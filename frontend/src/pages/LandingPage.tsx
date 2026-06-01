@@ -146,13 +146,12 @@ export default function LandingPage() {
             as a UI glitch instead of an intentional crop, so we landed the
             mockup flush against the section's bottom padding. */}
         <div className="relative mt-2 overflow-hidden bg-paper-100 dark:bg-umber-900 pt-6 sm:pt-8 lg:pt-10">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="origin-bottom pb-6 sm:pb-10 lg:pb-14">
               <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
-                {/* Rotation + heavy drop-shadow stripped: the page has
-                    enough tilted/framed surfaces below (Budget polaroid
-                    is the one literal "photo on paper" beat). */}
-                <WorkspaceMockup className="h-auto w-full drop-shadow-[0_18px_30px_rgba(16,24,48,0.12)]" />
+                {/* Smaller, shadowless preview per request — the SVG carries
+                    its own card frame, so no extra drop shadow. */}
+                <WorkspaceMockup className="h-auto w-full" />
               </LazyMount>
             </div>
           </div>

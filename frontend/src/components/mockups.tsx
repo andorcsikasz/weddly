@@ -34,6 +34,8 @@ export function WorkspaceMockup({ className }: Common) {
     { key: "guests", label: t("nav.guests") },
     { key: "budget", label: t("nav.budget") },
     { key: "seating", label: t("nav.seating") },
+    { key: "timeline", label: t("nav.timeline") },
+    { key: "logistics", label: t("nav.logistics") },
     { key: "suppliers", label: t("nav.suppliers") },
   ];
   return (
@@ -43,10 +45,6 @@ export function WorkspaceMockup({ className }: Common) {
       aria-label={t("landing.mockup_aria_dashboard")}
       className={className}
     >
-      {/* Drop-shadow simulator */}
-      <g className="text-ink-900" opacity="0.06">
-        <rect x="6" y="14" width="640" height="440" rx="20" fill="currentColor" />
-      </g>
       {/* Card frame */}
       <g className="text-paper-200">
         <rect
@@ -80,10 +78,10 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
 
       {/* Active nav item — Overview */}
-      <g className="text-blush-100">
+      <g className="text-umber-100">
         <rect x="12" y="78" width="116" height="32" rx="8" fill="currentColor" />
       </g>
-      <g className="text-blush-700 font-sans">
+      <g className="text-umber-700 font-sans">
         <circle cx="26" cy="94" r="3" fill="currentColor" />
         <text x="40" y="98" fontSize="11" fontWeight="600" fill="currentColor">
           {t("nav.dashboard")}
@@ -133,7 +131,7 @@ export function WorkspaceMockup({ className }: Common) {
           Mia &amp; Lucas
         </text>
       </g>
-      <g className="text-blush-300">
+      <g className="text-umber-300">
         <rect
           x="436"
           y="26"
@@ -145,7 +143,7 @@ export function WorkspaceMockup({ className }: Common) {
           strokeWidth="1"
         />
       </g>
-      <g className="text-blush-700 font-sans">
+      <g className="text-umber-700 font-sans">
         <circle cx="450" cy="40" r="3" fill="currentColor" />
         <text x="460" y="44" fontSize="11" fill="currentColor">
           {t("landing.mockup_date")}
@@ -183,7 +181,7 @@ export function WorkspaceMockup({ className }: Common) {
       <g className="text-paper-200">
         <rect x="184" y="156" width="184" height="8" rx="4" fill="currentColor" />
       </g>
-      <g className="text-blush-500">
+      <g className="text-umber-600">
         <rect x="184" y="156" width="148" height="8" rx="4" fill="currentColor" />
       </g>
       <g className="text-paper-300">
@@ -222,7 +220,7 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
       {/* Avatar stack */}
       {STATUS_DOT_OFFSETS.map((dx, i) => (
-        <g key={dx} className={i % 2 === 0 ? "text-blush-300" : "text-blush-200"}>
+        <g key={dx} className={i % 2 === 0 ? "text-umber-300" : "text-umber-200"}>
           <circle cx={424 + dx} cy="172" r="9" fill="currentColor" stroke="white" strokeWidth="2" />
         </g>
       ))}
@@ -232,10 +230,10 @@ export function WorkspaceMockup({ className }: Common) {
         </text>
       </g>
       {/* RSVP status pills */}
-      <g className="text-blush-100">
+      <g className="text-umber-100">
         <rect x="416" y="192" width="64" height="14" rx="7" fill="currentColor" />
       </g>
-      <g className="text-blush-700 font-sans">
+      <g className="text-umber-700 font-sans">
         <text x="424" y="202" fontSize="8" fontWeight="600" fill="currentColor">
           {t("landing.mockup_yes_count", { n: 87 })}
         </text>
@@ -286,7 +284,7 @@ export function WorkspaceMockup({ className }: Common) {
             <g className="text-ink-700">
               <circle cx="0" cy="0" r="20" fill="none" stroke="currentColor" strokeWidth="1" />
             </g>
-            <g className="text-blush-300">
+            <g className="text-umber-300">
               {TABLE_DEGS.map((deg) => {
                 const rad = (deg * Math.PI) / 180;
                 const cx = Math.cos(rad) * 28;
@@ -324,7 +322,7 @@ export function WorkspaceMockup({ className }: Common) {
               strokeWidth="1"
             />
           </g>
-          <g className="text-blush-300">
+          <g className="text-umber-300">
             {HEAD_TABLE_X.map((x) => (
               <rect
                 key={`top-${x}`}
@@ -352,7 +350,7 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
 
       {/* Confetti */}
-      <g className="text-blush-300">
+      <g className="text-umber-300">
         <circle cx="608" cy="14" r="3" fill="currentColor" />
         <circle cx="620" cy="32" r="2" fill="currentColor" />
       </g>
