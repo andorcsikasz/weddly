@@ -294,6 +294,27 @@
       0 1px 0 0 var(--btn-rim);
     transform: translateY(3px);
   }
+  /* Landing CTAs get a more pronounced, warm (umber-tinted) drop shadow so
+     the lift reads clearly on the cream canvas — bigger blur, higher
+     opacity and less negative spread than the default. Rim layers stay
+     colour-matched per variant. Scoped to landing so the workspace
+     buttons keep the subtler app shadow. */
+  .btn-landing.btn-lifted {
+    --btn-shadow: rgba(58, 46, 34, 0.34);
+    --btn-shadow-hover: rgba(58, 46, 34, 0.42);
+    box-shadow:
+      inset 0 1px 0 0 var(--btn-highlight),
+      inset 0 -1px 0 0 var(--btn-edge),
+      0 5px 0 0 var(--btn-rim),
+      0 14px 28px -6px var(--btn-shadow);
+  }
+  .btn-landing.btn-lifted:hover {
+    box-shadow:
+      inset 0 1px 0 0 var(--btn-highlight),
+      inset 0 -1px 0 0 var(--btn-edge),
+      0 6px 0 0 var(--btn-rim-hover),
+      0 18px 36px -6px var(--btn-shadow-hover);
+  }
   /* The .btn base sets focus via Tailwind's ring utility (which writes
      box-shadow), but .btn-lifted's literal box-shadow stack overwrites
      the whole shadow chain — ring is wiped. Use `outline` instead so the
