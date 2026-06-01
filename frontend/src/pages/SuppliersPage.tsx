@@ -999,8 +999,8 @@ export default function SuppliersPage() {
             onClick={() => setActiveCat(null)}
             className={
               activeCat === null
-                ? "inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 py-1 text-xs font-medium text-paper-100"
-                : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
+                ? "inline-flex items-center gap-1.5 rounded-xl border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 py-1 text-xs font-medium text-paper-100"
+                : "inline-flex items-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
             }
           >
             {t("suppliers.filter_all")}
@@ -1025,8 +1025,8 @@ export default function SuppliersPage() {
                 onClick={() => setActiveCat(c)}
                 className={
                   selected
-                    ? "inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 py-1 text-xs font-medium text-paper-100"
-                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
+                    ? "inline-flex items-center gap-1.5 rounded-xl border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 py-1 text-xs font-medium text-paper-100"
+                    : "inline-flex items-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
                 }
               >
                 <Icon size={13} />
@@ -1056,7 +1056,7 @@ export default function SuppliersPage() {
               setDiyEditing(null);
               setDiyOpen(true);
             }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition hover:border-sage-600 hover:bg-sage-100 sm:ml-auto dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition hover:border-sage-600 hover:bg-sage-100 sm:ml-auto dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
           >
             <Pencil size={13} aria-hidden />
             {t("suppliers.diy_button_short")}
@@ -1846,7 +1846,7 @@ function ChainStep({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex flex-col items-center gap-0.5 rounded-full border px-3 py-1 text-xs transition-colors ${
+      className={`group flex flex-col items-center gap-0.5 rounded-2xl border px-3 py-1 text-xs transition-colors ${
         active
           ? "border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
           : allDone
