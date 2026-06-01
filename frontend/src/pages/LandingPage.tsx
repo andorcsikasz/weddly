@@ -1010,7 +1010,7 @@ function CoupleCardsTeaser() {
                     {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
                   </span>
                   <span className="mt-1.5 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-white sm:mt-2 sm:text-sm lg:text-base">
-                    ({t(deck.titleKey)})
+                    {t(deck.titleKey)}
                   </span>
                 </div>
                 <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] text-white sm:text-[10px] sm:tracking-[0.28em]">

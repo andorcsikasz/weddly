@@ -419,10 +419,10 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     slug: "bibliai-idezetek-eskuvore",
     published_at: "2026-05-25",
     read_minutes: 9,
-    category: { hu: "Idézetek", en: "Verses" },
+    category: { hu: "Igék", en: "Verses" },
     hu: {
-      title: "Bibliai idézetek esküvőre: Igék szeretetről, házasságról és közös útról",
-      lead: "A legszebb bibliai igék esküvőre: szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
+      title: "Bibliai idézetek esküvőre: igék szeretetről, házasságról és közös útról",
+      lead: "A legszebb bibliai igék esküvőre: szeretetről, házasságról, hűségről, megbocsátásról és a közös útról.",
       seo_title: "Bibliai idézetek esküvőre: 30+ ige szeretetről és házasságról",
       seo_description:
         "A legszebb bibliai idézetek esküvőre: igék szeretetről, házasságról, hűségről, megbocsátásról és közös útról.",
@@ -1144,8 +1144,8 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     read_minutes: 6,
     category: { hu: "Vendéglista", en: "Guest list" },
     hu: {
-      title: "Esküvői vendéglista készítése: hogyan legyen végre átlátható?",
-      lead: "Így gyűjtsétek össze a neveket, plus one-okat, RSVP válaszokat, ételválasztásokat és speciális igényeket egy helyre.",
+      title: "Esküvői vendéglista készítése: hogyan legyen végre átlátható",
+      lead: "Így gyűjtsétek egy helyre a neveket, kísérőket, RSVP-válaszokat, ételválasztásokat és speciális igényeket.",
       seo_title: "Esküvői vendéglista készítése · Wēddly",
       seo_description:
         "Esküvői vendéglista stressz nélkül: így gyűjtsétek össze a neveket, plus one-okat, RSVP válaszokat, ételválasztásokat és speciális igényeket.",
