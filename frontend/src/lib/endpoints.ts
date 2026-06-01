@@ -259,6 +259,8 @@ export interface OnboardInput {
   budget_goal?: BudgetGoal;
   /** Display currency. Defaults to HUF on the backend when omitted. */
   currency?: Currency;
+  /** ISO 3166-1 alpha-2 country code where the wedding will be held. */
+  country?: string;
   /** Legacy scalars — kept for one or two clients still on the old shape. */
   wedding_date?: string | null;
   target_guest_count?: number | null;
@@ -310,6 +312,9 @@ export const coupleApi = {
   createAdditional: (body: {
     event_name: string;
     wedding_date_goal: WeddingDateGoal;
+    /** ISO 3166-1 alpha-2 country for the new event. Falls back to the
+     *  active workspace's country server-side when omitted. */
+    country?: string;
     seed_from_couple_id?: number | null;
     seed_guest_ids?: number[];
   }) =>
@@ -349,6 +354,8 @@ export const coupleApi = {
     planning_count_locked?: boolean;
     frozen_categories?: BudgetCategory[];
     currency?: Currency;
+    /** ISO 3166-1 alpha-2 country code. Drives supplier region filtering. */
+    country?: string;
     rsvp_offers_accommodation?: boolean;
     rsvp_collects_meal?: boolean;
     /** Publish toggle for the public wedding website at `/w/:slug`. */

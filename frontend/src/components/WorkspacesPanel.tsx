@@ -13,6 +13,7 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { type CoupleMembershipView, coupleApi, guestApi, householdApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { CountryCombobox } from "./CountryCombobox";
 import { Dialog, useEntryPrompt, useToast } from "./ui";
 
 interface Props {
@@ -397,6 +398,7 @@ function CreateWorkspaceDialog({
   const toast = useToast();
   const [eventName, setEventName] = useState("");
   const [weddingDate, setWeddingDate] = useState("");
+  const [country, setCountry] = useState("");
   const [seedOn, setSeedOn] = useState(false);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [households, setHouseholds] = useState<Household[]>([]);
@@ -405,9 +407,14 @@ function CreateWorkspaceDialog({
   const [submitting, setSubmitting] = useState(false);
   const [activeCoupleId, setActiveCoupleId] = useState<number | null>(null);
 
-  // Fetch the current couple's id once — needed as the seed_from source.
+  // Fetch the current couple's id + country once. The id seeds the
+  // "import from current workspace" toggle; the country pre-fills the
+  // combobox below since most multi-event weddings stay in one country.
   useEffect(() => {
-    coupleApi.current().then((r) => setActiveCoupleId(r.couple?.id ?? null));
+    coupleApi.current().then((r) => {
+      setActiveCoupleId(r.couple?.id ?? null);
+      if (r.couple?.country) setCountry(r.couple.country);
+    });
   }, []);
 
   // Lazy-load guests + households the first time the user toggles
@@ -471,6 +478,10 @@ function CreateWorkspaceDialog({
       toast.error(t("profile.workspaces_create_event_required"));
       return;
     }
+    if (!country || country.length !== 2) {
+      toast.error(t("profile.workspaces_create_country_required"));
+      return;
+    }
     setSubmitting(true);
     try {
       const wedding_date_goal =
@@ -494,6 +505,7 @@ function CreateWorkspaceDialog({
       const r = await coupleApi.createAdditional({
         event_name: name,
         wedding_date_goal,
+        country,
         seed_from_couple_id: seedFrom,
         seed_guest_ids: seedIds,
       });
@@ -564,6 +576,13 @@ function CreateWorkspaceDialog({
             disabled={submitting}
           />
         </div>
+        <CountryCombobox
+          value={country}
+          onChange={setCountry}
+          label={t("profile.workspaces_create_country_label")}
+          helperText={t("profile.workspaces_create_country_helper")}
+          required
+        />
         <label className="flex items-start gap-2 text-sm">
           <input
             type="checkbox"

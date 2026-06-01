@@ -422,7 +422,7 @@ const hu: LocaleMessages = {
     step2_short: "Dátum",
     step3_short: "Vendégek",
     step4_short: "Költségvetés",
-    step5_short: "Stílus",
+    step5_short: "Ország",
     bride_name_label: "Menyasszony",
     groom_name_label: "Vőlegény",
     partner_one_label: "Társ 1",
@@ -434,7 +434,12 @@ const hu: LocaleMessages = {
     step4_title: "Mekkora a tervezett keret?",
     budget_label: "Felső költségkeret (Ft)",
     budget_help: "Ez alapján bontjuk fel a kategóriákat — később egyenként finomíthatod.",
-    step5_title: "Milyen stílust képzeltetek el?",
+    step5_title: "Melyik országban lesz az esküvő?",
+    country_label: "Ország",
+    country_helper:
+      "Ezt használjuk, hogy ne ajánljunk olyan szolgáltatókat, akik a ti országotokban nem dolgoznak.",
+    country_placeholder: "Kezdj el gépelni…",
+    country_required: "Válassz egy országot.",
     style_help: "Több is választható. A stílus csak címkézi a páros profilját, nem korlátoz.",
     style_classic: "Klasszikus",
     style_modern: "Modern",
@@ -3377,6 +3382,10 @@ const hu: LocaleMessages = {
     budget_currency_confirm_body:
       "Biztos, hogy más pénznemben szeretnéd a továbbiakban vezetni a költségeket? Ez csak a megjelenítést váltja — a már bevitt összegeket nem számoljuk át árfolyam szerint, ugyanazok a számok jelennek meg az új szimbólummal.",
     budget_currency_confirm_yes: "Igen, váltsunk",
+    country_label: "Ország",
+    country_helper:
+      "Az esküvő helyszínének országa. Ez alapján szűrjük a szolgáltatókat, akik nálatok dolgoznak.",
+    country_save_done: "Ország mentve.",
     workspaces_title: "Esemény-munkaterületek",
     workspaces_body:
       "Több esemény (polgári, lakodalom, másnapi brunch)? Külön munkaterület mindegyiknek. Vendéglista és háztartások átvehetők az aktív munkaterületről.",
@@ -3394,6 +3403,10 @@ const hu: LocaleMessages = {
       "Pl. Polgári szertartás, Családi vacsora, Baráti afterparty",
     workspaces_create_event_required: "Add meg az esemény nevét",
     workspaces_create_date_label: "Dátum (opcionális)",
+    workspaces_create_country_label: "Ország",
+    workspaces_create_country_helper:
+      "Az új esemény helyszínének országa. Alapból az aktív munkaterület országa.",
+    workspaces_create_country_required: "Válassz országot.",
     workspaces_create_submit: "Létrehozás",
     workspaces_create_done: "{name} létrehozva.",
     workspaces_create_names_required: "Adj nevet a párnak.",

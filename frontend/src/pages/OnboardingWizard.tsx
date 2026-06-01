@@ -1,7 +1,9 @@
-// 4-step wizard. Wedding planning starts uncertain — couples often have a
+// 5-step wizard. Wedding planning starts uncertain — couples often have a
 // season ("Summer 2027") rather than a date, a guest range rather than a
 // number, and a vague budget. Each step lets them pick how certain they are
-// (the "kind") and only asks the fields that match.
+// (the "kind") and only asks the fields that match. The final step
+// commits the wedding country so we can offer country-aware supplier
+// suggestions from day one.
 
 import type {
   BudgetGoal,
@@ -17,6 +19,7 @@ import type {
 import { CURRENCIES } from "@shared/types";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { CountryCombobox } from "../components/CountryCombobox";
 import { Shell } from "../components/Shell";
 import { Skeleton } from "../components/ui";
 import { coupleApi } from "../lib/endpoints";
@@ -70,9 +73,13 @@ interface FormState {
   /** Picked on step 4 next to the budget inputs. Stored verbatim on the
    *  couple via the onboard call; flips every money field after onboarding. */
   currency: Currency;
+  /** ISO 3166-1 alpha-2 country code where the wedding will be held.
+   *  Picked on step 5 (country); empty string until the user commits a
+   *  pick. Drives supplier region filtering after onboarding. */
+  country: string;
 }
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const DEFAULT_FORM: FormState = {
   bride_name: "",
@@ -91,6 +98,7 @@ const DEFAULT_FORM: FormState = {
   budget_min: BUDGET_DEFAULTS.HUF.min,
   budget_max: BUDGET_DEFAULTS.HUF.max,
   currency: "HUF",
+  country: "",
 };
 
 function buildDateGoal(f: FormState): WeddingDateGoal {
@@ -221,6 +229,12 @@ function isStepValid(step: number, f: FormState): boolean {
     if (b.kind === "range")
       return b.min_huf !== null && b.max_huf !== null && b.min_huf > 0 && b.min_huf <= b.max_huf;
     return true;
+  }
+  // Step 4 (the 5th, country): a known ISO code must be picked before
+  // the visitor can finish onboarding. Combobox commits the code only on
+  // an explicit pick, so an empty string here means "no commit yet".
+  if (step === 4) {
+    return f.country.length === 2;
   }
   return true;
 }
@@ -366,6 +380,7 @@ export default function OnboardingWizard() {
         guest_count_goal: buildGuestGoal(form),
         budget_goal: buildBudgetGoal(form),
         currency: form.currency,
+        country: form.country,
         // Style tags are no longer collected in onboarding — the field stays
         // on the model so users can set it later from Profile, but ships
         // empty from this flow.
@@ -746,6 +761,22 @@ export default function OnboardingWizard() {
                     )}
                 </>
               )}
+            </>
+          )}
+
+          {step === 4 && (
+            <>
+              <h1>{t("onboarding.step5_title")}</h1>
+              <p className="mt-2 text-sm text-ink-600">{t("onboarding.country_helper")}</p>
+              <div className="mt-6">
+                <CountryCombobox
+                  value={form.country}
+                  onChange={(code) => update("country", code)}
+                  label={t("onboarding.country_label")}
+                  placeholder={t("onboarding.country_placeholder")}
+                  required
+                />
+              </div>
             </>
           )}
 

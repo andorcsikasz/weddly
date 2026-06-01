@@ -18,6 +18,7 @@ import {
   Archive,
   ChevronDown,
   Download,
+  Globe,
   Heart,
   LogOut,
   Pencil,
@@ -35,6 +36,7 @@ import {
   useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { CountryCombobox } from "../components/CountryCombobox";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
 import { ApiError } from "../lib/api";
@@ -535,6 +537,21 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
     }
   }
 
+  /** Persist a new wedding-country pick. Drives supplier-region filtering;
+   *  flipping it doesn't otherwise touch the workspace state. The combobox
+   *  fires onChange with "" while the user is typing — we ignore those
+   *  intermediate writes and only save once a known ISO code is committed. */
+  async function saveCountry(next: string) {
+    if (!next || next === couple?.country) return;
+    try {
+      const r = await coupleApi.update({ country: next });
+      setCouple(r.couple);
+      toast.success(t("profile.country_save_done"));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+    }
+  }
+
   return (
     <>
       {/* Visually-hidden h1 — hero band IS the visual heading but doesn't
@@ -808,6 +825,27 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
               )}
             </li>
           </ul>
+        </section>
+      )}
+
+      {showPlanning && couple && (
+        <section className="card mt-6">
+          <h2 className="flex items-center gap-2 text-lg">
+            <Globe size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("profile.country_label")}
+          </h2>
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+            {t("profile.country_helper")}
+          </p>
+          <div className="mt-4 max-w-sm">
+            <CountryCombobox
+              value={couple.country}
+              onChange={(code) => {
+                void saveCountry(code);
+              }}
+              label={t("profile.country_label")}
+            />
+          </div>
         </section>
       )}
 

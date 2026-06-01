@@ -418,7 +418,7 @@ const en: LocaleMessages = {
     step2_short: "Date",
     step3_short: "Guests",
     step4_short: "Budget",
-    step5_short: "Style",
+    step5_short: "Country",
     bride_name_label: "Bride",
     groom_name_label: "Groom",
     partner_one_label: "Partner 1",
@@ -430,7 +430,12 @@ const en: LocaleMessages = {
     step4_title: "What's the budget ceiling?",
     budget_label: "Budget ceiling (Ft)",
     budget_help: "We'll seed category splits — you can fine-tune each line later.",
-    step5_title: "What style fits you?",
+    step5_title: "Which country will the wedding be in?",
+    country_label: "Country",
+    country_helper:
+      "We'll use this so we don't suggest suppliers who can't work in your country.",
+    country_placeholder: "Start typing…",
+    country_required: "Pick a country.",
     style_help: "Pick as many as you like. Style is just a tag on the profile — nothing locks in.",
     style_classic: "Classic",
     style_modern: "Modern",
@@ -3339,6 +3344,10 @@ const en: LocaleMessages = {
     budget_currency_confirm_body:
       "Sure you want to track costs in a different currency going forward? This only switches the symbol — existing amounts are NOT converted by FX rate, the same numbers will display under the new symbol.",
     budget_currency_confirm_yes: "Yes, switch",
+    country_label: "Country",
+    country_helper:
+      "The country the wedding will be held in. We use it to filter suppliers who can actually work there.",
+    country_save_done: "Country saved.",
     workspaces_title: "Event workspaces",
     workspaces_body:
       "Hosting multiple events (civil, reception, day-after brunch)? Spin up a separate workspace per event. Guests + households can carry over from your active workspace.",
@@ -3356,6 +3365,10 @@ const en: LocaleMessages = {
     workspaces_create_event_placeholder: "e.g. Religious ceremony, Family dinner, Afterparty",
     workspaces_create_event_required: "Please enter an event name",
     workspaces_create_date_label: "Date (optional)",
+    workspaces_create_country_label: "Country",
+    workspaces_create_country_helper:
+      "The country the new event will be held in. Defaults to your active workspace's country.",
+    workspaces_create_country_required: "Pick a country.",
     workspaces_create_submit: "Create",
     workspaces_create_done: "{name} created.",
     workspaces_create_names_required: "Give the couple a name.",

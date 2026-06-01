@@ -515,6 +515,11 @@ export interface LocaleMessages {
     /** Submit-failed banner + retry button copy. */
     submit_failed: string;
     submit_retry: string;
+    // ── Country picker (step 5, repurposed from the deprecated style step) ──
+    country_label: string;
+    country_helper: string;
+    country_placeholder: string;
+    country_required: string;
     // ── Uncertainty: kind selectors and helper copy ───────────────────
     date_kind_question: string;
     date_kind_exact: string;
@@ -3837,6 +3842,12 @@ export interface LocaleMessages {
     budget_currency_confirm_title: string;
     budget_currency_confirm_body: string;
     budget_currency_confirm_yes: string;
+    /** Country combobox in the couple-settings panel. Drives supplier
+     *  region filtering — a Belgian couple shouldn't be pitched
+     *  HU-only venues. */
+    country_label: string;
+    country_helper: string;
+    country_save_done: string;
     /** Profile "Workspaces" panel — lists Alpha / Bravo / Charlie and
      *  hosts the "Új esemény" CTA + create modal. */
     workspaces_title: string;
@@ -3853,6 +3864,12 @@ export interface LocaleMessages {
     workspaces_create_event_placeholder: string;
     workspaces_create_event_required: string;
     workspaces_create_date_label: string;
+    /** Country combobox in the create-workspace dialog. Pre-filled with
+     *  the active workspace's country since most secondary events stay
+     *  in the same country. */
+    workspaces_create_country_label: string;
+    workspaces_create_country_helper: string;
+    workspaces_create_country_required: string;
     workspaces_create_submit: string;
     workspaces_create_done: string;
     workspaces_create_names_required: string;
