@@ -14,6 +14,19 @@ export type BlogBlock =
   /** Pulled-out quote. `text` carries the quote body (paragraphs split on
    *  `\n\n`); `cite` is the source attribution (e.g. "1Korinthus 13,4-8"). */
   | { type: "blockquote"; text: string; cite: string }
+  /** Inline figure. `src` is an http(s) image URL (e.g. a Wikimedia Commons
+   *  `Special:FilePath` link) or a local `/uploads/...` path; `alt` is the
+   *  accessibility text. `caption` shows below the image (venue name etc.);
+   *  `credit` + `creditHref` carry photographer/licence attribution, with
+   *  `creditHref` linking to the source page (helps SEO + satisfies CC-BY). */
+  | {
+      type: "img";
+      src: string;
+      alt: string;
+      caption?: string;
+      credit?: string;
+      creditHref?: string;
+    }
   | { type: "cta"; lead: string; href: string; label: string };
 
 export interface BlogPostLocale {
@@ -3811,6 +3824,716 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         {
           type: "p",
           text: "No for civil ceremonies. Some denominations require it for church weddings; check with the parish.",
+        },
+      ],
+    },
+  },
+
+  // ── Where to get married in Hungary ────────────────────────────────
+  {
+    slug: "where-to-get-married-in-hungary",
+    published_at: "2026-05-30",
+    read_minutes: 9,
+    category: { hu: "Helyszínek", en: "Venues" },
+    cover_image_url:
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Festetics_Palace,_Keszthely,_Hungary.jpg",
+    hu: {
+      title: "Hol házasodjunk Magyarországon? 6 mesés esküvői helyszín",
+      lead: "Barokk kastélyoktól a Balaton-parti apátságig: a legszebb magyar esküvői helyszínek régióról régióra, képekkel és gyakorlati tippekkel.",
+      seo_title: "Hol házasodjunk Magyarországon? 6 mesés esküvői helyszín · Wēddly",
+      seo_description:
+        "A legszebb esküvői helyszínek Magyarországon: Festetics-kastély, Gödöllő, Vajdahunyad vára, Tihany, Villány, Eszterháza. Stílusok, befogadóképesség, tippek.",
+      body: [
+        {
+          type: "p",
+          text: "Magyarország meglepően sok mesés esküvői helyszínt zsúfol egy kis országba: barokk kastélyokat, amelyek egykor császárokat láttak vendégül, dombtetői apátságot a Balaton felett, mesebeli várat Budapest szívében és vörösboros vidéket a meleg déli tájon. Akár nagy, 200 fős lakodalmat terveztek, akár szűk körű szertartást, íme hat helyszín, ahol érdemes igent mondani, régióról régióra.",
+        },
+        { type: "h2", text: "1. Festetics-kastély, Keszthely" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Festetics_Palace,_Keszthely,_Hungary.jpg",
+          alt: "A keszthelyi Festetics-kastély fehér barokk homlokzata",
+          caption: "Festetics-kastély, Keszthely",
+          credit: "Fotó: Sandor Somkuti / CC BY-SA 4.0, Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Festetics_Palace,_Keszthely,_Hungary.jpg",
+        },
+        {
+          type: "p",
+          text: "Magyarország harmadik legnagyobb és leglátogatottabb kastélya a Balaton nyugati partján áll. Az aranyozott csillárokkal díszített tükörterem, a híres történelmi könyvtár és a védett kastélypark francia és angol kertje a romantikus, nagyszabású esküvők klasszikus díszlete. A kastélyban külön szárnyat alakítottak ki szertartásokhoz és bálokhoz, így a polgári ceremónia és a fogadás egy helyen, ünnepi környezetben tartható meg.",
+        },
+        { type: "h2", text: "2. Gödöllői Királyi Kastély" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Hungria_-_Palacio_de_Sisi_en_G%C3%B6d%C3%B6ll%C3%B6_-_panoramio.jpg",
+          alt: "A gödöllői Királyi Kastély barokk épülete és parkja",
+          caption: "Gödöllői Királyi Kastély",
+          credit: "Fotó: isol / CC BY-SA 3.0, Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Hungria_-_Palacio_de_Sisi_en_G%C3%B6d%C3%B6ll%C3%B6_-_panoramio.jpg",
+        },
+        {
+          type: "p",
+          text: "Magyarország legnagyobb barokk kastélya alig 30 kilométerre fekszik Budapesttől, és örökre összeforrt Sisi, vagyis Erzsébet királyné nevével, akinek kedvenc nyári rezidenciája volt. Az aranyozott dísztermek és a formás kertek a fővároshoz közeli, mégis történelmi hangulatú esküvők ideális helyszínévé teszik, ha a vendégeknek nem kell messzire utazniuk.",
+        },
+        { type: "h2", text: "3. Vajdahunyad vára, Budapest" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Budapest_Burg_Vajdahunyad.JPG",
+          alt: "A budapesti Vajdahunyad vára a Városligetben, tó tükröződésével",
+          caption: "Vajdahunyad vára, Városliget, Budapest",
+          credit: "Fotó: Elelicht / CC BY-SA 3.0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Budapest_Burg_Vajdahunyad.JPG",
+        },
+        {
+          type: "p",
+          text: "Ha a vőlegény és a menyasszony Budapesthez ragaszkodik, a Városligetben álló Vajdahunyad vára a város egyik legfotogénebb háttere. Az 1896-os millenniumi kiállításra emelt, gótikát, reneszánszt és romanikát ötvöző épület tóparti tükörképe és mesekönyvbe illő sziluettje a belvárosban kínál intim szertartáshoz és fényképezéshez is tökéletes díszletet.",
+        },
+        { type: "h2", text: "4. Tihanyi Apátság, Balaton" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Tihanycivertanlegi1.jpg",
+          alt: "A Tihanyi Apátság kéttornyú temploma a Balaton felett, légi felvétel",
+          caption: "Tihanyi Bencés Apátság, Tihany",
+          credit: "Fotó: Civertan Grafikai Stúdió / CC BY-SA 2.5, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Tihanycivertanlegi1.jpg",
+        },
+        {
+          type: "p",
+          text: "Az 1055-ben alapított apátság okkersárga, kéttornyú barokk temploma a tihanyi félsziget tetejéről néz le a Balatonra, és az ország egyik leglátványosabb tóparti helyszíne. Az alapítólevél őrzi a legrégebbi fennmaradt magyar szavakat, így a hely történelmi súlya is hozzáad a szertartás hangulatához. A panoráma a naplementés fotókat is emlékezetessé teszi.",
+        },
+        { type: "h2", text: "5. Villányi borvidék" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Villany,_wine.jpg",
+          alt: "Szőlőültetvények a Villányi borvidéken a Szársomlyó hegy alatt",
+          caption: "Villányi borvidék, Baranya",
+          credit: "Fotó: Cserlajos / CC BY-SA 3.0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Villany,_wine.jpg",
+        },
+        {
+          type: "p",
+          text: "Ha a kastélyok helyett lazább, déli hangulatra vágytok, Villány az ország vezető vörösboros vidéke a Szársomlyó természetvédelmi terület alatt. A szubmediterrán éghajlat, a szőlősorok és a modern pincészetek teraszai elegáns, mégis kötetlen, szabadtéri esküvői hangulatot kínálnak, jó borral és hosszú nyári estékkel.",
+        },
+        { type: "h2", text: "6. Eszterháza, a magyar Versailles, Fertőd" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Esterh%C3%A1zy_Palace,_Fert%C5%91d,_20220426_1053_5444.jpg",
+          alt: "Az Esterházy-kastély rokokó homlokzata Fertődön",
+          caption: "Esterházy-kastély (Eszterháza), Fertőd",
+          credit: "Fotó: Jakub Hałun / CC BY-SA 4.0, Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Esterh%C3%A1zy_Palace,_Fert%C5%91d,_20220426_1053_5444.jpg",
+        },
+        {
+          type: "p",
+          text: "A magyar Versailles néven is emlegetett fertődi Esterházy-kastély az ország legnagyobb barokk-rokokó palotája, amely egykor Haydnnak és zenekarának adott otthont. A díszes termek a szűk körű szertartásokhoz, a formás kastélypark pedig a nagyobb, szabadtéri kerti esküvőkhöz és koncertekhez is illik, Sopron közelében.",
+        },
+        { type: "h2", text: "Gyakorlati tudnivalók" },
+        {
+          type: "p",
+          text: "Magyarországon a jogilag érvényes házasságot anyakönyvvezető köti, és sok kastély, valamint helyszín ki tudja hozni az anyakönyvvezetőt a helyszínre egy hivatalon kívüli ceremóniához. Adjatok magatoknak legalább egy hónapot a papírmunkára, a keresett dátumokat pedig érdemes akár egy évvel előre lefoglalni, főleg a nyári hétvégékre. Gondoljatok a vendégek utazására és szállására is, ha a helyszín Budapesten kívül van.",
+        },
+        {
+          type: "cta",
+          lead: "Megvan a helyszín? A többit mi egyszerűsítjük. A Weddlyvel egy helyen vezetheted a vendéglistát, az ültetési rendet, a költségvetést és a teendőket.",
+          href: "/signup",
+          label: "Kezdjétek el ingyen",
+        },
+      ],
+    },
+    en: {
+      title: "Where to get married in Hungary: 6 fairy-tale wedding venues",
+      lead: "From baroque palaces to a hilltop abbey above Lake Balaton, here are the most beautiful places to get married in Hungary, region by region, with photos and practical tips.",
+      seo_title: "Where to get married in Hungary: 6 fairy-tale venues · Weddly",
+      seo_description:
+        "The best wedding venues in Hungary: Festetics Palace, Gödöllő, Vajdahunyad Castle, Tihany Abbey, Villány wine country and Eszterháza. Styles, capacity, tips.",
+      body: [
+        {
+          type: "p",
+          text: "Hungary packs an improbable number of fairy-tale wedding settings into a small country: baroque palaces that once hosted emperors, a hilltop abbey above Lake Balaton, a storybook castle in the middle of Budapest, and red-wine country in the warm south. Whether you are planning a grand 200-guest celebration or an intimate ceremony, here are six places worth saying I do, region by region.",
+        },
+        { type: "h2", text: "1. Festetics Palace, Keszthely" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Festetics_Palace,_Keszthely,_Hungary.jpg",
+          alt: "The white baroque facade of Festetics Palace in Keszthely",
+          caption: "Festetics Palace, Keszthely",
+          credit: "Photo: Sandor Somkuti / CC BY-SA 4.0, via Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Festetics_Palace,_Keszthely,_Hungary.jpg",
+        },
+        {
+          type: "p",
+          text: "Hungary's third-largest and most-visited palace stands on the western shore of Lake Balaton. The mirrored ballroom with its gilded chandeliers, the famous historic library and the protected palace park with its French and English gardens make it a classic setting for grand, romantic weddings. A dedicated wing was created for ceremonies and balls, so the civil ceremony and the reception can happen in one festive place.",
+        },
+        { type: "h2", text: "2. Royal Palace of Gödöllő" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Hungria_-_Palacio_de_Sisi_en_G%C3%B6d%C3%B6ll%C3%B6_-_panoramio.jpg",
+          alt: "The baroque Royal Palace of Gödöllő and its grounds",
+          caption: "Royal Palace of Gödöllő",
+          credit: "Photo: isol / CC BY-SA 3.0, via Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Hungria_-_Palacio_de_Sisi_en_G%C3%B6d%C3%B6ll%C3%B6_-_panoramio.jpg",
+        },
+        {
+          type: "p",
+          text: "Hungary's largest baroque palace sits barely 30 kilometres from Budapest and is forever tied to Empress Elisabeth, beloved Sisi, whose favourite summer residence it was. The gilded state rooms and formal gardens make it an ideal choice for a wedding that feels historic and grand yet keeps guests close to the capital, with no long journey involved.",
+        },
+        { type: "h2", text: "3. Vajdahunyad Castle, Budapest" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Budapest_Burg_Vajdahunyad.JPG",
+          alt: "Vajdahunyad Castle in Budapest's City Park reflected in the lake",
+          caption: "Vajdahunyad Castle, City Park, Budapest",
+          credit: "Photo: Elelicht / CC BY-SA 3.0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Budapest_Burg_Vajdahunyad.JPG",
+        },
+        {
+          type: "p",
+          text: "If you want to stay in Budapest, Vajdahunyad Castle in the City Park is one of the city's most photogenic backdrops. Built for the 1896 Millennium Exhibition and blending Gothic, Renaissance and Romanesque styles, its lakeside reflection and storybook silhouette offer a setting perfect for both an intimate ceremony and photographs, right in the heart of the city.",
+        },
+        { type: "h2", text: "4. Tihany Abbey, Lake Balaton" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Tihanycivertanlegi1.jpg",
+          alt: "The twin-towered church of Tihany Abbey above Lake Balaton, aerial view",
+          caption: "Tihany Benedictine Abbey, Tihany",
+          credit: "Photo: Civertan Grafikai Stúdió / CC BY-SA 2.5, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Tihanycivertanlegi1.jpg",
+        },
+        {
+          type: "p",
+          text: "Founded in 1055, the abbey's ochre, twin-towered baroque church looks down on Lake Balaton from the top of the Tihany peninsula, making it one of the country's most spectacular lakeside locations. Its founding charter holds the oldest surviving Hungarian words, so the sheer history of the place adds weight to the day, while the panorama makes sunset photographs unforgettable.",
+        },
+        { type: "h2", text: "5. Villány wine region" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Villany,_wine.jpg",
+          alt: "Vineyards in the Villány wine region below the Szársomlyó hill",
+          caption: "Villány wine region, southern Hungary",
+          credit: "Photo: Cserlajos / CC BY-SA 3.0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Villany,_wine.jpg",
+        },
+        {
+          type: "p",
+          text: "If you prefer a relaxed southern mood to a palace, Villány is the country's leading red-wine region, set below the Szársomlyó nature reserve. The sub-Mediterranean climate, the rows of vines and the terraces of its modern wineries make for an elegant yet easygoing outdoor wedding atmosphere, with great wine and long summer evenings.",
+        },
+        { type: "h2", text: "6. Eszterháza, the Hungarian Versailles, Fertőd" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Esterh%C3%A1zy_Palace,_Fert%C5%91d,_20220426_1053_5444.jpg",
+          alt: "The rococo facade of Esterházy Palace in Fertőd",
+          caption: "Esterházy Palace (Eszterháza), Fertőd",
+          credit: "Photo: Jakub Hałun / CC BY-SA 4.0, via Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Esterh%C3%A1zy_Palace,_Fert%C5%91d,_20220426_1053_5444.jpg",
+        },
+        {
+          type: "p",
+          text: "Known as the Hungarian Versailles, the Esterházy Palace at Fertőd is the country's largest baroque-rococo palace and once home to the composer Joseph Haydn and his orchestra. The ornate state rooms suit intimate ceremonies, while the formal palace park works for larger outdoor garden weddings and concerts, all near the historic town of Sopron.",
+        },
+        { type: "h2", text: "Practical notes" },
+        {
+          type: "p",
+          text: "In Hungary a legally binding marriage is performed by a registrar, and many palaces and venues can bring the registrar on site for an off-premises ceremony. Give yourselves at least a month for the paperwork, and book sought-after dates up to a year ahead, especially summer weekends. Factor in guest travel and accommodation too if the venue sits outside Budapest.",
+        },
+        {
+          type: "cta",
+          lead: "Found your venue? We make the rest simple. With Weddly you can run your guest list, seating chart, budget and to-dos in one place.",
+          href: "/signup",
+          label: "Start free",
+        },
+      ],
+    },
+  },
+
+  // ── Where to get married in Austria ────────────────────────────────
+  {
+    slug: "where-to-get-married-in-austria",
+    published_at: "2026-05-31",
+    read_minutes: 9,
+    category: { hu: "Helyszínek", en: "Venues" },
+    cover_image_url:
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial_image_of_Schloss_Leopoldskron_(view_from_the_southwest).jpg",
+    hu: {
+      title: "Hol házasodjunk Ausztriában? 7 romantikus esküvői helyszín",
+      lead: "Császári palotáktól az alpesi panorámáig: a legszebb osztrák esküvői helyszínek Bécstől Salzburgon át a Wachau borvidékéig, képekkel.",
+      seo_title: "Hol házasodjunk Ausztriában? 7 romantikus helyszín · Wēddly",
+      seo_description:
+        "A legszebb esküvői helyszínek Ausztriában: Schönbrunn, Mirabell-kastély, Leopoldskron, Hallstatt, Schloss Hof, Wachau, alpesi panoráma. Stílusok és tippek.",
+      body: [
+        {
+          type: "p",
+          text: "Ausztria a romantikus, mégis elegáns esküvők egyik európai fellegvára: császári barokk paloták, Sound of Music-hangulatú salzburgi termek, smaragdzöld tavak, szőlősorok a Duna mentén és alpesi panoráma egyetlen országban. Akár nagyszabású bécsi ceremóniáról, akár hegytetői szertartásról álmodtok, íme hét helyszín, ahol érdemes igent mondani.",
+        },
+        { type: "h2", text: "1. Schönbrunn Orangerie, Bécs" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Orangerie_(Sch%C3%B6nbrunn)_20080216.jpg",
+          alt: "A bécsi Schönbrunn-palota Orangerie épülete",
+          caption: "Schönbrunn Orangerie, Bécs",
+          credit: "Fotó: Wolfgang H. Wögerer / CC BY 3.0, Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Orangerie_(Sch%C3%B6nbrunn)_20080216.jpg",
+        },
+        {
+          type: "p",
+          text: "A világ egyik leghosszabb barokk narancsháza a Schönbrunn-palota kertjében áll, ahol egykor Mária Terézia és Mozart udvari koncertjei zajlottak. Az ünnepi termek és az előcsarnok a kertre nyíló teraszra vezetnek, így nagyszabású, akár több száz fős esküvők díszletét adják a császári Bécs szívében.",
+        },
+        { type: "h2", text: "2. Mirabell-kastély, Salzburg" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/2150_-_Salzburg_-_Schloss_Mirabell.JPG",
+          alt: "A salzburgi Mirabell-kastély és kertje",
+          caption: "Mirabell-kastély, Salzburg",
+          credit: "Fotó: Andrew Bossi / CC BY-SA 2.5, Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:2150_-_Salzburg_-_Schloss_Mirabell.JPG",
+        },
+        {
+          type: "p",
+          text: "A Mirabell-kastély Márványterme a világ egyik legszebb és legkeresettebb polgári esküvői terme, márvánnyal és aranyozott stukkóval díszítve, ahol egykor Mozart is játszott. A terem inkább a meghittebb, mintegy 100 fős szertartásokhoz illik, a Mirabell-kertek pedig a Sound of Music ikonikus forgatási helyszínei.",
+        },
+        { type: "h2", text: "3. Schloss Leopoldskron, Salzburg" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial_image_of_Schloss_Leopoldskron_(view_from_the_southwest).jpg",
+          alt: "A Schloss Leopoldskron tóparti rokokó palotája légi felvételen",
+          caption: "Schloss Leopoldskron, Salzburg",
+          credit: "Fotó: Carsten Steger / CC BY-SA 4.0, Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Aerial_image_of_Schloss_Leopoldskron_(view_from_the_southwest).jpg",
+        },
+        {
+          type: "p",
+          text: "Az 1736-ban épült rokokó palota saját tava partján fekszik, az Untersberg és a salzburgi vár panorámájával, és a Sound of Music egyik fő külső forgatási helyszíne volt. Ma szállodaként és rendezvényhelyszínként működik, így a tóparti szertartástól a dísztermi fogadásig egy helyen szervezhető meg a nagy nap.",
+        },
+        { type: "h2", text: "4. Hallstatt, Salzkammergut" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Hallstatt_Panorama.jpg",
+          alt: "Hallstatt tóparti faluja a Dachstein hegyei alatt",
+          caption: "Hallstatt, Salzkammergut",
+          credit: "Fotó: Sergey / CC BY-SA 2.0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Hallstatt_Panorama.jpg",
+        },
+        {
+          type: "p",
+          text: "A világörökségi Hallstatt a világ egyik legfotózottabb tóparti faluja: smaragdzöld tó a Dachstein sziklái alatt. A szertartás megtartható a tóparton vagy akár hajón is, a parti szállodák pedig teraszos fogadásoknak adnak otthont. Egyetlen figyelmeztetés: a falu rendkívül látogatott, ezért az intim hangulathoz az alacsony szezon ajánlott.",
+        },
+        { type: "h2", text: "5. Schloss Hof, Alsó-Ausztria" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Schloss_hof_2023.jpg",
+          alt: "A Schloss Hof barokk kastélya és teraszos kertje",
+          caption: "Schloss Hof, Marchfeld",
+          credit: "Fotó: Ekrem Canli / CC BY-SA 4.0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Schloss_hof_2023.jpg",
+        },
+        {
+          type: "p",
+          text: "Savoyai Jenő herceg egykori vidéki rezidenciája a szlovák határ közelében, mintegy 50 hektáros teraszos barokk kerttel. Az eredeti kastélykápolnát ma is használják szertartásokhoz, a dísztermek, a lovaglócsarnok és a barokk istállók pedig többféle fogadási helyszínt kínálnak egy nagyobb ünnephez.",
+        },
+        { type: "h2", text: "6. Wachau-völgy, Dürnstein" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Vineyards_along_the_Danube_in_Wachau.jpg",
+          alt: "Teraszos szőlősorok a Duna mentén a Wachau-völgyben",
+          caption: "Wachau borvidék, Dürnstein",
+          credit: "Fotó: jay8085 / CC BY 2.0, Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Vineyards_along_the_Danube_in_Wachau.jpg",
+        },
+        {
+          type: "p",
+          text: "A világörökségi Wachau teraszos szőlősorai a Duna mentén húzódnak, Dürnstein kék barokk apátsági tornyával és dombtetői várromjával a háttérben. A nyári szőlőskerti szertartások és a közeli vár- és apátsági helyszínek a klasszikus osztrák borvidéki esküvő díszletét adják, jó fehérborral kísérve.",
+        },
+        { type: "h2", text: "7. Hohe Mut Alm, Tirol" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Hohe_Mut_Alm.jpg",
+          alt: "A Hohe Mut Alm magashegyi panorámája Tirolban",
+          caption: "Hohe Mut Alm, Obergurgl, Tirol",
+          credit: "Fotó: Tiia Monto / CC BY-SA 3.0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Hohe_Mut_Alm.jpg",
+        },
+        {
+          type: "p",
+          text: "Ha alpesi esküvőről álmodtok, a Hohe Mut Alm magasan az Ötztali-Alpokban fekszik, és kabinos felvonóval érhető el. A helyszínre akár saját esküvői gondola is felviszi a párt, a gleccserek és csúcsok panorámája pedig páratlan hátteret ad egy tiroli hegyi szertartáshoz.",
+        },
+        { type: "h2", text: "Gyakorlati tudnivalók" },
+        {
+          type: "p",
+          text: "Ausztriában a polgári házasságot az anyakönyvi hivatal (Standesamt) köti, és sok kastély, illetve hegyi helyszín együttműködik a helyi hivatallal a helyszíni szertartáshoz. Külföldi párként számoljatok a dokumentumok hitelesítésével és fordításával, ezért kezdjétek a papírmunkát jó előre. A keresett salzburgi és bécsi termeket érdemes akár egy évvel korábban lefoglalni.",
+        },
+        {
+          type: "cta",
+          lead: "Megvan a helyszín? A Weddlyvel egy helyen vezetheted a vendéglistát, az ültetési rendet, a költségvetést és a teendőket, akár határon átnyúló esküvőhöz is.",
+          href: "/signup",
+          label: "Kezdjétek el ingyen",
+        },
+      ],
+    },
+    en: {
+      title: "Where to get married in Austria: 7 romantic wedding venues",
+      lead: "From imperial palaces to an alpine panorama, here are the most beautiful places to get married in Austria, from Vienna through Salzburg to the Wachau wine country, with photos.",
+      seo_title: "Where to get married in Austria: 7 romantic venues · Weddly",
+      seo_description:
+        "The best wedding venues in Austria: Schönbrunn, Mirabell Palace, Leopoldskron, Hallstatt, Schloss Hof, the Wachau and an alpine panorama. Styles, capacity, tips.",
+      body: [
+        {
+          type: "p",
+          text: "Austria is one of Europe's great strongholds of the romantic-yet-elegant wedding: imperial baroque palaces, Sound of Music halls in Salzburg, emerald lakes, rows of vines along the Danube and alpine panoramas, all in one country. Whether you dream of a grand Vienna ceremony or a mountaintop vow, here are seven places worth saying I do.",
+        },
+        { type: "h2", text: "1. Schönbrunn Orangerie, Vienna" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Orangerie_(Sch%C3%B6nbrunn)_20080216.jpg",
+          alt: "The Orangery building in the gardens of Schönbrunn Palace, Vienna",
+          caption: "Schönbrunn Orangerie, Vienna",
+          credit: "Photo: Wolfgang H. Wögerer / CC BY 3.0, via Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Orangerie_(Sch%C3%B6nbrunn)_20080216.jpg",
+        },
+        {
+          type: "p",
+          text: "One of the world's longest baroque orangeries sits in the gardens of Schönbrunn Palace, where Maria Theresa and Mozart once held court concerts. The festive rooms and foyer open onto a terrace in the Orangery garden, making it a setting for grand weddings of several hundred guests in the heart of imperial Vienna.",
+        },
+        { type: "h2", text: "2. Mirabell Palace, Salzburg" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/2150_-_Salzburg_-_Schloss_Mirabell.JPG",
+          alt: "Mirabell Palace and its gardens in Salzburg",
+          caption: "Mirabell Palace, Salzburg",
+          credit: "Photo: Andrew Bossi / CC BY-SA 2.5, via Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:2150_-_Salzburg_-_Schloss_Mirabell.JPG",
+        },
+        {
+          type: "p",
+          text: "The Marble Hall of Mirabell Palace is billed as one of the most beautiful and most-booked civil-wedding rooms in the world, clad in marble and gilded stucco, where Mozart once performed. The hall suits more intimate ceremonies of around 100 guests, while the Mirabell Gardens are an iconic Sound of Music filming location.",
+        },
+        { type: "h2", text: "3. Schloss Leopoldskron, Salzburg" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial_image_of_Schloss_Leopoldskron_(view_from_the_southwest).jpg",
+          alt: "Aerial view of the lakeside rococo palace Schloss Leopoldskron",
+          caption: "Schloss Leopoldskron, Salzburg",
+          credit: "Photo: Carsten Steger / CC BY-SA 4.0, via Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Aerial_image_of_Schloss_Leopoldskron_(view_from_the_southwest).jpg",
+        },
+        {
+          type: "p",
+          text: "Built in 1736, this rococo palace sits beside its own lake with views of the Untersberg and Salzburg's fortress, and it was a primary exterior filming location for The Sound of Music. Today it runs as a hotel and event venue, so everything from a lakeside ceremony to a grand-room reception can be arranged in one place.",
+        },
+        { type: "h2", text: "4. Hallstatt, Salzkammergut" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Hallstatt_Panorama.jpg",
+          alt: "The lakeside village of Hallstatt below the Dachstein mountains",
+          caption: "Hallstatt, Salzkammergut",
+          credit: "Photo: Sergey / CC BY-SA 2.0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Hallstatt_Panorama.jpg",
+        },
+        {
+          type: "p",
+          text: "A UNESCO World Heritage site, Hallstatt is one of the most photographed lakeside villages in the world: an emerald lake framed by the cliffs of the Dachstein. Ceremonies can be held on the lakeshore or even on a boat, and the lakeside hotels host terrace receptions. One caveat: the village is intensely touristed, so off-season timing is best for an intimate feel.",
+        },
+        { type: "h2", text: "5. Schloss Hof, Lower Austria" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Schloss_hof_2023.jpg",
+          alt: "The baroque palace and terraced garden of Schloss Hof",
+          caption: "Schloss Hof, Marchfeld",
+          credit: "Photo: Ekrem Canli / CC BY-SA 4.0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Schloss_hof_2023.jpg",
+        },
+        {
+          type: "p",
+          text: "Once the country residence of Prince Eugene of Savoy, near the Slovak border, Schloss Hof comes with a roughly 50-hectare terraced baroque garden. The original palace chapel is still used for ceremonies, while the grand halls, riding hall and baroque stables provide several reception sites for a larger celebration.",
+        },
+        { type: "h2", text: "6. Wachau Valley, Dürnstein" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Vineyards_along_the_Danube_in_Wachau.jpg",
+          alt: "Terraced vineyards along the Danube in the Wachau valley",
+          caption: "Wachau wine region, Dürnstein",
+          credit: "Photo: jay8085 / CC BY 2.0, via Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Vineyards_along_the_Danube_in_Wachau.jpg",
+        },
+        {
+          type: "p",
+          text: "The UNESCO World Heritage terraced vineyards of the Wachau run along the Danube, with Dürnstein's blue baroque abbey tower and hilltop castle ruin behind. Summer vineyard ceremonies and nearby castle and abbey venues make for the classic Austrian wine-country wedding, paired with excellent white wine.",
+        },
+        { type: "h2", text: "7. Hohe Mut Alm, Tyrol" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Hohe_Mut_Alm.jpg",
+          alt: "The high-alpine panorama of Hohe Mut Alm in Tyrol",
+          caption: "Hohe Mut Alm, Obergurgl, Tyrol",
+          credit: "Photo: Tiia Monto / CC BY-SA 3.0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Hohe_Mut_Alm.jpg",
+        },
+        {
+          type: "p",
+          text: "If you dream of an alpine wedding, Hohe Mut Alm sits high in the Ötztal Alps and is reached by cable car. Couples can even ride a private wedding gondola up the mountain, and the glacier-and-peak panorama gives an unbeatable backdrop for a Tyrolean mountain ceremony.",
+        },
+        { type: "h2", text: "Practical notes" },
+        {
+          type: "p",
+          text: "In Austria the civil marriage is performed by the registry office (Standesamt), and many palaces and mountain venues work with the local office for an on-site ceremony. As an international couple, allow time for document authentication and translation, so start the paperwork well ahead. Book sought-after Salzburg and Vienna halls up to a year in advance.",
+        },
+        {
+          type: "cta",
+          lead: "Found your venue? With Weddly you can run your guest list, seating chart, budget and to-dos in one place, even for a cross-border wedding.",
+          href: "/signup",
+          label: "Start free",
+        },
+      ],
+    },
+  },
+
+  // ── Where to get married in Slovakia ───────────────────────────────
+  {
+    slug: "where-to-get-married-in-slovakia",
+    published_at: "2026-06-01",
+    read_minutes: 9,
+    category: { hu: "Helyszínek", en: "Venues" },
+    cover_image_url:
+      "https://commons.wikimedia.org/wiki/Special:FilePath/Bojnice_(Bojnitz)_Castle_(by_Pudelek).jpg",
+    hu: {
+      title: "Hol házasodjunk Szlovákiában? 7 mesés esküvői helyszín",
+      lead: "Mesebeli váraktól a Magas-Tátra tópartjáig: a legszebb szlovák esküvői helyszínek, képekkel és gyakorlati tippekkel.",
+      seo_title: "Hol házasodjunk Szlovákiában? 7 mesés helyszín · Wēddly",
+      seo_description:
+        "A legszebb esküvői helyszínek Szlovákiában: Bajmóci vár, Szomolány, Vöröskő, Pozsonyi vár, Château Béla, Csorba-tó, Bazin. Stílusok, befogadóképesség, tippek.",
+      body: [
+        {
+          type: "p",
+          text: "Szlovákia tele van romantikus esküvői helyszínekkel, amelyek meglepően közel vannak Magyarországhoz: mesebeli várak a Loire-völgy kastélyainak mintájára, reneszánsz erődök, a Duna fölé magasodó pozsonyi vár, a Magas-Tátra tóparti panorámája és a Kis-Kárpátok borvidéke. Íme hét helyszín, ahol érdemes igent mondani.",
+        },
+        { type: "h2", text: "1. Bajmóci vár (Bojnice)" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Bojnice_(Bojnitz)_Castle_(by_Pudelek).jpg",
+          alt: "A bajmóci vár tornyos, mesebeli sziluettje",
+          caption: "Bajmóci vár (Bojnický zámok), Bajmóc",
+          credit: "Fotó: Pudelek (Marcin Szala) / CC BY-SA 3.0, Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Bojnice_(Bojnitz)_Castle_(by_Pudelek).jpg",
+        },
+        {
+          type: "p",
+          text: "Szlovákia legismertebb mesebeli vára a Loire-völgy francia kastélyai mintájára épült át a 19. és 20. század fordulóján, középkori alapokon. Tornyos sziluettje, tava és kertjei az ország legromantikusabb helyszínévé teszik, amely gyakori forgatási helyszín is, így a tündérmese-hangulatú esküvők klasszikus választása.",
+        },
+        { type: "h2", text: "2. Szomolányi kastély (Smolenice)" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Smolenice_zamok.jpg",
+          alt: "A szomolányi kastély neogótikus tornya a Kis-Kárpátokban",
+          caption: "Szomolányi kastély (Smolenický zámok), Szomolány",
+          credit: "Fotó: Kamil Gašparík / közkincs, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Smolenice_zamok.jpg",
+        },
+        {
+          type: "p",
+          text: "A Kis-Kárpátok keleti lejtőin álló neogótikus kastély a bécsi Kreuzenstein vár mintájára épült újjá egy 15. századi erőd helyén. Ma a Szlovák Tudományos Akadémia kongresszusi központja, erdős dombok fölött, toronnyal és parkkal, ami az esküvőknek exkluzív, zárt hangulatot ad.",
+        },
+        { type: "h2", text: "3. Vöröskő vára (Červený Kameň)" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Cerveny_Kamen_z_Kukly_02.jpg",
+          alt: "A Vöröskő reneszánsz erődje a Kis-Kárpátok erdei fölött",
+          caption: "Vöröskő vára (Hrad Červený Kameň), Častá",
+          credit: "Fotó: Teslaton / CC BY 3.0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Cerveny_Kamen_z_Kukly_02.jpg",
+        },
+        {
+          type: "p",
+          text: "A 16. században erőddé átépített, később a Pálffy család nemesi rezidenciájaként szolgáló Vöröskő ma jól megőrzött múzeum, díszes belső termekkel és Európa egyik legnagyobb várpince-rendszerével. A Kis-Kárpátok borvidékének erdei veszik körül, így ideális azoknak, akik történelmi, nemesi környezetre vágynak.",
+        },
+        { type: "h2", text: "4. Pozsonyi vár (Bratislava)" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Bratislava_-_Burg_(b).JPG",
+          alt: "A pozsonyi vár négy saroktornyos barokk palotája a Duna fölött",
+          caption: "Pozsonyi vár (Bratislavský hrad), Pozsony",
+          credit: "Fotó: C.Stadler/Bwag / CC BY-SA 4.0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Bratislava_-_Burg_(b).JPG",
+        },
+        {
+          type: "p",
+          text: "A négy saroktornyával a Duna és az óváros fölé magasodó pozsonyi vár a szlovák főváros meghatározó sziluettje. Barokk kertjei és panorámája a városi esküvő ideális kiindulópontja azoknak a pároknak, akiknek Pozsony a háttér, jó közlekedéssel és sok közeli szálláshellyel.",
+        },
+        { type: "h2", text: "5. Château Béla, Dél-Szlovákia" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Ka%C5%A1tie%C4%BE_Bel%C3%A1_1.jpg",
+          alt: "A Château Béla barokk kúriája és parkja",
+          caption: "Château Béla (Kaštieľ Belá), Béla",
+          credit: "Fotó: Mlevicky / CC BY-SA 3.0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Ka%C5%A1tie%C4%BE_Bel%C3%A1_1.jpg",
+        },
+        {
+          type: "p",
+          text: "A 18. századi barokk kúriát 2008-ban öt csillagos butikhotellé újították fel, Esztergom és Párkány közelében. A 28 hektáros birtokon francia kert, szökőkút, kápolna és a freskós szalon várja a szertartást, az Orangerie terem pedig akár 140 fős fogadásnak is helyet ad, a birtok saját boraival kísérve.",
+        },
+        { type: "h2", text: "6. Csorba-tó, Magas-Tátra" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/StrbskePlesoSommer.jpg",
+          alt: "A Csorba-tó és a Magas-Tátra csúcsai nyáron",
+          caption: "Csorba-tó (Štrbské Pleso), Magas-Tátra",
+          credit: "Fotó: Molch-Entertainment / CC0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:StrbskePlesoSommer.jpg",
+        },
+        {
+          type: "p",
+          text: "Ha hegyi esküvőről álmodtok, a Magas-Tátra Csorba-tava mintegy 1350 méter magasan fekszik, a tóban tükröződő tátrai csúcsokkal. A tóparti szálloda kertjében tartott szertartások, valamint a panorámás báltermek az ország legkülönlegesebb hegyi és tóparti esküvői helyszínét adják.",
+        },
+        { type: "h2", text: "7. Bazini kastély (Pezinok), Kis-Kárpátok" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Pezinok_Castle_2019.jpg",
+          alt: "A bazini kastély a Kis-Kárpátok borvidékén",
+          caption: "Bazini kastély (Zámok Pezinok), Bazin",
+          credit: "Fotó: Bratislavský kraj / CC BY 2.0, Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Pezinok_Castle_2019.jpg",
+        },
+        {
+          type: "p",
+          text: "A Pozsonytól mintegy 20 kilométerre, a Kis-Kárpátok borútján fekvő, 13. századi alapokon újjáépített bazini kastély ma hotel saját pincészettel, angolkert közepén. A rugalmas rendezvénytermek, a házias gasztronómia és a helyszíni borászat a borvidéki tematikájú esküvők természetes választásává teszik.",
+        },
+        { type: "h2", text: "Gyakorlati tudnivalók" },
+        {
+          type: "p",
+          text: "Szlovákiában a polgári házasságot az anyakönyvi hivatal (matrika) köti, és sok vár, illetve kastély szervez helyszíni szertartást a helyi hivatallal. Magyar párként számoljatok a dokumentumok hitelesítésével és fordításával, ezért indítsátok a papírmunkát időben. A déli helyszínek, mint a Château Béla, autóval könnyen elérhetők Budapestről, így határon átnyúló esküvőhöz is jó választás.",
+        },
+        {
+          type: "cta",
+          lead: "Megvan a helyszín? A Weddlyvel egy helyen vezetheted a vendéglistát, az ültetési rendet, a költségvetést és a teendőket.",
+          href: "/signup",
+          label: "Kezdjétek el ingyen",
+        },
+      ],
+    },
+    en: {
+      title: "Where to get married in Slovakia: 7 fairy-tale wedding venues",
+      lead: "From storybook castles to a High Tatras lakeshore, here are the most beautiful places to get married in Slovakia, with photos and practical tips.",
+      seo_title: "Where to get married in Slovakia: 7 fairy-tale venues · Weddly",
+      seo_description:
+        "The best wedding venues in Slovakia: Bojnice Castle, Smolenice, Červený Kameň, Bratislava Castle, Château Béla, Štrbské Pleso and Pezinok. Styles, capacity, tips.",
+      body: [
+        {
+          type: "p",
+          text: "Slovakia is full of romantic wedding settings that sit surprisingly close to Hungary: storybook castles modelled on the châteaux of the Loire, Renaissance fortresses, a castle towering over the Danube in Bratislava, the lakeside panorama of the High Tatras and the vineyards of the Little Carpathians. Here are seven places worth saying I do.",
+        },
+        { type: "h2", text: "1. Bojnice Castle" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Bojnice_(Bojnitz)_Castle_(by_Pudelek).jpg",
+          alt: "The spired, fairy-tale silhouette of Bojnice Castle",
+          caption: "Bojnice Castle (Bojnický zámok), Bojnice",
+          credit: "Photo: Pudelek (Marcin Szala) / CC BY-SA 3.0, via Wikimedia Commons",
+          creditHref:
+            "https://commons.wikimedia.org/wiki/File:Bojnice_(Bojnitz)_Castle_(by_Pudelek).jpg",
+        },
+        {
+          type: "p",
+          text: "Slovakia's most famous fairy-tale castle was rebuilt at the turn of the 20th century on medieval foundations, modelled on the French châteaux of the Loire Valley. Its spired silhouette, lake and gardens make it the country's most romantic landmark, and a frequent film location, so it is the classic choice for a storybook wedding.",
+        },
+        { type: "h2", text: "2. Smolenice Castle" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Smolenice_zamok.jpg",
+          alt: "The neo-Gothic tower of Smolenice Castle in the Little Carpathians",
+          caption: "Smolenice Castle (Smolenický zámok), Smolenice",
+          credit: "Photo: Kamil Gašparík / public domain, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Smolenice_zamok.jpg",
+        },
+        {
+          type: "p",
+          text: "Set on the eastern slopes of the Little Carpathians, this neo-Gothic castle was rebuilt on the site of a 15th-century fortress, modelled on Burg Kreuzenstein near Vienna. Today it is a congress centre of the Slovak Academy of Sciences, sitting above forested hills with a tower and landscaped grounds that give weddings an exclusive, private feel.",
+        },
+        { type: "h2", text: "3. Červený Kameň Castle" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Cerveny_Kamen_z_Kukly_02.jpg",
+          alt: "The Renaissance fortress of Červený Kameň above the Little Carpathians forests",
+          caption: "Červený Kameň Castle (Hrad Červený Kameň), Častá",
+          credit: "Photo: Teslaton / CC BY 3.0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Cerveny_Kamen_z_Kukly_02.jpg",
+        },
+        {
+          type: "p",
+          text: "Rebuilt as a fortress in the 16th century and later a stately Pálffy family residence, Červený Kameň is now a well-preserved museum with grand decorated interiors and one of Europe's largest castle cellar systems. It is surrounded by the forests of the Little Carpathians wine country, ideal for couples who want a historic, noble setting.",
+        },
+        { type: "h2", text: "4. Bratislava Castle" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Bratislava_-_Burg_(b).JPG",
+          alt: "The four-towered baroque palace of Bratislava Castle above the Danube",
+          caption: "Bratislava Castle (Bratislavský hrad), Bratislava",
+          credit: "Photo: C.Stadler/Bwag / CC BY-SA 4.0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Bratislava_-_Burg_(b).JPG",
+        },
+        {
+          type: "p",
+          text: "With its four corner towers rising above the Danube and the Old Town, Bratislava Castle is the defining silhouette of Slovakia's capital. Its baroque gardens and panorama make it the ideal anchor for a city wedding for couples who want Bratislava as their backdrop, with good transport and plenty of accommodation nearby.",
+        },
+        { type: "h2", text: "5. Château Béla, southern Slovakia" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Ka%C5%A1tie%C4%BE_Bel%C3%A1_1.jpg",
+          alt: "The baroque manor house and park of Château Béla",
+          caption: "Château Béla (Kaštieľ Belá), Belá",
+          credit: "Photo: Mlevicky / CC BY-SA 3.0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Ka%C5%A1tie%C4%BE_Bel%C3%A1_1.jpg",
+        },
+        {
+          type: "p",
+          text: "This 18th-century baroque manor was restored into a five-star boutique hotel in 2008, near Štúrovo and the Hungarian border. The 28-hectare estate offers a French garden, a fountain, an on-site chapel and the Fresco Salon for ceremonies, while the Orangerie hall hosts receptions of up to about 140 guests, paired with the estate's own wines.",
+        },
+        { type: "h2", text: "6. Štrbské Pleso, High Tatras" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/StrbskePlesoSommer.jpg",
+          alt: "The alpine lake Štrbské Pleso and the High Tatras peaks in summer",
+          caption: "Štrbské Pleso, High Tatras",
+          credit: "Photo: Molch-Entertainment / CC0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:StrbskePlesoSommer.jpg",
+        },
+        {
+          type: "p",
+          text: "If you dream of a mountain wedding, the High Tatras lake of Štrbské Pleso sits at around 1,350 metres, with the Tatra peaks reflected in the water. Garden ceremonies by the lakeside hotel and panoramic ballrooms with mountain-and-lake views make for the country's most striking mountain-and-lake wedding setting.",
+        },
+        { type: "h2", text: "7. Pezinok Castle, Little Carpathians" },
+        {
+          type: "img",
+          src: "https://commons.wikimedia.org/wiki/Special:FilePath/Pezinok_Castle_2019.jpg",
+          alt: "Pezinok Castle in the Little Carpathians wine country",
+          caption: "Pezinok Castle (Zámok Pezinok), Pezinok",
+          credit: "Photo: Bratislavský kraj / CC BY 2.0, via Wikimedia Commons",
+          creditHref: "https://commons.wikimedia.org/wiki/File:Pezinok_Castle_2019.jpg",
+        },
+        {
+          type: "p",
+          text: "About 20 kilometres from Bratislava on the Little Carpathians wine route, this castle rebuilt on 13th-century foundations is now a hotel with its own winery, set in an English-style park. Flexible event halls, in-house gastronomy and an on-site winery make it the natural choice for a vineyard-themed wedding.",
+        },
+        { type: "h2", text: "Practical notes" },
+        {
+          type: "p",
+          text: "In Slovakia the civil marriage is performed by the registry office (matrika), and many castles arrange on-site ceremonies with the local office. As an international couple, allow time for document authentication and translation, so begin the paperwork early. Southern venues like Château Béla are an easy drive from Budapest, making them a good pick for a cross-border wedding too.",
+        },
+        {
+          type: "cta",
+          lead: "Found your venue? With Weddly you can run your guest list, seating chart, budget and to-dos in one place.",
+          href: "/signup",
+          label: "Start free",
         },
       ],
     },

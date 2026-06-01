@@ -646,10 +646,7 @@ function FoundingCouplesBand() {
           {t("landing.founders_note")}
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-          <Link
-            to="/signup"
-            className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
-          >
+          <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto">
             {t("landing.founders_cta")}
           </Link>
           <button

@@ -234,6 +234,26 @@ function renderBlogBlocks(blocks: BlogBlock[]): string {
         parts.push(`<blockquote>${body}<cite>${escapeText(block.cite)}</cite></blockquote>`);
         break;
       }
+      case "img": {
+        // Mirror the React <figure>: image + optional caption/credit. The
+        // credit links to the source page (attribution + an outbound link a
+        // crawler can follow). Caption text helps the image rank for the venue.
+        const caption = block.caption ? escapeText(block.caption) : "";
+        const creditInner = block.credit ? escapeText(block.credit) : "";
+        const credit = creditInner
+          ? block.creditHref
+            ? `<a href="${escapeAttr(block.creditHref)}">${creditInner}</a>`
+            : creditInner
+          : "";
+        const figcaption =
+          caption || credit
+            ? `<figcaption>${[caption, credit].filter(Boolean).join(" · ")}</figcaption>`
+            : "";
+        parts.push(
+          `<figure><img src="${escapeAttr(block.src)}" alt="${escapeAttr(block.alt)}" loading="lazy">${figcaption}</figure>`,
+        );
+        break;
+      }
       case "cta":
         parts.push(`<p><a href="${escapeAttr(block.href)}">${escapeText(block.label)}</a></p>`);
         break;

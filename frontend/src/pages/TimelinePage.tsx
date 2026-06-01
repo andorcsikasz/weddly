@@ -278,18 +278,21 @@ export default function TimelinePage() {
     <>
       <div className="space-y-6">
         <header>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-serif text-ink-900 sm:text-4xl dark:text-paper-50">
-              {t("timeline.title")}
-            </h1>
-            <Link
-              to="/app/planning"
-              aria-label={t("planning.title")}
-              title={t("planning.title")}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
-            >
-              <ClipboardList size={18} aria-hidden="true" />
-            </Link>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-serif text-ink-900 sm:text-4xl dark:text-paper-50">
+                {t("timeline.title")}
+              </h1>
+              <Link
+                to="/app/planning"
+                aria-label={t("planning.title")}
+                title={t("planning.title")}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+              >
+                <ClipboardList size={18} aria-hidden="true" />
+              </Link>
+            </div>
+            <CountdownChip weddingDate={weddingDate} />
           </div>
           <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("timeline.sub")}</p>
         </header>
@@ -331,6 +334,28 @@ export default function TimelinePage() {
         />
       )}
     </>
+  );
+}
+
+/** Days-until-wedding pill in the page header. Hidden until the couple has
+ *  locked an exact date (weddingDate is null otherwise). Reads as a calm
+ *  blush chip; on the day itself and after, the copy swaps so it never shows
+ *  a negative or zero day count. */
+function CountdownChip({ weddingDate }: { weddingDate: Date | null }) {
+  const { t } = useT();
+  if (!weddingDate) return null;
+  const days = diffDays(startOfDay(new Date()), weddingDate);
+  const label =
+    days > 0
+      ? t("timeline.countdown_days", { count: days })
+      : days === 0
+        ? t("timeline.countdown_today")
+        : t("timeline.countdown_past", { count: Math.abs(days) });
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-blush-50 px-3 py-1 text-sm font-medium text-blush-700 ring-1 ring-blush-200/70 dark:bg-blush-400/15 dark:text-blush-300 dark:ring-blush-400/20">
+      <Heart size={14} aria-hidden="true" />
+      <span className="tabular-nums">{label}</span>
+    </span>
   );
 }
 

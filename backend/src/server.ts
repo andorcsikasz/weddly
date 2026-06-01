@@ -167,7 +167,11 @@ const CSP = [
   // whitelisting (no Pinterest script/iframe).
   // GA4 (via GTM) falls back to image-pixel beacons in some browsers and the
   // googletagmanager origin serves a 1x1 too, so both need img-src.
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com",
+  // commons.wikimedia.org + upload.wikimedia.org host the freely-licensed
+  // venue photos embedded in blog posts (img blocks). commons.* serves the
+  // Special:FilePath redirect; upload.* is the redirect target the browser
+  // actually fetches the bytes from, so both origins must be whitelisted.
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
   // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may

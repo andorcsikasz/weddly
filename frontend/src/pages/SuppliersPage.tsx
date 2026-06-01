@@ -872,7 +872,7 @@ export default function SuppliersPage() {
           clicking the $$$$ chip filters to band-4 suppliers only, not
           "up to 4". Click the same chip to clear. Suppliers with no
           declared value pass through so non-venue cards are not dropped. */}
-      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1.5 sm:gap-x-6 sm:gap-y-2 sm:px-4 sm:py-2 dark:border-umber-700 dark:bg-umber-700/40">
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1 sm:gap-x-6 sm:px-4 dark:border-umber-700 dark:bg-umber-700/40">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.price_filter_label")}
@@ -909,7 +909,7 @@ export default function SuppliersPage() {
           )}
         </div>
         <div
-          className="hidden h-5 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
+          className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
           aria-hidden
         />
         <label className="flex items-center gap-3">
@@ -921,7 +921,7 @@ export default function SuppliersPage() {
             inputMode="numeric"
             min={1}
             step={1}
-            className="h-9 w-16 rounded-full border border-transparent bg-transparent px-2 text-center text-sm tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:bg-paper-50 hover:border-paper-300 focus:border-paper-400 focus:bg-paper-50 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:bg-umber-800 dark:hover:border-umber-700 dark:focus:border-umber-600 dark:focus:bg-umber-800"
+            className="h-7 w-16 rounded-full border border-transparent bg-transparent px-2 text-center text-sm tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:bg-paper-50 hover:border-paper-300 focus:border-paper-400 focus:bg-paper-50 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:bg-umber-800 dark:hover:border-umber-700 dark:focus:border-umber-600 dark:focus:bg-umber-800"
             placeholder={t("suppliers.guests_filter_placeholder")}
             value={guestsFilter ?? ""}
             onChange={(e) => setGuestsFilter(e.target.value)}
@@ -1846,7 +1846,7 @@ function ChainStep({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex flex-col items-center gap-0.5 rounded-2xl border px-3 py-1 text-xs transition-colors ${
+      className={`group relative flex items-center justify-center rounded-lg border px-3 py-1 text-xs transition-colors ${
         active
           ? "border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
           : allDone
@@ -1883,7 +1883,7 @@ function ChainStep({
       </span>
       {progress !== undefined && progress.total > 0 && (
         <span
-          className="flex w-full items-center justify-center gap-[3px]"
+          className="absolute inset-x-0 bottom-[3px] flex items-center justify-center gap-[3px]"
           aria-label={t("suppliers.chain_progress_aria", {
             done: progress.done,
             total: progress.total,

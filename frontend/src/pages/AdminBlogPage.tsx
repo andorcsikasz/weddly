@@ -539,6 +539,8 @@ function BlockEditor({
       onChange([...blocks, { type: "ul", items: [""] }]);
     } else if (type === "blockquote") {
       onChange([...blocks, { type: "blockquote", text: "", cite: "" }]);
+    } else if (type === "img") {
+      onChange([...blocks, { type: "img", src: "", alt: "" }]);
     } else {
       onChange([...blocks, { type: "cta", lead: "", href: "/signup", label: "" }]);
     }
@@ -602,6 +604,8 @@ function BlockEditor({
                 />
               ) : block.type === "blockquote" ? (
                 <BlockquoteEditor value={block} onChange={(next) => update(idx, next)} />
+              ) : block.type === "img" ? (
+                <ImgEditor value={block} onChange={(next) => update(idx, next)} />
               ) : (
                 <CtaEditor value={block} onChange={(next) => update(idx, next)} />
               )}
@@ -624,6 +628,9 @@ function BlockEditor({
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => add("blockquote")}>
           + {t("admin_blog.add_blockquote")}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => add("img")}>
+          + {t("admin_blog.add_img")}
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => add("cta")}>
           + {t("admin_blog.add_cta")}
@@ -714,6 +721,81 @@ function CtaEditor({
             onChange={(e) => onChange({ ...value, href: e.target.value })}
             className="input font-mono"
             placeholder="/signup"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function ImgEditor({
+  value,
+  onChange,
+}: {
+  value: Extract<BlogBlock, { type: "img" }>;
+  onChange: (next: Extract<BlogBlock, { type: "img" }>) => void;
+}) {
+  const { t } = useT();
+  return (
+    <div className="space-y-2">
+      {value.src ? (
+        <img src={value.src} alt={value.alt} className="max-h-40 w-full rounded-lg object-cover" />
+      ) : null}
+      <label className="block">
+        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          {t("admin_blog.img_src")}
+        </span>
+        <input
+          type="text"
+          value={value.src}
+          onChange={(e) => onChange({ ...value, src: e.target.value })}
+          className="input font-mono"
+          placeholder="https://commons.wikimedia.org/wiki/Special:FilePath/..."
+        />
+      </label>
+      <label className="block">
+        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          {t("admin_blog.img_alt")}
+        </span>
+        <input
+          type="text"
+          value={value.alt}
+          onChange={(e) => onChange({ ...value, alt: e.target.value })}
+          className="input"
+        />
+      </label>
+      <label className="block">
+        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          {t("admin_blog.img_caption")}
+        </span>
+        <input
+          type="text"
+          value={value.caption ?? ""}
+          onChange={(e) => onChange({ ...value, caption: e.target.value || undefined })}
+          className="input"
+        />
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block">
+          <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            {t("admin_blog.img_credit")}
+          </span>
+          <input
+            type="text"
+            value={value.credit ?? ""}
+            onChange={(e) => onChange({ ...value, credit: e.target.value || undefined })}
+            className="input"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            {t("admin_blog.img_credit_href")}
+          </span>
+          <input
+            type="text"
+            value={value.creditHref ?? ""}
+            onChange={(e) => onChange({ ...value, creditHref: e.target.value || undefined })}
+            className="input font-mono"
           />
         </label>
       </div>

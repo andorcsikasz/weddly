@@ -80,6 +80,29 @@ describe("seo: blog post body is baked into SSR HTML", () => {
   });
 });
 
+describe("seo: venue posts bake inline <img> blocks into SSR HTML", () => {
+  const VENUE_PATH = "/blog/where-to-get-married-in-hungary";
+
+  test("renders inline <figure><img> with alt text and a figcaption credit", () => {
+    const body = render(VENUE_PATH, "en-US").split("<!-- SEO_BODY_START -->")[1] ?? "";
+    expect(body).toContain("<figure>");
+    // The cover venue's verified Commons image is embedded inline.
+    expect(body).toContain('src="https://commons.wikimedia.org/wiki/Special:FilePath/');
+    expect(body).toContain('alt="');
+    expect(body).toContain("<figcaption>");
+    // Attribution credit links back to the source file page.
+    expect(body).toContain("commons.wikimedia.org/wiki/File:");
+    // No leaks from the new img block fields.
+    expect(body).not.toContain("undefined");
+    expect(body).not.toContain("[object Object]");
+  });
+
+  test("bakes multiple venue images, not just the cover", () => {
+    const body = render(VENUE_PATH, "hu").split("<!-- SEO_BODY_START -->")[1] ?? "";
+    expect((body.match(/<figure>/g) ?? []).length).toBeGreaterThanOrEqual(5);
+  });
+});
+
 describe("seo: tool pages stay lean (no DB body to bake)", () => {
   test("tool route does not emit an <article> body", () => {
     const body = render(TOOL_PATH, "hu").split("<!-- SEO_BODY_START -->")[1] ?? "";

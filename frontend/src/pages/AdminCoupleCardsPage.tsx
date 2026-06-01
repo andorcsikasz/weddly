@@ -273,9 +273,7 @@ export default function AdminCoupleCardsPage() {
                     <Td className="whitespace-nowrap text-ink-500 dark:text-umber-300">
                       {formatSuggestionDate(row.created_at)}
                     </Td>
-                    <Td className="font-medium">
-                      {DECK_LABELS[row.deck_id] ?? row.deck_id}
-                    </Td>
+                    <Td className="font-medium">{DECK_LABELS[row.deck_id] ?? row.deck_id}</Td>
                     <Td className="uppercase text-ink-500 dark:text-umber-300">{row.locale}</Td>
                     <Td className="max-w-xl text-sm leading-snug">{row.suggestion}</Td>
                   </tr>

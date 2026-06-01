@@ -446,6 +446,47 @@ function Block({ block, sectionMap }: { block: BlogBlock; sectionMap: SectionMap
       </figure>
     );
   }
+  if (block.type === "img") {
+    // Inline figure: full-bleed rounded image with an optional caption +
+    // photographer credit. The credit links to the source page (Wikimedia
+    // Commons) which both satisfies CC-BY attribution and adds an outbound
+    // editorial link. Images are lazy-loaded so a long photo-heavy post
+    // doesn't block first paint.
+    return (
+      <figure className="!my-10 overflow-hidden">
+        <img
+          src={block.src}
+          alt={block.alt}
+          loading="lazy"
+          className="w-full rounded-2xl object-cover"
+        />
+        {block.caption || block.credit ? (
+          <figcaption className="mt-3 text-sm text-ink-500 dark:text-umber-300">
+            {block.caption ? (
+              <span className="font-serif italic text-ink-600 dark:text-umber-200">
+                {block.caption}
+              </span>
+            ) : null}
+            {block.caption && block.credit ? <span className="px-1.5">·</span> : null}
+            {block.credit ? (
+              block.creditHref ? (
+                <a
+                  href={block.creditHref}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="hover:text-blush-700 dark:hover:text-blush-300"
+                >
+                  {block.credit}
+                </a>
+              ) : (
+                <span>{block.credit}</span>
+              )
+            ) : null}
+          </figcaption>
+        ) : null}
+      </figure>
+    );
+  }
   // CTA: external links open in a new tab, internal /paths stay in-app.
   // The whole block reads as a quiet call-out card so it doesn't compete
   // with the rest of the body but is unmissable at end-of-article. The

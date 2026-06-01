@@ -1355,6 +1355,20 @@ export interface LocaleMessages {
      *  rather than guess. */
     flight_estimate_baggage_unknown: string;
     flight_estimate_view_on_google: string;
+    /** Collapsible flight-estimate card + "save this flight to the plan"
+     *  action (writes a Travel budget line + a buy-ticket todo). */
+    flight_expand_aria: string;
+    flight_collapse_aria: string;
+    flight_price_disclaimer: string;
+    flight_price_disclaimer_dated: string;
+    flight_save_cta: string;
+    flight_save_cta_aria: string;
+    flight_save_confirm_title: string;
+    flight_save_confirm_body: string;
+    flight_save_confirm_cta: string;
+    flight_save_todo_title: string;
+    flight_save_todo_note: string;
+    flight_save_done: string;
     /** Honeymoon-scoped todo checklist that mirrors planning_items
      *  filtered by topic='honeymoon'. `todo_sub_count` receives
      *  `{done}` + `{total}` numbers; the empty body + CTA point to
@@ -4350,12 +4364,14 @@ export interface LocaleMessages {
     block_h3: string;
     block_ul: string;
     block_blockquote: string;
+    block_img: string;
     block_cta: string;
     add_p: string;
     add_h2: string;
     add_h3: string;
     add_ul: string;
     add_blockquote: string;
+    add_img: string;
     add_cta: string;
     add_ul_item: string;
     blockquote_text: string;
@@ -4364,6 +4380,11 @@ export interface LocaleMessages {
     cta_lead: string;
     cta_label: string;
     cta_href: string;
+    img_src: string;
+    img_alt: string;
+    img_caption: string;
+    img_credit: string;
+    img_credit_href: string;
     move_up: string;
     move_down: string;
     remove_block: string;

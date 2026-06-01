@@ -120,6 +120,47 @@ function parseBlocks(raw: unknown, field: string): BlogBlock[] {
       if (b.text.length > 4000) throw new HttpError(400, `${field}: blockquote text too long`);
       if (b.cite.length > 200) throw new HttpError(400, `${field}: blockquote cite too long`);
       out.push({ type: "blockquote", text: b.text, cite: b.cite });
+    } else if (b.type === "img") {
+      if (typeof b.src !== "string" || typeof b.alt !== "string") {
+        throw new HttpError(400, `${field}: img block needs src and alt`);
+      }
+      if (b.src.length > 2048) throw new HttpError(400, `${field}: img src too long`);
+      if (b.alt.length > 400) throw new HttpError(400, `${field}: img alt too long`);
+      // Same allow-list as cover images: a local /uploads/... path or an
+      // http(s) URL. Blocks javascript:/data: URIs from the admin editor.
+      const srcOk =
+        b.src.startsWith("/uploads/") ||
+        b.src.startsWith("http://") ||
+        b.src.startsWith("https://");
+      if (!srcOk) throw new HttpError(400, `${field}: img src must be /uploads/... or http(s)`);
+      const img: Extract<BlogBlock, { type: "img" }> = { type: "img", src: b.src, alt: b.alt };
+      if (b.caption !== undefined) {
+        if (typeof b.caption !== "string") {
+          throw new HttpError(400, `${field}: img caption must be a string`);
+        }
+        if (b.caption.length > 400) throw new HttpError(400, `${field}: img caption too long`);
+        img.caption = b.caption;
+      }
+      if (b.credit !== undefined) {
+        if (typeof b.credit !== "string") {
+          throw new HttpError(400, `${field}: img credit must be a string`);
+        }
+        if (b.credit.length > 400) throw new HttpError(400, `${field}: img credit too long`);
+        img.credit = b.credit;
+      }
+      if (b.creditHref !== undefined) {
+        if (typeof b.creditHref !== "string") {
+          throw new HttpError(400, `${field}: img creditHref must be a string`);
+        }
+        if (b.creditHref.length > 2048) {
+          throw new HttpError(400, `${field}: img creditHref too long`);
+        }
+        if (!b.creditHref.startsWith("http://") && !b.creditHref.startsWith("https://")) {
+          throw new HttpError(400, `${field}: img creditHref must be http(s)`);
+        }
+        img.creditHref = b.creditHref;
+      }
+      out.push(img);
     } else if (b.type === "cta") {
       if (typeof b.lead !== "string" || typeof b.href !== "string" || typeof b.label !== "string") {
         throw new HttpError(400, `${field}: cta block needs lead, href, label`);

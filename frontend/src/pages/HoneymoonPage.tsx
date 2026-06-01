@@ -468,6 +468,78 @@ export default function HoneymoonPage() {
     }
   }
 
+  /* ─── "We'll take this flight" → budget + todo ────────────────────────
+   * Picking an offer writes its price into the honeymoon budget as a
+   * "Travel" line (upserted — re-picking just refreshes the figure) and
+   * drops a single "Buy the flight ticket" todo carrying the Google Flights
+   * link in its body. A confirm step gates the writes (the deliberate
+   * second click) and spells out the price-volatility caveat. */
+  async function saveFlightSelection(offer: FlightOffer) {
+    const price = Math.max(0, Math.round(offer.price));
+    const priceLabel = formatOfferPrice(offer, locale);
+    const dateLabel = formatDateShort(todayIso(), locale);
+
+    const ok = await confirm({
+      title: t("honeymoon.flight_save_confirm_title"),
+      body: (
+        <div className="space-y-2 text-sm">
+          <p>{t("honeymoon.flight_save_confirm_body", { price: priceLabel })}</p>
+          <p className="text-ink-500 dark:text-umber-300">
+            {t("honeymoon.flight_price_disclaimer_dated", { date: dateLabel })}
+          </p>
+        </div>
+      ),
+      confirmLabel: t("honeymoon.flight_save_confirm_cta"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+
+    try {
+      // 1) Budget — upsert the Travel line so re-picking never duplicates it.
+      const existingTravel = honeymoonLines.find((l) => presetFor(l.label).id === "travel");
+      if (existingTravel) {
+        await budgetApi.updateLine(
+          existingTravel.id,
+          { ...existingTravel, planned_huf: price },
+          { ifMatch: existingTravel.updated_at },
+        );
+      } else {
+        await budgetApi.createLine({
+          category: "honeymoon",
+          label: t("honeymoon.preset.travel"),
+          planned_huf: price,
+          actual_huf: 0,
+        });
+      }
+      publish("budget:changed");
+
+      // 2) Todo — single canonical "buy the ticket" task; body carries the
+      // dated price caveat + the Google Flights deeplink.
+      const noteParts = [
+        t("honeymoon.flight_save_todo_note", {
+          carrier: offer.carrier || "—",
+          price: priceLabel,
+          date: dateLabel,
+        }),
+      ];
+      if (offer.booking_url) noteParts.push(offer.booking_url);
+      const body = noteParts.join("\n\n");
+      const todoTitle = t("honeymoon.flight_save_todo_title");
+      const existingTodo = honeymoonTasks.find((i) => i.title === todoTitle);
+      if (existingTodo) {
+        await planningApi.update(existingTodo.id, { body, done: false });
+      } else {
+        await planningApi.create({ kind: "task", topic: "honeymoon", title: todoTitle, body });
+      }
+
+      await refresh();
+      toast.success(t("honeymoon.flight_save_done"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      refresh();
+    }
+  }
+
   return (
     <>
       <header className="mb-6">
@@ -542,6 +614,7 @@ export default function HoneymoonPage() {
               await saveTrip({ honeymoon_origin_iata: iata });
               await loadFlightEstimate();
             }}
+            onSaveFlight={saveFlightSelection}
           />
         ) : (
           <section className="card stationery-light mt-4 mx-4 !p-5 sm:mx-8">
@@ -1295,6 +1368,7 @@ function FlightEstimateCard({
   t,
   currentOrigin,
   onOriginSave,
+  onSaveFlight,
 }: {
   estimate: FlightEstimate;
   locale: "hu" | "en";
@@ -1304,12 +1378,18 @@ function FlightEstimateCard({
    *  it saves null and reverts to the default. */
   currentOrigin: string | null;
   onOriginSave: (iata: string | null) => Promise<void>;
+  /** Pick an offer → write it into the budget + todos (gated by a confirm
+   *  in the parent). Resolves once the writes settle. */
+  onSaveFlight: (offer: FlightOffer) => Promise<void>;
 }) {
   const updated = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(estimate.fetched_at));
   const [editingOrigin, setEditingOrigin] = useState(false);
+  // The whole offer list folds away — the card can sit quietly once the
+  // couple has eyeballed the prices. Header chevron toggles it.
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <section
@@ -1367,22 +1447,43 @@ function FlightEstimateCard({
             <span>{t("honeymoon.flight_estimate_party", { adults: estimate.adults })}</span>
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-expanded={!collapsed}
+          aria-label={
+            collapsed ? t("honeymoon.flight_expand_aria") : t("honeymoon.flight_collapse_aria")
+          }
+          className="-mr-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-ink-900/5 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-paper-50/10 dark:hover:text-paper-50"
+        >
+          {collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+        </button>
       </header>
 
-      <ul className="mt-3 space-y-2">
-        {estimate.offers.map((offer, idx) => (
-          <FlightOfferRow
-            key={`${offer.carrier}-${offer.depart_iso}-${idx}`}
-            offer={offer}
-            locale={locale}
-            t={t}
-          />
-        ))}
-      </ul>
+      {!collapsed && (
+        <>
+          <ul className="mt-3 space-y-2">
+            {estimate.offers.map((offer, idx) => (
+              <FlightOfferRow
+                key={`${offer.carrier}-${offer.depart_iso}-${idx}`}
+                offer={offer}
+                locale={locale}
+                t={t}
+                onSave={onSaveFlight}
+              />
+            ))}
+          </ul>
 
-      <p className="mt-2 text-[11px] text-ink-400 dark:text-umber-300">
-        {t("honeymoon.flight_estimate_attribution", { updated })}
-      </p>
+          <p className="mt-3 inline-flex items-start gap-1.5 text-[11px] text-ink-400 dark:text-umber-300">
+            <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <span>{t("honeymoon.flight_price_disclaimer")}</span>
+          </p>
+
+          <p className="mt-1 text-[11px] text-ink-400 dark:text-umber-300">
+            {t("honeymoon.flight_estimate_attribution", { updated })}
+          </p>
+        </>
+      )}
     </section>
   );
 }
@@ -1395,67 +1496,94 @@ function FlightOfferRow({
   offer,
   locale,
   t,
+  onSave,
 }: {
   offer: FlightOffer;
   locale: "hu" | "en";
   t: (key: string, vars?: Record<string, string | number>) => string;
+  /** Pick this offer → push it to the budget + todos via the parent. */
+  onSave: (offer: FlightOffer) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
-  const priceLabel = new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
-    style: "currency",
-    currency: offer.currency,
-    maximumFractionDigits: 0,
-  }).format(offer.price);
+  const [saving, setSaving] = useState(false);
+  const priceLabel = formatOfferPrice(offer, locale);
   const hasSegments = offer.segments.length > 0;
+
+  async function handleSave() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onSave(offer);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <li className="rounded-xl border border-paper-200 bg-white/60 dark:border-umber-700 dark:bg-umber-900/40">
-      <button
-        type="button"
-        onClick={() => hasSegments && setOpen((v) => !v)}
-        className={`flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-3 py-2 text-left ${
-          hasSegments ? "cursor-pointer" : "cursor-default"
-        }`}
-        aria-expanded={open}
-        aria-label={
-          hasSegments
-            ? open
-              ? t("honeymoon.flight_estimate_collapse")
-              : t("honeymoon.flight_estimate_expand")
-            : undefined
-        }
-      >
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
-          <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
-            {offer.carrier || "—"}
-          </span>
-          <span className="text-ink-800 tabular-nums dark:text-paper-100">
-            {formatOfferTime(offer.depart_iso, locale)} →{" "}
-            {formatOfferTime(offer.arrival_iso, locale)}
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-            <Clock size={12} aria-hidden="true" />
-            {formatDurationLabel(offer.duration_min, t)}
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-            <ArrowRightLeft size={12} aria-hidden="true" />
-            {formatStopsLabel(offer.stops, t)}
-          </span>
-        </div>
-        <span className="flex items-center gap-2">
-          <span className="stat-num text-sm font-medium text-ink-900 dark:text-paper-50">
-            ~ {priceLabel}
-          </span>
-          {hasSegments && (
-            <span
-              aria-hidden="true"
-              className="inline-flex h-5 w-5 items-center justify-center text-ink-400 dark:text-umber-300"
-            >
-              {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          onClick={() => hasSegments && setOpen((v) => !v)}
+          className={`flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-3 py-2 text-left ${
+            hasSegments ? "cursor-pointer" : "cursor-default"
+          }`}
+          aria-expanded={open}
+          aria-label={
+            hasSegments
+              ? open
+                ? t("honeymoon.flight_estimate_collapse")
+                : t("honeymoon.flight_estimate_expand")
+              : undefined
+          }
+        >
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+            <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
+              {offer.carrier || "—"}
             </span>
+            <span className="text-ink-800 tabular-nums dark:text-paper-100">
+              {formatOfferTime(offer.depart_iso, locale)} →{" "}
+              {formatOfferTime(offer.arrival_iso, locale)}
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+              <Clock size={12} aria-hidden="true" />
+              {formatDurationLabel(offer.duration_min, t)}
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+              <ArrowRightLeft size={12} aria-hidden="true" />
+              {formatStopsLabel(offer.stops, t)}
+            </span>
+          </div>
+          <span className="flex items-center gap-2">
+            <span className="stat-num text-sm font-medium text-ink-900 dark:text-paper-50">
+              ~ {priceLabel}
+            </span>
+            {hasSegments && (
+              <span
+                aria-hidden="true"
+                className="inline-flex h-5 w-5 items-center justify-center text-ink-400 dark:text-umber-300"
+              >
+                {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </span>
+            )}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="flex shrink-0 items-center gap-1.5 border-l border-paper-200 px-3 text-xs font-medium text-blush-700 transition hover:bg-blush-50 disabled:opacity-60 dark:border-umber-700 dark:text-blush-300 dark:hover:bg-blush-400/10"
+          aria-label={t("honeymoon.flight_save_cta_aria")}
+          title={t("honeymoon.flight_save_cta_aria")}
+        >
+          {saving ? (
+            <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Check size={14} aria-hidden="true" />
           )}
-        </span>
-      </button>
+          <span className="hidden sm:inline">{t("honeymoon.flight_save_cta")}</span>
+        </button>
+      </div>
       {open && hasSegments && (
         <div className="border-t border-paper-200 bg-white/40 px-3 py-3 dark:border-umber-700 dark:bg-umber-900/30">
           <ol className="space-y-3 text-xs">
@@ -1670,6 +1798,15 @@ function OriginAutocomplete({
       )}
     </div>
   );
+}
+
+/** Whole-unit offer price in its own currency, e.g. "603 138 Ft" / "€1,240". */
+function formatOfferPrice(offer: FlightOffer, locale: "hu" | "en"): string {
+  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    style: "currency",
+    currency: offer.currency,
+    maximumFractionDigits: 0,
+  }).format(offer.price);
 }
 
 function formatOfferTime(iso: string, locale: "hu" | "en"): string {
