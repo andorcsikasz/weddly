@@ -65,14 +65,14 @@ export function DemoLaunchCard() {
   return (
     <aside
       aria-labelledby="demo-card-title"
-      className="relative w-full max-w-[280px] rounded-2xl border border-ink-900/15 p-5 text-left dark:border-paper-50/15 sm:p-6"
+      className="relative w-full max-w-[280px] rounded-2xl border border-ink-900/15 px-6 py-5 text-left dark:border-paper-50/15"
     >
       <p className="font-grotesk text-[10px] font-medium uppercase tracking-[0.24em] text-ink-500 dark:text-umber-200">
         {t("landing.demo_card_eyebrow")}
       </p>
       <h2
         id="demo-card-title"
-        className="mt-2 font-grotesk text-3xl font-normal leading-tight tracking-tight text-ink-900 dark:text-paper-50"
+        className="mt-1.5 font-grotesk text-2xl font-semibold leading-tight tracking-tight text-ink-900 dark:text-paper-50"
       >
         {t("landing.demo_card_title")}
       </h2>
@@ -84,7 +84,7 @@ export function DemoLaunchCard() {
         // Filled espresso CTA in the founders-band palette: General Sans,
         // sentence-case (more elegant than uppercase tracked), warm umber
         // fill + cream text. Distinct from the ink-800 signup primary.
-        className="btn mt-6 inline-flex w-full items-center justify-center gap-2 bg-umber-900 py-3 font-grotesk text-sm font-medium text-paper-50 transition-colors hover:bg-umber-800 disabled:cursor-wait disabled:opacity-80 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-200"
+        className="btn mt-4 inline-flex w-full items-center justify-center gap-2 bg-umber-900 py-2.5 font-grotesk text-sm font-medium text-paper-50 transition-colors hover:bg-umber-800 disabled:cursor-wait disabled:opacity-80 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-200"
       >
         {busy ? (
           <>
