@@ -22,7 +22,7 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
   hu: [
     {
       q: "Tényleg ingyenes a Wēddly?",
-      a: "A nyílt béta alatt minden funkciót szabadon használhattok — költségvetés, vendéglista, RSVP, ültetés, nyomtatható kártyák. A v2-vel vezetjük be az árazást; a részleteket időben kihirdetjük.",
+      a: "Az első 200 párnak ingyenes: ha köztük regisztráltok, a Wēddly végig ingyenes marad a teljes tervezés alatt, egészen az esküvőtök napjáig. Miután betelnek a helyek, az új párok 2 hetes ingyenes próbát kapnak, utána 1 990 Ft havonta, minden funkcióval.",
     },
     {
       q: "Mindketten tudjuk használni?",
@@ -48,7 +48,7 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
   en: [
     {
       q: "Is Weddly really free?",
-      a: "Every feature is free throughout the open beta — budget, guest list, RSVP, seating, printable cards. We'll introduce pricing with v2; details will be announced ahead of time.",
+      a: "Free for the first 200 couples: register among them and Weddly stays free through your whole planning, right up to your wedding day. After those spots fill, new couples get a two-week free trial, then 5 € a month with every feature included.",
     },
     {
       q: "Can both of us use it?",
