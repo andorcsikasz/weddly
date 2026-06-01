@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { lazy, type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { SectionLabel } from "../components/editorial";
 import { LazyMount } from "../components/LazyMount";
 import { WorkspaceMockup } from "../components/mockups";
 
@@ -292,8 +291,7 @@ export default function LandingPage() {
       <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:gap-12 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
-            <SectionLabel num="—" label={t("landing.phase_suppliers_title")} />
-            <h2 className="mt-5 font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+            <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
               {t("landing.suppliers_section_title")}
             </h2>
             <p className="mt-5 max-w-xl font-grotesk text-base text-ink-600 dark:text-umber-200 sm:text-lg">
