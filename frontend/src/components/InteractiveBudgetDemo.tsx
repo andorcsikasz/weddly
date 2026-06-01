@@ -129,11 +129,11 @@ export function InteractiveBudgetDemo() {
               <div className="flex items-center justify-between gap-3">
                 <label
                   htmlFor="demo-guests"
-                  className="font-serif text-base text-ink-900 dark:text-paper-50"
+                  className="font-grotesk text-base text-ink-900 dark:text-paper-50"
                 >
                   {t("landing.demo_guests_label")}
                 </label>
-                <span className="font-serif text-xl italic text-blush-700 dark:text-blush-300">
+                <span className="font-grotesk text-xl italic text-blush-700 dark:text-blush-300">
                   {guests}
                 </span>
               </div>
@@ -159,11 +159,11 @@ export function InteractiveBudgetDemo() {
               <div className="flex items-center justify-between gap-3">
                 <label
                   htmlFor="demo-budget"
-                  className="font-serif text-base text-ink-900 dark:text-paper-50"
+                  className="font-grotesk text-base text-ink-900 dark:text-paper-50"
                 >
                   {t("landing.demo_budget_label")}
                 </label>
-                <span className="font-serif text-xl italic text-blush-700 dark:text-blush-300">
+                <span className="font-grotesk text-xl italic text-blush-700 dark:text-blush-300">
                   {formatMoney(budget, currency, locale)}
                 </span>
               </div>
@@ -194,7 +194,7 @@ export function InteractiveBudgetDemo() {
               <p className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-500 dark:text-umber-300">
                 {t("landing.demo_per_guest_label")}
               </p>
-              <p className="ml-auto font-serif text-xl text-ink-900 sm:text-2xl lg:text-3xl dark:text-paper-50">
+              <p className="ml-auto font-grotesk text-xl text-ink-900 sm:text-2xl lg:text-3xl dark:text-paper-50">
                 {formatMoney(perGuest, currency, locale)}
               </p>
             </div>
@@ -219,7 +219,7 @@ export function InteractiveBudgetDemo() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
                 {t("landing.demo_breakdown_eyebrow")}
               </p>
-              <p className="text-right font-serif text-xs italic leading-tight text-ink-500 sm:text-sm dark:text-umber-300">
+              <p className="text-right font-grotesk text-xs italic leading-tight text-ink-500 sm:text-sm dark:text-umber-300">
                 {t("landing.demo_breakdown_sub")}
               </p>
             </div>
@@ -227,10 +227,10 @@ export function InteractiveBudgetDemo() {
               {rows.map((row) => (
                 <li key={row.i18nKey}>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="font-serif text-sm text-ink-800 dark:text-paper-100">
+                    <span className="font-grotesk text-sm text-ink-800 dark:text-paper-100">
                       {t(row.i18nKey)}
                     </span>
-                    <span className="font-serif text-sm tabular-nums text-ink-700 dark:text-paper-100">
+                    <span className="font-grotesk text-sm tabular-nums text-ink-700 dark:text-paper-100">
                       {formatMoney(row.amount, currency, locale)}
                     </span>
                   </div>
@@ -245,10 +245,10 @@ export function InteractiveBudgetDemo() {
             </ul>
             <div className="mt-4 border-t border-paper-300 pt-3 dark:border-umber-700">
               <div className="flex items-center justify-between">
-                <span className="font-serif text-base text-ink-900 dark:text-paper-50">
+                <span className="font-grotesk text-base text-ink-900 dark:text-paper-50">
                   {t("landing.demo_total_label")}
                 </span>
-                <span className="font-serif text-lg tabular-nums text-ink-900 dark:text-paper-50">
+                <span className="font-grotesk text-lg tabular-nums text-ink-900 dark:text-paper-50">
                   {formatMoney(budget, currency, locale)}
                 </span>
               </div>
