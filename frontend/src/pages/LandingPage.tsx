@@ -622,58 +622,51 @@ function FoundingCouplesBand() {
   }
 
   return (
-    <section className="stationery-light relative overflow-hidden">
-      <div className="mx-auto max-w-xl px-6 py-24 text-center sm:py-28">
-        <SectionLabel num="—" label={t("landing.founders_eyebrow")} className="justify-center" />
-        <h2 className="mt-7 font-serif text-3xl italic leading-[1.08] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
-          {t("landing.founders_title")}
-        </h2>
-        <p className="mx-auto mt-6 max-w-prose font-serif text-base leading-relaxed text-ink-700 dark:text-paper-100 sm:text-lg">
-          {t("landing.founders_body")}
-        </p>
-        {/* The section's single rationed accent: terracotta lives only on the
-            live count, kept large so blush-500 clears AA-large contrast on the
-            cream ground. The suffix stacks beneath as a tracked micro-label. */}
-        {showCount && (
-          <div className="mt-12">
-            <span className="block font-serif text-5xl font-medium tabular-nums leading-none text-blush-500 sm:text-6xl">
-              <FoundingCount value={claimed} />
-            </span>
-            <span className="mt-3 block text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-ink-600 dark:text-umber-200">
-              {t("landing.founders_count_suffix")}
-            </span>
-          </div>
-        )}
-        <p className="mx-auto mt-6 max-w-prose text-sm leading-relaxed text-ink-600 dark:text-umber-300">
-          {t("landing.founders_note")}
-        </p>
-        {/* One structural hairline — the lone non-type mark in the block. */}
-        <div className="mx-auto mt-10 h-px w-12 bg-ink-900/15 dark:bg-paper-50/15" aria-hidden />
-        <div className="mt-10">
-          <Link
-            to="/signup"
-            className="btn-primary btn-landing btn-lg inline-flex w-full justify-center sm:w-auto"
-          >
-            {t("landing.founders_cta")}
-          </Link>
-        </div>
-        {/* Share is a post-decision loop, not a co-equal action — demoted to a
-            quiet underline link merged into the prompt line. */}
-        <p className="mx-auto mt-6 max-w-prose text-sm leading-relaxed text-ink-600 dark:text-umber-300">
-          {t("landing.founders_share_prompt")}{" "}
-          <button
-            type="button"
-            onClick={shareFoundingLink}
-            className="font-medium text-ink-800 underline decoration-ink-900/25 underline-offset-4 transition-colors hover:text-blush-500 hover:decoration-blush-500 dark:text-paper-100 dark:decoration-paper-50/30"
-          >
-            {t("landing.founders_share_cta")}
-          </button>
-        </p>
-        {copyFallback && (
-          <p className="mx-auto mt-3 max-w-prose break-all text-xs text-ink-500 dark:text-umber-400">
-            {copyFallback}
+    // Compact dark feature-band: a deliberate inversion of the cream page so
+    // the founding offer reads as one premium "moment", not another stacked
+    // section. Two-column on desktop (pitch | proof + action), tight padding
+    // so it occupies roughly a third of the old height. Body/note/share-prompt
+    // copy is dropped — the title, the live count, and the CTA carry it.
+    <section className="bg-ink-950">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-12 text-center sm:flex-row sm:justify-between sm:gap-12 sm:py-14 sm:text-left">
+        {/* Pitch */}
+        <div className="sm:max-w-sm">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.25em] text-blush-400">
+            {t("landing.founders_eyebrow")}
           </p>
-        )}
+          <h2 className="mt-3 font-serif text-3xl italic leading-[1.05] text-paper-50 sm:text-4xl">
+            {t("landing.founders_title")}
+          </h2>
+        </div>
+
+        {/* Proof + action */}
+        <div className="flex shrink-0 flex-col items-center gap-5 sm:items-end">
+          {showCount && (
+            <div className="flex flex-col items-center sm:items-end">
+              <span className="font-sans text-6xl font-light tabular-nums leading-none tracking-tight text-paper-50 sm:text-7xl">
+                <FoundingCount value={claimed} />
+              </span>
+              <span className="mt-2 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-paper-400">
+                {t("landing.founders_count_suffix")}
+              </span>
+            </div>
+          )}
+          <div className="flex items-center gap-5">
+            <Link to="/signup" className="btn-accent btn-landing btn-lg">
+              {t("landing.founders_cta")}
+            </Link>
+            <button
+              type="button"
+              onClick={shareFoundingLink}
+              className="text-sm font-medium text-paper-300 underline decoration-paper-500/40 underline-offset-4 transition-colors hover:text-paper-50 hover:decoration-paper-300"
+            >
+              {t("landing.founders_share_cta")}
+            </button>
+          </div>
+          {copyFallback && (
+            <p className="max-w-xs break-all text-xs text-paper-400">{copyFallback}</p>
+          )}
+        </div>
       </div>
     </section>
   );
