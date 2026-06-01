@@ -1540,6 +1540,7 @@ export interface LocaleMessages {
     todo_item_coords: string;
     todo_item_schedule: string;
     todo_item_venue: string;
+    venue_saved_prefix: string;
     preview_divider_label: string;
     preview_title: string;
     preview_subtitle: string;

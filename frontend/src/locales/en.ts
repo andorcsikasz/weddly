@@ -1410,6 +1410,7 @@ const en: LocaleMessages = {
     todo_item_coords: "venue coordinates",
     todo_item_schedule: "schedule",
     todo_item_venue: "venue name",
+    venue_saved_prefix: "From your vendors:",
     preview_divider_label: "Guest view below",
     preview_title: "Live preview",
     preview_subtitle:

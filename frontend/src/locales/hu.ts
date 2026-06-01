@@ -1424,6 +1424,7 @@ const hu: LocaleMessages = {
     todo_item_coords: "helyszín koordinátái",
     todo_item_schedule: "menetrend",
     todo_item_venue: "helyszín neve",
+    venue_saved_prefix: "A szállítóid közül:",
     preview_divider_label: "Innen a vendégoldal",
     preview_title: "Élő előnézet",
     preview_subtitle:

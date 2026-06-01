@@ -5,7 +5,10 @@
 // thing they share with guests, with a public top section (anyone with the
 // link) and a deeper post-RSVP-yes block that unlocks for confirmed guests.
 
-import type { Couple, Household } from "@shared/types";
+import type { Couple, Household, PlaceSuggestion } from "@shared/types";
+import type { CoupleSupplier } from "@shared/couple_suppliers";
+import type { CouplePick } from "@shared/picks";
+import type { DirectorySupplier } from "@shared/suppliers";
 import type {
   GuestPortalView as GuestPortalViewType,
   GuestScheduleEntry,
@@ -22,28 +25,229 @@ import {
   MessageCircle,
   Plus,
   RefreshCcw,
+  MapPin,
   Unlock,
   Upload,
 } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import { GuestPortalView } from "../components/GuestPortalView";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { coupleApi, householdApi, scheduleApi } from "../lib/endpoints";
+import {
+  coupleApi,
+  coupleSupplierApi,
+  householdApi,
+  picksApi,
+  placesApi,
+  scheduleApi,
+  supplierApi,
+} from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 /** Inline "Missing" indicator next to a field label or jump-to button when
- *  the underlying value is empty. Pure visual — no click target. The
- *  blush palette is Weddly's "needs attention" semantic (same family the
- *  publish toggle and the locked-section eyebrow use). */
+ *  the underlying value is empty. Pure visual — no click target. Rendered in
+ *  the red danger palette (same tokens as the cost-planning delete state) so
+ *  an unfinished field reads as an explicit "still required" flag rather than
+ *  blending into the warm blush accents the rest of the editor uses. */
 function TodoPill({ label }: { label: string }) {
   return (
-    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-blush-100 px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-blush-800 dark:bg-blush-900/40 dark:text-blush-200">
+    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-400/15 dark:text-red-300">
       <AlertCircle size={10} aria-hidden />
       {label}
     </span>
+  );
+}
+
+/** Venue-name input with two assists:
+ *  - a debounced Nominatim-backed autocomplete (same /api/places/search proxy
+ *    the honeymoon picker uses) so typing "Sári" surfaces real venue names;
+ *  - quick-fill chips for venues the couple already saved among their
+ *    suppliers (a picked directory venue or a DIY "venue" entry).
+ *  Unlike the honeymoon picker we commit the suggestion's `primary` (the place
+ *  NAME), not its full address — the field is name-only by design; the precise
+ *  address lives on the invitation / post-RSVP block. */
+function VenueNameField({
+  value,
+  onChange,
+  savedVenues,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  savedVenues: { id: string; name: string }[];
+}) {
+  const { t } = useT();
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [highlight, setHighlight] = useState(-1);
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const requestId = useRef(0);
+  // After picking a suggestion / chip we write the committed name back into
+  // `value`, which would otherwise retrigger the debounced search and reopen
+  // the dropdown. This one-shot flag swallows that next run.
+  const skipNextSearch = useRef(false);
+
+  useEffect(() => {
+    if (skipNextSearch.current) {
+      skipNextSearch.current = false;
+      setSuggestions([]);
+      setOpen(false);
+      return;
+    }
+    const q = value.trim();
+    if (q.length < 2) {
+      setSuggestions([]);
+      setOpen(false);
+      return;
+    }
+    const myId = ++requestId.current;
+    const handle = setTimeout(async () => {
+      try {
+        const r = await placesApi.search(q);
+        // Discard stale responses — only the latest typed query wins.
+        if (myId !== requestId.current) return;
+        setSuggestions(r.places);
+        setHighlight(-1);
+        setOpen(r.places.length > 0);
+      } catch {
+        if (myId !== requestId.current) return;
+        setSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [value]);
+
+  // Click-outside just closes the dropdown — the field is already controlled,
+  // so there's nothing to commit (unlike the honeymoon tile).
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  function pick(name: string) {
+    skipNextSearch.current = true;
+    requestId.current++; // invalidate any in-flight search
+    setOpen(false);
+    setSuggestions([]);
+    onChange(name);
+  }
+
+  function onKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (suggestions.length === 0) return;
+      setOpen(true);
+      setHighlight((h) => (h + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (suggestions.length === 0) return;
+      setOpen(true);
+      setHighlight((h) => (h <= 0 ? suggestions.length - 1 : h - 1));
+    } else if (e.key === "Enter") {
+      const sel = highlight >= 0 ? suggestions[highlight] : undefined;
+      if (open && sel) {
+        e.preventDefault();
+        pick(sel.primary);
+      }
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  }
+
+  // "Option B" — saved venues the couple can drop in with one click, minus the
+  // one already in the field so we don't offer a no-op chip.
+  const chips = savedVenues.filter((v) => v.name.trim() && v.name.trim() !== value.trim());
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <input
+        id="guest-page-venue"
+        type="text"
+        className="input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => suggestions.length > 0 && setOpen(true)}
+        onKeyDown={onKey}
+        placeholder={t("wedding_site_editor.venue_placeholder")}
+        maxLength={200}
+        autoComplete="off"
+        aria-autocomplete="list"
+        aria-expanded={open}
+      />
+      {open && suggestions.length > 0 && (
+        <ul
+          role="listbox"
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-80 overflow-y-auto rounded-xl border border-paper-300 bg-white py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          {suggestions.map((s, i) => (
+            <li key={`${s.primary}-${i}`}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={i === highlight}
+                onMouseDown={(e) => {
+                  // mousedown fires before the input blurs, so the pick lands.
+                  e.preventDefault();
+                  pick(s.primary);
+                }}
+                onMouseEnter={() => setHighlight(i)}
+                className={`flex w-full items-start gap-2 px-3 py-2 text-left ${
+                  i === highlight
+                    ? "bg-blush-50 dark:bg-blush-400/15"
+                    : "hover:bg-paper-50 dark:hover:bg-umber-700"
+                }`}
+              >
+                <MapPin
+                  size={14}
+                  className="mt-0.5 shrink-0 text-blush-700 dark:text-blush-300"
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+                    {s.primary}
+                  </span>
+                  {s.secondary && s.secondary !== s.primary && (
+                    <span className="block truncate text-[11px] text-ink-500 dark:text-umber-300">
+                      {s.secondary}
+                    </span>
+                  )}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {chips.length > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-ink-500 dark:text-umber-300">
+            {t("guest_page_editor.venue_saved_prefix")}
+          </span>
+          {chips.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => pick(v.name)}
+              className="inline-flex items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2.5 py-0.5 text-xs font-medium text-sage-800 hover:bg-sage-100 dark:border-sage-700 dark:bg-sage-900/30 dark:text-sage-200 dark:hover:bg-sage-900/50"
+            >
+              <MapPin size={11} aria-hidden />
+              {v.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -70,6 +274,12 @@ export default function GuestPageEditorPage() {
   // code, and we patch the local row rather than round-tripping the whole list.
   const [households, setHouseholds] = useState<Household[]>([]);
   const [rotatingId, setRotatingId] = useState<number | null>(null);
+  // Venues the couple already saved among their suppliers — surfaced as
+  // one-click quick-fill chips under the venue-name field ("Option B"). We
+  // resolve a picked "venue" category to its name (directory or DIY) and add
+  // any DIY "venue" suppliers. Loaded in its own effect so a supplier-API
+  // hiccup never blocks the main couple/schedule/household load.
+  const [savedVenues, setSavedVenues] = useState<{ id: string; name: string }[]>([]);
   // Cover-image upload — the server persists the file and the new URL into
   // the couples row in the same transaction, so the upload bypasses the
   // dirty/save flow. We track only the in-flight bit + hidden file input
@@ -123,6 +333,46 @@ export default function GuestPageEditorPage() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Resolve the couple's saved venues for the quick-fill chips. Each call is
+  // wrapped so a single failure degrades to "no chips" rather than throwing.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      picksApi.list().catch(() => ({ picks: [] as CouplePick[] })),
+      coupleSupplierApi.list().catch(() => ({ suppliers: [] as CoupleSupplier[] })),
+      supplierApi.list("venue").catch(() => ({ suppliers: [] as DirectorySupplier[] })),
+    ]).then(([pR, csR, dR]) => {
+      if (cancelled) return;
+      // Public supplier id → display name, across directory + DIY entries.
+      const nameById = new Map<string, string>();
+      for (const s of dR.suppliers) nameById.set(s.id, s.name);
+      for (const s of csR.suppliers) nameById.set(s.id, s.name);
+      const out: { id: string; name: string }[] = [];
+      const seen = new Set<string>();
+      const add = (id: string, name: string) => {
+        const trimmed = name.trim();
+        const key = trimmed.toLowerCase();
+        if (!trimmed || seen.has(key)) return;
+        seen.add(key);
+        out.push({ id, name: trimmed });
+      };
+      // The explicit "this is our venue" pick leads.
+      const venuePick = pR.picks.find((p) => p.category === "venue");
+      if (venuePick) {
+        const name = nameById.get(venuePick.supplier_id);
+        if (name) add(venuePick.supplier_id, name);
+      }
+      // Then any DIY venue entries the couple typed in themselves.
+      for (const s of csR.suppliers) {
+        if (s.category === "venue") add(s.id, s.name);
+      }
+      setSavedVenues(out);
+    });
     return () => {
       cancelled = true;
     };
@@ -652,14 +902,10 @@ export default function GuestPageEditorPage() {
                   {t("wedding_site_editor.venue_label")}
                   {todoVenue && <TodoPill label={todoPillLabel} />}
                 </label>
-                <input
-                  id="guest-page-venue"
-                  type="text"
-                  className="input"
+                <VenueNameField
                   value={venueName}
-                  onChange={(e) => setVenueName(e.target.value)}
-                  placeholder={t("wedding_site_editor.venue_placeholder")}
-                  maxLength={200}
+                  onChange={setVenueName}
+                  savedVenues={savedVenues}
                 />
                 <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                   {t("wedding_site_editor.venue_hint")}
