@@ -2,7 +2,7 @@
 // forecast. The backend serves the live base; the projection (shared
 // projectRevenue) re-runs in the browser as the operator drags the sliders.
 
-import { Info } from "lucide-react";
+import { ChevronRight, Info } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   type AdminFinancialPlannerOverview,
@@ -303,32 +303,42 @@ export default function AdminFinancialPlannerPage() {
         {/* Simple MRR bar chart */}
         <MrrChart points={projection.map((p) => ({ month: p.month, mrr: p.mrr }))} fmt={eur} />
 
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-umber-300">
-                <th className="py-1 pr-4 font-medium">{t("admin.fin_col_month")}</th>
-                <th className="py-1 pr-4 font-medium">{t("admin.fin_col_subs")}</th>
-                <th className="py-1 font-medium">{t("admin.fin_col_mrr")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projection.map((p) => (
-                <tr key={p.month} className="border-t border-paper-200 dark:border-umber-700">
-                  <td className="py-1.5 pr-4 tabular-nums text-neutral-600 dark:text-umber-200">
-                    {p.month}
-                  </td>
-                  <td className="py-1.5 pr-4 tabular-nums text-neutral-800 dark:text-paper-100">
-                    {p.subscribers}
-                  </td>
-                  <td className="py-1.5 tabular-nums font-medium text-neutral-900 dark:text-paper-50">
-                    {eur(p.mrr)}
-                  </td>
+        <details className="group mt-4">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 dark:text-umber-200 dark:hover:text-paper-50">
+            <ChevronRight
+              size={14}
+              aria-hidden="true"
+              className="transition-transform group-open:rotate-90"
+            />
+            {t("admin.fin_monthly_breakdown")}
+          </summary>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-center text-xs uppercase tracking-wide text-neutral-500 dark:text-umber-300">
+                  <th className="px-3 py-1 font-medium">{t("admin.fin_col_month")}</th>
+                  <th className="px-3 py-1 font-medium">{t("admin.fin_col_subs")}</th>
+                  <th className="px-3 py-1 font-medium">{t("admin.fin_col_mrr")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {projection.map((p) => (
+                  <tr key={p.month} className="border-t border-paper-200 dark:border-umber-700">
+                    <td className="px-3 py-1.5 text-center tabular-nums text-neutral-600 dark:text-umber-200">
+                      {p.month}
+                    </td>
+                    <td className="px-3 py-1.5 text-center tabular-nums text-neutral-800 dark:text-paper-100">
+                      {p.subscribers}
+                    </td>
+                    <td className="px-3 py-1.5 text-center tabular-nums font-medium text-neutral-900 dark:text-paper-50">
+                      {eur(p.mrr)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       </section>
 
       {/* Becsült adózás a tervezett éves árbevételre */}

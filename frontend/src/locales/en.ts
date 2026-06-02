@@ -2513,6 +2513,7 @@ const en: LocaleMessages = {
     nav_financial_planner: "Financial planner",
     fin_title: "Financial planner",
     fin_subtitle: "Live subscription revenue and a forecast you can model.",
+    fin_monthly_breakdown: "Monthly breakdown",
     fin_kpi_mrr: "MRR (EUR)",
     fin_kpi_mrr_hint:
       "MRR = Monthly Recurring Revenue: the income from active subscriptions in a single month.",

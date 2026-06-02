@@ -2544,6 +2544,7 @@ const hu: LocaleMessages = {
     nav_financial_planner: "Pénzügyi tervező",
     fin_title: "Pénzügyi tervező",
     fin_subtitle: "Élő előfizetési bevétel és egy modellezhető előrejelzés.",
+    fin_monthly_breakdown: "Havi bontás",
     fin_kpi_mrr: "MRR (EUR)",
     fin_kpi_mrr_hint:
       "MRR = Monthly Recurring Revenue, vagyis havi ismétlődő bevétel: az aktív előfizetésekből egy hónap alatt befolyó összeg.",

@@ -2834,6 +2834,7 @@ export interface LocaleMessages {
     /** Financial planner (/app/admin/financial-planner). */
     fin_title: string;
     fin_subtitle: string;
+    fin_monthly_breakdown: string;
     fin_kpi_mrr: string;
     fin_kpi_mrr_hint: string;
     fin_kpi_arr: string;
