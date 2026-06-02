@@ -809,7 +809,11 @@ function CardView({
             })}
           </p>
         ) : cardNumber !== null ? (
-          <p className="mt-6 text-center font-display text-[11px] font-bold uppercase tracking-[0.32em] text-wnrs-red">
+          <p
+            className={`mt-6 text-center font-display text-[11px] font-bold uppercase tracking-[0.32em] ${
+              deckId === "lemonade" ? "text-umber-900 dark:text-paper-50" : "text-wnrs-red"
+            }`}
+          >
             {t("tools.couple_cards.card_position", { n: cardNumber, total: DECK_SIZE })}
           </p>
         ) : null}
@@ -834,7 +838,11 @@ function CardView({
               type="button"
               onClick={onNext}
               aria-label={t("tools.couple_cards.flip_card")}
-              className="couple-card group relative flex aspect-[3/2] w-full cursor-pointer flex-col items-center justify-between rounded-[2.25rem] bg-white px-7 py-8 text-left shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-12 sm:py-12"
+              className={`couple-card group relative flex aspect-[3/2] w-full cursor-pointer flex-col items-center justify-between rounded-[2.25rem] px-7 py-8 text-left transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-12 sm:py-12 ${
+                deckId === "lemonade"
+                  ? "bg-lemonade-yellow shadow-[0_30px_60px_-25px_rgba(161,98,7,0.55)] ring-1 ring-lemonade-yellowInk/30 focus-visible:ring-lemonade-yellow"
+                  : "bg-white shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 focus-visible:ring-wnrs-red"
+              }`}
             >
               {/* Re-mount the inner article on every card flip so the keyed
                 `animate-card-deal` enter animation fires for each new
@@ -849,7 +857,9 @@ function CardView({
 
                 <p
                   data-testid="couple-card-question"
-                  className="text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] text-wnrs-red sm:text-2xl lg:text-3xl"
+                  className={`text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] sm:text-2xl lg:text-3xl ${
+                    deckId === "lemonade" ? "text-umber-900" : "text-wnrs-red"
+                  }`}
                 >
                   {question ?? t("tools.couple_cards.card_empty")}
                 </p>
@@ -861,18 +871,33 @@ function CardView({
                   line below stays at both sizes — it tells the visitor
                   which level this card belongs to. */}
                 <div className="text-center">
-                  <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-wnrs-red sm:text-xs">
+                  <p
+                    className={`font-display text-[10px] font-bold uppercase tracking-[0.28em] sm:text-xs ${
+                      deckId === "lemonade" ? "text-umber-900" : "text-wnrs-red"
+                    }`}
+                  >
                     {t("app.name")}
                     <span className="hidden sm:inline">
                       {" · "}
                       {t("tools.couple_cards.page_h1")}
                     </span>
                   </p>
-                  <p className="mt-1 font-display text-[9px] uppercase tracking-[0.24em] text-wnrs-redInk sm:text-[10px]">
+                  <p
+                    className={`mt-1 font-display text-[9px] uppercase tracking-[0.24em] sm:text-[10px] ${
+                      deckId === "lemonade" ? "text-umber-700" : "text-wnrs-redInk"
+                    }`}
+                  >
                     {deckTitle}
                   </p>
                 </div>
               </article>
+              {/* Lemonade-only easter-egg flair: a small lemon-slice +
+                  lemonade-glass mark tucked into the bottom-left corner.
+                  Inline SVG (no extra dependency) inheriting currentColor
+                  so it tints with the umber text. */}
+              {deckId === "lemonade" ? (
+                <LemonadeGlassMark className="absolute bottom-4 left-4 text-umber-900 sm:bottom-6 sm:left-6" />
+              ) : null}
             </button>
           )}
 
@@ -1082,11 +1107,48 @@ function CardView({
   );
 }
 
-/** 26th-card blank suggestion form. Same 3:2 aspect + WNRS-red type as
- *  the question cards, but the border is dashed instead of a soft ring,
- *  signalling "this one's empty, you fill it in". Inline textarea +
- *  Submit button; status feedback (submitting / thanks / error) lives
- *  under the textarea. Hidden in normal card-flip mode. */
+/** Tiny easter-egg flair drawn into the bottom-left corner of every
+ *  Lemonade question card: a lemonade glass with a slice of lemon
+ *  perched on the rim and a straw poking out. Inline SVG (no extra
+ *  dependency) inheriting currentColor so it tints with the surrounding
+ *  text. Kept small + line-art-only so it reads as a quiet stamp rather
+ *  than competing with the question. */
+function LemonadeGlassMark({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 32 32"
+      width="28"
+      height="28"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
+      {/* Glass body — slight inward taper at the base, classic tumbler. */}
+      <path d="M10 11 L22 11 L20.6 26.6 Q20.4 28.4 18.7 28.4 L13.3 28.4 Q11.6 28.4 11.4 26.6 Z" />
+      {/* Lemonade waterline across the glass interior. */}
+      <path d="M10.5 15 L21.5 15" />
+      {/* Straw — diagonal from the rim up to the right. */}
+      <line x1="14" y1="6.5" x2="17" y2="14.5" />
+      {/* Lemon slice perched on the right side of the rim: outer rind +
+          four radial cuts so it reads as a citrus cross-section. */}
+      <circle cx="22.2" cy="11" r="3.6" />
+      <line x1="22.2" y1="7.5" x2="22.2" y2="14.5" />
+      <line x1="18.6" y1="11" x2="25.8" y2="11" />
+      <line x1="19.7" y1="8.5" x2="24.7" y2="13.5" />
+      <line x1="19.7" y1="13.5" x2="24.7" y2="8.5" />
+    </svg>
+  );
+}
+
+/** 26th-card blank suggestion form. Same 3:2 aspect as the question cards,
+ *  but the border is dashed instead of a soft ring, signalling "this one's
+ *  empty, you fill it in". Inline textarea + Submit button; status feedback
+ *  (submitting / thanks / error) lives under the textarea. Hidden in normal
+ *  card-flip mode. */
 function SuggestionCard({
   deckTitle,
   text,
