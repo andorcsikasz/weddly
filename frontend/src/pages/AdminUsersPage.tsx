@@ -1,6 +1,8 @@
 import type { AdminCoupleView, AdminUserView } from "@shared/types";
 import {
   Check,
+  ChevronDown,
+  ChevronRight,
   Flag,
   FlagOff,
   FlaskConical,
@@ -107,6 +109,14 @@ export default function AdminUsersPage() {
   // Same collapsed-by-default treatment for the beta-tester bucket — the
   // team's own test workspaces live below the real-couple list.
   const [betaOpen, setBetaOpen] = useState(false);
+  // The three real-signup lists (paired couples, solo workspaces, orphan
+  // users) are each collapsible. They open by default — they're the page's
+  // primary content — but an admin triaging a long list can fold the ones
+  // they're not working. An active search force-opens all three (see the
+  // `*ListOpen` derivations below) so matches never hide behind a fold.
+  const [couplesOpen, setCouplesOpen] = useState(true);
+  const [soloOpen, setSoloOpen] = useState(true);
+  const [orphansOpen, setOrphansOpen] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -208,6 +218,20 @@ export default function AdminUsersPage() {
     // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [betaCouples, searchQuery, userById],
   );
+  // Split the real-signup couples into actual pairs (both partners present)
+  // vs solo workspaces (one member — the partner was never invited/joined).
+  // Member count uses the locally-resolved partner list, mirroring the
+  // `members.length === 1` check renderCoupleCard uses for the solo label.
+  const couplePairs = useMemo(
+    () =>
+      filteredRealCouples.filter((c) => c.partners.filter((p) => userById.has(p.id)).length >= 2),
+    [filteredRealCouples, userById],
+  );
+  const soloWorkspaces = useMemo(
+    () =>
+      filteredRealCouples.filter((c) => c.partners.filter((p) => userById.has(p.id)).length < 2),
+    [filteredRealCouples, userById],
+  );
   const filteredOrphans = useMemo(
     () => (searchQuery === "" ? orphans : orphans.filter(orphanMatches)),
     // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
@@ -217,6 +241,11 @@ export default function AdminUsersPage() {
   // Auto-expand the beta bucket while searching so matching beta workspaces
   // surface inline instead of hiding behind the collapsed summary.
   const betaListOpen = betaOpen || isSearching;
+  // The collapsible real-signup lists force open during an active search so
+  // hits are never hidden behind a fold; the fold toggle is suppressed then.
+  const couplesListOpen = couplesOpen || isSearching;
+  const soloListOpen = soloOpen || isSearching;
+  const orphansListOpen = orphansOpen || isSearching;
   const totalFilteredHits =
     filteredRealCouples.length + filteredBetaCouples.length + filteredOrphans.length;
 
@@ -455,67 +484,73 @@ export default function AdminUsersPage() {
       ? Math.max(0, Math.ceil((flag.scheduled_delete_at - Date.now()) / (24 * 60 * 60 * 1000)))
       : 0;
     return (
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-        <span className="font-medium text-neutral-900 dark:text-paper-50">{u.full_name}</span>
-        <span className="text-xs text-neutral-500 dark:text-umber-300 break-all">{u.email}</span>
-        {u.is_admin && (
-          <Pill tone="violet" srLabel={t("admin.badge_admin")}>
-            {t("admin.badge_admin")}
-          </Pill>
-        )}
+      <div className="flex min-w-0 flex-col gap-y-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="font-medium text-neutral-900 dark:text-paper-50">{u.full_name}</span>
+          <span className="text-xs text-neutral-500 dark:text-umber-300 break-all">{u.email}</span>
+          {u.is_admin && (
+            <Pill tone="violet" srLabel={t("admin.badge_admin")}>
+              {t("admin.badge_admin")}
+            </Pill>
+          )}
+          {u.status === "suspended" && (
+            <Pill tone="muted" srLabel={t("admin.badge_suspended")}>
+              {t("admin.badge_suspended")}
+            </Pill>
+          )}
+          {!u.verified_email && <Pill tone="muted">{t("admin.badge_unverified")}</Pill>}
+          {flag && (
+            <span title={flag.reason}>
+              <Pill tone="blush" icon={<Flag size={11} aria-hidden />}>
+                {t("admin.flag_badge_days_left", { n: flagDaysLeft })}
+              </Pill>
+            </span>
+          )}
+          {u.activity.prior_flag_count > 0 && (
+            <span
+              title={t("admin.activity_prior_flags_tooltip", { n: u.activity.prior_flag_count })}
+            >
+              <Pill tone="paper" icon={<Flag size={11} aria-hidden />}>
+                {u.activity.prior_flag_count}
+              </Pill>
+            </span>
+          )}
+          {u.activity.supplier_tip_count > 0 && (
+            <span
+              title={t("admin.activity_supplier_tips_tooltip", {
+                n: u.activity.supplier_tip_count,
+                when: formatRelative(u.activity.supplier_tip_last_at, locale, t),
+              })}
+            >
+              <Pill tone="violet" icon={<Lightbulb size={11} aria-hidden />}>
+                {t("admin.activity_supplier_tips", { n: u.activity.supplier_tip_count })}
+              </Pill>
+            </span>
+          )}
+          {u.activity.feedback_count > 0 && (
+            <span
+              title={t("admin.activity_feedback_tooltip", {
+                n: u.activity.feedback_count,
+                when: formatRelative(u.activity.feedback_last_at, locale, t),
+              })}
+            >
+              <Pill tone="violet" icon={<MessageCircle size={11} aria-hidden />}>
+                {t("admin.activity_feedback", { n: u.activity.feedback_count })}
+              </Pill>
+            </span>
+          )}
+          {opts.showLastActive && (
+            <span className="text-[11px] text-neutral-500 dark:text-umber-300">
+              {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
+            </span>
+          )}
+        </div>
         {u.is_beta_tester && (
-          <Pill tone="sage" icon={<FlaskConical size={11} aria-hidden />}>
-            {t("admin.badge_beta")}
-          </Pill>
-        )}
-        {u.status === "suspended" && (
-          <Pill tone="muted" srLabel={t("admin.badge_suspended")}>
-            {t("admin.badge_suspended")}
-          </Pill>
-        )}
-        {!u.verified_email && <Pill tone="muted">{t("admin.badge_unverified")}</Pill>}
-        {flag && (
-          <span title={flag.reason}>
-            <Pill tone="blush" icon={<Flag size={11} aria-hidden />}>
-              {t("admin.flag_badge_days_left", { n: flagDaysLeft })}
+          <div>
+            <Pill tone="sage" icon={<FlaskConical size={11} aria-hidden />}>
+              {t("admin.badge_beta")}
             </Pill>
-          </span>
-        )}
-        {u.activity.prior_flag_count > 0 && (
-          <span title={t("admin.activity_prior_flags_tooltip", { n: u.activity.prior_flag_count })}>
-            <Pill tone="paper" icon={<Flag size={11} aria-hidden />}>
-              {u.activity.prior_flag_count}
-            </Pill>
-          </span>
-        )}
-        {u.activity.supplier_tip_count > 0 && (
-          <span
-            title={t("admin.activity_supplier_tips_tooltip", {
-              n: u.activity.supplier_tip_count,
-              when: formatRelative(u.activity.supplier_tip_last_at, locale, t),
-            })}
-          >
-            <Pill tone="violet" icon={<Lightbulb size={11} aria-hidden />}>
-              {t("admin.activity_supplier_tips", { n: u.activity.supplier_tip_count })}
-            </Pill>
-          </span>
-        )}
-        {u.activity.feedback_count > 0 && (
-          <span
-            title={t("admin.activity_feedback_tooltip", {
-              n: u.activity.feedback_count,
-              when: formatRelative(u.activity.feedback_last_at, locale, t),
-            })}
-          >
-            <Pill tone="violet" icon={<MessageCircle size={11} aria-hidden />}>
-              {t("admin.activity_feedback", { n: u.activity.feedback_count })}
-            </Pill>
-          </span>
-        )}
-        {opts.showLastActive && (
-          <span className="text-[11px] text-neutral-500 dark:text-umber-300">
-            {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
-          </span>
+          </div>
         )}
       </div>
     );
@@ -719,6 +754,40 @@ export default function AdminUsersPage() {
     );
   }
 
+  /** Collapse / expand chevron for a section header's `actions` slot.
+   *  Used by the paired-couples, solo and orphan lists so all three fold the
+   *  same way; the beta/demo buckets keep their own summary-card toggles. */
+  function SectionToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+    return (
+      <button
+        type="button"
+        className="btn-ghost btn-sm inline-flex items-center gap-1"
+        onClick={onToggle}
+        aria-expanded={open}
+      >
+        {open ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
+        <span>{open ? t("admin.section_hide") : t("admin.section_show")}</span>
+      </button>
+    );
+  }
+
+  // Shared md+ column-label row for the card lists (paired couples + solo).
+  // Matches the 5-column grid the cards use so the headers line up exactly.
+  const workspaceColumnHeader = (
+    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] gap-4 px-5 eyebrow md:grid">
+      <div>{t("admin.table_workspace_id")}</div>
+      <div>{t("admin.table_workspace_name")}</div>
+      <div>{t("admin.table_workspace_members")}</div>
+      <div>
+        <div>{t("admin.table_workspace_created")}</div>
+        <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
+          {t("admin.table_workspace_last_active")}
+        </div>
+      </div>
+      <div className="text-right">{t("admin.table_admin_actions")}</div>
+    </div>
+  );
+
   return (
     <>
       <AdminPageHeader title={t("admin.users_title")} subtitle={t("admin.users_sub")} />
@@ -858,51 +927,72 @@ export default function AdminUsersPage() {
             />
           ) : (
             <>
-              {/* ── Workspaces (couples) — one card per couple ──────────── */}
+              {/* ── Paired couples — both partners present, one card each ── */}
               <section className="mb-6">
                 <AdminSectionHeader
                   title={t("admin.workspaces_section")}
                   count={t(
-                    filteredRealCouples.length === 1
-                      ? "admin.workspaces_count_one"
-                      : "admin.workspaces_count_other",
-                    { n: filteredRealCouples.length },
+                    couplePairs.length === 1
+                      ? "admin.couples_count_one"
+                      : "admin.couples_count_other",
+                    { n: couplePairs.length },
                   )}
                   actions={
-                    deletingCount > 0 ? (
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
-                        onClick={onPurgeDeleting}
-                        disabled={purgingDeleting}
-                      >
-                        {t("admin.purge_deleting_button", { n: deletingCount })}
-                      </button>
+                    <>
+                      {deletingCount > 0 && (
+                        <button
+                          type="button"
+                          className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                          onClick={onPurgeDeleting}
+                          disabled={purgingDeleting}
+                        >
+                          {t("admin.purge_deleting_button", { n: deletingCount })}
+                        </button>
+                      )}
+                      {!isSearching && (
+                        <SectionToggle
+                          open={couplesOpen}
+                          onToggle={() => setCouplesOpen((v) => !v)}
+                        />
+                      )}
+                    </>
+                  }
+                />
+                {couplesListOpen &&
+                  (couplePairs.length === 0 ? (
+                    <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
+                  ) : (
+                    <>
+                      {workspaceColumnHeader}
+                      <ul className="space-y-1.5">{couplePairs.map(renderCoupleCard)}</ul>
+                    </>
+                  ))}
+              </section>
+
+              {/* ── Solo workspaces — one member, partner never joined ───── */}
+              <section className="mb-6">
+                <AdminSectionHeader
+                  title={t("admin.solo_section")}
+                  description={t("admin.solo_help")}
+                  count={t(
+                    soloWorkspaces.length === 1 ? "admin.solo_count_one" : "admin.solo_count_other",
+                    { n: soloWorkspaces.length },
+                  )}
+                  actions={
+                    !isSearching ? (
+                      <SectionToggle open={soloOpen} onToggle={() => setSoloOpen((v) => !v)} />
                     ) : undefined
                   }
                 />
-                {filteredRealCouples.length === 0 ? (
-                  <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
-                ) : (
-                  <>
-                    {/* Card-style row header — uses the same 4-column grid as the
-                     *  rows below so the labels line up exactly. Hidden on small
-                     *  screens (rows stack vertically there). */}
-                    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] gap-4 px-5 eyebrow md:grid">
-                      <div>{t("admin.table_workspace_id")}</div>
-                      <div>{t("admin.table_workspace_name")}</div>
-                      <div>{t("admin.table_workspace_members")}</div>
-                      <div>
-                        <div>{t("admin.table_workspace_created")}</div>
-                        <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
-                          {t("admin.table_workspace_last_active")}
-                        </div>
-                      </div>
-                      <div className="text-right">{t("admin.table_admin_actions")}</div>
-                    </div>
-                    <ul className="space-y-1.5">{filteredRealCouples.map(renderCoupleCard)}</ul>
-                  </>
-                )}
+                {soloListOpen &&
+                  (soloWorkspaces.length === 0 ? (
+                    <AdminEmptyState>{t("admin.solo_empty")}</AdminEmptyState>
+                  ) : (
+                    <>
+                      {workspaceColumnHeader}
+                      <ul className="space-y-1.5">{soloWorkspaces.map(renderCoupleCard)}</ul>
+                    </>
+                  ))}
               </section>
 
               {/* ── Beta testers — admin-marked test accounts, bucketed out of
@@ -1090,36 +1180,47 @@ export default function AdminUsersPage() {
                       : "admin.orphans_count_other",
                     { n: filteredOrphans.length },
                   )}
+                  actions={
+                    !isSearching ? (
+                      <SectionToggle
+                        open={orphansOpen}
+                        onToggle={() => setOrphansOpen((v) => !v)}
+                      />
+                    ) : undefined
+                  }
                 />
-                {filteredOrphans.length === 0 ? (
-                  <AdminEmptyState>{t("admin.orphans_empty")}</AdminEmptyState>
-                ) : (
-                  <div className="admin-card overflow-x-auto !p-0">
-                    <table className="min-w-full text-sm">
-                      <thead className="bg-paper-100 text-left eyebrow dark:bg-umber-700/60">
-                        <tr>
-                          <th className="px-3 py-2">{t("admin.table_name")}</th>
-                          <th className="px-3 py-2 text-right">{t("admin.table_admin_actions")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredOrphans.map((u) => (
-                          <tr
-                            key={u.id}
-                            className="border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
-                          >
-                            <td className="px-3 py-2">
-                              {renderUserInfo(u, { showLastActive: true })}
-                            </td>
-                            <td className="px-3 py-2 text-right align-middle">
-                              {renderUserActions(u)}
-                            </td>
+                {orphansListOpen &&
+                  (filteredOrphans.length === 0 ? (
+                    <AdminEmptyState>{t("admin.orphans_empty")}</AdminEmptyState>
+                  ) : (
+                    <div className="admin-card overflow-x-auto !p-0">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-paper-100 text-left eyebrow dark:bg-umber-700/60">
+                          <tr>
+                            <th className="px-3 py-2">{t("admin.table_name")}</th>
+                            <th className="px-3 py-2 text-right">
+                              {t("admin.table_admin_actions")}
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                        </thead>
+                        <tbody>
+                          {filteredOrphans.map((u) => (
+                            <tr
+                              key={u.id}
+                              className="border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
+                            >
+                              <td className="px-3 py-2">
+                                {renderUserInfo(u, { showLastActive: true })}
+                              </td>
+                              <td className="px-3 py-2 text-right align-middle">
+                                {renderUserActions(u)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
               </section>
             </>
           )}

@@ -2839,6 +2839,22 @@ export interface LocaleMessages {
     /** Financial planner (/app/admin/financial-planner). */
     fin_title: string;
     fin_subtitle: string;
+    fin_enforce_title: string;
+    fin_enforce_state_on: string;
+    fin_enforce_state_off: string;
+    fin_enforce_note_on: string;
+    fin_enforce_note_off: string;
+    fin_enforce_turn_off: string;
+    fin_enforce_go_live: string;
+    fin_enforce_not_ready: string;
+    fin_enforce_progress_label: string;
+    fin_enforce_ready_signal: string;
+    fin_enforce_confirm_on_title: string;
+    fin_enforce_confirm_on_body: string;
+    fin_enforce_confirm_off_title: string;
+    fin_enforce_confirm_off_body: string;
+    fin_enforce_on_success: string;
+    fin_enforce_off_success: string;
     fin_monthly_breakdown: string;
     fin_kpi_mrr: string;
     fin_kpi_mrr_hint: string;
@@ -3052,6 +3068,16 @@ export interface LocaleMessages {
     workspaces_section: string;
     workspaces_count_one: string;
     workspaces_count_other: string;
+    /** Solo-workspace bucket (one member, partner never joined) on the admin
+     *  users page — split out from the paired-couple list. */
+    solo_section: string;
+    solo_help: string;
+    solo_count_one: string;
+    solo_count_other: string;
+    solo_empty: string;
+    /** Collapse/expand toggle labels shared by the admin users-page lists. */
+    section_show: string;
+    section_hide: string;
     /** Demo workspaces are landing-page Shrek & Fiona seedlings — kept in
      *  their own section so the real-couple list stays scannable. */
     demo_workspaces_section: string;

@@ -316,6 +316,109 @@ html:not(.dark) [data-app-shell] .decoration-ink-700 {
   text-decoration-color: theme("colors.umber.700");
 }
 
+/* Structural navy → espresso: backgrounds, borders, focus rings and SVG
+   fill/stroke. Mapped 1:1 (ink-N → umber-N) rather than the text block's
+   step-down, because the dark shades (700–950) that carry the actual navy
+   weight — dark buttons, strong borders, focus rings — are near-identical in
+   lightness across the two scales, so 1:1 keeps the same depth while swapping
+   the hue. The lighter shades simply read as a warm tint of the same value. */
+html:not(.dark) [data-app-shell] .bg-ink-50 {
+  background-color: theme("colors.umber.50");
+}
+html:not(.dark) [data-app-shell] .bg-ink-100 {
+  background-color: theme("colors.umber.100");
+}
+html:not(.dark) [data-app-shell] .bg-ink-200 {
+  background-color: theme("colors.umber.200");
+}
+html:not(.dark) [data-app-shell] .bg-ink-300 {
+  background-color: theme("colors.umber.300");
+}
+html:not(.dark) [data-app-shell] .bg-ink-400 {
+  background-color: theme("colors.umber.400");
+}
+html:not(.dark) [data-app-shell] .bg-ink-500 {
+  background-color: theme("colors.umber.500");
+}
+html:not(.dark) [data-app-shell] .bg-ink-600 {
+  background-color: theme("colors.umber.600");
+}
+html:not(.dark) [data-app-shell] .bg-ink-700 {
+  background-color: theme("colors.umber.700");
+}
+html:not(.dark) [data-app-shell] .bg-ink-800 {
+  background-color: theme("colors.umber.800");
+}
+html:not(.dark) [data-app-shell] .bg-ink-900 {
+  background-color: theme("colors.umber.900");
+}
+html:not(.dark) [data-app-shell] .bg-ink-950 {
+  background-color: theme("colors.umber.950");
+}
+html:not(.dark) [data-app-shell] .border-ink-50 {
+  border-color: theme("colors.umber.50");
+}
+html:not(.dark) [data-app-shell] .border-ink-100 {
+  border-color: theme("colors.umber.100");
+}
+html:not(.dark) [data-app-shell] .border-ink-200 {
+  border-color: theme("colors.umber.200");
+}
+html:not(.dark) [data-app-shell] .border-ink-300 {
+  border-color: theme("colors.umber.300");
+}
+html:not(.dark) [data-app-shell] .border-ink-400 {
+  border-color: theme("colors.umber.400");
+}
+html:not(.dark) [data-app-shell] .border-ink-500 {
+  border-color: theme("colors.umber.500");
+}
+html:not(.dark) [data-app-shell] .border-ink-600 {
+  border-color: theme("colors.umber.600");
+}
+html:not(.dark) [data-app-shell] .border-ink-700 {
+  border-color: theme("colors.umber.700");
+}
+html:not(.dark) [data-app-shell] .border-ink-800 {
+  border-color: theme("colors.umber.800");
+}
+html:not(.dark) [data-app-shell] .border-ink-900 {
+  border-color: theme("colors.umber.900");
+}
+html:not(.dark) [data-app-shell] .ring-ink-200 {
+  --tw-ring-color: theme("colors.umber.200");
+}
+html:not(.dark) [data-app-shell] .ring-ink-300 {
+  --tw-ring-color: theme("colors.umber.300");
+}
+html:not(.dark) [data-app-shell] .ring-ink-400 {
+  --tw-ring-color: theme("colors.umber.400");
+}
+html:not(.dark) [data-app-shell] .ring-ink-500 {
+  --tw-ring-color: theme("colors.umber.500");
+}
+html:not(.dark) [data-app-shell] .ring-ink-700 {
+  --tw-ring-color: theme("colors.umber.700");
+}
+html:not(.dark) [data-app-shell] .stroke-ink-500 {
+  stroke: theme("colors.umber.500");
+}
+html:not(.dark) [data-app-shell] .stroke-ink-800 {
+  stroke: theme("colors.umber.800");
+}
+html:not(.dark) [data-app-shell] .stroke-ink-900 {
+  stroke: theme("colors.umber.900");
+}
+html:not(.dark) [data-app-shell] .fill-ink-800 {
+  fill: theme("colors.umber.800");
+}
+html:not(.dark) [data-app-shell] .fill-ink-900 {
+  fill: theme("colors.umber.900");
+}
+html:not(.dark) [data-app-shell] .outline-ink-400 {
+  outline-color: theme("colors.umber.500");
+}
+
 /* ── Components ────────────────────────────────────────────────────── */
 @layer components {
   /* Polymarket-style 3-D lifted button. Colours come from whatever the

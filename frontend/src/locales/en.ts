@@ -186,12 +186,12 @@ const en: LocaleMessages = {
     plan_none: "No active plan",
     status_trialing: "Your free trial runs until {date}. Add a card any time to keep going.",
     status_founding:
-      "You're one of our first 200 couples — Weddly is free for you until {date}. No card needed.",
+      "You're one of our first 200 couples, so Weddly is free for you until {date}. No card needed.",
     status_active: "Thanks for subscribing. Your plan renews on {date}.",
     status_past_due:
       "Your last payment didn't go through. Update your card to restore full access.",
     status_lapsed:
-      "Your free period has ended, so the workspace is read-only. Subscribe to keep editing — nothing is deleted.",
+      "Your free period has ended, so the workspace is read-only. Your data is safe, and a subscription brings editing right back.",
     price_line: "{price} / month",
     founding_spots: "{n} of 200 spots left",
     subscribe_cta: "Subscribe",
@@ -201,7 +201,7 @@ const en: LocaleMessages = {
     error_generic: "Something went wrong. Please try again.",
     banner_title: "Read-only mode",
     banner_body:
-      "Your free period has ended. Subscribe to keep editing your workspace — your data is safe.",
+      "Your free period has ended, so your workspace is read-only for now. Your data is safe, and a subscription brings editing right back.",
     banner_cta: "Subscribe",
     founding_banner_title: "You're in the first 200 🎉",
     founding_banner_body:
@@ -2517,6 +2517,26 @@ const en: LocaleMessages = {
     nav_financial_planner: "Financial planner",
     fin_title: "Financial planner",
     fin_subtitle: "Live subscription revenue and a forecast you can model.",
+    fin_enforce_title: "Payment go-live",
+    fin_enforce_state_on: "On",
+    fin_enforce_state_off: "Off",
+    fin_enforce_note_on:
+      "The payment period is live: couples with an expired trial drop to read-only. Beta testers and admins are always free.",
+    fin_enforce_note_off:
+      "The payment period is not live yet: nobody is in read-only right now. Every couple's data is safe, only the paywall is waiting.",
+    fin_enforce_turn_off: "Turn off",
+    fin_enforce_go_live: "Go live with payments",
+    fin_enforce_not_ready: "Waiting for 200 couples ({n} / {cap})",
+    fin_enforce_progress_label: "Couples toward the 200 cap",
+    fin_enforce_ready_signal: "200 couples reached - ready to go live with payments.",
+    fin_enforce_confirm_on_title: "Go live with payments?",
+    fin_enforce_confirm_on_body:
+      "This puts couples with an expired trial into read-only until they subscribe. Beta testers and admins stay free. You can turn it back off any time.",
+    fin_enforce_confirm_off_title: "Turn payments off?",
+    fin_enforce_confirm_off_body:
+      "This takes everyone out of read-only: every couple can edit again, regardless of their trial.",
+    fin_enforce_on_success: "Payment period is now live.",
+    fin_enforce_off_success: "Payment period turned off.",
     fin_monthly_breakdown: "Monthly breakdown",
     fin_kpi_mrr: "MRR (EUR)",
     fin_kpi_mrr_hint:
@@ -2692,6 +2712,13 @@ const en: LocaleMessages = {
     workspaces_section: "Couple workspaces",
     workspaces_count_one: "{n} workspace",
     workspaces_count_other: "{n} workspaces",
+    solo_section: "Solo users",
+    solo_help: "Single-member workspaces — the partner was never invited or hasn't joined.",
+    solo_count_one: "{n} solo",
+    solo_count_other: "{n} solo",
+    solo_empty: "No solo users.",
+    section_show: "Expand",
+    section_hide: "Collapse",
     demo_workspaces_section: "Demo workspaces",
     demo_workspaces_count_one: "{n} demo",
     demo_workspaces_count_other: "{n} demo",

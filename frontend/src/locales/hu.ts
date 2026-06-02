@@ -187,12 +187,12 @@ const hu: LocaleMessages = {
     status_trialing:
       "Az ingyenes próbaidőtök {date}-ig tart. Bármikor megadhattok egy kártyát a folytatáshoz.",
     status_founding:
-      "Az első 200 párunk egyike vagytok — a Weddly nektek {date}-ig ingyenes. Kártya nem szükséges.",
+      "Az első 200 párunk egyike vagytok, így a Weddly nektek {date}-ig ingyenes. Kártya nem szükséges.",
     status_active: "Köszönjük az előfizetést. A csomagotok {date}-kor újul meg.",
     status_past_due:
       "Az utolsó fizetés nem ment át. Frissítsétek a kártyát a teljes hozzáférésért.",
     status_lapsed:
-      "Az ingyenes időszakotok véget ért, így a munkaterület csak olvasható. Fizessetek elő a szerkesztéshez — semmi nem vész el.",
+      "Az ingyenes időszakotok véget ért, így a munkaterület csak olvasható. Az adataitok biztonságban vannak; egy előfizetéssel bármikor folytathatjátok a szerkesztést.",
     price_line: "{price} / hó",
     founding_spots: "{n} hely maradt a 200-ból",
     subscribe_cta: "Előfizetés",
@@ -203,7 +203,7 @@ const hu: LocaleMessages = {
     error_generic: "Valami hiba történt. Próbáljátok újra.",
     banner_title: "Csak olvasható mód",
     banner_body:
-      "Az ingyenes időszakotok véget ért. Fizessetek elő a szerkesztés folytatásához — az adataitok biztonságban vannak.",
+      "Az ingyenes időszakotok véget ért, ezért a munkaterület most csak olvasható. Az adataitok biztonságban vannak; egy előfizetéssel bármikor folytathatjátok a szerkesztést.",
     banner_cta: "Előfizetés",
     founding_banner_title: "Bekerültetek az első 200-ba 🎉",
     founding_banner_body:
@@ -2548,6 +2548,26 @@ const hu: LocaleMessages = {
     nav_financial_planner: "Pénzügyi tervező",
     fin_title: "Pénzügyi tervező",
     fin_subtitle: "Élő előfizetési bevétel és egy modellezhető előrejelzés.",
+    fin_enforce_title: "Fizetés élesítése",
+    fin_enforce_state_on: "Bekapcsolva",
+    fin_enforce_state_off: "Kikapcsolva",
+    fin_enforce_note_on:
+      "A fizetős időszak él: a lejárt próbaidős párok csak olvasható módba kerülnek. A beta tesztelők és az adminok mindig ingyenesek.",
+    fin_enforce_note_off:
+      "A fizetős időszak még nincs élesítve: jelenleg senki nem kerül csak olvasható módba. A párok adatai biztonságban, csak a paywall vár.",
+    fin_enforce_turn_off: "Kikapcsolás",
+    fin_enforce_go_live: "Fizetés élesítése",
+    fin_enforce_not_ready: "Várj a 200 párra ({n} / {cap})",
+    fin_enforce_progress_label: "Párok a 200-as keretből",
+    fin_enforce_ready_signal: "Megvan a 200 pár - készen áll a fizetés élesítésére.",
+    fin_enforce_confirm_on_title: "Élesíted a fizetést?",
+    fin_enforce_confirm_on_body:
+      "Ettől a lejárt próbaidős párok csak olvasható módba kerülnek, amíg elő nem fizetnek. A beta tesztelők és az adminok továbbra is ingyenesek. Bármikor visszakapcsolható.",
+    fin_enforce_confirm_off_title: "Kikapcsolod a fizetést?",
+    fin_enforce_confirm_off_body:
+      "Ettől senki nem kerül csak olvasható módba: minden pár újra szerkeszthet, függetlenül a próbaidőtől.",
+    fin_enforce_on_success: "A fizetős időszak élesítve.",
+    fin_enforce_off_success: "A fizetős időszak kikapcsolva.",
     fin_monthly_breakdown: "Havi bontás",
     fin_kpi_mrr: "MRR (EUR)",
     fin_kpi_mrr_hint:
@@ -2724,6 +2744,13 @@ const hu: LocaleMessages = {
     workspaces_section: "Páros munkaterületek",
     workspaces_count_one: "{n} munkaterület",
     workspaces_count_other: "{n} munkaterület",
+    solo_section: "Egyedüli felhasználók",
+    solo_help: "Egytagú munkaterületek — a párt még nem hívták meg, vagy nem csatlakozott.",
+    solo_count_one: "{n} egyedüli",
+    solo_count_other: "{n} egyedüli",
+    solo_empty: "Nincs egyedüli felhasználó.",
+    section_show: "Kibontás",
+    section_hide: "Összecsukás",
     demo_workspaces_section: "Demo munkaterületek",
     demo_workspaces_count_one: "{n} demo",
     demo_workspaces_count_other: "{n} demo",
