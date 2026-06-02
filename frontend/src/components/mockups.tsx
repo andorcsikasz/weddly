@@ -26,8 +26,9 @@ const STATUS_DOT_OFFSETS = [0, 16, 32, 48, 64] as const;
 
 /** Hero centrepiece — a stylised dashboard view of the app. Sidebar +
  *  main area with three live-looking cards (Budget, Guests, Seating).
- *  ViewBox 656×456 — 640×440 card with a 16px right/bottom buffer so the
- *  drop-shadow rect at (6,14) doesn't clip on the edges of the hero crop. */
+ *  ViewBox is offset to -8,-8 (same 656×456 size) so the 640×440 card sits
+ *  with an even 8px margin on every side — the 1.5px frame stroke then
+ *  renders fully instead of being clipped at the x=0 / y=0 edges. */
 export function WorkspaceMockup({ className }: Common) {
   const { t } = useT();
   const navItems: { key: string; label: string }[] = [
@@ -40,7 +41,7 @@ export function WorkspaceMockup({ className }: Common) {
   ];
   return (
     <svg
-      viewBox="0 0 656 456"
+      viewBox="-8 -8 656 456"
       role="img"
       aria-label={t("landing.mockup_aria_dashboard")}
       className={className}
