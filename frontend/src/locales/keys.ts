@@ -1034,6 +1034,8 @@ export interface LocaleMessages {
     pricing_amount_sub: string;
     /** Highlighted founding-offer callout: free for the first 200 couples. */
     pricing_after: string;
+    /** Full founding-offer explanation, surfaced behind the callout's info icon. */
+    pricing_after_detail: string;
     pricing_bullet_1: string;
     pricing_bullet_2: string;
     pricing_bullet_3: string;

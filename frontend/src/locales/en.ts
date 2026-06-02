@@ -931,7 +931,8 @@ const en: LocaleMessages = {
       "Sign up among the first 200 couples and Weddly stays free through your whole planning, up to 18 months. After that it's 5 € a month with a two-week free trial, every feature included.",
     pricing_amount: "5",
     pricing_amount_sub: "/ month",
-    pricing_after:
+    pricing_after: "Free for 18 months for the first 200 couples.",
+    pricing_after_detail:
       "We'd love to help make planning your wedding easier. If you and your partner both register among the first 200 couples, we won't charge you a thing for 18 months.",
     pricing_bullet_1: "2 weeks free to try, no card needed",
     pricing_bullet_2: "Every feature open to couples",

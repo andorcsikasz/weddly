@@ -8,6 +8,7 @@ import {
   Globe,
   Heart,
   History,
+  Info,
   LayoutGrid,
   Mail,
   Pause,
@@ -365,11 +366,28 @@ export default function LandingPage() {
                   {t("landing.pricing_amount_sub")}
                 </span>
               </div>
-              <div className="mt-3 flex gap-2.5 rounded-lg bg-umber-100 dark:bg-umber-700/50 px-3 py-2.5 ring-1 ring-umber-200/80 dark:ring-umber-600/50">
-                <Heart size={16} className="mt-0.5 shrink-0 text-umber-600 dark:text-umber-300" />
+              <div className="mt-3 flex items-center gap-2.5 rounded-lg bg-umber-100 dark:bg-umber-700/50 px-3 py-2.5 ring-1 ring-umber-200/80 dark:ring-umber-600/50">
                 <p className="font-grotesk text-sm leading-snug text-umber-800 dark:text-umber-100">
                   {t("landing.pricing_after")}
                 </p>
+                {/* Full founding-offer explanation tucked behind an info icon so
+                    the callout stays a single readable line. Tooltip shows on
+                    hover and keyboard focus. */}
+                <span className="group relative ml-auto shrink-0">
+                  <button
+                    type="button"
+                    aria-label={t("landing.pricing_after_detail")}
+                    className="flex h-5 w-5 items-center justify-center rounded-full text-umber-600 transition-colors hover:text-umber-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-umber-300 dark:hover:text-paper-50"
+                  >
+                    <Info size={16} aria-hidden />
+                  </button>
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute bottom-full right-0 z-10 mb-2 w-64 rounded-lg bg-umber-900 px-3 py-2 text-xs leading-snug text-paper-50 opacity-0 shadow-pop transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
+                  >
+                    {t("landing.pricing_after_detail")}
+                  </span>
+                </span>
               </div>
               <ul className="mt-5 space-y-2">
                 <IconRow tone="coffee" icon={<Gift size={16} />}>
