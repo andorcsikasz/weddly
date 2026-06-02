@@ -57,6 +57,7 @@ const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
 const PlanningPage = lazy(() => import("./pages/PlanningPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const SettingsLayout = lazy(() => import("./pages/SettingsLayout"));
+const BillingSettings = lazy(() => import("./pages/BillingSettings"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const RsvpCheckinPage = lazy(() => import("./pages/RsvpCheckinPage"));
 const RsvpPage = lazy(() => import("./pages/RsvpPage"));
@@ -624,6 +625,7 @@ export default function App() {
             <Route path="account" element={<ProfilePage tab="account" />} />
             <Route path="workspace" element={<ProfilePage tab="workspace" />} />
             <Route path="planning" element={<ProfilePage tab="planning" />} />
+            <Route path="billing" element={<BillingSettings />} />
             <Route path="data" element={<ProfilePage tab="data" />} />
           </Route>
           <Route

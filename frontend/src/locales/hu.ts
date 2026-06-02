@@ -174,6 +174,38 @@ const hu: LocaleMessages = {
     gate_open_inbox: "{provider} megnyitása",
     banner_done: "Megerősítettem",
   },
+  billing: {
+    title: "Előfizetés",
+    subtitle: "A csomagod, a számlázás és a számlák.",
+    plan_label: "Jelenlegi csomag",
+    plan_trialing: "Ingyenes próbaidő",
+    plan_founding: "Alapító tag",
+    plan_active: "Aktív előfizetés",
+    plan_past_due: "Fizetés szükséges",
+    plan_canceled: "Lemondva",
+    plan_none: "Nincs aktív csomag",
+    status_trialing:
+      "Az ingyenes próbaidőtök {date}-ig tart. Bármikor megadhattok egy kártyát a folytatáshoz.",
+    status_founding:
+      "Az első 200 párunk egyike vagytok — a Weddly nektek {date}-ig ingyenes. Kártya nem szükséges.",
+    status_active: "Köszönjük az előfizetést. A csomagotok {date}-kor újul meg.",
+    status_past_due:
+      "Az utolsó fizetés nem ment át. Frissítsétek a kártyát a teljes hozzáférésért.",
+    status_lapsed:
+      "Az ingyenes időszakotok véget ért, így a munkaterület csak olvasható. Fizessetek elő a szerkesztéshez — semmi nem vész el.",
+    price_line: "{price} / hó",
+    founding_spots: "{n} alapítói hely maradt",
+    subscribe_cta: "Előfizetés",
+    manage_cta: "Előfizetés kezelése",
+    opening: "Megnyitás…",
+    disabled_note:
+      "Az online fizetés még nem él. Az ingyenes időszak vége előtt e-mailben szólunk.",
+    error_generic: "Valami hiba történt. Próbáljátok újra.",
+    banner_title: "Csak olvasható mód",
+    banner_body:
+      "Az ingyenes időszakotok véget ért. Fizessetek elő a szerkesztés folytatásához — az adataitok biztonságban vannak.",
+    banner_cta: "Előfizetés",
+  },
   wedding_site: {
     page_title: "Esküvői oldal",
     loading: "Töltjük az oldalt…",
@@ -3229,6 +3261,7 @@ const hu: LocaleMessages = {
     tab_account: "Fiók",
     tab_workspace: "Munkaterület",
     tab_planning: "Tervezés",
+    tab_billing: "Előfizetés",
     tab_data: "Adatok",
   },
   profile: {

@@ -12,6 +12,11 @@ const DEFAULT_TIMEOUT_MS = 20_000;
  *  fetch caller needing to know about React state. */
 export const SESSION_EXPIRED_EVENT = "weddly:session-expired";
 
+/** Browser event dispatched on a 402 (subscription required) so the app shell
+ *  can surface the "your workspace is read-only" prompt without every write
+ *  caller having to special-case the billing state. */
+export const SUBSCRIPTION_REQUIRED_EVENT = "weddly:subscription-required";
+
 /** Code surfaced on the typed ApiError. Network-layer codes never come from
  *  the server — they're synthesized here so callers can branch on
  *  resilience signals without sniffing `instanceof TypeError`. */
@@ -20,6 +25,7 @@ export type ApiErrorCode =
   | "timeout"
   | "aborted"
   | "session_expired"
+  | "subscription_required"
   | "server_error"
   | "client_error";
 
@@ -192,6 +198,21 @@ export async function apiFetch<T>(
         }
         // 401 is not transient — never retry.
         throw new ApiError(401, "session_expired", msg, errBody.detail);
+      }
+      if (res.status === 402) {
+        // Billing lapsed — the workspace is read-only. Surface a typed event
+        // so the shell can show the subscribe prompt, and a typed error so the
+        // calling page can swallow it instead of toasting a generic failure.
+        if (typeof window !== "undefined") {
+          try {
+            window.dispatchEvent(
+              new CustomEvent(SUBSCRIPTION_REQUIRED_EVENT, { detail: errBody.detail }),
+            );
+          } catch {
+            /* CustomEvent may not exist on some odd embeds */
+          }
+        }
+        throw new ApiError(402, "subscription_required", msg, errBody.detail);
       }
       if (res.status >= 500) {
         lastTransientError = new ApiError(res.status, "server_error", msg, errBody.detail);

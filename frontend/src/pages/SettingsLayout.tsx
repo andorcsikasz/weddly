@@ -19,6 +19,7 @@ const TABS = [
   { id: "account", path: "account", labelKey: "settings.tab_account" },
   { id: "workspace", path: "workspace", labelKey: "settings.tab_workspace" },
   { id: "planning", path: "planning", labelKey: "settings.tab_planning" },
+  { id: "billing", path: "billing", labelKey: "settings.tab_billing" },
   { id: "data", path: "data", labelKey: "settings.tab_data" },
 ] as const;
 
@@ -56,7 +57,14 @@ export default function SettingsLayout() {
               }`
             }
           >
-            {t(tab.labelKey as `settings.tab_${"account" | "workspace" | "planning" | "data"}`)}
+            {t(
+              tab.labelKey as `settings.tab_${
+                | "account"
+                | "workspace"
+                | "planning"
+                | "billing"
+                | "data"}`,
+            )}
           </NavLink>
         ))}
       </nav>

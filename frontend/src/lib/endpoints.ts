@@ -41,6 +41,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
 } from "@shared/types";
+import type { BillingStatusResponse } from "@shared/billing";
 import type { BlogPost } from "@shared/blog_posts";
 import type { GuestPortalView } from "@shared/guest_portal";
 import type { PublicWeddingResponse } from "@shared/wedding_website";
@@ -283,6 +284,15 @@ export interface CoupleMembershipView {
   role: "owner" | "partner";
   joined_at: number;
 }
+
+export const billingApi = {
+  /** Current subscription snapshot + price + founding spots for the couple. */
+  status: () => apiFetch<BillingStatusResponse>("GET", "/api/billing/status"),
+  /** Start a Stripe-hosted Checkout — returns the redirect URL. */
+  checkout: () => apiFetch<{ url: string }>("POST", "/api/billing/checkout", {}),
+  /** Open the Stripe Billing Portal — returns the redirect URL. */
+  portal: () => apiFetch<{ url: string }>("POST", "/api/billing/portal", {}),
+};
 
 export const coupleApi = {
   current: () => apiFetch<{ couple: Couple | null }>("GET", "/api/couples/current"),

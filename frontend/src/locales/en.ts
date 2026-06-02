@@ -174,6 +174,36 @@ const en: LocaleMessages = {
     gate_open_inbox: "Open {provider}",
     banner_done: "I've verified",
   },
+  billing: {
+    title: "Subscription",
+    subtitle: "Your plan, billing and invoices.",
+    plan_label: "Current plan",
+    plan_trialing: "Free trial",
+    plan_founding: "Founding member",
+    plan_active: "Active subscription",
+    plan_past_due: "Payment needed",
+    plan_canceled: "Canceled",
+    plan_none: "No active plan",
+    status_trialing: "Your free trial runs until {date}. Add a card any time to keep going.",
+    status_founding:
+      "You're one of our first 200 couples — Weddly is free for you until {date}. No card needed.",
+    status_active: "Thanks for subscribing. Your plan renews on {date}.",
+    status_past_due:
+      "Your last payment didn't go through. Update your card to restore full access.",
+    status_lapsed:
+      "Your free period has ended, so the workspace is read-only. Subscribe to keep editing — nothing is deleted.",
+    price_line: "{price} / month",
+    founding_spots: "{n} founding spots left",
+    subscribe_cta: "Subscribe",
+    manage_cta: "Manage subscription",
+    opening: "Opening…",
+    disabled_note: "Online payment isn't live yet. We'll email you before your free period ends.",
+    error_generic: "Something went wrong. Please try again.",
+    banner_title: "Read-only mode",
+    banner_body:
+      "Your free period has ended. Subscribe to keep editing your workspace — your data is safe.",
+    banner_cta: "Subscribe",
+  },
   wedding_site: {
     page_title: "Wedding website",
     loading: "Loading the page…",
@@ -3195,6 +3225,7 @@ const en: LocaleMessages = {
     tab_account: "Account",
     tab_workspace: "Workspace",
     tab_planning: "Planning",
+    tab_billing: "Subscription",
     tab_data: "Data",
   },
   profile: {

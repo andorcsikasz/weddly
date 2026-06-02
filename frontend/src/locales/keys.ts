@@ -227,6 +227,37 @@ export interface LocaleMessages {
     gate_open_inbox: string;
     banner_done: string;
   };
+  /** Subscription / billing — the Settings → Subscription tab + the
+   *  read-only banner shown when a couple's free period lapses. */
+  billing: {
+    title: string;
+    subtitle: string;
+    plan_label: string;
+    plan_trialing: string;
+    plan_founding: string;
+    plan_active: string;
+    plan_past_due: string;
+    plan_canceled: string;
+    plan_none: string;
+    /** Body lines, some with a {date} placeholder. */
+    status_trialing: string;
+    status_founding: string;
+    status_active: string;
+    status_past_due: string;
+    status_lapsed: string;
+    /** "{price} / month" — price already formatted with the currency. */
+    price_line: string;
+    /** "{n} founding spots left". */
+    founding_spots: string;
+    subscribe_cta: string;
+    manage_cta: string;
+    opening: string;
+    disabled_note: string;
+    error_generic: string;
+    banner_title: string;
+    banner_body: string;
+    banner_cta: string;
+  };
   /** Public couple-branded landing at `/w/:slug` — first version: names,
    *  date, optional schedule, RSVP CTA. Followed by registry / story /
    *  travel sections once the schema picks them up. */
@@ -3654,6 +3685,7 @@ export interface LocaleMessages {
     tab_account: string;
     tab_workspace: string;
     tab_planning: string;
+    tab_billing: string;
     tab_data: string;
   };
   profile: {
