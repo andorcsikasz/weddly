@@ -2,15 +2,25 @@
 // forecast. The backend serves the live base; the projection (shared
 // projectRevenue) re-runs in the browser as the operator drags the sliders.
 
-import { Banknote, ChevronRight, DollarSign, Euro, Info, JapaneseYen } from "lucide-react";
+import {
+  Banknote,
+  ChevronRight,
+  DollarSign,
+  Euro,
+  Info,
+  JapaneseYen,
+  Lock,
+  LockOpen,
+} from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   type AdminFinancialPlannerOverview,
   type ForecastAssumptions,
   projectRevenue,
 } from "@shared/admin_financial_planner";
-import type { SubscriptionStatus } from "@shared/billing";
-import { AdminPageHeader } from "../components/admin";
+import { FOUNDING_CAP, type SubscriptionStatus } from "@shared/billing";
+import { AdminPageHeader, Pill } from "../components/admin";
+import { useConfirm, useToast } from "../components/ui";
 import { adminFinancialPlannerApi } from "../lib/endpoints";
 import { type FxRates, fetchFxRates } from "../lib/fx";
 import { formatMoney } from "../lib/format";
@@ -130,8 +140,11 @@ const TAX_FORMS: readonly TaxForm[] = [
 
 export default function AdminFinancialPlannerPage() {
   const { t, locale } = useT();
+  const confirm = useConfirm();
+  const toast = useToast();
   useDocumentMeta("admin.fin_title", "admin.fin_subtitle");
   const [data, setData] = useState<AdminFinancialPlannerOverview | null>(null);
+  const [enforcing, setEnforcing] = useState(false);
   const [a, setA] = useState<ForecastAssumptions>(DEFAULT_ASSUMPTIONS);
   // Költséghányad (a bevétel hány %-a a levonható költség) a profitalapú
   // adóformákhoz. Csak a KFT-sorokat befolyásolja.
@@ -179,6 +192,29 @@ export default function AdminFinancialPlannerPage() {
   const eur = (n: number) => formatMoney(n, "EUR", locale);
   const last = projection[projection.length - 1];
 
+  async function onToggleEnforcement(next: boolean) {
+    const ok = await confirm({
+      title: next
+        ? t("admin.fin_enforce_confirm_on_title")
+        : t("admin.fin_enforce_confirm_off_title"),
+      body: next ? t("admin.fin_enforce_confirm_on_body") : t("admin.fin_enforce_confirm_off_body"),
+      confirmLabel: next ? t("admin.fin_enforce_go_live") : t("admin.fin_enforce_turn_off"),
+      cancelLabel: t("common.cancel"),
+      destructive: next,
+    });
+    if (!ok) return;
+    setEnforcing(true);
+    try {
+      const fresh = await adminFinancialPlannerApi.setEnforcement(next);
+      setData(fresh);
+      toast.success(next ? t("admin.fin_enforce_on_success") : t("admin.fin_enforce_off_success"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setEnforcing(false);
+    }
+  }
+
   if (!data) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
@@ -190,6 +226,15 @@ export default function AdminFinancialPlannerPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
       <AdminPageHeader title={t("admin.fin_title")} subtitle={t("admin.fin_subtitle")} />
+
+      {/* Fizetés go-live vezérlő: a globális read-only paywall kapcsolója */}
+      <BillingLaunchCard
+        data={data}
+        busy={enforcing}
+        onToggle={onToggleEnforcement}
+        t={t}
+        locale={locale}
+      />
 
       {/* Élő árfolyam-sáv (EUR alapú) */}
       <FxStrip fx={fx} />
@@ -473,6 +518,92 @@ export default function AdminFinancialPlannerPage() {
         </section>
       )}
     </div>
+  );
+}
+
+/** Billing go-live control: the global read-only paywall switch. While OFF the
+ *  freeze is deferred and nobody is paywalled; the founder turns it on (once the
+ *  200-couple cohort fills) to start the payment period. */
+function BillingLaunchCard({
+  data,
+  busy,
+  onToggle,
+  t,
+  locale,
+}: {
+  data: AdminFinancialPlannerOverview;
+  busy: boolean;
+  onToggle: (next: boolean) => void;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  locale: string;
+}) {
+  const on = data.billing_enforcement_on;
+  const total = data.total_couples;
+  const pct = Math.min(100, Math.round((total / FOUNDING_CAP) * 100));
+  const ready = data.enforcement_ready;
+  return (
+    <section className="admin-card mt-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-paper-50">
+            {on ? <Lock size={15} aria-hidden /> : <LockOpen size={15} aria-hidden />}
+            {t("admin.fin_enforce_title")}
+            <Pill tone={on ? "blush" : "sage"}>
+              {on ? t("admin.fin_enforce_state_on") : t("admin.fin_enforce_state_off")}
+            </Pill>
+          </h2>
+          <p className="mt-1 max-w-prose text-xs text-neutral-500 dark:text-umber-300">
+            {on ? t("admin.fin_enforce_note_on") : t("admin.fin_enforce_note_off")}
+          </p>
+        </div>
+        {on ? (
+          <button
+            type="button"
+            onClick={() => onToggle(false)}
+            disabled={busy}
+            className="btn-ghost btn-sm shrink-0"
+          >
+            {t("admin.fin_enforce_turn_off")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onToggle(true)}
+            disabled={busy || !ready}
+            title={
+              ready ? undefined : t("admin.fin_enforce_not_ready", { n: total, cap: FOUNDING_CAP })
+            }
+            className="btn-primary btn-sm shrink-0"
+          >
+            {t("admin.fin_enforce_go_live")}
+          </button>
+        )}
+      </div>
+
+      {/* 200-pár előrehaladás + go-live jelzés */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-medium text-neutral-600 dark:text-umber-200">
+            {t("admin.fin_enforce_progress_label")}
+          </span>
+          <span className="tabular-nums font-semibold text-neutral-900 dark:text-paper-50">
+            {new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US").format(total)} /{" "}
+            {FOUNDING_CAP}
+          </span>
+        </div>
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800">
+          <div
+            className={`h-full rounded-full ${ready ? "bg-sage-500" : "bg-neutral-800/70 dark:bg-neutral-300/60"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        {!on && ready && (
+          <p className="mt-2 text-sm font-medium text-sage-700 dark:text-sage-300">
+            {t("admin.fin_enforce_ready_signal")}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 

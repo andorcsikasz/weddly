@@ -50,6 +50,12 @@ export interface AdminFinancialPlannerOverview {
   price_eur: number;
   price_huf: number;
   huf_per_eur: number;
+  /** Global read-only paywall switch. False = freeze deferred, nobody is
+   *  locked out yet (the default until the founder flips it on). */
+  billing_enforcement_on: boolean;
+  /** True once the founding cohort is full (total non-demo couples >= 200),
+   *  i.e. the freeze is ready to be turned on. Drives the admin go-live signal. */
+  enforcement_ready: boolean;
 }
 
 /** Editable forecast assumptions, all surfaced as sliders on the page. */

@@ -8,11 +8,12 @@
 import "../setup";
 
 import { beforeEach, describe, expect, test } from "bun:test";
+import type { AdminFinancialPlannerOverview } from "@shared/admin_financial_planner";
 import type { AdminCoupleView } from "@shared/types";
 import { type BillingStatusResponse, PAID_LAUNCH_DATE } from "@shared/billing";
 import type { Couple } from "@shared/types";
 import { db } from "../../src/db";
-import { activatePartnerFreeWindow } from "../../src/domain/billing";
+import { activatePartnerFreeWindow, setBillingEnforcement } from "../../src/domain/billing";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 
 /** Seed N placeholder non-demo couples with negative ids (all < any real id)
@@ -140,6 +141,7 @@ describe("billing state machine", () => {
     seedCouples(200);
     const { token, coupleId } = await bootstrapCouple("lapse@weddly.test");
     db.prepare("UPDATE couples SET trial_ends_at = 1 WHERE id = ?").run(coupleId);
+    setBillingEnforcement(true, 1); // paywall live, otherwise the freeze is deferred
 
     const get = await getCouple(token);
     expect(get.status).toBe(200);
@@ -161,6 +163,7 @@ describe("billing state machine", () => {
     seedCouples(200);
     const { token, coupleId } = await bootstrapCouple("comp@weddly.test");
     db.prepare("UPDATE couples SET trial_ends_at = 1 WHERE id = ?").run(coupleId); // lapsed
+    setBillingEnforcement(true, 1); // paywall live so revoke -> read-only is observable
     const adminToken = await addAdmin();
 
     const granted = await req<{ couple: AdminCoupleView }>(
@@ -188,6 +191,65 @@ describe("billing state machine", () => {
     expect(revoked.data.couple.billing.entitled).toBe(false);
     const blocked = await req("POST", "/api/households", { label: "Nope" }, { token });
     expect(blocked.status).toBe(402);
+  });
+
+  test("deferred freeze: while enforcement is OFF a lapsed couple still edits (no 402)", async () => {
+    seedCouples(200);
+    const { token, coupleId } = await bootstrapCouple("deferred@weddly.test");
+    db.prepare("UPDATE couples SET trial_ends_at = 1 WHERE id = ?").run(coupleId); // would lapse
+    // Leave enforcement OFF (the default) — nobody should be paywalled yet.
+
+    const get = await getCouple(token);
+    expect(get.data.couple.billing.entitled).toBe(true);
+
+    const edit = await req("POST", "/api/households", { label: "Still editable" }, { token });
+    expect(edit.status).toBe(201);
+  });
+
+  test("an admin-owned couple is never payment-obligated, even with enforcement ON", async () => {
+    seedCouples(200);
+    // admin@test.test is the pinned ADMIN_EMAILS value in setup.ts.
+    const { token, coupleId } = await bootstrapCouple("admin@test.test");
+    db.prepare("UPDATE couples SET trial_ends_at = 1 WHERE id = ?").run(coupleId); // expired trial
+    setBillingEnforcement(true, 1); // paywall live for everyone else
+
+    const get = await getCouple(token);
+    expect(get.data.couple.billing.entitled).toBe(true);
+
+    const edit = await req("POST", "/api/households", { label: "Admin edits" }, { token });
+    expect(edit.status).toBe(201);
+  });
+
+  test("admin enforcement toggle: requires admin, refuses ON below 200, then sets/clears", async () => {
+    const { token: userToken } = await bootstrapCouple("toggle-user@weddly.test");
+    const adminToken = await addAdmin();
+    const setEnforce = (on: boolean, tok: string) =>
+      req<AdminFinancialPlannerOverview>(
+        "POST",
+        "/api/admin/financial-planner/enforcement",
+        { on },
+        { token: tok },
+      );
+
+    // Non-admin is rejected.
+    const forbidden = await setEnforce(true, userToken);
+    expect(forbidden.status).toBe(403);
+
+    // Admin, but fewer than 200 couples → refused.
+    const tooEarly = await setEnforce(true, adminToken);
+    expect(tooEarly.status).toBe(400);
+
+    // Fill the cohort, then go live.
+    seedCouples(200);
+    const on = await setEnforce(true, adminToken);
+    expect(on.status).toBe(200);
+    expect(on.data.billing_enforcement_on).toBe(true);
+    expect(on.data.enforcement_ready).toBe(true);
+
+    // And turn it back off.
+    const off = await setEnforce(false, adminToken);
+    expect(off.status).toBe(200);
+    expect(off.data.billing_enforcement_on).toBe(false);
   });
 
   test("checkout + webhook degrade gracefully while Stripe is unconfigured", async () => {

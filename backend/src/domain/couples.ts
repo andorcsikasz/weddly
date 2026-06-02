@@ -21,9 +21,32 @@ import type {
   WeddingSeason,
   WeddingStyleTag,
 } from "@shared/types";
-import { db } from "../db";
+import { billingEnforcementOn, db } from "../db";
+import { isAdminEmail } from "./users";
 
 const VALID_SUBSCRIPTION_STATUSES: ReadonlySet<SubscriptionStatus> = new Set(SUBSCRIPTION_STATUSES);
+
+/** True when any member of the couple is a beta tester. Beta workspaces get the
+ *  platform free for as long as they are in beta, so they are never paywalled.
+ *  Matches how the admin list derives the Beta badge (users.couple_id link). */
+function coupleHasBetaMember(coupleId: number): boolean {
+  return (
+    db
+      .prepare("SELECT 1 AS hit FROM users WHERE couple_id = ? AND is_beta_tester = 1 LIMIT 1")
+      .get(coupleId) != null
+  );
+}
+
+/** True when any member of the couple is an admin. Admins are never payment-
+ *  obligated — their own workspace stays editable even after the paywall goes
+ *  live. Sourced from the ADMIN_EMAILS allowlist (isAdminEmail), so it tracks
+ *  env changes with no stored state. */
+function coupleHasAdminMember(coupleId: number): boolean {
+  const rows = db.prepare("SELECT email FROM users WHERE couple_id = ?").all(coupleId) as Array<{
+    email: string;
+  }>;
+  return rows.some((r) => isAdminEmail(r.email));
+}
 
 /** Build the billing snapshot for a couple row, computing live entitlement.
  *  Demo couples are always entitled — billing never touches the throwaway
@@ -41,13 +64,28 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
         founding_until: row.founding_until,
         nowMs,
       });
+  // Always-free / not-yet-enforced overrides. Only consulted when the plain
+  // verdict would lock the couple out, so the common paths (entitled subs, and
+  // the entire pre-launch period) pay no extra queries. Order is cheapest-first:
+  // a single PK read for the global switch short-circuits before any per-couple
+  // membership lookup, so while the freeze is deferred nothing else runs.
+  let entitled = verdict.entitled;
+  if (!entitled && !row.is_demo) {
+    if (
+      !billingEnforcementOn() || // deferred freeze: paywall not live yet
+      coupleHasBetaMember(row.id) || // beta testers: free while in beta
+      coupleHasAdminMember(row.id) // admins are never payment-obligated
+    ) {
+      entitled = true;
+    }
+  }
   return {
     subscription_status: status,
     trial_ends_at: row.trial_ends_at,
     founding_until: row.founding_until,
     is_founding_member: Boolean(row.is_founding_member),
     current_period_end: row.current_period_end,
-    entitled: verdict.entitled,
+    entitled,
     reason: verdict.reason,
   };
 }

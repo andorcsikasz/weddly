@@ -182,6 +182,16 @@ export function wipeAll(): void {
   // seedSupplierTaxonomy is idempotent so a partial wipe is safe.
   const { seedSupplierTaxonomy } = require("../src/domain/supplier_taxonomy");
   seedSupplierTaxonomy();
+  // Reset the billing kill-switch to its default (off) so a test that flips it
+  // on doesn't leak enforcement into the next one. The singleton row is never
+  // deleted, just reset.
+  try {
+    db.exec(
+      "UPDATE billing_control SET enforcement_on = 0, enforced_at = NULL, enforced_by_user_id = NULL WHERE id = 1",
+    );
+  } catch {
+    // Table may not exist on a very old DB; ignore.
+  }
 }
 
 /** Mark the most recently-issued verification token for the email as used.

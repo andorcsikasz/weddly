@@ -1080,3 +1080,15 @@ CREATE INDEX IF NOT EXISTS idx_couple_card_suggestions_created
   ON couple_card_suggestions(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_couple_card_suggestions_deck
   ON couple_card_suggestions(deck_id, locale);
+
+-- Global billing kill-switch (single row, id always 1). While enforcement_on=0
+-- the read-only paywall is DEFERRED: nobody is forced into read-only regardless
+-- of trial/founding state. The founder flips it on from the admin financial
+-- planner once the 200-couple founding cohort fills. Entitlement is still
+-- computed/stored per couple; this only gates whether it is ENFORCED.
+CREATE TABLE IF NOT EXISTS billing_control (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  enforcement_on INTEGER NOT NULL DEFAULT 0,
+  enforced_at INTEGER,
+  enforced_by_user_id INTEGER
+);

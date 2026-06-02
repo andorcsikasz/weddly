@@ -5,10 +5,11 @@
 import { type AdminFinancialPlannerOverview, HUF_PER_EUR } from "@shared/admin_financial_planner";
 import { type SubscriptionStatus, FOUNDING_CAP, MONTHLY_PRICE } from "@shared/billing";
 import type { Currency } from "@shared/types";
-import { db, now } from "../db";
-import { activeFoundingCount } from "../domain/billing";
+import { billingEnforcementOn, db, now } from "../db";
+import { addAuditLog } from "../lib/audit";
+import { activeFoundingCount, setBillingEnforcement } from "../domain/billing";
 import { requireAdmin } from "../domain/users";
-import { type Ctx, json, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 
 const STATUSES: SubscriptionStatus[] = [
   "trialing",
@@ -90,6 +91,8 @@ function overview(): AdminFinancialPlannerOverview {
     price_eur: MONTHLY_PRICE.EUR,
     price_huf: MONTHLY_PRICE.HUF,
     huf_per_eur: HUF_PER_EUR,
+    billing_enforcement_on: billingEnforcementOn(),
+    enforcement_ready: total >= FOUNDING_CAP,
   };
 }
 
@@ -98,6 +101,36 @@ function handleOverview(ctx: Ctx): Response {
   return json(overview());
 }
 
+/** Flip the global read-only paywall on or off (the manual go-live). Refuses to
+ *  turn ON before the 200-couple founding cohort is full — a server-side mirror
+ *  of the confirm gate so the freeze can never start early. */
+async function handleSetEnforcement(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const body = await readJson<{ on?: unknown }>(ctx.req);
+  if (typeof body.on !== "boolean") {
+    throw new HttpError(400, "`on` must be a boolean");
+  }
+  const total = (
+    db.prepare("SELECT COUNT(*) AS n FROM couples WHERE is_demo = 0").get() as { n: number }
+  ).n;
+  if (body.on && total < FOUNDING_CAP) {
+    throw new HttpError(400, "Cannot enforce billing before 200 couples", {
+      code: "founding_cohort_not_full",
+    });
+  }
+  setBillingEnforcement(body.on, admin.id);
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.billing.enforcement_set",
+    target_kind: "billing_control",
+    target_id: 1,
+    after: { enforcement_on: body.on },
+  });
+  return json(overview());
+}
+
 export function registerAdminFinancialPlannerRoutes(router: Router) {
   router.get("/api/admin/financial-planner/overview", handleOverview, true);
+  router.post("/api/admin/financial-planner/enforcement", handleSetEnforcement, true);
 }

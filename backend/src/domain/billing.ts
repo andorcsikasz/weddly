@@ -75,6 +75,18 @@ export function activeFoundingCount(nowMs: number = Date.now()): number {
   return row.n;
 }
 
+// ── Global enforcement switch ───────────────────────────────────────────────
+/** Flip the global read-only paywall on or off. Off (default) defers the freeze
+ *  so nobody is locked out; on makes lapsed couples read-only. Stamped with the
+ *  admin who flipped it. The read side is `billingEnforcementOn()` in db.ts. */
+export function setBillingEnforcement(on: boolean, adminUserId: number): void {
+  db.prepare(
+    `UPDATE billing_control
+        SET enforcement_on = ?, enforced_at = ?, enforced_by_user_id = ?
+      WHERE id = 1`,
+  ).run(on ? 1 : 0, now(), adminUserId);
+}
+
 // ── State transitions ───────────────────────────────────────────────────────
 /** Start the in-app trial. Called at onboarding for brand-new couples.
  *  The free window runs at least 14 days, but never ends before the public

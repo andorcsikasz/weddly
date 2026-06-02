@@ -746,6 +746,23 @@ db.prepare(
      AND subscription_status = 'none'`,
 ).run(FOUNDING_GRANDFATHER_UNTIL, BILLING_LAUNCH_MS);
 
+// Billing kill-switch singleton. Default enforcement_on=0 means the read-only
+// paywall is DEFERRED — no couple is locked out until the founder flips it on
+// from the admin financial planner (after the 200-couple cohort fills). Lives
+// in the DB (not env) so it is flippable at runtime from the UI with no
+// redeploy. INSERT OR IGNORE keeps the existing value on every boot.
+db.exec("INSERT OR IGNORE INTO billing_control (id, enforcement_on) VALUES (1, 0)");
+
+/** Whether the read-only paywall is currently being enforced. When false the
+ *  freeze is deferred and every couple stays editable (see toCoupleBilling). A
+ *  single indexed PK read; cheap enough to call per request. */
+export function billingEnforcementOn(): boolean {
+  const row = db.prepare("SELECT enforcement_on FROM billing_control WHERE id = 1").get() as
+    | { enforcement_on: number }
+    | undefined;
+  return row?.enforcement_on === 1;
+}
+
 // JSON array of the top-N Amadeus offers cached for a given route. We used to
 // cache only the cheapest price in `price_amount`; this column carries the
 // richer payload (carrier, duration, stops, depart/arrival ISO timestamps) so

@@ -1253,6 +1253,12 @@ export const adminCoupleCardsApi = {
 export const adminFinancialPlannerApi = {
   overview: () =>
     apiFetch<AdminFinancialPlannerOverview>("GET", "/api/admin/financial-planner/overview"),
+  /** Flip the global read-only paywall (the manual go-live). Returns the fresh
+   *  overview so the page reflects the new state without a refetch. */
+  setEnforcement: (on: boolean) =>
+    apiFetch<AdminFinancialPlannerOverview>("POST", "/api/admin/financial-planner/enforcement", {
+      on,
+    }),
 };
 
 export const adminAnalyticsApi = {
