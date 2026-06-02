@@ -452,7 +452,7 @@ export default function LandingPage() {
           down so the section doesn't dominate vertically on small
           viewports. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-16">
           <h2 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:whitespace-nowrap sm:text-4xl">
             {t("landing.faq_title")}
           </h2>
@@ -553,7 +553,7 @@ function LiveStatsBand() {
 
   return (
     <section className="relative bg-paper-50 dark:bg-umber-900">
-      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+      <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-14">
         <div className="mx-auto grid max-w-md grid-cols-2 gap-6 sm:gap-10">
           <StatCounter
             value={stats.couples}
@@ -644,7 +644,7 @@ function FoundingCouplesBand() {
     // (pitch + promise | the 200 hero, progress and CTA). The 200 leads — it's
     // the offer; the live booked count is a demoted progress sliver underneath.
     <section className="bg-umber-900">
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-14 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-12 sm:py-16 sm:text-left">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-16 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-12 sm:py-16 sm:text-left">
         {/* Left: the pitch */}
         <div className="sm:max-w-md">
           <h2 className="font-grotesk text-2xl font-medium leading-snug tracking-tight text-paper-50 sm:text-3xl">
@@ -983,7 +983,7 @@ function CoupleCardsTeaser() {
          *  requested 2:3 portrait aspect. Tablet stays 2-up; desktop lays
          *  out 4-up. Whole cards are clickable. */}
         <ul className="mt-5 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:grid-cols-4 lg:gap-5">
-          {COUPLE_CARD_DECKS.map((deck, idx) => (
+          {COUPLE_CARD_DECKS.filter((deck) => deck.id !== "lemonade").map((deck, idx) => (
             <li key={deck.id} className="h-full">
               <Link
                 to={`${toolPath}?deck=${deck.id}`}
