@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 /** Tones available to <Pill>. The colour mapping (see TONE_CLASSES below)
  *  matches what the Admin*Page surfaces were already using inline — pulling
  *  them through one component just lets us bump a shade (e.g. dark-mode
- *  violet text → violet-100 for WCAG AA) in one place. */
+ *  accent text → neutral-100 for WCAG AA) in one place. The legacy
+ *  "violet" tone now renders koromfekete neutral (admin lost its purple). */
 export type PillTone = "ink" | "paper" | "violet" | "blush" | "sage" | "muted";
 
 export interface PillProps {
@@ -28,13 +29,13 @@ export interface PillProps {
  *  blush-50 fill is too close to paper-50 to read as a chip on its own;
  *  every other tone has enough fill contrast to skip the ring. */
 const TONE_CLASSES: Record<PillTone, string> = {
-  ink: "bg-ink-800 text-paper-100 dark:bg-paper-100 dark:text-umber-900",
-  paper: "bg-paper-100 text-ink-700 dark:bg-umber-700/60 dark:text-paper-100",
-  violet: "bg-violet-100 text-violet-950 dark:bg-violet-500/20 dark:text-violet-100",
+  ink: "bg-neutral-800 text-paper-100 dark:bg-paper-100 dark:text-umber-900",
+  paper: "bg-paper-100 text-neutral-700 dark:bg-umber-700/60 dark:text-paper-100",
+  violet: "bg-neutral-100 text-neutral-950 dark:bg-neutral-500/20 dark:text-neutral-100",
   blush:
     "bg-blush-50 text-blush-800 ring-1 ring-blush-300 dark:bg-blush-400/15 dark:text-blush-200 dark:ring-blush-400/40",
   sage: "bg-sage-100 text-sage-900 dark:bg-sage-400/15 dark:text-sage-200",
-  muted: "bg-paper-200 text-ink-600 dark:bg-umber-800 dark:text-umber-300",
+  muted: "bg-paper-200 text-neutral-600 dark:bg-umber-800 dark:text-umber-300",
 };
 
 /** The dot variant uses the tone's text colour as the dot fill so the
@@ -43,18 +44,18 @@ const TONE_CLASSES: Record<PillTone, string> = {
  *  because the text colour in the dot variant is the surrounding ink
  *  colour, not the tone — the dot alone carries the status hue. */
 const DOT_CLASSES: Record<PillTone, string> = {
-  ink: "bg-ink-700 dark:bg-paper-100",
-  paper: "bg-ink-400 dark:bg-umber-300",
-  violet: "bg-violet-700 dark:bg-violet-300",
+  ink: "bg-neutral-700 dark:bg-paper-100",
+  paper: "bg-neutral-400 dark:bg-umber-300",
+  violet: "bg-neutral-700 dark:bg-neutral-300",
   blush: "bg-blush-600 dark:bg-blush-300",
   sage: "bg-sage-600 dark:bg-sage-300",
-  muted: "bg-ink-300 dark:bg-umber-500",
+  muted: "bg-neutral-300 dark:bg-umber-500",
 };
 
 const BASE_CLS = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
 
 const DOT_BASE_CLS =
-  "inline-flex items-center gap-1.5 text-[11px] font-medium text-ink-700 dark:text-paper-100";
+  "inline-flex items-center gap-1.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100";
 
 export function Pill({ tone = "paper", icon, children, srLabel, variant = "default" }: PillProps) {
   if (variant === "dot") {

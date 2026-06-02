@@ -39,8 +39,8 @@ type Loadable<T> = { status: "loading" } | { status: "ok"; data: T } | { status:
 // retired in the May 2026 design pass — the chrome lives in
 // `.admin-card` / `.admin-tile` and uppercase labels go through
 // `.eyebrow`. Only CARD_TITLE survives because its shape (sm + semibold
-// + non-uppercase ink-900) doesn't fit either utility.
-const CARD_TITLE = "text-sm font-semibold text-ink-900 dark:text-paper-50";
+// + non-uppercase neutral-900) doesn't fit either utility.
+const CARD_TITLE = "text-sm font-semibold text-neutral-900 dark:text-paper-50";
 
 // ─── Section anchor list (used by the sticky pills + scroll spy) ──────────
 
@@ -294,7 +294,7 @@ function PageHeader({
   return (
     <header className="sticky top-14 z-10 -mx-4 mb-6 border-b border-paper-200 bg-paper-100/85 px-4 py-2.5 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-10 xl:px-10 dark:border-umber-700 dark:bg-umber-900/85">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="m-0 shrink-0 text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+        <h1 className="m-0 shrink-0 text-lg font-semibold tracking-tight text-neutral-900 dark:text-paper-50">
           {t("admin.analytics_title")}
         </h1>
         {/* Subtitle is structurally present for screen readers but hidden
@@ -310,7 +310,7 @@ function PageHeader({
             value={activeId}
             onChange={(ev) => scrollTo(ev.target.value as SectionId)}
             aria-label={t("admin.analytics_jump_to_section")}
-            className="btn-lifted rounded-lg bg-paper-50 px-2 py-1 text-xs font-medium text-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 dark:bg-umber-800 dark:text-paper-100"
+            className="btn-lifted rounded-lg bg-paper-50 px-2 py-1 text-xs font-medium text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 dark:bg-umber-800 dark:text-paper-100"
           >
             {SECTIONS.map((s) => (
               <option key={s.id} value={s.id}>
@@ -333,10 +333,10 @@ function PageHeader({
                 onClick={() => scrollTo(s.id)}
                 aria-current={active ? "true" : undefined}
                 className={
-                  "btn-lifted rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 " +
+                  "btn-lifted rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 " +
                   (active
-                    ? "bg-violet-600 text-white dark:bg-violet-500"
-                    : "bg-paper-200/70 text-ink-700 hover:bg-paper-300/80 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700")
+                    ? "bg-neutral-600 text-white dark:bg-neutral-500"
+                    : "bg-paper-200/70 text-neutral-700 hover:bg-paper-300/80 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700")
                 }
               >
                 {t(s.labelKey)}
@@ -347,7 +347,7 @@ function PageHeader({
 
         <div className="ml-auto flex items-center gap-2">
           {lastLoadedLabel && (
-            <span className="hidden text-xs text-ink-500 dark:text-umber-300 sm:inline">
+            <span className="hidden text-xs text-neutral-500 dark:text-umber-300 sm:inline">
               {lastLoadedLabel}
             </span>
           )}
@@ -356,7 +356,7 @@ function PageHeader({
             onClick={onRefresh}
             disabled={refreshing}
             aria-label={t("admin.analytics_refresh")}
-            className="btn-lifted inline-flex items-center gap-1.5 rounded-lg bg-paper-50 px-3 py-1.5 text-xs font-medium text-ink-800 transition-colors duration-150 hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+            className="btn-lifted inline-flex items-center gap-1.5 rounded-lg bg-paper-50 px-3 py-1.5 text-xs font-medium text-neutral-800 transition-colors duration-150 hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
           >
             <RefreshIcon spinning={refreshing} />
             <span>{hasError ? t("admin.analytics_retry") : t("admin.analytics_refresh")}</span>
@@ -405,7 +405,9 @@ function SectionCard({
     <section className="admin-card !p-5">
       <header className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="eyebrow m-0">{title}</h2>
-        {subtitle && <span className="text-xs text-ink-500 dark:text-umber-300">{subtitle}</span>}
+        {subtitle && (
+          <span className="text-xs text-neutral-500 dark:text-umber-300">{subtitle}</span>
+        )}
       </header>
       {children}
     </section>
@@ -423,21 +425,21 @@ function KpiTile({
   label: string;
   value: string;
   sub?: string;
-  /** When true, swap the violet-tinted "primary" treatment in. Used for the
+  /** When true, swap the neutral-tinted "primary" treatment in. Used for the
    *  signature KPI in a strip (e.g. avg session minutes, total picks). */
   emphasis?: boolean;
 }) {
   const containerCls = emphasis
-    ? "rounded-xl bg-violet-50 p-3 ring-1 ring-violet-200 dark:bg-violet-500/10 dark:ring-violet-500/30"
+    ? "rounded-xl bg-neutral-50 p-3 ring-1 ring-neutral-200 dark:bg-neutral-500/10 dark:ring-neutral-500/30"
     : "admin-tile";
   return (
     <div className={containerCls}>
       <div className="eyebrow text-left">{label}</div>
-      <div className="stat-num mt-1 text-left text-2xl font-semibold text-ink-900 dark:text-paper-50">
+      <div className="stat-num mt-1 text-left text-2xl font-semibold text-neutral-900 dark:text-paper-50">
         {value}
       </div>
       {sub && (
-        <div className="stat-num mt-0.5 text-left text-xs text-ink-500 dark:text-umber-300">
+        <div className="stat-num mt-0.5 text-left text-xs text-neutral-500 dark:text-umber-300">
           {sub}
         </div>
       )}
@@ -462,7 +464,9 @@ function InnerCard({
     <div className={`admin-card${className ? ` ${className}` : ""}`}>
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <h3 className={`m-0 ${CARD_TITLE}`}>{title}</h3>
-        {subtitle && <span className="text-xs text-ink-500 dark:text-umber-300">{subtitle}</span>}
+        {subtitle && (
+          <span className="text-xs text-neutral-500 dark:text-umber-300">{subtitle}</span>
+        )}
       </div>
       {children}
     </div>
@@ -493,7 +497,7 @@ function SectionStatus({
           </div>
         </div>
       ) : (
-        <p className="text-sm text-ink-500 dark:text-umber-300">{message}</p>
+        <p className="text-sm text-neutral-500 dark:text-umber-300">{message}</p>
       )}
     </SectionCard>
   );
@@ -524,7 +528,7 @@ function MoneySection({
   return (
     <SectionCard title={title}>
       {!hasMoneyData ? (
-        <p className="text-sm text-ink-500 dark:text-umber-300">
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
           {t("admin.analytics_money_empty")}
         </p>
       ) : (
@@ -556,7 +560,7 @@ function MoneySection({
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <InnerCard title={t("admin.analytics_money_histogram_title")}>
               {m.budget_histogram.length === 0 ? (
-                <p className="text-sm text-ink-500 dark:text-umber-300">
+                <p className="text-sm text-neutral-500 dark:text-umber-300">
                   {t("admin.analytics_money_histogram_empty")}
                 </p>
               ) : (
@@ -567,7 +571,7 @@ function MoneySection({
                       className="grid grid-cols-[8rem_1fr_3rem] items-center gap-2"
                     >
                       <span
-                        className={`text-left text-xs text-ink-600 dark:text-umber-200 ${
+                        className={`text-left text-xs text-neutral-600 dark:text-umber-200 ${
                           b.bucket_max_huf === 0 ? "" : "stat-num"
                         }`}
                       >
@@ -581,7 +585,7 @@ function MoneySection({
                         pct={histogramMax > 0 ? (b.count / histogramMax) * 100 : 0}
                         ariaLabel={`${b.count}`}
                       />
-                      <span className="stat-num text-right text-xs font-medium text-ink-700 dark:text-paper-100">
+                      <span className="stat-num text-right text-xs font-medium text-neutral-700 dark:text-paper-100">
                         {formatNumber(b.count, locale)}
                       </span>
                     </li>
@@ -611,7 +615,7 @@ function PerCategoryTable({
   const sorted = useMemo(() => [...rows].sort((a, b) => b.avg_planned - a.avg_planned), [rows]);
   if (sorted.length === 0) {
     return (
-      <p className="text-sm text-ink-500 dark:text-umber-300">
+      <p className="text-sm text-neutral-500 dark:text-umber-300">
         {t("admin.analytics_money_per_category_empty")}
       </p>
     );
@@ -632,16 +636,16 @@ function PerCategoryTable({
         <tbody>
           {sorted.map((row) => (
             <tr key={row.category} className="border-t border-paper-200 dark:border-umber-700">
-              <td className="py-1 pr-2 text-left text-ink-800 dark:text-paper-100">
+              <td className="py-1 pr-2 text-left text-neutral-800 dark:text-paper-100">
                 {t(`budget.cat.${row.category}` as `budget.cat.${BudgetCategory}`)}
               </td>
-              <td className="stat-num py-1 pl-2 text-right text-ink-700 dark:text-paper-100">
+              <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                 {formatHuf(row.avg_planned, locale)}
               </td>
-              <td className="stat-num py-1 pl-2 text-right text-ink-700 dark:text-paper-100">
+              <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                 {formatHuf(row.avg_actual, locale)}
               </td>
-              <td className="stat-num py-1 pl-2 text-right text-ink-700 dark:text-paper-100">
+              <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                 {formatNumber(row.couples_with_data, locale)}
               </td>
             </tr>
@@ -718,13 +722,13 @@ function ActivitySection({
           subtitle={t("admin.analytics_activity_signups_daily_sub")}
         >
           {a.signups_daily.length === 0 ? (
-            <p className="text-sm text-ink-500 dark:text-umber-300">
+            <p className="text-sm text-neutral-500 dark:text-umber-300">
               {t("admin.analytics_activity_signups_empty")}
             </p>
           ) : (
             <>
               <SignupsAreaChart points={a.signups_daily} max={dailyMax} />
-              <div className="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-umber-300">
+              <div className="mt-1 flex justify-between text-[10px] text-neutral-500 dark:text-umber-300">
                 <span>{a.signups_daily[0]?.date ?? ""}</span>
                 <span>{a.signups_daily[a.signups_daily.length - 1]?.date ?? ""}</span>
               </div>
@@ -803,9 +807,9 @@ function FunnelStep({
   const clamped = Math.max(0, Math.min(100, pct));
   return (
     <div className="grid grid-cols-[8rem_1fr_5rem] items-center gap-2">
-      <span className="text-left text-xs text-ink-700 dark:text-paper-100">{label}</span>
+      <span className="text-left text-xs text-neutral-700 dark:text-paper-100">{label}</span>
       <HBar pct={clamped} ariaLabel={`${count}`} />
-      <span className="stat-num text-right text-xs font-medium text-ink-700 dark:text-paper-100">
+      <span className="stat-num text-right text-xs font-medium text-neutral-700 dark:text-paper-100">
         {formatNumber(count, locale)} · {clamped}%
       </span>
     </div>
@@ -839,12 +843,12 @@ function TrafficSection({
   if (!d.configured) {
     return (
       <SectionCard title={title}>
-        <div className="rounded-xl bg-violet-50 p-4 ring-1 ring-violet-200 dark:bg-violet-500/10 dark:ring-violet-500/30">
+        <div className="rounded-xl bg-neutral-50 p-4 ring-1 ring-neutral-200 dark:bg-neutral-500/10 dark:ring-neutral-500/30">
           <h3 className={`m-0 mb-1 ${CARD_TITLE}`}>{t("admin.analytics_traffic_setup_title")}</h3>
-          <p className="m-0 text-sm text-ink-600 dark:text-paper-200">
+          <p className="m-0 text-sm text-neutral-600 dark:text-paper-200">
             {t("admin.analytics_traffic_setup_body")}
           </p>
-          <ul className="mt-2 flex flex-col gap-1 text-xs text-ink-700 dark:text-paper-100">
+          <ul className="mt-2 flex flex-col gap-1 text-xs text-neutral-700 dark:text-paper-100">
             <li className="stat-num">GA4_PROPERTY_ID</li>
             <li className="stat-num">GA4_SERVICE_ACCOUNT_JSON</li>
           </ul>
@@ -862,10 +866,10 @@ function TrafficSection({
           <h3 className={`m-0 mb-1 ${CARD_TITLE}`}>
             {t("admin.analytics_traffic_api_error_title")}
           </h3>
-          <p className="m-0 break-words font-mono text-xs text-ink-700 dark:text-paper-100">
+          <p className="m-0 break-words font-mono text-xs text-neutral-700 dark:text-paper-100">
             {d.error}
           </p>
-          <p className="mt-2 mb-0 text-sm text-ink-600 dark:text-paper-200">
+          <p className="mt-2 mb-0 text-sm text-neutral-600 dark:text-paper-200">
             {t("admin.analytics_traffic_api_error_hint")}
           </p>
         </div>
@@ -889,7 +893,7 @@ function TrafficSection({
   if (!hasTraffic) {
     return (
       <SectionCard title={title} subtitle={subtitle}>
-        <p className="text-sm text-ink-500 dark:text-umber-300">
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
           {t("admin.analytics_traffic_empty")}
         </p>
       </SectionCard>
@@ -936,13 +940,13 @@ function TrafficSection({
           subtitle={t("admin.analytics_traffic_daily_sub")}
         >
           {d.active_users_daily.length === 0 || dailyMax === 0 ? (
-            <p className="text-sm text-ink-500 dark:text-umber-300">
+            <p className="text-sm text-neutral-500 dark:text-umber-300">
               {t("admin.analytics_traffic_empty")}
             </p>
           ) : (
             <>
               <SignupsAreaChart points={d.active_users_daily} max={dailyMax} />
-              <div className="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-umber-300">
+              <div className="mt-1 flex justify-between text-[10px] text-neutral-500 dark:text-umber-300">
                 <span>{d.active_users_daily[0]?.date ?? ""}</span>
                 <span>{d.active_users_daily[d.active_users_daily.length - 1]?.date ?? ""}</span>
               </div>
@@ -953,7 +957,7 @@ function TrafficSection({
         <div className="flex flex-col gap-3">
           <InnerCard title={t("admin.analytics_traffic_channels_title")}>
             {d.channels.length === 0 ? (
-              <p className="text-sm text-ink-500 dark:text-umber-300">
+              <p className="text-sm text-neutral-500 dark:text-umber-300">
                 {t("admin.analytics_traffic_channels_empty")}
               </p>
             ) : (
@@ -963,14 +967,14 @@ function TrafficSection({
                     key={c.channel}
                     className="grid grid-cols-[7rem_1fr_3rem] items-center gap-2 text-xs"
                   >
-                    <span className="truncate text-left text-ink-700 dark:text-paper-100">
+                    <span className="truncate text-left text-neutral-700 dark:text-paper-100">
                       {c.channel}
                     </span>
                     <HBar
                       pct={channelMax > 0 ? (c.sessions / channelMax) * 100 : 0}
                       ariaLabel={`${c.sessions}`}
                     />
-                    <span className="stat-num text-right font-medium text-ink-700 dark:text-paper-100">
+                    <span className="stat-num text-right font-medium text-neutral-700 dark:text-paper-100">
                       {formatNumber(c.sessions, locale)}
                     </span>
                   </li>
@@ -981,7 +985,7 @@ function TrafficSection({
 
           <InnerCard title={t("admin.analytics_traffic_countries_title")}>
             {d.countries.length === 0 ? (
-              <p className="text-sm text-ink-500 dark:text-umber-300">
+              <p className="text-sm text-neutral-500 dark:text-umber-300">
                 {t("admin.analytics_traffic_countries_empty")}
               </p>
             ) : (
@@ -991,14 +995,14 @@ function TrafficSection({
                     key={c.country}
                     className="grid grid-cols-[7rem_1fr_3rem] items-center gap-2 text-xs"
                   >
-                    <span className="truncate text-left text-ink-700 dark:text-paper-100">
+                    <span className="truncate text-left text-neutral-700 dark:text-paper-100">
                       {c.country}
                     </span>
                     <HBar
                       pct={countryMax > 0 ? (c.users / countryMax) * 100 : 0}
                       ariaLabel={`${c.users}`}
                     />
-                    <span className="stat-num text-right font-medium text-ink-700 dark:text-paper-100">
+                    <span className="stat-num text-right font-medium text-neutral-700 dark:text-paper-100">
                       {formatNumber(c.users, locale)}
                     </span>
                   </li>
@@ -1012,7 +1016,7 @@ function TrafficSection({
       <div className="mt-3">
         <InnerCard title={t("admin.analytics_traffic_top_pages_title")}>
           {d.top_pages.length === 0 ? (
-            <p className="text-sm text-ink-500 dark:text-umber-300">
+            <p className="text-sm text-neutral-500 dark:text-umber-300">
               {t("admin.analytics_traffic_top_pages_empty")}
             </p>
           ) : (
@@ -1032,13 +1036,13 @@ function TrafficSection({
                 <tbody>
                   {d.top_pages.slice(0, 10).map((row) => (
                     <tr key={row.path} className="border-t border-paper-200 dark:border-umber-700">
-                      <td className="py-1 pr-2 text-left text-ink-800 dark:text-paper-100">
+                      <td className="py-1 pr-2 text-left text-neutral-800 dark:text-paper-100">
                         <span className="block truncate">{row.path}</span>
                       </td>
-                      <td className="stat-num py-1 pl-2 text-right text-ink-700 dark:text-paper-100">
+                      <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                         {formatNumber(row.views, locale)}
                       </td>
-                      <td className="stat-num py-1 pl-2 text-right text-ink-700 dark:text-paper-100">
+                      <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                         {formatNumber(row.users, locale)}
                       </td>
                     </tr>
@@ -1084,7 +1088,7 @@ function PicksSection({
   return (
     <SectionCard title={title}>
       {!hasPicks ? (
-        <p className="text-sm text-ink-500 dark:text-umber-300">
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
           {t("admin.analytics_picks_empty")}
         </p>
       ) : (
@@ -1120,7 +1124,7 @@ function PicksSection({
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
             <InnerCard title={t("admin.analytics_picks_top_title")}>
               {p.top_picks.length === 0 ? (
-                <p className="text-sm text-ink-500 dark:text-umber-300">
+                <p className="text-sm text-neutral-500 dark:text-umber-300">
                   {t("admin.analytics_picks_top_empty")}
                 </p>
               ) : (
@@ -1142,10 +1146,10 @@ function PicksSection({
                           key={row.supplier_id}
                           className="border-t border-paper-200 dark:border-umber-700"
                         >
-                          <td className="py-1 pr-2 text-left text-ink-800 dark:text-paper-100">
+                          <td className="py-1 pr-2 text-left text-neutral-800 dark:text-paper-100">
                             <span className="block truncate">{row.display_name}</span>
                           </td>
-                          <td className="py-1 px-2 text-left text-xs text-ink-700 dark:text-paper-100">
+                          <td className="py-1 px-2 text-left text-xs text-neutral-700 dark:text-paper-100">
                             {t(
                               `suppliers.cat.${row.category}` as `suppliers.cat.${SupplierCategory}`,
                             )}
@@ -1153,7 +1157,7 @@ function PicksSection({
                           <td className="py-1 px-2 text-left">
                             <SourceBadge source={row.source} />
                           </td>
-                          <td className="stat-num py-1 pl-2 text-right text-ink-700 dark:text-paper-100">
+                          <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                             {formatNumber(row.pick_count, locale)}
                           </td>
                         </tr>
@@ -1166,7 +1170,7 @@ function PicksSection({
 
             <InnerCard title={t("admin.analytics_picks_coverage_title")}>
               {coverageSorted.length === 0 ? (
-                <p className="text-sm text-ink-500 dark:text-umber-300">
+                <p className="text-sm text-neutral-500 dark:text-umber-300">
                   {t("admin.analytics_picks_coverage_empty")}
                 </p>
               ) : (
@@ -1191,15 +1195,15 @@ function PicksSection({
                             key={row.category}
                             className="border-t border-paper-200 dark:border-umber-700"
                           >
-                            <td className="py-1 pr-2 text-left text-ink-800 dark:text-paper-100">
+                            <td className="py-1 pr-2 text-left text-neutral-800 dark:text-paper-100">
                               {t(
                                 `suppliers.cat.${row.category}` as `suppliers.cat.${SupplierCategory}`,
                               )}
                             </td>
-                            <td className="stat-num py-1 px-2 text-right text-ink-700 dark:text-paper-100">
+                            <td className="stat-num py-1 px-2 text-right text-neutral-700 dark:text-paper-100">
                               {formatNumber(row.picked, locale)}
                             </td>
-                            <td className="stat-num py-1 pl-2 text-right text-ink-700 dark:text-paper-100">
+                            <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                               {pct}%
                             </td>
                           </tr>
@@ -1274,7 +1278,7 @@ function SourceMiniBar({
       >
         {curated > 0 && (
           <div
-            className="bg-violet-600 dark:bg-violet-500"
+            className="bg-neutral-600 dark:bg-neutral-500"
             style={{ width: `${cPct}%` }}
             title={`${t("admin.analytics_source_curated")} · ${formatNumber(curated, locale)}`}
           />
@@ -1294,9 +1298,9 @@ function SourceMiniBar({
           />
         )}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-700 dark:text-paper-100">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-700 dark:text-paper-100">
         <LegendDot
-          colourClass="bg-violet-600 dark:bg-violet-500"
+          colourClass="bg-neutral-600 dark:bg-neutral-500"
           label={t("admin.analytics_source_curated")}
           value={formatNumber(curated, locale)}
         />
@@ -1328,7 +1332,7 @@ function LegendDot({
     <span className="inline-flex items-center gap-1.5">
       <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${colourClass}`} />
       <span>{label}</span>
-      <span className="stat-num text-ink-500 dark:text-umber-300">{value}</span>
+      <span className="stat-num text-neutral-500 dark:text-umber-300">{value}</span>
     </span>
   );
 }
@@ -1449,7 +1453,7 @@ function TimeOfDayHeatmap({ matrix, max }: { matrix: number[][]; max: number }) 
 
   if (max <= 0) {
     return (
-      <p className="text-sm text-ink-500 dark:text-umber-300">
+      <p className="text-sm text-neutral-500 dark:text-umber-300">
         {t("admin.analytics_engagement_heatmap_empty")}
       </p>
     );
@@ -1470,7 +1474,7 @@ function TimeOfDayHeatmap({ matrix, max }: { matrix: number[][]; max: number }) 
             x={ROW_LABEL_W + h * (CELL + GAP) + CELL / 2}
             y={COL_LABEL_H - 4}
             textAnchor="middle"
-            className="fill-ink-500 dark:fill-umber-300"
+            className="fill-neutral-500 dark:fill-umber-300"
             fontSize="9"
           >
             {String(h).padStart(2, "0")}
@@ -1485,7 +1489,7 @@ function TimeOfDayHeatmap({ matrix, max }: { matrix: number[][]; max: number }) 
                 x={ROW_LABEL_W - 6}
                 y={rowY + CELL / 2 + 3}
                 textAnchor="end"
-                className="fill-ink-500 dark:fill-umber-300"
+                className="fill-neutral-500 dark:fill-umber-300"
                 fontSize="9"
               >
                 {dowShort[dow]}
@@ -1501,7 +1505,7 @@ function TimeOfDayHeatmap({ matrix, max }: { matrix: number[][]; max: number }) 
                     width={CELL}
                     height={CELL}
                     rx={2}
-                    className="fill-violet-500"
+                    className="fill-neutral-500"
                     fillOpacity={opacity === 0 ? 0.06 : 0.18 + opacity * 0.82}
                   >
                     <title>
@@ -1534,7 +1538,7 @@ function TopFeaturesList({
   const maxCount = rows.reduce((m, r) => Math.max(m, r.count), 0);
   if (rows.length === 0) {
     return (
-      <p className="text-sm text-ink-500 dark:text-umber-300">
+      <p className="text-sm text-neutral-500 dark:text-umber-300">
         {t("admin.analytics_engagement_top_features_empty")}
       </p>
     );
@@ -1549,20 +1553,20 @@ function TopFeaturesList({
             className="grid grid-cols-[7rem_1fr_3rem] items-center gap-2 text-xs"
           >
             <div className="min-w-0">
-              <div className="truncate text-left font-medium text-ink-800 dark:text-paper-100">
+              <div className="truncate text-left font-medium text-neutral-800 dark:text-paper-100">
                 {row.feature}
               </div>
-              <div className="text-[10px] text-ink-500 dark:text-umber-300">
+              <div className="text-[10px] text-neutral-500 dark:text-umber-300">
                 {t("admin.analytics_engagement_users", { count: row.users })}
               </div>
             </div>
             <div className="relative h-2 w-full rounded-full bg-paper-200 dark:bg-umber-700">
               <div
-                className="h-full rounded-full bg-violet-600 dark:bg-violet-500"
+                className="h-full rounded-full bg-neutral-600 dark:bg-neutral-500"
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <span className="stat-num text-right font-semibold text-ink-800 dark:text-paper-50">
+            <span className="stat-num text-right font-semibold text-neutral-800 dark:text-paper-50">
               {formatNumber(row.count, locale)}
             </span>
           </li>
@@ -1582,7 +1586,7 @@ function TopUsersList({
   const { t } = useT();
   if (users.length === 0) {
     return (
-      <p className="text-sm text-ink-500 dark:text-umber-300">
+      <p className="text-sm text-neutral-500 dark:text-umber-300">
         {t("admin.analytics_engagement_top_users_empty")}
       </p>
     );
@@ -1597,24 +1601,24 @@ function TopUsersList({
             key={u.user_id}
             className="grid grid-cols-[1.25rem_minmax(0,1fr)_3.5rem_3rem] items-center gap-2 text-xs"
           >
-            <span className="stat-num text-ink-400 dark:text-umber-300">
+            <span className="stat-num text-neutral-400 dark:text-umber-300">
               {String(i + 1).padStart(2, "0")}
             </span>
             <div className="min-w-0">
-              <div className="truncate font-medium text-ink-900 dark:text-paper-50">
+              <div className="truncate font-medium text-neutral-900 dark:text-paper-50">
                 {u.full_name}
               </div>
-              <div className="truncate text-[10px] text-ink-500 dark:text-umber-300">
+              <div className="truncate text-[10px] text-neutral-500 dark:text-umber-300">
                 {formatRelative(u.last_seen_at, locale, t)}
               </div>
             </div>
             <div className="relative h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
               <div
-                className="h-full rounded-full bg-violet-600 dark:bg-violet-500"
+                className="h-full rounded-full bg-neutral-600 dark:bg-neutral-500"
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <span className="stat-num text-right font-semibold text-ink-800 dark:text-paper-50">
+            <span className="stat-num text-right font-semibold text-neutral-800 dark:text-paper-50">
               {formatNumber(u.event_count, locale)}
             </span>
           </li>
@@ -1671,7 +1675,7 @@ function DemoSection({
   return (
     <SectionCard title={title} subtitle={t("admin.analytics_demo_sub")}>
       {!hasDemos ? (
-        <p className="text-sm text-ink-500 dark:text-umber-300">
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
           {t("admin.analytics_demo_empty")}
         </p>
       ) : (
@@ -1712,13 +1716,13 @@ function DemoSection({
               subtitle={t("admin.analytics_demo_daily_sub")}
             >
               {d.demos_daily.length === 0 || dailyMax === 0 ? (
-                <p className="text-sm text-ink-500 dark:text-umber-300">
+                <p className="text-sm text-neutral-500 dark:text-umber-300">
                   {t("admin.analytics_demo_empty")}
                 </p>
               ) : (
                 <>
                   <SignupsAreaChart points={d.demos_daily} max={dailyMax} />
-                  <div className="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-umber-300">
+                  <div className="mt-1 flex justify-between text-[10px] text-neutral-500 dark:text-umber-300">
                     <span>{d.demos_daily[0]?.date ?? ""}</span>
                     <span>{d.demos_daily[d.demos_daily.length - 1]?.date ?? ""}</span>
                   </div>
@@ -1731,7 +1735,7 @@ function DemoSection({
               subtitle={t("admin.analytics_demo_top_features_sub")}
             >
               {d.top_features.length === 0 ? (
-                <p className="text-sm text-ink-500 dark:text-umber-300">
+                <p className="text-sm text-neutral-500 dark:text-umber-300">
                   {t("admin.analytics_demo_top_features_empty")}
                 </p>
               ) : (
@@ -1747,10 +1751,10 @@ function DemoSection({
                         className="grid grid-cols-[7rem_1fr_4rem] items-center gap-2 text-xs"
                       >
                         <div className="min-w-0">
-                          <div className="truncate text-left font-medium text-ink-800 dark:text-paper-100">
+                          <div className="truncate text-left font-medium text-neutral-800 dark:text-paper-100">
                             {f.feature}
                           </div>
-                          <div className="text-[10px] text-ink-500 dark:text-umber-300">
+                          <div className="text-[10px] text-neutral-500 dark:text-umber-300">
                             {t(
                               f.demos === 1
                                 ? "admin.analytics_demo_feature_demos_one"
@@ -1765,7 +1769,7 @@ function DemoSection({
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <span className="stat-num text-right font-semibold text-ink-800 dark:text-paper-50">
+                        <span className="stat-num text-right font-semibold text-neutral-800 dark:text-paper-50">
                           {formatNumber(f.count, locale)}
                         </span>
                       </li>
@@ -1773,7 +1777,7 @@ function DemoSection({
                   })}
                 </ul>
               )}
-              <p className="mt-3 border-t border-paper-200 pt-2 text-[11px] text-ink-500 dark:border-umber-700 dark:text-umber-300">
+              <p className="mt-3 border-t border-paper-200 pt-2 text-[11px] text-neutral-500 dark:border-umber-700 dark:text-umber-300">
                 {t("admin.analytics_demo_events_help")}
               </p>
             </InnerCard>
@@ -1878,13 +1882,13 @@ function SignupsAreaChart({
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop
               offset="0%"
-              className="text-violet-500"
+              className="text-neutral-500"
               stopColor="currentColor"
               stopOpacity={0.35}
             />
             <stop
               offset="100%"
-              className="text-violet-500"
+              className="text-neutral-500"
               stopColor="currentColor"
               stopOpacity={0}
             />
@@ -1906,7 +1910,7 @@ function SignupsAreaChart({
               x={W - 4}
               y={tick.y + 3}
               textAnchor="end"
-              className="fill-ink-400 stat-num dark:fill-umber-300"
+              className="fill-neutral-400 stat-num dark:fill-umber-300"
               fontSize="9"
             >
               {tick.value}
@@ -1916,7 +1920,7 @@ function SignupsAreaChart({
         <path d={fillPath} fill={`url(#${gradientId})`} stroke="none" />
         <path
           d={path}
-          className="stroke-violet-600 dark:stroke-violet-300"
+          className="stroke-neutral-600 dark:stroke-neutral-300"
           strokeWidth={1.75}
           fill="none"
           strokeLinecap="round"
@@ -1934,7 +1938,7 @@ function SignupsAreaChart({
               x={p.x}
               y={H - 6}
               textAnchor={i === 0 ? "start" : i === lastIdx ? "end" : "middle"}
-              className="fill-ink-400 stat-num dark:fill-umber-300"
+              className="fill-neutral-400 stat-num dark:fill-umber-300"
               fontSize="9"
             >
               {short}
@@ -1948,7 +1952,7 @@ function SignupsAreaChart({
               x2={hoveredCoord.x}
               y1={PAD_TOP - 4}
               y2={baselineY}
-              className="stroke-violet-600/40 dark:stroke-violet-300/40"
+              className="stroke-neutral-600/40 dark:stroke-neutral-300/40"
               strokeWidth={1}
               strokeDasharray="2 3"
               vectorEffect="non-scaling-stroke"
@@ -1957,24 +1961,24 @@ function SignupsAreaChart({
               cx={hoveredCoord.x}
               cy={hoveredCoord.y}
               r={3.5}
-              className="fill-violet-600 dark:fill-violet-300"
+              className="fill-neutral-600 dark:fill-neutral-300"
             />
             <circle
               cx={hoveredCoord.x}
               cy={hoveredCoord.y}
               r={6}
-              className="fill-violet-600/20 dark:fill-violet-300/20"
+              className="fill-neutral-600/20 dark:fill-neutral-300/20"
             />
           </g>
         )}
       </svg>
       {hovered && hoverIdx !== null && (
         <div
-          className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-2 rounded-md border border-ink-100 bg-white px-2 py-1 text-[11px] font-medium text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
+          className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-2 rounded-md border border-neutral-100 bg-white px-2 py-1 text-[11px] font-medium text-neutral-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
           style={{ left: `${hoveredLeftPct}%` }}
         >
           <div>{hovered.date}</div>
-          <div className="stat-num text-violet-600 dark:text-violet-300">{hovered.count}</div>
+          <div className="stat-num text-neutral-600 dark:text-neutral-300">{hovered.count}</div>
         </div>
       )}
     </div>
@@ -2003,7 +2007,7 @@ function HBar({ pct, ariaLabel }: { pct: number; ariaLabel: string }) {
       aria-label={ariaLabel}
     >
       <div
-        className="h-full rounded bg-violet-600 dark:bg-violet-500"
+        className="h-full rounded bg-neutral-600 dark:bg-neutral-500"
         style={{ width: `${clamped}%` }}
       />
     </div>

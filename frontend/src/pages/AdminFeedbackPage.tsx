@@ -302,10 +302,10 @@ export default function AdminFeedbackPage() {
         </div>
       ) : loadable.status === "error" ? (
         <div className="admin-card flex flex-col items-center justify-center space-y-2 py-8 text-center">
-          <p className="text-sm text-ink-700 dark:text-paper-100">
+          <p className="text-sm text-neutral-700 dark:text-paper-100">
             {t("admin.feedback_load_error_title")}
           </p>
-          <p className="text-xs text-ink-500 dark:text-umber-300">
+          <p className="text-xs text-neutral-500 dark:text-umber-300">
             {t("admin.feedback_load_error_body")}
           </p>
           <div className="pt-1">
@@ -351,35 +351,37 @@ export default function AdminFeedbackPage() {
                   >
                     <td className="py-3 pr-4">
                       {displayName && (
-                        <p className="font-medium text-ink-900 dark:text-paper-50">{displayName}</p>
+                        <p className="font-medium text-neutral-900 dark:text-paper-50">
+                          {displayName}
+                        </p>
                       )}
                       {displayEmail && (
                         <a
                           href={`mailto:${displayEmail}`}
-                          className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-50"
+                          className="mt-0.5 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-800 dark:text-umber-300 dark:hover:text-paper-50"
                         >
                           <Mail size={11} aria-hidden />
                           {displayEmail}
                         </a>
                       )}
                       {!displayName && !displayEmail && (
-                        <span className="text-xs text-ink-500 dark:text-umber-300">
+                        <span className="text-xs text-neutral-500 dark:text-umber-300">
                           {t("admin.feedback_anon")}
                         </span>
                       )}
                     </td>
                     <td className="py-3 pr-4">
                       {e.message ? (
-                        <p className="max-w-md whitespace-pre-wrap text-sm text-ink-800 dark:text-paper-100">
+                        <p className="max-w-md whitespace-pre-wrap text-sm text-neutral-800 dark:text-paper-100">
                           {e.message}
                         </p>
                       ) : (
-                        <span className="text-xs text-ink-500 dark:text-umber-300">
+                        <span className="text-xs text-neutral-500 dark:text-umber-300">
                           {t("admin.feedback_no_message")}
                         </span>
                       )}
                       {/* Mobile fallback: surface rating/monthly inline when hidden columns are off. */}
-                      <div className="mt-1 flex gap-3 text-xs text-ink-500 dark:text-umber-300 sm:hidden">
+                      <div className="mt-1 flex gap-3 text-xs text-neutral-500 dark:text-umber-300 sm:hidden">
                         {e.rating !== null && <span>★ {e.rating}/10</span>}
                         {e.monthly_value_ft !== null && e.monthly_value_ft > 0 && (
                           <span>{fmtMoney(e.monthly_value_ft, e.locale)}</span>
@@ -388,26 +390,26 @@ export default function AdminFeedbackPage() {
                     </td>
                     <td className="hidden py-3 pr-4 sm:table-cell">
                       {e.rating === null ? (
-                        <span className="text-ink-300 dark:text-umber-300">—</span>
+                        <span className="text-neutral-300 dark:text-umber-300">—</span>
                       ) : (
-                        <span className="font-medium text-ink-900 dark:text-paper-50">
+                        <span className="font-medium text-neutral-900 dark:text-paper-50">
                           {e.rating}/10
                         </span>
                       )}
                     </td>
                     <td className="hidden py-3 pr-4 md:table-cell">
                       {e.monthly_value_ft === null || e.monthly_value_ft === 0 ? (
-                        <span className="text-ink-300 dark:text-umber-300">—</span>
+                        <span className="text-neutral-300 dark:text-umber-300">—</span>
                       ) : (
-                        <span className="text-ink-900 dark:text-paper-50">
+                        <span className="text-neutral-900 dark:text-paper-50">
                           {fmtMoney(e.monthly_value_ft, e.locale)}
                         </span>
                       )}
                     </td>
-                    <td className="hidden py-3 pr-4 text-xs text-ink-500 dark:text-umber-300 md:table-cell">
+                    <td className="hidden py-3 pr-4 text-xs text-neutral-500 dark:text-umber-300 md:table-cell">
                       {sourceLabel(e, t)}
                     </td>
-                    <td className="hidden py-3 pr-4 text-xs text-ink-500 dark:text-umber-300 sm:table-cell">
+                    <td className="hidden py-3 pr-4 text-xs text-neutral-500 dark:text-umber-300 sm:table-cell">
                       {fmtDate(e.created_at)}
                     </td>
                     <td className="py-3 pr-4">

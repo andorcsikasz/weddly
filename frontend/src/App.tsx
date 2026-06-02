@@ -103,7 +103,9 @@ function RequireAdmin({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (user && !user.is_admin) return <Navigate to="/app" replace />;
-  return children;
+  // Admin surface rides the landing's General Sans voice (`font-grotesk`)
+  // rather than the app's default Inter, per user direction 2026-06-02.
+  return <div className="font-grotesk">{children}</div>;
 }
 
 /** Legacy `/g/:slug/:code` → `/w/:slug/:code`. The merged Vendégoldal

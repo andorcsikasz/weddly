@@ -456,8 +456,8 @@ export default function AdminUsersPage() {
       : 0;
     return (
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-        <span className="font-medium text-ink-900 dark:text-paper-50">{u.full_name}</span>
-        <span className="text-xs text-ink-500 dark:text-umber-300 break-all">{u.email}</span>
+        <span className="font-medium text-neutral-900 dark:text-paper-50">{u.full_name}</span>
+        <span className="text-xs text-neutral-500 dark:text-umber-300 break-all">{u.email}</span>
         {u.is_admin && (
           <Pill tone="violet" srLabel={t("admin.badge_admin")}>
             {t("admin.badge_admin")}
@@ -513,7 +513,7 @@ export default function AdminUsersPage() {
           </span>
         )}
         {opts.showLastActive && (
-          <span className="text-[11px] text-ink-500 dark:text-umber-300">
+          <span className="text-[11px] text-neutral-500 dark:text-umber-300">
             {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
           </span>
         )}
@@ -655,19 +655,21 @@ export default function AdminUsersPage() {
       >
         <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
           <div className="whitespace-nowrap">
-            <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
+            <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
               {workspaceId(c)}
             </code>
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="font-medium text-ink-900 dark:text-paper-50">{workspaceLabel(c)}</span>
+            <span className="font-medium text-neutral-900 dark:text-paper-50">
+              {workspaceLabel(c)}
+            </span>
             {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
             {!c.is_demo && renderBillingPill(c)}
             {!c.is_demo && (
               <button
                 type="button"
                 onClick={() => onToggleFree(c)}
-                className="text-[11px] font-medium text-ink-500 underline-offset-2 hover:underline dark:text-umber-300"
+                className="text-[11px] font-medium text-neutral-500 underline-offset-2 hover:underline dark:text-umber-300"
               >
                 {c.billing.subscription_status === "founding"
                   ? t("admin.revoke_free")
@@ -675,14 +677,14 @@ export default function AdminUsersPage() {
               </button>
             )}
             {members.length === 1 && (
-              <span className="text-[11px] text-ink-500 dark:text-umber-300">
+              <span className="text-[11px] text-neutral-500 dark:text-umber-300">
                 {t("admin.workspace_solo_member")}
               </span>
             )}
           </div>
           <div>
             {members.length === 0 ? (
-              <span className="text-xs text-ink-500 dark:text-umber-300">—</span>
+              <span className="text-xs text-neutral-500 dark:text-umber-300">—</span>
             ) : (
               <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
                 {members.map((u) => (
@@ -693,9 +695,9 @@ export default function AdminUsersPage() {
               </ul>
             )}
           </div>
-          <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+          <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
             <div>{formatDate(c.created_at, locale)}</div>
-            <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
+            <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
               {formatRelative(c.last_seen_at, locale, t)}
             </div>
           </div>
@@ -731,7 +733,7 @@ export default function AdminUsersPage() {
               <div>{t("admin.table_workspace_members")}</div>
               <div>
                 <div>{t("admin.table_workspace_created")}</div>
-                <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
+                <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
                   {t("admin.table_workspace_last_active")}
                 </div>
               </div>
@@ -807,7 +809,7 @@ export default function AdminUsersPage() {
               <Search
                 size={14}
                 aria-hidden
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-umber-400"
               />
               <input
                 type="search"
@@ -820,7 +822,7 @@ export default function AdminUsersPage() {
               {searchInput !== "" && (
                 <button
                   type="button"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-ink-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-800"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-neutral-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-800"
                   onClick={() => {
                     setSearchInput("");
                     setSearchQuery("");
@@ -892,7 +894,7 @@ export default function AdminUsersPage() {
                       <div>{t("admin.table_workspace_members")}</div>
                       <div>
                         <div>{t("admin.table_workspace_created")}</div>
-                        <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
+                        <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
                           {t("admin.table_workspace_last_active")}
                         </div>
                       </div>
@@ -911,7 +913,7 @@ export default function AdminUsersPage() {
               {betaCouples.length > 0 && (filteredBetaCouples.length > 0 || !isSearching) && (
                 <section className="mb-6">
                   <div className="admin-card flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700 dark:text-paper-100">
                       <Pill tone="sage" icon={<FlaskConical size={11} aria-hidden />}>
                         {t("admin.badge_beta")}
                       </Pill>
@@ -965,7 +967,7 @@ export default function AdminUsersPage() {
               {!isSearching && demoCouples.length > 0 && (
                 <section className="mb-6">
                   <div className="admin-card flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700 dark:text-paper-100">
                       <Pill tone="muted">{t("admin.demo_badge")}</Pill>
                       <span>
                         {t(
@@ -975,7 +977,7 @@ export default function AdminUsersPage() {
                           { n: demoCouples.length },
                         )}
                       </span>
-                      <span className="text-ink-500 dark:text-umber-300">
+                      <span className="text-neutral-500 dark:text-umber-300">
                         · {t("admin.demo_workspaces_recent_24h", { n: demoRecent24h })}
                       </span>
                     </div>
@@ -1024,27 +1026,27 @@ export default function AdminUsersPage() {
                             >
                               <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_10rem] md:items-center">
                                 <div className="whitespace-nowrap">
-                                  <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
+                                  <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
                                     {workspaceId(c)}
                                   </code>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+                                <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-paper-100">
                                   <Pill tone="muted">{t("admin.demo_badge")}</Pill>
                                   <span className="truncate">{workspaceLabel(c)}</span>
                                 </div>
-                                <div className="truncate text-xs text-ink-500 dark:text-umber-300">
+                                <div className="truncate text-xs text-neutral-500 dark:text-umber-300">
                                   {firstMemberEmail}
                                 </div>
-                                <div className="whitespace-nowrap text-xs text-ink-500 dark:text-umber-300">
+                                <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
                                   <div>{formatDate(c.created_at, locale)}</div>
-                                  <div className="mt-0.5 text-ink-500/70 dark:text-umber-300/80">
+                                  <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
                                     {formatRelative(c.last_seen_at, locale, t)}
                                   </div>
                                 </div>
                               </div>
                               {c.demo_feature_counts !== null && (
                                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                                  <span className="text-ink-500 dark:text-umber-300">
+                                  <span className="text-neutral-500 dark:text-umber-300">
                                     {usableTotal === 0
                                       ? t("admin.demo_events_none")
                                       : t(
@@ -1057,13 +1059,13 @@ export default function AdminUsersPage() {
                                   {visible.map(([feature, n]) => (
                                     <Pill key={feature} tone="paper">
                                       <span className="font-medium">{feature}</span>
-                                      <span className="ml-1 text-ink-500 dark:text-umber-300">
+                                      <span className="ml-1 text-neutral-500 dark:text-umber-300">
                                         {n}
                                       </span>
                                     </Pill>
                                   ))}
                                   {hidden > 0 && (
-                                    <span className="text-ink-500 dark:text-umber-300">
+                                    <span className="text-neutral-500 dark:text-umber-300">
                                       {t("admin.demo_feature_more", { n: hidden })}
                                     </span>
                                   )}

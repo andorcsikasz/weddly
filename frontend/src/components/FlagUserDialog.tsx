@@ -122,8 +122,8 @@ export function FlagUserDialog({ open, targetEmail, pending, onClose, onConfirm 
                 disabled={pending}
                 className={
                   active
-                    ? "rounded-full border border-violet-700 bg-violet-700 px-3 py-1 text-xs font-medium text-paper-100"
-                    : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 hover:border-violet-300 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-200"
+                    ? "rounded-full border border-neutral-700 bg-neutral-700 px-3 py-1 text-xs font-medium text-paper-100"
+                    : "rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 hover:border-neutral-300 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-200"
                 }
               >
                 {t(tpl.labelKey)}

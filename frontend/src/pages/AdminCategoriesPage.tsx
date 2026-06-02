@@ -190,10 +190,10 @@ export default function AdminCategoriesPage() {
             >
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-4 py-3">
                 <div className="flex flex-col gap-1">
-                  <div className="font-medium text-ink-900 dark:text-paper-50">
+                  <div className="font-medium text-neutral-900 dark:text-paper-50">
                     {g.label_hu}
-                    <span className="mx-2 text-ink-300 dark:text-umber-300">·</span>
-                    <span className="text-ink-500 dark:text-umber-300">{g.label_en}</span>
+                    <span className="mx-2 text-neutral-300 dark:text-umber-300">·</span>
+                    <span className="text-neutral-500 dark:text-umber-300">{g.label_en}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Pill tone="muted">{g.slug}</Pill>
@@ -238,7 +238,7 @@ export default function AdminCategoriesPage() {
                 </div>
               </div>
               {g.categories.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-ink-500 dark:text-umber-300">
+                <div className="px-4 py-3 text-sm text-neutral-500 dark:text-umber-300">
                   {t("admin.taxonomy_group_empty")}
                 </div>
               ) : (
@@ -251,10 +251,10 @@ export default function AdminCategoriesPage() {
                       }`}
                     >
                       <div className="flex flex-col gap-1">
-                        <div className="text-ink-900 dark:text-paper-50">
+                        <div className="text-neutral-900 dark:text-paper-50">
                           {c.label_hu}
-                          <span className="mx-2 text-ink-300 dark:text-umber-300">·</span>
-                          <span className="text-ink-500 dark:text-umber-300">{c.label_en}</span>
+                          <span className="mx-2 text-neutral-300 dark:text-umber-300">·</span>
+                          <span className="text-neutral-500 dark:text-umber-300">{c.label_en}</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-1.5">
                           <Pill tone="muted">{c.slug}</Pill>

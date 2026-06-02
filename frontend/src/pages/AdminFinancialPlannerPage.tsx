@@ -105,20 +105,20 @@ export default function AdminFinancialPlannerPage() {
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Cohorts */}
         <section className="admin-card">
-          <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
             {t("admin.fin_cohorts_title")}
           </h2>
           <ul className="mt-3 space-y-1.5">
             {COHORT_ORDER.map((s) => (
               <li key={s} className="flex items-center justify-between text-sm">
-                <span className="text-ink-600 dark:text-umber-200">{t(PLAN_LABEL[s])}</span>
-                <span className="font-medium tabular-nums text-ink-900 dark:text-paper-50">
+                <span className="text-neutral-600 dark:text-umber-200">{t(PLAN_LABEL[s])}</span>
+                <span className="font-medium tabular-nums text-neutral-900 dark:text-paper-50">
                   {data.counts[s]}
                 </span>
               </li>
             ))}
             <li className="mt-1 flex items-center justify-between border-t border-paper-200 pt-1.5 text-sm dark:border-umber-700">
-              <span className="text-ink-500 dark:text-umber-300">Total</span>
+              <span className="text-neutral-500 dark:text-umber-300">Total</span>
               <span className="font-semibold tabular-nums">{data.total_couples}</span>
             </li>
           </ul>
@@ -126,19 +126,19 @@ export default function AdminFinancialPlannerPage() {
 
         {/* MRR by currency */}
         <section className="admin-card">
-          <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
             {t("admin.fin_mrr_by_currency_title")}
           </h2>
           <ul className="mt-3 space-y-1.5">
             {data.mrr_by_currency.length === 0 && (
-              <li className="text-sm text-ink-500 dark:text-umber-300">—</li>
+              <li className="text-sm text-neutral-500 dark:text-umber-300">—</li>
             )}
             {data.mrr_by_currency.map((m) => (
               <li key={m.currency} className="flex items-center justify-between text-sm">
-                <span className="text-ink-600 dark:text-umber-200">
+                <span className="text-neutral-600 dark:text-umber-200">
                   {m.currency} · {m.subscribers}
                 </span>
-                <span className="font-medium tabular-nums text-ink-900 dark:text-paper-50">
+                <span className="font-medium tabular-nums text-neutral-900 dark:text-paper-50">
                   {formatMoney(m.mrr, m.currency, locale)}
                 </span>
               </li>
@@ -149,10 +149,10 @@ export default function AdminFinancialPlannerPage() {
 
       {/* Assumptions */}
       <section className="admin-card mt-4">
-        <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
           {t("admin.fin_assumptions_title")}
         </h2>
-        <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+        <p className="mt-1 text-xs text-neutral-500 dark:text-umber-300">
           {t("admin.fin_assumptions_hint")}
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -194,7 +194,7 @@ export default function AdminFinancialPlannerPage() {
           />
         </div>
         <div className="mt-4 flex items-center gap-2">
-          <span className="text-xs font-medium text-ink-600 dark:text-umber-200">
+          <span className="text-xs font-medium text-neutral-600 dark:text-umber-200">
             {t("admin.fin_horizon")}
           </span>
           {[12, 18, 24].map((m) => (
@@ -204,8 +204,8 @@ export default function AdminFinancialPlannerPage() {
               onClick={() => setA({ ...a, months: m })}
               className={`rounded-lg px-3 py-1 text-sm transition-colors ${
                 a.months === m
-                  ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                  : "bg-paper-100 text-ink-600 hover:bg-paper-200 dark:bg-umber-800 dark:text-umber-200"
+                  ? "bg-neutral-900 text-paper-50 dark:bg-paper-50 dark:text-neutral-900"
+                  : "bg-paper-100 text-neutral-600 hover:bg-paper-200 dark:bg-umber-800 dark:text-umber-200"
               }`}
             >
               {t("admin.fin_horizon_months", { n: m })}
@@ -217,24 +217,24 @@ export default function AdminFinancialPlannerPage() {
       {/* Projection */}
       <section className="admin-card mt-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
             {t("admin.fin_projection_title")}
           </h2>
           {last && (
             <div className="flex gap-6 text-right">
               <div>
-                <div className="text-xs text-ink-500 dark:text-umber-300">
+                <div className="text-xs text-neutral-500 dark:text-umber-300">
                   {t("admin.fin_projected_mrr", { n: a.months })}
                 </div>
-                <div className="text-lg font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                <div className="text-lg font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
                   {eur(last.mrr)}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-ink-500 dark:text-umber-300">
+                <div className="text-xs text-neutral-500 dark:text-umber-300">
                   {t("admin.fin_projected_arr", { n: a.months })}
                 </div>
-                <div className="text-lg font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                <div className="text-lg font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
                   {eur(last.mrr * 12)}
                 </div>
               </div>
@@ -248,7 +248,7 @@ export default function AdminFinancialPlannerPage() {
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-umber-300">
                 <th className="py-1 pr-4 font-medium">{t("admin.fin_col_month")}</th>
                 <th className="py-1 pr-4 font-medium">{t("admin.fin_col_subs")}</th>
                 <th className="py-1 font-medium">{t("admin.fin_col_mrr")}</th>
@@ -257,13 +257,13 @@ export default function AdminFinancialPlannerPage() {
             <tbody>
               {projection.map((p) => (
                 <tr key={p.month} className="border-t border-paper-200 dark:border-umber-700">
-                  <td className="py-1.5 pr-4 tabular-nums text-ink-600 dark:text-umber-200">
+                  <td className="py-1.5 pr-4 tabular-nums text-neutral-600 dark:text-umber-200">
                     {p.month}
                   </td>
-                  <td className="py-1.5 pr-4 tabular-nums text-ink-800 dark:text-paper-100">
+                  <td className="py-1.5 pr-4 tabular-nums text-neutral-800 dark:text-paper-100">
                     {p.subscribers}
                   </td>
-                  <td className="py-1.5 tabular-nums font-medium text-ink-900 dark:text-paper-50">
+                  <td className="py-1.5 tabular-nums font-medium text-neutral-900 dark:text-paper-50">
                     {eur(p.mrr)}
                   </td>
                 </tr>
@@ -279,8 +279,8 @@ export default function AdminFinancialPlannerPage() {
 function Kpi({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
   return (
     <div className={`admin-tile ${emphasis ? "ring-1 ring-blush-300 dark:ring-blush-500/40" : ""}`}>
-      <div className="text-xs text-ink-500 dark:text-umber-300">{label}</div>
-      <div className="mt-1 text-xl font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+      <div className="text-xs text-neutral-500 dark:text-umber-300">{label}</div>
+      <div className="mt-1 text-xl font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
         {value}
       </div>
     </div>
@@ -307,8 +307,8 @@ function Slider({
   return (
     <label className="block">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-ink-600 dark:text-umber-200">{label}</span>
-        <span className="tabular-nums font-semibold text-ink-900 dark:text-paper-50">
+        <span className="font-medium text-neutral-600 dark:text-umber-200">{label}</span>
+        <span className="tabular-nums font-semibold text-neutral-900 dark:text-paper-50">
           {display}
         </span>
       </div>

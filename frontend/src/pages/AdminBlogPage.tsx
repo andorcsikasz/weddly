@@ -76,7 +76,7 @@ function BlogList({ onEdit, onNew }: { onEdit: (id: number) => void; onNew: () =
       />
 
       {posts === null ? (
-        <p className="text-sm text-ink-500 dark:text-umber-300">{t("blog.loading")}</p>
+        <p className="text-sm text-neutral-500 dark:text-umber-300">{t("blog.loading")}</p>
       ) : posts.length === 0 ? (
         <AdminEmptyState
           title={t("admin_blog.empty_title")}
@@ -85,7 +85,7 @@ function BlogList({ onEdit, onNew }: { onEdit: (id: number) => void; onNew: () =
       ) : (
         <div className="overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
           <table className="w-full text-sm">
-            <thead className="bg-paper-100 text-left text-xs uppercase tracking-wider text-ink-500 dark:bg-umber-800 dark:text-umber-300">
+            <thead className="bg-paper-100 text-left text-xs uppercase tracking-wider text-neutral-500 dark:bg-umber-800 dark:text-umber-300">
               <tr>
                 <th className="px-4 py-3 font-semibold">{t("admin_blog.col_title")}</th>
                 <th className="px-4 py-3 font-semibold">{t("admin_blog.col_slug")}</th>
@@ -101,15 +101,15 @@ function BlogList({ onEdit, onNew }: { onEdit: (id: number) => void; onNew: () =
                     <button
                       type="button"
                       onClick={() => post.id && onEdit(post.id)}
-                      className="text-left font-medium text-ink-900 hover:underline dark:text-paper-50"
+                      className="text-left font-medium text-neutral-900 hover:underline dark:text-paper-50"
                     >
                       {post[locale].title || post.slug}
                     </button>
-                    <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+                    <p className="mt-0.5 text-xs text-neutral-500 dark:text-umber-300">
                       {post.category[locale]}
                     </p>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-ink-600 dark:text-umber-200">
+                  <td className="px-4 py-3 font-mono text-xs text-neutral-600 dark:text-umber-200">
                     {post.slug}
                   </td>
                   <td className="px-4 py-3">
@@ -119,7 +119,7 @@ function BlogList({ onEdit, onNew }: { onEdit: (id: number) => void; onNew: () =
                       <Pill tone="muted">{t("admin_blog.status_draft")}</Pill>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-ink-500 dark:text-umber-300">
+                  <td className="px-4 py-3 text-xs text-neutral-500 dark:text-umber-300">
                     {post.published_at}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -302,7 +302,7 @@ function BlogEditor({
 
   if (status === "loading") {
     return (
-      <p className="text-sm text-ink-500 dark:text-umber-300">
+      <p className="text-sm text-neutral-500 dark:text-umber-300">
         <Loader2 size={14} className="mr-1 inline animate-spin" />
         {t("blog.loading")}
       </p>
@@ -385,7 +385,7 @@ function BlogEditor({
       {/* Cover image */}
       <section className="rounded-xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-800">
         <h2 className="font-semibold">{t("admin_blog.section_cover")}</h2>
-        <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+        <p className="mt-1 text-xs text-neutral-500 dark:text-umber-300">
           {t("admin_blog.section_cover_help")}
         </p>
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -410,7 +410,7 @@ function BlogEditor({
               className="text-sm"
               disabled={uploading || currentId === null}
             />
-            <p className="text-xs text-ink-500 dark:text-umber-300">
+            <p className="text-xs text-neutral-500 dark:text-umber-300">
               {t("admin_blog.cover_constraints")}
             </p>
             {coverUrl && (
@@ -549,7 +549,7 @@ function BlockEditor({
   return (
     <div className="mt-3 space-y-3">
       {blocks.length === 0 ? (
-        <p className="text-xs text-ink-500 dark:text-umber-300">{t("admin_blog.body_empty")}</p>
+        <p className="text-xs text-neutral-500 dark:text-umber-300">{t("admin_blog.body_empty")}</p>
       ) : (
         blocks.map((block, idx) => (
           <div
@@ -557,13 +557,13 @@ function BlockEditor({
             className="rounded-lg border border-paper-300 bg-white p-3 dark:border-umber-600 dark:bg-umber-900"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-umber-300">
                 {t(`admin_blog.block_${block.type}`)}
               </span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  className="rounded p-1 text-xs text-ink-500 hover:bg-paper-200 dark:text-umber-300 dark:hover:bg-umber-700"
+                  className="rounded p-1 text-xs text-neutral-500 hover:bg-paper-200 dark:text-umber-300 dark:hover:bg-umber-700"
                   onClick={() => move(idx, -1)}
                   aria-label={t("admin_blog.move_up")}
                   disabled={idx === 0}
@@ -572,7 +572,7 @@ function BlockEditor({
                 </button>
                 <button
                   type="button"
-                  className="rounded p-1 text-xs text-ink-500 hover:bg-paper-200 dark:text-umber-300 dark:hover:bg-umber-700"
+                  className="rounded p-1 text-xs text-neutral-500 hover:bg-paper-200 dark:text-umber-300 dark:hover:bg-umber-700"
                   onClick={() => move(idx, 1)}
                   aria-label={t("admin_blog.move_down")}
                   disabled={idx === blocks.length - 1}
@@ -651,7 +651,7 @@ function BlockquoteEditor({
   return (
     <div className="space-y-2">
       <label className="block">
-        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
           {t("admin_blog.blockquote_text")}
         </span>
         <textarea
@@ -663,7 +663,7 @@ function BlockquoteEditor({
         />
       </label>
       <label className="block">
-        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
           {t("admin_blog.blockquote_cite")}
         </span>
         <input
@@ -689,7 +689,7 @@ function CtaEditor({
   return (
     <div className="space-y-2">
       <label className="block">
-        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
           {t("admin_blog.cta_lead")}
         </span>
         <textarea
@@ -701,7 +701,7 @@ function CtaEditor({
       </label>
       <div className="grid grid-cols-[1fr_2fr] gap-2">
         <label className="block">
-          <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
             {t("admin_blog.cta_label")}
           </span>
           <input
@@ -712,7 +712,7 @@ function CtaEditor({
           />
         </label>
         <label className="block">
-          <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
             {t("admin_blog.cta_href")}
           </span>
           <input
@@ -742,7 +742,7 @@ function ImgEditor({
         <img src={value.src} alt={value.alt} className="max-h-40 w-full rounded-lg object-cover" />
       ) : null}
       <label className="block">
-        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
           {t("admin_blog.img_src")}
         </span>
         <input
@@ -754,7 +754,7 @@ function ImgEditor({
         />
       </label>
       <label className="block">
-        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
           {t("admin_blog.img_alt")}
         </span>
         <input
@@ -765,7 +765,7 @@ function ImgEditor({
         />
       </label>
       <label className="block">
-        <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
           {t("admin_blog.img_caption")}
         </span>
         <input
@@ -777,7 +777,7 @@ function ImgEditor({
       </label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">
-          <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
             {t("admin_blog.img_credit")}
           </span>
           <input
@@ -788,7 +788,7 @@ function ImgEditor({
           />
         </label>
         <label className="block">
-          <span className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          <span className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-umber-300">
             {t("admin_blog.img_credit_href")}
           </span>
           <input
@@ -851,7 +851,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-umber-300">
         {label}
       </span>
       {children}

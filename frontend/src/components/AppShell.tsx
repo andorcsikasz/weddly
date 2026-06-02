@@ -594,7 +594,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     Hidden at md (icon-only) and at lg+ when the user has
                     collapsed the rail, matching SidebarGroupHeader behaviour. */}
                 {!sidebarCollapsed && (
-                  <div className="hidden items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-950 lg:flex dark:text-violet-300">
+                  <div className="hidden items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-950 lg:flex dark:text-neutral-300">
                     <ShieldCheck size={11} aria-hidden="true" />
                     {t("admin.nav_label")}
                   </div>
@@ -808,7 +808,7 @@ function AdminSidebarGroupHeader({
           group so the "Admin" eyebrow already provides the visual break. */}
       {!isFirst && (
         <div
-          className={`mx-2 my-2 h-px bg-violet-200/50 dark:bg-violet-800/40 ${
+          className={`mx-2 my-2 h-px bg-neutral-200/50 dark:bg-neutral-800/40 ${
             collapsed ? "" : "lg:hidden"
           }`}
           aria-hidden
@@ -871,8 +871,8 @@ function SideLink({
 }
 
 /** Sidebar link for admin pages. Inactive rows read as the regular
- *  neutral nav (ink-700) so the rail doesn't shout violet across every
- *  item; the active row alone fills a deep violet pill that signals
+ *  neutral nav (ink-700) so the rail doesn't shout across every
+ *  item; the active row alone fills a deep koromfekete pill that signals
  *  "you are here".
  *
  *  Like `SideLink`, the `collapsed` prop drives laptop+ behaviour while md
@@ -907,7 +907,7 @@ function AdminSideLink({
       className={({ isActive }) =>
         `flex items-center rounded-xl text-sm transition-colors ${shape} ${
           isActive
-            ? "btn-lifted bg-violet-950 text-white dark:bg-violet-700"
+            ? "btn-lifted bg-neutral-950 text-white dark:bg-neutral-700"
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
         }`
       }
@@ -1054,14 +1054,14 @@ function BottomLink({
    *  the icon so it sits above the label like a notification dot. */
   badgeCount?: number;
 }) {
-  // Light mode keeps the original navy / violet pair. Dark mode flips to
+  // Light mode: admin variant is koromfekete neutral, default stays navy. Dark mode flips to
   // a cream / blush palette so the labels actually read against the
   // umber-900 nav bar — the prior `text-ink-500` (deep navy) was
   // effectively invisible on dark, per the "dark dashboard nem látszik
   // jól" report.
   const active =
     variant === "admin"
-      ? "text-violet-950 dark:text-violet-200"
+      ? "text-neutral-950 dark:text-neutral-200"
       : "text-ink-900 dark:text-paper-50";
   const idle =
     variant === "admin" ? "text-ink-500 dark:text-umber-200" : "text-ink-500 dark:text-umber-200";

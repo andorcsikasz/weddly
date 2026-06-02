@@ -351,8 +351,8 @@ function ModerationView() {
       {/* Bulk-action toolbar. Stays mounted for layout stability when the
        *  card grid loads. The select-all checkbox lives here so the toolbar
        *  doubles as the grid header. */}
-      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-ink-200 bg-ink-50 dark:border-umber-700 dark:bg-umber-700/60 px-3 py-2 text-sm">
-        <label className="inline-flex items-center gap-2 text-xs text-ink-700 dark:text-paper-100">
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 dark:border-umber-700 dark:bg-umber-700/60 px-3 py-2 text-sm">
+        <label className="inline-flex items-center gap-2 text-xs text-neutral-700 dark:text-paper-100">
           <input
             type="checkbox"
             checked={allSelected}
@@ -496,9 +496,9 @@ function DefRow({
   return (
     <>
       <dt className="eyebrow self-center">{label}</dt>
-      <dd className="m-0 min-w-0 break-words text-xs text-ink-800 dark:text-paper-100">
+      <dd className="m-0 min-w-0 break-words text-xs text-neutral-800 dark:text-paper-100">
         {isEmpty ? (
-          <span className="text-ink-400 dark:text-umber-300">
+          <span className="text-neutral-400 dark:text-umber-300">
             {t("admin.suppliers_card_empty_value")}
           </span>
         ) : href ? (
@@ -587,7 +587,7 @@ function SupplierCard({
   return (
     <article
       className={`admin-card !p-0 transition ${
-        selected ? "ring-2 ring-violet-700 dark:ring-violet-400/60" : ""
+        selected ? "ring-2 ring-neutral-700 dark:ring-neutral-400/60" : ""
       }`}
       aria-label={s.name}
     >
@@ -617,11 +617,13 @@ function SupplierCard({
             expanded ? t("admin.suppliers_card_collapse") : t("admin.suppliers_card_expand")
           }
         >
-          <h2 className="m-0 text-sm font-semibold text-ink-900 dark:text-paper-50">{s.name}</h2>
+          <h2 className="m-0 text-sm font-semibold text-neutral-900 dark:text-paper-50">
+            {s.name}
+          </h2>
           <Pill tone="violet">{t(`suppliers.cat.${s.category}`)}</Pill>
           <StatusPill status={s.status} label={t(`admin.status_${s.status}`)} />
           {s.city ? (
-            <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+            <span className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-umber-300">
               <MapPin size={12} aria-hidden />
               {s.city}
             </span>
@@ -639,7 +641,7 @@ function SupplierCard({
         <ChevronDown
           size={16}
           aria-hidden
-          className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${
+          className={`shrink-0 text-neutral-400 transition-transform dark:text-umber-300 ${
             expanded ? "rotate-180" : ""
           }`}
         />
@@ -669,7 +671,11 @@ function SupplierCard({
                         href={`mailto:${decodeEntities(s.contact_email)}`}
                         className="inline-flex items-center gap-1 hover:underline"
                       >
-                        <Mail size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                        <Mail
+                          size={11}
+                          aria-hidden
+                          className="text-neutral-500 dark:text-umber-300"
+                        />
                         <span className="break-all">{decodeEntities(s.contact_email)}</span>
                       </a>
                     ) : null
@@ -683,7 +689,11 @@ function SupplierCard({
                         href={`tel:${decodeEntities(s.contact_phone).replace(/\s+/g, "")}`}
                         className="inline-flex items-center gap-1 hover:underline"
                       >
-                        <Phone size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                        <Phone
+                          size={11}
+                          aria-hidden
+                          className="text-neutral-500 dark:text-umber-300"
+                        />
                         <span>{decodeEntities(s.contact_phone)}</span>
                       </a>
                     ) : null
@@ -693,7 +703,11 @@ function SupplierCard({
                   label={t("admin.suppliers_card_field_submitter")}
                   value={
                     <span className="inline-flex items-center gap-1">
-                      <User size={11} aria-hidden className="text-ink-500 dark:text-umber-300" />
+                      <User
+                        size={11}
+                        aria-hidden
+                        className="text-neutral-500 dark:text-umber-300"
+                      />
                       <span className="break-all">{s.submitter_email}</span>
                     </span>
                   }
@@ -717,7 +731,7 @@ function SupplierCard({
                   <DefRow
                     label={t("admin.suppliers_card_field_hide_reason")}
                     value={
-                      <span className="text-ink-600 dark:text-umber-200">{s.hide_reason}</span>
+                      <span className="text-neutral-600 dark:text-umber-200">{s.hide_reason}</span>
                     }
                   />
                 ) : null}
@@ -755,7 +769,7 @@ function SupplierCard({
                         {s.open_report_count}
                       </Pill>
                     ) : (
-                      <span className="text-ink-500 dark:text-umber-300">0</span>
+                      <span className="text-neutral-500 dark:text-umber-300">0</span>
                     )
                   }
                 />
@@ -783,7 +797,7 @@ function SupplierCard({
               aria-label={t("admin.suppliers_card_field_admin_notes")}
             />
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-ink-500 dark:text-umber-300">
+              <p className="text-xs text-neutral-500 dark:text-umber-300">
                 {t("admin.suppliers_card_field_admin_notes_help")}
               </p>
               <button

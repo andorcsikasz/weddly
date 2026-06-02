@@ -179,15 +179,15 @@ export function SupplierDirectoryView() {
     <section className="flex flex-col gap-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="m-0 text-lg font-semibold text-ink-900 dark:text-paper-50">
+          <h2 className="m-0 text-lg font-semibold text-neutral-900 dark:text-paper-50">
             {t("admin.directory_title")}
           </h2>
-          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+          <p className="mt-1 text-sm text-neutral-500 dark:text-umber-300">
             {t("admin.directory_sub")}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-ink-500 dark:text-umber-300">
+          <span className="text-xs text-neutral-500 dark:text-umber-300">
             {t("admin.directory_total_count", { n: rows.length })}
           </span>
           <button
@@ -281,17 +281,17 @@ export function SupplierDirectoryView() {
       </div>
 
       {loading ? (
-        <p className="card text-sm text-ink-500 dark:text-umber-300">
+        <p className="card text-sm text-neutral-500 dark:text-umber-300">
           {t("admin.directory_loading")}
         </p>
       ) : sortedRows.length === 0 ? (
-        <p className="card text-sm text-ink-500 dark:text-umber-300">
+        <p className="card text-sm text-neutral-500 dark:text-umber-300">
           {t("admin.directory_empty")}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-paper-300 dark:border-umber-700">
           <table className="min-w-full divide-y divide-paper-300 text-sm dark:divide-umber-700">
-            <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-600 dark:bg-umber-800 dark:text-umber-200">
+            <thead className="bg-paper-100 text-left text-xs uppercase tracking-wide text-neutral-600 dark:bg-umber-800 dark:text-umber-200">
               <tr>
                 <SortableTh
                   label={t("admin.directory_col_name")}
@@ -372,14 +372,14 @@ export function SupplierDirectoryView() {
             <tbody className="divide-y divide-paper-200 bg-paper-50 dark:divide-umber-700 dark:bg-umber-800/40">
               {sortedRows.map((row) => (
                 <tr key={row.id} className="hover:bg-paper-100 dark:hover:bg-umber-700/40">
-                  <td className="px-3 py-2 font-medium text-ink-900 dark:text-paper-50">
+                  <td className="px-3 py-2 font-medium text-neutral-900 dark:text-paper-50">
                     <span className="block">{row.name}</span>
                     {row.website && (
                       <a
                         href={row.website}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-500 underline-offset-2 hover:underline dark:text-umber-300"
+                        className="mt-0.5 inline-flex items-center gap-1 text-xs text-neutral-500 underline-offset-2 hover:underline dark:text-umber-300"
                       >
                         <ExternalLink size={11} aria-hidden /> {row.website}
                       </a>
@@ -389,35 +389,35 @@ export function SupplierDirectoryView() {
                     <SourcePill source={row.source} t={t} />
                   </td>
                   <td className="px-3 py-2">
-                    <span className="text-xs text-ink-700 dark:text-paper-100">
+                    <span className="text-xs text-neutral-700 dark:text-paper-100">
                       {t(`admin.status_${row.status}`)}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-xs uppercase tracking-wide text-ink-600 dark:text-umber-200">
+                  <td className="px-3 py-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-umber-200">
                     {t(`suppliers.cat.${row.category}`)}
                   </td>
-                  <td className="px-3 py-2 text-ink-700 dark:text-paper-100">{row.city}</td>
-                  <td className="px-3 py-2 text-right stat-num text-ink-900 dark:text-paper-50">
+                  <td className="px-3 py-2 text-neutral-700 dark:text-paper-100">{row.city}</td>
+                  <td className="px-3 py-2 text-right stat-num text-neutral-900 dark:text-paper-50">
                     {row.analytics.views_total}
                   </td>
-                  <td className="px-3 py-2 text-right stat-num text-ink-700 dark:text-paper-100">
+                  <td className="px-3 py-2 text-right stat-num text-neutral-700 dark:text-paper-100">
                     {row.analytics.views_30d}
                   </td>
-                  <td className="px-3 py-2 text-right stat-num text-ink-700 dark:text-paper-100">
+                  <td className="px-3 py-2 text-right stat-num text-neutral-700 dark:text-paper-100">
                     {row.analytics.views_7d}
                   </td>
-                  <td className="px-3 py-2 text-right stat-num text-ink-900 dark:text-paper-50">
+                  <td className="px-3 py-2 text-right stat-num text-neutral-900 dark:text-paper-50">
                     {row.analytics.website_clicks_total}
                   </td>
-                  <td className="px-3 py-2 text-right stat-num text-ink-700 dark:text-paper-100">
+                  <td className="px-3 py-2 text-right stat-num text-neutral-700 dark:text-paper-100">
                     {row.analytics.phone_clicks_total}
                   </td>
-                  <td className="px-3 py-2 text-xs text-ink-500 dark:text-umber-300">
+                  <td className="px-3 py-2 text-xs text-neutral-500 dark:text-umber-300">
                     {row.analytics.last_event_at
                       ? formatTimestamp(row.analytics.last_event_at, locale)
                       : t("admin.directory_last_event_never")}
                   </td>
-                  <td className="px-3 py-2 text-xs text-ink-500 dark:text-umber-300">
+                  <td className="px-3 py-2 text-xs text-neutral-500 dark:text-umber-300">
                     {formatTimestamp(row.created_at, locale)}
                   </td>
                 </tr>
@@ -476,7 +476,7 @@ function SortableTh({
     >
       <button
         type="button"
-        className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide hover:text-ink-900 dark:hover:text-paper-50"
+        className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide hover:text-neutral-900 dark:hover:text-paper-50"
         onClick={onClick}
       >
         {label}
@@ -501,7 +501,7 @@ function FilterSelect({
 }) {
   return (
     <label className="flex flex-col gap-1 text-xs">
-      <span className="uppercase tracking-wide text-ink-500 dark:text-umber-300">{label}</span>
+      <span className="uppercase tracking-wide text-neutral-500 dark:text-umber-300">{label}</span>
       <select
         className="input"
         value={value}
@@ -535,10 +535,10 @@ function FilterInput({
 }) {
   return (
     <label className="flex flex-col gap-1 text-xs">
-      <span className="uppercase tracking-wide text-ink-500 dark:text-umber-300">{label}</span>
+      <span className="uppercase tracking-wide text-neutral-500 dark:text-umber-300">{label}</span>
       <span className="relative inline-flex items-center">
         {icon && (
-          <span className="pointer-events-none absolute left-2 text-ink-400 dark:text-umber-300">
+          <span className="pointer-events-none absolute left-2 text-neutral-400 dark:text-umber-300">
             {icon}
           </span>
         )}
@@ -563,8 +563,8 @@ function SourcePill({
 }) {
   const cls =
     source === "curated"
-      ? "border-violet-700 bg-violet-100 text-violet-900 dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200"
-      : "border-paper-300 bg-paper-100 text-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-paper-100";
+      ? "border-neutral-700 bg-neutral-100 text-neutral-900 dark:border-neutral-400/40 dark:bg-neutral-500/20 dark:text-neutral-200"
+      : "border-paper-300 bg-paper-100 text-neutral-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-paper-100";
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${cls}`}

@@ -116,7 +116,7 @@ export default function AdminCoupleCardsPage() {
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-umber-300">
           Nyelv:
         </span>
         {LOCALE_OPTIONS.map((opt) => (
@@ -127,7 +127,7 @@ export default function AdminCoupleCardsPage() {
             label={opt === "all" ? "összes" : opt.toUpperCase()}
           />
         ))}
-        <span className="ml-4 text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <span className="ml-4 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-umber-300">
           Pakli:
         </span>
         <AdminFilterChip
@@ -200,10 +200,10 @@ export default function AdminCoupleCardsPage() {
                     }
                   >
                     <Td className="font-medium">{DECK_LABELS[row.deck_id] ?? row.deck_id}</Td>
-                    <Td className="text-ink-500 dark:text-umber-300">{row.card_index + 1}</Td>
-                    <Td className="uppercase text-ink-500 dark:text-umber-300">{row.locale}</Td>
+                    <Td className="text-neutral-500 dark:text-umber-300">{row.card_index + 1}</Td>
+                    <Td className="uppercase text-neutral-500 dark:text-umber-300">{row.locale}</Td>
                     <Td className="max-w-xl text-sm leading-snug">
-                      {row.question_snapshot || <span className="text-ink-400">(üres)</span>}
+                      {row.question_snapshot || <span className="text-neutral-400">(üres)</span>}
                     </Td>
                     <Td className="text-right text-wnrs-red tabular-nums font-medium">
                       {row.bad_count}
@@ -212,7 +212,7 @@ export default function AdminCoupleCardsPage() {
                     <Td className="text-right tabular-nums text-sage-700 font-medium">
                       {row.great_count}
                     </Td>
-                    <Td className="text-right tabular-nums text-ink-700 dark:text-paper-200">
+                    <Td className="text-right tabular-nums text-neutral-700 dark:text-paper-200">
                       {row.total}
                     </Td>
                   </tr>
@@ -226,10 +226,10 @@ export default function AdminCoupleCardsPage() {
       {/* Visitor-submitted suggestions from the 26th blank card. Same
           deck + locale filter chips above apply to this list too. */}
       <div className="mt-12">
-        <h2 className="font-display text-lg font-bold uppercase tracking-tight text-ink-900 dark:text-paper-50">
+        <h2 className="font-display text-lg font-bold uppercase tracking-tight text-neutral-900 dark:text-paper-50">
           Beérkezett javaslatok
         </h2>
-        <p className="mt-1 text-sm text-ink-600 dark:text-umber-300">
+        <p className="mt-1 text-sm text-neutral-600 dark:text-umber-300">
           A 26. üres kártyán keresztül beküldött javaslatok. A legfrissebbek kerülnek felülre.
         </p>
 
@@ -270,11 +270,11 @@ export default function AdminCoupleCardsPage() {
               <tbody className="divide-y divide-paper-200 bg-white dark:divide-umber-700 dark:bg-umber-900">
                 {filteredSuggestions.map((row) => (
                   <tr key={row.id}>
-                    <Td className="whitespace-nowrap text-ink-500 dark:text-umber-300">
+                    <Td className="whitespace-nowrap text-neutral-500 dark:text-umber-300">
                       {formatSuggestionDate(row.created_at)}
                     </Td>
                     <Td className="font-medium">{DECK_LABELS[row.deck_id] ?? row.deck_id}</Td>
-                    <Td className="uppercase text-ink-500 dark:text-umber-300">{row.locale}</Td>
+                    <Td className="uppercase text-neutral-500 dark:text-umber-300">{row.locale}</Td>
                     <Td className="max-w-xl text-sm leading-snug">{row.suggestion}</Td>
                   </tr>
                 ))}
@@ -304,7 +304,7 @@ function formatSuggestionDate(epoch: number): string {
 function Th({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <th
-      className={`px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-600 dark:text-umber-300 ${className}`}
+      className={`px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-600 dark:text-umber-300 ${className}`}
     >
       {children}
     </th>
@@ -313,7 +313,7 @@ function Th({ children, className = "" }: { children: React.ReactNode; className
 
 function Td({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <td className={`px-3 py-2 text-sm text-ink-800 dark:text-paper-200 ${className}`}>
+    <td className={`px-3 py-2 text-sm text-neutral-800 dark:text-paper-200 ${className}`}>
       {children}
     </td>
   );

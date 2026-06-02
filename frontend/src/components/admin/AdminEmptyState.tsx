@@ -7,7 +7,7 @@ interface AdminEmptyStateProps {
   /** Secondary explanatory line, rendered under the title in muted ink. */
   description?: ReactNode;
   /** Optional decorative icon, typically a lucide glyph sized ~28-32px.
-   *  Rendered above the title in ink-400 so it doesn't compete with copy. */
+   *  Rendered above the title in neutral-400 so it doesn't compete with copy. */
   icon?: ReactNode;
   /** Optional CTA — usually a <button> or <Link>. Rendered under the
    *  description; consumers handle their own styling so any of the
@@ -40,13 +40,15 @@ export function AdminEmptyState({
   return (
     <div className="admin-card flex flex-col items-center justify-center space-y-2 py-8 text-center">
       {icon != null && (
-        <span aria-hidden="true" className="inline-flex text-ink-400 dark:text-umber-300">
+        <span aria-hidden="true" className="inline-flex text-neutral-400 dark:text-umber-300">
           {icon}
         </span>
       )}
-      {headline != null && <p className="text-sm text-ink-700 dark:text-paper-100">{headline}</p>}
+      {headline != null && (
+        <p className="text-sm text-neutral-700 dark:text-paper-100">{headline}</p>
+      )}
       {description != null && (
-        <p className="text-xs text-ink-500 dark:text-umber-300">{description}</p>
+        <p className="text-xs text-neutral-500 dark:text-umber-300">{description}</p>
       )}
       {action != null && <div className="pt-1">{action}</div>}
     </div>

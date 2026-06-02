@@ -151,10 +151,10 @@ function detectChannels(entry: VendorWaitlistAdminView): ChannelDetection {
 }
 
 /** Per-channel icon + brand-tinted active class. Dim state shares one token
- *  pair (`text-ink-300` / `dark:text-umber-500`) so every blank slot reads
+ *  pair (`text-neutral-300` / `dark:text-umber-500`) so every blank slot reads
  *  identically — colour only appears when the vendor actually submitted a
  *  link. YouTube uses Tailwind core red (the one channel where colour
- *  recognition is universal); Facebook stays ink-toned because the palette
+ *  recognition is universal); Facebook stays neutral-toned because the palette
  *  has no true brand blue and the icon shape is enough. */
 const CHANNEL_META: Record<
   ChannelKey,
@@ -167,8 +167,8 @@ const CHANNEL_META: Record<
 > = {
   website: {
     Icon: Globe,
-    activeClass: "text-ink-700 dark:text-paper-100",
-    hoverClass: "hover:text-ink-900 dark:hover:text-paper-50",
+    activeClass: "text-neutral-700 dark:text-paper-100",
+    hoverClass: "hover:text-neutral-900 dark:hover:text-paper-50",
     labelKey: "admin.waitlist_card_channel_website",
   },
   instagram: {
@@ -185,13 +185,13 @@ const CHANNEL_META: Record<
   },
   facebook: {
     Icon: Facebook,
-    activeClass: "text-ink-700 dark:text-ink-300",
-    hoverClass: "hover:text-ink-900 dark:hover:text-paper-50",
+    activeClass: "text-neutral-700 dark:text-neutral-300",
+    hoverClass: "hover:text-neutral-900 dark:hover:text-paper-50",
     labelKey: "admin.waitlist_card_channel_facebook",
   },
 };
 
-const CHANNEL_DIM_CLASS = "text-ink-300 dark:text-umber-500";
+const CHANNEL_DIM_CLASS = "text-neutral-300 dark:text-umber-500";
 const CHANNEL_ORDER: ChannelKey[] = ["website", "instagram", "youtube", "facebook"];
 
 export default function AdminVendorWaitlistPage() {
@@ -386,17 +386,17 @@ function EntryCard({
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <h2 className="m-0 text-sm font-semibold text-ink-900 dark:text-paper-50">
+            <h2 className="m-0 text-sm font-semibold text-neutral-900 dark:text-paper-50">
               {entry.business_name}
             </h2>
             <a
               href={`mailto:${entry.email}`}
-              className="inline-flex items-center gap-1 text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+              className="inline-flex items-center gap-1 text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
             >
               <Mail size={11} aria-hidden /> {entry.email}
             </a>
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-ink-600 dark:text-umber-200">
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-neutral-600 dark:text-umber-200">
             <span>{fmtDate(entry.created_at)}</span>
             <span className="rounded-full bg-paper-100 dark:bg-umber-800 px-1.5 py-0.5">
               {t(`suppliers.cat.${entry.category}`)}
@@ -453,7 +453,7 @@ function EntryCard({
       </div>
 
       {hasDetail && (
-        <details className="mt-2 text-xs text-ink-700 dark:text-paper-100">
+        <details className="mt-2 text-xs text-neutral-700 dark:text-paper-100">
           <summary className="cursor-pointer eyebrow">
             {t("admin.waitlist_card_more_label")}
           </summary>
@@ -468,7 +468,7 @@ function EntryCard({
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex max-w-full items-center gap-1 truncate text-xs text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+                        className="inline-flex max-w-full items-center gap-1 truncate text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
                       >
                         <Link2 size={12} aria-hidden className="shrink-0" />
                         <span className="truncate">{url}</span>
@@ -481,16 +481,16 @@ function EntryCard({
             {entry.message && (
               <div className="admin-tile">
                 <p className="eyebrow">{t("admin.waitlist_card_message_label")}</p>
-                <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">{entry.message}</p>
+                <p className="mt-1 text-sm text-neutral-700 dark:text-paper-100">{entry.message}</p>
               </div>
             )}
             {entry.sent_subject && (
               <details className="admin-tile">
-                <summary className="cursor-pointer text-xs font-medium text-ink-800 dark:text-paper-50">
+                <summary className="cursor-pointer text-xs font-medium text-neutral-800 dark:text-paper-50">
                   <span className="eyebrow">{t("admin.waitlist_card_sent_label")}</span> ·{" "}
                   {entry.sent_subject}
                 </summary>
-                <pre className="mt-2 whitespace-pre-wrap font-sans text-xs leading-relaxed text-ink-700 dark:text-paper-100">
+                <pre className="mt-2 whitespace-pre-wrap font-sans text-xs leading-relaxed text-neutral-700 dark:text-paper-100">
                   {entry.sent_body ?? ""}
                 </pre>
               </details>
@@ -498,7 +498,7 @@ function EntryCard({
             {entry.notes && (
               <div className="admin-tile">
                 <p className="eyebrow">{t("admin.waitlist_card_notes_label")}</p>
-                <p className="mt-1 text-xs text-ink-700 dark:text-paper-100">{entry.notes}</p>
+                <p className="mt-1 text-xs text-neutral-700 dark:text-paper-100">{entry.notes}</p>
               </div>
             )}
           </div>
@@ -542,7 +542,7 @@ function ChannelRow({
               rel="noopener noreferrer"
               title={channelName}
               aria-label={t("admin.waitlist_card_channel_visit", { channel: channelName })}
-              className={`inline-flex items-center rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${meta.activeClass} ${meta.hoverClass}`}
+              className={`inline-flex items-center rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 ${meta.activeClass} ${meta.hoverClass}`}
             >
               <Icon size={14} aria-hidden />
             </a>
@@ -687,8 +687,8 @@ function RespondDialog({
               label={t("admin.waitlist_modal_outcome_under_review")}
               onPick={pickOutcome}
               submitting={submitting}
-              tint="bg-violet-50 border-violet-300 text-violet-950 dark:bg-violet-500/15 dark:border-violet-400/40 dark:text-violet-200"
-              activeTint="bg-violet-900 border-violet-900 text-white dark:bg-violet-500/40 dark:border-violet-400/60 dark:text-violet-100"
+              tint="bg-neutral-50 border-neutral-300 text-neutral-950 dark:bg-neutral-500/15 dark:border-neutral-400/40 dark:text-neutral-200"
+              activeTint="bg-neutral-900 border-neutral-900 text-white dark:bg-neutral-500/40 dark:border-neutral-400/60 dark:text-neutral-100"
             />
             <OutcomeButton
               outcome="rejected"
@@ -696,8 +696,8 @@ function RespondDialog({
               label={t("admin.waitlist_modal_outcome_rejected")}
               onPick={pickOutcome}
               submitting={submitting}
-              tint="bg-paper-100 border-paper-300 text-ink-700 dark:bg-umber-700/60 dark:border-umber-700 dark:text-paper-100"
-              activeTint="bg-ink-800 border-ink-800 text-paper-100 dark:bg-paper-50 dark:border-paper-50 dark:text-umber-900"
+              tint="bg-paper-100 border-paper-300 text-neutral-700 dark:bg-umber-700/60 dark:border-umber-700 dark:text-paper-100"
+              activeTint="bg-neutral-800 border-neutral-800 text-paper-100 dark:bg-paper-50 dark:border-paper-50 dark:text-umber-900"
             />
           </div>
         </div>
@@ -785,7 +785,7 @@ function OutcomeButton({
       aria-busy={submitting && active ? true : undefined}
       disabled={submitting}
       onClick={() => onPick(outcome)}
-      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
         active ? activeTint : tint
       }`}
     >

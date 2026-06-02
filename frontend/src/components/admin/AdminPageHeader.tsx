@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /** Standard admin-page header: page title (h1) + optional subtitle + optional
  *  right-aligned action slot. Every Admin*Page should open with this so the
  *  six-level type scale (h1: `text-2xl font-semibold tracking-tight`,
- *  caption: `text-xs text-ink-500`) renders identically across the section.
+ *  caption: `text-xs text-neutral-500`) renders identically across the section.
  *
  *  Children render below the title row — used by AdminSuppliersPage for the
  *  SegmentedControl that toggles moderation vs. directory views.
@@ -25,7 +25,7 @@ export function AdminPageHeader({
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           {subtitle != null && (
-            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{subtitle}</p>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-umber-300">{subtitle}</p>
           )}
         </div>
         {actions != null && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
