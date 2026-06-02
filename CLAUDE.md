@@ -102,7 +102,15 @@ PDF formats supported in v1: **A4** (seating chart), **A6** (place cards), **A3*
 - Single Bun service on Railway. Multi-stage Dockerfile (Bun builder → slim runtime). `WORKDIR /app/backend`. `CMD bun src/server.ts`.
 - `/data` persistent volume holds SQLite + uploads. Without it, redeploy = data loss.
 - `VITE_*` env vars are baked at build time. Changing them requires a rebuild.
-- Required prod env: `JWT_SECRET`, `FRONTEND_BASE_URL`. Required for email: `RESEND_API_KEY`, `EMAIL_FROM`. Stripe deferred to v2.
+- Required prod env: `JWT_SECRET`, `FRONTEND_BASE_URL`. Required for email: `RESEND_API_KEY`, `EMAIL_FROM`.
+- Billing (Stripe subscriptions, live): set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_EUR`, `STRIPE_PRICE_HUF`. When `STRIPE_SECRET_KEY` is unset billing is disabled (checkout/portal 503, app runs in trial mode), so it never blocks boot. Run `bun backend/scripts/stripe_setup.ts` once (test mode first) to create the Product + Prices and print the price ids. Webhook endpoint: `POST {FRONTEND_BASE_URL}/api/billing/webhook` for `checkout.session.completed` + `customer.subscription.created/updated/deleted`. Plan price lives in `shared/billing.ts` (`MONTHLY_PRICE`) — keep it in sync with the Stripe Prices.
+
+## Billing / subscriptions
+
+- State machine on `couples` (`shared/billing.ts`): `trialing` (14-day in-app trial, set at onboarding) → `founding` (free 18 months, granted when partner B joins a couple among the first `FOUNDING_CAP`=200 created) → `active`/`past_due`/`canceled` (driven by the Stripe webhook). Entitlement (edit access) is COMPUTED from status + timestamps in `toCoupleBilling`, never stored — a lapsed couple goes read-only at read-time.
+- **Never reuse `couples.status` for billing** — that column drives the pause-to-DELETE countdown. A lapsed couple keeps `status='active'` and just loses edit entitlement (data preserved).
+- Read-only enforcement is central: `entitlementBlock()` in the `server.ts` request pipeline returns 402 for mutating requests to the workspace edit surfaces (`EDIT_PREFIXES` in `domain/billing.ts`) once a couple lapses. Reads, exports, and recovery flows stay open. Demo couples are always entitled.
+- Payment UI is 100% Stripe-hosted (Checkout + Billing Portal) — no card fields in-app, no `@stripe/*` frontend deps.
 
 ## What NOT to do
 
