@@ -288,7 +288,7 @@ export default function LandingPage() {
 
       {/* ════════════════════════ 07 · Suppliers ════════════════════════ */}
       <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-start">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
             <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
               {t("landing.suppliers_section_title")}
