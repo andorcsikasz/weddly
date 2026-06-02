@@ -705,6 +705,70 @@ describe("admin users — beta-tester marker", () => {
     expect(unset.data.user?.is_beta_tester).toBe(false);
   });
 
+  test("marking beta grants the founding gift; unmarking revokes it", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token, coupleId } = await bootstrapCouple("betagift@weddly.test");
+    const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, { token });
+    const userId = me.data.user.id;
+
+    const readBilling = () =>
+      db
+        .prepare("SELECT subscription_status, is_founding_member FROM couples WHERE id = ?")
+        .get(coupleId) as { subscription_status: string; is_founding_member: number };
+
+    // Mark as beta → workspace receives the free-access founding gift.
+    const set = await req(
+      "POST",
+      `/api/admin/users/${userId}/beta`,
+      { beta: true },
+      { token: adminToken },
+    );
+    expect(set.status).toBe(200);
+    const granted = readBilling();
+    expect(granted.subscription_status).toBe("founding");
+    expect(Boolean(granted.is_founding_member)).toBe(false);
+
+    // Audit log records the billing effect.
+    const grantAudit = db
+      .prepare(
+        "SELECT after_json FROM audit_log WHERE action = 'admin.user_beta_set' AND target_id = ? ORDER BY id DESC",
+      )
+      .get(userId) as { after_json: string } | undefined;
+    expect(grantAudit?.after_json).toContain('"billing_gift":"granted"');
+
+    // Unmark → comped gift is revoked, plan back to none.
+    const unset = await req(
+      "POST",
+      `/api/admin/users/${userId}/beta`,
+      { beta: false },
+      { token: adminToken },
+    );
+    expect(unset.status).toBe(200);
+    const revoked = readBilling();
+    expect(revoked.subscription_status).toBe("none");
+  });
+
+  test("marking beta does NOT downgrade an active paying couple", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token, coupleId } = await bootstrapCouple("betaactive@weddly.test");
+    const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, { token });
+    const userId = me.data.user.id;
+
+    db.prepare("UPDATE couples SET subscription_status = 'active' WHERE id = ?").run(coupleId);
+
+    const set = await req(
+      "POST",
+      `/api/admin/users/${userId}/beta`,
+      { beta: true },
+      { token: adminToken },
+    );
+    expect(set.status).toBe(200);
+    const row = db
+      .prepare("SELECT subscription_status FROM couples WHERE id = ?")
+      .get(coupleId) as { subscription_status: string };
+    expect(row.subscription_status).toBe("active");
+  });
+
   test("workspace inherits beta status from a tagged member", async () => {
     const adminToken = await bootstrapAdmin();
     const { token, coupleId } = await bootstrapCouple("betacouple@weddly.test");

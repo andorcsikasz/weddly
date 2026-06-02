@@ -9,7 +9,7 @@ import { grantFreeAccess, revokeFreeAccess } from "../domain/billing";
 import { sendKind } from "../domain/emails";
 import { purgeOneCouple, purgeOneUser } from "../domain/purge";
 import { isAdminEmail, requireAdmin, type UserRow } from "../domain/users";
-import { type CoupleRow, toCouple } from "../domain/couples";
+import { type CoupleRow, getCoupleById, toCouple } from "../domain/couples";
 import {
   activeFlagsByUserId,
   createUserFlag,
@@ -587,8 +587,8 @@ async function handleSetBetaTester(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "`beta` must be a boolean");
   }
 
-  const target = db.prepare("SELECT id, email FROM users WHERE id = ?").get(userId) as
-    | { id: number; email: string }
+  const target = db.prepare("SELECT id, email, couple_id FROM users WHERE id = ?").get(userId) as
+    | { id: number; email: string; couple_id: number | null }
     | undefined;
   if (!target) throw new HttpError(404, "User not found");
   if (target.email.endsWith("@purged.local")) {
@@ -601,13 +601,34 @@ async function handleSetBetaTester(ctx: Ctx): Promise<Response> {
     userId,
   );
 
+  // Beta testers get the same free-access gift as the admin "grant free" badge
+  // so the team's own accounts can use the workspace without a subscription.
+  // Guarded so we never clobber a real paying plan or a demo couple, and on
+  // un-marking we only revoke a comp this feature could have granted (an admin/
+  // beta founding gift), never a first-200 founding member or a paying sub.
+  let billingGift: "granted" | "revoked" | "unchanged" = "unchanged";
+  if (target.couple_id != null) {
+    const couple = getCoupleById(target.couple_id);
+    if (couple && !couple.is_demo) {
+      if (body.beta) {
+        if (couple.subscription_status !== "active" && couple.subscription_status !== "past_due") {
+          grantFreeAccess(couple.id);
+          billingGift = "granted";
+        }
+      } else if (couple.subscription_status === "founding" && !couple.is_founding_member) {
+        revokeFreeAccess(couple.id);
+        billingGift = "revoked";
+      }
+    }
+  }
+
   addAuditLog({
     actor_user_id: admin.id,
     couple_id: null,
     action: "admin.user_beta_set",
     target_kind: "user",
     target_id: userId,
-    after: { is_beta_tester: body.beta },
+    after: { is_beta_tester: body.beta, billing_gift: billingGift },
   });
 
   const view = listOneUserAdminView(userId);

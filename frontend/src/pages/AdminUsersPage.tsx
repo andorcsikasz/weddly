@@ -974,25 +974,26 @@ export default function AdminUsersPage() {
                       : "admin.couples_count_other",
                     { n: couplePairs.length },
                   )}
+                  collapse={
+                    !isSearching
+                      ? {
+                          open: couplesOpen,
+                          onToggle: () => setCouplesOpen((v) => !v),
+                          label: t(couplesOpen ? "admin.section_hide" : "admin.section_show"),
+                        }
+                      : undefined
+                  }
                   actions={
-                    <>
-                      {deletingCount > 0 && (
-                        <button
-                          type="button"
-                          className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
-                          onClick={onPurgeDeleting}
-                          disabled={purgingDeleting}
-                        >
-                          {t("admin.purge_deleting_button", { n: deletingCount })}
-                        </button>
-                      )}
-                      {!isSearching && (
-                        <SectionToggle
-                          open={couplesOpen}
-                          onToggle={() => setCouplesOpen((v) => !v)}
-                        />
-                      )}
-                    </>
+                    deletingCount > 0 ? (
+                      <button
+                        type="button"
+                        className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                        onClick={onPurgeDeleting}
+                        disabled={purgingDeleting}
+                      >
+                        {t("admin.purge_deleting_button", { n: deletingCount })}
+                      </button>
+                    ) : undefined
                   }
                 />
                 {couplesListOpen &&
@@ -1010,15 +1011,18 @@ export default function AdminUsersPage() {
               <section className="mb-6">
                 <AdminSectionHeader
                   title={t("admin.solo_section")}
-                  description={t("admin.solo_help")}
                   count={t(
                     soloWorkspaces.length === 1 ? "admin.solo_count_one" : "admin.solo_count_other",
                     { n: soloWorkspaces.length },
                   )}
-                  actions={
-                    !isSearching ? (
-                      <SectionToggle open={soloOpen} onToggle={() => setSoloOpen((v) => !v)} />
-                    ) : undefined
+                  collapse={
+                    !isSearching
+                      ? {
+                          open: soloOpen,
+                          onToggle: () => setSoloOpen((v) => !v),
+                          label: t(soloOpen ? "admin.section_hide" : "admin.section_show"),
+                        }
+                      : undefined
                   }
                 />
                 {soloListOpen &&
@@ -1039,48 +1043,30 @@ export default function AdminUsersPage() {
                *  matching beta workspaces. ──────────────────────────────────── */}
               {betaCouples.length > 0 && (filteredBetaCouples.length > 0 || !isSearching) && (
                 <section className="mb-6">
-                  <div className="admin-card flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700 dark:text-paper-100">
-                      <Pill tone="sage" icon={<FlaskConical size={11} aria-hidden />}>
-                        {t("admin.badge_beta")}
-                      </Pill>
-                      <span>
-                        {t(
-                          betaCouples.length === 1
-                            ? "admin.beta_workspaces_summary_one"
-                            : "admin.beta_workspaces_summary_other",
-                          { n: betaCouples.length },
-                        )}
-                      </span>
-                    </div>
-                    {!isSearching && (
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm"
-                        onClick={() => setBetaOpen((v) => !v)}
-                        aria-expanded={betaOpen}
-                      >
-                        {betaOpen
-                          ? t("admin.beta_workspaces_hide")
-                          : t("admin.beta_workspaces_show")}
-                      </button>
+                  <AdminSectionHeader
+                    title={t("admin.beta_workspaces_section")}
+                    count={t(
+                      betaCouples.length === 1
+                        ? "admin.beta_workspaces_summary_one"
+                        : "admin.beta_workspaces_summary_other",
+                      { n: betaCouples.length },
                     )}
-                  </div>
-                  {betaListOpen && (
-                    <>
-                      <div className="mt-3">
-                        <AdminSectionHeader
-                          title={t("admin.beta_workspaces_section")}
-                          description={t("admin.beta_workspaces_help")}
-                        />
-                      </div>
-                      {filteredBetaCouples.length === 0 ? (
-                        <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
-                      ) : (
-                        <ul className="space-y-1.5">{filteredBetaCouples.map(renderCoupleCard)}</ul>
-                      )}
-                    </>
-                  )}
+                    collapse={
+                      !isSearching
+                        ? {
+                            open: betaOpen,
+                            onToggle: () => setBetaOpen((v) => !v),
+                            label: t(betaOpen ? "admin.section_hide" : "admin.section_show"),
+                          }
+                        : undefined
+                    }
+                  />
+                  {betaListOpen &&
+                    (filteredBetaCouples.length === 0 ? (
+                      <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
+                    ) : (
+                      <ul className="space-y-1.5">{filteredBetaCouples.map(renderCoupleCard)}</ul>
+                    ))}
                 </section>
               )}
 
@@ -1093,116 +1079,105 @@ export default function AdminUsersPage() {
                *  + orphans lists above. ────────────────────────────────────── */}
               {!isSearching && demoCouples.length > 0 && (
                 <section className="mb-6">
-                  <div className="admin-card flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700 dark:text-paper-100">
-                      <Pill tone="muted">{t("admin.demo_badge")}</Pill>
+                  <AdminSectionHeader
+                    title={t("admin.demo_workspaces_section")}
+                    count={
                       <span>
                         {t(
                           demoCouples.length === 1
                             ? "admin.demo_workspaces_summary_one"
                             : "admin.demo_workspaces_summary_other",
                           { n: demoCouples.length },
-                        )}
+                        )}{" "}
+                        <span className="text-neutral-400 dark:text-umber-400">
+                          · {t("admin.demo_workspaces_recent_24h", { n: demoRecent24h })}
+                        </span>
                       </span>
-                      <span className="text-neutral-500 dark:text-umber-300">
-                        · {t("admin.demo_workspaces_recent_24h", { n: demoRecent24h })}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm"
-                      onClick={() => setDemoOpen((v) => !v)}
-                      aria-expanded={demoOpen}
-                    >
-                      {demoOpen ? t("admin.demo_workspaces_hide") : t("admin.demo_workspaces_show")}
-                    </button>
-                  </div>
+                    }
+                    collapse={{
+                      open: demoOpen,
+                      onToggle: () => setDemoOpen((v) => !v),
+                      label: t(demoOpen ? "admin.section_hide" : "admin.section_show"),
+                    }}
+                  />
                   {demoOpen && (
-                    <>
-                      <div className="mt-3">
-                        <AdminSectionHeader
-                          title={t("admin.demo_workspaces_section")}
-                          description={t("admin.demo_workspaces_help")}
-                        />
-                      </div>
-                      <ul className="space-y-1.5">
-                        {demoCouples.map((c) => {
-                          const members = c.partners
-                            .map((p) => userById.get(p.id))
-                            .filter((u): u is AdminUserView => u != null);
-                          const firstMemberEmail = members[0]?.email ?? "—";
-                          // Feature-usage chips: sort by event count desc, show the
-                          // top 6 inline + a "+N more" pill when the demo went deep.
-                          const counts = c.demo_feature_counts ?? {};
-                          const total = c.demo_total_events ?? 0;
-                          // The demo.start row is bookkeeping noise — strip it so the
-                          // chips only reflect what the visitor actually touched.
-                          const usable = Object.entries(counts).filter(
-                            ([feature]) => feature !== "demo",
-                          );
-                          const usableTotal = usable.reduce((s, [, n]) => s + n, 0);
-                          const sortedFeatures = usable.sort(
-                            (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
-                          );
-                          const visible = sortedFeatures.slice(0, 6);
-                          const hidden = sortedFeatures.length - visible.length;
-                          return (
-                            <li
-                              key={c.id}
-                              className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
-                            >
-                              <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_10rem] md:items-center">
-                                <div className="whitespace-nowrap">
-                                  <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
-                                    {workspaceId(c)}
-                                  </code>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-paper-100">
-                                  <Pill tone="muted">{t("admin.demo_badge")}</Pill>
-                                  <span className="truncate">{workspaceLabel(c)}</span>
-                                </div>
-                                <div className="truncate text-xs text-neutral-500 dark:text-umber-300">
-                                  {firstMemberEmail}
-                                </div>
-                                <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
-                                  <div>{formatDate(c.created_at, locale)}</div>
-                                  <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
-                                    {formatRelative(c.last_seen_at, locale, t)}
-                                  </div>
+                    <ul className="space-y-1.5">
+                      {demoCouples.map((c) => {
+                        const members = c.partners
+                          .map((p) => userById.get(p.id))
+                          .filter((u): u is AdminUserView => u != null);
+                        const firstMemberEmail = members[0]?.email ?? "—";
+                        // Feature-usage chips: sort by event count desc, show the
+                        // top 6 inline + a "+N more" pill when the demo went deep.
+                        const counts = c.demo_feature_counts ?? {};
+                        const total = c.demo_total_events ?? 0;
+                        // The demo.start row is bookkeeping noise — strip it so the
+                        // chips only reflect what the visitor actually touched.
+                        const usable = Object.entries(counts).filter(
+                          ([feature]) => feature !== "demo",
+                        );
+                        const usableTotal = usable.reduce((s, [, n]) => s + n, 0);
+                        const sortedFeatures = usable.sort(
+                          (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+                        );
+                        const visible = sortedFeatures.slice(0, 6);
+                        const hidden = sortedFeatures.length - visible.length;
+                        return (
+                          <li
+                            key={c.id}
+                            className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+                          >
+                            <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_10rem] md:items-center">
+                              <div className="whitespace-nowrap">
+                                <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
+                                  {workspaceId(c)}
+                                </code>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-paper-100">
+                                <Pill tone="muted">{t("admin.demo_badge")}</Pill>
+                                <span className="truncate">{workspaceLabel(c)}</span>
+                              </div>
+                              <div className="truncate text-xs text-neutral-500 dark:text-umber-300">
+                                {firstMemberEmail}
+                              </div>
+                              <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
+                                <div>{formatDate(c.created_at, locale)}</div>
+                                <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
+                                  {formatRelative(c.last_seen_at, locale, t)}
                                 </div>
                               </div>
-                              {c.demo_feature_counts !== null && (
-                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                                  <span className="text-neutral-500 dark:text-umber-300">
-                                    {usableTotal === 0
-                                      ? t("admin.demo_events_none")
-                                      : t(
-                                          total === 1
-                                            ? "admin.demo_events_label_one"
-                                            : "admin.demo_events_label_other",
-                                          { n: total },
-                                        )}
-                                  </span>
-                                  {visible.map(([feature, n]) => (
-                                    <Pill key={feature} tone="paper">
-                                      <span className="font-medium">{feature}</span>
-                                      <span className="ml-1 text-neutral-500 dark:text-umber-300">
-                                        {n}
-                                      </span>
-                                    </Pill>
-                                  ))}
-                                  {hidden > 0 && (
-                                    <span className="text-neutral-500 dark:text-umber-300">
-                                      {t("admin.demo_feature_more", { n: hidden })}
+                            </div>
+                            {c.demo_feature_counts !== null && (
+                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                                <span className="text-neutral-500 dark:text-umber-300">
+                                  {usableTotal === 0
+                                    ? t("admin.demo_events_none")
+                                    : t(
+                                        total === 1
+                                          ? "admin.demo_events_label_one"
+                                          : "admin.demo_events_label_other",
+                                        { n: total },
+                                      )}
+                                </span>
+                                {visible.map(([feature, n]) => (
+                                  <Pill key={feature} tone="paper">
+                                    <span className="font-medium">{feature}</span>
+                                    <span className="ml-1 text-neutral-500 dark:text-umber-300">
+                                      {n}
                                     </span>
-                                  )}
-                                </div>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </>
+                                  </Pill>
+                                ))}
+                                {hidden > 0 && (
+                                  <span className="text-neutral-500 dark:text-umber-300">
+                                    {t("admin.demo_feature_more", { n: hidden })}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   )}
                 </section>
               )}
