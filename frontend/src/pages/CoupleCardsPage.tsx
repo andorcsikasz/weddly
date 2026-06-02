@@ -1107,39 +1107,44 @@ function CardView({
   );
 }
 
-/** Tiny easter-egg flair drawn into the bottom-left corner of every
- *  Lemonade question card: a lemonade glass with a slice of lemon
- *  perched on the rim and a straw poking out. Inline SVG (no extra
- *  dependency) inheriting currentColor so it tints with the surrounding
- *  text. Kept small + line-art-only so it reads as a quiet stamp rather
- *  than competing with the question. */
+/** Easter-egg flair drawn into the bottom-left corner of every Lemonade
+ *  question card: a lemonade glass with a slice of lemon perched on the
+ *  rim, a bendy straw, and a few bubbles rising through the drink.
+ *  Inline SVG (no extra dependency) inheriting currentColor so it tints
+ *  with the surrounding text. Line-art only — thinner strokes + rounded
+ *  caps so it reads as a friendly hand-drawn stamp rather than a hard
+ *  geometric mark. */
 function LemonadeGlassMark({ className = "" }: { className?: string }) {
   return (
     <svg
       aria-hidden="true"
-      viewBox="0 0 32 32"
-      width="28"
-      height="28"
+      viewBox="0 0 36 36"
+      width="56"
+      height="56"
       className={className}
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.6"
+      strokeWidth="1.3"
       strokeLinejoin="round"
       strokeLinecap="round"
     >
-      {/* Glass body — slight inward taper at the base, classic tumbler. */}
-      <path d="M10 11 L22 11 L20.6 26.6 Q20.4 28.4 18.7 28.4 L13.3 28.4 Q11.6 28.4 11.4 26.6 Z" />
-      {/* Lemonade waterline across the glass interior. */}
-      <path d="M10.5 15 L21.5 15" />
-      {/* Straw — diagonal from the rim up to the right. */}
-      <line x1="14" y1="6.5" x2="17" y2="14.5" />
-      {/* Lemon slice perched on the right side of the rim: outer rind +
-          four radial cuts so it reads as a citrus cross-section. */}
-      <circle cx="22.2" cy="11" r="3.6" />
-      <line x1="22.2" y1="7.5" x2="22.2" y2="14.5" />
-      <line x1="18.6" y1="11" x2="25.8" y2="11" />
-      <line x1="19.7" y1="8.5" x2="24.7" y2="13.5" />
-      <line x1="19.7" y1="13.5" x2="24.7" y2="8.5" />
+      {/* Glass tumbler — softly tapered body with a rounded base curve. */}
+      <path d="M11 13 Q11 12.4 11.6 12.4 L24.4 12.4 Q25 12.4 25 13 L23.4 30 Q23.2 32 21.2 32 L14.8 32 Q12.8 32 12.6 30 Z" />
+      {/* Lemonade waterline, slight curve so it reads as liquid. */}
+      <path d="M11.7 16.5 Q18 17.2 24.3 16.5" />
+      {/* Three rising bubbles inside the drink. */}
+      <circle cx="14.5" cy="22" r="0.7" />
+      <circle cx="19" cy="25" r="0.55" />
+      <circle cx="16.5" cy="27.5" r="0.65" />
+      {/* Bendy straw — gentle S-curve from inside the glass up and out. */}
+      <path d="M18 14 Q17 10 19 8 Q20.5 6.5 19.5 4.5" />
+      {/* Lemon slice perched on the rim — outer rind + four radial cuts
+          so it reads as a citrus cross-section. */}
+      <circle cx="25.5" cy="11.5" r="4.2" />
+      <line x1="25.5" y1="7.3" x2="25.5" y2="15.7" />
+      <line x1="21.3" y1="11.5" x2="29.7" y2="11.5" />
+      <line x1="22.5" y1="8.5" x2="28.5" y2="14.5" />
+      <line x1="22.5" y1="14.5" x2="28.5" y2="8.5" />
     </svg>
   );
 }
