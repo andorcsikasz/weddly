@@ -92,13 +92,12 @@ export default {
         // Kept out of the `blush` palette on purpose: blush is the warm
         // earthy CTA accent (still used in chips, hero, supplier branding),
         // while wnrs.red is a single product-surface token specific to the
-        // conversation-cards face. Tuned to a strong, saturated warm red:
-        // brighter than the earlier muted firebrick (#b1232a) the user found
-        // too soft, but kept warm so it doesn't read cool like PMS-186-C
-        // (#c8102e) did against the warm paper palette.
+        // conversation-cards face. Pure pop red (#D00000) per user direction
+        // 2026-06-02 — louder than the earlier #cc1f28 / firebrick #b1232a,
+        // sits cleaner on white than the warmer PMS-186 variants did.
         wnrs: {
-          red: "#cc1f28",
-          redInk: "#9e1820",
+          red: "#D00000",
+          redInk: "#A00000",
         },
       },
       fontFamily: {
