@@ -552,9 +552,9 @@ function LiveStatsBand() {
   if (stats.couples === 0 && stats.rsvps === 0) return null;
 
   return (
-    <section className="relative bg-paper-100 dark:bg-umber-900">
-      <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
-        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-6 sm:gap-12">
+    <section className="relative bg-umber-100 dark:bg-umber-900">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+        <div className="mx-auto grid max-w-md grid-cols-2 gap-6 sm:gap-10">
           <StatCounter
             value={stats.couples}
             locale={locale}
@@ -721,16 +721,24 @@ function StatCounter({
   const fmt = useMemo(() => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US"), [locale]);
   return (
     <div className="text-center">
-      <div className="relative mx-auto flex aspect-[4/5] w-24 items-center justify-center overflow-hidden rounded-md border border-umber-200 bg-paper-50 shadow-soft sm:w-28 lg:w-32 dark:border-umber-700 dark:bg-umber-800">
+      {/* Vintage split-flap tile — espresso card, cream serif digit, and a
+          dark seam across the middle with a hairline highlight just below
+          for the flap-card depth (coffee-shop counter / old tennis
+          scoreboard). */}
+      <div className="relative mx-auto flex aspect-[5/6] w-16 items-center justify-center overflow-hidden rounded-lg bg-umber-900 shadow-pop ring-1 ring-umber-950/50 sm:w-20 lg:w-24 dark:bg-umber-950 dark:ring-umber-700/60">
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-6 top-1/2 h-px -translate-y-1/2 bg-paper-300/60 dark:bg-umber-700"
+          className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-[2px] -translate-y-px bg-black/30"
         />
-        <span className="relative font-serif text-4xl font-medium tabular-nums leading-none text-umber-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-px translate-y-px bg-paper-50/12"
+        />
+        <span className="relative font-serif text-3xl font-semibold tabular-nums leading-none text-paper-50 sm:text-4xl lg:text-5xl">
           {fmt.format(display)}
         </span>
       </div>
-      <div className="mt-3 font-serif text-sm text-umber-700 dark:text-umber-200 sm:mt-4 sm:text-base">
+      <div className="mt-2.5 font-grotesk text-[11px] font-medium uppercase tracking-[0.18em] text-umber-700 dark:text-umber-200 sm:text-xs">
         {label}
       </div>
     </div>
