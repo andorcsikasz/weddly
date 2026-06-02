@@ -12,13 +12,16 @@ import {
   BookOpen,
   CalendarCheck,
   CalendarDays,
+  Castle,
   ClipboardCheck,
   Gem,
   Heart,
+  Landmark,
   LayoutGrid,
   type LucideIcon,
   Mail,
   MailCheck,
+  Mountain,
   Quote,
   Users,
   Wallet,
@@ -41,6 +44,9 @@ const ICON_BY_SLUG: Record<string, LucideIcon> = {
   "eskuvoszervezesi-checklist-12-honapra": CalendarDays,
   "eskuvoszervezesi-checklist-6-honapra": CalendarCheck,
   "digitalis-eskuvoi-meghivo-vagy-papir-meghivo": Mail,
+  "where-to-get-married-in-hungary": Landmark,
+  "where-to-get-married-in-austria": Mountain,
+  "where-to-get-married-in-slovakia": Castle,
 };
 
 /** Topical Unsplash photo per post slug. Aesthetic is "wedding
@@ -75,6 +81,12 @@ export const DEFAULT_PHOTO_BY_SLUG: Record<string, string> = {
     "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&auto=format&fit=crop&q=75",
   "digitalis-eskuvoi-meghivo-vagy-papir-meghivo":
     "https://images.unsplash.com/photo-1525258946800-98cfd641d0de?w=1200&auto=format&fit=crop&q=75",
+  "where-to-get-married-in-hungary":
+    "https://images.unsplash.com/photo-1633895365999-20d132bf9319?w=1200&auto=format&fit=crop&q=75",
+  "where-to-get-married-in-austria":
+    "https://images.unsplash.com/photo-1698871061456-1834361d4e44?w=1200&auto=format&fit=crop&q=75",
+  "where-to-get-married-in-slovakia":
+    "https://images.unsplash.com/photo-1764816455462-dc5165344abe?w=1200&auto=format&fit=crop&q=75",
 };
 
 interface BlogCoverArtProps {
@@ -135,19 +147,18 @@ export function BlogCoverArt({ slug, bgUrl, className }: BlogCoverArtProps) {
           paper). Keeps overlay legible without flattening the image. */}
       {resolvedBg ? <rect width="800" height="500" fill={`url(#tint-${gradId})`} /> : null}
 
-      {/* Wēddly wordmark — large italic serif, centered. On a photo
-          it's white with low opacity so it reads as a watermark; on the
-          paper fallback it stays paper-300 like the original. */}
+      {/* Wēddly wordmark — small italic serif anchored to the bottom-
+          left as a quiet publication mark, like a magazine masthead.
+          White on photos, paper-300 on the paper fallback. */}
       <text
-        x="400"
-        y="290"
-        textAnchor="middle"
+        x="40"
+        y="465"
         fontFamily="Cormorant, 'Cormorant Garamond', Georgia, serif"
         fontStyle="italic"
         fontWeight="500"
-        fontSize="140"
-        letterSpacing="6"
-        fill={resolvedBg ? "rgba(255,255,255,0.78)" : "#e3d9bf"}
+        fontSize="48"
+        letterSpacing="2"
+        fill={resolvedBg ? "rgba(255,255,255,0.88)" : "#bfae7b"}
       >
         Wēddly
       </text>
