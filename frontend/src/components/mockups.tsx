@@ -743,6 +743,8 @@ export function SeatingMockup({ className }: Common) {
         </text>
       </g>
 
+      {/* Canvas + tables nudged up so the gap below the toolbar is tighter. */}
+      <g transform="translate(0, -10)">
       {/* Floor / grid */}
       <g className="text-paper-100">
         <rect x="24" y="60" width="432" height="276" rx="8" fill="currentColor" />
@@ -892,6 +894,7 @@ export function SeatingMockup({ className }: Common) {
             {t("landing.mockup_drag_subtitle")}
           </text>
         </g>
+      </g>
       </g>
     </svg>
   );
