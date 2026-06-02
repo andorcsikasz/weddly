@@ -190,7 +190,7 @@ export default function LandingPage() {
           footer "Funkciók" link and the interactive-budget demo's "#phases"
           jump still land on the first feature block. */}
       <section id="phases" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
@@ -222,7 +222,7 @@ export default function LandingPage() {
           bullets, mockup) — the mockup is wide and reads better below the
           copy at narrow widths. */}
       <section className="relative bg-paper-100/70 dark:bg-umber-900/70">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-16">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12">
             <div>
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
@@ -254,7 +254,7 @@ export default function LandingPage() {
           breaks the paper-50/white monotony with a subtle diagonal
           texture so this mid-page beat reads as a distinct chapter. */}
       <section className="stationery-light relative overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
               <h2 className="whitespace-pre-line font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
@@ -283,7 +283,7 @@ export default function LandingPage() {
 
       {/* ════════════════════════ 07 · Suppliers ════════════════════════ */}
       <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
             <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
               {t("landing.suppliers_section_title")}
@@ -318,7 +318,7 @@ export default function LandingPage() {
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
           <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
             {t("landing.audience_title")}
           </h2>
@@ -352,7 +352,7 @@ export default function LandingPage() {
           shadow. Leads with the founding offer (free for the first 200
           couples), with the standard 5 €/mo as the muted after-price. */}
       <section className="relative stationery">
-        <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="relative mx-auto max-w-lg">
             <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8">
               <div className="flex items-end gap-3">
@@ -428,7 +428,7 @@ export default function LandingPage() {
           Stationery texture, faded WĒDDLY watermark, huge italic
           headline, signature, eucalyptus stem ornament. */}
       <section className="stationery relative flex min-h-[40vh] items-center sm:min-h-[50vh]">
-        <div className="mx-auto w-full max-w-4xl px-4 py-20 text-center sm:px-6 sm:py-24">
+        <div className="mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-24">
           <Wordmark size="md" className="text-paper-400 dark:text-umber-600" />
           <h2 className="mt-8 whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-umber-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
             {t("landing.closing_title")}
