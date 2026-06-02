@@ -25,6 +25,10 @@ const MONEY = (locale: Locale, currency: Currency) =>
   new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     style: "currency",
     currency,
+    // `narrowSymbol` forces the glyph (€ / $ / Ft) instead of the ISO code.
+    // hu-HU defaults EUR to the literal "EUR" text — we want the € sign in
+    // Hungarian too, matching how en-GB already renders it.
+    currencyDisplay: "narrowSymbol",
     // HUF / EUR / USD are all whole-unit currencies for our purposes — we
     // store and edit as integers. Drop the trailing .00 so 5 000 € reads
     // as cleanly as 5 000 Ft.

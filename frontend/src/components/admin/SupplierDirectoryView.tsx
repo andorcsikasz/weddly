@@ -211,7 +211,7 @@ export function SupplierDirectoryView() {
 
       {/* Filter strip. Lay out as a wrapped flex so each control gets a
           comfortable minimum width on phones. */}
-      <div className="grid grid-cols-1 gap-3 rounded-xl border border-paper-300 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-800/60 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-x-3 gap-y-2 rounded-xl border border-paper-300 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-800/60 sm:grid-cols-2 lg:grid-cols-4">
         <FilterSelect
           label={t("admin.directory_filter_source_label")}
           value={filters.source ?? "all"}
@@ -500,10 +500,10 @@ function FilterSelect({
   options: { value: string; label: string }[];
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs">
+    <label className="flex flex-col gap-0.5 text-xs">
       <span className="uppercase tracking-wide text-neutral-500 dark:text-umber-300">{label}</span>
       <select
-        className="input"
+        className="input !min-h-0 !py-1.5"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
@@ -534,7 +534,7 @@ function FilterInput({
   icon?: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs">
+    <label className="flex flex-col gap-0.5 text-xs">
       <span className="uppercase tracking-wide text-neutral-500 dark:text-umber-300">{label}</span>
       <span className="relative inline-flex items-center">
         {icon && (
@@ -547,7 +547,7 @@ function FilterInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`input ${icon ? "pl-7" : ""}`}
+          className={`input !min-h-0 !py-1.5 ${icon ? "pl-7" : ""}`}
         />
       </span>
     </label>
