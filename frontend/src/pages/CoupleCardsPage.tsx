@@ -532,9 +532,6 @@ function DeckShowcase({
           <h1 className="font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl lg:whitespace-nowrap lg:text-5xl">
             {t("tools.couple_cards.page_h1")}
           </h1>
-          <p className="mx-auto mt-4 max-w-xl font-display text-sm leading-relaxed text-ink-700 dark:text-paper-200 sm:text-base">
-            {t("tools.couple_cards.page_intro")}
-          </p>
         </div>
 
         {/* Fixed 4-slot row, scoped to max-w-2xl so the row sits flush
