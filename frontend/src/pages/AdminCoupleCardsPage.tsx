@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader } from "../components/admin";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { COUPLE_CARD_DECKS } from "../lib/couple_cards";
 import {
   adminCoupleCardsApi,
   type CoupleCardFeedbackAggregate,
@@ -24,6 +25,26 @@ const DECK_LABELS: Record<string, string> = {
   closeness: "Közelség",
   deepwater: "Mély víz",
 };
+
+// Canonical current question text per (deck_id : card_index : locale).
+// Votes are keyed by that tuple and carry a snapshot of the wording the
+// visitor saw — but the decks get re-worded over time. A feedback row is
+// only "still a card" if its snapshot matches the live question at that
+// slot; reworded or removed questions ("not in the cards anymore") are
+// dropped from the table below.
+const CURRENT_QUESTIONS: ReadonlyMap<string, string> = (() => {
+  const m = new Map<string, string>();
+  for (const deck of COUPLE_CARD_DECKS) {
+    deck.questionsHu.forEach((q, i) => m.set(`${deck.id}:${i}:hu`, q));
+    deck.questionsEn.forEach((q, i) => m.set(`${deck.id}:${i}:en`, q));
+  }
+  return m;
+})();
+
+function isCurrentCard(row: CoupleCardFeedbackAggregate): boolean {
+  const current = CURRENT_QUESTIONS.get(`${row.deck_id}:${row.card_index}:${row.locale}`);
+  return current !== undefined && current.trim() === row.question_snapshot.trim();
+}
 
 const LOCALE_OPTIONS = ["all", "hu", "en"] as const;
 type LocaleFilter = (typeof LOCALE_OPTIONS)[number];
@@ -94,6 +115,9 @@ export default function AdminCoupleCardsPage() {
   const filtered = useMemo(() => {
     if (state.status !== "ok") return [];
     const rows = state.data.filter((row) => {
+      // Drop feedback for questions that are no longer in the decks (reworded
+      // copy or removed cards) — only show rows that match a live question.
+      if (!isCurrentCard(row)) return false;
       if (localeFilter !== "all" && row.locale !== localeFilter) return false;
       if (deckFilter !== "all" && row.deck_id !== deckFilter) return false;
       return true;
