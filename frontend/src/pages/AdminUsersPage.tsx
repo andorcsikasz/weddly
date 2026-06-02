@@ -906,11 +906,11 @@ export default function AdminUsersPage() {
         <>
           {/* ── Sticky search bar ──────────────────────────────────────────
            *  Filters every list below (workspaces, demos, orphans). Sticky
-           *  so the search field stays in view while the admin scrolls a
-           *  long workspace list. Pad the top so it doesn't overlap the
-           *  page header on first paint, and add a subtle backdrop so the
-           *  fade behind it reads correctly in dark mode too. */}
-          <div className="sticky top-0 z-20 -mx-4 mb-4 bg-paper-50/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-paper-50/80 dark:bg-umber-900/95 dark:supports-[backdrop-filter]:bg-umber-900/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-10 xl:px-10">
+           *  BELOW the app header (top-20, matching the section nav) so it never
+           *  overlaps the wordmark. Opaque page-coloured band (no lighter tint,
+           *  no backdrop-blur) so rows scrolling underneath are masked without a
+           *  visible lighter strip. */}
+          <div className="sticky top-20 z-20 -mx-4 mb-4 bg-paper-100 px-4 py-2 dark:bg-umber-900 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-10 xl:px-10">
             <div className="relative">
               <Search
                 size={14}
