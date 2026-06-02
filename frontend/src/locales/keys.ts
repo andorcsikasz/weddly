@@ -4393,8 +4393,7 @@ export interface LocaleMessages {
     read_minutes: string;
     related_eyebrow: string;
     back_to_index: string;
-    /** Heading + lead + CTA for the LandingPage teaser block. */
-    section_title: string;
+    /** CTA for the LandingPage teaser block. */
     section_cta: string;
     /** Tri-state loading / error / empty messages for the public blog
      *  surfaces (index, post, landing teaser) — the API is fetched at

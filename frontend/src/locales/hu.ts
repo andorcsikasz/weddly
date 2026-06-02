@@ -3942,7 +3942,6 @@ const hu: LocaleMessages = {
     read_minutes: "{n} perces olvasás",
     related_eyebrow: "Még a blogról",
     back_to_index: "Vissza a bloghoz",
-    section_title: "A blogból",
     section_cta: "Tovább a blogra",
     loading: "Betöltés…",
     load_failed: "Nem sikerült betölteni a posztokat. Próbáld újra egy perc múlva.",

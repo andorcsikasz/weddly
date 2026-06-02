@@ -856,18 +856,8 @@ function BlogTeaser() {
     timeZone: "UTC",
   });
   return (
-    <section className="relative bg-paper-50 dark:bg-umber-900">
-      {/* Outer wrapper keeps the centered header inside `max-w-6xl`, while
-       *  the carousel breaks out edge-to-edge below `sm:` so the cards can
-       *  visibly peek past the viewport (a strong swipe affordance on
-       *  phones). Tablet+ falls back to the 3-up grid. */}
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:pb-8 sm:pt-20">
-        <header className="text-center">
-          <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-5xl">
-            {t("blog.section_title")}
-          </h2>
-        </header>
-      </div>
+    <section className="relative bg-paper-50 pt-12 sm:pt-20 dark:bg-umber-900">
+      {/* Title removed per request — the cards speak for themselves. */}
       {/* Mobile: horizontal snap carousel so all three posts are visible
        *  through swiping in one viewport. The first card peeks at ~80vw so
        *  the user immediately sees there's more to scroll. Tablet+ keeps

@@ -3898,7 +3898,6 @@ const en: LocaleMessages = {
     read_minutes: "{n} min read",
     related_eyebrow: "More from the blog",
     back_to_index: "Back to the blog",
-    section_title: "From the blog",
     section_cta: "Browse the blog",
     loading: "Loading…",
     load_failed: "Couldn't load posts. Try again in a moment.",
