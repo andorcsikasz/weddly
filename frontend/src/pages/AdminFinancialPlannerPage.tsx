@@ -12,6 +12,7 @@ import {
 import type { SubscriptionStatus } from "@shared/billing";
 import { AdminPageHeader } from "../components/admin";
 import { adminFinancialPlannerApi } from "../lib/endpoints";
+import { type FxRates, fetchFxRates } from "../lib/fx";
 import { formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -60,22 +61,23 @@ function expiryByOffset(o: AdminFinancialPlannerOverview, months: number): numbe
 // Tájékoztató jellegű, leegyszerűsített magyar adóbecslés a tervezett éves
 // árbevételre. NEM adótanácsadás — 2024-es kulcsokkal, kerekítve. A
 // profitalapú (KFT) formák a "költséghányad" csúszkát használják.
-const HUF_PER_EUR = 400; // a KATA / minimálbér Ft-tételeinek EUR-ra váltásához
 // 2024-es minimálbér 266 800 Ft/hó. Az átalányadós EV jövedelme az éves
 // minimálbér feléig adómentes (SZJA + járulékok), és a főállású EV-nek a
 // járulékot legalább a minimálbér után meg kell fizetnie akkor is, ha
-// keveset keres — a mellékállásúnak (9-5 munka mellett) nem.
-const MIN_WAGE_EUR = (266_800 * 12) / HUF_PER_EUR; // éves minimálbér EUR-ban
-const HALF_MIN_WAGE_EUR = MIN_WAGE_EUR / 2; // átalányadó adómentes sávja
+// keveset keres — a mellékállásúnak (9-5 munka mellett) nem. A Ft-tételeket
+// az élő Ft/€ árfolyammal váltjuk EUR-ra (lásd lib/fx.ts).
+const ANNUAL_MIN_WAGE_HUF = 266_800 * 12;
 const ATALANY_SZJA = 0.15; // SZJA a jövedelmen
 const ATALANY_CONTRIB = 0.315; // TB 18,5% + szocho 13%
+// Ha az élő árfolyamot nem sikerül lekérni, ezzel a Ft/€ értékkel számolunk.
+const FALLBACK_HUF_PER_EUR = 400;
 
 type TaxForm = {
   key: string;
   name: string;
   note: string;
-  /** Becsült éves adó EUR-ban az éves árbevétel (EUR) + költséghányad (0..1) alapján. */
-  tax: (revenueEur: number, costRatio: number) => number;
+  /** Becsült éves adó EUR-ban: éves árbevétel (EUR), költséghányad (0..1), élő Ft/€ árfolyam. */
+  tax: (revenueEur: number, costRatio: number, hufPerEur: number) => number;
 };
 
 const TAX_FORMS: readonly TaxForm[] = [
@@ -83,17 +85,18 @@ const TAX_FORMS: readonly TaxForm[] = [
     key: "kata",
     name: "KATA",
     note: "fix 50e Ft/hó; csak magánszemély vevőkre, max. 18M Ft/év",
-    tax: () => (50_000 * 12) / HUF_PER_EUR,
+    tax: (_rev, _c, huf) => (50_000 * 12) / huf,
   },
   {
     key: "ev_atalany",
     name: "EV — átalányadó (főállás)",
     note: "40% kh.; az éves minimálbér feléig adómentes, de a járulék a minimálbér után akkor is jár",
-    tax: (rev) => {
+    tax: (rev, _c, huf) => {
+      const minWage = ANNUAL_MIN_WAGE_HUF / huf; // éves minimálbér EUR-ban
       const income = rev * 0.6; // 40% költséghányad
-      const taxable = Math.max(0, income - HALF_MIN_WAGE_EUR);
+      const taxable = Math.max(0, income - minWage / 2); // a minimálbér feléig adómentes
       // Főállásban a járulék+szocho legalább a minimálbér után jár.
-      const contrib = Math.max(MIN_WAGE_EUR * ATALANY_CONTRIB, taxable * ATALANY_CONTRIB);
+      const contrib = Math.max(minWage * ATALANY_CONTRIB, taxable * ATALANY_CONTRIB);
       return taxable * ATALANY_SZJA + contrib;
     },
   },
@@ -101,9 +104,10 @@ const TAX_FORMS: readonly TaxForm[] = [
     key: "ev_atalany_mellek",
     name: "EV — átalányadó (9-5 munka mellett)",
     note: "mellékállás: nincs járulékminimum (a főállás fedezi), az éves minimálbér feléig adómentes",
-    tax: (rev) => {
+    tax: (rev, _c, huf) => {
+      const halfMin = ANNUAL_MIN_WAGE_HUF / huf / 2;
       const income = rev * 0.6;
-      const taxable = Math.max(0, income - HALF_MIN_WAGE_EUR);
+      const taxable = Math.max(0, income - halfMin);
       return taxable * (ATALANY_SZJA + ATALANY_CONTRIB);
     },
   },
@@ -132,6 +136,10 @@ export default function AdminFinancialPlannerPage() {
   // Költséghányad (a bevétel hány %-a a levonható költség) a profitalapú
   // adóformákhoz. Csak a KFT-sorokat befolyásolja.
   const [costPct, setCostPct] = useState(20);
+  // Élő EUR-alapú árfolyamok (HUF / USD / CNY) az árfolyam-sávhoz és a Ft
+  // alapú adótételek átváltásához. Induláskor lekérjük, majd 10 percenként
+  // frissítjük, hogy folyamatosan az aktuális értéket mutassa.
+  const [fx, setFx] = useState<FxRates | null>(null);
 
   useEffect(() => {
     adminFinancialPlannerApi
@@ -139,6 +147,25 @@ export default function AdminFinancialPlannerPage() {
       .then(setData)
       .catch(() => setData(null));
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const ac = new AbortController();
+    const load = () => {
+      fetchFxRates(ac.signal).then((r) => {
+        if (!cancelled && r) setFx(r);
+      });
+    };
+    load();
+    const id = setInterval(load, 10 * 60_000);
+    return () => {
+      cancelled = true;
+      ac.abort();
+      clearInterval(id);
+    };
+  }, []);
+
+  const hufPerEur = fx?.rates.HUF ?? FALLBACK_HUF_PER_EUR;
 
   const projection = useMemo(() => {
     if (!data) return [];
@@ -163,6 +190,9 @@ export default function AdminFinancialPlannerPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
       <AdminPageHeader title={t("admin.fin_title")} subtitle={t("admin.fin_subtitle")} />
+
+      {/* Élő árfolyam-sáv (EUR alapú) */}
+      <FxStrip fx={fx} />
 
       {/* Live KPIs */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -376,7 +406,8 @@ export default function AdminFinancialPlannerPage() {
               <p className="mt-1 max-w-prose text-xs text-neutral-500 dark:text-umber-300">
                 A tervezett éves árbevételre ({eur(last.mrr * 12)} ARR a(z) {a.months}. hónapban).
                 Tájékoztató becslés 2024-es kulcsokkal, kerekítve — nem adótanácsadás. A
-                költséghányad csak a KFT (profitalapú) sorokat befolyásolja.
+                költséghányad csak a KFT (profitalapú) sorokat befolyásolja, a Ft-tételek pedig az
+                élő árfolyammal ({hufPerEur.toFixed(1)} Ft/€) számolnak.
               </p>
             </div>
             <div className="w-44 shrink-0">
@@ -405,9 +436,9 @@ export default function AdminFinancialPlannerPage() {
               <tbody>
                 {TAX_FORMS.map((f) => {
                   const rev = last.mrr * 12;
-                  const tax = Math.max(0, Math.round(f.tax(rev, costPct / 100)));
+                  const tax = Math.max(0, Math.round(f.tax(rev, costPct / 100, hufPerEur)));
                   const eff = rev > 0 ? (tax / rev) * 100 : 0;
-                  const overKataCap = f.key === "kata" && rev * HUF_PER_EUR > 18_000_000;
+                  const overKataCap = f.key === "kata" && rev * hufPerEur > 18_000_000;
                   return (
                     <tr key={f.key} className="border-t border-paper-200 dark:border-umber-700">
                       <td className="py-1.5 pr-4">
@@ -442,6 +473,36 @@ export default function AdminFinancialPlannerPage() {
         </section>
       )}
     </div>
+  );
+}
+
+/** Live EUR-based exchange-rate strip: 1 EUR in HUF / USD / CNY. Renders
+ *  nothing until the first successful fetch. */
+function FxStrip({ fx }: { fx: FxRates | null }) {
+  if (!fx) return null;
+  return (
+    <section className="admin-card mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
+      <span className="eyebrow">Árfolyam · 1 EUR</span>
+      <FxItem code="HUF" value={`${fx.rates.HUF.toFixed(1)} Ft`} />
+      <FxItem code="USD" value={`${fx.rates.USD.toFixed(3)} $`} />
+      <FxItem code="CNY" value={`${fx.rates.CNY.toFixed(2)} ¥`} />
+      <span className="ml-auto text-xs text-neutral-500 dark:text-umber-300">
+        ECB{fx.asOf ? ` · ${fx.asOf}` : ""}
+      </span>
+    </section>
+  );
+}
+
+function FxItem({ code, value }: { code: string; value: string }) {
+  return (
+    <span className="inline-flex items-baseline gap-1.5">
+      <span className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-umber-300">
+        {code}
+      </span>
+      <span className="text-sm font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
+        {value}
+      </span>
+    </span>
   );
 }
 

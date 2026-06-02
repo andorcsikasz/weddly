@@ -185,7 +185,7 @@ const CSP = [
   // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
   // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may
   // also XHR the container config from googletagmanager.com.
-  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
+  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://api.frankfurter.app",
   // OSM's /export/embed.html is iframed by the honeymoon map modal.
   // `blob:` is for the /app/seating PDF preview modal — the generated chart
   // is handed to <iframe src="blob:..."> so the browser's native PDF viewer
