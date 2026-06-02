@@ -134,15 +134,17 @@ export default function RegisterPage() {
       <Shell>
         <div className="mx-auto max-w-md">
           <div className="card text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center text-ink-700">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center text-umber-800">
               <Mail size={28} strokeWidth={1.5} />
             </div>
-            <h1 className="mt-5 text-2xl">{t("verify.check_inbox_title")}</h1>
-            <p className="mt-3 text-sm text-ink-700">{t("verify.check_inbox_body")}</p>
-            <p className="mt-4 break-all rounded-lg bg-paper-100 px-3 py-2 text-sm font-medium text-ink-900">
+            <h1 className="mt-5 font-grotesk text-2xl text-umber-900 dark:text-paper-50">
+              {t("verify.check_inbox_title")}
+            </h1>
+            <p className="mt-3 text-sm text-umber-800">{t("verify.check_inbox_body")}</p>
+            <p className="mt-4 break-all rounded-lg bg-paper-100 px-3 py-2 text-sm font-medium text-umber-900">
               {pendingSession.user.email}
             </p>
-            <p className="mt-4 text-xs text-ink-500">{t("verify.check_inbox_spam_hint")}</p>
+            <p className="mt-4 text-xs text-umber-600">{t("verify.check_inbox_spam_hint")}</p>
             <div className="mt-6 flex flex-col gap-3">
               <Button
                 type="button"
@@ -168,7 +170,9 @@ export default function RegisterPage() {
     <Shell>
       <div className="mx-auto max-w-md">
         <div className="card">
-          <h1 className="text-2xl">{t("auth.register_title")}</h1>
+          <h1 className="font-grotesk text-2xl text-umber-900 dark:text-paper-50">
+            {t("auth.register_title")}
+          </h1>
           <div className="mt-6">
             {/* oneTap (without autoSelect) means a returning Google user
                 lands here, gets the floating prompt, and one-taps to sign
@@ -177,7 +181,7 @@ export default function RegisterPage() {
                 silently signed in as an existing account. */}
             <GoogleSignInButton mode="signup" redirectTo="/onboarding" oneTap />
           </div>
-          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-ink-500">
+          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-umber-600">
             <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
             <span>{t("auth.or")}</span>
             <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
@@ -260,19 +264,19 @@ export default function RegisterPage() {
                 stay react-router <Link>s so the SPA doesn't reload. */}
             <p className="field-help mt-3 text-center">
               {t("register.continuing_prefix")}
-              <Link to="/privacy" className="underline hover:text-ink-700">
+              <Link to="/privacy" className="underline hover:text-umber-800">
                 {t("register.continuing_privacy_link")}
               </Link>
               {t("register.continuing_and")}
-              <Link to="/terms" className="underline hover:text-ink-700">
+              <Link to="/terms" className="underline hover:text-umber-800">
                 {t("register.continuing_terms_link")}
               </Link>
               {t("register.continuing_suffix")}
             </p>
           </form>
-          <p className="mt-4 text-center text-sm text-ink-600">
+          <p className="mt-4 text-center text-sm text-umber-700">
             {t("auth.have_account")}{" "}
-            <Link to="/login" className="font-medium text-ink-900 underline">
+            <Link to="/login" className="font-medium text-umber-900 underline">
               {t("auth.submit_login")}
             </Link>
           </p>
