@@ -378,6 +378,11 @@ export default function OnboardingWizard() {
     // before navigate() to /app. Also defends against an Enter keypress in
     // an earlier-step input field. Submission only fires on the real final step.
     if (step !== TOTAL_STEPS - 1) return;
+    // The Next and Finish buttons share the same on-screen slot, so a stray
+    // double-click on step 3's Next can land on Finish the instant step 4
+    // paints (country still empty). Refuse to submit an invalid final step —
+    // the user stays on the country picker instead of flashing past it.
+    if (!isStepValid(TOTAL_STEPS - 1, form)) return;
     if (submitting) return;
     setSubmitting(true);
     setError(null);
@@ -820,7 +825,11 @@ export default function OnboardingWizard() {
                 {t("common.next")}
               </button>
             ) : (
-              <button type="submit" className="btn-accent btn-lg" disabled={submitting}>
+              <button
+                type="submit"
+                className="btn-accent btn-lg"
+                disabled={submitting || !stepValid}
+              >
                 {submitting ? t("onboarding.saving") : t("onboarding.finish")}
               </button>
             )}
