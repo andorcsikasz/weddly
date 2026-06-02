@@ -274,6 +274,10 @@ export default function OnboardingWizard() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  // Set once the onboard call succeeds. We deliberately swap the wizard for a
+  // standalone "All set" confirmation rather than navigating to /app straight
+  // away — couples wanted a beat to land the milestone before the dashboard.
+  const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(() => loadDraft() ?? DEFAULT_FORM);
   // `null` = still loading, `false` = no couple (show wizard),
@@ -341,6 +345,11 @@ export default function OnboardingWizard() {
     return <ExistingCoupleWelcome couple={existing} />;
   }
 
+  // Onboarding committed: celebrate the milestone before handing off to /app.
+  if (done) {
+    return <AllSet onContinue={() => navigate("/app", { replace: true })} />;
+  }
+
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
@@ -388,7 +397,7 @@ export default function OnboardingWizard() {
       });
       completedRef.current = true;
       clearDraft();
-      navigate("/app", { replace: true });
+      setDone(true);
     } catch (err) {
       setError(t("common.error_generic"));
       console.error(err);
@@ -403,12 +412,12 @@ export default function OnboardingWizard() {
     <Shell>
       <form className="mx-auto max-w-xl" onSubmit={onSubmit}>
         <div className="mb-6">
-          <p className="text-xs uppercase tracking-wider text-ink-500">
+          <p className="text-xs uppercase tracking-wider text-umber-600">
             {step + 1} / {TOTAL_STEPS} — {t(`onboarding.step${step + 1}_short`)}
           </p>
           <div className="mt-2 h-1 w-full rounded-full bg-paper-300">
             <div
-              className="h-1 rounded-full bg-ink-700 transition-all"
+              className="h-1 rounded-full bg-umber-800 transition-all"
               style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }}
             />
           </div>
@@ -417,8 +426,8 @@ export default function OnboardingWizard() {
         <div className="card animate-fade-in-up">
           {step === 0 && (
             <>
-              <h1>{t("onboarding.step1_title")}</h1>
-              <p className="mt-2 text-sm text-ink-600">{t("onboarding.step1_help")}</p>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step1_title")}</h1>
+              <p className="mt-2 text-sm text-umber-700">{t("onboarding.step1_help")}</p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="bride_name" className="field-label">
@@ -448,8 +457,8 @@ export default function OnboardingWizard() {
 
           {step === 1 && (
             <>
-              <h1>{t("onboarding.step2_title")}</h1>
-              <p className="mt-2 text-sm text-ink-600">{t("onboarding.date_kind_question")}</p>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step2_title")}</h1>
+              <p className="mt-2 text-sm text-umber-700">{t("onboarding.date_kind_question")}</p>
               <div
                 className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5"
                 role="group"
@@ -522,7 +531,7 @@ export default function OnboardingWizard() {
               )}
 
               {form.date_kind === "tbd" && (
-                <p className="mt-6 rounded-lg bg-paper-200 p-4 text-sm text-ink-600">
+                <p className="mt-6 rounded-lg bg-paper-200 p-4 text-sm text-umber-700">
                   {t("onboarding.date_kind_help_tbd")}
                 </p>
               )}
@@ -531,8 +540,8 @@ export default function OnboardingWizard() {
 
           {step === 2 && (
             <>
-              <h1>{t("onboarding.step3_title")}</h1>
-              <p className="mt-2 text-sm text-ink-600">{t("onboarding.guest_kind_question")}</p>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step3_title")}</h1>
+              <p className="mt-2 text-sm text-umber-700">{t("onboarding.guest_kind_question")}</p>
               <div
                 className="mt-4 grid grid-cols-3 gap-2"
                 role="group"
@@ -603,7 +612,7 @@ export default function OnboardingWizard() {
                   </div>
                   {Number(form.guest_min) > 0 &&
                     Number(form.guest_max) >= Number(form.guest_min) && (
-                      <p className="mt-3 text-sm text-ink-500">
+                      <p className="mt-3 text-sm text-umber-600">
                         {t("goal.count_range", {
                           min: formatNumber(Number(form.guest_min), locale),
                           max: formatNumber(Number(form.guest_max), locale),
@@ -617,19 +626,19 @@ export default function OnboardingWizard() {
 
           {step === 3 && (
             <>
-              <h1>{t("onboarding.step4_title")}</h1>
-              <p className="mt-2 text-sm text-ink-600">{t("onboarding.budget_help")}</p>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step4_title")}</h1>
+              <p className="mt-2 text-sm text-umber-700">{t("onboarding.budget_help")}</p>
               {/* Currency picker — pinned above the budget inputs so the user
                *  picks the unit before typing an amount. Defaults to HUF; flips
                *  the preview formatting (and every money field after onboarding). */}
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="text-xs uppercase tracking-wide text-ink-500">
+                <span className="text-xs uppercase tracking-wide text-umber-600">
                   {t("onboarding.budget_currency_label")}
                 </span>
                 <div
                   role="radiogroup"
                   aria-label={t("onboarding.budget_currency_label")}
-                  className="inline-flex overflow-hidden rounded-full border border-ink-200"
+                  className="inline-flex overflow-hidden rounded-full border border-umber-200"
                 >
                   {CURRENCIES.map((c) => {
                     const active = c === form.currency;
@@ -642,8 +651,8 @@ export default function OnboardingWizard() {
                         onClick={() => setCurrency(c)}
                         className={`min-h-[44px] px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1 sm:text-xs ${
                           active
-                            ? "bg-ink-900 text-paper-50"
-                            : "bg-paper-50 text-ink-600 hover:bg-paper-100"
+                            ? "bg-umber-900 text-paper-50"
+                            : "bg-paper-50 text-umber-700 hover:bg-paper-100"
                         }`}
                       >
                         {t(`onboarding.budget_currency_${c.toLowerCase()}`)}
@@ -653,7 +662,7 @@ export default function OnboardingWizard() {
                 </div>
               </div>
 
-              <p className="mt-4 text-sm text-ink-600">{t("onboarding.budget_kind_question")}</p>
+              <p className="mt-4 text-sm text-umber-700">{t("onboarding.budget_kind_question")}</p>
               <div
                 className="mt-3 grid grid-cols-3 gap-2"
                 role="group"
@@ -688,14 +697,14 @@ export default function OnboardingWizard() {
                         locale,
                       )}
                     />
-                    <span className="text-sm text-ink-500">
+                    <span className="text-sm text-umber-600">
                       {currencySymbol(form.currency, locale)}
                     </span>
                   </div>
                   {Number(form.budget_exact) > 0 && (
-                    <p className="mt-2 text-sm text-ink-500">
+                    <p className="mt-2 text-sm text-umber-600">
                       {t("onboarding.budget_preview_label")}{" "}
-                      <span className="font-medium text-ink-700">
+                      <span className="font-medium text-umber-800">
                         {formatMoney(Number(form.budget_exact), form.currency, locale)}
                       </span>
                     </p>
@@ -720,7 +729,7 @@ export default function OnboardingWizard() {
                           value={formatGroupedDigits(form.budget_min, locale)}
                           onChange={(e) => update("budget_min", digitsOnly(e.target.value))}
                         />
-                        <span className="text-sm text-ink-500">
+                        <span className="text-sm text-umber-600">
                           {currencySymbol(form.currency, locale)}
                         </span>
                       </div>
@@ -739,7 +748,7 @@ export default function OnboardingWizard() {
                           value={formatGroupedDigits(form.budget_max, locale)}
                           onChange={(e) => update("budget_max", digitsOnly(e.target.value))}
                         />
-                        <span className="text-sm text-ink-500">
+                        <span className="text-sm text-umber-600">
                           {currencySymbol(form.currency, locale)}
                         </span>
                       </div>
@@ -747,9 +756,9 @@ export default function OnboardingWizard() {
                   </div>
                   {Number(form.budget_min) > 0 &&
                     Number(form.budget_max) >= Number(form.budget_min) && (
-                      <p className="mt-3 text-sm text-ink-500">
+                      <p className="mt-3 text-sm text-umber-600">
                         {t("onboarding.budget_preview_label")}{" "}
-                        <span className="font-medium text-ink-700">
+                        <span className="font-medium text-umber-800">
                           {formatMoneyRange(
                             Number(form.budget_min),
                             Number(form.budget_max),
@@ -766,8 +775,8 @@ export default function OnboardingWizard() {
 
           {step === 4 && (
             <>
-              <h1>{t("onboarding.step5_title")}</h1>
-              <p className="mt-2 text-sm text-ink-600">{t("onboarding.country_helper")}</p>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step5_title")}</h1>
+              <p className="mt-2 text-sm text-umber-700">{t("onboarding.country_helper")}</p>
               <div className="mt-6">
                 <CountryCombobox
                   value={form.country}
@@ -822,6 +831,47 @@ export default function OnboardingWizard() {
   );
 }
 
+/**
+ * Final confirmation shown once onboarding commits. A green check inside a
+ * circle lands the "you're done" beat; the button hands off to the dashboard.
+ */
+function AllSet({ onContinue }: { onContinue: () => void }) {
+  const { t } = useT();
+  return (
+    <Shell>
+      <div className="mx-auto max-w-xl">
+        <div className="card animate-fade-in-up text-center">
+          <div
+            className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-sage-100 dark:bg-sage-900"
+            aria-hidden="true"
+          >
+            <svg
+              className="h-10 w-10 text-sage-600 dark:text-sage-300"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </div>
+          <h1 className="mt-6 font-grotesk text-umber-900 dark:text-paper-50">
+            {t("onboarding.all_set_title")}
+          </h1>
+          <p className="mt-2 text-sm text-umber-700 dark:text-umber-200">
+            {t("onboarding.all_set_body")}
+          </p>
+          <button type="button" className="btn-accent btn-lg mt-8 w-full" onClick={onContinue}>
+            {t("onboarding.all_set_continue")}
+          </button>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
 function KindButton({
   active,
   onClick,
@@ -838,8 +888,8 @@ function KindButton({
       className={[
         "min-h-tap rounded-lg border px-3 py-2 text-sm transition",
         active
-          ? "border-ink-700 bg-ink-700 text-paper-100"
-          : "border-paper-400 bg-paper-100 text-ink-700 hover:border-ink-500",
+          ? "border-umber-800 bg-umber-800 text-paper-100"
+          : "border-paper-400 bg-paper-100 text-umber-800 hover:border-umber-600",
       ].join(" ")}
       aria-pressed={active}
     >
@@ -936,17 +986,17 @@ function ExistingCoupleWelcome({ couple }: { couple: Couple }) {
       <div className="mx-auto max-w-xl">
         <div className="card animate-fade-in-up">
           <p className="eyebrow">{t("onboarding.welcome_existing_eyebrow")}</p>
-          <h1 className="mt-2 break-words hyphens-auto font-serif italic text-4xl sm:text-5xl leading-[1.05] text-ink-900 dark:text-paper-50">
+          <h1 className="mt-2 break-words hyphens-auto font-grotesk font-semibold tracking-tight text-4xl sm:text-5xl leading-[1.05] text-umber-900 dark:text-paper-50">
             {t("onboarding.welcome_existing_title", { names: couple.display_name })}
           </h1>
           <div className="mt-5 h-px w-full bg-paper-300 dark:bg-umber-700" />
-          <p className="mt-5 text-ink-600 dark:text-umber-200">
+          <p className="mt-5 text-umber-700 dark:text-umber-200">
             {t("onboarding.welcome_existing_body")}
           </p>
 
           <div className="mt-7">
             <p className="eyebrow">{t("onboarding.welcome_existing_date_label")}</p>
-            <p className="mt-1 font-serif italic text-3xl sm:text-4xl text-ink-900 dark:text-paper-50">
+            <p className="mt-1 font-grotesk font-semibold tracking-tight text-3xl sm:text-4xl text-umber-900 dark:text-paper-50">
               {dateText}
             </p>
           </div>
@@ -958,7 +1008,7 @@ function ExistingCoupleWelcome({ couple }: { couple: Couple }) {
           </dl>
 
           <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-ink-500 dark:text-umber-300">
+            <p className="text-xs text-umber-600 dark:text-umber-300">
               {t("onboarding.welcome_existing_edit_hint")}
             </p>
             <Link to="/app" replace className="btn-accent btn-lg w-full sm:w-auto sm:min-w-[16rem]">
@@ -975,7 +1025,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-3 first:pt-3 last:pb-0">
       <dt className="field-label !mb-0">{label}</dt>
-      <dd className="text-right font-medium text-ink-800 dark:text-paper-100">{value}</dd>
+      <dd className="text-right font-medium text-umber-900 dark:text-paper-100">{value}</dd>
     </div>
   );
 }

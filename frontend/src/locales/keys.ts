@@ -546,6 +546,10 @@ export interface LocaleMessages {
     /** Submit-failed banner + retry button copy. */
     submit_failed: string;
     submit_retry: string;
+    /** "All set" confirmation card shown after onboarding commits. */
+    all_set_title: string;
+    all_set_body: string;
+    all_set_continue: string;
     // ── Country picker (step 5, repurposed from the deprecated style step) ──
     country_label: string;
     country_helper: string;
