@@ -45,8 +45,8 @@ export function WorkspaceMockup({ className }: Common) {
       aria-label={t("landing.mockup_aria_dashboard")}
       className={className}
     >
-      {/* Card frame */}
-      <g className="text-paper-200">
+      {/* Card frame — a clear warm edge line stands in for the dropped shadow. */}
+      <g className="text-umber-300">
         <rect
           x="0"
           y="0"
@@ -55,7 +55,7 @@ export function WorkspaceMockup({ className }: Common) {
           rx="20"
           fill="white"
           stroke="currentColor"
-          strokeWidth="1"
+          strokeWidth="1.5"
         />
       </g>
 
@@ -801,7 +801,7 @@ export function SeatingMockup({ className }: Common) {
             <rect
               key={`htop-${x}`}
               x={x - 3}
-              y="-20"
+              y="-17"
               width="6"
               height="6"
               rx="1.5"
@@ -821,15 +821,30 @@ export function SeatingMockup({ className }: Common) {
             <circle cx="0" cy="0" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
           </g>
           <g className="text-umber-600 font-sans">
-            <text x="0" y="3" fontSize="8" fontWeight="600" fill="currentColor" textAnchor="middle">
-              {tbl.label}
-            </text>
+            {(() => {
+              // Wrap multi-word labels (e.g. "Plusz egy fő") onto two lines so
+              // they stay inside the table circle instead of overflowing.
+              const words = tbl.label.split(" ");
+              const last = words.at(-1) ?? tbl.label;
+              const lines =
+                words.length <= 1 ? [tbl.label] : [words.slice(0, -1).join(" "), last];
+              const y0 = lines.length === 1 ? 3 : -1.5;
+              return (
+                <text fontSize="8" fontWeight="600" fill="currentColor" textAnchor="middle">
+                  {lines.map((ln, i) => (
+                    <tspan key={ln} x="0" y={y0 + i * 9}>
+                      {ln}
+                    </tspan>
+                  ))}
+                </text>
+              );
+            })()}
           </g>
           <g className="text-umber-300">
             {TABLE_DEGS.map((deg) => {
               const rad = (deg * Math.PI) / 180;
-              const cx = Math.cos(rad) * 30;
-              const cy = Math.sin(rad) * 30;
+              const cx = Math.cos(rad) * 26;
+              const cy = Math.sin(rad) * 26;
               return (
                 <rect
                   key={`s-${deg}`}
