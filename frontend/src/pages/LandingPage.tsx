@@ -1011,7 +1011,7 @@ function CoupleCardsTeaser() {
           {COUPLE_CARD_DECKS.map((deck, idx) => (
             <li key={deck.id} className="h-full">
               <Link
-                to={toolPath}
+                to={`${toolPath}?deck=${deck.id}`}
                 className="group flex aspect-[2/3] h-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-3 py-4 text-center text-white transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7"
               >
                 <span aria-hidden="true" className="block h-1" />

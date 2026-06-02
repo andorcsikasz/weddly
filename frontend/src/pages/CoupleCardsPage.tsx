@@ -117,6 +117,23 @@ function isValidProgress(p: unknown): p is DeckProgress {
  *  visitors who tap another deck just override this in state. */
 const DEFAULT_SELECTED: DeckId = "roots";
 
+const VALID_DECK_IDS: ReadonlySet<DeckId> = new Set([
+  "roots",
+  "everyday",
+  "closeness",
+  "deepwater",
+]);
+
+/** Read `?deck=…` from the URL on first render so deep-links from the
+ *  landing teaser open the matching deck instead of always defaulting
+ *  to roots. Invalid values fall through to the default. */
+function initialSelectedDeck(): DeckId {
+  if (typeof window === "undefined") return DEFAULT_SELECTED;
+  const param = new URLSearchParams(window.location.search).get("deck");
+  if (param && VALID_DECK_IDS.has(param as DeckId)) return param as DeckId;
+  return DEFAULT_SELECTED;
+}
+
 /** After this many distinct cards have surfaced in the card view, snap
  *  the page into focus mode automatically. Counts both the open-deck
  *  transition (which lands the first card) and every subsequent "next".
@@ -128,7 +145,7 @@ export default function CoupleCardsPage() {
   useDocumentMeta("tools.couple_cards.page_h1", "tools.couple_cards.page_intro");
 
   const [activeDeck, setActiveDeck] = useState<DeckId | null>(null);
-  const [selectedDeck, setSelectedDeck] = useState<DeckId>(DEFAULT_SELECTED);
+  const [selectedDeck, setSelectedDeck] = useState<DeckId>(() => initialSelectedDeck());
 
   // Swap the centred deck inside a View Transition so the browser
   // computes a layout morph between the just-tapped mini and the centre
