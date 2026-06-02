@@ -434,12 +434,12 @@ function KpiTile({
     : "admin-tile";
   return (
     <div className={containerCls}>
-      <div className="eyebrow text-left">{label}</div>
-      <div className="stat-num mt-1 text-left text-2xl font-semibold text-neutral-900 dark:text-paper-50">
+      <div className="eyebrow text-center">{label}</div>
+      <div className="stat-num mt-1 text-center text-2xl font-semibold text-neutral-900 dark:text-paper-50">
         {value}
       </div>
       {sub && (
-        <div className="stat-num mt-0.5 text-left text-xs text-neutral-500 dark:text-umber-300">
+        <div className="stat-num mt-0.5 text-center text-xs text-neutral-500 dark:text-umber-300">
           {sub}
         </div>
       )}

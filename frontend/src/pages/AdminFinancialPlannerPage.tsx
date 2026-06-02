@@ -437,7 +437,7 @@ function Kpi({
     <div
       className={`admin-tile ${emphasis ? "ring-1 ring-neutral-800 dark:ring-neutral-400/50" : ""}`}
     >
-      <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-umber-300">
+      <div className="flex items-center justify-center gap-1 text-xs text-neutral-500 dark:text-umber-300">
         <span>{label}</span>
         {hint && (
           <button
@@ -450,7 +450,7 @@ function Kpi({
           </button>
         )}
       </div>
-      <div className="mt-1 text-xl font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
+      <div className="mt-1 text-center text-xl font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
         {value}
       </div>
     </div>
