@@ -548,10 +548,15 @@ function DeckShowcase({
   const selected = visibleDecks[selectedIdx];
   if (!selected) return null;
 
-  // Swipe gate for the mini-row: any horizontal pointer drag (mouse, pen,
-  // or touch) greater than 50px reveals the 5th lemonade card. Easter-egg
-  // by design — no visual hint that the row is interactive.
+  // Swipe gate for the mini-row: any horizontal gesture across the row
+  // reveals the 5th lemonade card. Easter-egg by design — no visual hint
+  // that the row is interactive. Two gesture sources covered:
+  //   • Pointer drag (mouse-with-button, touch) → >50px horizontal travel
+  //   • Wheel / trackpad horizontal swipe → >60px accumulated deltaX
+  // The wheel branch matters on macOS, where a two-finger horizontal
+  // trackpad swipe fires wheel events with deltaX, not pointer events.
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const wheelAcc = useRef(0);
   const handleSwipeStart = (e: React.PointerEvent<HTMLUListElement>) => {
     swipeStart.current = { x: e.clientX, y: e.clientY };
   };
@@ -561,10 +566,22 @@ function DeckShowcase({
     if (!start || isLemonadeRevealed) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
-    // Predominantly horizontal swipe with >50px travel. Either direction
-    // counts — the user has to "move" the row, not the direction matters.
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
       onRevealLemonade();
+    }
+  };
+  const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
+    if (isLemonadeRevealed) return;
+    // Only accumulate when the gesture is predominantly horizontal —
+    // vertical page scroll passes through unchanged.
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      wheelAcc.current += e.deltaX;
+      if (Math.abs(wheelAcc.current) > 60) {
+        onRevealLemonade();
+        wheelAcc.current = 0;
+      }
+    } else {
+      wheelAcc.current = 0;
     }
   };
 
@@ -606,6 +623,8 @@ function DeckShowcase({
           onPointerCancel={() => {
             swipeStart.current = null;
           }}
+          onWheel={handleWheel}
+          style={{ touchAction: "pan-y" }}
           className={`mx-auto mt-8 grid max-w-2xl gap-2 sm:mt-10 sm:gap-3 ${
             isLemonadeRevealed ? "grid-cols-5" : "grid-cols-4"
           }`}

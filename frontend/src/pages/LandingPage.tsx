@@ -991,6 +991,11 @@ function CoupleCardsTeaser() {
     [isLemonadeRevealed],
   );
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const wheelAcc = useRef(0);
+  const triggerReveal = () => {
+    setIsLemonadeRevealed(true);
+    saveLemonadeRevealed();
+  };
   const handleSwipeStart = (e: React.PointerEvent<HTMLUListElement>) => {
     swipeStart.current = { x: e.clientX, y: e.clientY };
   };
@@ -1001,8 +1006,23 @@ function CoupleCardsTeaser() {
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
-      setIsLemonadeRevealed(true);
-      saveLemonadeRevealed();
+      triggerReveal();
+    }
+  };
+  // macOS trackpad horizontal swipes fire wheel events with deltaX, not
+  // pointer events. Accumulate them and trip the reveal once 60px of
+  // horizontal travel has piled up; vertical scroll resets the counter
+  // so a normal page scroll never accidentally unlocks the egg.
+  const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
+    if (isLemonadeRevealed) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      wheelAcc.current += e.deltaX;
+      if (Math.abs(wheelAcc.current) > 60) {
+        triggerReveal();
+        wheelAcc.current = 0;
+      }
+    } else {
+      wheelAcc.current = 0;
     }
   };
 
@@ -1025,6 +1045,8 @@ function CoupleCardsTeaser() {
           onPointerCancel={() => {
             swipeStart.current = null;
           }}
+          onWheel={handleWheel}
+          style={{ touchAction: "pan-y" }}
           className={`mt-5 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:gap-5 ${
             isLemonadeRevealed ? "lg:grid-cols-5" : "lg:grid-cols-4"
           }`}
