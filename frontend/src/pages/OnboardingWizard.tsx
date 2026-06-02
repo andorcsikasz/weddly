@@ -431,7 +431,9 @@ export default function OnboardingWizard() {
         <div className="card animate-fade-in-up">
           {step === 0 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step1_title")}</h1>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
+                {t("onboarding.step1_title")}
+              </h1>
               <p className="mt-2 text-sm text-umber-700">{t("onboarding.step1_help")}</p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div>
@@ -462,7 +464,9 @@ export default function OnboardingWizard() {
 
           {step === 1 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step2_title")}</h1>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
+                {t("onboarding.step2_title")}
+              </h1>
               <p className="mt-2 text-sm text-umber-700">{t("onboarding.date_kind_question")}</p>
               <div
                 className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5"
@@ -545,7 +549,9 @@ export default function OnboardingWizard() {
 
           {step === 2 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step3_title")}</h1>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
+                {t("onboarding.step3_title")}
+              </h1>
               <p className="mt-2 text-sm text-umber-700">{t("onboarding.guest_kind_question")}</p>
               <div
                 className="mt-4 grid grid-cols-3 gap-2"
@@ -631,7 +637,9 @@ export default function OnboardingWizard() {
 
           {step === 3 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step4_title")}</h1>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
+                {t("onboarding.step4_title")}
+              </h1>
               <p className="mt-2 text-sm text-umber-700">{t("onboarding.budget_help")}</p>
               {/* Currency picker — pinned above the budget inputs so the user
                *  picks the unit before typing an amount. Defaults to HUF; flips
@@ -780,7 +788,9 @@ export default function OnboardingWizard() {
 
           {step === 4 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">{t("onboarding.step5_title")}</h1>
+              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
+                {t("onboarding.step5_title")}
+              </h1>
               <p className="mt-2 text-sm text-umber-700">{t("onboarding.country_helper")}</p>
               <div className="mt-6">
                 <CountryCombobox

@@ -539,9 +539,7 @@ function DeckShowcase({
   // horizontal swipe across the mini row (or arrives via ?deck=lemonade).
   const visibleDecks = useMemo(
     () =>
-      isLemonadeRevealed
-        ? COUPLE_CARD_DECKS
-        : COUPLE_CARD_DECKS.filter((d) => d.id !== "lemonade"),
+      isLemonadeRevealed ? COUPLE_CARD_DECKS : COUPLE_CARD_DECKS.filter((d) => d.id !== "lemonade"),
     [isLemonadeRevealed],
   );
   const selectedIdx = visibleDecks.findIndex((d) => d.id === selectedId);

@@ -104,10 +104,7 @@ export function InteractiveBudgetDemo() {
   const signupHref = `/signup?guests=${guests}&budget=${budget}`;
 
   return (
-    <section
-      id="try-it"
-      className="relative overflow-x-clip bg-paper-50 dark:bg-umber-900"
-    >
+    <section id="try-it" className="relative overflow-x-clip bg-paper-50 dark:bg-umber-900">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-10 lg:py-12">
         <div className="text-center">
           {/* Eyebrow + descriptive body stay on tablet+, hidden on phones

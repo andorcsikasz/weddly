@@ -704,7 +704,15 @@ export function GuestListMockup({ className }: Common) {
           home node links the two avatars on the left. */}
       <g aria-hidden>
         <g className="text-umber-300">
-          <line x1="16" y1="132" x2="16" y2="172" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line
+            x1="16"
+            y1="132"
+            x2="16"
+            y2="172"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </g>
         <g className="text-umber-500">
           <circle cx="16" cy="152" r="6" fill="currentColor" />
@@ -785,156 +793,156 @@ export function SeatingMockup({ className }: Common) {
       {/* Canvas + tables nudged up so there's less white above the toolbar
           and the gap below it stays tight. */}
       <g transform="translate(0, -16)">
-      {/* Floor / grid */}
-      <g className="text-paper-100">
-        <rect x="16" y="60" width="448" height="298" rx="8" fill="currentColor" />
-      </g>
-      <g className="text-paper-300">
-        {[88, 152, 216, 280].map((y) => (
-          <line
-            key={`h-${y}`}
-            x1="16"
-            y1={y}
-            x2="464"
-            y2={y}
-            stroke="currentColor"
-            strokeWidth="0.5"
-            strokeDasharray="2 4"
-          />
-        ))}
-        {[80, 168, 256, 344, 432].map((x) => (
-          <line
-            key={`v-${x}`}
-            x1={x}
-            y1="60"
-            x2={x}
-            y2="346"
-            stroke="currentColor"
-            strokeWidth="0.5"
-            strokeDasharray="2 4"
-          />
-        ))}
-      </g>
-
-      {/* Head table */}
-      <g transform="translate(220, 92)">
-        <g className="text-paper-50">
-          <rect x="-50" y="-10" width="100" height="22" rx="4" fill="currentColor" />
+        {/* Floor / grid */}
+        <g className="text-paper-100">
+          <rect x="16" y="60" width="448" height="298" rx="8" fill="currentColor" />
         </g>
-        <g className="text-ink-700">
-          <rect
-            x="-50"
-            y="-10"
-            width="100"
-            height="22"
-            rx="4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-          />
-        </g>
-        <g className="text-umber-600 font-sans">
-          <text x="0" y="6" fontSize="9" fontWeight="600" fill="currentColor" textAnchor="middle">
-            {t("landing.mockup_table_head")}
-          </text>
-        </g>
-        <g className="text-umber-300">
-          {[-32, -16, 0, 16, 32].map((x) => (
-            <rect
-              key={`htop-${x}`}
-              x={x - 3}
-              y="-17"
-              width="6"
-              height="6"
-              rx="1.5"
-              fill="currentColor"
+        <g className="text-paper-300">
+          {[88, 152, 216, 280].map((y) => (
+            <line
+              key={`h-${y}`}
+              x1="16"
+              y1={y}
+              x2="464"
+              y2={y}
+              stroke="currentColor"
+              strokeWidth="0.5"
+              strokeDasharray="2 4"
+            />
+          ))}
+          {[80, 168, 256, 344, 432].map((x) => (
+            <line
+              key={`v-${x}`}
+              x1={x}
+              y1="60"
+              x2={x}
+              y2="346"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              strokeDasharray="2 4"
             />
           ))}
         </g>
-      </g>
 
-      {/* Round tables */}
-      {tables.map((tbl) => (
-        <g key={tbl.key} transform={`translate(${tbl.x}, ${tbl.y})`}>
+        {/* Head table */}
+        <g transform="translate(220, 92)">
           <g className="text-paper-50">
-            <circle cx="0" cy="0" r="22" fill="currentColor" />
+            <rect x="-50" y="-10" width="100" height="22" rx="4" fill="currentColor" />
           </g>
           <g className="text-ink-700">
-            <circle cx="0" cy="0" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
+            <rect
+              x="-50"
+              y="-10"
+              width="100"
+              height="22"
+              rx="4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
           </g>
           <g className="text-umber-600 font-sans">
-            {(() => {
-              // Wrap multi-word labels (e.g. "Plusz egy fő") onto two lines so
-              // they stay inside the table circle instead of overflowing.
-              const words = tbl.label.split(" ");
-              const last = words.at(-1) ?? tbl.label;
-              const lines =
-                words.length <= 1 ? [tbl.label] : [words.slice(0, -1).join(" "), last];
-              const y0 = lines.length === 1 ? 3 : -1.5;
-              return (
-                <text fontSize="8" fontWeight="600" fill="currentColor" textAnchor="middle">
-                  {lines.map((ln, i) => (
-                    <tspan key={ln} x="0" y={y0 + i * 9}>
-                      {ln}
-                    </tspan>
-                  ))}
-                </text>
-              );
-            })()}
+            <text x="0" y="6" fontSize="9" fontWeight="600" fill="currentColor" textAnchor="middle">
+              {t("landing.mockup_table_head")}
+            </text>
           </g>
           <g className="text-umber-300">
-            {TABLE_DEGS.map((deg) => {
-              const rad = (deg * Math.PI) / 180;
-              const cx = Math.cos(rad) * 26;
-              const cy = Math.sin(rad) * 26;
-              return (
-                <rect
-                  key={`s-${deg}`}
-                  x={cx - 4}
-                  y={cy - 3}
-                  width="8"
-                  height="6"
-                  rx="1.5"
-                  fill="currentColor"
-                  transform={`rotate(${deg + 90} ${cx} ${cy})`}
-                />
-              );
-            })}
+            {[-32, -16, 0, 16, 32].map((x) => (
+              <rect
+                key={`htop-${x}`}
+                x={x - 3}
+                y="-17"
+                width="6"
+                height="6"
+                rx="1.5"
+                fill="currentColor"
+              />
+            ))}
           </g>
         </g>
-      ))}
 
-      {/* Dragged guest card */}
-      <g transform="translate(380, 270)">
-        <g className="text-ink-900" opacity="0.10">
-          <rect x="2" y="4" width="80" height="32" rx="6" fill="currentColor" />
+        {/* Round tables */}
+        {tables.map((tbl) => (
+          <g key={tbl.key} transform={`translate(${tbl.x}, ${tbl.y})`}>
+            <g className="text-paper-50">
+              <circle cx="0" cy="0" r="22" fill="currentColor" />
+            </g>
+            <g className="text-ink-700">
+              <circle cx="0" cy="0" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
+            </g>
+            <g className="text-umber-600 font-sans">
+              {(() => {
+                // Wrap multi-word labels (e.g. "Plusz egy fő") onto two lines so
+                // they stay inside the table circle instead of overflowing.
+                const words = tbl.label.split(" ");
+                const last = words.at(-1) ?? tbl.label;
+                const lines =
+                  words.length <= 1 ? [tbl.label] : [words.slice(0, -1).join(" "), last];
+                const y0 = lines.length === 1 ? 3 : -1.5;
+                return (
+                  <text fontSize="8" fontWeight="600" fill="currentColor" textAnchor="middle">
+                    {lines.map((ln, i) => (
+                      <tspan key={ln} x="0" y={y0 + i * 9}>
+                        {ln}
+                      </tspan>
+                    ))}
+                  </text>
+                );
+              })()}
+            </g>
+            <g className="text-umber-300">
+              {TABLE_DEGS.map((deg) => {
+                const rad = (deg * Math.PI) / 180;
+                const cx = Math.cos(rad) * 26;
+                const cy = Math.sin(rad) * 26;
+                return (
+                  <rect
+                    key={`s-${deg}`}
+                    x={cx - 4}
+                    y={cy - 3}
+                    width="8"
+                    height="6"
+                    rx="1.5"
+                    fill="currentColor"
+                    transform={`rotate(${deg + 90} ${cx} ${cy})`}
+                  />
+                );
+              })}
+            </g>
+          </g>
+        ))}
+
+        {/* Dragged guest card */}
+        <g transform="translate(380, 270)">
+          <g className="text-ink-900" opacity="0.10">
+            <rect x="2" y="4" width="80" height="32" rx="6" fill="currentColor" />
+          </g>
+          <g className="text-paper-300">
+            <rect
+              x="0"
+              y="0"
+              width="80"
+              height="32"
+              rx="6"
+              fill="white"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
+          </g>
+          <g className="text-umber-300">
+            <circle cx="14" cy="16" r="6" fill="currentColor" />
+          </g>
+          <g className="text-ink-800 font-sans">
+            <text x="24" y="14" fontSize="9" fontWeight="600" fill="currentColor">
+              Dóra N.
+            </text>
+          </g>
+          <g className="text-ink-500 font-sans">
+            <text x="24" y="24" fontSize="8" fill="currentColor">
+              {t("landing.mockup_drag_subtitle")}
+            </text>
+          </g>
         </g>
-        <g className="text-paper-300">
-          <rect
-            x="0"
-            y="0"
-            width="80"
-            height="32"
-            rx="6"
-            fill="white"
-            stroke="currentColor"
-            strokeWidth="1"
-          />
-        </g>
-        <g className="text-umber-300">
-          <circle cx="14" cy="16" r="6" fill="currentColor" />
-        </g>
-        <g className="text-ink-800 font-sans">
-          <text x="24" y="14" fontSize="9" fontWeight="600" fill="currentColor">
-            Dóra N.
-          </text>
-        </g>
-        <g className="text-ink-500 font-sans">
-          <text x="24" y="24" fontSize="8" fill="currentColor">
-            {t("landing.mockup_drag_subtitle")}
-          </text>
-        </g>
-      </g>
       </g>
     </svg>
   );

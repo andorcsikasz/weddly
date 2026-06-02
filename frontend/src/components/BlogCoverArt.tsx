@@ -57,12 +57,18 @@ const ICON_BY_SLUG: Record<string, LucideIcon> = {
  *  via cover_image_url; the URL here is only used when no upload
  *  exists for a post. */
 export const DEFAULT_PHOTO_BY_SLUG: Record<string, string> = {
+  // Theology of marriage: a couple's hands clasped across a table, one
+  // wedding ring visible. Reads as the covenant the post is about.
   "miert-hazasodunk-a-biblia-szerint":
-    "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1604881991720-f91add269bed?w=1200&auto=format&fit=crop&q=75",
+  // Bible verses: open Bible turned to Jeremiah, hand on the page. The
+  // post is about scripture, so the cover shows scripture literally.
   "bibliai-idezetek-eskuvore":
-    "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=1200&auto=format&fit=crop&q=75",
+  // Budget: hands stacking coins. No face. The literal motion of
+  // counting money lines up with budget planning.
   "eskuvoi-koltsegvetes-keszitese":
-    "https://images.unsplash.com/photo-1604017011826-d3b4c23f8914?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1633158829585-23ba8f7c8caf?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-vendeglista-keszitese":
     "https://images.unsplash.com/photo-1525772764200-be829a350797?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-hagyomanyok-praktikusan":
@@ -71,16 +77,27 @@ export const DEFAULT_PHOTO_BY_SLUG: Record<string, string> = {
     "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-ultetesi-rend-keszitese":
     "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200&auto=format&fit=crop&q=75",
+  // RSVP: a single envelope on a dark surface. RSVP cards live inside
+  // envelopes, so the cover reads correspondence-first.
   "eskuvoi-rsvp-kerdesek":
-    "https://images.unsplash.com/photo-1522413452208-996ff3f3e740?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1649019489428-70f505daacd6?w=1200&auto=format&fit=crop&q=75",
+  // Paperwork: fountain-pen nib mid-stroke on handwritten paper.
+  // Hand-less close-up reads as signing a document.
   "eskuvoi-ugyintezes-lepesrol-lepesre":
-    "https://images.unsplash.com/photo-1606490194859-07c18c9f0968?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&auto=format&fit=crop&q=75",
+  // 12-month checklist: open yearly planner with months listed top to
+  // bottom and a rose-gold pen. Reads "year-out planning" at a glance.
   "eskuvoszervezesi-checklist-12-honapra":
-    "https://images.unsplash.com/photo-1546032996-6dfacbacbf3f?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1541140911322-98afe66ea6da?w=1200&auto=format&fit=crop&q=75",
+  // 6-month checklist: a hand filling out a checkbox list with a pen.
+  // Visually different from #12-honapra so the feed doesn't repeat.
   "eskuvoszervezesi-checklist-6-honapra":
-    "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=1200&auto=format&fit=crop&q=75",
+  // Digital vs paper invitation: full paper-invitation flat-lay with
+  // envelope, wax stamp, vintage postage stamps, ranunculus. Anchors
+  // the "paper" half of the topic.
   "digitalis-eskuvoi-meghivo-vagy-papir-meghivo":
-    "https://images.unsplash.com/photo-1525258946800-98cfd641d0de?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1721176487015-5408ae0e9bc2?w=1200&auto=format&fit=crop&q=75",
   "where-to-get-married-in-hungary":
     "https://images.unsplash.com/photo-1633895365999-20d132bf9319?w=1200&auto=format&fit=crop&q=75",
   "where-to-get-married-in-austria":
