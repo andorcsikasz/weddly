@@ -552,7 +552,7 @@ function LiveStatsBand() {
   if (stats.couples === 0 && stats.rsvps === 0) return null;
 
   return (
-    <section className="relative bg-umber-100 dark:bg-umber-900">
+    <section className="relative bg-paper-50 dark:bg-umber-900">
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
         <div className="mx-auto grid max-w-md grid-cols-2 gap-6 sm:gap-10">
           <StatCounter
