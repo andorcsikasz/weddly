@@ -208,6 +208,10 @@ const hu: LocaleMessages = {
     founding_banner_title: "Bekerültetek az első 200-ba 🎉",
     founding_banner_body:
       "Az első 200 párunk egyike vagytok, így a Weddly nektek {date}-ig ingyenes. Használjátok a teljes platformot.",
+    solo_banner_title: "Hívd meg a párod",
+    solo_banner_body:
+      "{date} után a Weddly fizetőssé válik. Ha meghívod a párod, az esküvőtök napjáig ingyenes marad, és semmi nem vész el.",
+    solo_banner_cta: "Pár meghívása",
   },
   wedding_site: {
     page_title: "Esküvői oldal",

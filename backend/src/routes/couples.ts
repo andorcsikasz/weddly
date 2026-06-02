@@ -40,7 +40,11 @@ import {
   toCouple,
 } from "../domain/couples";
 import { sendKind } from "../domain/emails";
-import { activateFoundingIfEligible, initBillingAtOnboarding } from "../domain/billing";
+import {
+  activatePartnerFreeWindow,
+  initBillingAtOnboarding,
+  refreshPartnerFreeWindow,
+} from "../domain/billing";
 import { recordExport } from "../domain/exports";
 import { recordGrowthEvent } from "../domain/growth_events";
 import { generateInviteToken } from "../domain/invite_codes";
@@ -872,9 +876,9 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   addCoupleMember(couple.id, userId, "partner");
   db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
 
-  // Both partners are now in — grant the 18-month founding free window if this
-  // couple is among the first 200. No-op otherwise (keeps the 2-week trial).
-  activateFoundingIfEligible(couple.id, ts);
+  // Both partners are now in: inviting your partner unlocks the free
+  // platform, so grant the "free until your wedding day" window.
+  activatePartnerFreeWindow(couple.id, ts);
 
   addAuditLog({
     actor_user_id: userId,
@@ -1103,8 +1107,8 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
     addCoupleMember(target.id, userId, "partner");
     db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
 
-    // Both partners are now in — grant the founding window if eligible.
-    activateFoundingIfEligible(target.id, ts);
+    // Both partners are now in: grant the "free until your wedding day" window.
+    activatePartnerFreeWindow(target.id, ts);
 
     addAuditLog({
       actor_user_id: userId,
@@ -1735,6 +1739,12 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   // backfill), seed it on the fly via ensurePartnerGuests below.
   if (renameBride) renamePartnerGuest(couple.id, "bride", nextBride);
   if (renameGroom) renamePartnerGuest(couple.id, "groom", nextGroom);
+
+  // The partner free window is pinned to the wedding day, so if the date moved,
+  // re-derive founding_until so "free until your wedding day" stays accurate.
+  if (body.wedding_date_goal !== undefined || body.wedding_date !== undefined) {
+    refreshPartnerFreeWindow(couple.id, ts);
+  }
 
   const refreshed = getCoupleById(couple.id);
   if (!refreshed) throw new HttpError(500, "Couple vanished after update");

@@ -260,6 +260,11 @@ export interface LocaleMessages {
     /** Celebratory founding-member band, body has a {date} placeholder. */
     founding_banner_title: string;
     founding_banner_body: string;
+    /** Solo-workspace nudge: invite your partner to stay free past the paid
+     *  launch. Body has a {date} placeholder for the paid-launch date. */
+    solo_banner_title: string;
+    solo_banner_body: string;
+    solo_banner_cta: string;
   };
   /** Public couple-branded landing at `/w/:slug` — first version: names,
    *  date, optional schedule, RSVP CTA. Followed by registry / story /

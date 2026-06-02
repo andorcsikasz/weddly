@@ -1,7 +1,7 @@
 // One-time backfill: give every existing real couple a founding slot (18 months
 // free), so nobody currently signed up sits in the billing read-only gate.
 //
-// Paying Stripe subscribers (active / past_due) are SKIPPED — we don't clobber a
+// Paying Stripe subscribers (active / past_due) are SKIPPED so we don't clobber a
 // live subscription or give away revenue; they can cancel via the Stripe portal
 // if they'd rather take the free window. Demo couples are skipped too.
 //
@@ -45,18 +45,24 @@ const nowMs = now();
 const untilIso = new Date(nowMs + FOUNDING_DURATION_MS).toISOString().slice(0, 10);
 
 console.log(`DB: ${process.env.DB_PATH ?? "./data/weddly.db"}`);
-console.log(`Real couples: ${all.length}  |  to grant: ${targets.length}  |  skipped (paying): ${skipped.length}`);
+console.log(
+  `Real couples: ${all.length}  |  to grant: ${targets.length}  |  skipped (paying): ${skipped.length}`,
+);
 console.log(`Founding window until: ${untilIso}`);
 console.log("");
 
 for (const c of targets) {
   const label = c.display_name?.trim() || `couple #${c.id}`;
-  console.log(`  ${APPLY ? "GRANT " : "would "}#${c.id}  ${label}  (${c.subscription_status} → founding)`);
+  console.log(
+    `  ${APPLY ? "GRANT " : "would "}#${c.id}  ${label}  (${c.subscription_status} → founding)`,
+  );
   if (APPLY) grantFreeAccess(c.id, nowMs);
 }
 
 for (const c of skipped) {
-  console.log(`  skip  #${c.id}  ${c.display_name?.trim() || `couple #${c.id}`}  (paying: ${c.subscription_status})`);
+  console.log(
+    `  skip  #${c.id}  ${c.display_name?.trim() || `couple #${c.id}`}  (paying: ${c.subscription_status})`,
+  );
 }
 
 console.log("");

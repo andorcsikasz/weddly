@@ -106,6 +106,15 @@ export const DEFAULT_PHOTO_BY_SLUG: Record<string, string> = {
     "https://images.unsplash.com/photo-1764816455462-dc5165344abe?w=1200&auto=format&fit=crop&q=75",
 };
 
+/** Catch-all photo for posts whose slug isn't in DEFAULT_PHOTO_BY_SLUG
+ *  (admin-created posts with arbitrary slugs, legacy entries that
+ *  haven't been migrated, etc). Soft pink rose in a glass vase — no
+ *  face, neutral palette, doesn't lock in any topic. Keeps every card
+ *  photographic so the feed never falls back to the paper composition
+ *  in the wild. */
+const GENERIC_FALLBACK_PHOTO =
+  "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=1200&auto=format&fit=crop&q=75";
+
 interface BlogCoverArtProps {
   /** Post slug for picking the content icon + default Unsplash photo. */
   slug?: string;
@@ -122,7 +131,9 @@ interface BlogCoverArtProps {
 
 export function BlogCoverArt({ slug, bgUrl, className }: BlogCoverArtProps) {
   const Icon = (slug && ICON_BY_SLUG[slug]) || Heart;
-  const resolvedBg = bgUrl ?? (slug && DEFAULT_PHOTO_BY_SLUG[slug]) ?? null;
+  // `||` (not `??`) so empty-string bgUrls fall through to the slug
+  // default; `??` would treat "" as a valid override and render nothing.
+  const resolvedBg = bgUrl || (slug && DEFAULT_PHOTO_BY_SLUG[slug]) || GENERIC_FALLBACK_PHOTO;
   // useId keeps the linearGradient id unique across mounted instances —
   // SVG defs are document-global, so without this every cover would
   // share (and overwrite) the same gradient id.

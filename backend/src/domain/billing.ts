@@ -9,6 +9,8 @@ import {
   type BillingReason,
   FOUNDING_CAP,
   FOUNDING_DURATION_MS,
+  PAID_LAUNCH_DATE,
+  partnerFreeWindowEnd,
   TRIAL_DURATION_MS,
 } from "@shared/billing";
 import type { Currency } from "@shared/types";
@@ -74,15 +76,20 @@ export function activeFoundingCount(nowMs: number = Date.now()): number {
 }
 
 // ── State transitions ───────────────────────────────────────────────────────
-/** Start the 14-day in-app trial. Called at onboarding for brand-new couples.
+/** Start the in-app trial. Called at onboarding for brand-new couples.
+ *  The free window runs at least 14 days, but never ends before the public
+ *  paid-launch date, so during the pre-launch period every solo workspace is
+ *  free until then (the "free until Aug 1" promise on the nudge banner). After
+ *  launch it degrades to the plain 14-day trial.
  *  Idempotent-ish: only writes when the couple is still in the default 'none'
  *  state so we never clobber a founding/active couple. */
 export function startTrial(coupleId: number, nowMs: number = now()): void {
+  const trialEnd = Math.max(nowMs + TRIAL_DURATION_MS, PAID_LAUNCH_DATE);
   db.prepare(
     `UPDATE couples
         SET subscription_status = 'trialing', trial_ends_at = ?, updated_at = ?
       WHERE id = ? AND subscription_status = 'none'`,
-  ).run(nowMs + TRIAL_DURATION_MS, nowMs, coupleId);
+  ).run(trialEnd, nowMs, coupleId);
 }
 
 /** Billing state for a brand-new couple at onboarding: the first 200 real
@@ -123,27 +130,55 @@ export function revokeFreeAccess(coupleId: number, nowMs: number = now()): void 
   ).run(nowMs, coupleId);
 }
 
-/** Activate the 18-month founding free window. Called when partner B joins a
- *  couple. No-op for demo couples, couples already on a paid/founding plan, or
- *  couples past the first-200 cutoff (those keep their trial). Returns whether
- *  the membership was granted. */
-export function activateFoundingIfEligible(coupleId: number, nowMs: number = now()): boolean {
+/** Parse a couple's stored wedding date (YYYY-MM-DD or null) to epoch ms, or
+ *  null when unset/unparseable. */
+function weddingMsOf(weddingDate: string | null): number | null {
+  if (!weddingDate) return null;
+  const ms = Date.parse(weddingDate);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/** Grant the "free until your wedding day" window. Called when partner B joins
+ *  a couple: inviting your partner is what unlocks the free platform. Applies
+ *  to EVERY couple (not just the first 200): the founding-member badge stays
+ *  reserved for the first 200 via `is_founding_member`, but the free entitlement
+ *  window is granted to all. No-op for demo couples, couples already on a
+ *  paid/founding plan, or a solo workspace. Returns whether it was granted. */
+export function activatePartnerFreeWindow(coupleId: number, nowMs: number = now()): boolean {
   const couple = getCoupleById(coupleId);
   if (!couple || couple.is_demo) return false;
   // Don't downgrade a paying subscriber or re-stamp an existing founder.
   if (["founding", "active", "past_due"].includes(couple.subscription_status)) return false;
   if (couple.partner_b_id == null) return false; // both partners required
-  if (!isFoundingEligible(coupleId)) return false;
 
+  const until = partnerFreeWindowEnd(weddingMsOf(couple.wedding_date), nowMs);
+  const badge = isFoundingEligible(coupleId) ? 1 : 0;
   db.prepare(
     `UPDATE couples
         SET subscription_status = 'founding',
-            is_founding_member = 1,
+            is_founding_member = ?,
             founding_until = ?,
             updated_at = ?
       WHERE id = ?`,
-  ).run(nowMs + FOUNDING_DURATION_MS, nowMs, coupleId);
+  ).run(badge, until, nowMs, coupleId);
   return true;
+}
+
+/** Keep a partner-granted free window pinned to the couple's wedding day when
+ *  they change the date. Only touches couples on the partner reward
+ *  (`founding` + NOT a first-200 badge holder) so the first-200 18-month window
+ *  is never shortened. No-op otherwise. */
+export function refreshPartnerFreeWindow(coupleId: number, nowMs: number = now()): void {
+  const couple = getCoupleById(coupleId);
+  if (!couple || couple.is_demo) return;
+  if (couple.subscription_status !== "founding" || couple.is_founding_member) return;
+  if (couple.partner_b_id == null) return;
+  const until = partnerFreeWindowEnd(weddingMsOf(couple.wedding_date), nowMs);
+  db.prepare("UPDATE couples SET founding_until = ?, updated_at = ? WHERE id = ?").run(
+    until,
+    nowMs,
+    coupleId,
+  );
 }
 
 // ── Stripe linkage lookups (used by the webhook) ────────────────────────────

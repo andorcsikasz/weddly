@@ -44,6 +44,23 @@ export const FOUNDING_DURATION_MS = 1000 * 60 * 60 * 24 * 30 * 18; // ~18 months
 /** How many of the earliest couples can claim a founding slot. */
 export const FOUNDING_CAP = 200;
 
+/** The day the platform stops being free for solo (one-partner) workspaces.
+ *  Until this date everyone can edit; after it, a couple that never invited
+ *  their partner goes read-only unless they subscribe. Couples who DID invite
+ *  their partner are free until their wedding day instead (see
+ *  `partnerFreeWindowEnd`). Drives the "invite your partner" nudge banner copy.
+ *  UTC midnight 2026-08-01. */
+export const PAID_LAUNCH_DATE = Date.UTC(2026, 7, 1);
+
+/** End of the free window granted when partner B joins: free until the wedding
+ *  day. Falls back to the generous 18-month founding window when the date is
+ *  unknown or already in the past, so a couple is never instantly locked out.
+ *  Pure + time-based so the domain grant and any test agree. */
+export function partnerFreeWindowEnd(weddingMs: number | null, nowMs: number): number {
+  if (weddingMs != null && weddingMs > nowMs) return weddingMs;
+  return nowMs + FOUNDING_DURATION_MS;
+}
+
 /** Standard monthly price, in integer minor-less units of each currency
  *  (Forint has no minor unit; EUR shown without cents on the card). These are
  *  the display/forecast figures — the charged amount comes from the Stripe
@@ -82,6 +99,9 @@ export interface BillingStatusResponse {
   /** The couple's display currency and the monthly price in that currency. */
   currency: Currency;
   price: number;
+  /** False when partner B hasn't joined yet (solo workspace). Drives the
+   *  "invite your partner, free until your wedding day" nudge banner. */
+  has_partner: boolean;
   /** Remaining founding slots (FOUNDING_CAP minus live founding members),
    *  clamped to >= 0. Drives the "N spots left" line. */
   founding_spots_left: number;
