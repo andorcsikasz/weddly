@@ -976,6 +976,36 @@ function CoupleCardsTeaser() {
   const { t, locale } = useT();
   const toolPath =
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
+
+  // Mirror the tool-page easter egg here: a horizontal swipe on the deck
+  // row reveals the hidden 5th lemonade card. Persisted via the same
+  // localStorage key so unlocking on either surface lights both up.
+  const [isLemonadeRevealed, setIsLemonadeRevealed] = useState<boolean>(() =>
+    loadLemonadeRevealed(),
+  );
+  const visibleDecks = useMemo(
+    () =>
+      isLemonadeRevealed
+        ? COUPLE_CARD_DECKS
+        : COUPLE_CARD_DECKS.filter((deck) => deck.id !== "lemonade"),
+    [isLemonadeRevealed],
+  );
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const handleSwipeStart = (e: React.PointerEvent<HTMLUListElement>) => {
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+  };
+  const handleSwipeEnd = (e: React.PointerEvent<HTMLUListElement>) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || isLemonadeRevealed) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      setIsLemonadeRevealed(true);
+      saveLemonadeRevealed();
+    }
+  };
+
   return (
     <section className="relative bg-white dark:bg-umber-900">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
@@ -986,29 +1016,51 @@ function CoupleCardsTeaser() {
         </header>
         {/* All four decks visible at once on mobile via a 2x2 grid in the
          *  requested 2:3 portrait aspect. Tablet stays 2-up; desktop lays
-         *  out 4-up. Whole cards are clickable. */}
-        <ul className="mt-5 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:grid-cols-4 lg:gap-5">
-          {COUPLE_CARD_DECKS.filter((deck) => deck.id !== "lemonade").map((deck, idx) => (
-            <li key={deck.id} className="h-full">
-              <Link
-                to={`${toolPath}?deck=${deck.id}`}
-                className="group flex aspect-[2/3] h-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-3 py-4 text-center text-white transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7"
-              >
-                <span aria-hidden="true" className="block h-1" />
-                <div className="flex flex-1 flex-col items-center justify-center">
-                  <span className="font-display text-lg font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-2xl lg:text-3xl">
-                    {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+         *  out 4-up. Whole cards are clickable. A horizontal swipe (>50px)
+         *  on the row reveals the hidden 5th lemonade deck — same easter
+         *  egg as the tool page. */}
+        <ul
+          onPointerDown={handleSwipeStart}
+          onPointerUp={handleSwipeEnd}
+          onPointerCancel={() => {
+            swipeStart.current = null;
+          }}
+          className={`mt-5 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:gap-5 ${
+            isLemonadeRevealed ? "lg:grid-cols-5" : "lg:grid-cols-4"
+          }`}
+        >
+          {visibleDecks.map((deck, idx) => {
+            const isLemonade = deck.id === "lemonade";
+            return (
+              <li key={deck.id} className="h-full">
+                <Link
+                  to={`${toolPath}?deck=${deck.id}`}
+                  className={`group flex aspect-[2/3] h-full flex-col items-center justify-between rounded-2xl px-3 py-4 text-center transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7 ${
+                    isLemonade
+                      ? "bg-lemonade-yellow text-umber-900 focus-visible:ring-lemonade-yellow"
+                      : "bg-wnrs-red text-white focus-visible:ring-wnrs-red"
+                  }`}
+                >
+                  <span aria-hidden="true" className="block h-1" />
+                  <div className="flex flex-1 flex-col items-center justify-center">
+                    <span className="font-display text-lg font-bold uppercase leading-[0.95] tracking-tight sm:text-2xl lg:text-3xl">
+                      {isLemonade
+                        ? t(deck.titleKey).toUpperCase()
+                        : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                    </span>
+                    {!isLemonade ? (
+                      <span className="mt-1.5 font-display text-[11px] font-bold uppercase tracking-[0.04em] sm:mt-2 sm:text-sm lg:text-base">
+                        {t(deck.titleKey)}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] sm:text-[10px] sm:tracking-[0.28em]">
+                    {t("app.name")} · {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
                   </span>
-                  <span className="mt-1.5 font-display text-[11px] font-bold uppercase tracking-[0.04em] text-white sm:mt-2 sm:text-sm lg:text-base">
-                    {t(deck.titleKey)}
-                  </span>
-                </div>
-                <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] text-white sm:text-[10px] sm:tracking-[0.28em]">
-                  {t("app.name")} · {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
-                </span>
-              </Link>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </section>
