@@ -294,6 +294,16 @@
       0 1px 0 0 var(--btn-rim);
     transform: translateY(3px);
   }
+  /* Permanently-pressed variant — a selected/active segmented button that
+     should read as "down" while its siblings stay raised. Mirrors the
+     :active look (and keeps it on hover) so click + selected feel the same. */
+  .btn-lifted.is-pressed,
+  .btn-lifted.is-pressed:hover {
+    box-shadow:
+      inset 0 1px 2px 0 var(--btn-rim-active),
+      0 1px 0 0 var(--btn-rim);
+    transform: translateY(3px);
+  }
   /* Landing CTAs get a single clean, warm (umber-tinted) drop shadow — no
      solid rim layer. The Polymarket-style hard rim read as a black smudge
      under the dark espresso buttons; a soft shadow gives clean contrast on

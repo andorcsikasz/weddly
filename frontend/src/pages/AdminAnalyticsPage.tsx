@@ -292,7 +292,7 @@ function PageHeader({
   }, []);
 
   return (
-    <header className="sticky top-14 z-10 -mx-4 mb-6 border-b border-paper-200 bg-paper-100/85 px-4 py-2.5 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-10 xl:px-10 dark:border-umber-700 dark:bg-umber-900/85">
+    <header className="sticky top-14 z-10 -mx-4 mb-6 border-b border-paper-200 bg-paper-100/85 px-4 pb-2.5 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-10 xl:px-10 dark:border-umber-700 dark:bg-umber-900/85">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="m-0 shrink-0 text-lg font-semibold tracking-tight text-neutral-900 dark:text-paper-50">
           {t("admin.analytics_title")}
@@ -335,7 +335,7 @@ function PageHeader({
                 className={
                   "btn-lifted rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 " +
                   (active
-                    ? "bg-neutral-600 text-white dark:bg-neutral-500"
+                    ? "is-pressed bg-neutral-600 text-white dark:bg-neutral-500"
                     : "bg-paper-200/70 text-neutral-700 hover:bg-paper-300/80 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700")
                 }
               >
