@@ -2835,7 +2835,9 @@ export interface LocaleMessages {
     fin_title: string;
     fin_subtitle: string;
     fin_kpi_mrr: string;
+    fin_kpi_mrr_hint: string;
     fin_kpi_arr: string;
+    fin_kpi_arr_hint: string;
     fin_kpi_paying: string;
     fin_kpi_founding_active: string;
     fin_kpi_founding_left: string;

@@ -2514,7 +2514,10 @@ const en: LocaleMessages = {
     fin_title: "Financial planner",
     fin_subtitle: "Live subscription revenue and a forecast you can model.",
     fin_kpi_mrr: "MRR (EUR)",
+    fin_kpi_mrr_hint:
+      "MRR = Monthly Recurring Revenue: the income from active subscriptions in a single month.",
     fin_kpi_arr: "ARR (EUR)",
+    fin_kpi_arr_hint: "ARR = Annual Recurring Revenue: the annualised run-rate, i.e. MRR × 12.",
     fin_kpi_paying: "Paying couples",
     fin_kpi_founding_active: "Founding (free)",
     fin_kpi_founding_left: "Founding spots left",

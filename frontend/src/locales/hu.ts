@@ -2545,7 +2545,11 @@ const hu: LocaleMessages = {
     fin_title: "Pénzügyi tervező",
     fin_subtitle: "Élő előfizetési bevétel és egy modellezhető előrejelzés.",
     fin_kpi_mrr: "MRR (EUR)",
+    fin_kpi_mrr_hint:
+      "MRR = Monthly Recurring Revenue, vagyis havi ismétlődő bevétel: az aktív előfizetésekből egy hónap alatt befolyó összeg.",
     fin_kpi_arr: "ARR (EUR)",
+    fin_kpi_arr_hint:
+      "ARR = Annual Recurring Revenue, vagyis éves ismétlődő bevétel: a havi MRR éves szintre vetítve (MRR × 12).",
     fin_kpi_paying: "Fizető párok",
     fin_kpi_founding_active: "Alapító (ingyenes)",
     fin_kpi_founding_left: "Szabad alapítói hely",

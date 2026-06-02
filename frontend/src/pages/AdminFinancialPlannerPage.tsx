@@ -2,6 +2,7 @@
 // forecast. The backend serves the live base; the projection (shared
 // projectRevenue) re-runs in the browser as the operator drags the sliders.
 
+import { Info } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   type AdminFinancialPlannerOverview,
@@ -94,8 +95,18 @@ export default function AdminFinancialPlannerPage() {
 
       {/* Live KPIs */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Kpi label={t("admin.fin_kpi_mrr")} value={eur(data.mrr_eur_total)} emphasis />
-        <Kpi label={t("admin.fin_kpi_arr")} value={eur(data.arr_eur_total)} emphasis />
+        <Kpi
+          label={t("admin.fin_kpi_mrr")}
+          value={eur(data.mrr_eur_total)}
+          emphasis
+          hint={t("admin.fin_kpi_mrr_hint")}
+        />
+        <Kpi
+          label={t("admin.fin_kpi_arr")}
+          value={eur(data.arr_eur_total)}
+          emphasis
+          hint={t("admin.fin_kpi_arr_hint")}
+        />
         <Kpi label={t("admin.fin_kpi_paying")} value={String(data.paying_subscribers)} />
         <Kpi label={t("admin.fin_kpi_founding_active")} value={String(data.founding_active)} />
         <Kpi label={t("admin.fin_kpi_founding_left")} value={String(data.founding_spots_left)} />
@@ -276,10 +287,35 @@ export default function AdminFinancialPlannerPage() {
   );
 }
 
-function Kpi({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
+function Kpi({
+  label,
+  value,
+  emphasis,
+  hint,
+}: {
+  label: string;
+  value: string;
+  emphasis?: boolean;
+  /** Optional plain-language explanation surfaced behind a small info icon. */
+  hint?: string;
+}) {
   return (
-    <div className={`admin-tile ${emphasis ? "ring-1 ring-blush-300 dark:ring-blush-500/40" : ""}`}>
-      <div className="text-xs text-neutral-500 dark:text-umber-300">{label}</div>
+    <div
+      className={`admin-tile ${emphasis ? "ring-1 ring-neutral-800 dark:ring-neutral-400/50" : ""}`}
+    >
+      <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-umber-300">
+        <span>{label}</span>
+        {hint && (
+          <button
+            type="button"
+            title={hint}
+            aria-label={hint}
+            className="inline-flex cursor-help items-center text-neutral-400 hover:text-neutral-700 dark:text-umber-300 dark:hover:text-paper-100"
+          >
+            <Info size={12} aria-hidden="true" />
+          </button>
+        )}
+      </div>
       <div className="mt-1 text-xl font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
         {value}
       </div>
@@ -319,7 +355,7 @@ function Slider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-2 w-full accent-blush-600"
+        className="mt-2 w-full accent-neutral-800"
       />
     </label>
   );
@@ -332,7 +368,7 @@ function MrrChart({ points }: { points: number[] }) {
       {points.map((p, i) => (
         <div
           key={i}
-          className="flex-1 rounded-t bg-blush-400/80 dark:bg-blush-500/60"
+          className="flex-1 rounded-t bg-neutral-800/80 dark:bg-neutral-300/60"
           style={{ height: `${Math.max(2, (p / max) * 100)}%` }}
           title={String(p)}
         />
