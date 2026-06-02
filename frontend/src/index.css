@@ -311,6 +311,14 @@
       inset 0 1px 0 0 var(--btn-highlight),
       0 10px 22px -6px var(--btn-shadow-hover);
   }
+  /* Light-faced landing buttons (the outline "Get listed" CTA) want a much
+     lighter shadow — the warm 0.22 reads as a dirty smudge under a pale
+     face. Drop it to a faint, clean lift. Placed after .btn-landing.btn-lifted
+     so it wins the equal-specificity tie. */
+  .btn-landing.btn-outline {
+    --btn-shadow: rgba(58, 46, 34, 0.1);
+    --btn-shadow-hover: rgba(58, 46, 34, 0.16);
+  }
   /* The .btn base sets focus via Tailwind's ring utility (which writes
      box-shadow), but .btn-lifted's literal box-shadow stack overwrites
      the whole shadow chain — ring is wiped. Use `outline` instead so the
