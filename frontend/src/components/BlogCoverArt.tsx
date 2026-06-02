@@ -69,12 +69,19 @@ export const DEFAULT_PHOTO_BY_SLUG: Record<string, string> = {
   // counting money lines up with budget planning.
   "eskuvoi-koltsegvetes-keszitese":
     "https://images.unsplash.com/photo-1633158829585-23ba8f7c8caf?w=1200&auto=format&fit=crop&q=75",
+  // Guest list: hand-addressed forest-green wedding envelope with white
+  // calligraphy, nib pen, blush ribbon, pinecone. Reads as the act of
+  // writing the list — quieter and more editorial than a tablescape.
   "eskuvoi-vendeglista-keszitese":
-    "https://images.unsplash.com/photo-1525772764200-be829a350797?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1537843147573-84a454793cf6?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-hagyomanyok-praktikusan":
     "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=1200&auto=format&fit=crop&q=75",
+  // Ceremony walkthrough: empty wooden church pews with warm window-
+  // light raking across a stone floor. No staging, no florals, no
+  // crowd — light does the work. Editorial alternative to the earlier
+  // saturated outdoor-altar shot the user flagged as kitsch.
   "eskuvoi-szertartas-menete":
-    "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1552600552-4d7c157e7db8?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-ultetesi-rend-keszitese":
     "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200&auto=format&fit=crop&q=75",
   // RSVP: a single envelope on a dark surface. RSVP cards live inside
