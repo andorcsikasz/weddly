@@ -6,6 +6,7 @@ import {
   Flag,
   FlagOff,
   FlaskConical,
+  Gift,
   Lightbulb,
   Mail,
   MessageCircle,
@@ -689,10 +690,35 @@ export default function AdminUsersPage() {
         className="admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
       >
         <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
-          <div className="whitespace-nowrap">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
               {workspaceId(c)}
             </code>
+            {/* Grant/revoke free access — gift icon next to the ID. Sage when
+                the workspace is currently free (founding), muted otherwise. */}
+            {!c.is_demo && (
+              <button
+                type="button"
+                onClick={() => onToggleFree(c)}
+                className={`inline-flex items-center rounded p-0.5 ${
+                  c.billing.subscription_status === "founding"
+                    ? "text-sage-600 hover:text-sage-700 dark:text-sage-300"
+                    : "text-neutral-400 hover:text-neutral-700 dark:text-umber-400 dark:hover:text-paper-100"
+                }`}
+                title={
+                  c.billing.subscription_status === "founding"
+                    ? t("admin.revoke_free")
+                    : t("admin.grant_free")
+                }
+                aria-label={
+                  c.billing.subscription_status === "founding"
+                    ? t("admin.revoke_free")
+                    : t("admin.grant_free")
+                }
+              >
+                <Gift size={14} aria-hidden />
+              </button>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span className="font-medium text-neutral-900 dark:text-paper-50">
@@ -700,17 +726,6 @@ export default function AdminUsersPage() {
             </span>
             {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
             {!c.is_demo && renderBillingPill(c)}
-            {!c.is_demo && (
-              <button
-                type="button"
-                onClick={() => onToggleFree(c)}
-                className="text-[11px] font-medium text-neutral-500 underline-offset-2 hover:underline dark:text-umber-300"
-              >
-                {c.billing.subscription_status === "founding"
-                  ? t("admin.revoke_free")
-                  : t("admin.grant_free")}
-              </button>
-            )}
           </div>
           <div>
             {members.length === 0 ? (
