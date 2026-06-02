@@ -60,7 +60,15 @@ function expiryByOffset(o: AdminFinancialPlannerOverview, months: number): numbe
 // Tájékoztató jellegű, leegyszerűsített magyar adóbecslés a tervezett éves
 // árbevételre. NEM adótanácsadás — 2024-es kulcsokkal, kerekítve. A
 // profitalapú (KFT) formák a "költséghányad" csúszkát használják.
-const HUF_PER_EUR = 400; // a KATA fix Ft-tételének EUR-ra váltásához
+const HUF_PER_EUR = 400; // a KATA / minimálbér Ft-tételeinek EUR-ra váltásához
+// 2024-es minimálbér 266 800 Ft/hó. Az átalányadós EV jövedelme az éves
+// minimálbér feléig adómentes (SZJA + járulékok), és a főállású EV-nek a
+// járulékot legalább a minimálbér után meg kell fizetnie akkor is, ha
+// keveset keres — a mellékállásúnak (9-5 munka mellett) nem.
+const MIN_WAGE_EUR = (266_800 * 12) / HUF_PER_EUR; // éves minimálbér EUR-ban
+const HALF_MIN_WAGE_EUR = MIN_WAGE_EUR / 2; // átalányadó adómentes sávja
+const ATALANY_SZJA = 0.15; // SZJA a jövedelmen
+const ATALANY_CONTRIB = 0.315; // TB 18,5% + szocho 13%
 
 type TaxForm = {
   key: string;
@@ -79,9 +87,25 @@ const TAX_FORMS: readonly TaxForm[] = [
   },
   {
     key: "ev_atalany",
-    name: "EV — átalányadó",
-    note: "40% költséghányad, ~46,5% a jövedelmen (SZJA + TB + szocho)",
-    tax: (rev) => rev * 0.6 * 0.465,
+    name: "EV — átalányadó (főállás)",
+    note: "40% kh.; az éves minimálbér feléig adómentes, de a járulék a minimálbér után akkor is jár",
+    tax: (rev) => {
+      const income = rev * 0.6; // 40% költséghányad
+      const taxable = Math.max(0, income - HALF_MIN_WAGE_EUR);
+      // Főállásban a járulék+szocho legalább a minimálbér után jár.
+      const contrib = Math.max(MIN_WAGE_EUR * ATALANY_CONTRIB, taxable * ATALANY_CONTRIB);
+      return taxable * ATALANY_SZJA + contrib;
+    },
+  },
+  {
+    key: "ev_atalany_mellek",
+    name: "EV — átalányadó (9-5 munka mellett)",
+    note: "mellékállás: nincs járulékminimum (a főállás fedezi), az éves minimálbér feléig adómentes",
+    tax: (rev) => {
+      const income = rev * 0.6;
+      const taxable = Math.max(0, income - HALF_MIN_WAGE_EUR);
+      return taxable * (ATALANY_SZJA + ATALANY_CONTRIB);
+    },
   },
   {
     key: "kft_osztalek",
