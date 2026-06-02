@@ -205,10 +205,10 @@ const en: LocaleMessages = {
     banner_cta: "Subscribe",
     founding_banner_title: "You're in the first 200 🎉",
     founding_banner_body:
-      "You're one of our first 200 couples, so Weddly is free for you until {date}. Enjoy the full platform.",
+      "You're one of our first 200 couples, so Weddly is free for you until your wedding day ({date}). Enjoy the full platform.",
     solo_banner_title: "Invite your partner",
     solo_banner_body:
-      "Weddly is all about planning together. Invite your partner and it stays free for you both until your wedding day, even after {date}. Everything you've created stays right where it is.",
+      "The first 200 couples use Weddly free until their wedding day. Invite your partner so you can keep planning together, free.",
     solo_banner_cta: "Invite partner",
   },
   wedding_site: {
@@ -2753,8 +2753,10 @@ const en: LocaleMessages = {
     remind_invite_partner_success: "Reminder sent.",
     remind_invite_partner_sent_label: "Reminder sent",
     billing_free: "Free",
+    billing_until_wedding: "Free until wedding",
     billing_trial: "Trial",
     billing_paying: "Paying",
+    billing_not_subscribed: "Not subscribed",
     billing_lapsed: "Read-only",
     grant_free: "Grant free",
     revoke_free: "Revoke free",

@@ -8,7 +8,6 @@
 // Renders nothing for paying couples, during onboarding (no couple yet), or
 // before billing data loads.
 
-import { PAID_LAUNCH_DATE } from "@shared/billing";
 import { Lock, Sparkles, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -53,14 +52,16 @@ export function SubscriptionBanner() {
         if (!alive) return;
         setEnabled(s.enabled);
         if (!s.billing.entitled) setMode("lapsed");
-        else if (s.billing.subscription_status === "founding" && s.billing.is_founding_member) {
-          // Celebratory "first 200" band, reserved for the badge holders.
+        else if (!s.has_partner) {
+          // Every partner-less couple: nudge them to invite their partner so the
+          // platform stays free until their wedding day. Takes priority over the
+          // founding band so a solo first-200 couple still gets the invite push.
+          setMode("solo");
+        } else if (s.billing.subscription_status === "founding" && s.billing.is_founding_member) {
+          // Celebratory "first 200" band, reserved for the badge holders who
+          // already have their partner on board.
           setMode("founding");
           setFoundingUntil(s.billing.founding_until);
-        } else if (!s.has_partner) {
-          // Solo workspace, still free: nudge them to invite their partner so
-          // the platform stays free until their wedding day past the paywall.
-          setMode("solo");
         } else setMode("none");
       })
       .catch(() => {
@@ -102,13 +103,9 @@ export function SubscriptionBanner() {
   }
 
   if (mode === "solo") {
-    // Only meaningful while the platform is still free for everyone. Once the
-    // paid launch passes, a solo couple is read-only (handled by "lapsed").
-    if (soloDismissed || Date.now() >= PAID_LAUNCH_DATE) return null;
-    const launchDate = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
-      month: "long",
-      day: "numeric",
-    }).format(new Date(PAID_LAUNCH_DATE));
+    // Shown to every partner-less couple: the first 200 are free until their
+    // wedding day, so the nudge is to invite the partner and lock that in.
+    if (soloDismissed) return null;
     return (
       <div className="border-b border-umber-200 bg-umber-100 text-umber-900 dark:border-umber-700/60 dark:bg-umber-800/60 dark:text-umber-100">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2 text-sm sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
@@ -116,10 +113,10 @@ export function SubscriptionBanner() {
           <p className="min-w-[14rem] flex-1">
             <span className="font-semibold">{t("billing.solo_banner_title")}</span>{" "}
             <span className="text-umber-700 dark:text-umber-200">
-              {t("billing.solo_banner_body", { date: launchDate })}
+              {t("billing.solo_banner_body")}
             </span>
           </p>
-          <Link to="/app" className="btn-primary btn-sm" onClick={dismissSolo}>
+          <Link to="/app/profile" className="btn-primary btn-sm" onClick={dismissSolo}>
             {t("billing.solo_banner_cta")}
           </Link>
           <button

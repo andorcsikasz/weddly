@@ -3126,8 +3126,10 @@ export interface LocaleMessages {
     workspace_status_paused: string;
     /** Billing badges + free-badge grant/revoke on the admin couples list. */
     billing_free: string;
+    billing_until_wedding: string;
     billing_trial: string;
     billing_paying: string;
+    billing_not_subscribed: string;
     billing_lapsed: string;
     grant_free: string;
     revoke_free: string;

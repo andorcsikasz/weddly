@@ -47,14 +47,16 @@ describe("billing state machine", () => {
     wipeAll();
   });
 
-  test("onboarding grants the 18-month founding plan to a couple within the first 200", async () => {
+  test("onboarding grants the first 200 'free until wedding day' founding plan", async () => {
+    // bootstrapCouple onboards with wedding_date 2026-09-12, so a first-200
+    // couple's free window is pinned to the wedding day (not a flat 18 months).
     const { token } = await bootstrapCouple("founding-onboard@weddly.test");
     const r = await getCouple(token);
     expect(r.status).toBe(200);
     expect(r.data.couple.billing.subscription_status).toBe("founding");
     expect(r.data.couple.billing.is_founding_member).toBe(true);
     expect(r.data.couple.billing.entitled).toBe(true);
-    expect(r.data.couple.billing.founding_until).toBeGreaterThan(Date.now());
+    expect(r.data.couple.billing.founding_until).toBe(Date.parse("2026-09-12"));
   });
 
   test("GET /api/billing/status reports disabled Stripe + decremented founding spots", async () => {

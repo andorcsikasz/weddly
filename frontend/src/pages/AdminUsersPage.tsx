@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  DollarSign,
   Flag,
   FlagOff,
   FlaskConical,
@@ -11,7 +12,6 @@ import {
   Mail,
   MessageCircle,
   Search,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -461,19 +461,44 @@ export default function AdminUsersPage() {
     }
   }
 
-  /** Compact billing badge so the admin can see at a glance who's free. */
+  /** Compact billing badge so the admin can see at a glance who's free. Free
+   *  workspaces (founding / admin-comped) carry no pill — the green gift frame
+   *  on the left already marks them, so the "free" tag is redundant. */
   function renderBillingPill(c: AdminCoupleView) {
     const s = c.billing.subscription_status;
-    if (s === "founding")
-      return (
-        <Pill tone="sage" icon={<Sparkles size={11} aria-hidden />}>
-          {t("admin.billing_free")}
-        </Pill>
-      );
+    if (s === "founding") return null;
     if (s === "trialing") return <Pill tone="paper">{t("admin.billing_trial")}</Pill>;
     if (s === "active" || s === "past_due")
       return <Pill tone="violet">{t("admin.billing_paying")}</Pill>;
     return <Pill tone="blush">{t("admin.billing_lapsed")}</Pill>;
+  }
+
+  /** Pay-or-not marker shown right of the gift icon: green dollar + check for a
+   *  paying subscriber, red X for anyone not subscribed. Free (founding)
+   *  workspaces show nothing — the green gift frame already conveys "free". */
+  function renderPaymentStatus(c: AdminCoupleView) {
+    const s = c.billing.subscription_status;
+    if (s === "founding") return null;
+    return s === "active" || s === "past_due" ? (
+      <span
+        className="relative inline-flex items-center text-sage-600 dark:text-sage-300"
+        title={t("admin.billing_paying")}
+        aria-label={t("admin.billing_paying")}
+      >
+        <DollarSign size={14} aria-hidden />
+        <span className="pointer-events-none absolute -right-1 -bottom-1 inline-flex h-3 w-3 items-center justify-center rounded-full bg-sage-500 text-paper-50 ring-1 ring-paper-50 dark:ring-umber-900">
+          <Check size={8} strokeWidth={3} aria-hidden />
+        </span>
+      </span>
+    ) : (
+      <span
+        className="inline-flex items-center text-blush-600 dark:text-blush-300"
+        title={t("admin.billing_not_subscribed")}
+        aria-label={t("admin.billing_not_subscribed")}
+      >
+        <X size={14} strokeWidth={2.5} aria-hidden />
+      </span>
+    );
   }
 
   function renderUserInfo(u: AdminUserView, opts: { showLastActive?: boolean } = {}) {
@@ -694,15 +719,16 @@ export default function AdminUsersPage() {
             <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
               {workspaceId(c)}
             </code>
-            {/* Grant/revoke free access — gift icon next to the ID. Sage when
-                the workspace is currently free (founding), muted otherwise. */}
+            {/* Grant/revoke free access — gift icon next to the ID. When the
+                workspace is free (founding) the gift gets a green frame + white
+                icon so it reads as "comped" at a glance; muted otherwise. */}
             {!c.is_demo && (
               <button
                 type="button"
                 onClick={() => onToggleFree(c)}
-                className={`inline-flex items-center rounded p-0.5 ${
+                className={`inline-flex items-center rounded-md p-0.5 ${
                   c.billing.subscription_status === "founding"
-                    ? "text-sage-600 hover:text-sage-700 dark:text-sage-300"
+                    ? "border border-sage-600 bg-sage-500 text-paper-50 hover:bg-sage-600 dark:border-sage-400 dark:bg-sage-600 dark:hover:bg-sage-500"
                     : "text-neutral-400 hover:text-neutral-700 dark:text-umber-400 dark:hover:text-paper-100"
                 }`}
                 title={
@@ -719,6 +745,7 @@ export default function AdminUsersPage() {
                 <Gift size={14} aria-hidden />
               </button>
             )}
+            {!c.is_demo && renderPaymentStatus(c)}
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span className="font-medium text-neutral-900 dark:text-paper-50">

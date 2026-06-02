@@ -5,6 +5,7 @@
 import { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import { partnerFreeWindowEnd } from "@shared/billing";
 import { CONFIG } from "./config";
 
 try {
@@ -745,6 +746,34 @@ db.prepare(
      AND created_at < ?
      AND subscription_status = 'none'`,
 ).run(FOUNDING_GRANDFATHER_UNTIL, BILLING_LAUNCH_MS);
+
+// Re-pin the first-200 grandfathered cohort from the flat 18-month window to
+// "free until their wedding day" (the founder's first-200 promise). Targets only
+// the rows the grandfather stamped (founding_until = FOUNDING_GRANDFATHER_UNTIL,
+// is_founding_member = 1), so admin comps and partner-reward couples are
+// untouched. Idempotent: once re-pinned, founding_until no longer matches, so it
+// never runs twice. A couple with no wedding date falls back to 18 months from
+// now (computed once here, then frozen).
+{
+  const grandfathered = db
+    .prepare(
+      `SELECT id, wedding_date FROM couples
+        WHERE is_demo = 0 AND subscription_status = 'founding'
+          AND is_founding_member = 1 AND founding_until = ?`,
+    )
+    .all(FOUNDING_GRANDFATHER_UNTIL) as Array<{ id: number; wedding_date: string | null }>;
+  if (grandfathered.length > 0) {
+    const nowMs = Date.now();
+    const repin = db.prepare("UPDATE couples SET founding_until = ?, updated_at = ? WHERE id = ?");
+    db.transaction(() => {
+      for (const c of grandfathered) {
+        const weddingMs = c.wedding_date ? Date.parse(c.wedding_date) : Number.NaN;
+        const until = partnerFreeWindowEnd(Number.isNaN(weddingMs) ? null : weddingMs, nowMs);
+        repin.run(until, nowMs, c.id);
+      }
+    })();
+  }
+}
 
 // Billing kill-switch singleton. Default enforcement_on=0 means the read-only
 // paywall is DEFERRED — no couple is locked out until the founder flips it on

@@ -207,10 +207,10 @@ const hu: LocaleMessages = {
     banner_cta: "Előfizetés",
     founding_banner_title: "Bekerültetek az első 200-ba 🎉",
     founding_banner_body:
-      "Az első 200 párunk egyike vagytok, így a Weddly nektek {date}-ig ingyenes. Használjátok a teljes platformot.",
+      "Az első 200 párunk egyike vagytok, így a Weddly az esküvőtök napjáig ({date}) ingyenes. Használjátok a teljes platformot.",
     solo_banner_title: "Hívd meg a párod",
     solo_banner_body:
-      "A Weddly a közös tervezésről szól. Hívd meg a párod, és az esküvőtök napjáig ingyenes marad nektek, {date} után is. Amit eddig elkészítettetek, mind a helyén marad.",
+      "Az első 200 pár az esküvője napjáig ingyen használhatja a Weddly-t. Hívd meg a párod, hogy együtt, ingyen tervezzetek tovább.",
     solo_banner_cta: "Pár meghívása",
   },
   wedding_site: {
@@ -2785,8 +2785,10 @@ const hu: LocaleMessages = {
     remind_invite_partner_success: "Emlékeztető elküldve.",
     remind_invite_partner_sent_label: "Elküldve",
     billing_free: "Ingyenes",
+    billing_until_wedding: "Esküvőig ingyen",
     billing_trial: "Próba",
     billing_paying: "Fizető",
+    billing_not_subscribed: "Nem fizetett elő",
     billing_lapsed: "Csak olvasható",
     grant_free: "Ingyen adás",
     revoke_free: "Ingyen visszavonás",

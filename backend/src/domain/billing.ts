@@ -109,6 +109,11 @@ export function startTrial(coupleId: number, nowMs: number = now()): void {
  *  the cap gets the 14-day trial. Only writes from the default 'none' state. */
 export function initBillingAtOnboarding(coupleId: number, nowMs: number = now()): void {
   if (isFoundingEligible(coupleId)) {
+    // First 200: free until their wedding day (fallback 18 months when the date
+    // is unknown or already past), per the founder's "first 200 free until your
+    // wedding" promise. The badge stays reserved for the first 200.
+    const couple = getCoupleById(coupleId);
+    const until = partnerFreeWindowEnd(weddingMsOf(couple?.wedding_date ?? null), nowMs);
     db.prepare(
       `UPDATE couples
           SET subscription_status = 'founding',
@@ -116,18 +121,20 @@ export function initBillingAtOnboarding(coupleId: number, nowMs: number = now())
               founding_until = ?,
               updated_at = ?
         WHERE id = ? AND subscription_status = 'none'`,
-    ).run(nowMs + FOUNDING_DURATION_MS, nowMs, coupleId);
+    ).run(until, nowMs, coupleId);
   } else {
     startTrial(coupleId, nowMs);
   }
 }
 
 /** Admin "free badge": comp a couple 18 months free regardless of the cap or
- *  partner state. Overwrites any current plan. */
+ *  partner state. Overwrites any current plan. NOT a first-200 founding member
+ *  (`is_founding_member = 0`) so the admin list shows it as a plain comp
+ *  ("Ingyenes"), distinct from the first-200 "free until wedding" cohort. */
 export function grantFreeAccess(coupleId: number, nowMs: number = now()): void {
   db.prepare(
     `UPDATE couples
-        SET subscription_status = 'founding', is_founding_member = 1, founding_until = ?, updated_at = ?
+        SET subscription_status = 'founding', is_founding_member = 0, founding_until = ?, updated_at = ?
       WHERE id = ?`,
   ).run(nowMs + FOUNDING_DURATION_MS, nowMs, coupleId);
 }
