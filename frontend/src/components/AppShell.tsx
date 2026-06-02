@@ -674,6 +674,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           ref={mainRef}
           tabIndex={-1}
           data-admin-shell={inAdminView ? "true" : undefined}
+          /* Couple workspace marker — scopes the warm espresso text palette
+             override in index.css (ink/navy → umber) so it never touches the
+             admin shell, auth, or public pages. */
+          data-app-shell={inAdminView ? undefined : "true"}
           className="flex-1 min-w-0 focus:outline-none"
         >
           {children}

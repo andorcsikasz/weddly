@@ -245,6 +245,77 @@
   }
 }
 
+/* ── /app workspace: warm espresso text palette ───────────────────────
+   The couple workspace used the cool navy `ink` scale for light-mode text,
+   which reads "blue" next to the landing — the landing runs the warm `umber`
+   (espresso/coffee) scale instead. These rules retint the workspace text to
+   match the landing, scoped to `[data-app-shell]` (the couple-view <main> in
+   AppShell.tsx) so admin, auth and public pages are untouched.
+
+   Why UNLAYERED and not @layer base: Tailwind utilities always beat @layer
+   base on cascade-layer order regardless of specificity, so a base-layer
+   rule could never override `.text-ink-500`. Unlayered styles outrank every
+   @layer, so these win cleanly.
+
+   Why `html:not(.dark)`: dark mode already pairs each `text-ink-*` with a
+   warm `dark:text-umber-*`. We only want to retint LIGHT mode, so the
+   `:not(.dark)` guard makes these inert in dark mode and leaves the existing
+   dark variants alone — no source-order/specificity fight.
+
+   Tone mapping (ink → umber): umber is lighter at the same number, so mid and
+   light shades step DOWN one (500→600, 400→500 …) to preserve contrast, while
+   the dark end (700–950) maps 1:1. Headings match the landing's umber-900. */
+html:not(.dark) [data-app-shell] {
+  color: theme("colors.umber.800"); /* was body default ink-800 */
+}
+html:not(.dark) [data-app-shell] :is(h1, h2) {
+  color: theme("colors.umber.900"); /* matches landing headings */
+}
+html:not(.dark) [data-app-shell] .text-ink-50 {
+  color: theme("colors.umber.100");
+}
+html:not(.dark) [data-app-shell] .text-ink-100 {
+  color: theme("colors.umber.200");
+}
+html:not(.dark) [data-app-shell] .text-ink-200 {
+  color: theme("colors.umber.300");
+}
+html:not(.dark) [data-app-shell] .text-ink-300 {
+  color: theme("colors.umber.400");
+}
+html:not(.dark) [data-app-shell] .text-ink-400 {
+  color: theme("colors.umber.500");
+}
+html:not(.dark) [data-app-shell] .text-ink-500 {
+  color: theme("colors.umber.600");
+}
+html:not(.dark) [data-app-shell] .text-ink-600 {
+  color: theme("colors.umber.700");
+}
+html:not(.dark) [data-app-shell] .text-ink-700 {
+  color: theme("colors.umber.700");
+}
+html:not(.dark) [data-app-shell] .text-ink-800 {
+  color: theme("colors.umber.800");
+}
+html:not(.dark) [data-app-shell] .text-ink-900 {
+  color: theme("colors.umber.900");
+}
+html:not(.dark) [data-app-shell] .text-ink-950 {
+  color: theme("colors.umber.950");
+}
+/* Strikethrough / underline tint (e.g. completed to-dos) where it was pinned
+   to an ink shade rather than currentColor. */
+html:not(.dark) [data-app-shell] .decoration-ink-300 {
+  text-decoration-color: theme("colors.umber.400");
+}
+html:not(.dark) [data-app-shell] .decoration-ink-400 {
+  text-decoration-color: theme("colors.umber.500");
+}
+html:not(.dark) [data-app-shell] .decoration-ink-700 {
+  text-decoration-color: theme("colors.umber.700");
+}
+
 /* ── Components ────────────────────────────────────────────────────── */
 @layer components {
   /* Polymarket-style 3-D lifted button. Colours come from whatever the
