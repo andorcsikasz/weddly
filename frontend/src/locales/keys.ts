@@ -2821,6 +2821,33 @@ export interface LocaleMessages {
     nav_users: string;
     nav_waitlist: string;
     nav_taxonomy: string;
+    nav_financial_planner: string;
+    /** Financial planner (/app/admin/financial-planner). */
+    fin_title: string;
+    fin_subtitle: string;
+    fin_kpi_mrr: string;
+    fin_kpi_arr: string;
+    fin_kpi_paying: string;
+    fin_kpi_founding_active: string;
+    fin_kpi_founding_left: string;
+    fin_kpi_trialing: string;
+    fin_cohorts_title: string;
+    fin_mrr_by_currency_title: string;
+    fin_assumptions_title: string;
+    fin_assumptions_hint: string;
+    fin_new_couples: string;
+    fin_trial_conv: string;
+    fin_founding_conv: string;
+    fin_churn: string;
+    fin_horizon: string;
+    fin_horizon_months: string;
+    fin_projection_title: string;
+    fin_col_month: string;
+    fin_col_subs: string;
+    fin_col_mrr: string;
+    fin_projected_mrr: string;
+    fin_projected_arr: string;
+    fin_subscribers_suffix: string;
     /** Admin blog CRUD page (/app/admin/blog). */
     nav_blog: string;
     /** Read-only analytics dashboard — money, activity, picks rollups. */

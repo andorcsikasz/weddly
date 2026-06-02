@@ -41,6 +41,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
 } from "@shared/types";
+import type { AdminFinancialPlannerOverview } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse } from "@shared/billing";
 import type { BlogPost } from "@shared/blog_posts";
 import type { GuestPortalView } from "@shared/guest_portal";
@@ -1243,6 +1244,11 @@ export const adminCoupleCardsApi = {
  *  GET endpoints — money, activity, picks, engagement — each returns the
  *  aggregated view in one round-trip. See `shared/admin_analytics.ts` for
  *  the response shapes. */
+export const adminFinancialPlannerApi = {
+  overview: () =>
+    apiFetch<AdminFinancialPlannerOverview>("GET", "/api/admin/financial-planner/overview"),
+};
+
 export const adminAnalyticsApi = {
   money: () => apiFetch<AdminMoneyAnalytics>("GET", "/api/admin/analytics/money"),
   activity: () => apiFetch<AdminActivityAnalytics>("GET", "/api/admin/analytics/activity"),

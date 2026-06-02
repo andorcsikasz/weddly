@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   LayoutList,
   LineChart,
+  Wallet,
   Layers,
   MessageCircle,
   Moon,
@@ -280,6 +281,12 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     labelKey: "admin.nav_analytics",
     tabKey: "admin.nav_analytics",
     icon: <LineChart size={18} />,
+    group: "insights",
+  },
+  {
+    to: "/app/admin/financial-planner",
+    labelKey: "admin.nav_financial_planner",
+    icon: <Wallet size={18} />,
     group: "insights",
   },
 ];

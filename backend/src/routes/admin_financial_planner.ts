@@ -1,0 +1,103 @@
+// Admin financial planner — live billing metrics that feed the forecast on
+// /app/admin/financial-planner. Read-only rollups over the couples table; the
+// projection math runs client-side from these numbers (shared/admin_financial_planner.ts).
+
+import { type AdminFinancialPlannerOverview, HUF_PER_EUR } from "@shared/admin_financial_planner";
+import { type SubscriptionStatus, FOUNDING_CAP, MONTHLY_PRICE } from "@shared/billing";
+import type { Currency } from "@shared/types";
+import { db, now } from "../db";
+import { activeFoundingCount } from "../domain/billing";
+import { requireAdmin } from "../domain/users";
+import { type Ctx, json, type Router } from "../lib/http";
+
+const STATUSES: SubscriptionStatus[] = [
+  "trialing",
+  "founding",
+  "active",
+  "past_due",
+  "canceled",
+  "none",
+];
+
+function overview(): AdminFinancialPlannerOverview {
+  const nowMs = now();
+
+  // Cohort counts (non-demo couples only).
+  const counts = Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<
+    SubscriptionStatus,
+    number
+  >;
+  const rows = db
+    .prepare(
+      "SELECT subscription_status AS s, COUNT(*) AS n FROM couples WHERE is_demo = 0 GROUP BY subscription_status",
+    )
+    .all() as Array<{ s: string; n: number }>;
+  let total = 0;
+  for (const r of rows) {
+    total += r.n;
+    if ((STATUSES as string[]).includes(r.s)) counts[r.s as SubscriptionStatus] = r.n;
+    else counts.none += r.n; // fold any unexpected value into 'none'
+  }
+
+  // Paying subscribers (active + past_due) split by currency for MRR.
+  const payRows = db
+    .prepare(
+      `SELECT COALESCE(currency, 'HUF') AS currency, COUNT(*) AS n
+         FROM couples
+        WHERE is_demo = 0 AND subscription_status IN ('active', 'past_due')
+        GROUP BY COALESCE(currency, 'HUF')`,
+    )
+    .all() as Array<{ currency: string; n: number }>;
+
+  const mrr_by_currency = payRows.map((r) => {
+    const currency: Currency =
+      r.currency === "EUR" || r.currency === "USD" ? (r.currency as Currency) : "HUF";
+    return { currency, subscribers: r.n, mrr: r.n * MONTHLY_PRICE[currency] };
+  });
+  const paying_subscribers = mrr_by_currency.reduce((a, c) => a + c.subscribers, 0);
+  const mrr_eur_total = Math.round(
+    mrr_by_currency.reduce((a, c) => a + (c.currency === "HUF" ? c.mrr / HUF_PER_EUR : c.mrr), 0),
+  );
+  const arpu_eur =
+    paying_subscribers > 0 ? Math.round(mrr_eur_total / paying_subscribers) : MONTHLY_PRICE.EUR;
+
+  // Founding-window expiry schedule: how many live founding members' free
+  // period ends in each upcoming calendar month.
+  const expiryRows = db
+    .prepare(
+      `SELECT strftime('%Y-%m', founding_until / 1000, 'unixepoch') AS month, COUNT(*) AS n
+         FROM couples
+        WHERE is_demo = 0 AND is_founding_member = 1
+          AND founding_until IS NOT NULL AND founding_until > ?
+        GROUP BY month
+        ORDER BY month`,
+    )
+    .all(nowMs) as Array<{ month: string; n: number }>;
+
+  return {
+    generated_at: nowMs,
+    counts,
+    total_couples: total,
+    founding_active: activeFoundingCount(nowMs),
+    founding_spots_left: Math.max(0, FOUNDING_CAP - activeFoundingCount(nowMs)),
+    trialing: counts.trialing,
+    mrr_by_currency,
+    paying_subscribers,
+    mrr_eur_total,
+    arr_eur_total: mrr_eur_total * 12,
+    arpu_eur,
+    founding_expiry: expiryRows.map((r) => ({ month: r.month, count: r.n })),
+    price_eur: MONTHLY_PRICE.EUR,
+    price_huf: MONTHLY_PRICE.HUF,
+    huf_per_eur: HUF_PER_EUR,
+  };
+}
+
+function handleOverview(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(overview());
+}
+
+export function registerAdminFinancialPlannerRoutes(router: Router) {
+  router.get("/api/admin/financial-planner/overview", handleOverview, true);
+}
