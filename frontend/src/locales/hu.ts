@@ -835,7 +835,7 @@ const hu: LocaleMessages = {
     card_guests_cta: "Add meg a kódodat",
     suppliers_section_title: "Válogatott szolgáltatói lista",
     suppliers_section_body:
-      "Helyszín, catering, fotó, zene, dekor. Foglalás a következő verzióban.",
+      "Találd meg azokat, akik feledhetetlenné teszik a napotokat: kézzel válogatott helyszínek, vendéglátók, fotósok, zenekarok és dekoratőrök, mind egy helyen. A közvetlen foglalás a következő verzióval érkezik.",
     suppliers_couple_cta: "Szolgáltatók böngészése",
     suppliers_vendor_cta: "Kerülj fel a listára",
     guest_sheet_title: "Add meg a meghívó kódod",

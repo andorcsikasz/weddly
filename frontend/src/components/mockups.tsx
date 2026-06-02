@@ -779,15 +779,15 @@ export function SeatingMockup({ className }: Common) {
       <g transform="translate(0, -10)">
       {/* Floor / grid */}
       <g className="text-paper-100">
-        <rect x="24" y="60" width="432" height="276" rx="8" fill="currentColor" />
+        <rect x="16" y="60" width="448" height="290" rx="8" fill="currentColor" />
       </g>
       <g className="text-paper-300">
         {[88, 152, 216, 280].map((y) => (
           <line
             key={`h-${y}`}
-            x1="24"
+            x1="16"
             y1={y}
-            x2="456"
+            x2="464"
             y2={y}
             stroke="currentColor"
             strokeWidth="0.5"
@@ -800,7 +800,7 @@ export function SeatingMockup({ className }: Common) {
             x1={x}
             y1="60"
             x2={x}
-            y2="336"
+            y2="346"
             stroke="currentColor"
             strokeWidth="0.5"
             strokeDasharray="2 4"
