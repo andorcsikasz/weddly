@@ -203,6 +203,9 @@ const en: LocaleMessages = {
     banner_body:
       "Your free period has ended. Subscribe to keep editing your workspace — your data is safe.",
     banner_cta: "Subscribe",
+    founding_banner_title: "You're a founding couple 🎉",
+    founding_banner_body:
+      "You're one of our first 200 couples, so Weddly is free for you until {date}. Enjoy the full platform.",
   },
   wedding_site: {
     page_title: "Wedding website",
@@ -2714,6 +2717,19 @@ const en: LocaleMessages = {
     remind_invite_partner_confirm: "Send reminder",
     remind_invite_partner_success: "Reminder sent.",
     remind_invite_partner_sent_label: "Reminder sent",
+    billing_free: "Free",
+    billing_trial: "Trial",
+    billing_paying: "Paying",
+    billing_lapsed: "Read-only",
+    grant_free: "Grant free",
+    revoke_free: "Revoke free",
+    grant_free_confirm_title: "Grant free access?",
+    grant_free_confirm_body: "{workspace} gets 18 months free, regardless of the founding cap.",
+    revoke_free_confirm_title: "Revoke free access?",
+    revoke_free_confirm_body:
+      "{workspace} loses its free badge and becomes read-only until they subscribe.",
+    grant_free_success: "Free access granted.",
+    revoke_free_success: "Free access revoked.",
     workspace_status_paused: "Paused",
     workspace_status_deleting: "Purged",
     purge_deleting_button: "Permanently purge {n} deleting workspaces",

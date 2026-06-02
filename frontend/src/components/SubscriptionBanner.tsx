@@ -1,26 +1,36 @@
-// Top-of-app sticky banner shown when a couple's free period has lapsed and
-// they aren't subscribed — the workspace is read-only until they subscribe.
-// Mirrors VerifyEmailBanner's single-line band. The "Subscribe" action mints a
-// Stripe Checkout URL and redirects. Hidden entirely while the couple is
-// entitled (trial / founding / active), during onboarding (no couple yet), or
-// before billing goes live.
+// Top-of-app billing banner. Two mutually-exclusive states:
+//   - lapsed (free period over, not subscribed) → read-only band + Subscribe.
+//   - founding member → a one-time celebratory band ("you're in the first 200,
+//     free for 18 months"), dismissible and remembered in localStorage.
+// Renders nothing for paying / trialing couples, during onboarding (no couple
+// yet), or before billing data loads.
 
-import { Lock } from "lucide-react";
+import { Lock, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../lib/auth";
 import { billingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
+const FOUNDING_DISMISS_KEY = "weddly.founding_banner.dismissed";
+
 export function SubscriptionBanner() {
   const { user } = useAuth();
-  const { t } = useT();
-  const [lapsed, setLapsed] = useState(false);
+  const { t, locale } = useT();
+  const [mode, setMode] = useState<"none" | "lapsed" | "founding">("none");
   const [enabled, setEnabled] = useState(false);
+  const [foundingUntil, setFoundingUntil] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(FOUNDING_DISMISS_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     if (!user) {
-      setLapsed(false);
+      setMode("none");
       return;
     }
     let alive = true;
@@ -28,19 +38,22 @@ export function SubscriptionBanner() {
       .status()
       .then((s) => {
         if (!alive) return;
-        setLapsed(!s.billing.entitled);
         setEnabled(s.enabled);
+        if (!s.billing.entitled) setMode("lapsed");
+        else if (s.billing.subscription_status === "founding") {
+          setMode("founding");
+          setFoundingUntil(s.billing.founding_until);
+        } else setMode("none");
       })
       .catch(() => {
-        // No couple yet (onboarding) or a transient error → don't show.
-        if (alive) setLapsed(false);
+        if (alive) setMode("none");
       });
     return () => {
       alive = false;
     };
   }, [user]);
 
-  if (!user || !lapsed) return null;
+  if (!user || mode === "none") return null;
 
   async function onSubscribe() {
     setBusy(true);
@@ -52,6 +65,47 @@ export function SubscriptionBanner() {
     }
   }
 
+  function dismissFounding() {
+    setDismissed(true);
+    try {
+      localStorage.setItem(FOUNDING_DISMISS_KEY, "1");
+    } catch {
+      /* localStorage may be blocked — non-fatal */
+    }
+  }
+
+  if (mode === "founding") {
+    if (dismissed) return null;
+    const until = foundingUntil
+      ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+          year: "numeric",
+          month: "long",
+        }).format(new Date(foundingUntil))
+      : "";
+    return (
+      <div className="border-b border-umber-200 bg-umber-100 text-umber-900 dark:border-umber-700/60 dark:bg-umber-800/60 dark:text-umber-100">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2 text-sm sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+          <Sparkles size={16} className="shrink-0 text-umber-600 dark:text-umber-300" aria-hidden />
+          <p className="min-w-[14rem] flex-1">
+            <span className="font-semibold">{t("billing.founding_banner_title")}</span>{" "}
+            <span className="text-umber-700 dark:text-umber-200">
+              {t("billing.founding_banner_body", { date: until })}
+            </span>
+          </p>
+          <button
+            type="button"
+            onClick={dismissFounding}
+            aria-label={t("verify.banner_dismiss")}
+            className="rounded-md p-1 text-umber-600 hover:bg-umber-200/70 dark:text-umber-300 dark:hover:bg-umber-700/60"
+          >
+            <X size={16} aria-hidden />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // mode === "lapsed"
   return (
     <div className="border-b border-blush-200 bg-blush-50 text-blush-900 dark:border-blush-700/60 dark:bg-blush-950/40 dark:text-blush-100">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 text-sm sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">

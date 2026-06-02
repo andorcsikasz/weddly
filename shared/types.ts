@@ -154,6 +154,9 @@ export interface AdminCoupleView {
    *  sage Mail+Check state on the workspace row so a refresh doesn't
    *  re-arm the button. */
   invite_partner_reminded_at: UnixMs | null;
+  /** Subscription / billing snapshot — lets the admin see who's free
+   *  (founding / trial) vs paying vs lapsed, and act on it. */
+  billing: CoupleBilling;
 }
 
 // ─── Couples (the workspace) ─────────────────────────────────────────────────

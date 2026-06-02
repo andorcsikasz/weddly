@@ -8,6 +8,19 @@ import type { AdminFinancialPlannerOverview } from "@shared/admin_financial_plan
 import { db } from "../../src/db";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 
+/** Seed N placeholder non-demo couples (negative ids) so later real couples
+ *  land past the founding cap and get the trial instead of founding. */
+function seedCouples(n: number): void {
+  const insert = db.prepare(
+    `INSERT INTO couples (id, partner_a_id, display_name, bride_name, groom_name,
+       style_tags_json, frozen_categories_json, status, created_at, updated_at, is_demo)
+     VALUES (?, 1, 'x', '', '', '[]', '[]', 'active', 1, 1, 0)`,
+  );
+  db.transaction(() => {
+    for (let i = 1; i <= n; i++) insert.run(-i);
+  })();
+}
+
 async function addAdmin(): Promise<string> {
   const reg = await req<{ token: string }>("POST", "/api/auth/register", {
     email: "admin@test.test",
@@ -27,7 +40,9 @@ describe("GET /api/admin/financial-planner/overview", () => {
 
   test("reports cohorts, founding spots, and MRR for paying couples", async () => {
     wipeAll();
-    // A trialing couple (from onboarding) + a forced active EUR subscriber.
+    // Seed past the founding cap so these real couples start as trialing, not
+    // founding — then force one into an active EUR subscription.
+    seedCouples(200);
     await bootstrapCouple("fin-trial@weddly.test");
     const { coupleId } = await bootstrapCouple("fin-active@weddly.test");
     db.prepare(

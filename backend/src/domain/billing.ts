@@ -85,6 +85,44 @@ export function startTrial(coupleId: number, nowMs: number = now()): void {
   ).run(nowMs + TRIAL_DURATION_MS, nowMs, coupleId);
 }
 
+/** Billing state for a brand-new couple at onboarding: the first 200 real
+ *  couples become founding members (free 18 months) immediately; everyone past
+ *  the cap gets the 14-day trial. Only writes from the default 'none' state. */
+export function initBillingAtOnboarding(coupleId: number, nowMs: number = now()): void {
+  if (isFoundingEligible(coupleId)) {
+    db.prepare(
+      `UPDATE couples
+          SET subscription_status = 'founding',
+              is_founding_member = 1,
+              founding_until = ?,
+              updated_at = ?
+        WHERE id = ? AND subscription_status = 'none'`,
+    ).run(nowMs + FOUNDING_DURATION_MS, nowMs, coupleId);
+  } else {
+    startTrial(coupleId, nowMs);
+  }
+}
+
+/** Admin "free badge": comp a couple 18 months free regardless of the cap or
+ *  partner state. Overwrites any current plan. */
+export function grantFreeAccess(coupleId: number, nowMs: number = now()): void {
+  db.prepare(
+    `UPDATE couples
+        SET subscription_status = 'founding', is_founding_member = 1, founding_until = ?, updated_at = ?
+      WHERE id = ?`,
+  ).run(nowMs + FOUNDING_DURATION_MS, nowMs, coupleId);
+}
+
+/** Remove a comped free badge → no plan (workspace goes read-only until they
+ *  subscribe). Used by the admin to revoke a manually-granted free badge. */
+export function revokeFreeAccess(coupleId: number, nowMs: number = now()): void {
+  db.prepare(
+    `UPDATE couples
+        SET subscription_status = 'none', is_founding_member = 0, founding_until = NULL, updated_at = ?
+      WHERE id = ?`,
+  ).run(nowMs, coupleId);
+}
+
 /** Activate the 18-month founding free window. Called when partner B joins a
  *  couple. No-op for demo couples, couples already on a paid/founding plan, or
  *  couples past the first-200 cutoff (those keep their trial). Returns whether

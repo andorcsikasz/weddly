@@ -1078,6 +1078,12 @@ export const adminUserApi = {
       `/api/admin/couples/${coupleId}/remind-invite-partner`,
       {},
     ),
+  /** Comp a couple 18 months free ("free badge"). Returns the updated row. */
+  grantFree: (coupleId: number) =>
+    apiFetch<{ couple: AdminCoupleView }>("POST", `/api/admin/couples/${coupleId}/grant-free`, {}),
+  /** Remove a previously-granted free badge (couple goes read-only). */
+  revokeFree: (coupleId: number) =>
+    apiFetch<{ couple: AdminCoupleView }>("POST", `/api/admin/couples/${coupleId}/revoke-free`, {}),
   /** Unread-style counts for the admin nav rail. AppShell polls this
    *  every ~30s while the admin is signed in and renders a small red
    *  badge next to each section with count > 0. */

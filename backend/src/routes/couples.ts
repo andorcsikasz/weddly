@@ -40,7 +40,7 @@ import {
   toCouple,
 } from "../domain/couples";
 import { sendKind } from "../domain/emails";
-import { activateFoundingIfEligible, startTrial } from "../domain/billing";
+import { activateFoundingIfEligible, initBillingAtOnboarding } from "../domain/billing";
 import { recordExport } from "../domain/exports";
 import { recordGrowthEvent } from "../domain/growth_events";
 import { generateInviteToken } from "../domain/invite_codes";
@@ -583,9 +583,9 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
       newCoupleId,
     );
 
-    // Start the 14-day in-app free trial. If the partner later joins and the
-    // couple is among the first 200, this flips to the 18-month founding plan.
-    startTrial(newCoupleId, ts);
+    // Among the first 200 couples → 18-month founding plan right away;
+    // otherwise the 14-day trial. (Partner-join also tops this up below.)
+    initBillingAtOnboarding(newCoupleId, ts);
 
     // The bride and groom are guests at their own wedding — and they need to
     // count in headcount, catering, and seating. The helper materializes them

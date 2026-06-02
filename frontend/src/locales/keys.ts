@@ -257,6 +257,9 @@ export interface LocaleMessages {
     banner_title: string;
     banner_body: string;
     banner_cta: string;
+    /** Celebratory founding-member band, body has a {date} placeholder. */
+    founding_banner_title: string;
+    founding_banner_body: string;
   };
   /** Public couple-branded landing at `/w/:slug` — first version: names,
    *  date, optional schedule, RSVP CTA. Followed by registry / story /
@@ -3087,6 +3090,19 @@ export interface LocaleMessages {
     remind_invite_partner_success: string;
     remind_invite_partner_sent_label: string;
     workspace_status_paused: string;
+    /** Billing badges + free-badge grant/revoke on the admin couples list. */
+    billing_free: string;
+    billing_trial: string;
+    billing_paying: string;
+    billing_lapsed: string;
+    grant_free: string;
+    revoke_free: string;
+    grant_free_confirm_title: string;
+    grant_free_confirm_body: string;
+    revoke_free_confirm_title: string;
+    revoke_free_confirm_body: string;
+    grant_free_success: string;
+    revoke_free_success: string;
     workspace_status_deleting: string;
     /** One-shot bulk purge of every couple in `status="deleting"` — already
      *  PII-scrubbed tombstones the regular UI now hides. */

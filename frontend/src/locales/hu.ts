@@ -205,6 +205,9 @@ const hu: LocaleMessages = {
     banner_body:
       "Az ingyenes időszakotok véget ért. Fizessetek elő a szerkesztés folytatásához — az adataitok biztonságban vannak.",
     banner_cta: "Előfizetés",
+    founding_banner_title: "Alapító pár vagytok 🎉",
+    founding_banner_body:
+      "Az első 200 párunk egyike vagytok, így a Weddly nektek {date}-ig ingyenes. Használjátok a teljes platformot.",
   },
   wedding_site: {
     page_title: "Esküvői oldal",
@@ -2745,6 +2748,20 @@ const hu: LocaleMessages = {
     remind_invite_partner_confirm: "Küldés",
     remind_invite_partner_success: "Emlékeztető elküldve.",
     remind_invite_partner_sent_label: "Elküldve",
+    billing_free: "Ingyenes",
+    billing_trial: "Próba",
+    billing_paying: "Fizető",
+    billing_lapsed: "Csak olvasható",
+    grant_free: "Ingyen adás",
+    revoke_free: "Ingyen visszavonás",
+    grant_free_confirm_title: "Ingyenes hozzáférés adása?",
+    grant_free_confirm_body:
+      "{workspace} 18 hónap ingyenes hozzáférést kap, az alapítói limittől függetlenül.",
+    revoke_free_confirm_title: "Ingyenes hozzáférés visszavonása?",
+    revoke_free_confirm_body:
+      "{workspace} elveszíti az ingyenes jelvényét, és csak olvasható lesz, amíg nem fizet elő.",
+    grant_free_success: "Ingyenes hozzáférés megadva.",
+    revoke_free_success: "Ingyenes hozzáférés visszavonva.",
     workspace_status_paused: "Szüneteltetve",
     workspace_status_deleting: "Törlés alatt",
     purge_deleting_button: "Véglegesen töröl {n} törlés alatti workspace-t",
@@ -4315,7 +4332,8 @@ const hu: LocaleMessages = {
       deck_deepwater_title: "Mély víz",
       deck_deepwater_blurb: "Halál, krízis, értelem, hit. Amiről nem szoktunk beszélni, és muszáj.",
       deck_lemonade_title: "Limonádé",
-      deck_lemonade_blurb: "Egy könnyű, vidám pakli. Vacsora után, kávé mellé, kuncogós kérdésekkel.",
+      deck_lemonade_blurb:
+        "Egy könnyű, vidám pakli. Vacsora után, kávé mellé, kuncogós kérdésekkel.",
       card_position: "{n} / {total}",
       card_empty: "Húzzatok egy kártyát.",
       next_card: "Következő kártya",

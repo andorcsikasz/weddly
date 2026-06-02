@@ -5,6 +5,7 @@
 import type { AdminCoupleView, AdminUserActivity, AdminUserView, UserFlag } from "@shared/types";
 import { CONFIG } from "../config";
 import { db } from "../db";
+import { grantFreeAccess, revokeFreeAccess } from "../domain/billing";
 import { sendKind } from "../domain/emails";
 import { purgeOneCouple, purgeOneUser } from "../domain/purge";
 import { isAdminEmail, requireAdmin, type UserRow } from "../domain/users";
@@ -202,6 +203,7 @@ function toAdminCouple(
     demo_feature_counts: featureCounts,
     demo_total_events: totalEvents,
     invite_partner_reminded_at: row.invite_partner_reminded_at ?? null,
+    billing: c.billing,
   };
 }
 
@@ -299,6 +301,50 @@ function handleRemindInvitePartner(ctx: Ctx): Response {
   });
 
   return json({ ok: true, reminded_at: ts });
+}
+
+/** Comp a couple 18 months free ("free badge") regardless of the founding cap
+ *  or partner state. Idempotent-ish: re-running just re-stamps the window. */
+function handleGrantFree(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const coupleId = parseId(ctx);
+  const couple = db.prepare("SELECT * FROM couples WHERE id = ?").get(coupleId) as
+    | CoupleRow
+    | undefined;
+  if (!couple) throw new HttpError(404, "Couple not found");
+  if (couple.is_demo) throw new HttpError(400, "Cannot grant free access to a demo workspace");
+
+  grantFreeAccess(coupleId);
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: coupleId,
+    action: "admin.billing.grant_free",
+    target_kind: "couple",
+    target_id: coupleId,
+  });
+  const updated = db.prepare("SELECT * FROM couples WHERE id = ?").get(coupleId) as CoupleRow;
+  return json({ couple: toAdminCouple(updated, new Map()) });
+}
+
+/** Remove a previously-granted free badge → no plan (read-only until subscribe). */
+function handleRevokeFree(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const coupleId = parseId(ctx);
+  const couple = db.prepare("SELECT * FROM couples WHERE id = ?").get(coupleId) as
+    | CoupleRow
+    | undefined;
+  if (!couple) throw new HttpError(404, "Couple not found");
+
+  revokeFreeAccess(coupleId);
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: coupleId,
+    action: "admin.billing.revoke_free",
+    target_kind: "couple",
+    target_id: coupleId,
+  });
+  const updated = db.prepare("SELECT * FROM couples WHERE id = ?").get(coupleId) as CoupleRow;
+  return json({ couple: toAdminCouple(updated, new Map()) });
 }
 
 function handleResendVerify(ctx: Ctx): Response {
@@ -682,4 +728,6 @@ export function registerAdminUserRoutes(router: Router) {
   router.post("/api/admin/users/:id/beta", handleSetBetaTester, true);
   router.post("/api/admin/couples/purge-deleting", handlePurgeDeletingCouples, true);
   router.post("/api/admin/couples/:id/remind-invite-partner", handleRemindInvitePartner, true);
+  router.post("/api/admin/couples/:id/grant-free", handleGrantFree, true);
+  router.post("/api/admin/couples/:id/revoke-free", handleRevokeFree, true);
 }

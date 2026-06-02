@@ -8,6 +8,7 @@ import {
   Mail,
   MessageCircle,
   Search,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -410,6 +411,41 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function onToggleFree(c: AdminCoupleView) {
+    const isFree = c.billing.subscription_status === "founding";
+    const ok = await confirm({
+      title: isFree ? t("admin.revoke_free_confirm_title") : t("admin.grant_free_confirm_title"),
+      body: isFree
+        ? t("admin.revoke_free_confirm_body", { workspace: workspaceLabel(c) })
+        : t("admin.grant_free_confirm_body", { workspace: workspaceLabel(c) }),
+      confirmLabel: isFree ? t("admin.revoke_free") : t("admin.grant_free"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    try {
+      const r = isFree ? await adminUserApi.revokeFree(c.id) : await adminUserApi.grantFree(c.id);
+      setCouples((cur) => cur.map((x) => (x.id === c.id ? r.couple : x)));
+      toast.success(isFree ? t("admin.revoke_free_success") : t("admin.grant_free_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  /** Compact billing badge so the admin can see at a glance who's free. */
+  function renderBillingPill(c: AdminCoupleView) {
+    const s = c.billing.subscription_status;
+    if (s === "founding")
+      return (
+        <Pill tone="sage" icon={<Sparkles size={11} aria-hidden />}>
+          {t("admin.billing_free")}
+        </Pill>
+      );
+    if (s === "trialing") return <Pill tone="paper">{t("admin.billing_trial")}</Pill>;
+    if (s === "active" || s === "past_due")
+      return <Pill tone="violet">{t("admin.billing_paying")}</Pill>;
+    return <Pill tone="blush">{t("admin.billing_lapsed")}</Pill>;
+  }
+
   function renderUserInfo(u: AdminUserView, opts: { showLastActive?: boolean } = {}) {
     const flag = u.active_flag;
     // Days-remaining countdown for the flag badge. Min 0 — we never display
@@ -626,6 +662,18 @@ export default function AdminUsersPage() {
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span className="font-medium text-ink-900 dark:text-paper-50">{workspaceLabel(c)}</span>
             {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
+            {!c.is_demo && renderBillingPill(c)}
+            {!c.is_demo && (
+              <button
+                type="button"
+                onClick={() => onToggleFree(c)}
+                className="text-[11px] font-medium text-ink-500 underline-offset-2 hover:underline dark:text-umber-300"
+              >
+                {c.billing.subscription_status === "founding"
+                  ? t("admin.revoke_free")
+                  : t("admin.grant_free")}
+              </button>
+            )}
             {members.length === 1 && (
               <span className="text-[11px] text-ink-500 dark:text-umber-300">
                 {t("admin.workspace_solo_member")}

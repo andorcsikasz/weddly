@@ -18,7 +18,9 @@ import { MONTHLY_PRICE } from "../../shared/billing";
 
 const key = process.env.STRIPE_SECRET_KEY;
 if (!key) {
-  console.error("STRIPE_SECRET_KEY is required. Run with: STRIPE_SECRET_KEY=sk_test_... bun backend/scripts/stripe_setup.ts");
+  console.error(
+    "STRIPE_SECRET_KEY is required. Run with: STRIPE_SECRET_KEY=sk_test_... bun backend/scripts/stripe_setup.ts",
+  );
   process.exit(1);
 }
 
