@@ -56,11 +56,58 @@ function expiryByOffset(o: AdminFinancialPlannerOverview, months: number): numbe
   return arr;
 }
 
+// ── Becsült adózás ────────────────────────────────────────────────────
+// Tájékoztató jellegű, leegyszerűsített magyar adóbecslés a tervezett éves
+// árbevételre. NEM adótanácsadás — 2024-es kulcsokkal, kerekítve. A
+// profitalapú (KFT) formák a "költséghányad" csúszkát használják.
+const HUF_PER_EUR = 400; // a KATA fix Ft-tételének EUR-ra váltásához
+
+type TaxForm = {
+  key: string;
+  name: string;
+  note: string;
+  /** Becsült éves adó EUR-ban az éves árbevétel (EUR) + költséghányad (0..1) alapján. */
+  tax: (revenueEur: number, costRatio: number) => number;
+};
+
+const TAX_FORMS: readonly TaxForm[] = [
+  {
+    key: "kata",
+    name: "KATA",
+    note: "fix 50e Ft/hó; csak magánszemély vevőkre, max. 18M Ft/év",
+    tax: () => (50_000 * 12) / HUF_PER_EUR,
+  },
+  {
+    key: "ev_atalany",
+    name: "EV — átalányadó",
+    note: "40% költséghányad, ~46,5% a jövedelmen (SZJA + TB + szocho)",
+    tax: (rev) => rev * 0.6 * 0.465,
+  },
+  {
+    key: "kft_osztalek",
+    name: "KFT — osztalék kivét",
+    note: "TAO 9% + osztalék (SZJA 15% + szocho 13%)",
+    tax: (rev, c) => {
+      const profit = rev * (1 - c);
+      return profit - profit * 0.91 * (1 - 0.28); // TAO 9% + 28% az osztalékon
+    },
+  },
+  {
+    key: "kft_reinvest",
+    name: "KFT — visszaforgatott profit",
+    note: "csak társasági adó (TAO 9%), osztalék nélkül",
+    tax: (rev, c) => rev * (1 - c) * 0.09,
+  },
+];
+
 export default function AdminFinancialPlannerPage() {
   const { t, locale } = useT();
   useDocumentMeta("admin.fin_title", "admin.fin_subtitle");
   const [data, setData] = useState<AdminFinancialPlannerOverview | null>(null);
   const [a, setA] = useState<ForecastAssumptions>(DEFAULT_ASSUMPTIONS);
+  // Költséghányad (a bevétel hány %-a a levonható költség) a profitalapú
+  // adóformákhoz. Csak a KFT-sorokat befolyásolja.
+  const [costPct, setCostPct] = useState(20);
 
   useEffect(() => {
     adminFinancialPlannerApi
@@ -254,7 +301,7 @@ export default function AdminFinancialPlannerPage() {
         </div>
 
         {/* Simple MRR bar chart */}
-        <MrrChart points={projection.map((p) => p.mrr)} />
+        <MrrChart points={projection.map((p) => ({ month: p.month, mrr: p.mrr }))} fmt={eur} />
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
@@ -283,6 +330,83 @@ export default function AdminFinancialPlannerPage() {
           </table>
         </div>
       </section>
+
+      {/* Becsült adózás a tervezett éves árbevételre */}
+      {last && (
+        <section className="admin-card mt-4">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
+                Becsült adózás
+              </h2>
+              <p className="mt-1 max-w-prose text-xs text-neutral-500 dark:text-umber-300">
+                A tervezett éves árbevételre ({eur(last.mrr * 12)} ARR a(z) {a.months}. hónapban).
+                Tájékoztató becslés 2024-es kulcsokkal, kerekítve — nem adótanácsadás. A
+                költséghányad csak a KFT (profitalapú) sorokat befolyásolja.
+              </p>
+            </div>
+            <div className="w-44 shrink-0">
+              <Slider
+                label="Költséghányad"
+                value={costPct}
+                min={0}
+                max={80}
+                step={5}
+                display={`${costPct}%`}
+                onChange={setCostPct}
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-umber-300">
+                  <th className="py-1 pr-4 font-medium">Forma</th>
+                  <th className="py-1 pr-4 text-right font-medium">Becsült éves adó</th>
+                  <th className="py-1 pr-4 text-right font-medium">Effektív kulcs</th>
+                  <th className="py-1 text-right font-medium">Nettó / év</th>
+                </tr>
+              </thead>
+              <tbody>
+                {TAX_FORMS.map((f) => {
+                  const rev = last.mrr * 12;
+                  const tax = Math.max(0, Math.round(f.tax(rev, costPct / 100)));
+                  const eff = rev > 0 ? (tax / rev) * 100 : 0;
+                  const overKataCap = f.key === "kata" && rev * HUF_PER_EUR > 18_000_000;
+                  return (
+                    <tr key={f.key} className="border-t border-paper-200 dark:border-umber-700">
+                      <td className="py-1.5 pr-4">
+                        <div className="font-medium text-neutral-900 dark:text-paper-50">
+                          {f.name}
+                        </div>
+                        <div className="text-xs text-neutral-500 dark:text-umber-300">
+                          {f.note}
+                          {overKataCap && (
+                            <span className="text-blush-600 dark:text-blush-300">
+                              {" "}
+                              · túllépi a keretet
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-1.5 pr-4 text-right font-medium tabular-nums text-neutral-900 dark:text-paper-50">
+                        {eur(tax)}
+                      </td>
+                      <td className="py-1.5 pr-4 text-right tabular-nums text-neutral-700 dark:text-paper-100">
+                        {eff.toFixed(1)}%
+                      </td>
+                      <td className="py-1.5 text-right tabular-nums text-neutral-700 dark:text-paper-100">
+                        {eur(Math.round(rev - tax))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -361,18 +485,47 @@ function Slider({
   );
 }
 
-function MrrChart({ points }: { points: number[] }) {
-  const max = Math.max(1, ...points);
+function MrrChart({
+  points,
+  fmt,
+}: {
+  points: { month: number; mrr: number }[];
+  fmt: (n: number) => string;
+}) {
+  const max = Math.max(1, ...points.map((p) => p.mrr));
+  const [hover, setHover] = useState<number | null>(null);
   return (
-    <div className="mt-4 flex h-28 items-end gap-0.5">
-      {points.map((p, i) => (
+    <div className="relative mt-4">
+      {/* Hover tooltip: the month + its projected MRR. */}
+      {hover !== null && points[hover] && (
         <div
-          key={i}
-          className="flex-1 rounded-t bg-neutral-800/80 dark:bg-neutral-300/60"
-          style={{ height: `${Math.max(2, (p / max) * 100)}%` }}
-          title={String(p)}
-        />
-      ))}
+          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-paper-50 shadow-pop dark:bg-paper-50 dark:text-neutral-900"
+          style={{ left: `${((hover + 0.5) / points.length) * 100}%` }}
+        >
+          <span className="tabular-nums">{points[hover].month}. hó</span>
+          <span className="mx-1 opacity-40">·</span>
+          <span className="tabular-nums">{fmt(points[hover].mrr)}</span>
+        </div>
+      )}
+      <div className="flex h-28 items-end gap-0.5">
+        {points.map((p, i) => (
+          <button
+            type="button"
+            key={p.month}
+            className="group flex h-full flex-1 items-end p-0"
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => setHover((h) => (h === i ? null : h))}
+            onFocus={() => setHover(i)}
+            onBlur={() => setHover((h) => (h === i ? null : h))}
+            aria-label={`${p.month}. hó: ${fmt(p.mrr)}`}
+          >
+            <span
+              className="w-full rounded-t bg-neutral-800/80 transition-colors group-hover:bg-neutral-900 dark:bg-neutral-300/60 dark:group-hover:bg-paper-50"
+              style={{ height: `${Math.max(2, (p.mrr / max) * 100)}%` }}
+            />
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
