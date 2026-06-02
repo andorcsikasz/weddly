@@ -46,18 +46,10 @@ export function WorkspaceMockup({ className }: Common) {
       aria-label={t("landing.mockup_aria_dashboard")}
       className={className}
     >
-      {/* Card frame — a clear warm edge line stands in for the dropped shadow. */}
-      <g className="text-umber-300">
-        <rect
-          x="0"
-          y="0"
-          width="640"
-          height="440"
-          rx="20"
-          fill="white"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        />
+      {/* Card background (fill only — the border is stroked last so the
+          sidebar can't cover it). */}
+      <g>
+        <rect x="0" y="0" width="640" height="440" rx="20" fill="white" />
       </g>
 
       {/* Sidebar */}
@@ -357,6 +349,21 @@ export function WorkspaceMockup({ className }: Common) {
       </g>
       <g className="text-ink-300">
         <circle cx="592" cy="22" r="2" fill="currentColor" />
+      </g>
+
+      {/* Card frame drawn last, on top of the sidebar and all content, so the
+          umber outline is an even 1.5px the whole way around. */}
+      <g className="text-umber-300">
+        <rect
+          x="0"
+          y="0"
+          width="640"
+          height="440"
+          rx="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        />
       </g>
     </svg>
   );
