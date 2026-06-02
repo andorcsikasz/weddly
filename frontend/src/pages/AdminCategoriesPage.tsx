@@ -5,7 +5,7 @@ import type {
 } from "@shared/supplier_taxonomy";
 import { Eye, EyeOff, LayoutList, Pencil, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
-import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
+import { AdminEmptyState, AdminPageHeader } from "../components/admin";
 import { Button, Dialog, Skeleton, TextField, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierTaxonomyApi } from "../lib/endpoints";
@@ -16,6 +16,10 @@ type EditTarget =
   | { kind: "edit-group"; group: AdminSupplierGroup }
   | { kind: "new-category"; groupId: number }
   | { kind: "edit-category"; category: AdminSupplierCategory };
+
+// Shared column grid for the group header + category rows so the name, slug,
+// budget key, and action cluster line up in tidy columns down the whole page.
+const ROW_GRID = "grid grid-cols-[minmax(0,1fr)_8rem_8rem_auto] items-center gap-x-3";
 
 export default function AdminCategoriesPage() {
   const { t } = useT();
@@ -188,34 +192,30 @@ export default function AdminCategoriesPage() {
               key={g.id}
               className={`admin-card p-0 overflow-hidden ${g.hidden ? "opacity-60" : ""}`}
             >
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-4 py-3">
-                <div className="flex flex-col gap-1">
-                  <div className="font-medium text-neutral-900 dark:text-paper-50">
-                    {g.label_hu}
-                    <span className="mx-2 text-neutral-300 dark:text-umber-300">·</span>
-                    <span className="text-neutral-500 dark:text-umber-300">{g.label_en}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <Pill tone="muted">{g.slug}</Pill>
-                    <Pill tone="paper">
-                      {t("admin.taxonomy_category_count", { n: g.categories.length })}
-                    </Pill>
-                    {g.hidden && <Pill tone="violet">{t("admin.taxonomy_hidden_badge")}</Pill>}
-                  </div>
+              {/* Header uses the same column grid as the category rows below, so
+                  the name / slug / key / actions line up in tidy columns down
+                  the whole page. One uniform text size everywhere. */}
+              <div
+                className={`${ROW_GRID} border-b border-paper-200 bg-paper-50 px-4 py-2.5 dark:border-umber-700 dark:bg-umber-800`}
+              >
+                <div className="truncate text-sm font-medium text-neutral-900 dark:text-paper-50">
+                  {g.label_hu}
+                  <span className="mx-1.5 text-neutral-300 dark:text-umber-300">·</span>
+                  <span className="text-neutral-500 dark:text-umber-300">{g.label_en}</span>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  <button
-                    type="button"
-                    className="btn-ghost btn-sm"
-                    onClick={() => setEditing({ kind: "new-category", groupId: g.id })}
-                  >
-                    <Plus size={14} /> {t("admin.taxonomy_add_category")}
-                  </button>
+                <div className="truncate text-sm text-neutral-500 dark:text-umber-300">
+                  {g.slug}
+                </div>
+                <div className="truncate text-sm text-neutral-500 dark:text-umber-300">
+                  {t("admin.taxonomy_category_count", { n: g.categories.length })}
+                </div>
+                <div className="flex shrink-0 items-center justify-end gap-1">
                   <button
                     type="button"
                     className="btn-ghost btn-sm"
                     onClick={() => setEditing({ kind: "edit-group", group: g })}
                     aria-label={t("admin.taxonomy_edit")}
+                    title={t("admin.taxonomy_edit")}
                   >
                     <Pencil size={14} />
                   </button>
@@ -223,22 +223,24 @@ export default function AdminCategoriesPage() {
                     type="button"
                     className="btn-ghost btn-sm"
                     onClick={() => onToggleHideGroup(g)}
+                    aria-label={g.hidden ? t("admin.taxonomy_unhide") : t("admin.taxonomy_hide")}
+                    title={g.hidden ? t("admin.taxonomy_unhide") : t("admin.taxonomy_hide")}
                   >
                     {g.hidden ? <Eye size={14} /> : <EyeOff size={14} />}
-                    <span>{g.hidden ? t("admin.taxonomy_unhide") : t("admin.taxonomy_hide")}</span>
                   </button>
                   <button
                     type="button"
                     className="btn-alert btn-sm"
                     onClick={() => onDeleteGroup(g)}
+                    aria-label={t("admin.taxonomy_delete")}
+                    title={t("admin.taxonomy_delete")}
                   >
                     <Trash2 size={14} />
-                    <span>{t("admin.taxonomy_delete")}</span>
                   </button>
                 </div>
               </div>
               {g.categories.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-neutral-500 dark:text-umber-300">
+                <div className="px-4 py-2.5 pl-10 text-sm text-neutral-500 dark:text-umber-300">
                   {t("admin.taxonomy_group_empty")}
                 </div>
               ) : (
@@ -246,30 +248,31 @@ export default function AdminCategoriesPage() {
                   {g.categories.map((c) => (
                     <li
                       key={c.id}
-                      className={`flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60 ${
+                      className={`${ROW_GRID} px-4 py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60 ${
                         c.hidden ? "opacity-60" : ""
                       }`}
                     >
-                      <div className="flex flex-col gap-1">
-                        <div className="text-neutral-900 dark:text-paper-50">
-                          {c.label_hu}
-                          <span className="mx-2 text-neutral-300 dark:text-umber-300">·</span>
-                          <span className="text-neutral-500 dark:text-umber-300">{c.label_en}</span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <Pill tone="muted">{c.slug}</Pill>
-                          <Pill tone="violet">{c.budget_category}</Pill>
-                          {c.hidden && (
-                            <Pill tone="violet">{t("admin.taxonomy_hidden_badge")}</Pill>
-                          )}
-                        </div>
+                      {/* pl-6 indents the category name a touch right of the
+                          group name to show the hierarchy; the slug/key columns
+                          stay aligned with the header's. */}
+                      <div className="truncate pl-6 text-sm text-neutral-900 dark:text-paper-50">
+                        {c.label_hu}
+                        <span className="mx-1.5 text-neutral-300 dark:text-umber-300">·</span>
+                        <span className="text-neutral-500 dark:text-umber-300">{c.label_en}</span>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="truncate text-sm text-neutral-500 dark:text-umber-300">
+                        {c.slug}
+                      </div>
+                      <div className="truncate text-sm text-neutral-500 dark:text-umber-300">
+                        {c.budget_category}
+                      </div>
+                      <div className="flex shrink-0 items-center justify-end gap-1">
                         <button
                           type="button"
                           className="btn-ghost btn-sm"
                           onClick={() => setEditing({ kind: "edit-category", category: c })}
                           aria-label={t("admin.taxonomy_edit")}
+                          title={t("admin.taxonomy_edit")}
                         >
                           <Pencil size={14} />
                         </button>
@@ -277,25 +280,39 @@ export default function AdminCategoriesPage() {
                           type="button"
                           className="btn-ghost btn-sm"
                           onClick={() => onToggleHideCategory(c)}
+                          aria-label={
+                            c.hidden ? t("admin.taxonomy_unhide") : t("admin.taxonomy_hide")
+                          }
+                          title={c.hidden ? t("admin.taxonomy_unhide") : t("admin.taxonomy_hide")}
                         >
                           {c.hidden ? <Eye size={14} /> : <EyeOff size={14} />}
-                          <span>
-                            {c.hidden ? t("admin.taxonomy_unhide") : t("admin.taxonomy_hide")}
-                          </span>
                         </button>
                         <button
                           type="button"
                           className="btn-alert btn-sm"
                           onClick={() => onDeleteCategory(c)}
+                          aria-label={t("admin.taxonomy_delete")}
+                          title={t("admin.taxonomy_delete")}
                         >
                           <Trash2 size={14} />
-                          <span>{t("admin.taxonomy_delete")}</span>
                         </button>
                       </div>
                     </li>
                   ))}
                 </ul>
               )}
+              {/* Add-category action lives in a footer row, indented to the
+                  category column, so the header's action cluster stays uniform
+                  with the category rows. */}
+              <div className="border-t border-paper-200 px-4 py-2 dark:border-umber-700">
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm pl-6 text-sm"
+                  onClick={() => setEditing({ kind: "new-category", groupId: g.id })}
+                >
+                  <Plus size={14} /> {t("admin.taxonomy_add_category")}
+                </button>
+              </div>
             </section>
           ))}
         </div>
