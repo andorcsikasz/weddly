@@ -46,7 +46,7 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
     },
     {
       q: "Használható már a mi esküvőnkhöz?",
-      a: "Az élő költségvetés, RSVP linkek, vizuális ültetés és nyomtatható kártyák (A4 / A6 / A3) ma már működnek. A szolgáltatói lista válogatott; a foglalás a v2-ben jön.",
+      a: "Igen, a teljes tervezés ma is működik: élő költségvetés, vendéglista személyre szóló RSVP linkekkel, vizuális ültetés és nyomtatható kártyák (A4 / A6 / A3), napirend (programterv), feladat-idővonal, logisztika (szállás és transzfer), moodboard, nászúttervező, saját esküvői vendégoldal és válogatott szolgáltatói lista. A szolgáltatók foglalása a v2-ben jön.",
     },
   ],
   en: [
@@ -76,7 +76,7 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
     },
     {
       q: "Is it ready for our wedding?",
-      a: "Live budget, RSVP links, visual seating and printable cards (A4 / A6 / A3) work today. The supplier directory is curated for browsing; bookings land in v2.",
+      a: "Yes, the whole planning flow works today: live budget, guest list with personal RSVP links, visual seating with printable cards (A4 / A6 / A3), day-of schedule, task timeline, logistics (accommodation and transfers), moodboard, honeymoon planner, your own wedding guest page and a curated supplier directory. Supplier bookings land in v2.",
     },
   ],
 };
