@@ -9,8 +9,8 @@ import { type BillingStatusResponse, FOUNDING_CAP, MONTHLY_PRICE } from "@shared
 import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import {
-  activeFoundingCount,
   applySubscriptionState,
+  foundingSlotsUsed,
   getCoupleByStripeCustomer,
   priceIdForCurrency,
   setStripeCustomerId,
@@ -53,7 +53,7 @@ function handleStatus(ctx: Ctx): Response {
     billing: toCoupleBilling(couple),
     currency,
     price: MONTHLY_PRICE[currency],
-    founding_spots_left: Math.max(0, FOUNDING_CAP - activeFoundingCount()),
+    founding_spots_left: Math.max(0, FOUNDING_CAP - foundingSlotsUsed()),
     has_partner: couple.partner_b_id != null,
   };
   return json(body);

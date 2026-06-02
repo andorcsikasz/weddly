@@ -7,7 +7,7 @@ import { type SubscriptionStatus, FOUNDING_CAP, MONTHLY_PRICE } from "@shared/bi
 import type { Currency } from "@shared/types";
 import { billingEnforcementOn, db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { activeFoundingCount, setBillingEnforcement } from "../domain/billing";
+import { activeFoundingCount, foundingSlotsUsed, setBillingEnforcement } from "../domain/billing";
 import { requireAdmin } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 
@@ -80,7 +80,7 @@ function overview(): AdminFinancialPlannerOverview {
     counts,
     total_couples: total,
     founding_active: activeFoundingCount(nowMs),
-    founding_spots_left: Math.max(0, FOUNDING_CAP - activeFoundingCount(nowMs)),
+    founding_spots_left: Math.max(0, FOUNDING_CAP - foundingSlotsUsed()),
     trialing: counts.trialing,
     mrr_by_currency,
     paying_subscribers,

@@ -1,9 +1,11 @@
 // Subscription billing state machine + read-only gate.
 //
 // Stripe stays DISABLED in tests (STRIPE_ENABLED=false), so this exercises the
-// parts that don't need a live Stripe: founding grant at onboarding (first
-// 200), the 14-day trial past the cap, entitlement, the 402 edit gate once a
-// trial lapses, the admin free-badge grant/revoke, and graceful degradation.
+// parts that don't need a live Stripe: the trial granted at onboarding, the
+// founding (free) plan granted at partner-join while slots remain (the
+// first-200 cohort is counted by "both partners joined"), entitlement, the 402
+// edit gate once a trial lapses, the admin free-badge grant/revoke, and
+// graceful degradation.
 
 import "../setup";
 
@@ -16,16 +18,21 @@ import { db } from "../../src/db";
 import { activatePartnerFreeWindow, setBillingEnforcement } from "../../src/domain/billing";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 
-/** Seed N placeholder non-demo couples with negative ids (all < any real id)
- *  so the next real couple's founding rank lands at >= N. */
+/** Seed N placeholder founding-cohort couples (`is_founding_member = 1`) so N
+ *  of the FOUNDING_CAP founding slots are consumed — the cap is now counted by
+ *  granted badges, not couple-creation order. Negative ids keep them clear of
+ *  real rows; a far-future `founding_until` keeps them entitled. They also
+ *  count as real (non-demo) couples for the enforcement-readiness threshold. */
 function seedCouples(n: number): void {
+  const until = Date.now() + 1000 * 60 * 60 * 24 * 365;
   const insert = db.prepare(
     `INSERT INTO couples (id, partner_a_id, display_name, bride_name, groom_name,
-       style_tags_json, frozen_categories_json, status, created_at, updated_at, is_demo)
-     VALUES (?, 1, 'x', '', '', '[]', '[]', 'active', 1, 1, 0)`,
+       style_tags_json, frozen_categories_json, status, subscription_status,
+       is_founding_member, founding_until, created_at, updated_at, is_demo)
+     VALUES (?, 1, 'x', '', '', '[]', '[]', 'active', 'founding', 1, ?, 1, 1, 0)`,
   );
   db.transaction(() => {
-    for (let i = 1; i <= n; i++) insert.run(-i);
+    for (let i = 1; i <= n; i++) insert.run(-i, until);
   })();
 }
 
@@ -47,37 +54,36 @@ describe("billing state machine", () => {
     wipeAll();
   });
 
-  test("onboarding grants the first 200 'free until wedding day' founding plan", async () => {
-    // bootstrapCouple onboards with wedding_date 2026-09-12, so a first-200
-    // couple's free window is pinned to the wedding day (not a flat 18 months).
+  test("onboarding starts a fresh (solo) couple on the trial, not founding", async () => {
+    // A new couple has only partner A, so it can't yet count toward the
+    // both-partners founding cohort — it onboards on the trial.
     const { token } = await bootstrapCouple("founding-onboard@weddly.test");
     const r = await getCouple(token);
     expect(r.status).toBe(200);
-    expect(r.data.couple.billing.subscription_status).toBe("founding");
-    expect(r.data.couple.billing.is_founding_member).toBe(true);
+    expect(r.data.couple.billing.subscription_status).toBe("trialing");
+    expect(r.data.couple.billing.is_founding_member).toBe(false);
     expect(r.data.couple.billing.entitled).toBe(true);
-    expect(r.data.couple.billing.founding_until).toBe(Date.parse("2026-09-12"));
   });
 
-  test("GET /api/billing/status reports disabled Stripe + decremented founding spots", async () => {
+  test("GET /api/billing/status reports disabled Stripe + an untouched founding cohort for a solo couple", async () => {
     const { token } = await bootstrapCouple("status@weddly.test");
     const r = await req<BillingStatusResponse>("GET", "/api/billing/status", undefined, { token });
     expect(r.status).toBe(200);
     expect(r.data.enabled).toBe(false);
     expect(r.data.currency).toBe("HUF");
     expect(r.data.price).toBe(1990);
-    // This couple just became a founding member → one of the 200 used.
-    expect(r.data.founding_spots_left).toBe(199);
+    // Solo couple hasn't consumed a founding slot (that happens at partner-join).
+    expect(r.data.founding_spots_left).toBe(200);
   });
 
-  test("a couple past the 200 cap gets the trial, free until at least the paid launch", async () => {
-    seedCouples(200);
+  test("a fresh couple trials even when the founding cohort is already full", async () => {
+    seedCouples(200); // all 200 founding slots consumed
     const { token } = await bootstrapCouple("overcap@weddly.test");
     const r = await getCouple(token);
     expect(r.data.couple.billing.subscription_status).toBe("trialing");
     expect(r.data.couple.billing.is_founding_member).toBe(false);
     expect(r.data.couple.billing.entitled).toBe(true);
-    // Pre-launch, the solo free window never ends before the paid-launch date.
+    // Pre-launch, the trial never ends before the paid-launch date.
     expect(r.data.couple.billing.trial_ends_at).toBeGreaterThanOrEqual(PAID_LAUNCH_DATE);
   });
 
@@ -87,8 +93,7 @@ describe("billing state machine", () => {
     expect(r.data.has_partner).toBe(false);
   });
 
-  test("inviting a partner grants 'free until the wedding day' to a past-cap couple", async () => {
-    seedCouples(200);
+  test("inviting a partner grants founding (free until the wedding day) while slots remain", async () => {
     const { token, coupleId } = await bootstrapCouple("partner-free@weddly.test");
     // Set a concrete wedding date and simulate partner B joining.
     const weddingMs = Date.parse("2027-06-15");
@@ -108,14 +113,35 @@ describe("billing state machine", () => {
     const r = await getCouple(token);
     expect(r.data.couple.billing.subscription_status).toBe("founding");
     expect(r.data.couple.billing.entitled).toBe(true);
-    // The founding-member badge stays reserved for the first 200; this couple
-    // is past the cap, so it gets the free window but not the badge.
-    expect(r.data.couple.billing.is_founding_member).toBe(false);
+    // Within the cap → this couple takes a founding slot (badge), free until the
+    // wedding day.
+    expect(r.data.couple.billing.is_founding_member).toBe(true);
     expect(r.data.couple.billing.founding_until).toBe(weddingMs);
   });
 
-  test("moving the wedding date re-pins the partner free window", async () => {
-    seedCouples(200);
+  test("inviting a partner does NOT grant founding once the cohort is full", async () => {
+    seedCouples(200); // all 200 founding slots consumed
+    const { token, coupleId } = await bootstrapCouple("partner-full@weddly.test");
+    const partnerA = (
+      db.prepare("SELECT partner_a_id FROM couples WHERE id = ?").get(coupleId) as {
+        partner_a_id: number;
+      }
+    ).partner_a_id;
+    db.prepare("UPDATE couples SET wedding_date = '2027-06-15', partner_b_id = ? WHERE id = ?").run(
+      partnerA,
+      coupleId,
+    );
+
+    // Cohort is full → partner-join is a no-op and the couple stays on its trial.
+    const granted = activatePartnerFreeWindow(coupleId);
+    expect(granted).toBe(false);
+
+    const r = await getCouple(token);
+    expect(r.data.couple.billing.subscription_status).toBe("trialing");
+    expect(r.data.couple.billing.is_founding_member).toBe(false);
+  });
+
+  test("moving the wedding date re-pins the founding free window", async () => {
     const { token, coupleId } = await bootstrapCouple("repin@weddly.test");
     const partnerA = (
       db.prepare("SELECT partner_a_id FROM couples WHERE id = ?").get(coupleId) as {

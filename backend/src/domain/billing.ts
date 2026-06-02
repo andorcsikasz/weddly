@@ -48,18 +48,22 @@ export function priceIdForCurrency(currency: Currency): string {
 }
 
 // ── Founding-member eligibility ─────────────────────────────────────────────
-/** Zero-based creation rank of a couple among the non-demo couples (how many
- *  real couples were created before it). Stable: earlier couples never shift. */
-function foundingRank(coupleId: number): number {
+/** Founding-cohort badges granted so far. The first-FOUNDING_CAP cap is filled
+ *  in partner-join order: a couple consumes a slot only once BOTH partners have
+ *  joined and it is granted the founding plan (see activatePartnerFreeWindow).
+ *  The badge is permanent — an expired free window never frees the slot back
+ *  up. Admin comps (`is_founding_member = 0`) and demo couples don't count. */
+export function foundingSlotsUsed(): number {
   const row = db
-    .prepare("SELECT COUNT(*) AS n FROM couples WHERE is_demo = 0 AND id < ?")
-    .get(coupleId) as { n: number };
+    .prepare("SELECT COUNT(*) AS n FROM couples WHERE is_demo = 0 AND is_founding_member = 1")
+    .get() as { n: number };
   return row.n;
 }
 
-/** True when this couple is one of the first FOUNDING_CAP real couples. */
-export function isFoundingEligible(coupleId: number): boolean {
-  return foundingRank(coupleId) < FOUNDING_CAP;
+/** True while founding slots remain (fewer than FOUNDING_CAP granted). Whether
+ *  a *specific* couple gets one is decided at partner-join time, first-come. */
+export function isFoundingEligible(): boolean {
+  return foundingSlotsUsed() < FOUNDING_CAP;
 }
 
 /** Count of real couples that currently hold a live founding membership. Used
@@ -104,27 +108,13 @@ export function startTrial(coupleId: number, nowMs: number = now()): void {
   ).run(trialEnd, nowMs, coupleId);
 }
 
-/** Billing state for a brand-new couple at onboarding: the first 200 real
- *  couples become founding members (free 18 months) immediately; everyone past
- *  the cap gets the 14-day trial. Only writes from the default 'none' state. */
+/** Billing state for a brand-new couple at onboarding. A fresh couple has only
+ *  partner A, so it always starts on the 14-day trial. The founding (free)
+ *  plan is granted later — when partner B joins — and only while founding slots
+ *  remain (see activatePartnerFreeWindow), so the first-FOUNDING_CAP cohort is
+ *  counted by "both partners joined", not by couple-creation order. */
 export function initBillingAtOnboarding(coupleId: number, nowMs: number = now()): void {
-  if (isFoundingEligible(coupleId)) {
-    // First 200: free until their wedding day (fallback 18 months when the date
-    // is unknown or already past), per the founder's "first 200 free until your
-    // wedding" promise. The badge stays reserved for the first 200.
-    const couple = getCoupleById(coupleId);
-    const until = partnerFreeWindowEnd(weddingMsOf(couple?.wedding_date ?? null), nowMs);
-    db.prepare(
-      `UPDATE couples
-          SET subscription_status = 'founding',
-              is_founding_member = 1,
-              founding_until = ?,
-              updated_at = ?
-        WHERE id = ? AND subscription_status = 'none'`,
-    ).run(until, nowMs, coupleId);
-  } else {
-    startTrial(coupleId, nowMs);
-  }
+  startTrial(coupleId, nowMs);
 }
 
 /** Admin "free badge": comp a couple 18 months free regardless of the cap or
@@ -157,40 +147,40 @@ function weddingMsOf(weddingDate: string | null): number | null {
   return Number.isNaN(ms) ? null : ms;
 }
 
-/** Grant the "free until your wedding day" window. Called when partner B joins
- *  a couple: inviting your partner is what unlocks the free platform. Applies
- *  to EVERY couple (not just the first 200): the founding-member badge stays
- *  reserved for the first 200 via `is_founding_member`, but the free entitlement
- *  window is granted to all. No-op for demo couples, couples already on a
- *  paid/founding plan, or a solo workspace. Returns whether it was granted. */
+/** Grant the founding "free until your wedding day" plan when partner B joins.
+ *  Inviting your partner is what unlocks the free platform — but only for the
+ *  first FOUNDING_CAP couples to get BOTH partners in. Once the cohort is full
+ *  this is a no-op and the couple stays on its trial → paid path. Also a no-op
+ *  for demo couples, a couple already on a paid/founding plan, or a still-solo
+ *  workspace. Returns whether founding was granted. */
 export function activatePartnerFreeWindow(coupleId: number, nowMs: number = now()): boolean {
   const couple = getCoupleById(coupleId);
   if (!couple || couple.is_demo) return false;
   // Don't downgrade a paying subscriber or re-stamp an existing founder.
   if (["founding", "active", "past_due"].includes(couple.subscription_status)) return false;
   if (couple.partner_b_id == null) return false; // both partners required
+  if (!isFoundingEligible()) return false; // founding cohort full → stays on trial
 
   const until = partnerFreeWindowEnd(weddingMsOf(couple.wedding_date), nowMs);
-  const badge = isFoundingEligible(coupleId) ? 1 : 0;
   db.prepare(
     `UPDATE couples
         SET subscription_status = 'founding',
-            is_founding_member = ?,
+            is_founding_member = 1,
             founding_until = ?,
             updated_at = ?
       WHERE id = ?`,
-  ).run(badge, until, nowMs, coupleId);
+  ).run(until, nowMs, coupleId);
   return true;
 }
 
-/** Keep a partner-granted free window pinned to the couple's wedding day when
- *  they change the date. Only touches couples on the partner reward
- *  (`founding` + NOT a first-200 badge holder) so the first-200 18-month window
- *  is never shortened. No-op otherwise. */
+/** Keep the founding cohort's "free until your wedding day" window pinned to
+ *  the wedding date when the couple moves it. Only touches the first-200
+ *  founding members (`founding` + `is_founding_member = 1`); admin comps
+ *  (badge 0, fixed 18-month window) are left alone. No-op otherwise. */
 export function refreshPartnerFreeWindow(coupleId: number, nowMs: number = now()): void {
   const couple = getCoupleById(coupleId);
   if (!couple || couple.is_demo) return;
-  if (couple.subscription_status !== "founding" || couple.is_founding_member) return;
+  if (couple.subscription_status !== "founding" || !couple.is_founding_member) return;
   if (couple.partner_b_id == null) return;
   const until = partnerFreeWindowEnd(weddingMsOf(couple.wedding_date), nowMs);
   db.prepare("UPDATE couples SET founding_until = ?, updated_at = ? WHERE id = ?").run(
