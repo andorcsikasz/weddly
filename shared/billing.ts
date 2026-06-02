@@ -73,6 +73,20 @@ export interface CoupleBilling {
   reason: BillingReason;
 }
 
+/** Response of GET /api/billing/status — everything the billing page needs. */
+export interface BillingStatusResponse {
+  /** Whether Stripe is configured server-side. When false, checkout/portal
+   *  are unavailable and the page shows a "billing not live yet" note. */
+  enabled: boolean;
+  billing: CoupleBilling;
+  /** The couple's display currency and the monthly price in that currency. */
+  currency: Currency;
+  price: number;
+  /** Remaining founding slots (FOUNDING_CAP minus live founding members),
+   *  clamped to >= 0. Drives the "N spots left" line. */
+  founding_spots_left: number;
+}
+
 export type BillingReason =
   | "trialing"
   | "founding"

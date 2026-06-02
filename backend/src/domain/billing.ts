@@ -5,7 +5,12 @@
 // State machine + entitlement rules: shared/billing.ts.
 
 import Stripe from "stripe";
-import { FOUNDING_CAP, FOUNDING_DURATION_MS, TRIAL_DURATION_MS } from "@shared/billing";
+import {
+  type BillingReason,
+  FOUNDING_CAP,
+  FOUNDING_DURATION_MS,
+  TRIAL_DURATION_MS,
+} from "@shared/billing";
 import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import { db, now } from "../db";
@@ -171,4 +176,46 @@ export function requireEntitledCouple(ctx: Ctx): CoupleRow {
     });
   }
   return couple;
+}
+
+// Couple-workspace EDIT surfaces. A mutating request (POST/PUT/PATCH/DELETE) to
+// any of these is refused with 402 once the couple's billing lapses, making the
+// workspace read-only. Deliberately EXCLUDED so a read-only couple can still
+// recover or wind down: auth/*, account/*, billing/*, couples/pause*,
+// couples/invites*, couples/onboard, exports/* (read-only export is allowed),
+// and every public/guest surface (rsvp/*, unsubscribe/*, suppliers/community).
+const EDIT_PREFIXES: readonly string[] = [
+  "/api/budget",
+  "/api/guests",
+  "/api/households",
+  "/api/seating",
+  "/api/schedule",
+  "/api/planning",
+  "/api/picks",
+  "/api/couple-suppliers",
+  "/api/couples/supplier-costs",
+  "/api/accommodations",
+  "/api/transfers",
+  "/api/bookings",
+  "/api/moodboard",
+  "/api/couples/current",
+];
+const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/** Central read-only gate, called from the request pipeline. Returns the
+ *  blocking billing reason when a lapsed couple tries to edit a workspace
+ *  surface, or null when the request should proceed. Demo couples and couples
+ *  still in trial/founding/active always proceed. */
+export function entitlementBlock(
+  method: string,
+  pathname: string,
+  userId: number | null,
+): BillingReason | null {
+  if (!userId || !MUTATING_METHODS.has(method)) return null;
+  const onEditSurface = EDIT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  if (!onEditSurface) return null;
+  const couple = getCoupleForUser(userId);
+  if (!couple) return null; // no workspace yet → nothing to gate
+  const billing = toCoupleBilling(couple);
+  return billing.entitled ? null : billing.reason;
 }

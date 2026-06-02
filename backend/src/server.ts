@@ -22,6 +22,7 @@ import {
 import { maybeCompress, negotiateEncoding } from "./lib/compression";
 import { log, makeLogger } from "./lib/logger";
 import { localeForHost, renderIndexHtml } from "./lib/seo_ssr";
+import { entitlementBlock } from "./domain/billing";
 import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
@@ -32,6 +33,7 @@ import { registerAdminUserRoutes } from "./routes/admin_users";
 import { registerVendorWaitlistRoutes } from "./routes/vendor_waitlist";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAuthGoogleRoutes } from "./routes/auth_google";
+import { registerBillingRoutes } from "./routes/billing";
 import { registerBlogRoutes, seedBlogPostsIfEmpty } from "./routes/blog";
 import { registerBudgetRoutes } from "./routes/budget";
 import { registerCommunitySupplierRoutes } from "./routes/community_suppliers";
@@ -100,6 +102,7 @@ registerEmailChangeRoutes(router);
 registerEmailPrefsRoutes(router);
 registerCoupleRoutes(router);
 registerCouplePauseRoutes(router);
+registerBillingRoutes(router);
 registerExportRoutes(router);
 registerDocumentArchiveRoutes(router);
 registerGuestRoutes(router);
@@ -456,6 +459,22 @@ async function handleRequest(req: Request): Promise<Response> {
 
   if (matched.route.requireAuth && userId === null) {
     const r = httpErr(401, "Not authenticated");
+    const headers = new Headers(r.headers);
+    for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+    headers.set("x-request-id", requestId);
+    return new Response(r.body, { status: r.status, headers });
+  }
+
+  // Billing read-only gate: a couple whose trial/founding window has lapsed
+  // (and who isn't subscribed) may view + export but not edit the workspace.
+  // Mutating requests to the edit surfaces get 402 with the billing reason so
+  // the frontend can show the "subscription needed" prompt.
+  const blockReason = entitlementBlock(req.method, url.pathname, userId);
+  if (blockReason) {
+    const r = httpErr(402, "Subscription required", {
+      code: "subscription_required",
+      reason: blockReason,
+    });
     const headers = new Headers(r.headers);
     for (const [k, v] of Object.entries(cors)) headers.set(k, v);
     headers.set("x-request-id", requestId);
