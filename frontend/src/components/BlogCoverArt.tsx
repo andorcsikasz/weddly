@@ -1,14 +1,12 @@
-// Default blog cover art. One unified composition used across every post
-// that doesn't have a hand-uploaded cover image: paper background, thin
-// inner frame, faded Wēddly wordmark anchoring the centre, category
-// eyebrow top-left, and a content-themed lucide icon top-right. The icon
-// is the one per-post differentiator; everything else stays identical so
-// the feed reads as a series of magazine inside-covers from the same
-// publication.
+// Default blog cover art. Every post has a topical Unsplash photo as
+// the background (DEFAULT_PHOTO_BY_SLUG) overlaid with the Wēddly
+// wordmark and a content-themed lucide icon so the feed reads as a
+// series of editorial covers from the same publication. Admin uploads
+// override the default; the overlay still renders on top so the brand
+// stays consistent across user-supplied imagery too.
 //
-// All colours match Tailwind tokens (paper-100/300/500, ink-500) so light/
-// dark mode are handled by swapping the SVG fills via CSS classes rather
-// than per-instance overrides.
+// If no bgUrl resolves (unknown slug + no upload), falls back to the
+// original paper composition so the layout never breaks.
 
 import {
   BookOpen,
@@ -25,16 +23,17 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import { useId } from "react";
 
 /** Per-slug content icon. Each post gets a lucide glyph that hints at
- *  the topic so the cover isn't purely typographic. Unknown slugs fall
+ *  the topic so the cover isn't purely photographic. Unknown slugs fall
  *  back to a generic glyph (Heart) so the layout never breaks. */
 const ICON_BY_SLUG: Record<string, LucideIcon> = {
-  "miert-hazasodunk-a-biblia-szerint": BookOpen, // Scripture-anchored theology piece
+  "miert-hazasodunk-a-biblia-szerint": BookOpen,
   "bibliai-idezetek-eskuvore": Quote,
   "eskuvoi-koltsegvetes-keszitese": Wallet,
   "eskuvoi-vendeglista-keszitese": Users,
-  "eskuvoi-hagyomanyok-praktikusan": Gem, // Ring / classic stone
+  "eskuvoi-hagyomanyok-praktikusan": Gem,
   "eskuvoi-szertartas-menete": Heart,
   "eskuvoi-ultetesi-rend-keszitese": LayoutGrid,
   "eskuvoi-rsvp-kerdesek": MailCheck,
@@ -44,18 +43,59 @@ const ICON_BY_SLUG: Record<string, LucideIcon> = {
   "digitalis-eskuvoi-meghivo-vagy-papir-meghivo": Mail,
 };
 
+/** Topical Unsplash photo per post slug. Each URL was verified loading
+ *  at this exact query string; the photos were picked for editorial
+ *  tone (soft light, neutral palette) over generic stock. Admin uploads
+ *  override these via cover_image_url; the URL here is only used when
+ *  no upload exists for a post. */
+export const DEFAULT_PHOTO_BY_SLUG: Record<string, string> = {
+  "miert-hazasodunk-a-biblia-szerint":
+    "https://images.unsplash.com/photo-1681396059178-72a46b4ec1ea?w=1200&auto=format&fit=crop&q=75",
+  "bibliai-idezetek-eskuvore":
+    "https://images.unsplash.com/photo-1686064196392-fd20325c68c7?w=1200&auto=format&fit=crop&q=75",
+  "eskuvoi-koltsegvetes-keszitese":
+    "https://images.unsplash.com/photo-1648201637025-1c77b9be3013?w=1200&auto=format&fit=crop&q=75",
+  "eskuvoi-vendeglista-keszitese":
+    "https://images.unsplash.com/photo-1708601421220-ed13ac3bcf3b?w=1200&auto=format&fit=crop&q=75",
+  "eskuvoi-hagyomanyok-praktikusan":
+    "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=1200&auto=format&fit=crop&q=75",
+  "eskuvoi-szertartas-menete":
+    "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=1200&auto=format&fit=crop&q=75",
+  "eskuvoi-ultetesi-rend-keszitese":
+    "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200&auto=format&fit=crop&q=75",
+  "eskuvoi-rsvp-kerdesek":
+    "https://images.unsplash.com/photo-1774891937445-be15587e50c1?w=1200&auto=format&fit=crop&q=75",
+  "eskuvoi-ugyintezes-lepesrol-lepesre":
+    "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&auto=format&fit=crop&q=75",
+  "eskuvoszervezesi-checklist-12-honapra":
+    "https://images.unsplash.com/photo-1546352214-9148ef4d8c9c?w=1200&auto=format&fit=crop&q=75",
+  "eskuvoszervezesi-checklist-6-honapra":
+    "https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=1200&auto=format&fit=crop&q=75",
+  "digitalis-eskuvoi-meghivo-vagy-papir-meghivo":
+    "https://images.unsplash.com/photo-1763414902882-4e9d4f8e6275?w=1200&auto=format&fit=crop&q=75",
+};
+
 interface BlogCoverArtProps {
-  /** Post slug for picking the content icon. Optional so callers without
-   *  a slug (legacy / preview) still render a valid cover, falling back
-   *  to a generic heart glyph. */
+  /** Post slug for picking the content icon + default Unsplash photo. */
   slug?: string;
-  /** Category eyebrow (top-left). Pass the post's locale-specific label. */
+  /** Category eyebrow — accepted for API compatibility; not rendered on
+   *  the photo overlay since the card layout already shows it next to
+   *  the title. */
   category?: string;
+  /** Photo URL to use as the background. Pass the admin-uploaded
+   *  cover_image_url when set; otherwise the component derives the
+   *  default from `slug`. */
+  bgUrl?: string | null;
   className?: string;
 }
 
-export function BlogCoverArt({ slug, category, className }: BlogCoverArtProps) {
+export function BlogCoverArt({ slug, bgUrl, className }: BlogCoverArtProps) {
   const Icon = (slug && ICON_BY_SLUG[slug]) || Heart;
+  const resolvedBg = bgUrl ?? (slug && DEFAULT_PHOTO_BY_SLUG[slug]) ?? null;
+  // useId keeps the linearGradient id unique across mounted instances —
+  // SVG defs are document-global, so without this every cover would
+  // share (and overwrite) the same gradient id.
+  const gradId = useId().replace(/:/g, "");
   return (
     <svg
       viewBox="0 0 800 500"
@@ -63,16 +103,39 @@ export function BlogCoverArt({ slug, category, className }: BlogCoverArtProps) {
       aria-hidden="true"
       className={className}
     >
-      {/* Paper background. Light mode uses paper-100; the dark-mode swap
-          happens via a CSS class on the parent (BlogCover handles it). */}
-      <rect width="800" height="500" fill="#f6f2e7" />
+      <defs>
+        {/* Subtle diagonal dark gradient so the wordmark + icon stay
+            legible on busy photos. Light at top-left where the photo
+            usually has its focal point, darker bottom-right behind the
+            Wēddly wordmark anchor. */}
+        <linearGradient id={`tint-${gradId}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="rgba(0,0,0,0.05)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.42)" />
+        </linearGradient>
+      </defs>
 
-      {/* Thin inner frame so the cover reads as a "page" rather than a
-          floating block. paper-300 line, 32px inset on all sides. */}
-      <rect x="32" y="32" width="736" height="436" fill="none" stroke="#e3d9bf" strokeWidth="1.2" />
+      {resolvedBg ? (
+        <image
+          href={resolvedBg}
+          x="0"
+          y="0"
+          width="800"
+          height="500"
+          preserveAspectRatio="xMidYMid slice"
+        />
+      ) : (
+        // No photo resolved — paper fallback so the cover never renders
+        // empty. Matches the original composition's tonal anchor.
+        <rect width="800" height="500" fill="#f6f2e7" />
+      )}
 
-      {/* Faded wordmark, big italic serif, centred. paper-300 fill so it
-          sits behind the eyebrow + icon as a quiet brand anchor. */}
+      {/* Dark tint layer (only meaningful over a photo, harmless over
+          paper). Keeps overlay legible without flattening the image. */}
+      {resolvedBg ? <rect width="800" height="500" fill={`url(#tint-${gradId})`} /> : null}
+
+      {/* Wēddly wordmark — large italic serif, centered. On a photo
+          it's white with low opacity so it reads as a watermark; on the
+          paper fallback it stays paper-300 like the original. */}
       <text
         x="400"
         y="290"
@@ -82,67 +145,22 @@ export function BlogCoverArt({ slug, category, className }: BlogCoverArtProps) {
         fontWeight="500"
         fontSize="140"
         letterSpacing="6"
-        fill="#e3d9bf"
+        fill={resolvedBg ? "rgba(255,255,255,0.78)" : "#e3d9bf"}
       >
         Wēddly
       </text>
 
-      {/* Content icon top-right. Same paper-300 stroke as the wordmark so
-          they share a tonal family; the icon reads as a quiet content
-          marker rather than competing accent. lucide-react renders a
-          nested <svg>; the surrounding <g transform> positions it. */}
+      {/* Content icon top-right. White stroke on photos, paper-300 on
+          fallback — same tonal family as the wordmark in both cases. */}
       <g transform="translate(668, 48)">
-        <Icon width={72} height={72} stroke="#e3d9bf" strokeWidth={1.6} fill="none" />
+        <Icon
+          width={72}
+          height={72}
+          stroke={resolvedBg ? "rgba(255,255,255,0.92)" : "#e3d9bf"}
+          strokeWidth={1.6}
+          fill="none"
+        />
       </g>
-
-      {/* Category eyebrow top-left. Tracked uppercase sans, ink-500. */}
-      {category ? (
-        <text
-          x="60"
-          y="80"
-          fontFamily="ui-sans-serif, system-ui, sans-serif"
-          fontSize="13"
-          letterSpacing="3.2"
-          fontWeight="600"
-          fill="#46577a"
-        >
-          {category.toUpperCase()}
-        </text>
-      ) : null}
-
-      {/* Small eucalyptus sprig bottom-right. paper-500 stem + leaves.
-          Six leaves alternating along a short curve, hand-tuned positions. */}
-      <g transform="translate(560, 380)" fill="#bfae7b" stroke="#bfae7b">
-        <path d="M 0 50 Q 80 20 170 60" fill="none" strokeWidth="1.2" strokeLinecap="round" />
-        <ellipse cx="22" cy="40" rx="11" ry="5" transform="rotate(-15 22 40)" opacity="0.78" />
-        <ellipse cx="48" cy="32" rx="13" ry="6" transform="rotate(8 48 32)" opacity="0.84" />
-        <ellipse cx="78" cy="28" rx="14" ry="6.5" transform="rotate(-12 78 28)" opacity="0.86" />
-        <ellipse cx="110" cy="34" rx="13" ry="6" transform="rotate(14 110 34)" opacity="0.82" />
-        <ellipse cx="140" cy="44" rx="11" ry="5.5" transform="rotate(-10 140 44)" opacity="0.78" />
-        <ellipse cx="162" cy="55" rx="8" ry="4" transform="rotate(18 162 55)" opacity="0.72" />
-      </g>
-
-      {/* Magazine masthead foot bottom-left. paper-500. */}
-      <text
-        x="60"
-        y="450"
-        fontFamily="Cormorant, 'Cormorant Garamond', Georgia, serif"
-        fontStyle="italic"
-        fontSize="20"
-        fill="#bfae7b"
-      >
-        wēddly
-      </text>
-      <text
-        x="120"
-        y="450"
-        fontFamily="ui-sans-serif, system-ui, sans-serif"
-        fontSize="11"
-        letterSpacing="2"
-        fill="#bfae7b"
-      >
-        · esküvős magazin
-      </text>
     </svg>
   );
 }

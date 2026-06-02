@@ -125,35 +125,34 @@ function BlogTile({
 
 export function BlogCover({
   url,
-  alt,
   slug,
   category,
 }: {
   url: string | null;
-  alt: string;
-  /** Post slug, used to pick the content icon on the SVG fallback cover. */
+  /** Accepted for API compatibility — the SVG cover is aria-hidden and
+   *  the card's <h3> title supplies the accessible name. */
+  alt?: string;
+  /** Post slug, used to pick the content icon + the topical default
+   *  Unsplash photo when no upload exists. */
   slug?: string;
-  /** Category eyebrow shown on the SVG fallback cover. */
+  /** Category eyebrow — accepted for API compatibility; the cover
+   *  itself no longer shows it since the card renders it next to the
+   *  title. */
   category?: string;
 }) {
-  if (url) {
-    return (
-      <div className="aspect-[16/10] w-full overflow-hidden bg-paper-200 dark:bg-umber-700">
-        <img
-          src={url}
-          alt={alt}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-        />
-      </div>
-    );
-  }
-  // No upload: render the unified SVG cover. Stays inside the same 16:10
-  // box as a real photo would, so the grid layout doesn't shift when the
-  // admin uploads images post by post.
+  // BlogCoverArt handles the whole composition now: it picks the
+  // photo (admin upload via `bgUrl`, else slug → DEFAULT_PHOTO_BY_SLUG,
+  // else paper fallback) and overlays the Wēddly wordmark + content
+  // icon on top. Single render path keeps the editorial chrome
+  // consistent across uploaded photos and topical defaults.
   return (
     <div className="aspect-[16/10] w-full overflow-hidden bg-paper-100 dark:bg-umber-800">
-      <BlogCoverArt slug={slug} category={category} className="h-full w-full" />
+      <BlogCoverArt
+        slug={slug}
+        bgUrl={url}
+        category={category}
+        className="h-full w-full transition-transform duration-500 group-hover:scale-[1.02]"
+      />
     </div>
   );
 }

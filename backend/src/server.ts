@@ -176,7 +176,11 @@ const CSP = [
   // venue photos embedded in blog posts (img blocks). commons.* serves the
   // Special:FilePath redirect; upload.* is the redirect target the browser
   // actually fetches the bytes from, so both origins must be whitelisted.
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org",
+  // images.unsplash.com hosts the default cover photos referenced from
+  // DEFAULT_PHOTO_BY_SLUG in BlogCoverArt — without this the SVG <image>
+  // tag is blocked and every default blog cover falls back to the paper
+  // composition.
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
   // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may
