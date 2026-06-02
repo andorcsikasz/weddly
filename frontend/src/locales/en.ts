@@ -208,7 +208,7 @@ const en: LocaleMessages = {
       "You're one of our first 200 couples, so Weddly is free for you until {date}. Enjoy the full platform.",
     solo_banner_title: "Invite your partner",
     solo_banner_body:
-      "After {date}, Weddly becomes paid. Invite your partner and it stays free until your wedding day. Nothing is lost.",
+      "Weddly is all about planning together. Invite your partner and it stays free for you both until your wedding day, even after {date}. Everything you've created stays right where it is.",
     solo_banner_cta: "Invite partner",
   },
   wedding_site: {

@@ -1049,20 +1049,24 @@ function CoupleCardsTeaser() {
     if (!start || isLemonadeRevealed) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+    // Right-swipe only — the easter egg fires when the visitor pulls the
+    // row to the right, revealing the card tucked off the right edge.
+    if (dx > 50 && Math.abs(dx) > Math.abs(dy)) {
       triggerReveal();
     }
   };
   // macOS trackpad horizontal swipes fire wheel events with deltaX, not
-  // pointer events. Accumulate them and trip the reveal once 60px of
-  // horizontal travel has piled up; vertical scroll resets the counter
-  // so a normal page scroll never accidentally unlocks the egg.
+  // pointer events. Accumulate rightward deltaX and trip the reveal once
+  // 60px have piled up; leftward / vertical wheel resets the counter so
+  // page scroll never accidentally unlocks the egg.
   const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
     if (isLemonadeRevealed) return;
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       wheelAcc.current += e.deltaX;
-      if (Math.abs(wheelAcc.current) > 60) {
+      if (wheelAcc.current > 60) {
         triggerReveal();
+        wheelAcc.current = 0;
+      } else if (wheelAcc.current < 0) {
         wheelAcc.current = 0;
       }
     } else {
@@ -1103,8 +1107,8 @@ function CoupleCardsTeaser() {
                   to={`${toolPath}?deck=${deck.id}`}
                   className={`group flex aspect-[2/3] h-full flex-col items-center justify-between rounded-2xl px-3 py-4 text-center transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7 ${
                     isLemonade
-                      ? "bg-lemonade-yellow text-umber-900 focus-visible:ring-lemonade-yellow"
-                      : "bg-wnrs-red text-white focus-visible:ring-wnrs-red"
+                      ? "bg-lemonade-yellow text-umber-900 shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
+                      : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
                   }`}
                 >
                   <span aria-hidden="true" className="block h-1" />

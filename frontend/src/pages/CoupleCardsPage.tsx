@@ -564,18 +564,26 @@ function DeckShowcase({
     if (!start || isLemonadeRevealed) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+    // Right-swipe only (positive dx): the easter egg fires when the
+    // visitor "pulls" the row to the right, revealing a card that was
+    // tucked off the right edge. Left-swipe and vertical drag are no-ops.
+    if (dx > 50 && Math.abs(dx) > Math.abs(dy)) {
       onRevealLemonade();
     }
   };
   const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
     if (isLemonadeRevealed) return;
-    // Only accumulate when the gesture is predominantly horizontal —
-    // vertical page scroll passes through unchanged.
+    // Trackpad swipes emit signed deltaX. Right-swipe ≈ positive deltaX
+    // on macOS — only that direction triggers the reveal. Vertical wheel
+    // resets the accumulator so page scroll never trips the egg.
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       wheelAcc.current += e.deltaX;
-      if (Math.abs(wheelAcc.current) > 60) {
+      if (wheelAcc.current > 60) {
         onRevealLemonade();
+        wheelAcc.current = 0;
+      } else if (wheelAcc.current < 0) {
+        // Don't let leftward drift sit in the accumulator forever; cap
+        // at zero so the next rightward swipe starts from a fresh count.
         wheelAcc.current = 0;
       }
     } else {
@@ -643,7 +651,7 @@ function DeckShowcase({
                     }
                     className={`group flex h-full w-full flex-col items-center justify-between rounded-xl px-2 py-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-3 sm:py-3 ${
                       isLemonade
-                        ? "bg-lemonade-yellow text-umber-900 shadow-[0_18px_36px_-18px_rgba(255,204,0,0.6)] focus-visible:ring-lemonade-yellow"
+                        ? "bg-lemonade-yellow text-umber-900 shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
                         : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
                     }`}
                   >
@@ -703,7 +711,7 @@ function DeckShowcase({
               }
               className={`relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl px-7 py-8 text-center transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10 ${
                 selectedId === "lemonade"
-                  ? "bg-lemonade-yellow text-umber-900 shadow-[0_24px_50px_-22px_rgba(255,204,0,0.6)] focus-visible:ring-lemonade-yellow"
+                  ? "bg-lemonade-yellow text-umber-900 shadow-[0_24px_50px_-22px_rgba(161,98,7,0.6)] focus-visible:ring-lemonade-yellow"
                   : "bg-wnrs-red text-white shadow-[0_24px_50px_-22px_rgba(204,31,40,0.55)] focus-visible:ring-wnrs-red"
               }`}
             >

@@ -99,12 +99,14 @@ export default {
           red: "#D00000",
           redInk: "#A00000",
         },
-        // Lemonade — sun-yellow surface for the hidden 5th easter-egg
-        // deck on the couple-cards tool. Tuned warm so it sits with the
-        // paper palette without going neon. Revealed only after a
-        // horizontal swipe across the mini-deck row.
+        // Lemonade — true citrus / lemon yellow for the hidden 5th
+        // easter-egg deck on the couple-cards tool. Bumped from the
+        // earlier muted #FFCC00 sun-yellow to a brighter lemon per user
+        // direction so the card pops against the paper palette like the
+        // wnrs-red one does. Revealed only after a right-swipe across
+        // the mini-deck row.
         lemonade: {
-          yellow: "#FFCC00",
+          yellow: "#FFE600",
           yellowInk: "#A16207",
         },
       },

@@ -43,7 +43,7 @@ export default function BlogIndexPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("blog.eyebrow")}
           </p>
-          <h1 className="mt-3 font-serif text-4xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+          <h1 className="mt-3 font-grotesk text-4xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
             {t("blog.index_title")}
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-ink-600 dark:text-umber-200 sm:text-lg">
@@ -109,7 +109,7 @@ function BlogTile({
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
           {post.category[locale]}
         </p>
-        <h2 className="mt-2 font-serif text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-[1.4rem]">
+        <h2 className="mt-2 font-grotesk text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-[1.4rem]">
           {copy.title}
         </h2>
         <div className="mt-auto flex items-center gap-3 pt-3 text-xs text-ink-500 dark:text-umber-300">

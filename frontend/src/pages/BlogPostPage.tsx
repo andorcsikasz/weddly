@@ -139,7 +139,7 @@ export default function BlogPostPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
                 {post.category[locale]}
               </p>
-              <h1 className="mt-3 font-serif text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h1 className="mt-3 font-grotesk text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {copy.title}
               </h1>
               <p className="mt-5 text-base leading-relaxed text-ink-600 dark:text-umber-200 sm:text-lg">
@@ -180,7 +180,7 @@ export default function BlogPostPage() {
                           <p className="text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
                             {r.category[locale]}
                           </p>
-                          <h3 className="mt-1 font-serif text-xl text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
+                          <h3 className="mt-1 font-grotesk text-xl text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
                             {rc.title}
                           </h3>
                         </Link>
@@ -394,7 +394,7 @@ function Block({ block, sectionMap }: { block: BlogBlock; sectionMap: SectionMap
     // chapter; the slightly larger mt-16 buys breathing room without
     // pushing the article into "outline" territory.
     return (
-      <h2 className="!mt-16 !mb-3 font-serif text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
+      <h2 className="!mt-16 !mb-3 font-grotesk text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
         {block.text}
       </h2>
     );
@@ -406,7 +406,7 @@ function Block({ block, sectionMap }: { block: BlogBlock; sectionMap: SectionMap
     return (
       <h3
         id={anchorId(block.text)}
-        className="!mt-12 !mb-2 scroll-mt-24 font-serif text-xl text-ink-900 dark:text-paper-50 sm:text-2xl"
+        className="!mt-12 !mb-2 scroll-mt-24 font-grotesk text-xl text-ink-900 dark:text-paper-50 sm:text-2xl"
       >
         {block.text}
       </h3>

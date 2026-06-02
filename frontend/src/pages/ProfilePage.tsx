@@ -5,6 +5,7 @@ import type {
   BudgetLine,
   Couple,
   CoupleActivityEntry,
+  CoupleInvite,
   CouplePartnerStatus,
   CouplePartnerView,
   CouplePauseRequest,
@@ -17,10 +18,13 @@ import { CURRENCIES } from "@shared/types";
 import {
   Archive,
   ChevronDown,
+  Copy,
   Download,
   Globe,
   Heart,
+  Link2,
   LogOut,
+  Mail,
   Pencil,
   ShieldCheck,
   Tablet,
@@ -121,6 +125,14 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
   const [armedDeleteId, setArmedDeleteId] = useState<number | null>(null);
   const [removing, setRemoving] = useState<number | null>(null);
   const [partner, setPartner] = useState<CouplePartnerView | null>(null);
+  // Pending partner invite (token + invited email), hydrated when partner B
+  // hasn't joined yet — drives the inline invite form, the shareable link, and
+  // the copy/cancel controls right here on the partner card.
+  const [invite, setInvite] = useState<CoupleInvite | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteEmailError, setInviteEmailError] = useState<string | null>(null);
+  const [inviteSending, setInviteSending] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [cancellingInvite, setCancellingInvite] = useState(false);
   /** Two-click confirmation for cancel-invite — invalidating the partner's
    *  link is irreversible, so a single accidental tap shouldn't fire it.
@@ -161,12 +173,18 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
   const [emailSubmitting, setEmailSubmitting] = useState(false);
 
   async function refresh() {
-    const [pause, current, docs, partnerRes, lines] = await Promise.all([
+    const [pause, current, docs, partnerRes, lines, inviteRes] = await Promise.all([
       pauseApi.status(),
       coupleApi.current(),
       documentsApi.list(),
       coupleApi.partner(),
       budgetApi.listLines(),
+      // Hydrate any in-flight invite so the partner card can show the shareable
+      // link + copy/cancel across reloads. Returns { invite: null } once
+      // partner B has joined or no invite is outstanding.
+      coupleApi
+        .currentInvite()
+        .catch(() => ({ invite: null })),
     ]);
     setCoupleStatus(pause.couple_status);
     setPauseReq(pause.pause_request);
@@ -174,6 +192,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
     setDocuments(docs.exports);
     setPartner(partnerRes.partner);
     setBudgetLines(lines.lines);
+    setInvite(inviteRes.invite);
   }
   async function refreshDocuments() {
     try {
@@ -211,6 +230,63 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
     }
   }
 
+  const inviteUrl = invite ? `${window.location.origin}/invite/${invite.token}` : null;
+
+  // Send (or just create) a partner invite straight from the partner card.
+  // `withEmail=true` mails the link to the typed address (the "send a message
+  // to your partner" path); `false` just mints a shareable link to copy.
+  async function sendInvite(withEmail: boolean) {
+    const trimmed = inviteEmail.trim();
+    if (withEmail) {
+      if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+        setInviteEmailError(t("dashboard.invite_email_invalid"));
+        return;
+      }
+      if (authUser && trimmed.toLowerCase() === authUser.email.toLowerCase()) {
+        setInviteEmailError(t("dashboard.invite_email_own"));
+        return;
+      }
+    }
+    setInviteEmailError(null);
+    setInviteSending(true);
+    try {
+      const r = await coupleApi.createInvite(
+        withEmail && trimmed ? { invited_email: trimmed } : {},
+      );
+      setInvite(r.invite);
+      if (withEmail) {
+        toast.success(t("dashboard.invite_sent_body", { email: trimmed }));
+        setInviteEmail("");
+        refresh();
+      } else {
+        // Link-only: copy it to the clipboard right away so the one action does
+        // both ("create + copy") the way the button label promises, then refresh
+        // so the card flips to the pending-invite view (link + cancel).
+        navigator.clipboard?.writeText(`${window.location.origin}/invite/${r.invite.token}`);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 1500);
+        refresh();
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const code = (err.detail as { code?: string } | null)?.code;
+        if (code === "invite_own_email") setInviteEmailError(t("dashboard.invite_email_own"));
+        else toast.error(err.message);
+      } else {
+        toast.error(t("common.error_generic"));
+      }
+    } finally {
+      setInviteSending(false);
+    }
+  }
+
+  function copyInviteLink() {
+    if (!inviteUrl) return;
+    navigator.clipboard?.writeText(inviteUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 1500);
+  }
+
   async function cancelPendingInvite() {
     // First click arms the button; second click within 4s fires the cancel.
     // Auto-disarm is handled by the useEffect below.
@@ -222,10 +298,11 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
     setCancellingInvite(true);
     try {
       await coupleApi.cancelInvite();
-      // Optimistic: clear the partner card so the Dashboard's invite
-      // widget re-appears on next nav. refresh() to also pick up any
+      // Optimistic: clear the partner card + invite so the inline form
+      // re-appears for a fresh send. refresh() to also pick up any
       // server-side state changes.
       setPartner(null);
+      setInvite(null);
       refresh();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -579,7 +656,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
 
       {showWorkspace && (
         <section className="card mt-6">
-          <h2 className="flex items-center gap-2 text-lg">
+          <h2 className="flex items-center gap-2 font-grotesk text-lg">
             <Heart size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
             {t("profile.partner_title")}
           </h2>
@@ -615,38 +692,98 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
                 </div>
               </div>
               {partner.status === "invited" && (
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <p className="text-xs text-ink-500 dark:text-umber-300">
-                    {t("profile.partner_invited_hint")}
-                  </p>
-                  <button
-                    type="button"
-                    className={`btn-sm ${
-                      armedCancelInvite
-                        ? "rounded-xl border border-blush-700 bg-blush-700 px-4 text-paper-50 transition-colors hover:bg-blush-800"
-                        : "btn-outline"
-                    }`}
-                    onClick={cancelPendingInvite}
-                    disabled={cancellingInvite}
-                  >
-                    {cancellingInvite
-                      ? t("profile.partner_invite_cancelling")
-                      : armedCancelInvite
-                        ? t("profile.partner_invite_cancel_confirm")
-                        : t("profile.partner_invite_cancel")}
-                  </button>
-                  {/* SR announce — paired with the armed visual state so
-                   *  non-visual users know the next click fires immediately. */}
-                  <span role="status" aria-live="polite" className="sr-only">
-                    {armedCancelInvite ? t("profile.partner_invite_cancel_armed_announce") : ""}
-                  </span>
+                <div className="mt-4 space-y-3">
+                  {/* Shareable invite link, copyable straight from the card. */}
+                  {inviteUrl && (
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <input className="input flex-1" readOnly value={inviteUrl} />
+                      <button type="button" className="btn-outline" onClick={copyInviteLink}>
+                        <Copy size={16} />
+                        {linkCopied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-xs text-ink-500 dark:text-umber-300">
+                      {t("profile.partner_invited_hint")}
+                    </p>
+                    <button
+                      type="button"
+                      className={`btn-sm ${
+                        armedCancelInvite
+                          ? "rounded-xl border border-blush-700 bg-blush-700 px-4 text-paper-50 transition-colors hover:bg-blush-800"
+                          : "btn-outline"
+                      }`}
+                      onClick={cancelPendingInvite}
+                      disabled={cancellingInvite}
+                    >
+                      {cancellingInvite
+                        ? t("profile.partner_invite_cancelling")
+                        : armedCancelInvite
+                          ? t("profile.partner_invite_cancel_confirm")
+                          : t("profile.partner_invite_cancel")}
+                    </button>
+                    {/* SR announce — paired with the armed visual state so
+                     *  non-visual users know the next click fires immediately. */}
+                    <span role="status" aria-live="polite" className="sr-only">
+                      {armedCancelInvite ? t("profile.partner_invite_cancel_armed_announce") : ""}
+                    </span>
+                  </div>
                 </div>
               )}
             </>
-          ) : (
+          ) : couple?.is_demo ? (
             <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">
               {t("profile.partner_none")}
             </p>
+          ) : (
+            /* No partner yet: invite them right here. Type an email to send the
+             *  invite, or mint a shareable link to copy and send yourself. */
+            <form
+              className="mt-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendInvite(true);
+              }}
+            >
+              <label htmlFor="partner-invite-email" className="field-label">
+                {t("dashboard.invite_email_label")}
+              </label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  id="partner-invite-email"
+                  type="email"
+                  autoComplete="email"
+                  className={`input flex-1 ${inviteEmailError ? "input-invalid" : ""}`}
+                  placeholder={t("dashboard.invite_email_placeholder")}
+                  value={inviteEmail}
+                  disabled={inviteSending}
+                  onChange={(e) => {
+                    setInviteEmail(e.target.value);
+                    if (inviteEmailError) setInviteEmailError(null);
+                  }}
+                  aria-invalid={inviteEmailError ? true : undefined}
+                />
+                <button type="submit" className="btn-primary" disabled={inviteSending}>
+                  <Mail size={16} />
+                  {inviteSending ? t("dashboard.invite_sending") : t("dashboard.invite_send")}
+                </button>
+                <button
+                  type="button"
+                  className="btn-outline"
+                  onClick={() => sendInvite(false)}
+                  disabled={inviteSending}
+                >
+                  <Link2 size={16} />
+                  {linkCopied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
+                </button>
+              </div>
+              {inviteEmailError ? (
+                <p className="field-error">{inviteEmailError}</p>
+              ) : (
+                <p className="field-help">{t("dashboard.invite_email_help")}</p>
+              )}
+            </form>
           )}
         </section>
       )}
@@ -661,7 +798,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
            *  inline with the heading so the section opens with one compact
            *  band instead of a stacked label-on-top-of-pills layout. */}
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <h2 className="flex items-center gap-2 text-lg">
+            <h2 className="flex items-center gap-2 font-grotesk text-lg">
               <Wallet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
               {t("profile.budget_title")}
             </h2>
@@ -830,7 +967,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
 
       {showPlanning && couple && (
         <section className="card mt-6">
-          <h2 className="flex items-center gap-2 text-lg">
+          <h2 className="flex items-center gap-2 font-grotesk text-lg">
             <Globe size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
             {t("profile.country_label")}
           </h2>
@@ -879,7 +1016,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
 
       {showData && (
         <section className="card mt-6">
-          <h2 className="flex items-center gap-2 text-lg">
+          <h2 className="flex items-center gap-2 font-grotesk text-lg">
             <Download size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
             {t("profile.export_title")}
           </h2>
@@ -924,7 +1061,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
 
       {showAccount && authUser && couple && (
         <section className="card mt-6">
-          <h2 className="flex items-center gap-2 text-lg">
+          <h2 className="flex items-center gap-2 font-grotesk text-lg">
             <LogOut size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
             {t("profile.leave_couple_title")}
           </h2>
@@ -952,7 +1089,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
 
       {showAccount && (
         <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40 dark:bg-blush-400/15">
-          <h2 className="flex items-center gap-2 text-lg text-blush-800 dark:text-blush-300">
+          <h2 className="flex items-center gap-2 font-grotesk text-lg text-blush-800 dark:text-blush-300">
             <Trash2 size={18} aria-hidden />
             {t("profile.delete_account_title")}
           </h2>
@@ -1088,7 +1225,7 @@ function CurrencyPicker({
  *  into a list of zones with an internal hierarchy. */
 function ZoneLabel({ children }: { children: ReactNode }) {
   return (
-    <h2 className="mt-10 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 dark:text-umber-400">
+    <h2 className="mt-10 px-1 font-grotesk text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 dark:text-umber-400">
       {children}
     </h2>
   );
@@ -1254,7 +1391,7 @@ export function ProfileHero({
           ) : (
             <>
               <div className="flex min-w-0 items-center gap-2">
-                <p className="truncate font-serif text-xl leading-snug tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
+                <p className="truncate font-grotesk text-xl leading-snug tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
                   {namesLine || t("profile.title")}
                 </p>
                 <button
@@ -1278,7 +1415,7 @@ export function ProfileHero({
         </div>
         {days !== null && !editing && (
           <div className="shrink-0 text-right">
-            <p className="font-serif text-2xl leading-none tabular-nums text-ink-900 sm:text-4xl dark:text-paper-50">
+            <p className="font-grotesk text-2xl leading-none tabular-nums text-ink-900 sm:text-4xl dark:text-paper-50">
               {Math.abs(days)}
             </p>
             {/* Long "Még 361 nap az esküvőig" / "361 days until your
@@ -1428,7 +1565,7 @@ function AccountSection({
       <div className="flex flex-wrap items-center gap-4">
         <UserAvatarDisc fullName={user.full_name} email={user.email} />
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg">{t("profile.account_title")}</h2>
+          <h2 className="font-grotesk text-lg">{t("profile.account_title")}</h2>
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
             {t("profile.account_body")}
           </p>
@@ -1608,7 +1745,7 @@ function WelcomeDeskCard({
     <section className="card mt-6">
       <div className="flex flex-wrap items-start gap-4">
         <div className="min-w-0 flex-1">
-          <h2 className="flex items-center gap-2 text-lg">
+          <h2 className="flex items-center gap-2 font-grotesk text-lg">
             <Tablet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
             {t("profile.welcome_desk_title")}
           </h2>
