@@ -179,7 +179,7 @@ const hu: LocaleMessages = {
     subtitle: "A csomagod, a számlázás és a számlák.",
     plan_label: "Jelenlegi csomag",
     plan_trialing: "Ingyenes próbaidő",
-    plan_founding: "Alapító tag",
+    plan_founding: "Az első 200",
     plan_active: "Aktív előfizetés",
     plan_past_due: "Fizetés szükséges",
     plan_canceled: "Lemondva",
@@ -194,7 +194,7 @@ const hu: LocaleMessages = {
     status_lapsed:
       "Az ingyenes időszakotok véget ért, így a munkaterület csak olvasható. Fizessetek elő a szerkesztéshez — semmi nem vész el.",
     price_line: "{price} / hó",
-    founding_spots: "{n} alapítói hely maradt",
+    founding_spots: "{n} hely maradt a 200-ból",
     subscribe_cta: "Előfizetés",
     manage_cta: "Előfizetés kezelése",
     opening: "Megnyitás…",
@@ -205,7 +205,7 @@ const hu: LocaleMessages = {
     banner_body:
       "Az ingyenes időszakotok véget ért. Fizessetek elő a szerkesztés folytatásához — az adataitok biztonságban vannak.",
     banner_cta: "Előfizetés",
-    founding_banner_title: "Alapító pár vagytok 🎉",
+    founding_banner_title: "Bekerültetek az első 200-ba 🎉",
     founding_banner_body:
       "Az első 200 párunk egyike vagytok, így a Weddly nektek {date}-ig ingyenes. Használjátok a teljes platformot.",
   },
@@ -2552,8 +2552,8 @@ const hu: LocaleMessages = {
     fin_kpi_arr_hint:
       "ARR = Annual Recurring Revenue, vagyis éves ismétlődő bevétel: a havi MRR éves szintre vetítve (MRR × 12).",
     fin_kpi_paying: "Fizető párok",
-    fin_kpi_founding_active: "Alapító (ingyenes)",
-    fin_kpi_founding_left: "Szabad alapítói hely",
+    fin_kpi_founding_active: "Első 200 (ingyenes)",
+    fin_kpi_founding_left: "Szabad hely a 200-ból",
     fin_kpi_trialing: "Próbaidőben",
     fin_cohorts_title: "Párok csomag szerint",
     fin_mrr_by_currency_title: "MRR pénznem szerint",
@@ -2561,7 +2561,7 @@ const hu: LocaleMessages = {
     fin_assumptions_hint: "Húzd a következő hónapok modellezéséhez. Semmi nem mentődik.",
     fin_new_couples: "Új pár / hó",
     fin_trial_conv: "Próba → fizető",
-    fin_founding_conv: "Alapító → fizető",
+    fin_founding_conv: "Első 200 → fizető",
     fin_churn: "Havi lemorzsolódás",
     fin_horizon: "Időtáv",
     fin_horizon_months: "{n} hónap",
@@ -2761,7 +2761,7 @@ const hu: LocaleMessages = {
     revoke_free: "Ingyen visszavonás",
     grant_free_confirm_title: "Ingyenes hozzáférés adása?",
     grant_free_confirm_body:
-      "{workspace} 18 hónap ingyenes hozzáférést kap, az alapítói limittől függetlenül.",
+      "{workspace} 18 hónap ingyenes hozzáférést kap, az első 200-as limittől függetlenül.",
     revoke_free_confirm_title: "Ingyenes hozzáférés visszavonása?",
     revoke_free_confirm_body:
       "{workspace} elveszíti az ingyenes jelvényét, és csak olvasható lesz, amíg nem fizet elő.",
