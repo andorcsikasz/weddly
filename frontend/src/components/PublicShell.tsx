@@ -358,12 +358,12 @@ function PublicFooter() {
   const couplesCardsPath =
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
-    <footer className="mt-16 border-t border-paper-300 bg-paper-100/60 font-grotesk sm:mt-24 dark:border-umber-700 dark:bg-umber-950/60">
+    <footer className="mt-16 bg-paper-100/60 font-grotesk sm:mt-24 dark:bg-umber-950/60">
       {/* Band: who-are-you. The specialty-coffee voice carried into the
        *  footer — a quiet grotesk prompt names the two non-couple audiences,
        *  each option a hairline cream pill that fills to espresso on hover
        *  (the single bright object inverts, candlelit). */}
-      <div className="border-b border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-950">
+      <div className="bg-paper-50 dark:bg-umber-950">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-4 px-4 py-7 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
           <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-umber-600 dark:text-umber-300">
             {t("landing.footer_band_prompt")}
