@@ -900,7 +900,7 @@ function BlogTeaser() {
               <li key={post.slug} className="h-full">
                 <Link
                   to={`/blog/${post.slug}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-800 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-ink-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
                 >
                   <BlogCover
                     url={post.cover_image_url ?? null}
@@ -908,17 +908,14 @@ function BlogTeaser() {
                     slug={post.slug}
                     category={post.category[locale]}
                   />
-                  <div className="flex flex-1 flex-col p-5">
+                  <div className="flex flex-1 flex-col p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
                       {post.category[locale]}
                     </p>
-                    <h3 className="mt-3 font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 transition-colors group-hover:text-umber-500 dark:text-paper-50 dark:group-hover:text-umber-300 sm:text-2xl">
+                    <h3 className="mt-2 font-grotesk text-lg font-semibold leading-[1.15] tracking-tight text-umber-900 transition-colors group-hover:text-umber-500 dark:text-paper-50 dark:group-hover:text-umber-300 sm:text-xl">
                       {copy.title}
                     </h3>
-                    <p className="mt-3 text-sm leading-relaxed text-umber-700 dark:text-umber-200">
-                      {copy.lead}
-                    </p>
-                    <div className="mt-auto flex items-center gap-3 pt-5 text-xs text-umber-700 dark:text-umber-300">
+                    <div className="mt-auto flex items-center gap-3 pt-3 text-xs text-umber-700 dark:text-umber-300">
                       <time dateTime={post.published_at}>{dateLabel}</time>
                       <span aria-hidden>·</span>
                       <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
