@@ -106,7 +106,7 @@ export function InteractiveBudgetDemo() {
   return (
     <section
       id="try-it"
-      className="relative overflow-x-clip bg-paper-50 dark:bg-umber-900 border-y border-paper-300 dark:border-umber-700"
+      className="relative overflow-x-clip bg-paper-50 dark:bg-umber-900"
     >
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10 lg:py-12">
         <div className="text-center">
