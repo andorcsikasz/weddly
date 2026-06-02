@@ -21,7 +21,7 @@ import { useT } from "../lib/i18n";
 type Common = { className?: string };
 
 const TABLE_DEGS = [0, 60, 120, 180, 240, 300] as const;
-const HEAD_TABLE_X = [-22, -10, 2, 14] as const;
+const HEAD_TABLE_X = [-18, -6, 6, 18] as const;
 const STATUS_DOT_OFFSETS = [0, 16, 32, 48, 64] as const;
 
 /** Hero centrepiece — a stylised dashboard view of the app. Sidebar +
