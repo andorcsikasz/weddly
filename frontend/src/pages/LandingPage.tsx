@@ -883,7 +883,7 @@ function BlogTeaser() {
             >
               <Link
                 to={`/blog/${post.slug}`}
-                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:border-umber-700 dark:bg-umber-800"
+                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:border-umber-700 dark:bg-umber-800"
               >
                 <BlogCover
                   url={post.cover_image_url ?? null}
@@ -892,7 +892,7 @@ function BlogTeaser() {
                   category={post.category[locale]}
                 />
                 <div className="flex flex-1 flex-col p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
                     {post.category[locale]}
                   </p>
                   <h3 className="mt-2 font-grotesk text-lg font-semibold leading-[1.15] tracking-tight text-umber-900 dark:text-paper-50">
@@ -928,7 +928,7 @@ function BlogTeaser() {
               <li key={post.slug} className="h-full">
                 <Link
                   to={`/blog/${post.slug}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
                 >
                   <BlogCover
                     url={post.cover_image_url ?? null}
@@ -937,10 +937,10 @@ function BlogTeaser() {
                     category={post.category[locale]}
                   />
                   <div className="flex flex-1 flex-col p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-800 dark:text-blush-300">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
                       {post.category[locale]}
                     </p>
-                    <h3 className="mt-3 font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 transition-colors group-hover:text-blush-800 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
+                    <h3 className="mt-3 font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 transition-colors group-hover:text-umber-500 dark:text-paper-50 dark:group-hover:text-umber-300 sm:text-2xl">
                       {copy.title}
                     </h3>
                     <p className="mt-3 text-sm leading-relaxed text-umber-700 dark:text-umber-200">
@@ -986,7 +986,7 @@ function IconRow({
   tone?: "blush" | "coffee";
 }) {
   const iconColor =
-    tone === "coffee" ? "text-umber-600 dark:text-umber-300" : "text-blush-800 dark:text-blush-300";
+    tone === "coffee" ? "text-umber-600 dark:text-umber-300" : "text-umber-500 dark:text-umber-300";
   return (
     <li className="flex items-center gap-3">
       <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center ${iconColor}`}>
@@ -1065,7 +1065,7 @@ function AudienceRow({
     "group flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50 sm:gap-5 sm:py-5";
   const inner = (
     <>
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-700 text-white dark:bg-blush-400 dark:text-umber-900 sm:h-10 sm:w-10">
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-umber-600 text-white dark:bg-umber-400 dark:text-umber-900 sm:h-10 sm:w-10">
         {icon}
       </span>
       {/* Row label is the audience name ("For couples", "For vendors"),
@@ -1074,7 +1074,7 @@ function AudienceRow({
       <h3 className="min-w-0 flex-1 font-grotesk text-base font-medium leading-snug text-umber-900 dark:text-paper-50 sm:text-lg">
         {row}
       </h3>
-      <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-grotesk text-sm font-medium text-umber-800 transition-colors group-hover:text-blush-800 dark:text-paper-200 dark:group-hover:text-blush-300 sm:text-base">
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-grotesk text-sm font-medium text-umber-800 transition-colors group-hover:text-umber-500 dark:text-paper-200 dark:group-hover:text-umber-300 sm:text-base">
         <span>{ctaLabel}</span>
         <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">
           →

@@ -91,7 +91,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-full flex-col bg-paper-50 text-umber-900 dark:bg-umber-900 dark:text-paper-100">
       <a
         href="#main-content"
-        className="sr-only rounded-md bg-umber-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-umber-600 focus:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:focus:ring-blush-400"
+        className="sr-only rounded-md bg-umber-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-umber-600 focus:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:focus:ring-umber-400"
       >
         {t("landing.skip_to_main")}
       </a>
@@ -145,7 +145,7 @@ function PublicHeader() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           to="/"
-          className="shrink-0 text-umber-900 transition-colors hover:text-umber-800 dark:text-paper-50 dark:hover:text-blush-300"
+          className="shrink-0 text-umber-900 transition-colors hover:text-umber-800 dark:text-paper-50 dark:hover:text-umber-300"
         >
           {/* Header wordmark sits between Wordmark's md and lg presets:
               bigger than the body brand mark, but tracked tightly so the

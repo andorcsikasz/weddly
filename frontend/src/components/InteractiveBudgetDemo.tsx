@@ -114,7 +114,7 @@ export function InteractiveBudgetDemo() {
            *  where they were three uppercase lines plus a 3-line paragraph
            *  before the first slider, pushing the whole demo below the
            *  fold. The title alone carries the hook on mobile. */}
-          <p className="hidden text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 sm:block dark:text-blush-300">
+          <p className="hidden text-[11px] font-semibold uppercase tracking-[0.32em] text-umber-500 sm:block dark:text-umber-300">
             {t("landing.demo_eyebrow")}
           </p>
           <h2 className="font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 sm:mt-2.5 sm:text-3xl lg:text-4xl dark:text-paper-50">
@@ -133,7 +133,7 @@ export function InteractiveBudgetDemo() {
                 >
                   {t("landing.demo_guests_label")}
                 </label>
-                <span className="font-grotesk text-lg font-semibold tabular-nums text-blush-700 dark:text-blush-300">
+                <span className="font-grotesk text-lg font-semibold tabular-nums text-umber-500 dark:text-umber-300">
                   {guests}
                 </span>
               </div>
@@ -145,7 +145,7 @@ export function InteractiveBudgetDemo() {
                 step={1}
                 value={guests}
                 onChange={(e) => setGuests(clamp(Number(e.target.value), MIN_GUESTS, MAX_GUESTS))}
-                className="mt-1.5 w-full rounded accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600 sm:mt-2"
+                className="mt-1.5 w-full rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2"
                 aria-label={t("landing.demo_guests_label")}
                 aria-valuetext={`${guests}`}
               />
@@ -163,7 +163,7 @@ export function InteractiveBudgetDemo() {
                 >
                   {t("landing.demo_budget_label")}
                 </label>
-                <span className="font-grotesk text-lg font-semibold tabular-nums text-blush-700 dark:text-blush-300">
+                <span className="font-grotesk text-lg font-semibold tabular-nums text-umber-500 dark:text-umber-300">
                   {formatMoney(budget, currency, locale)}
                 </span>
               </div>
@@ -175,7 +175,7 @@ export function InteractiveBudgetDemo() {
                 step={range.step}
                 value={budget}
                 onChange={(e) => setBudget(clamp(Number(e.target.value), range.min, range.max))}
-                className="mt-1.5 w-full rounded accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600 sm:mt-2"
+                className="mt-1.5 w-full rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2"
                 aria-label={t("landing.demo_budget_label")}
                 aria-valuetext={formatMoney(budget, currency, locale)}
               />
@@ -216,7 +216,7 @@ export function InteractiveBudgetDemo() {
            *  phones to match the new section pace. */}
           <div className="rounded-2xl bg-white p-4 shadow-pop ring-1 ring-paper-300 sm:p-6 dark:bg-umber-800 dark:ring-umber-700">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
                 {t("landing.demo_breakdown_eyebrow")}
               </p>
               <p className="text-right font-grotesk text-xs italic leading-tight text-umber-600 sm:text-sm dark:text-umber-300">
@@ -236,7 +236,7 @@ export function InteractiveBudgetDemo() {
                   </div>
                   <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                     <div
-                      className="h-full rounded-full bg-blush-500 transition-[width] duration-300 ease-out"
+                      className="h-full rounded-full bg-umber-400 transition-[width] duration-300 ease-out"
                       style={{ width: `${row.pct}%` }}
                     />
                   </div>
