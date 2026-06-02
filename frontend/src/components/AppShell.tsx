@@ -907,7 +907,7 @@ function AdminSideLink({
       className={({ isActive }) =>
         `flex items-center rounded-xl text-sm transition-colors ${shape} ${
           isActive
-            ? "btn-lifted bg-neutral-950 text-white dark:bg-neutral-700"
+            ? "bg-neutral-950 text-white dark:bg-neutral-700"
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
         }`
       }
