@@ -387,7 +387,7 @@ export function BudgetMockup({ className }: Common) {
   const labelFor = (key: string) => (locale === "hu" ? (BUDGET_LABELS_HU[key] ?? key) : key);
   return (
     <svg
-      viewBox="0 0 480 360"
+      viewBox="-8 -8 496 376"
       role="img"
       aria-label={t("landing.mockup_aria_budget")}
       className={className}
@@ -533,7 +533,7 @@ export function GuestListMockup({ className }: Common) {
         : t("landing.mockup_status_pending");
   return (
     <svg
-      viewBox="0 0 480 360"
+      viewBox="-8 -8 496 376"
       role="img"
       aria-label={t("landing.mockup_aria_guests")}
       className={className}
@@ -738,7 +738,7 @@ export function SeatingMockup({ className }: Common) {
   ];
   return (
     <svg
-      viewBox="0 0 480 360"
+      viewBox="-8 -8 496 376"
       role="img"
       aria-label={t("landing.mockup_aria_seating")}
       className={className}

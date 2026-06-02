@@ -61,7 +61,7 @@ import { COUPLE_CARD_DECKS, DECK_SIZE } from "../lib/couple_cards";
 // Mockups have known aspect ratios (from their SVG viewBox). LazyMount uses
 // these to reserve layout space, so the page doesn't jump as below-fold
 // SVGs mount when scrolled into view.
-const MOCKUP_AR_FEATURE = "480 / 360";
+const MOCKUP_AR_FEATURE = "496 / 376";
 const MOCKUP_AR_SUPPLIERS = "320 / 280";
 const MOCKUP_AR_WORKSPACE = "656 / 456";
 
