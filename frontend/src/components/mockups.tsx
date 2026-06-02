@@ -674,7 +674,8 @@ export function GuestListMockup({ className }: Common) {
                 {mealLabel(row.meal)}
               </text>
             </g>
-            {i < GUEST_ROWS.length - 1 && (
+            {/* No divider between rows 0 and 1 — they share a household. */}
+            {i < GUEST_ROWS.length - 1 && i !== 0 && (
               <g className="text-paper-200">
                 <line
                   x1="24"
@@ -689,6 +690,36 @@ export function GuestListMockup({ className }: Common) {
           </g>
         );
       })}
+
+      {/* Household marker — Anna Tóth + Bence Kovács are one household: the
+          divider between their rows is dropped and a gold spine with a small
+          home node links the two avatars on the left. */}
+      <g aria-hidden>
+        <g className="text-umber-300">
+          <line x1="16" y1="132" x2="16" y2="172" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </g>
+        <g className="text-umber-500">
+          <circle cx="16" cy="152" r="6" fill="currentColor" />
+        </g>
+        <g className="text-white">
+          <path
+            d="M 13.5 152.5 L 16 150.5 L 18.5 152.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M 14.2 152 L 14.2 154.5 L 17.8 154.5 L 17.8 152"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
+      </g>
     </svg>
   );
 }
