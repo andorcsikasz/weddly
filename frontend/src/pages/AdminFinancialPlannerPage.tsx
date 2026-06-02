@@ -2,8 +2,8 @@
 // forecast. The backend serves the live base; the projection (shared
 // projectRevenue) re-runs in the browser as the operator drags the sliders.
 
-import { ChevronRight, Info } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Banknote, ChevronRight, DollarSign, Euro, Info, JapaneseYen } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   type AdminFinancialPlannerOverview,
   type ForecastAssumptions,
@@ -482,10 +482,24 @@ function FxStrip({ fx }: { fx: FxRates | null }) {
   if (!fx) return null;
   return (
     <section className="admin-card mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
-      <span className="eyebrow">Árfolyam · 1 EUR</span>
-      <FxItem code="HUF" value={`${fx.rates.HUF.toFixed(1)} Ft`} />
-      <FxItem code="USD" value={`${fx.rates.USD.toFixed(3)} $`} />
-      <FxItem code="CNY" value={`${fx.rates.CNY.toFixed(2)} ¥`} />
+      <span className="eyebrow inline-flex items-center gap-1">
+        <Euro size={13} aria-hidden="true" /> 1 EUR
+      </span>
+      <FxItem
+        icon={<Banknote size={15} aria-hidden="true" />}
+        value={`${fx.rates.HUF.toFixed(2)} Ft`}
+        srLabel={`1 euró = ${fx.rates.HUF.toFixed(2)} forint`}
+      />
+      <FxItem
+        icon={<DollarSign size={15} aria-hidden="true" />}
+        value={fx.rates.USD.toFixed(2)}
+        srLabel={`1 euró = ${fx.rates.USD.toFixed(2)} amerikai dollár`}
+      />
+      <FxItem
+        icon={<JapaneseYen size={15} aria-hidden="true" />}
+        value={fx.rates.CNY.toFixed(2)}
+        srLabel={`1 euró = ${fx.rates.CNY.toFixed(2)} jüan`}
+      />
       <span className="ml-auto text-xs text-neutral-500 dark:text-umber-300">
         ECB{fx.asOf ? ` · ${fx.asOf}` : ""}
       </span>
@@ -493,11 +507,11 @@ function FxStrip({ fx }: { fx: FxRates | null }) {
   );
 }
 
-function FxItem({ code, value }: { code: string; value: string }) {
+function FxItem({ icon, value, srLabel }: { icon: ReactNode; value: string; srLabel: string }) {
   return (
-    <span className="inline-flex items-baseline gap-1.5">
-      <span className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-umber-300">
-        {code}
+    <span className="inline-flex items-center gap-1.5" aria-label={srLabel}>
+      <span className="text-neutral-500 dark:text-umber-300" aria-hidden="true">
+        {icon}
       </span>
       <span className="text-sm font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
         {value}
