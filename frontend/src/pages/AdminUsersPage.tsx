@@ -711,11 +711,6 @@ export default function AdminUsersPage() {
                   : t("admin.grant_free")}
               </button>
             )}
-            {members.length === 1 && (
-              <span className="text-[11px] text-neutral-500 dark:text-umber-300">
-                {t("admin.workspace_solo_member")}
-              </span>
-            )}
           </div>
           <div>
             {members.length === 0 ? (
