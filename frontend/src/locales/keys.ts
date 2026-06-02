@@ -4724,6 +4724,8 @@ export interface LocaleMessages {
       deck_closeness_blurb: string;
       deck_deepwater_title: string;
       deck_deepwater_blurb: string;
+      deck_lemonade_title: string;
+      deck_lemonade_blurb: string;
       card_position: string;
       card_empty: string;
       next_card: string;

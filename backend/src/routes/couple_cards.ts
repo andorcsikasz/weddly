@@ -17,7 +17,7 @@ import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { now } from "../db";
 import { rateLimit } from "../lib/rate_limit";
 
-const VALID_DECKS = new Set(["roots", "everyday", "closeness", "deepwater"]);
+const VALID_DECKS = new Set(["roots", "everyday", "closeness", "deepwater", "lemonade"]);
 const VALID_RATINGS = new Set(["bad", "ok", "great"]);
 const VALID_LOCALES = new Set(["hu", "en"]);
 

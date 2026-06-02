@@ -8,7 +8,7 @@
 // localStorage so a returning visitor doesn't get the same shuffle twice
 // in a session.
 
-export type DeckId = "roots" | "everyday" | "closeness" | "deepwater";
+export type DeckId = "roots" | "everyday" | "closeness" | "deepwater" | "lemonade";
 
 export interface Deck {
   id: DeckId;
@@ -246,6 +246,62 @@ const DEEPWATER_EN: readonly string[] = [
   "What do you want me to keep telling you, even when I assume you already know?",
 ];
 
+const LEMONADE_HU: readonly string[] = [
+  "Mi lenne a tökéletes közös szombat reggelünk?",
+  "Milyen filmet néznél meg most azonnal egy plédben velem?",
+  "Melyik dalt énekelnénk a legjobban karaokén együtt?",
+  "Mi a kedvenc közös ételünk, amit a saját konyhánkban főzünk?",
+  "Ha választhatnánk egy közös szuperképességet, mi lenne az?",
+  "Milyen állat lennél, és milyen állat lennék én?",
+  "Hol képzelsz el minket egy tökéletes randevú estén?",
+  "Mi az a furcsa szokásom, amit először idegesítőnek találtál, és most cukinak?",
+  "Ha holnap nem kellene dolgoznunk, mit csinálnánk együtt egész nap?",
+  "Mi a kedvenc illatom rajtam, amit szeretsz?",
+  "Min nevettünk a legjobban az elmúlt egy hónapban?",
+  "Ha választhatnánk egy tematikus jelmezpartit, mik lennénk?",
+  "Mi az utolsó dolog, amit együtt csináltunk, és igazán megnevettetett?",
+  "Hová szöknénk el egy hétvégére csak ketten, ha holnap indulhatnánk?",
+  "Melyik a kedvenc évszakod kettőnknek?",
+  "Milyen reggeli kávé- vagy teaszertartásod van?",
+  "Ha most rögtön rendelhetnénk pizzát, milyet kérnél?",
+  "Mi az a sorozat, amit szeretnél, ha újrakezdenénk együtt?",
+  "Mi az a régi gyerekkori játékod, amit szívesen megmutatnál nekem?",
+  "Mi a kedvenc emléked az első közös utazásunkról?",
+  "Ha kapnánk egy nyaralót bárhol a világon, hol lenne?",
+  "Melyik közös fényképünk a kedvenced?",
+  "Ha kutyát vagy macskát fogadnánk, hogyan hívnánk?",
+  "Mi az a hülyeség, amit csak mi ketten értünk?",
+  "Mi a legbutább vita, amibe valaha keveredtünk, és máig nevetünk rajta?",
+];
+
+const LEMONADE_EN: readonly string[] = [
+  "What would the perfect shared Saturday morning look like for us?",
+  "Which film would you rewatch right now under a blanket with me?",
+  "What song would the two of us nail at karaoke?",
+  "What's our favourite meal that we cook in our own kitchen?",
+  "If we could pick one shared superpower, what would it be?",
+  "What animal would you be, and what animal would I be?",
+  "Where do you picture a perfect date night for us?",
+  "What quirky habit of mine did you find annoying at first, and now find cute?",
+  "If we didn't have to work tomorrow, how would we spend the whole day together?",
+  "What's my best smell, the one you love on me?",
+  "What did we laugh hardest about in the past month?",
+  "If we picked a costume-party theme, what would we go as?",
+  "What's the last thing we did together that really made you laugh out loud?",
+  "Where would we sneak off to for a weekend, just the two of us, if we could leave tomorrow?",
+  "What's your favourite season for the two of us?",
+  "What's your morning coffee or tea ritual?",
+  "If we could order pizza right now, what would you go for?",
+  "What's a series you'd want us to start over together?",
+  "What's an old childhood toy of yours you'd want to show me?",
+  "What's your favourite memory from our first trip together?",
+  "If we got a holiday home anywhere in the world, where would it be?",
+  "Which of our shared photos is your favourite?",
+  "If we adopted a dog or a cat, what would we name them?",
+  "What's the silly thing only the two of us get?",
+  "What's the dumbest argument we ever had that we still laugh about?",
+];
+
 export const COUPLE_CARD_DECKS: readonly Deck[] = [
   {
     id: "roots",
@@ -274,6 +330,17 @@ export const COUPLE_CARD_DECKS: readonly Deck[] = [
     blurbKey: "tools.couple_cards.deck_deepwater_blurb",
     questionsHu: DEEPWATER_HU,
     questionsEn: DEEPWATER_EN,
+  },
+  // Hidden easter-egg deck: a 5th pack of light, playful questions, only
+  // revealed after the visitor swipes horizontally across the mini-deck
+  // row. Stays in this array unconditionally so the data shape stays
+  // simple — the gating lives in CoupleCardsPage state.
+  {
+    id: "lemonade",
+    titleKey: "tools.couple_cards.deck_lemonade_title",
+    blurbKey: "tools.couple_cards.deck_lemonade_blurb",
+    questionsHu: LEMONADE_HU,
+    questionsEn: LEMONADE_EN,
   },
 ];
 

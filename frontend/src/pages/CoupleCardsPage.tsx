@@ -17,7 +17,7 @@ import {
   Unlock,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
@@ -122,16 +122,43 @@ const VALID_DECK_IDS: ReadonlySet<DeckId> = new Set([
   "everyday",
   "closeness",
   "deepwater",
+  "lemonade",
 ]);
 
 /** Read `?deck=…` from the URL on first render so deep-links from the
  *  landing teaser open the matching deck instead of always defaulting
- *  to roots. Invalid values fall through to the default. */
+ *  to roots. Invalid values fall through to the default. A `?deck=lemonade`
+ *  link also unlocks the easter-egg deck so a curator can share the
+ *  hidden pack without forcing the recipient to discover the swipe. */
 function initialSelectedDeck(): DeckId {
   if (typeof window === "undefined") return DEFAULT_SELECTED;
   const param = new URLSearchParams(window.location.search).get("deck");
   if (param && VALID_DECK_IDS.has(param as DeckId)) return param as DeckId;
   return DEFAULT_SELECTED;
+}
+
+/** Easter-egg lemonade deck reveal state. Persisted across visits so a
+ *  visitor who discovered it once doesn't have to swipe again on every
+ *  return. Plain boolean key; the deep-link path (?deck=lemonade) also
+ *  flips this on. */
+const LEMONADE_REVEAL_KEY = "weddly.couple_cards.lemonade_revealed";
+
+function loadLemonadeRevealed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(LEMONADE_REVEAL_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveLemonadeRevealed() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LEMONADE_REVEAL_KEY, "1");
+  } catch {
+    // localStorage blocked; the reveal just won't persist across reloads.
+  }
 }
 
 /** After this many distinct cards have surfaced in the card view, snap
@@ -146,6 +173,17 @@ export default function CoupleCardsPage() {
 
   const [activeDeck, setActiveDeck] = useState<DeckId | null>(null);
   const [selectedDeck, setSelectedDeck] = useState<DeckId>(() => initialSelectedDeck());
+  const [isLemonadeRevealed, setIsLemonadeRevealed] = useState<boolean>(() => {
+    // Pre-reveal if either the storage flag is set OR the deep-link param
+    // points at lemonade. Otherwise the initial swipe gate stays armed.
+    if (loadLemonadeRevealed()) return true;
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("deck") === "lemonade";
+  });
+  const revealLemonade = useCallback(() => {
+    setIsLemonadeRevealed(true);
+    saveLemonadeRevealed();
+  }, []);
 
   // Swap the centred deck inside a View Transition so the browser
   // computes a layout morph between the just-tapped mini and the centre
@@ -425,6 +463,8 @@ export default function CoupleCardsPage() {
           selectedId={selectedDeck}
           onSelect={selectDeck}
           onOpen={() => openDeck(selectedDeck)}
+          isLemonadeRevealed={isLemonadeRevealed}
+          onRevealLemonade={revealLemonade}
         />
       ) : null}
       {/* In-flow card view only when focus mode is OFF. When locked, the
@@ -499,15 +539,48 @@ function DeckShowcase({
   selectedId,
   onSelect,
   onOpen,
+  isLemonadeRevealed,
+  onRevealLemonade,
 }: {
   selectedId: DeckId;
   onSelect: (id: DeckId) => void;
   onOpen: () => void;
+  isLemonadeRevealed: boolean;
+  onRevealLemonade: () => void;
 }) {
   const { t } = useT();
-  const selectedIdx = COUPLE_CARD_DECKS.findIndex((d) => d.id === selectedId);
-  const selected = COUPLE_CARD_DECKS[selectedIdx];
+  // Filter the easter-egg deck out until the visitor unlocks it via a
+  // horizontal swipe across the mini row (or arrives via ?deck=lemonade).
+  const visibleDecks = useMemo(
+    () =>
+      isLemonadeRevealed
+        ? COUPLE_CARD_DECKS
+        : COUPLE_CARD_DECKS.filter((d) => d.id !== "lemonade"),
+    [isLemonadeRevealed],
+  );
+  const selectedIdx = visibleDecks.findIndex((d) => d.id === selectedId);
+  const selected = visibleDecks[selectedIdx];
   if (!selected) return null;
+
+  // Swipe gate for the mini-row: any horizontal pointer drag (mouse, pen,
+  // or touch) greater than 50px reveals the 5th lemonade card. Easter-egg
+  // by design — no visual hint that the row is interactive.
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const handleSwipeStart = (e: React.PointerEvent<HTMLUListElement>) => {
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+  };
+  const handleSwipeEnd = (e: React.PointerEvent<HTMLUListElement>) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || isLemonadeRevealed) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    // Predominantly horizontal swipe with >50px travel. Either direction
+    // counts — the user has to "move" the row, not the direction matters.
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      onRevealLemonade();
+    }
+  };
 
   return (
     <section className="relative">
@@ -541,9 +614,19 @@ function DeckShowcase({
             no label), letting an open gap tell the "this card just rose
             into the centre" story without an extra placeholder shape. */}
         <h2 className="sr-only">{t("tools.couple_cards.decks_h2")}</h2>
-        <ul className="mx-auto mt-8 grid max-w-2xl grid-cols-4 gap-2 sm:mt-10 sm:gap-3">
-          {COUPLE_CARD_DECKS.map((deck, idx) => {
+        <ul
+          onPointerDown={handleSwipeStart}
+          onPointerUp={handleSwipeEnd}
+          onPointerCancel={() => {
+            swipeStart.current = null;
+          }}
+          className={`mx-auto mt-8 grid max-w-2xl gap-2 sm:mt-10 sm:gap-3 ${
+            isLemonadeRevealed ? "grid-cols-5" : "grid-cols-4"
+          }`}
+        >
+          {visibleDecks.map((deck, idx) => {
             const isSelected = deck.id === selectedId;
+            const isLemonade = deck.id === "lemonade";
             return (
               <li key={deck.id} className="aspect-[3/2]" aria-hidden={isSelected}>
                 {isSelected ? null : (
@@ -555,18 +638,26 @@ function DeckShowcase({
                         viewTransitionName: `couple-deck-${deck.id}`,
                       } as React.CSSProperties
                     }
-                    className="group flex h-full w-full flex-col items-center justify-between rounded-xl bg-wnrs-red px-2 py-2 text-center text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 sm:px-3 sm:py-3"
+                    className={`group flex h-full w-full flex-col items-center justify-between rounded-xl px-2 py-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-3 sm:py-3 ${
+                      isLemonade
+                        ? "bg-lemonade-yellow text-umber-900 shadow-[0_18px_36px_-18px_rgba(255,204,0,0.6)] focus-visible:ring-lemonade-yellow"
+                        : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
+                    }`}
                   >
                     <span aria-hidden="true" className="block h-0.5" />
                     <div className="flex flex-1 flex-col items-center justify-center">
-                      <span className="font-display text-xs font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-base lg:text-lg">
-                        {t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                      <span className="font-display text-xs font-bold uppercase leading-[0.95] tracking-tight sm:text-base lg:text-lg">
+                        {isLemonade
+                          ? t(deck.titleKey).toUpperCase()
+                          : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
                       </span>
-                      <span className="mt-1 hidden font-display text-[10px] font-bold uppercase tracking-[0.04em] text-white sm:block sm:text-[11px]">
-                        ({t(deck.titleKey)})
-                      </span>
+                      {!isLemonade ? (
+                        <span className="mt-1 hidden font-display text-[10px] font-bold uppercase tracking-[0.04em] sm:block sm:text-[11px]">
+                          ({t(deck.titleKey)})
+                        </span>
+                      ) : null}
                     </div>
-                    <span className="font-display text-[8px] font-bold uppercase tracking-[0.22em] text-white sm:text-[9px]">
+                    <span className="font-display text-[8px] font-bold uppercase tracking-[0.22em] sm:text-[9px]">
                       {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
                     </span>
                   </button>
@@ -607,16 +698,24 @@ function DeckShowcase({
                   viewTransitionName: `couple-deck-${selectedId}`,
                 } as React.CSSProperties
               }
-              className="relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl bg-wnrs-red px-7 py-8 text-center text-white shadow-[0_24px_50px_-22px_rgba(204,31,40,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10"
+              className={`relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl px-7 py-8 text-center transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10 ${
+                selectedId === "lemonade"
+                  ? "bg-lemonade-yellow text-umber-900 shadow-[0_24px_50px_-22px_rgba(255,204,0,0.6)] focus-visible:ring-lemonade-yellow"
+                  : "bg-wnrs-red text-white shadow-[0_24px_50px_-22px_rgba(204,31,40,0.55)] focus-visible:ring-wnrs-red"
+              }`}
             >
               <span aria-hidden="true" className="block h-1" />
               <div className="flex flex-1 flex-col items-center justify-center">
-                <h3 className="font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-5xl lg:text-6xl">
-                  {t("tools.couple_cards.deck_number_label", { n: selectedIdx + 1 })}
+                <h3 className="font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-6xl">
+                  {selectedId === "lemonade"
+                    ? t(selected.titleKey).toUpperCase()
+                    : t("tools.couple_cards.deck_number_label", { n: selectedIdx + 1 })}
                 </h3>
-                <p className="mt-3 font-display text-base font-bold uppercase tracking-[0.04em] text-white sm:mt-4 sm:text-xl">
-                  ({t(selected.titleKey)})
-                </p>
+                {selectedId !== "lemonade" ? (
+                  <p className="mt-3 font-display text-base font-bold uppercase tracking-[0.04em] sm:mt-4 sm:text-xl">
+                    ({t(selected.titleKey)})
+                  </p>
+                ) : null}
               </div>
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-white sm:text-xs">
                 {t("app.name")} · {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}

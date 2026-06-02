@@ -7,8 +7,8 @@ import { describe, expect, it } from "bun:test";
 import { COUPLE_CARD_DECKS, DECK_SIZE } from "@/lib/couple_cards";
 
 describe("couple_cards data shape", () => {
-  it("ships exactly 4 decks", () => {
-    expect(COUPLE_CARD_DECKS.length).toBe(4);
+  it("ships exactly 5 decks (4 visible + 1 easter-egg lemonade)", () => {
+    expect(COUPLE_CARD_DECKS.length).toBe(5);
   });
 
   it("every deck has DECK_SIZE questions in both locales", () => {

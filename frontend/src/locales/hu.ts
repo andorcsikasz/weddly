@@ -4314,6 +4314,8 @@ const hu: LocaleMessages = {
       deck_closeness_blurb: "Test, vágy, gyengédség, játék. Az, amit a sötétben tudunk egymásról.",
       deck_deepwater_title: "Mély víz",
       deck_deepwater_blurb: "Halál, krízis, értelem, hit. Amiről nem szoktunk beszélni, és muszáj.",
+      deck_lemonade_title: "Limonádé",
+      deck_lemonade_blurb: "Egy könnyű, vidám pakli. Vacsora után, kávé mellé, kuncogós kérdésekkel.",
       card_position: "{n} / {total}",
       card_empty: "Húzzatok egy kártyát.",
       next_card: "Következő kártya",

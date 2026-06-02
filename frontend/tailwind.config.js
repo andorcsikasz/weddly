@@ -99,6 +99,14 @@ export default {
           red: "#D00000",
           redInk: "#A00000",
         },
+        // Lemonade — sun-yellow surface for the hidden 5th easter-egg
+        // deck on the couple-cards tool. Tuned warm so it sits with the
+        // paper palette without going neon. Revealed only after a
+        // horizontal swipe across the mini-deck row.
+        lemonade: {
+          yellow: "#FFCC00",
+          yellowInk: "#A16207",
+        },
       },
       fontFamily: {
         // Self-hosted/system stack — we used to pull Inter from rsms.me and

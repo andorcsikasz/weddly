@@ -745,71 +745,38 @@ function StatCounter({
   );
 }
 
-/** Count-up "flip" animation. First 85% of the duration shuffles random
- *  numbers within [0, target] at a steady ~55ms cadence (illegible blur, as
- *  requested) — never above the real value; the last 15% drops to a slowing
- *  cadence that ramps from ~70ms toward ~290ms, dipping below `target` by a
- *  shrinking amount each tick so the final 2-3 values are readable and land
- *  from below. Respects prefers-reduced-motion (renders the target
- *  immediately). */
+/** Count-up animation: eases the display from 0 up to `target` over
+ *  `duration`, strictly monotonically — no random shuffle, no jumping, no
+ *  overshoot. Uses an ease-out cubic so the number decelerates into its
+ *  final value and lands exactly on `target`. Honours prefers-reduced-motion
+ *  (renders the target immediately). */
 function useFlipTo(target: number, duration = 1800): number {
-  const [display, setDisplay] = useState(() => {
-    const safe = Math.max(0, target);
-    // Seed within [0, target] so even the first painted frame never exceeds
-    // the real value.
-    return Math.floor(Math.random() * (safe + 1));
-  });
+  const [display, setDisplay] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       setDisplay(target);
       return;
     }
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      setDisplay(target);
-      return;
-    }
-    if (target <= 0) {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || target <= 0) {
       setDisplay(target);
       return;
     }
 
-    const fastPhaseEnd = duration * 0.85;
     let startTime = 0;
-    let lastTick = 0;
     let raf = 0;
+    const easeOut = (t: number) => 1 - (1 - t) ** 3;
 
     const step = (now: number) => {
       if (!startTime) startTime = now;
-      const elapsed = now - startTime;
-
-      if (elapsed >= duration) {
-        setDisplay(target);
-        return;
-      }
-
-      const inFast = elapsed < fastPhaseEnd;
-      const slowProgress = inFast ? 0 : (elapsed - fastPhaseEnd) / (duration - fastPhaseEnd);
-      const cadence = inFast ? 55 : 70 + slowProgress * 220;
-
-      if (now - lastTick >= cadence) {
-        lastTick = now;
-        if (inFast) {
-          // Shuffle only within [0, target] so the count never flashes a
-          // number above the real value (e.g. 40 must never read as 99).
-          setDisplay(Math.floor(Math.random() * (target + 1)));
-        } else {
-          // Settle from below: dip down from target by a shrinking amount so
-          // the last few ticks approach the final value without overshooting.
-          const variance = Math.max(1, Math.round((1 - slowProgress) * 6));
-          const dip = Math.floor(Math.random() * (variance + 1));
-          setDisplay(Math.max(0, target - dip));
-        }
-      }
-
-      raf = requestAnimationFrame(step);
+      const t = Math.min(1, (now - startTime) / duration);
+      // easeOut is monotonic increasing, so rounding * target never decreases
+      // and never exceeds target — a clean count-up.
+      setDisplay(Math.min(target, Math.round(easeOut(t) * target)));
+      if (t < 1) raf = requestAnimationFrame(step);
     };
 
+    setDisplay(0);
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [target, duration]);

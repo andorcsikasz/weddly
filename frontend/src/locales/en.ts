@@ -4274,6 +4274,9 @@ const en: LocaleMessages = {
       deck_deepwater_title: "Deep Water",
       deck_deepwater_blurb:
         "Death, crisis, meaning, faith. What we don't usually talk about, and have to.",
+      deck_lemonade_title: "Lemonade",
+      deck_lemonade_blurb:
+        "A light, playful deck. After-dinner, coffee-on-the-side, made-to-make-you-giggle questions.",
       card_position: "{n} / {total}",
       card_empty: "Draw a card.",
       next_card: "Next card",
