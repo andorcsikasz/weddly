@@ -881,7 +881,7 @@ const en: LocaleMessages = {
     founders_title: "This time, you're the guests",
     founders_promise:
       "A gift from Weddly: the first 200 couples plan free, right up to their wedding day.",
-    founders_seats_label: "spots left",
+    founders_seats_label: "early bird free spots",
     founders_joined_caption: "couples already in",
     founders_left_caption: "left",
     founders_body:
