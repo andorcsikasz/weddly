@@ -761,25 +761,26 @@ export function SeatingMockup({ className }: Common) {
 
       {/* Toolbar */}
       <g className="text-ink-500 font-sans">
-        <text x="24" y="32" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
+        <text x="24" y="24" fontSize="9" fontWeight="600" fill="currentColor" letterSpacing="1">
           {t("landing.mockup_canvas_label")}
         </text>
       </g>
       {/* Add table chip */}
       <g className="text-umber-600">
-        <rect x="332" y="20" width="124" height="22" rx="11" fill="currentColor" />
+        <rect x="332" y="12" width="124" height="22" rx="11" fill="currentColor" />
       </g>
       <g className="text-white font-sans">
-        <text x="394" y="35" fontSize="10" fontWeight="600" fill="currentColor" textAnchor="middle">
+        <text x="394" y="27" fontSize="10" fontWeight="600" fill="currentColor" textAnchor="middle">
           {t("landing.mockup_add_table")}
         </text>
       </g>
 
-      {/* Canvas + tables nudged up so the gap below the toolbar is tighter. */}
-      <g transform="translate(0, -10)">
+      {/* Canvas + tables nudged up so there's less white above the toolbar
+          and the gap below it stays tight. */}
+      <g transform="translate(0, -16)">
       {/* Floor / grid */}
       <g className="text-paper-100">
-        <rect x="16" y="60" width="448" height="290" rx="8" fill="currentColor" />
+        <rect x="16" y="60" width="448" height="298" rx="8" fill="currentColor" />
       </g>
       <g className="text-paper-300">
         {[88, 152, 216, 280].map((y) => (

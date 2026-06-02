@@ -825,7 +825,7 @@ const en: LocaleMessages = {
     card_guests_cta: "Enter your code",
     suppliers_section_title: "A curated directory",
     suppliers_section_body:
-      "Find the people who make the day unforgettable: handpicked venues, caterers, photographers, bands and florists, all in one place. Direct booking opens with v2.",
+      "Handpicked venues, photographers, caterers and more, all in one place. Booking opens with v2.",
     suppliers_couple_cta: "Browse",
     suppliers_vendor_cta: "Get listed",
     guest_sheet_title: "Enter your invite code",
