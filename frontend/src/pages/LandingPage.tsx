@@ -537,6 +537,7 @@ function MobileStickySignup() {
  *  so EN/HU stay in sync. */
 function LiveStatsBand() {
   const { t, locale } = useT();
+  const [gridRef, inView] = useInView<HTMLDivElement>();
   const [stats, setStats] = useState<{ couples: number; rsvps: number } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -559,16 +560,21 @@ function LiveStatsBand() {
   return (
     <section className="relative bg-paper-50 dark:bg-umber-900">
       <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-14">
-        <div className="mx-auto grid max-w-md grid-cols-2 gap-6 sm:gap-10">
+        {/* The count-up only fires once the tiles scroll into view (inView),
+            so the flip plays when the user can see it — not silently on load
+            while the band is still far below the fold. */}
+        <div ref={gridRef} className="mx-auto grid max-w-md grid-cols-2 gap-6 sm:gap-10">
           <StatCounter
             value={stats.couples}
             locale={locale}
             label={t("landing.counter_couples_label")}
+            run={inView}
           />
           <StatCounter
             value={stats.rsvps}
             locale={locale}
             label={t("landing.counter_rsvps_label")}
+            run={inView}
           />
         </div>
       </div>
@@ -717,12 +723,14 @@ function StatCounter({
   value,
   locale,
   label,
+  run,
 }: {
   value: number;
   locale: string;
   label: string;
+  run: boolean;
 }) {
-  const display = useFlipTo(value);
+  const display = useFlipTo(value, run);
   const fmt = useMemo(() => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US"), [locale]);
   return (
     <div className="text-center">
@@ -755,10 +763,13 @@ function StatCounter({
  *  overshoot. Uses an ease-out cubic so the number decelerates into its
  *  final value and lands exactly on `target`. Honours prefers-reduced-motion
  *  (renders the target immediately). */
-function useFlipTo(target: number, duration = 1800): number {
+function useFlipTo(target: number, run = true, duration = 1800): number {
   const [display, setDisplay] = useState(0);
 
   useEffect(() => {
+    // Hold at 0 until `run` flips true (e.g. the counter scrolls into view),
+    // so the count-up plays when the user can actually see it.
+    if (!run) return;
     if (typeof window === "undefined") {
       setDisplay(target);
       return;
@@ -784,9 +795,37 @@ function useFlipTo(target: number, duration = 1800): number {
     setDisplay(0);
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
+  }, [target, run, duration]);
 
   return display;
+}
+
+/** Returns a ref + a boolean that flips true once the element scrolls into
+ *  view (and stays true). Falls back to true where IntersectionObserver is
+ *  unavailable so content never gets stuck hidden. */
+function useInView<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (typeof window === "undefined" || !el) return;
+    if (!("IntersectionObserver" in window)) {
+      setInView(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setInView(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return [ref, inView] as const;
 }
 
 /** Slug pinned to the featured slot on the landing teaser. The Bible-
