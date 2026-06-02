@@ -20,7 +20,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { lazy, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LazyMount } from "../components/LazyMount";
 import { WorkspaceMockup } from "../components/mockups";
@@ -800,15 +800,23 @@ function useFlipTo(target: number, run = true, duration = 1800): number {
   return display;
 }
 
-/** Returns a ref + a boolean that flips true once the element scrolls into
- *  view (and stays true). Falls back to true where IntersectionObserver is
- *  unavailable so content never gets stuck hidden. */
+/** Returns a callback ref + a boolean that flips true once the element scrolls
+ *  into view (and stays true). Falls back to true where IntersectionObserver is
+ *  unavailable so content never gets stuck hidden.
+ *
+ *  A *callback* ref (not useRef + useEffect) is deliberate: consumers like the
+ *  live-stats band render `null` until their data loads, so the observed node
+ *  mounts on a later render. A one-shot mount effect would read `ref.current`
+ *  while it's still null and never re-attach — leaving `inView` stuck false and
+ *  the count-up frozen at 0. The callback ref fires whenever the node actually
+ *  attaches, so observation starts the moment the element exists. */
 function useInView<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
   const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (typeof window === "undefined" || !el) return;
+  const obsRef = useRef<IntersectionObserver | null>(null);
+  const ref = useCallback((el: T | null) => {
+    obsRef.current?.disconnect();
+    obsRef.current = null;
+    if (el === null || typeof window === "undefined") return;
     if (!("IntersectionObserver" in window)) {
       setInView(true);
       return;
@@ -823,7 +831,7 @@ function useInView<T extends HTMLElement>() {
       { threshold: 0.3 },
     );
     obs.observe(el);
-    return () => obs.disconnect();
+    obsRef.current = obs;
   }, []);
   return [ref, inView] as const;
 }
