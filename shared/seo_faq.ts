@@ -21,6 +21,10 @@ export interface SeoFaqEntry {
 export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
   hu: [
     {
+      q: "Miért érdemes a Wēddly-vel tervezni?",
+      a: "Egy hamburger áránál is kevesebbe kerül, mégis nagy terhet vesz le a válladról: egy helyen tartja a költségvetést, a vendéglistát és az ültetést, és segít megtalálni a legjobb ajánlatokat a szolgáltatóknál. A hasonló tervezőeszközök ennek a többszörösébe kerülnek.",
+    },
+    {
       q: "Tényleg ingyenes a Wēddly?",
       a: "Az első 200 párnak ingyenes: ha köztük regisztráltok, a Wēddly végig ingyenes marad a teljes tervezés alatt, egészen az esküvőtök napjáig. Miután betelnek a helyek, az új párok 2 hetes ingyenes próbát kapnak, utána 1 990 Ft havonta, minden funkcióval.",
     },
@@ -46,6 +50,10 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
     },
   ],
   en: [
+    {
+      q: "Why plan with Weddly?",
+      a: "It costs less than a burger, yet takes a real weight off your shoulders: it keeps your budget, guest list and seating in one place, and helps you find the best deals from suppliers. Comparable planning tools cost several times as much.",
+    },
     {
       q: "Is Weddly really free?",
       a: "Free for the first 200 couples: register among them and Weddly stays free through your whole planning, right up to your wedding day. After those spots fill, new couples get a two-week free trial, then 5 € a month with every feature included.",
