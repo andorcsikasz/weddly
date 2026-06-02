@@ -40,6 +40,7 @@ import {
   toCouple,
 } from "../domain/couples";
 import { sendKind } from "../domain/emails";
+import { activateFoundingIfEligible, startTrial } from "../domain/billing";
 import { recordExport } from "../domain/exports";
 import { recordGrowthEvent } from "../domain/growth_events";
 import { generateInviteToken } from "../domain/invite_codes";
@@ -582,6 +583,10 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
       newCoupleId,
     );
 
+    // Start the 14-day in-app free trial. If the partner later joins and the
+    // couple is among the first 200, this flips to the 18-month founding plan.
+    startTrial(newCoupleId, ts);
+
     // The bride and groom are guests at their own wedding — and they need to
     // count in headcount, catering, and seating. The helper materializes them
     // as real guest rows inside ONE shared dedicated 2-person household labelled
@@ -867,6 +872,10 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   addCoupleMember(couple.id, userId, "partner");
   db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
 
+  // Both partners are now in — grant the 18-month founding free window if this
+  // couple is among the first 200. No-op otherwise (keeps the 2-week trial).
+  activateFoundingIfEligible(couple.id, ts);
+
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
@@ -1093,6 +1102,9 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
     );
     addCoupleMember(target.id, userId, "partner");
     db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
+
+    // Both partners are now in — grant the founding window if eligible.
+    activateFoundingIfEligible(target.id, ts);
 
     addAuditLog({
       actor_user_id: userId,

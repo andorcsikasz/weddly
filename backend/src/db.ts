@@ -693,6 +693,59 @@ addColumnIfMissing(
 // so the lone partner doesn't get pestered. NULL = never reminded.
 addColumnIfMissing("couples", "invite_partner_reminded_at", "invite_partner_reminded_at INTEGER");
 
+// ── Subscription / billing (Stripe) ──────────────────────────────────────
+// State machine: see shared/billing.ts. `subscription_status` is the stored
+// state; entitlement (edit access) is COMPUTED from it + the timestamps at
+// read-time so a lapsed trial flips to read-only without a background job.
+// Money/access NEVER mutate the couple's `status` column (that drives the
+// pause-to-delete countdown), so a non-paying couple keeps all its data.
+addColumnIfMissing(
+  "couples",
+  "subscription_status",
+  "subscription_status TEXT NOT NULL DEFAULT 'none'",
+);
+// Epoch-ms end of the 14-day in-app trial (set at onboarding for new couples).
+addColumnIfMissing("couples", "trial_ends_at", "trial_ends_at INTEGER");
+// Epoch-ms end of the 18-month founding-member free window.
+addColumnIfMissing("couples", "founding_until", "founding_until INTEGER");
+// 1 = among the first 200 couples → eligible for the founding free window.
+addColumnIfMissing(
+  "couples",
+  "is_founding_member",
+  "is_founding_member INTEGER NOT NULL DEFAULT 0",
+);
+// Stripe linkage + paid-period end (filled by the billing webhook).
+addColumnIfMissing("couples", "stripe_customer_id", "stripe_customer_id TEXT");
+addColumnIfMissing("couples", "stripe_subscription_id", "stripe_subscription_id TEXT");
+addColumnIfMissing("couples", "current_period_end", "current_period_end INTEGER");
+// Index AFTER the column adds (see the May-2026 ordering rule): a column added
+// via addColumnIfMissing can't carry an inline index in schema.sql.
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_couples_stripe_customer ON couples(stripe_customer_id) WHERE stripe_customer_id IS NOT NULL",
+);
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_couples_subscription_status ON couples(subscription_status)",
+);
+
+// One-time grandfather: every real couple that existed BEFORE billing launched
+// is one of our earliest adopters, so make them founding members (free for 18
+// months from launch). Idempotent + bounded by the launch timestamp so it only
+// ever touches pre-launch rows: after the first run those rows are 'founding'
+// (no longer 'none'), and couples created after launch start at 'trialing' via
+// the onboard INSERT, never 'none'. Demo couples are excluded — they're always
+// entitled regardless of billing.
+const BILLING_LAUNCH_MS = 1_748_822_400_000; // 2026-06-02T00:00:00Z
+const FOUNDING_GRANDFATHER_UNTIL = BILLING_LAUNCH_MS + 1000 * 60 * 60 * 24 * 30 * 18;
+db.prepare(
+  `UPDATE couples
+     SET subscription_status = 'founding',
+         is_founding_member = 1,
+         founding_until = ?
+   WHERE is_demo = 0
+     AND created_at < ?
+     AND subscription_status = 'none'`,
+).run(FOUNDING_GRANDFATHER_UNTIL, BILLING_LAUNCH_MS);
+
 // JSON array of the top-N Amadeus offers cached for a given route. We used to
 // cache only the cheapest price in `price_amount`; this column carries the
 // richer payload (carrier, duration, stops, depart/arrival ISO timestamps) so

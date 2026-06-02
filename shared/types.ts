@@ -1,6 +1,8 @@
 // One contract, two sides. Backend mappers convert *Row → DTO; frontend
 // consumes via typed wrappers. Money is integer Forint (HUF has no sub-unit).
 
+import type { CoupleBilling } from "./billing";
+
 export type UnixMs = number;
 /** Integer Forint. Treat as a whole-number currency unit. */
 export type Huf = number;
@@ -338,6 +340,9 @@ export interface Couple {
    *  and the slider rail collapses out of view. Per-row planned amounts
    *  still drag freely; only the global per-guest rescale factor is pinned. */
   planning_count_locked: boolean;
+  /** Subscription / billing snapshot incl. computed edit entitlement.
+   *  See shared/billing.ts. */
+  billing: CoupleBilling;
 }
 
 /** One Nominatim hit reshaped into the honeymoon destination autocomplete.

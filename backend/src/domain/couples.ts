@@ -1,5 +1,11 @@
 // Couple row → DTO mapper + the workspace helpers used by every protected route.
 
+import {
+  type CoupleBilling,
+  computeEntitlement,
+  type SubscriptionStatus,
+  SUBSCRIPTION_STATUSES,
+} from "@shared/billing";
 import type {
   BudgetCategory,
   BudgetGoal,
@@ -16,6 +22,35 @@ import type {
   WeddingStyleTag,
 } from "@shared/types";
 import { db } from "../db";
+
+const VALID_SUBSCRIPTION_STATUSES: ReadonlySet<SubscriptionStatus> = new Set(SUBSCRIPTION_STATUSES);
+
+/** Build the billing snapshot for a couple row, computing live entitlement.
+ *  Demo couples are always entitled — billing never touches the throwaway
+ *  demo workspaces. Exported so route guards can reuse the same verdict. */
+export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): CoupleBilling {
+  const status: SubscriptionStatus = VALID_SUBSCRIPTION_STATUSES.has(
+    row.subscription_status as SubscriptionStatus,
+  )
+    ? (row.subscription_status as SubscriptionStatus)
+    : "none";
+  const verdict = row.is_demo
+    ? ({ entitled: true, reason: "subscribed" } as const)
+    : computeEntitlement(status, {
+        trial_ends_at: row.trial_ends_at,
+        founding_until: row.founding_until,
+        nowMs,
+      });
+  return {
+    subscription_status: status,
+    trial_ends_at: row.trial_ends_at,
+    founding_until: row.founding_until,
+    is_founding_member: Boolean(row.is_founding_member),
+    current_period_end: row.current_period_end,
+    entitled: verdict.entitled,
+    reason: verdict.reason,
+  };
+}
 
 export interface CoupleRow {
   id: number;
@@ -92,6 +127,14 @@ export interface CoupleRow {
    *  icon on the admin workspace list. NULL = never reminded. Used to
    *  enforce a one-shot send so the lone partner isn't pestered. */
   invite_partner_reminded_at: number | null;
+  /** Subscription state machine — see shared/billing.ts. */
+  subscription_status: string;
+  trial_ends_at: number | null;
+  founding_until: number | null;
+  is_founding_member: number;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  current_period_end: number | null;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);
@@ -246,6 +289,7 @@ export function toCouple(row: CoupleRow): Couple {
     updated_at: row.updated_at,
     names_last_changed_at: row.names_last_changed_at,
     planning_count_locked: Boolean(row.planning_count_locked),
+    billing: toCoupleBilling(row),
   };
 }
 

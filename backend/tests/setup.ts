@@ -61,6 +61,14 @@ process.env.GTM_CONTAINER_ID = "";
 process.env.GA4_PROPERTY_ID = "";
 process.env.GA4_SERVICE_ACCOUNT_JSON = "";
 
+// Stripe billing stays disabled in tests (STRIPE_ENABLED=false) so checkout /
+// portal endpoints 503 and no live API calls fire. The webhook is exercised
+// with a forged-but-secret-signed payload using this test webhook secret.
+process.env.STRIPE_SECRET_KEY = "";
+process.env.STRIPE_WEBHOOK_SECRET = "";
+process.env.STRIPE_PRICE_EUR = "";
+process.env.STRIPE_PRICE_HUF = "";
+
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {
   const f = `./data/test-weddly.db${ext}`;

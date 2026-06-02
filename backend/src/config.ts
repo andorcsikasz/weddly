@@ -77,4 +77,20 @@ export const CONFIG = {
    *  pasted verbatim). The account needs Viewer access on the GA4 property.
    *  Only `client_email` + `private_key` are read. Empty = GA4 disabled. */
   ga4ServiceAccountJson: process.env.GA4_SERVICE_ACCOUNT_JSON ?? "",
+  /** Stripe secret key (`sk_live_…` / `sk_test_…`). Empty = billing disabled:
+   *  the checkout/portal endpoints return 503 and the app keeps working in
+   *  read-with-trial mode, so dev + early prod can run before billing is wired. */
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+  /** Signing secret for the Stripe webhook endpoint (`whsec_…`). Required to
+   *  accept webhook events; without it the webhook handler rejects everything. */
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+  /** Recurring Price ids for the standard monthly plan, one per currency. A
+   *  couple is sent to Checkout with the Price matching its `currency`. Create
+   *  them in the Stripe dashboard (or via scripts/stripe_setup.ts). */
+  stripePriceEur: process.env.STRIPE_PRICE_EUR ?? "",
+  stripePriceHuf: process.env.STRIPE_PRICE_HUF ?? "",
 };
+
+/** True when a Stripe secret key is configured. Billing endpoints check this
+ *  and 503 when false, mirroring the Google-OAuth "configured?" pattern. */
+export const STRIPE_ENABLED = CONFIG.stripeSecretKey !== "";

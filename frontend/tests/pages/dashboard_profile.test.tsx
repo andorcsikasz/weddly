@@ -97,6 +97,15 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     updated_at: Date.now(),
     names_last_changed_at: null,
     planning_count_locked: false,
+    billing: {
+      subscription_status: "founding",
+      trial_ends_at: null,
+      founding_until: null,
+      is_founding_member: true,
+      current_period_end: null,
+      entitled: true,
+      reason: "founding",
+    },
     ...overrides,
   };
 }
