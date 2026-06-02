@@ -20,7 +20,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { lazy, type ReactNode, useEffect, useMemo, useState } from "react";
+import { lazy, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LazyMount } from "../components/LazyMount";
 import { WorkspaceMockup } from "../components/mockups";
@@ -56,7 +56,12 @@ import { SEO_FAQ } from "@shared/seo_faq";
 import type { BlogPost } from "@shared/blog_posts";
 import { blogApi } from "../lib/endpoints";
 import { BlogCover } from "./BlogIndexPage";
-import { COUPLE_CARD_DECKS, DECK_SIZE } from "../lib/couple_cards";
+import {
+  COUPLE_CARD_DECKS,
+  DECK_SIZE,
+  loadLemonadeRevealed,
+  saveLemonadeRevealed,
+} from "../lib/couple_cards";
 
 // Mockups have known aspect ratios (from their SVG viewBox). LazyMount uses
 // these to reserve layout space, so the page doesn't jump as below-fold
@@ -831,7 +836,7 @@ function BlogTeaser() {
     timeZone: "UTC",
   });
   return (
-    <section className="relative bg-paper-50 pt-12 sm:pt-20 dark:bg-umber-900">
+    <section className="relative bg-paper-50 pt-16 sm:pt-20 dark:bg-umber-900">
       {/* Title removed per request — the cards speak for themselves. */}
       {/* Mobile: horizontal snap carousel so all three posts are visible
        *  through swiping in one viewport. The first card peeks at ~80vw so
@@ -930,7 +935,7 @@ function BlogTeaser() {
           </Link>
         </div>
       </div>
-      <div className="flex justify-center pb-10 sm:hidden">
+      <div className="flex justify-center pb-16 sm:hidden">
         <Link to="/blog" className="btn-outline btn-landing">
           {t("blog.section_cta")}
         </Link>
@@ -973,7 +978,7 @@ function CoupleCardsTeaser() {
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
     <section className="relative bg-white dark:bg-umber-900">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
         <header className="text-center">
           <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.couple_cards_title")}

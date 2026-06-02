@@ -345,3 +345,27 @@ export const COUPLE_CARD_DECKS: readonly Deck[] = [
 ];
 
 export const DECK_SIZE = 25;
+
+/** localStorage key for the easter-egg reveal flag. Lives on the lib
+ *  module so both the landing teaser and the tool page read / write the
+ *  same key — a visitor who unlocks lemonade in either surface sees it
+ *  in both. */
+export const LEMONADE_REVEAL_KEY = "weddly.couple_cards.lemonade_revealed";
+
+export function loadLemonadeRevealed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(LEMONADE_REVEAL_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function saveLemonadeRevealed(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LEMONADE_REVEAL_KEY, "1");
+  } catch {
+    // localStorage blocked; the reveal just won't persist across reloads.
+  }
+}

@@ -21,7 +21,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
-import { COUPLE_CARD_DECKS, DECK_SIZE, type DeckId } from "../lib/couple_cards";
+import {
+  COUPLE_CARD_DECKS,
+  DECK_SIZE,
+  type DeckId,
+  loadLemonadeRevealed,
+  saveLemonadeRevealed,
+} from "../lib/couple_cards";
 import { coupleCardsApi, type CoupleCardRating } from "../lib/endpoints";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -137,29 +143,9 @@ function initialSelectedDeck(): DeckId {
   return DEFAULT_SELECTED;
 }
 
-/** Easter-egg lemonade deck reveal state. Persisted across visits so a
- *  visitor who discovered it once doesn't have to swipe again on every
- *  return. Plain boolean key; the deep-link path (?deck=lemonade) also
- *  flips this on. */
-const LEMONADE_REVEAL_KEY = "weddly.couple_cards.lemonade_revealed";
-
-function loadLemonadeRevealed(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(LEMONADE_REVEAL_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function saveLemonadeRevealed() {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(LEMONADE_REVEAL_KEY, "1");
-  } catch {
-    // localStorage blocked; the reveal just won't persist across reloads.
-  }
-}
+// Lemonade easter-egg reveal helpers live on `lib/couple_cards` so the
+// landing teaser and the tool page share the same localStorage key —
+// unlocking it on one surface lights it up on the other.
 
 /** After this many distinct cards have surfaced in the card view, snap
  *  the page into focus mode automatically. Counts both the open-deck

@@ -43,20 +43,22 @@ const ICON_BY_SLUG: Record<string, LucideIcon> = {
   "digitalis-eskuvoi-meghivo-vagy-papir-meghivo": Mail,
 };
 
-/** Topical Unsplash photo per post slug. Each URL was verified loading
- *  at this exact query string; the photos were picked for editorial
- *  tone (soft light, neutral palette) over generic stock. Admin uploads
- *  override these via cover_image_url; the URL here is only used when
- *  no upload exists for a post. */
+/** Topical Unsplash photo per post slug. Aesthetic is "wedding
+ *  ceremony, church, light, romantic" — every photo is soft-lit,
+ *  airy, neutral-palette editorial wedding work. Each URL was
+ *  visually inspected from its bytes (not just URL-verified) so the
+ *  content matches what the slug says. Admin uploads override these
+ *  via cover_image_url; the URL here is only used when no upload
+ *  exists for a post. */
 export const DEFAULT_PHOTO_BY_SLUG: Record<string, string> = {
   "miert-hazasodunk-a-biblia-szerint":
-    "https://images.unsplash.com/photo-1681396059178-72a46b4ec1ea?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1200&auto=format&fit=crop&q=75",
   "bibliai-idezetek-eskuvore":
-    "https://images.unsplash.com/photo-1686064196392-fd20325c68c7?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-koltsegvetes-keszitese":
-    "https://images.unsplash.com/photo-1648201637025-1c77b9be3013?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1604017011826-d3b4c23f8914?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-vendeglista-keszitese":
-    "https://images.unsplash.com/photo-1708601421220-ed13ac3bcf3b?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1525772764200-be829a350797?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-hagyomanyok-praktikusan":
     "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-szertartas-menete":
@@ -64,15 +66,15 @@ export const DEFAULT_PHOTO_BY_SLUG: Record<string, string> = {
   "eskuvoi-ultetesi-rend-keszitese":
     "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-rsvp-kerdesek":
-    "https://images.unsplash.com/photo-1774891937445-be15587e50c1?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1522413452208-996ff3f3e740?w=1200&auto=format&fit=crop&q=75",
   "eskuvoi-ugyintezes-lepesrol-lepesre":
-    "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1606490194859-07c18c9f0968?w=1200&auto=format&fit=crop&q=75",
   "eskuvoszervezesi-checklist-12-honapra":
-    "https://images.unsplash.com/photo-1546352214-9148ef4d8c9c?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1546032996-6dfacbacbf3f?w=1200&auto=format&fit=crop&q=75",
   "eskuvoszervezesi-checklist-6-honapra":
-    "https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&auto=format&fit=crop&q=75",
   "digitalis-eskuvoi-meghivo-vagy-papir-meghivo":
-    "https://images.unsplash.com/photo-1763414902882-4e9d4f8e6275?w=1200&auto=format&fit=crop&q=75",
+    "https://images.unsplash.com/photo-1525258946800-98cfd641d0de?w=1200&auto=format&fit=crop&q=75",
 };
 
 interface BlogCoverArtProps {
