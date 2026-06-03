@@ -475,7 +475,7 @@ export default function GanttView({
             >
               {visible.length === 0 && beforeCount === 0 && afterCount === 0 ? (
                 <div className="flex flex-col items-start gap-3 px-4 py-5">
-                  <p className="font-serif text-[15px] italic text-ink-700 dark:text-paper-100">
+                  <p className="font-grotesk text-[15px] text-ink-700 dark:text-paper-100">
                     {t("timeline.empty_gutter_title")}
                   </p>
                   <p className="text-xs leading-relaxed text-ink-500 dark:text-umber-300">
@@ -483,7 +483,7 @@ export default function GanttView({
                   </p>
                   <Link
                     to="/app/planning"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-blush-500 px-3 py-1.5 text-xs font-medium text-paper-50 transition-colors hover:bg-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-ink-800 px-3 py-1.5 text-xs font-medium text-paper-50 transition-colors hover:bg-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-100 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900"
                   >
                     <Plus size={13} aria-hidden="true" />
                     <span>{t("timeline.empty_gutter_cta")}</span>
