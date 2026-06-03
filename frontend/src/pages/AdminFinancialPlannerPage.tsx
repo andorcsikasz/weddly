@@ -2,12 +2,24 @@
 // forecast. The backend serves the live base; the projection (shared
 // projectRevenue) re-runs in the browser as the operator drags the sliders.
 
-import { Banknote, ChevronRight, DollarSign, Euro, Info, Lock, LockOpen } from "lucide-react";
+import {
+  Banknote,
+  Check,
+  ChevronRight,
+  CreditCard,
+  DollarSign,
+  Euro,
+  Info,
+  Lock,
+  LockOpen,
+  X,
+} from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   type AdminFinancialPlannerOverview,
   type ForecastAssumptions,
   projectRevenue,
+  type StripeHealth,
   type SubscriptionUnitEconomics,
   subscriptionUnitEconomics,
 } from "@shared/admin_financial_planner";
@@ -228,6 +240,9 @@ export default function AdminFinancialPlannerPage() {
         t={t}
         locale={locale}
       />
+
+      {/* Stripe kapcsolat / health monitor */}
+      <StripeHealthCard locale={locale} />
 
       {/* Élő árfolyam-sáv (EUR alapú) */}
       <FxStrip fx={fx} />
@@ -513,6 +528,210 @@ export default function AdminFinancialPlannerPage() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+/** Stripe kapcsolat-figyelő. Még mielőtt a billing be lenne kötve, megmutatja
+ *  mit tudunk: melyik env változó van beállítva + a kulcs módja (teszt/éles).
+ *  Ha van kulcs, élő API-ping (accounts.retrieve) mondja meg, hogy a kapcsolat
+ *  tényleg működik-e, és kiírja a kártyás fizetés / kifizetés go-live flageket.
+ *  Titkos értéket sosem mutat. */
+function StripeHealthCard({ locale }: { locale: string }) {
+  const [h, setH] = useState<StripeHealth | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    adminFinancialPlannerApi
+      .stripeHealth()
+      .then(setH)
+      .catch(() => setFailed(true));
+  }, []);
+
+  // Endpoint hiányzik (részleges deploy) → csendben elrejtjük a kártyát.
+  if (failed) return null;
+
+  const status: "loading" | "off" | "ok" | "error" = !h
+    ? "loading"
+    : !h.enabled
+      ? "off"
+      : h.connection?.ok
+        ? "ok"
+        : "error";
+
+  const statusPill =
+    status === "ok" ? (
+      <Pill tone="sage">Csatlakozva</Pill>
+    ) : status === "error" ? (
+      <Pill tone="blush">Kapcsolódási hiba</Pill>
+    ) : status === "off" ? (
+      <Pill tone="paper">Nincs beállítva</Pill>
+    ) : null;
+
+  const modeBadge =
+    h && h.mode && h.mode !== "unknown" ? (
+      <span
+        className={`rounded px-1.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${
+          h.mode === "live"
+            ? "bg-sage-100 text-sage-700 dark:bg-sage-500/20 dark:text-sage-300"
+            : "bg-paper-200 text-neutral-600 dark:bg-umber-800 dark:text-umber-200"
+        }`}
+      >
+        {h.mode === "live" ? "Éles" : "Teszt"}
+      </span>
+    ) : null;
+
+  const checkedLabel =
+    h && h.checkedAt
+      ? new Date(h.checkedAt).toLocaleTimeString(locale === "hu" ? "hu-HU" : "en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
+
+  return (
+    <section className="admin-card mt-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-paper-50">
+            <CreditCard size={15} aria-hidden="true" />
+            Stripe kapcsolat
+            {statusPill}
+            {modeBadge}
+          </h2>
+          <p className="mt-1 max-w-prose text-xs text-neutral-500 dark:text-umber-300">
+            {status === "ok"
+              ? "Az API-kulcs működik — élő kapcsolat a Stripe-pal."
+              : status === "error"
+                ? "A kulcs be van állítva, de a Stripe API nem válaszolt rendben."
+                : status === "off"
+                  ? "A billing még nincs bekötve. Addig is látod, mi van beállítva és mi hiányzik."
+                  : "Ellenőrzés…"}
+          </p>
+        </div>
+        {checkedLabel && (
+          <span className="shrink-0 text-xs text-neutral-400 dark:text-umber-300">
+            Ellenőrizve: {checkedLabel}
+          </span>
+        )}
+      </div>
+
+      {h && (
+        <>
+          {/* Env-konfiguráció checklist (sosem mutat titkos értéket) */}
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <ConfigItem label="Titkos kulcs" ok={h.config.secretKey} />
+            <ConfigItem label="Webhook secret" ok={h.config.webhookSecret} />
+            <ConfigItem label="EUR ár (price)" ok={h.config.priceEur} />
+            <ConfigItem label="HUF ár (price)" ok={h.config.priceHuf} />
+          </div>
+
+          {/* Élő fiók-adatok, ha a ping sikerült */}
+          {h.connection?.ok && (
+            <div className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              <HealthRow label="Fiók" value={h.connection.accountId ?? "—"} mono />
+              <HealthRow
+                label="Ország"
+                value={h.connection.country ? h.connection.country.toUpperCase() : "—"}
+              />
+              <HealthRow
+                label="Kártyás fizetés"
+                value={h.connection.chargesEnabled ? "aktív" : "nem aktív"}
+                good={h.connection.chargesEnabled === true}
+                bad={h.connection.chargesEnabled === false}
+              />
+              <HealthRow
+                label="Kifizetések"
+                value={h.connection.payoutsEnabled ? "aktív" : "nem aktív"}
+                good={h.connection.payoutsEnabled === true}
+                bad={h.connection.payoutsEnabled === false}
+              />
+              <HealthRow
+                label="Alap pénznem"
+                value={
+                  h.connection.defaultCurrency ? h.connection.defaultCurrency.toUpperCase() : "—"
+                }
+              />
+            </div>
+          )}
+
+          {/* Hibaüzenet, ha a kulcs megvan, de a ping elhasalt */}
+          {status === "error" && h.connection?.error && (
+            <p className="mt-3 rounded-lg bg-blush-50 px-3 py-2 font-mono text-xs text-blush-700 dark:bg-blush-500/10 dark:text-blush-200">
+              {h.connection.error}
+            </p>
+          )}
+
+          {/* Mi hiányzik, ha még nincs bekötve */}
+          {status === "off" && (
+            <p className="mt-3 text-xs text-neutral-500 dark:text-umber-300">
+              Bekötéshez állítsd be a Railway-en:{" "}
+              <span className="font-mono text-neutral-700 dark:text-paper-100">
+                STRIPE_SECRET_KEY
+              </span>
+              ,{" "}
+              <span className="font-mono text-neutral-700 dark:text-paper-100">
+                STRIPE_WEBHOOK_SECRET
+              </span>
+              ,{" "}
+              <span className="font-mono text-neutral-700 dark:text-paper-100">
+                STRIPE_PRICE_EUR
+              </span>
+              ,{" "}
+              <span className="font-mono text-neutral-700 dark:text-paper-100">
+                STRIPE_PRICE_HUF
+              </span>
+              .
+            </p>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Egy env-konfiguráció sor pipa/kereszt jelzéssel. */
+function ConfigItem({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg bg-paper-100 px-3 py-2 dark:bg-umber-800/60">
+      {ok ? (
+        <Check size={15} className="shrink-0 text-sage-600 dark:text-sage-400" aria-hidden="true" />
+      ) : (
+        <X size={15} className="shrink-0 text-neutral-400 dark:text-umber-300" aria-hidden="true" />
+      )}
+      <span
+        className={`text-xs ${ok ? "text-neutral-700 dark:text-paper-100" : "text-neutral-400 dark:text-umber-300"}`}
+      >
+        {label}
+      </span>
+      <span className="sr-only">{ok ? "beállítva" : "hiányzik"}</span>
+    </div>
+  );
+}
+
+function HealthRow({
+  label,
+  value,
+  mono,
+  good,
+  bad,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  good?: boolean;
+  bad?: boolean;
+}) {
+  const valCls = good
+    ? "text-sage-700 dark:text-sage-300"
+    : bad
+      ? "text-blush-600 dark:text-blush-300"
+      : "text-neutral-900 dark:text-paper-50";
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-paper-200 py-1 dark:border-umber-700">
+      <span className="text-neutral-500 dark:text-umber-300">{label}</span>
+      <span className={`font-medium ${mono ? "font-mono text-xs" : "tabular-nums"} ${valCls}`}>
+        {value}
+      </span>
     </div>
   );
 }

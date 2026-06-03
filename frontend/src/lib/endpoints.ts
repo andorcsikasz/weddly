@@ -41,7 +41,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
 } from "@shared/types";
-import type { AdminFinancialPlannerOverview } from "@shared/admin_financial_planner";
+import type { AdminFinancialPlannerOverview, StripeHealth } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse } from "@shared/billing";
 import type { BlogPost } from "@shared/blog_posts";
 import type { GuestPortalView } from "@shared/guest_portal";
@@ -1259,6 +1259,9 @@ export const adminFinancialPlannerApi = {
     apiFetch<AdminFinancialPlannerOverview>("POST", "/api/admin/financial-planner/enforcement", {
       on,
     }),
+  /** Stripe connection + config health (admin monitor). Live API ping when a
+   *  key is set; config-readiness only when billing isn't wired up yet. */
+  stripeHealth: () => apiFetch<StripeHealth>("GET", "/api/admin/financial-planner/stripe-health"),
 };
 
 export const adminAnalyticsApi = {

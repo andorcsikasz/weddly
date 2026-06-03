@@ -58,6 +58,40 @@ export interface AdminFinancialPlannerOverview {
   enforcement_ready: boolean;
 }
 
+/** Stripe connection + config health for the admin planner. Surfaces what we
+ *  can even before billing is wired up (which env vars are present), and once
+ *  a key is set, whether a live API ping actually succeeds. Never carries
+ *  secret values — only booleans + the (non-secret) account facts Stripe
+ *  returns. */
+export interface StripeHealth {
+  /** True when a Stripe secret key is configured (STRIPE_ENABLED). */
+  enabled: boolean;
+  /** Key mode from the `sk_live_` / `sk_test_` prefix. null when no key set;
+   *  "unknown" for an unrecognised prefix. */
+  mode: "live" | "test" | "unknown" | null;
+  /** Which billing env vars are present — booleans only, never the values. */
+  config: {
+    secretKey: boolean;
+    webhookSecret: boolean;
+    priceEur: boolean;
+    priceHuf: boolean;
+  };
+  /** Live API reachability. null when billing is disabled (nothing to ping). */
+  connection: {
+    ok: boolean;
+    /** acct_… id of the account the key belongs to (safe to show). */
+    accountId: string | null;
+    chargesEnabled: boolean | null;
+    payoutsEnabled: boolean | null;
+    country: string | null;
+    defaultCurrency: string | null;
+    /** Failure reason when ok=false. */
+    error: string | null;
+  } | null;
+  /** When the check ran (unix ms). */
+  checkedAt: number;
+}
+
 /** Editable forecast assumptions, all surfaced as sliders on the page. */
 export interface ForecastAssumptions {
   months: number;

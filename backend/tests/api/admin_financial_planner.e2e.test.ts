@@ -6,6 +6,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import {
   type AdminFinancialPlannerOverview,
+  type StripeHealth,
   subscriptionUnitEconomics,
 } from "@shared/admin_financial_planner";
 import { db } from "../../src/db";
@@ -86,6 +87,38 @@ describe("GET /api/admin/financial-planner/overview", () => {
     );
     expect(r.data.founding_active).toBe(1);
     expect(r.data.founding_expiry).toContainEqual({ month: "2027-09", count: 1 });
+  });
+});
+
+describe("GET /api/admin/financial-planner/stripe-health", () => {
+  test("requires admin", async () => {
+    const { token } = await bootstrapCouple("stripe-nonadmin@weddly.test");
+    const r = await req("GET", "/api/admin/financial-planner/stripe-health", undefined, { token });
+    expect(r.status).toBe(403);
+  });
+
+  test("reports disabled with config flags when Stripe is unset (test env)", async () => {
+    wipeAll();
+    const token = await addAdmin();
+    const r = await req<StripeHealth>(
+      "GET",
+      "/api/admin/financial-planner/stripe-health",
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(200);
+    // setup.ts pins every STRIPE_* env empty, so billing is disabled and the
+    // endpoint must never reach the network — config flags only, no ping.
+    expect(r.data.enabled).toBe(false);
+    expect(r.data.mode).toBeNull();
+    expect(r.data.connection).toBeNull();
+    expect(r.data.config).toEqual({
+      secretKey: false,
+      webhookSecret: false,
+      priceEur: false,
+      priceHuf: false,
+    });
+    expect(typeof r.data.checkedAt).toBe("number");
   });
 });
 
