@@ -1778,6 +1778,7 @@ const hu: LocaleMessages = {
     total_summary_invited: "{n} meghívva",
     total_summary_households_unit: "háztartás",
     total_summary_invited_unit: "meghívva",
+    total_summary_planned_unit: "tervezett",
     kind_label: "Típus",
     kind_help: "Babához kisszék kell; gyerek kapja a gyerekmenüt.",
     kind_adult: "Felnőtt",

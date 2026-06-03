@@ -1834,6 +1834,7 @@ export interface LocaleMessages {
     total_summary_invited: string;
     total_summary_households_unit: string;
     total_summary_invited_unit: string;
+    total_summary_planned_unit: string;
     /** Adult / child / baby kind selector. */
     kind_label: string;
     kind_help: string;

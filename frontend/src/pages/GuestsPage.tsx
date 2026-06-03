@@ -428,6 +428,17 @@ export default function GuestsPage() {
     [guests, rsvpFilter],
   );
 
+  // Planned headcount from the couple's onboarding goal — shown alongside the
+  // live counts so couples see actual vs target at a glance. Null (stat hidden)
+  // when the goal is still TBD.
+  const goal = couple?.guest_count_goal;
+  const plannedGuests: string | null =
+    goal?.kind === "exact" && goal.exact != null
+      ? String(goal.exact)
+      : goal?.kind === "range" && goal.min != null && goal.max != null
+        ? `${goal.min}–${goal.max}`
+        : null;
+
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -440,6 +451,9 @@ export default function GuestsPage() {
                 label={t("guests.total_summary_unit")}
                 tone="primary"
               />
+              {plannedGuests !== null && (
+                <GuestStat value={plannedGuests} label={t("guests.total_summary_planned_unit")} />
+              )}
               <GuestStat
                 value={households.length}
                 label={t("guests.total_summary_households_unit")}
@@ -3157,7 +3171,7 @@ function GuestStat({
   label,
   tone = "secondary",
 }: {
-  value: number;
+  value: number | string;
   label: string;
   tone?: "primary" | "secondary";
 }) {

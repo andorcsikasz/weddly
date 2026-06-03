@@ -1756,6 +1756,7 @@ const en: LocaleMessages = {
     total_summary_invited: "{n} invited",
     total_summary_households_unit: "households",
     total_summary_invited_unit: "invited",
+    total_summary_planned_unit: "planned",
     kind_label: "Type",
     kind_help: "A baby needs a high chair; a child gets the kids' meal.",
     kind_adult: "Adult",
