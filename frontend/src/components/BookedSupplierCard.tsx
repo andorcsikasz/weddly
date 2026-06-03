@@ -160,10 +160,10 @@ export function BookedSupplierCard({
 
   return (
     <article
-      // Dashed paper-toned border distinguishes the card from real supplier
-      // entries (which use solid borders). `auto-rows-fr` on the parent
-      // grid stretches this to match neighbouring card heights.
-      className="relative flex h-full flex-col rounded-2xl border-2 border-dashed border-paper-400 bg-paper-50/70 p-4 transition hover:border-paper-500 dark:border-umber-600 dark:bg-umber-800/40"
+      // Matches the directory supplier cards (the `card` utility) so the
+      // "already booked" form reads as one of them — same solid border,
+      // surface, radius, and padding.
+      className="card !p-4 relative flex flex-col"
       aria-label={t("suppliers.bookedCard.title")}
     >
       <div className="flex items-center gap-2">
