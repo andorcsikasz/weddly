@@ -19,6 +19,7 @@ import {
   ChefHat,
   ArrowBigDown,
   ArrowBigUp,
+  ArrowUpRight,
   Bookmark,
   BookmarkCheck,
   ChevronRight,
@@ -898,25 +899,27 @@ export default function SuppliersPage() {
         />
         {/* Guest count is read-only here — it's owned by the cost-planning
             slider on /app/budget and mirrored in. Editing it inline would
-            give couples two sources of truth for the same number, so we
-            show the live value and route edits to the budget page via the
-            adjacent wallet link. */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+            give couples two sources of truth for the same number, so the
+            whole control (label + value + arrow) is a link that routes
+            edits to the budget page. */}
+        <Link
+          to="/app/budget"
+          title={t("suppliers.guests_filter_edit_in_budget")}
+          aria-label={t("suppliers.guests_filter_edit_in_budget")}
+          className="group inline-flex items-center gap-2 rounded-full px-1.5 py-0.5 transition hover:bg-paper-50 dark:hover:bg-umber-800"
+        >
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100">
             {t("suppliers.guests_filter_label")}
           </span>
           <span className="min-w-[2ch] text-center text-[11px] font-semibold tabular-nums text-ink-800 dark:text-paper-100">
             {guestsFilter ?? "—"}
           </span>
-          <Link
-            to="/app/budget"
-            title={t("suppliers.guests_filter_edit_in_budget")}
-            aria-label={t("suppliers.guests_filter_edit_in_budget")}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-50 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-100"
-          >
-            <Wallet size={13} aria-hidden />
-          </Link>
-        </div>
+          <ArrowUpRight
+            size={13}
+            aria-hidden
+            className="text-ink-400 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100"
+          />
+        </Link>
       </div>
 
       {/* Step chain. Sequence numbers dropped — the icons carry the meaning.
@@ -1858,7 +1861,7 @@ function ChainStep({
           ? "border-transparent stationery-coffee text-paper-50"
           : allDone
             ? "border-sage-400 bg-sage-50 text-sage-800 hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
-            : "border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+            : "border-umber-300 bg-umber-200 text-ink-800 hover:border-umber-400 hover:bg-umber-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
       }`}
     >
       {/* Explicit h-4 row + leading-none on every child forces all three
@@ -1907,7 +1910,7 @@ function ChainStep({
                   ? "bg-sage-500"
                   : active
                     ? "bg-paper-100/30 dark:bg-umber-900/30"
-                    : "bg-paper-300 dark:bg-umber-700"
+                    : "bg-umber-400/60 dark:bg-umber-700"
               }`}
               aria-hidden
             />
