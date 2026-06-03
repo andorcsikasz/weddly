@@ -448,7 +448,7 @@ export default function GanttView({
               )}
               {todayLeftPct !== null && (
                 <span
-                  className="pointer-events-none absolute bottom-0 -translate-x-1/2 translate-y-1/2 whitespace-nowrap rounded-full bg-blush-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-paper-50 shadow-soft"
+                  className="pointer-events-none absolute bottom-0 z-10 -translate-x-1/2 translate-y-full whitespace-nowrap rounded-full bg-blush-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-paper-50 shadow-soft"
                   style={{ left: `${todayLeftPct}%` }}
                   aria-label={t("timeline.today_label")}
                   title={t("timeline.today_label")}
