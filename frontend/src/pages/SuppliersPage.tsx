@@ -954,7 +954,7 @@ export default function SuppliersPage() {
                 <div key={g.id} className="flex snap-start items-stretch gap-1">
                   {i > 0 && (
                     <span
-                      className="self-center text-lg text-paper-400 dark:text-umber-300"
+                      className="self-center text-paper-400 dark:text-umber-300"
                       aria-hidden
                     >
                       →
@@ -967,7 +967,7 @@ export default function SuppliersPage() {
                     onClick={() => pickGroup(activeGroup === g.id ? null : g.id)}
                     label={t(`suppliers.group.${g.id}`)}
                     count={groupCounts.get(g.id) ?? 0}
-                    icon={<Icon size={20} />}
+                    icon={<Icon size={16} />}
                     progress={progress}
                     t={t}
                   />
@@ -1849,7 +1849,7 @@ function ChainStep({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex items-center justify-center rounded-xl border px-4 py-2 text-base transition-colors ${
+      className={`group relative flex items-center justify-center rounded-lg border px-2.5 py-1 text-sm transition-colors ${
         active
           ? "border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
           : allDone
@@ -1863,16 +1863,16 @@ function ChainStep({
           metrics. Count uses the same text-xs as the label so number
           and text baselines align — text-[11px] was 1px shorter and
           drifted up. */}
-      <span className="flex h-6 items-center justify-center gap-2">
+      <span className="flex h-5 items-center justify-center gap-1.5">
         {!isAll && (
-          <span className="flex h-6 items-center leading-none" aria-hidden>
+          <span className="flex h-5 items-center leading-none" aria-hidden>
             {icon}
           </span>
         )}
-        <span className="flex h-6 items-center font-medium leading-none">{label}</span>
+        <span className="flex h-5 items-center font-medium leading-none">{label}</span>
         {count !== undefined && (
           <span
-            className={`flex h-6 items-center font-medium tabular-nums leading-none ${
+            className={`flex h-5 items-center font-medium tabular-nums leading-none ${
               active
                 ? "text-paper-100/80 dark:text-umber-900/80"
                 : allDone
@@ -1886,7 +1886,7 @@ function ChainStep({
       </span>
       {progress !== undefined && progress.total > 0 && (
         <span
-          className="absolute inset-x-0 bottom-1.5 flex items-center justify-center gap-1"
+          className="absolute inset-x-0 bottom-1 flex items-center justify-center gap-[3px]"
           aria-label={t("suppliers.chain_progress_aria", {
             done: progress.done,
             total: progress.total,
@@ -1898,7 +1898,7 @@ function ChainStep({
           })).map((bar) => (
             <span
               key={bar.id}
-              className={`h-1 w-[18px] rounded-full transition-colors ${
+              className={`h-[3px] w-3 rounded-full transition-colors ${
                 bar.filled
                   ? "bg-sage-500"
                   : active
