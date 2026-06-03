@@ -297,8 +297,7 @@ export default function DashboardPage() {
   // clamp would keep day-of mode stuck on the morning AFTER the wedding (raw
   // -1 → clamped 0). With rawDelta the eve (1) and the day itself (0) light up,
   // and the day after correctly falls through to the past-wedding tile.
-  const dayOfMode =
-    rawDelta !== null && rawDelta <= 1 && rawDelta >= 0 && !couple.archived_at;
+  const dayOfMode = rawDelta !== null && rawDelta <= 1 && rawDelta >= 0 && !couple.archived_at;
 
   // ── RSVP breakdown ────────────────────────────────────────────────────
   const rsvp = { yes: 0, no: 0, maybe: 0, pending: 0 };
@@ -1071,21 +1070,21 @@ export default function DashboardPage() {
              *  by an 8-item checklist — the progress chip in the summary
              *  carries the "are we done?" signal at a glance. */}
             <MobileCollapsibleCard
-              className="card lg:col-span-2 p-0 md:p-6"
+              className="card lg:col-span-2 p-0 md:px-6 md:py-5"
               bodyClassName="px-4 pb-4 md:px-0 md:pb-0"
               title={t("dashboard.tasks_title")}
               trailing={
                 <span>{t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}</span>
               }
             >
-              <div className="mb-4 hidden items-baseline justify-between md:flex">
+              <div className="mb-3 hidden items-baseline justify-between md:flex">
                 <h2>{t("dashboard.tasks_title")}</h2>
                 <span className="text-xs text-ink-500 dark:text-umber-300">
                   {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
                 </span>
               </div>
               <div
-                className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
+                className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
                 role="progressbar"
                 aria-valuemin={0}
                 aria-valuemax={tasksTotal}
@@ -1097,7 +1096,7 @@ export default function DashboardPage() {
                   style={{ width: `${(tasksDone / tasksTotal) * 100}%` }}
                 />
               </div>
-              <ul className="grid gap-1.5 sm:grid-cols-2">
+              <ul className="grid gap-1 sm:grid-cols-2">
                 {tasks.map((task) => {
                   const tone = task.done
                     ? "text-ink-500 dark:text-umber-300"
@@ -1137,7 +1136,7 @@ export default function DashboardPage() {
                       </span>
                     </>
                   );
-                  const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700 ${tone}`;
+                  const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700 ${tone}`;
                   return (
                     <li key={task.key}>
                       {task.to ? (
@@ -1152,7 +1151,7 @@ export default function DashboardPage() {
                         )
                       ) : (
                         <div
-                          className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${tone}`}
+                          className={`flex items-center gap-2 rounded-lg px-2 py-1 text-sm ${tone}`}
                         >
                           {body}
                         </div>
@@ -1166,7 +1165,7 @@ export default function DashboardPage() {
             {/* RSVP breakdown — stretches to match the tasks column. */}
             <div className="grid gap-4">
               <MobileCollapsibleCard
-                className="card flex h-full flex-col p-0 md:p-6"
+                className="card flex h-full flex-col p-0 md:px-6 md:py-5"
                 bodyClassName="flex flex-1 flex-col px-4 pb-4 md:px-0 md:pb-0"
                 title={t("dashboard.rsvp_breakdown_title")}
                 trailing={
@@ -1180,7 +1179,7 @@ export default function DashboardPage() {
                   ) : null
                 }
               >
-                <h2 className="mb-4 hidden md:block">{t("dashboard.rsvp_breakdown_title")}</h2>
+                <h2 className="mb-3 hidden md:block">{t("dashboard.rsvp_breakdown_title")}</h2>
                 <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                   <Segment
                     count={rsvp.yes}
@@ -1203,7 +1202,7 @@ export default function DashboardPage() {
                     className="bg-slate-300"
                   />
                 </div>
-                <ul className="mt-4 flex-1 divide-y divide-paper-100 dark:divide-umber-700">
+                <ul className="mt-3 flex-1 divide-y divide-paper-100 dark:divide-umber-700">
                   <RsvpRow
                     status="yes"
                     swatch="bg-emerald-500"
@@ -1238,7 +1237,7 @@ export default function DashboardPage() {
                   />
                 </ul>
                 {totalGuests > 0 && (
-                  <p className="mt-4 hidden border-t border-paper-200 pt-3 text-center text-xs text-ink-500 md:block dark:border-umber-700 dark:text-umber-300">
+                  <p className="mt-3 hidden border-t border-paper-200 pt-2 text-center text-xs text-ink-500 md:block dark:border-umber-700 dark:text-umber-300">
                     {t("dashboard.rsvp_responded_of_total", {
                       responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
                       total: formatNumber(totalGuests, locale),
@@ -1879,7 +1878,7 @@ function RsvpRow({
     <li>
       <Link
         to={`/app/guests?rsvp=${status}`}
-        className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-sm transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 dark:hover:bg-umber-700/60"
+        className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2 text-sm transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 dark:hover:bg-umber-700/60"
       >
         <span className="flex items-center gap-2.5 text-ink-700 dark:text-paper-100">
           <span className={`inline-block h-2.5 w-2.5 rounded-full ${swatch}`} aria-hidden="true" />
