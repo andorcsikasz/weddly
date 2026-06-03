@@ -85,7 +85,9 @@ export const HONEYMOON_EXTRA_TASKS: { title: LocaleText }[] = [
       en: "Check vaccinations and travel health",
     },
   },
-  { title: { hu: "Online check-in emlékeztető beállítása", en: "Set an online check-in reminder" } },
+  {
+    title: { hu: "Online check-in emlékeztető beállítása", en: "Set an online check-in reminder" },
+  },
   {
     title: {
       hu: "Útiterv és foglalások mentése offline",
@@ -124,7 +126,12 @@ export const HONEYMOON_EXTRA_TASKS: { title: LocaleText }[] = [
       en: "Apply for an international driving permit",
     },
   },
-  { title: { hu: "Pénznem és időeltolódás megnézése", en: "Check the currency and time difference" } },
+  {
+    title: {
+      hu: "Pénznem és időeltolódás megnézése",
+      en: "Check the currency and time difference",
+    },
+  },
 ];
 
 /** Light starter set of "what to consider adding" ideas — the obvious-but-

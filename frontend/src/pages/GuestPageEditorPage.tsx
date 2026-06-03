@@ -893,7 +893,9 @@ export default function GuestPageEditorPage() {
             {/* ── Public content (anyone with the link) ──────────────────── */}
             <section className="card mt-6">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h2 className="text-lg font-grotesk">{t("guest_page_editor.section_public_title")}</h2>
+                <h2 className="text-lg font-grotesk">
+                  {t("guest_page_editor.section_public_title")}
+                </h2>
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
                   <Unlock size={12} aria-hidden /> {t("guest_page_editor.section_public_eyebrow")}
                 </span>
@@ -999,7 +1001,9 @@ export default function GuestPageEditorPage() {
             {/* ── Post-RSVP unlocked content ────────────────────────────── */}
             <section className="card mt-6">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h2 className="text-lg font-grotesk">{t("guest_page_editor.section_unlocked_title")}</h2>
+                <h2 className="text-lg font-grotesk">
+                  {t("guest_page_editor.section_unlocked_title")}
+                </h2>
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
                   <Lock size={12} aria-hidden /> {t("guest_page_editor.section_unlocked_eyebrow")}
                 </span>
