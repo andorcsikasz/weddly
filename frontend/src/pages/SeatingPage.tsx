@@ -11,6 +11,7 @@ import { defaultDimsForShape, maxSeatsForTable } from "@shared/seating";
 import {
   Armchair,
   Baby,
+  ChevronDown,
   Circle,
   Copy,
   Crown,
@@ -33,6 +34,7 @@ import {
 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { InfoHint } from "../components/InfoHint";
 import { Button, Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
@@ -1101,9 +1103,9 @@ export default function SeatingPage() {
       <span aria-live="polite" aria-atomic="true" className="sr-only">
         {a11yMessage}
       </span>
-      <header className="mb-6">
+      <header className="mb-6 flex items-center gap-2">
         <h1 className="font-grotesk">{t("seating.title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("seating.sub")}</p>
+        <InfoHint text={t("seating.sub")} />
       </header>
 
       {/* Action toolbar sits just above the floor plan so the title + sub
@@ -1119,38 +1121,16 @@ export default function SeatingPage() {
         >
           <HelpCircle size={16} aria-hidden />
         </button>
-        <button
-          type="button"
-          className="btn-outline"
+        <PrintChartMenu
           disabled={previewLoading !== null}
-          onClick={() =>
+          onPick={(format) =>
             requestDownload(
-              `/api/print/seating/a4?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
-              "weddly-seating-a4.pdf",
-              t("seating.print_a4"),
+              `/api/print/seating/${format}?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
+              `weddly-seating-${format}.pdf`,
+              format === "a4" ? t("seating.print_a4") : t("seating.print_a3"),
             )
           }
-          aria-label={t("seating.print_a4")}
-          title={t("seating.print_a4")}
-        >
-          <Printer size={16} aria-hidden /> {t("seating.print_format_a4")}
-        </button>
-        <button
-          type="button"
-          className="btn-outline"
-          disabled={previewLoading !== null}
-          onClick={() =>
-            requestDownload(
-              `/api/print/seating/a3?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
-              "weddly-seating-a3.pdf",
-              t("seating.print_a3"),
-            )
-          }
-          aria-label={t("seating.print_a3")}
-          title={t("seating.print_a3")}
-        >
-          <Printer size={16} aria-hidden /> {t("seating.print_format_a3")}
-        </button>
+        />
         <button
           type="button"
           className="btn-outline"
@@ -2771,4 +2751,76 @@ function readDragData(e: DragEvent): DragData | null {
   } catch {
     return null;
   }
+}
+
+/** Single print affordance for the seating chart. One Printer button that
+ *  opens a small menu with the A4 / A3 paper sizes, replacing the pair of
+ *  side-by-side format buttons. Mirrors the click-outside-to-close menu
+ *  idiom used by the budget AddLinePicker. */
+function PrintChartMenu({
+  disabled,
+  onPick,
+}: {
+  disabled: boolean;
+  onPick: (format: "a4" | "a3") => void;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        className="btn-outline"
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t("seating.print_chart")}
+        title={t("seating.print_chart")}
+      >
+        <Printer size={16} aria-hidden /> {t("seating.print_chart")}
+        <ChevronDown size={14} aria-hidden />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 z-20 mt-2 w-40 rounded-xl border border-paper-300 bg-white p-2 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          {(["a4", "a3"] as const).map((format) => (
+            <button
+              key={format}
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink-800 transition hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+              onClick={() => {
+                setOpen(false);
+                onPick(format);
+              }}
+            >
+              <Printer size={14} className="text-ink-500 dark:text-umber-300" />
+              {format === "a4" ? t("seating.print_format_a4") : t("seating.print_format_a3")}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

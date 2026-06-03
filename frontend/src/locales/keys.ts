@@ -2261,6 +2261,7 @@ export interface LocaleMessages {
     conflict_avoid: string;
     print_a4: string;
     print_a3: string;
+    print_chart: string;
     print_place_cards: string;
     print_format_a4: string;
     print_format_a3: string;

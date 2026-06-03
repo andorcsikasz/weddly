@@ -2032,6 +2032,7 @@ const hu: LocaleMessages = {
     conflict_avoid: "kerüljék egymást",
     print_a4: "A4 ültetési rend",
     print_a3: "A3 ültetési rend",
+    print_chart: "Nyomtatás",
     print_place_cards: "Ültetőkártyák",
     print_format_a4: "A4",
     print_format_a3: "A3",

@@ -2005,6 +2005,7 @@ const en: LocaleMessages = {
     conflict_avoid: "should avoid each other",
     print_a4: "A4 seating chart",
     print_a3: "A3 seating chart",
+    print_chart: "Print",
     print_place_cards: "Place cards",
     print_format_a4: "A4",
     print_format_a3: "A3",
