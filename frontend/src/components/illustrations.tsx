@@ -401,7 +401,7 @@ export function SuppliersPreview({ className }: Common) {
               strokeWidth="1"
             />
           </g>
-          <g className="text-blush-500" transform="translate(36, 44)">
+          <g className="text-umber-700" transform="translate(36, 44)">
             {tile.kind === "venue" && (
               <path
                 d="M -14 8 L -14 -2 L 0 -14 L 14 -2 L 14 8 Z"
