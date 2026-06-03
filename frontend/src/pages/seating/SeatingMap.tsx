@@ -1034,9 +1034,8 @@ function TableShape({
                 textAnchor="middle"
                 dominantBaseline="central"
                 fontSize={chairHeightMm * 0.6}
-                fontFamily='"Cormorant Garamond", Georgia, serif'
                 fontWeight={600}
-                className={isFilled ? "fill-paper-50" : "fill-ink-700"}
+                className={`font-grotesk ${isFilled ? "fill-paper-50" : "fill-ink-700"}`}
                 style={{ pointerEvents: "none" }}
               >
                 {i + 1}
@@ -1070,9 +1069,8 @@ function TableShape({
               y={baseY}
               textAnchor="middle"
               fontSize={labelSize}
-              fontFamily='"Cormorant Garamond", Georgia, serif'
               fontWeight={600}
-              className={isSelected ? "fill-paper-50" : "fill-blush-700"}
+              className={`font-grotesk ${isSelected ? "fill-paper-50" : "fill-blush-700"}`}
             >
               {lines.length === 1
                 ? lines[0]
@@ -1324,15 +1322,15 @@ function clamp(v: number, lo: number, hi: number): number {
 
 // Wrap a table label into up to 3 lines so it stays on the table body.
 //
-// Strategy: estimate text width as length × 0.52 × fontSize (a reasonable
-// average for Cormorant Garamond), then greedy word-pack into successive
+// Strategy: estimate text width as length × 0.56 × fontSize (a reasonable
+// average for General Sans), then greedy word-pack into successive
 // lines that each fit `maxWidth`. The last line absorbs any remaining
 // words so we never produce more than MAX_LINES — better to slightly
 // overflow the last line than to chop the label mid-sentence. Hard-cuts a
 // single oversize word into MAX_LINES pieces if there are no spaces.
 function wrapLabel(label: string, maxWidth: number, fontSize: number): string[] {
   const MAX_LINES = 3;
-  const avgCharWidth = fontSize * 0.52;
+  const avgCharWidth = fontSize * 0.56;
   const maxChars = Math.max(1, Math.floor(maxWidth / avgCharWidth));
   if (label.length <= maxChars) return [label];
 
