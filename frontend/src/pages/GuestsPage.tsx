@@ -3243,6 +3243,9 @@ function GuestStat({
   return (
     <div className="inline-flex items-center gap-1.5 leading-none" title={label}>
       <dd className={numClass}>{value}</dd>
+      <span className="text-xs text-ink-300 dark:text-umber-400" aria-hidden>
+        ×
+      </span>
       <dt className="text-ink-400 dark:text-umber-300">
         {icon}
         <span className="sr-only">{label}</span>
