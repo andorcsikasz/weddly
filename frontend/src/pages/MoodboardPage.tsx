@@ -251,8 +251,10 @@ export default function MoodboardPage() {
           {/* Source-pin card — slimmed on mobile (`p-3` + `flex-nowrap` so
            *  the Pinterest link + Csere / Eltávolítás buttons share one
            *  row instead of stacking with the desktop `p-6`). The card
-           *  utility class still wins on tablet+ via the `sm:` overrides. */}
-          <div className="card mb-4 flex flex-nowrap items-center justify-between gap-2 p-3 sm:gap-3 sm:p-6">
+           *  utility class still wins on tablet+ via the `sm:` overrides.
+           *  Vertical padding is halved on desktop (`sm:py-3` vs the card's
+           *  `p-6`) so the bar stays short — it only holds one row. */}
+          <div className="card mb-4 flex flex-nowrap items-center justify-between gap-2 p-3 sm:gap-3 sm:px-6 sm:py-3">
             <a
               href={url}
               target="_blank"
