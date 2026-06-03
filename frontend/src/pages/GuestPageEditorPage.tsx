@@ -673,6 +673,7 @@ export default function GuestPageEditorPage() {
           <GuestPortalView
             data={preview}
             locale={locale}
+            onEditDate={() => navigate("/app")}
             onEditSchedule={() => navigate("/app/schedule")}
             onEditVenue={focusVenueField}
           />

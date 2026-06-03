@@ -30,11 +30,15 @@ function googleMapsUrl(lat: number, lng: number): string {
 export function GuestPortalView({
   data,
   locale,
+  onEditDate,
   onEditSchedule,
   onEditVenue,
 }: {
   data: GuestPortalView;
   locale: Locale;
+  /** When set (couple's editor preview only), the hero wedding date becomes a
+   *  shortcut to the dashboard where the date is set. Omitted on the public view. */
+  onEditDate?: () => void;
   /** When set (couple's editor preview only), the run-of-show card becomes a
    *  shortcut into the schedule editor. Omitted on the read-only public view. */
   onEditSchedule?: () => void;
@@ -89,7 +93,24 @@ export function GuestPortalView({
         <h1 className="font-serif text-3xl text-ink-900 sm:text-4xl dark:text-paper-50">
           {data.couple_display_name}
         </h1>
-        {data.wedding_date ? (
+        {onEditDate ? (
+          <button
+            type="button"
+            onClick={onEditDate}
+            title={t("guest_portal.edit_section_hint")}
+            className="mt-2 inline-flex items-center gap-2 rounded-md px-1.5 py-0.5 text-sm text-ink-600 transition hover:bg-paper-100 hover:text-ink-800 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+          >
+            {data.wedding_date ? (
+              <>
+                <CalendarDays size={14} aria-hidden />
+                {formatDate(data.wedding_date, locale)}
+              </>
+            ) : (
+              t("guest_portal.date_tbd")
+            )}
+            <Pencil size={12} aria-hidden className="opacity-60" />
+          </button>
+        ) : data.wedding_date ? (
           <p className="mt-2 inline-flex items-center gap-2 text-sm text-ink-600 dark:text-umber-200">
             <CalendarDays size={14} aria-hidden />
             {formatDate(data.wedding_date, locale)}
