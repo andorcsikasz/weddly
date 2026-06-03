@@ -2761,6 +2761,46 @@ function MealsDialog({
     }
   }
 
+  // Spreadsheet export for the caterer: one row per meal + per allergen, with
+  // a Category column so the two groups stay distinct when sorted. Quote every
+  // cell + escape embedded quotes so translated labels with commas stay intact.
+  function downloadCsv() {
+    const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const rows: string[] = [];
+    rows.push(
+      [
+        t("guests.meals_csv_col_category"),
+        t("guests.meals_csv_col_item"),
+        t("guests.meals_csv_col_count"),
+      ]
+        .map(cell)
+        .join(","),
+    );
+    const mealCat = t("guests.meals_csv_cat_meal");
+    for (const m of MEAL_ORDER) {
+      rows.push([mealCat, t(`guests.meal_${m}`), stats.mealCounts[m]].map(cell).join(","));
+    }
+    if (stats.pending > 0) {
+      rows.push([mealCat, t("guests.meals_pending_label"), stats.pending].map(cell).join(","));
+    }
+    const allergenCat = t("guests.meals_csv_cat_allergen");
+    for (const tag of DIETARY_TAG_KEYS) {
+      rows.push([allergenCat, t(`rsvp.tag_${tag}`), stats.dietaryCounts[tag]].map(cell).join(","));
+    }
+    // Prepend a UTF-8 BOM so Excel renders accented labels (Vegetáriánus,
+    // Tojás) correctly instead of mojibake.
+    const blob = new Blob([`﻿${rows.join("\r\n")}\r\n`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "weddly-meals-summary.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("guests.meals_download_success"));
+  }
+
   return (
     <Dialog
       open
@@ -2779,6 +2819,14 @@ function MealsDialog({
           >
             <ClipboardCopy size={16} aria-hidden /> {t("guests.meals_copy_text")}
           </button>
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={downloadCsv}
+            disabled={stats.totalYes === 0}
+          >
+            <Download size={16} aria-hidden /> {t("guests.meals_download_text")}
+          </button>
           <button type="button" className="btn-primary" onClick={onClose}>
             {t("guests.meals_close")}
           </button>
@@ -2791,7 +2839,7 @@ function MealsDialog({
             the whole guest list. Disabled when there are no households
             yet (nothing to PATCH) so the toggles can't desync. */}
         <section className="rounded-lg border border-paper-200 bg-paper-50/60 px-4 py-3 dark:border-umber-700 dark:bg-umber-800/40">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          <h3 className="font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
             {t("guests.rsvp_settings_title")}
           </h3>
           <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
@@ -2847,7 +2895,7 @@ function MealsDialog({
                 meal, color-keyed to its bar segment. */}
             <section className="space-y-3">
               <header className="flex items-baseline justify-between gap-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                <h3 className="font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
                   {t("guests.meals_section_meals")}
                 </h3>
                 <span className="text-xs text-ink-500 dark:text-umber-300">
@@ -2880,7 +2928,7 @@ function MealsDialog({
                 above so a glance is enough to know which is which. */}
             <section className="space-y-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-700/30">
               <header className="flex items-baseline justify-between gap-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                <h3 className="font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
                   {t("guests.meals_section_dietary")}
                 </h3>
                 <span className="text-xs text-ink-500 dark:text-umber-300">
@@ -3193,9 +3241,9 @@ function GuestStat({
       ? "text-3xl font-semibold tabular-nums text-ink-900 dark:text-paper-50"
       : "text-3xl font-semibold tabular-nums text-ink-700 dark:text-paper-100";
   return (
-    <div className="flex flex-col items-center leading-none" title={label}>
+    <div className="inline-flex items-center gap-1.5 leading-none" title={label}>
       <dd className={numClass}>{value}</dd>
-      <dt className="mt-2 text-ink-400 dark:text-umber-300">
+      <dt className="text-ink-400 dark:text-umber-300">
         {icon}
         <span className="sr-only">{label}</span>
       </dt>

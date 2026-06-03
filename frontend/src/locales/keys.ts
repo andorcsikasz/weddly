@@ -1976,6 +1976,13 @@ export interface LocaleMessages {
     meals_no_yes_yet: string;
     meals_copy_text: string;
     meals_copy_success: string;
+    meals_download_text: string;
+    meals_download_success: string;
+    meals_csv_col_category: string;
+    meals_csv_col_item: string;
+    meals_csv_col_count: string;
+    meals_csv_cat_meal: string;
+    meals_csv_cat_allergen: string;
     meals_summary_header: string;
     meals_close: string;
   };
