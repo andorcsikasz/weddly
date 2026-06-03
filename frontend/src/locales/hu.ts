@@ -2157,6 +2157,7 @@ const hu: LocaleMessages = {
     city_label: "Város",
     city_all: "Összes város",
     empty_filtered: "Erre a szűrésre nincs találat. Próbálj más szót vagy várost.",
+    load_more: "További {n} betöltése",
     bookedCard: {
       title: "Már foglaltam",
       subtitle: "Add hozzá a saját {category} szolgáltatódat.",

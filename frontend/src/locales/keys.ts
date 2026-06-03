@@ -2401,6 +2401,8 @@ export interface LocaleMessages {
     city_all: string;
     /** Empty result state when search/city filters out everything. */
     empty_filtered: string;
+    /** "Load more" button under the grid; {n} = how many more are hidden. */
+    load_more: string;
     /** "Már foglaltam" / "Already booked" card on the directory grid.
      *  Only rendered when the active group AND sub-category are both
      *  set. Couples either pick an existing match via the autocomplete

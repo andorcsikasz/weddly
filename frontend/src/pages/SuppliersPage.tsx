@@ -1219,7 +1219,7 @@ export default function SuppliersPage() {
               />
             </div>
           )}
-          {filtered.map((s) => {
+          {visibleSuppliers.map((s) => {
             const Icon = CATEGORY_ICON[s.category];
             const isHighlighted = s.id === highlightId;
             const isSaved = s.source !== "self" && saved.has(s.id);
@@ -1708,6 +1708,17 @@ export default function SuppliersPage() {
             <p className="col-span-full py-8 text-center text-sm text-ink-500 dark:text-umber-300">
               {t("suppliers.empty_filtered")}
             </p>
+          )}
+          {filtered.length > visibleCount && (
+            <div className="col-span-full flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((c) => c + SUPPLIERS_PAGE_SIZE)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-4 text-sm font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+              >
+                {t("suppliers.load_more", { n: filtered.length - visibleCount })}
+              </button>
+            </div>
           )}
         </div>
       )}

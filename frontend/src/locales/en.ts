@@ -2127,6 +2127,7 @@ const en: LocaleMessages = {
     city_label: "City",
     city_all: "All cities",
     empty_filtered: "No suppliers match this search. Try a different word or city.",
+    load_more: "Load {n} more",
     bookedCard: {
       title: "Already booked",
       subtitle: "Add the {category} you've already booked.",
