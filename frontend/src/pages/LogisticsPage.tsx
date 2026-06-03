@@ -436,7 +436,7 @@ export default function LogisticsPage() {
   return (
     <>
       <header className="mb-6">
-        <h1>{t("logistics.title")}</h1>
+        <h1 className="font-grotesk">{t("logistics.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("logistics.sub")}</p>
       </header>
 
@@ -562,7 +562,7 @@ export default function LogisticsPage() {
           }}
           onDrop={dropOnSidebar}
         >
-          <h2 className="text-lg">{t("logistics.sidebar_title")}</h2>
+          <h2 className="text-lg font-grotesk">{t("logistics.sidebar_title")}</h2>
           {/* Drag-language only on devices that actually drag. On a
            *  coarse-pointer device (touch / mobile) we'd previously stack
            *  the desktop "drag a guest…" copy *above* the tap callout — two

@@ -625,7 +625,7 @@ export default function GuestPageEditorPage() {
   return (
     <>
       <header className="mb-6">
-        <h1>{t("guest_page_editor.title")}</h1>
+        <h1 className="font-grotesk">{t("guest_page_editor.title")}</h1>
         <p className="mt-2 max-w-2xl text-sm text-ink-600 dark:text-umber-200">
           {t("guest_page_editor.subtitle")}
         </p>
@@ -673,7 +673,7 @@ export default function GuestPageEditorPage() {
            *  for save-the-dates / Instagram bio) and the slug + /rsvp pair the
            *  couple uses to brief individual guests on how to RSVP. */}
           <section className="card">
-            <h2 className="text-lg flex items-center gap-2">
+            <h2 className="text-lg flex items-center gap-2 font-grotesk">
               <Globe size={18} aria-hidden /> {t("guest_page_editor.section_share_title")}
             </h2>
             <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
@@ -858,7 +858,7 @@ export default function GuestPageEditorPage() {
             >
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-lg">{t("wedding_site_editor.publish_title")}</h2>
+                  <h2 className="text-lg font-grotesk">{t("wedding_site_editor.publish_title")}</h2>
                   <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
                     {isPublic
                       ? t("wedding_site_editor.publish_body_on")
@@ -893,7 +893,7 @@ export default function GuestPageEditorPage() {
             {/* ── Public content (anyone with the link) ──────────────────── */}
             <section className="card mt-6">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h2 className="text-lg">{t("guest_page_editor.section_public_title")}</h2>
+                <h2 className="text-lg font-grotesk">{t("guest_page_editor.section_public_title")}</h2>
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
                   <Unlock size={12} aria-hidden /> {t("guest_page_editor.section_public_eyebrow")}
                 </span>
@@ -999,7 +999,7 @@ export default function GuestPageEditorPage() {
             {/* ── Post-RSVP unlocked content ────────────────────────────── */}
             <section className="card mt-6">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h2 className="text-lg">{t("guest_page_editor.section_unlocked_title")}</h2>
+                <h2 className="text-lg font-grotesk">{t("guest_page_editor.section_unlocked_title")}</h2>
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
                   <Lock size={12} aria-hidden /> {t("guest_page_editor.section_unlocked_eyebrow")}
                 </span>

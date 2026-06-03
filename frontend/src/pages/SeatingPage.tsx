@@ -1102,7 +1102,7 @@ export default function SeatingPage() {
         {a11yMessage}
       </span>
       <header className="mb-6">
-        <h1>{t("seating.title")}</h1>
+        <h1 className="font-grotesk">{t("seating.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("seating.sub")}</p>
       </header>
 
@@ -1257,7 +1257,7 @@ export default function SeatingPage() {
 
       {tables.length > 0 && (
         <div className="mb-4 mt-2 border-t border-paper-300 pt-4 dark:border-umber-700">
-          <h2 className="text-base">{t("seating.assignments_section_title")}</h2>
+          <h2 className="text-base font-grotesk">{t("seating.assignments_section_title")}</h2>
           <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
             {t("seating.assignments_section_hint")}
           </p>
@@ -1357,7 +1357,7 @@ export default function SeatingPage() {
             dropToUnassigned(e);
           }}
         >
-          <h2 className="text-lg">{t("seating.unassigned_guests")}</h2>
+          <h2 className="text-lg font-grotesk">{t("seating.unassigned_guests")}</h2>
           <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
             {draggingSeatedId !== null
               ? unassignedHover

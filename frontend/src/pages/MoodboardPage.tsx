@@ -171,7 +171,7 @@ export default function MoodboardPage() {
   return (
     <>
       <header className="mb-6">
-        <h1>{t("moodboard.title")}</h1>
+        <h1 className="font-grotesk">{t("moodboard.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("moodboard.sub")}</p>
       </header>
 
@@ -183,7 +183,7 @@ export default function MoodboardPage() {
                 <Sparkles size={22} aria-hidden="true" />
               </span>
               <div>
-                <h2 className="font-serif text-xl">{t("moodboard.empty_title")}</h2>
+                <h2 className="font-grotesk text-xl">{t("moodboard.empty_title")}</h2>
                 <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
                   {t("moodboard.empty_body")}
                 </p>

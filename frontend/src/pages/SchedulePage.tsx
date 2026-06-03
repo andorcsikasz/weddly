@@ -210,7 +210,7 @@ export default function SchedulePage() {
     <>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1>{t("schedule.title")}</h1>
+          <h1 className="font-grotesk">{t("schedule.title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
             {t("schedule.sub")}
           </p>
@@ -515,7 +515,7 @@ function ScheduleEventDialog({
         onSubmit={onSubmit}
       >
         <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4 dark:border-umber-700">
-          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">
+          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50 font-grotesk">
             {existing ? t("schedule.edit_event") : t("schedule.add_event")}
           </h2>
           <button
