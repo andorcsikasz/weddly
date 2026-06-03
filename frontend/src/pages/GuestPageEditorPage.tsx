@@ -618,6 +618,34 @@ export default function GuestPageEditorPage() {
         <InfoHint text={t("guest_page_editor.subtitle")} />
       </header>
 
+      {/* ── Guest-view preview (on top) ──────────────────────────────────
+       *  The read-only "this is what your guest sees" view sits above the
+       *  editor so the couple sees the result first. The divider labels the
+       *  guest view directly below it; the editor (its own <details> summary
+       *  is the boundary) follows underneath. */}
+      <div
+        className="mb-6 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200"
+        role="separator"
+        aria-label={t("guest_page_editor.preview_divider_label")}
+      >
+        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+        <span>{t("guest_page_editor.preview_divider_label")}</span>
+        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+      </div>
+
+      <section className="mb-8">
+        <p className="mb-3 text-sm text-ink-600 dark:text-umber-200">
+          {t("guest_page_editor.preview_subtitle")}
+        </p>
+        {loading ? (
+          <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
+        ) : preview ? (
+          <GuestPortalView data={preview} locale={locale} />
+        ) : (
+          <p className="text-sm text-ink-500 dark:text-umber-300">{t("guest_preview.empty")}</p>
+        )}
+      </section>
+
       {/* ── Editor block (collapsible) ───────────────────────────────────
        *  Everything from the share artefact through the save button lives
        *  inside one <details>, so the couple can fold the whole editor
@@ -1067,35 +1095,6 @@ export default function GuestPageEditorPage() {
           </form>
         </div>
       </details>
-
-      {/* ── Divider into guest-view preview ─────────────────────────────
-       *  Visual break so it's obvious where the editor ends and the
-       *  read-only "this is what your guest sees" view begins. The divider
-       *  is the only boundary signal now — the preview heading below was
-       *  redundant with this label and got removed in the polish pass. */}
-      <div
-        className="my-8 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200"
-        role="separator"
-        aria-label={t("guest_page_editor.preview_divider_label")}
-      >
-        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-        <span>{t("guest_page_editor.preview_divider_label")}</span>
-        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-      </div>
-
-      {/* ── Live preview ────────────────────────────────────────────── */}
-      <section>
-        <p className="mb-3 text-sm text-ink-600 dark:text-umber-200">
-          {t("guest_page_editor.preview_subtitle")}
-        </p>
-        {loading ? (
-          <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
-        ) : preview ? (
-          <GuestPortalView data={preview} locale={locale} />
-        ) : (
-          <p className="text-sm text-ink-500 dark:text-umber-300">{t("guest_preview.empty")}</p>
-        )}
-      </section>
     </>
   );
 }
