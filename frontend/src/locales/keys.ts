@@ -1550,6 +1550,7 @@ export interface LocaleMessages {
     url_label: string;
     url_placeholder: string;
     url_help: string;
+    suggestion_label: string;
     save: string;
     change: string;
     clear: string;

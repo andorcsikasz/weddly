@@ -1415,6 +1415,7 @@ const en: LocaleMessages = {
     url_placeholder: "https://www.pinterest.com/username/wedding/",
     url_help:
       "Open the board on Pinterest, then copy the link from the address bar. Only public boards will load.",
+    suggestion_label: "Try a sample board",
     save: "Save",
     change: "Replace",
     clear: "Remove",

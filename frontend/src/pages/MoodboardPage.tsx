@@ -30,6 +30,11 @@ const PERSONAL_DEFAULT_URL = "https://hu.pinterest.com/andorcsikasz/when-i-get-m
 // a subsequent real workspace on the same machine).
 const DEMO_DEFAULT_URL = "https://hu.pinterest.com/weddlyxyz/when-i-get-married/";
 
+// Public sample board offered as a one-click suggestion under the URL input,
+// so a couple with no Pinterest board of their own can still see the page
+// populated. Same wēddly board the demo workspace prefills.
+const SUGGESTED_BOARD_URL = "https://hu.pinterest.com/weddlyxyz/when-i-get-married/";
+
 type ErrorCode = "invalid_url" | "not_found" | "private" | "empty" | "fetch_failed";
 
 const ERROR_KEY: Record<ErrorCode, string> = {
@@ -155,13 +160,14 @@ export default function MoodboardPage() {
     };
   }, [url, editing]);
 
-  function commit() {
-    const trimmed = draft.trim();
+  function commitUrl(value: string) {
+    const trimmed = value.trim();
     if (!isPinterestBoardUrl(trimmed)) {
       setFormError("invalid_url");
       return;
     }
     setFormError(null);
+    setDraft(trimmed);
     setUrl(trimmed);
     try {
       window.localStorage.setItem(STORAGE_KEY, trimmed);
@@ -169,6 +175,10 @@ export default function MoodboardPage() {
       /* localStorage blocked — fine, the page still works for this session */
     }
     setEditing(false);
+  }
+
+  function commit() {
+    commitUrl(draft);
   }
 
   function clear() {
@@ -245,6 +255,18 @@ export default function MoodboardPage() {
                 {t("moodboard.url_help")}
               </p>
             )}
+            {!draft.trim() ? (
+              <button
+                type="button"
+                onClick={() => commitUrl(SUGGESTED_BOARD_URL)}
+                className="mt-1 inline-flex items-center gap-1.5 self-start rounded-full border border-paper-300 px-3 py-1 text-xs font-medium text-ink-700 transition-colors hover:border-blush-300 hover:text-blush-700 dark:border-umber-700 dark:text-paper-100 dark:hover:border-blush-400/40 dark:hover:text-blush-300"
+              >
+                <span className="text-blush-700 dark:text-blush-300">
+                  <PinterestMark size={14} />
+                </span>
+                {t("moodboard.suggestion_label")}
+              </button>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" className="btn-primary btn-sm" onClick={commit}>
