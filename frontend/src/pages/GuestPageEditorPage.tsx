@@ -666,6 +666,19 @@ export default function GuestPageEditorPage() {
         )}
       </section>
 
+      {/* ── Divider into the editor ──────────────────────────────────────
+       *  Marks where the read-only guest view ends and the editing surface
+       *  below begins. */}
+      <div
+        className="mb-6 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200"
+        role="separator"
+        aria-label={t("guest_page_editor.editor_divider_label")}
+      >
+        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+        <span>{t("guest_page_editor.editor_divider_label")}</span>
+        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+      </div>
+
       {/* ── Editor block (collapsible) ───────────────────────────────────
        *  Everything from the share artefact through the save button lives
        *  inside one <details>, so the couple can fold the whole editor

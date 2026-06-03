@@ -1520,6 +1520,7 @@ const hu: LocaleMessages = {
     todo_item_venue: "helyszín neve",
     venue_saved_prefix: "A szállítóid közül:",
     preview_divider_label: "Innen a vendégoldal",
+    editor_divider_label: "Oldal szerkesztése",
     preview_title: "Élő előnézet",
     preview_subtitle:
       "Ezt látja most a vendég. Mentsd el a fenti módosításokat, hogy itt is frissüljön a dátum, a menetrend és a térkép.",

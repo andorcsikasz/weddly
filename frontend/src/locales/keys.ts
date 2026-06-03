@@ -1648,6 +1648,8 @@ export interface LocaleMessages {
     todo_item_venue: string;
     venue_saved_prefix: string;
     preview_divider_label: string;
+    /** Divider label marking the start of the editor, below the guest view. */
+    editor_divider_label: string;
     preview_title: string;
     preview_subtitle: string;
     /** Per-household share section — lists each household with a personal

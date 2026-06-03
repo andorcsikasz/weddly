@@ -1505,6 +1505,7 @@ const en: LocaleMessages = {
     todo_item_venue: "venue name",
     venue_saved_prefix: "From your vendors:",
     preview_divider_label: "Guest view below",
+    editor_divider_label: "Edit your page",
     preview_title: "Live preview",
     preview_subtitle:
       "What a guest sees right now. Save your edits above to refresh the date, schedule and location pin shown here.",
