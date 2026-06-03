@@ -1347,6 +1347,12 @@ export default function SeatingPage() {
                 ? t("seating.tap_select_help")
                 : t("seating.drag_help")}
           </p>
+          <Link
+            to="/app/guests"
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-blush-700 underline-offset-4 transition-colors hover:underline dark:text-blush-300"
+          >
+            <Users size={14} aria-hidden /> {t("seating.go_to_guests")}
+          </Link>
           {unassigned.length === 0 && partnerSlots.length === 0 ? (
             <p className="mt-4 text-sm text-ink-600 dark:text-umber-200">
               {t("seating.no_unassigned")}
@@ -2364,7 +2370,7 @@ function TableCard({
   return (
     <div
       className={`card cursor-pointer transition-shadow ${
-        isSelected ? "ring-2 ring-blush-400 dark:ring-blush-400/60" : "hover:shadow-pop"
+        isSelected ? "ring-2 ring-umber-600 dark:ring-umber-400/60" : "hover:shadow-pop"
       }`}
       onClick={onSelect}
       role="button"

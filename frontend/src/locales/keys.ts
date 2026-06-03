@@ -2271,6 +2271,7 @@ export interface LocaleMessages {
     confirm_delete_table: string;
     unassigned_guests: string;
     no_unassigned: string;
+    go_to_guests: string;
     no_tables: string;
     add_first_table: string;
     empty_cta_add_table: string;

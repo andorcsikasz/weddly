@@ -2011,6 +2011,7 @@ const en: LocaleMessages = {
     confirm_delete_table: "Delete this table?",
     unassigned_guests: "Unassigned guests",
     no_unassigned: "Everyone is seated!",
+    go_to_guests: "Manage guests",
     no_tables: "No tables yet",
     add_first_table: "Add one to get started.",
     empty_cta_add_table: "Add your first table",

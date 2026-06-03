@@ -2035,6 +2035,7 @@ const hu: LocaleMessages = {
     confirm_delete_table: "Biztos törölhető ez az asztal?",
     unassigned_guests: "Nem leültetett vendégek",
     no_unassigned: "Mindenki le van ültetve!",
+    go_to_guests: "Vendégek kezelése",
     no_tables: "Még nincsenek asztalok",
     add_first_table: "Adj hozzá egyet a kezdéshez.",
     empty_cta_add_table: "Első asztal hozzáadása",
