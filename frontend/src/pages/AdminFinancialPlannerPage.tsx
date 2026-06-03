@@ -18,6 +18,7 @@ import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   type AdminFinancialPlannerOverview,
   type ForecastAssumptions,
+  type FxRates,
   projectRevenue,
   type StripeHealth,
   type SubscriptionUnitEconomics,
@@ -27,7 +28,6 @@ import { FOUNDING_CAP, type SubscriptionStatus } from "@shared/billing";
 import { AdminPageHeader, Pill } from "../components/admin";
 import { useConfirm, useToast } from "../components/ui";
 import { adminFinancialPlannerApi } from "../lib/endpoints";
-import { type FxRates, fetchFxRates } from "../lib/fx";
 import { formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -168,17 +168,20 @@ export default function AdminFinancialPlannerPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const ac = new AbortController();
     const load = () => {
-      fetchFxRates(ac.signal).then((r) => {
-        if (!cancelled && r) setFx(r);
-      });
+      adminFinancialPlannerApi
+        .fx()
+        .then((r) => {
+          if (!cancelled && r) setFx(r);
+        })
+        .catch(() => {
+          /* leave the last good rate in place */
+        });
     };
     load();
     const id = setInterval(load, 10 * 60_000);
     return () => {
       cancelled = true;
-      ac.abort();
       clearInterval(id);
     };
   }, []);
@@ -1011,9 +1014,9 @@ function BillingLaunchCard({
 }
 
 /** Live exchange-rate strip in the home currency (HUF): 1 EUR and 1 USD in
- *  forint. The ECB feed is EUR-based, so USD→HUF is the cross rate
- *  (HUF-per-EUR ÷ USD-per-EUR). Renders nothing until the first successful
- *  fetch. */
+ *  forint. The feed is EUR-based (live market mid, server-fetched), so USD→HUF
+ *  is the cross rate (HUF-per-EUR ÷ USD-per-EUR). Renders nothing until the
+ *  first successful fetch. */
 function FxStrip({ fx }: { fx: FxRates | null }) {
   if (!fx) return null;
   const hufPerEur = fx.rates.HUF;
@@ -1039,7 +1042,8 @@ function FxStrip({ fx }: { fx: FxRates | null }) {
         srLabel={`1 amerikai dollár = ${ft(hufPerUsd)}`}
       />
       <span className="ml-auto text-xs text-neutral-500 dark:text-umber-300">
-        ECB{fx.asOf ? ` · ${fx.asOf}` : ""}
+        élő ·{" "}
+        {new Date(fx.as_of).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" })}
       </span>
     </section>
   );

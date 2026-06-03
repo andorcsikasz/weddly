@@ -41,7 +41,11 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
 } from "@shared/types";
-import type { AdminFinancialPlannerOverview, StripeHealth } from "@shared/admin_financial_planner";
+import type {
+  AdminFinancialPlannerOverview,
+  FxRates,
+  StripeHealth,
+} from "@shared/admin_financial_planner";
 import type { BillingStatusResponse } from "@shared/billing";
 import type { BlogPost } from "@shared/blog_posts";
 import type { GuestPortalView } from "@shared/guest_portal";
@@ -1262,6 +1266,9 @@ export const adminFinancialPlannerApi = {
   /** Stripe connection + config health (admin monitor). Live API ping when a
    *  key is set; config-readiness only when billing isn't wired up yet. */
   stripeHealth: () => apiFetch<StripeHealth>("GET", "/api/admin/financial-planner/stripe-health"),
+  /** Live EUR→HUF/USD/CNY rate (server-fetched market mid). null when the
+   *  upstream FX feed is unreachable. */
+  fx: () => apiFetch<FxRates | null>("GET", "/api/admin/financial-planner/fx"),
 };
 
 export const adminAnalyticsApi = {

@@ -11,6 +11,20 @@ import type { Currency } from "./types";
  *  1 990 Ft ≈ 5 € → ~398; rounded to 400. */
 export const HUF_PER_EUR = 400;
 
+/** Live EUR-based FX quote for the planner's rate strip + the HU tax
+ *  conversion. Fetched server-side (real-time market mid), so the browser
+ *  isn't tied to a once-a-day reference rate. null when the upstream is
+ *  unreachable — callers fall back to a static rate. */
+export interface FxRates {
+  base: "EUR";
+  /** Units of each currency per 1 EUR (live market mid). */
+  rates: { HUF: number; USD: number; CNY: number };
+  /** Unix ms of the upstream quote. */
+  as_of: number;
+  /** Upstream source label (e.g. "yahoo"). */
+  source: string;
+}
+
 export interface CurrencyMrr {
   currency: Currency;
   /** Paying subscribers (active + past_due) billed in this currency. */

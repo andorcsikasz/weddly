@@ -122,6 +122,24 @@ describe("GET /api/admin/financial-planner/stripe-health", () => {
   });
 });
 
+describe("GET /api/admin/financial-planner/fx", () => {
+  test("requires admin", async () => {
+    const { token } = await bootstrapCouple("fx-nonadmin@weddly.test");
+    const r = await req("GET", "/api/admin/financial-planner/fx", undefined, { token });
+    expect(r.status).toBe(403);
+  });
+
+  test("returns null without hitting the network in test env", async () => {
+    wipeAll();
+    const token = await addAdmin();
+    // setup.ts pins FX_DISABLED=1 so the endpoint never makes an outbound FX
+    // call — it returns null and the strip just hides.
+    const r = await req<unknown>("GET", "/api/admin/financial-planner/fx", undefined, { token });
+    expect(r.status).toBe(200);
+    expect(r.data).toBeNull();
+  });
+});
+
 // Per-subscription unit economics — the gross HUF price waterfall on the
 // planner page. Pins the founder's reference figures so a rate tweak can't
 // silently drift the breakdown.

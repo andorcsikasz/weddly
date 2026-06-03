@@ -40,6 +40,7 @@ process.env.AMADEUS_BASE_URL = "";
 process.env.AMADEUS_CLIENT_ID = "";
 process.env.AMADEUS_CLIENT_SECRET = "";
 process.env.SERPAPI_KEY = "";
+process.env.FX_DISABLED = "1"; // no outbound FX call in tests; fx endpoint returns null
 // Enables the Google ID-token verifier's HMAC test-bearer path so the E2E
 // suite can exercise /api/auth/google without hitting Google. Tests mint
 // bearers via mintTestBearer(); see backend/src/lib/google_oauth.ts.

@@ -19,6 +19,7 @@ import {
   stripe,
 } from "../domain/billing";
 import { requireAdmin } from "../domain/users";
+import { getFxRates } from "../lib/fx";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 
 const STATUSES: SubscriptionStatus[] = [
@@ -211,8 +212,16 @@ async function handleStripeHealth(ctx: Ctx): Promise<Response> {
   return json(await stripeHealth());
 }
 
+/** Live EUR→HUF/USD/CNY rate for the planner's strip + tax conversion.
+ *  Returns null when the upstream FX feed is unreachable (the strip hides). */
+async function handleFx(ctx: Ctx): Promise<Response> {
+  requireAdmin(ctx);
+  return json(await getFxRates());
+}
+
 export function registerAdminFinancialPlannerRoutes(router: Router) {
   router.get("/api/admin/financial-planner/overview", handleOverview, true);
   router.post("/api/admin/financial-planner/enforcement", handleSetEnforcement, true);
   router.get("/api/admin/financial-planner/stripe-health", handleStripeHealth, true);
+  router.get("/api/admin/financial-planner/fx", handleFx, true);
 }
