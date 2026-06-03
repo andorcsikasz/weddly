@@ -1372,6 +1372,7 @@ const en: LocaleMessages = {
     costs_empty_short: "Start with a category:",
     cost_actual_inline: "Spent: {actual}",
     slider_aria: "{label} planned amount",
+    rename: "Rename",
     preset: {
       travel: "Travel",
       stay: "Accommodation",

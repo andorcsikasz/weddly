@@ -50,7 +50,11 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { Dialog, useConfirm, useToast } from "../components/ui";
-import { TASK_TEMPLATE_GROUPS, localizeText } from "../lib/planning_templates";
+import {
+  HONEYMOON_EXTRA_TASKS,
+  TASK_TEMPLATE_GROUPS,
+  localizeText,
+} from "../lib/planning_templates";
 import { ApiError } from "../lib/api";
 import { type AirportOrigin, searchAirportOrigins } from "../lib/airport_origins";
 import { budgetApi, coupleApi, honeymoonApi, placesApi, planningApi } from "../lib/endpoints";
@@ -135,6 +139,11 @@ const PRESETS: readonly Preset[] = [
     match: [],
   },
 ];
+
+/** The "Egyéb / Other" catch-all can be added up to this many times (every
+ *  other preset stays single-use). Each extra row gets a numbered default
+ *  label until the couple renames it. */
+const MAX_OTHER_LINES = 5;
 
 function presetFor(label: string): Preset {
   const lc = label.toLowerCase();
@@ -346,6 +355,12 @@ export default function HoneymoonPage() {
     for (const l of honeymoonLines) used.add(presetFor(l.label).id);
     return used;
   }, [honeymoonLines]);
+  // "Egyéb / Other" is the exception to single-use: it can hold up to
+  // MAX_OTHER_LINES rows, so we count them to gate the chip + the default name.
+  const otherCount = useMemo(
+    () => honeymoonLines.filter((l) => presetFor(l.label).id === "other").length,
+    [honeymoonLines],
+  );
   const totals = useMemo(() => {
     let planned = 0;
     let actual = 0;
@@ -408,8 +423,16 @@ export default function HoneymoonPage() {
   async function addPreset(preset: Preset) {
     // Belt-and-suspenders — the chip is disabled in the UI when used, but
     // guard the action too so a stale click can't double-add a category.
-    if (usedPresetIds.has(preset.id)) return;
-    const label = t(`honeymoon.preset.${preset.id}`);
+    // "Other" is the exception: addable up to MAX_OTHER_LINES times.
+    if (preset.id === "other") {
+      if (otherCount >= MAX_OTHER_LINES) return;
+    } else if (usedPresetIds.has(preset.id)) {
+      return;
+    }
+    const base = t(`honeymoon.preset.${preset.id}`);
+    // Number the extra "Other" rows (Egyéb 2, Egyéb 3, …) so they're
+    // distinguishable until the couple renames them.
+    const label = preset.id === "other" && otherCount > 0 ? `${base} ${otherCount + 1}` : base;
     try {
       const r = await budgetApi.createLine({
         category: "honeymoon",
@@ -446,6 +469,30 @@ export default function HoneymoonPage() {
         return;
       }
       toast.error(t("budget.save_failed_retry"));
+    }
+  }
+
+  async function renameLine(line: BudgetLine, rawLabel: string) {
+    const label = rawLabel.trim();
+    if (!label || label === line.label) return;
+    const next = lines.map((l) => (l.id === line.id ? { ...l, label } : l));
+    setLines(next);
+    try {
+      const r = await budgetApi.updateLine(
+        line.id,
+        { ...line, label },
+        { ifMatch: line.updated_at },
+      );
+      setLines((prev) => prev.map((l) => (l.id === r.line.id ? r.line : l)));
+      publish("budget:changed");
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        toast.error(t("budget.save_conflict"));
+        refresh();
+        return;
+      }
+      toast.error(e instanceof ApiError ? e.message : t("budget.save_failed_retry"));
+      refresh();
     }
   }
 
@@ -664,7 +711,12 @@ export default function HoneymoonPage() {
             </p>
           </div>
           {honeymoonLines.length > 0 && (
-            <PresetChips onPick={addPreset} usedIds={usedPresetIds} compact />
+            <PresetChips
+              onPick={addPreset}
+              usedIds={usedPresetIds}
+              otherCount={otherCount}
+              compact
+            />
           )}
         </div>
 
@@ -677,7 +729,12 @@ export default function HoneymoonPage() {
             <p className="text-sm text-ink-700 dark:text-paper-100">
               {t("honeymoon.costs_empty_short")}
             </p>
-            <PresetChips onPick={addPreset} usedIds={usedPresetIds} compact />
+            <PresetChips
+              onPick={addPreset}
+              usedIds={usedPresetIds}
+              otherCount={otherCount}
+              compact
+            />
           </div>
         ) : (
           <div className="card overflow-hidden p-0">
@@ -700,6 +757,7 @@ export default function HoneymoonPage() {
                       return { ...d, [line.id]: v };
                     })
                   }
+                  onRename={(label) => renameLine(line, label)}
                   onRemove={() => removeLine(line)}
                 />
               ))}
@@ -1190,20 +1248,29 @@ function BudgetSummaryTile({
 function PresetChips({
   onPick,
   usedIds,
+  otherCount,
   compact,
 }: {
   onPick: (preset: Preset) => Promise<void>;
   /** Preset IDs that already have a matching honeymoon line. Their chip
    *  goes disabled with a check icon — one category per line. */
   usedIds: Set<Preset["id"]>;
+  /** How many "Other" rows exist. The Other chip stays active (and shows an
+   *  n/max counter) until MAX_OTHER_LINES are used. */
+  otherCount: number;
   compact?: boolean;
 }) {
   const { t } = useT();
   return (
     <div className={`flex flex-wrap gap-2 ${compact ? "" : "pt-1"}`}>
       {PRESETS.map((p) => {
-        const used = usedIds.has(p.id);
+        const isOther = p.id === "other";
+        const used = isOther ? otherCount >= MAX_OTHER_LINES : usedIds.has(p.id);
         const Icon = used ? Check : p.icon;
+        const label =
+          isOther && otherCount > 0
+            ? `${t("honeymoon.preset.other")} (${otherCount}/${MAX_OTHER_LINES})`
+            : t(`honeymoon.preset.${p.id}`);
         return (
           <button
             key={p.id}
@@ -1218,7 +1285,7 @@ function PresetChips({
             }
           >
             <Icon size={18} aria-hidden="true" />
-            {t(`honeymoon.preset.${p.id}`)}
+            {label}
           </button>
         );
       })}
@@ -1237,6 +1304,7 @@ function CostRow({
   currency,
   onPlannedChange,
   onDraft,
+  onRename,
   onRemove,
 }: {
   line: BudgetLine;
@@ -1248,6 +1316,7 @@ function CostRow({
    *  tile can update live during drag. Call with `null` once the row has
    *  settled (commit landed, drag returned to the saved value, etc.). */
   onDraft: (v: number | null) => void;
+  onRename: (label: string) => Promise<void>;
   onRemove: () => void;
 }) {
   const { t } = useT();
@@ -1255,6 +1324,23 @@ function CostRow({
   const Icon = preset.icon;
   const [localValue, setLocalValue] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  // Inline rename: click the label to edit it. Draft re-syncs whenever the
+  // saved label changes (after a successful rename or external refresh).
+  const [editingLabel, setEditingLabel] = useState(false);
+  const [labelDraft, setLabelDraft] = useState(line.label);
+  useEffect(() => {
+    setLabelDraft(line.label);
+  }, [line.label]);
+
+  function commitLabel() {
+    setEditingLabel(false);
+    const trimmed = labelDraft.trim();
+    if (!trimmed || trimmed === line.label) {
+      setLabelDraft(line.label);
+      return;
+    }
+    void onRename(trimmed);
+  }
   // Ref-guard prevents a duplicate save when blur fires immediately after
   // mouseup — state updates haven't flushed yet, so a useState gate would
   // see `saving === false` on the second call.
@@ -1301,12 +1387,35 @@ function CostRow({
       {/* Icon + label — col 1 on both layouts. */}
       <div className="col-start-1 row-start-1 flex items-center gap-2.5 min-w-0">
         <Icon size={18} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden="true" />
-        <p
-          className="truncate text-sm font-medium text-ink-900 dark:text-paper-50"
-          title={line.label}
-        >
-          {line.label}
-        </p>
+        {editingLabel ? (
+          <input
+            type="text"
+            value={labelDraft}
+            autoFocus
+            onChange={(e) => setLabelDraft(e.target.value)}
+            onBlur={commitLabel}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitLabel();
+              } else if (e.key === "Escape") {
+                setLabelDraft(line.label);
+                setEditingLabel(false);
+              }
+            }}
+            className="input min-w-0 flex-1 px-2 py-1 text-sm"
+            aria-label={t("honeymoon.rename")}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditingLabel(true)}
+            className="truncate text-left text-sm font-medium text-ink-900 decoration-dotted hover:underline dark:text-paper-50"
+            title={t("honeymoon.rename")}
+          >
+            {line.label}
+          </button>
+        )}
       </div>
 
       {/* Slider — row 2 spanning all cols on mobile, col 2 inline on desktop. */}
@@ -1870,7 +1979,7 @@ function HoneymoonTodoSection({
   // TASK_TEMPLATE_GROUPS so the wand on this page stays in lockstep with
   // the planning page's honeymoon section — adding a template item there
   // surfaces it here automatically.
-  const wandItems = useMemo(
+  const wandBaseItems = useMemo(
     () => TASK_TEMPLATE_GROUPS.find((g) => g.id === "honeymoon")?.items ?? [],
     [],
   );
@@ -1883,6 +1992,19 @@ function HoneymoonTodoSection({
     for (const item of items) set.add(item.title);
     return set;
   }, [items]);
+  // For every base item already on the list, surface one fresh suggestion from
+  // the reserve pool at the bottom (skipping any reserve task already added) so
+  // the pack always offers a full set of things still worth doing. The already-
+  // on-the-list base items stay visible (greyed, "Már a listán"); the extras are
+  // brand-new and so default to selected.
+  const wandItems = useMemo(() => {
+    const isOnList = (it: { title: { hu: string; en: string } }) =>
+      existingTitles.has(it.title.hu) || existingTitles.has(it.title.en);
+    const dupeCount = wandBaseItems.filter(isOnList).length;
+    if (dupeCount === 0) return wandBaseItems;
+    const extras = HONEYMOON_EXTRA_TASKS.filter((it) => !isOnList(it)).slice(0, dupeCount);
+    return [...wandBaseItems, ...extras];
+  }, [wandBaseItems, existingTitles]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   // Reset the selection every time the dialog opens — default to "every
   // template item not already in the list".

@@ -1387,6 +1387,7 @@ const hu: LocaleMessages = {
     costs_empty_short: "Kezdd egy kategóriával:",
     cost_actual_inline: "Eddig: {actual}",
     slider_aria: "{label} tervezett összeg",
+    rename: "Átnevezés",
     preset: {
       travel: "Utazás",
       stay: "Szállás",

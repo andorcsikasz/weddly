@@ -1507,6 +1507,8 @@ export interface LocaleMessages {
     cost_actual_inline: string;
     /** Aria-label for the per-card range slider. Receives `{label}`. */
     slider_aria: string;
+    /** Click-to-edit label affordance on a cost row (title + aria-label). */
+    rename: string;
     /** Preset chip labels — used as the seed `label` when creating a budget
      *  line, and as the chip's display text. */
     preset: {
