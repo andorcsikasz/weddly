@@ -449,12 +449,6 @@ export default function GuestsPage() {
           <h1 className="font-grotesk">{t("guests.title")}</h1>
           {guests.length > 0 ? (
             <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-              <GuestStat
-                value={guests.length}
-                label={t("guests.total_summary_unit")}
-                icon={<Users size={18} aria-hidden />}
-                tone="primary"
-              />
               {plannedGuests !== null && (
                 <GuestStat
                   value={plannedGuests}
@@ -462,6 +456,12 @@ export default function GuestsPage() {
                   icon={<Target size={18} aria-hidden />}
                 />
               )}
+              <GuestStat
+                value={guests.length}
+                label={t("guests.total_summary_unit")}
+                icon={<Users size={18} aria-hidden />}
+                tone="primary"
+              />
               <GuestStat
                 value={households.length}
                 label={t("guests.total_summary_households_unit")}
