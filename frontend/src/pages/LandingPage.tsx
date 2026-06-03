@@ -1105,7 +1105,7 @@ function CoupleCardsTeaser() {
               <li key={deck.id} className="h-full">
                 <Link
                   to={`${toolPath}?deck=${deck.id}`}
-                  className={`group flex aspect-[2/3] h-full flex-col items-center justify-between rounded-2xl px-3 py-4 text-center transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7 ${
+                  className={`group flex aspect-[2/3] h-full flex-col items-center justify-between overflow-hidden rounded-2xl px-3 py-4 text-center transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7 ${
                     isLemonade
                       ? "bg-lemonade-yellow text-umber-900 shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
                       : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
