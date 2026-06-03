@@ -620,7 +620,7 @@ export default function HoneymoonPage() {
           the three tiles become equal peers. Saves ~120px of vertical
           chrome vs the prior single-column stack. */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="col-span-2 sm:col-span-1">
+        <div className="col-span-2 flex sm:col-span-1">
           <DaysTile
             start={couple?.honeymoon_start_date ?? null}
             end={couple?.honeymoon_end_date ?? null}
@@ -853,7 +853,7 @@ function DaysTile({
   }, [start, end]);
 
   return (
-    <div ref={wrapperRef} className="card stationery-ink relative !p-4">
+    <div ref={wrapperRef} className="card stationery-ink relative flex w-full flex-col !p-4">
       <div className="flex items-center gap-2 text-paper-200">
         <Calendar size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
@@ -901,18 +901,18 @@ function DaysTile({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-1.5 block w-full text-center"
+          className="mt-1.5 flex w-full flex-1 flex-col items-center justify-center text-center"
           aria-label={t("honeymoon.edit_dates")}
         >
           {nights !== null ? (
-            <>
+            <span className="flex items-baseline justify-center">
               <span className="font-serif text-3xl font-semibold leading-none tabular-nums text-paper-50">
                 {nights}
               </span>
               <span className="ml-2 text-sm text-paper-200">
                 {t("honeymoon.day", { count: nights })}
               </span>
-            </>
+            </span>
           ) : loaded ? (
             // No dates yet: keep the slot at the same visual size as a filled
             // number by making the CTA the prominent serif line (responsive,
