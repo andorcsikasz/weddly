@@ -598,12 +598,18 @@ export default function HoneymoonPage() {
       {honeymoonBeforeWedding && couple?.wedding_date && couple?.honeymoon_start_date && (
         <section
           role="alert"
-          className="stationery-blush mb-4 flex items-start gap-3 rounded-2xl border-2 border-blush-500 px-4 py-3"
+          className="mb-4 flex items-start gap-3 rounded-2xl border-2 border-ink-900 bg-white px-4 py-3 dark:border-paper-100/40 dark:bg-umber-800"
         >
-          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-blush-700" aria-hidden="true" />
+          <AlertTriangle
+            size={18}
+            className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-100"
+            aria-hidden="true"
+          />
           <div className="min-w-0 flex-1 text-sm">
-            <p className="font-semibold text-blush-800">{t("honeymoon.before_wedding_title")}</p>
-            <p className="mt-0.5 text-ink-700">
+            <p className="font-semibold text-ink-900 dark:text-paper-50">
+              {t("honeymoon.before_wedding_title")}
+            </p>
+            <p className="mt-0.5 text-ink-700 dark:text-paper-200">
               {t("honeymoon.before_wedding_body", {
                 wedding: formatDateShort(couple.wedding_date, locale),
                 honeymoon: formatDateShort(couple.honeymoon_start_date, locale),
