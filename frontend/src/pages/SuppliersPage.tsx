@@ -60,6 +60,7 @@ import type { ComponentType, SVGProps } from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { BookedSupplierCard } from "../components/BookedSupplierCard";
+import { InfoHint } from "../components/InfoHint";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { OutreachInbox } from "../components/OutreachInbox";
@@ -709,14 +710,9 @@ export default function SuppliersPage() {
   return (
     <>
       <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <h1 className="font-grotesk">{t("suppliers.title")}</h1>
-          {/* Subtitle hidden on mobile — the page already has 7 rows of
-              chrome before the first supplier card, and the booking caveat
-              ("booking arrives in v2") isn't actionable on first scroll. */}
-          <p className="mt-1 hidden text-sm text-ink-500 sm:block dark:text-umber-300">
-            {t("suppliers.sub")}
-          </p>
+          <InfoHint text={t("suppliers.sub")} />
         </div>
         {/* Controls stack under the title on mobile so the view-mode pills and
             "Drop your own" button don't compress the heading + sub-copy into a
@@ -1849,7 +1845,7 @@ function ChainStep({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex items-center justify-center rounded-lg border px-2.5 py-1 text-sm transition-colors ${
+      className={`group relative flex items-center justify-center rounded-lg border px-2.5 pt-1 pb-3 text-sm transition-colors ${
         active
           ? "border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
           : allDone
