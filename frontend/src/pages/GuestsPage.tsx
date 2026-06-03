@@ -452,25 +452,25 @@ export default function GuestsPage() {
               <GuestStat
                 value={guests.length}
                 label={t("guests.total_summary_unit")}
-                icon={<Users size={20} aria-hidden />}
+                icon={<Users size={18} aria-hidden />}
                 tone="primary"
               />
               {plannedGuests !== null && (
                 <GuestStat
                   value={plannedGuests}
                   label={t("guests.total_summary_planned_unit")}
-                  icon={<Target size={20} aria-hidden />}
+                  icon={<Target size={18} aria-hidden />}
                 />
               )}
               <GuestStat
                 value={households.length}
                 label={t("guests.total_summary_households_unit")}
-                icon={<Home size={20} aria-hidden />}
+                icon={<Home size={18} aria-hidden />}
               />
               <GuestStat
                 value={guests.filter((g) => g.invited_at != null).length}
                 label={t("guests.total_summary_invited_unit")}
-                icon={<Send size={20} aria-hidden />}
+                icon={<Send size={18} aria-hidden />}
               />
             </dl>
           ) : (
@@ -942,7 +942,7 @@ function HouseholdCard({
          *  load-bearing change: the prior `flex-wrap` + `basis-full`
          *  on the metadata block pushed the icons onto their own row
          *  below the metadata, which is exactly what the user flagged. */
-        className={`flex flex-nowrap items-start justify-between gap-2 md:items-center md:gap-3 ${isHosts ? "stationery !bg-umber-200 dark:!bg-umber-700" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-2 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
+        className={`flex flex-nowrap items-start justify-between gap-2 md:items-center md:gap-3 ${isHosts ? "!bg-umber-800 text-paper-50 dark:!bg-umber-950" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-2 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
         {/* Metadata columns: label · group chip · slug · code · invited
             (+ delivered). Fixed-width tracks with `md:col-start-*` force
@@ -959,9 +959,10 @@ function HouseholdCard({
               household={household}
               count={members.length}
               onSave={(label) => onRenameHousehold(household.id, label)}
+              onDark={isHosts}
             />
             {isHosts && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-umber-600 dark:text-umber-200">
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-paper-200/90">
                 <Crown size={10} aria-hidden />
                 {t("guests.hosts_badge")}
               </span>
@@ -3232,24 +3233,22 @@ function GuestStat({
 }: {
   value: number | string;
   label: string;
-  /** Icon shown under the number in place of a text label (lucide, aria-hidden). */
+  /** Icon shown inline after the number, inheriting its color (lucide, aria-hidden). */
   icon: ReactNode;
   tone?: "primary" | "secondary";
 }) {
-  const numClass =
+  // One cool navy family per stat — the icon inherits the number's token so it
+  // can't drift to a mismatched (warm-looking) lighter shade. Hierarchy is
+  // carried by the primary/secondary number token alone.
+  const cls =
     tone === "primary"
-      ? "text-3xl font-semibold tabular-nums text-ink-900 dark:text-paper-50"
-      : "text-3xl font-semibold tabular-nums text-ink-700 dark:text-paper-100";
+      ? "text-2xl font-semibold tabular-nums text-ink-900 dark:text-paper-50"
+      : "text-2xl font-semibold tabular-nums text-ink-600 dark:text-umber-300";
   return (
-    <div className="inline-flex items-center gap-1.5 leading-none" title={label}>
-      <dd className={numClass}>{value}</dd>
-      <span className="text-xs text-ink-300 dark:text-umber-400" aria-hidden>
-        ×
-      </span>
-      <dt className="text-ink-400 dark:text-umber-300">
-        {icon}
-        <span className="sr-only">{label}</span>
-      </dt>
+    <div className={`inline-flex items-center gap-1 leading-none ${cls}`} title={label}>
+      <dd>{value}</dd>
+      <dt aria-hidden>{icon}</dt>
+      <span className="sr-only">{label}</span>
     </div>
   );
 }
