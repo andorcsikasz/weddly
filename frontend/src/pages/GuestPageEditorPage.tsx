@@ -55,19 +55,12 @@ import {
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
-/** Inline "Missing" indicator next to a field label or jump-to button when
- *  the underlying value is empty. Pure visual — no click target. Rendered in
- *  the red danger palette (same tokens as the cost-planning delete state) so
- *  an unfinished field reads as an explicit "still required" flag rather than
- *  blending into the warm blush accents the rest of the editor uses. */
-function TodoPill({ label }: { label: string }) {
-  return (
-    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-400/15 dark:text-red-300">
-      <AlertCircle size={10} aria-hidden />
-      {label}
-    </span>
-  );
-}
+/** Required-but-empty fields get a red, one-step-thicker outline (border-2 vs
+ *  the `.input` / `.btn-outline` 1px default) instead of a separate "MISSING"
+ *  pill next to the label. Appended to the control's className when its value
+ *  is still empty; shared by every field + jump-to link on this editor. */
+const MISSING_OUTLINE =
+  "border-2 border-red-400 focus:border-red-500 focus:ring-red-100 dark:border-red-400/60 dark:focus:border-red-400";
 
 /** Venue-name input with two assists:
  *  - a debounced Nominatim-backed autocomplete (same /api/places/search proxy
@@ -184,11 +177,7 @@ function VenueNameField({
       <input
         id="guest-page-venue"
         type="text"
-        className={`input${
-          missing
-            ? " border-red-400 focus:border-red-500 focus:ring-red-100 dark:border-red-400/60 dark:focus:border-red-400"
-            : ""
-        }`}
+        className={`input${missing ? ` ${MISSING_OUTLINE}` : ""}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
@@ -429,8 +418,6 @@ export default function GuestPageEditorPage() {
   if (todoPostRsvp) todoSummaryItems.push(t("guest_page_editor.todo_item_post_rsvp"));
   if (todoSchedule) todoSummaryItems.push(t("guest_page_editor.todo_item_schedule"));
   if (todoCoords) todoSummaryItems.push(t("guest_page_editor.todo_item_coords"));
-  const todoPillLabel = t("guest_page_editor.todo_pill");
-
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!couple || !dirty || saving) return;
@@ -929,7 +916,6 @@ export default function GuestPageEditorPage() {
               <div className="mt-3">
                 <label htmlFor="guest-page-cover" className="field-label">
                   {t("wedding_site_editor.cover_image_label")}
-                  {todoCover && <TodoPill label={todoPillLabel} />}
                 </label>
                 {/* Upload row — thumbnail of the current cover (if any) +
                  *  Tallózás button. Hidden <input type="file"> so we can style
@@ -974,13 +960,14 @@ export default function GuestPageEditorPage() {
                 <input
                   id="guest-page-cover"
                   type="text"
-                  className="input mt-2"
+                  className={`input mt-2${todoCover ? ` ${MISSING_OUTLINE}` : ""}`}
                   value={coverImageUrl}
                   onChange={(e) => setCoverImageUrl(e.target.value)}
                   placeholder={t("wedding_site_editor.cover_image_placeholder")}
                   maxLength={2048}
                   inputMode="url"
                   autoComplete="off"
+                  aria-invalid={todoCover || undefined}
                 />
                 <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                   {t("wedding_site_editor.cover_image_hint")}
@@ -989,16 +976,16 @@ export default function GuestPageEditorPage() {
               <div className="mt-3">
                 <label htmlFor="guest-page-intro" className="field-label">
                   {t("guest_page_editor.intro_label")}
-                  {todoIntro && <TodoPill label={todoPillLabel} />}
                 </label>
                 <textarea
                   id="guest-page-intro"
-                  className="input"
+                  className={`input${todoIntro ? ` ${MISSING_OUTLINE}` : ""}`}
                   rows={4}
                   value={guestPageIntro}
                   onChange={(e) => setGuestPageIntro(e.target.value)}
                   placeholder={t("guest_page_editor.intro_placeholder")}
                   maxLength={4000}
+                  aria-invalid={todoIntro || undefined}
                 />
                 <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                   {t("guest_page_editor.intro_hint")}
@@ -1021,22 +1008,25 @@ export default function GuestPageEditorPage() {
               </p>
               <ul className="mt-3 flex flex-wrap items-center gap-2">
                 <li className="inline-flex items-center">
-                  <Link to="/app/schedule" className="btn-outline btn-sm">
+                  <Link
+                    to="/app/schedule"
+                    className={`btn-outline btn-sm${todoSchedule ? ` ${MISSING_OUTLINE}` : ""}`}
+                  >
                     {t("guest_page_editor.section_unlocked_link_schedule")}
                   </Link>
-                  {todoSchedule && <TodoPill label={todoPillLabel} />}
                 </li>
                 <li className="inline-flex items-center">
-                  <Link to="/app/settings/workspace" className="btn-outline btn-sm">
+                  <Link
+                    to="/app/settings/workspace"
+                    className={`btn-outline btn-sm${todoCoords ? ` ${MISSING_OUTLINE}` : ""}`}
+                  >
                     {t("guest_page_editor.section_unlocked_link_profile")}
                   </Link>
-                  {todoCoords && <TodoPill label={todoPillLabel} />}
                 </li>
               </ul>
               <div className="mt-3">
                 <label htmlFor="guest-page-post-rsvp" className="field-label">
                   {t("guest_page_editor.post_rsvp_label")}
-                  {todoPostRsvp && <TodoPill label={todoPillLabel} />}
                 </label>
                 <div className="mb-2 flex flex-col gap-1.5">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500 dark:text-umber-200">
@@ -1071,12 +1061,13 @@ export default function GuestPageEditorPage() {
                 <textarea
                   ref={postRsvpTextareaRef}
                   id="guest-page-post-rsvp"
-                  className="input"
+                  className={`input${todoPostRsvp ? ` ${MISSING_OUTLINE}` : ""}`}
                   rows={6}
                   value={postRsvpContent}
                   onChange={(e) => setPostRsvpContent(e.target.value)}
                   placeholder={t("guest_page_editor.post_rsvp_placeholder")}
                   maxLength={8000}
+                  aria-invalid={todoPostRsvp || undefined}
                 />
                 <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                   {t("guest_page_editor.post_rsvp_hint")}
