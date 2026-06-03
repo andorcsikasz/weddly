@@ -1492,7 +1492,7 @@ function KpiTile({
   const accentRing =
     accent === "blush" ? "text-blush-700 dark:text-blush-300" : "text-ink-700 dark:text-paper-100";
   return (
-    <div className="card p-3 sm:p-4">
+    <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span
           className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${accentBg} ${accentRing}`}
@@ -1578,7 +1578,7 @@ function BudgetKpiTile({
   }
 
   return (
-    <div className="card p-3 sm:p-4">
+    <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50 text-ink-700 dark:bg-umber-700/60 dark:text-paper-100">
           <Wallet size={14} aria-hidden="true" />
@@ -1686,7 +1686,7 @@ function DaysToGoTile({
   }
 
   return (
-    <div className="card p-3 sm:p-4">
+    <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
           <CalendarHeart size={14} aria-hidden="true" />
