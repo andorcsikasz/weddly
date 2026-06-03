@@ -294,7 +294,6 @@ export default function TimelinePage() {
             </div>
             <CountdownChip weddingDate={weddingDate} />
           </div>
-          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("timeline.sub")}</p>
         </header>
 
         <ChartCard
@@ -802,7 +801,7 @@ function ChartModeSwitch({
     <div
       role="radiogroup"
       aria-label={t("timeline.view_aria")}
-      className="flex items-center gap-0.5 text-sm tabular-nums"
+      className="flex items-center gap-0.5 font-grotesk text-sm tracking-wide tabular-nums"
     >
       {options.map((opt) => {
         const active = opt.value === mode;
@@ -817,8 +816,8 @@ function ChartModeSwitch({
             onClick={() => onModeChange(opt.value)}
             className={`min-h-tap rounded-md px-2 pb-0.5 pt-1 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${
               active
-                ? "border-b-2 border-blush-500 text-ink-900 dark:text-paper-50"
-                : "border-b-2 border-transparent text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-200"
+                ? "border-b-2 border-blush-500 text-umber-900 dark:text-paper-50"
+                : "border-b-2 border-transparent text-umber-500 hover:text-umber-800 dark:text-umber-400 dark:hover:text-paper-200"
             }`}
           >
             {opt.short}

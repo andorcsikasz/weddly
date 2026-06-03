@@ -358,7 +358,11 @@ export default function GanttView({
           ticks at 3M). Sticky-top so it stays as the couple scrolls vertically;
           its gutter cell is sticky-left so it stays anchored as the chart
           slides horizontally underneath. */}
-          <div className="sticky top-0 z-30 flex shrink-0 border-b border-paper-300 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95">
+          {/* No backdrop-blur here: backdrop-filter makes Safari clip the
+              today/wedding marker badges that straddle this header's bottom
+              edge (bottom-0 translate-y-1/2), cutting off the "TODAY" pill.
+              A solid 95%-opaque fill hides scrolled content just as well. */}
+          <div className="sticky top-0 z-30 flex shrink-0 border-b border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900">
             <div
               className="sticky left-0 z-40 shrink-0 border-r border-paper-200 bg-paper-50/95 px-3 py-2.5 font-serif text-[12px] uppercase tracking-wider text-ink-500 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95 dark:text-umber-300"
               style={{ width: TASK_GUTTER_WIDTH }}
