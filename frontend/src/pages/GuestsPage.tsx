@@ -1059,7 +1059,7 @@ function HouseholdCard({
           )}
           <button
             type="button"
-            className="btn-ghost btn-sm"
+            className={`btn-ghost btn-sm ${isHosts ? "!text-paper-100 hover:!bg-umber-700 hover:!text-paper-50" : ""}`}
             onClick={() => setCollapsed((v) => !v)}
             aria-expanded={!collapsed}
             aria-label={collapsed ? t("guests.household_expand") : t("guests.household_collapse")}
@@ -1345,10 +1345,14 @@ function HouseholdLabelEditor({
   household,
   count,
   onSave,
+  onDark = false,
 }: {
   household: Household;
   count: number;
   onSave: (label: string) => Promise<void>;
+  /** True on the hosts' dark chocolate header — flips the label + count
+   *  text to a light tone so it reads on the dark bar. */
+  onDark?: boolean;
 }) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
@@ -1396,10 +1400,18 @@ function HouseholdLabelEditor({
         setEditing(true);
       }}
       aria-label={t("guests.household_label")}
-      className="inline-flex max-w-full items-baseline gap-1.5 truncate rounded text-left text-base font-semibold text-ink-900 hover:text-ink-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400 dark:text-paper-50 dark:hover:text-paper-100 dark:focus-visible:outline-umber-600"
+      className={`inline-flex max-w-full items-baseline gap-1.5 truncate rounded text-left text-base font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400 dark:focus-visible:outline-umber-600 ${
+        onDark
+          ? "text-paper-50 hover:text-paper-200"
+          : "text-ink-900 hover:text-ink-700 dark:text-paper-50 dark:hover:text-paper-100"
+      }`}
     >
       <span className="truncate">{household.label}</span>
-      <span className="text-sm font-normal text-ink-500 dark:text-umber-300">({count})</span>
+      <span
+        className={`text-sm font-normal ${onDark ? "text-paper-200/80" : "text-ink-500 dark:text-umber-300"}`}
+      >
+        ({count})
+      </span>
     </button>
   );
 }
