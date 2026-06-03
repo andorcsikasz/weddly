@@ -42,8 +42,10 @@ import {
   Printer,
   RefreshCw,
   Search,
+  Send,
   Shell,
   Sprout,
+  Target,
   Trash2,
   Upload,
   User,
@@ -450,18 +452,25 @@ export default function GuestsPage() {
               <GuestStat
                 value={guests.length}
                 label={t("guests.total_summary_unit")}
+                icon={<Users size={16} aria-hidden />}
                 tone="primary"
               />
               {plannedGuests !== null && (
-                <GuestStat value={plannedGuests} label={t("guests.total_summary_planned_unit")} />
+                <GuestStat
+                  value={plannedGuests}
+                  label={t("guests.total_summary_planned_unit")}
+                  icon={<Target size={16} aria-hidden />}
+                />
               )}
               <GuestStat
                 value={households.length}
                 label={t("guests.total_summary_households_unit")}
+                icon={<Home size={16} aria-hidden />}
               />
               <GuestStat
                 value={guests.filter((g) => g.invited_at != null).length}
                 label={t("guests.total_summary_invited_unit")}
+                icon={<Send size={16} aria-hidden />}
               />
             </dl>
           ) : (
@@ -3170,10 +3179,13 @@ function CopyFallbackDialog({ url, onClose }: { url: string; onClose: () => void
 function GuestStat({
   value,
   label,
+  icon,
   tone = "secondary",
 }: {
   value: number | string;
   label: string;
+  /** Icon shown under the number in place of a text label (lucide, aria-hidden). */
+  icon: ReactNode;
   tone?: "primary" | "secondary";
 }) {
   const numClass =
@@ -3181,10 +3193,11 @@ function GuestStat({
       ? "text-3xl font-semibold tabular-nums text-ink-900 dark:text-paper-50"
       : "text-3xl font-semibold tabular-nums text-ink-700 dark:text-paper-100";
   return (
-    <div className="flex flex-col items-start leading-none">
+    <div className="flex flex-col items-center leading-none" title={label}>
       <dd className={numClass}>{value}</dd>
-      <dt className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-400 dark:text-umber-300">
-        {label}
+      <dt className="mt-2 text-ink-400 dark:text-umber-300">
+        {icon}
+        <span className="sr-only">{label}</span>
       </dt>
     </div>
   );
