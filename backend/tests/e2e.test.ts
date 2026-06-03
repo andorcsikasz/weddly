@@ -1102,7 +1102,10 @@ describe("onboarding + invites", () => {
       { token: u.data.token },
     );
     expect(ob.status).toBe(201);
-    expect(ob.data.couple.display_name).toBe("Mia & Lucas");
+    // display_name is DERIVED from bride/groom here (no display_name sent),
+    // so it stays "Anna & Bence" — the Mia & Lucas rename only touches the
+    // explicit-display_name fixtures, not these bride/groom-driven ones.
+    expect(ob.data.couple.display_name).toBe("Anna & Bence");
     expect(ob.data.couple.bride_name).toBe("Anna");
     expect(ob.data.couple.groom_name).toBe("Bence");
     expect(ob.data.couple.wedding_date_goal.kind).toBe("season");
@@ -1989,7 +1992,10 @@ describe("households + airport check-in", () => {
     }>("GET", "/api/households", undefined, { token: reg.data.token });
     expect(list.data.households.length).toBe(1);
     const host = list.data.households[0]!;
-    expect(host.label).toBe("Mia & Lucas");
+    // Couple-household label is DERIVED as "{bride} & {groom}" from the
+    // onboarding input above (Anna/Bence), independent of the Mia & Lucas
+    // display_name rename.
+    expect(host.label).toBe("Anna & Bence");
     expect(host.member_ids.length).toBe(2);
     expect(host.is_couple_household).toBe(true);
 
