@@ -116,7 +116,7 @@ export function LegalSection({
   return (
     <section
       lang={sectionLocale}
-      className={`mt-8 space-y-6 text-base leading-relaxed ${
+      className={`mt-8 space-y-6 text-base leading-relaxed text-justify hyphens-auto ${
         secondary ? "text-ink-700 dark:text-paper-200" : "text-ink-800 dark:text-paper-100"
       }`}
     >
