@@ -728,7 +728,8 @@ function DeckShowcase({
                   selectedId === "lemonade" ? "text-lemonade-ink" : "text-white"
                 }`}
               >
-                {t("app.name")} · {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                {"WĒDDLY · "}
+                {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
               </span>
             </button>
           </div>
@@ -872,7 +873,12 @@ function CardView({
                       deckId === "lemonade" ? "text-lemonade-ink" : "text-wnrs-red"
                     }`}
                   >
-                    {t("app.name")}
+                    {/* Hard-coded already-uppercase form so the macron above
+                        the E renders reliably across font weights. CSS
+                        `text-transform: uppercase` was occasionally falling
+                        through the font stack to a weight that didn't carry
+                        the Ē glyph (U+0112). Keep in sync with app.name. */}
+                    {"WĒDDLY"}
                   </p>
                   <p
                     className={`mt-1 font-display text-[9px] uppercase tracking-[0.24em] sm:text-[10px] ${
