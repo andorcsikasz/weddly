@@ -838,9 +838,9 @@ function TableShape({
   // just outside the perimeter. Selection swaps the body to a calm espresso
   // (deep umber) fill with a darker rim AND thickens the stroke so the
   // active table is unmissable on a crowded floor plan.
-  const strokeClass = isSelected ? "stroke-umber-800" : "stroke-ink-800";
+  const strokeClass = isSelected ? "stroke-umber-950" : "stroke-ink-800";
   const strokeWidth = isSelected ? 22 : 14;
-  const fillClass = isSelected ? "fill-umber-600" : "fill-paper-50";
+  const fillClass = isSelected ? "fill-umber-900" : "fill-paper-50";
 
   // Long and head get a softer banquet-bench corner; square stays tighter.
   const rectCorner =

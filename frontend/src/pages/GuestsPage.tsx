@@ -480,13 +480,13 @@ export default function GuestsPage() {
         <div className="flex flex-wrap gap-2 sm:ml-auto">
           <button
             type="button"
-            className="btn-outline"
+            className="btn-outline !border-ink-700 dark:!border-paper-100"
             onClick={downloadCsvTemplate}
             title={t("guests.download_template")}
           >
             <Download size={16} aria-hidden /> {t("guests.download_template")}
           </button>
-          <label className="btn-outline cursor-pointer">
+          <label className="btn-outline !border-ink-700 cursor-pointer dark:!border-paper-100">
             <Upload size={16} aria-hidden /> {t("guests.import_csv")}
             <input
               type="file"
@@ -502,7 +502,7 @@ export default function GuestsPage() {
           </label>
           <button
             type="button"
-            className="btn-outline"
+            className="btn-outline !border-ink-700 dark:!border-paper-100"
             onClick={() => setMealsOpen(true)}
             title={t("guests.meals_title")}
           >
