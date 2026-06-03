@@ -904,16 +904,23 @@ function DaysTile({
           className="mt-1.5 block w-full text-center"
           aria-label={t("honeymoon.edit_dates")}
         >
-          <span className="font-serif text-3xl font-semibold leading-none tabular-nums text-paper-50">
-            {nights !== null ? nights : loaded ? "—" : ""}
-          </span>
-          <span className="ml-2 text-sm text-paper-200">
-            {nights !== null
-              ? t("honeymoon.day", { count: nights })
-              : loaded
-                ? t("honeymoon.set_dates_cta")
-                : ""}
-          </span>
+          {nights !== null ? (
+            <>
+              <span className="font-serif text-3xl font-semibold leading-none tabular-nums text-paper-50">
+                {nights}
+              </span>
+              <span className="ml-2 text-sm text-paper-200">
+                {t("honeymoon.day", { count: nights })}
+              </span>
+            </>
+          ) : loaded ? (
+            // No dates yet: keep the slot at the same visual size as a filled
+            // number by making the CTA the prominent serif line (responsive,
+            // matching the budget tile) instead of a thin "—" + small caption.
+            <span className="font-serif text-lg font-semibold leading-none text-paper-50 sm:text-2xl md:text-3xl">
+              {t("honeymoon.set_dates_cta")}
+            </span>
+          ) : null}
           {dateRange && <p className="mt-1 text-xs text-paper-300">{dateRange}</p>}
           {countdown && (
             <p className="mt-1 text-[11px] text-paper-300">
