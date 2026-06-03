@@ -180,6 +180,12 @@ export default function DashboardPage() {
   const [inviteEmailError, setInviteEmailError] = useState<string | null>(null);
   const [inviteSending, setInviteSending] = useState(false);
   const [sentToEmail, setSentToEmail] = useState<string | null>(null);
+  // "Invite was just created in this session" — keeps the invite card visible
+  // (showing the shareable link / confirmation) after Send invite, for BOTH
+  // the email and link-only paths. Without it the link-only path would hide
+  // the card the instant `invite` is set. Stays false for an invite hydrated
+  // from the server on load, so a reload still collapses the card as intended.
+  const [justInvited, setJustInvited] = useState(false);
   // Cost-planning slider — defaults to baseline once couple loads.
   const [planningCount, setPlanningCount] = useState<number | null>(null);
   // Date-changed notify + archive — separate spinners so the button labels
@@ -555,6 +561,7 @@ export default function DashboardPage() {
     try {
       const r = await coupleApi.createInvite(trimmed ? { invited_email: trimmed } : {});
       setInvite(r.invite);
+      setJustInvited(true);
       if (trimmed) setSentToEmail(trimmed);
     } catch (err) {
       // Surface the server's own-email + already-pending codes inline so the
@@ -591,6 +598,7 @@ export default function DashboardPage() {
       toast.success(t("dashboard.invite_cancelled"));
       setInvite(null);
       setSentToEmail(null);
+      setJustInvited(false);
       setInviteEmail("");
       setInviteEmailError(null);
       setCopied(false);
@@ -1300,7 +1308,7 @@ export default function DashboardPage() {
           invite is managed from the Profile partner card.
           Hidden entirely in the demo workspace — there's no real partner
           to invite there, and the form would just confuse the visitor. */}
-          {!couple.is_demo && !couple.partner_b_id && (!invite || sentToEmail) && (
+          {!couple.is_demo && !couple.partner_b_id && (!invite || justInvited) && (
             <section
               id="invite-partner"
               data-coach-target="partner-invite"
