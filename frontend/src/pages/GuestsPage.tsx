@@ -57,6 +57,7 @@ import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } 
 import { useSearchParams } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { guestCountBaseline } from "../lib/budget";
 import { coupleApi, fetchPdfBlob, guestApi, householdApi, placeCardsUrl } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -428,16 +429,16 @@ export default function GuestsPage() {
     [guests, rsvpFilter],
   );
 
-  // Planned headcount from the couple's onboarding goal — shown alongside the
-  // live counts so couples see actual vs target at a glance. Null (stat hidden)
-  // when the goal is still TBD.
+  // Planned headcount shown alongside the live counts so couples see actual vs
+  // target at a glance. Mirrors the single number the couple set on the budget
+  // page (planning_count), falling back to the onboarding goal's baseline (the
+  // exact value, or the midpoint of a range) rather than printing a "40–150"
+  // range. Null (stat hidden) while the goal is still TBD.
   const goal = couple?.guest_count_goal;
   const plannedGuests: string | null =
-    goal?.kind === "exact" && goal.exact != null
-      ? String(goal.exact)
-      : goal?.kind === "range" && goal.min != null && goal.max != null
-        ? `${goal.min}–${goal.max}`
-        : null;
+    couple && goal && goal.kind !== "tbd"
+      ? String(couple.planning_count ?? guestCountBaseline(couple, guests.length))
+      : null;
 
   return (
     <>
