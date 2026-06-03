@@ -2156,6 +2156,7 @@ const hu: LocaleMessages = {
     no_phone: "Nincs megadva telefonszám",
     no_email: "Nincs megadva email-cím",
     filter_all: "Mind",
+    show_all_in_category: "Összes mutatása: {category}",
     chain_help: "Foglalás logikus sorrendben — a helyszíntől az utolsó részletekig.",
     community_pill: "Közösségi",
     community_pill_tooltip: "Egy Weddly-t használó pár ajánlotta — közvetlen tapasztalat alapján.",
