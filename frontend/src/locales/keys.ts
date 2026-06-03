@@ -2527,6 +2527,9 @@ export interface LocaleMessages {
     guests_filter_placeholder: string;
     guests_filter_help: string;
     guests_filter_clear: string;
+    /** Tooltip/aria on the wallet link beside the read-only guest count —
+     *  the headcount is edited on /app/budget, not here. */
+    guests_filter_edit_in_budget: string;
     /** Up/downvote buttons + sort. */
     vote_up_aria: string;
     vote_down_aria: string;
