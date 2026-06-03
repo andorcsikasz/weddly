@@ -907,6 +907,16 @@ function Confetti() {
  */
 function AllSet({ onContinue }: { onContinue: () => void }) {
   const { t } = useT();
+  // Auto-hand off to the dashboard after a 7s countdown (the runner fill on the
+  // CTA visualises it). Fires once on mount; clicking the button short-circuits
+  // it, and unmounting (e.g. the redirect itself) clears the timer. A ref keeps
+  // the latest onContinue without restarting the countdown on re-render.
+  const continueRef = useRef(onContinue);
+  continueRef.current = onContinue;
+  useEffect(() => {
+    const id = window.setTimeout(() => continueRef.current(), 7000);
+    return () => window.clearTimeout(id);
+  }, []);
   return (
     <Shell>
       <div className="mx-auto max-w-xl">
@@ -914,7 +924,7 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
           <Confetti />
           <div className="relative z-10">
             <div
-              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-sage-100 dark:bg-sage-900"
+              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-sage-100 ring-2 ring-sage-400 dark:bg-sage-900 dark:ring-sage-600"
               aria-hidden="true"
             >
               <svg
@@ -932,11 +942,18 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
             <h1 className="mt-6 font-grotesk text-umber-900 dark:text-paper-50">
               {t("onboarding.all_set_title")}
             </h1>
-            <p className="mt-2 text-sm text-umber-700 dark:text-umber-200">
-              {t("onboarding.all_set_body")}
-            </p>
-            <button type="button" className="btn-accent btn-lg mt-8 w-full" onClick={onContinue}>
-              {t("onboarding.all_set_continue")}
+            <button
+              type="button"
+              className="btn-primary btn-landing btn-lg relative mt-8 w-full overflow-hidden"
+              onClick={onContinue}
+            >
+              {/* Countdown fill — sweeps left → right over 7s, then the timer
+                  above redirects. Behind the label, decorative only. */}
+              <span
+                aria-hidden
+                className="btn-runner pointer-events-none absolute inset-y-0 left-0 bg-paper-50/15"
+              />
+              <span className="relative z-10">{t("onboarding.all_set_continue")}</span>
             </button>
           </div>
         </div>

@@ -1067,3 +1067,24 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     display: none;
   }
 }
+
+/* Auto-continue "runner" — a fill that sweeps across the All set CTA over its
+   countdown, signalling the page will move on by itself. The redirect itself
+   is a JS timer, so reduce-motion users still get handed off; only the visual
+   sweep is suppressed. */
+@keyframes btn-runner {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+.btn-runner {
+  animation: btn-runner var(--runner-duration, 7s) linear forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-runner {
+    animation: none;
+  }
+}
