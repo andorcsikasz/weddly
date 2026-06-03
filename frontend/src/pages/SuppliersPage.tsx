@@ -711,7 +711,7 @@ export default function SuppliersPage() {
           <div
             role="group"
             aria-label={t("suppliers.view_label")}
-            className="inline-flex items-center rounded-full border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 p-0.5 text-xs"
+            className="inline-flex items-center rounded-full border border-umber-600 dark:border-umber-700 dark:bg-umber-800 p-0.5 text-xs"
           >
             {(
               [
@@ -744,7 +744,7 @@ export default function SuppliersPage() {
           <button
             type="button"
             onClick={() => setSubmitOpen(true)}
-            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-dashed border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-dashed border-umber-600 px-3 text-xs font-medium text-ink-700 transition hover:border-umber-700 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
           >
             <Plus size={12} aria-hidden />
             {t("suppliers.drop_your_own")}
@@ -765,7 +765,7 @@ export default function SuppliersPage() {
           />
           <input
             type="search"
-            className="h-9 w-full rounded-full border border-umber-600 bg-paper-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
+            className="h-9 w-full rounded-full border border-umber-600 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
             placeholder={t("suppliers.search_placeholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -775,7 +775,7 @@ export default function SuppliersPage() {
         <label className="flex items-center gap-2">
           <span className="sr-only">{t("suppliers.city_label")}</span>
           <select
-            className="h-9 min-w-[10rem] rounded-full border border-umber-600 bg-paper-50 px-3 text-sm text-ink-800 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
+            className="h-9 min-w-[10rem] rounded-full border border-umber-600 px-3 text-sm text-ink-800 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
             value={cityFilter}
             onChange={(e) => setCityFilter(e.target.value)}
             aria-label={t("suppliers.city_label")}
@@ -797,7 +797,7 @@ export default function SuppliersPage() {
           className={
             showSavedOnly
               ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 text-sm font-medium text-paper-100"
-              : "inline-flex h-9 items-center gap-1.5 rounded-full border border-umber-600 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 text-sm text-ink-700 dark:text-paper-100 hover:border-umber-700 dark:hover:border-umber-600"
+              : "inline-flex h-9 items-center gap-1.5 rounded-full border border-umber-600 dark:border-umber-700 dark:bg-umber-800 px-3 text-sm text-ink-700 dark:text-paper-100 hover:border-umber-700 dark:hover:border-umber-600"
           }
         >
           <Star size={14} className={showSavedOnly ? "fill-paper-100" : ""} aria-hidden />
@@ -822,7 +822,7 @@ export default function SuppliersPage() {
               : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
                   Object.keys(selection).length > 0
                     ? "border-sage-400 bg-sage-50 text-sage-700 hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
-                    : "border-umber-600 bg-paper-50 text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300"
+                    : "border-umber-600 text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300"
                 }`
           }
         >
@@ -836,7 +836,7 @@ export default function SuppliersPage() {
         <label className="flex items-center gap-2">
           <span className="sr-only">{t("suppliers.sort_label")}</span>
           <select
-            className="h-9 min-w-[10rem] rounded-full border border-umber-600 bg-paper-50 px-3 text-sm text-ink-800 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
+            className="h-9 min-w-[10rem] rounded-full border border-umber-600 px-3 text-sm text-ink-800 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
             value={sortMode}
             onChange={(e) =>
               setSortMode(e.target.value as "top" | "alpha" | "price_asc" | "price_desc")
@@ -1938,7 +1938,7 @@ function Avatar({
   category?: SupplierCategory;
 }) {
   const base =
-    "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-paper-300 bg-paper-100 font-serif text-lg text-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-paper-100";
+    "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-paper-300 font-serif text-lg text-ink-700 dark:border-umber-700 dark:text-paper-100";
   if (heroUrl) {
     return (
       <div className={base}>

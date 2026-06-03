@@ -349,16 +349,16 @@ export default function MoodboardPage() {
           ) : previewError ? (
             <div
               role="alert"
-              className="card flex items-start gap-3 border-blush-300 bg-blush-50 dark:border-blush-400/40 dark:bg-blush-500/15"
+              className="card flex items-start gap-3 border-ink-900 bg-white dark:border-paper-100/40 dark:bg-umber-800"
             >
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blush-100 text-blush-700 dark:bg-blush-400/20 dark:text-blush-200">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-900 dark:bg-umber-700 dark:text-paper-100">
                 <AlertTriangle size={18} aria-hidden="true" />
               </span>
               <div className="text-sm">
-                <p className="font-medium text-blush-900 dark:text-blush-100">
+                <p className="font-medium text-ink-900 dark:text-paper-50">
                   {t("moodboard.error_title")}
                 </p>
-                <p className="mt-1 text-blush-800 dark:text-blush-100">
+                <p className="mt-1 text-ink-700 dark:text-paper-200">
                   {t(ERROR_KEY[previewError])}
                 </p>
               </div>
