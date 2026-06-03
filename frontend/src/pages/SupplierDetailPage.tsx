@@ -1410,7 +1410,7 @@ function AdminMetaSection({
 }) {
   return (
     <section className="mt-10 rounded-xl border border-dashed border-ink-300/60 bg-ink-50/40 p-5 text-sm dark:border-umber-600/60 dark:bg-umber-800/30">
-      <h2 className="mb-3 text-base font-semibold uppercase tracking-wide text-ink-700 dark:text-umber-200">
+      <h2 className="mb-3 font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
         {t("suppliers.detail.adminMeta.title")}
       </h2>
       <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">

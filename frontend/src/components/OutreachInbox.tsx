@@ -173,7 +173,7 @@ export function OutreachInbox() {
                   ))}
                 </div>
                 <div>
-                  <h4 className="mb-2 text-sm font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                  <h4 className="mb-2 font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
                     {t("outreach.recipients_header")}
                   </h4>
                   <ul className="space-y-2">

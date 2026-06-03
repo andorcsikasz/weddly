@@ -875,7 +875,7 @@ function ExpandedChart({
         className="card relative flex h-[90vh] w-[90vw] max-w-[1800px] flex-col overflow-hidden p-0 shadow-pop dark:bg-umber-800 dark:border-umber-700"
       >
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100">
+          <h2 className="font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
             {title}
           </h2>
           <div className="flex items-center gap-1">

@@ -1416,7 +1416,7 @@ export default function DashboardPage() {
            *  same destinations with full labels — the icon strip would just
            *  duplicate navigation. */}
           <section className="lg:hidden">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            <h2 className="mb-3 font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
               {t("dashboard.quick_links_title")}
             </h2>
             {/* Eight quick-link pills laid out as an equal-column grid so they

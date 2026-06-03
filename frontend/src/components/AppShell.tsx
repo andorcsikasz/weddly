@@ -839,11 +839,17 @@ function SideLink({
   icon,
   label,
   collapsed,
+  darkActive,
 }: {
   to: string;
   icon: ReactNode;
   label: string;
   collapsed?: boolean;
+  /** Keep the cold near-black ink pill (`stationery-dark`) on the active row
+   *  instead of the warm-coffee landing pill. Used only by the Guest page
+   *  link, which the couple asked to stay visually "dark" / set apart from
+   *  the rest of the rail. */
+  darkActive?: boolean;
 }) {
   // Base classes describe the icon-only shape used at md (tablet) and at
   // lg+ when `collapsed` is true. `lg:` overrides flip to the padded row
@@ -859,13 +865,18 @@ function SideLink({
       // screen readers + hover tooltips need it regardless of `collapsed`.
       title={label}
       aria-label={label}
-      className={({ isActive }) =>
-        `flex items-center rounded-xl text-sm transition-colors ${shape} ${
+      className={({ isActive }) => {
+        // Active fill: warm-coffee landing pill for every row, except the
+        // Guest page which keeps the cold ink pill so it reads as set apart.
+        const active = darkActive
+          ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
+          : "stationery-coffee text-paper-50 dark:text-paper-50";
+        return `flex items-center rounded-xl text-sm transition-colors ${shape} ${
           isActive
-            ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
+            ? active
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
-        }`
-      }
+        }`;
+      }}
     >
       {icon}
       {/* Label is hidden at md (icon-only) and at lg+ collapsed. */}

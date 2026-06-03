@@ -929,6 +929,33 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     );
   }
 
+  /* Warm "specialty coffee" cousin of .stationery-dark, keyed to the landing
+     palette (espresso umber instead of the cold navy ink). Used for the active
+     sidebar pill so the workspace selection matches the marketing site's warm
+     tone. Light: near-black umber-900 with cream text. Dark: a mid-coffee
+     umber-600 raised one notch off the umber-900 rail so the pill reads as
+     "you are here" without falling back to blush. */
+  .stationery-coffee {
+    background-color: theme("colors.umber.900");
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(246, 242, 231, 0.05) 0,
+      rgba(246, 242, 231, 0.05) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
+  html.dark .stationery-coffee {
+    background-color: theme("colors.umber.600");
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(246, 242, 231, 0.08) 0,
+      rgba(246, 242, 231, 0.08) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
+
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
