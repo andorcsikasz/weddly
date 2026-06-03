@@ -328,7 +328,7 @@ export default function AdminFinancialPlannerPage() {
             label={t("admin.fin_new_couples")}
             value={a.newCouplesPerMonth}
             min={0}
-            max={200}
+            max={500}
             step={5}
             display={String(a.newCouplesPerMonth)}
             onChange={(v) => setA({ ...a, newCouplesPerMonth: v })}
