@@ -345,6 +345,9 @@ export interface LocaleMessages {
     cover_upload_error_too_large: string;
     cover_upload_error_type: string;
     cover_upload_preview_alt: string;
+    /** Cover dropzone helper line (idle) + active drag-over state. */
+    cover_drop_hint: string;
+    cover_drop_active: string;
     /** Save state — single shared button at the foot of the form. */
     save_button: string;
     save_saving: string;
@@ -1596,6 +1599,17 @@ export interface LocaleMessages {
     not_found_body: string;
     not_found_cta: string;
     load_error: string;
+    /** Couple-editor preview only — gray dashed "add this" ghost slots shown in
+     *  place of empty cover/date/schedule/venue sections. Never on the public view. */
+    ghost: {
+      cover_title: string;
+      cover_cta: string;
+      date_cta: string;
+      schedule_title: string;
+      schedule_cta: string;
+      venue_title: string;
+      venue_cta: string;
+    };
   };
   /** Couple-facing /app/guest-page editor — single merged surface that
    *  combines the publish/venue/cover form (formerly /app/wedding-site)
@@ -1606,6 +1620,12 @@ export interface LocaleMessages {
   guest_page_editor: {
     title: string;
     subtitle: string;
+    /** Eye button in the header that opens the live public /w/:slug page. */
+    preview_live_label: string;
+    preview_live_aria: string;
+    preview_live_hint_ready: string;
+    preview_live_hint_no_slug: string;
+    preview_live_hint_not_published: string;
     section_share_title: string;
     section_share_body: string;
     section_public_eyebrow: string;

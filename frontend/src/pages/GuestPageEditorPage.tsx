@@ -19,6 +19,7 @@ import {
   Clipboard,
   Copy,
   ExternalLink,
+  Eye,
   Globe,
   Lock,
   MessageCircle,
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 import {
   type ChangeEvent,
+  type DragEvent,
   type FormEvent,
   type KeyboardEvent,
   useCallback,
@@ -289,6 +291,7 @@ export default function GuestPageEditorPage() {
   // ref; on success we patch the local `couple` + `coverImageUrl` to the
   // returned `/uploads/couples/<id>/cover.<ext>?v=…` value.
   const [coverUploading, setCoverUploading] = useState(false);
+  const [coverDragOver, setCoverDragOver] = useState(false);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
   const postRsvpTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -384,6 +387,25 @@ export default function GuestPageEditorPage() {
   const slug = couple?.slug ?? "";
   const publicUrl = slug ? `${window.location.origin}/w/${slug}` : null;
   const rsvpUrl = typeof window !== "undefined" && slug ? `${window.location.origin}/rsvp` : "";
+
+  // Eye-preview button: the bare /w/:slug page is only reachable once the
+  // couple has a slug AND is_public (private == not-found by design), so we
+  // only open the live tab when both hold and explain the gap via tooltip.
+  const previewState: "ready" | "no_slug" | "not_published" = !slug
+    ? "no_slug"
+    : !isPublic
+      ? "not_published"
+      : "ready";
+  const previewHint =
+    previewState === "no_slug"
+      ? t("guest_page_editor.preview_live_hint_no_slug")
+      : previewState === "not_published"
+        ? t("guest_page_editor.preview_live_hint_not_published")
+        : t("guest_page_editor.preview_live_hint_ready");
+  function onOpenLivePreview() {
+    if (previewState !== "ready" || !publicUrl) return;
+    window.open(publicUrl, "_blank", "noopener,noreferrer");
+  }
 
   const venueTrimmed = venueName.trim();
   const coverTrimmed = coverImageUrl.trim();
@@ -538,14 +560,8 @@ export default function GuestPageEditorPage() {
   const COVER_MAX_BYTES = 4 * 1024 * 1024;
   const COVER_MIME_OK = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-  async function onCoverFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    // Reset the input value so re-picking the SAME file (e.g. after the user
-    // edits it and re-tries) still fires onChange. Without this, identical
-    // filenames silently no-op.
-    e.target.value = "";
-    if (!file) return;
-
+  // Shared upload path for both the file picker and the drag-and-drop zone.
+  async function uploadCoverFile(file: File) {
     if (!COVER_MIME_OK.has(file.type)) {
       toast.error(t("wedding_site_editor.cover_upload_error_type"));
       return;
@@ -581,6 +597,34 @@ export default function GuestPageEditorPage() {
     } finally {
       setCoverUploading(false);
     }
+  }
+
+  async function onCoverFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset the input value so re-picking the SAME file (e.g. after the user
+    // edits it and re-tries) still fires onChange. Without this, identical
+    // filenames silently no-op.
+    e.target.value = "";
+    if (!file) return;
+    await uploadCoverFile(file);
+  }
+
+  function onCoverDragOver(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault(); // required so the browser permits the drop
+    if (!coverUploading && !coverDragOver) setCoverDragOver(true);
+  }
+
+  function onCoverDragLeave(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setCoverDragOver(false);
+  }
+
+  async function onCoverDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setCoverDragOver(false);
+    if (coverUploading) return;
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadCoverFile(file);
   }
 
   // Synthesised preview — same shape as the public /g/:slug/:code endpoint
@@ -621,6 +665,16 @@ export default function GuestPageEditorPage() {
     if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
   }
 
+  // Cover ghost in the preview is a shortcut to the cover dropzone below —
+  // scroll it into view and open the file picker.
+  function focusCoverDropzone() {
+    const el = document.getElementById("guest-page-cover-dropzone");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el instanceof HTMLElement) {
+      window.setTimeout(() => coverFileInputRef.current?.click(), 350);
+    }
+  }
+
   // Double-verify before flipping publish on/off — it controls whether the
   // /w/… link is reachable by anyone, so it shouldn't toggle on a stray click.
   async function onTogglePublish() {
@@ -643,9 +697,22 @@ export default function GuestPageEditorPage() {
 
   return (
     <>
-      <header className="mb-6 flex items-center gap-2">
-        <h1 className="font-grotesk">{t("guest_page_editor.title")}</h1>
-        <InfoHint text={t("guest_page_editor.subtitle")} />
+      <header className="mb-6 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <h1 className="font-grotesk">{t("guest_page_editor.title")}</h1>
+          <InfoHint text={t("guest_page_editor.subtitle")} />
+        </div>
+        <button
+          type="button"
+          className="btn-outline btn-sm"
+          onClick={onOpenLivePreview}
+          disabled={previewState !== "ready"}
+          title={previewHint}
+          aria-label={t("guest_page_editor.preview_live_aria")}
+        >
+          <Eye size={14} aria-hidden />
+          {t("guest_page_editor.preview_live_label")}
+        </button>
       </header>
 
       {/* ── Guest-view preview (on top) ──────────────────────────────────
@@ -673,6 +740,8 @@ export default function GuestPageEditorPage() {
           <GuestPortalView
             data={preview}
             locale={locale}
+            isPreview
+            onEditCover={focusCoverDropzone}
             onEditDate={() => navigate("/app")}
             onEditSchedule={() => navigate("/app/schedule")}
             onEditVenue={focusVenueField}
@@ -976,41 +1045,59 @@ export default function GuestPageEditorPage() {
                  *  Tallózás button. Hidden <input type="file"> so we can style
                  *  the trigger as a regular outline button. Accept attribute
                  *  mirrors the server-side MIME allowlist. */}
-                <div className="flex items-center gap-3">
-                  {coverImageUrl ? (
-                    <img
-                      src={coverImageUrl}
-                      alt={t("wedding_site_editor.cover_upload_preview_alt")}
-                      className="h-14 w-20 shrink-0 rounded-md border border-paper-300 object-cover dark:border-umber-700"
+                <div
+                  id="guest-page-cover-dropzone"
+                  tabIndex={-1}
+                  onDragOver={onCoverDragOver}
+                  onDragLeave={onCoverDragLeave}
+                  onDrop={onCoverDrop}
+                  className={`flex flex-col gap-3 rounded-xl border border-dashed p-4 transition ${
+                    coverDragOver
+                      ? "border-sage-400 bg-sage-50 dark:border-sage-500 dark:bg-umber-800"
+                      : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {coverImageUrl ? (
+                      <img
+                        src={coverImageUrl}
+                        alt={t("wedding_site_editor.cover_upload_preview_alt")}
+                        className="h-14 w-20 shrink-0 rounded-md border border-paper-300 object-cover dark:border-umber-700"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-dashed border-paper-300 text-ink-400 dark:border-umber-700 dark:text-umber-300"
+                        aria-hidden
+                      >
+                        <Upload size={18} />
+                      </div>
+                    )}
+                    <input
+                      ref={coverFileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={onCoverFileChange}
                     />
-                  ) : (
-                    <div
-                      className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-dashed border-paper-300 text-ink-400 dark:border-umber-700 dark:text-umber-300"
-                      aria-hidden
+                    <button
+                      type="button"
+                      className="btn-outline btn-sm"
+                      disabled={coverUploading}
+                      onClick={() => coverFileInputRef.current?.click()}
                     >
-                      <Upload size={18} />
-                    </div>
-                  )}
-                  <input
-                    ref={coverFileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="sr-only"
-                    onChange={onCoverFileChange}
-                  />
-                  <button
-                    type="button"
-                    className="btn-outline btn-sm"
-                    disabled={coverUploading}
-                    onClick={() => coverFileInputRef.current?.click()}
-                  >
-                    <Upload size={14} aria-hidden />
-                    {coverUploading
-                      ? t("wedding_site_editor.cover_upload_uploading")
-                      : coverImageUrl
-                        ? t("wedding_site_editor.cover_upload_replace")
-                        : t("wedding_site_editor.cover_upload_button")}
-                  </button>
+                      <Upload size={14} aria-hidden />
+                      {coverUploading
+                        ? t("wedding_site_editor.cover_upload_uploading")
+                        : coverImageUrl
+                          ? t("wedding_site_editor.cover_upload_replace")
+                          : t("wedding_site_editor.cover_upload_button")}
+                    </button>
+                  </div>
+                  <p className="text-xs text-ink-400 dark:text-umber-300">
+                    {coverDragOver
+                      ? t("wedding_site_editor.cover_drop_active")
+                      : t("wedding_site_editor.cover_drop_hint")}
+                  </p>
                 </div>
                 <input
                   id="guest-page-cover"

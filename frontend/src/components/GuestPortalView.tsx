@@ -5,7 +5,7 @@
 // surface lives elsewhere (couple's /app/schedule, /app/profile, etc.).
 
 import type { GuestPortalView, GuestScheduleEntry } from "@shared/guest_portal";
-import { CalendarDays, Clock, MapPin, Pencil, Sparkles, Users } from "lucide-react";
+import { CalendarDays, Camera, Clock, MapPin, Pencil, Plus, Sparkles, Users } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { SCHEDULE_DAY_TWO_MINUTES } from "@shared/schedule";
 import { formatDate } from "../lib/format";
@@ -30,12 +30,19 @@ function googleMapsUrl(lat: number, lng: number): string {
 export function GuestPortalView({
   data,
   locale,
+  isPreview = false,
+  onEditCover,
   onEditDate,
   onEditSchedule,
   onEditVenue,
 }: {
   data: GuestPortalView;
   locale: Locale;
+  /** Couple's editor preview only — when true, empty cover/date/schedule/venue
+   *  slots render gray dashed "add this" ghosts. Omitted/false on the public view. */
+  isPreview?: boolean;
+  /** Editor preview only — scrolls to + opens the cover dropzone/picker. */
+  onEditCover?: () => void;
   /** When set (couple's editor preview only), the hero wedding date becomes a
    *  shortcut to the dashboard where the date is set. Omitted on the public view. */
   onEditDate?: () => void;
@@ -76,7 +83,7 @@ export function GuestPortalView({
     <div className="space-y-6">
       {/* Full-width cover photo at the very top, when the couple uploaded one.
        *  Mirrors the public wedding page's 16:9 hero image. */}
-      {data.cover_image_url && (
+      {data.cover_image_url ? (
         <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
           <img
             src={data.cover_image_url}
@@ -85,7 +92,37 @@ export function GuestPortalView({
             className="aspect-[16/9] w-full object-cover"
           />
         </div>
-      )}
+      ) : isPreview ? (
+        <div
+          className={`flex aspect-[16/9] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-paper-300 bg-paper-50 text-center dark:border-umber-700 dark:bg-umber-800/40${
+            onEditCover
+              ? " cursor-pointer transition hover:border-ink-300 hover:bg-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
+              : ""
+          }`}
+          {...(onEditCover
+            ? {
+                role: "button" as const,
+                tabIndex: 0,
+                onClick: onEditCover,
+                onKeyDown: (e: KeyboardEvent) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onEditCover();
+                  }
+                },
+              }
+            : {})}
+        >
+          <Camera size={28} className="text-ink-300 dark:text-umber-400" aria-hidden />
+          <p className="text-sm font-medium text-ink-400 dark:text-umber-300">
+            {t("guest_portal.ghost.cover_title")}
+          </p>
+          <p className="flex items-center gap-1 text-xs text-ink-500 dark:text-umber-200">
+            <Plus size={12} aria-hidden />
+            {t("guest_portal.ghost.cover_cta")}
+          </p>
+        </div>
+      ) : null}
 
       {/* Hero — the two facts every guest wants first: who's getting married
        *  and on what day. Centered serif date echoes the marketing landing. */}
@@ -93,22 +130,27 @@ export function GuestPortalView({
         <h1 className="font-serif text-3xl text-ink-900 sm:text-4xl dark:text-paper-50">
           {data.couple_display_name}
         </h1>
-        {onEditDate ? (
+        {onEditDate && data.wedding_date ? (
           <button
             type="button"
             onClick={onEditDate}
             title={t("guest_portal.edit_section_hint")}
             className="mt-2 inline-flex items-center gap-2 rounded-md px-1.5 py-0.5 text-sm text-ink-600 transition hover:bg-paper-100 hover:text-ink-800 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
           >
-            {data.wedding_date ? (
-              <>
-                <CalendarDays size={14} aria-hidden />
-                {formatDate(data.wedding_date, locale)}
-              </>
-            ) : (
-              t("guest_portal.date_tbd")
-            )}
+            <CalendarDays size={14} aria-hidden />
+            {formatDate(data.wedding_date, locale)}
             <Pencil size={12} aria-hidden className="opacity-60" />
+          </button>
+        ) : onEditDate ? (
+          <button
+            type="button"
+            onClick={onEditDate}
+            title={t("guest_portal.edit_section_hint")}
+            className="mt-2 inline-flex items-center gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
+          >
+            <CalendarDays size={14} aria-hidden />
+            {t("guest_portal.ghost.date_cta")}
+            <Plus size={12} aria-hidden />
           </button>
         ) : data.wedding_date ? (
           <p className="mt-2 inline-flex items-center gap-2 text-sm text-ink-600 dark:text-umber-200">
@@ -144,9 +186,17 @@ export function GuestPortalView({
             )}
           </div>
           {data.schedule.length === 0 ? (
-            <p className="text-sm text-ink-500 dark:text-umber-300">
-              {t("guest_portal.schedule_empty")}
-            </p>
+            isPreview ? (
+              <GhostSlot
+                icon={Clock}
+                title={t("guest_portal.ghost.schedule_title")}
+                cta={t("guest_portal.ghost.schedule_cta")}
+              />
+            ) : (
+              <p className="text-sm text-ink-500 dark:text-umber-300">
+                {t("guest_portal.schedule_empty")}
+              </p>
+            )
           ) : (
             <ol className="space-y-3">
               {data.schedule.map((ev) => (
@@ -185,6 +235,12 @@ export function GuestPortalView({
             >
               {t("guest_portal.location_open_map")}
             </a>
+          ) : isPreview ? (
+            <GhostSlot
+              icon={MapPin}
+              title={t("guest_portal.ghost.venue_title")}
+              cta={t("guest_portal.ghost.venue_cta")}
+            />
           ) : (
             <p className="text-sm text-ink-500 dark:text-umber-300">
               {t("guest_portal.location_empty")}
@@ -239,6 +295,59 @@ export function GuestPortalView({
           </ul>
         </section>
       )}
+    </div>
+  );
+}
+
+/** Gray dashed "potential slot" placeholder shown in the couple's editor
+ *  preview where a section is still empty. Clickable when `onAdd` is given;
+ *  otherwise purely visual (the parent card already handles the click). */
+function GhostSlot({
+  icon: Icon,
+  title,
+  cta,
+  onAdd,
+}: {
+  icon: typeof Clock;
+  title: string;
+  cta: string;
+  onAdd?: () => void;
+}) {
+  const clickable = Boolean(onAdd);
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-2xl border border-dashed border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-800/40${
+        clickable
+          ? " cursor-pointer transition hover:border-ink-300 hover:bg-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
+          : ""
+      }`}
+      {...(clickable
+        ? {
+            role: "button" as const,
+            tabIndex: 0,
+            onClick: onAdd,
+            onKeyDown: (e: KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onAdd?.();
+              }
+            },
+          }
+        : {})}
+    >
+      <span
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dashed border-paper-300 bg-white/60 text-ink-300 dark:border-umber-700 dark:bg-umber-900/40 dark:text-umber-400"
+        aria-hidden
+      >
+        <Icon size={18} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-ink-400 dark:text-umber-300">{title}</p>
+        <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-500 dark:text-umber-200">
+          <Plus size={12} aria-hidden />
+          {cta}
+        </p>
+      </div>
     </div>
   );
 }
