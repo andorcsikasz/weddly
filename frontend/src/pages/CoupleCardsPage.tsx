@@ -638,10 +638,18 @@ function DeckShowcase({
                     <button
                       type="button"
                       onClick={() => onSelect(deck.id)}
+                      // Lemonade never participates in the centre/mini
+                      // morph view transition. With a name on every tile
+                      // the snapshot pulled the off-viewport lemonade
+                      // card into frame during red-↔-red swaps, so it
+                      // flashed visible on swap. The red decks still
+                      // morph against the centre card — same as before.
                       style={
-                        {
-                          viewTransitionName: `couple-deck-${deck.id}`,
-                        } as React.CSSProperties
+                        isLemonade
+                          ? undefined
+                          : ({
+                              viewTransitionName: `couple-deck-${deck.id}`,
+                            } as React.CSSProperties)
                       }
                       className={`group flex h-full w-full flex-col items-center justify-between overflow-hidden rounded-xl px-2 py-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-3 sm:py-3 ${
                         isLemonade
@@ -699,10 +707,15 @@ function DeckShowcase({
               type="button"
               onClick={onOpen}
               aria-label={`${t("tools.couple_cards.draw_card")} · ${t(selected.titleKey)}`}
+              // Same rule as the mini: lemonade is outside the morph so
+              // the carousel slide animation owns it cleanly. Red decks
+              // still keep the mini-↔-centre morph.
               style={
-                {
-                  viewTransitionName: `couple-deck-${selectedId}`,
-                } as React.CSSProperties
+                selectedId === "lemonade"
+                  ? undefined
+                  : ({
+                      viewTransitionName: `couple-deck-${selectedId}`,
+                    } as React.CSSProperties)
               }
               className={`relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl px-7 py-8 text-center transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10 ${
                 selectedId === "lemonade"
