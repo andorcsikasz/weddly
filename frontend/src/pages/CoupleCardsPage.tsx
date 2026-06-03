@@ -863,12 +863,9 @@ function CardView({
                   {question ?? t("tools.couple_cards.card_empty")}
                 </p>
 
-                {/* Brand line is full on tablet+ ("Wēddly · 100 kérdés az esküvő
-                  előtt") but compressed on mobile to just the app name, so
-                  the 3:2 card stays the same shape on a 375px viewport
-                  instead of bloating into a near-square. The deck title
-                  line below stays at both sizes — it tells the visitor
-                  which level this card belongs to. */}
+                {/* Brand line is just the app name on every viewport. The deck
+                  title line below tells the visitor which level this card
+                  belongs to. */}
                 <div className="text-center">
                   <p
                     className={`font-display text-[10px] font-bold uppercase tracking-[0.28em] sm:text-xs ${
@@ -876,10 +873,6 @@ function CardView({
                     }`}
                   >
                     {t("app.name")}
-                    <span className="hidden sm:inline">
-                      {" · "}
-                      {t("tools.couple_cards.page_h1")}
-                    </span>
                   </p>
                   <p
                     className={`mt-1 font-display text-[9px] uppercase tracking-[0.24em] sm:text-[10px] ${
@@ -980,15 +973,17 @@ function CardView({
           </div>
         </div>
 
-        {/* Mobile fallback for the left-side cluster: back-arrow + suggest
-            toggle, fixed at the same vertical position as the right
-            cluster below. Back-arrow hides in suggestion mode. */}
-        <div
-          className={`fixed left-4 z-[60] flex flex-col gap-2 sm:hidden ${
-            isLocked ? "top-4" : "top-20"
-          }`}
-        >
-          {!isSuggesting ? (
+        {/* Mobile toolbar: the four side-rail controls (prev, suggest,
+            shuffle, lock) collapse into a single horizontal row directly
+            below the card on phones. The previous `fixed left-4 / right-4`
+            stacks floated alongside the card and forced the aspect-[3/2]
+            tile into a narrow middle strip, eating ~80 px of horizontal
+            room on a 390 px viewport. With the controls below the card,
+            the card itself can fill the available width while keeping
+            the same aspect ratio. Hidden in suggestion mode where the
+            relevant actions live inside the blank card itself. */}
+        {!isSuggesting ? (
+          <div className="mt-4 flex items-center justify-center gap-3 sm:hidden">
             <button
               type="button"
               onClick={onPrev}
@@ -998,58 +993,49 @@ function CardView({
             >
               <ChevronLeft size={16} aria-hidden="true" />
             </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={isSuggesting ? onCloseSuggestion : onOpenSuggestion}
-            aria-label={
-              isSuggesting
-                ? t("tools.couple_cards.suggest_close")
-                : t("tools.couple_cards.suggest_open")
-            }
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
-          >
-            {isSuggesting ? (
-              <X size={16} aria-hidden="true" />
-            ) : (
+            <button
+              type="button"
+              onClick={onOpenSuggestion}
+              aria-label={t("tools.couple_cards.suggest_open")}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+            >
               <PenLine size={16} aria-hidden="true" />
-            )}
-          </button>
-        </div>
-
-        {/* Mobile fallback: under-sm the side stack would overflow the
-            viewport, so the same two controls live in a fixed cluster at
-            the top-right instead. Hidden from sm and up. Also hidden in
-            suggestion mode — shuffle / lock don't apply to the blank
-            card. */}
-        <div
-          className={`fixed right-4 z-[60] ${
-            isSuggesting ? "hidden" : "flex flex-col gap-2 sm:hidden"
-          } ${isLocked ? "top-4" : "top-20"}`}
-        >
-          <button
-            type="button"
-            onClick={onShuffle}
-            aria-label={t("tools.couple_cards.shuffle_random")}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
-          >
-            <Shuffle size={16} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={onToggleLock}
-            aria-label={
-              isLocked ? t("tools.couple_cards.unlock_view") : t("tools.couple_cards.lock_view")
-            }
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
-          >
-            {isLocked ? (
-              <Lock size={16} aria-hidden="true" />
-            ) : (
-              <Unlock size={16} aria-hidden="true" />
-            )}
-          </button>
-        </div>
+            </button>
+            <button
+              type="button"
+              onClick={onShuffle}
+              aria-label={t("tools.couple_cards.shuffle_random")}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+            >
+              <Shuffle size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={onToggleLock}
+              aria-label={
+                isLocked ? t("tools.couple_cards.unlock_view") : t("tools.couple_cards.lock_view")
+              }
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+            >
+              {isLocked ? (
+                <Lock size={16} aria-hidden="true" />
+              ) : (
+                <Unlock size={16} aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 flex justify-center sm:hidden">
+            <button
+              type="button"
+              onClick={onCloseSuggestion}
+              aria-label={t("tools.couple_cards.suggest_close")}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-700 shadow-md transition-all hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700"
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
+          </div>
+        )}
 
         {/* Rating row: three small pills under the card. Anonymous, fire
             and forget — feeds the admin curator view where bad-rated

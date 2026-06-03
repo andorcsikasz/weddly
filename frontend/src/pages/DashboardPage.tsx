@@ -1070,7 +1070,7 @@ export default function DashboardPage() {
              *  by an 8-item checklist — the progress chip in the summary
              *  carries the "are we done?" signal at a glance. */}
             <MobileCollapsibleCard
-              className="card lg:col-span-2 p-0 md:px-6 md:py-5"
+              className="card lg:col-span-2 p-0 font-grotesk md:px-6 md:py-5"
               bodyClassName="px-4 pb-4 md:px-0 md:pb-0"
               title={t("dashboard.tasks_title")}
               trailing={
@@ -1078,8 +1078,10 @@ export default function DashboardPage() {
               }
             >
               <div className="mb-3 hidden items-baseline justify-between md:flex">
-                <h2>{t("dashboard.tasks_title")}</h2>
-                <span className="text-xs text-ink-500 dark:text-umber-300">
+                <h2 className="font-grotesk text-umber-900 dark:text-paper-50">
+                  {t("dashboard.tasks_title")}
+                </h2>
+                <span className="text-xs text-umber-500 dark:text-umber-300">
                   {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
                 </span>
               </div>
@@ -1099,8 +1101,8 @@ export default function DashboardPage() {
               <ul className="grid gap-1 sm:grid-cols-2">
                 {tasks.map((task) => {
                   const tone = task.done
-                    ? "text-ink-500 dark:text-umber-300"
-                    : "text-ink-800 dark:text-paper-100";
+                    ? "text-umber-500 dark:text-umber-300"
+                    : "text-umber-900 dark:text-paper-50";
                   const body = (
                     <>
                       <span
@@ -1165,7 +1167,7 @@ export default function DashboardPage() {
             {/* RSVP breakdown — stretches to match the tasks column. */}
             <div className="grid gap-4">
               <MobileCollapsibleCard
-                className="card flex h-full flex-col p-0 md:px-6 md:py-5"
+                className="card flex h-full flex-col p-0 font-grotesk md:px-6 md:py-5"
                 bodyClassName="flex flex-1 flex-col px-4 pb-4 md:px-0 md:pb-0"
                 title={t("dashboard.rsvp_breakdown_title")}
                 trailing={
@@ -1179,7 +1181,9 @@ export default function DashboardPage() {
                   ) : null
                 }
               >
-                <h2 className="mb-3 hidden md:block">{t("dashboard.rsvp_breakdown_title")}</h2>
+                <h2 className="mb-3 hidden font-grotesk text-umber-900 md:block dark:text-paper-50">
+                  {t("dashboard.rsvp_breakdown_title")}
+                </h2>
                 <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                   <Segment
                     count={rsvp.yes}
@@ -1237,7 +1241,7 @@ export default function DashboardPage() {
                   />
                 </ul>
                 {totalGuests > 0 && (
-                  <p className="mt-3 hidden border-t border-paper-200 pt-2 text-center text-xs text-ink-500 md:block dark:border-umber-700 dark:text-umber-300">
+                  <p className="mt-3 hidden border-t border-paper-200 pt-2 text-center text-xs text-umber-500 md:block dark:border-umber-700 dark:text-umber-300">
                     {t("dashboard.rsvp_responded_of_total", {
                       responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
                       total: formatNumber(totalGuests, locale),
@@ -1880,15 +1884,15 @@ function RsvpRow({
         to={`/app/guests?rsvp=${status}`}
         className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2 text-sm transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 dark:hover:bg-umber-700/60"
       >
-        <span className="flex items-center gap-2.5 text-ink-700 dark:text-paper-100">
+        <span className="flex items-center gap-2.5 text-umber-900 dark:text-paper-50">
           <span className={`inline-block h-2.5 w-2.5 rounded-full ${swatch}`} aria-hidden="true" />
           {label}
         </span>
-        <span className="stat-num inline-flex items-baseline gap-2 text-ink-900 dark:text-paper-50">
+        <span className="stat-num inline-flex items-baseline gap-2 text-umber-900 dark:text-paper-50">
           <span className="text-base font-semibold tabular-nums">
             {formatNumber(value, locale)}
           </span>
-          <span className="w-10 text-right text-xs tabular-nums text-ink-400 dark:text-umber-300">
+          <span className="w-10 text-right text-xs tabular-nums text-umber-500 dark:text-umber-300">
             {pct}%
           </span>
         </span>
