@@ -1828,38 +1828,21 @@ function MobileCollapsibleCard({
   bodyClassName?: string;
   children: ReactNode;
 }) {
-  // Initial: assume desktop so SSR + initial paint don't flash a
-  // collapsed section on wide viewports. Real viewport is measured in
-  // the `useEffect` below and pulls `isWide` to false on phones — one
-  // tick of paint, then the disclosure folds.
-  const [isWide, setIsWide] = useState(true);
-  const [userOpen, setUserOpen] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(min-width: 768px)");
-    setIsWide(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setIsWide(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  if (isWide) {
-    return <div className={className}>{children}</div>;
-  }
-
-  const open = userOpen;
+  // Collapsible on every viewport (open by default). The summary is the sole
+  // header — title + trailing chip + chevron — so the title mounts exactly once
+  // regardless of width (no duplicate body h2 to trip duplicate-text asserts).
+  const [open, setOpen] = useState(true);
   return (
     <details
       className={className}
       open={open}
-      onToggle={(e) => setUserOpen((e.target as HTMLDetailsElement).open)}
+      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
-        <div className="min-w-0 flex-1 text-base font-medium text-ink-900 dark:text-paper-50">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4 [&::-webkit-details-marker]:hidden">
+        <div className="min-w-0 flex-1 font-grotesk text-base font-medium text-umber-900 md:text-lg md:font-semibold dark:text-paper-50">
           {title}
         </div>
-        <div className="flex shrink-0 items-center gap-2 text-xs text-ink-500 dark:text-umber-300">
+        <div className="flex shrink-0 items-center gap-2 text-xs text-umber-500 dark:text-umber-300">
           {trailing}
           <ChevronDown
             size={16}

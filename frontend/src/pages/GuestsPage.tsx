@@ -502,7 +502,7 @@ export default function GuestsPage() {
           </label>
           <button
             type="button"
-            className="btn-outline !border-ink-700 dark:!border-paper-100"
+            className="btn-outline !border-neutral-400 !bg-neutral-200 !text-neutral-700 hover:!bg-neutral-300 dark:!border-neutral-500 dark:!bg-neutral-700 dark:!text-neutral-100 dark:hover:!bg-neutral-600"
             onClick={() => setMealsOpen(true)}
             title={t("guests.meals_title")}
           >
