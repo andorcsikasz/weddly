@@ -170,6 +170,9 @@ export default function DashboardPage() {
   const toast = useToast();
   const { user: currentUser } = useAuth();
   const [data, setData] = useState<Loaded | null | "loading">("loading");
+  // Shared open/closed state for the two side-by-side overview cards (Setup
+  // checklist + RSVP breakdown) so collapsing one collapses both.
+  const [overviewOpen, setOverviewOpen] = useState(true);
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
   const [copied, setCopied] = useState(false);
   // Partner-invite form state (email-or-link flow).
@@ -1081,21 +1084,15 @@ export default function DashboardPage() {
              *  by an 8-item checklist — the progress chip in the summary
              *  carries the "are we done?" signal at a glance. */}
             <MobileCollapsibleCard
-              className="card lg:col-span-2 p-0 font-grotesk md:px-6 md:py-5"
-              bodyClassName="px-4 pb-4 md:px-0 md:pb-0"
+              className="card lg:col-span-2 p-0 font-grotesk"
+              bodyClassName="px-4 pb-4 md:px-6 md:pb-6"
+              open={overviewOpen}
+              onToggle={setOverviewOpen}
               title={t("dashboard.tasks_title")}
               trailing={
                 <span>{t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}</span>
               }
             >
-              <div className="mb-3 hidden items-baseline justify-between md:flex">
-                <h2 className="font-grotesk text-umber-900 dark:text-paper-50">
-                  {t("dashboard.tasks_title")}
-                </h2>
-                <span className="text-xs text-umber-500 dark:text-umber-300">
-                  {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
-                </span>
-              </div>
               <div
                 className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
                 role="progressbar"
@@ -1178,8 +1175,10 @@ export default function DashboardPage() {
             {/* RSVP breakdown — stretches to match the tasks column. */}
             <div className="grid gap-4">
               <MobileCollapsibleCard
-                className="card flex h-full flex-col p-0 font-grotesk md:px-6 md:py-5"
-                bodyClassName="flex flex-1 flex-col px-4 pb-4 md:px-0 md:pb-0"
+                className="card flex h-full flex-col p-0 font-grotesk"
+                bodyClassName="flex flex-1 flex-col px-4 pb-4 md:px-6 md:pb-6"
+                open={overviewOpen}
+                onToggle={setOverviewOpen}
                 title={t("dashboard.rsvp_breakdown_title")}
                 trailing={
                   totalGuests > 0 ? (
@@ -1192,9 +1191,6 @@ export default function DashboardPage() {
                   ) : null
                 }
               >
-                <h2 className="mb-3 hidden font-grotesk text-umber-900 md:block dark:text-paper-50">
-                  {t("dashboard.rsvp_breakdown_title")}
-                </h2>
                 <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                   <Segment
                     count={rsvp.yes}
@@ -1821,22 +1817,34 @@ function MobileCollapsibleCard({
   className,
   bodyClassName,
   children,
+  open: controlledOpen,
+  onToggle,
 }: {
   title: ReactNode;
   trailing?: ReactNode;
   className?: string;
   bodyClassName?: string;
   children: ReactNode;
+  /** Controlled open state — pass both to share one state across cards. Omit
+   *  for the default self-managed (uncontrolled) behaviour. */
+  open?: boolean;
+  onToggle?: (open: boolean) => void;
 }) {
   // Collapsible on every viewport (open by default). The summary is the sole
   // header — title + trailing chip + chevron — so the title mounts exactly once
   // regardless of width (no duplicate body h2 to trip duplicate-text asserts).
-  const [open, setOpen] = useState(true);
+  const [internalOpen, setInternalOpen] = useState(true);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  function handleToggle(next: boolean) {
+    if (!isControlled) setInternalOpen(next);
+    onToggle?.(next);
+  }
   return (
     <details
       className={className}
       open={open}
-      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
+      onToggle={(e) => handleToggle((e.target as HTMLDetailsElement).open)}
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4 [&::-webkit-details-marker]:hidden">
         <div className="min-w-0 flex-1 font-grotesk text-base font-medium text-umber-900 md:text-lg md:font-semibold dark:text-paper-50">
