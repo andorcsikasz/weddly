@@ -21,13 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
-import {
-  COUPLE_CARD_DECKS,
-  DECK_SIZE,
-  type DeckId,
-  loadLemonadeRevealed,
-  saveLemonadeRevealed,
-} from "../lib/couple_cards";
+import { COUPLE_CARD_DECKS, DECK_SIZE, type DeckId } from "../lib/couple_cards";
 import { coupleCardsApi, type CoupleCardRating } from "../lib/endpoints";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -143,9 +137,13 @@ function initialSelectedDeck(): DeckId {
   return DEFAULT_SELECTED;
 }
 
-// Lemonade easter-egg reveal helpers live on `lib/couple_cards` so the
-// landing teaser and the tool page share the same localStorage key —
-// unlocking it on one surface lights it up on the other.
+// Lemonade easter egg lives entirely in selectedDeck state: when
+// `selectedDeck === "lemonade"`, the mini-row slides left by one slot
+// so the lemonade tile rotates into view and Level 1 rotates off the
+// left edge. Picking any red deck unshifts the row. No localStorage
+// flag — every fresh page load starts back at "hidden". A right-swipe
+// (pointer or trackpad wheel) selects lemonade directly, which is the
+// same thing as the user finding the easter egg.
 
 /** After this many distinct cards have surfaced in the card view, snap
  *  the page into focus mode automatically. Counts both the open-deck
@@ -159,17 +157,6 @@ export default function CoupleCardsPage() {
 
   const [activeDeck, setActiveDeck] = useState<DeckId | null>(null);
   const [selectedDeck, setSelectedDeck] = useState<DeckId>(() => initialSelectedDeck());
-  const [isLemonadeRevealed, setIsLemonadeRevealed] = useState<boolean>(() => {
-    // Pre-reveal if either the storage flag is set OR the deep-link param
-    // points at lemonade. Otherwise the initial swipe gate stays armed.
-    if (loadLemonadeRevealed()) return true;
-    if (typeof window === "undefined") return false;
-    return new URLSearchParams(window.location.search).get("deck") === "lemonade";
-  });
-  const revealLemonade = useCallback(() => {
-    setIsLemonadeRevealed(true);
-    saveLemonadeRevealed();
-  }, []);
 
   // Swap the centred deck inside a View Transition so the browser
   // computes a layout morph between the just-tapped mini and the centre
@@ -449,8 +436,6 @@ export default function CoupleCardsPage() {
           selectedId={selectedDeck}
           onSelect={selectDeck}
           onOpen={() => openDeck(selectedDeck)}
-          isLemonadeRevealed={isLemonadeRevealed}
-          onRevealLemonade={revealLemonade}
         />
       ) : null}
       {/* In-flow card view only when focus mode is OFF. When locked, the
@@ -525,34 +510,26 @@ function DeckShowcase({
   selectedId,
   onSelect,
   onOpen,
-  isLemonadeRevealed,
-  onRevealLemonade,
 }: {
   selectedId: DeckId;
   onSelect: (id: DeckId) => void;
   onOpen: () => void;
-  isLemonadeRevealed: boolean;
-  onRevealLemonade: () => void;
 }) {
   const { t } = useT();
-  // Filter the easter-egg deck out until the visitor unlocks it via a
-  // horizontal swipe across the mini row (or arrives via ?deck=lemonade).
-  const visibleDecks = useMemo(
-    () =>
-      isLemonadeRevealed ? COUPLE_CARD_DECKS : COUPLE_CARD_DECKS.filter((d) => d.id !== "lemonade"),
-    [isLemonadeRevealed],
-  );
-  const selectedIdx = visibleDecks.findIndex((d) => d.id === selectedId);
-  const selected = visibleDecks[selectedIdx];
+  const selectedIdx = COUPLE_CARD_DECKS.findIndex((d) => d.id === selectedId);
+  const selected = COUPLE_CARD_DECKS[selectedIdx];
   if (!selected) return null;
 
-  // Swipe gate for the mini-row: any horizontal gesture across the row
-  // reveals the 5th lemonade card. Easter-egg by design — no visual hint
-  // that the row is interactive. Two gesture sources covered:
-  //   • Pointer drag (mouse-with-button, touch) → >50px horizontal travel
-  //   • Wheel / trackpad horizontal swipe → >60px accumulated deltaX
-  // The wheel branch matters on macOS, where a two-finger horizontal
-  // trackpad swipe fires wheel events with deltaX, not pointer events.
+  // Easter-egg carousel shift: when lemonade is selected, the inner flex
+  // row slides left by exactly one slot (card width + gap), so Level 1
+  // rotates off the left edge and lemonade rotates into the rightmost
+  // visible slot. Card sizes never change — the row is always 5
+  // fixed-width children with a 4-slot viewport.
+  const isShifted = selectedId === "lemonade";
+
+  // Right-swipe gate: a horizontal gesture across the row (pointer drag
+  // or trackpad wheel) selects lemonade, which shifts the row left by
+  // one slot. The egg has no visual hint that the row is interactive.
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const wheelAcc = useRef(0);
   const handleSwipeStart = (e: React.PointerEvent<HTMLUListElement>) => {
@@ -561,29 +538,21 @@ function DeckShowcase({
   const handleSwipeEnd = (e: React.PointerEvent<HTMLUListElement>) => {
     const start = swipeStart.current;
     swipeStart.current = null;
-    if (!start || isLemonadeRevealed) return;
+    if (!start || isShifted) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
-    // Right-swipe only (positive dx): the easter egg fires when the
-    // visitor "pulls" the row to the right, revealing a card that was
-    // tucked off the right edge. Left-swipe and vertical drag are no-ops.
     if (dx > 50 && Math.abs(dx) > Math.abs(dy)) {
-      onRevealLemonade();
+      onSelect("lemonade");
     }
   };
   const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
-    if (isLemonadeRevealed) return;
-    // Trackpad swipes emit signed deltaX. Right-swipe ≈ positive deltaX
-    // on macOS — only that direction triggers the reveal. Vertical wheel
-    // resets the accumulator so page scroll never trips the egg.
+    if (isShifted) return;
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       wheelAcc.current += e.deltaX;
       if (wheelAcc.current > 60) {
-        onRevealLemonade();
+        onSelect("lemonade");
         wheelAcc.current = 0;
       } else if (wheelAcc.current < 0) {
-        // Don't let leftward drift sit in the accumulator forever; cap
-        // at zero so the next rightward swipe starts from a fresh count.
         wheelAcc.current = 0;
       }
     } else {
@@ -623,60 +592,78 @@ function DeckShowcase({
             no label), letting an open gap tell the "this card just rose
             into the centre" story without an extra placeholder shape. */}
         <h2 className="sr-only">{t("tools.couple_cards.decks_h2")}</h2>
-        <ul
-          onPointerDown={handleSwipeStart}
-          onPointerUp={handleSwipeEnd}
-          onPointerCancel={() => {
-            swipeStart.current = null;
-          }}
-          onWheel={handleWheel}
-          style={{ touchAction: "pan-y" }}
-          className={`mx-auto mt-8 grid max-w-2xl gap-2 sm:mt-10 sm:gap-3 ${
-            isLemonadeRevealed ? "grid-cols-5" : "grid-cols-4"
-          }`}
-        >
-          {visibleDecks.map((deck, idx) => {
-            const isSelected = deck.id === selectedId;
-            const isLemonade = deck.id === "lemonade";
-            return (
-              <li key={deck.id} className="aspect-[3/2]" aria-hidden={isSelected}>
-                {isSelected ? null : (
-                  <button
-                    type="button"
-                    onClick={() => onSelect(deck.id)}
-                    style={
-                      {
-                        viewTransitionName: `couple-deck-${deck.id}`,
-                      } as React.CSSProperties
-                    }
-                    className={`group flex h-full w-full flex-col items-center justify-between overflow-hidden rounded-xl px-2 py-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-3 sm:py-3 ${
-                      isLemonade
-                        ? "bg-lemonade-yellow text-umber-900 shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
-                        : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
-                    }`}
-                  >
-                    <span aria-hidden="true" className="block h-0.5" />
-                    <div className="flex flex-1 flex-col items-center justify-center">
-                      <span className="font-display text-xs font-bold uppercase leading-[0.95] tracking-tight sm:text-base lg:text-lg">
-                        {isLemonade
-                          ? t(deck.titleKey).toUpperCase()
-                          : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
-                      </span>
-                      {!isLemonade ? (
-                        <span className="mt-1 hidden font-display text-[10px] font-bold uppercase tracking-[0.04em] sm:block sm:text-[11px]">
-                          ({t(deck.titleKey)})
+        {/* Carousel viewport: a 4-slot wide window onto a 5-card flex row.
+            The 5th card (lemonade) is tucked off the right edge until the
+            row transforms left by exactly one slot — at which point
+            Level 1 rotates off the left edge and lemonade rotates into
+            view. Card sizes never change; the row width is fixed at
+            "5 × slot + 4 × gap" via the per-li width calculation, and
+            the parent overflow-hidden clips the off-screen card. */}
+        <div className="mx-auto mt-8 max-w-2xl overflow-hidden sm:mt-10">
+          <ul
+            onPointerDown={handleSwipeStart}
+            onPointerUp={handleSwipeEnd}
+            onPointerCancel={() => {
+              swipeStart.current = null;
+            }}
+            onWheel={handleWheel}
+            style={{
+              touchAction: "pan-y",
+              gap: "var(--card-gap)",
+              transform: isShifted
+                ? "translateX(calc(-25% - var(--card-gap) / 4))"
+                : "translateX(0)",
+            }}
+            className="flex transition-transform duration-500 ease-out [--card-gap:0.5rem] sm:[--card-gap:0.75rem]"
+          >
+            {COUPLE_CARD_DECKS.map((deck, idx) => {
+              const isSelected = deck.id === selectedId;
+              const isLemonade = deck.id === "lemonade";
+              return (
+                <li
+                  key={deck.id}
+                  className="aspect-[3/2] shrink-0"
+                  style={{ width: "calc((100% - 3 * var(--card-gap)) / 4)" }}
+                  aria-hidden={isSelected}
+                >
+                  {isSelected ? null : (
+                    <button
+                      type="button"
+                      onClick={() => onSelect(deck.id)}
+                      style={
+                        {
+                          viewTransitionName: `couple-deck-${deck.id}`,
+                        } as React.CSSProperties
+                      }
+                      className={`group flex h-full w-full flex-col items-center justify-between overflow-hidden rounded-xl px-2 py-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-3 sm:py-3 ${
+                        isLemonade
+                          ? "bg-lemonade-yellow text-umber-900 shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
+                          : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
+                      }`}
+                    >
+                      <span aria-hidden="true" className="block h-0.5" />
+                      <div className="flex flex-1 flex-col items-center justify-center">
+                        <span className="font-display text-xs font-bold uppercase leading-[0.95] tracking-tight sm:text-base lg:text-lg">
+                          {isLemonade
+                            ? t(deck.titleKey).toUpperCase()
+                            : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
                         </span>
-                      ) : null}
-                    </div>
-                    <span className="font-display text-[8px] font-bold uppercase tracking-[0.22em] sm:text-[9px]">
-                      {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
-                    </span>
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                        {!isLemonade ? (
+                          <span className="mt-1 hidden font-display text-[10px] font-bold uppercase tracking-[0.04em] sm:block sm:text-[11px]">
+                            ({t(deck.titleKey)})
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="font-display text-[8px] font-bold uppercase tracking-[0.22em] sm:text-[9px]">
+                        {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                      </span>
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
         {/* Centre: the lifted deck. The card's `viewTransitionName` matches
             the just-tapped mini's, so the browser morphs one into the

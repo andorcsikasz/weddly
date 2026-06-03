@@ -952,6 +952,7 @@ const hu: LocaleMessages = {
     pricing_body:
       "Legyetek az első 200 pár között, és a Wēddly végig ingyenes marad a tervezésetek alatt, akár 18 hónapig. Utána 1 990 Ft havonta, 2 hét ingyenes próbával, minden funkcióval.",
     pricing_amount: "1 990",
+    pricing_amount_decimal: "",
     pricing_amount_sub: "/ hó",
     pricing_after: "Az első 200 párnak 18 hónapig ingyenes.",
     pricing_after_detail:

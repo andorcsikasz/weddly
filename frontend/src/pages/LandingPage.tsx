@@ -363,6 +363,11 @@ export default function LandingPage() {
               <div className="flex items-end gap-3">
                 <span className="font-serif text-6xl leading-[0.9] text-umber-900 dark:text-paper-50 sm:text-7xl">
                   {t("landing.pricing_amount")}
+                  {t("landing.pricing_amount_decimal") && (
+                    <sup className="align-super text-2xl sm:text-3xl">
+                      .{t("landing.pricing_amount_decimal")}
+                    </sup>
+                  )}
                 </span>
                 <span className="mb-2 font-serif text-3xl text-umber-600 dark:text-umber-200">
                   {currencySymbol(localeCurrency(locale), locale)}

@@ -1042,6 +1042,9 @@ export interface LocaleMessages {
     pricing_body: string;
     /** Big serif number on the price card ("5" / "1 990"). */
     pricing_amount: string;
+    /** Superscript decimal shown after the big amount (EUR "90" → ".90");
+     *  empty for whole-unit currencies like HUF. */
+    pricing_amount_decimal: string;
     /** Per-period suffix beside the price ("/ month" / "/ hó"). */
     pricing_amount_sub: string;
     /** Highlighted founding-offer callout: free for the first 200 couples. */
