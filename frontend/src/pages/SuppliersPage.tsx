@@ -71,7 +71,6 @@ import {
   hydrateCostPlanningCount,
   readCostPlanningCount,
   subscribeCostPlanningCount,
-  writeCostPlanningCount,
 } from "../lib/cost_planning";
 import {
   budgetApi,
@@ -361,30 +360,6 @@ export default function SuppliersPage() {
     if (next === null) p.delete("price");
     else p.set("price", String(next));
     setParams(p, { replace: true });
-  }
-  function setGuestsFilter(next: string) {
-    const trimmed = next.trim();
-    const p = new URLSearchParams(params);
-    let parsed: number | null = null;
-    if (!trimmed) {
-      p.delete("guests");
-    } else {
-      const n = Number(trimmed);
-      if (Number.isInteger(n) && n > 0) {
-        p.set("guests", String(n));
-        parsed = n;
-      } else {
-        p.delete("guests");
-      }
-    }
-    setParams(p, { replace: true });
-    // Mirror the value back to /app/budget's cost-planning slider so the
-    // two surfaces stay in sync. Clearing the filter does NOT clear the
-    // slider — the slider always has a working value, so we only push
-    // positive integers across.
-    if (coupleId !== null && parsed !== null) {
-      writeCostPlanningCount(coupleId, parsed);
-    }
   }
 
   // Optimistic vote: flip the card immediately, roll back if the server says no.
@@ -921,22 +896,27 @@ export default function SuppliersPage() {
           className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
           aria-hidden
         />
-        <label className="flex items-center gap-3">
+        {/* Guest count is read-only here — it's owned by the cost-planning
+            slider on /app/budget and mirrored in. Editing it inline would
+            give couples two sources of truth for the same number, so we
+            show the live value and route edits to the budget page via the
+            adjacent wallet link. */}
+        <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.guests_filter_label")}
           </span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            step={1}
-            className="h-7 w-16 rounded-full border border-transparent bg-transparent px-2 text-center text-[11px] tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:bg-paper-50 hover:border-paper-300 focus:border-paper-400 focus:bg-paper-50 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:bg-umber-800 dark:hover:border-umber-700 dark:focus:border-umber-600 dark:focus:bg-umber-800"
-            placeholder={t("suppliers.guests_filter_placeholder")}
-            value={guestsFilter ?? ""}
-            onChange={(e) => setGuestsFilter(e.target.value)}
-            aria-label={t("suppliers.guests_filter_label")}
-          />
-        </label>
+          <span className="min-w-[2ch] text-center text-[11px] font-semibold tabular-nums text-ink-800 dark:text-paper-100">
+            {guestsFilter ?? "—"}
+          </span>
+          <Link
+            to="/app/budget"
+            title={t("suppliers.guests_filter_edit_in_budget")}
+            aria-label={t("suppliers.guests_filter_edit_in_budget")}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-50 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-100"
+          >
+            <Wallet size={13} aria-hidden />
+          </Link>
+        </div>
       </div>
 
       {/* Step chain. Sequence numbers dropped — the icons carry the meaning.
@@ -1008,7 +988,7 @@ export default function SuppliersPage() {
             onClick={() => setActiveCat(null)}
             className={
               activeCat === null
-                ? "inline-flex items-center gap-1.5 rounded-xl border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 py-1 text-xs font-medium text-paper-100"
+                ? "inline-flex items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
                 : "inline-flex items-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
             }
           >
@@ -1016,7 +996,7 @@ export default function SuppliersPage() {
             <span
               className={
                 activeCat === null
-                  ? "rounded-full bg-paper-100/20 dark:bg-umber-900/30 px-1.5 text-[10px] font-medium tabular-nums"
+                  ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
                   : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
               }
             >
@@ -1034,7 +1014,7 @@ export default function SuppliersPage() {
                 onClick={() => setActiveCat(c)}
                 className={
                   selected
-                    ? "inline-flex items-center gap-1.5 rounded-xl border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 py-1 text-xs font-medium text-paper-100"
+                    ? "inline-flex items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
                     : "inline-flex items-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
                 }
               >
@@ -1043,7 +1023,7 @@ export default function SuppliersPage() {
                 <span
                   className={
                     selected
-                      ? "rounded-full bg-paper-100/20 dark:bg-umber-900/30 px-1.5 text-[10px] font-medium tabular-nums"
+                      ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
                       : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
                   }
                 >
@@ -1875,7 +1855,7 @@ function ChainStep({
       onClick={onClick}
       className={`group relative flex items-center justify-center rounded-lg border px-2.5 py-2.5 text-sm transition-colors ${
         active
-          ? "border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+          ? "border-transparent stationery-coffee text-paper-50"
           : allDone
             ? "border-sage-400 bg-sage-50 text-sage-800 hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
             : "border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
@@ -1898,7 +1878,7 @@ function ChainStep({
           <span
             className={`flex h-5 items-center font-medium tabular-nums leading-none ${
               active
-                ? "text-paper-100/80 dark:text-umber-900/80"
+                ? "text-paper-50/70"
                 : allDone
                   ? "text-sage-700/80 dark:text-sage-300/80"
                   : "text-ink-400 dark:text-umber-300"
