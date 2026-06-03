@@ -619,7 +619,7 @@ function LiveStatsBand() {
 
   return (
     <section className="relative bg-paper-50 dark:bg-umber-900">
-      <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-14">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-14">
         {/* The count-up only fires once the tiles scroll into view (inView),
             so the flip plays when the user can see it — not silently on load
             while the band is still far below the fold. */}
@@ -1136,7 +1136,7 @@ function CoupleCardsTeaser() {
 
   return (
     <section className="relative bg-white dark:bg-umber-900">
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-16">
         <header className="text-center">
           <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.couple_cards_title")}
