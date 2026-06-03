@@ -710,7 +710,7 @@ export default function SuppliersPage() {
     <>
       <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <h1>{t("suppliers.title")}</h1>
+          <h1 className="font-grotesk">{t("suppliers.title")}</h1>
           {/* Subtitle hidden on mobile — the page already has 7 rows of
               chrome before the first supplier card, and the booking caveat
               ("booking arrives in v2") isn't actionable on first scroll. */}
