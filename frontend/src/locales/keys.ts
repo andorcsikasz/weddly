@@ -3127,6 +3127,7 @@ export interface LocaleMessages {
     /** Billing badges + free-badge grant/revoke on the admin couples list. */
     billing_free: string;
     billing_until_wedding: string;
+    first200_early_bird: string;
     billing_trial: string;
     billing_paying: string;
     billing_not_subscribed: string;

@@ -2786,6 +2786,7 @@ const hu: LocaleMessages = {
     remind_invite_partner_sent_label: "Elküldve",
     billing_free: "Ingyenes",
     billing_until_wedding: "Esküvőig ingyen",
+    first200_early_bird: "Első 200 · early bird",
     billing_trial: "Próba",
     billing_paying: "Fizető",
     billing_not_subscribed: "Nem fizetett elő",

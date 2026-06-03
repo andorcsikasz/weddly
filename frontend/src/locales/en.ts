@@ -2754,6 +2754,7 @@ const en: LocaleMessages = {
     remind_invite_partner_sent_label: "Reminder sent",
     billing_free: "Free",
     billing_until_wedding: "Free until wedding",
+    first200_early_bird: "First 200 · early bird",
     billing_trial: "Trial",
     billing_paying: "Paying",
     billing_not_subscribed: "Not subscribed",

@@ -1,5 +1,6 @@
 import type { AdminCoupleView, AdminUserView } from "@shared/types";
 import {
+  Bird,
   Check,
   ChevronDown,
   ChevronRight,
@@ -719,6 +720,16 @@ export default function AdminUsersPage() {
             <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
               {workspaceId(c)}
             </code>
+            {/* Early-bird mark: one of the first 200 founding couples. */}
+            {!c.is_demo && c.billing.is_founding_member && (
+              <span
+                title={t("admin.first200_early_bird")}
+                aria-label={t("admin.first200_early_bird")}
+                className="text-umber-600 dark:text-umber-300"
+              >
+                <Bird size={14} aria-hidden />
+              </span>
+            )}
             {/* Grant/revoke free access — gift icon next to the ID. When the
                 workspace is free (founding) the gift gets a green frame + white
                 icon so it reads as "comped" at a glance; muted otherwise. */}
