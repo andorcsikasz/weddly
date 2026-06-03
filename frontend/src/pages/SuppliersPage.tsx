@@ -177,6 +177,11 @@ function writeSaved(set: Set<string>) {
   }
 }
 
+// Progressive render: only the first page of filtered suppliers is laid out
+// up front; the rest expands in via a "load more" button. Keeps the initial
+// paint cheap on broad filters (the directory can run to hundreds of cards).
+const SUPPLIERS_PAGE_SIZE = 50;
+
 export default function SuppliersPage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.suppliers_title", "seo.suppliers_description");
@@ -643,6 +648,14 @@ export default function SuppliersPage() {
     }
     return sorted;
   }, [filteredBeforeCategory, activeGroup, activeCat, sortMode, locale]);
+
+  // How many of `filtered` are laid out right now. Reset to the first page
+  // whenever the filtered set changes (new search / category / sort) so we
+  // never show a stale offset, then grow it a page at a time on "load more".
+  const [visibleCount, setVisibleCount] = useState(SUPPLIERS_PAGE_SIZE);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on result change
+  useEffect(() => setVisibleCount(SUPPLIERS_PAGE_SIZE), [filtered]);
+  const visibleSuppliers = filtered.slice(0, visibleCount);
 
   // Per-group counts for the top chain. "Mind" gets the total across all
   // groups. Each group step gets its own count.
@@ -1344,7 +1357,7 @@ export default function SuppliersPage() {
                       : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
-                  <Avatar name={s.name} heroUrl={s.hero_image_url} />
+                  <Avatar name={s.name} heroUrl={s.hero_image_url} category={s.category} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       {user?.is_admin ? (
@@ -1532,7 +1545,7 @@ export default function SuppliersPage() {
                     corner. The right padding on the name reserves space for
                     the pinned-corner controls above. */}
                 <div className="flex items-start gap-3 pr-16">
-                  <Avatar name={s.name} heroUrl={s.hero_image_url} />
+                  <Avatar name={s.name} heroUrl={s.hero_image_url} category={s.category} />
                   <div className="min-w-0 flex-1">
                     {user?.is_admin ? (
                       <Link
@@ -1912,8 +1925,17 @@ function ChainStep({
  *  monogram on unclaimed / curated rows the vendor hasn't filled. The slot
  *  size matches the listing card's leading column on every viewport so the
  *  layout doesn't shift between cards with and without an uploaded image. */
-function Avatar({ name, heroUrl }: { name: string; heroUrl?: string | null }) {
-  const initial = name.charAt(0).toUpperCase();
+function Avatar({
+  name,
+  heroUrl,
+  category,
+}: {
+  name: string;
+  heroUrl?: string | null;
+  /** When set (and no hero image), the slot shows the category icon instead of
+   *  the name monogram, so curated rows read by trade at a glance. */
+  category?: SupplierCategory;
+}) {
   const base =
     "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-paper-300 bg-paper-100 font-serif text-lg text-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-paper-100";
   if (heroUrl) {
@@ -1923,7 +1945,12 @@ function Avatar({ name, heroUrl }: { name: string; heroUrl?: string | null }) {
       </div>
     );
   }
-  return <div className={base}>{initial}</div>;
+  const Icon = category ? CATEGORY_ICON[category] : null;
+  return (
+    <div className={base}>
+      {Icon ? <Icon size={18} aria-hidden /> : name.charAt(0).toUpperCase()}
+    </div>
+  );
 }
 
 /** Price-band scale: just N dollar signs ($ … $$$$$). No greyed
