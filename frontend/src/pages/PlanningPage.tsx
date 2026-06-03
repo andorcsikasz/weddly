@@ -557,7 +557,7 @@ export default function PlanningPage() {
               return (
                 <section key={section.group}>
                   {showHeader && (
-                    <h2 className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+                    <h2 className="mb-2 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
                       {t(TASK_GROUP_LABEL_KEY[section.group])}
                     </h2>
                   )}
