@@ -992,7 +992,7 @@ export default function SuppliersPage() {
             className={
               activeCat === null
                 ? "inline-flex items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
-                : "inline-flex items-center gap-1.5 rounded-xl border border-umber-600 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
+                : "inline-flex items-center gap-1.5 rounded-xl border border-umber-400 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
             }
           >
             {t("suppliers.filter_all")}
@@ -1018,7 +1018,7 @@ export default function SuppliersPage() {
                 className={
                   selected
                     ? "inline-flex items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
-                    : "inline-flex items-center gap-1.5 rounded-xl border border-umber-600 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
+                    : "inline-flex items-center gap-1.5 rounded-xl border border-umber-400 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
                 }
               >
                 <Icon size={13} />
@@ -1861,7 +1861,7 @@ function ChainStep({
           ? "border-transparent stationery-coffee text-paper-50"
           : allDone
             ? "border-sage-400 bg-sage-50 text-sage-800 hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
-            : "border-umber-600 bg-umber-200 text-ink-800 hover:border-umber-700 hover:bg-umber-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+            : "border-umber-400 bg-umber-200 text-ink-800 hover:border-umber-500 hover:bg-umber-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
       }`}
     >
       {/* Explicit h-4 row + leading-none on every child forces all three
