@@ -106,7 +106,14 @@ export default {
         // wnrs-red one does. Revealed only after a right-swipe across
         // the mini-deck row.
         lemonade: {
-          yellow: "#FFE600",
+          // Aureolin per user spec — softer, slightly greenish lemon
+          // versus the earlier vivid #FFE600. Reads as a real lemon-peel
+          // colour, not a pure RGB primary.
+          yellow: "#fbe311",
+          // Bistre — deep chocolate-coffee dark used for type + the
+          // glass-mark icon on every lemonade surface. Matches the
+          // landing hero ink so the brand line feels coherent.
+          ink: "#261606",
           yellowInk: "#A16207",
         },
       },

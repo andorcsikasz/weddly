@@ -645,7 +645,7 @@ function DeckShowcase({
                       }
                       className={`group flex h-full w-full flex-col items-center justify-between overflow-hidden rounded-xl px-2 py-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-3 sm:py-3 ${
                         isLemonade
-                          ? "bg-lemonade-yellow text-umber-900 shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
+                          ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
                           : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
                       }`}
                     >
@@ -706,7 +706,7 @@ function DeckShowcase({
               }
               className={`relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl px-7 py-8 text-center transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10 ${
                 selectedId === "lemonade"
-                  ? "bg-lemonade-yellow text-umber-900 shadow-[0_24px_50px_-22px_rgba(161,98,7,0.6)] focus-visible:ring-lemonade-yellow"
+                  ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_24px_50px_-22px_rgba(161,98,7,0.6)] focus-visible:ring-lemonade-yellow"
                   : "bg-wnrs-red text-white shadow-[0_24px_50px_-22px_rgba(204,31,40,0.55)] focus-visible:ring-wnrs-red"
               }`}
             >
@@ -723,7 +723,11 @@ function DeckShowcase({
                   </p>
                 ) : null}
               </div>
-              <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-white sm:text-xs">
+              <span
+                className={`font-display text-[10px] font-bold uppercase tracking-[0.28em] sm:text-xs ${
+                  selectedId === "lemonade" ? "text-lemonade-ink" : "text-white"
+                }`}
+              >
                 {t("app.name")} · {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
               </span>
             </button>
@@ -806,7 +810,7 @@ function CardView({
         ) : cardNumber !== null ? (
           <p
             className={`mt-6 text-center font-display text-[11px] font-bold uppercase tracking-[0.32em] ${
-              deckId === "lemonade" ? "text-umber-900 dark:text-paper-50" : "text-wnrs-red"
+              deckId === "lemonade" ? "text-lemonade-ink dark:text-paper-50" : "text-wnrs-red"
             }`}
           >
             {t("tools.couple_cards.card_position", { n: cardNumber, total: DECK_SIZE })}
@@ -853,7 +857,7 @@ function CardView({
                 <p
                   data-testid="couple-card-question"
                   className={`text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] sm:text-2xl lg:text-3xl ${
-                    deckId === "lemonade" ? "text-umber-900" : "text-wnrs-red"
+                    deckId === "lemonade" ? "text-lemonade-ink" : "text-wnrs-red"
                   }`}
                 >
                   {question ?? t("tools.couple_cards.card_empty")}
@@ -868,7 +872,7 @@ function CardView({
                 <div className="text-center">
                   <p
                     className={`font-display text-[10px] font-bold uppercase tracking-[0.28em] sm:text-xs ${
-                      deckId === "lemonade" ? "text-umber-900" : "text-wnrs-red"
+                      deckId === "lemonade" ? "text-lemonade-ink" : "text-wnrs-red"
                     }`}
                   >
                     {t("app.name")}
@@ -879,7 +883,7 @@ function CardView({
                   </p>
                   <p
                     className={`mt-1 font-display text-[9px] uppercase tracking-[0.24em] sm:text-[10px] ${
-                      deckId === "lemonade" ? "text-umber-700" : "text-wnrs-redInk"
+                      deckId === "lemonade" ? "text-lemonade-ink/70" : "text-wnrs-redInk"
                     }`}
                   >
                     {deckTitle}
@@ -891,7 +895,7 @@ function CardView({
                   Inline SVG (no extra dependency) inheriting currentColor
                   so it tints with the umber text. */}
               {deckId === "lemonade" ? (
-                <LemonadeGlassMark className="absolute bottom-4 left-4 text-umber-900 sm:bottom-6 sm:left-6" />
+                <LemonadeGlassMark className="absolute bottom-4 left-4 text-lemonade-ink sm:bottom-6 sm:left-6" />
               ) : null}
             </button>
           )}
