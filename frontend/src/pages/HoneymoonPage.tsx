@@ -853,7 +853,7 @@ function DaysTile({
   }, [start, end]);
 
   return (
-    <div ref={wrapperRef} className="card-hover stationery-ink relative !p-4">
+    <div ref={wrapperRef} className="card stationery-ink relative !p-4">
       <div className="flex items-center gap-2 text-paper-200">
         <Calendar size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
@@ -945,7 +945,7 @@ function DestinationTile({
   const [mapOpen, setMapOpen] = useState(false);
 
   return (
-    <div className="card-hover stationery-ink relative flex h-full flex-col !p-4">
+    <div className="card stationery-ink relative flex h-full flex-col !p-4">
       <div className="flex items-center gap-2 text-paper-200">
         <MapPin size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
@@ -1209,7 +1209,7 @@ function BudgetSummaryTile({
   return (
     <Link
       to="/app/budget"
-      className="card-hover stationery-ink relative flex h-full flex-col overflow-hidden !p-4"
+      className="card stationery-ink relative flex h-full flex-col overflow-hidden !p-4"
     >
       <div className="flex items-center gap-2 text-paper-200">
         <Wallet size={14} aria-hidden="true" />
@@ -1503,7 +1503,7 @@ function FlightEstimateCard({
 
   return (
     <section
-      className="card-hover stationery-light relative !p-5 mt-4 mx-4 sm:mx-8"
+      className="card stationery-light relative !p-5 mt-4 mx-4 sm:mx-8"
       aria-label={t("honeymoon.flight_estimate_title")}
     >
       <header className="flex items-start gap-3">
