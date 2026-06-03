@@ -281,9 +281,20 @@ export default function DashboardPage() {
   const { couple, guests, lines, tableCount, seatedGuestIds, dietary, schedule } = data;
 
   // ── Days countdown — only meaningful when an exact date is locked. ─────
+  // Measure midnight-to-midnight (both local) so the delta is a whole number of
+  // days regardless of the time of day. Using Date.now() (with the current
+  // time-of-day) made "today" round to -1 in the afternoon, which then read as
+  // "past" once day-of mode stopped clamping the value.
   const exactDate = couple.wedding_date_goal.kind === "exact" ? couple.wedding_date : null;
+  const todayMidnightMs = (() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  })();
   const rawDelta = exactDate
-    ? Math.round((new Date(`${exactDate}T00:00:00`).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    ? Math.round(
+        (new Date(`${exactDate}T00:00:00`).getTime() - todayMidnightMs) / (1000 * 60 * 60 * 24),
+      )
     : null;
   const daysUntil = rawDelta !== null ? Math.max(0, rawDelta) : null;
   // True if we have an exact date AND it's already passed.
