@@ -1255,14 +1255,6 @@ export default function DashboardPage() {
                     locale={locale}
                   />
                 </ul>
-                {totalGuests > 0 && (
-                  <p className="mt-3 hidden border-t border-paper-200 pt-2 text-center text-xs text-umber-500 md:block dark:border-umber-700 dark:text-umber-300">
-                    {t("dashboard.rsvp_responded_of_total", {
-                      responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
-                      total: formatNumber(totalGuests, locale),
-                    })}
-                  </p>
-                )}
               </MobileCollapsibleCard>
             </div>
           </section>
@@ -1312,7 +1304,7 @@ export default function DashboardPage() {
             <section
               id="invite-partner"
               data-coach-target="partner-invite"
-              className="card stationery mb-8 scroll-mt-24"
+              className="card stationery mb-8 scroll-mt-24 !border-ink-900 dark:!border-paper-100/40"
             >
               <h2>{t("dashboard.invite_partner")}</h2>
               <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">

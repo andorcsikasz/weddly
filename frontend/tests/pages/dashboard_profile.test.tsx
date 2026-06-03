@@ -522,6 +522,94 @@ describe("<DashboardPage>", () => {
 
     await waitFor(() => expect(calls.some((c) => c.includes("/api/print/place-cards"))).toBe(true));
   });
+
+  // Regression (link-only invite): sending with an EMPTY email must NOT make
+  // the invite-partner card vanish. The old visibility gate keyed off
+  // `sentToEmail` (only set on the email path), so a link-only invite set
+  // `invite` while that flag stayed null and the whole card disappeared before
+  // the shareable-link block could render. The fix gates on a `justInvited`
+  // session flag set on both paths.
+  it("link-only Send invite keeps the card and reveals the shareable link", async () => {
+    const calls: string[] = [];
+    // No partner B and no invite in flight → the invite-partner card renders.
+    const couple = makeCouple({ partner_b_id: null });
+    globalThis.fetch = buildFetch({
+      couple,
+      invite: null,
+      calls,
+      // POST /api/couples/invites mints a link-only invite (no invited_email).
+      override: (url, init) => {
+        if (url.endsWith("/api/couples/invites") && init?.method === "POST") {
+          return ok({
+            invite: {
+              id: 7,
+              couple_id: 1,
+              token: "TOK-LINKONLY",
+              invited_email: null,
+              invited_by_user_id: 1,
+              consumed_at: null,
+              expires_at: Date.now() + 7 * 86_400_000,
+              created_at: Date.now(),
+            },
+          });
+        }
+        return null;
+      },
+    });
+    renderPage("dashboard");
+
+    // Card starts on its "Send invite" form.
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /send invite/i })).toBeInTheDocument(),
+    );
+
+    // Send with the email field left empty → link-only path.
+    fireEvent.click(screen.getByRole("button", { name: /send invite/i }));
+
+    // The shareable-link block now renders (a "Copy link" button that only
+    // exists inside the card), proving the card stayed visible, and the
+    // email form is swapped out (no more "Send invite" button).
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /copy link/i })).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole("button", { name: /send invite/i })).not.toBeInTheDocument();
+    expect(calls.some((c) => c.startsWith("POST") && c.endsWith("/api/couples/invites"))).toBe(
+      true,
+    );
+  });
+
+  it("email Send invite keeps the card showing the 'on its way' confirmation", async () => {
+    const couple = makeCouple({ partner_b_id: null });
+    globalThis.fetch = buildFetch({
+      couple,
+      invite: null,
+      override: (url, init) => {
+        if (url.endsWith("/api/couples/invites") && init?.method === "POST") {
+          return ok({
+            invite: {
+              id: 8,
+              couple_id: 1,
+              token: "TOK-EMAIL",
+              invited_email: "partner@example.test",
+              invited_by_user_id: 1,
+              consumed_at: null,
+              expires_at: Date.now() + 7 * 86_400_000,
+              created_at: Date.now(),
+            },
+          });
+        }
+        return null;
+      },
+    });
+    renderPage("dashboard");
+
+    const emailInput = await screen.findByPlaceholderText(/partner@example/i);
+    fireEvent.change(emailInput, { target: { value: "partner@example.test" } });
+    fireEvent.click(screen.getByRole("button", { name: /send invite/i }));
+
+    // Confirmation card stays in place.
+    await waitFor(() => expect(screen.getByText(/invite on its way/i)).toBeInTheDocument());
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────
