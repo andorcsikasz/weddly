@@ -507,7 +507,7 @@ export function SeatingMap({
                 el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
                 el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
               }}
-              className="rounded-md border border-paper-300 bg-paper-50 p-1.5 text-ink-500 transition-colors hover:border-ink-700 hover:text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-paper-100 dark:hover:text-paper-100"
+              className="rounded-md border border-ink-700 p-1.5 text-ink-700 transition-colors hover:bg-paper-100 dark:border-paper-100 dark:text-paper-100 dark:hover:bg-umber-800"
               aria-label={t("seating.map_recenter")}
               title={t("seating.map_recenter")}
             >
@@ -517,7 +517,7 @@ export function SeatingMap({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="rounded-md border border-paper-300 bg-paper-50 p-1.5 text-ink-500 transition-colors hover:border-ink-700 hover:text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-paper-100 dark:hover:text-paper-100"
+            className="rounded-md border border-ink-700 p-1.5 text-ink-700 transition-colors hover:bg-paper-100 dark:border-paper-100 dark:text-paper-100 dark:hover:bg-umber-800"
             aria-label={expanded ? t("seating.map_collapse") : t("seating.map_expand")}
             title={expanded ? t("seating.map_collapse") : t("seating.map_expand")}
           >
@@ -704,7 +704,9 @@ function RoomDimsInput({
           commit(Number.isFinite(v) ? v : null, null);
         }}
       />
-      <span aria-hidden>×</span>
+      <span aria-hidden className="text-sm leading-none">
+        ×
+      </span>
       <input
         type="number"
         min={MIN_ROOM_MM / 1000}
