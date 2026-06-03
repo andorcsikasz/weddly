@@ -942,7 +942,7 @@ function HouseholdCard({
          *  load-bearing change: the prior `flex-wrap` + `basis-full`
          *  on the metadata block pushed the icons onto their own row
          *  below the metadata, which is exactly what the user flagged. */
-        className={`flex flex-nowrap items-start justify-between gap-2 md:items-center md:gap-3 ${isHosts ? "stationery" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-2 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
+        className={`flex flex-nowrap items-start justify-between gap-2 md:items-center md:gap-3 ${isHosts ? "stationery !bg-umber-200 dark:!bg-umber-700" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-2 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
         {/* Metadata columns: label · group chip · slug · code · invited
             (+ delivered). Fixed-width tracks with `md:col-start-*` force
@@ -961,7 +961,7 @@ function HouseholdCard({
               onSave={(label) => onRenameHousehold(household.id, label)}
             />
             {isHosts && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-blush-700 dark:text-blush-200">
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-umber-600 dark:text-umber-200">
                 <Crown size={10} aria-hidden />
                 {t("guests.hosts_badge")}
               </span>
@@ -1431,7 +1431,7 @@ function PartnerRoleIcon({ role }: { role: "bride" | "groom" | null }) {
   const Icon = role === "bride" ? Gem : Crown;
   return (
     <span title={label} className="inline-flex shrink-0">
-      <Icon size={14} aria-label={label} className="text-blush-600 dark:text-blush-300" />
+      <Icon size={14} aria-label={label} className="text-umber-600 dark:text-umber-300" />
     </span>
   );
 }
