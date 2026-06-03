@@ -930,7 +930,7 @@ export default function SuppliersPage() {
             inputMode="numeric"
             min={1}
             step={1}
-            className="h-7 w-16 rounded-full border border-transparent bg-transparent px-2 text-center text-sm tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:bg-paper-50 hover:border-paper-300 focus:border-paper-400 focus:bg-paper-50 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:bg-umber-800 dark:hover:border-umber-700 dark:focus:border-umber-600 dark:focus:bg-umber-800"
+            className="h-7 w-16 rounded-full border border-transparent bg-transparent px-2 text-center text-[11px] tabular-nums text-ink-800 placeholder:text-ink-400 transition hover:bg-paper-50 hover:border-paper-300 focus:border-paper-400 focus:bg-paper-50 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:bg-umber-800 dark:hover:border-umber-700 dark:focus:border-umber-600 dark:focus:bg-umber-800"
             placeholder={t("suppliers.guests_filter_placeholder")}
             value={guestsFilter ?? ""}
             onChange={(e) => setGuestsFilter(e.target.value)}
