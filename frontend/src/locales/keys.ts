@@ -1047,6 +1047,10 @@ export interface LocaleMessages {
     pricing_amount_decimal: string;
     /** Per-period suffix beside the price ("/ month" / "/ hó"). */
     pricing_amount_sub: string;
+    /** Early-access window + the regular price it reverts to after the cutover. */
+    pricing_early_note: string;
+    /** Tooltip on the price "i" — the low-cortisol / BigMac value line. */
+    pricing_value_note: string;
     /** Highlighted founding-offer callout: free for the first 200 couples. */
     pricing_after: string;
     /** Full founding-offer explanation, surfaced behind the callout's info icon. */

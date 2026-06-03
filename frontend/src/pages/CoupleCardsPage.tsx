@@ -518,18 +518,24 @@ function DeckShowcase({
   const { t } = useT();
   const selectedIdx = COUPLE_CARD_DECKS.findIndex((d) => d.id === selectedId);
   const selected = COUPLE_CARD_DECKS[selectedIdx];
-  if (!selected) return null;
 
-  // Easter-egg carousel shift: when lemonade is selected, the inner flex
-  // row slides left by exactly one slot (card width + gap), so Level 1
-  // rotates off the left edge and lemonade rotates into the rightmost
-  // visible slot. Card sizes never change — the row is always 5
-  // fixed-width children with a 4-slot viewport.
-  const isShifted = selectedId === "lemonade";
+  // Easter-egg carousel shift state. Decoupled from the centred deck on
+  // purpose: a right-swipe only reveals the lemonade tile in the top
+  // row, it does NOT auto-select it. The visitor has to tap the yellow
+  // tile to lift lemonade into the centre. Card sizes never change —
+  // the row is always 5 fixed-width children inside a 4-slot viewport.
+  const [isShifted, setIsShifted] = useState<boolean>(() => selectedId === "lemonade");
+  // Keep the shift in sync with the centred deck. Picking a red deck
+  // unshifts the row → lemonade tucks back off the right edge. Picking
+  // lemonade (or arriving via ?deck=lemonade) keeps the row shifted so
+  // the empty slot lands inside the viewport.
+  useEffect(() => {
+    setIsShifted(selectedId === "lemonade");
+  }, [selectedId]);
 
-  // Right-swipe gate: a horizontal gesture across the row (pointer drag
-  // or trackpad wheel) selects lemonade, which shifts the row left by
-  // one slot. The egg has no visual hint that the row is interactive.
+  // Right-swipe gate: a horizontal gesture (pointer drag or trackpad
+  // wheel) on the row shifts the carousel one slot — that's it. No
+  // auto-select. The egg has no visual hint that the row is interactive.
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const wheelAcc = useRef(0);
   const handleSwipeStart = (e: React.PointerEvent<HTMLUListElement>) => {
@@ -542,7 +548,7 @@ function DeckShowcase({
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
     if (dx > 50 && Math.abs(dx) > Math.abs(dy)) {
-      onSelect("lemonade");
+      setIsShifted(true);
     }
   };
   const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
@@ -550,7 +556,7 @@ function DeckShowcase({
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       wheelAcc.current += e.deltaX;
       if (wheelAcc.current > 60) {
-        onSelect("lemonade");
+        setIsShifted(true);
         wheelAcc.current = 0;
       } else if (wheelAcc.current < 0) {
         wheelAcc.current = 0;
@@ -559,6 +565,8 @@ function DeckShowcase({
       wheelAcc.current = 0;
     }
   };
+
+  if (!selected) return null;
 
   return (
     <section className="relative">

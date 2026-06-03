@@ -954,6 +954,8 @@ const hu: LocaleMessages = {
     pricing_amount: "1 990",
     pricing_amount_decimal: "",
     pricing_amount_sub: "/ hó",
+    pricing_early_note: "Early access ár aug. 15-ig · utána 2 490 Ft / hó.",
+    pricing_value_note: "Alacsony kortizolszintű esküvőszervezés egy BigMac menü áráért.",
     pricing_after: "Az első 200 párnak 18 hónapig ingyenes.",
     pricing_after_detail:
       "Szeretnénk segíteni, hogy könnyebb legyen az esküvőtök szervezése. Ha a pároddal mindketten regisztráltok az első 200 pár között, 18 hónapig semmilyen költséget nem számolunk fel nektek.",

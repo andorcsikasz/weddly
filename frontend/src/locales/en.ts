@@ -939,10 +939,12 @@ const en: LocaleMessages = {
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_title: "Free for the first 200 couples.",
     pricing_body:
-      "Sign up among the first 200 couples and Weddly stays free through your whole planning, up to 18 months. After that it's 5.90 € a month with a two-week free trial, every feature included.",
+      "Sign up among the first 200 couples and Weddly stays free through your whole planning, up to 18 months. After that it's 5.50 € a month (early-access price until Aug 15, then 7 €), with a two-week free trial and every feature included.",
     pricing_amount: "5",
-    pricing_amount_decimal: "90",
+    pricing_amount_decimal: "50",
     pricing_amount_sub: "/ month",
+    pricing_early_note: "Early-access price until Aug 15 · then 7 € / month.",
+    pricing_value_note: "Low-cortisol wedding planning, for the price of a BigMac menu.",
     pricing_after: "Free for 18 months for the first 200 couples.",
     pricing_after_detail:
       "We'd love to help make planning your wedding easier. If you and your partner both register among the first 200 couples, we won't charge you a thing for 18 months.",

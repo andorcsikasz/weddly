@@ -2,16 +2,7 @@
 // forecast. The backend serves the live base; the projection (shared
 // projectRevenue) re-runs in the browser as the operator drags the sliders.
 
-import {
-  Banknote,
-  ChevronRight,
-  DollarSign,
-  Euro,
-  Info,
-  JapaneseYen,
-  Lock,
-  LockOpen,
-} from "lucide-react";
+import { Banknote, ChevronRight, DollarSign, Euro, Info, Lock, LockOpen } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   type AdminFinancialPlannerOverview,
@@ -800,29 +791,33 @@ function BillingLaunchCard({
   );
 }
 
-/** Live EUR-based exchange-rate strip: 1 EUR in HUF / USD / CNY. Renders
- *  nothing until the first successful fetch. */
+/** Live exchange-rate strip in the home currency (HUF): 1 EUR and 1 USD in
+ *  forint. The ECB feed is EUR-based, so USD→HUF is the cross rate
+ *  (HUF-per-EUR ÷ USD-per-EUR). Renders nothing until the first successful
+ *  fetch. */
 function FxStrip({ fx }: { fx: FxRates | null }) {
   if (!fx) return null;
+  const hufPerEur = fx.rates.HUF;
+  const hufPerUsd = fx.rates.USD > 0 ? fx.rates.HUF / fx.rates.USD : 0;
+  const ft = (n: number) =>
+    `${new Intl.NumberFormat("hu-HU", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n)} Ft`;
   return (
     <section className="admin-card mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
       <span className="eyebrow inline-flex items-center gap-1">
-        <Euro size={13} aria-hidden="true" /> 1 EUR
+        <Banknote size={13} aria-hidden="true" /> Árfolyam
       </span>
       <FxItem
-        icon={<Banknote size={15} aria-hidden="true" />}
-        value={`${fx.rates.HUF.toFixed(2)} Ft`}
-        srLabel={`1 euró = ${fx.rates.HUF.toFixed(2)} forint`}
+        icon={<Euro size={15} aria-hidden="true" />}
+        value={`1 € = ${ft(hufPerEur)}`}
+        srLabel={`1 euró = ${ft(hufPerEur)}`}
       />
       <FxItem
         icon={<DollarSign size={15} aria-hidden="true" />}
-        value={fx.rates.USD.toFixed(2)}
-        srLabel={`1 euró = ${fx.rates.USD.toFixed(2)} amerikai dollár`}
-      />
-      <FxItem
-        icon={<JapaneseYen size={15} aria-hidden="true" />}
-        value={fx.rates.CNY.toFixed(2)}
-        srLabel={`1 euró = ${fx.rates.CNY.toFixed(2)} jüan`}
+        value={`1 $ = ${ft(hufPerUsd)}`}
+        srLabel={`1 amerikai dollár = ${ft(hufPerUsd)}`}
       />
       <span className="ml-auto text-xs text-neutral-500 dark:text-umber-300">
         ECB{fx.asOf ? ` · ${fx.asOf}` : ""}

@@ -360,7 +360,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="relative mx-auto max-w-lg">
             <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8">
-              <div className="flex items-end gap-3">
+              <div className="flex items-end gap-2.5">
                 <span className="font-serif text-6xl leading-[0.9] text-umber-900 dark:text-paper-50 sm:text-7xl">
                   {t("landing.pricing_amount")}
                   {t("landing.pricing_amount_decimal") && (
@@ -375,7 +375,27 @@ export default function LandingPage() {
                 <span className="mb-2.5 font-grotesk text-sm text-umber-600 dark:text-umber-300">
                   {t("landing.pricing_amount_sub")}
                 </span>
+                {/* "i" with the low-cortisol / BigMac value-prop line. */}
+                <span className="group relative mb-2.5 ml-auto shrink-0">
+                  <button
+                    type="button"
+                    aria-label={t("landing.pricing_value_note")}
+                    className="flex h-5 w-5 items-center justify-center rounded-full text-umber-600 transition-colors hover:text-umber-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-umber-300 dark:hover:text-paper-50"
+                  >
+                    <Info size={16} aria-hidden />
+                  </button>
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute bottom-full right-0 z-10 mb-2 w-60 rounded-lg bg-umber-900 px-3 py-2 text-xs leading-snug text-paper-50 opacity-0 shadow-pop transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
+                  >
+                    {t("landing.pricing_value_note")}
+                  </span>
+                </span>
               </div>
+              {/* Early-access window + the regular price it reverts to. */}
+              <p className="mt-1.5 font-grotesk text-xs text-umber-600 dark:text-umber-300">
+                {t("landing.pricing_early_note")}
+              </p>
               <div className="mt-3 flex items-center gap-2.5 rounded-lg bg-umber-100 dark:bg-umber-700/50 px-3 py-2.5 ring-1 ring-umber-200/80 dark:ring-umber-600/50">
                 <p className="font-grotesk text-sm leading-snug text-umber-800 dark:text-umber-100">
                   {t("landing.pricing_after")}
