@@ -40,6 +40,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { GuestPortalView } from "../components/GuestPortalView";
+import { InfoHint } from "../components/InfoHint";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
@@ -81,6 +82,7 @@ function VenueNameField({
   onChange,
   savedVenues,
   country,
+  missing,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -88,6 +90,9 @@ function VenueNameField({
   /** ISO 3166-1 alpha-2 — scopes the autocomplete to the couple's country so
    *  a HU couple isn't offered cross-border (e.g. Austrian) venues. */
   country: string;
+  /** Empty/required → red input outline + aria-invalid, in place of a
+   *  separate "MISSING" pill next to the label. */
+  missing?: boolean;
 }) {
   const { t } = useT();
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -179,7 +184,11 @@ function VenueNameField({
       <input
         id="guest-page-venue"
         type="text"
-        className="input"
+        className={`input${
+          missing
+            ? " border-red-400 focus:border-red-500 focus:ring-red-100 dark:border-red-400/60 dark:focus:border-red-400"
+            : ""
+        }`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
@@ -189,6 +198,7 @@ function VenueNameField({
         autoComplete="off"
         aria-autocomplete="list"
         aria-expanded={open}
+        aria-invalid={missing || undefined}
       />
       {open && suggestions.length > 0 && (
         <ul
@@ -624,11 +634,9 @@ export default function GuestPageEditorPage() {
 
   return (
     <>
-      <header className="mb-6">
+      <header className="mb-6 flex items-center gap-2">
         <h1 className="font-grotesk">{t("guest_page_editor.title")}</h1>
-        <p className="mt-2 max-w-2xl text-sm text-ink-600 dark:text-umber-200">
-          {t("guest_page_editor.subtitle")}
-        </p>
+        <InfoHint text={t("guest_page_editor.subtitle")} />
       </header>
 
       {/* ── Outstanding-items summary ────────────────────────────────────
@@ -906,13 +914,13 @@ export default function GuestPageEditorPage() {
               <div className="mt-3">
                 <label htmlFor="guest-page-venue" className="field-label">
                   {t("wedding_site_editor.venue_label")}
-                  {todoVenue && <TodoPill label={todoPillLabel} />}
                 </label>
                 <VenueNameField
                   value={venueName}
                   onChange={setVenueName}
                   savedVenues={savedVenues}
                   country={couple?.country ?? "HU"}
+                  missing={todoVenue}
                 />
                 <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                   {t("wedding_site_editor.venue_hint")}
