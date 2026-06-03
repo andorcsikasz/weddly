@@ -111,3 +111,84 @@ function clampPct(n: number): number {
   if (!Number.isFinite(n)) return 0;
   return Math.min(100, Math.max(0, n));
 }
+
+// ── Egy előfizetés bontása (per-subscription unit economics) ────────────────
+// A bruttó, ÁFÁ-s magyar fogyasztói árból mennyi marad a cégben, illetve
+// magánszemélyként osztalék után. Tájékoztató becslés, NEM adótanácsadás —
+// leegyszerűsített, a szocho-felső­korlátot és a tényleges költségelszámolást
+// elhanyagolja. A díj- és adókulcsok forrása a Stripe magyar árlistája + a
+// 2024-es magyar adókulcsok.
+
+/** Magyar általános ÁFA-kulcs. A bruttó ár ÁFÁ-t tartalmaz, így a kivont ÁFA
+ *  = bruttó × 27/127. */
+export const HU_VAT_RATE = 0.27;
+/** Stripe online kártyadíj, EEA kártya: 1,5% + 85 Ft a bruttóra. (UK kártya
+ *  2,5% + 85 Ft — itt az EEA-val, a tipikus esettel számolunk.) */
+export const STRIPE_EEA_PCT = 0.015;
+export const STRIPE_FIXED_HUF = 85;
+/** Stripe Billing előfizetés-kezelési díj: a bruttó forgalom 0,7%-a. */
+export const STRIPE_BILLING_PCT = 0.007;
+/** Helyi iparűzési adó (HIPA) felső kulcsa a nettó árbevételre. */
+export const HU_HIPA_RATE = 0.02;
+/** Társasági adó (TAO) a nyereségre. */
+export const HU_TAO_RATE = 0.09;
+/** Osztalékadó: SZJA 15% + szocho 13% (a szocho éves felső korlátját
+ *  elhanyagolva — felette az effektív kulcs ~15%-ra csökken). */
+export const HU_DIVIDEND_RATE = 0.28;
+
+export interface SubscriptionUnitEconomics {
+  /** Amit a vásárló fizet (bruttó, ÁFÁ-s). */
+  grossHuf: number;
+  /** Ebből ÁFA (27%, a bruttóból visszaszámolva). */
+  vatHuf: number;
+  /** Nettó árbevétel ÁFA nélkül. */
+  netRevenueHuf: number;
+  /** Stripe kártyadíj (1,5% + 85 Ft a bruttóra). */
+  stripeCardHuf: number;
+  /** Stripe Billing díj (0,7% a bruttóra). */
+  stripeBillingHuf: number;
+  /** Nettó árbevétel a Stripe-díjak után, magyar adók előtt. */
+  afterStripeHuf: number;
+  /** HIPA (2% a nettó árbevételre). */
+  hipaHuf: number;
+  /** TAO (9% a Stripe utáni nyereségre). */
+  taoHuf: number;
+  /** Cégben maradó összeg adózás után (osztalék nélkül). */
+  inCompanyHuf: number;
+  /** Osztalékadó, ha magánszemélyként kiveszik (SZJA 15% + szocho 13%). */
+  dividendTaxHuf: number;
+  /** Magánszemélyként kézben maradó összeg, osztalék után. */
+  inHandHuf: number;
+}
+
+/** Egy darab bruttó (ÁFÁ-s) havi előfizetés teljes lebontása forintban.
+ *  Minden tétel egész Ft-ra kerekítve, hogy a táblázat összeadódjon. Pure —
+ *  a kliens élőben újraszámolja, ahogy az operátor másik árat ír be. */
+export function subscriptionUnitEconomics(grossHuf: number): SubscriptionUnitEconomics {
+  const gross = Math.max(0, Math.round(grossHuf));
+  const vat = Math.round((gross * HU_VAT_RATE) / (1 + HU_VAT_RATE));
+  const netRevenue = gross - vat;
+  const stripeCard = gross > 0 ? Math.round(gross * STRIPE_EEA_PCT + STRIPE_FIXED_HUF) : 0;
+  const stripeBilling = Math.round(gross * STRIPE_BILLING_PCT);
+  const afterStripe = netRevenue - stripeCard - stripeBilling;
+  const hipa = Math.round(netRevenue * HU_HIPA_RATE);
+  // A TAO alapja a Stripe utáni eredmény (a HIPA-t a táblázat külön sorként
+  // vonja le — a kerekített tételek így adódnak össze a felhasználó modelljével).
+  const tao = Math.round(afterStripe * HU_TAO_RATE);
+  const inCompany = afterStripe - hipa - tao;
+  const dividendTax = Math.round(inCompany * HU_DIVIDEND_RATE);
+  const inHand = inCompany - dividendTax;
+  return {
+    grossHuf: gross,
+    vatHuf: vat,
+    netRevenueHuf: netRevenue,
+    stripeCardHuf: stripeCard,
+    stripeBillingHuf: stripeBilling,
+    afterStripeHuf: afterStripe,
+    hipaHuf: hipa,
+    taoHuf: tao,
+    inCompanyHuf: inCompany,
+    dividendTaxHuf: dividendTax,
+    inHandHuf: inHand,
+  };
+}

@@ -17,6 +17,8 @@ import {
   type AdminFinancialPlannerOverview,
   type ForecastAssumptions,
   projectRevenue,
+  type SubscriptionUnitEconomics,
+  subscriptionUnitEconomics,
 } from "@shared/admin_financial_planner";
 import { FOUNDING_CAP, type SubscriptionStatus } from "@shared/billing";
 import { AdminPageHeader, Pill } from "../components/admin";
@@ -304,6 +306,9 @@ export default function AdminFinancialPlannerPage() {
         </section>
       </div>
 
+      {/* Egy előfizetés bontása: bruttó ár → ÁFA → Stripe → magyar adók */}
+      <UnitEconomicsCard locale={locale} liveHuf={data.price_huf} />
+
       {/* Assumptions */}
       <section className="admin-card mt-4">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
@@ -517,6 +522,194 @@ export default function AdminFinancialPlannerPage() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+/** Egy bruttó (ÁFÁ-s) havi előfizetés teljes lebontása: mennyi marad a cégben,
+ *  illetve magánszemélyként osztalék után. Két ár egymás mellett (alapból
+ *  1 990 és 2 490 Ft) — bármelyik szabadon átírható, a táblázat élőben
+ *  újraszámol. A számok HUF-ban; a matek a `subscriptionUnitEconomics`
+ *  pure függvényből jön. Tájékoztató becslés, nem adótanácsadás. */
+function UnitEconomicsCard({ locale, liveHuf }: { locale: string; liveHuf: number }) {
+  const [priceA, setPriceA] = useState(1990);
+  const [priceB, setPriceB] = useState(2490);
+  const ea = useMemo(() => subscriptionUnitEconomics(priceA), [priceA]);
+  const eb = useMemo(() => subscriptionUnitEconomics(priceB), [priceB]);
+  const ft = (n: number) => formatMoney(n, "HUF", locale as "hu" | "en");
+
+  type Kind = "gross" | "deduct" | "subtotal" | "final";
+  const rows: Array<{ label: string; kind: Kind; a: number; b: number }> = [
+    { label: "Vásárló fizet (bruttó)", kind: "gross", a: ea.grossHuf, b: eb.grossHuf },
+    { label: "ÁFA (27%)", kind: "deduct", a: ea.vatHuf, b: eb.vatHuf },
+    { label: "Nettó árbevétel", kind: "subtotal", a: ea.netRevenueHuf, b: eb.netRevenueHuf },
+    {
+      label: "Stripe kártyadíj (1,5% + 85 Ft)",
+      kind: "deduct",
+      a: ea.stripeCardHuf,
+      b: eb.stripeCardHuf,
+    },
+    {
+      label: "Stripe Billing (0,7%)",
+      kind: "deduct",
+      a: ea.stripeBillingHuf,
+      b: eb.stripeBillingHuf,
+    },
+    {
+      label: "Stripe után (adók előtt)",
+      kind: "subtotal",
+      a: ea.afterStripeHuf,
+      b: eb.afterStripeHuf,
+    },
+    { label: "HIPA (2% nettó árbevétel)", kind: "deduct", a: ea.hipaHuf, b: eb.hipaHuf },
+    { label: "TAO (9%)", kind: "deduct", a: ea.taoHuf, b: eb.taoHuf },
+    {
+      label: "Cégben marad (osztalék előtt)",
+      kind: "final",
+      a: ea.inCompanyHuf,
+      b: eb.inCompanyHuf,
+    },
+    {
+      label: "Osztalékadó (SZJA 15% + szocho 13%)",
+      kind: "deduct",
+      a: ea.dividendTaxHuf,
+      b: eb.dividendTaxHuf,
+    },
+    { label: "Kézben (osztalék után)", kind: "final", a: ea.inHandHuf, b: eb.inHandHuf },
+  ];
+
+  const cell = (n: number, kind: Kind) => (kind === "deduct" ? `− ${ft(n)}` : ft(n));
+
+  return (
+    <section className="admin-card mt-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
+            Egy előfizetés bontása
+          </h2>
+          <p className="mt-1 max-w-prose text-xs text-neutral-500 dark:text-umber-300">
+            Egy bruttó (ÁFÁ-s) havi előfizetésből mennyi marad a cégben, illetve magánszemélyként
+            osztalék után. Stripe magyar árlista (EEA kártya 1,5% + 85 Ft, Billing 0,7%) + 2024-es
+            magyar adókulcsok. Tájékoztató becslés, nem adótanácsadás — a szocho-felső­korlátot és a
+            tényleges költségelszámolást elhanyagolja.
+          </p>
+        </div>
+        <div className="flex items-end gap-3">
+          <PriceInput label="Ár A" value={priceA} onChange={setPriceA} />
+          <PriceInput label="Ár B" value={priceB} onChange={setPriceB} />
+        </div>
+      </div>
+
+      {liveHuf > 0 && liveHuf !== priceA && liveHuf !== priceB && (
+        <p className="mt-2 text-xs text-neutral-500 dark:text-umber-300">
+          Élő HUF listaár jelenleg: {ft(liveHuf)} — írd be valamelyik mezőbe az összevetéshez.
+        </p>
+      )}
+
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-neutral-500 dark:text-umber-300">
+              <th className="py-1 pr-4 text-left font-medium">Tétel</th>
+              <th className="py-1 pl-4 text-right font-medium tabular-nums">{ft(priceA)}</th>
+              <th className="py-1 pl-4 text-right font-medium tabular-nums">{ft(priceB)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const isFinal = r.kind === "final";
+              const isSub = r.kind === "subtotal";
+              const isDeduct = r.kind === "deduct";
+              const rowCls = isFinal
+                ? "border-t-2 border-neutral-300 dark:border-umber-600"
+                : isSub
+                  ? "border-t border-paper-200 dark:border-umber-700"
+                  : "";
+              const labelCls = isFinal
+                ? "font-semibold text-neutral-900 dark:text-paper-50"
+                : isDeduct
+                  ? "text-neutral-500 dark:text-umber-300"
+                  : "text-neutral-700 dark:text-paper-100";
+              const valCls = isFinal
+                ? "font-semibold text-neutral-900 dark:text-paper-50"
+                : isSub
+                  ? "font-medium text-neutral-900 dark:text-paper-50"
+                  : isDeduct
+                    ? "text-neutral-500 dark:text-umber-300"
+                    : "text-neutral-800 dark:text-paper-100";
+              return (
+                <tr key={r.label} className={rowCls}>
+                  <td className={`py-1.5 pr-4 ${labelCls}`}>{r.label}</td>
+                  <td className={`py-1.5 pl-4 text-right tabular-nums ${valCls}`}>
+                    {cell(r.a, r.kind)}
+                  </td>
+                  <td className={`py-1.5 pl-4 text-right tabular-nums ${valCls}`}>
+                    {cell(r.b, r.kind)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Ökölszabály: a kézbe kapott összeg a bruttó arányában */}
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <RuleOfThumb price={priceA} e={ea} ft={ft} />
+        <RuleOfThumb price={priceB} e={eb} ft={ft} />
+      </div>
+    </section>
+  );
+}
+
+function PriceInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-neutral-600 dark:text-umber-200">
+        {label}
+      </span>
+      <span className="inline-flex items-center rounded-lg border border-paper-200 bg-paper-50 pr-2 focus-within:ring-2 focus-within:ring-neutral-800/40 dark:border-umber-700 dark:bg-umber-800">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={100000}
+          step={100}
+          value={value}
+          onChange={(e) => onChange(Math.max(0, Math.round(Number(e.target.value) || 0)))}
+          className="w-24 bg-transparent px-2 py-1.5 text-right text-sm font-semibold tabular-nums text-neutral-900 outline-none dark:text-paper-50"
+        />
+        <span className="text-xs text-neutral-500 dark:text-umber-300">Ft</span>
+      </span>
+    </label>
+  );
+}
+
+/** Egysoros ökölszabály-összegzés egy árhoz: a kézbe kapott összeg és aránya. */
+function RuleOfThumb({
+  price,
+  e,
+  ft,
+}: {
+  price: number;
+  e: SubscriptionUnitEconomics;
+  ft: (n: number) => string;
+}) {
+  const companyPct = price > 0 ? Math.round((e.inCompanyHuf / price) * 100) : 0;
+  const handPct = price > 0 ? Math.round((e.inHandHuf / price) * 100) : 0;
+  return (
+    <div className="rounded-lg bg-paper-100 px-3 py-2 text-xs text-neutral-600 dark:bg-umber-800/60 dark:text-umber-200">
+      <span className="font-semibold text-neutral-900 dark:text-paper-50">{ft(price)}</span> →{" "}
+      cégben <span className="font-semibold tabular-nums">{ft(e.inCompanyHuf)}</span> ({companyPct}
+      %), kézben <span className="font-semibold tabular-nums">{ft(e.inHandHuf)}</span> ({handPct}%)
     </div>
   );
 }
