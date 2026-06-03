@@ -833,12 +833,12 @@ function TableShape({
 
   // Stationery aesthetic from the landing-page mockup: clean white-ish
   // table body, dark navy single stroke, blush rounded-rect chairs spaced
-  // just outside the perimeter. Selection swaps the body to a warm blush
-  // tint AND thickens the stroke so the active table is unmissable on
-  // a crowded floor plan.
-  const strokeClass = isSelected ? "stroke-blush-700" : "stroke-ink-800";
+  // just outside the perimeter. Selection swaps the body to a calm espresso
+  // (deep umber) fill with a darker rim AND thickens the stroke so the
+  // active table is unmissable on a crowded floor plan.
+  const strokeClass = isSelected ? "stroke-umber-800" : "stroke-ink-800";
   const strokeWidth = isSelected ? 22 : 14;
-  const fillClass = isSelected ? "fill-blush-400" : "fill-paper-50";
+  const fillClass = isSelected ? "fill-umber-600" : "fill-paper-50";
 
   // Long and head get a softer banquet-bench corner; square stays tighter.
   const rectCorner =
@@ -1149,9 +1149,10 @@ function ResizeHandle({
   // corner. Rectangles use a true bounding-box position.
   const pos = handlePosition(dir, rx, ry, shape);
   const cursor = handleCursor(dir);
-  // Handles are SOLID blush-filled rectangles — deliberately a different
-  // shape AND fill from the hollow chair circles, so the user can never
-  // confuse "I'm grabbing a chair" with "I'm grabbing a resize knob".
+  // Handles are SOLID espresso-filled rectangles (one step darker than the
+  // selected body, with a white outline) — deliberately a different shape
+  // AND fill from the hollow chair circles, so the user can never confuse
+  // "I'm grabbing a chair" with "I'm grabbing a resize knob".
   // Side handles stretch along the edge they control (a bar that points
   // in the drag direction); corners are tidy squares.
   const isCorner = dir.length === 2;
@@ -1166,7 +1167,7 @@ function ResizeHandle({
       width={w}
       height={h}
       rx={20}
-      className="fill-blush-600 stroke-paper-50"
+      className="fill-umber-800 stroke-paper-50"
       strokeWidth={8}
       style={{ cursor }}
       onPointerDown={(e) => {
