@@ -9,10 +9,10 @@ import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
 
 /**
- * /privacy — MVP-quality privacy policy. Renders both the HU and EN
- * versions on one page (HU first to match the rest of the product),
- * regardless of the active locale, so anyone landing here can read the
- * policy in whichever language they prefer without flipping a toggle.
+ * /privacy — MVP-quality privacy policy. Renders both the EN and HU
+ * versions on one page (EN first), regardless of the active locale, so
+ * anyone landing here can read the policy in whichever language they prefer
+ * without flipping a toggle.
  *
  * Real legal review is deferred to v2; the copy here is honest and
  * accurate based on what the codebase actually does today.
@@ -31,10 +31,9 @@ export default function PrivacyPage() {
           version={PRIVACY_VERSION}
           versionLabel={t("legal.version_label")}
         />
-        <LegalDraftBanner />
-        <PrivacyBodyForLocale strings={hu.privacy} sectionLocale="hu" />
-        <SecondaryLanguageDivider label="English" />
-        <PrivacyBodyForLocale strings={en.privacy} sectionLocale="en" secondary />
+        <PrivacyBodyForLocale strings={en.privacy} sectionLocale="en" />
+        <SecondaryLanguageDivider label="Magyar" />
+        <PrivacyBodyForLocale strings={hu.privacy} sectionLocale="hu" secondary />
         <BackLink />
       </article>
     </PublicShell>
@@ -66,7 +65,7 @@ export function LegalHeader({
         {updatedLabel}: {updatedDate}
         {version && versionLabel ? ` · ${versionLabel}: ${version}` : ""}
       </p>
-      <h1 className="mt-3 font-serif text-4xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
+      <h1 className="mt-3 font-grotesk text-4xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
         {title}
       </h1>
     </header>
@@ -128,28 +127,9 @@ export function LegalSection({
 
 export function H2({ children }: { children: ReactNode }) {
   return (
-    <h2 className="mt-10 font-serif text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
+    <h2 className="mt-10 font-grotesk text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
       {children}
     </h2>
-  );
-}
-
-/** Visible "this hasn't been reviewed by a lawyer yet" banner. Mounted above
- *  the body on both Privacy and Terms during the open beta — keeps the honest
- *  framing from the comments out of the source and in front of the user. */
-export function LegalDraftBanner() {
-  const { t } = useT();
-  return (
-    <aside
-      role="note"
-      lang="hu"
-      className="mt-8 rounded-2xl border border-blush-300 bg-blush-50 px-5 py-4 text-sm text-ink-800 dark:border-blush-300/30 dark:bg-blush-300/10 dark:text-paper-100"
-    >
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blush-700 dark:text-blush-300">
-        {t("legal.draft_banner_label")}
-      </p>
-      <p className="mt-2 leading-relaxed">{t("legal.draft_banner_body")}</p>
-    </aside>
   );
 }
 

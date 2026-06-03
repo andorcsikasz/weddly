@@ -7,7 +7,6 @@ import { useDocumentMeta } from "../lib/seo";
 import {
   BackLink,
   H2,
-  LegalDraftBanner,
   LegalHeader,
   LegalSection,
   SecondaryLanguageDivider,
@@ -31,10 +30,9 @@ export default function TermsPage() {
           version={TERMS_VERSION}
           versionLabel={t("legal.version_label")}
         />
-        <LegalDraftBanner />
-        <TermsBodyForLocale strings={hu.terms} sectionLocale="hu" />
-        <SecondaryLanguageDivider label="English" />
-        <TermsBodyForLocale strings={en.terms} sectionLocale="en" secondary />
+        <TermsBodyForLocale strings={en.terms} sectionLocale="en" />
+        <SecondaryLanguageDivider label="Magyar" />
+        <TermsBodyForLocale strings={hu.terms} sectionLocale="hu" secondary />
         <BackLink />
       </article>
     </PublicShell>
