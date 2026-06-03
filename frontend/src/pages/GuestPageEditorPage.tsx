@@ -611,6 +611,26 @@ export default function GuestPageEditorPage() {
       }
     : null;
 
+  // Double-verify before flipping publish on/off — it controls whether the
+  // /w/… link is reachable by anyone, so it shouldn't toggle on a stray click.
+  async function onTogglePublish() {
+    const turningOn = !isPublic;
+    const ok = await confirm({
+      title: turningOn
+        ? t("wedding_site_editor.publish_confirm_on_title")
+        : t("wedding_site_editor.publish_confirm_off_title"),
+      body: turningOn
+        ? t("wedding_site_editor.publish_confirm_on_body")
+        : t("wedding_site_editor.publish_confirm_off_body"),
+      confirmLabel: turningOn
+        ? t("wedding_site_editor.publish_confirm_on_cta")
+        : t("wedding_site_editor.publish_confirm_off_cta"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setIsPublic(turningOn);
+  }
+
   return (
     <>
       <header className="mb-6 flex items-center gap-2">
@@ -856,9 +876,11 @@ export default function GuestPageEditorPage() {
               }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-lg font-grotesk">{t("wedding_site_editor.publish_title")}</h2>
-                  <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                <div className="min-w-0 flex-1 lg:flex lg:items-baseline lg:gap-2">
+                  <h2 className="shrink-0 text-lg font-grotesk">
+                    {t("wedding_site_editor.publish_title")}
+                  </h2>
+                  <p className="mt-1 text-sm text-ink-600 lg:mt-0 dark:text-umber-200">
                     {isPublic
                       ? t("wedding_site_editor.publish_body_on")
                       : t("wedding_site_editor.publish_body_off")}
@@ -869,7 +891,7 @@ export default function GuestPageEditorPage() {
                     type="button"
                     role="switch"
                     aria-checked={isPublic}
-                    onClick={() => setIsPublic((v) => !v)}
+                    onClick={onTogglePublish}
                     className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
                       isPublic ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
                     }`}

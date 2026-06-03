@@ -257,6 +257,14 @@ const en: LocaleMessages = {
       "Your page is live — the /w/… address is reachable by anyone you share it with.",
     publish_label_off: "Your page is private",
     publish_label_on: "Your page is published",
+    publish_confirm_on_title: "Publish your page?",
+    publish_confirm_on_body:
+      "Once you save, anyone you share the /w/… link with can open your page.",
+    publish_confirm_on_cta: "Publish",
+    publish_confirm_off_title: "Make your page private?",
+    publish_confirm_off_body:
+      "After you save, the /w/… link stops working until you publish again.",
+    publish_confirm_off_cta: "Make private",
     venue_label: "Venue name",
     venue_placeholder: "e.g. Sári Udvar Estate",
     venue_hint: "Name only. The exact address belongs on the invitation itself.",

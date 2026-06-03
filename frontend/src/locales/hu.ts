@@ -259,6 +259,13 @@ const hu: LocaleMessages = {
     publish_body_on: "Az oldal publikus — a /w/… cím bárki számára elérhető, akinek megosztod.",
     publish_label_off: "Az oldal jelenleg privát",
     publish_label_on: "Az oldal publikus",
+    publish_confirm_on_title: "Publikálod az oldalt?",
+    publish_confirm_on_body:
+      "Mentés után bárki megnyithatja az oldalt, akinek megosztod a /w/… linket.",
+    publish_confirm_on_cta: "Publikálás",
+    publish_confirm_off_title: "Priváttá teszed az oldalt?",
+    publish_confirm_off_body: "Mentés után a /w/… link nem működik, amíg újra nem publikálod.",
+    publish_confirm_off_cta: "Priváttá teszem",
     venue_label: "Helyszín neve",
     venue_placeholder: "pl. Sári Udvar Birtok",
     venue_hint: "Csak a név. A pontos címet a meghívóban érdemes megadni.",

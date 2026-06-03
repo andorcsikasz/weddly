@@ -320,6 +320,13 @@ export interface LocaleMessages {
     publish_body_on: string;
     publish_label_off: string;
     publish_label_on: string;
+    /** Confirm dialog ("double verification") shown before flipping publish. */
+    publish_confirm_on_title: string;
+    publish_confirm_on_body: string;
+    publish_confirm_on_cta: string;
+    publish_confirm_off_title: string;
+    publish_confirm_off_body: string;
+    publish_confirm_off_cta: string;
     /** Venue name + cover-image inputs. `cover_image_hint` explains the
      *  http(s) requirement so a paste of a `data:` URL doesn't silently
      *  fail at the boundary. */
