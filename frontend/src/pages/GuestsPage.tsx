@@ -443,29 +443,31 @@ export default function GuestsPage() {
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-        <h1 className="font-grotesk">{t("guests.title")}</h1>
-        {guests.length > 0 ? (
-          <dl className="flex flex-wrap items-end gap-x-6 gap-y-3">
-            <GuestStat
-              value={guests.length}
-              label={t("guests.total_summary_unit")}
-              tone="primary"
-            />
-            {plannedGuests !== null && (
-              <GuestStat value={plannedGuests} label={t("guests.total_summary_planned_unit")} />
-            )}
-            <GuestStat
-              value={households.length}
-              label={t("guests.total_summary_households_unit")}
-            />
-            <GuestStat
-              value={guests.filter((g) => g.invited_at != null).length}
-              label={t("guests.total_summary_invited_unit")}
-            />
-          </dl>
-        ) : (
-          <p className="text-sm text-ink-500 dark:text-umber-300">{guests.length}</p>
-        )}
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+          <h1 className="font-grotesk">{t("guests.title")}</h1>
+          {guests.length > 0 ? (
+            <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+              <GuestStat
+                value={guests.length}
+                label={t("guests.total_summary_unit")}
+                tone="primary"
+              />
+              {plannedGuests !== null && (
+                <GuestStat value={plannedGuests} label={t("guests.total_summary_planned_unit")} />
+              )}
+              <GuestStat
+                value={households.length}
+                label={t("guests.total_summary_households_unit")}
+              />
+              <GuestStat
+                value={guests.filter((g) => g.invited_at != null).length}
+                label={t("guests.total_summary_invited_unit")}
+              />
+            </dl>
+          ) : (
+            <p className="text-sm text-ink-500 dark:text-umber-300">{guests.length}</p>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2 sm:ml-auto">
           <button
             type="button"
