@@ -71,6 +71,62 @@ export const TASK_TEMPLATE_GROUPS: {
  *  their group to keep prior indices pointing to the same task. */
 export const TASK_TEMPLATE: { title: LocaleText }[] = TASK_TEMPLATE_GROUPS.flatMap((g) => g.items);
 
+/** Reserve honeymoon trip-prep tasks. NOT part of the base pack above, these
+ *  are the backfill the honeymoon wand pulls from: for every base item a couple
+ *  has already added (shown as "already on the list"), one fresh suggestion from
+ *  here is appended to the bottom of the dialog so the pack always offers a full
+ *  set of things still worth doing. Same HU + EN inline pattern as the groups.
+ *  All real, broadly useful pre-departure tasks (no filler). */
+export const HONEYMOON_EXTRA_TASKS: { title: LocaleText }[] = [
+  { title: { hu: "Roaming vagy eSIM beállítása", en: "Set up roaming or an eSIM" } },
+  {
+    title: {
+      hu: "Oltások és utazási egészségügy ellenőrzése",
+      en: "Check vaccinations and travel health",
+    },
+  },
+  { title: { hu: "Online check-in emlékeztető beállítása", en: "Set an online check-in reminder" } },
+  {
+    title: {
+      hu: "Útiterv és foglalások mentése offline",
+      en: "Save the itinerary and bookings offline",
+    },
+  },
+  {
+    title: {
+      hu: "Fontos dokumentumok másolata (felhő + papír)",
+      en: "Copies of key documents (cloud + paper)",
+    },
+  },
+  {
+    title: {
+      hu: "Vészhelyzeti elérhetőségek és nagykövetség elmentése",
+      en: "Save emergency contacts and the embassy",
+    },
+  },
+  {
+    title: {
+      hu: "Hálózati adapter és töltő a célországhoz",
+      en: "Power adapter and charger for the destination",
+    },
+  },
+  { title: { hu: "Alap útipatika összeállítása", en: "Pack a basic travel first-aid kit" } },
+  {
+    title: {
+      hu: "Otthoni teendők: növények, posta, kulcs",
+      en: "Home prep: plants, mail, spare key",
+    },
+  },
+  { title: { hu: "Reptéri parkolás vagy transzfer foglalása", en: "Book airport parking" } },
+  {
+    title: {
+      hu: "Nemzetközi vezetői engedélyt igényelni",
+      en: "Apply for an international driving permit",
+    },
+  },
+  { title: { hu: "Pénznem és időeltolódás megnézése", en: "Check the currency and time difference" } },
+];
+
 /** Light starter set of "what to consider adding" ideas — the obvious-but-
  *  easy-to-forget options. The Wand button drops these in as starting points
  *  the couple can dismiss or refine. */
