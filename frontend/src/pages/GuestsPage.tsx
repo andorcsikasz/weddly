@@ -931,7 +931,7 @@ function HouseholdCard({
        "date changed" stationery). Reads as the same design language as
        the Crown icon next to each partner's name — elegant, not loud. */
     <div
-      className={`card overflow-hidden p-0 ${isHosts ? "!border-blush-300 dark:!border-blush-500/40" : ""}`}
+      className={`card overflow-hidden p-0 ${isHosts ? "!border-ink-900 dark:!border-paper-100/40" : ""}`}
     >
       <header
         /* `items-start md:items-center` keeps the action-icon cluster
