@@ -38,7 +38,7 @@ export default function BlogIndexPage() {
 
   return (
     <PublicShell>
-      <article className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
+      <article className="mx-auto max-w-6xl px-5 py-12 sm:px-6 sm:py-20">
         <header className="border-b border-paper-300 dark:border-umber-700 pb-10">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
             {t("blog.eyebrow")}
