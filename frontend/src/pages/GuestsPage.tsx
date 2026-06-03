@@ -452,25 +452,25 @@ export default function GuestsPage() {
               <GuestStat
                 value={guests.length}
                 label={t("guests.total_summary_unit")}
-                icon={<Users size={16} aria-hidden />}
+                icon={<Users size={20} aria-hidden />}
                 tone="primary"
               />
               {plannedGuests !== null && (
                 <GuestStat
                   value={plannedGuests}
                   label={t("guests.total_summary_planned_unit")}
-                  icon={<Target size={16} aria-hidden />}
+                  icon={<Target size={20} aria-hidden />}
                 />
               )}
               <GuestStat
                 value={households.length}
                 label={t("guests.total_summary_households_unit")}
-                icon={<Home size={16} aria-hidden />}
+                icon={<Home size={20} aria-hidden />}
               />
               <GuestStat
                 value={guests.filter((g) => g.invited_at != null).length}
                 label={t("guests.total_summary_invited_unit")}
-                icon={<Send size={16} aria-hidden />}
+                icon={<Send size={20} aria-hidden />}
               />
             </dl>
           ) : (
