@@ -495,7 +495,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Wordmark size="sm" />
             </Link>
             {/* Workspace chip sits inline with the wordmark so the active
-             *  event (Mia & Lucas) is the second thing the user reads
+             *  event (Allie & Noah) is the second thing the user reads
              *  after the brand. Hidden when signed-out. */}
             {user && <WorkspaceSwitcher />}
           </div>

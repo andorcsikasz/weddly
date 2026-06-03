@@ -12,7 +12,7 @@
  * surrounding page.
  *
  * Visible text is localised via `useT()` so HU users see HU labels.
- * Sample names ("Mia & Lucas", supplier name) are intentionally kept
+ * Sample names ("Allie & Noah", supplier name) are intentionally kept
  * static — they read naturally in both locales.
  */
 
@@ -30,7 +30,21 @@ const STATUS_DOT_OFFSETS = [0, 16, 32, 48, 64] as const;
  *  with an even 8px margin on every side — the 1.5px frame stroke then
  *  renders fully instead of being clipped at the x=0 / y=0 edges. */
 export function WorkspaceMockup({ className }: Common) {
-  const { t } = useT();
+  const { t, locale } = useT();
+  // Hero mockup wedding date: 27 July of next year, so the badge always shows a
+  // plausible future date with an exact day countdown. It rolls forward each
+  // January (2027 while we're in 2026, 2028 once 2026 ends, and so on) since
+  // the year is derived from the current year + 1.
+  const weddingDay = new Date(new Date().getFullYear() + 1, 6, 27); // month 6 = July
+  const mockupDate = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(weddingDay);
+  const mockupDays = Math.max(
+    0,
+    Math.round((weddingDay.setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86_400_000),
+  );
   const navItems: { key: string; label: string }[] = [
     { key: "guests", label: t("nav.guests") },
     { key: "budget", label: t("nav.budget") },
@@ -114,14 +128,14 @@ export function WorkspaceMockup({ className }: Common) {
       <g className="text-ink-700 font-sans">
         <circle cx="26" cy="408" r="6" fill="currentColor" opacity="0.18" />
         <text x="40" y="412" fontSize="10" fill="currentColor">
-          A &amp; B
+          A &amp; N
         </text>
       </g>
 
       {/* Main header */}
       <g className="font-serif text-ink-900">
         <text x="168" y="48" fontSize="26" fill="currentColor">
-          Mia &amp; Lucas
+          Allie &amp; Noah
         </text>
       </g>
       <g className="text-umber-300">
@@ -139,7 +153,7 @@ export function WorkspaceMockup({ className }: Common) {
       <g className="text-umber-700 font-sans">
         <circle cx="450" cy="40" r="3" fill="currentColor" />
         <text x="460" y="44" fontSize="11" fill="currentColor">
-          {t("landing.mockup_date")}
+          {t("landing.mockup_date", { date: mockupDate, n: mockupDays })}
         </text>
       </g>
 
