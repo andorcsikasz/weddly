@@ -2454,14 +2454,14 @@ function TableCard({
                         .replace("{seat}", String(idx + 1))}
                       className={
                         guest
-                          ? `rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-umber-300 ${tappable ? "cursor-pointer" : ""} ${seatIsSelected ? "ring-2 ring-blush-500 dark:ring-blush-400/60" : ""}`
-                          : `rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-300 dark:focus-visible:ring-umber-300 ${tappable ? "cursor-pointer ring-1 ring-blush-200 dark:ring-blush-400/40" : ""}`
+                          ? `flex items-baseline gap-2 rounded-lg border border-ink-300 bg-paper-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:focus-visible:ring-umber-300 ${tappable ? "cursor-pointer" : ""} ${seatIsSelected ? "ring-2 ring-blush-500 dark:ring-blush-400/60" : ""}`
+                          : `flex items-baseline gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-100 px-2 py-1.5 text-xs text-ink-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-300 dark:focus-visible:ring-umber-300 ${tappable ? "cursor-pointer ring-1 ring-blush-200 dark:ring-blush-400/40" : ""}`
                       }
                     >
-                      <span className="text-[10px] uppercase tracking-wider text-ink-400 dark:text-umber-300">
+                      <span className="shrink-0 text-[10px] uppercase tracking-wider text-ink-400 dark:text-umber-300">
                         #{idx + 1}
                       </span>
-                      <div className="mt-0.5">
+                      <div className="min-w-0 flex-1">
                         {guest ? (
                           <DraggableGuest
                             guest={guest}
