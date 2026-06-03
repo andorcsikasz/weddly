@@ -696,6 +696,15 @@ export default function SuppliersPage() {
     setActiveCat(null);
   }
 
+  // Jump straight to a single category from a card's avatar icon: open the
+  // group that owns it and pin the sub-category, so the grid shows every
+  // supplier in that trade.
+  function filterByCategory(cat: SupplierCategory) {
+    const group = SUPPLIER_GROUPS.find((g) => g.categories.includes(cat));
+    setActiveGroup(group ? group.id : null);
+    setActiveCat(cat);
+  }
+
   return (
     <>
       <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -1344,7 +1353,15 @@ export default function SuppliersPage() {
                         : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
                     } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                   >
-                    <Avatar name={s.name} heroUrl={s.hero_image_url} category={s.category} />
+                    <Avatar
+                      name={s.name}
+                      heroUrl={s.hero_image_url}
+                      category={s.category}
+                      onClick={() => filterByCategory(s.category)}
+                      ariaLabel={t("suppliers.show_all_in_category", {
+                        category: t(`suppliers.cat.${s.category}`),
+                      })}
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         {user?.is_admin ? (
@@ -1534,7 +1551,15 @@ export default function SuppliersPage() {
                     corner. The right padding on the name reserves space for
                     the pinned-corner controls above. */}
                   <div className="flex items-start gap-3 pr-16">
-                    <Avatar name={s.name} heroUrl={s.hero_image_url} category={s.category} />
+                    <Avatar
+                      name={s.name}
+                      heroUrl={s.hero_image_url}
+                      category={s.category}
+                      onClick={() => filterByCategory(s.category)}
+                      ariaLabel={t("suppliers.show_all_in_category", {
+                        category: t(`suppliers.cat.${s.category}`),
+                      })}
+                    />
                     <div className="min-w-0 flex-1">
                       {user?.is_admin ? (
                         <Link
@@ -1930,28 +1955,47 @@ function Avatar({
   name,
   heroUrl,
   category,
+  onClick,
+  ariaLabel,
 }: {
   name: string;
   heroUrl?: string | null;
   /** When set (and no hero image), the slot shows the category icon instead of
    *  the name monogram, so curated rows read by trade at a glance. */
   category?: SupplierCategory;
+  /** When set, the slot becomes a button — clicking it filters the directory
+   *  to this supplier's category. Stops propagation so it doesn't trigger any
+   *  card-level handler. */
+  onClick?: () => void;
+  ariaLabel?: string;
 }) {
   const base =
     "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-paper-300 font-serif text-lg text-ink-700 dark:border-umber-700 dark:text-paper-100";
-  if (heroUrl) {
+  const Icon = category ? CATEGORY_ICON[category] : null;
+  const inner = heroUrl ? (
+    <img src={heroUrl} alt={name} className="h-full w-full object-cover" loading="lazy" />
+  ) : Icon ? (
+    <Icon size={18} aria-hidden />
+  ) : (
+    name.charAt(0).toUpperCase()
+  );
+  if (onClick) {
     return (
-      <div className={base}>
-        <img src={heroUrl} alt={name} className="h-full w-full object-cover" loading="lazy" />
-      </div>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        aria-label={ariaLabel}
+        title={ariaLabel}
+        className={`${base} cursor-pointer transition-colors hover:border-ink-400 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 dark:hover:border-umber-500 dark:hover:text-paper-50`}
+      >
+        {inner}
+      </button>
     );
   }
-  const Icon = category ? CATEGORY_ICON[category] : null;
-  return (
-    <div className={base}>
-      {Icon ? <Icon size={18} aria-hidden /> : name.charAt(0).toUpperCase()}
-    </div>
-  );
+  return <div className={base}>{inner}</div>;
 }
 
 /** Price-band scale: just N dollar signs ($ … $$$$$). No greyed

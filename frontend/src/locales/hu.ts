@@ -2211,6 +2211,8 @@ const hu: LocaleMessages = {
       err_generic: "Nem sikerült hozzáadni. Próbáld újra.",
       add: "Hozzáadás",
       submitting: "Mentés…",
+      expand: "Foglalt szolgáltató hozzáadása",
+      collapse: "Űrlap elrejtése",
     },
     nearby_banner: "{query} közelében — {anchor} környékét mutatjuk.",
     accommodation_external_title: "Szállás partnerek vendégeknek",

@@ -2182,6 +2182,8 @@ const en: LocaleMessages = {
       err_generic: "Couldn't add it. Please try again.",
       add: "Add",
       submitting: "Saving…",
+      expand: "Add a booked vendor",
+      collapse: "Hide the form",
     },
     nearby_banner: "Near {query} — showing the {anchor} area.",
     accommodation_external_title: "Lodging partners for your guests",

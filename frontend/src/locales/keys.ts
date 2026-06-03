@@ -2479,6 +2479,10 @@ export interface LocaleMessages {
       add: string;
       /** Loading-state label on the same button. */
       submitting: string;
+      /** SR + tooltip label on the collapsed header toggle. */
+      expand: string;
+      /** SR + tooltip label on the expanded header toggle. */
+      collapse: string;
     };
     /** Shown above the result list when the typed city wasn't in the
      *  directory but resolved to a known metro area (e.g. "Zsámbék" →
