@@ -995,7 +995,7 @@ export default function SuppliersPage() {
                 : "inline-flex items-center gap-1.5 rounded-xl border border-umber-400 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
             }
           >
-            {t("suppliers.filter_all")}
+            <span className="lowercase">{t("suppliers.filter_all")}</span>
             <span
               className={
                 activeCat === null
@@ -1022,7 +1022,7 @@ export default function SuppliersPage() {
                 }
               >
                 <Icon size={13} />
-                {t(`suppliers.cat.${c}`)}
+                <span className="lowercase">{t(`suppliers.cat.${c}`)}</span>
                 <span
                   className={
                     selected
@@ -1051,7 +1051,7 @@ export default function SuppliersPage() {
             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 sm:ml-auto dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
           >
             <Pencil size={13} aria-hidden />
-            {t("suppliers.diy_button_short")}
+            <span className="lowercase">{t("suppliers.diy_button_short")}</span>
           </button>
         </div>
       )}
@@ -1876,7 +1876,7 @@ function ChainStep({
             {icon}
           </span>
         )}
-        <span className="flex h-5 items-center font-medium leading-none">{label}</span>
+        <span className="flex h-5 items-center font-medium lowercase leading-none">{label}</span>
         {count !== undefined && (
           <span
             className={`flex h-5 items-center font-medium tabular-nums leading-none ${
