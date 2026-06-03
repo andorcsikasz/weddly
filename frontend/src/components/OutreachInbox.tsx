@@ -93,7 +93,7 @@ export function OutreachInbox() {
     <section aria-labelledby="outreach-section-heading" className="mt-10">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 id="outreach-section-heading" className="font-serif text-2xl">
+          <h2 id="outreach-section-heading" className="font-grotesk text-2xl">
             {t("outreach.heading")}
           </h2>
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
@@ -105,9 +105,9 @@ export function OutreachInbox() {
         </button>
       </div>
 
-      <div className="card mb-4 bg-blush-50/60 ring-1 ring-blush-200 dark:bg-blush-400/10 dark:ring-blush-400/40">
+      <div className="card mb-4 bg-umber-100/60 ring-1 ring-umber-200 dark:bg-umber-700/40 dark:ring-umber-600">
         <div className="flex items-start gap-3">
-          <Mail size={16} className="mt-1 shrink-0 text-blush-700 dark:text-blush-300" />
+          <Mail size={16} className="mt-1 shrink-0 text-umber-600 dark:text-umber-200" />
           <p className="text-sm text-ink-700 dark:text-paper-100">{t("outreach.reply_note")}</p>
         </div>
       </div>
@@ -116,7 +116,7 @@ export function OutreachInbox() {
         <div className="card text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</div>
       ) : campaigns.length === 0 ? (
         <div className="card text-center">
-          <h3 className="text-lg font-semibold">{t("outreach.empty_title")}</h3>
+          <h3 className="font-grotesk text-lg">{t("outreach.empty_title")}</h3>
           <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
             {t("outreach.empty_body")}
           </p>
@@ -144,7 +144,7 @@ export function OutreachInbox() {
                       : "border-paper-300 bg-white hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
                   }`}
                 >
-                  <p className="truncate font-serif text-sm font-semibold">{c.subject}</p>
+                  <p className="truncate font-grotesk text-sm font-semibold">{c.subject}</p>
                   <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                     {t("outreach.recipient_count", { n: c.message_count })} ·{" "}
                     {dateFmt.format(c.created_at)}
@@ -160,7 +160,7 @@ export function OutreachInbox() {
                   <p className="text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
                     {dateFmt.format(detail.created_at)}
                   </p>
-                  <h3 className="mt-1 font-serif text-2xl">{detail.subject}</h3>
+                  <h3 className="mt-1 font-grotesk text-2xl">{detail.subject}</h3>
                 </header>
                 <div className="rounded-xl bg-paper-50 p-4 text-sm leading-relaxed text-ink-700 dark:bg-umber-800/60 dark:text-paper-100">
                   {detail.body_template.split(/\n+/).map((para, idx) => (
@@ -173,7 +173,7 @@ export function OutreachInbox() {
                   ))}
                 </div>
                 <div>
-                  <h4 className="mb-2 font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
+                  <h4 className="mb-2 font-grotesk text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
                     {t("outreach.recipients_header")}
                   </h4>
                   <ul className="space-y-2">
