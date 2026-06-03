@@ -1193,17 +1193,16 @@ export default function SuppliersPage() {
           />
         </Suspense>
       ) : (
-        <div className={viewMode === "line" ? "flex flex-col gap-2" : "grid gap-3 md:grid-cols-2"}>
+        <>
           {/* "Már foglaltam" card. Only appears once the couple has narrowed
               down to a specific sub-category (activeGroup AND activeCat both
               set) — without that context the autocomplete + admin-queue
-              category pinning have nothing to anchor to. Sits at the very
-              start of the cards grid so it never gets buried by a long
-              filtered list. Spans the full row (md:col-span-2) so this taller
-              form never shares a row with a directory card — without that, the
-              card beside it would stretch to the form's height. */}
+              category pinning have nothing to anchor to. Rendered above the
+              grid (full-width either way) so the `auto-rows-fr` grid below
+              keeps every directory card the same height without this taller
+              form inflating the card rows. */}
           {activeGroup && activeCat && (
-            <div className="md:col-span-2">
+            <div className="mb-3">
               <BookedSupplierCard
                 coupleId={coupleId}
                 category={activeCat}
@@ -1219,66 +1218,295 @@ export default function SuppliersPage() {
               />
             </div>
           )}
-          {visibleSuppliers.map((s) => {
-            const Icon = CATEGORY_ICON[s.category];
-            const isHighlighted = s.id === highlightId;
-            const isSaved = s.source !== "self" && saved.has(s.id);
-            const isPicked = selection[s.category] === s.id;
-            const isCompared = compareIds.includes(s.id);
-            const compareCapReached = compareIds.length >= COMPARE_MAX;
-            if (s.source === "self") {
-              const openEdit = () => {
-                setDiyEditing(s);
-                setDiyOpen(true);
-              };
+          <div
+            className={
+              viewMode === "line" ? "flex flex-col gap-2" : "grid auto-rows-fr gap-3 md:grid-cols-2"
+            }
+          >
+            {visibleSuppliers.map((s) => {
+              const Icon = CATEGORY_ICON[s.category];
+              const isHighlighted = s.id === highlightId;
+              const isSaved = s.source !== "self" && saved.has(s.id);
+              const isPicked = selection[s.category] === s.id;
+              const isCompared = compareIds.includes(s.id);
+              const compareCapReached = compareIds.length >= COMPARE_MAX;
+              if (s.source === "self") {
+                const openEdit = () => {
+                  setDiyEditing(s);
+                  setDiyOpen(true);
+                };
+                if (viewMode === "line") {
+                  return (
+                    <article
+                      key={s.id}
+                      data-supplier-id={s.id}
+                      className={`relative flex items-center gap-3 rounded-2xl border border-sage-200 border-l-4 border-l-sage-500 bg-sage-50/60 px-4 py-3 transition hover:border-sage-300 hover:shadow-sm dark:border-sage-400/40 dark:bg-sage-400/15 dark:hover:border-sage-400/60 ${
+                        isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
+                      }`}
+                    >
+                      {/* DIY supplier card — couple-saved row from
+                        `couple_suppliers`, no `listings` join. The hero-image
+                        upload is vendor-only (P2.D), so the monogram fallback
+                        stays for this view. */}
+                      <Avatar name={s.name} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="truncate text-sm font-semibold">{s.name}</h3>
+                          <span className="hidden shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300 sm:inline-flex">
+                            {t("suppliers.diy_pill")}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
+                          <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                            <Icon size={11} aria-hidden />
+                            {t(`suppliers.cat.${s.category}`)}
+                          </span>
+                          {s.price_huf !== null && s.price_huf > 0 && (
+                            <>
+                              <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                                ·
+                              </span>
+                              <span className="inline-flex items-center gap-1 whitespace-nowrap text-sage-700 dark:text-sage-300">
+                                <Wallet size={11} aria-hidden />
+                                {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
+                              </span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={openEdit}
+                        aria-label={t("suppliers.diy_action_edit_aria")}
+                        className="inline-flex h-7 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-3 text-xs font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
+                      >
+                        <Pencil size={12} aria-hidden />
+                        <span className="hidden sm:inline">{t("suppliers.diy_modal_edit")}</span>
+                      </button>
+                    </article>
+                  );
+                }
+                return (
+                  <article
+                    key={s.id}
+                    data-supplier-id={s.id}
+                    className={`card !p-4 relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 dark:!bg-sage-400/15 ${
+                      isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={openEdit}
+                      aria-label={t("suppliers.diy_action_edit_aria")}
+                      className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-600 transition hover:bg-sage-100 hover:text-sage-800 dark:text-sage-300 dark:hover:bg-sage-400/20 dark:hover:text-sage-200"
+                    >
+                      <Pencil size={14} aria-hidden />
+                    </button>
+                    <div className="flex items-start gap-3 pr-8">
+                      {/* Same DIY supplier card as above (expanded layout) — no
+                        listings join, monogram fallback only. */}
+                      <Avatar name={s.name} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="truncate text-base font-semibold">{s.name}</h3>
+                          <span className="shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300">
+                            {t("suppliers.diy_pill")}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                          <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                            <Icon size={12} aria-hidden />
+                            {t(`suppliers.cat.${s.category}`)}
+                          </span>
+                          {s.price_huf !== null && s.price_huf > 0 && (
+                            <>
+                              <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                                ·
+                              </span>
+                              <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-sage-700 dark:text-sage-300">
+                                <Wallet size={12} aria-hidden />
+                                {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
+                              </span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    {s.notes && (
+                      <p className="mt-2 line-clamp-3 text-sm text-ink-700 dark:text-paper-100">
+                        {s.notes}
+                      </p>
+                    )}
+                    <div className="mt-auto flex items-center justify-end gap-2 pt-3">
+                      <button
+                        type="button"
+                        onClick={openEdit}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-medium text-sage-700 transition hover:border-sage-500 hover:bg-sage-100 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
+                      >
+                        <Pencil size={13} aria-hidden />
+                        {t("suppliers.diy_modal_edit")}
+                      </button>
+                    </div>
+                  </article>
+                );
+              }
               if (viewMode === "line") {
                 return (
                   <article
                     key={s.id}
                     data-supplier-id={s.id}
-                    className={`relative flex items-center gap-3 rounded-2xl border border-sage-200 border-l-4 border-l-sage-500 bg-sage-50/60 px-4 py-3 transition hover:border-sage-300 hover:shadow-sm dark:border-sage-400/40 dark:bg-sage-400/15 dark:hover:border-sage-400/60 ${
-                      isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
-                    }`}
+                    className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition hover:shadow-sm ${
+                      isPicked
+                        ? "border-sage-400 border-l-4 border-l-sage-500 bg-sage-50/70 dark:border-sage-400/40 dark:bg-sage-400/15"
+                        : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+                    } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                   >
-                    {/* DIY supplier card — couple-saved row from
-                        `couple_suppliers`, no `listings` join. The hero-image
-                        upload is vendor-only (P2.D), so the monogram fallback
-                        stays for this view. */}
-                    <Avatar name={s.name} />
+                    <Avatar name={s.name} heroUrl={s.hero_image_url} category={s.category} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="truncate text-sm font-semibold">{s.name}</h3>
-                        <span className="hidden shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300 sm:inline-flex">
-                          {t("suppliers.diy_pill")}
-                        </span>
+                        {user?.is_admin ? (
+                          <Link
+                            to={`/app/suppliers/${encodeURIComponent(s.id)}`}
+                            className="truncate text-sm font-semibold hover:underline"
+                          >
+                            {s.name}
+                          </Link>
+                        ) : (
+                          <h3 className="truncate text-sm font-semibold">{s.name}</h3>
+                        )}
+                        {s.source === "community" && s.submitter_type === "self" && (
+                          <span
+                            className="hidden shrink-0 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 sm:inline-flex"
+                            title={t("suppliers.self_pill_tooltip")}
+                            aria-label={t("suppliers.self_pill_tooltip")}
+                          >
+                            <Store size={10} aria-hidden />
+                            {t("suppliers.self_pill")}
+                          </span>
+                        )}
+                        {s.source === "community" && s.submitter_type !== "self" && (
+                          <span
+                            className="hidden shrink-0 items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300 sm:inline-flex"
+                            title={t("suppliers.community_pill_tooltip")}
+                            aria-label={t("suppliers.community_pill_tooltip")}
+                          >
+                            <Users size={10} aria-hidden />
+                            {t("suppliers.community_pill")}
+                          </span>
+                        )}
                       </div>
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
                         <span className="inline-flex items-center gap-1 uppercase tracking-wide">
                           <Icon size={11} aria-hidden />
                           {t(`suppliers.cat.${s.category}`)}
                         </span>
-                        {s.price_huf !== null && s.price_huf > 0 && (
+                        {s.venue_style && (
                           <>
                             <span aria-hidden className="text-paper-400 dark:text-umber-300">
                               ·
                             </span>
-                            <span className="inline-flex items-center gap-1 whitespace-nowrap text-sage-700 dark:text-sage-300">
-                              <Wallet size={11} aria-hidden />
-                              {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
+                            <span className="uppercase tracking-wide text-ink-600 dark:text-umber-200">
+                              {t(`suppliers.venue_style.${s.venue_style}`)}
+                            </span>
+                          </>
+                        )}
+                        <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                          ·
+                        </span>
+                        <span className="uppercase tracking-wide">{s.city}</span>
+                        <DistanceHint queryNorm={queryNorm} city={s.city} />
+                        {s.price_band !== null && (
+                          <>
+                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                              ·
+                            </span>
+                            <span
+                              className="text-ink-600 dark:text-umber-200"
+                              title={t("suppliers.price_legend")}
+                            >
+                              <PriceBandDots band={s.price_band} />
+                            </span>
+                          </>
+                        )}
+                        {(s.capacity_max ?? 0) > 0 && (
+                          <>
+                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                              ·
+                            </span>
+                            <span className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200">
+                              <Users size={11} aria-hidden />
+                              {s.capacity_min && s.capacity_max
+                                ? t("suppliers.capacity_range", {
+                                    min: s.capacity_min,
+                                    max: s.capacity_max,
+                                  })
+                                : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
                             </span>
                           </>
                         )}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={openEdit}
-                      aria-label={t("suppliers.diy_action_edit_aria")}
-                      className="inline-flex h-7 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-3 text-xs font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
-                    >
-                      <Pencil size={12} aria-hidden />
-                      <span className="hidden sm:inline">{t("suppliers.diy_modal_edit")}</span>
-                    </button>
+                    {/* Action cluster: contact CTAs collapse to icons on small
+                      widths so the row never wraps. Star + vote pinned to the
+                      far right. */}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <a
+                        href={s.website}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="btn-outline btn-sm"
+                        aria-label={t("suppliers.visit_website")}
+                        onClick={() => trackSupplierClick(s.id, "website_click")}
+                      >
+                        <span className="hidden md:inline">{t("suppliers.visit_website")}</span>
+                        <span className="md:hidden">→</span>
+                      </a>
+                      {s.contact_phone && (
+                        <PhoneReveal
+                          phone={s.contact_phone}
+                          onCall={() => trackSupplierClick(s.id, "phone_click")}
+                          iconOnly
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => togglePicked(s)}
+                        aria-label={
+                          isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")
+                        }
+                        aria-pressed={isPicked}
+                        title={t("suppliers.pick_aria")}
+                        className={
+                          isPicked
+                            ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                            : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                        }
+                      >
+                        {isPicked ? (
+                          <BookmarkCheck size={15} className="fill-sage-200" aria-hidden />
+                        ) : (
+                          <Bookmark size={15} aria-hidden />
+                        )}
+                      </button>
+                      <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
+                      <CompareToggle
+                        supplierId={s.id}
+                        isCompared={isCompared}
+                        capReached={compareCapReached}
+                        onToggle={() => toggleCompare(s.id)}
+                        t={t}
+                      />
+                      <ReportButton
+                        onReport={() =>
+                          setReporting({
+                            id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                            name: s.name,
+                          })
+                        }
+                        t={t}
+                      />
+                      <VoteRow supplier={s} onVote={onVote} t={t} />
+                    </div>
                   </article>
                 );
               }
@@ -1286,184 +1514,16 @@ export default function SuppliersPage() {
                 <article
                   key={s.id}
                   data-supplier-id={s.id}
-                  className={`card !p-4 relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 dark:!bg-sage-400/15 ${
-                    isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={openEdit}
-                    aria-label={t("suppliers.diy_action_edit_aria")}
-                    className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-600 transition hover:bg-sage-100 hover:text-sage-800 dark:text-sage-300 dark:hover:bg-sage-400/20 dark:hover:text-sage-200"
-                  >
-                    <Pencil size={14} aria-hidden />
-                  </button>
-                  <div className="flex items-start gap-3 pr-8">
-                    {/* Same DIY supplier card as above (expanded layout) — no
-                        listings join, monogram fallback only. */}
-                    <Avatar name={s.name} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="truncate text-base font-semibold">{s.name}</h3>
-                        <span className="shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300">
-                          {t("suppliers.diy_pill")}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
-                        <span className="inline-flex items-center gap-1 uppercase tracking-wide">
-                          <Icon size={12} aria-hidden />
-                          {t(`suppliers.cat.${s.category}`)}
-                        </span>
-                        {s.price_huf !== null && s.price_huf > 0 && (
-                          <>
-                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                              ·
-                            </span>
-                            <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-sage-700 dark:text-sage-300">
-                              <Wallet size={12} aria-hidden />
-                              {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
-                            </span>
-                          </>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  {s.notes && (
-                    <p className="mt-2 line-clamp-3 text-sm text-ink-700 dark:text-paper-100">
-                      {s.notes}
-                    </p>
-                  )}
-                  <div className="mt-auto flex items-center justify-end gap-2 pt-3">
-                    <button
-                      type="button"
-                      onClick={openEdit}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-medium text-sage-700 transition hover:border-sage-500 hover:bg-sage-100 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
-                    >
-                      <Pencil size={13} aria-hidden />
-                      {t("suppliers.diy_modal_edit")}
-                    </button>
-                  </div>
-                </article>
-              );
-            }
-            if (viewMode === "line") {
-              return (
-                <article
-                  key={s.id}
-                  data-supplier-id={s.id}
-                  className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition hover:shadow-sm ${
+                  className={`card !p-4 relative flex h-full flex-col ${
                     isPicked
-                      ? "border-sage-400 border-l-4 border-l-sage-500 bg-sage-50/70 dark:border-sage-400/40 dark:bg-sage-400/15"
-                      : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+                      ? "border-sage-400 border-l-4 border-l-sage-500 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15"
+                      : ""
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
-                  <Avatar name={s.name} heroUrl={s.hero_image_url} category={s.category} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      {user?.is_admin ? (
-                        <Link
-                          to={`/app/suppliers/${encodeURIComponent(s.id)}`}
-                          className="truncate text-sm font-semibold hover:underline"
-                        >
-                          {s.name}
-                        </Link>
-                      ) : (
-                        <h3 className="truncate text-sm font-semibold">{s.name}</h3>
-                      )}
-                      {s.source === "community" && s.submitter_type === "self" && (
-                        <span
-                          className="hidden shrink-0 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 sm:inline-flex"
-                          title={t("suppliers.self_pill_tooltip")}
-                          aria-label={t("suppliers.self_pill_tooltip")}
-                        >
-                          <Store size={10} aria-hidden />
-                          {t("suppliers.self_pill")}
-                        </span>
-                      )}
-                      {s.source === "community" && s.submitter_type !== "self" && (
-                        <span
-                          className="hidden shrink-0 items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300 sm:inline-flex"
-                          title={t("suppliers.community_pill_tooltip")}
-                          aria-label={t("suppliers.community_pill_tooltip")}
-                        >
-                          <Users size={10} aria-hidden />
-                          {t("suppliers.community_pill")}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
-                      <span className="inline-flex items-center gap-1 uppercase tracking-wide">
-                        <Icon size={11} aria-hidden />
-                        {t(`suppliers.cat.${s.category}`)}
-                      </span>
-                      {s.venue_style && (
-                        <>
-                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                            ·
-                          </span>
-                          <span className="uppercase tracking-wide text-ink-600 dark:text-umber-200">
-                            {t(`suppliers.venue_style.${s.venue_style}`)}
-                          </span>
-                        </>
-                      )}
-                      <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                        ·
-                      </span>
-                      <span className="uppercase tracking-wide">{s.city}</span>
-                      <DistanceHint queryNorm={queryNorm} city={s.city} />
-                      {s.price_band !== null && (
-                        <>
-                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                            ·
-                          </span>
-                          <span
-                            className="text-ink-600 dark:text-umber-200"
-                            title={t("suppliers.price_legend")}
-                          >
-                            <PriceBandDots band={s.price_band} />
-                          </span>
-                        </>
-                      )}
-                      {(s.capacity_max ?? 0) > 0 && (
-                        <>
-                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                            ·
-                          </span>
-                          <span className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200">
-                            <Users size={11} aria-hidden />
-                            {s.capacity_min && s.capacity_max
-                              ? t("suppliers.capacity_range", {
-                                  min: s.capacity_min,
-                                  max: s.capacity_max,
-                                })
-                              : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
-                          </span>
-                        </>
-                      )}
-                    </p>
-                  </div>
-                  {/* Action cluster: contact CTAs collapse to icons on small
-                      widths so the row never wraps. Star + vote pinned to the
-                      far right. */}
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <a
-                      href={s.website}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="btn-outline btn-sm"
-                      aria-label={t("suppliers.visit_website")}
-                      onClick={() => trackSupplierClick(s.id, "website_click")}
-                    >
-                      <span className="hidden md:inline">{t("suppliers.visit_website")}</span>
-                      <span className="md:hidden">→</span>
-                    </a>
-                    {s.contact_phone && (
-                      <PhoneReveal
-                        phone={s.contact_phone}
-                        onCall={() => trackSupplierClick(s.id, "phone_click")}
-                        iconOnly
-                      />
-                    )}
+                  {/* Top-right corner: "save for later" toggles (pick + star).
+                    Compare and report now live in the bottom action row so
+                    every per-card action is visible at a glance. */}
+                  <div className="absolute right-3 top-3 inline-flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => togglePicked(s)}
@@ -1483,234 +1543,181 @@ export default function SuppliersPage() {
                       )}
                     </button>
                     <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
-                    <CompareToggle
-                      supplierId={s.id}
-                      isCompared={isCompared}
-                      capReached={compareCapReached}
-                      onToggle={() => toggleCompare(s.id)}
-                      t={t}
-                    />
-                    <ReportButton
-                      onReport={() =>
-                        setReporting({
-                          id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                          name: s.name,
-                        })
-                      }
-                      t={t}
-                    />
-                    <VoteRow supplier={s} onVote={onVote} t={t} />
                   </div>
-                </article>
-              );
-            }
-            return (
-              <article
-                key={s.id}
-                data-supplier-id={s.id}
-                className={`card !p-4 relative flex h-full flex-col ${
-                  isPicked
-                    ? "border-sage-400 border-l-4 border-l-sage-500 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15"
-                    : ""
-                } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
-              >
-                {/* Top-right corner: "save for later" toggles (pick + star).
-                    Compare and report now live in the bottom action row so
-                    every per-card action is visible at a glance. */}
-                <div className="absolute right-3 top-3 inline-flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => togglePicked(s)}
-                    aria-label={isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")}
-                    aria-pressed={isPicked}
-                    title={t("suppliers.pick_aria")}
-                    className={
-                      isPicked
-                        ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                        : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
-                    }
-                  >
-                    {isPicked ? (
-                      <BookmarkCheck size={15} className="fill-sage-200" aria-hidden />
-                    ) : (
-                      <Bookmark size={15} aria-hidden />
-                    )}
-                  </button>
-                  <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
-                </div>
-                {/* Single-column body: avatar + name + meta line (with price
+                  {/* Single-column body: avatar + name + meta line (with price
                     band and capacity inline so the meta strip stays one line),
                     address, blurb, then a bottom action row that places the
                     contact buttons on the left and the vote on the right
                     corner. The right padding on the name reserves space for
                     the pinned-corner controls above. */}
-                <div className="flex items-start gap-3 pr-16">
-                  <Avatar name={s.name} heroUrl={s.hero_image_url} category={s.category} />
-                  <div className="min-w-0 flex-1">
-                    {user?.is_admin ? (
-                      <Link
-                        to={`/app/suppliers/${encodeURIComponent(s.id)}`}
-                        className="block truncate text-base font-semibold hover:underline"
-                      >
-                        {s.name}
-                      </Link>
-                    ) : (
-                      <h3 className="truncate text-base font-semibold">{s.name}</h3>
-                    )}
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
-                      <span className="inline-flex items-center gap-1 uppercase tracking-wide">
-                        <Icon size={12} aria-hidden />
-                        {t(`suppliers.cat.${s.category}`)}
-                      </span>
-                      {s.venue_style && (
-                        <>
-                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                            ·
-                          </span>
-                          <span className="uppercase tracking-wide text-ink-600 dark:text-umber-200">
-                            {t(`suppliers.venue_style.${s.venue_style}`)}
-                          </span>
-                        </>
-                      )}
-                      <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                        ·
-                      </span>
-                      <span className="uppercase tracking-wide">{s.city}</span>
-                      <DistanceHint queryNorm={queryNorm} city={s.city} />
-                      {s.price_band !== null && (
-                        <>
-                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                            ·
-                          </span>
-                          <span
-                            className="text-ink-600 dark:text-umber-200"
-                            title={t("suppliers.price_legend")}
-                            aria-label={t("suppliers.price_legend")}
-                          >
-                            <PriceBandDots band={s.price_band} />
-                          </span>
-                        </>
-                      )}
-                      {(s.capacity_max ?? 0) > 0 && (
-                        <>
-                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                            ·
-                          </span>
-                          <span
-                            className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200"
-                            aria-label={t("suppliers.capacity_label")}
-                          >
-                            <Users size={11} aria-hidden />
-                            {s.capacity_min && s.capacity_max
-                              ? t("suppliers.capacity_range", {
-                                  min: s.capacity_min,
-                                  max: s.capacity_max,
-                                })
-                              : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
-                          </span>
-                        </>
-                      )}
-                      {s.source === "community" && s.submitter_type === "self" && (
-                        <span
-                          className="inline-flex items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
-                          title={t("suppliers.self_pill_tooltip")}
-                          aria-label={t("suppliers.self_pill_tooltip")}
+                  <div className="flex items-start gap-3 pr-16">
+                    <Avatar name={s.name} heroUrl={s.hero_image_url} category={s.category} />
+                    <div className="min-w-0 flex-1">
+                      {user?.is_admin ? (
+                        <Link
+                          to={`/app/suppliers/${encodeURIComponent(s.id)}`}
+                          className="block truncate text-base font-semibold hover:underline"
                         >
-                          <Store size={10} aria-hidden />
-                          {t("suppliers.self_pill")}
-                        </span>
+                          {s.name}
+                        </Link>
+                      ) : (
+                        <h3 className="truncate text-base font-semibold">{s.name}</h3>
                       )}
-                      {s.source === "community" && s.submitter_type !== "self" && (
-                        <span
-                          className="inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
-                          title={t("suppliers.community_pill_tooltip")}
-                          aria-label={t("suppliers.community_pill_tooltip")}
-                        >
-                          <Users size={10} aria-hidden />
-                          {t("suppliers.community_pill")}
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                        <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                          <Icon size={12} aria-hidden />
+                          {t(`suppliers.cat.${s.category}`)}
                         </span>
-                      )}
+                        {s.venue_style && (
+                          <>
+                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                              ·
+                            </span>
+                            <span className="uppercase tracking-wide text-ink-600 dark:text-umber-200">
+                              {t(`suppliers.venue_style.${s.venue_style}`)}
+                            </span>
+                          </>
+                        )}
+                        <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                          ·
+                        </span>
+                        <span className="uppercase tracking-wide">{s.city}</span>
+                        <DistanceHint queryNorm={queryNorm} city={s.city} />
+                        {s.price_band !== null && (
+                          <>
+                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                              ·
+                            </span>
+                            <span
+                              className="text-ink-600 dark:text-umber-200"
+                              title={t("suppliers.price_legend")}
+                              aria-label={t("suppliers.price_legend")}
+                            >
+                              <PriceBandDots band={s.price_band} />
+                            </span>
+                          </>
+                        )}
+                        {(s.capacity_max ?? 0) > 0 && (
+                          <>
+                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                              ·
+                            </span>
+                            <span
+                              className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200"
+                              aria-label={t("suppliers.capacity_label")}
+                            >
+                              <Users size={11} aria-hidden />
+                              {s.capacity_min && s.capacity_max
+                                ? t("suppliers.capacity_range", {
+                                    min: s.capacity_min,
+                                    max: s.capacity_max,
+                                  })
+                                : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
+                            </span>
+                          </>
+                        )}
+                        {s.source === "community" && s.submitter_type === "self" && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
+                            title={t("suppliers.self_pill_tooltip")}
+                            aria-label={t("suppliers.self_pill_tooltip")}
+                          >
+                            <Store size={10} aria-hidden />
+                            {t("suppliers.self_pill")}
+                          </span>
+                        )}
+                        {s.source === "community" && s.submitter_type !== "self" && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
+                            title={t("suppliers.community_pill_tooltip")}
+                            aria-label={t("suppliers.community_pill_tooltip")}
+                          >
+                            <Users size={10} aria-hidden />
+                            {t("suppliers.community_pill")}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  {s.address && (
+                    <p className="mt-2 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
+                      {s.address}
                     </p>
-                  </div>
-                </div>
-                {s.address && (
-                  <p className="mt-2 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
-                    {s.address}
+                  )}
+                  <p className="mt-2 line-clamp-2 text-sm text-ink-700 dark:text-paper-100">
+                    {locale === "hu" ? s.blurb_hu : s.blurb_en}
                   </p>
-                )}
-                <p className="mt-2 line-clamp-2 text-sm text-ink-700 dark:text-paper-100">
-                  {locale === "hu" ? s.blurb_hu : s.blurb_en}
-                </p>
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <a
-                      href={s.website}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="btn-ghost btn-sm"
-                      aria-label={t("suppliers.visit_website")}
-                      title={t("suppliers.visit_website")}
-                      onClick={() => trackSupplierClick(s.id, "website_click")}
-                    >
-                      <Globe size={14} aria-hidden />
-                    </a>
-                    {s.contact_phone && (
-                      <PhoneReveal
-                        phone={s.contact_phone}
-                        onCall={() => trackSupplierClick(s.id, "phone_click")}
-                      />
-                    )}
-                    {s.contact_email && (
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-3">
+                    <div className="flex flex-wrap items-center gap-2">
                       <a
-                        href={`mailto:${s.contact_email}`}
+                        href={s.website}
+                        target="_blank"
+                        rel="noreferrer noopener"
                         className="btn-ghost btn-sm"
-                        aria-label={t("suppliers.contact_email")}
+                        aria-label={t("suppliers.visit_website")}
+                        title={t("suppliers.visit_website")}
+                        onClick={() => trackSupplierClick(s.id, "website_click")}
                       >
-                        <Mail size={14} />
+                        <Globe size={14} aria-hidden />
                       </a>
-                    )}
-                    {s.vendor_account_id === null && user?.role !== "vendor" && (
-                      <button
-                        type="button"
-                        onClick={() => setClaimTarget({ id: s.id, name: s.name })}
-                        className="btn-ghost btn-sm"
-                        aria-label={t("vendor_claim.button_label")}
-                        title={t("vendor_claim.button_label")}
-                      >
-                        <UserCheck size={14} aria-hidden />
-                      </button>
-                    )}
+                      {s.contact_phone && (
+                        <PhoneReveal
+                          phone={s.contact_phone}
+                          onCall={() => trackSupplierClick(s.id, "phone_click")}
+                        />
+                      )}
+                      {s.contact_email && (
+                        <a
+                          href={`mailto:${s.contact_email}`}
+                          className="btn-ghost btn-sm"
+                          aria-label={t("suppliers.contact_email")}
+                        >
+                          <Mail size={14} />
+                        </a>
+                      )}
+                      {s.vendor_account_id === null && user?.role !== "vendor" && (
+                        <button
+                          type="button"
+                          onClick={() => setClaimTarget({ id: s.id, name: s.name })}
+                          className="btn-ghost btn-sm"
+                          aria-label={t("vendor_claim.button_label")}
+                          title={t("vendor_claim.button_label")}
+                        >
+                          <UserCheck size={14} aria-hidden />
+                        </button>
+                      )}
+                    </div>
+                    <div className="ml-auto flex items-center gap-1">
+                      <CompareToggle
+                        supplierId={s.id}
+                        isCompared={isCompared}
+                        capReached={compareCapReached}
+                        onToggle={() => toggleCompare(s.id)}
+                        t={t}
+                      />
+                      <ReportButton
+                        onReport={() =>
+                          setReporting({
+                            id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                            name: s.name,
+                          })
+                        }
+                        t={t}
+                      />
+                      <VoteRow supplier={s} onVote={onVote} t={t} />
+                    </div>
                   </div>
-                  <div className="ml-auto flex items-center gap-1">
-                    <CompareToggle
-                      supplierId={s.id}
-                      isCompared={isCompared}
-                      capReached={compareCapReached}
-                      onToggle={() => toggleCompare(s.id)}
-                      t={t}
-                    />
-                    <ReportButton
-                      onReport={() =>
-                        setReporting({
-                          id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                          name: s.name,
-                        })
-                      }
-                      t={t}
-                    />
-                    <VoteRow supplier={s} onVote={onVote} t={t} />
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-          {filtered.length === 0 && items.length > 0 && (
-            <p className="col-span-full py-8 text-center text-sm text-ink-500 dark:text-umber-300">
-              {t("suppliers.empty_filtered")}
-            </p>
-          )}
+                </article>
+              );
+            })}
+            {filtered.length === 0 && items.length > 0 && (
+              <p className="col-span-full py-8 text-center text-sm text-ink-500 dark:text-umber-300">
+                {t("suppliers.empty_filtered")}
+              </p>
+            )}
+          </div>
           {filtered.length > visibleCount && (
-            <div className="col-span-full flex justify-center pt-2">
+            <div className="flex justify-center pt-3">
               <button
                 type="button"
                 onClick={() => setVisibleCount((c) => c + SUPPLIERS_PAGE_SIZE)}
@@ -1720,7 +1727,7 @@ export default function SuppliersPage() {
               </button>
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Outreach Inbox — the "shop → message" flow lives on the same
