@@ -1866,7 +1866,7 @@ function ChainStep({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${
+      className={`group relative flex items-center justify-center rounded-lg border px-2.5 py-2.5 text-sm transition-colors ${
         active
           ? "border-ink-700 bg-ink-700 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
           : allDone
@@ -1903,7 +1903,7 @@ function ChainStep({
       </span>
       {progress !== undefined && progress.total > 0 && (
         <span
-          className="flex items-center justify-center gap-[3px]"
+          className="absolute inset-x-0 bottom-1.5 flex items-center justify-center gap-[3px]"
           aria-label={t("suppliers.chain_progress_aria", {
             done: progress.done,
             total: progress.total,
