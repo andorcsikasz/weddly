@@ -37,7 +37,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { GuestPortalView } from "../components/GuestPortalView";
 import { InfoHint } from "../components/InfoHint";
 import { useConfirm, useToast } from "../components/ui";
@@ -258,6 +258,7 @@ export default function GuestPageEditorPage() {
   useDocumentMeta("seo.guest_page_title", "seo.guest_page_description");
   const toast = useToast();
   const confirm = useConfirm();
+  const navigate = useNavigate();
 
   const [couple, setCouple] = useState<Couple | null>(null);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
@@ -612,6 +613,14 @@ export default function GuestPageEditorPage() {
       }
     : null;
 
+  // Venue card in the preview is a shortcut to its editor field below — scroll
+  // it into view and focus it so the couple lands right on the input.
+  function focusVenueField() {
+    const el = document.getElementById("guest-page-venue");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
+  }
+
   // Double-verify before flipping publish on/off — it controls whether the
   // /w/… link is reachable by anyone, so it shouldn't toggle on a stray click.
   async function onTogglePublish() {
@@ -661,7 +670,12 @@ export default function GuestPageEditorPage() {
         {loading ? (
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
         ) : preview ? (
-          <GuestPortalView data={preview} locale={locale} />
+          <GuestPortalView
+            data={preview}
+            locale={locale}
+            onEditSchedule={() => navigate("/app/timeline")}
+            onEditVenue={focusVenueField}
+          />
         ) : (
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("guest_preview.empty")}</p>
         )}

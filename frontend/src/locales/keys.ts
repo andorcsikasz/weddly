@@ -1565,6 +1565,9 @@ export interface LocaleMessages {
    *  at /g/:slug/:code AND the couple-side preview at /app/guest-portal. */
   guest_portal: {
     date_tbd: string;
+    /** Hover/title hint on the run-of-show + venue cards in the couple's
+     *  editor preview, where they double as edit shortcuts. */
+    edit_section_hint: string;
     schedule_title: string;
     schedule_empty: string;
     /** Label appended to a time when the event lands after midnight (day +1). */

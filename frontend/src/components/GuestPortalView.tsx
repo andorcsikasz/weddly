@@ -5,7 +5,8 @@
 // surface lives elsewhere (couple's /app/schedule, /app/profile, etc.).
 
 import type { GuestPortalView, GuestScheduleEntry } from "@shared/guest_portal";
-import { CalendarDays, Clock, MapPin, Sparkles, Users } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Pencil, Sparkles, Users } from "lucide-react";
+import type { KeyboardEvent } from "react";
 import { SCHEDULE_DAY_TWO_MINUTES } from "@shared/schedule";
 import { formatDate } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -26,12 +27,46 @@ function googleMapsUrl(lat: number, lng: number): string {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
 
-export function GuestPortalView({ data, locale }: { data: GuestPortalView; locale: Locale }) {
+export function GuestPortalView({
+  data,
+  locale,
+  onEditSchedule,
+  onEditVenue,
+}: {
+  data: GuestPortalView;
+  locale: Locale;
+  /** When set (couple's editor preview only), the run-of-show card becomes a
+   *  shortcut into the schedule editor. Omitted on the read-only public view. */
+  onEditSchedule?: () => void;
+  /** Same, for the venue/location card. */
+  onEditVenue?: () => void;
+}) {
   const { t } = useT();
   const hasLocation = data.location_lat !== null && data.location_lng !== null;
   const ceremonyLabel = data.ceremony_kind
     ? t(`guest_portal.ceremony.${data.ceremony_kind}`)
     : null;
+
+  // Turn a card into a click/keyboard "edit shortcut" when a handler is given.
+  const editProps = (handler?: () => void) =>
+    handler
+      ? {
+          role: "button" as const,
+          tabIndex: 0,
+          title: t("guest_portal.edit_section_hint"),
+          onClick: handler,
+          onKeyDown: (e: KeyboardEvent) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handler();
+            }
+          },
+        }
+      : {};
+  const editClass = (handler?: () => void) =>
+    handler
+      ? " cursor-pointer transition hover:border-ink-300 hover:bg-paper-50 dark:hover:border-umber-600 dark:hover:bg-umber-800"
+      : "";
 
   return (
     <div className="space-y-6">
@@ -71,8 +106,9 @@ export function GuestPortalView({ data, locale }: { data: GuestPortalView; local
          *  state stays muted so the card doesn't shout when the couple
          *  hasn't filled it in yet. */}
         <section
-          className="rounded-2xl border border-paper-200 bg-white p-5 dark:border-umber-700 dark:bg-umber-800/60"
+          className={`rounded-2xl border border-paper-200 bg-white p-5 dark:border-umber-700 dark:bg-umber-800/60${editClass(onEditSchedule)}`}
           aria-labelledby="guest-portal-schedule-title"
+          {...editProps(onEditSchedule)}
         >
           <div className="mb-3 flex items-center gap-2">
             <Clock size={16} className="text-ink-500 dark:text-umber-300" aria-hidden />
@@ -82,6 +118,9 @@ export function GuestPortalView({ data, locale }: { data: GuestPortalView; local
             >
               {t("guest_portal.schedule_title")}
             </h2>
+            {onEditSchedule && (
+              <Pencil size={13} className="ml-auto text-ink-400 dark:text-umber-300" aria-hidden />
+            )}
           </div>
           {data.schedule.length === 0 ? (
             <p className="text-sm text-ink-500 dark:text-umber-300">
@@ -99,8 +138,9 @@ export function GuestPortalView({ data, locale }: { data: GuestPortalView; local
         {/* Location — map pin link + ceremony kind. Two small facts merged
          *  so the card isn't half-empty when only one is filled in. */}
         <section
-          className="rounded-2xl border border-paper-200 bg-white p-5 dark:border-umber-700 dark:bg-umber-800/60"
+          className={`rounded-2xl border border-paper-200 bg-white p-5 dark:border-umber-700 dark:bg-umber-800/60${editClass(onEditVenue)}`}
           aria-labelledby="guest-portal-location-title"
+          {...editProps(onEditVenue)}
         >
           <div className="mb-3 flex items-center gap-2">
             <MapPin size={16} className="text-ink-500 dark:text-umber-300" aria-hidden />
@@ -110,12 +150,16 @@ export function GuestPortalView({ data, locale }: { data: GuestPortalView; local
             >
               {t("guest_portal.location_title")}
             </h2>
+            {onEditVenue && (
+              <Pencil size={13} className="ml-auto text-ink-400 dark:text-umber-300" aria-hidden />
+            )}
           </div>
           {hasLocation ? (
             <a
               href={googleMapsUrl(data.location_lat as number, data.location_lng as number)}
               target="_blank"
               rel="noreferrer noopener"
+              onClick={(e) => e.stopPropagation()}
               className="inline-flex items-center gap-1 text-sm text-blush-700 underline-offset-2 hover:underline dark:text-blush-300"
             >
               {t("guest_portal.location_open_map")}

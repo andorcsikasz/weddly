@@ -1433,6 +1433,7 @@ const en: LocaleMessages = {
   },
   guest_portal: {
     date_tbd: "Wedding date — to be confirmed",
+    edit_section_hint: "Click to edit",
     schedule_title: "Run of show",
     schedule_empty: "The couple hasn't published a timeline yet — check back closer to the day.",
     schedule_next_day: "next day",
