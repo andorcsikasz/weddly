@@ -17,7 +17,7 @@ import type {
   WeddingSeason,
 } from "@shared/types";
 import { CURRENCIES } from "@shared/types";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CountryCombobox } from "../components/CountryCombobox";
 import { Shell } from "../components/Shell";
@@ -850,6 +850,57 @@ export default function OnboardingWizard() {
   );
 }
 
+/** Confetti palette — warm coffee/blush + a green to echo the success check
+ *  and a single lemon pop. Full Tailwind class strings so the scanner keeps
+ *  them (no raw hex in components). */
+const CONFETTI_COLORS = [
+  "bg-blush-400",
+  "bg-blush-500",
+  "bg-sage-400",
+  "bg-sage-300",
+  "bg-umber-300",
+  "bg-lemonade-yellow",
+];
+
+/** A one-shot confetti burst that rains down inside the success card. Pieces
+ *  are generated once (useMemo) with randomised position, colour, shape and
+ *  motion; the fall/spin/fade is driven by the `.confetti-piece` keyframe in
+ *  index.css, which is disabled under prefers-reduced-motion. Decorative only
+ *  (aria-hidden, pointer-events-none) so it never blocks the CTA. */
+function Confetti() {
+  const pieces = useMemo(() => {
+    return Array.from({ length: 60 }, (_, i) => {
+      const round = Math.random() < 0.4;
+      const w = 5 + Math.random() * 6;
+      return {
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        round,
+        style: {
+          left: `${Math.random() * 100}%`,
+          width: `${w}px`,
+          height: round ? `${w}px` : `${w * 1.8}px`,
+          "--cf-drift": `${(Math.random() - 0.5) * 180}px`,
+          "--cf-spin": `${(Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 720)}deg`,
+          "--cf-fall": `${380 + Math.random() * 180}px`,
+          "--cf-duration": `${2.4 + Math.random() * 1.8}s`,
+          "--cf-delay": `${Math.random() * 0.8}s`,
+        } as CSSProperties,
+      };
+    });
+  }, []);
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          className={`confetti-piece absolute top-0 ${p.round ? "rounded-full" : "rounded-[1px]"} ${p.color}`}
+          style={p.style}
+        />
+      ))}
+    </div>
+  );
+}
+
 /**
  * Final confirmation shown once onboarding commits. A green check inside a
  * circle lands the "you're done" beat; the button hands off to the dashboard.
@@ -859,32 +910,35 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
   return (
     <Shell>
       <div className="mx-auto max-w-xl">
-        <div className="card animate-fade-in-up text-center">
-          <div
-            className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-sage-100 dark:bg-sage-900"
-            aria-hidden="true"
-          >
-            <svg
-              className="h-10 w-10 text-sage-600 dark:text-sage-300"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        <div className="card animate-fade-in-up relative overflow-hidden text-center">
+          <Confetti />
+          <div className="relative z-10">
+            <div
+              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-sage-100 dark:bg-sage-900"
+              aria-hidden="true"
             >
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
+              <svg
+                className="h-10 w-10 text-sage-600 dark:text-sage-300"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </div>
+            <h1 className="mt-6 font-grotesk text-umber-900 dark:text-paper-50">
+              {t("onboarding.all_set_title")}
+            </h1>
+            <p className="mt-2 text-sm text-umber-700 dark:text-umber-200">
+              {t("onboarding.all_set_body")}
+            </p>
+            <button type="button" className="btn-accent btn-lg mt-8 w-full" onClick={onContinue}>
+              {t("onboarding.all_set_continue")}
+            </button>
           </div>
-          <h1 className="mt-6 font-grotesk text-umber-900 dark:text-paper-50">
-            {t("onboarding.all_set_title")}
-          </h1>
-          <p className="mt-2 text-sm text-umber-700 dark:text-umber-200">
-            {t("onboarding.all_set_body")}
-          </p>
-          <button type="button" className="btn-accent btn-lg mt-8 w-full" onClick={onContinue}>
-            {t("onboarding.all_set_continue")}
-          </button>
         </div>
       </div>
     </Shell>

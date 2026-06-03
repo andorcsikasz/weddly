@@ -1037,3 +1037,33 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     animation: none !important;
   }
 }
+
+/* Onboarding "All set" celebration. Pieces are positioned + coloured inline
+   (Tailwind bg-* tokens); this just drives the fall + spin + fade. The
+   per-piece custom props (--cf-drift / --cf-spin / --cf-fall / --cf-duration /
+   --cf-delay) vary the motion so the burst never looks mechanical. */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -24px, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--cf-drift, 0px), var(--cf-fall, 460px), 0)
+      rotate(var(--cf-spin, 720deg));
+    opacity: 0;
+  }
+}
+.confetti-piece {
+  animation: confetti-fall var(--cf-duration, 3s) cubic-bezier(0.2, 0.6, 0.4, 1)
+    var(--cf-delay, 0s) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No celebration motion for reduce-motion users. The green check already
+     reads as "done" on its own. */
+  .confetti-piece {
+    display: none;
+  }
+}
