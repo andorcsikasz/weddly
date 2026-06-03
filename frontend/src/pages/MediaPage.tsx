@@ -4,6 +4,7 @@
 
 import { Camera, CheckCircle2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { InfoHint } from "../components/InfoHint";
 import { feedbackApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
@@ -36,9 +37,9 @@ export default function MediaPage() {
 
   return (
     <>
-      <header className="mb-4">
+      <header className="mb-4 flex items-center gap-2">
         <h1 className="font-grotesk">{t("media.title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("media.sub")}</p>
+        <InfoHint text={t("media.sub")} />
       </header>
 
       {/* The card sits ~30% down the visual area instead of pinning to the

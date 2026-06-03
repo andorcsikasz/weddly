@@ -28,6 +28,7 @@ import {
   PER_GUEST_CATEGORIES,
   resolveCustomIcon,
 } from "../components/CostPlanningCard";
+import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
@@ -716,9 +717,9 @@ export default function BudgetPage() {
   return (
     <>
       <header className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <h1 className="font-grotesk">{t("budget.title")}</h1>
-          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.sub")}</p>
+          <InfoHint text={t("budget.sub")} />
         </div>
         <div
           role="radiogroup"

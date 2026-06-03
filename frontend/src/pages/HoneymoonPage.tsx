@@ -49,6 +49,7 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
+import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import {
   HONEYMOON_EXTRA_TASKS,
@@ -589,9 +590,9 @@ export default function HoneymoonPage() {
 
   return (
     <>
-      <header className="mb-6">
+      <header className="mb-6 flex items-center gap-2">
         <h1 className="font-grotesk">{t("honeymoon.title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("honeymoon.sub")}</p>
+        <InfoHint text={t("honeymoon.sub")} />
       </header>
 
       {honeymoonBeforeWedding && couple?.wedding_date && couple?.honeymoon_start_date && (

@@ -8,6 +8,7 @@
 import type { MoodboardPin } from "@shared/types";
 import { AlertTriangle, ExternalLink, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { InfoHint } from "../components/InfoHint";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -188,9 +189,9 @@ export default function MoodboardPage() {
 
   return (
     <>
-      <header className="mb-6">
+      <header className="mb-6 flex items-center gap-2">
         <h1 className="font-grotesk">{t("moodboard.title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("moodboard.sub")}</p>
+        <InfoHint text={t("moodboard.sub")} />
       </header>
 
       {showForm ? (

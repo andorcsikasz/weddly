@@ -14,6 +14,7 @@ import {
 } from "@shared/schedule";
 import { Clock, Download, MapPin, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { InfoHint } from "../components/InfoHint";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { fetchPdfBlob, scheduleApi, schedulePdfUrl } from "../lib/endpoints";
@@ -209,11 +210,9 @@ export default function SchedulePage() {
   return (
     <>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div className="flex items-center gap-2">
           <h1 className="font-grotesk">{t("schedule.title")}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
-            {t("schedule.sub")}
-          </p>
+          <InfoHint text={t("schedule.sub")} />
         </div>
         <div className="flex flex-wrap gap-2">
           <button

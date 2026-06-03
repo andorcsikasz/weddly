@@ -47,6 +47,7 @@ import {
   X,
 } from "lucide-react";
 import { type DragEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { InfoHint } from "../components/InfoHint";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { accommodationApi, coupleApi, guestApi, transferApi } from "../lib/endpoints";
@@ -435,9 +436,9 @@ export default function LogisticsPage() {
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <>
-      <header className="mb-6">
+      <header className="mb-6 flex items-center gap-2">
         <h1 className="font-grotesk">{t("logistics.title")}</h1>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("logistics.sub")}</p>
+        <InfoHint text={t("logistics.sub")} />
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
