@@ -1,10 +1,10 @@
 // Interactive "try-it" widget for the landing page. Pure client state — no
 // backend, no auth. The breakdown uses ratios curated for the landing demo
-// (see DEMO_ROWS below); the real Budget page after signup uses a more
+// (see DEMO_ROWS_HU / DEMO_ROWS_EU below); the real Budget page after signup uses a more
 // granular DEFAULT_BUDGET_SPLIT. The handoff carries only the chosen guest
 // count + total budget into the onboarding draft.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Currency } from "@shared/types";
 import { formatMoney, localeCurrency } from "../lib/format";
@@ -29,9 +29,12 @@ const BUDGET_RANGES: Record<Currency, BudgetRange> = {
   USD: { min: 10_000, max: 80_000, step: 500, default: 30_000 },
 };
 
-// Curated breakdown ratios for HU weddings. Order = display order (the
-// reserve bucket lives at the end because it is conceptually a buffer
-// rather than a spend line). Shares sum to 1.00.
+// Curated breakdown ratios. Order = display order (the reserve bucket lives at
+// the end because it is conceptually a buffer rather than a spend line). Each
+// set sums to 1.00. HU and EU deliberately DIFFER: Hungarian weddings skew more
+// catering-heavy (venue often bundles the catering, so the standalone venue line
+// is smaller and food/drink + music carry more), while the European split puts
+// a bigger standalone share on the venue.
 type DemoRow = {
   /** Locale key (under `landing.*`) for the bar label. */
   i18nKey: string;
@@ -39,16 +42,30 @@ type DemoRow = {
   share: number;
 };
 
-const DEMO_ROWS: DemoRow[] = [
-  { i18nKey: "landing.demo_cat_food_drinks", share: 0.35 },
-  { i18nKey: "landing.demo_cat_venue", share: 0.18 },
+// European averages (shown for EUR/USD).
+const DEMO_ROWS_EU: DemoRow[] = [
+  { i18nKey: "landing.demo_cat_food_drinks", share: 0.33 },
+  { i18nKey: "landing.demo_cat_venue", share: 0.2 },
   { i18nKey: "landing.demo_cat_photo_video", share: 0.13 },
-  { i18nKey: "landing.demo_cat_decor_floral", share: 0.09 },
+  { i18nKey: "landing.demo_cat_decor_floral", share: 0.1 },
   { i18nKey: "landing.demo_cat_attire_beauty", share: 0.08 },
-  { i18nKey: "landing.demo_cat_music_dj", share: 0.07 },
+  { i18nKey: "landing.demo_cat_music_dj", share: 0.06 },
   { i18nKey: "landing.demo_cat_ceremony_services", share: 0.05 },
   { i18nKey: "landing.demo_cat_stationery_smalls", share: 0.02 },
   { i18nKey: "landing.demo_cat_reserve", share: 0.03 },
+];
+
+// Hungarian averages (shown for HUF) — catering-heavier, smaller standalone venue.
+const DEMO_ROWS_HU: DemoRow[] = [
+  { i18nKey: "landing.demo_cat_food_drinks", share: 0.4 },
+  { i18nKey: "landing.demo_cat_venue", share: 0.15 },
+  { i18nKey: "landing.demo_cat_photo_video", share: 0.12 },
+  { i18nKey: "landing.demo_cat_decor_floral", share: 0.08 },
+  { i18nKey: "landing.demo_cat_attire_beauty", share: 0.07 },
+  { i18nKey: "landing.demo_cat_music_dj", share: 0.08 },
+  { i18nKey: "landing.demo_cat_ceremony_services", share: 0.04 },
+  { i18nKey: "landing.demo_cat_stationery_smalls", share: 0.02 },
+  { i18nKey: "landing.demo_cat_reserve", share: 0.04 },
 ];
 
 function clamp(n: number, lo: number, hi: number) {
@@ -89,10 +106,22 @@ export function InteractiveBudgetDemo() {
   const [guests, setGuests] = useState(locale === "hu" ? DEFAULT_GUESTS_HU : DEFAULT_GUESTS);
   const [budget, setBudget] = useState(range.default);
 
+  // Reset the figures to the market's defaults when the UI locale flips at
+  // runtime (HU ↔ EN). useState only seeds the FIRST render, so without this a
+  // visitor toggling to Hungarian would keep the euro budget shown as
+  // "25 000 Ft" instead of a realistic Ft figure.
+  useEffect(() => {
+    setBudget(BUDGET_RANGES[currency].default);
+    setGuests(locale === "hu" ? DEFAULT_GUESTS_HU : DEFAULT_GUESTS);
+  }, [currency, locale]);
+
+  // HU and EU use different curated breakdowns (see the row tables above).
+  const demoRows = currency === "HUF" ? DEMO_ROWS_HU : DEMO_ROWS_EU;
+
   // Multiply each curated share by the chosen total, then normalise bar
   // widths against the largest row so the chart reads at a glance.
   const rows = useMemo(() => {
-    const all = DEMO_ROWS.map((row) => ({
+    const all = demoRows.map((row) => ({
       i18nKey: row.i18nKey,
       amount: Math.round(budget * row.share),
     }));
@@ -101,7 +130,7 @@ export function InteractiveBudgetDemo() {
       ...r,
       pct: maxAmount === 0 ? 0 : Math.round((r.amount / maxAmount) * 100),
     }));
-  }, [budget]);
+  }, [budget, demoRows]);
 
   const perGuest = guests === 0 ? 0 : Math.round(budget / guests);
 
