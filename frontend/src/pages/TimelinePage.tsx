@@ -280,7 +280,7 @@ export default function TimelinePage() {
         <header>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-serif text-ink-900 sm:text-4xl dark:text-paper-50">
+              <h1 className="text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
                 {t("timeline.title")}
               </h1>
               <Link
@@ -352,7 +352,7 @@ function CountdownChip({ weddingDate }: { weddingDate: Date | null }) {
         ? t("timeline.countdown_today")
         : t("timeline.countdown_past", { count: Math.abs(days) });
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-blush-50 px-3 py-1 text-sm font-medium text-blush-700 ring-1 ring-blush-200/70 dark:bg-blush-400/15 dark:text-blush-300 dark:ring-blush-400/20">
+    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-blush-700 dark:text-blush-300">
       <Heart size={14} aria-hidden="true" />
       <span className="tabular-nums">{label}</span>
     </span>
@@ -373,7 +373,7 @@ function PocCard({
   return (
     <section className="card p-0 rounded-3xl ring-1 ring-paper-300/60 dark:ring-umber-700/60">
       <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-        <h2 className="flex items-center gap-2.5 font-serif text-lg text-ink-900 dark:text-paper-50">
+        <h2 className="flex items-center gap-2.5 font-grotesk text-lg text-ink-900 dark:text-paper-50">
           <span className="inline-block h-5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           {t("timeline.poc_title")}
         </h2>
@@ -731,7 +731,7 @@ function ChartCard({
   // week-grid (Quarter/Half-year) — the title chrome can stay uniformly serif.
   const isCalendarMode = true;
   const titleClass = isCalendarMode
-    ? "font-serif text-xl text-ink-900 dark:text-paper-50"
+    ? "font-grotesk text-xl text-ink-900 dark:text-paper-50"
     : "text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100";
 
   return (
@@ -922,7 +922,7 @@ function UndatedCard({
   return (
     <section className="card p-0 rounded-3xl ring-1 ring-paper-300/60 dark:ring-umber-700/60">
       <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-        <h2 className="flex items-center gap-2.5 font-serif text-lg text-ink-900 dark:text-paper-50">
+        <h2 className="flex items-center gap-2.5 font-grotesk text-lg text-ink-900 dark:text-paper-50">
           <span className="inline-block h-5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           <span>{t("timeline.no_dates_title")}</span>
           {tasks.length > 0 && (
@@ -1087,7 +1087,7 @@ function TimelineEditDialog({
         className="flex w-full max-w-lg max-h-[90vh] flex-col overflow-hidden rounded-t-2xl bg-paper-50 shadow-pop sm:rounded-2xl dark:bg-umber-800"
       >
         <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4 dark:border-umber-700">
-          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">
+          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50 font-grotesk">
             {t("timeline.edit_title")}
           </h2>
           <button
