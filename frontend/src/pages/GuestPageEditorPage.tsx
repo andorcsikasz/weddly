@@ -15,7 +15,6 @@ import type {
 } from "@shared/guest_portal";
 import type { ScheduleEvent } from "@shared/schedule";
 import {
-  AlertCircle,
   ChevronRight,
   Clipboard,
   Copy,
@@ -411,13 +410,6 @@ export default function GuestPageEditorPage() {
   const todoVenue = venueTrimmed.length === 0;
   const todoCoords = couple ? couple.location_lat === null || couple.location_lng === null : false;
   const todoSchedule = !loading && events.length === 0;
-  const todoSummaryItems: string[] = [];
-  if (todoVenue) todoSummaryItems.push(t("guest_page_editor.todo_item_venue"));
-  if (todoCover) todoSummaryItems.push(t("guest_page_editor.todo_item_cover"));
-  if (todoIntro) todoSummaryItems.push(t("guest_page_editor.todo_item_intro"));
-  if (todoPostRsvp) todoSummaryItems.push(t("guest_page_editor.todo_item_post_rsvp"));
-  if (todoSchedule) todoSummaryItems.push(t("guest_page_editor.todo_item_schedule"));
-  if (todoCoords) todoSummaryItems.push(t("guest_page_editor.todo_item_coords"));
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!couple || !dirty || saving) return;
@@ -625,22 +617,6 @@ export default function GuestPageEditorPage() {
         <h1 className="font-grotesk">{t("guest_page_editor.title")}</h1>
         <InfoHint text={t("guest_page_editor.subtitle")} />
       </header>
-
-      {/* ── Outstanding-items summary ────────────────────────────────────
-       *  Sits OUTSIDE the collapsible editor so the planner still sees the
-       *  list of unfilled fields when the editor is folded shut. Hidden
-       *  entirely once everything's filled. Plain text — the inline pills
-       *  next to each label are the actionable signal; this row is just
-       *  a glance-able overview. */}
-      {!loading && todoSummaryItems.length > 0 && (
-        <div className="mb-4 flex items-start gap-2 rounded-xl border border-blush-300 bg-blush-50 px-3 py-2 text-sm text-blush-800 dark:border-blush-400/40 dark:bg-blush-900/20 dark:text-blush-200">
-          <AlertCircle size={16} aria-hidden className="mt-0.5 shrink-0" />
-          <p>
-            <span className="font-medium">{t("guest_page_editor.todo_summary_prefix")}</span>{" "}
-            {todoSummaryItems.join(" · ")}
-          </p>
-        </div>
-      )}
 
       {/* ── Editor block (collapsible) ───────────────────────────────────
        *  Everything from the share artefact through the save button lives
