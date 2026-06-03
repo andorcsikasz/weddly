@@ -2076,7 +2076,7 @@ function EditableHeading({
               setEditing(false);
             }
           }}
-          className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 font-serif text-xl text-ink-900 focus:border-ink-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:focus:border-paper-100"
+          className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 font-grotesk text-xl text-ink-900 focus:border-ink-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:focus:border-paper-100"
         />
       ) : (
         <button
@@ -2085,7 +2085,7 @@ function EditableHeading({
           className="group flex w-full items-center gap-2 rounded-lg text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-700"
           aria-label={editAriaLabel}
         >
-          <h3 className="flex-1 truncate font-serif text-xl text-ink-900 dark:text-paper-50">
+          <h3 className="flex-1 truncate font-grotesk text-xl text-ink-900 dark:text-paper-50">
             {value}
           </h3>
           <Pencil
@@ -2403,7 +2403,7 @@ function TableCard({
           <>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-serif text-xl">{table.label}</h3>
+                <h3 className="font-grotesk text-xl">{table.label}</h3>
                 <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
                   {t(`seating.shape_${table.shape}`)} ·{" "}
                   {t("seating.seats_count").replace("{n}", String(usable))}

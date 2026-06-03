@@ -481,7 +481,7 @@ export function SeatingMap({
     <>
       <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-4 py-2.5 dark:border-umber-700">
         <div>
-          <h2 className="text-base">{t("seating.map_title")}</h2>
+          <h2 className="text-base font-grotesk">{t("seating.map_title")}</h2>
           <p className="text-xs text-ink-500 dark:text-umber-300">{t("seating.map_help")}</p>
         </div>
         <div className="flex items-center gap-2">
