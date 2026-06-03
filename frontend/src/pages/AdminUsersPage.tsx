@@ -504,11 +504,21 @@ export default function AdminUsersPage() {
 
   function renderUserInfo(u: AdminUserView, opts: { showLastActive?: boolean } = {}) {
     const flag = u.active_flag;
-    // Days-remaining countdown for the flag badge. Min 0 — we never display
-    // a negative count; once the deadline passes the hourly sweep removes
-    // the row entirely on the next tick.
+    // Days-remaining countdown for the flag badge, counted in CALENDAR days
+    // between today and the deletion date (both floored to local midnight), so
+    // a user flagged yesterday reads "6" today, not "7". A raw ceil of the ms
+    // gap would keep showing the full 7 until a complete 24h had elapsed.
+    // Math.round absorbs the ±1h DST wobble. Min 0 — never a negative count;
+    // once the deadline passes the hourly sweep removes the row on the next tick.
     const flagDaysLeft = flag
-      ? Math.max(0, Math.ceil((flag.scheduled_delete_at - Date.now()) / (24 * 60 * 60 * 1000)))
+      ? Math.max(
+          0,
+          Math.round(
+            (new Date(flag.scheduled_delete_at).setHours(0, 0, 0, 0) -
+              new Date().setHours(0, 0, 0, 0)) /
+              (24 * 60 * 60 * 1000),
+          ),
+        )
       : 0;
     return (
       <div className="flex min-w-0 flex-col gap-y-1">

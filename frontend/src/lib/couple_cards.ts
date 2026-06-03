@@ -346,26 +346,31 @@ export const COUPLE_CARD_DECKS: readonly Deck[] = [
 
 export const DECK_SIZE = 25;
 
-/** localStorage key for the easter-egg reveal flag. Lives on the lib
- *  module so both the landing teaser and the tool page read / write the
- *  same key — a visitor who unlocks lemonade in either surface sees it
- *  in both. */
+/** Easter-egg lemonade reveal is intentionally session-ephemeral: every
+ *  fresh page load starts back at "hidden" so the visitor has to re-
+ *  discover the swipe. We keep the load/save helpers exported and the
+ *  legacy localStorage key around so both surfaces (landing teaser +
+ *  tool page) share the same wiring, but persistence is now a no-op.
+ *  If we ever want a one-time discovery (visit-A unlocks → visit-B sees
+ *  it), wiring it back into localStorage is the obvious place. */
 export const LEMONADE_REVEAL_KEY = "weddly.couple_cards.lemonade_revealed";
 
 export function loadLemonadeRevealed(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(LEMONADE_REVEAL_KEY) === "1";
-  } catch {
-    return false;
+  // Always start hidden — the swipe is the unlock. No-op localStorage
+  // read keeps the easter egg feeling like an easter egg.
+  if (typeof window !== "undefined") {
+    try {
+      // Clear any leftover persisted flag from the previous behaviour so
+      // returning visitors actually re-experience the hidden state.
+      window.localStorage.removeItem(LEMONADE_REVEAL_KEY);
+    } catch {
+      // localStorage blocked — nothing to clean up anyway.
+    }
   }
+  return false;
 }
 
 export function saveLemonadeRevealed(): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(LEMONADE_REVEAL_KEY, "1");
-  } catch {
-    // localStorage blocked; the reveal just won't persist across reloads.
-  }
+  // Intentionally a no-op: reveals don't persist across reloads, see
+  // `loadLemonadeRevealed` for the why.
 }
