@@ -869,21 +869,25 @@ const CONFETTI_COLORS = [
  *  (aria-hidden, pointer-events-none) so it never blocks the CTA. */
 function Confetti() {
   const pieces = useMemo(() => {
-    return Array.from({ length: 60 }, (_, i) => {
-      const round = Math.random() < 0.4;
-      const w = 5 + Math.random() * 6;
+    return Array.from({ length: 48 }, (_, i) => {
+      const round = Math.random() < 0.45;
+      const w = 5 + Math.random() * 5;
       return {
         color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
         round,
+        // Slightly translucent so overlaps read as soft layers, not hard blocks.
+        opacity: 0.8 + Math.random() * 0.2,
         style: {
           left: `${Math.random() * 100}%`,
           width: `${w}px`,
-          height: round ? `${w}px` : `${w * 1.8}px`,
-          "--cf-drift": `${(Math.random() - 0.5) * 180}px`,
-          "--cf-spin": `${(Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 720)}deg`,
-          "--cf-fall": `${380 + Math.random() * 180}px`,
-          "--cf-duration": `${2.4 + Math.random() * 1.8}s`,
-          "--cf-delay": `${Math.random() * 0.8}s`,
+          height: round ? `${w}px` : `${w * 1.7}px`,
+          "--cf-drift": `${(Math.random() - 0.5) * 140}px`,
+          "--cf-fall": `${360 + Math.random() * 200}px`,
+          // Long, staggered, floaty descents read as graceful rather than a dump.
+          "--cf-duration": `${3.8 + Math.random() * 2.4}s`,
+          "--cf-delay": `${Math.random() * 1.1}s`,
+          "--cf-sway": `${10 + Math.random() * 22}px`,
+          "--cf-sway-duration": `${1.3 + Math.random() * 1.3}s`,
         } as CSSProperties,
       };
     });
@@ -891,11 +895,12 @@ function Confetti() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       {pieces.map((p, i) => (
-        <span
-          key={i}
-          className={`confetti-piece absolute top-0 ${p.round ? "rounded-full" : "rounded-[1px]"} ${p.color}`}
-          style={p.style}
-        />
+        <span key={i} className="confetti-piece absolute top-0" style={p.style}>
+          <i
+            className={`${p.round ? "rounded-full" : "rounded-[1px]"} ${p.color}`}
+            style={{ opacity: p.opacity }}
+          />
+        </span>
       ))}
     </div>
   );

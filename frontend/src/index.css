@@ -1038,27 +1038,47 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
 }
 
-/* Onboarding "All set" celebration. Pieces are positioned + coloured inline
-   (Tailwind bg-* tokens); this just drives the fall + spin + fade. The
-   per-piece custom props (--cf-drift / --cf-spin / --cf-fall / --cf-duration /
-   --cf-delay) vary the motion so the burst never looks mechanical. */
+/* Onboarding "All set" celebration. Motion is split across two layers for an
+   organic, paper-like flutter: the outer `.confetti-piece` does the graceful
+   vertical descent + fade, while the inner `<i>` sways side to side and turns
+   on two axes (the rotateY squish reads as the piece flipping edge-on). Pieces
+   are positioned + coloured inline (Tailwind bg-* tokens); per-piece custom
+   props vary every value so no two fall alike. */
 @keyframes confetti-fall {
   0% {
-    transform: translate3d(0, -24px, 0) rotate(0deg);
+    transform: translate3d(0, -24px, 0);
     opacity: 0;
   }
-  8% {
+  12% {
+    opacity: 1;
+  }
+  82% {
     opacity: 1;
   }
   100% {
-    transform: translate3d(var(--cf-drift, 0px), var(--cf-fall, 460px), 0)
-      rotate(var(--cf-spin, 720deg));
+    transform: translate3d(var(--cf-drift, 0px), var(--cf-fall, 460px), 0);
     opacity: 0;
   }
 }
+@keyframes confetti-sway {
+  0% {
+    transform: translateX(calc(var(--cf-sway, 16px) * -1)) rotateZ(-8deg) rotateY(0deg);
+  }
+  100% {
+    transform: translateX(var(--cf-sway, 16px)) rotateZ(8deg) rotateY(360deg);
+  }
+}
 .confetti-piece {
-  animation: confetti-fall var(--cf-duration, 3s) cubic-bezier(0.2, 0.6, 0.4, 1)
+  animation: confetti-fall var(--cf-duration, 4.5s) cubic-bezier(0.25, 0.46, 0.45, 0.94)
     var(--cf-delay, 0s) forwards;
+  will-change: transform, opacity;
+}
+.confetti-piece > i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  animation: confetti-sway var(--cf-sway-duration, 1.8s) ease-in-out var(--cf-delay, 0s) infinite
+    alternate;
 }
 @media (prefers-reduced-motion: reduce) {
   /* No celebration motion for reduce-motion users. The green check already
