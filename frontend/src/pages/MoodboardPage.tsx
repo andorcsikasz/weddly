@@ -199,9 +199,48 @@ export default function MoodboardPage() {
 
   return (
     <>
-      <header className="mb-6 flex items-center gap-2">
-        <h1 className="font-grotesk">{t("moodboard.title")}</h1>
-        <InfoHint text={t("moodboard.sub")} />
+      <header className="mb-6 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <h1 className="font-grotesk">{t("moodboard.title")}</h1>
+          <InfoHint text={t("moodboard.sub")} />
+        </div>
+        {/* Source-pin bar — moved up beside the title, half-width with a dark
+         *  outline. Only shows once a board is connected (!showForm). */}
+        {!showForm && (
+          <div className="card ml-auto flex w-full flex-nowrap items-center justify-between gap-2 border-2 border-ink-700 p-2.5 sm:w-1/2 sm:gap-3 sm:px-5 sm:py-2 dark:border-paper-100">
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-w-0 items-center gap-1.5 truncate text-sm text-ink-700 underline-offset-4 hover:underline dark:text-paper-100"
+            >
+              <ExternalLink size={14} aria-hidden="true" className="shrink-0" />
+              <span className="truncate">{t("moodboard.open_in_pinterest")}</span>
+            </a>
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={() => {
+                  setDraft(url);
+                  setEditing(true);
+                }}
+              >
+                {t("moodboard.change")}
+              </button>
+              <button
+                type="button"
+                className="btn-ghost btn-sm inline-flex items-center gap-1"
+                onClick={clear}
+                aria-label={t("moodboard.clear")}
+                title={t("moodboard.clear")}
+              >
+                <Trash2 size={14} aria-hidden="true" />
+                <span className="hidden sm:inline">{t("moodboard.clear")}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {showForm ? (
@@ -289,46 +328,6 @@ export default function MoodboardPage() {
         </div>
       ) : (
         <>
-          {/* Source-pin card — slimmed on mobile (`p-3` + `flex-nowrap` so
-           *  the Pinterest link + Csere / Eltávolítás buttons share one
-           *  row instead of stacking with the desktop `p-6`). The card
-           *  utility class still wins on tablet+ via the `sm:` overrides.
-           *  Vertical padding is halved on desktop (`sm:py-3` vs the card's
-           *  `p-6`) so the bar stays short — it only holds one row. */}
-          <div className="card mb-4 flex flex-nowrap items-center justify-between gap-2 p-3 sm:gap-3 sm:px-6 sm:py-3">
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-w-0 items-center gap-1.5 truncate text-sm text-ink-700 underline-offset-4 hover:underline dark:text-paper-100"
-            >
-              <ExternalLink size={14} aria-hidden="true" className="shrink-0" />
-              <span className="truncate">{t("moodboard.open_in_pinterest")}</span>
-            </a>
-            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-              <button
-                type="button"
-                className="btn-ghost btn-sm"
-                onClick={() => {
-                  setDraft(url);
-                  setEditing(true);
-                }}
-              >
-                {t("moodboard.change")}
-              </button>
-              <button
-                type="button"
-                className="btn-ghost btn-sm inline-flex items-center gap-1"
-                onClick={clear}
-                aria-label={t("moodboard.clear")}
-                title={t("moodboard.clear")}
-              >
-                <Trash2 size={14} aria-hidden="true" />
-                <span className="hidden sm:inline">{t("moodboard.clear")}</span>
-              </button>
-            </div>
-          </div>
-
           {loading ? (
             <div
               className="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>*]:mb-3"
