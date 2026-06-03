@@ -37,7 +37,7 @@ export default function MediaPage() {
   return (
     <>
       <header className="mb-4">
-        <h1>{t("media.title")}</h1>
+        <h1 className="font-grotesk">{t("media.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("media.sub")}</p>
       </header>
 
@@ -54,7 +54,7 @@ export default function MediaPage() {
             <Camera size={22} aria-hidden="true" />
           </span>
           <div>
-            <h2 className="font-serif text-xl">{t("media.coming_soon_title")}</h2>
+            <h2 className="font-grotesk text-xl">{t("media.coming_soon_title")}</h2>
             <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
               {t("media.coming_soon_body")}
             </p>
@@ -77,7 +77,7 @@ export default function MediaPage() {
           ) : (
             <form onSubmit={onSubmit} className="space-y-3" noValidate>
               <div>
-                <h2 className="font-serif text-lg">{t("media.feedback_title")}</h2>
+                <h2 className="font-grotesk text-lg">{t("media.feedback_title")}</h2>
                 <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
                   {t("media.feedback_intro")}
                 </p>

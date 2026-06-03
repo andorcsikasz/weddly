@@ -543,7 +543,7 @@ export default function HoneymoonPage() {
   return (
     <>
       <header className="mb-6">
-        <h1>{t("honeymoon.title")}</h1>
+        <h1 className="font-grotesk">{t("honeymoon.title")}</h1>
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("honeymoon.sub")}</p>
       </header>
 
@@ -658,7 +658,7 @@ export default function HoneymoonPage() {
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2>{t("honeymoon.costs_title")}</h2>
+            <h2 className="font-grotesk">{t("honeymoon.costs_title")}</h2>
             <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
               {t("honeymoon.costs_sub")}
             </p>
@@ -1965,7 +1965,7 @@ function HoneymoonTodoSection({
     <section className="mt-8">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2>{t("honeymoon.todo_title")}</h2>
+          <h2 className="font-grotesk">{t("honeymoon.todo_title")}</h2>
           <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
             {items.length > 0
               ? t("honeymoon.todo_sub_count", { done, total: items.length })

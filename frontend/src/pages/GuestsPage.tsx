@@ -432,7 +432,7 @@ export default function GuestsPage() {
     <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1>{t("guests.title")}</h1>
+          <h1 className="font-grotesk">{t("guests.title")}</h1>
           {guests.length > 0 ? (
             <dl className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-3">
               <GuestStat

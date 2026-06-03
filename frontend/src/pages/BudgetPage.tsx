@@ -717,7 +717,7 @@ export default function BudgetPage() {
     <>
       <header className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <h1>{t("budget.title")}</h1>
+          <h1 className="font-grotesk">{t("budget.title")}</h1>
           <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.sub")}</p>
         </div>
         <div
@@ -772,7 +772,7 @@ export default function BudgetPage() {
 
       <section className="mt-8">
         <div className="mb-3">
-          <h2>{t("budget.lines_title")}</h2>
+          <h2 className="font-grotesk">{t("budget.lines_title")}</h2>
           <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
         </div>
 
@@ -1038,7 +1038,7 @@ export default function BudgetPage() {
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2>{t("budget.snapshots_title")}</h2>
+            <h2 className="font-grotesk">{t("budget.snapshots_title")}</h2>
             <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
               {t("budget.snapshots_sub")}
             </p>
