@@ -293,7 +293,12 @@ export default function DashboardPage() {
   // mode KPI / checklist / cost-planning surface in favour of a compact
   // jumbo check-in panel + day-of-only call-outs. Archived workspaces keep
   // their planning chrome so the past-wedding tile can still link to PDFs.
-  const dayOfMode = daysUntil !== null && daysUntil <= 1 && daysUntil >= 0 && !couple.archived_at;
+  // Gate on the RAW delta, not the clamped `daysUntil` (which floors at 0): the
+  // clamp would keep day-of mode stuck on the morning AFTER the wedding (raw
+  // -1 → clamped 0). With rawDelta the eve (1) and the day itself (0) light up,
+  // and the day after correctly falls through to the past-wedding tile.
+  const dayOfMode =
+    rawDelta !== null && rawDelta <= 1 && rawDelta >= 0 && !couple.archived_at;
 
   // ── RSVP breakdown ────────────────────────────────────────────────────
   const rsvp = { yes: 0, no: 0, maybe: 0, pending: 0 };
