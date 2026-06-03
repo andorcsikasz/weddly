@@ -949,10 +949,7 @@ export default function SuppliersPage() {
               return (
                 <div key={g.id} className="flex snap-start items-stretch gap-1">
                   {i > 0 && (
-                    <span
-                      className="self-center text-paper-400 dark:text-umber-300"
-                      aria-hidden
-                    >
+                    <span className="self-center text-paper-400 dark:text-umber-300" aria-hidden>
                       →
                     </span>
                   )}
@@ -1276,7 +1273,7 @@ export default function SuppliersPage() {
                 <article
                   key={s.id}
                   data-supplier-id={s.id}
-                  className={`card-hover !p-4 relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 dark:!bg-sage-400/15 transition-shadow ${
+                  className={`card !p-4 relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 dark:!bg-sage-400/15 ${
                     isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                   }`}
                 >
@@ -1498,7 +1495,7 @@ export default function SuppliersPage() {
               <article
                 key={s.id}
                 data-supplier-id={s.id}
-                className={`card-hover !p-4 relative flex h-full flex-col transition-shadow ${
+                className={`card !p-4 relative flex h-full flex-col ${
                   isPicked
                     ? "border-sage-400 border-l-4 border-l-sage-500 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15"
                     : ""
