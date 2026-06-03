@@ -1087,7 +1087,7 @@ function QuickAddForm({
       onSubmit={onSubmit}
       onFocus={() => setTitleFocused(true)}
       onBlur={onFormBlur}
-      className="card p-3"
+      className="card !border-ink-900 p-3 dark:!border-paper-100/40"
     >
       <div className="flex items-center gap-2">
         <Plus size={16} className="text-ink-400 dark:text-umber-300" aria-hidden="true" />
