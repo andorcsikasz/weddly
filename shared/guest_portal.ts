@@ -27,6 +27,9 @@ export interface GuestScheduleEntry {
 export interface GuestPortalView {
   couple_slug: string;
   couple_display_name: string;
+  /** Full-width cover photo at the top of the guest view. Null when the
+   *  couple hasn't uploaded one. */
+  cover_image_url: string | null;
   /** ISO YYYY-MM-DD. Null when the couple hasn't picked a date yet (rare for
    *  a household that already RSVP'd yes, but possible). */
   wedding_date: string | null;

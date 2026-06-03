@@ -589,6 +589,7 @@ export default function GuestPageEditorPage() {
     ? {
         couple_slug: couple.slug ?? "",
         couple_display_name: couple.display_name,
+        cover_image_url: couple.cover_image_url,
         wedding_date: couple.wedding_date,
         ceremony_kind: couple.ceremony_kind,
         location_lat: couple.location_lat,

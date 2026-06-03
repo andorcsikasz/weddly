@@ -35,6 +35,19 @@ export function GuestPortalView({ data, locale }: { data: GuestPortalView; local
 
   return (
     <div className="space-y-6">
+      {/* Full-width cover photo at the very top, when the couple uploaded one.
+       *  Mirrors the public wedding page's 16:9 hero image. */}
+      {data.cover_image_url && (
+        <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
+          <img
+            src={data.cover_image_url}
+            alt=""
+            loading="lazy"
+            className="aspect-[16/9] w-full object-cover"
+          />
+        </div>
+      )}
+
       {/* Hero — the two facts every guest wants first: who's getting married
        *  and on what day. Centered serif date echoes the marketing landing. */}
       <header className="rounded-2xl border border-paper-200 bg-paper-50 p-6 text-center dark:border-umber-700 dark:bg-umber-800/60">
