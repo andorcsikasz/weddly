@@ -625,7 +625,7 @@ const en: LocaleMessages = {
     kpi_roi_unit_actual: "actual · {n} confirmed",
     kpi_roi_unit_planned: "planned · {n} guests",
     kpi_roi_no_data: "No spend yet",
-    rsvp_breakdown_title: "RSVP breakdown",
+    rsvp_breakdown_title: "RSVP",
     rsvp_yes: "Yes",
     rsvp_no: "No",
     rsvp_maybe: "Maybe",
