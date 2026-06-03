@@ -83,7 +83,7 @@ export default function MediaPage() {
                 </p>
               </div>
               <textarea
-                className="input min-h-[6rem] resize-y"
+                className="input min-h-[2rem] resize-y"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={t("media.feedback_placeholder")}
