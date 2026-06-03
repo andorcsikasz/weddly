@@ -198,7 +198,7 @@ export default function MoodboardPage() {
         <div className="card flex flex-col gap-4">
           {!url ? (
             <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:text-left">
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-paper-100 text-blush-700 dark:bg-umber-800 dark:text-blush-300">
                 <PinterestMark size={22} />
               </span>
               <div>
