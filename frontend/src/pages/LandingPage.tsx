@@ -63,6 +63,34 @@ import {
   saveLemonadeRevealed,
 } from "../lib/couple_cards";
 
+// Hand-rolled hamburger glyph. lucide 0.469 ships no burger icon (only `Beef`),
+// and the price tooltip's value-prop is "for the price of a BigMac menu", so we
+// draw a burger in the same 24x24 outline style as the rest of the lucide set:
+// domed top bun, cheese + patty lines, rounded bottom bun.
+function BurgerIcon({ size = 24, ...props }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      {/* Top bun + sesame */}
+      <path d="M3.5 10.3C3.5 6.5 7.3 4 12 4s8.5 2.5 8.5 6.3Z" />
+      <path d="M8.8 7.4l.5.5M11.7 6.7l.5.5M14.8 7.4l.5.5" strokeWidth={1.4} />
+      {/* Lettuce / filling ruffle */}
+      <path d="M4 13.1c1.3 1.1 2.7 1.1 4 0s2.7-1.1 4 0 2.7 1.1 4 0 2.7-1.1 4 0" />
+      {/* Bottom bun */}
+      <path d="M4 16.4h16c0 2.2-1.8 3.6-4 3.6H8c-2.2 0-4-1.4-4-3.6Z" />
+    </svg>
+  );
+}
+
 // Mockups have known aspect ratios (from their SVG viewBox). LazyMount uses
 // these to reserve layout space, so the page doesn't jump as below-fold
 // SVGs mount when scrolled into view.
@@ -172,13 +200,6 @@ export default function LandingPage() {
           to register. */}
       <InteractiveBudgetDemo />
 
-      {/* ════════════════════════ Live counters ════════════════════════
-          Two real numbers — onboarded couples + RSVPs collected — fed by
-          GET /api/public/stats (60s server-side cache). Hides itself when
-          both are 0 so a freshly-seeded environment doesn't broadcast
-          "0 pár". This replaces the earlier fake "Open beta" stats band. */}
-      <LiveStatsBand />
-
       {/* ════════════════════════ Founding 200 — HOSPITALITY/SCARCITY ════════════
           The emotional FOMO beat: reframes signing up as "being our guest"
           rather than buying. Real (honest) couples count drives the
@@ -187,6 +208,13 @@ export default function LandingPage() {
           share affordance (native share sheet → clipboard fallback) so an
           engaged visitor can pass Weddly to another engaged couple. */}
       <FoundingCouplesBand />
+
+      {/* ════════════════════════ Live counters ════════════════════════
+          Two real numbers — onboarded couples + RSVPs collected — fed by
+          GET /api/public/stats (60s server-side cache). Hides itself when
+          both are 0 so a freshly-seeded environment doesn't broadcast
+          "0 pár". This replaces the earlier fake "Open beta" stats band. */}
+      <LiveStatsBand />
 
       {/* ════════════════════════ 03 · Budget — POLAROID ════════════════════════
           Mockup framed as a tilted polaroid with a watermark "02.1" sitting
@@ -361,12 +389,12 @@ export default function LandingPage() {
           <div className="relative mx-auto max-w-lg">
             <div className="rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8">
               <div className="flex items-end gap-2.5">
-                <span className="font-serif text-6xl leading-[0.9] text-umber-900 dark:text-paper-50 sm:text-7xl">
-                  {t("landing.pricing_amount")}
+                <span className="inline-flex items-start font-serif text-6xl leading-[0.9] text-umber-900 dark:text-paper-50 sm:text-7xl">
+                  <span>{t("landing.pricing_amount")}</span>
                   {t("landing.pricing_amount_decimal") && (
-                    <sup className="align-super text-2xl sm:text-3xl">
+                    <span className="text-[0.4em] leading-[0.9]">
                       .{t("landing.pricing_amount_decimal")}
-                    </sup>
+                    </span>
                   )}
                 </span>
                 <span className="mb-2 font-serif text-3xl text-umber-600 dark:text-umber-200">
@@ -382,7 +410,7 @@ export default function LandingPage() {
                     aria-label={t("landing.pricing_value_note")}
                     className="flex h-5 w-5 items-center justify-center rounded-full text-umber-600 transition-colors hover:text-umber-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-umber-300 dark:hover:text-paper-50"
                   >
-                    <Info size={16} aria-hidden />
+                    <BurgerIcon size={16} aria-hidden />
                   </button>
                   <span
                     role="tooltip"
