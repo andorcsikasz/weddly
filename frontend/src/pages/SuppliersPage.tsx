@@ -886,7 +886,7 @@ export default function SuppliersPage() {
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.price_filter_label")}
           </span>
-          <div className="inline-flex items-center gap-0.5 font-mono">
+          <div className="inline-flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map((band) => {
               const active = priceBand !== null && band <= priceBand;
               return (
@@ -898,8 +898,8 @@ export default function SuppliersPage() {
                   onClick={() => setPriceBand(priceBand === band ? null : band)}
                   className={
                     active
-                      ? "inline-flex h-6 w-5 items-center justify-center text-sm font-semibold text-ink-700 transition hover:text-ink-900 dark:text-paper-50"
-                      : "inline-flex h-6 w-5 items-center justify-center text-sm text-ink-300 transition hover:text-ink-500 dark:text-umber-500 dark:hover:text-umber-300"
+                      ? "inline-flex h-6 w-5 items-center justify-center text-[11px] font-semibold text-ink-700 transition hover:text-ink-900 dark:text-paper-50"
+                      : "inline-flex h-6 w-5 items-center justify-center text-[11px] text-ink-300 transition hover:text-ink-500 dark:text-umber-500 dark:hover:text-umber-300"
                   }
                 >
                   $

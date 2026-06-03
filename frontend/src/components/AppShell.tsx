@@ -660,6 +660,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           icon={item.icon}
                           label={t(item.labelKey)}
                           collapsed={sidebarCollapsed}
+                          darkActive={itemGroup === "guest"}
                         />
                       </div>
                     );
