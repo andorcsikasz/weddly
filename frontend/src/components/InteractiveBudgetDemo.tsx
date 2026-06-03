@@ -13,6 +13,10 @@ import { useT } from "../lib/i18n";
 const MIN_GUESTS = 20;
 const MAX_GUESTS = 250;
 const DEFAULT_GUESTS = 80;
+// HU market default — a 100-guest wedding on a 7.2M Ft budget (→ 72 000 Ft /
+// guest) is the typical Hungarian starting point, so HU visitors land on a
+// realistic number without dragging. EN/EUR keeps the generic 80-guest default.
+const DEFAULT_GUESTS_HU = 100;
 
 // Per-currency slider bounds. HU range covers the 3–12M Ft realistic span
 // (sub-3M can't cover catering, 12M+ is the long tail). EUR/USD ranges are
@@ -20,7 +24,7 @@ const DEFAULT_GUESTS = 80;
 // number in the first drag, narrow enough that each tick feels meaningful.
 type BudgetRange = { min: number; max: number; step: number; default: number };
 const BUDGET_RANGES: Record<Currency, BudgetRange> = {
-  HUF: { min: 3_000_000, max: 12_000_000, step: 100_000, default: 6_000_000 },
+  HUF: { min: 3_000_000, max: 12_000_000, step: 100_000, default: 7_200_000 },
   EUR: { min: 8_000, max: 60_000, step: 500, default: 25_000 },
   USD: { min: 10_000, max: 80_000, step: 500, default: 30_000 },
 };
@@ -82,7 +86,7 @@ export function InteractiveBudgetDemo() {
   // Currency follows the UI locale: HU → HUF, everything else → EUR.
   const currency = localeCurrency(locale);
   const range = BUDGET_RANGES[currency];
-  const [guests, setGuests] = useState(DEFAULT_GUESTS);
+  const [guests, setGuests] = useState(locale === "hu" ? DEFAULT_GUESTS_HU : DEFAULT_GUESTS);
   const [budget, setBudget] = useState(range.default);
 
   // Multiply each curated share by the chosen total, then normalise bar
