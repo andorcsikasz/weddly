@@ -65,14 +65,18 @@ export function DemoLaunchCard() {
   return (
     <aside
       aria-labelledby="demo-card-title"
-      className="relative w-full max-w-[280px] rounded-2xl border border-umber-900/15 px-6 py-5 text-left dark:border-paper-50/15"
+      /* Compact sticker on phones (220 px wide, 16/12 padding, smaller
+       * title + button) so it stops dominating the hero column on a
+       * 360-390 px viewport. The sm: bump restores the original 280 px
+       * card with the larger title and roomier padding on tablet+. */
+      className="relative w-full max-w-[220px] rounded-2xl border border-umber-900/15 px-4 py-3 text-left sm:max-w-[280px] sm:px-6 sm:py-5 dark:border-paper-50/15"
     >
       <p className="font-grotesk text-[10px] font-medium uppercase tracking-[0.24em] text-umber-600 dark:text-umber-200">
         {t("landing.demo_card_eyebrow")}
       </p>
       <h2
         id="demo-card-title"
-        className="mt-1.5 font-grotesk text-2xl font-semibold leading-tight tracking-tight text-umber-900 dark:text-paper-50"
+        className="mt-1 font-grotesk text-lg font-semibold leading-tight tracking-tight text-umber-900 sm:mt-1.5 sm:text-2xl dark:text-paper-50"
       >
         {t("landing.demo_card_title")}
       </h2>
@@ -84,7 +88,7 @@ export function DemoLaunchCard() {
         // Filled espresso CTA in the founders-band palette: General Sans,
         // sentence-case (more elegant than uppercase tracked), warm umber
         // fill + cream text. Distinct from the umber-900 signup primary.
-        className="btn mt-4 inline-flex w-full items-center justify-center gap-2 bg-umber-900 py-2.5 font-grotesk text-sm font-medium text-paper-50 transition-colors hover:bg-umber-800 disabled:cursor-wait disabled:opacity-80 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-200"
+        className="btn mt-3 inline-flex w-full items-center justify-center gap-1.5 bg-umber-900 py-2 font-grotesk text-xs font-medium text-paper-50 transition-colors hover:bg-umber-800 disabled:cursor-wait disabled:opacity-80 sm:mt-4 sm:gap-2 sm:py-2.5 sm:text-sm dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-200"
       >
         {busy ? (
           <>
