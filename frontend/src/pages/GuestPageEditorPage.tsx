@@ -15,7 +15,6 @@ import type {
 } from "@shared/guest_portal";
 import type { ScheduleEvent } from "@shared/schedule";
 import {
-  Check,
   ChevronRight,
   Clipboard,
   Copy,
@@ -458,8 +457,11 @@ export default function GuestPageEditorPage() {
   const todoVenue = venueTrimmed.length === 0;
   const todoCoords = couple ? couple.location_lat === null || couple.location_lng === null : false;
   const todoSchedule = !loading && events.length === 0;
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  // Persist the current form state. No manual Save button — edits auto-save
+  // (debounced) via the effect below, and the venue input's Enter also calls
+  // this through onSubmit. Quiet on success (the inline status line reflects
+  // it); only failures surface, inline.
+  async function save() {
     if (!couple || !dirty || saving) return;
     setSaving(true);
     setError(null);
@@ -479,7 +481,6 @@ export default function GuestPageEditorPage() {
       setGuestPageIntro(r.couple.guest_page_intro ?? "");
       setUsefulInfo(r.couple.useful_info ?? "");
       setPostRsvpContent(r.couple.post_rsvp_content ?? "");
-      toast.success(t("wedding_site_editor.save_success"));
     } catch (err) {
       const msg =
         err instanceof ApiError ? err.message : t("wedding_site_editor.save_error_generic");
@@ -488,6 +489,31 @@ export default function GuestPageEditorPage() {
       setSaving(false);
     }
   }
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    void save();
+  }
+
+  // Debounced auto-save: ~900ms after the last edit, persist. Keyed on the
+  // field values so each keystroke resets the timer; skipped while a save is
+  // already in flight or nothing changed. The save closure is fresh on every
+  // re-run, so the timeout always commits the latest values.
+  useEffect(() => {
+    if (!couple || !dirty || saving) return;
+    const id = setTimeout(() => void save(), 900);
+    return () => clearTimeout(id);
+  }, [
+    couple,
+    dirty,
+    saving,
+    venueName,
+    coverImageUrl,
+    guestPageIntro,
+    usefulInfo,
+    postRsvpContent,
+    isPublic,
+  ]);
 
   async function copyText(text: string, successKey: "share_copied" | "url_copied") {
     try {
@@ -1038,19 +1064,23 @@ export default function GuestPageEditorPage() {
             </section>
 
             {/* ── Public content (anyone with the link) ──────────────────── */}
-            <section className="card mt-6">
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h2 className="text-lg font-grotesk">
-                  {t("guest_page_editor.section_public_title")}
-                </h2>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
-                  <Unlock size={12} aria-hidden /> {t("guest_page_editor.section_public_eyebrow")}
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-                {t("guest_page_editor.section_public_hint")}
-              </p>
-              <div className="mt-3">
+            <details className="card mt-6 group/pub">
+              <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <ChevronRight
+                    size={16}
+                    aria-hidden
+                    className="shrink-0 text-ink-400 transition-transform group-open/pub:rotate-90 dark:text-umber-300"
+                  />
+                  <h2 className="font-serif text-lg font-medium tracking-tight text-ink-900 dark:text-paper-50">
+                    {t("guest_page_editor.section_public_title")}
+                  </h2>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
+                    <Unlock size={12} aria-hidden /> {t("guest_page_editor.section_public_eyebrow")}
+                  </span>
+                </div>
+              </summary>
+              <div className="mt-4">
                 <label htmlFor="guest-page-venue" className="field-label">
                   {t("wedding_site_editor.venue_label")}
                 </label>
@@ -1061,9 +1091,6 @@ export default function GuestPageEditorPage() {
                   country={couple?.country ?? "HU"}
                   missing={todoVenue}
                 />
-                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-                  {t("wedding_site_editor.venue_hint")}
-                </p>
               </div>
               <div className="mt-3">
                 <label htmlFor="guest-page-cover" className="field-label">
@@ -1139,9 +1166,6 @@ export default function GuestPageEditorPage() {
                   autoComplete="off"
                   aria-invalid={todoCover || undefined}
                 />
-                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-                  {t("wedding_site_editor.cover_image_hint")}
-                </p>
               </div>
               <div className="mt-3">
                 <label htmlFor="guest-page-intro" className="field-label">
@@ -1157,9 +1181,6 @@ export default function GuestPageEditorPage() {
                   maxLength={4000}
                   aria-invalid={todoIntro || undefined}
                 />
-                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-                  {t("guest_page_editor.intro_hint")}
-                </p>
               </div>
               <div className="mt-3">
                 <label htmlFor="guest-page-useful-info" className="field-label">
@@ -1174,26 +1195,27 @@ export default function GuestPageEditorPage() {
                   placeholder={t("guest_page_editor.useful_info_placeholder")}
                   maxLength={6000}
                 />
-                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-                  {t("guest_page_editor.useful_info_hint")}
-                </p>
               </div>
-            </section>
+            </details>
 
-            {/* ── Post-RSVP unlocked content ────────────────────────────── */}
-            <section className="card mt-6">
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h2 className="text-lg font-grotesk">
-                  {t("guest_page_editor.section_unlocked_title")}
-                </h2>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
-                  <Lock size={12} aria-hidden /> {t("guest_page_editor.section_unlocked_eyebrow")}
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-                {t("guest_page_editor.section_unlocked_hint")}
-              </p>
-              <ul className="mt-3 flex flex-wrap items-center gap-2">
+            {/* ── Post-RSVP unlocked content (collapsible) ──────────────── */}
+            <details className="card mt-6 group/rsvp">
+              <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <ChevronRight
+                    size={16}
+                    aria-hidden
+                    className="shrink-0 text-ink-400 transition-transform group-open/rsvp:rotate-90 dark:text-umber-300"
+                  />
+                  <h2 className="font-serif text-lg font-medium tracking-tight text-ink-900 dark:text-paper-50">
+                    {t("guest_page_editor.section_unlocked_title")}
+                  </h2>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+                    <Lock size={12} aria-hidden /> {t("guest_page_editor.section_unlocked_eyebrow")}
+                  </span>
+                </div>
+              </summary>
+              <ul className="mt-4 flex flex-wrap items-center gap-2">
                 <li className="inline-flex items-center">
                   <Link
                     to="/app/schedule"
@@ -1256,11 +1278,8 @@ export default function GuestPageEditorPage() {
                   maxLength={8000}
                   aria-invalid={todoPostRsvp || undefined}
                 />
-                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-                  {t("guest_page_editor.post_rsvp_hint")}
-                </p>
               </div>
-            </section>
+            </details>
 
             {error && (
               <p className="field-error mt-4" role="alert">
@@ -1269,11 +1288,14 @@ export default function GuestPageEditorPage() {
             )}
 
             <div className="mt-6">
-              <button type="submit" className="btn-primary" disabled={!dirty || saving}>
-                {saving
+              <p
+                className="flex items-center gap-1.5 text-sm text-ink-500 dark:text-umber-300"
+                aria-live="polite"
+              >
+                {saving || dirty
                   ? t("wedding_site_editor.save_saving")
-                  : t("wedding_site_editor.save_button")}
-              </button>
+                  : t("wedding_site_editor.save_success")}
+              </p>
             </div>
           </form>
         </div>
