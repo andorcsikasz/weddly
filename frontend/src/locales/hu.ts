@@ -1629,6 +1629,7 @@ const hu: LocaleMessages = {
     target_amount_hint: "Csak egy kívánság, nem számla — segít a vendégeknek a nagyságrendben.",
     url_label: "Link",
     url_placeholder: "https://…",
+    url_hint: "Illessz be egy termék linket, és behúzzuk hozzá a fotót.",
     delete_confirm_title: "Töröljük ezt a kívánságot?",
     delete_confirm_body: "Eltűnik a vendégoldalról. Ez nem vonható vissza.",
     saved_toast: "Mentve",

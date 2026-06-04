@@ -209,6 +209,30 @@ describe("/api/wishlist — boundary validation", () => {
     expect(negAmount.status).toBe(400);
   });
 
+  test("explicit image_url is stored; a bad image_url → 400", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("wishlist-image@weddly.test");
+
+    // A client-supplied (e.g. editor-prefetched) image_url is persisted as-is,
+    // and the server does NOT clobber it with an auto-fetch.
+    const ok = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Toaster", image_url: "https://cdn.example/toaster.jpg" },
+      { token },
+    );
+    expect(ok.status).toBe(201);
+    expect(ok.data.item.image_url).toBe("https://cdn.example/toaster.jpg");
+
+    const bad = await req(
+      "POST",
+      "/api/wishlist",
+      { title: "Toaster", image_url: "data:image/png;base64,AAAA" },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+  });
+
   test("unauthenticated request → 401", async () => {
     wipeAll();
     const r = await req("GET", "/api/wishlist");

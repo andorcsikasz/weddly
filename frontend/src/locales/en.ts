@@ -1610,6 +1610,7 @@ const en: LocaleMessages = {
     target_amount_hint: "Just a wish, not an invoice — gives guests a sense of scale.",
     url_label: "Link",
     url_placeholder: "https://…",
+    url_hint: "Paste a product link and we'll pull in its photo for the wish.",
     delete_confirm_title: "Remove this wish?",
     delete_confirm_body: "It will disappear from your guest page. This can't be undone.",
     saved_toast: "Saved",

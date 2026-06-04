@@ -118,6 +118,7 @@ function makeItem(over: Partial<WishlistItem> = {}): WishlistItem {
     kind: "item",
     target_amount_minor: null,
     url: null,
+    image_url: null,
     sort_order: 0,
     created_at: 0,
     updated_at: 100,
@@ -133,6 +134,7 @@ function makeEntry(over: Partial<WishlistEntry> = {}): WishlistEntry {
     kind: "item",
     target_amount_minor: null,
     url: null,
+    image_url: null,
     interest_count: 0,
     viewer_has_interest: false,
     ...over,
@@ -299,6 +301,71 @@ describe("WishlistEditorPage", () => {
 
     await waitFor(() => expect(postBody).not.toBeNull());
     expect(postBody).toMatchObject({ title: "Kávégép", target_amount_minor: 180000 });
+  });
+
+  it("entering a URL fetches its preview image and includes it in the POST", async () => {
+    setLocale("en");
+    on(
+      ({ url, method }) => method === "GET" && url.includes("/api/couples/current"),
+      () => jsonResponse(200, { couple: makeCouple() }),
+    );
+    on(
+      ({ url, method }) => method === "GET" && url.endsWith("/api/wishlist"),
+      () => jsonResponse(200, { items: [] }),
+    );
+    let previewUrlParam: string | null = null;
+    on(
+      ({ url, method }) => method === "GET" && url.includes("/api/wishlist/link-preview"),
+      ({ url }) => {
+        previewUrlParam = new URL(url, "http://x").searchParams.get("url");
+        return jsonResponse(200, { image_url: "https://cdn.test/p.jpg", title: "Pretty thing" });
+      },
+    );
+    let postBody: Record<string, unknown> | null = null;
+    on(
+      ({ url, method }) => method === "POST" && url.endsWith("/api/wishlist"),
+      ({ body }) => {
+        postBody = body as Record<string, unknown>;
+        return jsonResponse(200, { item: makeItem({ id: 7, title: "Linked gift" }) });
+      },
+    );
+
+    await renderPage(<WishlistEditorPage />);
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole("button", { name: /Add a wish/i })[0]!);
+      await Promise.resolve();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/A weekend away/i), {
+      target: { value: "Linked gift" },
+    });
+    const urlInput = screen.getByPlaceholderText("https://…");
+    fireEvent.change(urlInput, { target: { value: "https://shop.test/p" } });
+    await act(async () => {
+      fireEvent.blur(urlInput);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // The preview was requested for the entered URL...
+    await waitFor(() => expect(previewUrlParam).toBe("https://shop.test/p"));
+    // ...and its image shows in the dialog.
+    await waitFor(() =>
+      expect(document.querySelector('img[src="https://cdn.test/p.jpg"]')).not.toBeNull(),
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(postBody).not.toBeNull());
+    expect(postBody).toMatchObject({
+      title: "Linked gift",
+      url: "https://shop.test/p",
+      image_url: "https://cdn.test/p.jpg",
+    });
   });
 
   it("editing an existing item PATCHes with the If-Match header", async () => {

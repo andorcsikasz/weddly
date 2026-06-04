@@ -17,8 +17,7 @@ const MAX_REDIRECTS = 4;
 // 1 MiB is plenty to reach the <head> of any real product page; we also stop
 // reading as soon as </head> shows up (see readCappedHtml).
 const MAX_BODY_BYTES = 1024 * 1024;
-const PREVIEW_UA =
-  "Mozilla/5.0 (compatible; WeddlyLinkPreview/1.0; +https://weddly.hu)";
+const PREVIEW_UA = "Mozilla/5.0 (compatible; WeddlyLinkPreview/1.0; +https://weddly.hu)";
 
 /** Reserved / non-routable IPv4 ranges we refuse to fetch from. */
 function isBlockedIpv4(ip: string): boolean {

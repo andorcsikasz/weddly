@@ -179,7 +179,11 @@ export default function WishlistEditorPage() {
                   </span>
                   {item.target_amount_minor !== null && (
                     <span className="shrink-0 tabular-nums text-xs text-ink-500 dark:text-umber-300">
-                      {formatMoney(minorToWhole(item.target_amount_minor, currency), currency, locale)}
+                      {formatMoney(
+                        minorToWhole(item.target_amount_minor, currency),
+                        currency,
+                        locale,
+                      )}
                     </span>
                   )}
                   {item.url && (
