@@ -544,6 +544,9 @@ export interface LocaleMessages {
     partner_two_label: string;
     step2_title: string;
     wedding_date_label: string;
+    /** Inline error under the exact-date input when the chosen day is in the
+     *  past. */
+    date_past_error: string;
     step3_title: string;
     target_guest_count_label: string;
     step4_title: string;
@@ -669,6 +672,7 @@ export interface LocaleMessages {
     invite_send: string;
     invite_sending: string;
     invite_sent: string;
+    invite_pending_hint: string;
     invite_sent_title: string;
     invite_sent_body: string;
     invite_sent_spam_hint: string;

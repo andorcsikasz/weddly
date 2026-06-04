@@ -477,6 +477,7 @@ const hu: LocaleMessages = {
     partner_two_label: "Társ 2",
     step2_title: "Mikor lesz az esküvő?",
     wedding_date_label: "Esküvő dátuma",
+    date_past_error: "Az esküvő dátuma nem lehet korábbi a mai napnál.",
     step3_title: "Hány vendéget hívnátok?",
     target_guest_count_label: "Célzott létszám",
     step4_title: "Mekkora a tervezett keret?",
@@ -596,6 +597,8 @@ const hu: LocaleMessages = {
     invite_send: "Meghívó küldése",
     invite_sending: "Küldés…",
     invite_sent: "Elküldve a(z) {email} címre",
+    invite_pending_hint:
+      "Várjuk, hogy csatlakozzon — a munkaterületeket automatikusan összekapcsoljuk.",
     invite_sent_title: "Elküldtük a meghívót!",
     invite_sent_body:
       "Most küldtünk egy levelet a(z) {email} címre, benne a csatlakozási linkkel. A következő 7 napban bármikor kattinthat rá.",

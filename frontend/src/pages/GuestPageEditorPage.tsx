@@ -15,6 +15,7 @@ import type {
 } from "@shared/guest_portal";
 import type { ScheduleEvent } from "@shared/schedule";
 import {
+  Check,
   ChevronRight,
   Clipboard,
   Copy,

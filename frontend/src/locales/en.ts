@@ -472,6 +472,7 @@ const en: LocaleMessages = {
     partner_two_label: "Partner 2",
     step2_title: "When's the wedding?",
     wedding_date_label: "Wedding date",
+    date_past_error: "The wedding date can't be earlier than today.",
     step3_title: "How many guests are you planning for?",
     target_guest_count_label: "Target guest count",
     step4_title: "What's the budget ceiling?",
@@ -590,6 +591,7 @@ const en: LocaleMessages = {
     invite_send: "Send invite",
     invite_sending: "Sending…",
     invite_sent: "Sent to {email}",
+    invite_pending_hint: "Waiting for them to join — we'll link your workspaces automatically.",
     invite_sent_title: "Invite on its way!",
     invite_sent_body:
       "We just emailed {email} with a link to join your workspace. They can click it any time in the next 7 days.",

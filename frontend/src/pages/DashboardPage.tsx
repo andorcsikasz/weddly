@@ -1662,6 +1662,12 @@ function DaysToGoTile({
       setEditing(false);
       return;
     }
+    // A past wedding day is never valid — the `min` attribute blocks the
+    // calendar UI, but reject a typed/pasted earlier date too.
+    if (ymd < todayIso()) {
+      setEditing(false);
+      return;
+    }
     if (ymd === goal.exact_date) {
       setEditing(false);
       return;
@@ -1934,6 +1940,12 @@ function EditableWeddingDate({
 
   async function commit(ymd: string) {
     if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+      setEditing(false);
+      return;
+    }
+    // A past wedding day is never valid — the `min` attribute blocks the
+    // calendar UI, but reject a typed/pasted earlier date too.
+    if (ymd < todayIso()) {
       setEditing(false);
       return;
     }

@@ -211,7 +211,9 @@ function isStepValid(step: number, f: FormState): boolean {
   if (step === 0) return f.bride_name.trim().length > 0 && f.groom_name.trim().length > 0;
   if (step === 1) {
     const goal = buildDateGoal(f);
-    if (goal.kind === "exact") return !!goal.exact_date;
+    // Reject a past wedding day — `min` on the picker stops the calendar UI,
+    // but a typed/pasted value can still land before today.
+    if (goal.kind === "exact") return !!goal.exact_date && goal.exact_date >= todayIso();
     if (goal.kind === "month") return !!goal.target_year && !!goal.target_month;
     if (goal.kind === "season") return !!goal.target_year && !!goal.target_season;
     if (goal.kind === "year") return !!goal.target_year;
@@ -492,10 +494,16 @@ export default function OnboardingWizard() {
                     id="wedding_date"
                     type="date"
                     min={todayIso()}
+                    aria-invalid={form.date_exact !== "" && form.date_exact < todayIso()}
                     className="input"
                     value={form.date_exact}
                     onChange={(e) => update("date_exact", e.target.value)}
                   />
+                  {form.date_exact !== "" && form.date_exact < todayIso() && (
+                    <p className="mt-1 text-xs text-blush-700 dark:text-blush-300" role="alert">
+                      {t("onboarding.date_past_error")}
+                    </p>
+                  )}
                 </div>
               )}
 
