@@ -537,17 +537,27 @@ function DeckShowcase({
   // wheel) on the row shifts the carousel one slot — that's it. No
   // auto-select. The egg has no visual hint that the row is interactive.
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  // Set the instant a horizontal swipe fires the shift, so the trailing
+  // click that touch dispatches on release doesn't also select a deck.
+  const swipeFired = useRef(false);
   const wheelAcc = useRef(0);
   const handleSwipeStart = (e: React.PointerEvent<HTMLUListElement>) => {
     swipeStart.current = { x: e.clientX, y: e.clientY };
+    swipeFired.current = false;
   };
-  const handleSwipeEnd = (e: React.PointerEvent<HTMLUListElement>) => {
+  // Evaluate the gesture during the move, not on pointerup. On mobile a
+  // vertically-scrollable page makes the browser cancel the pointer (it
+  // fires pointercancel, never pointerup) the moment it locks the touch
+  // into a scroll, which silently dropped the swipe. The early move
+  // events still arrive before that lock, so we catch the shift here.
+  const handleSwipeMove = (e: React.PointerEvent<HTMLUListElement>) => {
     const start = swipeStart.current;
-    swipeStart.current = null;
     if (!start || isShifted) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
     if (dx > 50 && Math.abs(dx) > Math.abs(dy)) {
+      swipeStart.current = null;
+      swipeFired.current = true;
       setIsShifted(true);
     }
   };
@@ -610,7 +620,10 @@ function DeckShowcase({
         <div className="mx-auto mt-8 max-w-2xl overflow-hidden sm:mt-10">
           <ul
             onPointerDown={handleSwipeStart}
-            onPointerUp={handleSwipeEnd}
+            onPointerMove={handleSwipeMove}
+            onPointerUp={() => {
+              swipeStart.current = null;
+            }}
             onPointerCancel={() => {
               swipeStart.current = null;
             }}
@@ -637,7 +650,16 @@ function DeckShowcase({
                   {isSelected ? null : (
                     <button
                       type="button"
-                      onClick={() => onSelect(deck.id)}
+                      onClick={() => {
+                        // A horizontal swipe that crossed a card still
+                        // dispatches a click on release; ignore it so the
+                        // gesture only shifts the row, never selects.
+                        if (swipeFired.current) {
+                          swipeFired.current = false;
+                          return;
+                        }
+                        onSelect(deck.id);
+                      }}
                       // Lemonade never participates in the centre/mini
                       // morph view transition. With a name on every tile
                       // the snapshot pulled the off-viewport lemonade
