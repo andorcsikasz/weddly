@@ -1451,6 +1451,12 @@ const hu: LocaleMessages = {
   guest_portal: {
     date_tbd: "Esküvő dátuma — még pontosítás alatt",
     edit_section_hint: "Kattints a szerkesztéshez",
+    countdown_title: "Visszaszámlálás",
+    countdown_add_date: "Add meg az esküvő dátumát",
+    countdown_days: "nap",
+    countdown_hours: "óra",
+    countdown_minutes: "perc",
+    countdown_seconds: "mp",
     schedule_title: "Menetrend",
     schedule_empty: "A pár még nem tette közzé a menetrendet — nézzétek meg újra később.",
     schedule_next_day: "másnap",

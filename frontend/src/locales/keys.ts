@@ -1572,6 +1572,13 @@ export interface LocaleMessages {
     /** Hover/title hint on the run-of-show + venue cards in the couple's
      *  editor preview, where they double as edit shortcuts. */
     edit_section_hint: string;
+    /** Live wedding-day countdown at the bottom of the guest page. */
+    countdown_title: string;
+    countdown_add_date: string;
+    countdown_days: string;
+    countdown_hours: string;
+    countdown_minutes: string;
+    countdown_seconds: string;
     schedule_title: string;
     schedule_empty: string;
     /** Label appended to a time when the event lands after midnight (day +1). */

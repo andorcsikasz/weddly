@@ -1437,6 +1437,12 @@ const en: LocaleMessages = {
   guest_portal: {
     date_tbd: "Wedding date — to be confirmed",
     edit_section_hint: "Click to edit",
+    countdown_title: "Countdown",
+    countdown_add_date: "Add your wedding date",
+    countdown_days: "days",
+    countdown_hours: "hours",
+    countdown_minutes: "min",
+    countdown_seconds: "sec",
     schedule_title: "Run of show",
     schedule_empty: "The couple hasn't published a timeline yet — check back closer to the day.",
     schedule_next_day: "next day",

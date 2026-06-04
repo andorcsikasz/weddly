@@ -28,6 +28,7 @@ import { formatDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Shell } from "../components/Shell";
+import { WeddingCountdown } from "../components/WeddingCountdown";
 import type {
   PublicWeddingHouseholdContext,
   PublicWeddingResponse,
@@ -385,6 +386,13 @@ export default function WeddingWebsitePage() {
               {t("wedding_site.rsvp_manage_cta")}
             </Link>
           </section>
+        )}
+
+        {/* Live countdown to the wedding day at the bottom of the page. */}
+        {view.wedding_date && (
+          <div className="mt-6">
+            <WeddingCountdown date={view.wedding_date} />
+          </div>
         )}
 
         <p className="mt-8 text-center text-[11px] text-ink-400 dark:text-umber-400">

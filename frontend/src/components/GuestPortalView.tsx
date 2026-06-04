@@ -10,6 +10,7 @@ import type { KeyboardEvent } from "react";
 import { SCHEDULE_DAY_TWO_MINUTES } from "@shared/schedule";
 import { formatDate } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
+import { WeddingCountdown } from "./WeddingCountdown";
 
 function formatHHMM(minutes: number): string {
   const safe = Math.max(0, Math.floor(minutes));
@@ -295,6 +296,9 @@ export function GuestPortalView({
           </ul>
         </section>
       )}
+
+      {/* Live countdown at the very bottom of the guest page. */}
+      <WeddingCountdown date={data.wedding_date} isPreview={isPreview} onEdit={onEditDate} />
     </div>
   );
 }
