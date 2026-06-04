@@ -816,6 +816,21 @@ addColumnIfMissing("feedback_submissions", "context", "context TEXT");
 // writes 0 instead of null when the offer count is zero — same null-meaning,
 // no constraint violation.
 
+// Wishlist / gift-registry indexes. Both `wishlist_items` and
+// `wishlist_interests` are created in schema.sql, but their indexes live here
+// per the additive-table ordering rule (see [[project_schema_additive_ordering]])
+// so they apply uniformly whether the table was just created or already
+// existed on a prod DB. The couple-list query walks
+// (couple_id, sort_order, id); the interest count/exists lookups seek by item.
+// `image_url` (og:image resolved from the link) is additive on a table that
+// may already exist from an earlier wishlist deploy, so add it the canonical
+// way rather than only in the CREATE TABLE.
+addColumnIfMissing("wishlist_items", "image_url", "TEXT");
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_wishlist_items_couple ON wishlist_items(couple_id, sort_order, id)",
+);
+db.exec("CREATE INDEX IF NOT EXISTS idx_wishlist_interests_item ON wishlist_interests(item_id)");
+
 export function now(): number {
   return Date.now();
 }

@@ -33,6 +33,9 @@ export interface GuestPortalView {
   /** "Good to know" block (parking, getting there, accommodation, …). Null
    *  when unset. */
   useful_info: string | null;
+  /** Couple-authored welcome message shown under the hero date. Null when
+   *  unset. */
+  guest_page_intro: string | null;
   /** ISO YYYY-MM-DD. Null when the couple hasn't picked a date yet (rare for
    *  a household that already RSVP'd yes, but possible). */
   wedding_date: string | null;

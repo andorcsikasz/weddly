@@ -689,6 +689,7 @@ export default function GuestPageEditorPage() {
         couple_display_name: couple.display_name,
         cover_image_url: couple.cover_image_url,
         useful_info: couple.useful_info,
+        guest_page_intro: couple.guest_page_intro,
         wedding_date: couple.wedding_date,
         ceremony_kind: couple.ceremony_kind,
         location_lat: couple.location_lat,
@@ -715,6 +716,12 @@ export default function GuestPageEditorPage() {
   // it into view and focus it so the couple lands right on the input.
   function focusVenueField() {
     const el = document.getElementById("guest-page-venue");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
+  }
+
+  function focusIntroField() {
+    const el = document.getElementById("guest-page-intro");
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
     if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
   }
@@ -753,7 +760,9 @@ export default function GuestPageEditorPage() {
     <>
       <header className="mb-6 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h1 className="font-grotesk">{t("guest_page_editor.title")}</h1>
+          <h1 className="font-grotesk font-semibold tracking-tight">
+            {t("guest_page_editor.title")}
+          </h1>
           <InfoHint text={t("guest_page_editor.subtitle")} />
         </div>
         <button
@@ -799,6 +808,7 @@ export default function GuestPageEditorPage() {
             onEditDate={() => navigate("/app")}
             onEditSchedule={() => navigate("/app/schedule")}
             onEditVenue={focusVenueField}
+            onEditIntro={focusIntroField}
           />
         ) : (
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("guest_preview.empty")}</p>
@@ -843,8 +853,8 @@ export default function GuestPageEditorPage() {
            *  Two pieces side-by-side: the public /w/:slug URL (one share artefact
            *  for save-the-dates / Instagram bio) and the slug + /rsvp pair the
            *  couple uses to brief individual guests on how to RSVP. */}
-          <section className="card">
-            <h2 className="text-lg flex items-center gap-2 font-grotesk">
+          <section className="card !border-ink-900 dark:!border-paper-100/40">
+            <h2 className="flex items-center gap-2 font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
               <Globe size={18} aria-hidden /> {t("guest_page_editor.section_share_title")}
             </h2>
             <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
@@ -856,7 +866,7 @@ export default function GuestPageEditorPage() {
                 <button
                   type="button"
                   onClick={() => copyText(publicUrl, "url_copied")}
-                  className="flex-1 min-w-0 rounded-xl border border-ink-200 bg-white px-3 py-2 text-left font-mono text-sm tabular-nums text-ink-900 transition hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:hover:border-umber-600"
+                  className="flex-1 min-w-0 rounded-xl border border-ink-900 bg-white px-3 py-2 text-left font-mono text-sm tabular-nums text-ink-900 transition hover:border-ink-700 dark:border-paper-100/40 dark:bg-umber-800 dark:text-paper-50 dark:hover:border-paper-100/60"
                   aria-label={t("wedding_site_editor.url_copied")}
                 >
                   <span className="block truncate">{publicUrl}</span>
@@ -1029,7 +1039,7 @@ export default function GuestPageEditorPage() {
             >
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="min-w-0 flex-1 lg:flex lg:items-baseline lg:gap-2">
-                  <h2 className="shrink-0 text-lg font-grotesk">
+                  <h2 className="shrink-0 font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                     {t("wedding_site_editor.publish_title")}
                   </h2>
                   <p className="mt-1 text-sm text-ink-600 lg:mt-0 dark:text-umber-200">
@@ -1072,7 +1082,7 @@ export default function GuestPageEditorPage() {
                     aria-hidden
                     className="shrink-0 text-ink-400 transition-transform group-open/pub:rotate-90 dark:text-umber-300"
                   />
-                  <h2 className="font-serif text-lg font-medium tracking-tight text-ink-900 dark:text-paper-50">
+                  <h2 className="font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                     {t("guest_page_editor.section_public_title")}
                   </h2>
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
@@ -1207,7 +1217,7 @@ export default function GuestPageEditorPage() {
                     aria-hidden
                     className="shrink-0 text-ink-400 transition-transform group-open/rsvp:rotate-90 dark:text-umber-300"
                   />
-                  <h2 className="font-serif text-lg font-medium tracking-tight text-ink-900 dark:text-paper-50">
+                  <h2 className="font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                     {t("guest_page_editor.section_unlocked_title")}
                   </h2>
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">

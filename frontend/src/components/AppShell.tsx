@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Coins,
   GanttChartSquare,
+  Gift,
   Globe,
   Image as ImageIcon,
   Inbox,
@@ -176,6 +177,15 @@ const ITEMS: NavItem[] = [
   // RSVP portal preview — couples now manage both audiences from one
   // page with labelled sections ("public" vs "unlocks after RSVP-yes").
   // /app/wedding-site and /app/guest-portal still resolve via redirects.
+  // The couple-curated wishlist sits just above the guest-page entry — it's
+  // another thing confirmed guests see on the merged Vendégoldal. Desktop +
+  // More-sheet only (no tabKey), like the other secondary guest surfaces.
+  {
+    to: "/app/wishlist",
+    labelKey: "nav.wishlist",
+    icon: <Gift size={18} />,
+    group: "guest",
+  },
   {
     to: "/app/guest-page",
     labelKey: "nav.guest_page",
@@ -561,7 +571,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             sidebarCollapsed ? "lg:w-14" : "lg:w-56"
           }`}
         >
-          <div className="sticky top-20 flex flex-col gap-1">
+          {/* Bound the rail to the viewport so the full nav (15 links + 4
+              section headers) is reachable in one screen — it scrolls inside
+              itself on short laptops instead of running off the bottom. The
+              tightened row rhythm below keeps it scrollbar-free on most
+              displays. `min-h-0` lets the inner nav shrink so overflow works. */}
+          <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] min-h-0 flex-col gap-1 overflow-y-auto [scrollbar-width:thin]">
             {/* Collapse toggle — sits above the nav so it's the same
                 affordance in both couple and admin views. Aligns right when
                 expanded so the chevron sits flush with the rail edge;
@@ -636,7 +651,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 })()}
               </nav>
             ) : (
-              <nav className="flex flex-col gap-1">
+              <nav className="flex flex-col gap-0.5">
                 {(() => {
                   // Render items in stable order, injecting a small section
                   // header (or, when collapsed, a thin divider) whenever the
@@ -783,7 +798,7 @@ function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: b
       />
       {/* Labelled header — only renders in the fully-expanded rail. */}
       {!collapsed && (
-        <div className="mt-3 hidden items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
+        <div className="mt-1.5 hidden items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
           <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
           <span>{label}</span>
           <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
@@ -857,7 +872,7 @@ function SideLink({
   // shape when the user has the laptop rail expanded.
   const shape = collapsed
     ? "h-10 w-10 justify-center"
-    : "h-10 w-10 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-2";
+    : "h-10 w-10 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1.5";
   return (
     <NavLink
       to={to}
@@ -912,7 +927,7 @@ function AdminSideLink({
 }) {
   const shape = collapsed
     ? "h-10 w-10 justify-center"
-    : "h-10 w-10 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-2";
+    : "h-10 w-10 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1.5";
   return (
     <NavLink
       to={to}

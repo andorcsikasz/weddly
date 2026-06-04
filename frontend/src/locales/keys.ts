@@ -1232,6 +1232,9 @@ export interface LocaleMessages {
      *  /app/guest-page. Replaces the older split between the wedding-site
      *  editor and the gated guest-portal preview. */
     guest_page: string;
+    /** Couple-curated wishlist / gift registry — sidebar + More-sheet entry
+     *  sitting just above the guest-page link in the `guest` group. */
+    wishlist: string;
     /** Sidebar group headers that bundle the rail into the four phases
      *  of the wedding journey. `guest` is the read-only portal preview;
      *  the other three carry the couple from decisions → wedding-day ops
@@ -1585,6 +1588,18 @@ export interface LocaleMessages {
     countdown_seconds: string;
     /** "Good to know" section heading on the guest page (preview + public). */
     useful_info_title: string;
+    /** Couple-curated wishlist deck — confirmed-tier only. Soft, no-money
+     *  framing: a group-gift card shows how many households are coordinating
+     *  + a non-binding "I'd like to help" toggle. */
+    wishlist_section_title: string;
+    wishlist_group_gift_help_cta: string;
+    wishlist_group_gift_help_active: string;
+    /** Receives `{count}` — how many households tapped "I'd like to help". */
+    wishlist_interest_count: string;
+    /** Prefixes the optional rough target amount on a card. */
+    wishlist_target_amount_prefix: string;
+    /** Accessible label for the external product / registry link. */
+    wishlist_external_link_label: string;
     schedule_title: string;
     schedule_empty: string;
     /** Label appended to a time when the event lands after midnight (day +1). */
@@ -1625,6 +1640,7 @@ export interface LocaleMessages {
       venue_cta: string;
       useful_info_title: string;
       useful_info_cta: string;
+      welcome_cta: string;
     };
   };
   /** Couple-facing /app/guest-page editor — single merged surface that
@@ -1736,6 +1752,34 @@ export interface LocaleMessages {
     share_copied: string;
     share_copy_failed: string;
     share_no_slug: string;
+  };
+  /** Couple-facing /app/wishlist editor — CRUD over the wishlist_items table.
+   *  Mirrors the schedule editor: a list with inline add/edit/delete. No
+   *  money moves; the target amount is a wish, not an invoice. */
+  wishlist_editor: {
+    title: string;
+    subtitle: string;
+    add_item: string;
+    empty_state: string;
+    title_label: string;
+    title_placeholder: string;
+    kind_label: string;
+    kind_item: string;
+    kind_group_gift: string;
+    kind_personal: string;
+    description_label: string;
+    description_placeholder: string;
+    target_amount_label: string;
+    /** Framed as a wish, not an invoice — no money moves in-app. */
+    target_amount_hint: string;
+    url_label: string;
+    url_placeholder: string;
+    delete_confirm_title: string;
+    delete_confirm_body: string;
+    saved_toast: string;
+    /** Shown when a PATCH 409s because a partner edited the same item. */
+    stale_reload: string;
+    save_button: string;
   };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {

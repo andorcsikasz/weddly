@@ -35,10 +35,19 @@ import type {
   PublicWeddingTier,
   PublicWeddingWebsiteView,
 } from "@shared/wedding_website";
+import type { WishlistEntry, WishlistInterestToggleResult } from "@shared/wishlist";
 import { db, now } from "../db";
 import { type CoupleRow } from "../domain/couples";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { listScheduleEvents } from "../domain/schedule";
+import {
+  getWishlistItemScoped,
+  listHouseholdInterestItemIds,
+  listInterestCountsForItems,
+  listWishlistItemRows,
+  toggleInterest,
+  toWishlistEntry,
+} from "../domain/wishlist";
 import { type HouseholdRow, listMembers, toHouseholdMember } from "../domain/households";
 import { normalizeSlugInput } from "../domain/slug";
 import { type Ctx, HttpError, json, type Router } from "../lib/http";
@@ -92,6 +101,7 @@ function buildView(
   couple: CoupleRow,
   tier: PublicWeddingTier,
   schedule: PublicWeddingScheduleEntry[],
+  wishlist: WishlistEntry[] | null,
 ): PublicWeddingWebsiteView {
   const ceremonyKind: CeremonyKind | null =
     couple.ceremony_kind && CEREMONY_KINDS.has(couple.ceremony_kind as CeremonyKind)
@@ -121,8 +131,32 @@ function buildView(
     // unless the credential allows it.
     post_rsvp_content: isConfirmed ? couple.post_rsvp_content : null,
     schedule,
+    // Couple-curated wishlist — confirmed tier only. Same server-side omission
+    // rule as the exact pin / post_rsvp_content: the caller passes the
+    // populated array only at confirmed tier and null otherwise, so a tampered
+    // client can never surface it. Empty array when the couple is confirmed-
+    // eligible but authored no items.
+    wishlist: isConfirmed ? (wishlist ?? []) : null,
     fetched_at: now(),
   };
+}
+
+/** Build the confirmed-tier wishlist embed for one resolved household. For each
+ *  item we strip the couple-internal fields; for 'group_gift' items we fold in
+ *  the soft interest count + whether THIS household has tapped in. Non-group
+ *  kinds get 0 / false (the interest tap only applies to group gifts). Batched:
+ *  one COUNT query + one household-membership query, not per-item. */
+function buildWishlistEntries(coupleId: number, householdId: number): WishlistEntry[] {
+  const rows = listWishlistItemRows(coupleId);
+  if (rows.length === 0) return [];
+  const groupIds = rows.filter((r) => r.kind === "group_gift").map((r) => r.id);
+  const counts = listInterestCountsForItems(groupIds);
+  const mine = listHouseholdInterestItemIds(householdId, groupIds);
+  return rows.map((r) =>
+    r.kind === "group_gift"
+      ? toWishlistEntry(r, counts.get(r.id) ?? 0, mine.has(r.id))
+      : toWishlistEntry(r, 0, false),
+  );
 }
 
 function handleGetWeddingWebsite(ctx: Ctx): Response {
@@ -186,7 +220,15 @@ function handleGetWeddingWebsite(ctx: Ctx): Response {
     });
   }
 
-  const wedding = buildView(couple, tier, schedule);
+  // Wishlist is a confirmed-tier-only embed (valid code + ≥1 RSVP yes). At
+  // lower tiers we pass null so buildView omits it server-side — same omission
+  // rule as the exact pin / post_rsvp_content.
+  const wishlist =
+    tier === "confirmed" && householdId !== null
+      ? buildWishlistEntries(couple.id, householdId)
+      : null;
+
+  const wedding = buildView(couple, tier, schedule, wishlist);
   const payload: PublicWeddingResponse = { wedding, household, tier };
   return json(payload);
 }
@@ -258,12 +300,58 @@ function handleLegacyGuestPortal(ctx: Ctx): Response {
   });
 }
 
+// Toggle the household's soft "I'd like to help" tap on a group-gift wishlist
+// item. The slug + code pair is the credential — same gate as the
+// confirmed-tier embed: the household must resolve AND have at least one RSVP
+// yes (403 otherwise). Only 'group_gift' items accept the tap. Idempotent: a
+// second tap from the same household toggles the interest back off. Returns the
+// post-toggle { interest_count, viewer_has_interest }. Rate-limited on the same
+// code bucket as the lookup so it can't be used to enumerate codes either.
+async function handleToggleWishlistInterest(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "public:wedding:code", WEDDING_CODE_BUCKET);
+
+  const slug = ctx.params.slug ?? "";
+  const codeRaw = ctx.params.code ?? "";
+  const itemId = Number(ctx.params.itemId);
+  if (!Number.isFinite(itemId)) throw new HttpError(400, "Invalid item id");
+
+  // Code is the credential — works even on private couples (requireIsPublic
+  // false), matching the code-bearing lookup path.
+  const couple = resolveCoupleBySlug(slug, false);
+  const household = resolveHousehold(couple.id, codeRaw);
+
+  // Confirmed-tier gate: at least one member must have RSVP'd yes. Below that
+  // the wishlist isn't even visible, so the tap is refused with 403.
+  const members = listMembers(household.id);
+  const anyYes = members.some((m) => m.rsvp_status === "yes");
+  if (!anyYes) {
+    throw new HttpError(403, "Please RSVP yes first", { code: "not_rsvpd" });
+  }
+
+  const item = getWishlistItemScoped(itemId, couple.id);
+  if (!item) throw new HttpError(404, "Wishlist item not found");
+  // Only group gifts surface the coordination tap.
+  if (item.kind !== "group_gift") {
+    throw new HttpError(400, "Interest is only valid for group_gift items");
+  }
+
+  const result: WishlistInterestToggleResult = toggleInterest(couple.id, itemId, household);
+  return json(result);
+}
+
 export function registerPublicWeddingRoutes(router: Router) {
   // Public — no auth flag. Path param `:slug` is the couple's slug.
   router.get("/api/public/wedding/:slug", handleGetWeddingWebsite);
   // Same surface, with the household code carried in the path so the
   // frontend `/w/:slug/:code` route can mirror the URL layout.
   router.get("/api/public/wedding/:slug/:code", handleGetWeddingWebsite);
+  // Soft "I'd like to help" toggle on a group-gift wishlist item. The code in
+  // the path is the credential; confirmed-tier-gated + group_gift-only inside
+  // the handler. No auth flag — guests aren't logged in.
+  router.post(
+    "/api/public/wedding/:slug/:code/wishlist/:itemId/interest",
+    handleToggleWishlistInterest,
+  );
   // Legacy redirect-shim — see comment on handleLegacyGuestPortal. Slated
   // for removal one release after Phase 2 ships.
   router.get("/api/guest/portal", handleLegacyGuestPortal);

@@ -272,6 +272,7 @@ const EDIT_PREFIXES: readonly string[] = [
   "/api/households",
   "/api/seating",
   "/api/schedule",
+  "/api/wishlist",
   "/api/planning",
   "/api/picks",
   "/api/couple-suppliers",

@@ -52,6 +52,12 @@ import type { GuestPortalView } from "@shared/guest_portal";
 import type { PublicWeddingResponse } from "@shared/wedding_website";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type {
+  UpsertWishlistItemInput,
+  WishlistInterestToggleResult,
+  WishlistItem,
+  WishlistLinkPreview,
+} from "@shared/wishlist";
+import type {
   CommunitySupplierAdminView,
   CommunitySupplierReportReason,
   SubmitCommunitySupplierInput,
@@ -592,6 +598,37 @@ export const scheduleApi = {
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/schedule/${id}`),
 };
 
+/** Couple-curated wishlist / gift registry. Mirrors `scheduleApi`: list +
+ *  CRUD with an optional optimistic-concurrency guard on update. No money
+ *  moves in-app — `target_amount_minor` is informational only. Guests see a
+ *  read-only deck on the confirmed-tier guest page; the soft "I'd like to
+ *  help" tap lives on `weddingWebsiteApi.toggleWishlistInterest`. */
+export const wishlistApi = {
+  list: () => apiFetch<{ items: WishlistItem[] }>("GET", "/api/wishlist"),
+  create: (body: UpsertWishlistItemInput) =>
+    apiFetch<{ item: WishlistItem }>("POST", "/api/wishlist", body),
+  /** Partial PATCH with optional optimistic-concurrency guard. Pass `ifMatch`
+   *  with the row's last `updated_at` to make the server return 409 if a
+   *  concurrent editor has touched the same item in the meantime. */
+  update: (
+    id: number,
+    body: Partial<UpsertWishlistItemInput>,
+    opts: { ifMatch?: number | string } = {},
+  ) =>
+    apiFetch<{ item: WishlistItem }>("PATCH", `/api/wishlist/${id}`, body, {
+      headers: opts.ifMatch !== undefined ? { "If-Match": String(opts.ifMatch) } : undefined,
+    }),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/wishlist/${id}`),
+  /** Resolve a product link's preview image (og:image) + title server-side so
+   *  the editor can show a thumbnail before saving. Soft by contract: returns
+   *  `{ image_url: null, title: null }` for an unreachable / blocked URL. */
+  linkPreview: (url: string) =>
+    apiFetch<WishlistLinkPreview>(
+      "GET",
+      `/api/wishlist/link-preview?url=${encodeURIComponent(url)}`,
+    ),
+};
+
 /** Per-user couple membership + self-edit endpoints. */
 export const userApi = {
   leaveCouple: () => apiFetch<{ ok: true }>("POST", "/api/users/me/leave-couple", {}),
@@ -750,6 +787,20 @@ export const weddingWebsiteApi = {
     apiFetch<PublicWeddingResponse>(
       "GET",
       `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(code)}`,
+    ),
+  /** Public, code-gated — toggle the household's soft "I'd like to help"
+   *  interest on a `group_gift` wishlist item. The personal household code is
+   *  the credential; the server resolves it to the household, flips the
+   *  interest row, and returns the fresh aggregate. 403 unless the slug+code
+   *  resolves to the `confirmed` tier (>=1 RSVP yes) and the item is a
+   *  group gift. */
+  toggleWishlistInterest: (slug: string, code: string, itemId: number) =>
+    apiFetch<WishlistInterestToggleResult>(
+      "POST",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(
+        code,
+      )}/wishlist/${itemId}/interest`,
+      {},
     ),
 };
 

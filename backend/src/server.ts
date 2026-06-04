@@ -80,6 +80,7 @@ import { seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
 import { registerUserCoupleRoutes } from "./routes/user_couple";
 import { registerUserProfileRoutes } from "./routes/user_profile";
+import { registerWishlistRoutes } from "./routes/wishlist";
 
 seedSupplierTaxonomy();
 // First-boot seed of the public blog. Idempotent — short-circuits when
@@ -118,6 +119,7 @@ registerRsvpRoutes(router);
 registerPublicStatsRoutes(router);
 registerPublicWeddingRoutes(router);
 registerScheduleRoutes(router);
+registerWishlistRoutes(router);
 registerSeatingRoutes(router);
 registerAccommodationRoutes(router);
 registerTransferRoutes(router);

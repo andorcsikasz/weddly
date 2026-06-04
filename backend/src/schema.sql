@@ -1092,3 +1092,44 @@ CREATE TABLE IF NOT EXISTS billing_control (
   enforced_at INTEGER,
   enforced_by_user_id INTEGER
 );
+
+-- ── Wishlist / gift-registry ────────────────────────────────────────────────
+--
+-- The couple authors a list of things they'd love — a regular gift ('item'), a
+-- bigger gift several guests coordinate on ('group_gift'), or a non-object
+-- gesture ('personal'). Confirmed guests (valid household code + ≥1 RSVP yes)
+-- see the list embedded in the public-wedding response. No money ever moves
+-- in-app: `target_amount_minor` is the couple's informational "roughly what it
+-- costs" (integer minor units in the couple's native currency), never a ledger.
+-- See shared/wishlist.ts for the contract. Indexes live in db.ts (additive-table
+-- ordering rule) — NOT here.
+CREATE TABLE IF NOT EXISTS wishlist_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  kind TEXT NOT NULL DEFAULT 'item',                          -- 'item' | 'group_gift' | 'personal'
+  target_amount_minor INTEGER,                                -- informational rough price; integer minor units; NULL when unset
+  url TEXT,                                                    -- couple-pasted http(s) link; NULL when unset
+  image_url TEXT,                                              -- og:image resolved server-side from url; NULL when none
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- The soft, non-money "I'd like to help" tap a confirmed household makes on a
+-- 'group_gift' item. Idempotent per household via UNIQUE(item_id, household_id):
+-- the toggle endpoint inserts if absent, deletes if present. `household_code` /
+-- `household_label` are denormalised snapshots so the couple-side coordination
+-- view can render who tapped in without a join even if the household is later
+-- relabelled. Indexes live in db.ts.
+CREATE TABLE IF NOT EXISTS wishlist_interests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  item_id INTEGER NOT NULL REFERENCES wishlist_items(id) ON DELETE CASCADE,
+  household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+  household_code TEXT NOT NULL,
+  household_label TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  UNIQUE(item_id, household_id)
+);

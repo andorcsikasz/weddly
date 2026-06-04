@@ -72,6 +72,7 @@ const VendorClaimVerifyPage = lazy(() => import("./pages/VendorClaimVerifyPage")
 const VendorHomePage = lazy(() => import("./pages/VendorHomePage"));
 const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
 const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
+const WishlistEditorPage = lazy(() => import("./pages/WishlistEditorPage"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the
 // "continue with limited access" path. Lets the gate downgrade to an
@@ -579,6 +580,14 @@ export default function App() {
             element={
               <Page>
                 <HoneymoonPage />
+              </Page>
+            }
+          />
+          <Route
+            path="wishlist"
+            element={
+              <Page>
+                <WishlistEditorPage />
               </Page>
             }
           />

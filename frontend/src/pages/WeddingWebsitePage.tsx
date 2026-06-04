@@ -19,12 +19,21 @@
 // emits `noindex,follow` + canonical=`/w/:slug` so personalised links
 // don't leak into Google.
 
-import { Calendar, Heart, Languages, Lock, MapPin } from "lucide-react";
+import {
+  Calendar,
+  ExternalLink,
+  Gift,
+  Heart,
+  HeartHandshake,
+  Languages,
+  Lock,
+  MapPin,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { weddingWebsiteApi } from "../lib/endpoints";
-import { formatDate, isPlausibleDateIso } from "../lib/format";
+import { formatDate, formatMoney, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Shell } from "../components/Shell";
@@ -157,6 +166,54 @@ export default function WeddingWebsitePage() {
   }, [justConfirmed, tier]);
 
   useDocumentMeta("seo.wedding_site_title", "seo.wedding_site_description");
+
+  /** Soft "I'd like to help" toggle on a group-gift wishlist item. Optimistic:
+   *  flip the local entry immediately, fire the code-gated endpoint, then
+   *  reconcile the count + state from the server response. On failure we roll
+   *  back to the pre-click snapshot. Only reachable on the code-bearing,
+   *  confirmed-tier page (the button isn't rendered otherwise). */
+  function onToggleWishlistInterest(itemId: number) {
+    if (!hasCode) return;
+    const snapshot = view;
+    setView((cur) => {
+      if (!cur || !cur.wishlist) return cur;
+      return {
+        ...cur,
+        wishlist: cur.wishlist.map((e) =>
+          e.id === itemId
+            ? {
+                ...e,
+                viewer_has_interest: !e.viewer_has_interest,
+                interest_count: e.interest_count + (e.viewer_has_interest ? -1 : 1),
+              }
+            : e,
+        ),
+      };
+    });
+    weddingWebsiteApi
+      .toggleWishlistInterest(slug, code, itemId)
+      .then((res) => {
+        setView((cur) => {
+          if (!cur || !cur.wishlist) return cur;
+          return {
+            ...cur,
+            wishlist: cur.wishlist.map((e) =>
+              e.id === itemId
+                ? {
+                    ...e,
+                    viewer_has_interest: res.viewer_has_interest,
+                    interest_count: res.interest_count,
+                  }
+                : e,
+            ),
+          };
+        });
+      })
+      .catch(() => {
+        // Roll back to the pre-click snapshot on failure.
+        setView(snapshot);
+      });
+  }
 
   if (loading) {
     return (
@@ -385,6 +442,80 @@ export default function WeddingWebsitePage() {
                 </a>
               </p>
             )}
+          </section>
+        )}
+
+        {/* Wishlist deck — confirmed-tier only (server returns null otherwise).
+            Soft, no-money framing: group gifts show how many households are
+            coordinating + a non-binding "I'd like to help" toggle wired to the
+            code-gated interest endpoint. */}
+        {view.wishlist && view.wishlist.length > 0 && (
+          <section className="card mt-6">
+            <h2 className="flex items-center gap-2 font-serif text-2xl text-ink-900 dark:text-paper-50">
+              <Gift size={20} aria-hidden /> {t("guest_portal.wishlist_section_title")}
+            </h2>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              {view.wishlist.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="flex flex-col gap-2 rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900/40"
+                >
+                  <div className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                    {entry.title}
+                  </div>
+                  {entry.description && (
+                    <p className="text-xs text-ink-600 dark:text-umber-200">{entry.description}</p>
+                  )}
+                  {entry.target_amount_minor !== null && (
+                    <p className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
+                      {t("guest_portal.wishlist_target_amount_prefix")}{" "}
+                      {formatMoney(
+                        entry.target_amount_minor / (localeCurrency(locale) === "HUF" ? 1 : 100),
+                        localeCurrency(locale),
+                        locale,
+                      )}
+                    </p>
+                  )}
+                  {entry.url && (
+                    <a
+                      href={entry.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex w-fit items-center gap-1 text-xs text-blush-700 underline-offset-2 hover:underline dark:text-blush-300"
+                    >
+                      <ExternalLink size={12} aria-hidden />
+                      {t("guest_portal.wishlist_external_link_label")}
+                    </a>
+                  )}
+                  {entry.kind === "group_gift" && (
+                    <div className="mt-1 flex flex-col gap-2">
+                      {entry.interest_count > 0 && (
+                        <p className="text-xs text-ink-500 dark:text-umber-300">
+                          {t("guest_portal.wishlist_interest_count", {
+                            count: entry.interest_count,
+                          })}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => onToggleWishlistInterest(entry.id)}
+                        aria-pressed={entry.viewer_has_interest}
+                        className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                          entry.viewer_has_interest
+                            ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                            : "border border-paper-300 text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:text-paper-100 dark:hover:bg-umber-800"
+                        }`}
+                      >
+                        <HeartHandshake size={13} aria-hidden />
+                        {entry.viewer_has_interest
+                          ? t("guest_portal.wishlist_group_gift_help_active")
+                          : t("guest_portal.wishlist_group_gift_help_cta")}
+                      </button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 

@@ -5,10 +5,15 @@
 // surface lives elsewhere (couple's /app/schedule, /app/profile, etc.).
 
 import type { GuestPortalView, GuestScheduleEntry } from "@shared/guest_portal";
+import type { Currency } from "@shared/types";
+import type { WishlistEntry } from "@shared/wishlist";
 import {
   CalendarDays,
   Camera,
   Clock,
+  ExternalLink,
+  Gift,
+  HeartHandshake,
   Info,
   MapPin,
   Pencil,
@@ -18,7 +23,7 @@ import {
 } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { SCHEDULE_DAY_TWO_MINUTES } from "@shared/schedule";
-import { formatDate } from "../lib/format";
+import { formatDate, formatMoney } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { WeddingCountdown } from "./WeddingCountdown";
 
@@ -46,6 +51,10 @@ export function GuestPortalView({
   onEditDate,
   onEditSchedule,
   onEditVenue,
+  onEditIntro,
+  wishlist,
+  currency = "HUF",
+  onToggleWishlistInterest,
 }: {
   data: GuestPortalView;
   locale: Locale;
@@ -62,6 +71,21 @@ export function GuestPortalView({
   onEditSchedule?: () => void;
   /** Same, for the venue/location card. */
   onEditVenue?: () => void;
+  /** Editor preview only — the hero welcome-message ghost jumps to the intro
+   *  field. */
+  onEditIntro?: () => void;
+  /** Confirmed-tier wishlist (from the public-wedding response). Optional — the
+   *  deck renders ONLY when this is a non-empty array. The base GuestPortalView
+   *  shape has no wishlist, so callers pass it alongside `data`. Null/empty/
+   *  undefined → nothing renders. */
+  wishlist?: WishlistEntry[] | null;
+  /** Couple's display currency, used to format the optional rough target
+   *  amount on each card. Defaults to HUF. */
+  currency?: Currency;
+  /** Live guest page only — toggles the household's soft "I'd like to help"
+   *  interest on a group-gift item. Omitted on the couple-side editor preview,
+   *  where the toggle is read-only (not wired). */
+  onToggleWishlistInterest?: (itemId: number) => void;
 }) {
   const { t } = useT();
   const hasLocation = data.location_lat !== null && data.location_lng !== null;
@@ -173,6 +197,22 @@ export function GuestPortalView({
             {t("guest_portal.date_tbd")}
           </p>
         )}
+        {/* Welcome message — couple-authored greeting under the date. */}
+        {data.guest_page_intro ? (
+          <p className="mx-auto mt-4 max-w-prose whitespace-pre-line text-sm text-ink-700 dark:text-paper-100">
+            {data.guest_page_intro}
+          </p>
+        ) : isPreview && onEditIntro ? (
+          <button
+            type="button"
+            onClick={onEditIntro}
+            title={t("guest_portal.edit_section_hint")}
+            className="mx-auto mt-4 inline-flex items-center gap-1 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
+          >
+            <Plus size={12} aria-hidden />
+            {t("guest_portal.ghost.welcome_cta")}
+          </button>
+        ) : null}
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -328,6 +368,40 @@ export function GuestPortalView({
         />
       ) : null}
 
+      {/* Wishlist deck — confirmed-tier only. Renders ONLY when the caller
+       *  passes a non-empty array; the base GuestPortalView shape has no
+       *  wishlist, so a nullish guard keeps it absent everywhere else. No
+       *  money / payment copy anywhere — the only interaction is a soft
+       *  "I'd like to help" tap on group gifts. */}
+      {wishlist && wishlist.length > 0 && (
+        <section
+          className="rounded-2xl border border-paper-200 bg-white p-5 dark:border-umber-700 dark:bg-umber-800/60"
+          aria-labelledby="guest-portal-wishlist-title"
+        >
+          <div className="mb-3 flex items-center gap-2">
+            <Gift size={16} className="text-ink-500 dark:text-umber-300" aria-hidden />
+            <h2
+              id="guest-portal-wishlist-title"
+              className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300"
+            >
+              {t("guest_portal.wishlist_section_title")}
+            </h2>
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {wishlist.map((entry) => (
+              <WishlistCard
+                key={entry.id}
+                entry={entry}
+                currency={currency}
+                locale={locale}
+                onToggleInterest={onToggleWishlistInterest}
+                t={t}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Live countdown at the very bottom of the guest page. */}
       <WeddingCountdown date={data.wedding_date} isPreview={isPreview} onEdit={onEditDate} />
     </div>
@@ -384,6 +458,81 @@ function GhostSlot({
         </p>
       </div>
     </div>
+  );
+}
+
+/** One read-only wishlist card on the guest deck. Title + optional
+ *  description, optional formatted rough target amount, optional external
+ *  link, and — for group gifts only — a soft chip-in count + an "I'd like to
+ *  help" / "You're in" toggle. No money / payment copy. */
+function WishlistCard({
+  entry,
+  currency,
+  locale,
+  onToggleInterest,
+  t,
+}: {
+  entry: WishlistEntry;
+  currency: Currency;
+  locale: Locale;
+  onToggleInterest?: (itemId: number) => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const isGroupGift = entry.kind === "group_gift";
+  return (
+    <li className="flex flex-col gap-2 rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900/40">
+      <div className="text-sm font-medium text-ink-900 dark:text-paper-50">{entry.title}</div>
+      {entry.description && (
+        <p className="text-xs text-ink-600 dark:text-umber-200">{entry.description}</p>
+      )}
+      {entry.target_amount_minor !== null && (
+        <p className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
+          {t("guest_portal.wishlist_target_amount_prefix")}{" "}
+          {formatMoney(
+            entry.target_amount_minor / (currency === "HUF" ? 1 : 100),
+            currency,
+            locale,
+          )}
+        </p>
+      )}
+      {entry.url && (
+        <a
+          href={entry.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex w-fit items-center gap-1 text-xs text-blush-700 underline-offset-2 hover:underline dark:text-blush-300"
+        >
+          <ExternalLink size={12} aria-hidden />
+          {t("guest_portal.wishlist_external_link_label")}
+        </a>
+      )}
+      {isGroupGift && (
+        <div className="mt-1 flex flex-col gap-2">
+          {entry.interest_count > 0 && (
+            <p className="text-xs text-ink-500 dark:text-umber-300">
+              {t("guest_portal.wishlist_interest_count", { count: entry.interest_count })}
+            </p>
+          )}
+          <button
+            type="button"
+            disabled={!onToggleInterest}
+            onClick={() => onToggleInterest?.(entry.id)}
+            aria-pressed={entry.viewer_has_interest}
+            className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              entry.viewer_has_interest
+                ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                : "border border-paper-300 text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:text-paper-100 dark:hover:bg-umber-800"
+            } ${onToggleInterest ? "" : "cursor-default opacity-90"}`}
+          >
+            <HeartHandshake size={13} aria-hidden />
+            {entry.viewer_has_interest
+              ? t("guest_portal.wishlist_group_gift_help_active")
+              : t("guest_portal.wishlist_group_gift_help_cta")}
+          </button>
+        </div>
+      )}
+    </li>
   );
 }
 

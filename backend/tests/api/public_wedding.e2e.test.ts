@@ -619,6 +619,199 @@ describe("/api/public/wedding tier ladder", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
+// Wishlist embed + interest toggle (confirmed-tier only)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// The couple-curated wishlist is embedded in the public-wedding response only
+// at the confirmed tier (valid household code + ≥1 RSVP yes). At public /
+// invited tiers `wedding.wishlist` is server-side null. The soft "I'd like to
+// help" tap (POST .../wishlist/:itemId/interest) is confirmed-gated and
+// group_gift-only, idempotent per household.
+
+/** Create a group-gift wishlist item on the couple, returns its id. */
+async function createWishlistItem(token: string, body: Record<string, unknown>): Promise<number> {
+  const r = await req<{ item: { id: number } }>("POST", "/api/wishlist", body, { token });
+  if (r.status !== 201) throw new Error(`wishlist create failed: ${r.status}`);
+  return r.data.item.id;
+}
+
+/** Bring a household to the confirmed tier by RSVP-ing its guest yes. */
+async function confirmHousehold(
+  slug: string,
+  household_code: string,
+  guest_id: number,
+): Promise<void> {
+  const checkin = await req("POST", "/api/rsvp/checkin", {
+    couple_slug: slug,
+    household_code,
+    members: [{ guest_id, rsvp_status: "yes" }],
+  });
+  if (checkin.status !== 200) throw new Error(`checkin failed: ${checkin.status}`);
+}
+
+describe("/api/public/wedding wishlist embed", () => {
+  test("wishlist is null at public + invited tiers, populated array at confirmed", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("wishlist-tiers@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slug = await getSlug(coupleId);
+    await createWishlistItem(token, { title: "Honeymoon fund", kind: "group_gift" });
+    await createWishlistItem(token, { title: "A letter", kind: "personal" });
+    const { household_code, guest_id } = await createHouseholdWithGuest(token, "Wish-fam");
+
+    // Public tier — no code → wishlist null.
+    const publicR = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(publicR.status).toBe(200);
+    expect(publicR.data.tier).toBe("public");
+    expect(publicR.data.wedding.wishlist).toBeNull();
+
+    // Invited tier — valid code, no yes → still null.
+    const invitedR = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(household_code)}`,
+    );
+    expect(invitedR.status).toBe(200);
+    expect(invitedR.data.tier).toBe("invited");
+    expect(invitedR.data.wedding.wishlist).toBeNull();
+
+    // Confirmed tier — populated array.
+    await confirmHousehold(slug, household_code, guest_id);
+    const confirmedR = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(household_code)}`,
+    );
+    expect(confirmedR.status).toBe(200);
+    expect(confirmedR.data.tier).toBe("confirmed");
+    expect(Array.isArray(confirmedR.data.wedding.wishlist)).toBe(true);
+    expect(confirmedR.data.wedding.wishlist!.length).toBe(2);
+    const group = confirmedR.data.wedding.wishlist!.find((w) => w.kind === "group_gift");
+    expect(group).toBeTruthy();
+    expect(group!.interest_count).toBe(0);
+    expect(group!.viewer_has_interest).toBe(false);
+  });
+
+  test("confirmed couple with no items → empty array (not null)", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("wishlist-empty@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slug = await getSlug(coupleId);
+    const { household_code, guest_id } = await createHouseholdWithGuest(token, "Empty-fam");
+    await confirmHousehold(slug, household_code, guest_id);
+
+    const r = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(household_code)}`,
+    );
+    expect(r.data.tier).toBe("confirmed");
+    expect(Array.isArray(r.data.wedding.wishlist)).toBe(true);
+    expect(r.data.wedding.wishlist!.length).toBe(0);
+  });
+});
+
+describe("POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest", () => {
+  test("403 below confirmed tier (no RSVP yes on the household)", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("wishlist-interest-403@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slug = await getSlug(coupleId);
+    const itemId = await createWishlistItem(token, { title: "Group fund", kind: "group_gift" });
+    const { household_code } = await createHouseholdWithGuest(token, "NotYet");
+
+    const r = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(household_code)}/wishlist/${itemId}/interest`,
+    );
+    expect(r.status).toBe(403);
+    expect(r.data.detail?.code).toBe("not_rsvpd");
+  });
+
+  test("non-group_gift item → 400", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("wishlist-interest-kind@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slug = await getSlug(coupleId);
+    const itemId = await createWishlistItem(token, { title: "Plain item", kind: "item" });
+    const { household_code, guest_id } = await createHouseholdWithGuest(token, "Confirmed");
+    await confirmHousehold(slug, household_code, guest_id);
+
+    const r = await req(
+      "POST",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(household_code)}/wishlist/${itemId}/interest`,
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("200 toggle on at confirmed, idempotent second tap toggles off, counts correct", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("wishlist-interest-toggle@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slug = await getSlug(coupleId);
+    const itemId = await createWishlistItem(token, { title: "Group fund", kind: "group_gift" });
+    const { household_code, guest_id } = await createHouseholdWithGuest(token, "Helper");
+    await confirmHousehold(slug, household_code, guest_id);
+
+    const url = `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(household_code)}/wishlist/${itemId}/interest`;
+
+    // First tap — interest on.
+    const on = await req<{ interest_count: number; viewer_has_interest: boolean }>("POST", url);
+    expect(on.status).toBe(200);
+    expect(on.data.viewer_has_interest).toBe(true);
+    expect(on.data.interest_count).toBe(1);
+
+    // The embed reflects it.
+    const embed = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(household_code)}`,
+    );
+    const group = embed.data.wedding.wishlist!.find((w) => w.id === itemId);
+    expect(group!.interest_count).toBe(1);
+    expect(group!.viewer_has_interest).toBe(true);
+
+    // Second tap — idempotent toggle off.
+    const off = await req<{ interest_count: number; viewer_has_interest: boolean }>("POST", url);
+    expect(off.status).toBe(200);
+    expect(off.data.viewer_has_interest).toBe(false);
+    expect(off.data.interest_count).toBe(0);
+  });
+
+  test("two distinct households each count once toward interest_count", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("wishlist-interest-two@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slug = await getSlug(coupleId);
+    const itemId = await createWishlistItem(token, { title: "Group fund", kind: "group_gift" });
+
+    const h1 = await createHouseholdWithGuest(token, "Fam1");
+    const h2 = await createHouseholdWithGuest(token, "Fam2");
+    await confirmHousehold(slug, h1.household_code, h1.guest_id);
+    await confirmHousehold(slug, h2.household_code, h2.guest_id);
+
+    await req(
+      "POST",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(h1.household_code)}/wishlist/${itemId}/interest`,
+    );
+    const second = await req<{ interest_count: number }>(
+      "POST",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(h2.household_code)}/wishlist/${itemId}/interest`,
+    );
+    expect(second.status).toBe(200);
+    expect(second.data.interest_count).toBe(2);
+
+    // h1's viewer_has_interest is true; h2 also true; counts shared.
+    const embed1 = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(h1.household_code)}`,
+    );
+    const g1 = embed1.data.wedding.wishlist!.find((w) => w.id === itemId);
+    expect(g1!.interest_count).toBe(2);
+    expect(g1!.viewer_has_interest).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 // Legacy /api/guest/portal shim — kept for one release while old SPA
 // bundles in user caches finish rolling over. New requests should hit
 // /api/public/wedding/:slug/:code instead.

@@ -102,6 +102,8 @@ export function wipeAll(): void {
     "seating_conflicts",
     "seating_tables",
     "schedule_events",
+    "wishlist_interests",
+    "wishlist_items",
     "planning_items",
     "guests",
     "households",

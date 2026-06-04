@@ -13,6 +13,7 @@
 // non-null in the payload, you may render it".
 
 import type { CeremonyKind, HouseholdMember, UnixMs } from "./types";
+import type { WishlistEntry } from "./wishlist";
 
 export interface PublicWeddingScheduleEntry {
   id: number;
@@ -72,6 +73,12 @@ export interface PublicWeddingWebsiteView {
    *  expose it on the public site. Empty array otherwise. Visible at
    *  every tier — schedule has always been on the public surface. */
   schedule: PublicWeddingScheduleEntry[];
+  /** Couple-curated wishlist. Returned only at `confirmed` tier (valid
+   *  household code + at least one RSVP yes) — same server-side omission rule
+   *  as `post_rsvp_content` / the exact pin: null at public/invited so a
+   *  tampered client can't surface it. Empty array when the couple is
+   *  confirmed-eligible but authored no items. */
+  wishlist: WishlistEntry[] | null;
   fetched_at: UnixMs;
 }
 
