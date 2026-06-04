@@ -28,29 +28,47 @@ interface NominatimResult {
 }
 
 export interface PlaceSuggestion {
-  /** Headline label — e.g. "Bali" or "Tuscany". */
+  /** Headline label — e.g. "Bali" or "Tuscany" (place mode) or the POI name
+   *  like "Sári Csárda" (venue mode). */
   primary: string;
   /** Subtitle — full address / region. */
   secondary: string;
+  /** Settlement the result sits in (city/town/village), when available. */
+  locality: string | null;
   lat: number | null;
   lng: number | null;
   /** ISO country code if Nominatim provided one. */
   country_code: string | null;
 }
 
-function primaryLabel(r: NominatimResult): string {
+/** "place" → destination picker (the settlement is the headline, e.g. "Bali").
+ *  "venue" → venue-name picker (the POI name is the headline, e.g. "Sári
+ *  Csárda" — the settlement it sits in is demoted to `locality`). */
+type SearchKind = "place" | "venue";
+
+function localityOf(r: NominatimResult): string | null {
   const a = r.address;
-  if (a?.city) return a.city;
-  if (a?.town) return a.town;
-  if (a?.village) return a.village;
+  return a?.city ?? a?.town ?? a?.village ?? null;
+}
+
+/** display_name's first comma-separated segment — usually the POI/street name. */
+function headline(r: NominatimResult): string {
   if (r.name && r.name.trim()) return r.name.trim();
-  // display_name's first comma-separated segment is usually the headline.
   const first = r.display_name?.split(",")[0]?.trim();
   return first || r.display_name?.trim() || "";
 }
 
-function toSuggestion(r: NominatimResult): PlaceSuggestion | null {
-  const primary = primaryLabel(r);
+function primaryLabel(r: NominatimResult, kind: SearchKind): string {
+  if (kind === "venue") {
+    // The venue's own name leads; the settlement rides along as `locality`.
+    return headline(r) || localityOf(r) || "";
+  }
+  // Destination picker: the settlement IS the headline.
+  return localityOf(r) || headline(r);
+}
+
+function toSuggestion(r: NominatimResult, kind: SearchKind): PlaceSuggestion | null {
+  const primary = primaryLabel(r, kind);
   if (!primary) return null;
   const secondary = r.display_name?.trim() ?? "";
   const lat = r.lat !== undefined ? Number(r.lat) : null;
@@ -58,6 +76,7 @@ function toSuggestion(r: NominatimResult): PlaceSuggestion | null {
   return {
     primary,
     secondary,
+    locality: localityOf(r),
     lat: Number.isFinite(lat) ? lat : null,
     lng: Number.isFinite(lng) ? lng : null,
     country_code: r.address?.country_code?.toUpperCase() ?? null,
@@ -88,6 +107,9 @@ async function handleSearch(ctx: Ctx): Promise<Response> {
   // Honeymoon destination search omits this on purpose (it's meant to roam).
   const country = params.get("country")?.trim().toLowerCase() ?? "";
   if (/^[a-z]{2}$/.test(country)) url.searchParams.set("countrycodes", country);
+  // "venue" mode keeps the POI name as the headline (e.g. "Sári Csárda")
+  // instead of collapsing it to the settlement. Default stays "place".
+  const kind: SearchKind = params.get("kind") === "venue" ? "venue" : "place";
 
   let raw: unknown;
   try {
@@ -104,7 +126,7 @@ async function handleSearch(ctx: Ctx): Promise<Response> {
 
   if (!Array.isArray(raw)) return json({ places: [] });
   const places = raw
-    .map((r) => toSuggestion(r as NominatimResult))
+    .map((r) => toSuggestion(r as NominatimResult, kind))
     .filter((p): p is PlaceSuggestion => p !== null)
     .slice(0, 5);
   return json({ places });
