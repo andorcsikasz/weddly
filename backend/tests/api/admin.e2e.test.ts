@@ -1,6 +1,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
+import type { AdminActivityAnalytics } from "@shared/admin_analytics";
 import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
 import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
@@ -1474,6 +1475,40 @@ describe("admin analytics", () => {
     expect(r.data.onboarding_funnel.registered).toBe(2);
     expect(r.data.onboarding_funnel.onboarded).toBe(1);
     expect(r.data.couples_by_status.active).toBe(1);
+  });
+
+  test("activity — demo workspace is excluded from the real headline, counted in `demo`", async () => {
+    const adminToken = await bootstrapAdmin();
+    // Spin up a real demo workspace through the public CTA endpoint. It
+    // creates a verified, onboarded demo user + an is_demo=1 active couple.
+    const demo = await req("POST", "/api/demo/start");
+    expect(demo.status).toBe(201);
+
+    const r = await req<AdminActivityAnalytics>(
+      "GET",
+      "/api/admin/analytics/activity",
+      undefined,
+      { token: adminToken },
+    );
+
+    // Real headline: only the admin (1 signup, verified, no workspace). The
+    // demo user/couple must NOT leak into any of these.
+    expect(r.data.signups.total).toBe(1);
+    expect(r.data.signups.last_24h).toBe(1);
+    expect(r.data.onboarding_funnel.registered).toBe(1);
+    expect(r.data.onboarding_funnel.verified).toBe(1);
+    expect(r.data.onboarding_funnel.onboarded).toBe(0);
+    expect(r.data.couples_by_status.active).toBe(0);
+    // Daily series excludes the demo signup too.
+    expect(r.data.signups_daily.reduce((s, d) => s + d.count, 0)).toBe(1);
+
+    // Demo block: the one demo workspace shows up here instead.
+    expect(r.data.demo.signups.total).toBe(1);
+    expect(r.data.demo.signups.last_24h).toBe(1);
+    expect(r.data.demo.onboarding_funnel.registered).toBe(1);
+    expect(r.data.demo.onboarding_funnel.verified).toBe(1);
+    expect(r.data.demo.onboarding_funnel.onboarded).toBe(1);
+    expect(r.data.demo.couples_total).toBe(1);
   });
 
   test("picks — empty returns zeroed totals + the category scaffold", async () => {

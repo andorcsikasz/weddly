@@ -84,8 +84,21 @@ export interface AdminActivityAnalytics {
   top_actions: Array<{ action: string; count: number }>;
   /** Newest-last array of `{date, count}` for daily signups over the
    *  last 14 days. Dates are YYYY-MM-DD in UTC so the chart aligns
-   *  consistently regardless of admin locale. */
+   *  consistently regardless of admin locale. All the fields above are
+   *  REAL traffic — demo workspaces (`couples.is_demo`, `…@demo.weddly.local`
+   *  users) are excluded so the headlines aren't inflated by the landing's
+   *  "Try the demo" seeds. */
   signups_daily: Array<{ date: string; count: number }>;
+  /** Demo-only mirror of the headline counts, rendered as a small "demo: N"
+   *  note under each real figure. Same windows + funnel stages, but counted
+   *  over the demo users/couples that the fields above deliberately omit. */
+  demo: {
+    signups: { last_24h: number; last_7d: number; last_30d: number; total: number };
+    active_users: { last_24h: number; last_7d: number; last_30d: number };
+    onboarding_funnel: { registered: number; verified: number; onboarded: number };
+    /** Live demo couples (`is_demo = 1`) regardless of status. */
+    couples_total: number;
+  };
 }
 
 // ─── /api/admin/analytics/picks ──────────────────────────────────────────

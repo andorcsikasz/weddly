@@ -3626,6 +3626,8 @@ export interface LocaleMessages {
     /** Daily signups bar chart. */
     analytics_activity_signups_daily_title: string;
     analytics_activity_signups_daily_sub: string;
+    /** Tiny "demo: {n}" note under a real headline, flagging demo accounts. */
+    analytics_activity_demo_note: string;
     /** Onboarding funnel. */
     analytics_activity_funnel_title: string;
     analytics_activity_funnel_registered: string;

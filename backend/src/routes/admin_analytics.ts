@@ -270,36 +270,54 @@ function activityAnalytics(): AdminActivityAnalytics {
   // signup count doesn't keep ticking up every time someone deletes their
   // account.
   const NOT_PURGED = "email NOT LIKE '%@purged.local'";
+  // Demo workspaces are seeded by the landing "Try the demo" button under
+  // `demo-…@demo.weddly.local` users (couples.is_demo = 1). They'd otherwise
+  // inflate every headline — a demo signs up verified + onboarded in one
+  // shot. So the headline numbers are REAL (non-demo) traffic, and we
+  // surface a parallel `demo` breakdown the UI renders as a small note.
+  const NOT_DEMO = "email NOT LIKE '%@demo.weddly.local'";
+  const IS_DEMO = "email LIKE '%@demo.weddly.local'";
+  const REAL = `${NOT_PURGED} AND ${NOT_DEMO}`;
+  const DEMO = `${NOT_PURGED} AND ${IS_DEMO}`;
 
-  const countSince = (since: number): number =>
+  const countSince = (cond: string, since: number): number =>
     (
-      db
-        .prepare(`SELECT COUNT(*) AS n FROM users WHERE ${NOT_PURGED} AND created_at >= ?`)
-        .get(since) as { n: number }
+      db.prepare(`SELECT COUNT(*) AS n FROM users WHERE ${cond} AND created_at >= ?`).get(since) as {
+        n: number;
+      }
     ).n;
-  const totalSignups = (
-    db.prepare(`SELECT COUNT(*) AS n FROM users WHERE ${NOT_PURGED}`).get() as { n: number }
-  ).n;
-
-  const activeSince = (since: number): number =>
+  const totalCount = (cond: string): number =>
+    (db.prepare(`SELECT COUNT(*) AS n FROM users WHERE ${cond}`).get() as { n: number }).n;
+  const activeSince = (cond: string, since: number): number =>
     (
       db
         .prepare(
-          `SELECT COUNT(DISTINCT id) AS n FROM users WHERE ${NOT_PURGED} AND last_seen_at IS NOT NULL AND last_seen_at >= ?`,
+          `SELECT COUNT(DISTINCT id) AS n FROM users WHERE ${cond} AND last_seen_at IS NOT NULL AND last_seen_at >= ?`,
         )
         .get(since) as { n: number }
     ).n;
+  const verifiedCount = (cond: string): number =>
+    (
+      db.prepare(`SELECT COUNT(*) AS n FROM users WHERE ${cond} AND verified_email = 1`).get() as {
+        n: number;
+      }
+    ).n;
+  const onboardedCount = (cond: string): number =>
+    (
+      db
+        .prepare(`SELECT COUNT(*) AS n FROM users WHERE ${cond} AND couple_id IS NOT NULL`)
+        .get() as { n: number }
+    ).n;
 
+  const totalSignups = totalCount(REAL);
   const registered = totalSignups;
-  const verified = (
-    db
-      .prepare(`SELECT COUNT(*) AS n FROM users WHERE ${NOT_PURGED} AND verified_email = 1`)
-      .get() as { n: number }
-  ).n;
-  const onboarded = (
-    db
-      .prepare(`SELECT COUNT(*) AS n FROM users WHERE ${NOT_PURGED} AND couple_id IS NOT NULL`)
-      .get() as { n: number }
+  const verified = verifiedCount(REAL);
+  const onboarded = onboardedCount(REAL);
+
+  // Demo-only breakdown (same windows + predicates, IS_DEMO) for the UI's
+  // small "demo: N" notes under each real headline.
+  const demoCouplesTotal = (
+    db.prepare("SELECT COUNT(*) AS n FROM couples WHERE is_demo = 1").get() as { n: number }
   ).n;
 
   // Initialise every CoupleStatus to 0 — the GROUP BY only surfaces rows we
@@ -311,7 +329,7 @@ function activityAnalytics(): AdminActivityAnalytics {
     archived: 0,
   };
   const statusRows = db
-    .prepare("SELECT status, COUNT(*) AS n FROM couples GROUP BY status")
+    .prepare("SELECT status, COUNT(*) AS n FROM couples WHERE is_demo = 0 GROUP BY status")
     .all() as { status: string; n: number }[];
   for (const r of statusRows) {
     if ((COUPLE_STATUSES as readonly string[]).includes(r.status)) {
@@ -342,7 +360,7 @@ function activityAnalytics(): AdminActivityAnalytics {
     .prepare(
       `SELECT strftime('%Y-%m-%d', created_at / 1000, 'unixepoch') AS d, COUNT(*) AS n
          FROM users
-        WHERE ${NOT_PURGED} AND created_at >= ?
+        WHERE ${REAL} AND created_at >= ?
         GROUP BY d`,
     )
     .all(since14) as { d: string; n: number }[];
@@ -360,15 +378,15 @@ function activityAnalytics(): AdminActivityAnalytics {
 
   return {
     signups: {
-      last_24h: countSince(w24h),
-      last_7d: countSince(w7d),
-      last_30d: countSince(w30d),
+      last_24h: countSince(REAL, w24h),
+      last_7d: countSince(REAL, w7d),
+      last_30d: countSince(REAL, w30d),
       total: totalSignups,
     },
     active_users: {
-      last_24h: activeSince(w24h),
-      last_7d: activeSince(w7d),
-      last_30d: activeSince(w30d),
+      last_24h: activeSince(REAL, w24h),
+      last_7d: activeSince(REAL, w7d),
+      last_30d: activeSince(REAL, w30d),
     },
     onboarding_funnel: {
       registered,
@@ -380,6 +398,25 @@ function activityAnalytics(): AdminActivityAnalytics {
     couples_by_status: couplesByStatus,
     top_actions: topActions.map((r) => ({ action: r.action, count: r.n })),
     signups_daily: signupsDaily,
+    demo: {
+      signups: {
+        last_24h: countSince(DEMO, w24h),
+        last_7d: countSince(DEMO, w7d),
+        last_30d: countSince(DEMO, w30d),
+        total: totalCount(DEMO),
+      },
+      active_users: {
+        last_24h: activeSince(DEMO, w24h),
+        last_7d: activeSince(DEMO, w7d),
+        last_30d: activeSince(DEMO, w30d),
+      },
+      onboarding_funnel: {
+        registered: totalCount(DEMO),
+        verified: verifiedCount(DEMO),
+        onboarded: onboardedCount(DEMO),
+      },
+      couples_total: demoCouplesTotal,
+    },
   };
 }
 

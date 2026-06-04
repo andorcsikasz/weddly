@@ -422,11 +422,15 @@ function KpiTile({
   label,
   value,
   sub,
+  demoNote,
   emphasis,
 }: {
   label: string;
   value: string;
   sub?: string;
+  /** Tiny muted line under `sub` flagging the demo-account count that the
+   *  headline `value` deliberately excludes (e.g. "demo: 11"). */
+  demoNote?: string;
   /** When true, swap the neutral-tinted "primary" treatment in. Used for the
    *  signature KPI in a strip (e.g. avg session minutes, total picks). */
   emphasis?: boolean;
@@ -445,6 +449,11 @@ function KpiTile({
       {sub && (
         <div className="stat-num stat-num-centered mt-0.5 text-xs text-neutral-500 dark:text-umber-300">
           {sub}
+        </div>
+      )}
+      {demoNote && (
+        <div className="stat-num stat-num-centered mt-0.5 text-[10px] text-neutral-400 dark:text-umber-400">
+          {demoNote}
         </div>
       )}
     </div>
@@ -683,6 +692,10 @@ function ActivitySection({
   const funnelMax = Math.max(1, funnel.registered);
   const pctVerified = Math.round((funnel.pct_verified ?? 0) * 100);
   const statusKeys: CoupleStatus[] = ["active", "paused", "deleting", "archived"];
+  // Small "demo: N" note rendered under a headline; omitted when there are
+  // no demo accounts in that bucket so clean periods stay uncluttered.
+  const demoNote = (n: number): string | undefined =>
+    n > 0 ? t("admin.analytics_activity_demo_note", { n: formatNumber(n, locale) }) : undefined;
 
   return (
     <SectionCard title={title}>
@@ -690,6 +703,7 @@ function ActivitySection({
         <KpiTile
           label={t("admin.analytics_activity_signups_24h")}
           value={formatNumber(a.signups.last_24h, locale)}
+          demoNote={demoNote(a.demo.signups.last_24h)}
         />
         <KpiTile
           label={t("admin.analytics_activity_signups_7d")}
@@ -697,11 +711,13 @@ function ActivitySection({
           sub={t("admin.analytics_activity_signups_sub", {
             total: formatNumber(a.signups.total, locale),
           })}
+          demoNote={demoNote(a.demo.signups.last_7d)}
           emphasis
         />
         <KpiTile
           label={t("admin.analytics_activity_signups_30d")}
           value={formatNumber(a.signups.last_30d, locale)}
+          demoNote={demoNote(a.demo.signups.last_30d)}
         />
         <KpiTile
           label={t("admin.analytics_activity_active_users_24h")}
@@ -709,6 +725,7 @@ function ActivitySection({
           sub={t("admin.analytics_activity_active_users_sub", {
             n: formatNumber(a.active_users.last_7d, locale),
           })}
+          demoNote={demoNote(a.demo.active_users.last_24h)}
         />
         <KpiTile
           label={t("admin.analytics_activity_verified_pct")}
@@ -717,6 +734,7 @@ function ActivitySection({
             onboarded: formatNumber(funnel.onboarded, locale),
             registered: formatNumber(funnel.registered, locale),
           })}
+          demoNote={demoNote(a.demo.onboarding_funnel.onboarded)}
         />
       </div>
 
@@ -748,24 +766,27 @@ function ActivitySection({
                 count={funnel.registered}
                 pct={100}
                 locale={locale}
+                demoNote={demoNote(a.demo.onboarding_funnel.registered)}
               />
               <FunnelStep
                 label={t("admin.analytics_activity_funnel_verified")}
                 count={funnel.verified}
                 pct={Math.round((funnel.verified / funnelMax) * 100)}
                 locale={locale}
+                demoNote={demoNote(a.demo.onboarding_funnel.verified)}
               />
               <FunnelStep
                 label={t("admin.analytics_activity_funnel_onboarded")}
                 count={funnel.onboarded}
                 pct={Math.round((funnel.onboarded / funnelMax) * 100)}
                 locale={locale}
+                demoNote={demoNote(a.demo.onboarding_funnel.onboarded)}
               />
             </div>
           </InnerCard>
 
           <InnerCard title={t("admin.analytics_activity_status_title")}>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               {statusKeys.map((s) => (
                 <Pill key={s} tone={STATUS_TONE[s]}>
                   <span>
@@ -778,6 +799,11 @@ function ActivitySection({
                   </span>
                 </Pill>
               ))}
+              {a.demo.couples_total > 0 && (
+                <span className="stat-num text-[10px] text-neutral-400 dark:text-umber-400">
+                  {demoNote(a.demo.couples_total)}
+                </span>
+              )}
             </div>
           </InnerCard>
         </div>
@@ -802,19 +828,30 @@ function FunnelStep({
   count,
   pct,
   locale,
+  demoNote,
 }: {
   label: string;
   count: number;
   pct: number;
   locale: "hu" | "en";
+  /** Tiny muted "demo: N" line under the count — demo workspaces are
+   *  excluded from `count`, this surfaces how many sit alongside it. */
+  demoNote?: string;
 }) {
   const clamped = Math.max(0, Math.min(100, pct));
   return (
     <div className="grid grid-cols-[8rem_1fr_5rem] items-center gap-2">
       <span className="text-left text-xs text-neutral-700 dark:text-paper-100">{label}</span>
       <HBar pct={clamped} ariaLabel={`${count}`} />
-      <span className="stat-num text-right text-xs font-medium text-neutral-700 dark:text-paper-100">
-        {formatNumber(count, locale)} · {clamped}%
+      <span className="flex flex-col items-end text-right">
+        <span className="stat-num text-xs font-medium text-neutral-700 dark:text-paper-100">
+          {formatNumber(count, locale)} · {clamped}%
+        </span>
+        {demoNote && (
+          <span className="stat-num text-[10px] text-neutral-400 dark:text-umber-400">
+            {demoNote}
+          </span>
+        )}
       </span>
     </div>
   );
