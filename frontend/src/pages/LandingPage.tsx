@@ -141,13 +141,19 @@ export default function LandingPage() {
             fold on 360x640 Android. The hero is H1 + subline + single
             primary CTA. */}
         <div className="relative mx-auto flex min-h-[75svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:block sm:min-h-0 sm:px-6 sm:pt-24 lg:pt-28 lg:pb-12">
-          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
+          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
               {/* Cap with `max-w-[18ch]` on mobile — HU translations are
                * 30-40% longer than EN and the old 14ch limit was wrapping
                * the title to 4+ lines on 360px phones. Desktop still gets
-               * the tighter 14ch column for visual rhythm. */}
-              <h1 className="max-w-[18ch] font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+               * the tighter 14ch column for visual rhythm.
+               *
+               * The title strings carry authored `\n` line breaks for the
+               * stacked mobile headline; `whitespace-pre-line` honours them
+               * on mobile, and `sm:whitespace-normal` collapses them back to
+               * spaces on desktop so the wrap is driven by max-w-[14ch] as
+               * before — desktop copy/layout is unchanged. */}
+              <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                 {t("landing.hero_title")}
               </h1>
               {/* Subline removed from the visible hero per request; the
@@ -158,7 +164,7 @@ export default function LandingPage() {
                     secondary intent that doesn't deserve hero real-estate. */}
                 <Link
                   to="/signup"
-                  className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
+                  className="btn-primary btn-lifted btn-landing btn-lg w-4/5 sm:w-auto"
                 >
                   {t("landing.cta_signup")}
                 </Link>

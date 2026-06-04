@@ -755,7 +755,7 @@ const en: LocaleMessages = {
     merge_success: "You're in — welcome to the new workspace.",
   },
   landing: {
-    hero_title: "Your whole wedding, in one place.",
+    hero_title: "Your whole\nwedding,\nin one place.",
     hero_sub:
       "Budget, guest list, RSVP, seating chart and your own wedding site. Both of you see the same picture, in real time.",
     cta_signup: "Start planning",

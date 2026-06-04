@@ -764,7 +764,7 @@ const hu: LocaleMessages = {
     merge_success: "Csatlakoztál — üdv az új munkaterületen.",
   },
   landing: {
-    hero_title: "Az egész esküvőtök, egy helyen.",
+    hero_title: "Az egész\nesküvőtök,\negy helyen.",
     hero_sub:
       "Költségvetés, vendéglista, RSVP, ültetési rend és saját esküvői oldal. Mindkettőtök ugyanazt látja, ugyanakkor.",
     cta_signup: "Kezdjétek el",
