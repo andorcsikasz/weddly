@@ -58,13 +58,6 @@ function formatRelative(
   return formatDate(unixMs, locale);
 }
 
-/** Zero-padded 5-digit numeric workspace code (e.g. couple.id=7 → "00007").
- *  Stable across reloads and trivially sortable; the human-meaningful
- *  `slug` is still available on the type for other consumers. */
-function workspaceId(c: AdminCoupleView): string {
-  return String(c.id).padStart(5, "0");
-}
-
 function workspaceLabel(c: AdminCoupleView): string {
   if (c.display_name && c.display_name.trim()) return c.display_name;
   const a = c.bride_name?.trim();
@@ -173,6 +166,29 @@ export default function AdminUsersPage() {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     return demoCouples.filter((c) => c.last_seen_at != null && c.last_seen_at >= cutoff).length;
   }, [demoCouples]);
+
+  // Display codes are positional, not the raw DB id: real signups get a
+  // gap-free 5-digit sequence ("00001"…) while demo workspaces get a separate
+  // D-prefixed 4-digit one ("D0001"…). Seeding a demo (or any non-signup row)
+  // no longer punches a gap into the real-couple numbering. Ordered by id
+  // ascending = signup order, so "00001" is the very first couple. Counted
+  // over visibleCouples — deleting tombstones are hidden, so they don't
+  // reserve a number.
+  const displayCodeById = useMemo(() => {
+    const map = new Map<number, string>();
+    const byIdAsc = (a: AdminCoupleView, b: AdminCoupleView) => a.id - b.id;
+    visibleCouples
+      .filter((c) => !c.is_demo)
+      .sort(byIdAsc)
+      .forEach((c, i) => map.set(c.id, String(i + 1).padStart(5, "0")));
+    visibleCouples
+      .filter((c) => c.is_demo)
+      .sort(byIdAsc)
+      .forEach((c, i) => map.set(c.id, `D${String(i + 1).padStart(4, "0")}`));
+    return map;
+  }, [visibleCouples]);
+  const workspaceId = (c: AdminCoupleView): string =>
+    displayCodeById.get(c.id) ?? String(c.id).padStart(5, "0");
 
   // ── Search predicates ───────────────────────────────────────────────────
   // Match the workspace by id (padded code), slug, display name, bride/groom

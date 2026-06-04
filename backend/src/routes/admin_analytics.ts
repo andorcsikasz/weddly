@@ -282,7 +282,9 @@ function activityAnalytics(): AdminActivityAnalytics {
 
   const countSince = (cond: string, since: number): number =>
     (
-      db.prepare(`SELECT COUNT(*) AS n FROM users WHERE ${cond} AND created_at >= ?`).get(since) as {
+      db
+        .prepare(`SELECT COUNT(*) AS n FROM users WHERE ${cond} AND created_at >= ?`)
+        .get(since) as {
         n: number;
       }
     ).n;

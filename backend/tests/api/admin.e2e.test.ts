@@ -1484,12 +1484,9 @@ describe("admin analytics", () => {
     const demo = await req("POST", "/api/demo/start");
     expect(demo.status).toBe(201);
 
-    const r = await req<AdminActivityAnalytics>(
-      "GET",
-      "/api/admin/analytics/activity",
-      undefined,
-      { token: adminToken },
-    );
+    const r = await req<AdminActivityAnalytics>("GET", "/api/admin/analytics/activity", undefined, {
+      token: adminToken,
+    });
 
     // Real headline: only the admin (1 signup, verified, no workspace). The
     // demo user/couple must NOT leak into any of these.
