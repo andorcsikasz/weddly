@@ -140,8 +140,8 @@ export default function LandingPage() {
         {/* Tighter top padding on mobile so the CTA pair stays above the
             fold on 360x640 Android. The hero is H1 + subline + single
             primary CTA. */}
-        <div className="relative mx-auto max-w-7xl px-4 pt-10 pb-8 sm:px-6 sm:pt-24 lg:pt-28 lg:pb-12">
-          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
+        <div className="relative mx-auto max-w-7xl px-4 pt-12 pb-8 sm:px-6 sm:pt-24 lg:pt-28 lg:pb-12">
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
               {/* Cap with `max-w-[18ch]` on mobile — HU translations are
                * 30-40% longer than EN and the old 14ch limit was wrapping
@@ -179,7 +179,7 @@ export default function LandingPage() {
             cropping the bottom of the mockup) read to first-time visitors
             as a UI glitch instead of an intentional crop, so we landed the
             mockup flush against the section's bottom padding. */}
-        <div className="relative mt-2 overflow-hidden bg-paper-50 dark:bg-umber-900 pt-6 sm:pt-8 lg:pt-10">
+        <div className="relative mt-4 overflow-hidden bg-paper-50 dark:bg-umber-900 pt-4 sm:pt-8 lg:pt-10">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="origin-bottom pb-6 sm:pb-10 lg:pb-14">
               <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
@@ -351,7 +351,7 @@ export default function LandingPage() {
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-20">
           <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
             {t("landing.audience_title")}
           </h2>
@@ -385,7 +385,7 @@ export default function LandingPage() {
           shadow. Leads with the founding offer (free for the first 200
           couples), with the standard 5 €/mo as the muted after-price. */}
       <section className="relative stationery">
-        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-20">
           <div className="relative mx-auto max-w-lg">
             <div className="relative rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8">
               {/* Value-prop "burger" mark, pinned to the card's top-right corner.
@@ -517,7 +517,7 @@ export default function LandingPage() {
           down so the section doesn't dominate vertically on small
           viewports. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
           <h2 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:whitespace-nowrap sm:text-4xl">
             {t("landing.faq_title")}
           </h2>
@@ -619,7 +619,7 @@ function LiveStatsBand() {
 
   return (
     <section className="relative bg-paper-50 dark:bg-umber-900">
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-14">
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-14">
         {/* The count-up only fires once the tiles scroll into view (inView),
             so the flip plays when the user can see it — not silently on load
             while the band is still far below the fold. */}
@@ -715,7 +715,7 @@ function FoundingCouplesBand() {
     // (pitch + promise | the 200 hero, progress and CTA). The 200 leads — it's
     // the offer; the live booked count is a demoted progress sliver underneath.
     <section className="bg-umber-900">
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-6 py-16 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-12 sm:py-16 sm:text-left">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-4 py-20 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-12 sm:py-16 sm:text-left">
         {/* Left: the pitch */}
         <div className="sm:max-w-md">
           <h2 className="font-grotesk text-2xl font-medium leading-snug tracking-tight text-paper-50 sm:text-3xl">
@@ -943,7 +943,7 @@ function BlogTeaser() {
     timeZone: "UTC",
   });
   return (
-    <section className="relative bg-paper-50 pt-16 sm:pt-20 dark:bg-umber-900">
+    <section className="relative bg-paper-50 pt-12 sm:pt-20 dark:bg-umber-900">
       {/* Title removed per request — the cards speak for themselves. */}
       {/* Mobile: horizontal snap carousel so all three posts are visible
        *  through swiping in one viewport. The first card peeks at ~80vw so
@@ -1039,7 +1039,7 @@ function BlogTeaser() {
           </Link>
         </div>
       </div>
-      <div className="flex justify-center pb-16 sm:hidden">
+      <div className="flex justify-center pb-12 sm:hidden">
         <Link to="/blog" className="btn-outline btn-landing">
           {t("blog.section_cta")}
         </Link>
@@ -1136,7 +1136,7 @@ function CoupleCardsTeaser() {
 
   return (
     <section className="relative bg-white dark:bg-umber-900">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         <header className="text-center">
           <h2 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
             {t("landing.couple_cards_title")}
@@ -1185,7 +1185,8 @@ function CoupleCardsTeaser() {
                     ) : null}
                   </div>
                   <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] sm:text-[10px] sm:tracking-[0.28em]">
-                    {t("app.name")} · {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                    {"WĒDDLY · "}
+                    {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
                   </span>
                 </Link>
               </li>
