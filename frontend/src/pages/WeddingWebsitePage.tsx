@@ -19,7 +19,7 @@
 // emits `noindex,follow` + canonical=`/w/:slug` so personalised links
 // don't leak into Google.
 
-import { Calendar, Heart, Lock, MapPin } from "lucide-react";
+import { Calendar, Heart, Languages, Lock, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../lib/api";
@@ -29,6 +29,7 @@ import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Shell } from "../components/Shell";
 import { WeddingCountdown } from "../components/WeddingCountdown";
+import { Wordmark } from "../components/Wordmark";
 import type {
   PublicWeddingHouseholdContext,
   PublicWeddingResponse,
@@ -55,7 +56,7 @@ function canonicalUrlFor(slug: string): string {
 export default function WeddingWebsitePage() {
   const { slug = "", code = "" } = useParams<{ slug: string; code?: string }>();
   const hasCode = code.length > 0;
-  const { t, locale } = useT();
+  const { t, locale, setLocale } = useT();
   const [view, setView] = useState<PublicWeddingWebsiteView | null>(null);
   const [household, setHousehold] = useState<PublicWeddingHouseholdContext | null>(null);
   const [tier, setTier] = useState<PublicWeddingTier>("public");
@@ -223,8 +224,22 @@ export default function WeddingWebsitePage() {
   const showConfirmedExtras = tier === "confirmed";
 
   return (
-    <Shell>
+    <Shell hideHeader>
       <div className="mx-auto max-w-3xl">
+        {/* No app chrome on a guest-facing wedding site — just a compact
+            icon-only language toggle pinned to the top-right corner. The
+            Weddly brand moves to the footer instead. */}
+        <div className="mb-4 flex justify-end">
+          <button
+            type="button"
+            className="btn-ghost btn-sm !px-2"
+            onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+            aria-label={t("nav.switch_language")}
+            title={t("nav.switch_language")}
+          >
+            <Languages size={18} aria-hidden="true" />
+          </button>
+        </div>
         {view.cover_image_url && (
           <div className="mb-6 overflow-hidden rounded-3xl border border-paper-200 dark:border-umber-700">
             {/* Plain <img> with `loading="lazy"` — no CSP fetch through a CDN. */}
@@ -407,9 +422,19 @@ export default function WeddingWebsitePage() {
           </div>
         )}
 
-        <p className="mt-8 text-center text-[11px] text-ink-400 dark:text-umber-400">
-          {t("wedding_site.footer_built_with")}
-        </p>
+        {/* Weddly branding lives at the bottom — a centered wordmark over a
+            hairline, with the "built with" tagline beneath it. */}
+        <footer className="mt-12 flex flex-col items-center gap-2 border-t border-paper-300 pt-8 dark:border-umber-700">
+          <Link
+            to="/"
+            className="text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+          >
+            <Wordmark size="md" />
+          </Link>
+          <p className="text-center text-[11px] text-ink-400 dark:text-umber-400">
+            {t("wedding_site.footer_built_with")}
+          </p>
+        </footer>
       </div>
     </Shell>
   );
