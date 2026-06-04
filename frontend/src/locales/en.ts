@@ -591,7 +591,7 @@ const en: LocaleMessages = {
     invite_send: "Send invite",
     invite_sending: "Sending…",
     invite_sent: "Sent to {email}",
-    invite_pending_hint: "Waiting for them to join — we'll link your workspaces automatically.",
+    invite_pending_hint: "Waiting for them to join. We'll link your workspaces automatically.",
     invite_sent_title: "Invite on its way!",
     invite_sent_body:
       "We just emailed {email} with a link to join your workspace. They can click it any time in the next 7 days.",

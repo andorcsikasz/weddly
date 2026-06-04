@@ -598,7 +598,7 @@ const hu: LocaleMessages = {
     invite_sending: "Küldés…",
     invite_sent: "Elküldve a(z) {email} címre",
     invite_pending_hint:
-      "Várjuk, hogy csatlakozzon — a munkaterületeket automatikusan összekapcsoljuk.",
+      "Várjuk, hogy csatlakozzon. A munkaterületeket automatikusan összekapcsoljuk.",
     invite_sent_title: "Elküldtük a meghívót!",
     invite_sent_body:
       "Most küldtünk egy levelet a(z) {email} címre, benne a csatlakozási linkkel. A következő 7 napban bármikor kattinthat rá.",

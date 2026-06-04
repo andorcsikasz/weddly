@@ -578,7 +578,7 @@ describe("<DashboardPage>", () => {
     );
   });
 
-  it("email Send invite keeps the card showing the 'on its way' confirmation", async () => {
+  it("email Send invite collapses the card into the slim 'sent to' pending banner", async () => {
     const couple = makeCouple({ partner_b_id: null });
     globalThis.fetch = buildFetch({
       couple,
@@ -607,8 +607,49 @@ describe("<DashboardPage>", () => {
     fireEvent.change(emailInput, { target: { value: "partner@example.test" } });
     fireEvent.click(screen.getByRole("button", { name: /send invite/i }));
 
-    // Confirmation card stays in place.
-    await waitFor(() => expect(screen.getByText(/invite on its way/i)).toBeInTheDocument());
+    // The form collapses to the pending banner: "Sent to {email}" with a
+    // waiting hint, and the email form is gone.
+    await waitFor(() =>
+      expect(screen.getByText(/sent to partner@example\.test/i)).toBeInTheDocument(),
+    );
+    expect(screen.getByText(/waiting for them to join/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /send invite/i })).not.toBeInTheDocument();
+  });
+
+  // The pending banner must survive a reload (no session flag involved): a
+  // pending email invite hydrated from the server keeps the card mounted.
+  it("renders the pending banner on load when a sent email invite is hydrated", async () => {
+    const couple = makeCouple({ partner_b_id: null });
+    globalThis.fetch = buildFetch({
+      couple,
+      invite: {
+        id: 9,
+        couple_id: 1,
+        token: "TOK-HYDRATED",
+        invited_email: "future@example.test",
+        invited_by_user_id: 1,
+        consumed_at: null,
+        expires_at: Date.now() + 7 * 86_400_000,
+        created_at: Date.now(),
+      },
+    });
+    renderPage("dashboard");
+
+    await waitFor(() =>
+      expect(screen.getByText(/sent to future@example\.test/i)).toBeInTheDocument(),
+    );
+    // It's the slim banner, not the full form.
+    expect(screen.queryByRole("button", { name: /send invite/i })).not.toBeInTheDocument();
+  });
+
+  // Once the partner has actually joined (partner_b_id set), the invite
+  // section is gone entirely: no card, no banner.
+  it("drops the invite section once the partner has joined", async () => {
+    globalThis.fetch = buildFetch({ couple: makeCouple({ partner_b_id: 2 }) });
+    renderPage("dashboard");
+
+    await waitFor(() => expect(screen.getByText(/setup checklist/i)).toBeInTheDocument());
+    expect(document.getElementById("invite-partner")).toBeNull();
   });
 });
 
