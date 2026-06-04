@@ -41,7 +41,19 @@ for (const v of variants) {
     // 'Cormorant Garamond, Georgia, serif'. resvg-js falls through to
     // bundled noto fonts otherwise — Georgia approximates Cormorant
     // well enough for a one-shot social card.
-    font: { loadSystemFonts: true, defaultFontFamily: "Georgia" },
+    //
+    // Self-host General Sans (the landing `font-grotesk` voice) so the
+    // tagline renders in the real brand sans rather than a fallback.
+    // System fonts won't have it, so point resvg at the woff2 files.
+    font: {
+      loadSystemFonts: true,
+      defaultFontFamily: "Georgia",
+      fontFiles: [
+        resolve(root, "public/fonts/general-sans-400.woff2"),
+        resolve(root, "public/fonts/general-sans-500.woff2"),
+        resolve(root, "public/fonts/general-sans-600.woff2"),
+      ],
+    },
   });
   const png = resvg.render().asPng();
   writeFileSync(pngPath, png);
