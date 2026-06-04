@@ -70,6 +70,13 @@ addColumnIfMissing("couples", "budget_kind", "budget_kind TEXT NOT NULL DEFAULT 
 addColumnIfMissing("couples", "budget_ceiling_min_huf", "budget_ceiling_min_huf INTEGER");
 addColumnIfMissing("couples", "budget_ceiling_max_huf", "budget_ceiling_max_huf INTEGER");
 
+// Set the moment `purgeOneCouple` scrubs this row. Tombstones (status='deleting')
+// with purged_at IS NULL are LEGACY rows scrubbed by an older purge pass; the
+// hourly sweep re-finalises them once to clean residue, then stamps purged_at so
+// they're never re-swept. New purges stamp it immediately, so the sweep is a
+// self-limiting backfill rather than an unbounded hourly re-hammer.
+addColumnIfMissing("couples", "purged_at", "purged_at INTEGER");
+
 // Real-world table dimensions in millimetres so the floor-plan map and PDF
 // can render at exact size when the user knows their venue's table sizes.
 addColumnIfMissing("seating_tables", "width_mm", "width_mm INTEGER NOT NULL DEFAULT 1500");

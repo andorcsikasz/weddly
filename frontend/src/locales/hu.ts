@@ -2899,12 +2899,6 @@ const hu: LocaleMessages = {
     revoke_free_success: "Ingyenes hozzáférés visszavonva.",
     workspace_status_paused: "Szüneteltetve",
     workspace_status_deleting: "Törlés alatt",
-    purge_deleting_button: "Véglegesen töröl {n} törlés alatti workspace-t",
-    purge_deleting_confirm_title: "Törlés alatti munkaterületek véglegesítése",
-    purge_deleting_confirm_body:
-      "{n} már szkennelt, törlés alatti munkaterület újra-purge-ölése. Ez nem vonható vissza.",
-    purge_deleting_confirm: "Véglegesítés",
-    purge_deleting_success: "{n} munkaterület véglegesítve.",
     badge_admin: "Admin",
     badge_suspended: "Felfüggesztve",
     badge_unverified: "Nem hitelesített",

@@ -77,7 +77,6 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [verifySentIds, setVerifySentIds] = useState<Set<number>>(new Set());
-  const [purgingDeleting, setPurgingDeleting] = useState(false);
   // Solo-workspace "nudge partner invite" — local pending state for the
   // button spinner. The "already sent" check reads couples.invite_partner_reminded_at
   // off the AdminCoupleView so a refresh keeps the sage Mail+Check state.
@@ -138,13 +137,10 @@ export default function AdminUsersPage() {
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
   const orphans = useMemo(() => users.filter((u) => u.couple_id == null), [users]);
   // Couples flagged "deleting" are already-purged tombstones (PII scrubbed,
-  // row kept for audit retention). Hide them from the main list and surface a
-  // one-shot purge action so admins can sweep the residue.
+  // row kept for audit retention). Hide them from the main list — the hourly
+  // purge sweep finalises any residue automatically, so there's nothing for an
+  // admin to act on here.
   const visibleCouples = useMemo(() => couples.filter((c) => c.status !== "deleting"), [couples]);
-  const deletingCount = useMemo(
-    () => couples.filter((c) => c.status === "deleting").length,
-    [couples],
-  );
   // Demo workspaces ("try Shrek & Fiona") are seeded by the landing-page
   // flow; keep them out of the real-couple list so the admin overview
   // reflects actual signups, but surface them in their own section below.
@@ -406,30 +402,6 @@ export default function AdminUsersPage() {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setPendingId(null);
-    }
-  }
-
-  async function onPurgeDeleting() {
-    if (deletingCount === 0) return;
-    const ok = await confirm({
-      title: t("admin.purge_deleting_confirm_title"),
-      body: t("admin.purge_deleting_confirm_body", { n: deletingCount }),
-      confirmLabel: t("admin.purge_deleting_confirm"),
-      cancelLabel: t("common.cancel"),
-      destructive: true,
-    });
-    if (!ok) return;
-    setPurgingDeleting(true);
-    try {
-      const r = await adminUserApi.purgeDeleting();
-      const [u2, c2] = await Promise.all([adminUserApi.listUsers(), adminUserApi.listCouples()]);
-      setUsers(u2.users);
-      setCouples(c2.couples);
-      toast.success(t("admin.purge_deleting_success", { n: r.purged }));
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-    } finally {
-      setPurgingDeleting(false);
     }
   }
 
@@ -1019,18 +991,6 @@ export default function AdminUsersPage() {
                           label: t(couplesOpen ? "admin.section_hide" : "admin.section_show"),
                         }
                       : undefined
-                  }
-                  actions={
-                    deletingCount > 0 ? (
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
-                        onClick={onPurgeDeleting}
-                        disabled={purgingDeleting}
-                      >
-                        {t("admin.purge_deleting_button", { n: deletingCount })}
-                      </button>
-                    ) : undefined
                   }
                 />
                 {couplesListOpen &&

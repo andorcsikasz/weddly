@@ -7,7 +7,7 @@ import { CONFIG } from "../config";
 import { db } from "../db";
 import { grantFreeAccess, revokeFreeAccess } from "../domain/billing";
 import { sendKind } from "../domain/emails";
-import { purgeOneCouple, purgeOneUser } from "../domain/purge";
+import { purgeOneUser } from "../domain/purge";
 import { isAdminEmail, requireAdmin, type UserRow } from "../domain/users";
 import { type CoupleRow, getCoupleById, toCouple } from "../domain/couples";
 import {
@@ -402,41 +402,6 @@ function handleDeleteUser(ctx: Ctx): Response {
 }
 
 /**
- * Bulk re-purge every couple currently flagged `status="deleting"`. These
- * rows have already had their PII scrubbed by `purgeOneCouple` (either via
- * admin delete or the scheduled-pause worker) — re-running is idempotent and
- * cheap, and gives us a one-shot "clean residue" sweep for legacy tombstones.
- * Returns the count of rows that were touched so the UI can show a toast.
- */
-function handlePurgeDeletingCouples(ctx: Ctx): Response {
-  const admin = requireAdmin(ctx);
-  const rows = db
-    .prepare("SELECT id FROM couples WHERE status = 'deleting' ORDER BY id ASC")
-    .all() as { id: number }[];
-
-  for (const r of rows) {
-    // adminInitiated=true is the right semantic (this is an admin action),
-    // though in practice no email fires here because every user on these
-    // tombstone rows already has a `@purged.local` address from the prior
-    // sweep — the notify-list filter in `purgeOneCouple` will be empty.
-    purgeOneCouple(r.id, { adminInitiated: true });
-  }
-
-  if (rows.length > 0) {
-    addAuditLog({
-      actor_user_id: admin.id,
-      couple_id: null,
-      action: "admin.couples_purge_deleting",
-      target_kind: "couple",
-      target_id: null,
-      note: `bulk purge of ${rows.length} deleting couples`,
-    });
-  }
-
-  return json({ purged: rows.length });
-}
-
-/**
  * Flag a user account. Inserts a 7-day grace window into `user_flags`,
  * emails the recipient with the admin's reason verbatim, and audit-logs.
  * The hourly purge sweep auto-deletes the account at the deadline unless
@@ -747,7 +712,6 @@ export function registerAdminUserRoutes(router: Router) {
   router.post("/api/admin/users/:id/flag", handleFlagUser, true);
   router.post("/api/admin/users/:id/unflag", handleUnflagUser, true);
   router.post("/api/admin/users/:id/beta", handleSetBetaTester, true);
-  router.post("/api/admin/couples/purge-deleting", handlePurgeDeletingCouples, true);
   router.post("/api/admin/couples/:id/remind-invite-partner", handleRemindInvitePartner, true);
   router.post("/api/admin/couples/:id/grant-free", handleGrantFree, true);
   router.post("/api/admin/couples/:id/revoke-free", handleRevokeFree, true);

@@ -1125,9 +1125,6 @@ export const adminUserApi = {
    *  the workspace may move between groups. */
   setBetaTester: (id: number, beta: boolean) =>
     apiFetch<{ user: AdminUserView | null }>("POST", `/api/admin/users/${id}/beta`, { beta }),
-  /** One-shot bulk re-purge of every couple flagged `status="deleting"`. */
-  purgeDeleting: () =>
-    apiFetch<{ purged: number }>("POST", "/api/admin/couples/purge-deleting", {}),
   /** Manually nudge a solo workspace owner to invite their partner. One
    *  send per workspace — the server stamps `couples.invite_partner_reminded_at`
    *  and returns 409 with `code: "already_reminded"` on a second attempt.

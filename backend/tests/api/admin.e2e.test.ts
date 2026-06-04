@@ -6,6 +6,7 @@ import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
 import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { autoInviteDueAt, runEmailSweep } from "../../src/domain/emails/worker";
+import { runPurgeSweep } from "../../src/domain/purge";
 
 const HOUR = 1000 * 60 * 60;
 
@@ -104,7 +105,6 @@ describe("admin gate — 403 for verified non-admin token on every /api/admin/* 
     },
     { method: "POST", path: "/api/admin/users/1/unflag", body: {} },
     { method: "POST", path: "/api/admin/users/1/beta", body: { beta: true } },
-    { method: "POST", path: "/api/admin/couples/purge-deleting", body: {} },
     { method: "POST", path: "/api/admin/couples/1/remind-invite-partner", body: {} },
     // admin_suppliers.ts
     { method: "GET", path: "/api/admin/suppliers" },
@@ -218,7 +218,7 @@ describe("admin gate — 401 with no token on every /api/admin/* route", () => {
 
 // ────────────────────────────────────────────────────────────────────────────
 // Category 2 — Admin users module (list, badges, resend-verify, flag/unflag,
-//                                    delete, purge-deleting).
+//                                    delete, auto-finalised deleting tombstones).
 // ────────────────────────────────────────────────────────────────────────────
 
 interface AdminUserRow {
@@ -625,38 +625,33 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
     expect(r.data.cleared).toBe(false);
   });
 
-  test("purge-deleting — runs cleanly with zero rows and returns purged=0", async () => {
-    const adminToken = await bootstrapAdmin();
-    const r = await req<{ purged: number }>(
-      "POST",
-      "/api/admin/couples/purge-deleting",
-      {},
-      { token: adminToken },
-    );
-    expect(r.status).toBe(200);
-    expect(r.data.purged).toBe(0);
-  });
-
-  test("purge-deleting — deletes a couple-owner triggers cascading tombstone, then purge sweeps it", async () => {
+  test("deleting tombstones are finalised automatically by the purge sweep, not a button", async () => {
     const adminToken = await bootstrapAdmin();
     const { coupleId } = await bootstrapCouple("victim@weddly.test");
     const owner = db.prepare("SELECT id FROM users WHERE email = 'victim@weddly.test'").get() as {
       id: number;
     };
-    // Admin deletes the owner → couple flips to status='deleting'.
+    // Admin deletes the owner → couple flips to status='deleting' and the
+    // current purge stamps purged_at, so it's already fully finalised.
     await req("DELETE", `/api/admin/users/${owner.id}`, undefined, { token: adminToken });
-    const before = db.prepare("SELECT status FROM couples WHERE id = ?").get(coupleId) as {
-      status: string;
-    };
+    const before = db
+      .prepare("SELECT status, purged_at FROM couples WHERE id = ?")
+      .get(coupleId) as { status: string; purged_at: number | null };
     expect(before.status).toBe("deleting");
-    const r = await req<{ purged: number }>(
-      "POST",
-      "/api/admin/couples/purge-deleting",
-      {},
-      { token: adminToken },
-    );
-    expect(r.status).toBe(200);
-    expect(r.data.purged).toBe(1);
+    expect(before.purged_at).not.toBeNull();
+
+    // Simulate a LEGACY tombstone: a row scrubbed by an older purge pass that
+    // predates the purged_at column. The hourly sweep must finalise it once.
+    db.prepare("UPDATE couples SET purged_at = NULL WHERE id = ?").run(coupleId);
+    const first = runPurgeSweep();
+    expect(first.residue_finalised).toBe(1);
+
+    // It's now stamped, so a second sweep is a no-op — bounded, never re-hammered.
+    const stamped = db.prepare("SELECT purged_at FROM couples WHERE id = ?").get(coupleId) as {
+      purged_at: number | null;
+    };
+    expect(stamped.purged_at).not.toBeNull();
+    expect(runPurgeSweep().residue_finalised).toBe(0);
   });
 });
 

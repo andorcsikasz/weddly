@@ -2865,12 +2865,6 @@ const en: LocaleMessages = {
     revoke_free_success: "Free access revoked.",
     workspace_status_paused: "Paused",
     workspace_status_deleting: "Purged",
-    purge_deleting_button: "Permanently purge {n} deleting workspaces",
-    purge_deleting_confirm_title: "Finalise deleting workspaces",
-    purge_deleting_confirm_body:
-      "Re-purges {n} already-scrubbed, deleting workspaces. This can't be undone.",
-    purge_deleting_confirm: "Finalise",
-    purge_deleting_success: "Finalised {n} workspaces.",
     badge_admin: "Admin",
     badge_suspended: "Suspended",
     badge_unverified: "Unverified",

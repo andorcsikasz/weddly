@@ -155,9 +155,10 @@ export function purgeOneCouple(
                         location_radius_km = NULL,
                         style_tags_json = '[]',
                         status = 'deleting',
+                        purged_at = ?,
                         updated_at = ?
        WHERE id = ?`,
-    ).run(ts, coupleId);
+    ).run(ts, ts, coupleId);
 
     db.prepare(
       "UPDATE couple_pause_requests SET status = 'completed', completed_at = ? WHERE couple_id = ? AND status = 'pending'",
@@ -279,6 +280,7 @@ export function runPurgeSweep(): {
   purged: number;
   flagged_purged: number;
   demos_purged: number;
+  residue_finalised: number;
   ratelimit_buckets_deleted: number;
 } {
   const ts = now();
@@ -293,6 +295,26 @@ export function runPurgeSweep(): {
       purgeOneCouple(couple_id);
     } catch (e) {
       log.error("purge.couple_failed", e, { couple_id });
+    }
+  }
+
+  // Legacy tombstones: rows already in status='deleting' from an older purge
+  // pass that predates a table/column the current scrubber covers. purged_at is
+  // NULL on those (it's stamped only by the current purgeOneCouple), so we
+  // re-finalise each one once and the stamp keeps it out of every later tick.
+  // This is what used to be the manual "purge deleting workspaces" admin button.
+  let residueFinalised = 0;
+  const residue = db
+    .prepare("SELECT id FROM couples WHERE status = 'deleting' AND purged_at IS NULL")
+    .all() as { id: number }[];
+  for (const { id } of residue) {
+    try {
+      // adminInitiated isn't meaningful here (no human actor) and no email can
+      // fire — every member already carries a `@purged.local` address.
+      purgeOneCouple(id, { silent: true });
+      residueFinalised += 1;
+    } catch (e) {
+      log.error("purge.residue_failed", e, { couple_id: id });
     }
   }
 
@@ -339,6 +361,7 @@ export function runPurgeSweep(): {
     purged: due.length,
     flagged_purged: flaggedPurged,
     demos_purged: demosPurged,
+    residue_finalised: residueFinalised,
     ratelimit_buckets_deleted: ratelimitDeleted,
   };
 }
@@ -360,7 +383,12 @@ export function startPurgeWorker(): void {
     () => {
       try {
         const r = runPurgeSweep();
-        if (r.purged > 0 || r.demos_purged > 0 || r.ratelimit_buckets_deleted > 0)
+        if (
+          r.purged > 0 ||
+          r.demos_purged > 0 ||
+          r.residue_finalised > 0 ||
+          r.ratelimit_buckets_deleted > 0
+        )
           log.info("purge.hourly_sweep", r);
       } catch (e) {
         log.error("purge.hourly_sweep_failed", e);
