@@ -942,7 +942,7 @@ function HouseholdCard({
          *  load-bearing change: the prior `flex-wrap` + `basis-full`
          *  on the metadata block pushed the icons onto their own row
          *  below the metadata, which is exactly what the user flagged. */
-        className={`flex flex-nowrap items-start justify-between gap-2 md:items-center md:gap-3 ${isHosts ? "!bg-umber-800 text-paper-50 dark:!bg-umber-950" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-2 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
+        className={`flex flex-nowrap items-start justify-between gap-2 md:items-center md:gap-3 ${isHosts ? "!bg-umber-800 text-paper-50 dark:!bg-umber-950" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-1.5 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
         {/* Metadata columns: label · group chip · slug · code · invited
             (+ delivered). Fixed-width tracks with `md:col-start-*` force
@@ -954,7 +954,11 @@ function HouseholdCard({
             renders just the label — chip / slug / code / invited cells
             are skipped because the hosts don't check themselves in. */}
         <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600 md:grid md:gap-x-6 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_minmax(0,13rem)_8rem_5.5rem_auto]">
-          <div className="flex min-w-0 basis-full flex-wrap items-center gap-2 md:basis-auto">
+          {/* Label grows to fill row 1 so the RSVP code rides the same line,
+              pinned right — never wrapping to a row of its own on mobile.
+              On desktop the parent is a grid, so DOM order is irrelevant and
+              every cell lands by its md:col-start-*. */}
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 md:basis-auto md:flex-none">
             <HouseholdLabelEditor
               household={household}
               count={members.length}
@@ -968,6 +972,11 @@ function HouseholdCard({
               </span>
             )}
           </div>
+          {!isHosts && (
+            <span className="shrink-0 font-mono text-sm text-ink-900 tracking-[0.2em] dark:text-paper-50 md:col-start-4 md:text-base md:tracking-[0.3em]">
+              {household.code}
+            </span>
+          )}
           {!isHosts && (
             <div className="min-w-0 max-w-full md:col-start-2">
               <HouseholdGroupChip
@@ -983,11 +992,6 @@ function HouseholdCard({
              * share button, so the inline slug is desktop-only. */
             <span className="hidden font-mono uppercase md:col-start-3 md:inline">
               {coupleSlug}
-            </span>
-          )}
-          {!isHosts && (
-            <span className="font-mono text-base text-ink-900 tracking-[0.3em] dark:text-paper-50 md:col-start-4">
-              {household.code}
             </span>
           )}
           {!isHosts && members.length > 0 && (

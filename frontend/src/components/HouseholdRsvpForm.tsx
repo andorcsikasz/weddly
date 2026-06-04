@@ -608,18 +608,20 @@ export function HouseholdRsvpForm({
 
       {/* Boarding-pass anchor: monospace REF · slug · code so the credential
           on the page matches what was on the invite the guest just typed.
-          flex-wrap keeps the pill from overflowing on narrow phones. */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 self-start rounded-lg border border-paper-300 bg-paper-50 px-2.5 py-1 font-mono text-xs uppercase tracking-[0.25em] text-ink-700 max-w-full overflow-hidden dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
-        <span className="text-ink-500 dark:text-umber-300">{t("rsvp.checkin_ref_label")}</span>
-        <span aria-hidden>·</span>
-        <span className="break-all">{view.couple_slug}</span>
-        <span aria-hidden>·</span>
-        <span className="tracking-[0.4em] text-ink-900 dark:text-paper-50">
+          Single line (flex-nowrap): the slug truncates if space is tight so
+          the RSVP code never drops to its own row on narrow phones — the code
+          is the credential that matters, the slug is identical for everyone. */}
+      <div className="mt-2.5 flex flex-nowrap items-center gap-x-1.5 self-start rounded-lg border border-paper-300 bg-paper-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-700 max-w-full overflow-hidden sm:mt-3 sm:gap-x-2 sm:text-xs sm:tracking-[0.25em] dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
+        <span className="shrink-0 text-ink-500 dark:text-umber-300">{t("rsvp.checkin_ref_label")}</span>
+        <span aria-hidden className="shrink-0">·</span>
+        <span className="min-w-0 truncate">{view.couple_slug}</span>
+        <span aria-hidden className="shrink-0">·</span>
+        <span className="shrink-0 tracking-[0.3em] text-ink-900 sm:tracking-[0.4em] dark:text-paper-50">
           {view.household_code}
         </span>
       </div>
 
-      <h1 className="mt-4 font-serif text-2xl sm:text-3xl">
+      <h1 className="mt-3 font-serif text-2xl sm:mt-4 sm:text-3xl">
         {t("rsvp.checkin_party_of", { n: drafts.length })}
       </h1>
       <p className="mt-1 break-words text-sm text-ink-700 dark:text-paper-100">
