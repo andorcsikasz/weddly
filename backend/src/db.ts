@@ -826,6 +826,13 @@ addColumnIfMissing("feedback_submissions", "context", "context TEXT");
 // may already exist from an earlier wishlist deploy, so add it the canonical
 // way rather than only in the CREATE TABLE.
 addColumnIfMissing("wishlist_items", "image_url", "image_url TEXT");
+// `image_checked_at` records the last og:image resolution attempt. NULL means
+// "never attempted" — the marker the boot backfill (domain/wishlist_image_backfill)
+// uses to find legacy rows (created before link-preview shipped, or before this
+// column existed) that have a link but no thumbnail. New/edited rows are always
+// stamped, so the backfill is a one-time legacy sweep that never re-hammers a
+// dead link.
+addColumnIfMissing("wishlist_items", "image_checked_at", "image_checked_at INTEGER");
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_wishlist_items_couple ON wishlist_items(couple_id, sort_order, id)",
 );

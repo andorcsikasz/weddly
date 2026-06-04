@@ -1112,6 +1112,7 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
   target_amount_minor INTEGER,                                -- informational rough price; integer minor units; NULL when unset
   url TEXT,                                                    -- couple-pasted http(s) link; NULL when unset
   image_url TEXT,                                              -- og:image resolved server-side from url; NULL when none
+  image_checked_at INTEGER,                                   -- last og:image resolution attempt (ms); NULL = never attempted (legacy rows the boot backfill sweeps)
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL

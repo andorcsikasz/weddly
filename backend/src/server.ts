@@ -26,6 +26,7 @@ import { entitlementBlock } from "./domain/billing";
 import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
+import { startWishlistImageBackfill } from "./domain/wishlist_image_backfill";
 import { registerAccommodationRoutes } from "./routes/accommodations";
 import { registerAdminAnalyticsRoutes } from "./routes/admin_analytics";
 import { registerAdminFinancialPlannerRoutes } from "./routes/admin_financial_planner";
@@ -566,6 +567,10 @@ if (process.env.NODE_ENV !== "test") {
   // Tidy any abandoned demo couples left over from a previous boot — keeps
   // the table sparse even when /api/demo/start hasn't been hit in days.
   runDemoBootSweep();
+  // One-time sweep: resolve og:image thumbnails for wishlist rows that have a
+  // link but no image (created before link-preview shipped). Non-blocking and
+  // self-limiting — each row is attempted exactly once. See the module header.
+  startWishlistImageBackfill();
   // Boot-time guard against re-introducing the legacy `sendEmail` direct-call
   // pattern. The May 2026 "phishy email" bug lived for months because nothing
   // flagged it; this scan emits a `mailer.integrity.violation` warning at boot

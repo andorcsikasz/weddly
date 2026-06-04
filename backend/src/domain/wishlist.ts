@@ -33,6 +33,8 @@ export interface WishlistItemRow {
   target_amount_minor: number | null;
   url: string | null;
   image_url: string | null;
+  /** ms timestamp of the last og:image resolution attempt; NULL = never tried. */
+  image_checked_at: number | null;
   sort_order: number;
   created_at: number;
   updated_at: number;
@@ -252,11 +254,15 @@ export function getWishlistItemScoped(id: number, coupleId: number): WishlistIte
 
 export function insertWishlistItem(coupleId: number, parsed: ParsedWishlistItem): WishlistItemRow {
   const ts = now();
+  // Stamp image_checked_at whenever the row has a link: the caller resolves (or
+  // attempts) the og:image before inserting, so a link present here means
+  // "image already attempted" — keeps the legacy backfill from re-touching it.
+  const imageCheckedAt = parsed.url ? ts : null;
   const result = db
     .prepare(
       `INSERT INTO wishlist_items
-         (couple_id, title, description, kind, target_amount_minor, url, image_url, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (couple_id, title, description, kind, target_amount_minor, url, image_url, image_checked_at, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -266,6 +272,7 @@ export function insertWishlistItem(coupleId: number, parsed: ParsedWishlistItem)
       parsed.target_amount_minor,
       parsed.url,
       parsed.image_url,
+      imageCheckedAt,
       parsed.sort_order,
       ts,
       ts,
@@ -280,10 +287,11 @@ export function updateWishlistItem(
   parsed: ParsedWishlistItem,
 ): WishlistItemRow {
   const ts = now();
+  const imageCheckedAt = parsed.url ? ts : null;
   db.prepare(
     `UPDATE wishlist_items SET
        title = ?, description = ?, kind = ?, target_amount_minor = ?,
-       url = ?, image_url = ?, sort_order = ?, updated_at = ?
+       url = ?, image_url = ?, image_checked_at = ?, sort_order = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.title,
@@ -292,12 +300,40 @@ export function updateWishlistItem(
     parsed.target_amount_minor,
     parsed.url,
     parsed.image_url,
+    imageCheckedAt,
     parsed.sort_order,
     ts,
     id,
     coupleId,
   );
   return db.prepare("SELECT * FROM wishlist_items WHERE id = ?").get(id) as WishlistItemRow;
+}
+
+/** Legacy rows the boot backfill should re-resolve: a link is set but no
+ *  og:image was ever attempted (image_checked_at IS NULL). New/edited rows are
+ *  always stamped (see insert/update), so this only ever returns rows created
+ *  before this column — and only once each, since the backfill stamps them. */
+export function listWishlistRowsNeedingImageBackfill(limit: number): WishlistItemRow[] {
+  return db
+    .prepare(
+      `SELECT * FROM wishlist_items
+         WHERE url IS NOT NULL AND image_url IS NULL AND image_checked_at IS NULL
+         ORDER BY id ASC
+         LIMIT ?`,
+    )
+    .all(limit) as WishlistItemRow[];
+}
+
+/** Record a backfill attempt: set the resolved image (or leave it null on a
+ *  miss) and stamp image_checked_at so the row is never swept again. Does NOT
+ *  bump updated_at — this is a background system write, and bumping it would
+ *  spuriously 409 a couple who has the editor open against the old value. */
+export function applyBackfilledImage(id: number, imageUrl: string | null): void {
+  db.prepare("UPDATE wishlist_items SET image_url = ?, image_checked_at = ? WHERE id = ?").run(
+    imageUrl,
+    now(),
+    id,
+  );
 }
 
 export function deleteWishlistItem(id: number, coupleId: number): boolean {

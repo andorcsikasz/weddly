@@ -86,12 +86,19 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 
   const body = await readJson<Partial<UpsertWishlistItemInput>>(ctx.req);
   const parsed = parseUpsertPatch(body, existing);
-  // Re-resolve the preview image whenever the URL changed and the client
-  // didn't pass its own image_url: a new link fetches a fresh og:image, a
-  // cleared link drops the image. URL unchanged -> the existing image is kept
-  // (parseUpsertPatch already carried it over).
-  if (body.image_url === undefined && parsed.url !== existing.url) {
-    parsed.image_url = parsed.url ? (await fetchLinkPreview(parsed.url)).image_url : null;
+  // Resolve the preview image server-side unless the client passed its own.
+  //  - link cleared        -> drop the image
+  //  - link changed        -> fetch a fresh og:image
+  //  - link set but no image yet (changed OR carried-over without a thumbnail)
+  //    -> fetch, so re-saving an item is a recovery path for a link whose
+  //       preview failed the first time (e.g. a site that was briefly down).
+  //  - link unchanged + image already present -> keep it (no refetch).
+  if (body.image_url === undefined) {
+    if (!parsed.url) {
+      parsed.image_url = null;
+    } else if (parsed.url !== existing.url || !existing.image_url) {
+      parsed.image_url = (await fetchLinkPreview(parsed.url)).image_url;
+    }
   }
   const row = updateWishlistItem(id, couple.id, parsed);
 
