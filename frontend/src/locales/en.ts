@@ -1594,6 +1594,7 @@ const en: LocaleMessages = {
   },
   wishlist_editor: {
     title: "Wishlist",
+    dev_badge: "Under development",
     subtitle:
       "A gentle list of things you'd love — a bigger gift to coordinate on, smaller gifts, or a personal gesture. Confirmed guests see it on your guest page. Nothing is paid through Weddly.",
     add_item: "Add a wish",

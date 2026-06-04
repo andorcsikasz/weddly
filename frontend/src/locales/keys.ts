@@ -1758,6 +1758,7 @@ export interface LocaleMessages {
    *  money moves; the target amount is a wish, not an invoice. */
   wishlist_editor: {
     title: string;
+    dev_badge: string;
     subtitle: string;
     add_item: string;
     empty_state: string;

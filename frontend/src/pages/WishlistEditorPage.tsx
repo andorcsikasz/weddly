@@ -131,6 +131,9 @@ export default function WishlistEditorPage() {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-2">
           <h1 className="font-grotesk">{t("wishlist_editor.title")}</h1>
+          <span className="inline-flex shrink-0 items-center rounded-full border border-umber-300 bg-umber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-umber-700 dark:border-umber-600 dark:bg-umber-700/40 dark:text-umber-200">
+            {t("wishlist_editor.dev_badge")}
+          </span>
           <InfoHint text={t("wishlist_editor.subtitle")} />
         </div>
         <button type="button" className="btn-primary" onClick={() => setEditing({ item: null })}>

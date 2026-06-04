@@ -1613,6 +1613,7 @@ const hu: LocaleMessages = {
   },
   wishlist_editor: {
     title: "Kívánságlista",
+    dev_badge: "Fejlesztés alatt",
     subtitle:
       "Egy kedves lista azokról, amiknek örülnétek — egy nagyobb közös ajándék, kisebb meglepetések vagy egy személyes gesztus. A visszajelzett vendégek a vendégoldalon látják. A Weddlyn keresztül nem mozog pénz.",
     add_item: "Új kívánság",
