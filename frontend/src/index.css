@@ -710,6 +710,13 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       "lnum" 1;
     letter-spacing: -0.01em;
   }
+  /* When a .stat-num is centered, the -0.01em tracking is applied after the
+     last glyph too, adding a phantom trailing gap that pushes the digits
+     visually left. Re-add it as right margin so the centered box has no
+     trailing offset and the number reads dead-centre. */
+  .stat-num-centered {
+    margin-right: -0.01em;
+  }
 
   /* Native <input type="range"> with a coloured fill on the left of the
      thumb. Set the gradient via inline `style.background` (the consumer

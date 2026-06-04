@@ -414,8 +414,10 @@ function SectionCard({
   );
 }
 
-/** Compact KPI tile — left-aligned label, left-aligned value, with optional
- *  sub-line. Used in the KPI strip at the top of every section. */
+/** Compact KPI tile — centred eyebrow label over a big centred value, with an
+ *  optional sub-line. A shared min-height plus flex centring keeps every tile
+ *  in a row on the same baseline whether or not it has a sub-line. Used in the
+ *  KPI strip at the top of every section. */
 function KpiTile({
   label,
   value,
@@ -433,13 +435,15 @@ function KpiTile({
     ? "rounded-xl bg-neutral-50 p-3 ring-1 ring-neutral-200 dark:bg-neutral-500/10 dark:ring-neutral-500/30"
     : "admin-tile";
   return (
-    <div className={containerCls}>
-      <div className="eyebrow text-center">{label}</div>
-      <div className="stat-num mt-1 text-center text-2xl font-semibold text-neutral-900 dark:text-paper-50">
+    <div
+      className={`${containerCls} flex min-h-[5.5rem] flex-col items-center justify-center text-center`}
+    >
+      <div className="eyebrow">{label}</div>
+      <div className="stat-num stat-num-centered mt-1 text-2xl font-semibold text-neutral-900 dark:text-paper-50">
         {value}
       </div>
       {sub && (
-        <div className="stat-num mt-0.5 text-center text-xs text-neutral-500 dark:text-umber-300">
+        <div className="stat-num stat-num-centered mt-0.5 text-xs text-neutral-500 dark:text-umber-300">
           {sub}
         </div>
       )}
