@@ -5,7 +5,17 @@
 // surface lives elsewhere (couple's /app/schedule, /app/profile, etc.).
 
 import type { GuestPortalView, GuestScheduleEntry } from "@shared/guest_portal";
-import { CalendarDays, Camera, Clock, MapPin, Pencil, Plus, Sparkles, Users } from "lucide-react";
+import {
+  CalendarDays,
+  Camera,
+  Clock,
+  Info,
+  MapPin,
+  Pencil,
+  Plus,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { SCHEDULE_DAY_TWO_MINUTES } from "@shared/schedule";
 import { formatDate } from "../lib/format";
@@ -296,6 +306,27 @@ export function GuestPortalView({
           </ul>
         </section>
       )}
+
+      {/* "Good to know" — parking, getting there, accommodation, … */}
+      {data.useful_info ? (
+        <section className="rounded-2xl border border-paper-200 bg-white p-5 dark:border-umber-700 dark:bg-umber-800/60">
+          <div className="mb-3 flex items-center gap-2">
+            <Info size={16} className="text-ink-500 dark:text-umber-300" aria-hidden />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              {t("guest_portal.useful_info_title")}
+            </h2>
+          </div>
+          <p className="whitespace-pre-line text-sm text-ink-700 dark:text-paper-100">
+            {data.useful_info}
+          </p>
+        </section>
+      ) : isPreview ? (
+        <GhostSlot
+          icon={Info}
+          title={t("guest_portal.ghost.useful_info_title")}
+          cta={t("guest_portal.ghost.useful_info_cta")}
+        />
+      ) : null}
 
       {/* Live countdown at the very bottom of the guest page. */}
       <WeddingCountdown date={data.wedding_date} isPreview={isPreview} onEdit={onEditDate} />

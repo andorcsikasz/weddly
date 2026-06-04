@@ -325,6 +325,9 @@ export interface Couple {
   /** Pre-RSVP welcome block on the merged Vendégoldal (`/w/:slug`).
    *  Visible at every tier of the public endpoint. Null when unset. */
   guest_page_intro: string | null;
+  /** "Good to know" block — parking, getting there, accommodation, … (markdown).
+   *  Same public visibility as guest_page_intro. Null when unset. */
+  useful_info: string | null;
   /** Post-RSVP unlocked block. Server omits from the public-wedding
    *  endpoint unless the caller's tier is `confirmed`. Null when unset. */
   post_rsvp_content: string | null;
@@ -354,6 +357,10 @@ export interface Couple {
 export interface PlaceSuggestion {
   primary: string;
   secondary: string;
+  /** Settlement the result sits in (city/town/village), when Nominatim
+   *  provides one. The venue-name picker composes "{primary}, {locality}"
+   *  so a POI like "Sári Csárda" keeps its town ("Dunakiliti") as context. */
+  locality: string | null;
   lat: number | null;
   lng: number | null;
   country_code: string | null;

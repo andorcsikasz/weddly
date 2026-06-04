@@ -1460,6 +1460,7 @@ const hu: LocaleMessages = {
     countdown_hours: "óra",
     countdown_minutes: "perc",
     countdown_seconds: "mp",
+    useful_info_title: "Hasznos infók",
     schedule_title: "Menetrend",
     schedule_empty: "A pár még nem tette közzé a menetrendet — nézzétek meg újra később.",
     schedule_next_day: "másnap",
@@ -1496,6 +1497,8 @@ const hu: LocaleMessages = {
       schedule_cta: "Add hozzá a nap programját",
       venue_title: "Helyszín és térkép",
       venue_cta: "Add meg a helyszínt",
+      useful_info_title: "Hasznos infók",
+      useful_info_cta: "Add hozzá a hasznos infókat",
     },
   },
   guest_page_editor: {
@@ -1525,6 +1528,10 @@ const hu: LocaleMessages = {
       "Pár sor a vendégeknek — pl. „Köszönjük, hogy velünk ünnepeltek. Itt találtok minden infót, ami a napon kell.”",
     intro_hint:
       "Bárki látja, aki megnyitja a linket. Hagyd üresen, ha nem akarsz nyilvános köszöntőt.",
+    useful_info_label: "Hasznos infók",
+    useful_info_placeholder: "Parkolás: ...\nMegközelítés: ...\nSzállás: ...",
+    useful_info_hint:
+      "Parkolás, megközelítés, szállás és minden, amit jó tudni. A vendégoldalon jelenik meg.",
     post_rsvp_label: "Részletek a visszajelölteknek",
     post_rsvp_placeholder: "Kattints fent egy javasolt témára, vagy írd be a részleteket szabadon.",
     post_rsvp_hint:

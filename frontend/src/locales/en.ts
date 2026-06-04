@@ -1445,6 +1445,7 @@ const en: LocaleMessages = {
     countdown_hours: "hours",
     countdown_minutes: "min",
     countdown_seconds: "sec",
+    useful_info_title: "Good to know",
     schedule_title: "Run of show",
     schedule_empty: "The couple hasn't published a timeline yet — check back closer to the day.",
     schedule_next_day: "next day",
@@ -1480,6 +1481,8 @@ const en: LocaleMessages = {
       schedule_cta: "Add the day's schedule",
       venue_title: "Venue & map",
       venue_cta: "Add the venue",
+      useful_info_title: "Good to know",
+      useful_info_cta: "Add the good-to-know info",
     },
   },
   guest_page_editor: {
@@ -1509,6 +1512,10 @@ const en: LocaleMessages = {
       'A short paragraph for your guests — e.g. "Thanks for being part of our day. You\'ll find every detail you need here as we get closer."',
     intro_hint:
       "Visible to anyone with the link. Leave blank if you don't want a public welcome note.",
+    useful_info_label: "Good to know",
+    useful_info_placeholder: "Parking: ...\nGetting there: ...\nAccommodation: ...",
+    useful_info_hint:
+      "Parking, getting there, accommodation and anything good to know. Shown on the guest page.",
     post_rsvp_label: "Details for confirmed guests",
     post_rsvp_placeholder: "Click a suggested topic above, or just type the details freely.",
     post_rsvp_hint:

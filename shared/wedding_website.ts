@@ -52,6 +52,9 @@ export interface PublicWeddingWebsiteView {
   /** Pre-RSVP welcome block (markdown). Visible at every tier — the
    *  couple authors this for "anyone with the link". Null when unset. */
   guest_page_intro: string | null;
+  /** "Good to know" block (parking, getting there, accommodation, …). Visible
+   *  at every tier like guest_page_intro. Null when unset. */
+  useful_info: string | null;
   /** Exact venue coordinate centre. Returned only at `confirmed` tier —
    *  the privacy buffer (`location_radius_km`) is the public face. Null
    *  outside `confirmed` so a client that mis-parses tier can't render

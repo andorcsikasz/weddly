@@ -65,13 +65,14 @@ const MISSING_OUTLINE =
   "border-2 border-red-400 focus:border-red-500 focus:ring-red-100 dark:border-red-400/60 dark:focus:border-red-400";
 
 /** Venue-name input with two assists:
- *  - a debounced Nominatim-backed autocomplete (same /api/places/search proxy
- *    the honeymoon picker uses) so typing "Sári" surfaces real venue names;
+ *  - a debounced Nominatim-backed autocomplete (the /api/places/search proxy
+ *    the honeymoon picker uses, in `kind="venue"` mode) so typing "Sári"
+ *    surfaces real venue names rather than the settlements they sit in;
  *  - quick-fill chips for venues the couple already saved among their
  *    suppliers (a picked directory venue or a DIY "venue" entry).
- *  Unlike the honeymoon picker we commit the suggestion's `primary` (the place
- *  NAME), not its full address — the field is name-only by design; the precise
- *  address lives on the invitation / post-RSVP block. */
+ *  We commit the venue NAME plus its town ("Sári Csárda, Dunakiliti"), not the
+ *  full street address — the precise address lives on the invitation /
+ *  post-RSVP block. */
 function VenueNameField({
   value,
   onChange,
@@ -116,7 +117,7 @@ function VenueNameField({
     const myId = ++requestId.current;
     const handle = setTimeout(async () => {
       try {
-        const r = await placesApi.search(q, country);
+        const r = await placesApi.search(q, country, "venue");
         // Discard stale responses — only the latest typed query wins.
         if (myId !== requestId.current) return;
         setSuggestions(r.places);
@@ -148,6 +149,20 @@ function VenueNameField({
     onChange(name);
   }
 
+  /** Commit a Nominatim suggestion as "{venue name}, {town}" so a POI like
+   *  "Sári Csárda" keeps its settlement ("Dunakiliti") as context. We skip
+   *  the suffix when the name already IS the settlement (a plain town search)
+   *  or already contains it, to avoid "Dunakiliti, Dunakiliti". */
+  function pickSuggestion(s: PlaceSuggestion) {
+    const name = s.primary.trim();
+    const loc = s.locality?.trim();
+    const nameLc = name.toLowerCase();
+    const locLc = loc?.toLowerCase();
+    const composed =
+      loc && locLc && nameLc !== locLc && !nameLc.includes(locLc) ? `${name}, ${loc}` : name;
+    pick(composed);
+  }
+
   function onKey(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -163,7 +178,7 @@ function VenueNameField({
       const sel = highlight >= 0 ? suggestions[highlight] : undefined;
       if (open && sel) {
         e.preventDefault();
-        pick(sel.primary);
+        pickSuggestion(sel);
       }
     } else if (e.key === "Escape") {
       setOpen(false);
@@ -205,7 +220,7 @@ function VenueNameField({
                 onMouseDown={(e) => {
                   // mousedown fires before the input blurs, so the pick lands.
                   e.preventDefault();
-                  pick(s.primary);
+                  pickSuggestion(s);
                 }}
                 onMouseEnter={() => setHighlight(i)}
                 className={`flex w-full items-start gap-2 px-3 py-2 text-left ${
@@ -269,6 +284,7 @@ export default function GuestPageEditorPage() {
   const [venueName, setVenueName] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [guestPageIntro, setGuestPageIntro] = useState("");
+  const [usefulInfo, setUsefulInfo] = useState("");
   const [postRsvpContent, setPostRsvpContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -329,6 +345,7 @@ export default function GuestPageEditorPage() {
           setVenueName(cR.couple.venue_name ?? "");
           setCoverImageUrl(cR.couple.cover_image_url ?? "");
           setGuestPageIntro(cR.couple.guest_page_intro ?? "");
+          setUsefulInfo(cR.couple.useful_info ?? "");
           setPostRsvpContent(cR.couple.post_rsvp_content ?? "");
         }
         setEvents(sR.events);
@@ -416,9 +433,16 @@ export default function GuestPageEditorPage() {
   const venueChanged = venueTrimmed !== (couple?.venue_name ?? "");
   const coverChanged = coverTrimmed !== (couple?.cover_image_url ?? "");
   const introChanged = guestPageIntro !== (couple?.guest_page_intro ?? "");
+  const usefulInfoChanged = usefulInfo !== (couple?.useful_info ?? "");
   const postRsvpChanged = postRsvpContent !== (couple?.post_rsvp_content ?? "");
   const publishChanged = isPublic !== Boolean(couple?.is_public);
-  const dirty = venueChanged || coverChanged || publishChanged || introChanged || postRsvpChanged;
+  const dirty =
+    venueChanged ||
+    coverChanged ||
+    publishChanged ||
+    introChanged ||
+    usefulInfoChanged ||
+    postRsvpChanged;
 
   // Completeness flags — derived from the live form state for fields the
   // couple edits in this page, and from the loaded couple/events for the
@@ -445,6 +469,7 @@ export default function GuestPageEditorPage() {
       if (venueChanged) body.venue_name = venueTrimmed === "" ? null : venueTrimmed;
       if (coverChanged) body.cover_image_url = coverTrimmed === "" ? null : coverTrimmed;
       if (introChanged) body.guest_page_intro = guestPageIntro === "" ? null : guestPageIntro;
+      if (usefulInfoChanged) body.useful_info = usefulInfo === "" ? null : usefulInfo;
       if (postRsvpChanged) body.post_rsvp_content = postRsvpContent === "" ? null : postRsvpContent;
       const r = await coupleApi.update(body);
       setCouple(r.couple);
@@ -452,6 +477,7 @@ export default function GuestPageEditorPage() {
       setVenueName(r.couple.venue_name ?? "");
       setCoverImageUrl(r.couple.cover_image_url ?? "");
       setGuestPageIntro(r.couple.guest_page_intro ?? "");
+      setUsefulInfo(r.couple.useful_info ?? "");
       setPostRsvpContent(r.couple.post_rsvp_content ?? "");
       toast.success(t("wedding_site_editor.save_success"));
     } catch (err) {
@@ -636,6 +662,7 @@ export default function GuestPageEditorPage() {
         couple_slug: couple.slug ?? "",
         couple_display_name: couple.display_name,
         cover_image_url: couple.cover_image_url,
+        useful_info: couple.useful_info,
         wedding_date: couple.wedding_date,
         ceremony_kind: couple.ceremony_kind,
         location_lat: couple.location_lat,
@@ -1132,6 +1159,23 @@ export default function GuestPageEditorPage() {
                 />
                 <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                   {t("guest_page_editor.intro_hint")}
+                </p>
+              </div>
+              <div className="mt-3">
+                <label htmlFor="guest-page-useful-info" className="field-label">
+                  {t("guest_page_editor.useful_info_label")}
+                </label>
+                <textarea
+                  id="guest-page-useful-info"
+                  className="input"
+                  rows={5}
+                  value={usefulInfo}
+                  onChange={(e) => setUsefulInfo(e.target.value)}
+                  placeholder={t("guest_page_editor.useful_info_placeholder")}
+                  maxLength={6000}
+                />
+                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                  {t("guest_page_editor.useful_info_hint")}
                 </p>
               </div>
             </section>

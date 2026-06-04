@@ -149,6 +149,9 @@ interface OnboardBody {
   /** Vendégoldal Phase 2 — pre-RSVP welcome block (markdown). Empty
    *  string clears. Cap ≤4000 chars. */
   guest_page_intro?: unknown;
+  /** "Good to know" block — parking, getting there, accommodation, … (markdown).
+   *  Empty string clears. Cap ≤6000 chars. */
+  useful_info?: unknown;
   /** Vendégoldal Phase 2 — post-RSVP unlocked content (markdown). Empty
    *  string clears. Cap ≤8000 chars. */
   post_rsvp_content?: unknown;
@@ -1711,6 +1714,19 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     }
   }
 
+  if (body.useful_info !== undefined) {
+    const next = parseMarkdownBlock(body.useful_info, "useful_info", 6000);
+    const prev = couple.useful_info;
+    if (next !== prev) {
+      updates.push({ col: "useful_info", val: next });
+      auditEntries.push({
+        action: "couple.useful_info_update",
+        before: { useful_info: prev },
+        after: { useful_info: next },
+      });
+    }
+  }
+
   if (body.post_rsvp_content !== undefined) {
     const next = parseMarkdownBlock(body.post_rsvp_content, "post_rsvp_content", 8000);
     const prev = couple.post_rsvp_content;
@@ -2307,6 +2323,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.cover_image_url_upload",
   "couple.guest_page_intro_update",
   "couple.post_rsvp_content_update",
+  "couple.useful_info_update",
   // Guests
   "guest.create",
   "guest.update",

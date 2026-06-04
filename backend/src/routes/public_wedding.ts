@@ -108,6 +108,7 @@ function buildView(
     venue_name: couple.venue_name,
     cover_image_url: couple.cover_image_url,
     guest_page_intro: couple.guest_page_intro,
+    useful_info: couple.useful_info,
     // Exact venue pin — confirmed tier only. The privacy buffer
     // (`location_radius_km`) is the public face; the precise coordinates
     // unlock once a household member has RSVP'd yes. Server-side null

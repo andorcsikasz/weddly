@@ -148,6 +148,9 @@ export interface CoupleRow {
    *  of the public wedding endpoint — the couple authors it for "anyone
    *  with the link". Null when unset. */
   guest_page_intro: string | null;
+  /** "Good to know" block (parking, getting there, accommodation, …). Same
+   *  public visibility as guest_page_intro. Null when unset. */
+  useful_info: string | null;
   /** Post-RSVP unlocked content (Vendégoldal Phase 2). Server omits it
    *  from the public-wedding response unless the caller's tier is
    *  `confirmed` (valid household code + at least one RSVP yes). Null
@@ -321,6 +324,7 @@ export function toCouple(row: CoupleRow): Couple {
     venue_name: row.venue_name,
     cover_image_url: row.cover_image_url,
     guest_page_intro: row.guest_page_intro,
+    useful_info: row.useful_info,
     post_rsvp_content: row.post_rsvp_content,
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,

@@ -634,6 +634,9 @@ addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 //   the data never reaches the client unless the credential allows it.
 addColumnIfMissing("couples", "guest_page_intro", "guest_page_intro TEXT");
 addColumnIfMissing("couples", "post_rsvp_content", "post_rsvp_content TEXT");
+// - useful_info: "good to know" block (parking, getting there, accommodation,
+//   …). Same public visibility as guest_page_intro. Plain text / light markdown.
+addColumnIfMissing("couples", "useful_info", "useful_info TEXT");
 // Wedding-day "Welcome Desk" mode — couple flips this to 1 when they set up
 // a kiosk tablet at the entrance so the Settings card can surface the
 // current status persistently (across devices, across reloads) instead of

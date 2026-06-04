@@ -383,6 +383,39 @@ describe("/api/public/wedding tier ladder", () => {
     );
   });
 
+  test("PATCH persists useful_info, it round-trips + shows on the public page, empty clears", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("useful-info@weddly.test");
+    const body = "Parking: at the gate.\nAccommodation: Hotel X.";
+    const patch = await req<{ couple: { useful_info: string | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { useful_info: body },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.couple.useful_info).toBe(body);
+
+    // Visible at the public tier on the wedding page.
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slug = await getSlug(coupleId);
+    const r = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.wedding.useful_info).toBe(body);
+
+    // Empty string clears it back to null.
+    const cleared = await req<{ couple: { useful_info: string | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { useful_info: "" },
+      { token },
+    );
+    expect(cleared.data.couple.useful_info).toBeNull();
+  });
+
   test("empty string clears guest_page_intro / post_rsvp_content (back to null)", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("phase2-clear@weddly.test");

@@ -382,6 +382,8 @@ export const coupleApi = {
     /** Pre-RSVP welcome block on the merged Vendégoldal (markdown,
      *  ≤4000 chars). Empty string clears the column. */
     guest_page_intro?: string | null;
+    /** "Good to know" block (markdown, ≤6000 chars). Empty string clears. */
+    useful_info?: string | null;
     /** Post-RSVP unlocked block (markdown, ≤8000 chars). Empty string
      *  clears the column. */
     post_rsvp_content?: string | null;
@@ -549,11 +551,15 @@ export const moodboardApi = {
  *  (ISO 3166-1 alpha-2) to restrict results to one country, e.g. the venue-name
  *  field scoping to the couple's country. Honeymoon search omits it on purpose. */
 export const placesApi = {
-  search: (q: string, country?: string) => {
+  /** `kind: "venue"` keeps the POI name as the headline (e.g. "Sári Csárda")
+   *  instead of collapsing the result to its settlement — used by the
+   *  venue-name field. The honeymoon destination picker omits it. */
+  search: (q: string, country?: string, kind?: "venue") => {
     const cc = country && /^[a-z]{2}$/i.test(country) ? `&country=${country.toLowerCase()}` : "";
+    const k = kind === "venue" ? "&kind=venue" : "";
     return apiFetch<{ places: PlaceSuggestion[] }>(
       "GET",
-      `/api/places/search?q=${encodeURIComponent(q)}${cc}`,
+      `/api/places/search?q=${encodeURIComponent(q)}${cc}${k}`,
     );
   },
 };

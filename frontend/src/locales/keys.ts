@@ -1583,6 +1583,8 @@ export interface LocaleMessages {
     countdown_hours: string;
     countdown_minutes: string;
     countdown_seconds: string;
+    /** "Good to know" section heading on the guest page (preview + public). */
+    useful_info_title: string;
     schedule_title: string;
     schedule_empty: string;
     /** Label appended to a time when the event lands after midnight (day +1). */
@@ -1621,6 +1623,8 @@ export interface LocaleMessages {
       schedule_cta: string;
       venue_title: string;
       venue_cta: string;
+      useful_info_title: string;
+      useful_info_cta: string;
     };
   };
   /** Couple-facing /app/guest-page editor — single merged surface that
@@ -1653,6 +1657,10 @@ export interface LocaleMessages {
     intro_label: string;
     intro_placeholder: string;
     intro_hint: string;
+    /** "Good to know" editor field — parking, getting there, accommodation. */
+    useful_info_label: string;
+    useful_info_placeholder: string;
+    useful_info_hint: string;
     /** Phase 2 — markdown textarea bound to `couples.post_rsvp_content`.
      *  Lives under the Post-RSVP section. */
     post_rsvp_label: string;
