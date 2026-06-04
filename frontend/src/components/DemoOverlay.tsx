@@ -17,9 +17,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Couple } from "@shared/types";
 import { useAuth } from "../lib/auth";
+import { clearDemoSessionFlag, isCurrentSessionDemo } from "../lib/demoSession";
 import { coupleApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
-import { clearDemoSessionFlag, isCurrentSessionDemo } from "./DemoLaunchCard";
 
 /** Fire the conversion popup after this many ms of session activity. */
 const NUDGE_DELAY_MS = 3 * 60 * 1000;

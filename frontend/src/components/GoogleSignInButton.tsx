@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { clearDemoSessionFlag } from "../lib/demoSession";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useToast } from "./ui";
@@ -192,6 +193,9 @@ export function GoogleSignInButton({
                 // deliberately do NOT call setSession or navigate here.
                 onSuccess(session);
               } else {
+                // A real Google sign-in/up ends any demo session live on this
+                // device — drop the flag before the real session takes over.
+                clearDemoSessionFlag();
                 setSession(session.token, session.user);
                 navigate(redirectTo, { replace: true });
               }

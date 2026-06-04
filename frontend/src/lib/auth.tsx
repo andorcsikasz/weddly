@@ -5,6 +5,7 @@ import type { User } from "@shared/types";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { SessionExpiredDialog } from "../components/SessionExpiredDialog";
 import { ApiError, getToken, SESSION_EXPIRED_EVENT, setToken as persistToken } from "./api";
+import { clearDemoSessionFlag } from "./demoSession";
 import { authApi } from "./endpoints";
 import { useT } from "./i18n";
 
@@ -98,6 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const session = await authApi.login({ email, password });
     persistToken(session.token);
     setUser(session.user);
+    // A real login ends any demo session that was live on this device — drop
+    // the flag so the workspace doesn't render the demo banner over the real
+    // account (and so the auth-redirect guard stops treating it as a demo).
+    clearDemoSessionFlag();
     return session.user;
   }, []);
 
@@ -110,6 +115,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persistToken(null);
     setUser(null);
     setSessionExpired(false);
+    // The demo flag must never outlive its session. Clearing it here covers
+    // both the in-app "Start your own" conversion and the auth-form guard's
+    // demo teardown, so a later real account on this device is never mistaken
+    // for a demo.
+    clearDemoSessionFlag();
     // Drop the verify-email bypass flag — otherwise logout → relogin as a
     // different unverified user would skip the gate (the flag is keyed by
     // browser tab, not by user). Mirrors the same key VerifyEmailGate writes.

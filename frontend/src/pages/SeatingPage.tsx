@@ -43,7 +43,7 @@ import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
 import { computeSymmetricLayout } from "./seating/layout";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
-import { isCurrentSessionDemo } from "../components/DemoLaunchCard";
+import { isCurrentSessionDemo } from "../lib/demoSession";
 
 // Demo workspace canvas — 10 × 15 m portrait. Sized for the intimate
 // 15-guest fairytale wedding: head table + 3 round tables fit comfortably

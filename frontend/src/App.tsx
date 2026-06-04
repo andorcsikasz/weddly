@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useParams } from "react-router-do
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { VerifyEmailGate } from "./components/VerifyEmailGate";
 import { useAuth } from "./lib/auth";
+import { clearDemoSessionFlag, isCurrentSessionDemo } from "./lib/demoSession";
 
 // Public routes are eagerly imported — they're FCP-critical and small in
 // aggregate. The signed-in /app/* and admin/* areas, plus low-traffic
@@ -118,10 +119,25 @@ function GuestPageRedirect() {
   return <Navigate to={`/w/${encodeURIComponent(slug)}/${encodeURIComponent(code)}`} replace />;
 }
 
-function RedirectIfAuthed({ children }: { children: JSX.Element }) {
-  const { user, loading } = useAuth();
+export function RedirectIfAuthed({ children }: { children: JSX.Element }) {
+  const { user, loading, logout } = useAuth();
+  // A live *demo* session must never block the auth forms. The throwaway
+  // Shrek & Fiona session is "authed" from React's point of view, so a
+  // visitor who launched the demo and then lands on /signup or /login by any
+  // route other than the in-overlay convert button (a header link, a typed
+  // URL, the back button) would otherwise be bounced straight back into the
+  // demo workspace at /app — i.e. "registration just shows the demo". Treat
+  // arriving here with a demo session as intent to convert: tear the demo
+  // down and render the form. Real sessions still bounce to /app.
+  const demoSession = isCurrentSessionDemo();
+  useEffect(() => {
+    if (user && demoSession) {
+      clearDemoSessionFlag();
+      void logout();
+    }
+  }, [user, demoSession, logout]);
   if (loading) return <FullScreenLoader />;
-  if (user) return <Navigate to="/app" replace />;
+  if (user && !demoSession) return <Navigate to="/app" replace />;
   return children;
 }
 

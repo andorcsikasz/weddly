@@ -10,34 +10,9 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { markCurrentSessionDemo } from "../lib/demoSession";
 import { demoApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
-
-const DEMO_FLAG_KEY = "weddly.demo_session";
-
-export function isCurrentSessionDemo(): boolean {
-  try {
-    return localStorage.getItem(DEMO_FLAG_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function clearDemoSessionFlag() {
-  try {
-    localStorage.removeItem(DEMO_FLAG_KEY);
-  } catch {
-    // ignore
-  }
-}
-
-function markCurrentSessionDemo() {
-  try {
-    localStorage.setItem(DEMO_FLAG_KEY, "1");
-  } catch {
-    // ignore
-  }
-}
 
 export function DemoLaunchCard() {
   const { t } = useT();

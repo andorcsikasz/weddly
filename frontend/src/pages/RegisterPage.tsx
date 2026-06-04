@@ -8,6 +8,7 @@ import { Shell } from "../components/Shell";
 import { Button, PasswordField, useToast } from "../components/ui";
 import { ApiError, apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { clearDemoSessionFlag } from "../lib/demoSession";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -125,6 +126,9 @@ export default function RegisterPage() {
 
   function continueToApp() {
     if (!pendingSession) return;
+    // This is a brand-new real account — make sure no stale demo flag from an
+    // earlier demo launch on this device follows them into onboarding.
+    clearDemoSessionFlag();
     setSession(pendingSession.token, pendingSession.user);
     navigate("/onboarding", { replace: true });
   }
