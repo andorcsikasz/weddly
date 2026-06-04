@@ -825,7 +825,7 @@ addColumnIfMissing("feedback_submissions", "context", "context TEXT");
 // `image_url` (og:image resolved from the link) is additive on a table that
 // may already exist from an earlier wishlist deploy, so add it the canonical
 // way rather than only in the CREATE TABLE.
-addColumnIfMissing("wishlist_items", "image_url", "TEXT");
+addColumnIfMissing("wishlist_items", "image_url", "image_url TEXT");
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_wishlist_items_couple ON wishlist_items(couple_id, sort_order, id)",
 );
