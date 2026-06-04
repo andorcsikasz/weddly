@@ -24,7 +24,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { weddingWebsiteApi } from "../lib/endpoints";
-import { formatDate } from "../lib/format";
+import { formatDate, isPlausibleDateIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Shell } from "../components/Shell";
@@ -200,7 +200,7 @@ export default function WeddingWebsitePage() {
     );
   }
 
-  const dateLine = view.wedding_date
+  const dateLine = isPlausibleDateIso(view.wedding_date)
     ? formatDate(view.wedding_date, locale)
     : t("wedding_site.date_tbd");
 
@@ -324,6 +324,18 @@ export default function WeddingWebsitePage() {
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* "Good to know" — parking, getting there, accommodation, … */}
+        {view.useful_info && (
+          <section className="card mt-6">
+            <h2 className="font-serif text-2xl text-ink-900 dark:text-paper-50">
+              {t("guest_portal.useful_info_title")}
+            </h2>
+            <p className="mt-3 whitespace-pre-line text-base text-ink-800 dark:text-paper-100">
+              {view.useful_info}
+            </p>
           </section>
         )}
 

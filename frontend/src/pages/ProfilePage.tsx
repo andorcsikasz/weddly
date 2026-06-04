@@ -62,6 +62,7 @@ import {
   formatDate,
   formatMoney,
   formatTimestamp,
+  isPlausibleDateIso,
 } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -1406,7 +1407,7 @@ export function ProfileHero({
                 </button>
               </div>
               <p className="mt-0.5 truncate text-xs text-ink-600 sm:mt-1 sm:text-sm dark:text-umber-200">
-                {couple.wedding_date
+                {isPlausibleDateIso(couple.wedding_date)
                   ? formatDate(couple.wedding_date, locale)
                   : t("profile.hero_date_tbd")}
               </p>

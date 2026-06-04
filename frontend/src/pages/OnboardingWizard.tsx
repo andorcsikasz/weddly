@@ -31,6 +31,7 @@ import {
   formatMoneyRange,
   formatNumber,
   formatWeddingDateGoal,
+  isPlausibleDateIso,
   todayIso,
 } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -211,9 +212,15 @@ function isStepValid(step: number, f: FormState): boolean {
   if (step === 0) return f.bride_name.trim().length > 0 && f.groom_name.trim().length > 0;
   if (step === 1) {
     const goal = buildDateGoal(f);
-    // Reject a past wedding day — `min` on the picker stops the calendar UI,
-    // but a typed/pasted value can still land before today.
-    if (goal.kind === "exact") return !!goal.exact_date && goal.exact_date >= todayIso();
+    // Only a real, fully-typed future day counts. `isPlausibleDateIso` rejects
+    // a half-typed year ("2" → "0002-01-01"); the `>= todayIso()` guard then
+    // rejects a complete-but-past date.
+    if (goal.kind === "exact")
+      return (
+        goal.exact_date !== null &&
+        isPlausibleDateIso(goal.exact_date) &&
+        goal.exact_date >= todayIso()
+      );
     if (goal.kind === "month") return !!goal.target_year && !!goal.target_month;
     if (goal.kind === "season") return !!goal.target_year && !!goal.target_season;
     if (goal.kind === "year") return !!goal.target_year;
@@ -414,6 +421,13 @@ export default function OnboardingWizard() {
   }
 
   const stepValid = isStepValid(step, form);
+  // The exact-date field is "invalid" once it holds a value that isn't a
+  // real future day — a half-typed year ("2") or a past date. Drives the
+  // inline error + aria-invalid on step 2.
+  const dateExactInvalid =
+    form.date_kind === "exact" &&
+    form.date_exact !== "" &&
+    !(isPlausibleDateIso(form.date_exact) && form.date_exact >= todayIso());
 
   return (
     <Shell>
@@ -494,12 +508,12 @@ export default function OnboardingWizard() {
                     id="wedding_date"
                     type="date"
                     min={todayIso()}
-                    aria-invalid={form.date_exact !== "" && form.date_exact < todayIso()}
+                    aria-invalid={dateExactInvalid}
                     className="input"
                     value={form.date_exact}
                     onChange={(e) => update("date_exact", e.target.value)}
                   />
-                  {form.date_exact !== "" && form.date_exact < todayIso() && (
+                  {dateExactInvalid && (
                     <p className="mt-1 text-xs text-blush-700 dark:text-blush-300" role="alert">
                       {t("onboarding.date_past_error")}
                     </p>

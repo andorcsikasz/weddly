@@ -178,6 +178,19 @@ export function formatTimestamp(ms: number, locale: Locale = "hu"): string {
   return `${dateStr} ${hh}:${mm}`;
 }
 
+/** True when `ymd` is a real, fully-specified `YYYY-MM-DD` date with a
+ *  sensible 4-digit year. A native `<input type="date">` can emit a partial
+ *  value like "0002-01-01" while the user is still typing the year ("2") —
+ *  a valid ISO string but nonsense as a wedding date. Use this to gate both
+ *  input acceptance and display so a half-typed date never sticks. */
+export function isPlausibleDateIso(ymd: string | null | undefined): boolean {
+  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return false;
+  const year = Number(ymd.slice(0, 4));
+  if (year < 1900 || year > 2200) return false;
+  const d = new Date(`${ymd}T00:00:00`);
+  return !Number.isNaN(d.getTime());
+}
+
 export function formatDate(ymd: string | null, locale: Locale = "hu"): string {
   if (!ymd) return "";
   const d = new Date(`${ymd}T00:00:00`);
@@ -216,7 +229,8 @@ export interface GoalText {
  */
 export function formatWeddingDateGoal(goal: WeddingDateGoal, ctx: GoalText): string {
   if (goal.kind === "tbd") return ctx.t("goal.date_tbd");
-  if (goal.kind === "exact" && goal.exact_date) return formatDate(goal.exact_date, ctx.locale);
+  if (goal.kind === "exact" && isPlausibleDateIso(goal.exact_date))
+    return formatDate(goal.exact_date, ctx.locale);
   if (goal.kind === "month" && goal.target_year && goal.target_month) {
     return formatYearMonth(goal.target_year, goal.target_month, ctx.locale);
   }

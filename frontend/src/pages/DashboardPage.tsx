@@ -70,6 +70,7 @@ import {
   formatMoney,
   formatNumber,
   formatWeddingDateGoal,
+  isPlausibleDateIso,
   todayIso,
 } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -861,9 +862,12 @@ export default function DashboardPage() {
             <button
               type="button"
               className="btn-primary"
-              disabled={datePickerSaving || !/^\d{4}-\d{2}-\d{2}$/.test(datePickerDraft)}
+              disabled={
+                datePickerSaving ||
+                !(isPlausibleDateIso(datePickerDraft) && datePickerDraft >= todayIso())
+              }
               onClick={async () => {
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(datePickerDraft)) return;
+                if (!(isPlausibleDateIso(datePickerDraft) && datePickerDraft >= todayIso())) return;
                 setDatePickerSaving(true);
                 try {
                   await saveWeddingDate({
@@ -1658,12 +1662,14 @@ function DaysToGoTile({
   const [saving, setSaving] = useState(false);
 
   async function commit(ymd: string) {
-    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    // Only accept a real, fully-typed date — `isPlausibleDateIso` rejects a
+    // half-typed year ("2" → "0002-01-01") the picker can emit mid-edit.
+    if (!isPlausibleDateIso(ymd)) {
       setEditing(false);
       return;
     }
-    // A past wedding day is never valid — the `min` attribute blocks the
-    // calendar UI, but reject a typed/pasted earlier date too.
+    // A past wedding day is never valid either — the `min` attribute blocks
+    // the calendar UI, but reject a typed/pasted earlier date too.
     if (ymd < todayIso()) {
       setEditing(false);
       return;
@@ -1939,12 +1945,14 @@ function EditableWeddingDate({
   const dateText = formatWeddingDateGoal(goal, { t, locale });
 
   async function commit(ymd: string) {
-    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    // Only accept a real, fully-typed date — `isPlausibleDateIso` rejects a
+    // half-typed year ("2" → "0002-01-01") the picker can emit mid-edit.
+    if (!isPlausibleDateIso(ymd)) {
       setEditing(false);
       return;
     }
-    // A past wedding day is never valid — the `min` attribute blocks the
-    // calendar UI, but reject a typed/pasted earlier date too.
+    // A past wedding day is never valid either — the `min` attribute blocks
+    // the calendar UI, but reject a typed/pasted earlier date too.
     if (ymd < todayIso()) {
       setEditing(false);
       return;
