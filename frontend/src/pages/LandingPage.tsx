@@ -808,7 +808,7 @@ function StatCounter({
           dark seam across the middle with a hairline highlight just below
           for the flap-card depth (coffee-shop counter / old tennis
           scoreboard). */}
-      <div className="relative mx-auto flex aspect-[5/6] w-16 items-center justify-center overflow-hidden rounded-lg bg-umber-900 shadow-pop ring-1 ring-umber-950/50 sm:w-20 lg:w-24 dark:bg-umber-950 dark:ring-umber-700/60">
+      <div className="relative mx-auto flex aspect-[5/6] w-12 items-center justify-center overflow-hidden rounded-lg bg-umber-900 shadow-pop ring-1 ring-umber-950/50 sm:w-20 lg:w-24 dark:bg-umber-950 dark:ring-umber-700/60">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-[2px] -translate-y-px bg-black/30"
@@ -817,7 +817,7 @@ function StatCounter({
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-px translate-y-px bg-paper-50/12"
         />
-        <span className="relative translate-y-[0.08em] font-serif text-3xl font-semibold tabular-nums leading-none text-paper-50 sm:text-4xl lg:text-5xl">
+        <span className="relative translate-y-[0.08em] font-serif text-2xl font-semibold tabular-nums leading-none text-paper-50 sm:text-4xl lg:text-5xl">
           {fmt.format(display)}
         </span>
       </div>
