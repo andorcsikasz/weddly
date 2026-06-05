@@ -151,7 +151,10 @@ function PublicHeader() {
               bigger than the body brand mark, but tracked tightly so the
               full WĒDDLY + audience cluster + right cluster fit at lg
               viewports. */}
-          <Wordmark size="md" className="text-lg tracking-[0.32em] sm:text-xl" />
+          <Wordmark
+            size="md"
+            className="text-lg tracking-[0.21em] sm:text-xl sm:tracking-[0.32em]"
+          />
         </Link>
 
         {/* Audience entry points pulled left, immediately after the

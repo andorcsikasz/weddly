@@ -158,13 +158,13 @@ export default function LandingPage() {
               </h1>
               {/* Subline removed from the visible hero per request; the
                   hero_sub string still feeds the SEO prerender body. */}
-              <div className="mt-8 sm:max-w-md">
+              <div className="mt-8 max-w-[18ch] sm:max-w-md">
                 {/* Single primary CTA only. Login moved to the public header
                     (PublicShell) since "I already have an account" is a
                     secondary intent that doesn't deserve hero real-estate. */}
                 <Link
                   to="/signup"
-                  className="btn-primary btn-lifted btn-landing btn-lg w-4/5 sm:w-auto"
+                  className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
                 >
                   {t("landing.cta_signup")}
                 </Link>
