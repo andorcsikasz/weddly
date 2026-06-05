@@ -1776,6 +1776,7 @@ export default function SuppliersPage() {
       <DiyEntryModal
         open={diyOpen}
         editing={diyEditing}
+        currency={currency}
         defaultCategory={activeCat ?? null}
         onClose={() => {
           setDiyOpen(false);

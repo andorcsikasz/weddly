@@ -17,6 +17,7 @@ import { randomBytes } from "node:crypto";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import { SUPPLIER_TO_BUDGET, type SupplierCategory } from "@shared/suppliers";
 import { db, now } from "../db";
+import { listForSupplier, recomputePaidState } from "./supplier_installments";
 
 interface Row {
   id: string;
@@ -41,6 +42,7 @@ function toDto(r: Row): CoupleSupplier {
     price_huf: r.price_huf,
     paid: r.paid === 1,
     budget_line_id: r.budget_line_id,
+    installments: listForSupplier(r.id),
     created_at: r.created_at,
     updated_at: r.updated_at,
   };
@@ -226,6 +228,12 @@ export function update(id: string, coupleId: number, input: UpdateInput): Couple
       id,
       coupleId,
     );
+
+    // If the supplier carries a payment schedule, the installments are the
+    // source of truth: re-derive `paid` + the mirror's actual_huf from them,
+    // overriding the manual all-or-nothing `paid` just written above. A no-op
+    // when there are no installments.
+    recomputePaidState(coupleId, id, ts);
   })();
 
   return getById(id, coupleId);

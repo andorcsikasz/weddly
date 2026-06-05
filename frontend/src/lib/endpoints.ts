@@ -65,7 +65,9 @@ import type {
 import type {
   CoupleSupplier,
   CreateCoupleSupplierInput,
+  CreateInstallmentInput,
   UpdateCoupleSupplierInput,
+  UpdateInstallmentInput,
 } from "@shared/couple_suppliers";
 import type { CoupleSupplierCost, UpsertCoupleSupplierCostInput } from "@shared/supplier_costs";
 import type { FeedbackEntry, FeedbackStatus } from "@shared/feedback";
@@ -1069,6 +1071,25 @@ export const coupleSupplierApi = {
     ),
   remove: (id: string) =>
     apiFetch<{ ok: true }>("DELETE", `/api/couple-suppliers/${encodeURIComponent(id)}`),
+  /** Payment schedule. Each call returns the full updated supplier (with its
+   *  recomputed `paid` flag + installments) so the caller refreshes in one shot. */
+  addInstallment: (id: string, body: CreateInstallmentInput) =>
+    apiFetch<{ supplier: CoupleSupplier }>(
+      "POST",
+      `/api/couple-suppliers/${encodeURIComponent(id)}/installments`,
+      body,
+    ),
+  updateInstallment: (id: string, installmentId: number, body: UpdateInstallmentInput) =>
+    apiFetch<{ supplier: CoupleSupplier }>(
+      "PATCH",
+      `/api/couple-suppliers/${encodeURIComponent(id)}/installments/${installmentId}`,
+      body,
+    ),
+  removeInstallment: (id: string, installmentId: number) =>
+    apiFetch<{ supplier: CoupleSupplier }>(
+      "DELETE",
+      `/api/couple-suppliers/${encodeURIComponent(id)}/installments/${installmentId}`,
+    ),
 };
 
 export const supplierCostApi = {

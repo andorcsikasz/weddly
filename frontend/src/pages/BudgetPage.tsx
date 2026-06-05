@@ -1,6 +1,7 @@
 // Budget planner. Hero "cost planning" panel with a guest-count slider that
 // re-prices per-guest categories live, plus an inline-editable line table.
 
+import type { CoupleSupplier } from "@shared/couple_suppliers";
 import {
   type BudgetCategory,
   type BudgetLine,
@@ -43,7 +44,7 @@ import {
   subscribeCostPlanningCount,
   writeCostPlanningCount,
 } from "../lib/cost_planning";
-import { budgetApi, coupleApi } from "../lib/endpoints";
+import { budgetApi, coupleApi, coupleSupplierApi } from "../lib/endpoints";
 import { currencySymbol, formatMoney, formatNumber, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -122,6 +123,9 @@ export default function BudgetPage() {
   const [lines, setLines] = useState<BudgetLine[]>([]);
   const [snapshots, setSnapshots] = useState<BudgetSnapshot[]>([]);
   const [couple, setCouple] = useState<Couple | null>(null);
+  // DIY/booked suppliers — only their payment schedules matter here, for the
+  // "Payments due" roll-up band above the budget table.
+  const [coupleSuppliers, setCoupleSuppliers] = useState<CoupleSupplier[]>([]);
   // Slider state lives here so saveSnapshot() can read the current scenario
   // headcount and seed the snapshot-name suggestion.
   const [count, setCount] = useState<number | null>(null);
@@ -129,14 +133,16 @@ export default function BudgetPage() {
    *  the affected card and shows an inline spinner. Null when idle. */
   const [restoringId, setRestoringId] = useState<number | null>(null);
   async function refresh() {
-    const [linesR, snapsR, coupleR] = await Promise.all([
+    const [linesR, snapsR, coupleR, suppliersR] = await Promise.all([
       budgetApi.listLines(),
       budgetApi.listSnapshots(),
       coupleApi.current(),
+      coupleSupplierApi.list(),
     ]);
     setLines(linesR.lines);
     setSnapshots(snapsR.snapshots);
     setCouple(coupleR.couple);
+    setCoupleSuppliers(suppliersR.suppliers);
     // Seed the slider with the shared cost-planning count if /app/suppliers
     // or a prior session has one stored. Otherwise stay at `null` so the
     // slider defaults to the couple's onboarding target. Hydration moved
@@ -714,6 +720,28 @@ export default function BudgetPage() {
     }
   }
 
+  // "Payments due" roll-up — flattens every supplier's payment schedule into
+  // paid-so-far / outstanding / next-due / due-in-30-days. This is the thing
+  // that replaces the couple's "by when, how much" spreadsheet.
+  const payments = useMemo(() => {
+    const all = coupleSuppliers.flatMap((s) =>
+      s.installments.map((i) => ({ ...i, supplierName: s.name })),
+    );
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() + 30);
+    const cutoffIso = cutoff.toISOString().slice(0, 10);
+    const unpaid = all.filter((i) => !i.paid);
+    const paidSum = all.filter((i) => i.paid).reduce((a, i) => a + i.amount_huf, 0);
+    const outstanding = unpaid.reduce((a, i) => a + i.amount_huf, 0);
+    const dueSoon = unpaid
+      .filter((i) => i.due_date && i.due_date <= cutoffIso)
+      .reduce((a, i) => a + i.amount_huf, 0);
+    const next =
+      unpaid.filter((i) => i.due_date).sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0] ??
+      null;
+    return { count: all.length, paidSum, outstanding, dueSoon, next };
+  }, [coupleSuppliers]);
+
   return (
     <>
       <header className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
@@ -748,6 +776,67 @@ export default function BudgetPage() {
           })}
         </div>
       </header>
+
+      {payments.count > 0 && (
+        <section
+          aria-label={t("budget.payments_due_title")}
+          className="mb-6 rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-ink-800 px-4 py-3"
+        >
+          <div className="mb-2 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+              {t("budget.payments_due_title")}
+            </h2>
+            <InfoHint text={t("budget.payments_due_sub")} />
+          </div>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+            <div>
+              <dt className="text-xs text-ink-500 dark:text-umber-300">
+                {t("budget.payments_paid")}
+              </dt>
+              <dd className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+                {formatMoney(payments.paidSum, currency, locale === "hu" ? "hu" : "en")}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-500 dark:text-umber-300">
+                {t("budget.payments_outstanding")}
+              </dt>
+              <dd className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+                {formatMoney(payments.outstanding, currency, locale === "hu" ? "hu" : "en")}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-500 dark:text-umber-300">
+                {t("budget.payments_due_30")}
+              </dt>
+              <dd className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+                {formatMoney(payments.dueSoon, currency, locale === "hu" ? "hu" : "en")}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-500 dark:text-umber-300">
+                {t("budget.payments_next")}
+              </dt>
+              <dd className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+                {payments.next ? (
+                  <>
+                    {new Date(`${payments.next.due_date}T00:00:00`).toLocaleDateString(
+                      locale === "hu" ? "hu-HU" : "en-GB",
+                    )}
+                    <span className="ml-1 font-normal text-ink-500 dark:text-umber-300">
+                      · {payments.next.supplierName}
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-normal text-ink-400 dark:text-umber-300">
+                    {t("budget.payments_none_dated")}
+                  </span>
+                )}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       <CostPlanningCard
         lines={lines}

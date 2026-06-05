@@ -5,6 +5,7 @@
 import type { SupplierCategory } from "@shared/suppliers";
 import { getCoupleForUser } from "../domain/couples";
 import * as domain from "../domain/couple_suppliers";
+import * as installments from "../domain/supplier_installments";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
@@ -211,9 +212,162 @@ function handleDelete(ctx: Ctx): Response {
   return json({ ok: true });
 }
 
+// ── Payment schedule (installments) ─────────────────────────────────────────
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+interface InstallmentBody {
+  label?: unknown;
+  amount_huf?: unknown;
+  due_date?: unknown;
+  paid?: unknown;
+}
+
+interface ParsedInstallment {
+  label?: string | null;
+  amount_huf?: number;
+  due_date?: string | null;
+  paid?: boolean;
+}
+
+function parseInstallmentBody(body: InstallmentBody, partial: boolean): ParsedInstallment {
+  const out: ParsedInstallment = {};
+
+  if (body.label !== undefined) {
+    if (body.label === null) {
+      out.label = null;
+    } else if (typeof body.label === "string") {
+      const trimmed = body.label.trim();
+      if (trimmed.length > 80) throw new HttpError(400, "label too long (max 80)");
+      out.label = trimmed || null;
+    } else {
+      throw new HttpError(400, "label must be a string or null");
+    }
+  }
+
+  if (body.amount_huf !== undefined) {
+    const n = Number(body.amount_huf);
+    if (!Number.isFinite(n) || n <= 0 || n > 10_000_000_000) {
+      throw new HttpError(400, "amount_huf out of range");
+    }
+    out.amount_huf = Math.round(n);
+  } else if (!partial) {
+    throw new HttpError(400, "amount_huf required");
+  }
+
+  if (body.due_date !== undefined) {
+    if (body.due_date === null || body.due_date === "") {
+      out.due_date = null;
+    } else if (typeof body.due_date === "string" && ISO_DATE.test(body.due_date)) {
+      out.due_date = body.due_date;
+    } else {
+      throw new HttpError(400, "due_date must be YYYY-MM-DD or null");
+    }
+  }
+
+  if (body.paid !== undefined) {
+    if (typeof body.paid !== "boolean") throw new HttpError(400, "paid must be a boolean");
+    out.paid = body.paid;
+  }
+
+  return out;
+}
+
+/** Resolve the couple + assert the DIY supplier in the path belongs to it.
+ *  Returns { coupleId, supplierId } or throws 400/404. */
+function requireOwnedSupplier(ctx: Ctx): { userId: number; coupleId: number; supplierId: string } {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const supplierId = ctx.params.id;
+  if (!supplierId) throw new HttpError(400, "Invalid supplier id");
+  if (!domain.getById(supplierId, couple.id)) throw new HttpError(404, "Supplier not found");
+  return { userId, coupleId: couple.id, supplierId };
+}
+
+async function handleCreateInstallment(ctx: Ctx): Promise<Response> {
+  const { userId, coupleId, supplierId } = requireOwnedSupplier(ctx);
+  const body = await readJson<InstallmentBody>(ctx.req);
+  const parsed = parseInstallmentBody(body, false);
+  if (parsed.amount_huf === undefined) throw new HttpError(400, "amount_huf required");
+
+  installments.createInstallment(coupleId, supplierId, {
+    label: parsed.label ?? null,
+    amount_huf: parsed.amount_huf,
+    due_date: parsed.due_date ?? null,
+    paid: parsed.paid ?? false,
+  });
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "supplier_installment.create",
+    target_kind: "couple_supplier",
+    target_id: null,
+    note: supplierId,
+    after: {
+      amount_huf: parsed.amount_huf,
+      due_date: parsed.due_date ?? null,
+      paid: parsed.paid ?? false,
+    },
+  });
+
+  const supplier = domain.getById(supplierId, coupleId);
+  return json({ supplier }, { status: 201 });
+}
+
+async function handleUpdateInstallment(ctx: Ctx): Promise<Response> {
+  const { userId, coupleId, supplierId } = requireOwnedSupplier(ctx);
+  const installmentId = Number(ctx.params.iid);
+  if (!Number.isInteger(installmentId)) throw new HttpError(400, "Invalid installment id");
+
+  const body = await readJson<InstallmentBody>(ctx.req);
+  const parsed = parseInstallmentBody(body, true);
+
+  const updated = installments.updateInstallment(coupleId, supplierId, installmentId, parsed);
+  if (!updated) throw new HttpError(404, "Installment not found");
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "supplier_installment.update",
+    target_kind: "couple_supplier",
+    target_id: null,
+    note: supplierId,
+    after: { id: installmentId, paid: updated.paid, amount_huf: updated.amount_huf },
+  });
+
+  const supplier = domain.getById(supplierId, coupleId);
+  return json({ supplier });
+}
+
+function handleDeleteInstallment(ctx: Ctx): Response {
+  const { userId, coupleId, supplierId } = requireOwnedSupplier(ctx);
+  const installmentId = Number(ctx.params.iid);
+  if (!Number.isInteger(installmentId)) throw new HttpError(400, "Invalid installment id");
+
+  const ok = installments.deleteInstallment(coupleId, supplierId, installmentId);
+  if (!ok) throw new HttpError(404, "Installment not found");
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "supplier_installment.delete",
+    target_kind: "couple_supplier",
+    target_id: null,
+    note: supplierId,
+  });
+
+  const supplier = domain.getById(supplierId, coupleId);
+  return json({ supplier });
+}
+
 export function registerCoupleSupplierRoutes(router: Router) {
   router.get("/api/couple-suppliers", handleList, true);
   router.post("/api/couple-suppliers", handleCreate, true);
   router.patch("/api/couple-suppliers/:id", handleUpdate, true);
   router.delete("/api/couple-suppliers/:id", handleDelete, true);
+  router.post("/api/couple-suppliers/:id/installments", handleCreateInstallment, true);
+  router.patch("/api/couple-suppliers/:id/installments/:iid", handleUpdateInstallment, true);
+  router.delete("/api/couple-suppliers/:id/installments/:iid", handleDeleteInstallment, true);
 }

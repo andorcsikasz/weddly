@@ -74,6 +74,9 @@ export function purgeOneCouple(
     db.prepare("DELETE FROM seating_tables WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM guests WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM households WHERE couple_id = ?").run(coupleId);
+    // Children-first: installments ON DELETE CASCADE from couple_suppliers,
+    // but delete explicitly to keep the erasure sweep self-describing.
+    db.prepare("DELETE FROM supplier_installments WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM couple_suppliers WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM couple_supplier_costs WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM couple_picks WHERE couple_id = ?").run(coupleId);

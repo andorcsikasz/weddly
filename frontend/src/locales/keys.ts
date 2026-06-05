@@ -2098,6 +2098,14 @@ export interface LocaleMessages {
     /** Aria-label + tooltip on the same tile when the headcount is already
      *  pinned. Clicking unlocks and re-expands the slider. */
     cost_planning_count_unlock_aria: string;
+    /** "Payments due" roll-up band above the budget table. */
+    payments_due_title: string;
+    payments_due_sub: string;
+    payments_paid: string;
+    payments_outstanding: string;
+    payments_due_30: string;
+    payments_next: string;
+    payments_none_dated: string;
     lines_title: string;
     lines_sub: string;
     lines_empty: string;
@@ -2213,6 +2221,19 @@ export interface LocaleMessages {
     paid_help: string;
     /** Help line shown when the toggle is disabled because price is empty. */
     paid_disabled_hint: string;
+    /** Payment-schedule editor (DiyEntryModal). */
+    schedule_title: string;
+    schedule_add: string;
+    schedule_empty: string;
+    schedule_save_first: string;
+    schedule_needs_price: string;
+    schedule_paid: string;
+    schedule_outstanding: string;
+    schedule_mark_paid: string;
+    schedule_label_placeholder: string;
+    schedule_amount: string;
+    schedule_due: string;
+    schedule_delete: string;
   };
   /** Cost-planning panel surfaces that don't belong to the budget *table*:
    *  HU benchmark strip, tiered over-cap warnings, page-level cost-per-guest
