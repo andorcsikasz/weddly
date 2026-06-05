@@ -40,18 +40,19 @@ export function DemoLaunchCard() {
   return (
     <aside
       aria-labelledby="demo-card-title"
-      /* Compact sticker on phones (220 px wide, 16/12 padding, smaller
-       * title + button) so it stops dominating the hero column on a
-       * 360-390 px viewport. The sm: bump restores the original 280 px
-       * card with the larger title and roomier padding on tablet+. */
-      className="relative w-full max-w-[220px] rounded-2xl border border-umber-900/15 px-4 py-3 text-left sm:max-w-[280px] sm:px-6 sm:py-5 dark:border-paper-50/15"
+      /* Compact sticker on phones (~85% of the old card: 188 px wide, tighter
+       * padding, smaller title + button) so it stops dominating the hero
+       * column on a 360-390 px viewport. Left padding is trimmed harder than
+       * the right so the copy hugs the left edge. The sm: bump restores a
+       * roomier 238 px card on tablet+. */
+      className="relative w-full max-w-[188px] rounded-2xl border border-umber-900/15 py-2.5 pl-3 pr-4 text-left sm:max-w-[238px] sm:py-4 sm:pl-4 sm:pr-6 dark:border-paper-50/15"
     >
       <p className="font-grotesk text-[10px] font-medium uppercase tracking-[0.24em] text-umber-600 dark:text-umber-200">
         {t("landing.demo_card_eyebrow")}
       </p>
       <h2
         id="demo-card-title"
-        className="mt-1 font-grotesk text-lg font-semibold leading-tight tracking-tight text-umber-900 sm:mt-1.5 sm:text-2xl dark:text-paper-50"
+        className="mt-1 font-grotesk text-base font-semibold leading-tight tracking-tight text-umber-900 sm:mt-1.5 sm:text-xl dark:text-paper-50"
       >
         {t("landing.demo_card_title")}
       </h2>
@@ -65,7 +66,7 @@ export function DemoLaunchCard() {
         // umber-600 fill + cream text rather than the heavy near-black
         // espresso. Deliberately quieter than the umber-900 signup primary so
         // the demo reads as the secondary intent.
-        className="btn mt-3 inline-flex w-full items-center justify-center gap-1.5 bg-umber-600 py-2 font-grotesk text-xs font-medium text-paper-50 transition-colors hover:bg-umber-500 disabled:cursor-wait disabled:opacity-80 sm:mt-4 sm:gap-2 sm:py-2.5 sm:text-sm dark:bg-umber-200 dark:text-umber-900 dark:hover:bg-umber-100"
+        className="btn mt-2.5 inline-flex w-full items-center justify-center gap-1.5 bg-umber-600 py-1.5 font-grotesk text-xs font-medium text-paper-50 transition-colors hover:bg-umber-500 disabled:cursor-wait disabled:opacity-80 sm:mt-3 sm:gap-2 sm:py-2 sm:text-sm dark:bg-umber-200 dark:text-umber-900 dark:hover:bg-umber-100"
       >
         {busy ? (
           <>
