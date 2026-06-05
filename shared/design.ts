@@ -26,6 +26,19 @@ export type PaletteSlug = "botanical_green" | "espresso" | "blush" | "stone_mini
 
 export type FontPresetSlug = "classic_serif" | "modern_clean" | "soft_romantic";
 
+/** Monogram separator - the glyph between the two initials/names. The "and"
+ *  slug resolves to a locale-aware word ("és" / "and") at render time; the rest
+ *  are locale-neutral glyphs. See {@link monogramSeparatorGlyph}. */
+export type MonogramSeparatorSlug = "amp" | "plus" | "slash" | "and";
+
+/** How the wedding date is rendered across the guest page + printables. The
+ *  concrete formatting is locale-aware - see {@link formatWeddingDate}. */
+export type DateFormatSlug = "numeric_dot" | "long" | "slash";
+
+/** Decorative detail applied to the guest page + printable cards. Curated, not
+ *  freeform - same rationale as the palette/font catalogs. */
+export type DecorSlug = "none" | "line" | "botanical" | "dots" | "frame";
+
 /** Minimal per-template print options. Each printable template honours the
  *  subset that makes sense for it (a table number has no QR block). */
 export interface DesignPrintOptions {
@@ -44,7 +57,18 @@ export interface CoupleDesignInput {
   style?: StylePresetSlug;
   palette?: PaletteSlug;
   fonts?: FontPresetSlug;
+  monogram?: Partial<MonogramOptions>;
+  dateFormat?: DateFormatSlug;
+  decor?: DecorSlug;
   print?: Partial<DesignPrintOptions>;
+}
+
+/** The wedding monogram - the couple's initials joined by a separator. The
+ *  actual initials are derived from the couple's names at render time, so we
+ *  only persist the on/off flag + the separator choice (no freeform text). */
+export interface MonogramOptions {
+  enabled: boolean;
+  separator: MonogramSeparatorSlug;
 }
 
 /** Fully-resolved shape carried on the `Couple` DTO — always populated. */
@@ -52,6 +76,9 @@ export interface CoupleDesign {
   style: StylePresetSlug;
   palette: PaletteSlug;
   fonts: FontPresetSlug;
+  monogram: MonogramOptions;
+  dateFormat: DateFormatSlug;
+  decor: DecorSlug;
   print: DesignPrintOptions;
 }
 
@@ -202,9 +229,39 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
   },
 ];
 
+/** Monogram separators. The glyph for `and` is locale-aware, so it carries no
+ *  static glyph here - {@link monogramSeparatorGlyph} resolves it. */
+export const MONOGRAM_SEPARATORS: readonly { slug: MonogramSeparatorSlug; glyph: string }[] = [
+  { slug: "amp", glyph: "&" },
+  { slug: "plus", glyph: "+" },
+  { slug: "slash", glyph: "/" },
+  { slug: "and", glyph: "" },
+];
+
+export const DATE_FORMATS: readonly { slug: DateFormatSlug; nameKey: string }[] = [
+  { slug: "numeric_dot", nameKey: "design.date.numeric_dot" },
+  { slug: "long", nameKey: "design.date.long" },
+  { slug: "slash", nameKey: "design.date.slash" },
+];
+
+export const DECOR_STYLES: readonly { slug: DecorSlug; nameKey: string }[] = [
+  { slug: "none", nameKey: "design.decor.none" },
+  { slug: "line", nameKey: "design.decor.line" },
+  { slug: "botanical", nameKey: "design.decor.botanical" },
+  { slug: "dots", nameKey: "design.decor.dots" },
+  { slug: "frame", nameKey: "design.decor.frame" },
+];
+
 export const VALID_STYLES: ReadonlySet<StylePresetSlug> = new Set(STYLE_PRESETS.map((s) => s.slug));
 export const VALID_PALETTES: ReadonlySet<PaletteSlug> = new Set(PALETTES.map((p) => p.slug));
 export const VALID_FONTS: ReadonlySet<FontPresetSlug> = new Set(FONT_PRESETS.map((f) => f.slug));
+export const VALID_SEPARATORS: ReadonlySet<MonogramSeparatorSlug> = new Set(
+  MONOGRAM_SEPARATORS.map((s) => s.slug),
+);
+export const VALID_DATE_FORMATS: ReadonlySet<DateFormatSlug> = new Set(
+  DATE_FORMATS.map((d) => d.slug),
+);
+export const VALID_DECOR: ReadonlySet<DecorSlug> = new Set(DECOR_STYLES.map((d) => d.slug));
 
 /** The Design feature's own default — Botanical Green + classic serif. NULL /
  *  legacy `design_json` rows resolve to this; it drives only the guest page +
@@ -213,6 +270,9 @@ export const DEFAULT_DESIGN: CoupleDesign = {
   style: "botanical_green",
   palette: "botanical_green",
   fonts: "classic_serif",
+  monogram: { enabled: true, separator: "amp" },
+  dateFormat: "long",
+  decor: "line",
   print: { border: true, ornament: false, qr: false },
 };
 
@@ -237,6 +297,21 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
     style: i.style && VALID_STYLES.has(i.style) ? i.style : DEFAULT_DESIGN.style,
     palette: i.palette && VALID_PALETTES.has(i.palette) ? i.palette : DEFAULT_DESIGN.palette,
     fonts: i.fonts && VALID_FONTS.has(i.fonts) ? i.fonts : DEFAULT_DESIGN.fonts,
+    monogram: {
+      enabled:
+        typeof i.monogram?.enabled === "boolean"
+          ? i.monogram.enabled
+          : DEFAULT_DESIGN.monogram.enabled,
+      separator:
+        i.monogram?.separator && VALID_SEPARATORS.has(i.monogram.separator)
+          ? i.monogram.separator
+          : DEFAULT_DESIGN.monogram.separator,
+    },
+    dateFormat:
+      i.dateFormat && VALID_DATE_FORMATS.has(i.dateFormat)
+        ? i.dateFormat
+        : DEFAULT_DESIGN.dateFormat,
+    decor: i.decor && VALID_DECOR.has(i.decor) ? i.decor : DEFAULT_DESIGN.decor,
     print: {
       border: typeof i.print?.border === "boolean" ? i.print.border : DEFAULT_DESIGN.print.border,
       ornament:
@@ -256,6 +331,12 @@ export interface PublicDesign {
   text: string;
   heading_font: string;
   body_font: string;
+  /** Monogram on/off + separator slug. The initials are built from the
+   *  couple's names by the consumer (guest page / PDF), so no names leak here. */
+  monogram_enabled: boolean;
+  monogram_separator: MonogramSeparatorSlug;
+  date_format: DateFormatSlug;
+  decor: DecorSlug;
 }
 
 /** Build the public, presentation-only payload from a resolved design. */
@@ -269,5 +350,100 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
     text: palette.text.hex,
     heading_font: fonts.headingStack,
     body_font: fonts.bodyStack,
+    monogram_enabled: design.monogram.enabled,
+    monogram_separator: design.monogram.separator,
+    date_format: design.dateFormat,
+    decor: design.decor,
   };
+}
+
+/** Locale-aware glyph for a monogram separator. Only `and` differs by locale. */
+export function monogramSeparatorGlyph(
+  slug: MonogramSeparatorSlug,
+  locale: "hu" | "en",
+): string {
+  if (slug === "and") return locale === "hu" ? "és" : "and";
+  return MONOGRAM_SEPARATORS.find((s) => s.slug === slug)?.glyph ?? "&";
+}
+
+/** First grapheme of a name, upper-cased - the initial for the monogram. Falls
+ *  back to "" for an empty name so a half-filled couple still renders cleanly. */
+function initialOf(name: string | null | undefined): string {
+  const trimmed = (name ?? "").trim();
+  return trimmed ? trimmed[0]!.toUpperCase() : "";
+}
+
+/** Build the monogram string (e.g. `A & B`) from the two partner names. Returns
+ *  "" when both initials are empty so the consumer can skip the block. */
+export function buildMonogram(
+  nameA: string | null | undefined,
+  nameB: string | null | undefined,
+  separator: MonogramSeparatorSlug,
+  locale: "hu" | "en",
+): string {
+  const a = initialOf(nameA);
+  const b = initialOf(nameB);
+  if (!a && !b) return "";
+  const glyph = monogramSeparatorGlyph(separator, locale);
+  return [a, glyph, b].filter(Boolean).join(" ");
+}
+
+/** Format a wedding date (`YYYY-MM-DD` ISO, or anything `Date` can parse)
+ *  per the chosen {@link DateFormatSlug} and locale. Invalid input returns the
+ *  raw string unchanged, mirroring the guest page's permissive date handling. */
+export function formatWeddingDate(
+  iso: string | null | undefined,
+  slug: DateFormatSlug,
+  locale: "hu" | "en",
+): string {
+  const raw = (iso ?? "").trim();
+  if (!raw) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (!m) return raw;
+  const [, y, mo, d] = m;
+  const year = Number(y);
+  const month = Number(mo);
+  const day = Number(d);
+  if (slug === "numeric_dot") {
+    return locale === "hu"
+      ? `${year}.${mo}.${d}.`
+      : `${year}.${mo}.${d}`;
+  }
+  if (slug === "slash") {
+    return locale === "hu" ? `${year}/${mo}/${d}` : `${mo}/${d}/${year}`;
+  }
+  // "long" - month name spelled out, locale word order.
+  const monthsHu = [
+    "január",
+    "február",
+    "március",
+    "április",
+    "május",
+    "június",
+    "július",
+    "augusztus",
+    "szeptember",
+    "október",
+    "november",
+    "december",
+  ];
+  const monthsEn = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const idx = month - 1;
+  if (idx < 0 || idx > 11) return raw;
+  return locale === "hu"
+    ? `${year}. ${monthsHu[idx]} ${day}.`
+    : `${monthsEn[idx]} ${day}, ${year}`;
 }

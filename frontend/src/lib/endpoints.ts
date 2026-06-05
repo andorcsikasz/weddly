@@ -1562,3 +1562,10 @@ export function placeCardsUrl(opts: { onlyConfirmed?: boolean; guestIds?: number
 
 /** A4 portrait day-of run-of-show. Auth-protected; download via `fetchPdfBlob`. */
 export const schedulePdfUrl = "/api/print/schedule";
+
+/** A6 table-number cards - one card per seating table. Styled from the
+ *  couple's design (palette + fonts + decor). Download via `fetchPdfBlob`. */
+export const tableNumbersPdfUrl = "/api/print/table-numbers";
+
+/** A5 menu cards in the couple's wedding style. Download via `fetchPdfBlob`. */
+export const menuPdfUrl = "/api/print/menu";

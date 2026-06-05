@@ -28,11 +28,17 @@ import {
 import { COUNTRY_CODES } from "@shared/country_list";
 import {
   type CoupleDesign,
+  type DateFormatSlug,
+  type DecorSlug,
   type FontPresetSlug,
+  type MonogramSeparatorSlug,
   type PaletteSlug,
   type StylePresetSlug,
+  VALID_DATE_FORMATS,
+  VALID_DECOR,
   VALID_FONTS,
   VALID_PALETTES,
+  VALID_SEPARATORS,
   VALID_STYLES,
 } from "@shared/design";
 import { CONFIG } from "../config";
@@ -1820,6 +1826,9 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       style: prev.style,
       palette: prev.palette,
       fonts: prev.fonts,
+      monogram: { ...prev.monogram },
+      dateFormat: prev.dateFormat,
+      decor: prev.decor,
       print: { ...prev.print },
     };
     // Each curated slug, if present, must be a known value — a present-but-
@@ -1845,6 +1854,33 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       }
       next.fonts = v as FontPresetSlug;
     }
+    // Monogram - partial object: an `enabled` boolean and/or a `separator`
+    // slug. A present-but-unknown separator is a client bug → 400.
+    if ("monogram" in obj && obj.monogram && typeof obj.monogram === "object") {
+      const m = obj.monogram as Record<string, unknown>;
+      if (typeof m.enabled === "boolean") next.monogram.enabled = m.enabled;
+      if ("separator" in m) {
+        const v = m.separator;
+        if (typeof v !== "string" || !VALID_SEPARATORS.has(v as MonogramSeparatorSlug)) {
+          throw new HttpError(400, "design.monogram.separator is not a valid separator");
+        }
+        next.monogram.separator = v as MonogramSeparatorSlug;
+      }
+    }
+    if ("dateFormat" in obj) {
+      const v = obj.dateFormat;
+      if (typeof v !== "string" || !VALID_DATE_FORMATS.has(v as DateFormatSlug)) {
+        throw new HttpError(400, "design.dateFormat is not a valid date format");
+      }
+      next.dateFormat = v as DateFormatSlug;
+    }
+    if ("decor" in obj) {
+      const v = obj.decor;
+      if (typeof v !== "string" || !VALID_DECOR.has(v as DecorSlug)) {
+        throw new HttpError(400, "design.decor is not a valid decorative style");
+      }
+      next.decor = v as DecorSlug;
+    }
     // Print toggles — only known boolean keys are applied; anything else is
     // ignored (forward-compatible with future template options).
     if ("print" in obj && obj.print && typeof obj.print === "object") {
@@ -1857,6 +1893,10 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.style !== prev.style ||
       next.palette !== prev.palette ||
       next.fonts !== prev.fonts ||
+      next.monogram.enabled !== prev.monogram.enabled ||
+      next.monogram.separator !== prev.monogram.separator ||
+      next.dateFormat !== prev.dateFormat ||
+      next.decor !== prev.decor ||
       next.print.border !== prev.print.border ||
       next.print.ornament !== prev.print.ornament ||
       next.print.qr !== prev.print.qr;

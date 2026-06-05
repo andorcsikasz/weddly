@@ -902,7 +902,14 @@ export interface CouplePauseRequest {
 
 // ─── Saved download archive ─────────────────────────────────────────────────
 
-export type ExportKind = "json" | "seating_pdf" | "place_cards_pdf" | "schedule_pdf" | "guest_csv";
+export type ExportKind =
+  | "json"
+  | "seating_pdf"
+  | "place_cards_pdf"
+  | "table_numbers_pdf"
+  | "menu_pdf"
+  | "schedule_pdf"
+  | "guest_csv";
 
 /** Listed on the Profile page. The `body` is fetched separately via the
  *  download endpoint to keep the list response small. */

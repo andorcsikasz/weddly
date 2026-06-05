@@ -20,6 +20,9 @@ interface CoupleDesign {
   style: string;
   palette: string;
   fonts: string;
+  monogram: { enabled: boolean; separator: string };
+  dateFormat: string;
+  decor: string;
   print: { border: boolean; ornament: boolean; qr: boolean };
 }
 
@@ -64,6 +67,9 @@ describe("design: default resolution", () => {
       style: "botanical_green",
       palette: "botanical_green",
       fonts: "classic_serif",
+      monogram: { enabled: true, separator: "amp" },
+      dateFormat: "long",
+      decor: "line",
       print: { border: true, ornament: false, qr: false },
     });
   });
@@ -162,6 +168,42 @@ describe("design: PATCH /api/couples/current", () => {
       { token },
     );
     expect(badFont.status).toBe(400);
+  });
+});
+
+describe("design: design-aware print templates", () => {
+  const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
+
+  /** Fetch a print endpoint raw (the JSON `req` helper would choke on the
+   *  binary PDF body) and assert it is a non-empty `%PDF` stream. */
+  async function expectPdf(path: string, token: string): Promise<void> {
+    const res = await fetch(`${BASE}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/pdf");
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    expect(bytes.byteLength).toBeGreaterThan(0);
+    // Every PDF stream opens with the "%PDF" magic.
+    const head = new TextDecoder().decode(bytes.slice(0, 4));
+    expect(head).toBe("%PDF");
+  }
+
+  test("table-numbers and menu render valid PDFs, and place-cards still does after the design change", async () => {
+    wipeAll();
+    const token = await registerVerified("design-print@weddly.test");
+    await onboard(token);
+    // Pick a non-default identity so the design actually threads through.
+    await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { palette: "espresso", fonts: "modern_clean", decor: "dots" } },
+      { token },
+    );
+
+    await expectPdf("/api/print/table-numbers", token);
+    await expectPdf("/api/print/menu", token);
+    await expectPdf("/api/print/place-cards", token);
   });
 });
 

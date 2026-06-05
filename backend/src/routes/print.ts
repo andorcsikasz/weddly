@@ -2,11 +2,17 @@
 
 import { db } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { getCoupleForUser } from "../domain/couples";
+import { getCoupleForUser, parseDesignJson } from "../domain/couples";
 import { recordExport } from "../domain/exports";
 import { type Ctx, HttpError, requireAuth, type Router } from "../lib/http";
 import { listByCoupleId as listCoupleSuppliers } from "../domain/couple_suppliers";
-import { renderPlaceCardsPdf, renderSchedulePdf, renderSeatingChartPdf } from "../domain/pdf";
+import {
+  renderMenuPdf,
+  renderPlaceCardsPdf,
+  renderSchedulePdf,
+  renderSeatingChartPdf,
+  renderTableNumbersPdf,
+} from "../domain/pdf";
 import { listScheduleEvents } from "../domain/schedule";
 import { listGuestsByCouple, toGuest } from "../domain/guests";
 import type { GuestRow } from "../domain/guests";
@@ -213,6 +219,9 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
   const pdf = await renderPlaceCardsPdf({
     couple_display_name: couple.display_name,
     wedding_date: couple.wedding_date,
+    bride_name: couple.bride_name,
+    groom_name: couple.groom_name,
+    design: parseDesignJson(couple.design_json),
     guests,
     tablesByGuestId,
   });
@@ -229,6 +238,72 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
     coupleId: couple.id,
     userId,
     kind: "place_cards_pdf",
+    format: null,
+    filename,
+    contentType: "application/pdf",
+    body: pdf,
+  });
+  return pdfResponse(filename, pdf);
+}
+
+async function handleTableNumbers(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const tables = loadTables(couple.id);
+  const pdf = await renderTableNumbersPdf({
+    bride_name: couple.bride_name,
+    groom_name: couple.groom_name,
+    design: parseDesignJson(couple.design_json),
+    tables,
+  });
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "print.table_numbers",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: { table_count: tables.length },
+  });
+  const filename = "table-numbers-a6.pdf";
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "table_numbers_pdf",
+    format: null,
+    filename,
+    contentType: "application/pdf",
+    body: pdf,
+  });
+  return pdfResponse(filename, pdf);
+}
+
+async function handleMenu(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const pdf = await renderMenuPdf({
+    couple_display_name: couple.display_name,
+    wedding_date: couple.wedding_date,
+    bride_name: couple.bride_name,
+    groom_name: couple.groom_name,
+    design: parseDesignJson(couple.design_json),
+  });
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "print.menu",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: {},
+  });
+  const filename = "menu-a5.pdf";
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "menu_pdf",
     format: null,
     filename,
     contentType: "application/pdf",
@@ -276,5 +351,7 @@ export function registerPrintRoutes(router: Router) {
   router.get("/api/print/seating/a4", (ctx) => handleSeatingChart(ctx, "a4"), true);
   router.get("/api/print/seating/a3", (ctx) => handleSeatingChart(ctx, "a3"), true);
   router.get("/api/print/place-cards", handlePlaceCards, true);
+  router.get("/api/print/table-numbers", handleTableNumbers, true);
+  router.get("/api/print/menu", handleMenu, true);
   router.get("/api/print/schedule", handleSchedule, true);
 }

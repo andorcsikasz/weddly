@@ -16,6 +16,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { type PDFFont, type PDFPage, PDFDocument, degrees, rgb } from "pdf-lib";
+import {
+  buildMonogram,
+  type CoupleDesign,
+  formatWeddingDate,
+  getPalette,
+} from "@shared/design";
 import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets } from "@shared/seating";
 import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";
@@ -48,6 +54,7 @@ const MM_TO_PT = 2.83465;
 
 const FORMATS = {
   a4: { width_mm: 210, height_mm: 297 },
+  a5: { width_mm: 148, height_mm: 210 },
   a3: { width_mm: 297, height_mm: 420 },
   // Flat 100×50mm place card. 2 across × 5 down on an A4 sheet = 10 per page.
   place_card: { width_mm: 100, height_mm: 50 },
@@ -665,9 +672,72 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
   return pdf.save();
 }
 
+/** Resolve a design's palette into the rgb() colours the PDF toolkit wants.
+ *  The shared catalog already normalises hex → rgb 0..1, which is exactly the
+ *  shape pdf-lib's `rgb()` consumes, so this is a thin adapter. */
+function designColors(design: CoupleDesign): {
+  primary: ReturnType<typeof rgb>;
+  background: ReturnType<typeof rgb>;
+  accent: ReturnType<typeof rgb>;
+  text: ReturnType<typeof rgb>;
+} {
+  const p = getPalette(design.palette);
+  return {
+    primary: rgb(...p.primary.rgb),
+    background: rgb(...p.background.rgb),
+    accent: rgb(...p.accent.rgb),
+    text: rgb(...p.text.rgb),
+  };
+}
+
+/** Draw the chosen decorative divider centred on (cxPt, yPt), within maxWidthPt.
+ *  Curated set only: a thin rule, a dotted run, or a sprig glyph. `frame` and
+ *  `none` are handled at the card level (frame = inset rectangle), so they draw
+ *  nothing here. Returns nothing; purely decorative. */
+function drawDecorDivider(
+  page: PDFPage,
+  font: PDFFont,
+  decor: CoupleDesign["decor"],
+  cxPt: number,
+  yPt: number,
+  maxWidthPt: number,
+  color: ReturnType<typeof rgb>,
+): void {
+  if (decor === "none" || decor === "frame") return;
+  if (decor === "line") {
+    const half = Math.min(maxWidthPt, mm(18)) / 2;
+    page.drawLine({
+      start: { x: cxPt - half, y: yPt },
+      end: { x: cxPt + half, y: yPt },
+      thickness: 0.6,
+      color,
+    });
+    return;
+  }
+  // `dots` and `botanical` both render as a short centred glyph run. Botanical
+  // has no embedded sprig face, so it falls back to a tasteful dotted motif -
+  // the divider still reads as an intentional ornament, never a missing glyph.
+  const glyph = decor === "dots" ? "· · ·" : "❦";
+  const safeGlyph = safe(glyph);
+  const size = 9;
+  const w = font.widthOfTextAtSize(safeGlyph, size);
+  page.drawText(safeGlyph, {
+    x: cxPt - w / 2,
+    y: yPt - size * 0.35,
+    size,
+    font,
+    color,
+  });
+}
+
 interface PlaceCardInput {
   couple_display_name: string;
   wedding_date: string | null;
+  /** Partner names - used to build the monogram via the shared catalog. */
+  bride_name: string;
+  groom_name: string;
+  /** Resolved visual identity. Drives palette, monogram, decor, border. */
+  design: CoupleDesign;
   guests: Guest[];
   /** When provided, prints the table label below the guest name. */
   tablesByGuestId?: Map<number, string>;
@@ -692,6 +762,12 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       return cjkFont;
     },
   };
+  // Resolved visual identity - palette colours, monogram, decor, border.
+  const colors = designColors(input.design);
+  const monogram =
+    input.design.monogram.enabled &&
+    buildMonogram(input.bride_name, input.groom_name, input.design.monogram.separator, "en");
+
   const cardW = FORMATS.place_card.width_mm;
   const cardH = FORMATS.place_card.height_mm;
   const sheetW = FORMATS.a4.width_mm;
@@ -726,17 +802,46 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       const row = Math.floor(slot / COLS);
       const x_mm0 = col * cellW + (cellW - cardW) / 2;
       const y_mm0_top = sheetH - (row + 1) * cellH + (cellH - cardH) / 2;
+      const cxPt = mm(x_mm0 + cardW / 2);
 
-      // Card border.
+      // Card background in the palette background tone. The hairline frame is
+      // honoured per design.print.border; a `frame` decor draws a second inset
+      // rule for a stationery double-border look.
       page.drawRectangle({
         x: mm(x_mm0),
         y: mm(y_mm0_top),
         width: mm(cardW),
         height: mm(cardH),
-        borderWidth: 0.5,
-        borderColor: rgb(0.75, 0.7, 0.55),
-        color: rgb(0.99, 0.98, 0.95),
+        borderWidth: input.design.print.border ? 0.5 : 0,
+        borderColor: colors.accent,
+        color: colors.background,
       });
+      if (input.design.decor === "frame") {
+        const inset = mm(3);
+        page.drawRectangle({
+          x: mm(x_mm0) + inset,
+          y: mm(y_mm0_top) + inset,
+          width: mm(cardW) - 2 * inset,
+          height: mm(cardH) - 2 * inset,
+          borderWidth: 0.5,
+          borderColor: colors.accent,
+          color: colors.background,
+        });
+      }
+
+      // Monogram across the top of the card, in the accent/primary tone.
+      if (monogram) {
+        const mFont = await pickFontAsync(fontPair, monogram, "bold");
+        const mSafe = safe(monogram);
+        const mw = mFont.widthOfTextAtSize(mSafe, 10);
+        page.drawText(mSafe, {
+          x: cxPt - mw / 2,
+          y: mm(y_mm0_top + cardH * 0.78),
+          size: 10,
+          font: mFont,
+          color: colors.primary,
+        });
+      }
 
       const name = safe(g.full_name);
       const nameSize = name.length > 22 ? 14 : 18;
@@ -745,29 +850,282 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       const tableLabel = input.tablesByGuestId?.get(g.id);
       // Centre the name vertically when there's no table label; nudge it up
       // a bit when a label is present so the two lines sit visually centred.
-      const nameY_mm = tableLabel ? y_mm0_top + cardH * 0.55 : y_mm0_top + cardH / 2 - 3;
+      const nameY_mm = tableLabel ? y_mm0_top + cardH * 0.5 : y_mm0_top + cardH / 2 - 3;
       page.drawText(name, {
-        x: mm(x_mm0 + cardW / 2) - nameW / 2,
+        x: cxPt - nameW / 2,
         y: mm(nameY_mm),
         size: nameSize,
         font: nameFont,
-        color: rgb(0.06, 0.09, 0.19),
+        color: colors.text,
       });
+
+      // Decorative divider between the name and the table label, in accent.
+      drawDecorDivider(
+        page,
+        helv,
+        input.design.decor,
+        cxPt,
+        mm(y_mm0_top + cardH * 0.36),
+        mm(cardW * 0.6),
+        colors.accent,
+      );
 
       if (tableLabel) {
         const t = safe(tableLabel);
         const tFont = await pickFontAsync(fontPair, t, "regular");
         const tw = tFont.widthOfTextAtSize(t, 10);
         page.drawText(t, {
-          x: mm(x_mm0 + cardW / 2) - tw / 2,
-          y: mm(y_mm0_top + cardH * 0.22),
+          x: cxPt - tw / 2,
+          y: mm(y_mm0_top + cardH * 0.2),
           size: 10,
           font: tFont,
-          color: rgb(0.27, 0.33, 0.48),
+          color: colors.primary,
         });
       }
     }
   }
+  return pdf.save();
+}
+
+/** Shared font-pair builder for the single-card A5/A6 design templates. Embeds
+ *  the Noto Sans subset + a lazy CJK fallback, exactly like the other
+ *  renderers. */
+async function buildFontPair(pdf: PDFDocument): Promise<FontPair> {
+  pdf.registerFontkit(fontkit);
+  const regular = await pdf.embedFont(NOTO_REGULAR, { subset: true });
+  const bold = await pdf.embedFont(NOTO_BOLD, { subset: true });
+  let cjkFont: PDFFont | null = null;
+  return {
+    regular,
+    bold,
+    getCjk: async () => {
+      if (cjkFont) return cjkFont;
+      cjkFont = await pdf.embedFont(NOTO_SC);
+      return cjkFont;
+    },
+  };
+}
+
+interface TableNumbersInput {
+  bride_name: string;
+  groom_name: string;
+  design: CoupleDesign;
+  tables: SeatingTable[];
+}
+
+/** A6 table-number cards - one per seating table, a big centred label with a
+ *  small monogram on top. Palette, decor, and border match the place cards so
+ *  the two sit together as a set. One card per A6 page. */
+export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  const fontPair = await buildFontPair(pdf);
+  const { regular: helv } = fontPair;
+  const colors = designColors(input.design);
+  const monogram =
+    input.design.monogram.enabled &&
+    buildMonogram(input.bride_name, input.groom_name, input.design.monogram.separator, "en");
+
+  // A6 = 105x148mm - half of A5, the matching set size for the place cards.
+  const W = 105;
+  const H = 148;
+
+  if (input.tables.length === 0) {
+    const page = pdf.addPage([mm(W), mm(H)]);
+    page.drawText("No tables yet.", {
+      x: mm(12),
+      y: mm(H - 24),
+      size: 14,
+      font: helv,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+    return pdf.save();
+  }
+
+  for (const t of input.tables) {
+    const page = pdf.addPage([mm(W), mm(H)]);
+    const cxPt = mm(W / 2);
+
+    // Background + optional hairline frame, identical idiom to the place card.
+    page.drawRectangle({
+      x: mm(6),
+      y: mm(6),
+      width: mm(W - 12),
+      height: mm(H - 12),
+      borderWidth: input.design.print.border ? 0.6 : 0,
+      borderColor: colors.accent,
+      color: colors.background,
+    });
+    if (input.design.decor === "frame") {
+      page.drawRectangle({
+        x: mm(10),
+        y: mm(10),
+        width: mm(W - 20),
+        height: mm(H - 20),
+        borderWidth: 0.5,
+        borderColor: colors.accent,
+        color: colors.background,
+      });
+    }
+
+    // Monogram at the top.
+    if (monogram) {
+      const mFont = await pickFontAsync(fontPair, monogram, "bold");
+      const mSafe = safe(monogram);
+      const mw = mFont.widthOfTextAtSize(mSafe, 14);
+      page.drawText(mSafe, {
+        x: cxPt - mw / 2,
+        y: mm(H - 28),
+        size: 14,
+        font: mFont,
+        color: colors.primary,
+      });
+    }
+
+    // Divider under the monogram.
+    drawDecorDivider(page, helv, input.design.decor, cxPt, mm(H - 40), mm(W * 0.5), colors.accent);
+
+    // Big centred table label, fitted to the card width.
+    const labelFit = await fitText(fontPair, t.label, 44, mm(W - 24), "bold");
+    const labelW = labelFit.font.widthOfTextAtSize(labelFit.text, 44);
+    page.drawText(labelFit.text, {
+      x: cxPt - labelW / 2,
+      y: mm(H / 2 - 8),
+      size: 44,
+      font: labelFit.font,
+      color: colors.text,
+    });
+  }
+
+  return pdf.save();
+}
+
+interface MenuInput {
+  couple_display_name: string;
+  wedding_date: string | null;
+  bride_name: string;
+  groom_name: string;
+  design: CoupleDesign;
+}
+
+/** A5 menu card in the wedding style - monogram, couple name, date, then a set
+ *  of labelled course lines the couple fills by hand. No invented dish names
+ *  (project rule: no fake placeholder data), just the generic course labels and
+ *  a writing rule under each. One card per A5 page. */
+export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
+  const { width_mm: W, height_mm: H } = FORMATS.a5;
+  const pdf = await PDFDocument.create();
+  const fontPair = await buildFontPair(pdf);
+  const { regular: helv } = fontPair;
+  const colors = designColors(input.design);
+  const monogram =
+    input.design.monogram.enabled &&
+    buildMonogram(input.bride_name, input.groom_name, input.design.monogram.separator, "en");
+  const dateText = formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
+
+  const page = pdf.addPage([mm(W), mm(H)]);
+  const cxPt = mm(W / 2);
+
+  // Background + optional hairline frame.
+  page.drawRectangle({
+    x: mm(8),
+    y: mm(8),
+    width: mm(W - 16),
+    height: mm(H - 16),
+    borderWidth: input.design.print.border ? 0.6 : 0,
+    borderColor: colors.accent,
+    color: colors.background,
+  });
+  if (input.design.decor === "frame") {
+    page.drawRectangle({
+      x: mm(12),
+      y: mm(12),
+      width: mm(W - 24),
+      height: mm(H - 24),
+      borderWidth: 0.5,
+      borderColor: colors.accent,
+      color: colors.background,
+    });
+  }
+
+  // Monogram.
+  if (monogram) {
+    const mFont = await pickFontAsync(fontPair, monogram, "bold");
+    const mSafe = safe(monogram);
+    const mw = mFont.widthOfTextAtSize(mSafe, 14);
+    page.drawText(mSafe, {
+      x: cxPt - mw / 2,
+      y: mm(H - 26),
+      size: 14,
+      font: mFont,
+      color: colors.primary,
+    });
+  }
+
+  // Couple display name.
+  const nameSafe = safe(input.couple_display_name);
+  const nameFont = await pickFontAsync(fontPair, nameSafe, "bold");
+  const nameW = nameFont.widthOfTextAtSize(nameSafe, 22);
+  page.drawText(nameSafe, {
+    x: cxPt - nameW / 2,
+    y: mm(H - 40),
+    size: 22,
+    font: nameFont,
+    color: colors.text,
+  });
+
+  // Date, when present.
+  if (dateText) {
+    const dSafe = safe(dateText);
+    const dFont = await pickFontAsync(fontPair, dSafe, "regular");
+    const dw = dFont.widthOfTextAtSize(dSafe, 11);
+    page.drawText(dSafe, {
+      x: cxPt - dw / 2,
+      y: mm(H - 49),
+      size: 11,
+      font: dFont,
+      color: colors.primary,
+    });
+  }
+
+  // "Menu" heading + divider.
+  const heading = "Menu";
+  const hFont = await pickFontAsync(fontPair, heading, "bold");
+  const hw = hFont.widthOfTextAtSize(heading, 13);
+  page.drawText(heading, {
+    x: cxPt - hw / 2,
+    y: mm(H - 64),
+    size: 13,
+    font: hFont,
+    color: colors.primary,
+  });
+  drawDecorDivider(page, helv, input.design.decor, cxPt, mm(H - 70), mm(W * 0.5), colors.accent);
+
+  // Course sections - generic labels only, each over a blank writing rule the
+  // couple fills in by hand. No invented dishes.
+  const courses = ["Starter", "Main", "Dessert"];
+  let yMm = H - 84;
+  const ruleHalf = mm((W - 40) / 2);
+  for (const course of courses) {
+    const cFont = await pickFontAsync(fontPair, course, "bold");
+    const cSafe = safe(course);
+    const cw = cFont.widthOfTextAtSize(cSafe, 11);
+    page.drawText(cSafe, {
+      x: cxPt - cw / 2,
+      y: mm(yMm),
+      size: 11,
+      font: cFont,
+      color: colors.text,
+    });
+    // Blank writing rule under the label.
+    page.drawLine({
+      start: { x: cxPt - ruleHalf, y: mm(yMm - 6) },
+      end: { x: cxPt + ruleHalf, y: mm(yMm - 6) },
+      thickness: 0.4,
+      color: colors.accent,
+    });
+    yMm -= 28;
+  }
+
   return pdf.save();
 }
 

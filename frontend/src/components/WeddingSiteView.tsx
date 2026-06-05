@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
 import { Link } from "react-router-dom";
+import { buildMonogram, formatWeddingDate } from "@shared/design";
 import { formatDate, formatMoney, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { GuestWishlistCard } from "./GuestWishlistCard";
@@ -198,8 +199,17 @@ export function WeddingSiteView({
   const showConfirmedExtras = tier === "confirmed";
 
   const dateLine = isPlausibleDateIso(view.wedding_date)
-    ? formatDate(view.wedding_date, locale)
+    ? formatWeddingDate(view.wedding_date, view.design.date_format, locale) ||
+      formatDate(view.wedding_date, locale)
     : t("wedding_site.date_tbd");
+
+  // Monogram (the couple's joined initials) + a decorative divider beneath the
+  // names, both driven by the Design selection. Empty monogram (no names yet)
+  // skips the block; "none" decor renders nothing.
+  const monogram = view.design.monogram_enabled
+    ? buildMonogram(view.bride_name, view.groom_name, view.design.monogram_separator, locale)
+    : "";
+  const decor = view.design.decor;
 
   // Visual identity from the couple's Design selection, fed in as CSS custom
   // properties on the `.wedding-theme` wrapper. index.css consumes these to
@@ -250,12 +260,53 @@ export function WeddingSiteView({
       {/* Hero — names + date (+ venue). Stationery aesthetic mirroring the
           landing page so the public site reads as part of the same brand. */}
       <section className="card stationery text-center">
+        {monogram && (
+          <p
+            className="wt-accent wt-heading mb-2 text-2xl tracking-[0.2em] text-blush-700 dark:text-blush-300"
+            style={{ color: "var(--wt-accent)", fontFamily: "var(--wt-heading-font)" }}
+            aria-hidden
+          >
+            {monogram}
+          </p>
+        )}
         <p className="wt-accent text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
           {t("wedding_site.eyebrow")}
         </p>
         <h1 className="mt-3 font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
           {view.couple_display_name}
         </h1>
+
+        {/* Decorative divider under the names: subtle, driven by the Design
+            selection. "none" renders nothing. */}
+        {decor !== "none" && (
+          <div className="mt-3 flex justify-center" aria-hidden>
+            {decor === "line" && (
+              <span
+                className="h-px w-20"
+                style={{ backgroundColor: "var(--wt-accent)" }}
+              />
+            )}
+            {decor === "dots" && (
+              <span
+                className="text-lg tracking-[0.4em]"
+                style={{ color: "var(--wt-accent)" }}
+              >
+                · · ·
+              </span>
+            )}
+            {decor === "frame" && (
+              <span
+                className="h-5 w-20 rounded border"
+                style={{ borderColor: "var(--wt-accent)" }}
+              />
+            )}
+            {decor === "botanical" && (
+              <span className="text-xl" style={{ color: "var(--wt-accent)" }}>
+                ❧
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Date — real line on the live page; in preview an empty/placeholder
             date becomes a ghost button that jumps to the dashboard. */}

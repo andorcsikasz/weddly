@@ -1610,6 +1610,9 @@ export interface LocaleMessages {
       palette: string;
       fonts: string;
       print: string;
+      monogram: string;
+      date: string;
+      decor: string;
     };
     /** Print-template toggle labels. */
     print: {
@@ -1647,6 +1650,56 @@ export interface LocaleMessages {
       classic_serif: string;
       modern_clean: string;
       soft_romantic: string;
+    };
+    /** Tabs: the Style Kit vs the Cards & printables hub. */
+    tab: {
+      style_kit: string;
+      cards: string;
+    };
+    /** Style-kit subtitle under the tab. */
+    subtitle: string;
+    /** Monogram section. */
+    monogram: {
+      enable: string;
+      separator_label: string;
+    };
+    /** Date-format preset names. */
+    date: {
+      numeric_dot: string;
+      long: string;
+      slash: string;
+    };
+    /** Decorative-style names. */
+    decor: {
+      none: string;
+      line: string;
+      botanical: string;
+      dots: string;
+      frame: string;
+    };
+    /** Cards & printables hub. */
+    cards: {
+      subtitle: string;
+      /** "Using your Wedding Style Kit" notice + link. */
+      using_style: string;
+      using_style_sub: string;
+      edit_style_kit: string;
+      action_download: string;
+      action_open: string;
+      downloading: string;
+      download_error: string;
+      status_ready: string;
+      status_needs_data: string;
+      place_cards_name: string;
+      place_cards_desc: string;
+      table_numbers_name: string;
+      table_numbers_desc: string;
+      menu_name: string;
+      menu_desc: string;
+      seating_chart_name: string;
+      seating_chart_desc: string;
+      schedule_name: string;
+      schedule_desc: string;
     };
   };
   moodboard: {
