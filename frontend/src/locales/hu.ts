@@ -1544,8 +1544,17 @@ const hu: LocaleMessages = {
     web: {
       card_radius_label: "Kártya lekerekítés",
       shadow_label: "Kártya árnyék",
+      button_style_label: "Gomb stílusa",
+      sections_label: "Látható szakaszok",
       card_radius: { sharp: "Éles", soft: "Lágy", full: "Erős" },
       shadow: { none: "Nincs", soft: "Lágy", pop: "Erős" },
+      button_style: { lifted: "Kiemelt", flat: "Lapos", outline: "Körvonal" },
+      section: {
+        intro: "Köszöntő",
+        schedule: "Program",
+        useful_info: "Tudnivalók",
+        wishlist: "Kívánságlista",
+      },
     },
     print_preview: {
       sample_name: "Vendég neve",
@@ -1558,6 +1567,7 @@ const hu: LocaleMessages = {
       menu_starter: "Előétel",
       menu_main: "Főétel",
       menu_dessert: "Desszert",
+      preview_exact_pdf: "Egzakt PDF előnézet",
     },
     subtitle:
       "Válasszátok ki a színeket, betűtípusokat és részleteket, amelyek a vendégoldalon, a kártyákon és a nyomtatványokon visszaköszönnek.",

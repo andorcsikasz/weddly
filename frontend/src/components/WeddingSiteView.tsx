@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
 import { Link } from "react-router-dom";
-import { buildMonogram, formatWeddingDate } from "@shared/design";
+import { buildMonogram, formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
 import { formatDate, formatMoney, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { GuestWishlistCard } from "./GuestWishlistCard";
@@ -211,6 +211,19 @@ export function WeddingSiteView({
     : "";
   const decor = view.design.decor;
 
+  // Website-only chrome from the Design feature's `web` sub-object.
+  // Section hiding applies to the LIVE page only — the editor preview keeps
+  // every section visible so the couple can still edit hidden ones.
+  const hiddenSet = new Set(view.design.website_hidden_sections);
+  const sectionHidden = (s: WebsiteSectionSlug) => !isPreview && hiddenSet.has(s);
+  // RSVP CTA look: lifted (3D), flat (filled), or outline.
+  const rsvpBtnClass =
+    view.design.website_button_style === "outline"
+      ? "btn-outline"
+      : view.design.website_button_style === "flat"
+        ? "btn-primary"
+        : "btn-primary btn-lifted";
+
   // Visual identity from the couple's Design selection, fed in as CSS custom
   // properties on the `.wedding-theme` wrapper. index.css consumes these to
   // retarget the heading font + accent colour (unlayered, so it beats the
@@ -355,7 +368,7 @@ export function WeddingSiteView({
       </section>
 
       {/* Pre-RSVP welcome block — same at every tier. */}
-      {view.guest_page_intro ? (
+      {view.guest_page_intro && !sectionHidden("intro") ? (
         <CardSection onEdit={isPreview ? e.onEditIntro : undefined} hint={editHint}>
           <p className="whitespace-pre-line text-base text-ink-800 dark:text-paper-100">
             {view.guest_page_intro}
@@ -398,7 +411,7 @@ export function WeddingSiteView({
       )}
 
       {/* Schedule — exposed at every tier. Ghost in preview when empty. */}
-      {view.schedule.length > 0 ? (
+      {view.schedule.length > 0 && !sectionHidden("schedule") ? (
         <CardSection onEdit={isPreview ? e.onEditSchedule : undefined} hint={editHint}>
           <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
             {t("wedding_site.schedule_title")}
@@ -437,7 +450,7 @@ export function WeddingSiteView({
       ) : null}
 
       {/* "Good to know" — parking, getting there, accommodation, … */}
-      {view.useful_info ? (
+      {view.useful_info && !sectionHidden("useful_info") ? (
         <CardSection onEdit={isPreview ? e.onEditUsefulInfo : undefined} hint={editHint}>
           <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
             {t("guest_portal.useful_info_title")}
@@ -513,6 +526,7 @@ export function WeddingSiteView({
           otherwise, and the editor preview has no household context). Gifts and
           personal requests render as two separate sections. */}
       {!isPreview &&
+        !sectionHidden("wishlist") &&
         view.wishlist &&
         view.wishlist.length > 0 &&
         (() => {
@@ -577,13 +591,13 @@ export function WeddingSiteView({
           </p>
           {isPreview ? (
             <span
-              className="btn-primary btn-lifted mt-5 inline-flex cursor-default opacity-90"
+              className={`${rsvpBtnClass} mt-5 inline-flex cursor-default opacity-90`}
               aria-hidden
             >
               {t("wedding_site.rsvp_cta")}
             </span>
           ) : (
-            <Link to={rsvpHref ?? "/"} className="btn-primary btn-lifted mt-5 inline-flex">
+            <Link to={rsvpHref ?? "/"} className={`${rsvpBtnClass} mt-5 inline-flex`}>
               {hasCode ? t("wedding_site.rsvp_personal_cta") : t("wedding_site.rsvp_cta")}
             </Link>
           )}

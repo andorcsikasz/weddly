@@ -1690,8 +1690,12 @@ export interface LocaleMessages {
     web: {
       card_radius_label: string;
       shadow_label: string;
+      button_style_label: string;
+      sections_label: string;
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };
+      button_style: { lifted: string; flat: string; outline: string };
+      section: { intro: string; schedule: string; useful_info: string; wishlist: string };
     };
     /** Instant print-card preview (right column on the Print tab). */
     print_preview: {
@@ -1706,6 +1710,7 @@ export interface LocaleMessages {
       menu_starter: string;
       menu_main: string;
       menu_dessert: string;
+      preview_exact_pdf: string;
     };
     /** Style-kit subtitle under the tab. */
     subtitle: string;

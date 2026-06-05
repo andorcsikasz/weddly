@@ -1528,8 +1528,17 @@ const en: LocaleMessages = {
     web: {
       card_radius_label: "Card rounding",
       shadow_label: "Card shadow",
+      button_style_label: "Button style",
+      sections_label: "Visible sections",
       card_radius: { sharp: "Sharp", soft: "Soft", full: "Round" },
       shadow: { none: "None", soft: "Soft", pop: "Pop" },
+      button_style: { lifted: "Lifted", flat: "Flat", outline: "Outline" },
+      section: {
+        intro: "Welcome",
+        schedule: "Schedule",
+        useful_info: "Good to know",
+        wishlist: "Wishlist",
+      },
     },
     print_preview: {
       sample_name: "Guest name",
@@ -1542,6 +1551,7 @@ const en: LocaleMessages = {
       menu_starter: "Starter",
       menu_main: "Main course",
       menu_dessert: "Dessert",
+      preview_exact_pdf: "Preview exact PDF",
     },
     subtitle:
       "Choose the colours, fonts and details reused across your guest page, cards and printables.",

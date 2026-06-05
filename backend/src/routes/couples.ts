@@ -27,6 +27,7 @@ import {
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
 import {
+  type ButtonStyleSlug,
   type CardRadiusSlug,
   COLOR_ROLES,
   type ColorRole,
@@ -40,6 +41,7 @@ import {
   type PaletteSlug,
   type ShadowSlug,
   type StylePresetSlug,
+  VALID_BUTTON_STYLES,
   VALID_CARD_RADII,
   VALID_DATE_FORMATS,
   VALID_DECOR,
@@ -49,6 +51,8 @@ import {
   VALID_SEPARATORS,
   VALID_SHADOWS,
   VALID_STYLES,
+  VALID_WEBSITE_SECTIONS,
+  type WebsiteSectionSlug,
 } from "@shared/design";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
@@ -1958,6 +1962,25 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         }
         next.web.shadow = v as ShadowSlug;
       }
+      if ("buttonStyle" in w) {
+        const v = w.buttonStyle;
+        if (typeof v !== "string" || !VALID_BUTTON_STYLES.has(v as ButtonStyleSlug)) {
+          throw new HttpError(400, "design.web.buttonStyle is not a valid button style");
+        }
+        next.web.buttonStyle = v as ButtonStyleSlug;
+      }
+      // hiddenSections is the authoritative full list (replace, not merge):
+      // every entry must be a known section slug. Deduped on store.
+      if ("hiddenSections" in w) {
+        const v = w.hiddenSections;
+        if (
+          !Array.isArray(v) ||
+          !v.every((s) => VALID_WEBSITE_SECTIONS.has(s as WebsiteSectionSlug))
+        ) {
+          throw new HttpError(400, "design.web.hiddenSections must be valid section slugs");
+        }
+        next.web.hiddenSections = [...new Set(v as WebsiteSectionSlug[])];
+      }
     }
     const changed =
       next.style !== prev.style ||
@@ -1974,7 +1997,9 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.print.ornament !== prev.print.ornament ||
       next.print.qr !== prev.print.qr ||
       next.web.cardRadius !== prev.web.cardRadius ||
-      next.web.shadow !== prev.web.shadow;
+      next.web.shadow !== prev.web.shadow ||
+      next.web.buttonStyle !== prev.web.buttonStyle ||
+      JSON.stringify(next.web.hiddenSections) !== JSON.stringify(prev.web.hiddenSections);
     if (changed) {
       updates.push({ col: "design_json", val: JSON.stringify(next) });
       auditEntries.push({

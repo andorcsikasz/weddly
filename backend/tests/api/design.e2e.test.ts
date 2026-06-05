@@ -27,7 +27,12 @@ interface CoupleDesign {
   dateFormat: string;
   decor: string;
   print: { border: boolean; ornament: boolean; qr: boolean };
-  web: { cardRadius: string; shadow: string };
+  web: {
+    cardRadius: string;
+    shadow: string;
+    buttonStyle: string;
+    hiddenSections: string[];
+  };
 }
 
 async function registerVerified(email: string): Promise<string> {
@@ -78,7 +83,7 @@ describe("design: default resolution", () => {
       dateFormat: "long",
       decor: "line",
       print: { border: true, ornament: false, qr: false },
-      web: { cardRadius: "soft", shadow: "soft" },
+      web: { cardRadius: "soft", shadow: "soft", buttonStyle: "lifted", hiddenSections: [] },
     });
   });
 });
@@ -370,7 +375,53 @@ describe("design: website-only `web` sub-object", () => {
       { token },
     );
     expect(me.data.couple.design.palette).toBe("espresso");
-    expect(me.data.couple.design.web).toEqual({ cardRadius: "soft", shadow: "soft" });
+    expect(me.data.couple.design.web).toEqual({
+      cardRadius: "soft",
+      shadow: "soft",
+      buttonStyle: "lifted",
+      hiddenSections: [],
+    });
+  });
+
+  test("button style + hidden sections round-trip; invalid values 400", async () => {
+    wipeAll();
+    const token = await registerVerified("design-web2@weddly.test");
+    const { couple } = await onboard(token);
+    const r = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { buttonStyle: "outline", hiddenSections: ["wishlist", "schedule"] } } },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.design.web.buttonStyle).toBe("outline");
+    expect(r.data.couple.design.web.hiddenSections.sort()).toEqual(["schedule", "wishlist"]);
+
+    // The public payload exposes them for the guest renderer.
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(couple.id);
+    const slug = (
+      db.prepare("SELECT slug FROM couples WHERE id = ?").get(couple.id) as { slug: string }
+    ).slug;
+    const pub = await req<{
+      wedding: { design: { website_button_style: string; website_hidden_sections: string[] } };
+    }>("GET", `/api/public/wedding/${encodeURIComponent(slug)}`);
+    expect(pub.data.wedding.design.website_button_style).toBe("outline");
+    expect(pub.data.wedding.design.website_hidden_sections).toContain("wishlist");
+
+    const badBtn = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { buttonStyle: "neon" } } },
+      { token },
+    );
+    expect(badBtn.status).toBe(400);
+    const badSection = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { hiddenSections: ["rsvp"] } } },
+      { token },
+    );
+    expect(badSection.status).toBe(400);
   });
 
   test("a valid web block round-trips and reaches the public payload as resolved CSS", async () => {

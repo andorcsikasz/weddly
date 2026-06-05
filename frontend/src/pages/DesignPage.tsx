@@ -7,6 +7,8 @@
 // page can never drift.
 
 import {
+  BUTTON_STYLES,
+  type ButtonStyleSlug,
   CARD_RADII,
   type CardRadiusSlug,
   COLOR_ROLES,
@@ -15,6 +17,8 @@ import {
   DATE_FORMATS,
   type ShadowSlug,
   SHADOWS,
+  WEBSITE_SECTIONS,
+  type WebsiteSectionSlug,
   DECOR_STYLES,
   FONT_FAMILIES,
   FONT_PRESETS,
@@ -33,7 +37,7 @@ import {
 import { getContrastRatio } from "@shared/wcag";
 import type { Couple } from "@shared/types";
 import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
-import { Check, Download, Loader2 } from "lucide-react";
+import { Check, Download, Eye, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
@@ -202,6 +206,10 @@ export default function DesignPage() {
   const [tab, setTab] = useState<"website" | "print">("website");
   // Which printable the live print preview shows (Print tab only).
   const [printTemplate, setPrintTemplate] = useState<PrintTemplate>("place_card");
+  // On-demand exact-PDF preview (blob: URL shown in an iframe under the live
+  // card). Null until the couple asks for it; revoked + recomputed per request.
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfPreviewBusy, setPdfPreviewBusy] = useState(false);
   // Per-tile download-in-flight flag, keyed by the printable's slug.
   const [downloading, setDownloading] = useState<string | null>(null);
 
@@ -302,6 +310,17 @@ export default function DesignPage() {
   function chooseShadow(slug: ShadowSlug) {
     setDesign((d) => ({ ...d, web: { ...d.web, shadow: slug } }));
   }
+  function chooseButtonStyle(slug: ButtonStyleSlug) {
+    setDesign((d) => ({ ...d, web: { ...d.web, buttonStyle: slug } }));
+  }
+  function toggleSection(slug: WebsiteSectionSlug) {
+    setDesign((d) => {
+      const hidden = d.web.hiddenSections.includes(slug)
+        ? d.web.hiddenSections.filter((s) => s !== slug)
+        : [...d.web.hiddenSections, slug];
+      return { ...d, web: { ...d.web, hiddenSections: hidden } };
+    });
+  }
   function toggleMonogram() {
     setDesign((d) => ({ ...d, monogram: { ...d.monogram, enabled: !d.monogram.enabled } }));
   }
@@ -335,6 +354,33 @@ export default function DesignPage() {
       toast.error(t("design.cards.download_error"));
     } finally {
       setDownloading(null);
+    }
+  }
+
+  // Server path for the exact PDF of the currently-selected template.
+  const exactPdfPath: Record<PrintTemplate, string> = {
+    place_card: placeCardsUrl(),
+    table_number: "/api/print/table-numbers",
+    menu: "/api/print/menu",
+  };
+
+  // Fetch the real PDF and show it in the iframe below the live card. Revokes
+  // any previous blob URL first so we never leak object URLs.
+  async function previewExactPdf() {
+    if (pdfPreviewBusy) return;
+    setPdfPreviewBusy(true);
+    try {
+      const blob = await fetchPdfBlob(exactPdfPath[printTemplate]);
+      const typed =
+        blob.type === "application/pdf" ? blob : blob.slice(0, blob.size, "application/pdf");
+      setPdfPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(typed);
+      });
+    } catch {
+      toast.error(t("design.cards.download_error"));
+    } finally {
+      setPdfPreviewBusy(false);
     }
   }
 
@@ -748,6 +794,61 @@ export default function DesignPage() {
                   value={design.web.shadow}
                   onChange={chooseShadow}
                 />
+                {/* RSVP button look */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.web.button_style_label")}
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {BUTTON_STYLES.map((b) => {
+                      const active = design.web.buttonStyle === b.slug;
+                      return (
+                        <button
+                          key={b.slug}
+                          type="button"
+                          onClick={() => chooseButtonStyle(b.slug)}
+                          aria-pressed={active}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                            active
+                              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+                              : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                          }`}
+                        >
+                          {active && <Check size={12} strokeWidth={3} aria-hidden />}
+                          {t(b.nameKey)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+                {/* Section visibility — a pressed chip = visible; unpress to hide
+                    it from the guest page. RSVP is never hideable. */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.web.sections_label")}
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {WEBSITE_SECTIONS.map((sec) => {
+                      const visible = !design.web.hiddenSections.includes(sec.slug);
+                      return (
+                        <button
+                          key={sec.slug}
+                          type="button"
+                          onClick={() => toggleSection(sec.slug)}
+                          aria-pressed={visible}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                            visible
+                              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+                              : "border-paper-300 bg-white text-ink-400 line-through hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300"
+                          }`}
+                        >
+                          {visible && <Check size={12} strokeWidth={3} aria-hidden />}
+                          {t(sec.nameKey)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
               </div>
             ) : (
               <div className="space-y-6">
@@ -761,7 +862,13 @@ export default function DesignPage() {
                       <button
                         key={tpl}
                         type="button"
-                        onClick={() => setPrintTemplate(tpl)}
+                        onClick={() => {
+                          setPrintTemplate(tpl);
+                          setPdfPreviewUrl((p) => {
+                            if (p) URL.revokeObjectURL(p);
+                            return null;
+                          });
+                        }}
                         aria-pressed={printTemplate === tpl}
                         className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
                           printTemplate === tpl
@@ -858,13 +965,35 @@ export default function DesignPage() {
               {t("design.preview_label")}
             </p>
             {tab === "print" ? (
-              <PrintCardPreview
-                design={design}
-                template={printTemplate}
-                brideName={couple?.bride_name ?? null}
-                groomName={couple?.groom_name ?? null}
-                locale={locale}
-              />
+              <div className="space-y-3">
+                <PrintCardPreview
+                  design={design}
+                  template={printTemplate}
+                  brideName={couple?.bride_name ?? null}
+                  groomName={couple?.groom_name ?? null}
+                  locale={locale}
+                />
+                <button
+                  type="button"
+                  onClick={() => void previewExactPdf()}
+                  disabled={pdfPreviewBusy}
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-paper-400 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
+                >
+                  {pdfPreviewBusy ? (
+                    <Loader2 size={14} className="animate-spin" aria-hidden />
+                  ) : (
+                    <Eye size={14} aria-hidden />
+                  )}
+                  {t("design.print_preview.preview_exact_pdf")}
+                </button>
+                {pdfPreviewUrl && (
+                  <iframe
+                    src={pdfPreviewUrl}
+                    title={t("design.print_preview.preview_exact_pdf")}
+                    className="h-96 w-full rounded-xl border border-paper-200 dark:border-umber-700"
+                  />
+                )}
+              </div>
             ) : (
               previewView && (
                 <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">

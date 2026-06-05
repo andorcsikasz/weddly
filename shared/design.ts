@@ -354,6 +354,11 @@ export const VALID_DECOR: ReadonlySet<DecorSlug> = new Set(DECOR_STYLES.map((d) 
 export type CardRadiusSlug = "sharp" | "soft" | "full";
 /** Card elevation on the guest page. */
 export type ShadowSlug = "none" | "soft" | "pop";
+/** Look of the guest-page RSVP call-to-action button. */
+export type ButtonStyleSlug = "lifted" | "flat" | "outline";
+/** Guest-page sections the couple may hide. RSVP is intentionally NOT hideable
+ *  (a couple shouldn't be able to silently turn off responses). */
+export type WebsiteSectionSlug = "intro" | "schedule" | "useful_info" | "wishlist";
 
 export const CARD_RADII: readonly { slug: CardRadiusSlug; nameKey: string; css: string }[] = [
   { slug: "sharp", nameKey: "design.web.card_radius.sharp", css: "0.375rem" },
@@ -375,14 +380,36 @@ export const SHADOWS: readonly { slug: ShadowSlug; nameKey: string; css: string 
   },
 ];
 
+export const BUTTON_STYLES: readonly { slug: ButtonStyleSlug; nameKey: string }[] = [
+  { slug: "lifted", nameKey: "design.web.button_style.lifted" },
+  { slug: "flat", nameKey: "design.web.button_style.flat" },
+  { slug: "outline", nameKey: "design.web.button_style.outline" },
+];
+
+export const WEBSITE_SECTIONS: readonly { slug: WebsiteSectionSlug; nameKey: string }[] = [
+  { slug: "intro", nameKey: "design.web.section.intro" },
+  { slug: "schedule", nameKey: "design.web.section.schedule" },
+  { slug: "useful_info", nameKey: "design.web.section.useful_info" },
+  { slug: "wishlist", nameKey: "design.web.section.wishlist" },
+];
+
 export const VALID_CARD_RADII: ReadonlySet<CardRadiusSlug> = new Set(CARD_RADII.map((r) => r.slug));
 export const VALID_SHADOWS: ReadonlySet<ShadowSlug> = new Set(SHADOWS.map((s) => s.slug));
+export const VALID_BUTTON_STYLES: ReadonlySet<ButtonStyleSlug> = new Set(
+  BUTTON_STYLES.map((b) => b.slug),
+);
+export const VALID_WEBSITE_SECTIONS: ReadonlySet<WebsiteSectionSlug> = new Set(
+  WEBSITE_SECTIONS.map((s) => s.slug),
+);
 
 /** Website-only options (guest page chrome). Always fully populated on the
  *  resolved design; absent in legacy blobs (filled from DEFAULT_DESIGN.web). */
 export interface DesignWebsiteOptions {
   cardRadius: CardRadiusSlug;
   shadow: ShadowSlug;
+  buttonStyle: ButtonStyleSlug;
+  /** Sections the couple chose to hide (deduped, validated). */
+  hiddenSections: WebsiteSectionSlug[];
 }
 
 /** Resolve a card-radius slug to its CSS length; never throws. */
@@ -410,7 +437,7 @@ export const DEFAULT_DESIGN: CoupleDesign = {
   print: { border: true, ornament: false, qr: false },
   // Defaults reproduce today's hardcoded guest-page look, so a legacy blob
   // (no `web` key) restyles to nothing.
-  web: { cardRadius: "soft", shadow: "soft" },
+  web: { cardRadius: "soft", shadow: "soft", buttonStyle: "lifted", hiddenSections: [] },
 };
 
 /** Look up a palette by slug; never throws — an unknown slug falls back to the
@@ -472,6 +499,14 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
           : DEFAULT_DESIGN.web.cardRadius,
       shadow:
         i.web?.shadow && VALID_SHADOWS.has(i.web.shadow) ? i.web.shadow : DEFAULT_DESIGN.web.shadow,
+      buttonStyle:
+        i.web?.buttonStyle && VALID_BUTTON_STYLES.has(i.web.buttonStyle)
+          ? i.web.buttonStyle
+          : DEFAULT_DESIGN.web.buttonStyle,
+      // Keep only known section slugs, deduped, so a bad blob can't poison it.
+      hiddenSections: Array.isArray(i.web?.hiddenSections)
+        ? [...new Set(i.web.hiddenSections.filter((s) => VALID_WEBSITE_SECTIONS.has(s)))]
+        : [],
     },
   };
 }
@@ -500,6 +535,10 @@ export interface PublicDesign {
    *  `--wt-*` custom properties. Never read by the PDF renderer. */
   website_card_radius: string;
   website_shadow: string;
+  /** RSVP button look (slug; the guest page maps it to a class). */
+  website_button_style: ButtonStyleSlug;
+  /** Sections the couple hid; the guest page skips these. */
+  website_hidden_sections: WebsiteSectionSlug[];
 }
 
 /** Build the public, presentation-only payload from a resolved design. */
@@ -533,6 +572,8 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
     decor: design.decor,
     website_card_radius: getCardRadiusCss(design.web.cardRadius),
     website_shadow: getShadowCss(design.web.shadow),
+    website_button_style: design.web.buttonStyle,
+    website_hidden_sections: design.web.hiddenSections,
   };
 }
 
