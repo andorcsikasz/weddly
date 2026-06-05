@@ -1315,7 +1315,7 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
                   setActive(idx);
                 }
               }}
-              className="absolute left-1/2 top-1/2 block w-[56vw] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-wnrs-red"
+              className="absolute left-1/2 top-1/2 block w-[76vw] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-wnrs-red"
               style={{
                 transform: `translate(-50%, -50%) translateX(${p * 56}vw) scale(${scale}) rotateY(${rot}deg)`,
                 opacity,
@@ -1327,8 +1327,10 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
                 willChange: "transform",
               }}
             >
+              {/* Landscape (3/2) face matching the tool's deck-cover card:
+               *  number headline, parenthesised deck title, WĒDDLY footer. */}
               <div
-                className={`flex aspect-[2/3] w-full flex-col items-center justify-between overflow-hidden rounded-2xl px-5 py-7 text-center ${
+                className={`flex aspect-[3/2] w-full flex-col items-center justify-between overflow-hidden rounded-2xl px-7 py-8 text-center ${
                   isLemonade
                     ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_24px_50px_-20px_rgba(161,98,7,0.6)]"
                     : "bg-wnrs-red text-white shadow-[0_24px_50px_-20px_rgba(204,31,40,0.6)]"
@@ -1336,14 +1338,14 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
               >
                 <span aria-hidden className="block h-1" />
                 <div className="flex flex-1 flex-col items-center justify-center">
-                  <span className="font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight">
+                  <span className="font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight">
                     {isLemonade
                       ? t(deck.titleKey).toUpperCase()
                       : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
                   </span>
                   {!isLemonade ? (
-                    <span className="mt-2 font-display text-base font-bold uppercase tracking-[0.04em]">
-                      {t(deck.titleKey)}
+                    <span className="mt-3 font-display text-base font-bold uppercase tracking-[0.04em]">
+                      ({t(deck.titleKey)})
                     </span>
                   ) : null}
                 </div>
