@@ -21,8 +21,6 @@ import {
   getPalette,
   MONOGRAM_SEPARATORS,
   monogramSeparatorGlyph,
-  PALETTES,
-  type PaletteSlug,
   resolveDesign,
   STYLE_PRESETS,
   type StylePresetSlug,
@@ -84,6 +82,37 @@ function PresetTile({
       )}
       {children}
       <span className="text-sm font-medium text-ink-900 dark:text-paper-50">{label}</span>
+    </button>
+  );
+}
+
+/** A selectable font chip that renders its own label in the font it represents,
+ *  so the couple previews the typeface before choosing. `fontFamily` omitted =
+ *  the "Use preset" chip (rendered in the UI font). */
+function FontChip({
+  active,
+  onClick,
+  fontFamily,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  fontFamily?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      style={fontFamily ? { fontFamily } : undefined}
+      className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+        active
+          ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+          : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+      }`}
+    >
+      {children}
     </button>
   );
 }
@@ -175,11 +204,6 @@ export default function DesignPage() {
       headingFont: null,
       bodyFont: null,
     }));
-  }
-  function choosePalette(slug: PaletteSlug) {
-    // Picking a palette clears per-role colour overrides, so the palette tile
-    // doubles as the "reset my custom colours" affordance.
-    setDesign((d) => ({ ...d, palette: slug, colors: {} }));
   }
   function chooseFonts(slug: FontPresetSlug) {
     // Picking a font preset clears the independent family overrides.
@@ -404,43 +428,18 @@ export default function DesignPage() {
               </div>
             </section>
 
-            {/* Colour palette */}
+            {/* Colours — the base palette comes from the chosen Wedding Style;
+                here the couple fine-tunes any role on top of it. Each input is
+                seeded from the resolved colour (override or palette); Reset
+                clears the override back to the palette. */}
             <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("design.section.palette")}
-              </h2>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {PALETTES.map((p) => (
-                  <PresetTile
-                    key={p.slug}
-                    active={design.palette === p.slug}
-                    onSelect={() => choosePalette(p.slug)}
-                    label={t(p.nameKey)}
-                    ariaLabel={t(p.nameKey)}
-                  >
-                    <span className="flex gap-1.5" aria-hidden>
-                      {[p.primary, p.accent, p.background, p.text].map((c) => (
-                        <span
-                          key={c.hex}
-                          className="h-8 w-8 rounded-full border border-paper-200 dark:border-umber-700"
-                          style={{ backgroundColor: c.hex }}
-                        />
-                      ))}
-                    </span>
-                  </PresetTile>
-                ))}
+              <div className="mb-2 flex items-center gap-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  {t("design.colors.title")}
+                </h2>
+                <InfoHint text={t("design.colors.hint")} />
               </div>
-
-              {/* Custom colours — per-role overrides on top of the palette.
-                  Each input is seeded from the resolved colour (override or
-                  palette), and a Reset clears the override back to the palette. */}
-              <div className="mt-3 rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.colors.title")}
-                  </span>
-                  <InfoHint text={t("design.colors.hint")} />
-                </div>
+              <div className="rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {COLOR_ROLES.map((role) => {
                     const resolved = design.colors[role] ?? activePalette[role].hex;
@@ -511,34 +510,37 @@ export default function DesignPage() {
               </div>
 
               {/* Independent heading / body family overrides on top of the
-                  preset. "Use preset" clears the override. Only bundled
-                  families are offered (no new webfont request). */}
-              <div className="mt-3 grid grid-cols-2 gap-3">
+                  preset, one row each. Each chip renders its own name in its
+                  actual font so the couple sees the typeface before picking.
+                  "Use preset" clears the override; only bundled families are
+                  offered (no new webfont request). */}
+              <div className="mt-3 space-y-3">
                 {(
                   [
                     ["heading", design.headingFont, chooseHeadingFont] as const,
                     ["body", design.bodyFont, chooseBodyFont] as const,
                   ] as const
                 ).map(([which, current, setter]) => (
-                  <label key={which} className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-ink-600 dark:text-umber-200">
+                  <div key={which}>
+                    <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
                       {t(`design.font.${which}_label`)}
                     </span>
-                    <select
-                      value={current ?? ""}
-                      onChange={(ev) =>
-                        setter(ev.target.value === "" ? null : (ev.target.value as FontFamilySlug))
-                      }
-                      className="input h-10 min-h-0"
-                    >
-                      <option value="">{t("design.font.use_preset")}</option>
+                    <div className="flex flex-wrap gap-2">
+                      <FontChip active={current === null} onClick={() => setter(null)}>
+                        {t("design.font.use_preset")}
+                      </FontChip>
                       {FONT_FAMILIES.map((fam) => (
-                        <option key={fam.slug} value={fam.slug}>
+                        <FontChip
+                          key={fam.slug}
+                          active={current === fam.slug}
+                          onClick={() => setter(fam.slug)}
+                          fontFamily={fam.stack}
+                        >
                           {t(fam.nameKey)}
-                        </option>
+                        </FontChip>
                       ))}
-                    </select>
-                  </label>
+                    </div>
+                  </div>
                 ))}
               </div>
             </section>
