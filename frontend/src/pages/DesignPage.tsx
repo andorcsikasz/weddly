@@ -367,10 +367,10 @@ export default function DesignPage() {
       ) : tab === "style" ? (
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
           {/* ── Picker column ───────────────────────────────────────────── */}
-          <div className="space-y-10">
+          <div className="space-y-6">
             {/* Wedding style */}
             <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("design.section.style")}
               </h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -406,7 +406,7 @@ export default function DesignPage() {
 
             {/* Colour palette */}
             <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("design.section.palette")}
               </h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -434,7 +434,7 @@ export default function DesignPage() {
               {/* Custom colours — per-role overrides on top of the palette.
                   Each input is seeded from the resolved colour (override or
                   palette), and a Reset clears the override back to the palette. */}
-              <div className="mt-4 rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
+              <div className="mt-3 rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
                 <div className="mb-2 flex items-center gap-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                     {t("design.colors.title")}
@@ -480,10 +480,10 @@ export default function DesignPage() {
 
             {/* Fonts */}
             <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("design.section.fonts")}
               </h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {FONT_PRESETS.map((f) => (
                   <PresetTile
                     key={f.slug}
@@ -492,15 +492,15 @@ export default function DesignPage() {
                     label={t(f.nameKey)}
                     ariaLabel={t(f.nameKey)}
                   >
-                    <span className="flex flex-col gap-0.5" aria-hidden>
+                    <span className="flex flex-col" aria-hidden>
                       <span
-                        className="text-2xl leading-none text-ink-900 dark:text-paper-50"
+                        className="text-xl leading-tight text-ink-900 dark:text-paper-50"
                         style={{ fontFamily: f.headingStack }}
                       >
                         Anna & Bence
                       </span>
                       <span
-                        className="text-xs text-ink-500 dark:text-umber-300"
+                        className="truncate text-[11px] text-ink-500 dark:text-umber-300"
                         style={{ fontFamily: f.bodyStack }}
                       >
                         {t("design.font_sample_body")}
@@ -513,7 +513,7 @@ export default function DesignPage() {
               {/* Independent heading / body family overrides on top of the
                   preset. "Use preset" clears the override. Only bundled
                   families are offered (no new webfont request). */}
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="mt-3 grid grid-cols-2 gap-3">
                 {(
                   [
                     ["heading", design.headingFont, chooseHeadingFont] as const,
@@ -545,7 +545,7 @@ export default function DesignPage() {
 
             {/* Print options */}
             <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("design.section.print")}
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -573,7 +573,7 @@ export default function DesignPage() {
 
             {/* Monogram */}
             <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("design.section.monogram")}
               </h2>
               <button
@@ -623,10 +623,10 @@ export default function DesignPage() {
 
             {/* Date format */}
             <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("design.section.date")}
               </h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-3 gap-2">
                 {DATE_FORMATS.map((df) => (
                   <PresetTile
                     key={df.slug}
@@ -648,7 +648,7 @@ export default function DesignPage() {
 
             {/* Decorative style */}
             <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("design.section.decor")}
               </h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
