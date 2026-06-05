@@ -1113,7 +1113,7 @@ CREATE INDEX IF NOT EXISTS idx_couple_card_feedback_created
 -- next copy iteration; nothing is auto-promoted.
 CREATE TABLE IF NOT EXISTS couple_card_suggestions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  deck_id TEXT NOT NULL,                        -- 'roots' | 'everyday' | 'closeness' | 'deepwater' | 'lemonade'
+  deck_id TEXT NOT NULL,                        -- 'roots' | 'everyday' | 'closeness' | 'deepwater' | 'lemonade' | 'greenflag'
   locale TEXT NOT NULL,                         -- 'hu' | 'en'
   suggestion TEXT NOT NULL,
   created_at INTEGER NOT NULL

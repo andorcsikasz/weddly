@@ -8,8 +8,9 @@ import { COUPLE_CARD_DECKS, DECK_SIZE } from "@/lib/couple_cards";
 
 // Decks that ship without questions yet — they render a "coming soon"
 // label and are not openable until cards land. Keep this list in sync
-// with the empty arrays in couple_cards.ts.
-const COMING_SOON_DECK_IDS = new Set(["greenflag"]);
+// with the empty arrays in couple_cards.ts. All six decks are now fully
+// populated (greenflag's first-date cards have landed), so this is empty.
+const COMING_SOON_DECK_IDS = new Set<string>();
 
 describe("couple_cards data shape", () => {
   it("ships exactly 6 decks (4 red + greenflag + lemonade easter eggs)", () => {

@@ -304,11 +304,62 @@ const LEMONADE_EN: readonly string[] = [
 
 // Hidden easter-egg deck tucked off the LEFT edge of the mini-deck row,
 // the mirror of lemonade on the right. A light "first date" pack — pastel
-// green, revealed after a left-swipe. Questions land later; for now the
-// arrays are intentionally empty (the tile shows a "soon" label and the
-// deck is not openable until it has cards).
-const GREENFLAG_HU: readonly string[] = [];
-const GREENFLAG_EN: readonly string[] = [];
+// green, revealed after a left-swipe. Easy, curious openers for the very
+// beginning of a relationship.
+const GREENFLAG_HU: readonly string[] = [
+  "Mi az az apróság, amitől rögtön jobb kedved lesz?",
+  "Felébredsz, és semmi dolgod aznap. Hogyan töltenéd a napot?",
+  "Mi az, amitől egy első randin azt érzed: na, ez green flag?",
+  "Mi az a komfortkaja, ami mindig jólesik, és miért pont az?",
+  "Te inkább azonnal válaszolsz, átgondolod az üzeneteidet, vagy a „bocsi, elfelejtettem, hogy van telefonom” típus vagy?",
+  "Ha az életed most egy film lenne, milyen zene szólna alatta?",
+  "Mi az az egyszerű randiötlet, amit szerinted többen is értékelhetnének?",
+  "Milyen humorral lehet téged a legkönnyebben megnevettetni?",
+  "Neked milyen egy igazán kuckózós este?",
+  "Mi az a teljesen random képesség vagy furán specifikus dolog, amiben meglepően jó vagy?",
+  "Utazásnál inkább előre megtervezel mindent, vagy szereted, ha alakulnak a dolgok?",
+  "Milyen bók esik neked igazán jól?",
+  "Van olyan kis napi vagy heti szokásod, amitől jobb lesz a heted?",
+  "Egy pörgős hét után hogyan töltődsz fel leginkább: egyedül, közeli barátokkal vagy valami aktív programmal?",
+  "Te választasz filmet egy nyugis otthoni estére. Mit nézünk?",
+  "Mi az az apró kedvesség, amit mindig észreveszel másokban?",
+  "Mi az, amit gyerekként imádtál, és valahol még most is ugyanúgy szeretsz?",
+  "Mit értenek félre veled kapcsolatban az emberek elsőre?",
+  "Mi az az apróság, ami érezhetően jobbá tette a mindennapjaidat?",
+  "Mitől lesz valaki úgy igazán sármos anélkül, hogy erőlködne?",
+  "Három szóban: milyen a zenei ízlésed?",
+  "Városnézés, természetközeli elvonulás, lusta otthoni hétvége vagy spontán road trip? Melyiket választanád, és miért?",
+  "Milyen tulajdonságot értékelsz igazán azokban, akikkel szívesen vagy együtt?",
+  "Mi az az ártalmatlan véleményed, ami mellett meglepően lelkesen tudsz érvelni?",
+  "Ha lenne második randi, szerinted mi lenne egy jó közös program?",
+];
+const GREENFLAG_EN: readonly string[] = [
+  "What is one small thing that instantly improves your mood?",
+  "You wake up with a completely free day and no responsibilities. What do you do?",
+  "What is something someone can do on a first date that feels like a green flag to you?",
+  "What meal feels like comfort to you, and why?",
+  "Are you a fast replier, a thoughtful replier, or a “sorry, I forgot I own a phone” person?",
+  "What song would play in the background of your life right now?",
+  "What is a simple date idea that you think is underrated?",
+  "What kind of humor gets you every time?",
+  "What does a cozy evening look like for you?",
+  "What is a random skill, talent, or oddly specific thing you are good at?",
+  "Are you more of a planned-itinerary traveler or a “let’s see what happens” traveler?",
+  "What kind of compliment actually means something to you?",
+  "Do you have a daily or weekly ritual that makes life better?",
+  "After a busy week, do you recharge alone, with close friends, or by doing something active?",
+  "You get to choose the movie for a relaxed night in. What are we watching?",
+  "What is a small act of kindness you notice in other people?",
+  "What is something you loved as a kid that you still secretly love now?",
+  "What do people often misunderstand about you at first?",
+  "What is one small thing that made your life noticeably better?",
+  "What is something charming that someone can do without trying too hard?",
+  "What three words describe your music taste?",
+  "City trip, nature escape, lazy home weekend, or spontaneous road trip? Choose one and explain.",
+  "What is a quality you really appreciate in people you spend time with?",
+  "What harmless opinion are you weirdly passionate about?",
+  "After tonight, what would be a fun second-date idea?",
+];
 
 export const COUPLE_CARD_DECKS: readonly Deck[] = [
   {

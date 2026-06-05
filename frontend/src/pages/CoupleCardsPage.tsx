@@ -887,7 +887,11 @@ function CardView({
         ) : cardNumber !== null ? (
           <p
             className={`mt-6 text-center font-display text-[11px] font-bold uppercase tracking-[0.32em] ${
-              deckId === "lemonade" ? "text-lemonade-ink dark:text-paper-50" : "text-wnrs-red"
+              deckId === "lemonade"
+                ? "text-lemonade-ink dark:text-paper-50"
+                : deckId === "greenflag"
+                  ? "text-greenflag-ink dark:text-paper-50"
+                  : "text-wnrs-red"
             }`}
           >
             {t("tools.couple_cards.card_position", { n: cardNumber, total: DECK_SIZE })}
@@ -917,7 +921,9 @@ function CardView({
               className={`couple-card group relative flex aspect-[3/2] w-full cursor-pointer flex-col items-center justify-between rounded-[2.25rem] px-7 py-8 text-left transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-12 sm:py-12 ${
                 deckId === "lemonade"
                   ? "bg-lemonade-yellow shadow-[0_30px_60px_-25px_rgba(161,98,7,0.55)] ring-1 ring-lemonade-yellowInk/30 focus-visible:ring-lemonade-yellow"
-                  : "bg-white shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 focus-visible:ring-wnrs-red"
+                  : deckId === "greenflag"
+                    ? "bg-greenflag-green shadow-[0_30px_60px_-25px_rgba(21,128,61,0.45)] ring-1 ring-greenflag-greenInk/30 focus-visible:ring-greenflag-green"
+                    : "bg-white shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 focus-visible:ring-wnrs-red"
               }`}
             >
               {/* Re-mount the inner article on every card flip so the keyed
@@ -934,7 +940,11 @@ function CardView({
                 <p
                   data-testid="couple-card-question"
                   className={`text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] sm:text-2xl lg:text-3xl ${
-                    deckId === "lemonade" ? "text-lemonade-ink" : "text-wnrs-red"
+                    deckId === "lemonade"
+                      ? "text-lemonade-ink"
+                      : deckId === "greenflag"
+                        ? "text-greenflag-ink"
+                        : "text-wnrs-red"
                   }`}
                 >
                   {question ?? t("tools.couple_cards.card_empty")}
@@ -946,7 +956,11 @@ function CardView({
                 <div className="text-center">
                   <p
                     className={`font-display text-[10px] font-bold uppercase tracking-[0.28em] sm:text-xs ${
-                      deckId === "lemonade" ? "text-lemonade-ink" : "text-wnrs-red"
+                      deckId === "lemonade"
+                        ? "text-lemonade-ink"
+                        : deckId === "greenflag"
+                          ? "text-greenflag-ink"
+                          : "text-wnrs-red"
                     }`}
                   >
                     {/* Hard-coded already-uppercase form so the macron above
@@ -958,7 +972,11 @@ function CardView({
                   </p>
                   <p
                     className={`mt-1 font-display text-[9px] uppercase tracking-[0.24em] sm:text-[10px] ${
-                      deckId === "lemonade" ? "text-lemonade-ink/70" : "text-wnrs-redInk"
+                      deckId === "lemonade"
+                        ? "text-lemonade-ink/70"
+                        : deckId === "greenflag"
+                          ? "text-greenflag-ink/70"
+                          : "text-wnrs-redInk"
                     }`}
                   >
                     {deckTitle}
