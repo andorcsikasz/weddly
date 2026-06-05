@@ -731,38 +731,48 @@ export default function GuestPageEditorPage() {
       }
     : null;
 
-  // Venue card in the preview is a shortcut to its editor field below — scroll
-  // it into view and focus it so the couple lands right on the input.
-  function focusVenueField() {
-    const el = document.getElementById("guest-page-venue");
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
+  // Reveal an editor field that may live inside a collapsed <details> section:
+  // open the section FIRST, then scroll it into view. The public-content fields
+  // (venue, cover, intro, useful-info) sit inside a collapsed disclosure, so
+  // without the open step a click on a preview ghost scrolls to (and focuses)
+  // an element that's still display:none and nothing visible happens.
+  function revealField(id: string): HTMLElement | null {
+    const el = document.getElementById(id);
+    if (!(el instanceof HTMLElement)) return null;
+    el.closest("details")?.setAttribute("open", "");
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    return el;
   }
 
+  // Venue card in the preview is a shortcut to its editor field below — reveal
+  // it and focus the input so the couple lands right on it.
+  function focusVenueField() {
+    const el = revealField("guest-page-venue");
+    if (el) window.setTimeout(() => el.focus(), 350);
+  }
+
+  // Köszöntő ghost → reveal the intro textarea (the type-in) and focus it. The
+  // 3 starter-welcome suggestions render right below it while it's empty, so a
+  // click lands the couple on both the field and the pick-one shortcuts.
   function focusIntroField() {
-    const el = document.getElementById("guest-page-intro");
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
+    const el = revealField("guest-page-intro");
+    if (el) window.setTimeout(() => el.focus(), 350);
   }
 
   function focusUsefulInfoField() {
-    const el = document.getElementById("guest-page-useful-info");
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
+    const el = revealField("guest-page-useful-info");
+    if (el) window.setTimeout(() => el.focus(), 350);
   }
 
   function focusPostRsvpField() {
-    const el = document.getElementById("guest-page-post-rsvp");
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
+    const el = revealField("guest-page-post-rsvp");
+    if (el) window.setTimeout(() => el.focus(), 350);
   }
 
   // Cover ghost in the preview is a shortcut to the cover dropzone below —
-  // scroll it into view and open the file picker.
+  // reveal it and open the file picker.
   function focusCoverDropzone() {
-    const el = document.getElementById("guest-page-cover-dropzone");
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (el instanceof HTMLElement) {
+    if (revealField("guest-page-cover-dropzone")) {
       window.setTimeout(() => coverFileInputRef.current?.click(), 350);
     }
   }
