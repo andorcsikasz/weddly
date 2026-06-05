@@ -161,6 +161,51 @@ describe("guests: validation + filter", () => {
     expect(r.data.guest.meal_choice).toBeNull();
   });
 
+  test("is_supplier defaults to false, can be set on create, and toggled on update", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("g-supplier@weddly.test");
+
+    // Default false.
+    const plain = await req<{ guest: { id: number; is_supplier: boolean } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna" },
+      { token },
+    );
+    expect(plain.status).toBe(201);
+    expect(plain.data.guest.is_supplier).toBe(false);
+
+    // Set on create.
+    const dj = await req<{ guest: { id: number; is_supplier: boolean } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "DJ Marci", is_supplier: true },
+      { token },
+    );
+    expect(dj.status).toBe(201);
+    expect(dj.data.guest.is_supplier).toBe(true);
+
+    // Persists in the list.
+    const list = await req<{ guests: { id: number; is_supplier: boolean }[] }>(
+      "GET",
+      "/api/guests",
+      undefined,
+      { token },
+    );
+    const djRow = list.data.guests.find((g) => g.id === dj.data.guest.id);
+    expect(djRow?.is_supplier).toBe(true);
+
+    // Toggle off via PATCH.
+    const off = await req<{ guest: { is_supplier: boolean } }>(
+      "PATCH",
+      `/api/guests/${dj.data.guest.id}`,
+      { full_name: "DJ Marci", is_supplier: false },
+      { token },
+    );
+    expect(off.status).toBe(200);
+    expect(off.data.guest.is_supplier).toBe(false);
+  });
+
   test("GET /api/guests rejects an unknown group_tag (not silent-passthrough)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("g-listflt@weddly.test");

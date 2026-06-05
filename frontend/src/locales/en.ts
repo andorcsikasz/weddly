@@ -1843,6 +1843,10 @@ const en: LocaleMessages = {
     total_summary_planned_unit: "planned",
     kind_label: "Type",
     kind_help: "A baby needs a high chair; a child gets the kids' meal.",
+    supplier_label: "Supplier",
+    supplier_help:
+      "DJ, photographer and the like who eat at the wedding. They usually get a separate (reduced) menu and a separate table.",
+    supplier_badge: "Supplier",
     kind_adult: "Adult",
     kind_child: "Child",
     kind_baby: "Baby",

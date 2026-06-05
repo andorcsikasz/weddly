@@ -102,6 +102,7 @@ function makeGuest(name: string, overrides: Partial<Guest> = {}): Guest {
     group_tag: "shared_friends",
     invite_code: `INV${id}`,
     kind: "adult",
+    is_supplier: false,
     partner_role: null,
     rsvp_status: "pending",
     meal_choice: null,

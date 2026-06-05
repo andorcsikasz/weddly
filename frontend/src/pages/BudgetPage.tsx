@@ -142,7 +142,7 @@ export default function BudgetPage() {
     setLines(linesR.lines);
     setSnapshots(snapsR.snapshots);
     setCouple(coupleR.couple);
-    setCoupleSuppliers(suppliersR.suppliers);
+    setCoupleSuppliers(suppliersR.suppliers ?? []);
     // Seed the slider with the shared cost-planning count if /app/suppliers
     // or a prior session has one stored. Otherwise stay at `null` so the
     // slider defaults to the couple's onboarding target. Hydration moved

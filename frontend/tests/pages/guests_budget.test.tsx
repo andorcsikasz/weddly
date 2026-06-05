@@ -249,6 +249,7 @@ function makeGuest(over: Partial<Guest> = {}): Guest {
     group_tag: "his_family",
     invite_code: "ABC123",
     kind: "adult",
+    is_supplier: false,
     partner_role: null,
     rsvp_status: "pending",
     meal_choice: null,

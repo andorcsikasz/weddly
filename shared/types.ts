@@ -518,6 +518,10 @@ export interface Guest {
   invite_code: string;
   /** Adult / child / baby. Defaults to "adult". */
   kind: GuestKind;
+  /** Marks a supplier (DJ, photographer, ...) who's on the guest list so they
+   *  can be counted on a reduced "supplier menu" and seated apart. Orthogonal
+   *  to `kind` and `group_tag`. Defaults to false. */
+  is_supplier: boolean;
   /** Set on the two host guest rows that mirror `couples.bride_name` /
    *  `couples.groom_name`. `null` on every other guest. Server-derived only —
    *  PATCH/POST `/api/guests` ignores this field. The seating page reads it to

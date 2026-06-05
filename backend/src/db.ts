@@ -110,6 +110,11 @@ addColumnIfMissing("guests", "household_id", "household_id INTEGER REFERENCES ho
 // 'adult' (default) | 'child' | 'baby'. Orthogonal to meal_choice.
 addColumnIfMissing("guests", "kind", "kind TEXT NOT NULL DEFAULT 'adult'");
 
+// "This guest is a supplier" (DJ, photographer, ...). Orthogonal to kind +
+// group_tag. They often eat at a reduced "supplier menu" rate and sit at a
+// separate supplier table, so the couple tags them to count + seat them apart.
+addColumnIfMissing("guests", "is_supplier", "is_supplier INTEGER NOT NULL DEFAULT 0");
+
 // "Invited?" check on the guest row. Nullable timestamp — null = not yet
 // invited, non-null = ms since epoch when the couple marked them invited.
 // Drives the per-guest checkbox + the x/n indicator on the household header.

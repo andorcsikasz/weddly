@@ -1937,6 +1937,10 @@ export interface LocaleMessages {
     /** Adult / child / baby kind selector. */
     kind_label: string;
     kind_help: string;
+    /** Supplier tag (DJ, photographer, ...) on a guest. */
+    supplier_label: string;
+    supplier_help: string;
+    supplier_badge: string;
     kind_adult: string;
     kind_child: string;
     kind_baby: string;

@@ -1866,6 +1866,10 @@ const hu: LocaleMessages = {
     total_summary_planned_unit: "tervezett",
     kind_label: "Típus",
     kind_help: "Babához kisszék kell; gyerek kapja a gyerekmenüt.",
+    supplier_label: "Szolgáltató",
+    supplier_help:
+      "DJ, fotós és társaik, akik az esküvőn esznek. Általában külön (csökkentett) menü és külön asztal jár nekik.",
+    supplier_badge: "Szolgáltató",
     kind_adult: "Felnőtt",
     kind_child: "Gyerek",
     kind_baby: "Baba",

@@ -11,6 +11,7 @@ import { defaultDimsForShape, maxSeatsForTable } from "@shared/seating";
 import {
   Armchair,
   Baby,
+  Briefcase,
   ChevronDown,
   Circle,
   Copy,
@@ -2597,6 +2598,15 @@ function DraggableGuest({
           size={compact ? 14 : 16}
           aria-hidden
           className="mr-1 inline-block align-text-bottom text-ink-500 dark:text-umber-300"
+        />
+      )}
+      {/* Supplier badge so vendors (DJ, photographer) stand out in the pool —
+          couples usually seat them apart at a supplier table. */}
+      {guest.is_supplier && !partnerRole && (
+        <Briefcase
+          size={compact ? 13 : 15}
+          aria-hidden
+          className="mr-1 inline-block align-text-bottom text-umber-600 dark:text-umber-300"
         />
       )}
       {guest.full_name}

@@ -833,6 +833,7 @@ function SearchResults({
             <p className="flex items-center gap-1.5 truncate text-sm text-ink-900 dark:text-paper-50">
               <PartnerRoleIcon role={g.partner_role} />
               <KindIcon kind={g.kind} />
+              <SupplierIcon show={g.is_supplier} />
               <span className="truncate">{g.full_name}</span>
               <MealIcons meal={g.meal_choice} dietary={g.dietary} />
             </p>
@@ -1101,6 +1102,7 @@ function HouseholdCard({
               <p className="flex min-w-0 flex-1 items-center gap-1 truncate text-sm text-ink-900 dark:text-paper-50">
                 <PartnerRoleIcon role={g.partner_role} />
                 <KindIcon kind={g.kind} />
+                <SupplierIcon show={g.is_supplier} />
                 <span className="truncate">{g.full_name}</span>
                 <span className="inline-flex shrink-0">
                   <MealIcons meal={g.meal_choice} dietary={g.dietary} />
@@ -1437,6 +1439,20 @@ function KindIcon({ kind }: { kind: GuestKind }) {
   const label = t(`guests.kind_${kind}`);
   return (
     <Icon size={14} aria-label={label} className="shrink-0 text-blush-700 dark:text-blush-300" />
+  );
+}
+
+/** Briefcase glyph next to a guest who's tagged as a supplier (DJ,
+ *  photographer, ...). Renders nothing for regular guests. */
+function SupplierIcon({ show }: { show: boolean | undefined }) {
+  const { t } = useT();
+  if (!show) return null;
+  return (
+    <Briefcase
+      size={13}
+      aria-label={t("guests.supplier_badge")}
+      className="shrink-0 text-umber-600 dark:text-umber-300"
+    />
   );
 }
 
@@ -2011,6 +2027,25 @@ function GuestDrawer({
                 />
               ))}
             </div>
+          </div>
+
+          <div className="mb-3">
+            <label
+              htmlFor="guest-supplier"
+              className="flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100"
+            >
+              <input
+                id="guest-supplier"
+                type="checkbox"
+                className="h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-400 dark:border-umber-700"
+                checked={form.is_supplier ?? false}
+                onChange={(e) => setForm({ ...form, is_supplier: e.target.checked })}
+              />
+              <span>{t("guests.supplier_label")}</span>
+            </label>
+            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+              {t("guests.supplier_help")}
+            </p>
           </div>
 
           <div className="mb-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-3 dark:border-umber-700 dark:bg-umber-700/60">

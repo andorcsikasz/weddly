@@ -44,6 +44,8 @@ interface UpsertBody {
   phone?: unknown;
   group_tag?: unknown;
   kind?: unknown;
+  /** Boolean — marks/unmarks the guest as a supplier. Omitted = false. */
+  is_supplier?: unknown;
   rsvp_status?: unknown;
   meal_choice?: unknown;
   dietary?: unknown;
@@ -83,6 +85,7 @@ interface ParsedGuest {
   phone: string | null;
   group_tag: GuestGroupTag;
   kind: GuestKind;
+  is_supplier: number;
   rsvp_status: RsvpStatus;
   meal_choice: MealChoice | null;
   dietary: string | null;
@@ -132,6 +135,7 @@ function parseUpsert(body: UpsertBody, requireName = true): ParsedGuest {
     phone: parseStr(body.phone, 64),
     group_tag: parseGroupTag(body.group_tag),
     kind: parseKind(body.kind),
+    is_supplier: body.is_supplier ? 1 : 0,
     rsvp_status: parseRsvp(body.rsvp_status),
     meal_choice: parseMeal(body.meal_choice),
     dietary: parseStr(body.dietary, 500),
@@ -263,11 +267,11 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const result = db
     .prepare(
       `INSERT INTO guests
-        (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
+        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
          created_at, updated_at, household_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -277,6 +281,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       parsed.group_tag,
       code,
       parsed.kind,
+      parsed.is_supplier,
       parsed.rsvp_status,
       parsed.meal_choice,
       parsed.dietary,
@@ -414,7 +419,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 
   db.prepare(
     `UPDATE guests SET
-        full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, rsvp_status = ?,
+        full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, is_supplier = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
         accommodation_needed = ?, song_request = ?, notes = ?, household_id = ?,
         invited_at = ?, invitation_delivered_at = ?, updated_at = ?
@@ -425,6 +430,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     parsed.phone,
     parsed.group_tag,
     parsed.kind,
+    parsed.is_supplier,
     parsed.rsvp_status,
     parsed.meal_choice,
     parsed.dietary,
