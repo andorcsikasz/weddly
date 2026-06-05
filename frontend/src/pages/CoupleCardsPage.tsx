@@ -568,24 +568,31 @@ function DeckShowcase({
   // events still arrive before that lock, so we catch the shift here.
   const handleSwipeMove = (e: React.PointerEvent<HTMLUListElement>) => {
     const start = swipeStart.current;
-    if (!start || shift !== "none") return;
+    if (!start) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
     if (Math.abs(dx) <= 50 || Math.abs(dx) <= Math.abs(dy)) return;
+    // Direction maps to the accent side, from ANY current framing: swipe
+    // right reveals lemonade (right edge), swipe left reveals greenflag
+    // (left edge). So from the revealed-greenflag state a right-swipe slides
+    // straight over to lemonade, and vice-versa — no need to return to the
+    // red row first.
+    const next: Shift = dx > 0 ? "lemon" : "green";
+    if (next === shift) return;
     swipeStart.current = null;
     swipeFired.current = true;
-    // Swipe right → reveal lemonade (right edge); swipe left → greenflag.
-    setShift(dx > 0 ? "lemon" : "green");
+    setShift(next);
   };
   const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
-    if (shift !== "none") return;
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       wheelAcc.current += e.deltaX;
+      // Same any-state mapping as the pointer swipe: scroll right → lemonade,
+      // scroll left → greenflag, regardless of where the row currently sits.
       if (wheelAcc.current > 60) {
-        setShift("lemon");
+        if (shift !== "lemon") setShift("lemon");
         wheelAcc.current = 0;
       } else if (wheelAcc.current < -60) {
-        setShift("green");
+        if (shift !== "green") setShift("green");
         wheelAcc.current = 0;
       }
     } else {
