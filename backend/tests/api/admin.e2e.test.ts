@@ -321,6 +321,23 @@ describe("admin users — list, engagement, badges", () => {
     expect(badges.data.users).toBeGreaterThanOrEqual(1);
   });
 
+  test("sidebar users badge ignores freshly generated demo accounts", async () => {
+    const adminToken = await bootstrapAdmin();
+    // Watermark the users section so existing rows don't count.
+    await req("POST", "/api/admin/sidebar-badges/seen", { section: "users" }, { token: adminToken });
+    const before = await req<{ users: number }>("GET", "/api/admin/sidebar-badges", undefined, {
+      token: adminToken,
+    });
+    // Spin up a demo workspace — this creates a throwaway user attached to an
+    // is_demo couple, which must NOT light up the users badge.
+    const demo = await req("POST", "/api/demo/start", {});
+    expect(demo.status).toBe(201);
+    const after = await req<{ users: number }>("GET", "/api/admin/sidebar-badges", undefined, {
+      token: adminToken,
+    });
+    expect(after.data.users).toBe(before.data.users);
+  });
+
   test("sidebar mark-seen clears the section it touches", async () => {
     const adminToken = await bootstrapAdmin();
     await req("POST", "/api/feedback", { message: "Hello world." });

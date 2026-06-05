@@ -655,10 +655,17 @@ function handleSidebarBadges(ctx: Ctx): Response {
   // since the admin last looked + moderation flags raised since then.
   // Purged tombstones are excluded from the new-user count so a deleted
   // user doesn't re-light the badge every time the sweep stamps their row.
+  // Demo accounts (users attached to an is_demo couple) are excluded too —
+  // generating a demo workspace shouldn't light up the admin badge.
   const newUsers = (
     db
       .prepare(
-        "SELECT COUNT(*) AS n FROM users WHERE created_at > ? AND email NOT LIKE '%@purged.local'",
+        `SELECT COUNT(*) AS n
+           FROM users u
+           LEFT JOIN couples c ON c.id = u.couple_id
+          WHERE u.created_at > ?
+            AND u.email NOT LIKE '%@purged.local'
+            AND COALESCE(c.is_demo, 0) = 0`,
       )
       .get(seen.users) as { n: number }
   ).n;
