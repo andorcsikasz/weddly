@@ -331,7 +331,7 @@ export function WeddingSiteView({
         {/* Venue — name when set; an approximate marker on the live public
             page; a ghost button in the editor preview when still empty. */}
         {view.venue_name ? (
-          <p className="mt-2 inline-flex items-center justify-center gap-2 font-serif text-lg italic text-ink-700 dark:text-paper-100 sm:text-xl">
+          <p className="mt-2 ml-4 inline-flex items-center justify-center gap-2 font-serif text-lg font-normal italic text-ink-700 dark:text-paper-100 sm:text-xl">
             <MapPin size={16} aria-hidden />
             {view.venue_name}
           </p>
