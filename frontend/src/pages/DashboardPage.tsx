@@ -792,7 +792,7 @@ export default function DashboardPage() {
       {!couple.partner_b_id && <PartnerMergeBanner onAccepted={() => window.location.reload()} />}
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl break-words hyphens-auto">
+          <h1 className="font-grotesk text-3xl sm:text-4xl break-words hyphens-auto">
             {couple.display_name}
           </h1>
           <EditableWeddingDate goal={couple.wedding_date_goal} onSave={saveWeddingDate} />
@@ -918,7 +918,7 @@ export default function DashboardPage() {
             </span>
 
             <div className="min-w-0 flex-1">
-              <h2 className="font-serif text-xl font-semibold leading-tight text-blush-800 dark:text-blush-300">
+              <h2 className="font-grotesk text-xl font-semibold leading-tight text-blush-800 dark:text-blush-300">
                 {t("dashboard.date_changed_title")}
               </h2>
               {/* Old → new chip row. Renders only when both dates are present
@@ -1416,7 +1416,7 @@ export default function DashboardPage() {
            *  same destinations with full labels — the icon strip would just
            *  duplicate navigation. */}
           <section className="lg:hidden">
-            <h2 className="mb-3 font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
+            <h2 className="mb-3 font-grotesk text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
               {t("dashboard.quick_links_title")}
             </h2>
             {/* Eight quick-link pills laid out as an equal-column grid so they

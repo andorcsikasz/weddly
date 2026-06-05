@@ -930,7 +930,7 @@ function LivePreviewCard({
         </span>
       </div>
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 dark:border-umber-700 bg-paper-100 dark:bg-umber-700/60 font-serif text-lg text-ink-700 dark:text-paper-100">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 dark:border-umber-700 bg-paper-100 dark:bg-umber-700/60 font-grotesk text-lg text-ink-700 dark:text-paper-100">
           {initial}
         </div>
         <div className="min-w-0 flex-1">

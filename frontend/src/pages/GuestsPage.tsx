@@ -2895,7 +2895,7 @@ function MealsDialog({
             the whole guest list. Disabled when there are no households
             yet (nothing to PATCH) so the toggles can't desync. */}
         <section className="rounded-lg border border-paper-200 bg-paper-50/60 px-4 py-3 dark:border-umber-700 dark:bg-umber-800/40">
-          <h3 className="font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
+          <h3 className="font-grotesk text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
             {t("guests.rsvp_settings_title")}
           </h3>
           <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
@@ -2951,7 +2951,7 @@ function MealsDialog({
                 meal, color-keyed to its bar segment. */}
             <section className="space-y-3">
               <header className="flex items-baseline justify-between gap-2">
-                <h3 className="font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
+                <h3 className="font-grotesk text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
                   {t("guests.meals_section_meals")}
                 </h3>
                 <span className="text-xs text-ink-500 dark:text-umber-300">
@@ -2984,7 +2984,7 @@ function MealsDialog({
                 above so a glance is enough to know which is which. */}
             <section className="space-y-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-700/30">
               <header className="flex items-baseline justify-between gap-2">
-                <h3 className="font-serif text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
+                <h3 className="font-grotesk text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
                   {t("guests.meals_section_dietary")}
                 </h3>
                 <span className="text-xs text-ink-500 dark:text-umber-300">

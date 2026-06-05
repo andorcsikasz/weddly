@@ -65,8 +65,11 @@ const STATUS_TONE_ACTIVE: Record<(typeof STATUSES)[number], string> = {
     "border-2 border-ink-800 bg-ink-800 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900",
 };
 
+// Idle pills carry a dark outline (matching the selected pill's border-2
+// weight, so selecting one never nudges the row). The outline-only look
+// reads as a clear, tappable choice on the calm paper surface.
 const IDLE_NEUTRAL =
-  "border border-paper-300 bg-paper-50 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600";
+  "border-2 border-ink-900 bg-paper-50 text-ink-700 hover:border-ink-700 dark:border-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-50";
 
 const STATUS_TONE_IDLE: Record<(typeof STATUSES)[number], string> = {
   yes: IDLE_NEUTRAL,
@@ -627,7 +630,7 @@ export function HouseholdRsvpForm({
         </span>
       </div>
 
-      <h1 className="mt-3 font-serif text-2xl sm:mt-4 sm:text-3xl">
+      <h1 className="mt-3 font-grotesk text-2xl sm:mt-4 sm:text-3xl">
         {t("rsvp.checkin_party_of", { n: drafts.length })}
       </h1>
       <p className="mt-1 break-words text-sm text-ink-700 dark:text-paper-100">
@@ -657,7 +660,7 @@ export function HouseholdRsvpForm({
             key={d.id}
             className="rounded-2xl border border-paper-200 bg-paper-50/60 p-4 space-y-3 dark:border-umber-700 dark:bg-umber-800/60"
           >
-            <legend className="px-1 font-serif text-lg text-ink-900 break-words dark:text-paper-50">
+            <legend className="px-1 font-grotesk text-lg text-ink-900 break-words dark:text-paper-50">
               {d.full_name}
             </legend>
             {d.is_plus_one && (
@@ -712,163 +715,184 @@ export function HouseholdRsvpForm({
               })}
             </div>
 
-            {d.interacted && d.rsvp_status === "yes" && (
-              <div className="space-y-3">
-                {/* Meal choice — radio-like icon row. Mutually exclusive;
+            {/* Yes-only detail block — meal, dietary, accommodation, song
+                and family additions. Animated open with the CSS grid
+                0fr→1fr height trick so it slides down smoothly when the
+                guest taps "yes" and folds back up when they switch away.
+                `!mt-0` drops the fieldset's space-y gap (the inner `pt-3`
+                supplies it, so it collapses with the height); `inert` keeps
+                the hidden fields out of the tab order and the a11y tree. */}
+            <div
+              inert={!(d.interacted && d.rsvp_status === "yes")}
+              className={`grid !mt-0 transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
+                d.interacted && d.rsvp_status === "yes" ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="space-y-3 pt-3">
+                  {/* Meal choice — radio-like icon row. Mutually exclusive;
                     clicking the active one clears it. Gated on
                     `rsvp_collects_meal` so buffet couples can hide it from
                     the workspace settings. The serif header + the divider
                     below separate this from the dietary chips, which were
                     previously visually indistinguishable. */}
-                {view.rsvp_collects_meal && (
-                  <div>
-                    <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                      {t("rsvp.meal_section_title")}
-                    </p>
-                    <div
-                      role="radiogroup"
-                      aria-label={t("rsvp.meal")}
-                      className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
-                    >
-                      {MEALS.map((m) => {
-                        const Icon = MEAL_ICONS[m];
-                        const active = d.meal_choice === m;
-                        const label = t(`guests.meal_${m}`);
-                        return (
-                          <button
-                            key={m}
-                            type="button"
-                            role="radio"
-                            aria-checked={active}
-                            aria-label={label}
-                            title={label}
-                            onClick={() => updateMember(d.id, { meal_choice: active ? null : m })}
-                            className={
-                              active
-                                ? "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-ink-700 bg-ink-700 px-1 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
-                                : "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-paper-300 bg-paper-50 px-1 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-                            }
-                          >
-                            <Icon size={20} aria-hidden />
-                            <span className="text-[11px] font-medium leading-tight">{label}</span>
-                          </button>
-                        );
-                      })}
+                  {view.rsvp_collects_meal && (
+                    <div>
+                      <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                        {t("rsvp.meal_section_title")}
+                      </p>
+                      <div
+                        role="radiogroup"
+                        aria-label={t("rsvp.meal")}
+                        className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
+                      >
+                        {MEALS.map((m) => {
+                          const Icon = MEAL_ICONS[m];
+                          const active = d.meal_choice === m;
+                          const label = t(`guests.meal_${m}`);
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              role="radio"
+                              aria-checked={active}
+                              aria-label={label}
+                              title={label}
+                              onClick={() => updateMember(d.id, { meal_choice: active ? null : m })}
+                              className={
+                                active
+                                  ? "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-ink-700 bg-ink-700 px-1 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+                                  : "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-paper-300 bg-paper-50 px-1 text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                              }
+                            >
+                              <Icon size={20} aria-hidden />
+                              <span className="text-[11px] font-medium leading-tight">{label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Dietary chips — multi-select allergen flags. Each chip
+                  {/* Dietary chips — multi-select allergen flags. Each chip
                     carries a semantic colour family (dairy → sky, wheat →
                     amber, nut → orange, egg → yellow, seafood → cyan) so
                     guests scan the row by tone, not by reading. Lactose +
                     milk-protein share the dairy palette but differ by icon
                     (plain milk vs. milk + atom). Forced to 6-col grid at
                     sm+; 3-col below to keep two rows max. */}
-                <div
-                  className={`${view.rsvp_collects_meal ? "border-t border-paper-200 pt-3 dark:border-umber-700" : ""}`}
-                >
-                  <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                    {t("rsvp.dietary_section_title")}
-                  </p>
-                  <div className="grid grid-cols-3 gap-1.5 [&>button]:w-full [&>button]:justify-center">
-                    {(
-                      ["milk_protein", "lactose", "gluten", "nut", "egg", "fish_shellfish"] as const
-                    ).map((tag) => (
-                      <Chip
-                        key={tag}
-                        on={d.dietary_tags.has(tag)}
-                        onClick={() => toggleDietaryTag(d.id, tag)}
-                        icon={<DietaryTagIcon tag={tag} />}
-                        label={t(`rsvp.tag_${tag}`)}
-                      />
-                    ))}
+                  <div
+                    className={`${view.rsvp_collects_meal ? "border-t border-paper-200 pt-3 dark:border-umber-700" : ""}`}
+                  >
+                    <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                      {t("rsvp.dietary_section_title")}
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5 [&>button]:w-full [&>button]:justify-center">
+                      {(
+                        [
+                          "milk_protein",
+                          "lactose",
+                          "gluten",
+                          "nut",
+                          "egg",
+                          "fish_shellfish",
+                        ] as const
+                      ).map((tag) => (
+                        <Chip
+                          key={tag}
+                          on={d.dietary_tags.has(tag)}
+                          onClick={() => toggleDietaryTag(d.id, tag)}
+                          icon={<DietaryTagIcon tag={tag} />}
+                          label={t(`rsvp.tag_${tag}`)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                {view.rsvp_offers_accommodation && (
-                  <label className="flex min-h-tap cursor-pointer items-center gap-3 py-1 text-sm text-ink-700 dark:text-paper-100">
+                  {view.rsvp_offers_accommodation && (
+                    <label className="flex min-h-tap cursor-pointer items-center gap-3 py-1 text-sm text-ink-700 dark:text-paper-100">
+                      <input
+                        type="checkbox"
+                        checked={d.accommodation_needed}
+                        onChange={(e) =>
+                          updateMember(d.id, { accommodation_needed: e.target.checked })
+                        }
+                        /* h-5 w-5 = 20px box; combined with the parent
+                         * `min-h-tap` label this gives a 44px-tall row that
+                         * passes WCAG without bloating the form. */
+                        className="h-5 w-5 cursor-pointer accent-ink-700"
+                      />
+                      {t("rsvp.checkin_member_accommodation")}
+                    </label>
+                  )}
+                  <div>
+                    <label className="field-label">{t("rsvp.checkin_member_song")}</label>
                     <input
-                      type="checkbox"
-                      checked={d.accommodation_needed}
-                      onChange={(e) =>
-                        updateMember(d.id, { accommodation_needed: e.target.checked })
-                      }
-                      /* h-5 w-5 = 20px box; combined with the parent
-                       * `min-h-tap` label this gives a 44px-tall row that
-                       * passes WCAG without bloating the form. */
-                      className="h-5 w-5 cursor-pointer accent-ink-700"
+                      className="input"
+                      value={d.song_request}
+                      onChange={(e) => updateMember(d.id, { song_request: e.target.value })}
                     />
-                    {t("rsvp.checkin_member_accommodation")}
-                  </label>
-                )}
-                <div>
-                  <label className="field-label">{t("rsvp.checkin_member_song")}</label>
-                  <input
-                    className="input"
-                    value={d.song_request}
-                    onChange={(e) => updateMember(d.id, { song_request: e.target.value })}
-                  />
-                </div>
+                  </div>
 
-                {/* Family additions — visually separated from the allergen
+                  {/* Family additions — visually separated from the allergen
                     block above so guests don't conflate "bringing a +1"
                     with a dietary attribute. */}
-                <div className="mt-6 border-t border-paper-200 pt-4 dark:border-umber-700">
-                  <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                    {t("rsvp.additions_section_title")}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    <Chip
-                      on={d.plus_one !== null}
-                      onClick={() => togglePlusOne(d)}
-                      icon={<Plus size={14} aria-hidden />}
-                      label={t("rsvp.tag_plus_one")}
-                      controlsId={`plus-one-${d.id}`}
-                      expanded={d.plus_one !== null}
-                    />
-                    <Chip
-                      on={d.baby !== null}
-                      onClick={() => toggleBaby(d)}
-                      icon={<Baby size={14} aria-hidden />}
-                      label={t("rsvp.tag_baby")}
-                      controlsId={`baby-${d.id}`}
-                      expanded={d.baby !== null}
-                    />
+                  <div className="mt-6 border-t border-paper-200 pt-4 dark:border-umber-700">
+                    <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                      {t("rsvp.additions_section_title")}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Chip
+                        on={d.plus_one !== null}
+                        onClick={() => togglePlusOne(d)}
+                        icon={<Plus size={14} aria-hidden />}
+                        label={t("rsvp.tag_plus_one")}
+                        controlsId={`plus-one-${d.id}`}
+                        expanded={d.plus_one !== null}
+                      />
+                      <Chip
+                        on={d.baby !== null}
+                        onClick={() => toggleBaby(d)}
+                        icon={<Baby size={14} aria-hidden />}
+                        label={t("rsvp.tag_baby")}
+                        controlsId={`baby-${d.id}`}
+                        expanded={d.baby !== null}
+                      />
+                    </div>
+                    {d.plus_one && (
+                      <div className="mt-3 space-y-3">
+                        <AttachedNameField
+                          id={`plus-one-${d.id}`}
+                          label={t("rsvp.added_name_plus_one")}
+                          placeholder={t("rsvp.added_name_placeholder")}
+                          value={d.plus_one.full_name}
+                          onChange={(v) => updateAttached(d.id, "plus_one", v)}
+                        />
+                        <AttachedDietary
+                          member={d.plus_one}
+                          onMealChange={(meal) =>
+                            patchAttached(d.id, "plus_one", { meal_choice: meal })
+                          }
+                          onToggleTag={(tag) => toggleAttachedDietaryTag(d.id, "plus_one", tag)}
+                          showMeal={view.rsvp_collects_meal}
+                        />
+                      </div>
+                    )}
+                    {d.baby && (
+                      <div className="mt-3">
+                        <AttachedNameField
+                          id={`baby-${d.id}`}
+                          label={t("rsvp.added_name_baby")}
+                          placeholder={t("rsvp.added_name_placeholder")}
+                          value={d.baby.full_name}
+                          onChange={(v) => updateAttached(d.id, "baby", v)}
+                        />
+                      </div>
+                    )}
                   </div>
-                  {d.plus_one && (
-                    <div className="mt-3 space-y-3">
-                      <AttachedNameField
-                        id={`plus-one-${d.id}`}
-                        label={t("rsvp.added_name_plus_one")}
-                        placeholder={t("rsvp.added_name_placeholder")}
-                        value={d.plus_one.full_name}
-                        onChange={(v) => updateAttached(d.id, "plus_one", v)}
-                      />
-                      <AttachedDietary
-                        member={d.plus_one}
-                        onMealChange={(meal) =>
-                          patchAttached(d.id, "plus_one", { meal_choice: meal })
-                        }
-                        onToggleTag={(tag) => toggleAttachedDietaryTag(d.id, "plus_one", tag)}
-                        showMeal={view.rsvp_collects_meal}
-                      />
-                    </div>
-                  )}
-                  {d.baby && (
-                    <div className="mt-3">
-                      <AttachedNameField
-                        id={`baby-${d.id}`}
-                        label={t("rsvp.added_name_baby")}
-                        placeholder={t("rsvp.added_name_placeholder")}
-                        value={d.baby.full_name}
-                        onChange={(v) => updateAttached(d.id, "baby", v)}
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
-            )}
+            </div>
           </fieldset>
         ))}
       </div>
@@ -935,7 +959,10 @@ export function HouseholdRsvpForm({
               </a>
             )}
             <p className="text-xs text-ink-500 dark:text-umber-300">
-              <a href="/?ref=rsvp" className="font-serif italic underline-offset-4 hover:underline">
+              <a
+                href="/?ref=rsvp"
+                className="font-grotesk italic underline-offset-4 hover:underline"
+              >
                 {t("rsvp.thanks_plan_your_own")}
               </a>
             </p>

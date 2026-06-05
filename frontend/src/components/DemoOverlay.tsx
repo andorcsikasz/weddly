@@ -217,11 +217,11 @@ function DemoNudgeModal({ onClose, onConvert }: { onClose: () => void; onConvert
         <div className="p-7 text-center sm:p-9">
           <h2
             id="demo-nudge-title"
-            className="font-serif text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl"
+            className="font-grotesk text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl"
           >
             {t("demo.popup_title")}
           </h2>
-          <p className="mt-4 font-serif text-base leading-relaxed text-ink-700 dark:text-paper-100">
+          <p className="mt-4 font-grotesk text-base leading-relaxed text-ink-700 dark:text-paper-100">
             {t("demo.popup_body")}
           </p>
           <button

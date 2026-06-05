@@ -198,7 +198,7 @@ export default function VendorHomePage() {
     <Shell>
       <div className="mx-auto max-w-3xl">
         <div className="mb-4">
-          <h1 className="font-serif text-3xl">
+          <h1 className="font-grotesk text-3xl">
             {t("vendor_home.welcome", { name: user.full_name })}
           </h1>
           <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("vendor_home.intro")}</p>

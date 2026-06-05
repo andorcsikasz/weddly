@@ -2,7 +2,7 @@
 // code) → one resolved household → one RSVP submission for everyone in it.
 
 import type { PublicCheckinView } from "@shared/types";
-import { Lock } from "lucide-react";
+import { Languages, Lock } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { HouseholdRsvpForm } from "../components/HouseholdRsvpForm";
@@ -217,8 +217,10 @@ export default function RsvpCheckinPage() {
             type="button"
             className="btn-ghost btn-sm"
             onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+            aria-label={t("nav.switch_language")}
+            title={(locale === "hu" ? "en" : "hu").toUpperCase()}
           >
-            {locale === "hu" ? "EN" : "HU"}
+            <Languages size={18} aria-hidden="true" />
           </button>
         )}
       </div>
@@ -256,7 +258,7 @@ export default function RsvpCheckinPage() {
           <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-ink-500">
             {t("rsvp.checkin_kicker")}
           </p>
-          <h1 className="mt-1 font-serif text-3xl sm:text-4xl">{t("rsvp.checkin_title")}</h1>
+          <h1 className="mt-1 font-grotesk text-3xl sm:text-4xl">{t("rsvp.checkin_title")}</h1>
           <p className="mt-2 text-sm text-ink-600">{t("rsvp.checkin_intro")}</p>
 
           <div className="mt-6 space-y-4">

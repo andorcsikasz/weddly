@@ -97,7 +97,7 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
             </p>
             <h2
               id={titleId}
-              className="mt-0.5 truncate font-serif text-lg text-ink-900 dark:text-paper-50"
+              className="mt-0.5 truncate font-grotesk text-lg text-ink-900 dark:text-paper-50"
             >
               {label}
             </h2>

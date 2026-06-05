@@ -1971,7 +1971,7 @@ function Avatar({
   ariaLabel?: string;
 }) {
   const base =
-    "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-paper-300 font-serif text-lg text-ink-700 dark:border-umber-700 dark:text-paper-100";
+    "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-paper-300 font-grotesk text-lg text-ink-700 dark:border-umber-700 dark:text-paper-100";
   const Icon = category ? CATEGORY_ICON[category] : null;
   const inner = heroUrl ? (
     <img src={heroUrl} alt={name} className="h-full w-full object-cover" loading="lazy" />

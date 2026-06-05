@@ -162,7 +162,7 @@ export function GuestPortalView({
       {/* Hero — the two facts every guest wants first: who's getting married
        *  and on what day. Centered serif date echoes the marketing landing. */}
       <header className="rounded-2xl border border-paper-200 bg-paper-50 p-6 text-center dark:border-umber-700 dark:bg-umber-800/60">
-        <h1 className="font-serif text-3xl text-ink-900 sm:text-4xl dark:text-paper-50">
+        <h1 className="font-grotesk text-3xl text-ink-900 sm:text-4xl dark:text-paper-50">
           {data.couple_display_name}
         </h1>
         {onEditDate && data.wedding_date ? (

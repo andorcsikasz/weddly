@@ -24,7 +24,7 @@ export default function SeatingChartPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-600 dark:text-blush-300">
             {t("tools.seating_chart.page_eyebrow")}
           </p>
-          <h1 className="mt-4 font-serif text-4xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+          <h1 className="mt-4 font-grotesk text-4xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
             {t("tools.seating_chart.page_h1")}
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-ink-700 dark:text-paper-200">
@@ -45,7 +45,7 @@ export default function SeatingChartPage() {
 
       <section className="relative">
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.seating_chart.what_h2")}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -56,7 +56,7 @@ export default function SeatingChartPage() {
 
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.seating_chart.print_h2")}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -72,7 +72,7 @@ export default function SeatingChartPage() {
 
       <section className="relative">
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.seating_chart.etiquette_h2")}
           </h2>
           <ul className="mt-8 space-y-4 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -86,7 +86,7 @@ export default function SeatingChartPage() {
 
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 sm:py-20">
-          <h2 className="font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.seating_chart.cta_h2")}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -100,7 +100,7 @@ export default function SeatingChartPage() {
 
       <section className="relative">
         <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-serif text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.seating_chart.faq_h2")}
           </h2>
           <div className="mt-8 space-y-3">
@@ -113,7 +113,7 @@ export default function SeatingChartPage() {
                 key={entry.q}
                 className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"
               >
-                <summary className="cursor-pointer list-none font-serif text-xl text-ink-900 dark:text-paper-50">
+                <summary className="cursor-pointer list-none font-grotesk text-xl text-ink-900 dark:text-paper-50">
                   {entry.q}
                 </summary>
                 <p className="mt-3 text-sm leading-relaxed text-ink-600 dark:text-umber-200">

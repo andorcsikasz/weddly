@@ -74,7 +74,7 @@ export default function VendorsPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-blush-500 dark:bg-blush-300" />
             {t("vendors.pill")}
           </span>
-          <h1 className="mt-5 font-serif text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
+          <h1 className="mt-5 font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg lg:mx-0 dark:text-umber-200">
@@ -149,7 +149,7 @@ function Benefit({
   return (
     <article className="card">
       <div className="mb-4">{art}</div>
-      <h3 className="font-serif text-xl text-ink-900 dark:text-paper-50">{title}</h3>
+      <h3 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
     </article>
   );
@@ -357,7 +357,7 @@ function WaitlistContact() {
           <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/20 dark:text-blush-300">
             <Check size={28} aria-hidden />
           </span>
-          <h2 className="mt-4 font-serif text-3xl text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="mt-4 font-grotesk text-3xl text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("vendors.form_success_title")}
           </h2>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink-600 dark:text-umber-200">
@@ -386,7 +386,7 @@ function WaitlistContact() {
             duplicate next to the page hero. Now: tight serif title with
             mini Sparkles inline. Saves ~60px of vertical chrome. */}
         <div>
-          <h2 className="flex items-center gap-2 font-serif text-2xl text-ink-900 dark:text-paper-50">
+          <h2 className="flex items-center gap-2 font-grotesk text-2xl text-ink-900 dark:text-paper-50">
             <Sparkles size={18} className="text-blush-600 dark:text-blush-300" aria-hidden />
             {t("vendors.contact_title")}
           </h2>
