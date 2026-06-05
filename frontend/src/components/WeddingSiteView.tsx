@@ -20,11 +20,9 @@ import {
   Gift,
   Heart,
   HeartHandshake,
-  Info,
   Lock,
   MapPin,
   Plus,
-  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import type { KeyboardEvent, ReactNode, Ref } from "react";
@@ -63,7 +61,7 @@ export interface WeddingSiteViewProps {
   /** Live page only — href the RSVP CTA points at (pre-fills slug + code). */
   rsvpHref?: string;
   /** Live page only — soft "I'd like to help" toggle on a group-gift item. */
-  onToggleWishlistInterest?: (itemId: number) => void;
+  onToggleWishlistInterest?: (itemId: number, pledgedAmountMinor?: number | null) => void;
   /** Live page only — ref to the confirmed-tier heading so the page can shift
    *  focus there after an in-page RSVP reveals the block. */
   confirmedHeadingRef?: Ref<HTMLHeadingElement>;
@@ -133,7 +131,9 @@ function Ghost({
         <Icon size={18} />
       </span>
       <div className="min-w-0">
-        <p className="text-sm font-medium text-ink-400 dark:text-umber-300">{title}</p>
+        <p className="font-grotesk text-base font-medium tracking-tight text-ink-400 dark:text-umber-300">
+          {title}
+        </p>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-500 dark:text-umber-200">
           <Plus size={12} aria-hidden />
           {cta}
@@ -222,7 +222,7 @@ export function WeddingSiteView({
           {...editAffordance(e.onEditCover, editHint)}
         >
           <Camera size={28} className="text-ink-300 dark:text-umber-400" aria-hidden />
-          <p className="text-sm font-medium text-ink-400 dark:text-umber-300">
+          <p className="font-grotesk text-base font-medium tracking-tight text-ink-400 dark:text-umber-300">
             {t("wedding_site.ghost.cover_title")}
           </p>
           <p className="flex items-center gap-1 text-xs text-ink-500 dark:text-umber-200">
@@ -238,7 +238,7 @@ export function WeddingSiteView({
         <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
           {t("wedding_site.eyebrow")}
         </p>
-        <h1 className="mt-3 font-grotesk text-4xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
+        <h1 className="mt-3 font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
           {view.couple_display_name}
         </h1>
 
@@ -257,7 +257,7 @@ export function WeddingSiteView({
             <Plus size={12} aria-hidden />
           </button>
         ) : (
-          <p className="mt-4 inline-flex items-center justify-center gap-2 font-grotesk text-base italic text-ink-700 dark:text-paper-100 sm:text-lg">
+          <p className="mt-4 inline-flex items-center justify-center gap-2 font-serif text-lg italic text-ink-700 dark:text-paper-100 sm:text-xl">
             <Calendar size={16} aria-hidden /> {dateLine}
           </p>
         )}
@@ -319,7 +319,7 @@ export function WeddingSiteView({
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
             {t("wedding_site.invited_eyebrow")}
           </p>
-          <h2 className="mt-1 font-grotesk text-2xl text-ink-900 dark:text-paper-50">
+          <h2 className="mt-1 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
             {household.household_label}
           </h2>
           {household.members.length > 0 && (
@@ -340,7 +340,7 @@ export function WeddingSiteView({
       {/* Schedule — exposed at every tier. Ghost in preview when empty. */}
       {view.schedule.length > 0 ? (
         <CardSection onEdit={isPreview ? e.onEditSchedule : undefined} hint={editHint}>
-          <h2 className="font-grotesk text-2xl text-ink-900 dark:text-paper-50">
+          <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
             {t("wedding_site.schedule_title")}
           </h2>
           <ul className="mt-4 space-y-3">
@@ -365,21 +365,21 @@ export function WeddingSiteView({
           </ul>
         </CardSection>
       ) : isPreview ? (
-        <div className="mt-6">
-          <Ghost
-            icon={Calendar}
-            title={t("wedding_site.ghost.schedule_title")}
-            cta={t("wedding_site.ghost.schedule_cta")}
-            onAdd={e.onEditSchedule}
-            hint={editHint}
-          />
-        </div>
+        <CardSection onEdit={e.onEditSchedule} hint={editHint}>
+          <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
+            {t("wedding_site.schedule_title")}
+          </h2>
+          <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-ink-400 dark:text-umber-300">
+            <Plus size={14} aria-hidden />
+            {t("wedding_site.ghost.schedule_cta")}
+          </p>
+        </CardSection>
       ) : null}
 
       {/* "Good to know" — parking, getting there, accommodation, … */}
       {view.useful_info ? (
         <CardSection onEdit={isPreview ? e.onEditUsefulInfo : undefined} hint={editHint}>
-          <h2 className="font-grotesk text-2xl text-ink-900 dark:text-paper-50">
+          <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
             {t("guest_portal.useful_info_title")}
           </h2>
           <p className="mt-3 whitespace-pre-line text-base text-ink-800 dark:text-paper-100">
@@ -387,15 +387,15 @@ export function WeddingSiteView({
           </p>
         </CardSection>
       ) : isPreview ? (
-        <div className="mt-6">
-          <Ghost
-            icon={Info}
-            title={t("wedding_site.ghost.useful_info_title")}
-            cta={t("wedding_site.ghost.useful_info_cta")}
-            onAdd={e.onEditUsefulInfo}
-            hint={editHint}
-          />
-        </div>
+        <CardSection onEdit={e.onEditUsefulInfo} hint={editHint}>
+          <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
+            {t("guest_portal.useful_info_title")}
+          </h2>
+          <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-ink-400 dark:text-umber-300">
+            <Plus size={14} aria-hidden />
+            {t("wedding_site.ghost.useful_info_cta")}
+          </p>
+        </CardSection>
       ) : null}
 
       {/* Confirmed-tier unlocked block. Live: shown only at confirmed tier.
@@ -412,7 +412,7 @@ export function WeddingSiteView({
           <h2
             ref={confirmedHeadingRef}
             tabIndex={isPreview ? undefined : -1}
-            className="font-grotesk text-2xl text-ink-900 outline-none dark:text-paper-50"
+            className="font-grotesk text-2xl tracking-tight text-ink-900 outline-none dark:text-paper-50"
           >
             {t("wedding_site.confirmed_title")}
           </h2>
@@ -421,15 +421,16 @@ export function WeddingSiteView({
               {view.post_rsvp_content}
             </p>
           ) : isPreview ? (
-            <div className="mt-3">
-              <Ghost
-                icon={Sparkles}
-                title={t("wedding_site.ghost.post_rsvp_title")}
-                cta={t("wedding_site.ghost.post_rsvp_cta")}
-                onAdd={e.onEditPostRsvp}
-                hint={editHint}
-              />
-            </div>
+            <button
+              type="button"
+              onClick={e.onEditPostRsvp}
+              disabled={!e.onEditPostRsvp}
+              title={editHint}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 disabled:cursor-default dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
+            >
+              <Plus size={14} aria-hidden />
+              {t("wedding_site.ghost.post_rsvp_cta")}
+            </button>
           ) : null}
           {view.location_lat !== null && view.location_lng !== null && (
             <p className="mt-4 inline-flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
@@ -452,7 +453,7 @@ export function WeddingSiteView({
           otherwise, and the editor preview has no household context). */}
       {!isPreview && view.wishlist && view.wishlist.length > 0 && (
         <section className="card mt-6">
-          <h2 className="flex items-center gap-2 font-grotesk text-2xl text-ink-900 dark:text-paper-50">
+          <h2 className="flex items-center gap-2 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
             <Gift size={20} aria-hidden /> {t("guest_portal.wishlist_section_title")}
           </h2>
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -541,7 +542,7 @@ export function WeddingSiteView({
       {(isPreview || !showConfirmedExtras) && (
         <section className="card stationery mt-6 text-center">
           <Heart size={28} className="mx-auto text-blush-600 dark:text-blush-300" />
-          <h2 className="mt-3 font-grotesk text-2xl text-ink-900 dark:text-paper-50">
+          <h2 className="mt-3 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
             {hasCode ? t("wedding_site.rsvp_personal_title") : t("wedding_site.rsvp_title")}
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-ink-600 dark:text-umber-200">
