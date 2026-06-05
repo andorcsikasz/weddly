@@ -1709,15 +1709,13 @@ const en: LocaleMessages = {
     intro_hint:
       "Visible to anyone with the link. Leave blank if you don't want a public welcome note.",
     intro_suggestions_heading: "Need a starting point? Pick a note, then make it yours:",
-    intro_suggestion_tone_warm: "Warm",
-    intro_suggestion_tone_playful: "Playful",
-    intro_suggestion_tone_heartfelt: "Heartfelt",
-    intro_suggestion_warm:
-      "We're so happy you're here. Thank you for celebrating this day with us — your presence means the world, and we can't wait to make memories together.",
-    intro_suggestion_playful:
-      "Get ready to celebrate! We've been counting down to this day, and there's no one we'd rather share it with than you. Let's make it unforgettable.",
-    intro_suggestion_heartfelt:
-      "With full hearts, we welcome you to our wedding. We're endlessly grateful to have you with us as we begin this new chapter side by side.",
+    intro_suggestion_1:
+      "Thank you for celebrating one of the most beautiful days of our lives with us.",
+    intro_suggestion_2: "We're so happy to share the joy of our wedding with you.",
+    intro_suggestion_3: "It means so much to us that you're here with us on this special day.",
+    intro_suggestion_4:
+      "We're grateful that your presence makes our wedding day even more beautiful.",
+    intro_suggestion_5: "Thank you for being part of our day with your love and your presence.",
     useful_info_label: "Good to know",
     useful_info_placeholder: "Parking: ...\nGetting there: ...\nAccommodation: ...",
     useful_info_hint:

@@ -1252,20 +1252,20 @@ export default function GuestPageEditorPage() {
                     <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500 dark:text-umber-200">
                       {t("guest_page_editor.intro_suggestions_heading")}
                     </span>
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      {(["warm", "playful", "heartfelt"] as const).map((tone) => {
-                        const text = t(`guest_page_editor.intro_suggestion_${tone}`);
+                    <div className="flex flex-col gap-1.5">
+                      {([1, 2, 3, 4, 5] as const).map((n) => {
+                        const text = t(`guest_page_editor.intro_suggestion_${n}`);
                         return (
                           <button
-                            key={tone}
+                            key={n}
                             type="button"
                             onClick={() => applyIntroSuggestion(text)}
-                            className="flex flex-col gap-1.5 rounded-xl border border-paper-300 bg-paper-50 p-3 text-left transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-500 dark:hover:bg-umber-800"
+                            className="flex items-start gap-2.5 rounded-xl border border-paper-300 bg-paper-50 p-3 text-left transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-500 dark:hover:bg-umber-800"
                           >
-                            <span className="inline-flex w-fit items-center gap-1 rounded-full bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-600 dark:bg-umber-700 dark:text-umber-200">
-                              {t(`guest_page_editor.intro_suggestion_tone_${tone}`)}
+                            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-paper-200 text-[11px] font-semibold tabular-nums text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+                              {n}
                             </span>
-                            <span className="line-clamp-4 text-xs leading-relaxed text-ink-600 dark:text-paper-100">
+                            <span className="text-sm leading-relaxed text-ink-700 dark:text-paper-100">
                               {text}
                             </span>
                           </button>
