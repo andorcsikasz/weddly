@@ -21,6 +21,7 @@ import {
   Globe,
   Lock,
   MessageCircle,
+  Palette,
   Plus,
   RefreshCcw,
   MapPin,
@@ -806,17 +807,23 @@ export default function GuestPageEditorPage() {
           </h1>
           <InfoHint text={t("guest_page_editor.subtitle")} />
         </div>
-        <button
-          type="button"
-          className="btn-outline btn-sm"
-          onClick={onOpenLivePreview}
-          disabled={previewState !== "ready"}
-          title={previewHint}
-          aria-label={t("guest_page_editor.preview_live_aria")}
-        >
-          <Eye size={14} aria-hidden />
-          {t("guest_page_editor.preview_live_label")}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link to="/app/design" className="btn-outline btn-sm">
+            <Palette size={14} aria-hidden />
+            {t("nav.design")}
+          </Link>
+          <button
+            type="button"
+            className="btn-outline btn-sm"
+            onClick={onOpenLivePreview}
+            disabled={previewState !== "ready"}
+            title={previewHint}
+            aria-label={t("guest_page_editor.preview_live_aria")}
+          >
+            <Eye size={14} aria-hidden />
+            {t("guest_page_editor.preview_live_label")}
+          </button>
+        </div>
       </header>
 
       {/* ── Guest-view preview (on top) ──────────────────────────────────
