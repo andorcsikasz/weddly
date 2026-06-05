@@ -3,7 +3,7 @@
 // lands in a follow-up.
 
 import type { Couple, MediaLinks, MediaSource } from "@shared/types";
-import { Camera, CheckCircle2, ExternalLink, Pencil } from "lucide-react";
+import { CheckCircle2, ExternalLink, Pencil } from "lucide-react";
 import { type FormEvent, type SVGProps, useEffect, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { useToast } from "../components/ui";
@@ -138,26 +138,13 @@ export default function MediaPage() {
         <InfoHint text={t("media.sub")} />
       </header>
 
-      {/* The card sits ~30% down the visual area instead of pinning to the
-          top — without this nudge the "Coming soon" copy floats above a
-          vast empty viewport on mobile, reading as "this page is broken"
-          rather than "this page is intentionally empty until photos
-          land". The min-h fills the column on phone heights and shrinks
-          out of the way on desktop where the rest of the shell carries
-          the layout. */}
+      {/* The boxes sit ~30% down the visual area instead of pinning to the
+          top — without this nudge the copy floats above a vast empty viewport
+          on mobile, reading as "this page is broken" rather than
+          "intentionally empty until photos land". The min-h fills the column
+          on phone heights and shrinks out of the way on desktop where the
+          rest of the shell carries the layout. */}
       <div className="flex min-h-[40vh] flex-col items-center justify-center sm:block sm:min-h-0">
-        <div className="card flex w-full flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:text-left">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-            <Camera size={22} aria-hidden="true" />
-          </span>
-          <div>
-            <h2 className="font-grotesk text-xl">{t("media.coming_soon_title")}</h2>
-            <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
-              {t("media.coming_soon_body")}
-            </p>
-          </div>
-        </div>
-
         {/* Where the photos come from — three source boxes the couple fills
             with a Google Drive (or any http(s)) album link. An empty slot is a
             dashed "Add a link" target with a gray Drive glyph; a filled slot
@@ -262,43 +249,47 @@ export default function MediaPage() {
 
         {/* Inline feedback — we ask couples what they actually want before
             we build it. POST lands in the same admin inbox the landing-page
-            dialog uses (source: "app"), so triage stays in one place. */}
-        <div className="card mt-4 w-full">
+            dialog uses (source: "app"), so triage stays in one place. Kept
+            deliberately compact (p-4, tight spacing, single-line textarea)
+            so it reads as a small footnote under the source boxes, not a
+            second hero. */}
+        <div className="card mt-4 w-full p-4">
           {done ? (
-            <div className="flex flex-col items-center gap-3 py-2 text-center sm:flex-row sm:text-left">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-                <CheckCircle2 size={22} aria-hidden="true" />
+            <div className="flex items-center gap-2 text-center sm:text-left">
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+                <CheckCircle2 size={18} aria-hidden="true" />
               </span>
               <p className="text-sm text-ink-700 dark:text-paper-100">
                 {t("media.feedback_success")}
               </p>
             </div>
           ) : (
-            <form onSubmit={onSubmit} className="space-y-3" noValidate>
+            <form onSubmit={onSubmit} className="space-y-2" noValidate>
               <div>
-                <h2 className="font-grotesk text-lg">{t("media.feedback_title")}</h2>
-                <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                <h2 className="font-grotesk text-base">{t("media.feedback_title")}</h2>
+                <p className="text-xs text-ink-600 dark:text-umber-200">
                   {t("media.feedback_intro")}
                 </p>
               </div>
-              <textarea
-                className="input min-h-[2rem] resize-y"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={t("media.feedback_placeholder")}
-                maxLength={2000}
-                aria-label={t("media.feedback_title")}
-              />
+              <div className="flex items-start gap-2">
+                <textarea
+                  className="input min-h-tap flex-1 resize-y py-1.5 text-sm leading-snug"
+                  rows={1}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={t("media.feedback_placeholder")}
+                  maxLength={2000}
+                  aria-label={t("media.feedback_title")}
+                />
+                <button type="submit" className="btn-primary btn-sm shrink-0" disabled={submitting}>
+                  {submitting ? t("media.feedback_submitting") : t("media.feedback_submit")}
+                </button>
+              </div>
               {error && (
                 <p className="field-error" role="alert">
                   {error}
                 </p>
               )}
-              <div className="flex justify-end">
-                <button type="submit" className="btn-primary btn-sm" disabled={submitting}>
-                  {submitting ? t("media.feedback_submitting") : t("media.feedback_submit")}
-                </button>
-              </div>
             </form>
           )}
         </div>
