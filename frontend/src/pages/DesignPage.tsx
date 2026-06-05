@@ -688,7 +688,11 @@ export default function DesignPage() {
             </p>
             {previewView && (
               <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
-                <div className="max-h-[34rem] overflow-y-auto p-4">
+                {/* Show the WHOLE guest page. Below lg it renders full-height in
+                    flow (scrolls with the page); on lg+ the sticky aside caps to
+                    the viewport and scrolls internally so the full preview stays
+                    reachable without clipping. */}
+                <div className="p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
                   <WeddingSiteView
                     view={previewView}
                     household={null}
