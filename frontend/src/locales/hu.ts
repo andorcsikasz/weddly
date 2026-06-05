@@ -336,6 +336,9 @@ const hu: LocaleMessages = {
       "Igényelnéd a(z) {name} listing tulajdonjogát? Egy megerősítő emailt küldünk a listingen szereplő hivatalos címre.",
     modal_body_email_hidden:
       "Adatvédelmi okból a teljes címet nem mutatjuk — a megerősítés után te leszel a listing kezelője.",
+    modal_email_label: "A te email címed",
+    modal_email_help: "Az admin csapatunk ezzel látja, ki kezdeményezte az átvételt.",
+    modal_email_invalid: "Adj meg egy érvényes email címet.",
     modal_submit: "Megerősítő email küldése",
     modal_submitting: "Küldés…",
     modal_close: "Rendben",
@@ -1654,6 +1657,7 @@ const hu: LocaleMessages = {
     description_placeholder: "Egy mondat arról, miért fontos ez nektek (nem kötelező)",
     target_amount_label: "Hozzávetőleges összeg",
     target_amount_hint: "Csak egy kívánság, nem számla — segít a vendégeknek a nagyságrendben.",
+    currency_aria: "Pénznem ehhez a kívánsághoz",
     url_label: "Link",
     url_placeholder: "https://…",
     url_hint: "Illessz be egy termék linket, és behúzzuk hozzá a fotót.",

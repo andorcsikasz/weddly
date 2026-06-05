@@ -97,7 +97,10 @@ async function claimListing(
   contactEmail: string,
   fullName: string,
 ): Promise<{ vendorToken: string; listingId: string }> {
-  const start = await req("POST", "/api/vendor/claim/start", { listing_id: listingId });
+  const start = await req("POST", "/api/vendor/claim/start", {
+    listing_id: listingId,
+    claimant_email: "claimer@gmail.test",
+  });
   expect(start.status).toBe(200);
   const claim = db
     .prepare(

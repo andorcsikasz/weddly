@@ -401,6 +401,9 @@ export interface LocaleMessages {
     /** Receives `{name}` — listing display name. */
     modal_body_intro: string;
     modal_body_email_hidden: string;
+    modal_email_label: string;
+    modal_email_help: string;
+    modal_email_invalid: string;
     modal_submit: string;
     modal_submitting: string;
     modal_close: string;

@@ -43,6 +43,7 @@ export type EmailKind =
   | "community_supplier_rejected" // admin rejected a pending listing during moderation
   | "community_supplier_reported" // first user report on a live listing — heads-up to the contact
   | "vendor_claim_verify" // P2.C — sent to a listing's contact_email when someone clicks "this is mine"
+  | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
   | "supplier_outreach"; // P2.E — couple-initiated cold outreach to a shortlisted vendor
 
@@ -149,6 +150,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // listing id, and the listing's contact_email gets the mail — the recipient
   // didn't necessarily start the flow themselves.
   vendor_claim_verify: "outreach",
+  // Transactional: internal ops correspondence to the admin allowlist — a
+  // claim just started and a human may want to watch it. Same framing as
+  // admin_moderation_digest; never opt-out.
+  vendor_claim_admin_alert: "transactional",
   // Transactional: the vendor just completed the claim form (set their own
   // password, clicked through) — this is the success confirmation closing
   // that loop. They now have a Weddly vendor account.

@@ -73,18 +73,13 @@ import {
   SUPPLIER_REVIEW_TAGS,
 } from "@shared/suppliers";
 import { Pill } from "../components/admin";
+import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ComposeDialog } from "../components/OutreachInbox";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import {
-  reviewApi,
-  supplierApi,
-  supplierBookingApi,
-  supplierCommentApi,
-  vendorClaimApi,
-} from "../lib/endpoints";
+import { reviewApi, supplierApi, supplierBookingApi, supplierCommentApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 // Lazy so the OpenStreetMap embed modal only loads when the user opens the map.
@@ -492,9 +487,7 @@ export default function SupplierDetailPage() {
 
           {/* Bookings list — admin-only operational view. Couples read
               availability from the right-rail busy calendar instead. */}
-          {isAdmin && (
-            <BookingsSection bookings={bookings} bookable={detail.bookable} t={t} />
-          )}
+          {isAdmin && <BookingsSection bookings={bookings} bookable={detail.bookable} t={t} />}
 
           {/* Owner-side claim CTA. Renders only on unclaimed listings; once
               vendor_account_id is set, the slot disappears. Armed-confirm
@@ -503,7 +496,7 @@ export default function SupplierDetailPage() {
               listing's contact_email AND records a listing_claims row
               admins can see in the moderation queue. */}
           {detail.vendor_account_id === null && (
-            <ClaimCtaSection supplierId={detail.id} toast={toast} t={t} />
+            <ClaimCtaSection supplierId={detail.id} listingName={detail.name} t={t} />
           )}
 
           {/* Admin meta — internal ids / source / redirect. Admin-only. */}
@@ -712,65 +705,65 @@ function ReviewsSection({
           ride a Phase-3 anti-spam (engagement-proof) gate the backend doesn't
           enforce yet, so couples read published reviews but can't post. */}
       {isAdmin && (
-      <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
-        <div className="mb-3 flex items-center gap-3">
-          <span className="text-sm text-ink-600 dark:text-umber-200">
-            {t("suppliers.detail.reviews.yourRating")}:
-          </span>
-          <StarPicker value={rating} onChange={setRating} />
-        </div>
-        <textarea
-          className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
-          placeholder={t("suppliers.detail.reviews.bodyPlaceholder")}
-          maxLength={REVIEW_BODY_MAX_CHARS}
-          rows={4}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-        />
-        <div className="mb-3">
-          <div className="mb-1.5 text-xs text-ink-500 dark:text-umber-300">
-            {t("suppliers.detail.reviews.tagsLabel", { max: MAX_REVIEW_TAGS })}
+        <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="text-sm text-ink-600 dark:text-umber-200">
+              {t("suppliers.detail.reviews.yourRating")}:
+            </span>
+            <StarPicker value={rating} onChange={setRating} />
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {SUPPLIER_REVIEW_TAGS.map((tag) => {
-              const on = tags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => toggleTag(tag)}
-                  className={`rounded-full px-2.5 py-1 text-xs transition ${
-                    on
-                      ? "bg-rose-500 text-white"
-                      : "bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-50 dark:bg-umber-700/60 dark:text-umber-100 dark:ring-umber-600"
-                  }`}
-                >
-                  {t(`suppliers.reviewTags.${tag}`)}
-                </button>
-              );
-            })}
+          <textarea
+            className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
+            placeholder={t("suppliers.detail.reviews.bodyPlaceholder")}
+            maxLength={REVIEW_BODY_MAX_CHARS}
+            rows={4}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+          />
+          <div className="mb-3">
+            <div className="mb-1.5 text-xs text-ink-500 dark:text-umber-300">
+              {t("suppliers.detail.reviews.tagsLabel", { max: MAX_REVIEW_TAGS })}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {SUPPLIER_REVIEW_TAGS.map((tag) => {
+                const on = tags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-full px-2.5 py-1 text-xs transition ${
+                      on
+                        ? "bg-rose-500 text-white"
+                        : "bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-50 dark:bg-umber-700/60 dark:text-umber-100 dark:ring-umber-600"
+                    }`}
+                  >
+                    {t(`suppliers.reviewTags.${tag}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
+              <input
+                type="checkbox"
+                checked={published}
+                onChange={(e) => setPublished(e.target.checked)}
+              />
+              {t("suppliers.detail.reviews.publishedLabel")}
+            </label>
+            <button
+              type="button"
+              disabled={submitting || rating === 0}
+              onClick={submit}
+              title={rating === 0 ? t("suppliers.detail.reviews.pickStarFirst") : undefined}
+              className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting ? "…" : t("suppliers.detail.reviews.submit")}
+            </button>
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
-            <input
-              type="checkbox"
-              checked={published}
-              onChange={(e) => setPublished(e.target.checked)}
-            />
-            {t("suppliers.detail.reviews.publishedLabel")}
-          </label>
-          <button
-            type="button"
-            disabled={submitting || rating === 0}
-            onClick={submit}
-            title={rating === 0 ? t("suppliers.detail.reviews.pickStarFirst") : undefined}
-            className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {submitting ? "…" : t("suppliers.detail.reviews.submit")}
-          </button>
-        </div>
-      </div>
       )}
 
       {reviews.length === 0 ? (
@@ -884,37 +877,37 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
           (admin_internal / public / vendor_only) is a moderation control, and
           couple-authored questions are a separate Phase-3 surface. */}
       {isAdmin && (
-      <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
-        <textarea
-          className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
-          placeholder={t("suppliers.detail.comments.placeholder")}
-          maxLength={COMMENT_BODY_MAX_CHARS}
-          rows={3}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-        />
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <select
-            value={visibility}
-            onChange={(e) => setVisibility(e.target.value as CommentVisibility)}
-            className="rounded-md border border-ink-200 bg-white px-2 py-1 text-sm dark:border-umber-700 dark:bg-umber-900"
-          >
-            {VISIBILITIES.map((v) => (
-              <option key={v} value={v}>
-                {t(`suppliers.detail.comments.visibility.${v}`)}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            disabled={submitting || !body.trim()}
-            onClick={submit}
-            className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {submitting ? "…" : t("suppliers.detail.comments.submit")}
-          </button>
+        <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
+          <textarea
+            className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
+            placeholder={t("suppliers.detail.comments.placeholder")}
+            maxLength={COMMENT_BODY_MAX_CHARS}
+            rows={3}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+          />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <select
+              value={visibility}
+              onChange={(e) => setVisibility(e.target.value as CommentVisibility)}
+              className="rounded-md border border-ink-200 bg-white px-2 py-1 text-sm dark:border-umber-700 dark:bg-umber-900"
+            >
+              {VISIBILITIES.map((v) => (
+                <option key={v} value={v}>
+                  {t(`suppliers.detail.comments.visibility.${v}`)}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={submitting || !body.trim()}
+              onClick={submit}
+              className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting ? "…" : t("suppliers.detail.comments.submit")}
+            </button>
+          </div>
         </div>
-      </div>
       )}
 
       {comments.length === 0 ? (
@@ -1020,57 +1013,20 @@ function BookingsSection({
 
 // ─── Owner-side claim CTA ───────────────────────────────────────────────────
 
-/** Renders for unclaimed listings only. First click arms the button (label
- *  flips to "Click again to confirm"); the next click within ARMED_WINDOW_MS
- *  fires the existing vendor-claim/start flow. After the window expires the
- *  button resets to its idle label so a stray tap from an hour ago can't
- *  trigger a stale request. */
+/** Renders for unclaimed listings only. Opens the shared claim modal, which
+ *  collects the claimer's email, fires vendor-claim/start, and notifies the
+ *  admins. Single entry point keeps this surface consistent with the directory
+ *  page's "this is mine" button. */
 function ClaimCtaSection({
   supplierId,
-  toast,
+  listingName,
   t,
 }: {
   supplierId: string;
-  toast: ReturnType<typeof useToast>;
+  listingName: string;
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
-  const ARMED_WINDOW_MS = 5_000;
-  const [phase, setPhase] = useState<"idle" | "armed" | "sending">("idle");
-
-  // Auto-disarm so a forgotten armed button can't fire on a stale click.
-  useEffect(() => {
-    if (phase !== "armed") return;
-    const tid = window.setTimeout(() => setPhase("idle"), ARMED_WINDOW_MS);
-    return () => window.clearTimeout(tid);
-  }, [phase]);
-
-  const onClick = async () => {
-    if (phase === "sending") return;
-    if (phase === "idle") {
-      setPhase("armed");
-      return;
-    }
-    // armed --> fire
-    setPhase("sending");
-    try {
-      await vendorClaimApi.start({ listing_id: supplierId });
-      toast.success(t("suppliers.detail.claim.sentToast"), 6_000);
-      // Stay in "idle" so the slot is still visible (vendor might re-trigger
-      // if they didn't get the email). The success toast carries the receipt.
-      setPhase("idle");
-    } catch (e) {
-      const msg = e instanceof ApiError ? e.message : "Claim failed";
-      toast.error(msg);
-      setPhase("idle");
-    }
-  };
-
-  const label =
-    phase === "sending"
-      ? t("suppliers.detail.claim.sending")
-      : phase === "armed"
-        ? t("suppliers.detail.claim.armed")
-        : t("suppliers.detail.claim.button");
+  const [open, setOpen] = useState(false);
 
   return (
     <section className="mb-10 rounded-xl border border-ink-200/60 bg-cream-50 p-6 dark:border-umber-700/60 dark:bg-umber-800/40">
@@ -1091,18 +1047,17 @@ function ClaimCtaSection({
       </div>
       <button
         type="button"
-        onClick={onClick}
-        disabled={phase === "sending"}
-        aria-pressed={phase === "armed"}
-        className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-          phase === "armed"
-            ? "bg-paper-700 text-cream-50 hover:bg-paper-800 dark:bg-paper-400 dark:text-ink-900 dark:hover:bg-paper-300"
-            : "bg-blush-600 text-white hover:bg-blush-700"
-        }`}
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-blush-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-blush-700"
       >
         <ShieldCheck size={16} aria-hidden />
-        {label}
+        {t("suppliers.detail.claim.button")}
       </button>
+      <ClaimListingModal
+        listingId={open ? supplierId : null}
+        listingName={listingName}
+        onClose={() => setOpen(false)}
+      />
     </section>
   );
 }

@@ -321,6 +321,19 @@ export interface VendorClaimVerifyPayload {
   verifyUrl: string;
 }
 
+export interface VendorClaimAdminAlertPayload {
+  /** Listing name the claimer wants to take over. */
+  listingName: string;
+  /** Public listing id (curated slug / `c{N}`) — lets the admin locate it. */
+  listingId: string;
+  /** The email the claimer typed into the modal — who is asking. */
+  claimantEmail: string;
+  /** Masked contact_email the verification link was actually sent to. */
+  contactEmailMasked: string;
+  /** Admin console URL the CTA points at. */
+  adminUrl: string;
+}
+
 export interface VendorClaimApprovedPayload {
   /** Listing name to acknowledge ("Your listing 'Bloom Studio' is live"). */
   listingName: string;
@@ -389,6 +402,7 @@ export type KindPayload = {
   community_supplier_rejected: CommunitySupplierRejectedPayload;
   community_supplier_reported: CommunitySupplierReportedPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
+  vendor_claim_admin_alert: VendorClaimAdminAlertPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
   supplier_outreach: SupplierOutreachPayload;
 };
@@ -1429,6 +1443,45 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       secondaryLinks: [{ label: "What is Weddly?", url: CONFIG.frontendBaseUrl }],
     },
   }),
+  // Internal heads-up to the admin allowlist the moment someone starts a
+  // listing claim. The verification link still goes to the listing's own
+  // contact_email (that's the ownership proof); this just lets a human watch
+  // who's asking — the claimer-typed address often differs from the inbox on
+  // file, which is exactly the signal an admin wants before the link lands.
+  vendor_claim_admin_alert: (p, ctx) => ({
+    subject: `Listing-igénylés indult / Claim started — ${p.listingName}`,
+    ctaUrl: p.adminUrl,
+    hu: {
+      preheader: `${p.listingName}: valaki igényelni szeretné.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Valaki elindította a(z) ${p.listingName} listing átvételét a Weddly katalógusban.`,
+        [
+          `• Listing: ${p.listingName} (${p.listingId})`,
+          `• Igénylő által megadott email: ${p.claimantEmail}`,
+          `• Megerősítő link kiküldve ide: ${p.contactEmailMasked}`,
+        ].join("\n"),
+        "A megerősítő link a listingen szereplő hivatalos címre ment — ez igazolja a tulajdonjogot. Ez a levél csak figyelmeztetés, nincs teendő, hacsak nem tűnik gyanúsnak.",
+      ],
+      cta: "Admin felület megnyitása",
+      footnote: "Ezt minden listing-igénylés indulásakor elküldjük az adminoknak.",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `Someone started a claim on the ${p.listingName} listing in the Weddly directory.`,
+        [
+          `• Listing: ${p.listingName} (${p.listingId})`,
+          `• Email the claimer entered: ${p.claimantEmail}`,
+          `• Verification link sent to: ${p.contactEmailMasked}`,
+        ].join("\n"),
+        "The verification link went to the listing's contact email on file — that's what proves ownership. This is a heads-up only; nothing to do unless it looks off.",
+      ],
+      cta: "Open admin",
+      footnote: "Sent to admins whenever a listing claim starts.",
+    },
+  }),
+
   // Admin moderation flipped a verified community-submitted supplier to
   // 'active' — it's now visible to couples. Closes the verify → moderation
   // → live loop the recipient last heard about when they clicked the verify

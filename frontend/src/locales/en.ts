@@ -333,6 +333,9 @@ const en: LocaleMessages = {
       "Want to claim ownership of {name}? We'll email a verification link to the address on file for this listing.",
     modal_body_email_hidden:
       "We don't show the full address for privacy — once you confirm, you'll manage the listing yourself.",
+    modal_email_label: "Your email",
+    modal_email_help: "Our admin team uses this to see who started the claim.",
+    modal_email_invalid: "Enter a valid email address.",
     modal_submit: "Send verification email",
     modal_submitting: "Sending…",
     modal_close: "Got it",
@@ -1635,6 +1638,7 @@ const en: LocaleMessages = {
     description_placeholder: "A line about why this means something to you (optional)",
     target_amount_label: "Rough amount",
     target_amount_hint: "Just a wish, not an invoice — gives guests a sense of scale.",
+    currency_aria: "Currency for this wish",
     url_label: "Link",
     url_placeholder: "https://…",
     url_hint: "Paste a product link and we'll pull in its photo for the wish.",

@@ -12,6 +12,10 @@ export interface ListingClaim {
    *  contact_email at issue time so a later edit doesn't invalidate the
    *  in-flight token. */
   email_sent_to: string;
+  /** Address the claimer typed into the modal — who is requesting the
+   *  takeover. Surfaced to admins in the heads-up mail. Distinct from
+   *  `email_sent_to`; null on legacy rows. */
+  claimant_email: string | null;
   status: ListingClaimStatus;
   expires_at: number;
   verified_at: number | null;
@@ -38,6 +42,11 @@ export interface ClaimVerifyView {
 /** POST /api/vendor/claim/start — anonymous, body shape. */
 export interface StartClaimInput {
   listing_id: string;
+  /** The claimer's own email, typed into the modal. We notify admins with
+   *  this address the moment a claim starts so a human can keep tabs on who's
+   *  asking — it does NOT replace `email_sent_to` (the verification link still
+   *  goes to the listing's contact_email, which is what proves ownership). */
+  claimant_email: string;
 }
 
 /** POST /api/vendor/claim/complete — completes the verify step + sets the

@@ -59,6 +59,33 @@ async function sendClaimEmail(toEmail: string, listingName: string, token: strin
   );
 }
 
+// Heads-up to every admin on the allowlist the moment a claim starts — the
+// product wants a human in the loop BEFORE the verify link is clicked. Sent as
+// a guest send per admin (admins aren't guaranteed to have a users row); the
+// kind is `transactional` so there's no opt-out lookup. Fire-and-forget — a
+// mailer hiccup must never fail the claim itself.
+function notifyAdminsOfClaim(opts: {
+  listingName: string;
+  listingId: string;
+  claimantEmail: string;
+  contactEmailMasked: string;
+}): void {
+  const adminUrl = `${CONFIG.frontendBaseUrl}/app/admin`;
+  for (const email of CONFIG.adminEmails) {
+    void sendKind(
+      "vendor_claim_admin_alert",
+      {
+        listingName: opts.listingName,
+        listingId: opts.listingId,
+        claimantEmail: opts.claimantEmail,
+        contactEmailMasked: opts.contactEmailMasked,
+        adminUrl,
+      },
+      { user: null, guest: { email, full_name: "" } },
+    );
+  }
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function maskEmail(e: string): string {
@@ -74,6 +101,21 @@ function parseListingId(raw: unknown): string {
   if (typeof raw !== "string") throw new HttpError(400, "listing_id required");
   const trimmed = raw.trim();
   if (!trimmed || trimmed.length > 120) throw new HttpError(400, "listing_id invalid");
+  return trimmed;
+}
+
+// Lightweight shape check only — this address never receives the verification
+// link (that goes to the listing's contact_email), it's surfaced to admins as
+// a who-is-asking signal. A full RFC validation would be theatre; we just want
+// a sane string with one `@` and a dot in the domain.
+function parseClaimantEmail(raw: unknown): string {
+  if (typeof raw !== "string") throw new HttpError(400, "Email is required");
+  const trimmed = raw.trim();
+  if (trimmed.length < 3 || trimmed.length > 254) throw new HttpError(400, "Email looks invalid");
+  const at = trimmed.indexOf("@");
+  if (at < 1 || at !== trimmed.lastIndexOf("@") || !trimmed.slice(at + 1).includes(".")) {
+    throw new HttpError(400, "Email looks invalid");
+  }
   return trimmed;
 }
 
@@ -98,6 +140,7 @@ async function handleStart(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "vendor_claim:start", START_BUCKET);
   const body = await readJson<StartClaimInput>(ctx.req);
   const listingId = parseListingId(body.listing_id);
+  const claimantEmail = parseClaimantEmail(body.claimant_email);
 
   const listing = getListingById(listingId);
   if (!listing) throw new HttpError(404, "Listing not found");
@@ -116,8 +159,18 @@ async function handleStart(ctx: Ctx): Promise<Response> {
   // the inbox-protect quota.
   rateLimit(listingId, "vendor_claim:start:listing", START_PER_LISTING_BUCKET);
 
-  const claim = createClaim(listingId, listing.contact_email);
+  const claim = createClaim(listingId, listing.contact_email, claimantEmail);
   await sendClaimEmail(listing.contact_email, listing.name, claim.token);
+
+  // Let the admins know first — fire the heads-up the instant the claim lands,
+  // not on the weekly Monday digest. Carries the claimer-typed email so a human
+  // sees who's asking before the verify link is clicked.
+  notifyAdminsOfClaim({
+    listingName: listing.name,
+    listingId,
+    claimantEmail,
+    contactEmailMasked: maskEmail(listing.contact_email),
+  });
 
   addAuditLog({
     actor_user_id: null,
@@ -125,7 +178,11 @@ async function handleStart(ctx: Ctx): Promise<Response> {
     action: "vendor.claim.start",
     target_kind: "listing",
     target_id: null,
-    after: { listing_id: listingId, email_sent_to_masked: maskEmail(listing.contact_email) },
+    after: {
+      listing_id: listingId,
+      email_sent_to_masked: maskEmail(listing.contact_email),
+      claimant_email_masked: maskEmail(claimantEmail),
+    },
   });
 
   return json({

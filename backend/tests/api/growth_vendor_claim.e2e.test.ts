@@ -283,10 +283,30 @@ describe("P2.C vendor claim — happy path", () => {
     const start = await req<{ ok: true; sent_to_masked: string }>(
       "POST",
       "/api/vendor/claim/start",
-      { listing_id: listingId },
+      { listing_id: listingId, claimant_email: "claimer@gmail.test" },
     );
     expect(start.status).toBe(200);
     expect(start.data.sent_to_masked).toMatch(/\*+@claim\.example/);
+
+    // The claimer-typed email is persisted on the claim, distinct from the
+    // contact_email the verification link went to.
+    const startedClaim = db
+      .prepare(
+        "SELECT claimant_email, email_sent_to FROM listing_claims WHERE listing_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(listingId) as { claimant_email: string | null; email_sent_to: string } | undefined;
+    expect(startedClaim?.claimant_email).toBe("claimer@gmail.test");
+    expect(startedClaim?.email_sent_to).toBe(contactEmail);
+
+    // Admins are notified the moment the claim starts (not just the weekly
+    // digest). The heads-up lands on the allowlist and names the claimer.
+    const adminAlert = db
+      .prepare(
+        "SELECT to_email, subject FROM email_log WHERE kind = 'vendor_claim_admin_alert' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string; subject: string } | undefined;
+    expect(adminAlert?.to_email).toBe("admin@test.test");
+    expect(adminAlert?.subject).toContain("Claim Photo Studio");
 
     // 2. Pull token directly from the DB (simulates clicking the email link)
     const claimRow = db
@@ -368,8 +388,35 @@ describe("P2.C vendor claim — error paths", () => {
       .get() as { id: string; contact_email: string | null } | undefined;
     expect(curatedRow).toBeTruthy();
 
-    const r = await req("POST", "/api/vendor/claim/start", { listing_id: curatedRow!.id });
+    const r = await req("POST", "/api/vendor/claim/start", {
+      listing_id: curatedRow!.id,
+      claimant_email: "claimer@gmail.test",
+    });
     expect(r.status).toBe(409);
+  });
+
+  test("start refuses without a valid claimant_email", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "needs-email-owner@weddly.test",
+      "needsemail@claim.example",
+      "Needs Email Studio",
+    );
+
+    const missing = await req("POST", "/api/vendor/claim/start", { listing_id: listingId });
+    expect(missing.status).toBe(400);
+
+    const malformed = await req("POST", "/api/vendor/claim/start", {
+      listing_id: listingId,
+      claimant_email: "not-an-email",
+    });
+    expect(malformed.status).toBe(400);
+
+    // Nothing should have been written for a rejected start.
+    const claimCount = db
+      .prepare("SELECT COUNT(*) AS n FROM listing_claims WHERE listing_id = ?")
+      .get(listingId) as { n: number };
+    expect(claimCount.n).toBe(0);
   });
 
   test("start refuses when listing is already claimed", async () => {
@@ -381,7 +428,10 @@ describe("P2.C vendor claim — error paths", () => {
     );
 
     // First claim wins.
-    const s1 = await req("POST", "/api/vendor/claim/start", { listing_id: listingId });
+    const s1 = await req("POST", "/api/vendor/claim/start", {
+      listing_id: listingId,
+      claimant_email: "claimer@gmail.test",
+    });
     expect(s1.status).toBe(200);
     const c1 = db
       .prepare("SELECT token FROM listing_claims WHERE listing_id = ? ORDER BY id DESC LIMIT 1")
@@ -396,6 +446,7 @@ describe("P2.C vendor claim — error paths", () => {
     // Second start refuses with already_claimed.
     const s2 = await req<{ detail?: { code?: string } }>("POST", "/api/vendor/claim/start", {
       listing_id: listingId,
+      claimant_email: "claimer@gmail.test",
     });
     expect(s2.status).toBe(409);
   });
@@ -417,7 +468,10 @@ describe("P2.C vendor claim — error paths", () => {
       "Conflict Studio",
     );
 
-    const s = await req("POST", "/api/vendor/claim/start", { listing_id: listingId });
+    const s = await req("POST", "/api/vendor/claim/start", {
+      listing_id: listingId,
+      claimant_email: "claimer@gmail.test",
+    });
     expect(s.status).toBe(200);
     const c = db
       .prepare("SELECT token FROM listing_claims WHERE listing_id = ? ORDER BY id DESC LIMIT 1")

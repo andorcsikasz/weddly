@@ -22,6 +22,7 @@ export interface ListingClaimRow {
   id: number;
   listing_id: string;
   email_sent_to: string;
+  claimant_email: string | null;
   token: string;
   status: string;
   expires_at: number;
@@ -40,6 +41,7 @@ export function toListingClaim(row: ListingClaimRow): ListingClaim {
     id: row.id,
     listing_id: row.listing_id,
     email_sent_to: row.email_sent_to,
+    claimant_email: row.claimant_email,
     status: toClaimStatus(row.status),
     expires_at: row.expires_at,
     verified_at: row.verified_at,
@@ -52,21 +54,26 @@ export function toListingClaim(row: ListingClaimRow): ListingClaim {
  *  multiple pending tokens over time (a vendor re-requests because they lost
  *  the first email); each is independently consumable until any one is
  *  marked verified — see `markOtherPendingClaimsCancelled`. */
-export function createClaim(listingId: string, emailSentTo: string): ListingClaimRow {
+export function createClaim(
+  listingId: string,
+  emailSentTo: string,
+  claimantEmail: string | null,
+): ListingClaimRow {
   const ts = now();
   const token = randomBytes(32).toString("hex");
   const expires = ts + CLAIM_TOKEN_TTL_MS;
   const r = db
     .prepare(
       `INSERT INTO listing_claims
-         (listing_id, email_sent_to, token, status, expires_at, created_at)
-       VALUES (?, ?, ?, 'pending', ?, ?)`,
+         (listing_id, email_sent_to, claimant_email, token, status, expires_at, created_at)
+       VALUES (?, ?, ?, ?, 'pending', ?, ?)`,
     )
-    .run(listingId, emailSentTo, token, expires, ts);
+    .run(listingId, emailSentTo, claimantEmail, token, expires, ts);
   return {
     id: Number(r.lastInsertRowid),
     listing_id: listingId,
     email_sent_to: emailSentTo,
+    claimant_email: claimantEmail,
     token,
     status: "pending",
     expires_at: expires,

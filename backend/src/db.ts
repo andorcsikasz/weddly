@@ -685,6 +685,14 @@ addColumnIfMissing("listings", "hero_image_url", "hero_image_url TEXT");
 // Null on non-venue + unclassified listings. See @shared/suppliers VenueStyle.
 addColumnIfMissing("listings", "venue_style", "venue_style TEXT");
 
+// Email the claimer typed into the "this is mine" modal — WHO is asking to
+// take over the listing. Distinct from `email_sent_to` (the listing's
+// contact_email, where the verification link actually goes). Surfaced to
+// admins in the immediate heads-up mail so a human can keep an eye on claims
+// before the verify link is clicked. NULL on legacy rows created before the
+// field existed.
+addColumnIfMissing("listing_claims", "claimant_email", "claimant_email TEXT");
+
 // Soft-hide for the admin-editable supplier taxonomy. Couples no longer
 // see hidden groups / categories on the public dropdowns + directory
 // surfaces, but the rows stay in the DB so existing community-supplier
@@ -856,6 +864,10 @@ addColumnIfMissing("wishlist_items", "image_url", "image_url TEXT");
 // stamped, so the backfill is a one-time legacy sweep that never re-hammers a
 // dead link.
 addColumnIfMissing("wishlist_items", "image_checked_at", "image_checked_at INTEGER");
+// `currency` is a per-item override of the couple's display currency. NULL (the
+// default for every existing row) means "inherit the couple's currency", so the
+// additive add is a safe no-op for legacy data.
+addColumnIfMissing("wishlist_items", "currency", "currency TEXT");
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_wishlist_items_couple ON wishlist_items(couple_id, sort_order, id)",
 );
