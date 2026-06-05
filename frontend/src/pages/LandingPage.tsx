@@ -1303,7 +1303,13 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
   return (
     <div className="sm:hidden">
       <div
-        className="relative mt-6 select-none [perspective:1100px]"
+        /* Clip horizontally: the side/off-screen cards translate up to
+           ±112vw (translateX(p*56vw)), which otherwise widens the document
+           past the viewport. That page-level horizontal overflow made the
+           fixed bottom signup bar stretch to the scroll-width and spill off
+           the right edge on phones. Clipping here keeps the peeking cards
+           inside the viewport and the page non-scrollable sideways. */
+        className="relative mt-6 select-none overflow-x-clip [perspective:1100px]"
         style={{ height: "58vw", touchAction: "pan-y" }}
         onPointerDown={onDown}
         onPointerMove={onMove}
