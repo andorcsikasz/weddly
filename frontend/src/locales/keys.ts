@@ -1698,6 +1698,14 @@ export interface LocaleMessages {
       sample_name: string;
       sample_table: string;
       caption: string;
+      /** Template segmented control + per-template sample copy. */
+      template_label: string;
+      tpl: { place_card: string; table_number: string; menu: string };
+      table_label: string;
+      menu_title: string;
+      menu_starter: string;
+      menu_main: string;
+      menu_dessert: string;
     };
     /** Style-kit subtitle under the tab. */
     subtitle: string;

@@ -36,7 +36,7 @@ import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
 import { Check, Download, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
-import { PrintCardPreview } from "../components/PrintCardPreview";
+import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -200,6 +200,8 @@ export default function DesignPage() {
   // Which top-level tab is showing: the Style kit pickers, or the Cards &
   // printables download hub. Both share the same persisted design blob.
   const [tab, setTab] = useState<"website" | "print">("website");
+  // Which printable the live print preview shows (Print tab only).
+  const [printTemplate, setPrintTemplate] = useState<PrintTemplate>("place_card");
   // Per-tile download-in-flight flag, keyed by the printable's slug.
   const [downloading, setDownloading] = useState<string | null>(null);
 
@@ -749,6 +751,30 @@ export default function DesignPage() {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Which printable the live preview (right column) shows. */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.print_preview.template_label")}
+                  </h2>
+                  <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800">
+                    {(["place_card", "table_number", "menu"] as const).map((tpl) => (
+                      <button
+                        key={tpl}
+                        type="button"
+                        onClick={() => setPrintTemplate(tpl)}
+                        aria-pressed={printTemplate === tpl}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                          printTemplate === tpl
+                            ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                            : "text-ink-600 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
+                        }`}
+                      >
+                        {t(`design.print_preview.tpl.${tpl}`)}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
                 {/* Print options — only the toggles that affect the printed
                     card; the live card preview is in the right column. */}
                 <section>
@@ -834,6 +860,7 @@ export default function DesignPage() {
             {tab === "print" ? (
               <PrintCardPreview
                 design={design}
+                template={printTemplate}
                 brideName={couple?.bride_name ?? null}
                 groomName={couple?.groom_name ?? null}
                 locale={locale}

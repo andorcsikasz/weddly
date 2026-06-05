@@ -1535,6 +1535,13 @@ const en: LocaleMessages = {
       sample_name: "Guest name",
       sample_table: "Table 1",
       caption: "Live preview — the downloaded PDF follows this look.",
+      template_label: "Preview card",
+      tpl: { place_card: "Place card", table_number: "Table number", menu: "Menu card" },
+      table_label: "table",
+      menu_title: "Menu",
+      menu_starter: "Starter",
+      menu_main: "Main course",
+      menu_dessert: "Dessert",
     },
     subtitle:
       "Choose the colours, fonts and details reused across your guest page, cards and printables.",

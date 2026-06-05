@@ -1,8 +1,8 @@
-// Instant, in-browser preview of a printable place card. Themed entirely from
-// the resolved CoupleDesign (the SAME object the server PDF renderer consumes),
-// so toggling border / QR / decor / palette / monogram updates the card live
-// with zero round-trip. The pdf-lib render stays the source of truth for the
-// actual download; this is the "azonnali nézet" the couple edits against.
+// Instant, in-browser preview of the printable cards. Themed entirely from the
+// resolved CoupleDesign (the SAME object the server PDF renderer consumes), so
+// toggling border / QR / decor / palette / monogram / fonts updates the card
+// live with zero round-trip. The pdf-lib render stays the source of truth for
+// the actual download; this is the "azonnali nézet" the couple edits against.
 //
 // No raw hex in the component: colours come from the shared catalog via
 // toPublicDesign (override-or-palette), reaching the DOM as inline values that
@@ -11,6 +11,9 @@
 import { type CoupleDesign, buildMonogram, toPublicDesign } from "@shared/design";
 import type { Locale } from "../lib/i18n";
 import { useT } from "../lib/i18n";
+
+/** Which printable the preview renders. */
+export type PrintTemplate = "place_card" | "table_number" | "menu";
 
 /** Decorative divider mirroring WeddingSiteView's decor glyphs, tinted with the
  *  resolved accent so web + print read as one decor system. */
@@ -39,11 +42,13 @@ function DecorDivider({ decor, color }: { decor: CoupleDesign["decor"]; color: s
 
 export function PrintCardPreview({
   design,
+  template,
   brideName,
   groomName,
   locale,
 }: {
   design: CoupleDesign;
+  template: PrintTemplate;
   brideName: string | null;
   groomName: string | null;
   locale: Locale;
@@ -53,14 +58,14 @@ export function PrintCardPreview({
   const monogram = design.monogram.enabled
     ? buildMonogram(brideName, groomName, design.monogram.separator, locale)
     : "";
-  const sampleName = brideName?.trim() || t("design.print_preview.sample_name");
+
+  // Menu cards are taller (portrait); place cards + table numbers are landscape.
+  const aspect = template === "menu" ? "aspect-[3/4]" : "aspect-[3/2]";
 
   return (
     <div className="flex flex-col items-center gap-3">
-      {/* The card. Aspect roughly matches a folded place card; border + frame
-          honour the print toggles so the couple sees them before downloading. */}
       <div
-        className="relative flex aspect-[3/2] w-full max-w-[20rem] flex-col items-center justify-center px-6 py-5 text-center shadow-soft"
+        className={`relative flex ${aspect} w-full max-w-[20rem] flex-col items-center justify-center px-6 py-5 text-center shadow-soft`}
         style={{
           backgroundColor: d.background,
           color: d.text,
@@ -88,23 +93,67 @@ export function PrintCardPreview({
           </span>
         )}
 
-        <span
-          className="mt-1 text-2xl leading-tight"
-          style={{ color: d.text, fontFamily: d.heading_font }}
-        >
-          {sampleName}
-        </span>
+        {template === "place_card" && (
+          <>
+            <span
+              className="mt-1 text-2xl leading-tight"
+              style={{ color: d.text, fontFamily: d.heading_font }}
+            >
+              {brideName?.trim() || t("design.print_preview.sample_name")}
+            </span>
+            <span className="mt-2 flex items-center justify-center">
+              <DecorDivider decor={design.decor} color={d.accent} />
+            </span>
+            <span
+              className="mt-2 text-[11px] uppercase tracking-[0.18em]"
+              style={{ color: d.text }}
+            >
+              {t("design.print_preview.sample_table")}
+            </span>
+          </>
+        )}
 
-        <span className="mt-2 flex items-center justify-center">
-          <DecorDivider decor={design.decor} color={d.accent} />
-        </span>
+        {template === "table_number" && (
+          <>
+            <span className="mt-1 flex items-center justify-center">
+              <DecorDivider decor={design.decor} color={d.accent} />
+            </span>
+            <span
+              className="text-6xl leading-none tabular-nums"
+              style={{ color: d.text, fontFamily: d.heading_font }}
+            >
+              12
+            </span>
+            <span
+              className="mt-2 text-[11px] uppercase tracking-[0.18em]"
+              style={{ color: d.accent_text }}
+            >
+              {t("design.print_preview.table_label")}
+            </span>
+          </>
+        )}
 
-        <span className="mt-2 text-[11px] uppercase tracking-[0.18em]" style={{ color: d.text }}>
-          {t("design.print_preview.sample_table")}
-        </span>
+        {template === "menu" && (
+          <>
+            <span
+              className="mt-1 text-xl uppercase tracking-[0.18em]"
+              style={{ color: d.text, fontFamily: d.heading_font }}
+            >
+              {t("design.print_preview.menu_title")}
+            </span>
+            <span className="my-3 flex items-center justify-center">
+              <DecorDivider decor={design.decor} color={d.accent} />
+            </span>
+            <div className="flex flex-col gap-2 text-sm" style={{ color: d.text }}>
+              {(["menu_starter", "menu_main", "menu_dessert"] as const).map((key) => (
+                <span key={key}>{t(`design.print_preview.${key}`)}</span>
+              ))}
+            </div>
+          </>
+        )}
 
-        {/* QR placeholder when the toggle is on, bottom-right. */}
-        {design.print.qr && (
+        {/* QR placeholder when the toggle is on (place cards only support it). */}
+        {design.print.qr && template === "place_card" && (
           <span
             className="absolute bottom-2 right-2 grid h-7 w-7 grid-cols-3 grid-rows-3 gap-px rounded-sm p-0.5"
             style={{ backgroundColor: d.accent }}

@@ -1551,6 +1551,13 @@ const hu: LocaleMessages = {
       sample_name: "Vendég neve",
       sample_table: "1. asztal",
       caption: "Élő előnézet — a letöltött PDF ezt az arculatot követi.",
+      template_label: "Előnézet kártyája",
+      tpl: { place_card: "Ültetőkártya", table_number: "Asztalszám", menu: "Menükártya" },
+      table_label: "asztal",
+      menu_title: "Menü",
+      menu_starter: "Előétel",
+      menu_main: "Főétel",
+      menu_dessert: "Desszert",
     },
     subtitle:
       "Válasszátok ki a színeket, betűtípusokat és részleteket, amelyek a vendégoldalon, a kártyákon és a nyomtatványokon visszaköszönnek.",
