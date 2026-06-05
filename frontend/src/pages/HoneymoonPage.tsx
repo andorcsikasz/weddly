@@ -859,8 +859,8 @@ function DaysTile({
   }, [start, end]);
 
   return (
-    <div ref={wrapperRef} className="card stationery-ink relative flex w-full flex-col !p-4">
-      <div className="flex items-center gap-2 text-paper-200">
+    <div ref={wrapperRef} className="card stationery-ink relative flex h-full w-full flex-col !p-4">
+      <div className="absolute left-4 top-4 flex items-center gap-2 text-paper-200">
         <Calendar size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_days")}
@@ -868,7 +868,7 @@ function DaysTile({
       </div>
 
       {editing ? (
-        <div className="mt-2 space-y-2">
+        <div className="mt-7 space-y-2">
           <label className="block">
             <span className="text-[11px] uppercase tracking-wide text-paper-200">
               {t("honeymoon.start_label")}
@@ -907,7 +907,7 @@ function DaysTile({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-1.5 flex w-full flex-1 flex-col items-center justify-center text-center"
+          className="flex w-full flex-1 flex-col items-center justify-center text-center"
           aria-label={t("honeymoon.edit_dates")}
         >
           {nights !== null ? (
@@ -959,7 +959,7 @@ function DestinationTile({
 
   return (
     <div className="card stationery-ink relative flex h-full flex-col !p-4">
-      <div className="flex items-center gap-2 text-paper-200">
+      <div className="absolute left-4 top-4 flex items-center gap-2 text-paper-200">
         <MapPin size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_destination")}
@@ -1140,7 +1140,7 @@ function DestinationAutocomplete({
   }
 
   return (
-    <div ref={wrapperRef} className="relative mt-3">
+    <div ref={wrapperRef} className="relative mt-7">
       <input
         type="text"
         className="input h-10 min-h-0 w-full text-base"
@@ -1224,7 +1224,7 @@ function BudgetSummaryTile({
       to="/app/budget"
       className="card stationery-ink relative flex h-full flex-col overflow-hidden !p-4"
     >
-      <div className="flex items-center gap-2 text-paper-200">
+      <div className="absolute left-4 top-4 flex items-center gap-2 text-paper-200">
         <Wallet size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_budget")}
