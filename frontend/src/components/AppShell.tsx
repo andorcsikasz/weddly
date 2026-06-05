@@ -474,7 +474,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const displayItems = inAdminView ? ADMIN_ITEMS : coupleItems;
 
   return (
-    <div className="min-h-full">
+    // `overflow-x-clip` clamps any stray-wide descendant at the viewport edge so
+    // the workspace can't horizontally bleed and trigger mobile shrink-to-fit
+    // (the "el van csúszva" header/content misalignment). `clip` (not `hidden`)
+    // keeps overflow-y visible, so it never establishes a scroll container —
+    // the sticky header/sidebar and fixed bottom nav stay anchored, and the
+    // page's intentional horizontal scrollers keep their own overflow-x-auto.
+    <div className="min-h-full overflow-x-clip">
       <a
         href="#main-content"
         className="sr-only rounded-md bg-ink-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:focus:ring-blush-400"
