@@ -1111,7 +1111,7 @@ export default function SeatingPage() {
       {/* Action toolbar sits just above the floor plan so the title + sub
           read as a clean intro, and the print/add affordances stay close
           to the thing they act on. */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="seating-toolbar mb-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
           className="btn-outline"

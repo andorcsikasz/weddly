@@ -608,6 +608,16 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     --btn-shadow: rgba(0, 0, 0, 0.36);
     --btn-shadow-hover: rgba(0, 0, 0, 0.42);
   }
+  /* Seating toolbar: nudge its outline-button borders one notch darker than the
+     app-wide .btn-outline (ink-200 → ink-300) so the print/place-card row reads
+     as a defined control group on the cream canvas. Scoped to the toolbar, so
+     every other .btn-outline across the app keeps the softer default edge. */
+  .seating-toolbar .btn-outline {
+    border-color: theme("colors.ink.300");
+  }
+  html.dark .seating-toolbar .btn-outline {
+    border-color: theme("colors.umber.600");
+  }
   .btn-lg {
     @apply px-6 py-3 text-base;
   }

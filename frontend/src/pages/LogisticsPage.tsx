@@ -453,7 +453,7 @@ export default function LogisticsPage() {
             <div
               role="tablist"
               aria-label={t("logistics.tabs_aria")}
-              className="flex flex-1 min-w-[12rem] rounded-lg border border-paper-300 bg-paper-100 p-0.5 dark:border-umber-700 dark:bg-umber-900"
+              className="flex flex-1 min-w-[12rem] rounded-lg border border-paper-400 bg-paper-100 p-0.5 dark:border-umber-600 dark:bg-umber-900"
             >
               <TabButton
                 active={tab === "accommodation"}
