@@ -938,12 +938,14 @@ function CardView({
                 question. Article tags also keep the page semantically
                 clean — the question is the article, the button is the
                 affordance around it. */}
+              {/* Question fills the card and is centred on both axes. The
+                  brand + deck-title line is pulled out below as an absolute
+                  footer so the question sits at the true vertical middle
+                  instead of being pushed up by the footer's height. */}
               <article
                 key={`${deckId}-${cardNumber ?? 0}`}
-                className="flex h-full w-full animate-card-deal flex-col items-center justify-between"
+                className="flex h-full w-full animate-card-deal items-center justify-center"
               >
-                <span aria-hidden="true" className="block h-1" />
-
                 <p
                   data-testid="couple-card-question"
                   className={`text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] sm:text-2xl lg:text-3xl ${
@@ -956,40 +958,40 @@ function CardView({
                 >
                   {question ?? t("tools.couple_cards.card_empty")}
                 </p>
-
-                {/* Brand line is just the app name on every viewport. The deck
-                  title line below tells the visitor which level this card
-                  belongs to. */}
-                <div className="text-center">
-                  <p
-                    className={`font-display text-[10px] font-bold uppercase tracking-[0.28em] sm:text-xs ${
-                      deckId === "lemonade"
-                        ? "text-lemonade-ink"
-                        : deckId === "greenflag"
-                          ? "text-greenflag-ink"
-                          : "text-wnrs-red"
-                    }`}
-                  >
-                    {/* Hard-coded already-uppercase form so the macron above
-                        the E renders reliably across font weights. CSS
-                        `text-transform: uppercase` was occasionally falling
-                        through the font stack to a weight that didn't carry
-                        the Ē glyph (U+0112). Keep in sync with app.name. */}
-                    {"WĒDDLY"}
-                  </p>
-                  <p
-                    className={`mt-1 font-display text-[9px] uppercase tracking-[0.24em] sm:text-[10px] ${
-                      deckId === "lemonade"
-                        ? "text-lemonade-ink/70"
-                        : deckId === "greenflag"
-                          ? "text-greenflag-ink/70"
-                          : "text-wnrs-redInk"
-                    }`}
-                  >
-                    {deckTitle}
-                  </p>
-                </div>
               </article>
+
+              {/* Brand + deck-title footer — small and pinned low (sits in the
+                  card's bottom padding), so it reads as a quiet signature
+                  under the centred question. */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-4 text-center sm:bottom-5">
+                <p
+                  className={`font-display text-[9px] font-bold uppercase tracking-[0.28em] sm:text-[10px] ${
+                    deckId === "lemonade"
+                      ? "text-lemonade-ink"
+                      : deckId === "greenflag"
+                        ? "text-greenflag-ink"
+                        : "text-wnrs-red"
+                  }`}
+                >
+                  {/* Hard-coded already-uppercase form so the macron above
+                      the E renders reliably across font weights. CSS
+                      `text-transform: uppercase` was occasionally falling
+                      through the font stack to a weight that didn't carry
+                      the Ē glyph (U+0112). Keep in sync with app.name. */}
+                  {"WĒDDLY"}
+                </p>
+                <p
+                  className={`mt-0.5 font-display text-[8px] uppercase tracking-[0.24em] sm:text-[9px] ${
+                    deckId === "lemonade"
+                      ? "text-lemonade-ink/70"
+                      : deckId === "greenflag"
+                        ? "text-greenflag-ink/70"
+                        : "text-wnrs-redInk"
+                  }`}
+                >
+                  {deckTitle}
+                </p>
+              </div>
               {/* Lemonade-only easter-egg flair: a small lemon-slice +
                   lemonade-glass mark tucked into the bottom-left corner.
                   Inline SVG (no extra dependency) inheriting currentColor
