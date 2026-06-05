@@ -32,6 +32,7 @@ import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
 import { Check, Download, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
+import { PrintCardPreview } from "../components/PrintCardPreview";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -133,7 +134,7 @@ export default function DesignPage() {
   const [readOnly, setReadOnly] = useState(false);
   // Which top-level tab is showing: the Style kit pickers, or the Cards &
   // printables download hub. Both share the same persisted design blob.
-  const [tab, setTab] = useState<"style" | "cards">("style");
+  const [tab, setTab] = useState<"website" | "print">("website");
   // Per-tile download-in-flight flag, keyed by the printable's slug.
   const [downloading, setDownloading] = useState<string | null>(null);
 
@@ -350,7 +351,7 @@ export default function DesignPage() {
     },
   ];
 
-  const tabBtn = (key: "style" | "cards", label: string) => (
+  const tabBtn = (key: "website" | "print", label: string) => (
     <button
       type="button"
       role="tab"
@@ -376,21 +377,13 @@ export default function DesignPage() {
         <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("design.subtitle")}</p>
       </header>
 
-      {/* Tab switcher: Style kit vs the Cards & printables hub. */}
-      <div
-        role="tablist"
-        aria-label={t("design.title")}
-        className="mb-6 inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800"
-      >
-        {tabBtn("style", t("design.tab.style_kit"))}
-        {tabBtn("cards", t("design.tab.cards"))}
-      </div>
-
       {loading ? (
         <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
-      ) : tab === "style" ? (
+      ) : (
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-          {/* ── Picker column ───────────────────────────────────────────── */}
+          {/* ── Left column: the COMMON identity (drives BOTH surfaces), then
+              the Website / Print surface tabs with only surface-specific
+              controls. ───────────────────────────────────────────────────── */}
           <div className="space-y-6">
             {/* Wedding style */}
             <section>
@@ -545,34 +538,6 @@ export default function DesignPage() {
               </div>
             </section>
 
-            {/* Print options */}
-            <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("design.section.print")}
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {(["border", "ornament", "qr"] as const).map((key) => {
-                  const on = design.print[key];
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => togglePrint(key)}
-                      aria-pressed={on}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                        on
-                          ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                          : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                      }`}
-                    >
-                      {on && <Check size={12} strokeWidth={3} aria-hidden />}
-                      {t(`design.print.${key}`)}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
             {/* Monogram */}
             <section>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
@@ -681,95 +646,132 @@ export default function DesignPage() {
                 ))}
               </div>
             </section>
+            {/* ── Surface tabs: Website vs Print. The common identity above
+                drives both; each tab owns only its surface-specific controls. */}
+            <div
+              role="tablist"
+              aria-label={t("design.title")}
+              className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800"
+            >
+              {tabBtn("website", t("design.tab.website"))}
+              {tabBtn("print", t("design.tab.print"))}
+            </div>
+
+            {tab === "website" ? (
+              <p className="text-sm text-ink-500 dark:text-umber-300">
+                {t("design.website.helper")}
+              </p>
+            ) : (
+              <div className="space-y-6">
+                {/* Print options — only the toggles that affect the printed
+                    card; the live card preview is in the right column. */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.section.print")}
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {(["border", "ornament", "qr"] as const).map((key) => {
+                      const on = design.print[key];
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => togglePrint(key)}
+                          aria-pressed={on}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                            on
+                              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+                              : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                          }`}
+                        >
+                          {on && <Check size={12} strokeWidth={3} aria-hidden />}
+                          {t(`design.print.${key}`)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {/* Downloadable PDFs (the instant preview is the right column;
+                    these render the exact print-ready files on demand). */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.cards.downloads_heading")}
+                  </h2>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {printables.map((card) => {
+                      const busy = downloading === card.slug;
+                      return (
+                        <div
+                          key={card.slug}
+                          className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800"
+                        >
+                          <h3 className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                            {card.name}
+                          </h3>
+                          <p className="flex-1 text-xs text-ink-500 dark:text-umber-300">
+                            {card.desc}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => downloadCard(card.slug, card.path, card.filename)}
+                            disabled={busy || downloading !== null}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-ink-900 px-3 py-1.5 text-xs font-medium text-ink-900 transition hover:bg-ink-900 hover:text-paper-50 disabled:cursor-default disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-paper-100 dark:text-paper-50 dark:hover:bg-paper-100 dark:hover:text-umber-900"
+                          >
+                            {busy ? (
+                              <>
+                                <Loader2 size={14} className="animate-spin" aria-hidden />
+                                {t("design.cards.downloading")}
+                              </>
+                            ) : (
+                              <>
+                                <Download size={14} aria-hidden />
+                                {t("design.cards.action_download")}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              </div>
+            )}
           </div>
 
-          {/* ── Live preview column ─────────────────────────────────────── */}
+          {/* ── Preview column: the guest page on the Website tab, the live
+              print card on the Print tab. ──────────────────────────────── */}
           <aside className="lg:sticky lg:top-6 lg:self-start">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200">
               {t("design.preview_label")}
             </p>
-            {previewView && (
-              <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
-                {/* Show the WHOLE guest page. Below lg it renders full-height in
-                    flow (scrolls with the page); on lg+ the sticky aside caps to
-                    the viewport and scrolls internally so the full preview stays
-                    reachable without clipping. */}
-                <div className="p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
-                  <WeddingSiteView
-                    view={previewView}
-                    household={null}
-                    tier="public"
-                    locale={locale}
-                    isPreview={false}
-                    showFooter={false}
-                  />
+            {tab === "print" ? (
+              <PrintCardPreview
+                design={design}
+                brideName={couple?.bride_name ?? null}
+                groomName={couple?.groom_name ?? null}
+                locale={locale}
+              />
+            ) : (
+              previewView && (
+                <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
+                  {/* Full guest page: below lg it scrolls with the page; on lg+
+                      the sticky aside caps to the viewport and scrolls internally
+                      so the whole page stays reachable without clipping. */}
+                  <div className="p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+                    <WeddingSiteView
+                      view={previewView}
+                      household={null}
+                      tier="public"
+                      locale={locale}
+                      isPreview={false}
+                      showFooter={false}
+                    />
+                  </div>
                 </div>
-              </div>
+              )
             )}
           </aside>
-        </div>
-      ) : (
-        /* ── Cards & printables hub ──────────────────────────────────────── */
-        <div className="space-y-6">
-          {/* "Using your style kit" notice: links back to the Style kit tab. */}
-          <div className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800/40 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
-                {t("design.cards.using_style")}
-              </p>
-              <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
-                {t("design.cards.using_style_sub")}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setTab("style")}
-              className="shrink-0 self-start rounded-full border border-ink-900 px-3 py-1.5 text-xs font-medium text-ink-900 transition hover:bg-ink-900 hover:text-paper-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-paper-100 dark:text-paper-50 dark:hover:bg-paper-100 dark:hover:text-umber-900 sm:self-auto"
-            >
-              {t("design.cards.edit_style_kit")}
-            </button>
-          </div>
-
-          {/* Printable tiles. */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {printables.map((card) => {
-              const busy = downloading === card.slug;
-              return (
-                <div
-                  key={card.slug}
-                  className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-white p-4 dark:border-umber-700 dark:bg-umber-800"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-grotesk text-base font-medium text-ink-900 dark:text-paper-50">
-                      {card.name}
-                    </h3>
-                    <span className="shrink-0 rounded-full bg-paper-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:bg-umber-700 dark:text-umber-200">
-                      {t("design.cards.status_ready")}
-                    </span>
-                  </div>
-                  <p className="flex-1 text-sm text-ink-500 dark:text-umber-300">{card.desc}</p>
-                  <button
-                    type="button"
-                    onClick={() => downloadCard(card.slug, card.path, card.filename)}
-                    disabled={busy || downloading !== null}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-ink-900 px-3 py-1.5 text-xs font-medium text-ink-900 transition hover:bg-ink-900 hover:text-paper-50 disabled:cursor-default disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-paper-100 dark:text-paper-50 dark:hover:bg-paper-100 dark:hover:text-umber-900"
-                  >
-                    {busy ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" aria-hidden />
-                        {t("design.cards.downloading")}
-                      </>
-                    ) : (
-                      <>
-                        <Download size={14} aria-hidden />
-                        {t("design.cards.action_download")}
-                      </>
-                    )}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
     </>

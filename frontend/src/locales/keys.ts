@@ -1678,6 +1678,19 @@ export interface LocaleMessages {
     tab: {
       style_kit: string;
       cards: string;
+      /** Surface tabs under the common identity: guest page vs printables. */
+      website: string;
+      print: string;
+    };
+    /** One-line helper shown on the Website tab (the controls above drive it). */
+    website: {
+      helper: string;
+    };
+    /** Instant print-card preview (right column on the Print tab). */
+    print_preview: {
+      sample_name: string;
+      sample_table: string;
+      caption: string;
     };
     /** Style-kit subtitle under the tab. */
     subtitle: string;
@@ -1703,6 +1716,8 @@ export interface LocaleMessages {
     /** Cards & printables hub. */
     cards: {
       subtitle: string;
+      /** Heading above the on-demand PDF download tiles on the Print tab. */
+      downloads_heading: string;
       /** "Using your Wedding Style Kit" notice + link. */
       using_style: string;
       using_style_sub: string;

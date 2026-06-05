@@ -1534,6 +1534,17 @@ const hu: LocaleMessages = {
     tab: {
       style_kit: "Stíluscsomag",
       cards: "Kártyák és nyomtatványok",
+      website: "Weboldal",
+      print: "Nyomtatás",
+    },
+    website: {
+      helper:
+        "A fenti közös beállítások adják a vendégoldal arculatát. Az élő előnézet jobbra látszik.",
+    },
+    print_preview: {
+      sample_name: "Vendég neve",
+      sample_table: "1. asztal",
+      caption: "Élő előnézet — a letöltött PDF ezt az arculatot követi.",
     },
     subtitle:
       "Válasszátok ki a színeket, betűtípusokat és részleteket, amelyek a vendégoldalon, a kártyákon és a nyomtatványokon visszaköszönnek.",
@@ -1555,6 +1566,7 @@ const hu: LocaleMessages = {
     },
     cards: {
       subtitle: "Készítsetek összehangolt nyomtatványokat a stíluscsomagotok alapján.",
+      downloads_heading: "Letölthető PDF-ek",
       using_style: "A stíluscsomagotok alapján",
       using_style_sub: "A színek, betűtípusok és részletek a stíluscsomagból származnak.",
       edit_style_kit: "Stíluscsomag szerkesztése",

@@ -1519,6 +1519,16 @@ const en: LocaleMessages = {
     tab: {
       style_kit: "Style kit",
       cards: "Cards & printables",
+      website: "Website",
+      print: "Print",
+    },
+    website: {
+      helper: "The shared settings above shape your guest page. The live preview is on the right.",
+    },
+    print_preview: {
+      sample_name: "Guest name",
+      sample_table: "Table 1",
+      caption: "Live preview — the downloaded PDF follows this look.",
     },
     subtitle:
       "Choose the colours, fonts and details reused across your guest page, cards and printables.",
@@ -1540,6 +1550,7 @@ const en: LocaleMessages = {
     },
     cards: {
       subtitle: "Create matching printed materials using your wedding style kit.",
+      downloads_heading: "Downloadable PDFs",
       using_style: "Using your Wedding Style Kit",
       using_style_sub: "Colours, fonts and details are applied from your style kit.",
       edit_style_kit: "Edit style kit",
