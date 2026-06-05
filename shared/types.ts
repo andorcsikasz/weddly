@@ -482,6 +482,36 @@ export interface BudgetSnapshot {
   created_at: UnixMs;
 }
 
+/** Money that came in (cash gifts, contributions). A standalone ledger used
+ *  for the post-wedding "recovered vs spent" report — not tied to a supplier
+ *  or budget line. */
+export interface CoupleIncome {
+  id: number;
+  couple_id: number;
+  label: string;
+  /** Integer minor units of the couple's currency. */
+  amount_huf: Huf;
+  /** ISO YYYY-MM-DD. Null = undated. */
+  received_on: string | null;
+  notes: string | null;
+  created_at: UnixMs;
+  updated_at: UnixMs;
+}
+
+export interface CreateCoupleIncomeInput {
+  label: string;
+  amount_huf: number;
+  received_on?: string | null;
+  notes?: string | null;
+}
+
+export interface UpdateCoupleIncomeInput {
+  label?: string;
+  amount_huf?: number;
+  received_on?: string | null;
+  notes?: string | null;
+}
+
 // ─── Guests & RSVP ───────────────────────────────────────────────────────────
 
 export type RsvpStatus = "pending" | "yes" | "no" | "maybe";

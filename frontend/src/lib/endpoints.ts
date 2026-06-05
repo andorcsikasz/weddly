@@ -10,6 +10,8 @@ import type {
   BudgetGoal,
   BudgetLine,
   BudgetSnapshot,
+  CoupleIncome,
+  CreateCoupleIncomeInput,
   CeremonyKind,
   CheckinSubmitBody,
   Couple,
@@ -35,6 +37,7 @@ import type {
   SeatingTable,
   TableShape,
   Transfer,
+  UpdateCoupleIncomeInput,
   UpsertAccommodationInput,
   UpsertTransferInput,
   User,
@@ -732,6 +735,15 @@ export const budgetApi = {
       {},
     ),
   removeSnapshot: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/budget/snapshots/${id}`),
+};
+
+export const incomeApi = {
+  list: () => apiFetch<{ income: CoupleIncome[] }>("GET", "/api/income"),
+  create: (body: CreateCoupleIncomeInput) =>
+    apiFetch<{ income: CoupleIncome }>("POST", "/api/income", body),
+  update: (id: number, body: UpdateCoupleIncomeInput) =>
+    apiFetch<{ income: CoupleIncome }>("PATCH", `/api/income/${id}`, body),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/income/${id}`),
 };
 
 export const rsvpApi = {

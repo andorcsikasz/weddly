@@ -78,6 +78,22 @@ CREATE TABLE IF NOT EXISTS budget_snapshots (
 );
 CREATE INDEX IF NOT EXISTS idx_snapshots_couple ON budget_snapshots(couple_id);
 
+-- Money that came IN (cash gifts, contributions). A standalone ledger — not
+-- tied to suppliers or budget lines. Powers the post-wedding "how much did we
+-- recover vs spend" report. amount_huf is integer minor units of the couple's
+-- currency (the _huf suffix is historical; display via formatMoney(currency)).
+CREATE TABLE IF NOT EXISTS couple_income (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,                                        -- "Kovács család", "Nagyi", ...
+  amount_huf INTEGER NOT NULL,
+  received_on TEXT,                                           -- ISO YYYY-MM-DD; NULL = undated
+  notes TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_couple_income_couple ON couple_income(couple_id);
+
 CREATE TABLE IF NOT EXISTS guests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,

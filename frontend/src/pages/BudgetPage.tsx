@@ -29,6 +29,7 @@ import {
   PER_GUEST_CATEGORIES,
   resolveCustomIcon,
 } from "../components/CostPlanningCard";
+import { IncomeSection } from "../components/IncomeSection";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -720,6 +721,10 @@ export default function BudgetPage() {
     }
   }
 
+  // Realized spend across the budget — the denominator for the income
+  // "recovered vs spent" report.
+  const totalSpentHuf = useMemo(() => lines.reduce((a, l) => a + l.actual_huf, 0), [lines]);
+
   // "Payments due" roll-up — flattens every supplier's payment schedule into
   // paid-so-far / outstanding / next-due / due-in-30-days. This is the thing
   // that replaces the couple's "by when, how much" spreadsheet.
@@ -1157,6 +1162,8 @@ export default function BudgetPage() {
           </div>
         )}
       </section>
+
+      <IncomeSection currency={currency} totalSpentHuf={totalSpentHuf} />
     </>
   );
 }

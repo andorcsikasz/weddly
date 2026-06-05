@@ -108,6 +108,7 @@ export function purgeOneCouple(
     db.prepare("DELETE FROM schedule_events WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM budget_lines WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM budget_snapshots WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM couple_income WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM data_exports WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM couple_invites WHERE couple_id = ?").run(coupleId);
     // Feedback rows authored by users on this workspace — message body and

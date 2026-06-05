@@ -2266,6 +2266,25 @@ export interface LocaleMessages {
     schedule_due: string;
     schedule_delete: string;
   };
+  /** "Gifts received" money-in ledger on the budget page. */
+  income: {
+    title: string;
+    sub: string;
+    received: string;
+    spent: string;
+    net_cost: string;
+    surplus: string;
+    recovered_pct: string;
+    field_label: string;
+    field_label_placeholder: string;
+    field_amount: string;
+    field_date: string;
+    add: string;
+    empty: string;
+    delete: string;
+    delete_confirm_title: string;
+    delete_confirm_body: string;
+  };
   /** Cost-planning panel surfaces that don't belong to the budget *table*:
    *  HU benchmark strip, tiered over-cap warnings, page-level cost-per-guest
    *  rows. Kept separate from `budget.*` so the snapshot UI (Agent B) and the
