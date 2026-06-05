@@ -4,6 +4,7 @@
 // HouseholdRsvpForm as the new check-in page.
 
 import type { PublicCheckinView } from "@shared/types";
+import { Languages } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { HouseholdRsvpForm } from "../components/HouseholdRsvpForm";
@@ -45,8 +46,10 @@ export default function RsvpPage() {
           type="button"
           className="btn-ghost btn-sm"
           onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+          aria-label={t("nav.switch_language")}
+          title={(locale === "hu" ? "en" : "hu").toUpperCase()}
         >
-          {locale === "hu" ? "EN" : "HU"}
+          <Languages size={18} aria-hidden="true" />
         </button>
       </div>
 
