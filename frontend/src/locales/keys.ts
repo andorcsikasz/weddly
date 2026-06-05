@@ -2993,6 +2993,13 @@ export interface LocaleMessages {
         phone: string;
         empty: string;
       };
+      map: {
+        open: string;
+        openExternal: string;
+        iframeTitle: string;
+        notFound: string;
+        error: string;
+      };
       busy: {
         title: string;
         legendBooked: string;

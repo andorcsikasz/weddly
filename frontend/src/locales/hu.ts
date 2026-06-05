@@ -2669,6 +2669,13 @@ const hu: LocaleMessages = {
         phone: "Telefon",
         empty: "Nincs megadott kapcsolat",
       },
+      map: {
+        open: "Megjelenítés térképen",
+        openExternal: "Megnyitás az OpenStreetMapen",
+        iframeTitle: "Térkép a következő helyszínnel: {name}",
+        notFound: "Nem sikerült megjelölni ezt a címet a térképen.",
+        error: "A térkép nem töltődött be. Próbáld újra.",
+      },
       busy: {
         title: "Foglaltság",
         legendBooked: "Foglalt napok",

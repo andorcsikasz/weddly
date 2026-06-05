@@ -13,6 +13,8 @@
 import {
   type ComponentType,
   type SVGProps,
+  Suspense,
+  lazy,
   useCallback,
   useEffect,
   useMemo,
@@ -83,6 +85,9 @@ import {
   vendorClaimApi,
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+// Lazy so the OpenStreetMap embed modal only loads when the user opens the map.
+const SupplierMapModal = lazy(() => import("../components/SupplierMapModal"));
 
 /** Same localStorage shape the directory uses, so the heart icon stays in
  *  sync across `/app/suppliers` (the list) and `/app/suppliers/:id` (this
@@ -231,6 +236,7 @@ export default function SupplierDetailPage() {
   const [availability, setAvailability] = useState<SupplierAvailability | null>(null);
   const [bookings, setBookings] = useState<SupplierBooking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapOpen, setMapOpen] = useState(false);
 
   useEffect(() => {
     document.title = detail ? `${detail.name} · ${t("suppliers.detail.adminTitle")}` : "Supplier";
@@ -489,7 +495,7 @@ export default function SupplierDetailPage() {
 
         {/* ─── SIDEBAR (sticky on lg+) ───────────────────────────────────── */}
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <InfoCard detail={detail} t={t} />
+          <InfoCard detail={detail} t={t} onOpenMap={() => setMapOpen(true)} />
           <ContactCard detail={detail} t={t} />
           <BusyCalendarCard availability={availability} locale={locale} t={t} />
         </aside>
@@ -541,6 +547,19 @@ export default function SupplierDetailPage() {
             toast.success(t("suppliers.detail.cta.inquireSent"));
           }}
         />
+      )}
+
+      {mapOpen && (
+        <Suspense fallback={null}>
+          <SupplierMapModal
+            name={detail.name}
+            lat={detail.lat}
+            lng={detail.lng}
+            address={detail.address}
+            city={detail.city}
+            onClose={() => setMapOpen(false)}
+          />
+        </Suspense>
       )}
     </div>
   );
@@ -1199,16 +1218,26 @@ function PriceBandDots({
 function InfoCard({
   detail,
   t,
+  onOpenMap,
 }: {
   detail: SupplierDetail;
   t: (k: string, vars?: Record<string, string | number>) => string;
+  onOpenMap: () => void;
 }) {
+  const value = detail.address ? `${detail.city} · ${detail.address}` : detail.city;
   return (
     <SidebarCard>
-      <SidebarRow
-        icon={<MapPin size={14} aria-hidden />}
-        value={detail.address ? `${detail.city} · ${detail.address}` : detail.city}
-      />
+      {/* The whole address row is the map trigger — couples expect to click an
+       *  address and see it on a map. The button stays full-width and left-
+       *  aligned so it reads as the same row, just interactive. */}
+      <button
+        type="button"
+        onClick={onOpenMap}
+        title={t("suppliers.detail.map.open")}
+        className="-mx-2 w-[calc(100%+1rem)] rounded-lg px-2 text-left transition hover:bg-ink-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:hover:bg-umber-800/60 dark:focus-visible:ring-paper-100"
+      >
+        <SidebarRow icon={<MapPin size={14} aria-hidden />} value={value} />
+      </button>
     </SidebarCard>
   );
 }

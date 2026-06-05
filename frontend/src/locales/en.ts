@@ -2637,6 +2637,13 @@ const en: LocaleMessages = {
         phone: "Phone",
         empty: "No contact details on file",
       },
+      map: {
+        open: "Show on map",
+        openExternal: "Open in OpenStreetMap",
+        iframeTitle: "Map showing the location of {name}",
+        notFound: "We couldn't pin this address on the map.",
+        error: "The map couldn't load. Please try again.",
+      },
       busy: {
         title: "Availability",
         legendBooked: "Booked days",
