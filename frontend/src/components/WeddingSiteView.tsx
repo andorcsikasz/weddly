@@ -219,6 +219,7 @@ export function WeddingSiteView({
   const themeStyle = {
     "--wt-primary": view.design.primary,
     "--wt-accent": view.design.accent,
+    "--wt-accent-text": view.design.accent_text,
     "--wt-bg": view.design.background,
     "--wt-text": view.design.text,
     "--wt-heading-font": view.design.heading_font,
@@ -262,8 +263,8 @@ export function WeddingSiteView({
       <section className="card stationery text-center">
         {monogram && (
           <p
-            className="wt-accent wt-heading mb-2 text-2xl tracking-[0.2em] text-blush-700 dark:text-blush-300"
-            style={{ color: "var(--wt-accent)", fontFamily: "var(--wt-heading-font)" }}
+            className="wt-accent wt-heading mb-2 text-2xl tracking-[0.2em]"
+            style={{ color: "var(--wt-accent-text)", fontFamily: "var(--wt-heading-font)" }}
             aria-hidden
           >
             {monogram}
@@ -278,16 +279,10 @@ export function WeddingSiteView({
         {decor !== "none" && (
           <div className="mt-3 flex justify-center" aria-hidden>
             {decor === "line" && (
-              <span
-                className="h-px w-20"
-                style={{ backgroundColor: "var(--wt-accent)" }}
-              />
+              <span className="h-px w-20" style={{ backgroundColor: "var(--wt-accent)" }} />
             )}
             {decor === "dots" && (
-              <span
-                className="text-lg tracking-[0.4em]"
-                style={{ color: "var(--wt-accent)" }}
-              >
+              <span className="text-lg tracking-[0.4em]" style={{ color: "var(--wt-accent)" }}>
                 · · ·
               </span>
             )}
@@ -379,7 +374,7 @@ export function WeddingSiteView({
       {/* Invited tier — personal hello + member list (live page only). */}
       {!isPreview && showInvitedExtras && household && (
         <section className="card mt-6">
-          <p className="wt-accent text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+          <p className="wt-accent text-[11px] font-semibold uppercase tracking-[0.2em]">
             {t("wedding_site.invited_eyebrow")}
           </p>
           <h2 className="mt-1 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
@@ -468,7 +463,7 @@ export function WeddingSiteView({
         (showConfirmedExtras && (view.post_rsvp_content || view.location_lat !== null))) && (
         <section className="card mt-6" aria-live={isPreview ? undefined : "polite"}>
           {isPreview && (
-            <p className="wt-accent mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+            <p className="wt-accent mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]">
               <Lock size={12} aria-hidden /> {t("wedding_site.ghost.locked_eyebrow")}
             </p>
           )}
@@ -539,7 +534,7 @@ export function WeddingSiteView({
           their guests get without leaving the editor. */}
       {(isPreview || !showConfirmedExtras) && (
         <section className="card stationery mt-6 text-center">
-          <Heart size={28} className="wt-accent mx-auto text-blush-600 dark:text-blush-300" />
+          <Heart size={28} className="wt-accent mx-auto" />
           <h2 className="mt-3 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
             {hasCode ? t("wedding_site.rsvp_personal_title") : t("wedding_site.rsvp_title")}
           </h2>

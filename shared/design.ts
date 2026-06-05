@@ -13,6 +13,13 @@
 // Print colours are the SAME colours as rgb 0..1 triples (what the PDF toolkit
 // in `backend/src/domain/pdf.ts` expects), derived from the hex so they match
 // exactly.
+//
+// On top of the curated presets, the couple can override individual colours
+// (any `#RRGGBB`) and pick the heading / body font family independently. The
+// presets stay the base layer; overrides are stored sparsely so changing the
+// palette still re-tints every role the couple hasn't explicitly pinned.
+
+import { getContrastRatio } from "./wcag";
 
 export type StylePresetSlug =
   | "classic_elegant"
@@ -25,6 +32,24 @@ export type StylePresetSlug =
 export type PaletteSlug = "botanical_green" | "espresso" | "blush" | "stone_minimal" | "sage_cream";
 
 export type FontPresetSlug = "classic_serif" | "modern_clean" | "soft_romantic";
+
+/** A single bundled font family the couple can assign to the heading or body
+ *  independently (the editable layer on top of the font PRESETS). The list is
+ *  restricted to families already @font-face'd in index.css or available as a
+ *  system stack - no new webfont / CDN request. */
+export type FontFamilySlug =
+  | "cormorant"
+  | "inter"
+  | "general_sans"
+  | "system_serif"
+  | "system_sans";
+
+/** The four colour roles a couple can override individually on top of a chosen
+ *  palette. An override is a `#RRGGBB` string; absence means "use the palette". */
+export type ColorRole = "primary" | "background" | "accent" | "text";
+
+/** `#RRGGBB` validator shared by the resolver + the PATCH boundary. */
+export const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 /** Monogram separator - the glyph between the two initials/names. The "and"
  *  slug resolves to a locale-aware word ("és" / "and") at render time; the rest
@@ -57,6 +82,13 @@ export interface CoupleDesignInput {
   style?: StylePresetSlug;
   palette?: PaletteSlug;
   fonts?: FontPresetSlug;
+  /** Per-role colour overrides on top of the chosen palette. Sparse: only the
+   *  roles the couple actually customised. Each value is a `#RRGGBB` string. */
+  colors?: Partial<Record<ColorRole, string>>;
+  /** Independent heading / body font-family overrides on top of the font
+   *  preset. `undefined`/`null` means "use the preset's stack". */
+  headingFont?: FontFamilySlug | null;
+  bodyFont?: FontFamilySlug | null;
   monogram?: Partial<MonogramOptions>;
   dateFormat?: DateFormatSlug;
   decor?: DecorSlug;
@@ -76,6 +108,12 @@ export interface CoupleDesign {
   style: StylePresetSlug;
   palette: PaletteSlug;
   fonts: FontPresetSlug;
+  /** Validated sparse colour overrides (only roles the couple customised, each
+   *  a lowercased `#RRGGBB`). The palette supplies any role not present here. */
+  colors: Partial<Record<ColorRole, string>>;
+  /** Heading / body font-family overrides, or null to use the preset stack. */
+  headingFont: FontFamilySlug | null;
+  bodyFont: FontFamilySlug | null;
   monogram: MonogramOptions;
   dateFormat: DateFormatSlug;
   decor: DecorSlug;
@@ -190,6 +228,42 @@ export const FONT_PRESETS: readonly FontPreset[] = [
   },
 ];
 
+/** Individually-assignable font families (the editable layer). Stacks are
+ *  copied verbatim from {@link FONT_PRESETS} / tailwind.config.js so NO new
+ *  family name (and therefore no new webfont request) is introduced. */
+export const FONT_FAMILIES: readonly { slug: FontFamilySlug; nameKey: string; stack: string }[] = [
+  {
+    slug: "cormorant",
+    nameKey: "design.family.cormorant",
+    stack: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+  },
+  {
+    slug: "inter",
+    nameKey: "design.family.inter",
+    stack: '"Inter Variable", Inter, system-ui, sans-serif',
+  },
+  {
+    slug: "general_sans",
+    nameKey: "design.family.general_sans",
+    stack: '"General Sans", "Helvetica Neue", Inter, system-ui, sans-serif',
+  },
+  {
+    slug: "system_serif",
+    nameKey: "design.family.system_serif",
+    stack: 'Georgia, "Times New Roman", Times, serif',
+  },
+  {
+    slug: "system_sans",
+    nameKey: "design.family.system_sans",
+    stack: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+  },
+];
+
+/** Resolve a font-family slug to its CSS stack; falls back to Cormorant. */
+export function getFontFamilyStack(slug: FontFamilySlug): string {
+  return FONT_FAMILIES.find((f) => f.slug === slug)?.stack ?? FONT_FAMILIES[0]!.stack;
+}
+
 export const STYLE_PRESETS: readonly StylePreset[] = [
   {
     slug: "classic_elegant",
@@ -255,6 +329,10 @@ export const DECOR_STYLES: readonly { slug: DecorSlug; nameKey: string }[] = [
 export const VALID_STYLES: ReadonlySet<StylePresetSlug> = new Set(STYLE_PRESETS.map((s) => s.slug));
 export const VALID_PALETTES: ReadonlySet<PaletteSlug> = new Set(PALETTES.map((p) => p.slug));
 export const VALID_FONTS: ReadonlySet<FontPresetSlug> = new Set(FONT_PRESETS.map((f) => f.slug));
+export const VALID_FONT_FAMILIES: ReadonlySet<FontFamilySlug> = new Set(
+  FONT_FAMILIES.map((f) => f.slug),
+);
+export const COLOR_ROLES: readonly ColorRole[] = ["primary", "background", "accent", "text"];
 export const VALID_SEPARATORS: ReadonlySet<MonogramSeparatorSlug> = new Set(
   MONOGRAM_SEPARATORS.map((s) => s.slug),
 );
@@ -270,6 +348,9 @@ export const DEFAULT_DESIGN: CoupleDesign = {
   style: "botanical_green",
   palette: "botanical_green",
   fonts: "classic_serif",
+  colors: {},
+  headingFont: null,
+  bodyFont: null,
   monogram: { enabled: true, separator: "amp" },
   dateFormat: "long",
   decor: "line",
@@ -293,10 +374,20 @@ export function getFontPreset(slug: FontPresetSlug): FontPreset {
  *  slot and `rowToCurrency` degrades to HUF. */
 export function resolveDesign(input: CoupleDesignInput | null | undefined): CoupleDesign {
   const i = input ?? {};
+  // Keep only valid `#RRGGBB` overrides, lowercased. Unknown roles / malformed
+  // values are dropped so a bad blob can never poison the resolved colours.
+  const colors: Partial<Record<ColorRole, string>> = {};
+  for (const role of COLOR_ROLES) {
+    const v = i.colors?.[role];
+    if (typeof v === "string" && HEX_COLOR_RE.test(v)) colors[role] = v.toLowerCase();
+  }
   return {
     style: i.style && VALID_STYLES.has(i.style) ? i.style : DEFAULT_DESIGN.style,
     palette: i.palette && VALID_PALETTES.has(i.palette) ? i.palette : DEFAULT_DESIGN.palette,
     fonts: i.fonts && VALID_FONTS.has(i.fonts) ? i.fonts : DEFAULT_DESIGN.fonts,
+    colors,
+    headingFont: i.headingFont && VALID_FONT_FAMILIES.has(i.headingFont) ? i.headingFont : null,
+    bodyFont: i.bodyFont && VALID_FONT_FAMILIES.has(i.bodyFont) ? i.bodyFont : null,
     monogram: {
       enabled:
         typeof i.monogram?.enabled === "boolean"
@@ -329,6 +420,10 @@ export interface PublicDesign {
   background: string;
   accent: string;
   text: string;
+  /** Contrast-safe colour for small accent TEXT (eyebrows, monogram) on the
+   *  background: the brand primary when it clears 3:1, else the body text
+   *  colour. The raw `accent` stays for 1px dividers/borders (contrast-exempt). */
+  accent_text: string;
   heading_font: string;
   body_font: string;
   /** Monogram on/off + separator slug. The initials are built from the
@@ -343,13 +438,27 @@ export interface PublicDesign {
 export function toPublicDesign(design: CoupleDesign): PublicDesign {
   const palette = getPalette(design.palette);
   const fonts = getFontPreset(design.fonts);
+  // Per-role custom override falls back to the palette hex.
+  const primary = design.colors.primary ?? palette.primary.hex;
+  const background = design.colors.background ?? palette.background.hex;
+  const accent = design.colors.accent ?? palette.accent.hex;
+  const text = design.colors.text ?? palette.text.hex;
+  // Independent family override falls back to the preset's stack.
+  const headingFont = design.headingFont
+    ? getFontFamilyStack(design.headingFont)
+    : fonts.headingStack;
+  const bodyFont = design.bodyFont ? getFontFamilyStack(design.bodyFont) : fonts.bodyStack;
+  // Accent TEXT must stay legible: prefer the brand primary, fall back to the
+  // body text colour when primary-on-background drops below 3:1.
+  const accentText = getContrastRatio(primary, background) >= 3 ? primary : text;
   return {
-    primary: palette.primary.hex,
-    background: palette.background.hex,
-    accent: palette.accent.hex,
-    text: palette.text.hex,
-    heading_font: fonts.headingStack,
-    body_font: fonts.bodyStack,
+    primary,
+    background,
+    accent,
+    text,
+    accent_text: accentText,
+    heading_font: headingFont,
+    body_font: bodyFont,
     monogram_enabled: design.monogram.enabled,
     monogram_separator: design.monogram.separator,
     date_format: design.dateFormat,
@@ -358,10 +467,7 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
 }
 
 /** Locale-aware glyph for a monogram separator. Only `and` differs by locale. */
-export function monogramSeparatorGlyph(
-  slug: MonogramSeparatorSlug,
-  locale: "hu" | "en",
-): string {
+export function monogramSeparatorGlyph(slug: MonogramSeparatorSlug, locale: "hu" | "en"): string {
   if (slug === "and") return locale === "hu" ? "és" : "and";
   return MONOGRAM_SEPARATORS.find((s) => s.slug === slug)?.glyph ?? "&";
 }
@@ -405,9 +511,7 @@ export function formatWeddingDate(
   const month = Number(mo);
   const day = Number(d);
   if (slug === "numeric_dot") {
-    return locale === "hu"
-      ? `${year}.${mo}.${d}.`
-      : `${year}.${mo}.${d}`;
+    return locale === "hu" ? `${year}.${mo}.${d}.` : `${year}.${mo}.${d}`;
   }
   if (slug === "slash") {
     return locale === "hu" ? `${year}/${mo}/${d}` : `${mo}/${d}/${year}`;
@@ -443,7 +547,5 @@ export function formatWeddingDate(
   ];
   const idx = month - 1;
   if (idx < 0 || idx > 11) return raw;
-  return locale === "hu"
-    ? `${year}. ${monthsHu[idx]} ${day}.`
-    : `${monthsEn[idx]} ${day}, ${year}`;
+  return locale === "hu" ? `${year}. ${monthsHu[idx]} ${day}.` : `${monthsEn[idx]} ${day}, ${year}`;
 }

@@ -20,6 +20,9 @@ interface CoupleDesign {
   style: string;
   palette: string;
   fonts: string;
+  colors: Partial<Record<"primary" | "background" | "accent" | "text", string>>;
+  headingFont: string | null;
+  bodyFont: string | null;
   monogram: { enabled: boolean; separator: string };
   dateFormat: string;
   decor: string;
@@ -67,6 +70,9 @@ describe("design: default resolution", () => {
       style: "botanical_green",
       palette: "botanical_green",
       fonts: "classic_serif",
+      colors: {},
+      headingFont: null,
+      bodyFont: null,
       monogram: { enabled: true, separator: "amp" },
       dateFormat: "long",
       decor: "line",
@@ -168,6 +174,144 @@ describe("design: PATCH /api/couples/current", () => {
       { token },
     );
     expect(badFont.status).toBe(400);
+  });
+});
+
+describe("design: editable custom colours + font families", () => {
+  test("a valid custom colour persists, overrides the palette, and clears with null", async () => {
+    wipeAll();
+    const token = await registerVerified("design-color@weddly.test");
+    const { couple } = await onboard(token);
+    // Override two roles (mixed case in → stored lowercase).
+    const set = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { colors: { primary: "#AABBCC", text: "#112233" } } },
+      { token },
+    );
+    expect(set.status).toBe(200);
+    expect(set.data.couple.design.colors.primary).toBe("#aabbcc");
+    expect(set.data.couple.design.colors.text).toBe("#112233");
+
+    // The public payload resolves the override over the palette hex.
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(couple.id);
+    const slug = (
+      db.prepare("SELECT slug FROM couples WHERE id = ?").get(couple.id) as { slug: string }
+    ).slug;
+    const pub = await req<{ wedding: { design: { primary: string } } }>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(pub.data.wedding.design.primary).toBe("#aabbcc");
+
+    // `colors` is the authoritative full set (replace): resending only `text`
+    // drops the `primary` override back to the palette.
+    const cleared = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { colors: { text: "#112233" } } },
+      { token },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.couple.design.colors.primary).toBeUndefined();
+    expect(cleared.data.couple.design.colors.text).toBe("#112233");
+
+    // An empty `colors` object clears every override.
+    const wiped = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { colors: {} } },
+      { token },
+    );
+    expect(wiped.status).toBe(200);
+    expect(wiped.data.couple.design.colors).toEqual({});
+  });
+
+  test("picking a palette clears existing custom colour overrides", async () => {
+    wipeAll();
+    const token = await registerVerified("design-color-reset@weddly.test");
+    await onboard(token);
+    await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { colors: { accent: "#abcdef" } } },
+      { token },
+    );
+    const r = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { palette: "espresso", colors: {} } },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.design.colors.accent).toBeUndefined();
+  });
+
+  test("a malformed hex and an unknown colour role are each rejected with 400", async () => {
+    wipeAll();
+    const token = await registerVerified("design-color-bad@weddly.test");
+    await onboard(token);
+    const badHex = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { colors: { primary: "blue" } } },
+      { token },
+    );
+    expect(badHex.status).toBe(400);
+    const badRole = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { colors: { border: "#aabbcc" } } },
+      { token },
+    );
+    expect(badRole.status).toBe(400);
+  });
+
+  test("heading/body font family persists, resolves to a stack, and clears with null", async () => {
+    wipeAll();
+    const token = await registerVerified("design-family@weddly.test");
+    const { couple } = await onboard(token);
+    const set = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { headingFont: "general_sans", bodyFont: "system_serif" } },
+      { token },
+    );
+    expect(set.status).toBe(200);
+    expect(set.data.couple.design.headingFont).toBe("general_sans");
+    expect(set.data.couple.design.bodyFont).toBe("system_serif");
+
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(couple.id);
+    const slug = (
+      db.prepare("SELECT slug FROM couples WHERE id = ?").get(couple.id) as { slug: string }
+    ).slug;
+    const pub = await req<{ wedding: { design: { heading_font: string } } }>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(pub.data.wedding.design.heading_font).toContain("General Sans");
+
+    const cleared = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { headingFont: null } },
+      { token },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.couple.design.headingFont).toBeNull();
+  });
+
+  test("an unknown font family is rejected with 400", async () => {
+    wipeAll();
+    const token = await registerVerified("design-family-bad@weddly.test");
+    await onboard(token);
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { headingFont: "papyrus" } },
+      { token },
+    );
+    expect(r.status).toBe(400);
   });
 });
 

@@ -7,10 +7,14 @@
 // page can never drift.
 
 import {
+  COLOR_ROLES,
+  type ColorRole,
   type CoupleDesign,
   DATE_FORMATS,
   DECOR_STYLES,
+  FONT_FAMILIES,
   FONT_PRESETS,
+  type FontFamilySlug,
   type FontPresetSlug,
   formatWeddingDate,
   getFontPreset,
@@ -24,6 +28,7 @@ import {
   type StylePresetSlug,
   toPublicDesign,
 } from "@shared/design";
+import { getContrastRatio } from "@shared/wcag";
 import type { Couple } from "@shared/types";
 import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
 import { Check, Download, Loader2 } from "lucide-react";
@@ -159,18 +164,42 @@ export default function DesignPage() {
   function chooseStyle(slug: StylePresetSlug) {
     const preset = STYLE_PRESETS.find((s) => s.slug === slug);
     if (!preset) return;
+    // A style is a full reset: it re-seeds palette + fonts AND drops any
+    // custom colour / font-family overrides so the tile is the obvious reset.
     setDesign((d) => ({
       ...d,
       style: slug,
       palette: preset.defaultPalette,
       fonts: preset.defaultFonts,
+      colors: {},
+      headingFont: null,
+      bodyFont: null,
     }));
   }
   function choosePalette(slug: PaletteSlug) {
-    setDesign((d) => ({ ...d, palette: slug }));
+    // Picking a palette clears per-role colour overrides, so the palette tile
+    // doubles as the "reset my custom colours" affordance.
+    setDesign((d) => ({ ...d, palette: slug, colors: {} }));
   }
   function chooseFonts(slug: FontPresetSlug) {
-    setDesign((d) => ({ ...d, fonts: slug }));
+    // Picking a font preset clears the independent family overrides.
+    setDesign((d) => ({ ...d, fonts: slug, headingFont: null, bodyFont: null }));
+  }
+  function chooseColor(role: ColorRole, hex: string) {
+    setDesign((d) => ({ ...d, colors: { ...d.colors, [role]: hex.toLowerCase() } }));
+  }
+  function clearColor(role: ColorRole) {
+    setDesign((d) => {
+      const colors = { ...d.colors };
+      delete colors[role];
+      return { ...d, colors };
+    });
+  }
+  function chooseHeadingFont(slug: FontFamilySlug | null) {
+    setDesign((d) => ({ ...d, headingFont: slug }));
+  }
+  function chooseBodyFont(slug: FontFamilySlug | null) {
+    setDesign((d) => ({ ...d, bodyFont: slug }));
   }
   function togglePrint(key: "border" | "ornament" | "qr") {
     setDesign((d) => ({ ...d, print: { ...d.print, [key]: !d.print[key] } }));
@@ -210,6 +239,17 @@ export default function DesignPage() {
       setDownloading(null);
     }
   }
+
+  // Base palette for the colour pickers: each input seeds from the custom
+  // override if set, else this palette's hex for that role.
+  const activePalette = getPalette(design.palette);
+  // Resolved final colours (overrides applied) drive the live contrast check.
+  const resolvedColors = useMemo(() => toPublicDesign(design), [design]);
+  // Warn (never block) when body text or accent text would be hard to read on
+  // the chosen background. Decorative dividers are contrast-exempt and skipped.
+  const lowContrast =
+    getContrastRatio(resolvedColors.text, resolvedColors.background) < 4.5 ||
+    getContrastRatio(resolvedColors.accent_text, resolvedColors.background) < 3;
 
   // Live guest-page preview through the SAME <WeddingSiteView> guests see, fed
   // the in-progress design so the couple watches the theme update as they pick.
@@ -390,6 +430,52 @@ export default function DesignPage() {
                   </PresetTile>
                 ))}
               </div>
+
+              {/* Custom colours — per-role overrides on top of the palette.
+                  Each input is seeded from the resolved colour (override or
+                  palette), and a Reset clears the override back to the palette. */}
+              <div className="mt-4 rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.colors.title")}
+                  </span>
+                  <InfoHint text={t("design.colors.hint")} />
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {COLOR_ROLES.map((role) => {
+                    const resolved = design.colors[role] ?? activePalette[role].hex;
+                    const overridden = design.colors[role] !== undefined;
+                    return (
+                      <div key={role} className="flex flex-col gap-1">
+                        <label className="flex items-center gap-2 text-xs text-ink-700 dark:text-paper-100">
+                          <input
+                            type="color"
+                            value={resolved}
+                            onChange={(ev) => chooseColor(role, ev.target.value)}
+                            aria-label={t(`design.colors.${role}`)}
+                            className="h-8 w-8 shrink-0 cursor-pointer rounded-md border border-paper-300 bg-transparent p-0.5 dark:border-umber-700"
+                          />
+                          <span className="min-w-0 truncate">{t(`design.colors.${role}`)}</span>
+                        </label>
+                        {overridden && (
+                          <button
+                            type="button"
+                            onClick={() => clearColor(role)}
+                            className="self-start text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+                          >
+                            {t("design.colors.reset")}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {lowContrast && (
+                  <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-400">
+                    {t("design.colors.low_contrast")}
+                  </p>
+                )}
+              </div>
             </section>
 
             {/* Fonts */}
@@ -421,6 +507,38 @@ export default function DesignPage() {
                       </span>
                     </span>
                   </PresetTile>
+                ))}
+              </div>
+
+              {/* Independent heading / body family overrides on top of the
+                  preset. "Use preset" clears the override. Only bundled
+                  families are offered (no new webfont request). */}
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    ["heading", design.headingFont, chooseHeadingFont] as const,
+                    ["body", design.bodyFont, chooseBodyFont] as const,
+                  ] as const
+                ).map(([which, current, setter]) => (
+                  <label key={which} className="flex flex-col gap-1">
+                    <span className="text-xs font-medium text-ink-600 dark:text-umber-200">
+                      {t(`design.font.${which}_label`)}
+                    </span>
+                    <select
+                      value={current ?? ""}
+                      onChange={(ev) =>
+                        setter(ev.target.value === "" ? null : (ev.target.value as FontFamilySlug))
+                      }
+                      className="input h-10 min-h-0"
+                    >
+                      <option value="">{t("design.font.use_preset")}</option>
+                      {FONT_FAMILIES.map((fam) => (
+                        <option key={fam.slug} value={fam.slug}>
+                          {t(fam.nameKey)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 ))}
               </div>
             </section>

@@ -1650,6 +1650,29 @@ export interface LocaleMessages {
       classic_serif: string;
       modern_clean: string;
       soft_romantic: string;
+      /** Heading / body font-family override pickers + the "use preset" option. */
+      heading_label: string;
+      body_label: string;
+      use_preset: string;
+    };
+    /** Individually-assignable font families (the editable layer). */
+    family: {
+      cormorant: string;
+      inter: string;
+      general_sans: string;
+      system_serif: string;
+      system_sans: string;
+    };
+    /** Custom per-role colour overrides on top of the palette. */
+    colors: {
+      title: string;
+      hint: string;
+      primary: string;
+      background: string;
+      accent: string;
+      text: string;
+      reset: string;
+      low_contrast: string;
     };
     /** Tabs: the Style Kit vs the Cards & printables hub. */
     tab: {

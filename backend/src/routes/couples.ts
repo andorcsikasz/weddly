@@ -27,15 +27,20 @@ import {
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
 import {
+  COLOR_ROLES,
+  type ColorRole,
   type CoupleDesign,
   type DateFormatSlug,
   type DecorSlug,
+  type FontFamilySlug,
   type FontPresetSlug,
+  HEX_COLOR_RE,
   type MonogramSeparatorSlug,
   type PaletteSlug,
   type StylePresetSlug,
   VALID_DATE_FORMATS,
   VALID_DECOR,
+  VALID_FONT_FAMILIES,
   VALID_FONTS,
   VALID_PALETTES,
   VALID_SEPARATORS,
@@ -1826,6 +1831,9 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       style: prev.style,
       palette: prev.palette,
       fonts: prev.fonts,
+      colors: { ...prev.colors },
+      headingFont: prev.headingFont,
+      bodyFont: prev.bodyFont,
       monogram: { ...prev.monogram },
       dateFormat: prev.dateFormat,
       decor: prev.decor,
@@ -1881,6 +1889,44 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       }
       next.decor = v as DecorSlug;
     }
+    // Custom colour overrides - the `colors` object, when present, is the
+    // AUTHORITATIVE full set of overrides (replace, not merge): the client
+    // always holds the complete sparse map, so `colors: {}` clears every
+    // override back to the palette. A `null` value is treated as "omitted"
+    // (cleared); an unknown role or malformed hex is a client bug → 400.
+    if ("colors" in obj && obj.colors !== undefined) {
+      const c = obj.colors;
+      if (c === null || typeof c !== "object" || Array.isArray(c)) {
+        throw new HttpError(400, "design.colors must be an object");
+      }
+      const rebuilt: Partial<Record<ColorRole, string>> = {};
+      for (const [role, value] of Object.entries(c as Record<string, unknown>)) {
+        if (!COLOR_ROLES.includes(role as ColorRole)) {
+          throw new HttpError(400, `design.colors.${role} is not a valid colour role`);
+        }
+        if (value === null) continue;
+        if (typeof value === "string" && HEX_COLOR_RE.test(value)) {
+          rebuilt[role as ColorRole] = value.toLowerCase();
+        } else {
+          throw new HttpError(400, `design.colors.${role} must be a #RRGGBB hex colour`);
+        }
+      }
+      next.colors = rebuilt;
+    }
+    // Independent font-family overrides. A valid family slug sets it; explicit
+    // null clears back to the preset stack.
+    for (const key of ["headingFont", "bodyFont"] as const) {
+      if (key in obj) {
+        const v = obj[key];
+        if (v === null) {
+          next[key] = null;
+        } else if (typeof v === "string" && VALID_FONT_FAMILIES.has(v as FontFamilySlug)) {
+          next[key] = v as FontFamilySlug;
+        } else {
+          throw new HttpError(400, `design.${key} is not a valid font family`);
+        }
+      }
+    }
     // Print toggles — only known boolean keys are applied; anything else is
     // ignored (forward-compatible with future template options).
     if ("print" in obj && obj.print && typeof obj.print === "object") {
@@ -1893,6 +1939,9 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.style !== prev.style ||
       next.palette !== prev.palette ||
       next.fonts !== prev.fonts ||
+      next.headingFont !== prev.headingFont ||
+      next.bodyFont !== prev.bodyFont ||
+      COLOR_ROLES.some((r) => next.colors[r] !== prev.colors[r]) ||
       next.monogram.enabled !== prev.monogram.enabled ||
       next.monogram.separator !== prev.monogram.separator ||
       next.dateFormat !== prev.dateFormat ||

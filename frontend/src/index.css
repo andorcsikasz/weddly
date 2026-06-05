@@ -435,8 +435,13 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
 .wedding-theme :is(h1, h2, h3) {
   font-family: var(--wt-heading-font);
 }
+/* Accent TEXT (eyebrows, monogram) uses the contrast-safe `--wt-accent-text`
+   the resolver computes (brand primary when legible on the background, else
+   the body text colour). The raw `--wt-accent` stays for 1px dividers / frames
+   only, which are contrast-exempt. Falls back to --wt-primary for any cached
+   payload that predates --wt-accent-text. */
 .wedding-theme .wt-accent {
-  color: var(--wt-primary);
+  color: var(--wt-accent-text, var(--wt-primary));
 }
 
 /* ── Components ────────────────────────────────────────────────────── */
