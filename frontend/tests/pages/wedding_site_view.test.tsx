@@ -16,6 +16,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { _preloadHuForTests, I18nProvider } from "@/lib/i18n";
 import { WeddingSiteView } from "@/components/WeddingSiteView";
+import { DEFAULT_DESIGN, toPublicDesign } from "@shared/design";
 import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
 
 beforeAll(async () => {
@@ -63,6 +64,7 @@ function filledView(overrides: Partial<PublicWeddingWebsiteView> = {}): PublicWe
       },
     ],
     wishlist: null,
+    design: toPublicDesign(DEFAULT_DESIGN),
     fetched_at: 0,
     ...overrides,
   };

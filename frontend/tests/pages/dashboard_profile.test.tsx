@@ -12,6 +12,7 @@
 //     `scheduleApi.list()` AFTER first paint) need a single waitFor on the
 //     primary data so the lazy effect has time to settle before assertions.
 
+import { resolveDesign } from "@shared/design";
 import type { Couple, Guest, BudgetLine } from "@shared/types";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -94,6 +95,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     useful_info: null,
     post_rsvp_content: null,
     media_links: { guests: null, photographer: null, other: null },
+    design: resolveDesign(null),
     created_at: Date.now() - 86_400_000,
     onboarded_at: Date.now() - 86_400_000,
     updated_at: Date.now(),

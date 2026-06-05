@@ -1262,6 +1262,8 @@ export interface LocaleMessages {
     honeymoon: string;
     /** Pre-wedding inspiration — embeds a Pinterest board the couple links. */
     moodboard: string;
+    /** Curated visual-identity editor — sits next to the moodboard. */
+    design: string;
     media: string;
     print: string;
     /** Merged guest-facing surface — single sidebar entry pointing at
@@ -1597,6 +1599,56 @@ export interface LocaleMessages {
     feedback_empty_error: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
+  /** /app/design — the curated wedding visual-identity editor. */
+  design: {
+    title: string;
+    /** InfoHint next to the title. */
+    hint: string;
+    /** Section headings for the three pickers + print toggles. */
+    section: {
+      style: string;
+      palette: string;
+      fonts: string;
+      print: string;
+    };
+    /** Print-template toggle labels. */
+    print: {
+      border: string;
+      ornament: string;
+      qr: string;
+    };
+    /** Live-preview column label. */
+    preview_label: string;
+    /** Body sample line shown under the heading sample in a font tile. */
+    font_sample_body: string;
+    /** Toast copy. */
+    saved: string;
+    save_blocked: string;
+    save_error: string;
+    /** Wedding-style preset names. */
+    style: {
+      classic_elegant: string;
+      botanical_green: string;
+      modern_minimal: string;
+      romantic_soft: string;
+      rustic_natural: string;
+      editorial: string;
+    };
+    /** Colour-palette names. */
+    palette: {
+      botanical_green: string;
+      espresso: string;
+      blush: string;
+      stone_minimal: string;
+      sage_cream: string;
+    };
+    /** Font-preset names. */
+    font: {
+      classic_serif: string;
+      modern_clean: string;
+      soft_romantic: string;
+    };
+  };
   moodboard: {
     title: string;
     sub: string;

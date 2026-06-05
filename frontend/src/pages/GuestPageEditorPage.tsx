@@ -9,6 +9,7 @@ import type { Couple, Household, PlaceSuggestion } from "@shared/types";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
 import type { DirectorySupplier } from "@shared/suppliers";
+import { toPublicDesign } from "@shared/design";
 import type { PublicWeddingScheduleEntry, PublicWeddingWebsiteView } from "@shared/wedding_website";
 import type { ScheduleEvent } from "@shared/schedule";
 import {
@@ -711,6 +712,7 @@ export default function GuestPageEditorPage() {
           }),
         ),
         wishlist: null,
+        design: toPublicDesign(couple.design),
         fetched_at: Date.now(),
       }
     : null;

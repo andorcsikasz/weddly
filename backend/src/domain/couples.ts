@@ -6,6 +6,7 @@ import {
   type SubscriptionStatus,
   SUBSCRIPTION_STATUSES,
 } from "@shared/billing";
+import { type CoupleDesign, type CoupleDesignInput, resolveDesign } from "@shared/design";
 import type {
   BudgetCategory,
   BudgetGoal,
@@ -161,6 +162,10 @@ export interface CoupleRow {
   /** JSON blob `{ guests, photographer, other }` of photo-share URLs for the
    *  Photos page. NULL / malformed parses to all-null. */
   media_links_json: string | null;
+  /** JSON blob of curated visual-identity slugs + print toggles for the
+   *  Design feature, e.g. `{ style, palette, fonts, print: {...} }`. NULL /
+   *  malformed resolves to the Botanical Green default at read-time. */
+  design_json: string | null;
   /** Unix-ms stamp of the last bride/groom rename via PATCH
    *  /api/couples/current. Drives the 7-day rename cooldown. NULL for
    *  couples that have never used the gated rename path. */
@@ -296,6 +301,19 @@ export function parseMediaLinksJson(json: string | null): MediaLinks {
   return out;
 }
 
+/** Parse the `design_json` blob into a {@link CoupleDesignInput}. NULL or
+ *  malformed JSON degrades to `{}`; {@link resolveDesign} then fills every
+ *  field from the default, so the DTO always carries a complete design. */
+export function parseDesignJson(json: string | null): CoupleDesign {
+  if (!json) return resolveDesign(null);
+  try {
+    return resolveDesign(JSON.parse(json) as CoupleDesignInput);
+  } catch {
+    // Malformed JSON in the DB shouldn't crash the API; fall back to default.
+    return resolveDesign(null);
+  }
+}
+
 export function toCouple(row: CoupleRow): Couple {
   let styleTags: WeddingStyleTag[] = [];
   try {
@@ -353,6 +371,7 @@ export function toCouple(row: CoupleRow): Couple {
     useful_info: row.useful_info,
     post_rsvp_content: row.post_rsvp_content,
     media_links: parseMediaLinksJson(row.media_links_json),
+    design: parseDesignJson(row.design_json),
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,

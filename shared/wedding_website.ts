@@ -12,6 +12,7 @@
 // — server-side omits gated fields, so the contract is "if a field is
 // non-null in the payload, you may render it".
 
+import type { PublicDesign } from "./design";
 import type { CeremonyKind, HouseholdMember, UnixMs } from "./types";
 import type { WishlistEntry } from "./wishlist";
 
@@ -79,6 +80,10 @@ export interface PublicWeddingWebsiteView {
    *  tampered client can't surface it. Empty array when the couple is
    *  confirmed-eligible but authored no items. */
   wishlist: WishlistEntry[] | null;
+  /** Resolved visual identity (hex colours + font stacks) the couple chose on
+   *  /app/design. Presentation-only, visible at every tier — styling isn't
+   *  gated. The guest page reads these straight into CSS custom properties. */
+  design: PublicDesign;
   fetched_at: UnixMs;
 }
 

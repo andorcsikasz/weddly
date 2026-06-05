@@ -660,6 +660,12 @@ addColumnIfMissing("couples", "useful_info", "useful_info TEXT");
 // - media_links_json: photo-share URLs for the Photos page, one Google Drive
 //   (or any http(s)) link per source. JSON blob `{ guests, photographer, other }`.
 addColumnIfMissing("couples", "media_links_json", "media_links_json TEXT");
+// - design_json: curated visual identity for the Design feature (style /
+//   palette / font slugs + print toggles), one JSON blob. NULL/legacy rows
+//   resolve to the Botanical Green default at read-time (resolveDesign), so
+//   existing guest pages keep working. No index (always read via the loaded
+//   couple row); validation lives in the PATCH allowlist, not the column.
+addColumnIfMissing("couples", "design_json", "design_json TEXT");
 // Wedding-day "Welcome Desk" mode — couple flips this to 1 when they set up
 // a kiosk tablet at the entrance so the Settings card can surface the
 // current status persistently (across devices, across reloads) instead of

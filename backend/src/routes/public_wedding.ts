@@ -40,8 +40,9 @@ import type {
   WishlistInterestToggleInput,
   WishlistInterestToggleResult,
 } from "@shared/wishlist";
+import { toPublicDesign } from "@shared/design";
 import { db, now } from "../db";
-import { type CoupleRow } from "../domain/couples";
+import { type CoupleRow, parseDesignJson } from "../domain/couples";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { listScheduleEvents } from "../domain/schedule";
 import {
@@ -141,6 +142,10 @@ function buildView(
     // client can never surface it. Empty array when the couple is confirmed-
     // eligible but authored no items.
     wishlist: isConfirmed ? (wishlist ?? []) : null,
+    // Visual identity — presentation-only, never gated (styling is public).
+    // Resolved to hex + font stacks; the guest page reads these straight into
+    // CSS custom properties. NULL/legacy design_json → Botanical Green.
+    design: toPublicDesign(parseDesignJson(couple.design_json)),
     fetched_at: now(),
   };
 }

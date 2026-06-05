@@ -51,6 +51,7 @@ import type {
   StripeHealth,
 } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse } from "@shared/billing";
+import type { CoupleDesignInput } from "@shared/design";
 import type { BlogPost } from "@shared/blog_posts";
 import type { GuestPortalView } from "@shared/guest_portal";
 import type { PublicWeddingResponse } from "@shared/wedding_website";
@@ -409,6 +410,9 @@ export const coupleApi = {
     /** Photos page photo-share links. Partial — only the sources present
      *  are updated; "" / null clears that slot. */
     media_links?: Partial<MediaLinks>;
+    /** Design feature — curated visual identity. Partial: any of the slugs
+     *  + print toggles; only the keys present are updated. */
+    design?: CoupleDesignInput;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Multipart cover-image upload — mirrors vendorListingApi.uploadHero.
    *  Server writes the file to `${UPLOADS_DIR}/couples/<id>/cover.<ext>` and

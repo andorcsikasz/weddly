@@ -48,6 +48,7 @@ const AdminVendorWaitlistPage = lazy(() => import("./pages/AdminVendorWaitlistPa
 const BudgetPage = lazy(() => import("./pages/BudgetPage"));
 const ChangeEmailPage = lazy(() => import("./pages/ChangeEmailPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const DesignPage = lazy(() => import("./pages/DesignPage"));
 const GuestPageEditorPage = lazy(() => import("./pages/GuestPageEditorPage"));
 const GuestsPage = lazy(() => import("./pages/GuestsPage"));
 const HoneymoonPage = lazy(() => import("./pages/HoneymoonPage"));
@@ -625,6 +626,14 @@ export default function App() {
             element={
               <Page>
                 <MoodboardPage />
+              </Page>
+            }
+          />
+          <Route
+            path="design"
+            element={
+              <Page>
+                <DesignPage />
               </Page>
             }
           />

@@ -26,6 +26,15 @@ import {
   type WeddingStyleTag,
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
+import {
+  type CoupleDesign,
+  type FontPresetSlug,
+  type PaletteSlug,
+  type StylePresetSlug,
+  VALID_FONTS,
+  VALID_PALETTES,
+  VALID_STYLES,
+} from "@shared/design";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
@@ -37,6 +46,7 @@ import {
   isCoupleMember,
   listCouplesForUser,
   MEDIA_SOURCES,
+  parseDesignJson,
   parseMediaLinksJson,
   removeCoupleMember,
   seedCoupleFromCouple,
@@ -162,6 +172,11 @@ interface OnboardBody {
    *  (`guests` / `photographer` / `other`); only the keys present are
    *  updated. Each value is an http(s) URL or "" / null to clear that slot. */
   media_links?: unknown;
+  /** Design feature — curated visual identity. Partial object: any of
+   *  `style` / `palette` / `fonts` (validated slugs) + `print` (partial
+   *  booleans). Only the keys present are updated; the rest keep their
+   *  current resolved value. */
+  design?: unknown;
   /** Wedding-day "Welcome Desk" mode toggle. Boolean. Persistent on the
    *  couple row so the Settings card's status pill stays accurate across
    *  reloads and devices. */
@@ -1790,6 +1805,67 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.media_links_update",
         before: { media_links: prev },
         after: { media_links: next },
+      });
+    }
+  }
+
+  if (body.design !== undefined) {
+    const incoming = body.design;
+    if (incoming === null || typeof incoming !== "object" || Array.isArray(incoming)) {
+      throw new HttpError(400, "design must be an object");
+    }
+    const obj = incoming as Record<string, unknown>;
+    const prev = parseDesignJson(couple.design_json);
+    const next: CoupleDesign = {
+      style: prev.style,
+      palette: prev.palette,
+      fonts: prev.fonts,
+      print: { ...prev.print },
+    };
+    // Each curated slug, if present, must be a known value — a present-but-
+    // unknown slug is a client bug, so we 400 rather than silently ignore it.
+    if ("style" in obj) {
+      const v = obj.style;
+      if (typeof v !== "string" || !VALID_STYLES.has(v as StylePresetSlug)) {
+        throw new HttpError(400, "design.style is not a valid style preset");
+      }
+      next.style = v as StylePresetSlug;
+    }
+    if ("palette" in obj) {
+      const v = obj.palette;
+      if (typeof v !== "string" || !VALID_PALETTES.has(v as PaletteSlug)) {
+        throw new HttpError(400, "design.palette is not a valid palette");
+      }
+      next.palette = v as PaletteSlug;
+    }
+    if ("fonts" in obj) {
+      const v = obj.fonts;
+      if (typeof v !== "string" || !VALID_FONTS.has(v as FontPresetSlug)) {
+        throw new HttpError(400, "design.fonts is not a valid font preset");
+      }
+      next.fonts = v as FontPresetSlug;
+    }
+    // Print toggles — only known boolean keys are applied; anything else is
+    // ignored (forward-compatible with future template options).
+    if ("print" in obj && obj.print && typeof obj.print === "object") {
+      const p = obj.print as Record<string, unknown>;
+      for (const key of ["border", "ornament", "qr"] as const) {
+        if (typeof p[key] === "boolean") next.print[key] = p[key] as boolean;
+      }
+    }
+    const changed =
+      next.style !== prev.style ||
+      next.palette !== prev.palette ||
+      next.fonts !== prev.fonts ||
+      next.print.border !== prev.print.border ||
+      next.print.ornament !== prev.print.ornament ||
+      next.print.qr !== prev.print.qr;
+    if (changed) {
+      updates.push({ col: "design_json", val: JSON.stringify(next) });
+      auditEntries.push({
+        action: "couple.design_update",
+        before: { design: prev },
+        after: { design: next },
       });
     }
   }

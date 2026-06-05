@@ -12,6 +12,7 @@
 // detection helper otherwise falls back to navigator.language which is
 // environment-dependent.
 
+import { resolveDesign } from "@shared/design";
 import type { BudgetLine, BudgetSnapshot, Couple, Guest, Household } from "@shared/types";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -202,6 +203,7 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
     useful_info: null,
     post_rsvp_content: null,
     media_links: { guests: null, photographer: null, other: null },
+    design: resolveDesign(null),
     created_at: 0,
     onboarded_at: 1,
     updated_at: 1,

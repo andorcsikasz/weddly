@@ -419,6 +419,26 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   outline-color: theme("colors.umber.500");
 }
 
+/* ── Wedding visual identity (Design feature) ──────────────────────────
+   The guest-page view (WeddingSiteView) wraps itself in `.wedding-theme`
+   and sets six CSS custom properties from the couple's chosen palette +
+   font preset (see /app/design and shared/design.ts). These rules consume
+   them to retarget the heading font + accent colour. UNLAYERED for the same
+   reason as the block above: the elements still carry their Tailwind
+   `font-grotesk` / `text-blush-*` utility classes (which keep the default
+   look anywhere a theme isn't set), and only unlayered styles outrank
+   @layer utilities. No raw hex here — the values arrive via the vars, which
+   resolve from the shared catalog. */
+.wedding-theme {
+  font-family: var(--wt-body-font);
+}
+.wedding-theme :is(h1, h2, h3) {
+  font-family: var(--wt-heading-font);
+}
+.wedding-theme .wt-accent {
+  color: var(--wt-primary);
+}
+
 /* ── Components ────────────────────────────────────────────────────── */
 @layer components {
   /* Polymarket-style 3-D lifted button. Colours come from whatever the

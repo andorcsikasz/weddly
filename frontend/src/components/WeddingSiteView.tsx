@@ -25,7 +25,7 @@ import {
   Plus,
   type LucideIcon,
 } from "lucide-react";
-import type { KeyboardEvent, ReactNode, Ref } from "react";
+import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
 import { Link } from "react-router-dom";
 import { formatDate, formatMoney, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -201,8 +201,22 @@ export function WeddingSiteView({
     ? formatDate(view.wedding_date, locale)
     : t("wedding_site.date_tbd");
 
+  // Visual identity from the couple's Design selection, fed in as CSS custom
+  // properties on the `.wedding-theme` wrapper. index.css consumes these to
+  // retarget the heading font + accent colour (unlayered, so it beats the
+  // Tailwind utility classes still on the elements). No raw hex here — the
+  // values are resolved data from the shared catalog.
+  const themeStyle = {
+    "--wt-primary": view.design.primary,
+    "--wt-accent": view.design.accent,
+    "--wt-bg": view.design.background,
+    "--wt-text": view.design.text,
+    "--wt-heading-font": view.design.heading_font,
+    "--wt-body-font": view.design.body_font,
+  } as CSSProperties;
+
   return (
-    <>
+    <div className="wedding-theme" style={themeStyle}>
       {/* Cover — 16:9 hero image, or a dashed ghost in the editor preview. */}
       {view.cover_image_url ? (
         <div className="mb-6 overflow-hidden rounded-3xl border border-paper-200 dark:border-umber-700">
@@ -236,7 +250,7 @@ export function WeddingSiteView({
       {/* Hero — names + date (+ venue). Stationery aesthetic mirroring the
           landing page so the public site reads as part of the same brand. */}
       <section className="card stationery text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+        <p className="wt-accent text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
           {t("wedding_site.eyebrow")}
         </p>
         <h1 className="mt-3 font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
@@ -317,7 +331,7 @@ export function WeddingSiteView({
       {/* Invited tier — personal hello + member list (live page only). */}
       {!isPreview && showInvitedExtras && household && (
         <section className="card mt-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+          <p className="wt-accent text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
             {t("wedding_site.invited_eyebrow")}
           </p>
           <h2 className="mt-1 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
@@ -406,7 +420,7 @@ export function WeddingSiteView({
         (showConfirmedExtras && (view.post_rsvp_content || view.location_lat !== null))) && (
         <section className="card mt-6" aria-live={isPreview ? undefined : "polite"}>
           {isPreview && (
-            <p className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
+            <p className="wt-accent mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
               <Lock size={12} aria-hidden /> {t("wedding_site.ghost.locked_eyebrow")}
             </p>
           )}
@@ -477,7 +491,7 @@ export function WeddingSiteView({
           their guests get without leaving the editor. */}
       {(isPreview || !showConfirmedExtras) && (
         <section className="card stationery mt-6 text-center">
-          <Heart size={28} className="mx-auto text-blush-600 dark:text-blush-300" />
+          <Heart size={28} className="wt-accent mx-auto text-blush-600 dark:text-blush-300" />
           <h2 className="mt-3 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
             {hasCode ? t("wedding_site.rsvp_personal_title") : t("wedding_site.rsvp_title")}
           </h2>
@@ -533,6 +547,6 @@ export function WeddingSiteView({
           </p>
         </footer>
       )}
-    </>
+    </div>
   );
 }

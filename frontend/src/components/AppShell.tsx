@@ -23,6 +23,7 @@ import {
   MessageCircle,
   Moon,
   MoreHorizontal,
+  Palette,
   Plane,
   ShieldCheck,
   Store,
@@ -155,6 +156,15 @@ const ITEMS: NavItem[] = [
     to: "/app/moodboard",
     labelKey: "nav.moodboard",
     icon: <ImageIcon size={18} />,
+    group: "dreaming",
+  },
+  // Curated visual identity — sits in the inspiration cluster next to the
+  // moodboard (inspiration → concrete design system). Desktop sidebar +
+  // More-sheet only (no tabKey), so the mobile bottom nav stays at 5 items.
+  {
+    to: "/app/design",
+    labelKey: "nav.design",
+    icon: <Palette size={18} />,
     group: "dreaming",
   },
   // Post-wedding "follow-up" entries — desktop sidebar only; bottom mobile

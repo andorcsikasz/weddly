@@ -2,6 +2,7 @@
 // consumes via typed wrappers. Money is integer Forint (HUF has no sub-unit).
 
 import type { CoupleBilling } from "./billing";
+import type { CoupleDesign } from "./design";
 
 export type UnixMs = number;
 /** Integer Forint. Treat as a whole-number currency unit. */
@@ -342,6 +343,11 @@ export interface Couple {
    *  (or any http(s)) URL per source. Always present; each slot is null until
    *  the couple pastes a link. Shared across both partners. */
   media_links: MediaLinks;
+  /** Curated wedding visual identity (style / palette / font slugs + print
+   *  toggles). Always fully resolved — NULL/legacy `design_json` rows read
+   *  back as the Botanical Green default. Drives the guest page + printable
+   *  cards; the app-shell accent is unaffected. */
+  design: CoupleDesign;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
   /** Server timestamp of the last write — clients use this as the `If-Match`
