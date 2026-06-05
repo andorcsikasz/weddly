@@ -28,6 +28,7 @@ import type {
   Guest,
   GuestGroupTag,
   Household,
+  MediaLinks,
   MoodboardPin,
   PlaceSuggestion,
   PublicCheckinView,
@@ -401,6 +402,9 @@ export const coupleApi = {
     /** Wedding-day Welcome Desk mode toggle. Persistent on the couple
      *  row so the Settings card shows a stable status across reloads. */
     welcome_desk_active?: boolean;
+    /** Photos page photo-share links. Partial — only the sources present
+     *  are updated; "" / null clears that slot. */
+    media_links?: Partial<MediaLinks>;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Multipart cover-image upload — mirrors vendorListingApi.uploadHero.
    *  Server writes the file to `${UPLOADS_DIR}/couples/<id>/cover.<ext>` and

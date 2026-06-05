@@ -1565,6 +1565,12 @@ export interface LocaleMessages {
     collect_guests: string;
     collect_photographer: string;
     collect_other: string;
+    collect_add: string;
+    collect_open: string;
+    collect_placeholder: string;
+    collect_invalid: string;
+    collect_saved: string;
+    collect_removed: string;
     feedback_title: string;
     feedback_intro: string;
     feedback_placeholder: string;

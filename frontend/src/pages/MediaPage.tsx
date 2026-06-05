@@ -2,11 +2,29 @@
 // today; full content (upload + "send link to every yes RSVP" batch email)
 // lands in a follow-up.
 
-import { Camera, CheckCircle2 } from "lucide-react";
-import { type FormEvent, type SVGProps, useState } from "react";
+import type { Couple, MediaLinks, MediaSource } from "@shared/types";
+import { Camera, CheckCircle2, ExternalLink, Pencil } from "lucide-react";
+import { type FormEvent, type SVGProps, useEffect, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
-import { feedbackApi } from "../lib/endpoints";
+import { useToast } from "../components/ui";
+import { coupleApi, feedbackApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+/** Fixed photo-share slots, in display order. Mirrors MEDIA_SOURCES backend. */
+const MEDIA_SOURCES: readonly MediaSource[] = ["guests", "photographer", "other"];
+
+const EMPTY_LINKS: MediaLinks = { guests: null, photographer: null, other: null };
+
+/** http(s)-only check, mirroring the backend's parseMediaLink boundary so we
+ *  catch typos before the round-trip and show a friendly inline message. */
+function isHttpUrl(value: string): boolean {
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 // Monochrome Google Drive glyph — lucide ships no brand mark, and the
 // placeholder copy already frames the flow around a "Drive link", so the
@@ -26,10 +44,69 @@ function DriveIcon(props: SVGProps<SVGSVGElement>) {
 
 export default function MediaPage() {
   const { t, locale } = useT();
+  const toast = useToast();
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // Photo-share links live on the couple, so both partners see the same Drive
+  // albums. We hold the couple locally and refresh it from the PATCH response
+  // after every save instead of re-fetching.
+  const [couple, setCouple] = useState<Couple | null>(null);
+  const [editing, setEditing] = useState<MediaSource | null>(null);
+  const [draft, setDraft] = useState("");
+  const [savingSource, setSavingSource] = useState<MediaSource | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    coupleApi
+      .current()
+      .then((res) => {
+        if (!cancelled) setCouple(res.couple);
+      })
+      .catch(() => {
+        // A failed load just leaves the boxes empty/addable; the save call
+        // surfaces any real error.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const links: MediaLinks = couple?.media_links ?? EMPTY_LINKS;
+
+  function startEdit(source: MediaSource) {
+    setEditing(source);
+    setDraft(links[source] ?? "");
+    setLinkError(null);
+  }
+
+  function cancelEdit() {
+    setEditing(null);
+    setLinkError(null);
+  }
+
+  async function saveLink(source: MediaSource, rawValue: string) {
+    const trimmed = rawValue.trim();
+    if (trimmed && !isHttpUrl(trimmed)) {
+      setLinkError(t("media.collect_invalid"));
+      return;
+    }
+    setSavingSource(source);
+    setLinkError(null);
+    try {
+      const res = await coupleApi.update({ media_links: { [source]: trimmed || null } });
+      setCouple(res.couple);
+      setEditing(null);
+      toast.success(trimmed ? t("media.collect_saved") : t("media.collect_removed"));
+    } catch (err) {
+      setLinkError(err instanceof Error ? err.message : t("common.error_generic"));
+    } finally {
+      setSavingSource(null);
+    }
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -81,26 +158,106 @@ export default function MediaPage() {
           </div>
         </div>
 
-        {/* Where the photos will come from — three dashed source boxes the
-            future flow will wire up (guest uploads, photographer drop, a
-            catch-all "other"). Outline-only + gray Drive glyph signals they
-            are placeholders, not live actions yet. */}
+        {/* Where the photos come from — three source boxes the couple fills
+            with a Google Drive (or any http(s)) album link. An empty slot is a
+            dashed "Add a link" target with a gray Drive glyph; a filled slot
+            goes solid, opens the album in a new tab, and offers an inline
+            edit. Saved per couple, so both partners share the same albums. */}
         <div className="mt-4 grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
-          {[
-            { key: "guests", label: t("media.collect_guests") },
-            { key: "photographer", label: t("media.collect_photographer") },
-            { key: "other", label: t("media.collect_other") },
-          ].map((box) => (
-            <div
-              key={box.key}
-              className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 px-4 py-6 text-center dark:border-umber-600"
-            >
-              <DriveIcon className="h-7 w-7 text-ink-300 dark:text-umber-400" />
-              <span className="text-sm font-medium text-ink-600 dark:text-paper-100">
-                {box.label}
-              </span>
-            </div>
-          ))}
+          {MEDIA_SOURCES.map((source) => {
+            const url = links[source];
+            const isEditing = editing === source;
+            const isSaving = savingSource === source;
+            const label = t(`media.collect_${source}`);
+            return (
+              <div
+                key={source}
+                className={`flex flex-col items-center gap-2 rounded-2xl px-4 py-6 text-center ${
+                  url && !isEditing
+                    ? "border-2 border-ink-200 dark:border-umber-600"
+                    : "border-2 border-dashed border-ink-200 dark:border-umber-600"
+                }`}
+              >
+                <DriveIcon
+                  className={`h-7 w-7 ${
+                    url ? "text-umber-600 dark:text-umber-300" : "text-ink-300 dark:text-umber-400"
+                  }`}
+                />
+                <span className="text-sm font-medium text-ink-600 dark:text-paper-100">
+                  {label}
+                </span>
+
+                {isEditing ? (
+                  <form
+                    className="mt-1 w-full space-y-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      saveLink(source, draft);
+                    }}
+                    noValidate
+                  >
+                    <input
+                      type="url"
+                      className="input text-sm"
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      placeholder={t("media.collect_placeholder")}
+                      aria-label={label}
+                      // biome-ignore lint/a11y/noAutofocus: focus the field the
+                      // couple just opened so they can paste straight away.
+                      autoFocus
+                    />
+                    {linkError && (
+                      <p className="field-error" role="alert">
+                        {linkError}
+                      </p>
+                    )}
+                    <div className="flex justify-center gap-2">
+                      <button type="submit" className="btn-primary btn-sm" disabled={isSaving}>
+                        {isSaving ? t("common.saving") : t("common.save")}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-ghost btn-sm"
+                        onClick={cancelEdit}
+                        disabled={isSaving}
+                      >
+                        {t("common.cancel")}
+                      </button>
+                    </div>
+                  </form>
+                ) : url ? (
+                  <div className="mt-1 flex flex-col items-center gap-1">
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm font-medium text-umber-700 underline-offset-2 hover:underline dark:text-umber-200"
+                    >
+                      <ExternalLink size={14} aria-hidden="true" />
+                      {t("media.collect_open")}
+                    </a>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+                      onClick={() => startEdit(source)}
+                    >
+                      <Pencil size={12} aria-hidden="true" />
+                      {t("common.edit")}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-ghost btn-sm mt-1"
+                    onClick={() => startEdit(source)}
+                  >
+                    {t("media.collect_add")}
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Inline feedback — we ask couples what they actually want before

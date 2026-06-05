@@ -1834,6 +1834,95 @@ describe("couples_lifecycle: welcome-desk mode toggle", () => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
+//   COUPLES: Photos-page photo-share links (media_links)
+// ════════════════════════════════════════════════════════════════════════════
+
+describe("couples_lifecycle: media_links", () => {
+  type MediaLinksResp = {
+    couple: { media_links: { guests: string | null; photographer: string | null; other: string | null } };
+  };
+
+  test("defaults to all-null on a brand-new couple", async () => {
+    const { token } = await bootstrapCouple("media-default@weddly.test");
+    const r = await req<MediaLinksResp>("GET", "/api/couples/current", undefined, { token });
+    expect(r.status).toBe(200);
+    expect(r.data.couple.media_links).toEqual({ guests: null, photographer: null, other: null });
+  });
+
+  test("PATCH sets one slot and partial-merges without clobbering the others", async () => {
+    const { token } = await bootstrapCouple("media-merge@weddly.test");
+
+    const first = await req<MediaLinksResp>(
+      "PATCH",
+      "/api/couples/current",
+      { media_links: { guests: "https://drive.google.com/drive/folders/guests" } },
+      { token },
+    );
+    expect(first.status).toBe(200);
+    expect(first.data.couple.media_links.guests).toBe(
+      "https://drive.google.com/drive/folders/guests",
+    );
+    expect(first.data.couple.media_links.photographer).toBeNull();
+
+    // A second PATCH touching only `photographer` must leave `guests` intact.
+    const second = await req<MediaLinksResp>(
+      "PATCH",
+      "/api/couples/current",
+      { media_links: { photographer: "https://example.com/album" } },
+      { token },
+    );
+    expect(second.data.couple.media_links.guests).toBe(
+      "https://drive.google.com/drive/folders/guests",
+    );
+    expect(second.data.couple.media_links.photographer).toBe("https://example.com/album");
+
+    // Survives a re-fetch — persisted, shared between both partners.
+    const fresh = await req<MediaLinksResp>("GET", "/api/couples/current", undefined, { token });
+    expect(fresh.data.couple.media_links.guests).toBe(
+      "https://drive.google.com/drive/folders/guests",
+    );
+    expect(fresh.data.couple.media_links.photographer).toBe("https://example.com/album");
+  });
+
+  test("empty string clears a slot back to null", async () => {
+    const { token } = await bootstrapCouple("media-clear@weddly.test");
+    await req("PATCH", "/api/couples/current", { media_links: { other: "https://x.test/a" } }, {
+      token,
+    });
+    const cleared = await req<MediaLinksResp>(
+      "PATCH",
+      "/api/couples/current",
+      { media_links: { other: "" } },
+      { token },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.couple.media_links.other).toBeNull();
+  });
+
+  test("rejects a non-http(s) URL", async () => {
+    const { token } = await bootstrapCouple("media-scheme@weddly.test");
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { media_links: { guests: "javascript:alert(1)" } },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("rejects a non-object media_links payload", async () => {
+    const { token } = await bootstrapCouple("media-type@weddly.test");
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { media_links: "https://drive.google.com/x" },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
 //   COUPLES: bride/groom rename via PATCH (no rate limit)
 // ════════════════════════════════════════════════════════════════════════════
 

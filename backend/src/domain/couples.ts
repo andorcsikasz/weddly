@@ -16,6 +16,8 @@ import type {
   Currency,
   GuestCountGoal,
   GuestCountKind,
+  MediaLinks,
+  MediaSource,
   WeddingDateGoal,
   WeddingDateKind,
   WeddingSeason,
@@ -156,6 +158,9 @@ export interface CoupleRow {
    *  `confirmed` (valid household code + at least one RSVP yes). Null
    *  when unset. */
   post_rsvp_content: string | null;
+  /** JSON blob `{ guests, photographer, other }` of photo-share URLs for the
+   *  Photos page. NULL / malformed parses to all-null. */
+  media_links_json: string | null;
   /** Unix-ms stamp of the last bride/groom rename via PATCH
    *  /api/couples/current. Drives the 7-day rename cooldown. NULL for
    *  couples that have never used the gated rename path. */
@@ -270,6 +275,27 @@ function rowToBudgetGoal(row: CoupleRow): BudgetGoal {
   };
 }
 
+/** The three fixed photo-share slots, in display order. */
+export const MEDIA_SOURCES: readonly MediaSource[] = ["guests", "photographer", "other"];
+
+/** Parse the `media_links_json` blob into a fully-populated {@link MediaLinks}.
+ *  NULL, malformed JSON, or missing keys all degrade to null per slot, so the
+ *  DTO always carries the three slots. Non-string values are dropped to null. */
+export function parseMediaLinksJson(json: string | null): MediaLinks {
+  const out: MediaLinks = { guests: null, photographer: null, other: null };
+  if (!json) return out;
+  try {
+    const parsed = JSON.parse(json) as Record<string, unknown>;
+    for (const source of MEDIA_SOURCES) {
+      const val = parsed[source];
+      if (typeof val === "string" && val.trim()) out[source] = val;
+    }
+  } catch {
+    // Malformed JSON in the DB shouldn't crash the API; leave all-null.
+  }
+  return out;
+}
+
 export function toCouple(row: CoupleRow): Couple {
   let styleTags: WeddingStyleTag[] = [];
   try {
@@ -326,6 +352,7 @@ export function toCouple(row: CoupleRow): Couple {
     guest_page_intro: row.guest_page_intro,
     useful_info: row.useful_info,
     post_rsvp_content: row.post_rsvp_content,
+    media_links: parseMediaLinksJson(row.media_links_json),
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,

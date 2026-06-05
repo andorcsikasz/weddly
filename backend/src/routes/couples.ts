@@ -19,6 +19,7 @@ import {
   type GuestCountGoal,
   type GuestCountKind,
   INVITE_TTL_MS,
+  type MediaLinks,
   type WeddingDateGoal,
   type WeddingDateKind,
   type WeddingSeason,
@@ -35,6 +36,8 @@ import {
   getCoupleForUser,
   isCoupleMember,
   listCouplesForUser,
+  MEDIA_SOURCES,
+  parseMediaLinksJson,
   removeCoupleMember,
   seedCoupleFromCouple,
   toCouple,
@@ -155,6 +158,10 @@ interface OnboardBody {
   /** Vendégoldal Phase 2 — post-RSVP unlocked content (markdown). Empty
    *  string clears. Cap ≤8000 chars. */
   post_rsvp_content?: unknown;
+  /** Photos page photo-share links. Partial object keyed by source
+   *  (`guests` / `photographer` / `other`); only the keys present are
+   *  updated. Each value is an http(s) URL or "" / null to clear that slot. */
+  media_links?: unknown;
   /** Wedding-day "Welcome Desk" mode toggle. Boolean. Persistent on the
    *  couple row so the Settings card's status pill stays accurate across
    *  reloads and devices. */
@@ -1298,6 +1305,27 @@ function parseCoverImageUrl(raw: unknown): string | null {
   return parsed.href;
 }
 
+/** A single photo-share URL slot on the Photos page. Empty string / null →
+ *  null (clears the slot). Mirrors parseCoverImageUrl: explicit http(s) scheme
+ *  required, length capped, the normalized href stored. */
+function parseMediaLink(raw: unknown, source: string): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, `media_links.${source} must be a string`);
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > 2048) throw new HttpError(400, `media_links.${source} too long`);
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new HttpError(400, `media_links.${source} must be a valid http(s) URL`);
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new HttpError(400, `media_links.${source} must be http(s)`);
+  }
+  return parsed.href;
+}
+
 /** Free-text markdown block author authors for the merged Vendégoldal.
  *  Empty string → null (clears the column). Cap chosen large enough to
  *  hold a 2-3 paragraph welcome message without enabling someone to
@@ -1736,6 +1764,32 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.post_rsvp_content_update",
         before: { post_rsvp_content: prev },
         after: { post_rsvp_content: next },
+      });
+    }
+  }
+
+  // Photos page photo-share links. Partial merge: only the sources present in
+  // the body are touched, the rest carry over. Stored as one JSON blob; an
+  // all-empty result clears the column back to NULL.
+  if (body.media_links !== undefined) {
+    const incoming = body.media_links;
+    if (incoming === null || typeof incoming !== "object" || Array.isArray(incoming)) {
+      throw new HttpError(400, "media_links must be an object");
+    }
+    const prev = parseMediaLinksJson(couple.media_links_json);
+    const next: MediaLinks = { ...prev };
+    for (const source of MEDIA_SOURCES) {
+      if (source in incoming) {
+        next[source] = parseMediaLink((incoming as Record<string, unknown>)[source], source);
+      }
+    }
+    if (MEDIA_SOURCES.some((s) => next[s] !== prev[s])) {
+      const allEmpty = MEDIA_SOURCES.every((s) => next[s] === null);
+      updates.push({ col: "media_links_json", val: allEmpty ? null : JSON.stringify(next) });
+      auditEntries.push({
+        action: "couple.media_links_update",
+        before: { media_links: prev },
+        after: { media_links: next },
       });
     }
   }

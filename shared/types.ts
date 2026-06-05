@@ -224,6 +224,13 @@ export interface BudgetGoal {
   max_huf: Huf | null;
 }
 
+/** The three fixed photo-share sources on the Photos page. */
+export type MediaSource = "guests" | "photographer" | "other";
+
+/** One photo-share URL per source. Each slot is null until the couple pastes
+ *  a link. Stored couple-side as a single JSON blob (`media_links_json`). */
+export type MediaLinks = Record<MediaSource, string | null>;
+
 export interface Couple {
   id: number;
   partner_a_id: number;
@@ -331,6 +338,10 @@ export interface Couple {
   /** Post-RSVP unlocked block. Server omits from the public-wedding
    *  endpoint unless the caller's tier is `confirmed`. Null when unset. */
   post_rsvp_content: string | null;
+  /** Couple-pasted photo-share links for the Photos page — one Google Drive
+   *  (or any http(s)) URL per source. Always present; each slot is null until
+   *  the couple pastes a link. Shared across both partners. */
+  media_links: MediaLinks;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
   /** Server timestamp of the last write — clients use this as the `If-Match`
