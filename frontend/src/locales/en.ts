@@ -1397,6 +1397,7 @@ const en: LocaleMessages = {
   },
   media: {
     title: "Photos",
+    dev_badge: "Under development",
     sub: "Drop the wedding photos here once they're back from the photographer.",
     coming_soon_title: "Coming soon",
     coming_soon_body:

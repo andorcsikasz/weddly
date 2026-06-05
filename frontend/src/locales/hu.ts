@@ -1412,6 +1412,7 @@ const hu: LocaleMessages = {
   },
   media: {
     title: "Képek",
+    dev_badge: "Fejlesztés alatt",
     sub: "Töltsétek fel ide a fotókat, miután visszaértek a fotóstól.",
     coming_soon_title: "Hamarosan",
     coming_soon_body:

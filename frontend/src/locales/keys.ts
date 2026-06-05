@@ -1539,6 +1539,7 @@ export interface LocaleMessages {
   };
   media: {
     title: string;
+    dev_badge: string;
     sub: string;
     coming_soon_title: string;
     coming_soon_body: string;

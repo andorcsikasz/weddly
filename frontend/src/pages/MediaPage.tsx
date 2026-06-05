@@ -39,6 +39,9 @@ export default function MediaPage() {
     <>
       <header className="mb-4 flex items-center gap-2">
         <h1 className="font-grotesk">{t("media.title")}</h1>
+        <span className="inline-flex shrink-0 items-center rounded-full border border-umber-300 bg-umber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-umber-700 dark:border-umber-600 dark:bg-umber-700/40 dark:text-umber-200">
+          {t("media.dev_badge")}
+        </span>
         <InfoHint text={t("media.sub")} />
       </header>
 
