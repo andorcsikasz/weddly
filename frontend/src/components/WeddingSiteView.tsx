@@ -269,10 +269,7 @@ export function WeddingSiteView({
             {monogram}
           </p>
         )}
-        <p className="wt-accent text-[11px] font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
-          {t("wedding_site.eyebrow")}
-        </p>
-        <h1 className="mt-3 font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
+        <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
           {view.couple_display_name}
         </h1>
 
