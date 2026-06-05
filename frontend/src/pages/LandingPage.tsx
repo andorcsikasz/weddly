@@ -968,7 +968,7 @@ function BlogTeaser() {
           return (
             <li
               key={post.slug}
-              className="w-[80vw] max-w-[20rem] shrink-0 snap-start first:ml-0 last:mr-4"
+              className="w-[80vw] max-w-[20rem] shrink-0 snap-start first:ml-2 last:mr-4"
             >
               <Link
                 to={`/blog/${post.slug}`}
