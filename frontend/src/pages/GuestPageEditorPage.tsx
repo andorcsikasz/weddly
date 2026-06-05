@@ -9,10 +9,7 @@ import type { Couple, Household, PlaceSuggestion } from "@shared/types";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
 import type { DirectorySupplier } from "@shared/suppliers";
-import type {
-  GuestPortalView as GuestPortalViewType,
-  GuestScheduleEntry,
-} from "@shared/guest_portal";
+import type { PublicWeddingScheduleEntry, PublicWeddingWebsiteView } from "@shared/wedding_website";
 import type { ScheduleEvent } from "@shared/schedule";
 import {
   ChevronRight,
@@ -40,7 +37,7 @@ import {
   useState,
 } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GuestPortalView } from "../components/GuestPortalView";
+import { WeddingSiteView } from "../components/WeddingSiteView";
 import { InfoHint } from "../components/InfoHint";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -680,23 +677,31 @@ export default function GuestPageEditorPage() {
     if (file) await uploadCoverFile(file);
   }
 
-  // Synthesised preview — same shape as the public /g/:slug/:code endpoint
-  // returns, with empty household so the shared component's defensive
-  // `members.length > 0` check renders the no-household branch.
-  const preview: GuestPortalViewType | null = couple
+  // Synthesised preview in the exact shape the public /w/:slug endpoint returns,
+  // so the editor preview renders through the SAME <WeddingSiteView> as the live
+  // page — what the couple sees here IS what guests get. Editor-owned fields
+  // read from live form state (venue/cover/intro/useful-info/post-RSVP) so a
+  // ghost fills in the instant the couple types; the rest comes from the loaded
+  // couple/events. Empty strings normalise to null so the component's "is this
+  // set?" checks and ghost placeholders behave exactly like the live page.
+  const previewView: PublicWeddingWebsiteView | null = couple
     ? {
         couple_slug: couple.slug ?? "",
         couple_display_name: couple.display_name,
-        cover_image_url: couple.cover_image_url,
-        useful_info: couple.useful_info,
-        guest_page_intro: couple.guest_page_intro,
+        bride_name: null,
+        groom_name: null,
         wedding_date: couple.wedding_date,
         ceremony_kind: couple.ceremony_kind,
+        venue_name: venueName.trim() === "" ? null : venueName.trim(),
+        cover_image_url: coverImageUrl.trim() === "" ? null : coverImageUrl.trim(),
+        guest_page_intro: guestPageIntro.trim() === "" ? null : guestPageIntro,
+        useful_info: usefulInfo.trim() === "" ? null : usefulInfo,
         location_lat: couple.location_lat,
         location_lng: couple.location_lng,
         location_radius_km: couple.location_radius_km,
+        post_rsvp_content: postRsvpContent.trim() === "" ? null : postRsvpContent,
         schedule: events.map(
-          (ev): GuestScheduleEntry => ({
+          (ev): PublicWeddingScheduleEntry => ({
             id: ev.id,
             label: ev.label,
             starts_at_minutes: ev.starts_at_minutes,
@@ -705,9 +710,7 @@ export default function GuestPageEditorPage() {
             notes: ev.notes,
           }),
         ),
-        household_code: "",
-        household_label: "",
-        members: [],
+        wishlist: null,
         fetched_at: Date.now(),
       }
     : null;
@@ -722,6 +725,18 @@ export default function GuestPageEditorPage() {
 
   function focusIntroField() {
     const el = document.getElementById("guest-page-intro");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
+  }
+
+  function focusUsefulInfoField() {
+    const el = document.getElementById("guest-page-useful-info");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
+  }
+
+  function focusPostRsvpField() {
+    const el = document.getElementById("guest-page-post-rsvp");
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
     if (el instanceof HTMLElement) window.setTimeout(() => el.focus(), 350);
   }
@@ -799,17 +814,25 @@ export default function GuestPageEditorPage() {
         </p>
         {loading ? (
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
-        ) : preview ? (
-          <GuestPortalView
-            data={preview}
-            locale={locale}
-            isPreview
-            onEditCover={focusCoverDropzone}
-            onEditDate={() => navigate("/app")}
-            onEditSchedule={() => navigate("/app/schedule")}
-            onEditVenue={focusVenueField}
-            onEditIntro={focusIntroField}
-          />
+        ) : previewView ? (
+          <div className="mx-auto max-w-3xl">
+            <WeddingSiteView
+              view={previewView}
+              household={null}
+              tier="public"
+              locale={locale}
+              isPreview
+              edit={{
+                onEditCover: focusCoverDropzone,
+                onEditDate: () => navigate("/app"),
+                onEditSchedule: () => navigate("/app/schedule"),
+                onEditVenue: focusVenueField,
+                onEditIntro: focusIntroField,
+                onEditUsefulInfo: focusUsefulInfoField,
+                onEditPostRsvp: focusPostRsvpField,
+              }}
+            />
+          </div>
         ) : (
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("guest_preview.empty")}</p>
         )}
