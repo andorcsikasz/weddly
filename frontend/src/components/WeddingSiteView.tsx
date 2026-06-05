@@ -320,16 +320,16 @@ export function WeddingSiteView({
             <Plus size={12} aria-hidden />
           </button>
         ) : (
-          <p className="mt-4 inline-flex items-center justify-center gap-2 font-serif text-lg italic text-ink-700 dark:text-paper-100 sm:text-xl">
-            <Calendar size={16} aria-hidden /> {dateLine}
+          <p className="mt-4 inline-flex items-center justify-center gap-2 font-serif text-sm italic text-ink-700 dark:text-paper-100 sm:text-base">
+            <Calendar size={14} aria-hidden /> {dateLine}
           </p>
         )}
 
         {/* Venue — name when set; an approximate marker on the live public
             page; a ghost button in the editor preview when still empty. */}
         {view.venue_name ? (
-          <p className="mt-2 ml-4 inline-flex items-center justify-center gap-2 font-serif text-lg font-normal italic text-ink-700 dark:text-paper-100 sm:text-xl">
-            <MapPin size={16} aria-hidden />
+          <p className="mt-2 ml-4 inline-flex items-center justify-center gap-2 font-serif text-sm font-normal italic text-ink-700 dark:text-paper-100 sm:text-base">
+            <MapPin size={14} aria-hidden />
             {view.venue_name}
           </p>
         ) : isPreview ? (
