@@ -229,21 +229,31 @@ function WishlistRow({ item, currency, locale, t, onEdit, onDelete }: ItemViewPr
 function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete }: ItemViewProps) {
   const cur = item.currency ?? currency;
   return (
-    <li className="card flex flex-col overflow-hidden p-0 dark:border-umber-700">
+    // Fixed card height with a 3/5 image · 2/5 text split. The whole row of
+    // cards stretches to a uniform height, so pinning the ratio keeps every
+    // card consistent regardless of how much text each item carries.
+    <li className="card flex h-[26rem] flex-col overflow-hidden p-0 dark:border-umber-700">
       <button
         type="button"
         onClick={onEdit}
         aria-label={t("common.edit")}
-        className="flex flex-col text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-300"
+        className="block shrink-0 basis-3/5 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-300"
       >
         {item.image_url ? (
-          <img src={item.image_url} alt="" loading="lazy" className="h-32 w-full object-cover" />
+          <img src={item.image_url} alt="" loading="lazy" className="h-full w-full object-cover" />
         ) : (
-          <span className="flex h-32 w-full items-center justify-center bg-paper-100 text-ink-300 dark:bg-umber-700/40 dark:text-umber-300">
+          <span className="flex h-full w-full items-center justify-center bg-paper-100 text-ink-300 dark:bg-umber-700/40 dark:text-umber-300">
             <Gift size={28} aria-hidden />
           </span>
         )}
-        <span className="flex flex-col gap-1.5 px-4 pt-3">
+      </button>
+      <div className="flex basis-2/5 flex-col px-4 py-3">
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={t("common.edit")}
+          className="flex flex-col gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-300"
+        >
           <span className="flex items-center gap-2">
             <span className="inline-flex shrink-0 items-center rounded-full bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-ink-600 dark:bg-umber-700 dark:text-umber-200">
               {t(`wishlist_editor.kind_${item.kind}`)}
@@ -263,22 +273,22 @@ function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete }: ItemV
               {t("guest_portal.wishlist_external_link_label")}
             </span>
           )}
-        </span>
-      </button>
-      <div className="flex flex-1 flex-col justify-end px-4 pb-3">
-        {itemHasBar(item) && (
-          <WishlistProgress
-            pledgedMinor={item.pledged_amount_minor}
-            targetMinor={item.target_amount_minor ?? 0}
-            interestCount={item.interest_count}
-            currency={cur}
-            locale={locale}
-            layout="below"
-            t={t}
-          />
-        )}
-        <div className="mt-2 flex justify-end">
-          <ItemActions t={t} onEdit={onEdit} onDelete={onDelete} />
+        </button>
+        <div className="mt-auto pt-2">
+          {itemHasBar(item) && (
+            <WishlistProgress
+              pledgedMinor={item.pledged_amount_minor}
+              targetMinor={item.target_amount_minor ?? 0}
+              interestCount={item.interest_count}
+              currency={cur}
+              locale={locale}
+              layout="below"
+              t={t}
+            />
+          )}
+          <div className="mt-2 flex justify-end">
+            <ItemActions t={t} onEdit={onEdit} onDelete={onDelete} />
+          </div>
         </div>
       </div>
     </li>
