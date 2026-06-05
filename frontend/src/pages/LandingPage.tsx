@@ -503,15 +503,19 @@ export default function LandingPage() {
           Stationery texture, faded WĒDDLY watermark, huge italic
           headline, signature, eucalyptus stem ornament. */}
       <section className="stationery relative flex min-h-[40vh] items-center justify-center px-4 py-24 text-center sm:min-h-[50vh] sm:px-6 sm:py-24">
-        {/* Only the WĒDDLY + headline live in the centered wrapper, so the
-            section's items-center puts the *text* at the true vertical middle
-            of the stationery. The desktop CTA is absolutely positioned just
-            below it (top-full) — in normal flow its weight pulled the text
-            above center on lg. py-24 reserves the room the absolute button
-            needs (its gap + height stays under the 96px bottom pad). */}
+        {/* Only the dark headline lives in flow, so the section's items-center
+            puts the *dark text* at the true vertical middle of the stationery.
+            The WĒDDLY wordmark above and the desktop CTA below are both
+            absolutely positioned (bottom-full / top-full) so their weight
+            doesn't pull the headline off center. py-24 reserves the room those
+            absolute elements need (their gap + height stays under the 96px
+            pads). */}
         <div className="relative w-full max-w-4xl">
-          <Wordmark size="md" className="text-paper-400 dark:text-umber-600" />
-          <h2 className="mt-8 whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-umber-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
+          <Wordmark
+            size="md"
+            className="absolute inset-x-0 bottom-full mb-8 text-paper-400 dark:text-umber-600"
+          />
+          <h2 className="whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-umber-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
             {t("landing.closing_title")}
           </h2>
           {/* Closing CTA shown on desktop only. On mobile/tablet the persistent
@@ -1338,18 +1342,18 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
               >
                 <span aria-hidden className="block h-1" />
                 <div className="flex flex-1 flex-col items-center justify-center">
-                  <span className="font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight">
+                  <span className="font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight">
                     {isLemonade
                       ? t(deck.titleKey).toUpperCase()
                       : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
                   </span>
                   {!isLemonade ? (
-                    <span className="mt-3 font-display text-base font-bold uppercase tracking-[0.04em]">
+                    <span className="mt-4 font-display text-lg font-bold uppercase tracking-[0.04em]">
                       ({t(deck.titleKey)})
                     </span>
                   ) : null}
                 </div>
-                <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em]">
+                <span className="font-display text-xs font-bold uppercase tracking-[0.28em]">
                   {"WĒDDLY · "}
                   {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
                 </span>
