@@ -121,13 +121,12 @@ export default {
         // mirror of lemonade on the right). Revealed only after a
         // left-swipe across the row.
         greenflag: {
-          // Pastel mint card face — soft, but saturated enough to read as
-          // clearly green against the cream paper palette (the lighter
-          // green-200 washed out almost to white on paper-50).
-          green: "#86efac",
+          // Soft sage-mint card face — greener than a pure pastel but still
+          // elegant against Weddly's cream/navy world. Per user spec.
+          green: "#BFE8C9",
           // Deep forest green for type + flair on every greenflag surface.
-          ink: "#14532d",
-          greenInk: "#15803d",
+          ink: "#234B32",
+          greenInk: "#234B32",
         },
       },
       fontFamily: {
