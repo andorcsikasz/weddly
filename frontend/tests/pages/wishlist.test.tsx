@@ -117,6 +117,7 @@ function makeItem(over: Partial<WishlistItem> = {}): WishlistItem {
     description: null,
     kind: "item",
     target_amount_minor: null,
+    currency: null,
     url: null,
     image_url: null,
     sort_order: 0,
@@ -133,6 +134,7 @@ function makeEntry(over: Partial<WishlistEntry> = {}): WishlistEntry {
     description: null,
     kind: "item",
     target_amount_minor: null,
+    currency: null,
     url: null,
     image_url: null,
     interest_count: 0,
@@ -241,8 +243,9 @@ describe("WishlistEditorPage", () => {
     fireEvent.change(screen.getByPlaceholderText(/A weekend away/i), {
       target: { value: "A weekend away" },
     });
-    // Kind select → group_gift.
-    const kindSelect = screen.getByRole("combobox");
+    // Kind select → group_gift. Two comboboxes now render (kind + the per-item
+    // currency selector); the kind select is the first.
+    const kindSelect = screen.getAllByRole("combobox")[0]!;
     fireEvent.change(kindSelect, { target: { value: "group_gift" } });
     // Rough amount in whole EUR units → must serialize as ×100 minor units.
     fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: "250" } });

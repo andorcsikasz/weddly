@@ -10,7 +10,7 @@
 // like to help" tap on `group_gift` items so the couple can see who is
 // coordinating; it carries no amount and is idempotent per household.
 
-import type { UnixMs } from "./types";
+import type { Currency, UnixMs } from "./types";
 
 /** What kind of wish this is. Drives both the guest-side rendering and which
  *  items surface the "I'd like to help" tap:
@@ -40,6 +40,12 @@ export interface WishlistItem {
    *  display via Intl.NumberFormat with `maximumFractionDigits: 0`. Null when
    *  the couple didn't attach a rough price. */
   target_amount_minor: number | null;
+  /** Per-item currency override. Null means "inherit the couple's display
+   *  currency" — the common case. When set, `target_amount_minor` is in minor
+   *  units of THIS currency, not the couple's, so display always pairs the
+   *  amount with `currency ?? couple.currency`. Lets a couple price a single
+   *  wish in another currency (e.g. an item only sold abroad). */
+  currency: Currency | null;
   /** Couple-pasted http(s) link to an external product / registry page. Null
    *  when unset. Validated http(s) + length on the boundary. */
   url: string | null;
@@ -61,6 +67,9 @@ export interface UpsertWishlistItemInput {
   description?: string | null;
   kind?: WishlistKind;
   target_amount_minor?: number | null;
+  /** Per-item currency override (null/omitted = inherit the couple's). When
+   *  set, `target_amount_minor` is interpreted in this currency's minor units. */
+  currency?: Currency | null;
   url?: string | null;
   /** Usually omitted — the server resolves the preview image from `url`. May
    *  be passed explicitly (e.g. the editor echoing back a fetched preview, or
@@ -79,6 +88,9 @@ export interface WishlistEntry {
   description: string | null;
   kind: WishlistKind;
   target_amount_minor: number | null;
+  /** Per-item currency override (null = inherit the couple's display
+   *  currency). Display pairs the amount with `currency ?? couple.currency`. */
+  currency: Currency | null;
   url: string | null;
   /** Preview image resolved from `url` (og:image), or null. */
   image_url: string | null;

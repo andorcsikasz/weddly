@@ -1805,6 +1805,8 @@ export interface LocaleMessages {
     target_amount_label: string;
     /** Framed as a wish, not an invoice — no money moves in-app. */
     target_amount_hint: string;
+    /** aria-label for the per-item currency selector next to the rough amount. */
+    currency_aria: string;
     url_label: string;
     url_placeholder: string;
     url_hint: string;

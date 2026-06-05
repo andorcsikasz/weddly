@@ -10,6 +10,7 @@
 // the guest page (the route layer enforces that), but the helpers here are
 // kind-agnostic.
 
+import { CURRENCIES, type Currency } from "@shared/types";
 import {
   WISHLIST_KINDS,
   WISHLIST_MAX_DESC_LEN,
@@ -31,6 +32,8 @@ export interface WishlistItemRow {
   description: string | null;
   kind: string;
   target_amount_minor: number | null;
+  /** Per-item currency override; NULL = inherit the couple's display currency. */
+  currency: string | null;
   url: string | null;
   image_url: string | null;
   /** ms timestamp of the last og:image resolution attempt; NULL = never tried. */
@@ -44,6 +47,12 @@ function normalizeKind(raw: string): WishlistKind {
   return (WISHLIST_KINDS as readonly string[]).includes(raw) ? (raw as WishlistKind) : "item";
 }
 
+/** A stored currency string → a valid Currency, or null (inherit the couple's)
+ *  when unset or unrecognised. */
+function normalizeCurrency(raw: string | null): Currency | null {
+  return raw && (CURRENCIES as readonly string[]).includes(raw) ? (raw as Currency) : null;
+}
+
 /** Couple-facing DTO returned by GET/POST/PATCH /api/wishlist. */
 export function toWishlistItem(row: WishlistItemRow): WishlistItem {
   return {
@@ -53,6 +62,7 @@ export function toWishlistItem(row: WishlistItemRow): WishlistItem {
     description: row.description,
     kind: normalizeKind(row.kind),
     target_amount_minor: row.target_amount_minor,
+    currency: normalizeCurrency(row.currency),
     url: row.url,
     image_url: row.image_url,
     sort_order: row.sort_order,
@@ -77,6 +87,7 @@ export function toWishlistEntry(
     description: row.description,
     kind: normalizeKind(row.kind),
     target_amount_minor: row.target_amount_minor,
+    currency: normalizeCurrency(row.currency),
     url: row.url,
     image_url: row.image_url,
     interest_count: interestCount,
@@ -91,6 +102,7 @@ export interface ParsedWishlistItem {
   description: string | null;
   kind: WishlistKind;
   target_amount_minor: number | null;
+  currency: Currency | null;
   url: string | null;
   image_url: string | null;
   sort_order: number;
@@ -132,6 +144,14 @@ function parseTargetAmount(raw: unknown): number | null {
     throw new HttpError(400, "target_amount_minor must be a non-negative integer or null");
   }
   return n;
+}
+
+function parseCurrency(raw: unknown): Currency | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw !== "string" || !(CURRENCIES as readonly string[]).includes(raw)) {
+    throw new HttpError(400, `currency must be one of ${CURRENCIES.join(", ")} or null`);
+  }
+  return raw as Currency;
 }
 
 function parseUrl(raw: unknown): string | null {
@@ -193,6 +213,7 @@ export function parseUpsertCreate(body: Partial<UpsertWishlistItemInput>): Parse
     description: parseDescription(body.description),
     kind: parseKind(body.kind),
     target_amount_minor: parseTargetAmount(body.target_amount_minor),
+    currency: parseCurrency(body.currency),
     url: parseUrl(body.url),
     image_url: parseImageUrl(body.image_url),
     sort_order: parseSortOrder(body.sort_order, 0),
@@ -214,6 +235,10 @@ export function parseUpsertPatch(
       body.target_amount_minor === undefined
         ? existing.target_amount_minor
         : parseTargetAmount(body.target_amount_minor),
+    currency:
+      body.currency === undefined
+        ? normalizeCurrency(existing.currency)
+        : parseCurrency(body.currency),
     url: body.url === undefined ? existing.url : parseUrl(body.url),
     image_url: body.image_url === undefined ? existing.image_url : parseImageUrl(body.image_url),
     sort_order: parseSortOrder(body.sort_order, existing.sort_order),
@@ -261,8 +286,8 @@ export function insertWishlistItem(coupleId: number, parsed: ParsedWishlistItem)
   const result = db
     .prepare(
       `INSERT INTO wishlist_items
-         (couple_id, title, description, kind, target_amount_minor, url, image_url, image_checked_at, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (couple_id, title, description, kind, target_amount_minor, currency, url, image_url, image_checked_at, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -270,6 +295,7 @@ export function insertWishlistItem(coupleId: number, parsed: ParsedWishlistItem)
       parsed.description,
       parsed.kind,
       parsed.target_amount_minor,
+      parsed.currency,
       parsed.url,
       parsed.image_url,
       imageCheckedAt,
@@ -290,7 +316,7 @@ export function updateWishlistItem(
   const imageCheckedAt = parsed.url ? ts : null;
   db.prepare(
     `UPDATE wishlist_items SET
-       title = ?, description = ?, kind = ?, target_amount_minor = ?,
+       title = ?, description = ?, kind = ?, target_amount_minor = ?, currency = ?,
        url = ?, image_url = ?, image_checked_at = ?, sort_order = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
@@ -298,6 +324,7 @@ export function updateWishlistItem(
     parsed.description,
     parsed.kind,
     parsed.target_amount_minor,
+    parsed.currency,
     parsed.url,
     parsed.image_url,
     imageCheckedAt,

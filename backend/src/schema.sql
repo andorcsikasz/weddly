@@ -1151,7 +1151,8 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
   title TEXT NOT NULL,
   description TEXT,
   kind TEXT NOT NULL DEFAULT 'item',                          -- 'item' | 'group_gift' | 'personal'
-  target_amount_minor INTEGER,                                -- informational rough price; integer minor units; NULL when unset
+  target_amount_minor INTEGER,                                -- informational rough price; integer minor units (of `currency` when set, else the couple's); NULL when unset
+  currency TEXT,                                              -- per-item currency override ('HUF'|'EUR'|'USD'); NULL = inherit the couple's display currency
   url TEXT,                                                    -- couple-pasted http(s) link; NULL when unset
   image_url TEXT,                                              -- og:image resolved server-side from url; NULL when none
   image_checked_at INTEGER,                                   -- last og:image resolution attempt (ms); NULL = never attempted (legacy rows the boot backfill sweeps)

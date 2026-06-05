@@ -209,6 +209,45 @@ describe("/api/wishlist — boundary validation", () => {
     expect(negAmount.status).toBe(400);
   });
 
+  test("per-item currency: defaults null, accepts an override, rejects junk, clears via patch", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("wishlist-currency@weddly.test");
+
+    // No currency sent → null (inherit the couple's display currency).
+    const inherited = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Inherits", target_amount_minor: 200000 },
+      { token },
+    );
+    expect(inherited.status).toBe(201);
+    expect(inherited.data.item.currency).toBeNull();
+
+    // Explicit override is stored and echoed back.
+    const eur = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Priced abroad", target_amount_minor: 50000, currency: "EUR" },
+      { token },
+    );
+    expect(eur.status).toBe(201);
+    expect(eur.data.item.currency).toBe("EUR");
+
+    // Junk currency → 400.
+    const bad = await req("POST", "/api/wishlist", { title: "ok", currency: "GBP" }, { token });
+    expect(bad.status).toBe(400);
+
+    // PATCH currency: null clears the override back to inheriting.
+    const cleared = await req<{ item: WishlistItem }>(
+      "PATCH",
+      `/api/wishlist/${eur.data.item.id}`,
+      { currency: null },
+      { token, headers: { "If-Match": String(eur.data.item.updated_at) } },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.item.currency).toBeNull();
+  });
+
   test("explicit image_url is stored; a bad image_url → 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("wishlist-image@weddly.test");

@@ -476,16 +476,21 @@ export function WeddingSiteView({
                   {entry.description && (
                     <p className="text-xs text-ink-600 dark:text-umber-200">{entry.description}</p>
                   )}
-                  {entry.target_amount_minor !== null && (
-                    <p className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
-                      {t("guest_portal.wishlist_target_amount_prefix")}{" "}
-                      {formatMoney(
-                        entry.target_amount_minor / (localeCurrency(locale) === "HUF" ? 1 : 100),
-                        localeCurrency(locale),
-                        locale,
-                      )}
-                    </p>
-                  )}
+                  {entry.target_amount_minor !== null &&
+                    (() => {
+                      // Per-item currency override, else the locale default.
+                      const itemCurrency = entry.currency ?? localeCurrency(locale);
+                      return (
+                        <p className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
+                          {t("guest_portal.wishlist_target_amount_prefix")}{" "}
+                          {formatMoney(
+                            entry.target_amount_minor / (itemCurrency === "HUF" ? 1 : 100),
+                            itemCurrency,
+                            locale,
+                          )}
+                        </p>
+                      );
+                    })()}
                   {entry.url && (
                     <a
                       href={entry.url}

@@ -479,6 +479,8 @@ function WishlistCard({
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const isGroupGift = entry.kind === "group_gift";
+  // A wish may carry its own currency override; fall back to the couple's.
+  const itemCurrency = entry.currency ?? currency;
   return (
     <li className="flex gap-3 rounded-xl border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-900/40">
       {entry.image_url && (
@@ -498,8 +500,8 @@ function WishlistCard({
           <p className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
             {t("guest_portal.wishlist_target_amount_prefix")}{" "}
             {formatMoney(
-              entry.target_amount_minor / (currency === "HUF" ? 1 : 100),
-              currency,
+              entry.target_amount_minor / (itemCurrency === "HUF" ? 1 : 100),
+              itemCurrency,
               locale,
             )}
           </p>

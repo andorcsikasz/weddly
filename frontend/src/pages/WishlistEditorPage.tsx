@@ -10,6 +10,7 @@
 // couple types into the form.
 
 import type { Couple } from "@shared/types";
+import { CURRENCIES, type Currency } from "@shared/types";
 import type { UpsertWishlistItemInput, WishlistItem, WishlistKind } from "@shared/wishlist";
 import {
   WISHLIST_KINDS,
@@ -23,7 +24,7 @@ import { InfoHint } from "../components/InfoHint";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, wishlistApi } from "../lib/endpoints";
-import { currencySymbol, formatMoney } from "../lib/format";
+import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -183,8 +184,8 @@ export default function WishlistEditorPage() {
                   {item.target_amount_minor !== null && (
                     <span className="shrink-0 tabular-nums text-xs text-ink-500 dark:text-umber-300">
                       {formatMoney(
-                        minorToWhole(item.target_amount_minor, currency),
-                        currency,
+                        minorToWhole(item.target_amount_minor, item.currency ?? currency),
+                        item.currency ?? currency,
                         locale,
                       )}
                     </span>
@@ -285,11 +286,18 @@ function WishlistItemDialog({
   const [title, setTitle] = useState(existing?.title ?? "");
   const [kind, setKind] = useState<WishlistKind>(existing?.kind ?? "item");
   const [description, setDescription] = useState(existing?.description ?? "");
-  // Amount is entered + displayed in WHOLE currency units; we convert to/from
-  // minor units only at the API boundary.
+  // Per-item currency. Defaults to the couple's site currency; the couple can
+  // override it for a single wish (e.g. an item only sold abroad). We send null
+  // when it matches the couple's so the row keeps inheriting future changes.
+  const [itemCurrency, setItemCurrency] = useState<Currency>(existing?.currency ?? currency);
+  // Amount is entered + displayed in WHOLE currency units (rounded — rough
+  // wishes don't need cents); we convert to/from minor units only at the API
+  // boundary. Stored here as a raw digit string; the input renders it grouped.
   const [amount, setAmount] = useState<string>(
     existing?.target_amount_minor !== null && existing?.target_amount_minor !== undefined
-      ? String(minorToWhole(existing.target_amount_minor, currency))
+      ? String(
+          Math.round(minorToWhole(existing.target_amount_minor, existing.currency ?? currency)),
+        )
       : "",
   );
   const [url, setUrl] = useState(existing?.url ?? "");
@@ -332,13 +340,14 @@ function WishlistItemDialog({
     }
     setTitleError(null);
 
-    // Parse the rough amount into integer minor units, or leave null.
+    // Parse the rough amount into integer minor units, or leave null. The raw
+    // digit string holds whole units in `itemCurrency`.
     let targetMinor: number | null = null;
     const trimmedAmount = amount.trim();
     if (trimmedAmount !== "") {
-      const parsed = Number(trimmedAmount.replace(/[\s,]/g, ""));
+      const parsed = Number(trimmedAmount.replace(/\D/g, ""));
       if (Number.isFinite(parsed) && parsed >= 0) {
-        targetMinor = Math.round(parsed * minorFactor(currency));
+        targetMinor = Math.round(parsed * minorFactor(itemCurrency));
       }
     }
 
@@ -348,6 +357,9 @@ function WishlistItemDialog({
       kind,
       description: description.trim() ? description.trim().slice(0, WISHLIST_MAX_DESC_LEN) : null,
       target_amount_minor: targetMinor,
+      // Persist an override only when it differs from the couple's currency, so
+      // an unchanged item keeps tracking the couple-level setting.
+      currency: itemCurrency === currency ? null : itemCurrency,
       url: trimmedUrl ? trimmedUrl.slice(0, WISHLIST_MAX_URL_LEN) : null,
       // Send the resolved preview image when we have one. When empty, omit the
       // field so the server resolves the og:image itself (fallback for links
@@ -405,7 +417,7 @@ function WishlistItemDialog({
         <div className="flex-1 overflow-y-auto px-6 py-5">
           <FormRow label={t("wishlist_editor.title_label")} error={titleError}>
             <input
-              className={`input ${titleError ? "input-invalid" : ""}`}
+              className={`input font-grotesk ${titleError ? "input-invalid" : ""}`}
               type="text"
               value={title}
               maxLength={WISHLIST_MAX_TITLE_LEN}
@@ -421,7 +433,7 @@ function WishlistItemDialog({
 
           <FormRow label={t("wishlist_editor.kind_label")}>
             <select
-              className="input"
+              className="input font-grotesk"
               value={kind}
               onChange={(e) => setKind(e.target.value as WishlistKind)}
             >
@@ -435,7 +447,7 @@ function WishlistItemDialog({
 
           <FormRow label={t("wishlist_editor.description_label")}>
             <textarea
-              className="input"
+              className="input font-grotesk"
               rows={3}
               value={description}
               maxLength={WISHLIST_MAX_DESC_LEN}
@@ -450,20 +462,28 @@ function WishlistItemDialog({
           >
             <div className="relative">
               <input
-                className="input pr-12"
-                type="number"
-                min={0}
+                className="input pr-24 font-grotesk tabular-nums"
+                type="text"
                 inputMode="numeric"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                // Display the raw digits with locale thousands grouping (HU
+                // "200 000", EN "200,000"); store only digits so the math stays
+                // exact regardless of the visible separator.
+                value={amount === "" ? "" : formatNumber(Number(amount), locale)}
+                onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
                 placeholder="0"
               />
-              <span
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 select-none text-sm text-ink-500 dark:text-umber-300"
-                aria-hidden
+              <select
+                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md border border-paper-300 bg-white py-1 pl-2 pr-1 font-grotesk text-sm text-ink-700 focus:border-ink-600 focus:outline-none dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100"
+                value={itemCurrency}
+                onChange={(e) => setItemCurrency(e.target.value as Currency)}
+                aria-label={t("wishlist_editor.currency_aria")}
               >
-                {currencySymbol(currency, locale)}
-              </span>
+                {CURRENCIES.map((c) => (
+                  <option key={c} value={c}>
+                    {currencySymbol(c, locale)}
+                  </option>
+                ))}
+              </select>
             </div>
           </FormRow>
 
@@ -479,7 +499,7 @@ function WishlistItemDialog({
                 </span>
               )}
               <input
-                className="input flex-1"
+                className="input flex-1 font-grotesk"
                 type="url"
                 value={url}
                 maxLength={WISHLIST_MAX_URL_LEN}
