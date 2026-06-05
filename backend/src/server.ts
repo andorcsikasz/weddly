@@ -56,6 +56,7 @@ import { registerGrowthRoutes } from "./routes/growth";
 import { registerGuestRoutes } from "./routes/guests";
 import { registerVendorClaimRoutes } from "./routes/vendor_claim";
 import { registerVendorListingRoutes } from "./routes/vendor_listing";
+import { registerVendorAvailabilityRoutes } from "./routes/vendor_availability";
 import { registerHealthRoutes } from "./routes/health";
 import { registerHoneymoonRoutes } from "./routes/honeymoon";
 import { registerHouseholdRoutes } from "./routes/households";
@@ -149,6 +150,7 @@ registerCoupleCardsRoutes(router);
 registerGrowthRoutes(router);
 registerVendorClaimRoutes(router);
 registerVendorListingRoutes(router);
+registerVendorAvailabilityRoutes(router);
 registerSeoRoutes(router);
 registerDemoRoutes(router);
 

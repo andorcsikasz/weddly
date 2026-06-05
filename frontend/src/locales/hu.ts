@@ -405,6 +405,19 @@ const hu: LocaleMessages = {
     save_failed: "Nem sikerült menteni — próbáld újra.",
     name_locked: "A márkanév zárolt — ügyfélszolgálati ticketet nyiss a módosításhoz.",
     back_to_directory: "Vissza a katalógusba",
+    section_availability: "Foglaltság",
+    availability_intro:
+      "Jelöld be a már lefoglalt napokat. A párok ezeket látják a naptáradban, a következő szabad dátum pedig automatikusan frissül.",
+    availability_add_label: "Nap blokkolása",
+    availability_add: "Hozzáadás",
+    availability_empty: "Még nincs blokkolt nap — a naptárad teljesen szabadnak mutat.",
+    availability_remove: "{date} feloldása",
+    availability_next_free: "Következő szabad dátum: {date}",
+    availability_none_free: "Nincs szabad nap a következő 12 hónapban.",
+    availability_blocked: "Nap blokkolva.",
+    availability_block_failed: "Nem sikerült blokkolni a dátumot. Próbáld újra.",
+    availability_unblocked: "Nap feloldva.",
+    availability_unblock_failed: "Nem sikerült feloldani a dátumot. Próbáld újra.",
     error_load:
       "Nem tudtuk betölteni a listingedet. Próbáld újra — ha nem megy, nyiss ügyfélszolgálati ticketet.",
     error_no_account:
@@ -1497,6 +1510,9 @@ const hu: LocaleMessages = {
     wishlist_interest_count: "{count} háztartás száll be ebbe",
     wishlist_target_amount_prefix: "Körülbelül",
     wishlist_external_link_label: "Megnézem",
+    wishlist_pledge_placeholder: "összeg",
+    wishlist_pledge_aria: "Mennyivel szállnál be (nem kötelező)",
+    wishlist_pledged_progress: "{pledged} / {target} összegyűlt",
     schedule_title: "Menetrend",
     schedule_empty: "A pár még nem tette közzé a menetrendet — nézzétek meg újra később.",
     schedule_next_day: "másnap",
@@ -1667,6 +1683,9 @@ const hu: LocaleMessages = {
     stale_reload:
       "Valaki módosította ezt a kívánságot egy másik eszközön. Betöltöttük a legfrissebb változatot.",
     save_button: "Mentés",
+    view_list: "Sávos nézet",
+    view_cards: "Kártya nézet",
+    pledged_count: "{count} vendég vállalta be",
   },
   schedule: {
     title: "Programterv",

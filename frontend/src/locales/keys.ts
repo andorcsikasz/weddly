@@ -470,6 +470,20 @@ export interface LocaleMessages {
     save_failed: string;
     name_locked: string;
     back_to_directory: string;
+    section_availability: string;
+    availability_intro: string;
+    availability_add_label: string;
+    availability_add: string;
+    availability_empty: string;
+    /** Receives `{date}` — the blocked day to unblock. */
+    availability_remove: string;
+    /** Receives `{date}` — the next free day. */
+    availability_next_free: string;
+    availability_none_free: string;
+    availability_blocked: string;
+    availability_block_failed: string;
+    availability_unblocked: string;
+    availability_unblock_failed: string;
     error_load: string;
     error_no_account: string;
   };
@@ -1632,6 +1646,13 @@ export interface LocaleMessages {
     wishlist_target_amount_prefix: string;
     /** Accessible label for the external product / registry link. */
     wishlist_external_link_label: string;
+    /** Placeholder for the optional soft-pledge amount input on a group gift. */
+    wishlist_pledge_placeholder: string;
+    /** aria-label for the soft-pledge amount input. */
+    wishlist_pledge_aria: string;
+    /** Receives `{pledged}` + `{target}` — the GoFundMe-style "X / Y committed"
+     *  line under a group gift's progress bar. */
+    wishlist_pledged_progress: string;
     schedule_title: string;
     schedule_empty: string;
     /** Label appended to a time when the event lands after midnight (day +1). */
@@ -1816,6 +1837,12 @@ export interface LocaleMessages {
     /** Shown when a PATCH 409s because a partner edited the same item. */
     stale_reload: string;
     save_button: string;
+    /** aria-label for the dense row ("sávos") view toggle. */
+    view_list: string;
+    /** aria-label for the card ("kártya") view toggle. */
+    view_cards: string;
+    /** Receives `{count}` — guests who pledged toward a group gift. */
+    pledged_count: string;
   };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {

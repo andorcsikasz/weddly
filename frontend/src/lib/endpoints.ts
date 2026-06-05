@@ -117,7 +117,11 @@ import type {
   UpdateSupplierGroupInput,
 } from "@shared/supplier_taxonomy";
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
-import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
+import type {
+  VendorAvailabilityView,
+  VendorListingEditInput,
+  VendorListingView,
+} from "@shared/listings";
 import type {
   CreateOutreachCampaignInput,
   OutreachCampaign,
@@ -812,13 +816,20 @@ export const weddingWebsiteApi = {
    *  interest row, and returns the fresh aggregate. 403 unless the slug+code
    *  resolves to the `confirmed` tier (>=1 RSVP yes) and the item is a
    *  group gift. */
-  toggleWishlistInterest: (slug: string, code: string, itemId: number) =>
+  toggleWishlistInterest: (
+    slug: string,
+    code: string,
+    itemId: number,
+    pledgedAmountMinor?: number | null,
+  ) =>
     apiFetch<WishlistInterestToggleResult>(
       "POST",
       `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(
         code,
       )}/wishlist/${itemId}/interest`,
-      {},
+      // Omit the key entirely for a pure toggle; send it (number or null) to set
+      // the soft pledge amount.
+      pledgedAmountMinor === undefined ? {} : { pledged_amount_minor: pledgedAmountMinor },
     ),
 };
 
@@ -1254,6 +1265,20 @@ export const vendorListingApi = {
     return JSON.parse(text) as VendorListingView;
   },
   deleteHero: () => apiFetch<VendorListingView>("DELETE", "/api/vendor/listing/me/hero"),
+};
+
+/** Vendor self-serve availability — the booked/blocked days a claimed vendor
+ *  manages from /vendor. Every call returns the full refreshed view so the UI
+ *  re-renders from the server's truth after each block/unblock. */
+export const vendorAvailabilityApi = {
+  me: () => apiFetch<VendorAvailabilityView>("GET", "/api/vendor/availability/me"),
+  block: (date: string, reason?: string) =>
+    apiFetch<VendorAvailabilityView>("POST", "/api/vendor/availability/me", { date, reason }),
+  unblock: (date: string) =>
+    apiFetch<VendorAvailabilityView>(
+      "DELETE",
+      `/api/vendor/availability/me?date=${encodeURIComponent(date)}`,
+    ),
 };
 
 /** Supplier Outreach Inbox (P2.E v1). Couple-facing endpoints; the

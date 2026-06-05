@@ -123,3 +123,12 @@ export interface VendorListingView {
   listing: Listing;
   account: VendorAccount;
 }
+
+/** Vendor self-serve availability (the dates a claimed vendor marks as taken).
+ *  `blocked_dates` are ISO 'YYYY-MM-DD', sorted ascending. `next_available`
+ *  is the earliest free day from today, or null if the next 365 days are full
+ *  — the same value the public busy calendar shows couples. */
+export interface VendorAvailabilityView {
+  blocked_dates: string[];
+  next_available: string | null;
+}

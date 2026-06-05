@@ -401,6 +401,19 @@ const en: LocaleMessages = {
     save_failed: "Couldn't save — please try again.",
     name_locked: "Brand name is locked — open a support ticket to change it.",
     back_to_directory: "Back to the directory",
+    section_availability: "Availability",
+    availability_intro:
+      "Mark the days you're already booked. Couples see these on your calendar, and your next free date updates automatically.",
+    availability_add_label: "Block a date",
+    availability_add: "Add",
+    availability_empty: "No blocked days yet — your calendar shows you as fully available.",
+    availability_remove: "Unblock {date}",
+    availability_next_free: "Next free date: {date}",
+    availability_none_free: "No free days in the next 12 months.",
+    availability_blocked: "Date blocked.",
+    availability_block_failed: "Couldn't block that date. Try again.",
+    availability_unblocked: "Date unblocked.",
+    availability_unblock_failed: "Couldn't unblock that date. Try again.",
     error_load:
       "We couldn't load your listing. Try refreshing — if it sticks, open a support ticket.",
     error_no_account:

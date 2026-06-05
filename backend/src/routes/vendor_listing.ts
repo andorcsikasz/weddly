@@ -31,8 +31,9 @@ import { getUserById } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 
 /** Resolve `requireAuth(ctx)` to the vendor's listing + account, or throw the
- *  right HTTP error. Centralised so GET + PATCH share the same gate. */
-function resolveVendorListing(ctx: Ctx): VendorListingView {
+ *  right HTTP error. Centralised so GET + PATCH share the same gate. Exported
+ *  so sibling vendor routes (e.g. availability) reuse the exact same gate. */
+export function resolveVendorListing(ctx: Ctx): VendorListingView {
   const userId = requireAuth(ctx);
   const user = getUserById(userId);
   if (!user) throw new HttpError(401, "User not found");

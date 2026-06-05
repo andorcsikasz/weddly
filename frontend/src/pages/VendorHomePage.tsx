@@ -13,12 +13,16 @@
 
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
+import type {
+  VendorAvailabilityView,
+  VendorListingEditInput,
+  VendorListingView,
+} from "@shared/listings";
 import { Shell } from "../components/Shell";
 import { TextField } from "../components/ui/TextField";
 import { useToast } from "../components/ui/ToastProvider";
 import { useAuth } from "../lib/auth";
-import { vendorListingApi } from "../lib/endpoints";
+import { vendorAvailabilityApi, vendorListingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -36,6 +40,19 @@ interface FormState {
   price_band: string;
   capacity_min: string;
   capacity_max: string;
+}
+
+/** Render an ISO 'YYYY-MM-DD' block date in the vendor's locale. Parsed as
+ *  UTC midnight so the displayed day never shifts under a timezone offset. */
+function formatBlockedDate(iso: string, locale: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(d);
 }
 
 function viewToForm(view: VendorListingView): FormState {
@@ -95,7 +112,7 @@ function formToPatch(form: FormState, baseline: VendorListingView): VendorListin
 
 export default function VendorHomePage() {
   const { user, loading: authLoading } = useAuth();
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const navigate = useNavigate();
   useDocumentMeta("vendor_home.page_title", "vendor_home.page_body");
@@ -106,6 +123,13 @@ export default function VendorHomePage() {
   const [saving, setSaving] = useState(false);
   const [heroBusy, setHeroBusy] = useState(false);
   const heroInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Availability: the booked/blocked days. Managed independently of the
+  // listing form — each block/unblock hits the server and re-renders from the
+  // returned view, so there's no local-vs-server drift to reconcile on save.
+  const [availability, setAvailability] = useState<VendorAvailabilityView | null>(null);
+  const [newDate, setNewDate] = useState("");
+  const [availBusy, setAvailBusy] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -120,9 +144,10 @@ export default function VendorHomePage() {
 
   const loadView = useCallback(async () => {
     try {
-      const next = await vendorListingApi.me();
+      const [next, avail] = await Promise.all([vendorListingApi.me(), vendorAvailabilityApi.me()]);
       setView(next);
       setForm(viewToForm(next));
+      setAvailability(avail);
       setLoadError(null);
     } catch (err) {
       const status = (err as { status?: number } | undefined)?.status;
@@ -172,6 +197,37 @@ export default function VendorHomePage() {
       toast.error(t("vendor_home.hero_delete_failed"));
     } finally {
       setHeroBusy(false);
+    }
+  };
+
+  const onAddBlock = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const date = newDate.trim();
+    if (!date || availBusy) return;
+    setAvailBusy(true);
+    try {
+      const next = await vendorAvailabilityApi.block(date);
+      setAvailability(next);
+      setNewDate("");
+      toast.success(t("vendor_home.availability_blocked"));
+    } catch {
+      toast.error(t("vendor_home.availability_block_failed"));
+    } finally {
+      setAvailBusy(false);
+    }
+  };
+
+  const onRemoveBlock = async (date: string) => {
+    if (availBusy) return;
+    setAvailBusy(true);
+    try {
+      const next = await vendorAvailabilityApi.unblock(date);
+      setAvailability(next);
+      toast.success(t("vendor_home.availability_unblocked"));
+    } catch {
+      toast.error(t("vendor_home.availability_unblock_failed"));
+    } finally {
+      setAvailBusy(false);
     }
   };
 
@@ -392,6 +448,74 @@ export default function VendorHomePage() {
               </button>
             </div>
           </form>
+        )}
+
+        {availability && (
+          <section className="card mt-4 space-y-3">
+            <div>
+              <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
+              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                {t("vendor_home.availability_intro")}
+              </p>
+            </div>
+
+            <form onSubmit={onAddBlock} className="flex flex-wrap items-end gap-2">
+              <label className="block" htmlFor="vendor-block-date">
+                <span className="field-label">{t("vendor_home.availability_add_label")}</span>
+                <input
+                  id="vendor-block-date"
+                  type="date"
+                  className="input"
+                  value={newDate}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setNewDate(e.target.value)}
+                  disabled={availBusy}
+                />
+              </label>
+              <button
+                type="submit"
+                className="btn-accent"
+                disabled={availBusy || newDate.trim().length === 0}
+              >
+                {t("vendor_home.availability_add")}
+              </button>
+            </form>
+
+            {availability.blocked_dates.length === 0 ? (
+              <p className="text-sm italic text-ink-500 dark:text-umber-300">
+                {t("vendor_home.availability_empty")}
+              </p>
+            ) : (
+              <ul className="flex flex-wrap gap-2">
+                {availability.blocked_dates.map((d) => (
+                  <li
+                    key={d}
+                    className="inline-flex items-center gap-2 rounded-full bg-paper-100 py-1 pl-3 pr-1 text-sm text-ink-800 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-100 dark:ring-umber-700"
+                  >
+                    <span>{formatBlockedDate(d, locale)}</span>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveBlock(d)}
+                      disabled={availBusy}
+                      aria-label={t("vendor_home.availability_remove", { date: d })}
+                      title={t("vendor_home.availability_remove", { date: d })}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-300 hover:text-ink-800 disabled:opacity-50 dark:text-umber-300 dark:hover:bg-umber-700"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-xs text-ink-500 dark:text-umber-300">
+              {availability.next_available
+                ? t("vendor_home.availability_next_free", {
+                    date: formatBlockedDate(availability.next_available, locale),
+                  })
+                : t("vendor_home.availability_none_free")}
+            </p>
+          </section>
         )}
       </div>
     </Shell>
