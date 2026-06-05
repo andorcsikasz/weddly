@@ -179,10 +179,6 @@ export function InteractiveBudgetDemo() {
                 aria-label={t("landing.demo_guests_label")}
                 aria-valuetext={`${guests}`}
               />
-              <div className="mt-0.5 flex justify-between text-[10px] tabular-nums text-umber-600 sm:text-[11px] dark:text-umber-300">
-                <span>{MIN_GUESTS}</span>
-                <span>{MAX_GUESTS}</span>
-              </div>
             </div>
 
             <div>
@@ -209,10 +205,6 @@ export function InteractiveBudgetDemo() {
                 aria-label={t("landing.demo_budget_label")}
                 aria-valuetext={formatMoney(budget, currency, locale)}
               />
-              <div className="mt-0.5 flex justify-between text-[10px] tabular-nums text-umber-600 sm:text-[11px] dark:text-umber-300">
-                <span>{formatMoney(range.min, currency, locale)}</span>
-                <span>{formatMoney(range.max, currency, locale)}</span>
-              </div>
             </div>
 
             {/* Per-guest tile: vertically centred row (the prior
