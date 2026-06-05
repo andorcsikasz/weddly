@@ -912,7 +912,7 @@ function DaysTile({
         >
           {nights !== null ? (
             <span className="flex items-baseline justify-center">
-              <span className="font-serif text-3xl font-semibold leading-none tabular-nums text-paper-50">
+              <span className="font-grotesk text-3xl font-semibold leading-none tabular-nums text-paper-50">
                 {nights}
               </span>
               <span className="ml-2 text-sm text-paper-200">
@@ -923,7 +923,7 @@ function DaysTile({
             // No dates yet: keep the slot at the same visual size as a filled
             // number by making the CTA the prominent serif line (responsive,
             // matching the budget tile) instead of a thin "—" + small caption.
-            <span className="font-serif text-lg font-semibold leading-none text-paper-50 sm:text-2xl md:text-3xl">
+            <span className="font-grotesk text-lg font-semibold leading-none text-paper-50 sm:text-2xl md:text-3xl">
               {t("honeymoon.set_dates_cta")}
             </span>
           ) : null}
@@ -990,7 +990,7 @@ function DestinationTile({
             // string stays in `value` (and the title tooltip) and is what the
             // autocomplete pre-fills when the user clicks to edit.
             <span
-              className="line-clamp-2 font-serif text-xl font-semibold text-paper-50 sm:text-2xl"
+              className="line-clamp-2 font-grotesk text-xl font-semibold text-paper-50 sm:text-2xl"
               title={value}
             >
               {(value.split(",")[0] ?? value).trim() || value}
@@ -1237,7 +1237,7 @@ function BudgetSummaryTile({
               because the centered flex item overflowed the ~115px content
               area. text-lg fits with room to spare; text-2xl/3xl restore
               the hero feel at sm+/md+ widths where the cell is wider. */}
-          <span className="font-serif text-lg font-semibold leading-none tabular-nums text-paper-50 sm:text-2xl md:text-3xl">
+          <span className="font-grotesk text-lg font-semibold leading-none tabular-nums text-paper-50 sm:text-2xl md:text-3xl">
             {loaded ? formatMoney(planned, currency, locale) : ""}
           </span>
         </div>

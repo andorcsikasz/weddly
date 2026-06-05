@@ -252,7 +252,7 @@ export default function MonthView({
               style={{ gridTemplateColumns: "40px repeat(7, 1fr)" }}
             >
               {/* ISO week gutter */}
-              <div className="flex items-start justify-center pt-1.5 font-serif text-sm text-ink-400 dark:text-umber-400">
+              <div className="flex items-start justify-center pt-1.5 font-grotesk text-sm text-ink-400 dark:text-umber-400">
                 {isoWeek(weekStart)}
               </div>
 
@@ -299,7 +299,7 @@ export default function MonthView({
                           {day.getDate()}
                         </span>
                       ) : (
-                        <span className={`font-serif text-sm ${dayNumClass}`}>{day.getDate()}</span>
+                        <span className={`font-grotesk text-sm ${dayNumClass}`}>{day.getDate()}</span>
                       )}
                     </div>
                   </div>

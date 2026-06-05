@@ -240,7 +240,7 @@ export default function HalfYearView({
                 }`}
                 style={{ height: HEADER_OFFSET_PX }}
               >
-                <span className="font-serif text-lg text-ink-900 dark:text-paper-50">
+                <span className="font-grotesk text-lg text-ink-900 dark:text-paper-50">
                   {monthName}
                 </span>
                 {showYear && (

@@ -364,7 +364,7 @@ export default function GanttView({
               A solid 95%-opaque fill hides scrolled content just as well. */}
           <div className="sticky top-0 z-30 flex shrink-0 border-b border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900">
             <div
-              className="sticky left-0 z-40 shrink-0 border-r border-paper-200 bg-paper-50/95 px-3 py-2.5 font-serif text-[12px] uppercase tracking-wider text-ink-500 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95 dark:text-umber-300"
+              className="sticky left-0 z-40 shrink-0 border-r border-paper-200 bg-paper-50/95 px-3 py-2.5 font-grotesk text-[12px] uppercase tracking-wider text-ink-500 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95 dark:text-umber-300"
               style={{ width: TASK_GUTTER_WIDTH }}
             >
               {t("timeline.task_column")}
@@ -377,7 +377,7 @@ export default function GanttView({
                   m.yearLabel ? (
                     <span
                       key={`yr-${m.start.toISOString()}`}
-                      className="absolute top-1.5 px-2 font-serif text-[11px] text-ink-400 dark:text-umber-400"
+                      className="absolute top-1.5 px-2 font-grotesk text-[11px] text-ink-400 dark:text-umber-400"
                       style={{ left: `${m.offsetPct}%` }}
                     >
                       {m.yearLabel}
@@ -401,8 +401,8 @@ export default function GanttView({
                       ? ""
                       : "border-l border-paper-200 dark:border-umber-700";
                   const labelClass = isPrimary
-                    ? "font-serif text-[13px] font-medium text-ink-700 dark:text-paper-100"
-                    : "font-serif text-[13px] text-ink-500 dark:text-umber-300";
+                    ? "font-grotesk text-[13px] font-medium text-ink-700 dark:text-paper-100"
+                    : "font-grotesk text-[13px] text-ink-500 dark:text-umber-300";
                   return (
                     <div
                       key={m.start.toISOString()}
@@ -423,7 +423,7 @@ export default function GanttView({
                   {geometry.weeks.map((w) => (
                     <span
                       key={`wk-${w.start.toISOString()}`}
-                      className="absolute top-1.5 px-1 font-serif text-[11px] text-ink-400 dark:text-umber-400"
+                      className="absolute top-1.5 px-1 font-grotesk text-[11px] text-ink-400 dark:text-umber-400"
                       style={{ left: `${w.offsetPct}%` }}
                     >
                       W{w.weekNumber}

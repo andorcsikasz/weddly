@@ -313,7 +313,7 @@ export default function QuarterView({
                   >
                     <div className="flex items-start justify-between px-2 pt-1">
                       <div className="flex items-baseline gap-1.5">
-                        <span className={`font-serif text-sm ${weekNumClass}`}>
+                        <span className={`font-grotesk text-sm ${weekNumClass}`}>
                           W{isoWeek(weekStart)}
                         </span>
                         {containsToday && (
@@ -322,7 +322,7 @@ export default function QuarterView({
                           </span>
                         )}
                       </div>
-                      <span className="font-serif text-[11px] text-ink-500 dark:text-umber-300">
+                      <span className="font-grotesk text-[11px] text-ink-500 dark:text-umber-300">
                         {formatWeekRange(weekStart)}
                       </span>
                     </div>

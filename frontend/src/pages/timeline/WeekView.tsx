@@ -253,8 +253,8 @@ export default function WeekView({
               <span
                 className={
                   isToday
-                    ? "mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush-500 font-serif text-lg tabular-nums text-paper-50 ring-2 ring-blush-200 dark:ring-blush-400/20"
-                    : `mt-1 font-serif text-lg tabular-nums ${
+                    ? "mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush-500 font-grotesk text-lg tabular-nums text-paper-50 ring-2 ring-blush-200 dark:ring-blush-400/20"
+                    : `mt-1 font-grotesk text-lg tabular-nums ${
                         weekend
                           ? "text-ink-700 dark:text-paper-50/90"
                           : "text-ink-900 dark:text-paper-50"

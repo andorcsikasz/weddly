@@ -181,13 +181,13 @@ export default function DayView({
         </div>
         {isToday ? (
           <span
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-blush-500 font-serif text-3xl text-paper-50 ring-2 ring-blush-200 dark:ring-blush-400/30"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-blush-500 font-grotesk text-3xl text-paper-50 ring-2 ring-blush-200 dark:ring-blush-400/30"
             aria-label={todayLabel}
           >
             {dayNumber}
           </span>
         ) : (
-          <span className="font-serif text-3xl text-ink-900 dark:text-paper-50">{dayNumber}</span>
+          <span className="font-grotesk text-3xl text-ink-900 dark:text-paper-50">{dayNumber}</span>
         )}
       </header>
 

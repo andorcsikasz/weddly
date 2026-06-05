@@ -2138,7 +2138,7 @@ function DayOfPanel({
         <p className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-blush-700 md:block dark:text-blush-300">
           {t("dashboard.day_of_mode_title")}
         </p>
-        <p className="mt-2 hidden text-3xl font-serif text-ink-900 md:block dark:text-paper-50">
+        <p className="mt-2 hidden text-3xl font-grotesk text-ink-900 md:block dark:text-paper-50">
           {isToday ? t("dashboard.day_of_today_label") : t("dashboard.day_of_tomorrow_label")}
         </p>
         <h2 className="mt-6 flex items-center justify-center gap-2 text-base font-semibold text-ink-900 dark:text-paper-50">

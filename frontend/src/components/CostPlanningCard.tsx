@@ -561,7 +561,7 @@ export function CostPlanningCard({
                 : "budget.cost_planning_count_lock_aria",
             )}
           >
-            <span className="font-serif text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
+            <span className="font-grotesk text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
               {formatNumber(count, locale)}
             </span>
             {countLocked ? (
@@ -579,7 +579,7 @@ export function CostPlanningCard({
             )}
           </button>
         ) : (
-          <div className="font-serif text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
+          <div className="font-grotesk text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
             {formatNumber(count, locale)}
           </div>
         )}

@@ -104,7 +104,7 @@ export default function CountdownPage() {
             </p>
           ) : (
             <div className="mt-8 text-center">
-              <p className="font-serif text-7xl italic leading-none text-ink-900 dark:text-paper-50 sm:text-8xl">
+              <p className="font-grotesk text-7xl leading-none text-ink-900 dark:text-paper-50 sm:text-8xl">
                 {Math.abs(dayDelta).toLocaleString()}
               </p>
               <p className="mt-2 text-base text-ink-600 dark:text-paper-200">
