@@ -6,7 +6,7 @@
 //
 // The guest-side soft "I'd like to help" tap lives in wishlist_interests:
 // idempotent per household via UNIQUE(item_id, household_id) — toggleInterest
-// inserts if absent, deletes if present. Only 'group_gift' items surface it on
+// inserts if absent, deletes if present. Only 'gift' items surface it on
 // the guest page (the route layer enforces that), but the helpers here are
 // kind-agnostic.
 
@@ -43,9 +43,18 @@ export interface WishlistItemRow {
   updated_at: number;
 }
 
-function normalizeKind(raw: string): WishlistKind {
-  return (WISHLIST_KINDS as readonly string[]).includes(raw) ? (raw as WishlistKind) : "item";
+/** Map any stored kind (current or legacy) to the two-bucket vocabulary:
+ *  item/group_gift → gift, personal → request. Anything unknown defaults to a
+ *  gift (the safer, money-capable bucket). */
+export function normalizeKind(raw: string): WishlistKind {
+  if (raw === "request" || raw === "personal") return "request";
+  return "gift";
 }
+
+/** Kind values accepted on the API boundary — the new vocabulary plus the
+ *  legacy aliases (so older clients + existing tests keep working). Normalized
+ *  to gift/request before storage. */
+const ACCEPTED_KIND_INPUTS = new Set(["gift", "request", "item", "group_gift", "personal"]);
 
 /** A stored currency string → a valid Currency, or null (inherit the couple's)
  *  when unset or unrecognised. */
@@ -83,8 +92,7 @@ export function toWishlistItem(
 /** Guest-facing DTO embedded in the public-wedding response at the confirmed
  *  tier. Strips couple_id / sort_order / timestamps and folds in the soft
  *  interest signal. `interest_count` / `viewer_has_interest` are only
- *  meaningful for kind === "group_gift" (the caller passes 0 / false for the
- *  other kinds). */
+ *  meaningful for kind === "gift" (the caller passes 0 / false for requests). */
 export function toWishlistEntry(
   row: WishlistItemRow,
   interestCount: number,
@@ -143,11 +151,11 @@ function parseDescription(raw: unknown): string | null {
 }
 
 function parseKind(raw: unknown): WishlistKind {
-  if (raw === null || raw === undefined) return "item";
-  if (typeof raw !== "string" || !(WISHLIST_KINDS as readonly string[]).includes(raw)) {
+  if (raw === null || raw === undefined) return "gift";
+  if (typeof raw !== "string" || !ACCEPTED_KIND_INPUTS.has(raw)) {
     throw new HttpError(400, `kind must be one of ${WISHLIST_KINDS.join(", ")}`);
   }
-  return raw as WishlistKind;
+  return normalizeKind(raw);
 }
 
 function parseTargetAmount(raw: unknown): number | null {
@@ -269,10 +277,10 @@ export function listWishlistItems(coupleId: number): WishlistItem[] {
     )
     .all(coupleId) as WishlistItemRow[];
   // Fold in the coordination aggregates (helper count + pledged sum) so the
-  // editor can draw the progress bar. Only group gifts collect pledges, so we
-  // only query those ids; everything else gets 0/0 via the map default.
-  const groupIds = rows.filter((r) => r.kind === "group_gift").map((r) => r.id);
-  const stats = listInterestStatsForItems(groupIds);
+  // editor can draw the progress bar. Only gifts collect pledges, so we
+  // only query those ids; requests get 0/0 via the map default.
+  const giftIds = rows.filter((r) => normalizeKind(r.kind) === "gift").map((r) => r.id);
+  const stats = listInterestStatsForItems(giftIds);
   return rows.map((row) => {
     const s = stats.get(row.id);
     return toWishlistItem(row, s?.count ?? 0, s?.pledged ?? 0);

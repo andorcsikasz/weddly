@@ -509,27 +509,59 @@ export function WeddingSiteView({
         </section>
       )}
 
-      {/* Wishlist deck — confirmed-tier live page only (server returns null
-          otherwise, and the editor preview has no household context). */}
-      {!isPreview && view.wishlist && view.wishlist.length > 0 && (
-        <section className="card mt-6">
-          <h2 className="flex items-center gap-2 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
-            <Gift size={20} aria-hidden /> {t("guest_portal.wishlist_section_title")}
-          </h2>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-            {view.wishlist.map((entry) => (
-              <GuestWishlistCard
-                key={entry.id}
-                entry={entry}
-                currency={localeCurrency(locale)}
-                locale={locale}
-                onToggleInterest={onToggleWishlistInterest}
-                t={t}
-              />
-            ))}
-          </ul>
-        </section>
-      )}
+      {/* Wishlist decks — confirmed-tier live page only (server returns null
+          otherwise, and the editor preview has no household context). Gifts and
+          personal requests render as two separate sections. */}
+      {!isPreview &&
+        view.wishlist &&
+        view.wishlist.length > 0 &&
+        (() => {
+          const gifts = view.wishlist.filter((e) => e.kind === "gift");
+          const requests = view.wishlist.filter((e) => e.kind === "request");
+          return (
+            <>
+              {gifts.length > 0 && (
+                <section className="card mt-6">
+                  <h2 className="flex items-center gap-2 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
+                    <Gift size={20} aria-hidden /> {t("guest_portal.wishlist_section_title")}
+                  </h2>
+                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {gifts.map((entry) => (
+                      <GuestWishlistCard
+                        key={entry.id}
+                        entry={entry}
+                        currency={localeCurrency(locale)}
+                        locale={locale}
+                        onToggleInterest={onToggleWishlistInterest}
+                        t={t}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              )}
+              {requests.length > 0 && (
+                <section className="card mt-6">
+                  <h2 className="flex items-center gap-2 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
+                    <HeartHandshake size={20} aria-hidden />{" "}
+                    {t("guest_portal.wishlist_requests_title")}
+                  </h2>
+                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {requests.map((entry) => (
+                      <GuestWishlistCard
+                        key={entry.id}
+                        entry={entry}
+                        currency={localeCurrency(locale)}
+                        locale={locale}
+                        onToggleInterest={onToggleWishlistInterest}
+                        t={t}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </>
+          );
+        })()}
 
       {/* RSVP CTA — generic at the public tier, personal at invited. In preview
           it's representative (non-navigating), so the couple sees the button

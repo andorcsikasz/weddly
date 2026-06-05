@@ -878,6 +878,13 @@ addColumnIfMissing("wishlist_items", "currency", "currency TEXT");
 // tapping "I'd like to help" on a group gift. NULL on every legacy row (tapped
 // in without a number), so the additive add is a safe no-op.
 addColumnIfMissing("wishlist_interests", "pledged_amount_minor", "pledged_amount_minor INTEGER");
+// Wishlist kinds collapsed from three (item / group_gift / personal) to two
+// (gift / request): item + group_gift are one "gift" bucket now, personal reads
+// as a "request". Normalize legacy rows once at boot so the stored value matches
+// the new vocabulary (mappers also normalize on read, so this is belt-and-braces
+// for the few pre-change rows). Idempotent — only touches legacy values.
+db.exec("UPDATE wishlist_items SET kind = 'gift' WHERE kind IN ('item', 'group_gift')");
+db.exec("UPDATE wishlist_items SET kind = 'request' WHERE kind = 'personal'");
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_wishlist_items_couple ON wishlist_items(couple_id, sort_order, id)",
 );

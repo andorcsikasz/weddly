@@ -1,26 +1,33 @@
 // Wishlist / gift-registry — the couple authors a list of things they'd love
-// (a bigger group gift several guests can chip in on, smaller gifts, or
-// personal gestures like a handwritten letter) and confirmed guests see it on
-// the guest page. Lives in its own module — same rationale as schedule.ts: a
-// self-contained CRUD aggregate that would only bloat types.ts.
+// (gifts guests can buy or chip in on) plus a separate set of personal
+// "requests" (a gesture like a handwritten letter or a childhood photo). Both
+// surface to confirmed guests on the guest page. Lives in its own module — same
+// rationale as schedule.ts: a self-contained CRUD aggregate that would only
+// bloat types.ts.
 //
 // No money ever moves in-app. `target_amount_minor` is purely the couple's
 // informational "this is roughly what it costs" — never a ledger, never a
 // per-guest pledge. The only guest interaction is a soft, non-binding "I'd
-// like to help" tap on `group_gift` items so the couple can see who is
-// coordinating; it carries no amount and is idempotent per household.
+// like to help" tap on `gift` items so the couple can see who is coordinating;
+// it carries an optional, non-binding pledge amount and is idempotent per
+// household.
 
 import type { Currency, UnixMs } from "./types";
 
-/** What kind of wish this is. Drives both the guest-side rendering and which
- *  items surface the "I'd like to help" tap:
- *  - `item`       a regular gift (small or large), buy-it-yourself
- *  - `group_gift` a bigger gift several guests coordinate on — the only kind
- *                 that shows the non-money interest tap + chip-in count
- *  - `personal`   a non-object gesture (a letter, a song, a toast) */
-export type WishlistKind = "item" | "group_gift" | "personal";
+/** What kind of wish this is. Two buckets, rendered as two separate sections:
+ *  - `gift`     something concrete the couple would love — guests can buy it or
+ *               softly chip in toward its rough price (the GoFundMe-style bar +
+ *               the "I'd like to help" pledge). This is the merge of the old
+ *               `item` (buy-it-yourself) and `group_gift` (coordinate) kinds.
+ *  - `request`  a non-object personal wish / gesture (a handwritten letter, a
+ *               childhood photo, a song). NOT part of the gift list and carries
+ *               no money — just the couple asking the wedding party for it.
+ *
+ *  Legacy stored values are normalized on read + at boot: item/group_gift →
+ *  gift, personal → request. */
+export type WishlistKind = "gift" | "request";
 
-export const WISHLIST_KINDS: readonly WishlistKind[] = ["item", "group_gift", "personal"];
+export const WISHLIST_KINDS: readonly WishlistKind[] = ["gift", "request"];
 
 export const WISHLIST_MAX_TITLE_LEN = 200;
 export const WISHLIST_MAX_DESC_LEN = 2000;
@@ -91,7 +98,7 @@ export interface UpsertWishlistItemInput {
 /** Guest-facing wishlist item embedded in the public-wedding response at the
  *  `confirmed` tier. Strips couple_id/sort_order/timestamps and folds in the
  *  soft interest signal. `interest_count` / `viewer_has_interest` are only
- *  meaningful for `kind === "group_gift"` (0 / false otherwise). */
+ *  meaningful for `kind === "gift"` (0 / false for requests). */
 export interface WishlistEntry {
   id: number;
   title: string;

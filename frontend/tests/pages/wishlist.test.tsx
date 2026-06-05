@@ -115,7 +115,7 @@ function makeItem(over: Partial<WishlistItem> = {}): WishlistItem {
     couple_id: 1,
     title: "Espresso machine",
     description: null,
-    kind: "item",
+    kind: "gift",
     target_amount_minor: null,
     currency: null,
     url: null,
@@ -134,7 +134,7 @@ function makeEntry(over: Partial<WishlistEntry> = {}): WishlistEntry {
     id: 1,
     title: "Group honeymoon fund",
     description: null,
-    kind: "item",
+    kind: "gift",
     target_amount_minor: null,
     currency: null,
     url: null,
@@ -203,7 +203,7 @@ describe("WishlistEditorPage", () => {
         jsonResponse(200, {
           items: [
             makeItem({ id: 1, title: "Espresso machine" }),
-            makeItem({ id: 2, title: "A weekend away", kind: "group_gift" }),
+            makeItem({ id: 2, title: "A weekend away", kind: "gift" }),
           ],
         }),
     );
@@ -230,7 +230,7 @@ describe("WishlistEditorPage", () => {
       ({ body }) => {
         postBody = body as Record<string, unknown>;
         return jsonResponse(200, {
-          item: makeItem({ id: 9, title: "A weekend away", kind: "group_gift" }),
+          item: makeItem({ id: 9, title: "A weekend away", kind: "gift" }),
         });
       },
     );
@@ -238,20 +238,16 @@ describe("WishlistEditorPage", () => {
     await renderPage(<WishlistEditorPage />);
 
     await act(async () => {
-      // Two "Add a wish" buttons render on the empty state (header + card) —
-      // the header one is first.
-      fireEvent.click(screen.getAllByRole("button", { name: /Add a wish/i })[0]!);
+      // The gifts section header carries the "Gift" add button.
+      fireEvent.click(screen.getByRole("button", { name: "Gift" }));
       await Promise.resolve();
     });
 
     fireEvent.change(screen.getByPlaceholderText(/A weekend away/i), {
       target: { value: "A weekend away" },
     });
-    // Kind select → group_gift. Two comboboxes now render (kind + the per-item
-    // currency selector); the kind select is the first.
-    const kindSelect = screen.getAllByRole("combobox")[0]!;
-    fireEvent.change(kindSelect, { target: { value: "group_gift" } });
-    // Rough amount in whole EUR units → must serialize as ×100 minor units.
+    // Default kind is "gift", so the rough amount field is visible. Whole EUR
+    // units → must serialize as ×100 minor units.
     fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: "250" } });
 
     await act(async () => {
@@ -263,7 +259,7 @@ describe("WishlistEditorPage", () => {
     await waitFor(() => expect(postBody).not.toBeNull());
     expect(postBody).toMatchObject({
       title: "A weekend away",
-      kind: "group_gift",
+      kind: "gift",
       target_amount_minor: 25000,
     });
   });
@@ -291,7 +287,9 @@ describe("WishlistEditorPage", () => {
     await renderPage(<WishlistEditorPage />);
 
     await act(async () => {
-      fireEvent.click(screen.getAllByRole("button", { name: /Új kívánság/i })[0]!);
+      // Gifts section add button (HU "Ajándék"); [0] avoids the "Ajándékok"
+      // section heading (a heading, not a button, but be explicit).
+      fireEvent.click(screen.getAllByRole("button", { name: /^Ajándék$/i })[0]!);
       await Promise.resolve();
     });
 
@@ -339,7 +337,7 @@ describe("WishlistEditorPage", () => {
 
     await renderPage(<WishlistEditorPage />);
     await act(async () => {
-      fireEvent.click(screen.getAllByRole("button", { name: /Add a wish/i })[0]!);
+      fireEvent.click(screen.getByRole("button", { name: "Gift" }));
       await Promise.resolve();
     });
 
@@ -518,7 +516,7 @@ describe("GuestPortalView wishlist deck", () => {
           data={{ ...basePortalData }}
           locale="en"
           wishlist={[
-            makeEntry({ id: 42, title: "Honeymoon fund", kind: "group_gift", interest_count: 2 }),
+            makeEntry({ id: 42, title: "Honeymoon fund", kind: "gift", interest_count: 2 }),
           ]}
           onToggleWishlistInterest={onToggle}
         />

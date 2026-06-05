@@ -45,7 +45,7 @@ describe("/api/wishlist — CRUD lifecycle", () => {
     );
     expect(created.status).toBe(201);
     expect(created.data.item.title).toBe("Espresso machine");
-    expect(created.data.item.kind).toBe("group_gift");
+    expect(created.data.item.kind).toBe("gift");
     expect(created.data.item.target_amount_minor).toBe(250000);
     expect(created.data.item.url).toBe("https://shop.example/espresso");
     expect(auditCount(coupleId, "wishlist.item_create")).toBe(1);

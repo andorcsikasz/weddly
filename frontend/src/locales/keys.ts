@@ -1796,6 +1796,8 @@ export interface LocaleMessages {
      *  framing: a group-gift card shows how many households are coordinating
      *  + a non-binding "I'd like to help" toggle. */
     wishlist_section_title: string;
+    /** Heading for the separate "personal requests" deck (letter, photo, ...). */
+    wishlist_requests_title: string;
     wishlist_group_gift_help_cta: string;
     wishlist_group_gift_help_active: string;
     /** Receives `{count}` — how many households tapped "I'd like to help". */
@@ -1983,9 +1985,25 @@ export interface LocaleMessages {
     title_label: string;
     title_placeholder: string;
     kind_label: string;
-    kind_item: string;
-    kind_group_gift: string;
-    kind_personal: string;
+    /** The two kinds (gifts vs personal requests). */
+    kind_gift: string;
+    kind_request: string;
+    /** Section headers + per-section add buttons. */
+    section_gifts_title: string;
+    section_requests_title: string;
+    /** One-liner under the requests section explaining what it's for. */
+    section_requests_subtitle: string;
+    add_gift: string;
+    add_request: string;
+    /** Empty states per section. */
+    gifts_empty: string;
+    requests_empty: string;
+    /** Label + example quick-add chips for the requests section. */
+    request_examples_label: string;
+    request_example_letter: string;
+    request_example_photo: string;
+    request_example_song: string;
+    request_example_time: string;
     description_label: string;
     description_placeholder: string;
     target_amount_label: string;

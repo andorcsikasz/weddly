@@ -38,9 +38,9 @@ export function GuestWishlistCard({
 }) {
   const cur = entry.currency ?? currency;
   const factor = minorFactor(cur);
-  const isGroupGift = entry.kind === "group_gift";
+  const isGift = entry.kind === "gift";
   const interactive = !!onToggleInterest;
-  const hasBar = isGroupGift && entry.target_amount_minor !== null && entry.target_amount_minor > 0;
+  const hasBar = isGift && entry.target_amount_minor !== null && entry.target_amount_minor > 0;
 
   // Soft pledge input (whole units, digit string), seeded from the viewer's own
   // pledge so they can see + edit it.
@@ -89,7 +89,7 @@ export function GuestWishlistCard({
             {t("guest_portal.wishlist_external_link_label")}
           </a>
         )}
-        {isGroupGift && (
+        {isGift && (
           <div className="mt-1 flex flex-col gap-2">
             {hasBar &&
               (() => {

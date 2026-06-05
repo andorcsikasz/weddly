@@ -687,7 +687,7 @@ describe("/api/public/wedding wishlist embed", () => {
     expect(confirmedR.data.tier).toBe("confirmed");
     expect(Array.isArray(confirmedR.data.wedding.wishlist)).toBe(true);
     expect(confirmedR.data.wedding.wishlist!.length).toBe(2);
-    const group = confirmedR.data.wedding.wishlist!.find((w) => w.kind === "group_gift");
+    const group = confirmedR.data.wedding.wishlist!.find((w) => w.kind === "gift");
     expect(group).toBeTruthy();
     expect(group!.interest_count).toBe(0);
     expect(group!.viewer_has_interest).toBe(false);
@@ -728,12 +728,12 @@ describe("POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest", () =>
     expect(r.data.detail?.code).toBe("not_rsvpd");
   });
 
-  test("non-group_gift item → 400", async () => {
+  test("request item (no money) → 400", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("wishlist-interest-kind@weddly.test");
     db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
     const slug = await getSlug(coupleId);
-    const itemId = await createWishlistItem(token, { title: "Plain item", kind: "item" });
+    const itemId = await createWishlistItem(token, { title: "A letter", kind: "request" });
     const { household_code, guest_id } = await createHouseholdWithGuest(token, "Confirmed");
     await confirmHousehold(slug, household_code, guest_id);
 
@@ -848,22 +848,19 @@ describe("POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest", () =>
     expect(p2.data.pledged_amount_minor).toBe(170000);
 
     // The couple-side editor list carries the same aggregates.
-    const list = await req<{ items: Array<{ id: number; pledged_amount_minor: number; interest_count: number }> }>(
-      "GET",
-      "/api/wishlist",
-      undefined,
-      { token },
-    );
+    const list = await req<{
+      items: Array<{ id: number; pledged_amount_minor: number; interest_count: number }>;
+    }>("GET", "/api/wishlist", undefined, { token });
     const editorItem = list.data.items.find((i) => i.id === itemId);
     expect(editorItem!.pledged_amount_minor).toBe(170000);
     expect(editorItem!.interest_count).toBe(2);
 
     // h1 updates their pledge (stays in, no extra helper) → total 230000.
-    const upd = await req<{ interest_count: number; pledged_amount_minor: number; viewer_pledged_amount_minor: number | null }>(
-      "POST",
-      url1,
-      { pledged_amount_minor: 180000 },
-    );
+    const upd = await req<{
+      interest_count: number;
+      pledged_amount_minor: number;
+      viewer_pledged_amount_minor: number | null;
+    }>("POST", url1, { pledged_amount_minor: 180000 });
     expect(upd.data.interest_count).toBe(2);
     expect(upd.data.pledged_amount_minor).toBe(230000);
     expect(upd.data.viewer_pledged_amount_minor).toBe(180000);

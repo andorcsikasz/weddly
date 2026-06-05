@@ -369,39 +369,82 @@ export function GuestPortalView({
         />
       ) : null}
 
-      {/* Wishlist deck — confirmed-tier only. Renders ONLY when the caller
+      {/* Wishlist decks — confirmed-tier only. Renders ONLY when the caller
        *  passes a non-empty array; the base GuestPortalView shape has no
-       *  wishlist, so a nullish guard keeps it absent everywhere else. No
-       *  money / payment copy anywhere — the only interaction is a soft
-       *  "I'd like to help" tap on group gifts. */}
-      {wishlist && wishlist.length > 0 && (
-        <section
-          className="rounded-2xl border border-paper-200 bg-white p-5 dark:border-umber-700 dark:bg-umber-800/60"
-          aria-labelledby="guest-portal-wishlist-title"
-        >
-          <div className="mb-3 flex items-center gap-2">
-            <Gift size={16} className="text-ink-500 dark:text-umber-300" aria-hidden />
-            <h2
-              id="guest-portal-wishlist-title"
-              className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300"
-            >
-              {t("guest_portal.wishlist_section_title")}
-            </h2>
-          </div>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {wishlist.map((entry) => (
-              <GuestWishlistCard
-                key={entry.id}
-                entry={entry}
-                currency={currency}
-                locale={locale}
-                onToggleInterest={onToggleWishlistInterest}
-                t={t}
-              />
-            ))}
-          </ul>
-        </section>
-      )}
+       *  wishlist, so a nullish guard keeps it absent everywhere else. Gifts
+       *  and personal requests render as two separate sections. No money /
+       *  payment copy anywhere — the only interaction is a soft "I'd like to
+       *  help" tap (+ optional pledge) on gifts. */}
+      {wishlist &&
+        wishlist.length > 0 &&
+        (() => {
+          const gifts = wishlist.filter((e) => e.kind === "gift");
+          const requests = wishlist.filter((e) => e.kind === "request");
+          return (
+            <>
+              {gifts.length > 0 && (
+                <section
+                  className="rounded-2xl border border-paper-200 bg-white p-5 dark:border-umber-700 dark:bg-umber-800/60"
+                  aria-labelledby="guest-portal-wishlist-title"
+                >
+                  <div className="mb-3 flex items-center gap-2">
+                    <Gift size={16} className="text-ink-500 dark:text-umber-300" aria-hidden />
+                    <h2
+                      id="guest-portal-wishlist-title"
+                      className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300"
+                    >
+                      {t("guest_portal.wishlist_section_title")}
+                    </h2>
+                  </div>
+                  <ul className="grid gap-3 sm:grid-cols-2">
+                    {gifts.map((entry) => (
+                      <GuestWishlistCard
+                        key={entry.id}
+                        entry={entry}
+                        currency={currency}
+                        locale={locale}
+                        onToggleInterest={onToggleWishlistInterest}
+                        t={t}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              )}
+              {requests.length > 0 && (
+                <section
+                  className="rounded-2xl border border-paper-200 bg-white p-5 dark:border-umber-700 dark:bg-umber-800/60"
+                  aria-labelledby="guest-portal-requests-title"
+                >
+                  <div className="mb-3 flex items-center gap-2">
+                    <HeartHandshake
+                      size={16}
+                      className="text-ink-500 dark:text-umber-300"
+                      aria-hidden
+                    />
+                    <h2
+                      id="guest-portal-requests-title"
+                      className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300"
+                    >
+                      {t("guest_portal.wishlist_requests_title")}
+                    </h2>
+                  </div>
+                  <ul className="grid gap-3 sm:grid-cols-2">
+                    {requests.map((entry) => (
+                      <GuestWishlistCard
+                        key={entry.id}
+                        entry={entry}
+                        currency={currency}
+                        locale={locale}
+                        onToggleInterest={onToggleWishlistInterest}
+                        t={t}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </>
+          );
+        })()}
 
       {/* Live countdown at the very bottom of the guest page. */}
       <WeddingCountdown date={data.wedding_date} isPreview={isPreview} onEdit={onEditDate} />

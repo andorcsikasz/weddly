@@ -50,6 +50,7 @@ import {
   listHouseholdPledges,
   listInterestStatsForItems,
   listWishlistItemRows,
+  normalizeKind,
   setInterest,
   toWishlistEntry,
 } from "../domain/wishlist";
@@ -151,18 +152,18 @@ function buildView(
 }
 
 /** Build the confirmed-tier wishlist embed for one resolved household. For each
- *  item we strip the couple-internal fields; for 'group_gift' items we fold in
- *  the soft interest count + whether THIS household has tapped in. Non-group
- *  kinds get 0 / false (the interest tap only applies to group gifts). Batched:
- *  one COUNT query + one household-membership query, not per-item. */
+ *  item we strip the couple-internal fields; for 'gift' items we fold in the
+ *  soft interest count + this household's pledge. 'request' items get 0 / false
+ *  (the interest tap + pledge only apply to gifts). Batched: one stats query +
+ *  one household-pledge query, not per-item. */
 function buildWishlistEntries(coupleId: number, householdId: number): WishlistEntry[] {
   const rows = listWishlistItemRows(coupleId);
   if (rows.length === 0) return [];
-  const groupIds = rows.filter((r) => r.kind === "group_gift").map((r) => r.id);
-  const stats = listInterestStatsForItems(groupIds);
-  const mine = listHouseholdPledges(householdId, groupIds);
+  const giftIds = rows.filter((r) => normalizeKind(r.kind) === "gift").map((r) => r.id);
+  const stats = listInterestStatsForItems(giftIds);
+  const mine = listHouseholdPledges(householdId, giftIds);
   return rows.map((r) => {
-    if (r.kind !== "group_gift") return toWishlistEntry(r, 0, 0, false, null);
+    if (normalizeKind(r.kind) !== "gift") return toWishlistEntry(r, 0, 0, false, null);
     const s = stats.get(r.id);
     return toWishlistEntry(
       r,
@@ -315,13 +316,12 @@ function handleLegacyGuestPortal(ctx: Ctx): Response {
   });
 }
 
-// Toggle the household's soft "I'd like to help" tap on a group-gift wishlist
-// item. The slug + code pair is the credential — same gate as the
-// confirmed-tier embed: the household must resolve AND have at least one RSVP
-// yes (403 otherwise). Only 'group_gift' items accept the tap. Idempotent: a
-// second tap from the same household toggles the interest back off. Returns the
-// post-toggle { interest_count, viewer_has_interest }. Rate-limited on the same
-// code bucket as the lookup so it can't be used to enumerate codes either.
+// Toggle the household's soft "I'd like to help" tap on a 'gift' wishlist item.
+// The slug + code pair is the credential — same gate as the confirmed-tier
+// embed: the household must resolve AND have at least one RSVP yes (403
+// otherwise). Only 'gift' items accept the tap ('request' items carry no
+// money). Idempotent toggle, plus an optional soft pledge amount. Rate-limited
+// on the same code bucket as the lookup so it can't be used to enumerate codes.
 async function handleToggleWishlistInterest(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "public:wedding:code", WEDDING_CODE_BUCKET);
 
@@ -345,9 +345,9 @@ async function handleToggleWishlistInterest(ctx: Ctx): Promise<Response> {
 
   const item = getWishlistItemScoped(itemId, couple.id);
   if (!item) throw new HttpError(404, "Wishlist item not found");
-  // Only group gifts surface the coordination tap.
-  if (item.kind !== "group_gift") {
-    throw new HttpError(400, "Interest is only valid for group_gift items");
+  // Only gifts surface the coordination tap; requests carry no money.
+  if (normalizeKind(item.kind) !== "gift") {
+    throw new HttpError(400, "Interest is only valid for gift items");
   }
 
   // Optional soft pledge. Absent key → pure toggle (undefined). `null` → in,
@@ -378,7 +378,7 @@ export function registerPublicWeddingRoutes(router: Router) {
   // frontend `/w/:slug/:code` route can mirror the URL layout.
   router.get("/api/public/wedding/:slug/:code", handleGetWeddingWebsite);
   // Soft "I'd like to help" toggle on a group-gift wishlist item. The code in
-  // the path is the credential; confirmed-tier-gated + group_gift-only inside
+  // the path is the credential; confirmed-tier-gated + gift-only inside
   // the handler. No auth flag — guests aren't logged in.
   router.post(
     "/api/public/wedding/:slug/:code/wishlist/:itemId/interest",
