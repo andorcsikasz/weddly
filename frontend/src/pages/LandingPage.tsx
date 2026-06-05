@@ -502,8 +502,14 @@ export default function LandingPage() {
       {/* ════════════════════════ Closing ════════════════════════
           Stationery texture, faded WĒDDLY watermark, huge italic
           headline, signature, eucalyptus stem ornament. */}
-      <section className="stationery relative flex min-h-[40vh] items-center sm:min-h-[50vh]">
-        <div className="mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-24">
+      <section className="stationery relative flex min-h-[40vh] items-center justify-center px-4 py-24 text-center sm:min-h-[50vh] sm:px-6 sm:py-24">
+        {/* Only the WĒDDLY + headline live in the centered wrapper, so the
+            section's items-center puts the *text* at the true vertical middle
+            of the stationery. The desktop CTA is absolutely positioned just
+            below it (top-full) — in normal flow its weight pulled the text
+            above center on lg. py-24 reserves the room the absolute button
+            needs (its gap + height stays under the 96px bottom pad). */}
+        <div className="relative w-full max-w-4xl">
           <Wordmark size="md" className="text-paper-400 dark:text-umber-600" />
           <h2 className="mt-8 whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-umber-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
             {t("landing.closing_title")}
@@ -511,11 +517,8 @@ export default function LandingPage() {
           {/* Closing CTA shown on desktop only. On mobile/tablet the persistent
               MobileStickySignup bar already keeps "Start planning" a thumb-tap
               away, so a second button here just duplicates it. */}
-          <div className="mt-10 hidden justify-center lg:flex">
-            <Link
-              to="/signup"
-              className="btn-primary btn-lifted btn-landing btn-lg w-full max-w-sm sm:w-auto sm:max-w-none"
-            >
+          <div className="absolute inset-x-0 top-full mt-10 hidden justify-center lg:flex">
+            <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg">
               {t("landing.cta_signup")}
             </Link>
           </div>
@@ -975,7 +978,7 @@ function BlogTeaser() {
           return (
             <li
               key={post.slug}
-              className="w-[80vw] max-w-[20rem] shrink-0 snap-start first:ml-4 last:mr-4"
+              className="w-[80vw] max-w-[20rem] shrink-0 snap-start first:ml-6 last:mr-4"
             >
               <Link
                 to={`/blog/${post.slug}`}
@@ -1278,7 +1281,7 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
     <div className="sm:hidden">
       <div
         className="relative mt-6 select-none [perspective:1100px]"
-        style={{ height: "84vw", touchAction: "pan-y" }}
+        style={{ height: "58vw", touchAction: "pan-y" }}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
