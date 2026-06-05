@@ -243,6 +243,22 @@ const hu: LocaleMessages = {
     rsvp_status_no: "nem tudok jönni",
     rsvp_status_maybe: "talán",
     footer_built_with: "Weddly · Az esküvő-tervező",
+    edit_hint: "Kattints a szerkesztéshez",
+    ghost: {
+      cover_title: "Borítókép",
+      cover_cta: "Adj hozzá borítóképet",
+      date_cta: "Add meg az esküvő dátumát",
+      venue_cta: "Add meg a helyszínt",
+      welcome_title: "Köszöntő",
+      welcome_cta: "Írj köszöntőt a vendégeknek",
+      schedule_title: "A nap menete",
+      schedule_cta: "Add meg a nap menetét",
+      useful_info_title: "Jó tudni",
+      useful_info_cta: "Add meg a jó tudni infókat",
+      post_rsvp_title: "Részletek a visszajelölt vendégeknek",
+      post_rsvp_cta: "Add meg a visszajelzés utáni részleteket",
+      locked_eyebrow: "A vendégek visszajelzése után jelenik meg",
+    },
   },
   wedding_site_editor: {
     page_title: "Esküvői weboldal",
@@ -1417,6 +1433,9 @@ const hu: LocaleMessages = {
     coming_soon_title: "Hamarosan",
     coming_soon_body:
       "Az esküvő után feltölthetitek a képeket, és egy kattintással elküldhetitek a letöltési linket minden vendégnek, aki igent mondott, közvetlenül innen, külön galéria-fiók nélkül.",
+    collect_guests: "A vendégektől",
+    collect_photographer: "A fotóstól",
+    collect_other: "Egyéb",
     feedback_title: "Mire lenne szükségetek?",
     feedback_intro:
       "Még alakítjuk a fotó-megosztás folyamatot. Írjátok meg, mit várnátok tőle, és figyelembe vesszük, amikor megépítjük.",

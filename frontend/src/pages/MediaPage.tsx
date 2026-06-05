@@ -3,10 +3,26 @@
 // lands in a follow-up.
 
 import { Camera, CheckCircle2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, type SVGProps, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { feedbackApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+// Monochrome Google Drive glyph — lucide ships no brand mark, and the
+// placeholder copy already frames the flow around a "Drive link", so the
+// dashed source boxes carry the recognisable triangle in a single gray.
+function DriveIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 87.3 78" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" />
+      <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" />
+      <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" />
+      <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" />
+      <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" />
+      <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" />
+    </svg>
+  );
+}
 
 export default function MediaPage() {
   const { t, locale } = useT();
@@ -63,6 +79,28 @@ export default function MediaPage() {
               {t("media.coming_soon_body")}
             </p>
           </div>
+        </div>
+
+        {/* Where the photos will come from — three dashed source boxes the
+            future flow will wire up (guest uploads, photographer drop, a
+            catch-all "other"). Outline-only + gray Drive glyph signals they
+            are placeholders, not live actions yet. */}
+        <div className="mt-4 grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+          {[
+            { key: "guests", label: t("media.collect_guests") },
+            { key: "photographer", label: t("media.collect_photographer") },
+            { key: "other", label: t("media.collect_other") },
+          ].map((box) => (
+            <div
+              key={box.key}
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 px-4 py-6 text-center dark:border-umber-600"
+            >
+              <DriveIcon className="h-7 w-7 text-ink-300 dark:text-umber-400" />
+              <span className="text-sm font-medium text-ink-600 dark:text-paper-100">
+                {box.label}
+              </span>
+            </div>
+          ))}
         </div>
 
         {/* Inline feedback — we ask couples what they actually want before

@@ -240,6 +240,22 @@ const en: LocaleMessages = {
     rsvp_status_no: "can't make it",
     rsvp_status_maybe: "maybe",
     footer_built_with: "Weddly · Wedding planning",
+    edit_hint: "Click to edit",
+    ghost: {
+      cover_title: "Cover photo",
+      cover_cta: "Add a cover photo",
+      date_cta: "Add your wedding date",
+      venue_cta: "Add the venue",
+      welcome_title: "Welcome note",
+      welcome_cta: "Add a welcome message",
+      schedule_title: "Run of show",
+      schedule_cta: "Add the day's schedule",
+      useful_info_title: "Good to know",
+      useful_info_cta: "Add the good-to-know info",
+      post_rsvp_title: "Details for confirmed guests",
+      post_rsvp_cta: "Add the post-RSVP details",
+      locked_eyebrow: "Unlocks after guests RSVP",
+    },
   },
   wedding_site_editor: {
     page_title: "Wedding website",
@@ -1402,6 +1418,9 @@ const en: LocaleMessages = {
     coming_soon_title: "Coming soon",
     coming_soon_body:
       "Upload the photos after the wedding and send a download link to every guest who said yes, straight from this page, no separate gallery account needed.",
+    collect_guests: "From the guests",
+    collect_photographer: "From the photographer",
+    collect_other: "Other",
     feedback_title: "What would you need?",
     feedback_intro:
       "We're still shaping the photo-share flow. Tell us what you'd want from it and we'll factor it in when we build it.",

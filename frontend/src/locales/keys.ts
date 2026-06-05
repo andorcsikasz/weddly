@@ -302,6 +302,25 @@ export interface LocaleMessages {
     rsvp_status_no: string;
     rsvp_status_maybe: string;
     footer_built_with: string;
+    /** Editor-preview-only copy. The shared <WeddingSiteView> renders these
+     *  ghost placeholders + the click-to-edit hint on /app/guest-page when a
+     *  section is still empty; the live public page just omits empty sections. */
+    edit_hint: string;
+    ghost: {
+      cover_title: string;
+      cover_cta: string;
+      date_cta: string;
+      venue_cta: string;
+      welcome_title: string;
+      welcome_cta: string;
+      schedule_title: string;
+      schedule_cta: string;
+      useful_info_title: string;
+      useful_info_cta: string;
+      post_rsvp_title: string;
+      post_rsvp_cta: string;
+      locked_eyebrow: string;
+    };
   };
   /** Couple-facing editor for the public wedding-website at /w/:slug — flips
    *  the publish toggle and edits venue name + hero image. Reachable at
@@ -1543,6 +1562,9 @@ export interface LocaleMessages {
     sub: string;
     coming_soon_title: string;
     coming_soon_body: string;
+    collect_guests: string;
+    collect_photographer: string;
+    collect_other: string;
     feedback_title: string;
     feedback_intro: string;
     feedback_placeholder: string;
