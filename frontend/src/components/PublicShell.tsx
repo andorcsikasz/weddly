@@ -364,7 +364,7 @@ function PublicFooter() {
        *  each option a hairline cream pill that fills to espresso on hover
        *  (the single bright object inverts, candlelit). */}
       <div className="bg-paper-50 dark:bg-umber-950">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-4 px-4 py-7 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-4 py-5 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
           <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-umber-600 dark:text-umber-300">
             {t("landing.footer_band_prompt")}
           </span>
@@ -391,10 +391,10 @@ function PublicFooter() {
        *  three link columns sit two-up below (Vendors + Guests share a
        *  row, Couples gets its own width). Tablet keeps the previous
        *  2-col grid; desktop expands to the brand+3-col layout. */}
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 sm:gap-8 sm:px-6 sm:py-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
         <div className="col-span-2 lg:col-span-1">
           <Wordmark size="md" className="text-umber-900 dark:text-paper-50" />
-          <p className="mt-2 max-w-xs text-sm leading-snug text-umber-700 sm:mt-3 sm:leading-relaxed dark:text-umber-200">
+          <p className="mt-1.5 max-w-xs text-sm leading-snug text-umber-700 sm:mt-3 sm:leading-relaxed dark:text-umber-200">
             {t("landing.footer_tagline")}
           </p>
         </div>
@@ -431,7 +431,7 @@ function PublicFooter() {
         {/* Bottom row tightened: copyright sits left, legal links wrap into
          *  a tidy 2-col grid on mobile so the five labels can never trail
          *  into a ragged 3rd row. Tablet+ keeps them on a single line. */}
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-4 py-4 text-xs text-umber-700 sm:flex-row sm:items-center sm:px-6 sm:py-5 dark:text-umber-300">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-3 text-xs text-umber-700 sm:flex-row sm:items-center sm:gap-3 sm:px-6 sm:py-5 dark:text-umber-300">
           <p>
             © {new Date().getFullYear()} {t("app.name")}
           </p>
@@ -464,7 +464,7 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
       <p className="text-xs font-semibold uppercase tracking-wider text-umber-700 dark:text-umber-300">
         {title}
       </p>
-      <div className="mt-3 flex flex-col items-start gap-2">{children}</div>
+      <div className="mt-2 flex flex-col items-start gap-1.5 sm:mt-3 sm:gap-2">{children}</div>
     </div>
   );
 }
