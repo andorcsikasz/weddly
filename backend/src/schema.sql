@@ -524,6 +524,32 @@ CREATE TABLE IF NOT EXISTS couple_suppliers (
 );
 CREATE INDEX IF NOT EXISTS idx_couple_suppliers_couple ON couple_suppliers(couple_id);
 
+-- Payment schedule for a couple's priced supplier (couple_suppliers). One row
+-- per installment (deposit, balance on the day, ...). When a supplier has any
+-- installments they become the source of truth for "how much is actually
+-- paid": the mirrored budget line's actual_huf is recomputed as
+-- SUM(amount_huf WHERE paid_at IS NOT NULL), and couple_suppliers.paid is
+-- derived (fully paid). With zero installments the legacy all-or-nothing
+-- `paid` toggle still drives the budget line. amount_huf is integer minor
+-- units of the couple's currency (matches couple_suppliers.price_huf — the
+-- _huf suffix is historical; display routes through formatMoney(currency)).
+CREATE TABLE IF NOT EXISTS supplier_installments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  supplier_id TEXT NOT NULL REFERENCES couple_suppliers(id) ON DELETE CASCADE,
+  label TEXT,                                                 -- 'Deposit', 'Balance', free text
+  amount_huf INTEGER NOT NULL,
+  due_date TEXT,                                              -- ISO YYYY-MM-DD; NULL = undated / "on the day"
+  paid_at INTEGER,                                            -- epoch ms when marked paid; NULL = unpaid
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_supplier_installments_supplier
+  ON supplier_installments(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_installments_due
+  ON supplier_installments(couple_id, due_date);
+
 
 -- Per-category "this is our pick" supplier selections. One row per
 -- (couple, category) — picking a new supplier in the same category REPLACES

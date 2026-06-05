@@ -25,8 +25,45 @@ export interface CoupleSupplier {
   /** Auto-managed FK to the locked budget line that mirrors `price_huf`.
    *  Null when there is no price or the line was removed externally. */
   budget_line_id: number | null;
+  /** Payment schedule. Empty when the couple paid in one go (the `paid`
+   *  boolean governs in that case). When non-empty, these installments are
+   *  the source of truth: `paid` is derived (fully settled) and the mirrored
+   *  budget line's actual_huf equals the sum of paid installments. Ordered by
+   *  sort_order then due_date. */
+  installments: SupplierInstallment[];
   created_at: number;
   updated_at: number;
+}
+
+/** One scheduled payment toward a supplier (deposit, balance, ...). */
+export interface SupplierInstallment {
+  id: number;
+  supplier_id: string;
+  /** Free-text name like "Deposit" / "Foglaló". Null when unlabelled. */
+  label: string | null;
+  /** Integer minor units of the couple's currency (see CoupleSupplier.price_huf). */
+  amount_huf: number;
+  /** ISO YYYY-MM-DD. Null = undated ("on the day"). */
+  due_date: string | null;
+  /** Derived from paid_at. */
+  paid: boolean;
+  /** Epoch ms when marked paid; null when unpaid. */
+  paid_at: number | null;
+  sort_order: number;
+}
+
+export interface CreateInstallmentInput {
+  label?: string | null;
+  amount_huf: number;
+  due_date?: string | null;
+  paid?: boolean;
+}
+
+export interface UpdateInstallmentInput {
+  label?: string | null;
+  amount_huf?: number;
+  due_date?: string | null;
+  paid?: boolean;
 }
 
 export interface CreateCoupleSupplierInput {

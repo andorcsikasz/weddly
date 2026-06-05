@@ -174,7 +174,11 @@ export default function LandingPage() {
                 catch the eye, sits to the right of the headline on desktop
                 and stacks below the CTAs on mobile. Hits POST /api/demo/start
                 and drops the visitor into /app with a seeded workspace. */}
-            <div className="flex justify-center lg:justify-end">
+            {/* Mobile: drop the demo sticker lower and shove it to the right
+                edge so it reads as a distinct secondary intent under the
+                primary CTA, not a centered twin of it. Desktop (lg) keeps the
+                vertically-centered right column untouched. */}
+            <div className="mt-6 flex justify-end lg:mt-0 lg:justify-end">
               <DemoLaunchCard />
             </div>
           </div>
