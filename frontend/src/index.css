@@ -178,7 +178,7 @@
 
   h1,
   h2 {
-    font-family: theme("fontFamily.serif");
+    font-family: theme("fontFamily.grotesk");
     font-weight: 600;
     color: theme("colors.ink.900");
     letter-spacing: -0.01em;
@@ -209,12 +209,12 @@
   }
 
   /* ── Admin shell typography ─────────────────────────────────────────
-     The admin section is an operational tool, not editorial copy — the
-     Cormorant serif we use on h1/h2 makes the dashboard feel inconsistent
-     next to the Inter sans body text and stat-num numbers. Inside the
-     admin shell (data-admin-shell on the <main> in AppShell.tsx) every
-     heading drops back to the sans stack so all four text styles —
-     headings, body, labels, stat-num numbers — share one family. */
+     The admin section is an operational tool, not editorial copy. Inside
+     the admin shell (data-admin-shell on the <main> in AppShell.tsx) every
+     heading drops to the Inter sans body stack so all four text styles —
+     headings, body, labels, stat-num numbers — share one family, rather
+     than mixing in the General Sans grotesk the rest of the app uses for
+     h1/h2. */
   [data-admin-shell] h1,
   [data-admin-shell] h2,
   [data-admin-shell] h3,
