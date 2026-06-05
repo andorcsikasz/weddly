@@ -157,26 +157,37 @@ export default function WeddingWebsitePage() {
    *  reconcile the count + state from the server response. On failure we roll
    *  back to the pre-click snapshot. Only reachable on the code-bearing,
    *  confirmed-tier page (the button isn't rendered otherwise). */
-  function onToggleWishlistInterest(itemId: number) {
+  function onToggleWishlistInterest(itemId: number, pledgedAmountMinor?: number | null) {
     if (!hasCode) return;
+    const isPledge = pledgedAmountMinor !== undefined;
     const snapshot = view;
     setView((cur) => {
       if (!cur || !cur.wishlist) return cur;
       return {
         ...cur,
-        wishlist: cur.wishlist.map((entry) =>
-          entry.id === itemId
-            ? {
-                ...entry,
-                viewer_has_interest: !entry.viewer_has_interest,
-                interest_count: entry.interest_count + (entry.viewer_has_interest ? -1 : 1),
-              }
-            : entry,
-        ),
+        wishlist: cur.wishlist.map((entry) => {
+          if (entry.id !== itemId) return entry;
+          if (isPledge) {
+            // Optimistically join + show the typed amount; the server response
+            // reconciles the pledged sum + count (we can't know the new total
+            // here without the other households' pledges).
+            return {
+              ...entry,
+              viewer_has_interest: true,
+              viewer_pledged_amount_minor: pledgedAmountMinor ?? null,
+            };
+          }
+          // Pure toggle: flip membership + count.
+          return {
+            ...entry,
+            viewer_has_interest: !entry.viewer_has_interest,
+            interest_count: entry.interest_count + (entry.viewer_has_interest ? -1 : 1),
+          };
+        }),
       };
     });
     weddingWebsiteApi
-      .toggleWishlistInterest(slug, code, itemId)
+      .toggleWishlistInterest(slug, code, itemId, pledgedAmountMinor)
       .then((res) => {
         setView((cur) => {
           if (!cur || !cur.wishlist) return cur;
@@ -188,6 +199,8 @@ export default function WeddingWebsitePage() {
                     ...entry,
                     viewer_has_interest: res.viewer_has_interest,
                     interest_count: res.interest_count,
+                    pledged_amount_minor: res.pledged_amount_minor,
+                    viewer_pledged_amount_minor: res.viewer_pledged_amount_minor,
                   }
                 : entry,
             ),

@@ -35,22 +35,26 @@ import type {
   PublicWeddingTier,
   PublicWeddingWebsiteView,
 } from "@shared/wedding_website";
-import type { WishlistEntry, WishlistInterestToggleResult } from "@shared/wishlist";
+import type {
+  WishlistEntry,
+  WishlistInterestToggleInput,
+  WishlistInterestToggleResult,
+} from "@shared/wishlist";
 import { db, now } from "../db";
 import { type CoupleRow } from "../domain/couples";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { listScheduleEvents } from "../domain/schedule";
 import {
   getWishlistItemScoped,
-  listHouseholdInterestItemIds,
-  listInterestCountsForItems,
+  listHouseholdPledges,
+  listInterestStatsForItems,
   listWishlistItemRows,
-  toggleInterest,
+  setInterest,
   toWishlistEntry,
 } from "../domain/wishlist";
 import { type HouseholdRow, listMembers, toHouseholdMember } from "../domain/households";
 import { normalizeSlugInput } from "../domain/slug";
-import { type Ctx, HttpError, json, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
 // 20-token burst then ~10/min sustained per IP. Slug enumeration is the
@@ -150,13 +154,19 @@ function buildWishlistEntries(coupleId: number, householdId: number): WishlistEn
   const rows = listWishlistItemRows(coupleId);
   if (rows.length === 0) return [];
   const groupIds = rows.filter((r) => r.kind === "group_gift").map((r) => r.id);
-  const counts = listInterestCountsForItems(groupIds);
-  const mine = listHouseholdInterestItemIds(householdId, groupIds);
-  return rows.map((r) =>
-    r.kind === "group_gift"
-      ? toWishlistEntry(r, counts.get(r.id) ?? 0, mine.has(r.id))
-      : toWishlistEntry(r, 0, false),
-  );
+  const stats = listInterestStatsForItems(groupIds);
+  const mine = listHouseholdPledges(householdId, groupIds);
+  return rows.map((r) => {
+    if (r.kind !== "group_gift") return toWishlistEntry(r, 0, 0, false, null);
+    const s = stats.get(r.id);
+    return toWishlistEntry(
+      r,
+      s?.count ?? 0,
+      s?.pledged ?? 0,
+      mine.has(r.id),
+      mine.get(r.id) ?? null,
+    );
+  });
 }
 
 function handleGetWeddingWebsite(ctx: Ctx): Response {
@@ -335,7 +345,24 @@ async function handleToggleWishlistInterest(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Interest is only valid for group_gift items");
   }
 
-  const result: WishlistInterestToggleResult = toggleInterest(couple.id, itemId, household);
+  // Optional soft pledge. Absent key → pure toggle (undefined). `null` → in,
+  // no amount. A number must be a non-negative integer (minor units). No money
+  // moves — this is a non-binding coordination figure.
+  const body = await readJson<WishlistInterestToggleInput>(ctx.req).catch(() => ({}));
+  let pledge: number | null | undefined;
+  if (!("pledged_amount_minor" in body)) {
+    pledge = undefined;
+  } else if (body.pledged_amount_minor === null) {
+    pledge = null;
+  } else {
+    const n = Number(body.pledged_amount_minor);
+    if (!Number.isInteger(n) || n < 0) {
+      throw new HttpError(400, "pledged_amount_minor must be a non-negative integer or null");
+    }
+    pledge = n;
+  }
+
+  const result: WishlistInterestToggleResult = setInterest(couple.id, itemId, household, pledge);
   return json(result);
 }
 

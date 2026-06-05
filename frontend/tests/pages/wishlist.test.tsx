@@ -120,6 +120,8 @@ function makeItem(over: Partial<WishlistItem> = {}): WishlistItem {
     currency: null,
     url: null,
     image_url: null,
+    interest_count: 0,
+    pledged_amount_minor: 0,
     sort_order: 0,
     created_at: 0,
     updated_at: 100,
@@ -138,7 +140,9 @@ function makeEntry(over: Partial<WishlistEntry> = {}): WishlistEntry {
     url: null,
     image_url: null,
     interest_count: 0,
+    pledged_amount_minor: 0,
     viewer_has_interest: false,
+    viewer_pledged_amount_minor: null,
     ...over,
   };
 }

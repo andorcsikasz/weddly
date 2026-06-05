@@ -53,8 +53,15 @@ function normalizeCurrency(raw: string | null): Currency | null {
   return raw && (CURRENCIES as readonly string[]).includes(raw) ? (raw as Currency) : null;
 }
 
-/** Couple-facing DTO returned by GET/POST/PATCH /api/wishlist. */
-export function toWishlistItem(row: WishlistItemRow): WishlistItem {
+/** Couple-facing DTO returned by GET/POST/PATCH /api/wishlist. `interestCount` /
+ *  `pledgedAmountMinor` are the coordination aggregates for the progress bar —
+ *  the list path computes them in one batched query; create/update return a
+ *  fresh item with no interests yet, so they default to 0. */
+export function toWishlistItem(
+  row: WishlistItemRow,
+  interestCount = 0,
+  pledgedAmountMinor = 0,
+): WishlistItem {
   return {
     id: row.id,
     couple_id: row.couple_id,
@@ -65,6 +72,8 @@ export function toWishlistItem(row: WishlistItemRow): WishlistItem {
     currency: normalizeCurrency(row.currency),
     url: row.url,
     image_url: row.image_url,
+    interest_count: interestCount,
+    pledged_amount_minor: pledgedAmountMinor,
     sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -79,7 +88,9 @@ export function toWishlistItem(row: WishlistItemRow): WishlistItem {
 export function toWishlistEntry(
   row: WishlistItemRow,
   interestCount: number,
+  pledgedAmountMinor: number,
   viewerHasInterest: boolean,
+  viewerPledgedAmountMinor: number | null,
 ): WishlistEntry {
   return {
     id: row.id,
@@ -91,7 +102,9 @@ export function toWishlistEntry(
     url: row.url,
     image_url: row.image_url,
     interest_count: interestCount,
+    pledged_amount_minor: pledgedAmountMinor,
     viewer_has_interest: viewerHasInterest,
+    viewer_pledged_amount_minor: viewerPledgedAmountMinor,
   };
 }
 
@@ -255,7 +268,15 @@ export function listWishlistItems(coupleId: number): WishlistItem[] {
          ORDER BY sort_order ASC, id ASC`,
     )
     .all(coupleId) as WishlistItemRow[];
-  return rows.map(toWishlistItem);
+  // Fold in the coordination aggregates (helper count + pledged sum) so the
+  // editor can draw the progress bar. Only group gifts collect pledges, so we
+  // only query those ids; everything else gets 0/0 via the map default.
+  const groupIds = rows.filter((r) => r.kind === "group_gift").map((r) => r.id);
+  const stats = listInterestStatsForItems(groupIds);
+  return rows.map((row) => {
+    const s = stats.get(row.id);
+    return toWishlistItem(row, s?.count ?? 0, s?.pledged ?? 0);
+  });
 }
 
 /** Raw rows (not DTOs) for the guest-side embed mapper. Same ordering. */
@@ -373,13 +394,6 @@ export function deleteWishlistItem(id: number, coupleId: number): boolean {
 
 // ── Interest tap (soft, non-money, idempotent per household) ─────────────────
 
-export function countInterest(itemId: number): number {
-  const row = db
-    .prepare("SELECT COUNT(*) AS n FROM wishlist_interests WHERE item_id = ?")
-    .get(itemId) as { n: number };
-  return row.n;
-}
-
 export function householdHasInterest(itemId: number, householdId: number): boolean {
   const row = db
     .prepare("SELECT 1 FROM wishlist_interests WHERE item_id = ? AND household_id = ? LIMIT 1")
@@ -389,64 +403,117 @@ export function householdHasInterest(itemId: number, householdId: number): boole
   return row != null;
 }
 
-/** Batch count of interests for a set of item ids — one query, returned as a
- *  Map<item_id, count>. Items with no interests are absent (caller defaults to
- *  0). Used by the guest-side embed so we don't COUNT per item in a loop. */
-export function listInterestCountsForItems(itemIds: number[]): Map<number, number> {
-  const counts = new Map<number, number>();
-  if (itemIds.length === 0) return counts;
+/** Per-item coordination aggregates: the helper count + the summed soft pledge
+ *  (minor units; NULL pledges count as 0 via COALESCE). One GROUP BY query,
+ *  returned as a Map<item_id, {count, pledged}>. Items with no interests are
+ *  absent (callers default to 0/0). Used by both the couple-side list and the
+ *  guest-side embed so we never aggregate per item in a loop. */
+export function listInterestStatsForItems(
+  itemIds: number[],
+): Map<number, { count: number; pledged: number }> {
+  const stats = new Map<number, { count: number; pledged: number }>();
+  if (itemIds.length === 0) return stats;
   const placeholders = itemIds.map(() => "?").join(", ");
   const rows = db
     .prepare(
-      `SELECT item_id, COUNT(*) AS n FROM wishlist_interests
+      `SELECT item_id, COUNT(*) AS n, COALESCE(SUM(pledged_amount_minor), 0) AS pledged
+         FROM wishlist_interests
          WHERE item_id IN (${placeholders})
          GROUP BY item_id`,
     )
-    .all(...itemIds) as Array<{ item_id: number; n: number }>;
-  for (const r of rows) counts.set(r.item_id, r.n);
-  return counts;
+    .all(...itemIds) as Array<{ item_id: number; n: number; pledged: number }>;
+  for (const r of rows) stats.set(r.item_id, { count: r.n, pledged: r.pledged });
+  return stats;
 }
 
-/** Set of item ids (from the given set) the household has tapped. Used by the
- *  guest-side embed to fill viewer_has_interest without an EXISTS per item. */
-export function listHouseholdInterestItemIds(householdId: number, itemIds: number[]): Set<number> {
-  const set = new Set<number>();
-  if (itemIds.length === 0) return set;
+/** Map<item_id, pledged_amount_minor | null> of THIS household's own pledges for
+ *  the given items — fills `viewer_pledged_amount_minor` on the guest embed so
+ *  the guest can see + edit their own number. Items the household hasn't tapped
+ *  are absent (caller reads null). */
+export function listHouseholdPledges(
+  householdId: number,
+  itemIds: number[],
+): Map<number, number | null> {
+  const map = new Map<number, number | null>();
+  if (itemIds.length === 0) return map;
   const placeholders = itemIds.map(() => "?").join(", ");
   const rows = db
     .prepare(
-      `SELECT item_id FROM wishlist_interests
+      `SELECT item_id, pledged_amount_minor FROM wishlist_interests
          WHERE household_id = ? AND item_id IN (${placeholders})`,
     )
-    .all(householdId, ...itemIds) as Array<{ item_id: number }>;
-  for (const r of rows) set.add(r.item_id);
-  return set;
+    .all(householdId, ...itemIds) as Array<{
+    item_id: number;
+    pledged_amount_minor: number | null;
+  }>;
+  for (const r of rows) map.set(r.item_id, r.pledged_amount_minor);
+  return map;
 }
 
-/** Idempotent toggle: if the household already tapped this item, remove the
- *  tap; otherwise insert it. Returns the post-toggle state. The UNIQUE
- *  (item_id, household_id) constraint is the backstop against a double-insert
- *  race. The denormalised code/label snapshot is taken from the household row. */
-export function toggleInterest(
+export interface InterestState {
+  interest_count: number;
+  pledged_amount_minor: number;
+  viewer_has_interest: boolean;
+  viewer_pledged_amount_minor: number | null;
+}
+
+/** Read the post-write coordination state for one item + household: the helper
+ *  count, the summed pledge, and the viewer's own membership + pledge. */
+function readInterestState(itemId: number, householdId: number): InterestState {
+  const agg = listInterestStatsForItems([itemId]).get(itemId);
+  const mine = listHouseholdPledges(householdId, [itemId]);
+  return {
+    interest_count: agg?.count ?? 0,
+    pledged_amount_minor: agg?.pledged ?? 0,
+    viewer_has_interest: mine.has(itemId),
+    viewer_pledged_amount_minor: mine.get(itemId) ?? null,
+  };
+}
+
+/** The household's "I'd like to help" interaction on a group gift. Two modes,
+ *  picked by whether the caller passes a `pledge` value (no money moves — the
+ *  amount is a soft, non-binding coordination number):
+ *  - `pledge === undefined` → pure TOGGLE: a household not in taps in (no
+ *    amount); one already in taps back out. (Backward-compatible default.)
+ *  - `pledge` is a number ≥ 0 or null → SET PLEDGE: ensure the household is in
+ *    and record/replace its amount (null = in, no number). Never leaves.
+ *  The UNIQUE(item_id, household_id) constraint backstops a double-insert race;
+ *  the code/label snapshot is taken from the household row. */
+export function setInterest(
   coupleId: number,
   itemId: number,
   household: HouseholdRow,
-): { interest_count: number; viewer_has_interest: boolean } {
+  pledge: number | null | undefined,
+): InterestState {
   const existing = householdHasInterest(itemId, household.id);
-  if (existing) {
-    db.prepare("DELETE FROM wishlist_interests WHERE item_id = ? AND household_id = ?").run(
-      itemId,
-      household.id,
-    );
+
+  if (pledge === undefined) {
+    // Pure toggle.
+    if (existing) {
+      db.prepare("DELETE FROM wishlist_interests WHERE item_id = ? AND household_id = ?").run(
+        itemId,
+        household.id,
+      );
+    } else {
+      db.prepare(
+        `INSERT INTO wishlist_interests
+           (couple_id, item_id, household_id, household_code, household_label, pledged_amount_minor, created_at)
+         VALUES (?, ?, ?, ?, ?, NULL, ?)`,
+      ).run(coupleId, itemId, household.id, household.code, household.label, now());
+    }
+  } else if (existing) {
+    // Set pledge on an existing membership — update the amount in place.
+    db.prepare(
+      "UPDATE wishlist_interests SET pledged_amount_minor = ? WHERE item_id = ? AND household_id = ?",
+    ).run(pledge, itemId, household.id);
   } else {
+    // Set pledge while not yet in — join and record the amount.
     db.prepare(
       `INSERT INTO wishlist_interests
-         (couple_id, item_id, household_id, household_code, household_label, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    ).run(coupleId, itemId, household.id, household.code, household.label, now());
+         (couple_id, item_id, household_id, household_code, household_label, pledged_amount_minor, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).run(coupleId, itemId, household.id, household.code, household.label, pledge, now());
   }
-  return {
-    interest_count: countInterest(itemId),
-    viewer_has_interest: !existing,
-  };
+
+  return readInterestState(itemId, household.id);
 }

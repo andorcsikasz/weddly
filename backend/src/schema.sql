@@ -1174,6 +1174,7 @@ CREATE TABLE IF NOT EXISTS wishlist_interests (
   household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
   household_code TEXT NOT NULL,
   household_label TEXT NOT NULL,
+  pledged_amount_minor INTEGER,                               -- soft, non-binding amount the household will chip in; minor units of the item's currency; NULL = tapped in without a number. No money moves.
   created_at INTEGER NOT NULL,
   UNIQUE(item_id, household_id)
 );

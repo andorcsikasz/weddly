@@ -11,6 +11,7 @@ import {
   deleteWishlistItem,
   getWishlistItemScoped,
   insertWishlistItem,
+  listInterestStatsForItems,
   listWishlistItems,
   parseUpsertCreate,
   parseUpsertPatch,
@@ -112,7 +113,10 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     after: { title: parsed.title, kind: parsed.kind },
   });
 
-  return json({ item: toWishlistItem(row) });
+  // Carry the coordination aggregates so a PATCH returns the same shape GET
+  // does — editing an item must not blank out its progress bar in the client.
+  const stats = listInterestStatsForItems([id]).get(id);
+  return json({ item: toWishlistItem(row, stats?.count ?? 0, stats?.pledged ?? 0) });
 }
 
 function handleDelete(ctx: Ctx): Response {

@@ -868,6 +868,10 @@ addColumnIfMissing("wishlist_items", "image_checked_at", "image_checked_at INTEG
 // default for every existing row) means "inherit the couple's currency", so the
 // additive add is a safe no-op for legacy data.
 addColumnIfMissing("wishlist_items", "currency", "currency TEXT");
+// `pledged_amount_minor` is the soft, non-binding amount a household enters when
+// tapping "I'd like to help" on a group gift. NULL on every legacy row (tapped
+// in without a number), so the additive add is a safe no-op.
+addColumnIfMissing("wishlist_interests", "pledged_amount_minor", "pledged_amount_minor INTEGER");
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_wishlist_items_couple ON wishlist_items(couple_id, sort_order, id)",
 );

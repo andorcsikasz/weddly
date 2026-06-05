@@ -25,6 +25,7 @@ import type { KeyboardEvent } from "react";
 import { SCHEDULE_DAY_TWO_MINUTES } from "@shared/schedule";
 import { formatDate, formatMoney } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
+import { GuestWishlistCard } from "./GuestWishlistCard";
 import { WeddingCountdown } from "./WeddingCountdown";
 
 function formatHHMM(minutes: number): string {
@@ -85,7 +86,7 @@ export function GuestPortalView({
   /** Live guest page only — toggles the household's soft "I'd like to help"
    *  interest on a group-gift item. Omitted on the couple-side editor preview,
    *  where the toggle is read-only (not wired). */
-  onToggleWishlistInterest?: (itemId: number) => void;
+  onToggleWishlistInterest?: (itemId: number, pledgedAmountMinor?: number | null) => void;
 }) {
   const { t } = useT();
   const hasLocation = data.location_lat !== null && data.location_lng !== null;
@@ -389,7 +390,7 @@ export function GuestPortalView({
           </div>
           <ul className="grid gap-3 sm:grid-cols-2">
             {wishlist.map((entry) => (
-              <WishlistCard
+              <GuestWishlistCard
                 key={entry.id}
                 entry={entry}
                 currency={currency}
@@ -458,93 +459,6 @@ function GhostSlot({
         </p>
       </div>
     </div>
-  );
-}
-
-/** One read-only wishlist card on the guest deck. Title + optional
- *  description, optional formatted rough target amount, optional external
- *  link, and — for group gifts only — a soft chip-in count + an "I'd like to
- *  help" / "You're in" toggle. No money / payment copy. */
-function WishlistCard({
-  entry,
-  currency,
-  locale,
-  onToggleInterest,
-  t,
-}: {
-  entry: WishlistEntry;
-  currency: Currency;
-  locale: Locale;
-  onToggleInterest?: (itemId: number) => void;
-  t: (key: string, vars?: Record<string, string | number>) => string;
-}) {
-  const isGroupGift = entry.kind === "group_gift";
-  // A wish may carry its own currency override; fall back to the couple's.
-  const itemCurrency = entry.currency ?? currency;
-  return (
-    <li className="flex gap-3 rounded-xl border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-900/40">
-      {entry.image_url && (
-        <img
-          src={entry.image_url}
-          alt=""
-          loading="lazy"
-          className="h-16 w-16 shrink-0 rounded-lg border border-paper-200 object-cover dark:border-umber-700"
-        />
-      )}
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <div className="text-sm font-medium text-ink-900 dark:text-paper-50">{entry.title}</div>
-        {entry.description && (
-          <p className="text-xs text-ink-600 dark:text-umber-200">{entry.description}</p>
-        )}
-        {entry.target_amount_minor !== null && (
-          <p className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
-            {t("guest_portal.wishlist_target_amount_prefix")}{" "}
-            {formatMoney(
-              entry.target_amount_minor / (itemCurrency === "HUF" ? 1 : 100),
-              itemCurrency,
-              locale,
-            )}
-          </p>
-        )}
-        {entry.url && (
-          <a
-            href={entry.url}
-            target="_blank"
-            rel="noreferrer noopener"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex w-fit items-center gap-1 text-xs text-blush-700 underline-offset-2 hover:underline dark:text-blush-300"
-          >
-            <ExternalLink size={12} aria-hidden />
-            {t("guest_portal.wishlist_external_link_label")}
-          </a>
-        )}
-        {isGroupGift && (
-          <div className="mt-1 flex flex-col gap-2">
-            {entry.interest_count > 0 && (
-              <p className="text-xs text-ink-500 dark:text-umber-300">
-                {t("guest_portal.wishlist_interest_count", { count: entry.interest_count })}
-              </p>
-            )}
-            <button
-              type="button"
-              disabled={!onToggleInterest}
-              onClick={() => onToggleInterest?.(entry.id)}
-              aria-pressed={entry.viewer_has_interest}
-              className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                entry.viewer_has_interest
-                  ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
-                  : "border border-paper-300 text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:text-paper-100 dark:hover:bg-umber-800"
-              } ${onToggleInterest ? "" : "cursor-default opacity-90"}`}
-            >
-              <HeartHandshake size={13} aria-hidden />
-              {entry.viewer_has_interest
-                ? t("guest_portal.wishlist_group_gift_help_active")
-                : t("guest_portal.wishlist_group_gift_help_cta")}
-            </button>
-          </div>
-        )}
-      </div>
-    </li>
   );
 }
 

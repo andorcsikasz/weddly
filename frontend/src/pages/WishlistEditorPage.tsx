@@ -18,7 +18,7 @@ import {
   WISHLIST_MAX_TITLE_LEN,
   WISHLIST_MAX_URL_LEN,
 } from "@shared/wishlist";
-import { ExternalLink, Gift, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ExternalLink, Gift, LayoutGrid, Pencil, Plus, Rows3, Trash2, X } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
@@ -75,6 +75,216 @@ interface DrawerInit {
   item: WishlistItem | null;
 }
 
+/** Editor layout: a dense "sávos" row list or a "kártya" card grid. Persisted
+ *  per device so the couple's preferred view sticks across visits. */
+type WishlistView = "list" | "cards";
+const VIEW_STORAGE_KEY = "weddly.wishlist.view";
+
+/** GoFundMe-style soft-pledge progress for a group gift: how much guests have
+ *  said they'll chip in toward the rough amount, plus the helper count. No
+ *  money moves — purely a coordination signal. `layout` places the bar beside
+ *  the row content (list view) or stacked below it (card view). */
+function WishlistProgress({
+  pledgedMinor,
+  targetMinor,
+  interestCount,
+  currency,
+  locale,
+  layout,
+  t,
+}: {
+  pledgedMinor: number;
+  targetMinor: number;
+  interestCount: number;
+  currency: Currency;
+  locale: "hu" | "en";
+  layout: "beside" | "below";
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const target = minorToWhole(targetMinor, currency);
+  const pledged = minorToWhole(pledgedMinor, currency);
+  const pct = target > 0 ? Math.min(100, Math.round((pledged / target) * 100)) : 0;
+  return (
+    <div className={layout === "beside" ? "w-40 shrink-0 sm:w-48" : "mt-2"}>
+      <div
+        className="h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className="h-full rounded-full bg-emerald-500 transition-[width] dark:bg-emerald-400"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-[11px] text-ink-500 dark:text-umber-300">
+        <span className="tabular-nums">
+          {formatMoney(pledged, currency, locale)} / {formatMoney(target, currency, locale)}
+        </span>
+        {interestCount > 0 && (
+          <span>{t("wishlist_editor.pledged_count", { count: interestCount })}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface ItemViewProps {
+  item: WishlistItem;
+  currency: Currency;
+  locale: "hu" | "en";
+  t: (key: string, vars?: Record<string, string | number>) => string;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+/** A group gift with a rough price shows the soft-pledge progress bar; other
+ *  kinds (or priceless wishes) don't collect pledges, so no bar. */
+function itemHasBar(item: WishlistItem): boolean {
+  return (
+    item.kind === "group_gift" && item.target_amount_minor !== null && item.target_amount_minor > 0
+  );
+}
+
+/** Edit + delete affordances, shared by both views. */
+function ItemActions({ t, onEdit, onDelete }: Pick<ItemViewProps, "t" | "onEdit" | "onDelete">) {
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        aria-label={t("common.edit")}
+        title={t("common.edit")}
+        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+        onClick={onEdit}
+      >
+        <Pencil size={14} />
+      </button>
+      <button
+        type="button"
+        aria-label={t("common.remove")}
+        title={t("common.remove")}
+        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+        onClick={onDelete}
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  );
+}
+
+/** "Sávos" view: a dense row. The progress bar sits BESIDE the content (before
+ *  the action buttons) on wide screens. */
+function WishlistRow({ item, currency, locale, t, onEdit, onDelete }: ItemViewProps) {
+  const cur = item.currency ?? currency;
+  return (
+    <li className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700">
+      <button
+        type="button"
+        onClick={onEdit}
+        aria-label={t("common.edit")}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
+      >
+        <WishlistThumb imageUrl={item.image_url} />
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+            {item.title}
+          </span>
+          <span className="inline-flex shrink-0 items-center rounded-full bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+            {t(`wishlist_editor.kind_${item.kind}`)}
+          </span>
+          {item.target_amount_minor !== null && (
+            <span className="shrink-0 tabular-nums text-xs text-ink-500 dark:text-umber-300">
+              {formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)}
+            </span>
+          )}
+          {item.url && (
+            <span className="inline-flex shrink-0 items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+              <ExternalLink size={11} aria-hidden />
+              {t("guest_portal.wishlist_external_link_label")}
+            </span>
+          )}
+        </span>
+      </button>
+      {itemHasBar(item) && (
+        <div className="hidden sm:block">
+          <WishlistProgress
+            pledgedMinor={item.pledged_amount_minor}
+            targetMinor={item.target_amount_minor ?? 0}
+            interestCount={item.interest_count}
+            currency={cur}
+            locale={locale}
+            layout="beside"
+            t={t}
+          />
+        </div>
+      )}
+      <ItemActions t={t} onEdit={onEdit} onDelete={onDelete} />
+    </li>
+  );
+}
+
+/** "Kártya" view: a card with the image up top, then the title/meta, then the
+ *  progress bar stacked BELOW. */
+function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete }: ItemViewProps) {
+  const cur = item.currency ?? currency;
+  return (
+    <li className="card flex flex-col overflow-hidden p-0 dark:border-umber-700">
+      <button
+        type="button"
+        onClick={onEdit}
+        aria-label={t("common.edit")}
+        className="flex flex-col text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-300"
+      >
+        {item.image_url ? (
+          <img src={item.image_url} alt="" loading="lazy" className="h-32 w-full object-cover" />
+        ) : (
+          <span className="flex h-32 w-full items-center justify-center bg-paper-100 text-ink-300 dark:bg-umber-700/40 dark:text-umber-300">
+            <Gift size={28} aria-hidden />
+          </span>
+        )}
+        <span className="flex flex-col gap-1.5 px-4 pt-3">
+          <span className="flex items-center gap-2">
+            <span className="inline-flex shrink-0 items-center rounded-full bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+              {t(`wishlist_editor.kind_${item.kind}`)}
+            </span>
+            {item.target_amount_minor !== null && (
+              <span className="tabular-nums text-xs text-ink-500 dark:text-umber-300">
+                {formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)}
+              </span>
+            )}
+          </span>
+          <span className="line-clamp-2 text-sm font-medium text-ink-900 dark:text-paper-50">
+            {item.title}
+          </span>
+          {item.url && (
+            <span className="inline-flex w-fit items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+              <ExternalLink size={11} aria-hidden />
+              {t("guest_portal.wishlist_external_link_label")}
+            </span>
+          )}
+        </span>
+      </button>
+      <div className="flex flex-1 flex-col justify-end px-4 pb-3">
+        {itemHasBar(item) && (
+          <WishlistProgress
+            pledgedMinor={item.pledged_amount_minor}
+            targetMinor={item.target_amount_minor ?? 0}
+            interestCount={item.interest_count}
+            currency={cur}
+            locale={locale}
+            layout="below"
+            t={t}
+          />
+        )}
+        <div className="mt-2 flex justify-end">
+          <ItemActions t={t} onEdit={onEdit} onDelete={onDelete} />
+        </div>
+      </div>
+    </li>
+  );
+}
+
 export default function WishlistEditorPage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.guest_page_title", "seo.guest_page_description");
@@ -84,6 +294,20 @@ export default function WishlistEditorPage() {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
+  const [view, setView] = useState<WishlistView>(() =>
+    typeof localStorage !== "undefined" && localStorage.getItem(VIEW_STORAGE_KEY) === "cards"
+      ? "cards"
+      : "list",
+  );
+
+  function changeView(next: WishlistView) {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      // Private-mode / disabled storage — the in-memory state still switches.
+    }
+  }
 
   const currency = couple?.currency ?? "HUF";
 
@@ -137,10 +361,42 @@ export default function WishlistEditorPage() {
           </span>
           <InfoHint text={t("wishlist_editor.subtitle")} />
         </div>
-        <button type="button" className="btn-primary" onClick={() => setEditing({ item: null })}>
-          <Plus size={16} />
-          {t("wishlist_editor.add_item")}
-        </button>
+        <div className="flex items-center gap-2">
+          {sortedItems.length > 0 && (
+            <div className="inline-flex rounded-lg border border-paper-300 p-0.5 dark:border-umber-700">
+              <button
+                type="button"
+                aria-label={t("wishlist_editor.view_list")}
+                aria-pressed={view === "list"}
+                onClick={() => changeView("list")}
+                className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+                  view === "list"
+                    ? "bg-paper-200 text-ink-900 dark:bg-umber-700 dark:text-paper-50"
+                    : "text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                }`}
+              >
+                <Rows3 size={16} />
+              </button>
+              <button
+                type="button"
+                aria-label={t("wishlist_editor.view_cards")}
+                aria-pressed={view === "cards"}
+                onClick={() => changeView("cards")}
+                className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+                  view === "cards"
+                    ? "bg-paper-200 text-ink-900 dark:bg-umber-700 dark:text-paper-50"
+                    : "text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                }`}
+              >
+                <LayoutGrid size={16} />
+              </button>
+            </div>
+          )}
+          <button type="button" className="btn-primary" onClick={() => setEditing({ item: null })}>
+            <Plus size={16} />
+            {t("wishlist_editor.add_item")}
+          </button>
+        </div>
       </header>
 
       {loading ? (
@@ -160,65 +416,32 @@ export default function WishlistEditorPage() {
             {t("wishlist_editor.add_item")}
           </button>
         </div>
-      ) : (
+      ) : view === "list" ? (
         <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
           {sortedItems.map((item) => (
-            <li
+            <WishlistRow
               key={item.id}
-              className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700"
-            >
-              <button
-                type="button"
-                onClick={() => setEditing({ item })}
-                aria-label={t("common.edit")}
-                className="flex min-w-0 flex-1 items-center gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
-              >
-                <WishlistThumb imageUrl={item.image_url} />
-                <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
-                    {item.title}
-                  </span>
-                  <span className="inline-flex shrink-0 items-center rounded-full bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-ink-600 dark:bg-umber-700 dark:text-umber-200">
-                    {t(`wishlist_editor.kind_${item.kind}`)}
-                  </span>
-                  {item.target_amount_minor !== null && (
-                    <span className="shrink-0 tabular-nums text-xs text-ink-500 dark:text-umber-300">
-                      {formatMoney(
-                        minorToWhole(item.target_amount_minor, item.currency ?? currency),
-                        item.currency ?? currency,
-                        locale,
-                      )}
-                    </span>
-                  )}
-                  {item.url && (
-                    <span className="inline-flex shrink-0 items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-                      <ExternalLink size={11} aria-hidden />
-                      {t("guest_portal.wishlist_external_link_label")}
-                    </span>
-                  )}
-                </span>
-              </button>
-              <div className="ml-auto flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  aria-label={t("common.edit")}
-                  title={t("common.edit")}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                  onClick={() => setEditing({ item })}
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  type="button"
-                  aria-label={t("common.remove")}
-                  title={t("common.remove")}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
-                  onClick={() => void onDelete(item)}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </li>
+              item={item}
+              currency={currency}
+              locale={locale}
+              t={t}
+              onEdit={() => setEditing({ item })}
+              onDelete={() => void onDelete(item)}
+            />
+          ))}
+        </ul>
+      ) : (
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sortedItems.map((item) => (
+            <WishlistCardItem
+              key={item.id}
+              item={item}
+              currency={currency}
+              locale={locale}
+              t={t}
+              onEdit={() => setEditing({ item })}
+              onDelete={() => void onDelete(item)}
+            />
           ))}
         </ul>
       )}

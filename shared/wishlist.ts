@@ -54,6 +54,16 @@ export interface WishlistItem {
    *  Null when there's no link or the fetch found no usable image. Rendered
    *  as the row/card thumbnail on both the editor and the guest page. */
   image_url: string | null;
+  /** How many households have softly pledged ("I'd like to help") on this group
+   *  gift. 0 for non-group kinds and items nobody tapped. No money moves — this
+   *  is a coordination count only. */
+  interest_count: number;
+  /** Sum of the soft pledge amounts guests entered, in minor units of this
+   *  item's effective currency (`currency ?? couple.currency`). Drives the
+   *  GoFundMe-style "vállalva / célösszeg" progress bar in the editor. 0 when
+   *  nobody pledged an amount (a tap without a number still counts toward
+   *  `interest_count`). Informational only. */
+  pledged_amount_minor: number;
   sort_order: number;
   created_at: UnixMs;
   updated_at: UnixMs;
@@ -96,16 +106,36 @@ export interface WishlistEntry {
   image_url: string | null;
   /** How many households have tapped "I'd like to help" on this group gift. */
   interest_count: number;
+  /** Sum of the guests' soft pledge amounts, in minor units of this item's
+   *  effective currency. Drives the guest-side progress bar. 0 when no amounts
+   *  were entered. No money moves — coordination only. */
+  pledged_amount_minor: number;
   /** Whether the requesting household (the one whose code resolved the tier)
    *  has already tapped in — drives the toggle's "You're in" state. */
   viewer_has_interest: boolean;
+  /** The requesting household's own soft pledge amount (minor units of the
+   *  item's currency), or null when they tapped in without a number / aren't
+   *  in. Lets the guest UI prefill and edit their pledge. */
+  viewer_pledged_amount_minor: number | null;
+}
+
+/** Request body for the interest toggle endpoint. Two modes:
+ *  - `pledged_amount_minor` ABSENT → pure toggle: a household not in taps in
+ *    (no amount), one already in taps back out. (Backward-compatible default.)
+ *  - `pledged_amount_minor` PRESENT (number ≥ 0 or null) → set pledge: ensure
+ *    the household is in and record/replace its soft pledge amount; never
+ *    leaves. Sending `null` keeps them in with no amount. */
+export interface WishlistInterestToggleInput {
+  pledged_amount_minor?: number | null;
 }
 
 /** Response shape of the toggle endpoint
  *  (POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest). */
 export interface WishlistInterestToggleResult {
   interest_count: number;
+  pledged_amount_minor: number;
   viewer_has_interest: boolean;
+  viewer_pledged_amount_minor: number | null;
 }
 
 /** Response of GET /api/wishlist/link-preview?url=… — the couple-side editor

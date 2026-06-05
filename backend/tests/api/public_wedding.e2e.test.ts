@@ -809,6 +809,69 @@ describe("POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest", () =>
     expect(g1!.interest_count).toBe(2);
     expect(g1!.viewer_has_interest).toBe(true);
   });
+
+  test("soft pledge: set amount, sum on embed + editor list, update, reject junk", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("wishlist-pledge@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slug = await getSlug(coupleId);
+    const itemId = await createWishlistItem(token, {
+      title: "Group fund",
+      kind: "group_gift",
+      target_amount_minor: 200000,
+    });
+    const h1 = await createHouseholdWithGuest(token, "Fam1");
+    const h2 = await createHouseholdWithGuest(token, "Fam2");
+    await confirmHousehold(slug, h1.household_code, h1.guest_id);
+    await confirmHousehold(slug, h2.household_code, h2.guest_id);
+    const url1 = `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(h1.household_code)}/wishlist/${itemId}/interest`;
+    const url2 = `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(h2.household_code)}/wishlist/${itemId}/interest`;
+
+    // h1 pledges 120000; the response reflects their own pledge + the total.
+    const p1 = await req<{
+      interest_count: number;
+      pledged_amount_minor: number;
+      viewer_has_interest: boolean;
+      viewer_pledged_amount_minor: number | null;
+    }>("POST", url1, { pledged_amount_minor: 120000 });
+    expect(p1.status).toBe(200);
+    expect(p1.data.viewer_has_interest).toBe(true);
+    expect(p1.data.interest_count).toBe(1);
+    expect(p1.data.pledged_amount_minor).toBe(120000);
+    expect(p1.data.viewer_pledged_amount_minor).toBe(120000);
+
+    // h2 pledges 50000 → total 170000 across two helpers.
+    const p2 = await req<{ interest_count: number; pledged_amount_minor: number }>("POST", url2, {
+      pledged_amount_minor: 50000,
+    });
+    expect(p2.data.interest_count).toBe(2);
+    expect(p2.data.pledged_amount_minor).toBe(170000);
+
+    // The couple-side editor list carries the same aggregates.
+    const list = await req<{ items: Array<{ id: number; pledged_amount_minor: number; interest_count: number }> }>(
+      "GET",
+      "/api/wishlist",
+      undefined,
+      { token },
+    );
+    const editorItem = list.data.items.find((i) => i.id === itemId);
+    expect(editorItem!.pledged_amount_minor).toBe(170000);
+    expect(editorItem!.interest_count).toBe(2);
+
+    // h1 updates their pledge (stays in, no extra helper) → total 230000.
+    const upd = await req<{ interest_count: number; pledged_amount_minor: number; viewer_pledged_amount_minor: number | null }>(
+      "POST",
+      url1,
+      { pledged_amount_minor: 180000 },
+    );
+    expect(upd.data.interest_count).toBe(2);
+    expect(upd.data.pledged_amount_minor).toBe(230000);
+    expect(upd.data.viewer_pledged_amount_minor).toBe(180000);
+
+    // Junk pledge → 400.
+    const bad = await req("POST", url1, { pledged_amount_minor: -5 });
+    expect(bad.status).toBe(400);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────
