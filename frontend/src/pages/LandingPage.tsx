@@ -60,7 +60,9 @@ import {
   COUPLE_CARD_DECKS,
   type Deck,
   DECK_SIZE,
+  isAccentDeck,
   loadLemonadeRevealed,
+  redLevel,
   saveLemonadeRevealed,
 } from "../lib/couple_cards";
 
@@ -1106,21 +1108,27 @@ function CoupleCardsTeaser() {
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
 
   // Mirror the tool-page easter egg here: a horizontal swipe on the deck
-  // row reveals the hidden 5th lemonade card. Persisted via the same
-  // localStorage key so unlocking on either surface lights both up.
+  // row reveals a hidden accent card tucked off the edge. Right-swipe
+  // reveals lemonade (off the RIGHT edge); left-swipe reveals greenflag
+  // (off the LEFT edge). Lemonade reveal is persisted via the shared
+  // localStorage key so unlocking on either surface lights both up;
+  // greenflag stays session-ephemeral like the tool page.
   const [isLemonadeRevealed, setIsLemonadeRevealed] = useState<boolean>(() =>
     loadLemonadeRevealed(),
   );
+  const [isGreenflagRevealed, setIsGreenflagRevealed] = useState<boolean>(false);
   const visibleDecks = useMemo(
     () =>
-      isLemonadeRevealed
-        ? COUPLE_CARD_DECKS
-        : COUPLE_CARD_DECKS.filter((deck) => deck.id !== "lemonade"),
-    [isLemonadeRevealed],
+      COUPLE_CARD_DECKS.filter(
+        (deck) =>
+          (deck.id !== "lemonade" || isLemonadeRevealed) &&
+          (deck.id !== "greenflag" || isGreenflagRevealed),
+      ),
+    [isLemonadeRevealed, isGreenflagRevealed],
   );
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const wheelAcc = useRef(0);
-  const triggerReveal = () => {
+  const revealLemonade = () => {
     setIsLemonadeRevealed(true);
     saveLemonadeRevealed();
   };
@@ -1130,27 +1138,27 @@ function CoupleCardsTeaser() {
   const handleSwipeEnd = (e: React.PointerEvent<HTMLUListElement>) => {
     const start = swipeStart.current;
     swipeStart.current = null;
-    if (!start || isLemonadeRevealed) return;
+    if (!start) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
-    // Right-swipe only — the easter egg fires when the visitor pulls the
-    // row to the right, revealing the card tucked off the right edge.
-    if (dx > 50 && Math.abs(dx) > Math.abs(dy)) {
-      triggerReveal();
-    }
+    if (Math.abs(dx) <= 50 || Math.abs(dx) <= Math.abs(dy)) return;
+    // Right-swipe pulls the row right → reveals lemonade off the right
+    // edge; left-swipe reveals greenflag off the left edge.
+    if (dx > 0) revealLemonade();
+    else setIsGreenflagRevealed(true);
   };
   // macOS trackpad horizontal swipes fire wheel events with deltaX, not
-  // pointer events. Accumulate rightward deltaX and trip the reveal once
-  // 60px have piled up; leftward / vertical wheel resets the counter so
+  // pointer events. Accumulate horizontal deltaX and trip the matching
+  // reveal once 60px have piled up; a vertical wheel resets the counter so
   // page scroll never accidentally unlocks the egg.
   const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
-    if (isLemonadeRevealed) return;
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       wheelAcc.current += e.deltaX;
       if (wheelAcc.current > 60) {
-        triggerReveal();
+        revealLemonade();
         wheelAcc.current = 0;
-      } else if (wheelAcc.current < 0) {
+      } else if (wheelAcc.current < -60) {
+        setIsGreenflagRevealed(true);
         wheelAcc.current = 0;
       }
     } else {
@@ -1184,11 +1192,18 @@ function CoupleCardsTeaser() {
           onWheel={handleWheel}
           style={{ touchAction: "pan-y" }}
           className={`mt-5 hidden grid-cols-2 gap-3 sm:mt-10 sm:grid sm:gap-4 lg:gap-5 ${
-            isLemonadeRevealed ? "lg:grid-cols-5" : "lg:grid-cols-4"
+            visibleDecks.length >= 6
+              ? "lg:grid-cols-6"
+              : visibleDecks.length === 5
+                ? "lg:grid-cols-5"
+                : "lg:grid-cols-4"
           }`}
         >
-          {visibleDecks.map((deck, idx) => {
+          {visibleDecks.map((deck) => {
             const isLemonade = deck.id === "lemonade";
+            const isGreenflag = deck.id === "greenflag";
+            const isAccent = isAccentDeck(deck.id);
+            const hasCards = deck.questionsEn.length > 0;
             return (
               <li key={deck.id} className="h-full">
                 <Link
@@ -1196,17 +1211,19 @@ function CoupleCardsTeaser() {
                   className={`group flex aspect-[2/3] h-full flex-col items-center justify-between overflow-hidden rounded-2xl px-3 py-4 text-center transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7 ${
                     isLemonade
                       ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
-                      : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
+                      : isGreenflag
+                        ? "bg-greenflag-green text-greenflag-ink shadow-[0_18px_36px_-18px_rgba(21,128,61,0.4)] focus-visible:ring-greenflag-green"
+                        : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
                   }`}
                 >
                   <span aria-hidden="true" className="block h-1" />
                   <div className="flex flex-1 flex-col items-center justify-center">
                     <span className="font-display text-lg font-bold uppercase leading-[0.95] tracking-tight sm:text-2xl lg:text-3xl">
-                      {isLemonade
+                      {isAccent
                         ? t(deck.titleKey).toUpperCase()
-                        : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                        : t("tools.couple_cards.deck_number_label", { n: redLevel(deck.id) })}
                     </span>
-                    {!isLemonade ? (
+                    {!isAccent ? (
                       <span className="mt-1.5 font-display text-[11px] font-bold uppercase tracking-[0.04em] sm:mt-2 sm:text-sm lg:text-base">
                         {t(deck.titleKey)}
                       </span>
@@ -1214,7 +1231,9 @@ function CoupleCardsTeaser() {
                   </div>
                   <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] sm:text-[10px] sm:tracking-[0.28em]">
                     {"WĒDDLY · "}
-                    {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                    {hasCards
+                      ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
+                      : t("tools.couple_cards.deck_soon_label")}
                   </span>
                 </Link>
               </li>
@@ -1301,6 +1320,9 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
           const rot = clamp(-p * 34, -38, 38);
           const opacity = hidden ? 0 : Math.max(0, 1 - 0.42 * ap);
           const isLemonade = deck.id === "lemonade";
+          const isGreenflag = deck.id === "greenflag";
+          const isAccent = isAccentDeck(deck.id);
+          const hasCards = deck.questionsEn.length > 0;
           return (
             <Link
               key={deck.id}
@@ -1337,17 +1359,19 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
                 className={`flex aspect-[3/2] w-full flex-col items-center justify-between overflow-hidden rounded-2xl px-7 py-8 text-center ${
                   isLemonade
                     ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_24px_50px_-20px_rgba(161,98,7,0.6)]"
-                    : "bg-wnrs-red text-white shadow-[0_24px_50px_-20px_rgba(204,31,40,0.6)]"
+                    : isGreenflag
+                      ? "bg-greenflag-green text-greenflag-ink shadow-[0_24px_50px_-20px_rgba(21,128,61,0.45)]"
+                      : "bg-wnrs-red text-white shadow-[0_24px_50px_-20px_rgba(204,31,40,0.6)]"
                 }`}
               >
                 <span aria-hidden className="block h-1" />
                 <div className="flex flex-1 flex-col items-center justify-center">
                   <span className="font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight">
-                    {isLemonade
+                    {isAccent
                       ? t(deck.titleKey).toUpperCase()
-                      : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                      : t("tools.couple_cards.deck_number_label", { n: redLevel(deck.id) })}
                   </span>
-                  {!isLemonade ? (
+                  {!isAccent ? (
                     <span className="mt-4 font-display text-lg font-bold uppercase tracking-[0.04em]">
                       ({t(deck.titleKey)})
                     </span>
@@ -1355,7 +1379,9 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
                 </div>
                 <span className="font-display text-xs font-bold uppercase tracking-[0.28em]">
                   {"WĒDDLY · "}
-                  {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                  {hasCards
+                    ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
+                    : t("tools.couple_cards.deck_soon_label")}
                 </span>
               </div>
             </Link>

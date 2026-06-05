@@ -6,14 +6,25 @@
 import { describe, expect, it } from "bun:test";
 import { COUPLE_CARD_DECKS, DECK_SIZE } from "@/lib/couple_cards";
 
+// Decks that ship without questions yet — they render a "coming soon"
+// label and are not openable until cards land. Keep this list in sync
+// with the empty arrays in couple_cards.ts.
+const COMING_SOON_DECK_IDS = new Set(["greenflag"]);
+
 describe("couple_cards data shape", () => {
-  it("ships exactly 5 decks (4 visible + 1 easter-egg lemonade)", () => {
-    expect(COUPLE_CARD_DECKS.length).toBe(5);
+  it("ships exactly 6 decks (4 red + greenflag + lemonade easter eggs)", () => {
+    expect(COUPLE_CARD_DECKS.length).toBe(6);
   });
 
-  it("every deck has DECK_SIZE questions in both locales", () => {
+  it("every playable deck has DECK_SIZE questions in both locales", () => {
     expect(DECK_SIZE).toBe(25);
     for (const deck of COUPLE_CARD_DECKS) {
+      if (COMING_SOON_DECK_IDS.has(deck.id)) {
+        // Coming-soon decks ship with empty arrays until their cards land.
+        expect(deck.questionsHu.length).toBe(0);
+        expect(deck.questionsEn.length).toBe(0);
+        continue;
+      }
       expect(deck.questionsHu.length).toBe(DECK_SIZE);
       expect(deck.questionsEn.length).toBe(DECK_SIZE);
     }

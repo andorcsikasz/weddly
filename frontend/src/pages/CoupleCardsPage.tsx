@@ -21,7 +21,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
-import { COUPLE_CARD_DECKS, DECK_SIZE, type DeckId } from "../lib/couple_cards";
+import {
+  COUPLE_CARD_DECKS,
+  DECK_SIZE,
+  type DeckId,
+  isAccentDeck,
+  redLevel,
+} from "../lib/couple_cards";
 import { coupleCardsApi, type CoupleCardRating } from "../lib/endpoints";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -118,6 +124,7 @@ function isValidProgress(p: unknown): p is DeckProgress {
 const DEFAULT_SELECTED: DeckId = "roots";
 
 const VALID_DECK_IDS: ReadonlySet<DeckId> = new Set([
+  "greenflag",
   "roots",
   "everyday",
   "closeness",
@@ -231,6 +238,11 @@ export default function CoupleCardsPage() {
   // Lazy-init a deck's progress the first time the user opens it.
   // Existing progress is preserved across visits.
   const openDeck = useCallback((id: DeckId) => {
+    // Decks without questions yet (e.g. greenflag, "coming soon") can't be
+    // drawn — the card view assumes a full DECK_SIZE bag. Selecting them in
+    // the picker still works; "Draw a card" is just a no-op until they ship.
+    const def = COUPLE_CARD_DECKS.find((d) => d.id === id);
+    if (!def || def.questionsEn.length === 0) return;
     setActiveDeck(id);
     setProgress((prev) => {
       const current = prev[id];
@@ -519,22 +531,26 @@ function DeckShowcase({
   const selectedIdx = COUPLE_CARD_DECKS.findIndex((d) => d.id === selectedId);
   const selected = COUPLE_CARD_DECKS[selectedIdx];
 
-  // Easter-egg carousel shift state. Decoupled from the centred deck on
-  // purpose: a right-swipe only reveals the lemonade tile in the top
-  // row, it does NOT auto-select it. The visitor has to tap the yellow
-  // tile to lift lemonade into the centre. Card sizes never change —
-  // the row is always 5 fixed-width children inside a 4-slot viewport.
-  const [isShifted, setIsShifted] = useState<boolean>(() => selectedId === "lemonade");
-  // Keep the shift in sync with the centred deck. Picking a red deck
-  // unshifts the row → lemonade tucks back off the right edge. Picking
-  // lemonade (or arriving via ?deck=lemonade) keeps the row shifted so
-  // the empty slot lands inside the viewport.
+  // Easter-egg carousel shift state. The row holds 6 fixed-width cards —
+  // [greenflag, 4 reds, lemonade] — inside a 4-slot viewport. "none" (the
+  // default) frames the 4 reds, with greenflag tucked off the LEFT edge and
+  // lemonade off the RIGHT. A left-swipe slides the row right to reveal
+  // greenflag; a right-swipe slides it left to reveal lemonade. Revealing
+  // only shifts the row — it does NOT auto-select; the visitor still taps
+  // the pastel tile to lift it into the centre. Card sizes never change.
+  type Shift = "green" | "none" | "lemon";
+  const shiftFor = (id: DeckId): Shift =>
+    id === "greenflag" ? "green" : id === "lemonade" ? "lemon" : "none";
+  const [shift, setShift] = useState<Shift>(() => shiftFor(selectedId));
+  // Keep the shift in sync with the centred deck: picking a red deck tucks
+  // both accent tiles back off-edge; picking (or ?deck=) greenflag/lemonade
+  // keeps the matching empty slot inside the viewport.
   useEffect(() => {
-    setIsShifted(selectedId === "lemonade");
+    setShift(shiftFor(selectedId));
   }, [selectedId]);
 
-  // Right-swipe gate: a horizontal gesture (pointer drag or trackpad
-  // wheel) on the row shifts the carousel one slot — that's it. No
+  // Swipe gate: a horizontal gesture (pointer drag or trackpad wheel) from
+  // the neutral "none" framing reveals the accent tile on that side. No
   // auto-select. The egg has no visual hint that the row is interactive.
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   // Set the instant a horizontal swipe fires the shift, so the trailing
@@ -552,23 +568,24 @@ function DeckShowcase({
   // events still arrive before that lock, so we catch the shift here.
   const handleSwipeMove = (e: React.PointerEvent<HTMLUListElement>) => {
     const start = swipeStart.current;
-    if (!start || isShifted) return;
+    if (!start || shift !== "none") return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
-    if (dx > 50 && Math.abs(dx) > Math.abs(dy)) {
-      swipeStart.current = null;
-      swipeFired.current = true;
-      setIsShifted(true);
-    }
+    if (Math.abs(dx) <= 50 || Math.abs(dx) <= Math.abs(dy)) return;
+    swipeStart.current = null;
+    swipeFired.current = true;
+    // Swipe right → reveal lemonade (right edge); swipe left → greenflag.
+    setShift(dx > 0 ? "lemon" : "green");
   };
   const handleWheel = (e: React.WheelEvent<HTMLUListElement>) => {
-    if (isShifted) return;
+    if (shift !== "none") return;
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       wheelAcc.current += e.deltaX;
       if (wheelAcc.current > 60) {
-        setIsShifted(true);
+        setShift("lemon");
         wheelAcc.current = 0;
-      } else if (wheelAcc.current < 0) {
+      } else if (wheelAcc.current < -60) {
+        setShift("green");
         wheelAcc.current = 0;
       }
     } else {
@@ -631,15 +648,25 @@ function DeckShowcase({
             style={{
               touchAction: "pan-y",
               gap: "var(--card-gap)",
-              transform: isShifted
-                ? "translateX(calc(-25% - var(--card-gap) / 4))"
-                : "translateX(0)",
+              // "none" frames the 4 reds (row shifted one slot left so the
+              // off-left greenflag clears the viewport). "green" slides back
+              // to 0 to reveal greenflag; "lemon" shifts two slots to reveal
+              // lemonade. One slot = 25% + gap/4 of the 4-slot viewport.
+              transform:
+                shift === "green"
+                  ? "translateX(0)"
+                  : shift === "lemon"
+                    ? "translateX(calc(-50% - var(--card-gap) / 2))"
+                    : "translateX(calc(-25% - var(--card-gap) / 4))",
             }}
             className="flex transition-transform duration-500 ease-out [--card-gap:0.5rem] sm:[--card-gap:0.75rem]"
           >
-            {COUPLE_CARD_DECKS.map((deck, idx) => {
+            {COUPLE_CARD_DECKS.map((deck) => {
               const isSelected = deck.id === selectedId;
               const isLemonade = deck.id === "lemonade";
+              const isGreenflag = deck.id === "greenflag";
+              const isAccent = isLemonade || isGreenflag;
+              const hasCards = deck.questionsEn.length > 0;
               return (
                 <li
                   key={deck.id}
@@ -660,14 +687,14 @@ function DeckShowcase({
                         }
                         onSelect(deck.id);
                       }}
-                      // Lemonade never participates in the centre/mini
-                      // morph view transition. With a name on every tile
-                      // the snapshot pulled the off-viewport lemonade
-                      // card into frame during red-↔-red swaps, so it
-                      // flashed visible on swap. The red decks still
-                      // morph against the centre card — same as before.
+                      // Accent decks (greenflag / lemonade) never participate
+                      // in the centre/mini morph view transition. With a name
+                      // on every tile the snapshot pulled the off-viewport
+                      // accent card into frame during red-↔-red swaps, so it
+                      // flashed visible on swap. The red decks still morph
+                      // against the centre card — same as before.
                       style={
-                        isLemonade
+                        isAccent
                           ? undefined
                           : ({
                               viewTransitionName: `couple-deck-${deck.id}`,
@@ -676,24 +703,30 @@ function DeckShowcase({
                       className={`group flex h-full w-full flex-col items-center justify-between overflow-hidden rounded-xl px-2 py-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-3 sm:py-3 ${
                         isLemonade
                           ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
-                          : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
+                          : isGreenflag
+                            ? "bg-greenflag-green text-greenflag-ink shadow-[0_18px_36px_-18px_rgba(21,128,61,0.4)] focus-visible:ring-greenflag-green"
+                            : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
                       }`}
                     >
                       <span aria-hidden="true" className="block h-0.5" />
                       <div className="flex flex-1 flex-col items-center justify-center">
                         <span className="font-display text-xs font-bold uppercase leading-[0.95] tracking-tight sm:text-base lg:text-lg">
-                          {isLemonade
+                          {isAccent
                             ? t(deck.titleKey).toUpperCase()
-                            : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                            : t("tools.couple_cards.deck_number_label", {
+                                n: redLevel(deck.id),
+                              })}
                         </span>
-                        {!isLemonade ? (
+                        {!isAccent ? (
                           <span className="mt-1 hidden font-display text-[10px] font-bold uppercase tracking-[0.04em] sm:block sm:text-[11px]">
                             ({t(deck.titleKey)})
                           </span>
                         ) : null}
                       </div>
                       <span className="font-display text-[8px] font-bold uppercase tracking-[0.22em] sm:text-[9px]">
-                        {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                        {hasCards
+                          ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
+                          : t("tools.couple_cards.deck_soon_label")}
                       </span>
                     </button>
                   )}
@@ -729,11 +762,11 @@ function DeckShowcase({
               type="button"
               onClick={onOpen}
               aria-label={`${t("tools.couple_cards.draw_card")} · ${t(selected.titleKey)}`}
-              // Same rule as the mini: lemonade is outside the morph so
-              // the carousel slide animation owns it cleanly. Red decks
+              // Same rule as the mini: accent decks are outside the morph so
+              // the carousel slide animation owns them cleanly. Red decks
               // still keep the mini-↔-centre morph.
               style={
-                selectedId === "lemonade"
+                isAccentDeck(selectedId)
                   ? undefined
                   : ({
                       viewTransitionName: `couple-deck-${selectedId}`,
@@ -742,17 +775,19 @@ function DeckShowcase({
               className={`relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl px-7 py-8 text-center transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10 ${
                 selectedId === "lemonade"
                   ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_24px_50px_-22px_rgba(161,98,7,0.6)] focus-visible:ring-lemonade-yellow"
-                  : "bg-wnrs-red text-white shadow-[0_24px_50px_-22px_rgba(204,31,40,0.55)] focus-visible:ring-wnrs-red"
+                  : selectedId === "greenflag"
+                    ? "bg-greenflag-green text-greenflag-ink shadow-[0_24px_50px_-22px_rgba(21,128,61,0.45)] focus-visible:ring-greenflag-green"
+                    : "bg-wnrs-red text-white shadow-[0_24px_50px_-22px_rgba(204,31,40,0.55)] focus-visible:ring-wnrs-red"
               }`}
             >
               <span aria-hidden="true" className="block h-1" />
               <div className="flex flex-1 flex-col items-center justify-center">
                 <h3 className="font-display text-3xl font-bold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-6xl">
-                  {selectedId === "lemonade"
+                  {isAccentDeck(selectedId)
                     ? t(selected.titleKey).toUpperCase()
-                    : t("tools.couple_cards.deck_number_label", { n: selectedIdx + 1 })}
+                    : t("tools.couple_cards.deck_number_label", { n: redLevel(selectedId) })}
                 </h3>
-                {selectedId !== "lemonade" ? (
+                {!isAccentDeck(selectedId) ? (
                   <p className="mt-3 font-display text-base font-bold uppercase tracking-[0.04em] sm:mt-4 sm:text-xl">
                     ({t(selected.titleKey)})
                   </p>
@@ -760,11 +795,17 @@ function DeckShowcase({
               </div>
               <span
                 className={`font-display text-[10px] font-bold uppercase tracking-[0.28em] sm:text-xs ${
-                  selectedId === "lemonade" ? "text-lemonade-ink" : "text-white"
+                  selectedId === "lemonade"
+                    ? "text-lemonade-ink"
+                    : selectedId === "greenflag"
+                      ? "text-greenflag-ink"
+                      : "text-white"
                 }`}
               >
                 {"WĒDDLY · "}
-                {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                {selected.questionsEn.length > 0
+                  ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
+                  : t("tools.couple_cards.deck_soon_label")}
               </span>
             </button>
           </div>

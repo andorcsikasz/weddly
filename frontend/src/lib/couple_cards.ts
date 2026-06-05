@@ -8,7 +8,7 @@
 // localStorage so a returning visitor doesn't get the same shuffle twice
 // in a session.
 
-export type DeckId = "roots" | "everyday" | "closeness" | "deepwater" | "lemonade";
+export type DeckId = "greenflag" | "roots" | "everyday" | "closeness" | "deepwater" | "lemonade";
 
 export interface Deck {
   id: DeckId;
@@ -302,7 +302,22 @@ const LEMONADE_EN: readonly string[] = [
   "What's the dumbest argument we've ever had and still laugh about?",
 ];
 
+// Hidden easter-egg deck tucked off the LEFT edge of the mini-deck row,
+// the mirror of lemonade on the right. A light "first date" pack — pastel
+// green, revealed after a left-swipe. Questions land later; for now the
+// arrays are intentionally empty (the tile shows a "soon" label and the
+// deck is not openable until it has cards).
+const GREENFLAG_HU: readonly string[] = [];
+const GREENFLAG_EN: readonly string[] = [];
+
 export const COUPLE_CARD_DECKS: readonly Deck[] = [
+  {
+    id: "greenflag",
+    titleKey: "tools.couple_cards.deck_greenflag_title",
+    blurbKey: "tools.couple_cards.deck_greenflag_blurb",
+    questionsHu: GREENFLAG_HU,
+    questionsEn: GREENFLAG_EN,
+  },
   {
     id: "roots",
     titleKey: "tools.couple_cards.deck_roots_title",
@@ -345,6 +360,22 @@ export const COUPLE_CARD_DECKS: readonly Deck[] = [
 ];
 
 export const DECK_SIZE = 25;
+
+// The numbered "Level 1-4" red decks, in fixed order. Accent decks
+// (greenflag, lemonade) sit outside this set: greenflag is the hidden
+// first-date pack tucked off the LEFT edge of the deck row, lemonade the
+// playful pack off the RIGHT. Both render with their own pastel palette
+// and a name instead of a Level number.
+export const RED_DECK_ORDER: readonly DeckId[] = ["roots", "everyday", "closeness", "deepwater"];
+
+export function isAccentDeck(id: DeckId): boolean {
+  return id === "greenflag" || id === "lemonade";
+}
+
+/** 1-based Level number for a red deck; 0 for accent decks. */
+export function redLevel(id: DeckId): number {
+  return RED_DECK_ORDER.indexOf(id) + 1;
+}
 
 /** Easter-egg lemonade reveal is intentionally session-ephemeral: every
  *  fresh page load starts back at "hidden" so the visitor has to re-

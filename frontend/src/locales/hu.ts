@@ -4476,6 +4476,10 @@ const hu: LocaleMessages = {
       decks_h2: "Válasszatok paklit",
       deck_number_label: "{n}. szint",
       deck_count_label: "{n} kártya",
+      deck_soon_label: "Hamarosan",
+      deck_greenflag_title: "Greenflag",
+      deck_greenflag_blurb:
+        "Egy könnyed első randis pakli. Kíváncsi, oldott kérdések a legelejére.",
       deck_roots_title: "Gyökerek",
       deck_roots_blurb:
         "Amit otthonról hoztunk, és amit szabadon választhatunk újra. Család, eredet, minták.",

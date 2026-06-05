@@ -116,6 +116,19 @@ export default {
           ink: "#261606",
           yellowInk: "#A16207",
         },
+        // Greenflag — soft pastel mint for the hidden "first date" deck
+        // tucked off the LEFT edge of the couple-cards mini-row (the
+        // mirror of lemonade on the right). Revealed only after a
+        // left-swipe across the row.
+        greenflag: {
+          // Pastel mint card face — soft, but saturated enough to read as
+          // clearly green against the cream paper palette (the lighter
+          // green-200 washed out almost to white on paper-50).
+          green: "#86efac",
+          // Deep forest green for type + flair on every greenflag surface.
+          ink: "#14532d",
+          greenInk: "#15803d",
+        },
       },
       fontFamily: {
         // Self-hosted/system stack — we used to pull Inter from rsms.me and

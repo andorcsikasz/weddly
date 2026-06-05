@@ -4917,6 +4917,9 @@ export interface LocaleMessages {
       decks_h2: string;
       deck_number_label: string;
       deck_count_label: string;
+      deck_soon_label: string;
+      deck_greenflag_title: string;
+      deck_greenflag_blurb: string;
       deck_roots_title: string;
       deck_roots_blurb: string;
       deck_everyday_title: string;

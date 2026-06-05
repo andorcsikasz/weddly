@@ -4431,6 +4431,10 @@ const en: LocaleMessages = {
       decks_h2: "Pick a deck",
       deck_number_label: "Level {n}",
       deck_count_label: "{n} cards",
+      deck_soon_label: "Soon",
+      deck_greenflag_title: "Greenflag",
+      deck_greenflag_blurb:
+        "A light first-date deck. Easy, curious openers for the very beginning.",
       deck_roots_title: "Roots",
       deck_roots_blurb:
         "What we brought from home, and what we get to choose again. Family, origin, patterns.",
