@@ -726,7 +726,11 @@ function FoundingCouplesBand() {
     // cream-inverse CTA as the single bright object. Two-column on desktop
     // (pitch + promise | the 200 hero, progress and CTA). The 200 leads — it's
     // the offer; the live booked count is a demoted progress sliver underneath.
-    <section className="bg-umber-900">
+    // Mobile-only breathing gap above the dark band: the cream page shows
+    // through this top margin so the espresso "moment" doesn't butt straight
+    // up against the budget card. ~1.4x the prior gap (the budget demo's
+    // py-12 = 48px bottom) → +20px ≈ 68px. Reset from sm up.
+    <section className="mt-5 bg-umber-900 sm:mt-0">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-4 py-20 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-12 sm:py-16 sm:text-left">
         {/* Left: the pitch */}
         <div className="sm:max-w-md">
@@ -823,7 +827,7 @@ function StatCounter({
           {fmt.format(display)}
         </span>
       </div>
-      <div className="mt-2.5 font-grotesk text-[11px] font-medium uppercase tracking-[0.18em] text-umber-700 dark:text-umber-200 sm:text-xs">
+      <div className="mx-auto mt-2.5 max-w-[7rem] font-grotesk text-[11px] font-medium uppercase tracking-[0.18em] text-umber-700 dark:text-umber-200 sm:max-w-none sm:text-xs">
         {label}
       </div>
     </div>
