@@ -673,7 +673,6 @@ function DeckShowcase({
               const isLemonade = deck.id === "lemonade";
               const isGreenflag = deck.id === "greenflag";
               const isAccent = isLemonade || isGreenflag;
-              const hasCards = deck.questionsEn.length > 0;
               return (
                 <li
                   key={deck.id}
@@ -715,7 +714,6 @@ function DeckShowcase({
                             : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
                       }`}
                     >
-                      <span aria-hidden="true" className="block h-0.5" />
                       <div className="flex flex-1 flex-col items-center justify-center">
                         <span className="font-display text-xs font-bold uppercase leading-[0.95] tracking-tight sm:text-base lg:text-lg">
                           {isAccent
@@ -730,11 +728,6 @@ function DeckShowcase({
                           </span>
                         ) : null}
                       </div>
-                      <span className="font-display text-[8px] font-bold uppercase tracking-[0.22em] sm:text-[9px]">
-                        {hasCards
-                          ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
-                          : t("tools.couple_cards.deck_soon_label")}
-                      </span>
                     </button>
                   )}
                 </li>
