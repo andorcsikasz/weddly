@@ -865,7 +865,7 @@ const hu: LocaleMessages = {
     guest_sheet_cta: "Tovább az RSVP-re",
     guest_sheet_cancel: "Mégse",
     guest_sheet_invalid: "Adj meg egy érvényes kódot.",
-    footer_tagline: "Esküvőtervezés kettőtöknek, egy nyugodt helyen.",
+    footer_tagline: "Alacsony kortizolszintű esküvőtervezés kettőtöknek.",
     footer_couples: "Pároknak",
     footer_vendors: "Szolgáltatóknak",
     footer_guests: "vendégeknek",

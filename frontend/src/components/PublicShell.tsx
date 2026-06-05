@@ -390,10 +390,11 @@ function PublicFooter() {
         </div>
       </div>
 
-      {/* Mobile = 2-col grid: brand+tagline span the row at top, then the
-       *  three link columns sit two-up below (Vendors + Guests share a
-       *  row, Couples gets its own width). Tablet keeps the previous
-       *  2-col grid; desktop expands to the brand+3-col layout. */}
+      {/* Mobile = 2-col grid: brand+tagline span the top row, then Couples
+       *  fills the left column while Vendors + Guests stack in the right
+       *  column. Desktop (lg) expands to brand + 3 link columns — the
+       *  right-column wrapper uses lg:contents so its two columns rejoin
+       *  the grid as direct children. */}
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 sm:gap-8 sm:px-6 sm:py-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
         <div className="col-span-2 lg:col-span-1">
           <Wordmark size="md" className="text-umber-900 dark:text-paper-50" />
@@ -408,53 +409,58 @@ function PublicFooter() {
           <FooterLink to="/blog">{t("blog.eyebrow")}</FooterLink>
           <FooterLink to={couplesCardsPath}>{t("landing.footer_couples_cards")}</FooterLink>
         </FooterColumn>
-        <FooterColumn title={t("landing.footer_vendors")}>
-          <FooterLink to="/vendors">{t("landing.footer_vendors_waitlist")}</FooterLink>
-          <FooterLink to="/about">{t("landing.footer_about_link")}</FooterLink>
-        </FooterColumn>
-        <FooterColumn title={t("landing.footer_guests")}>
-          <button
-            type="button"
-            className={`text-left ${footerLinkClass}`}
-            onClick={() => {
-              void askGuestCode();
-            }}
-          >
-            {t("landing.footer_guests_enter")}
-          </button>
-          {/* The original "What is RSVP?" link pointed at the landing's
-              #suppliers anchor, which 404'd visually on every public
-              surface other than /. Send guests to the real check-in
-              page instead, since that's the destination they actually want. */}
-          <FooterLink to="/rsvp">{t("landing.footer_guests_about")}</FooterLink>
-        </FooterColumn>
+        {/* Mobile: Vendors + Guests stack in the right grid column (Guests
+         *  directly under Vendors). `lg:contents` dissolves this wrapper on
+         *  desktop so both columns become direct grid children again and the
+         *  4-column brand+Couples+Vendors+Guests row is restored. */}
+        <div className="flex flex-col gap-y-4 lg:contents">
+          <FooterColumn title={t("landing.footer_vendors")}>
+            <FooterLink to="/vendors">{t("landing.footer_vendors_waitlist")}</FooterLink>
+            <FooterLink to="/about">{t("landing.footer_about_link")}</FooterLink>
+          </FooterColumn>
+          <FooterColumn title={t("landing.footer_guests")}>
+            <button
+              type="button"
+              className={`text-left ${footerLinkClass}`}
+              onClick={() => {
+                void askGuestCode();
+              }}
+            >
+              {t("landing.footer_guests_enter")}
+            </button>
+            {/* The original "What is RSVP?" link pointed at the landing's
+                #suppliers anchor, which 404'd visually on every public
+                surface other than /. Send guests to the real check-in
+                page instead, since that's the destination they actually want. */}
+            <FooterLink to="/rsvp">{t("landing.footer_guests_about")}</FooterLink>
+          </FooterColumn>
+        </div>
       </div>
 
       <div className="border-t border-paper-300 dark:border-umber-700">
-        {/* Bottom row tightened: copyright sits left, legal links wrap into
-         *  a tidy 2-col grid on mobile so the five labels can never trail
-         *  into a ragged 3rd row. Tablet+ keeps them on a single line. */}
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-3 text-xs text-umber-700 sm:flex-row sm:items-center sm:gap-3 sm:px-6 sm:py-5 dark:text-umber-300">
-          <p>
+        {/* Minimal single-line bar: copyright + every legal link flow in one
+         *  flex-wrap row at all widths. On phones they wrap to as few lines
+         *  as the labels allow (no rigid 2-col grid forcing a tall block);
+         *  on tablet+ everything sits on one line, copyright pushed left. */}
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-xs text-umber-700 sm:gap-x-5 sm:px-6 sm:py-4 dark:text-umber-300">
+          <p className="sm:mr-auto">
             © {new Date().getFullYear()} {t("app.name")}
           </p>
-          <div className="grid w-full grid-cols-2 gap-x-4 gap-y-1.5 sm:flex sm:w-auto sm:flex-wrap sm:gap-x-5 sm:gap-y-2">
-            <Link to="/terms" className={legalLinkClass}>
-              {t("landing.footer_legal_terms")}
-            </Link>
-            <Link to="/privacy" className={legalLinkClass}>
-              {t("landing.footer_legal_privacy")}
-            </Link>
-            <Link to="/impresszum" className={legalLinkClass}>
-              {t("landing.footer_legal_imprint")}
-            </Link>
-            <Link to="/terms/vendor-subscription" className={legalLinkClass}>
-              {t("landing.footer_legal_subscription")}
-            </Link>
-            <Link to="/about" className={legalLinkClass}>
-              {t("landing.footer_legal_about")}
-            </Link>
-          </div>
+          <Link to="/terms" className={legalLinkClass}>
+            {t("landing.footer_legal_terms")}
+          </Link>
+          <Link to="/privacy" className={legalLinkClass}>
+            {t("landing.footer_legal_privacy")}
+          </Link>
+          <Link to="/impresszum" className={legalLinkClass}>
+            {t("landing.footer_legal_imprint")}
+          </Link>
+          <Link to="/terms/vendor-subscription" className={legalLinkClass}>
+            {t("landing.footer_legal_subscription")}
+          </Link>
+          <Link to="/about" className={legalLinkClass}>
+            {t("landing.footer_legal_about")}
+          </Link>
         </div>
       </div>
     </footer>

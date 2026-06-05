@@ -855,7 +855,7 @@ const en: LocaleMessages = {
     guest_sheet_cta: "Go to RSVP",
     guest_sheet_cancel: "Cancel",
     guest_sheet_invalid: "Enter a valid code.",
-    footer_tagline: "Wedding planning for two, in one quiet place.",
+    footer_tagline: "Low-cortisol wedding planning, for two.",
     footer_couples: "For couples",
     footer_vendors: "For vendors",
     footer_guests: "for guests",
