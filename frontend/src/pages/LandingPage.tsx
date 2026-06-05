@@ -58,6 +58,7 @@ import { blogApi } from "../lib/endpoints";
 import { BlogCover } from "./BlogIndexPage";
 import {
   COUPLE_CARD_DECKS,
+  type Deck,
   DECK_SIZE,
   loadLemonadeRevealed,
   saveLemonadeRevealed,
@@ -271,7 +272,7 @@ export default function LandingPage() {
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
-              <ul className="mt-7 space-y-3">
+              <ul className="mt-7 space-y-1">
                 <IconRow icon={<Smartphone size={16} />}>
                   {t("landing.block_guests_bullet_1")}
                 </IconRow>
@@ -303,7 +304,7 @@ export default function LandingPage() {
               <h2 className="whitespace-pre-line font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
-              <ul className="mt-7 space-y-3">
+              <ul className="mt-7 space-y-1">
                 <IconRow icon={<LayoutGrid size={16} />}>
                   {t("landing.block_seating_bullet_1")}
                 </IconRow>
@@ -1158,7 +1159,11 @@ function CoupleCardsTeaser() {
             {t("landing.couple_cards_title")}
           </h2>
         </header>
-        {/* All four decks visible at once on mobile via a 2x2 grid in the
+        {/* Mobile: an infinite 3D coverflow — one deck centered, the prev/next
+         *  decks peeking in at the sides, swipeable around a circular track.
+         *  Tablet+ keeps the flat grid below. */}
+        <CoupleCardsCarousel decks={visibleDecks} toolPath={toolPath} />
+        {/* Tablet/desktop: all decks visible at once via a grid in the
          *  requested 2:3 portrait aspect. Tablet stays 2-up; desktop lays
          *  out 4-up. Whole cards are clickable. A horizontal swipe (>50px)
          *  on the row reveals the hidden 5th lemonade deck — same easter
@@ -1171,7 +1176,7 @@ function CoupleCardsTeaser() {
           }}
           onWheel={handleWheel}
           style={{ touchAction: "pan-y" }}
-          className={`mt-5 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:gap-5 ${
+          className={`mt-5 hidden grid-cols-2 gap-3 sm:mt-10 sm:grid sm:gap-4 lg:gap-5 ${
             isLemonadeRevealed ? "lg:grid-cols-5" : "lg:grid-cols-4"
           }`}
         >
@@ -1211,6 +1216,158 @@ function CoupleCardsTeaser() {
         </ul>
       </div>
     </section>
+  );
+}
+
+/** Mobile-only infinite 3D coverflow for the 100-questions decks. The active
+ *  deck sits full-size in the centre; the previous and next decks peek in from
+ *  the sides, scaled down and angled in perspective (the cards themselves stay
+ *  flat rectangles — the 3D read comes only from translate / scale / rotateY /
+ *  opacity / z-index, never from warping the card). Swiping wraps around a
+ *  circular track, so there is no first or last card. Tablet+ uses the flat
+ *  grid instead (this component is `sm:hidden`). */
+function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; toolPath: string }) {
+  const { t } = useT();
+  const n = decks.length;
+  const [active, setActive] = useState(0);
+  // Live drag offset in px while the finger is down; 0 when settled.
+  const [dragDx, setDragDx] = useState(0);
+  const drag = useRef<{ x: number; moved: boolean } | null>(null);
+  // True for the click that fires right after a swipe so it doesn't navigate.
+  const swallowClick = useRef(false);
+
+  // One "step" of travel ≈ how far a neighbour sits from centre (56vw). Used to
+  // turn pixel drag into a fractional card offset so the flip tracks the finger.
+  const unitPx = () => (typeof window === "undefined" ? 360 : window.innerWidth * 0.56);
+  const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    drag.current = { x: e.clientX, moved: false };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const s = drag.current;
+    if (!s) return;
+    const dx = e.clientX - s.x;
+    if (Math.abs(dx) > 6) s.moved = true;
+    // Cap the live drag at ±1 card so a single swipe advances one deck.
+    setDragDx(clamp(dx, -unitPx(), unitPx()));
+  };
+  const onUp = () => {
+    const s = drag.current;
+    drag.current = null;
+    const dx = dragDx;
+    setDragDx(0);
+    if (!s) return;
+    if (s.moved) swallowClick.current = true;
+    const threshold = unitPx() * 0.18;
+    const step = dx <= -threshold ? 1 : dx >= threshold ? -1 : 0;
+    if (step !== 0) setActive((a) => (((a + step) % n) + n) % n);
+  };
+
+  // Signed circular distance of card i from the active card, in [-n/2, n/2].
+  const circularDelta = (i: number) => {
+    let d = (((i - active) % n) + n) % n;
+    if (d > n / 2) d -= n;
+    return d;
+  };
+
+  const frac = drag.current ? dragDx / unitPx() : 0;
+
+  return (
+    <div className="sm:hidden">
+      <div
+        className="relative mt-6 select-none [perspective:1100px]"
+        style={{ height: "84vw", touchAction: "pan-y" }}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+      >
+        {decks.map((deck, idx) => {
+          const baseDelta = circularDelta(idx);
+          const p = baseDelta + frac; // continuous position while dragging
+          const ap = Math.abs(p);
+          const hidden = ap > 1.6;
+          const isActive = baseDelta === 0;
+          const scale = Math.max(0.7, 1 - 0.16 * ap);
+          const rot = clamp(-p * 34, -38, 38);
+          const opacity = hidden ? 0 : Math.max(0, 1 - 0.42 * ap);
+          const isLemonade = deck.id === "lemonade";
+          return (
+            <Link
+              key={deck.id}
+              to={`${toolPath}?deck=${deck.id}`}
+              aria-hidden={hidden}
+              tabIndex={isActive ? 0 : -1}
+              onClick={(e) => {
+                if (swallowClick.current) {
+                  swallowClick.current = false;
+                  e.preventDefault();
+                  return;
+                }
+                // Tapping a side card brings it to centre instead of navigating.
+                if (!isActive) {
+                  e.preventDefault();
+                  setActive(idx);
+                }
+              }}
+              className="absolute left-1/2 top-1/2 block w-[56vw] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-wnrs-red"
+              style={{
+                transform: `translate(-50%, -50%) translateX(${p * 56}vw) scale(${scale}) rotateY(${rot}deg)`,
+                opacity,
+                zIndex: Math.round(100 - ap * 10),
+                pointerEvents: hidden ? "none" : "auto",
+                transition: drag.current
+                  ? "none"
+                  : "transform 380ms cubic-bezier(.22,.61,.36,1), opacity 380ms ease",
+                willChange: "transform",
+              }}
+            >
+              <div
+                className={`flex aspect-[2/3] w-full flex-col items-center justify-between overflow-hidden rounded-2xl px-5 py-7 text-center ${
+                  isLemonade
+                    ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_24px_50px_-20px_rgba(161,98,7,0.6)]"
+                    : "bg-wnrs-red text-white shadow-[0_24px_50px_-20px_rgba(204,31,40,0.6)]"
+                }`}
+              >
+                <span aria-hidden className="block h-1" />
+                <div className="flex flex-1 flex-col items-center justify-center">
+                  <span className="font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight">
+                    {isLemonade
+                      ? t(deck.titleKey).toUpperCase()
+                      : t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+                  </span>
+                  {!isLemonade ? (
+                    <span className="mt-2 font-display text-base font-bold uppercase tracking-[0.04em]">
+                      {t(deck.titleKey)}
+                    </span>
+                  ) : null}
+                </div>
+                <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em]">
+                  {"WĒDDLY · "}
+                  {t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+      {/* Position dots — affordance that the track wraps. */}
+      <div className="mt-4 flex justify-center gap-1.5">
+        {decks.map((deck, idx) => (
+          <button
+            key={deck.id}
+            type="button"
+            aria-label={t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+            onClick={() => setActive(idx)}
+            className={`h-1.5 rounded-full transition-all ${
+              circularDelta(idx) === 0 ? "w-5 bg-wnrs-red" : "w-1.5 bg-umber-300 dark:bg-umber-700"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
