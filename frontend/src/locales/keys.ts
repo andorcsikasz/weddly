@@ -1686,6 +1686,13 @@ export interface LocaleMessages {
     website: {
       helper: string;
     };
+    /** Website-only chrome controls (the `web` sub-object). */
+    web: {
+      card_radius_label: string;
+      shadow_label: string;
+      card_radius: { sharp: string; soft: string; full: string };
+      shadow: { none: string; soft: string; pop: string };
+    };
     /** Instant print-card preview (right column on the Print tab). */
     print_preview: {
       sample_name: string;

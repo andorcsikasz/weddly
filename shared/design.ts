@@ -93,6 +93,8 @@ export interface CoupleDesignInput {
   dateFormat?: DateFormatSlug;
   decor?: DecorSlug;
   print?: Partial<DesignPrintOptions>;
+  /** Website-only chrome (guest page; never touches print). */
+  web?: Partial<DesignWebsiteOptions>;
 }
 
 /** The wedding monogram - the couple's initials joined by a separator. The
@@ -118,6 +120,7 @@ export interface CoupleDesign {
   dateFormat: DateFormatSlug;
   decor: DecorSlug;
   print: DesignPrintOptions;
+  web: DesignWebsiteOptions;
 }
 
 /** One colour value in both web (hex) and print (rgb 0..1) forms. */
@@ -341,6 +344,56 @@ export const VALID_DATE_FORMATS: ReadonlySet<DateFormatSlug> = new Set(
 );
 export const VALID_DECOR: ReadonlySet<DecorSlug> = new Set(DECOR_STYLES.map((d) => d.slug));
 
+// ─── Website-only design (the `web` sub-object) ────────────────────────────
+// Surface-scoped chrome that affects ONLY the guest page, never the printed
+// cards (pdf.ts never reads design.web). Each control resolves to a concrete
+// CSS value HERE so the component just drops it into a CSS custom property -
+// no raw CSS/length literals authored in WeddingSiteView.
+
+/** Corner rounding of the guest-page cards. */
+export type CardRadiusSlug = "sharp" | "soft" | "full";
+/** Card elevation on the guest page. */
+export type ShadowSlug = "none" | "soft" | "pop";
+
+export const CARD_RADII: readonly { slug: CardRadiusSlug; nameKey: string; css: string }[] = [
+  { slug: "sharp", nameKey: "design.web.card_radius.sharp", css: "0.375rem" },
+  { slug: "soft", nameKey: "design.web.card_radius.soft", css: "1rem" },
+  { slug: "full", nameKey: "design.web.card_radius.full", css: "1.5rem" },
+];
+
+export const SHADOWS: readonly { slug: ShadowSlug; nameKey: string; css: string }[] = [
+  { slug: "none", nameKey: "design.web.shadow.none", css: "none" },
+  {
+    slug: "soft",
+    nameKey: "design.web.shadow.soft",
+    css: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",
+  },
+  {
+    slug: "pop",
+    nameKey: "design.web.shadow.pop",
+    css: "0 10px 25px -8px rgba(16, 24, 48, 0.16), 0 2px 6px -2px rgba(16, 24, 48, 0.10)",
+  },
+];
+
+export const VALID_CARD_RADII: ReadonlySet<CardRadiusSlug> = new Set(CARD_RADII.map((r) => r.slug));
+export const VALID_SHADOWS: ReadonlySet<ShadowSlug> = new Set(SHADOWS.map((s) => s.slug));
+
+/** Website-only options (guest page chrome). Always fully populated on the
+ *  resolved design; absent in legacy blobs (filled from DEFAULT_DESIGN.web). */
+export interface DesignWebsiteOptions {
+  cardRadius: CardRadiusSlug;
+  shadow: ShadowSlug;
+}
+
+/** Resolve a card-radius slug to its CSS length; never throws. */
+export function getCardRadiusCss(slug: CardRadiusSlug): string {
+  return CARD_RADII.find((r) => r.slug === slug)?.css ?? CARD_RADII[1]!.css;
+}
+/** Resolve a shadow slug to its CSS box-shadow; never throws. */
+export function getShadowCss(slug: ShadowSlug): string {
+  return SHADOWS.find((s) => s.slug === slug)?.css ?? SHADOWS[1]!.css;
+}
+
 /** The Design feature's own default — Botanical Green + classic serif. NULL /
  *  legacy `design_json` rows resolve to this; it drives only the guest page +
  *  wired print templates, NOT the app-shell accent. */
@@ -355,6 +408,9 @@ export const DEFAULT_DESIGN: CoupleDesign = {
   dateFormat: "long",
   decor: "line",
   print: { border: true, ornament: false, qr: false },
+  // Defaults reproduce today's hardcoded guest-page look, so a legacy blob
+  // (no `web` key) restyles to nothing.
+  web: { cardRadius: "soft", shadow: "soft" },
 };
 
 /** Look up a palette by slug; never throws — an unknown slug falls back to the
@@ -409,6 +465,14 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
         typeof i.print?.ornament === "boolean" ? i.print.ornament : DEFAULT_DESIGN.print.ornament,
       qr: typeof i.print?.qr === "boolean" ? i.print.qr : DEFAULT_DESIGN.print.qr,
     },
+    web: {
+      cardRadius:
+        i.web?.cardRadius && VALID_CARD_RADII.has(i.web.cardRadius)
+          ? i.web.cardRadius
+          : DEFAULT_DESIGN.web.cardRadius,
+      shadow:
+        i.web?.shadow && VALID_SHADOWS.has(i.web.shadow) ? i.web.shadow : DEFAULT_DESIGN.web.shadow,
+    },
   };
 }
 
@@ -432,6 +496,10 @@ export interface PublicDesign {
   monogram_separator: MonogramSeparatorSlug;
   date_format: DateFormatSlug;
   decor: DecorSlug;
+  /** Website-only chrome, resolved to concrete CSS the guest page drops into
+   *  `--wt-*` custom properties. Never read by the PDF renderer. */
+  website_card_radius: string;
+  website_shadow: string;
 }
 
 /** Build the public, presentation-only payload from a resolved design. */
@@ -463,6 +531,8 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
     monogram_separator: design.monogram.separator,
     date_format: design.dateFormat,
     decor: design.decor,
+    website_card_radius: getCardRadiusCss(design.web.cardRadius),
+    website_shadow: getShadowCss(design.web.shadow),
   };
 }
 

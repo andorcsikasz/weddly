@@ -27,6 +27,7 @@ import {
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
 import {
+  type CardRadiusSlug,
   COLOR_ROLES,
   type ColorRole,
   type CoupleDesign,
@@ -37,13 +38,16 @@ import {
   HEX_COLOR_RE,
   type MonogramSeparatorSlug,
   type PaletteSlug,
+  type ShadowSlug,
   type StylePresetSlug,
+  VALID_CARD_RADII,
   VALID_DATE_FORMATS,
   VALID_DECOR,
   VALID_FONT_FAMILIES,
   VALID_FONTS,
   VALID_PALETTES,
   VALID_SEPARATORS,
+  VALID_SHADOWS,
   VALID_STYLES,
 } from "@shared/design";
 import { CONFIG } from "../config";
@@ -1838,6 +1842,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       dateFormat: prev.dateFormat,
       decor: prev.decor,
       print: { ...prev.print },
+      web: { ...prev.web },
     };
     // Each curated slug, if present, must be a known value — a present-but-
     // unknown slug is a client bug, so we 400 rather than silently ignore it.
@@ -1935,6 +1940,25 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         if (typeof p[key] === "boolean") next.print[key] = p[key] as boolean;
       }
     }
+    // Website-only chrome. Each slug, if present, must be a known value (400 on
+    // a present-but-unknown slug, like the other curated fields).
+    if ("web" in obj && obj.web && typeof obj.web === "object") {
+      const w = obj.web as Record<string, unknown>;
+      if ("cardRadius" in w) {
+        const v = w.cardRadius;
+        if (typeof v !== "string" || !VALID_CARD_RADII.has(v as CardRadiusSlug)) {
+          throw new HttpError(400, "design.web.cardRadius is not a valid card radius");
+        }
+        next.web.cardRadius = v as CardRadiusSlug;
+      }
+      if ("shadow" in w) {
+        const v = w.shadow;
+        if (typeof v !== "string" || !VALID_SHADOWS.has(v as ShadowSlug)) {
+          throw new HttpError(400, "design.web.shadow is not a valid shadow");
+        }
+        next.web.shadow = v as ShadowSlug;
+      }
+    }
     const changed =
       next.style !== prev.style ||
       next.palette !== prev.palette ||
@@ -1948,7 +1972,9 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.decor !== prev.decor ||
       next.print.border !== prev.print.border ||
       next.print.ornament !== prev.print.ornament ||
-      next.print.qr !== prev.print.qr;
+      next.print.qr !== prev.print.qr ||
+      next.web.cardRadius !== prev.web.cardRadius ||
+      next.web.shadow !== prev.web.shadow;
     if (changed) {
       updates.push({ col: "design_json", val: JSON.stringify(next) });
       auditEntries.push({

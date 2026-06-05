@@ -443,6 +443,13 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
 .wedding-theme .wt-accent {
   color: var(--wt-accent-text, var(--wt-primary));
 }
+/* Website-only chrome (the `web` sub-object): the guest page's cards take their
+   corner rounding + elevation from the couple's choice. Unlayered so it beats
+   the `.card` component utilities; falls back to today's look when unset. */
+.wedding-theme .card {
+  border-radius: var(--wt-card-radius, 1rem);
+  box-shadow: var(--wt-card-shadow, 0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06));
+}
 
 /* ── Components ────────────────────────────────────────────────────── */
 @layer components {

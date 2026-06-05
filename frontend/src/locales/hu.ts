@@ -1541,6 +1541,12 @@ const hu: LocaleMessages = {
       helper:
         "A fenti közös beállítások adják a vendégoldal arculatát. Az élő előnézet jobbra látszik.",
     },
+    web: {
+      card_radius_label: "Kártya lekerekítés",
+      shadow_label: "Kártya árnyék",
+      card_radius: { sharp: "Éles", soft: "Lágy", full: "Erős" },
+      shadow: { none: "Nincs", soft: "Lágy", pop: "Erős" },
+    },
     print_preview: {
       sample_name: "Vendég neve",
       sample_table: "1. asztal",

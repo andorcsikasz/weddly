@@ -224,6 +224,8 @@ export function WeddingSiteView({
     "--wt-text": view.design.text,
     "--wt-heading-font": view.design.heading_font,
     "--wt-body-font": view.design.body_font,
+    "--wt-card-radius": view.design.website_card_radius,
+    "--wt-card-shadow": view.design.website_shadow,
   } as CSSProperties;
 
   return (

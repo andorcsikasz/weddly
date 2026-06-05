@@ -7,10 +7,14 @@
 // page can never drift.
 
 import {
+  CARD_RADII,
+  type CardRadiusSlug,
   COLOR_ROLES,
   type ColorRole,
   type CoupleDesign,
   DATE_FORMATS,
+  type ShadowSlug,
+  SHADOWS,
   DECOR_STYLES,
   FONT_FAMILIES,
   FONT_PRESETS,
@@ -228,6 +232,12 @@ export default function DesignPage() {
   }
   function togglePrint(key: "border" | "ornament" | "qr") {
     setDesign((d) => ({ ...d, print: { ...d.print, [key]: !d.print[key] } }));
+  }
+  function chooseCardRadius(slug: CardRadiusSlug) {
+    setDesign((d) => ({ ...d, web: { ...d.web, cardRadius: slug } }));
+  }
+  function chooseShadow(slug: ShadowSlug) {
+    setDesign((d) => ({ ...d, web: { ...d.web, shadow: slug } }));
   }
   function toggleMonogram() {
     setDesign((d) => ({ ...d, monogram: { ...d.monogram, enabled: !d.monogram.enabled } }));
@@ -658,9 +668,57 @@ export default function DesignPage() {
             </div>
 
             {tab === "website" ? (
-              <p className="text-sm text-ink-500 dark:text-umber-300">
-                {t("design.website.helper")}
-              </p>
+              <div className="space-y-6">
+                <p className="text-sm text-ink-500 dark:text-umber-300">
+                  {t("design.website.helper")}
+                </p>
+                {/* Card corner rounding */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.web.card_radius_label")}
+                  </h2>
+                  <div className="grid grid-cols-3 gap-2">
+                    {CARD_RADII.map((r) => (
+                      <PresetTile
+                        key={r.slug}
+                        active={design.web.cardRadius === r.slug}
+                        onSelect={() => chooseCardRadius(r.slug)}
+                        label={t(r.nameKey)}
+                        ariaLabel={t(r.nameKey)}
+                      >
+                        <span
+                          className="block h-8 w-full border border-paper-300 bg-paper-100 dark:border-umber-600 dark:bg-umber-700"
+                          style={{ borderRadius: r.css }}
+                          aria-hidden
+                        />
+                      </PresetTile>
+                    ))}
+                  </div>
+                </section>
+                {/* Card elevation / shadow */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.web.shadow_label")}
+                  </h2>
+                  <div className="grid grid-cols-3 gap-2">
+                    {SHADOWS.map((s) => (
+                      <PresetTile
+                        key={s.slug}
+                        active={design.web.shadow === s.slug}
+                        onSelect={() => chooseShadow(s.slug)}
+                        label={t(s.nameKey)}
+                        ariaLabel={t(s.nameKey)}
+                      >
+                        <span
+                          className="block h-8 w-full rounded-lg border border-paper-200 bg-white dark:border-umber-600 dark:bg-umber-700"
+                          style={{ boxShadow: s.css === "none" ? undefined : s.css }}
+                          aria-hidden
+                        />
+                      </PresetTile>
+                    ))}
+                  </div>
+                </section>
+              </div>
             ) : (
               <div className="space-y-6">
                 {/* Print options — only the toggles that affect the printed

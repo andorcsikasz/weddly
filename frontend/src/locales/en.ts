@@ -1525,6 +1525,12 @@ const en: LocaleMessages = {
     website: {
       helper: "The shared settings above shape your guest page. The live preview is on the right.",
     },
+    web: {
+      card_radius_label: "Card rounding",
+      shadow_label: "Card shadow",
+      card_radius: { sharp: "Sharp", soft: "Soft", full: "Round" },
+      shadow: { none: "None", soft: "Soft", pop: "Pop" },
+    },
     print_preview: {
       sample_name: "Guest name",
       sample_table: "Table 1",

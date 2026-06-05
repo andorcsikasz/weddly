@@ -27,6 +27,7 @@ interface CoupleDesign {
   dateFormat: string;
   decor: string;
   print: { border: boolean; ornament: boolean; qr: boolean };
+  web: { cardRadius: string; shadow: string };
 }
 
 async function registerVerified(email: string): Promise<string> {
@@ -77,6 +78,7 @@ describe("design: default resolution", () => {
       dateFormat: "long",
       decor: "line",
       print: { border: true, ornament: false, qr: false },
+      web: { cardRadius: "soft", shadow: "soft" },
     });
   });
 });
@@ -348,6 +350,66 @@ describe("design: design-aware print templates", () => {
     await expectPdf("/api/print/table-numbers", token);
     await expectPdf("/api/print/menu", token);
     await expectPdf("/api/print/place-cards", token);
+  });
+});
+
+describe("design: website-only `web` sub-object", () => {
+  test("a legacy flat blob (no web key) resolves to the default web object", async () => {
+    wipeAll();
+    const token = await registerVerified("design-web-legacy@weddly.test");
+    const { couple } = await onboard(token);
+    // Hand-write a legacy blob with NO `web` key, straight into the column.
+    db.prepare("UPDATE couples SET design_json = ? WHERE id = ?").run(
+      JSON.stringify({ palette: "espresso", decor: "dots" }),
+      couple.id,
+    );
+    const me = await req<{ couple: { design: CoupleDesign } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(me.data.couple.design.palette).toBe("espresso");
+    expect(me.data.couple.design.web).toEqual({ cardRadius: "soft", shadow: "soft" });
+  });
+
+  test("a valid web block round-trips and reaches the public payload as resolved CSS", async () => {
+    wipeAll();
+    const token = await registerVerified("design-web@weddly.test");
+    const { couple } = await onboard(token);
+    const r = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { cardRadius: "full", shadow: "pop" } } },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.design.web.cardRadius).toBe("full");
+    expect(r.data.couple.design.web.shadow).toBe("pop");
+
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(couple.id);
+    const slug = (
+      db.prepare("SELECT slug FROM couples WHERE id = ?").get(couple.id) as { slug: string }
+    ).slug;
+    const pub = await req<{
+      wedding: { design: { website_card_radius: string; website_shadow: string } };
+    }>("GET", `/api/public/wedding/${encodeURIComponent(slug)}`);
+    // Resolved to a concrete CSS length / box-shadow, not the slug.
+    expect(pub.data.wedding.design.website_card_radius).toBe("1.5rem");
+    expect(pub.data.wedding.design.website_shadow).toContain("rgba");
+  });
+
+  test("an invalid web slug is rejected with 400", async () => {
+    wipeAll();
+    const token = await registerVerified("design-web-bad@weddly.test");
+    await onboard(token);
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { cardRadius: "spiky" } } },
+      { token },
+    );
+    expect(r.status).toBe(400);
   });
 });
 
