@@ -802,6 +802,122 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {/* ── Invite partner: stays mounted until partner B actually joins
+      (partner_b_id set), so the couple always has a live reminder while
+      they wait. Surfaced at the top of the dashboard so it's the first
+      thing a solo planner sees. Three states:
+        • no invite yet      → full card with the email-or-link form
+        • link-only invite   → full card showing the shareable link to copy
+        • email invite sent  → collapses to a slim "pending" banner
+      The email/sent state survives reload because it's derived from
+      invite.invited_email, not just the session flag. Hidden entirely in
+      the demo workspace, since there's no real partner to invite there, and
+      in day-of mode where the jumbo check-in panel takes over. */}
+      {!dayOfMode &&
+        !couple.is_demo &&
+        !couple.partner_b_id &&
+        (invitedEmail ? (
+          // Slim pending banner: the email is out, we're waiting for them
+          // to join. Keeps a backup copy-link and a cancel affordance, but
+          // in a single row rather than the full stationery card.
+          <section
+            id="invite-partner"
+            data-coach-target="partner-invite"
+            className="card mb-8 flex flex-wrap items-center gap-x-4 gap-y-3 scroll-mt-24 !border-ink-900 dark:!border-paper-100/40"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-800 dark:bg-blush-400/15 dark:text-blush-300">
+              <Mail size={18} aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                {t("dashboard.invite_sent", { email: invitedEmail })}
+              </p>
+              <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+                {t("dashboard.invite_pending_hint")}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button type="button" className="btn-ghost btn-sm" onClick={onCopy}>
+                {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
+              </button>
+              <button
+                type="button"
+                className="btn-ghost btn-sm text-ink-500 dark:text-umber-300"
+                onClick={onCancelInvite}
+                disabled={inviteCancelling}
+              >
+                {inviteCancelling ? t("dashboard.invite_cancelling") : t("dashboard.invite_cancel")}
+              </button>
+            </div>
+          </section>
+        ) : (
+          // Full card: collect the partner's email or mint a shareable link.
+          <section
+            id="invite-partner"
+            data-coach-target="partner-invite"
+            className="card stationery mb-8 scroll-mt-24 !border-ink-900 dark:!border-paper-100/40"
+          >
+            <h2>{t("dashboard.invite_partner")}</h2>
+            <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
+              {t("dashboard.invite_partner_help")}
+            </p>
+
+            {!inviteUrl ? (
+              <form className="mt-4" onSubmit={onSendInvite}>
+                <label htmlFor="partner-email" className="field-label">
+                  {t("dashboard.invite_email_label")}
+                </label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    id="partner-email"
+                    type="email"
+                    autoComplete="email"
+                    className={`input flex-1 ${inviteEmailError ? "input-invalid" : ""}`}
+                    placeholder={t("dashboard.invite_email_placeholder")}
+                    value={inviteEmail}
+                    disabled={inviteSending}
+                    onChange={(e) => {
+                      setInviteEmail(e.target.value);
+                      if (inviteEmailError) setInviteEmailError(null);
+                    }}
+                    aria-invalid={inviteEmailError ? true : undefined}
+                  />
+                  <button type="submit" className="btn-primary" disabled={inviteSending}>
+                    <Mail size={16} />
+                    {inviteSending ? t("dashboard.invite_sending") : t("dashboard.invite_send")}
+                  </button>
+                </div>
+                {inviteEmailError ? (
+                  <p className="field-error">{inviteEmailError}</p>
+                ) : (
+                  <p className="field-help">{t("dashboard.invite_email_help")}</p>
+                )}
+              </form>
+            ) : (
+              // Link-only path: submitted without an email, so we show the
+              // shareable URL to copy. Cancel voids it back to the form.
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input className="input flex-1" readOnly value={inviteUrl} />
+                  <button type="button" className="btn-outline" onClick={onCopy}>
+                    {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm text-ink-500 dark:text-umber-300"
+                  onClick={onCancelInvite}
+                  disabled={inviteCancelling}
+                >
+                  {inviteCancelling
+                    ? t("dashboard.invite_cancelling")
+                    : t("dashboard.invite_cancel")}
+                </button>
+              </div>
+            )}
+          </section>
+        ))}
+
       {/* ── Next-action CTA — surfaces the first incomplete checklist item.
           Hash targets use a plain <a> so the browser scrolls to the section
           natively; react-router's <Link> swallows the navigation and never
@@ -1293,121 +1409,6 @@ export default function DashboardPage() {
               amountLinkTo="/app/budget"
             />
           </section>
-
-          {/* ── Invite partner: stays mounted until partner B actually joins
-          (partner_b_id set), so the couple always has a live reminder while
-          they wait. Three states:
-            • no invite yet      → full card with the email-or-link form
-            • link-only invite   → full card showing the shareable link to copy
-            • email invite sent  → collapses to a slim "pending" banner
-          The email/sent state survives reload because it's derived from
-          invite.invited_email, not just the session flag. Hidden entirely in
-          the demo workspace, since there's no real partner to invite there. */}
-          {!couple.is_demo &&
-            !couple.partner_b_id &&
-            (invitedEmail ? (
-              // Slim pending banner: the email is out, we're waiting for them
-              // to join. Keeps a backup copy-link and a cancel affordance, but
-              // in a single row rather than the full stationery card.
-              <section
-                id="invite-partner"
-                data-coach-target="partner-invite"
-                className="card mb-8 flex flex-wrap items-center gap-x-4 gap-y-3 scroll-mt-24 !border-ink-900 dark:!border-paper-100/40"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-800 dark:bg-blush-400/15 dark:text-blush-300">
-                  <Mail size={18} aria-hidden />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
-                    {t("dashboard.invite_sent", { email: invitedEmail })}
-                  </p>
-                  <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
-                    {t("dashboard.invite_pending_hint")}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <button type="button" className="btn-ghost btn-sm" onClick={onCopy}>
-                    {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-ghost btn-sm text-ink-500 dark:text-umber-300"
-                    onClick={onCancelInvite}
-                    disabled={inviteCancelling}
-                  >
-                    {inviteCancelling
-                      ? t("dashboard.invite_cancelling")
-                      : t("dashboard.invite_cancel")}
-                  </button>
-                </div>
-              </section>
-            ) : (
-              // Full card: collect the partner's email or mint a shareable link.
-              <section
-                id="invite-partner"
-                data-coach-target="partner-invite"
-                className="card stationery mb-8 scroll-mt-24 !border-ink-900 dark:!border-paper-100/40"
-              >
-                <h2>{t("dashboard.invite_partner")}</h2>
-                <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
-                  {t("dashboard.invite_partner_help")}
-                </p>
-
-                {!inviteUrl ? (
-                  <form className="mt-4" onSubmit={onSendInvite}>
-                    <label htmlFor="partner-email" className="field-label">
-                      {t("dashboard.invite_email_label")}
-                    </label>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <input
-                        id="partner-email"
-                        type="email"
-                        autoComplete="email"
-                        className={`input flex-1 ${inviteEmailError ? "input-invalid" : ""}`}
-                        placeholder={t("dashboard.invite_email_placeholder")}
-                        value={inviteEmail}
-                        disabled={inviteSending}
-                        onChange={(e) => {
-                          setInviteEmail(e.target.value);
-                          if (inviteEmailError) setInviteEmailError(null);
-                        }}
-                        aria-invalid={inviteEmailError ? true : undefined}
-                      />
-                      <button type="submit" className="btn-primary" disabled={inviteSending}>
-                        <Mail size={16} />
-                        {inviteSending ? t("dashboard.invite_sending") : t("dashboard.invite_send")}
-                      </button>
-                    </div>
-                    {inviteEmailError ? (
-                      <p className="field-error">{inviteEmailError}</p>
-                    ) : (
-                      <p className="field-help">{t("dashboard.invite_email_help")}</p>
-                    )}
-                  </form>
-                ) : (
-                  // Link-only path: submitted without an email, so we show the
-                  // shareable URL to copy. Cancel voids it back to the form.
-                  <div className="mt-4 space-y-3">
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <input className="input flex-1" readOnly value={inviteUrl} />
-                      <button type="button" className="btn-outline" onClick={onCopy}>
-                        {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm text-ink-500 dark:text-umber-300"
-                      onClick={onCancelInvite}
-                      disabled={inviteCancelling}
-                    >
-                      {inviteCancelling
-                        ? t("dashboard.invite_cancelling")
-                        : t("dashboard.invite_cancel")}
-                    </button>
-                  </div>
-                )}
-              </section>
-            ))}
 
           {/* ── Quick links ───────────────────────────────────────────── */}
           {/* Compact icon-only strip mirroring the sidebar (minus the current
