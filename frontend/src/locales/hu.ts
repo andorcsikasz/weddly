@@ -1669,6 +1669,16 @@ const hu: LocaleMessages = {
       "Pár sor a vendégeknek — pl. „Köszönjük, hogy velünk ünnepeltek. Itt találtok minden infót, ami a napon kell.”",
     intro_hint:
       "Bárki látja, aki megnyitja a linket. Hagyd üresen, ha nem akarsz nyilvános köszöntőt.",
+    intro_suggestions_heading: "Nincs ötleted? Válassz egy köszöntőt, aztán alakítsd a sajátoddá:",
+    intro_suggestion_tone_warm: "Szívélyes",
+    intro_suggestion_tone_playful: "Játékos",
+    intro_suggestion_tone_heartfelt: "Bensőséges",
+    intro_suggestion_warm:
+      "Nagyon örülünk, hogy itt vagytok. Köszönjük, hogy velünk ünneplitek ezt a napot — a jelenlétetek mindennél többet jelent, és alig várjuk a közös emlékeket.",
+    intro_suggestion_playful:
+      "Készüljetek az ünneplésre! Régóta várjuk ezt a napot, és nincs senki, akivel szívesebben osztanánk meg nálatok. Tegyük felejthetetlenné!",
+    intro_suggestion_heartfelt:
+      "Tiszta szívből köszöntünk benneteket az esküvőnkön. Hálásak vagyunk, hogy velünk lehettek, ahogy egymás oldalán új fejezetet kezdünk.",
     useful_info_label: "Hasznos infók",
     useful_info_placeholder: "Parkolás: ...\nMegközelítés: ...\nSzállás: ...",
     useful_info_hint:

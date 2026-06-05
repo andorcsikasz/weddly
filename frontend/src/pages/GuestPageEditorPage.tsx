@@ -331,6 +331,20 @@ export default function GuestPageEditorPage() {
     });
   }
 
+  // Drop a ready-made welcome note into the intro field. Offered only while
+  // the field is empty so we never clobber something the couple already wrote;
+  // they can edit the picked text freely afterwards.
+  function applyIntroSuggestion(text: string) {
+    setGuestPageIntro(text);
+    requestAnimationFrame(() => {
+      const el = document.getElementById("guest-page-intro");
+      if (el instanceof HTMLTextAreaElement) {
+        el.focus();
+        el.setSelectionRange(text.length, text.length);
+      }
+    });
+  }
+
   useEffect(() => {
     let cancelled = false;
     Promise.all([coupleApi.current(), scheduleApi.list(), householdApi.list()])
@@ -1216,6 +1230,33 @@ export default function GuestPageEditorPage() {
                   maxLength={4000}
                   aria-invalid={todoIntro || undefined}
                 />
+                {guestPageIntro.trim() === "" && (
+                  <div className="mt-2 flex flex-col gap-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500 dark:text-umber-200">
+                      {t("guest_page_editor.intro_suggestions_heading")}
+                    </span>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {(["warm", "playful", "heartfelt"] as const).map((tone) => {
+                        const text = t(`guest_page_editor.intro_suggestion_${tone}`);
+                        return (
+                          <button
+                            key={tone}
+                            type="button"
+                            onClick={() => applyIntroSuggestion(text)}
+                            className="flex flex-col gap-1.5 rounded-xl border border-paper-300 bg-paper-50 p-3 text-left transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-500 dark:hover:bg-umber-800"
+                          >
+                            <span className="inline-flex w-fit items-center gap-1 rounded-full bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+                              {t(`guest_page_editor.intro_suggestion_tone_${tone}`)}
+                            </span>
+                            <span className="line-clamp-4 text-xs leading-relaxed text-ink-600 dark:text-paper-100">
+                              {text}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="mt-3">
                 <label htmlFor="guest-page-useful-info" className="field-label">

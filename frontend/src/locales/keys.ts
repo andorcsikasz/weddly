@@ -1831,6 +1831,13 @@ export interface LocaleMessages {
     intro_label: string;
     intro_placeholder: string;
     intro_hint: string;
+    intro_suggestions_heading: string;
+    intro_suggestion_tone_warm: string;
+    intro_suggestion_tone_playful: string;
+    intro_suggestion_tone_heartfelt: string;
+    intro_suggestion_warm: string;
+    intro_suggestion_playful: string;
+    intro_suggestion_heartfelt: string;
     /** "Good to know" editor field — parking, getting there, accommodation. */
     useful_info_label: string;
     useful_info_placeholder: string;
