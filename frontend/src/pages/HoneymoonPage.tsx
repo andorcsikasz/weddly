@@ -860,7 +860,7 @@ function DaysTile({
 
   return (
     <div ref={wrapperRef} className="card stationery-ink relative flex h-full w-full flex-col !p-4">
-      <div className="absolute left-4 top-4 flex items-center gap-2 text-paper-200">
+      <div className="flex items-center gap-2 text-paper-200">
         <Calendar size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_days")}
@@ -868,7 +868,7 @@ function DaysTile({
       </div>
 
       {editing ? (
-        <div className="mt-7 space-y-2">
+        <div className="mt-3 space-y-2">
           <label className="block">
             <span className="text-[11px] uppercase tracking-wide text-paper-200">
               {t("honeymoon.start_label")}
@@ -959,7 +959,7 @@ function DestinationTile({
 
   return (
     <div className="card stationery-ink relative flex h-full flex-col !p-4">
-      <div className="absolute left-4 top-4 flex items-center gap-2 text-paper-200">
+      <div className="flex items-center gap-2 text-paper-200">
         <MapPin size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_destination")}
@@ -1140,7 +1140,7 @@ function DestinationAutocomplete({
   }
 
   return (
-    <div ref={wrapperRef} className="relative mt-7">
+    <div ref={wrapperRef} className="relative mt-3">
       <input
         type="text"
         className="input h-10 min-h-0 w-full text-base"
@@ -1224,7 +1224,7 @@ function BudgetSummaryTile({
       to="/app/budget"
       className="card stationery-ink relative flex h-full flex-col overflow-hidden !p-4"
     >
-      <div className="absolute left-4 top-4 flex items-center gap-2 text-paper-200">
+      <div className="flex items-center gap-2 text-paper-200">
         <Wallet size={14} aria-hidden="true" />
         <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
           {t("honeymoon.tile_budget")}
