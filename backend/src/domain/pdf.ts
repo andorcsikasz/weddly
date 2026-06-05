@@ -775,6 +775,9 @@ interface ScheduleInput {
   couple_display_name: string;
   wedding_date: string | null;
   events: ScheduleEvent[];
+  /** Maps `couple_supplier_id` → supplier name so a run-sheet beat can print
+   *  which supplier owns it. Missing ids render without a name. */
+  supplier_names?: Record<string, string>;
 }
 
 /** Format wedding-day-local minutes as "HH:MM". Day-2 rows (minutes >= 1440)
@@ -963,6 +966,12 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
       : formatHhmm(ev.starts_at_minutes);
     const labelWrap = await wrapLines(fontPair, ev.label, 12, mm(labelColWidthMm), 2, "bold");
     const subBits: string[] = [];
+    // Run-sheet first: who runs this beat + which supplier, then place + notes.
+    const supplierName = ev.couple_supplier_id
+      ? input.supplier_names?.[ev.couple_supplier_id]
+      : undefined;
+    if (ev.responsible) subBits.push(ev.responsible);
+    if (supplierName) subBits.push(supplierName);
     if (ev.location) subBits.push(ev.location);
     if (ev.notes) subBits.push(ev.notes);
     const subWrap = await wrapLines(

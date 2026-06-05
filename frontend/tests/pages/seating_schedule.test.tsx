@@ -132,6 +132,8 @@ function makeEvent(overrides: Partial<ScheduleEvent> = {}): ScheduleEvent {
     duration_minutes: 30,
     location: "Main hall",
     notes: null,
+    responsible: null,
+    couple_supplier_id: null,
     sort_order: 0,
     created_at: 1,
     updated_at: 1,

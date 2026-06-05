@@ -121,6 +121,8 @@ function handleDuplicate(ctx: Ctx): Response {
     duration_minutes: existing.duration_minutes,
     location: existing.location,
     notes: existing.notes,
+    responsible: existing.responsible,
+    couple_supplier_id: existing.couple_supplier_id,
     sort_order: existing.sort_order,
   });
 

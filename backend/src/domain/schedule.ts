@@ -8,6 +8,8 @@ import {
   SCHEDULE_MAX_LOCATION_LEN,
   SCHEDULE_MAX_MINUTES,
   SCHEDULE_MAX_NOTES_LEN,
+  SCHEDULE_MAX_RESPONSIBLE_LEN,
+  SCHEDULE_MAX_SUPPLIER_ID_LEN,
   SCHEDULE_MIN_DURATION,
 } from "@shared/schedule";
 import { db, now } from "../db";
@@ -21,6 +23,8 @@ export interface ScheduleEventRow {
   duration_minutes: number | null;
   location: string | null;
   notes: string | null;
+  responsible: string | null;
+  couple_supplier_id: string | null;
   sort_order: number;
   created_at: number;
   updated_at: number;
@@ -35,6 +39,8 @@ export function toScheduleEvent(row: ScheduleEventRow): ScheduleEvent {
     duration_minutes: row.duration_minutes,
     location: row.location,
     notes: row.notes,
+    responsible: row.responsible,
+    couple_supplier_id: row.couple_supplier_id,
     sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -49,6 +55,8 @@ export interface ParsedScheduleEvent {
   duration_minutes: number | null;
   location: string | null;
   notes: string | null;
+  responsible: string | null;
+  couple_supplier_id: string | null;
   sort_order: number;
 }
 
@@ -108,6 +116,12 @@ export function parseUpsertCreate(body: Partial<UpsertScheduleEventInput>): Pars
     duration_minutes: parseDuration(body.duration_minutes),
     location: parseOptionalString(body.location, SCHEDULE_MAX_LOCATION_LEN, "location"),
     notes: parseOptionalString(body.notes, SCHEDULE_MAX_NOTES_LEN, "notes"),
+    responsible: parseOptionalString(body.responsible, SCHEDULE_MAX_RESPONSIBLE_LEN, "responsible"),
+    couple_supplier_id: parseOptionalString(
+      body.couple_supplier_id,
+      SCHEDULE_MAX_SUPPLIER_ID_LEN,
+      "couple_supplier_id",
+    ),
     sort_order: parseSortOrder(body.sort_order, 0),
   };
 }
@@ -136,6 +150,18 @@ export function parseUpsertPatch(
       body.notes === undefined
         ? existing.notes
         : parseOptionalString(body.notes, SCHEDULE_MAX_NOTES_LEN, "notes"),
+    responsible:
+      body.responsible === undefined
+        ? existing.responsible
+        : parseOptionalString(body.responsible, SCHEDULE_MAX_RESPONSIBLE_LEN, "responsible"),
+    couple_supplier_id:
+      body.couple_supplier_id === undefined
+        ? existing.couple_supplier_id
+        : parseOptionalString(
+            body.couple_supplier_id,
+            SCHEDULE_MAX_SUPPLIER_ID_LEN,
+            "couple_supplier_id",
+          ),
     sort_order: parseSortOrder(body.sort_order, existing.sort_order),
   };
 }
@@ -167,8 +193,9 @@ export function insertScheduleEvent(
   const result = db
     .prepare(
       `INSERT INTO schedule_events
-         (couple_id, label, starts_at_minutes, duration_minutes, location, notes, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (couple_id, label, starts_at_minutes, duration_minutes, location, notes,
+          responsible, couple_supplier_id, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -177,6 +204,8 @@ export function insertScheduleEvent(
       parsed.duration_minutes,
       parsed.location,
       parsed.notes,
+      parsed.responsible,
+      parsed.couple_supplier_id,
       parsed.sort_order,
       ts,
       ts,
@@ -194,7 +223,7 @@ export function updateScheduleEvent(
   db.prepare(
     `UPDATE schedule_events SET
        label = ?, starts_at_minutes = ?, duration_minutes = ?, location = ?,
-       notes = ?, sort_order = ?, updated_at = ?
+       notes = ?, responsible = ?, couple_supplier_id = ?, sort_order = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.label,
@@ -202,6 +231,8 @@ export function updateScheduleEvent(
     parsed.duration_minutes,
     parsed.location,
     parsed.notes,
+    parsed.responsible,
+    parsed.couple_supplier_id,
     parsed.sort_order,
     ts,
     id,

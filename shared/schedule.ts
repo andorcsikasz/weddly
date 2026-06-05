@@ -25,6 +25,13 @@ export interface ScheduleEvent {
   duration_minutes: number | null;
   location: string | null;
   notes: string | null;
+  /** Run-sheet ("forgatókönyv") fields — who runs this beat on the day, and
+   *  which booked supplier it belongs to. Free-text + a loose reference (no
+   *  hard FK), mirroring planning_items.assignee / supplier_id. */
+  responsible: string | null;
+  /** Loose reference to `couple_suppliers.id`. Null = not tied to a supplier.
+   *  Dangling ids (supplier later deleted) just render without a name. */
+  couple_supplier_id: string | null;
   /** Tiebreaker for events that share the same `starts_at_minutes`. Server
    *  returns rows ordered by (starts_at_minutes, sort_order, id). */
   sort_order: number;
@@ -41,6 +48,8 @@ export interface UpsertScheduleEventInput {
   duration_minutes?: number | null;
   location?: string | null;
   notes?: string | null;
+  responsible?: string | null;
+  couple_supplier_id?: string | null;
   sort_order?: number;
 }
 
@@ -57,3 +66,5 @@ export const SCHEDULE_MAX_DURATION = 1440;
 export const SCHEDULE_MAX_LABEL_LEN = 200;
 export const SCHEDULE_MAX_LOCATION_LEN = 200;
 export const SCHEDULE_MAX_NOTES_LEN = 2000;
+export const SCHEDULE_MAX_RESPONSIBLE_LEN = 80;
+export const SCHEDULE_MAX_SUPPLIER_ID_LEN = 64;

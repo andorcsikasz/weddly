@@ -157,6 +157,14 @@ addColumnIfMissing("planning_items", "topic", "topic TEXT");
 // per-couple slice and filtering in memory.
 db.exec("CREATE INDEX IF NOT EXISTS idx_planning_topic ON planning_items(couple_id, kind, topic)");
 
+// Run-sheet ("forgatókönyv") fields on the day-of schedule: who runs each beat
+// (free-text, like planning_items.assignee) and which booked supplier it ties
+// to (loose reference to couple_suppliers.id, no hard FK — same as
+// planning_items.supplier_id). Turns the program timeline into a backstage
+// production script the couple can hand to a helper.
+addColumnIfMissing("schedule_events", "responsible", "responsible TEXT");
+addColumnIfMissing("schedule_events", "couple_supplier_id", "couple_supplier_id TEXT");
+
 // Global slug uniqueness — couples.slug paired with the 4-digit household
 // code is the public RSVP credential, so two weddings must never share a
 // slug. Application code (uniqueCoupleSlug + PATCH /api/couples/slug)

@@ -1801,6 +1801,11 @@ export interface LocaleMessages {
     field_location_placeholder: string;
     field_notes: string;
     field_notes_placeholder: string;
+    /** Run-sheet fields: responsible person + booked supplier. */
+    field_responsible: string;
+    field_responsible_placeholder: string;
+    field_supplier: string;
+    field_supplier_none: string;
     save: string;
     saving: string;
     delete_confirm_title: string;

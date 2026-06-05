@@ -207,7 +207,7 @@ const hu: LocaleMessages = {
     banner_cta: "Előfizetés",
     founding_banner_title: "Bekerültetek az első 200-ba 🎉",
     founding_banner_body:
-      "Az első 200 párunk egyike vagytok, így a Weddly az esküvőtök napjáig ({date}) ingyenes. Használjátok a teljes platformot.",
+      "Az első 200 párunk egyike vagytok, így a Weddly az esküvőtök napjáig ingyenes. Használjátok a teljes platformot.",
     solo_banner_title: "Hívd meg a párod",
     solo_banner_body:
       "Az első 200 pár az esküvője napjáig ingyen használhatja a Weddly-t. Hívd meg a párod, hogy együtt, ingyen tervezzetek tovább.",
@@ -1655,6 +1655,10 @@ const hu: LocaleMessages = {
     field_location_placeholder: "pl. Főterem",
     field_notes: "Megjegyzés",
     field_notes_placeholder: "Részletek, jelzések a stábnak…",
+    field_responsible: "Felelős",
+    field_responsible_placeholder: "pl. Anna (tanú)",
+    field_supplier: "Szolgáltató",
+    field_supplier_none: "Nincs",
     save: "Mentés",
     saving: "Mentés…",
     delete_confirm_title: "Törölhető ez a programpont?",

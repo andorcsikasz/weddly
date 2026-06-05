@@ -1835,3 +1835,85 @@ describe("print: unknown couple", () => {
     expect(res.status).toBe(400);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Schedule run-sheet fields — responsible + couple_supplier_id (F3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("schedule: run-sheet fields (responsible + supplier)", () => {
+  test("create + patch persist responsible and couple_supplier_id", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("sched-runsheet@weddly.test");
+
+    // A booked DIY supplier to link the beat to.
+    const sup = await req<{ supplier: { id: string } }>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "DJ Marci", category: "music_dj" },
+      { token },
+    );
+    const supplierId = sup.data.supplier.id;
+
+    const created = await req<{
+      event: { id: number; responsible: string | null; couple_supplier_id: string | null };
+    }>(
+      "POST",
+      "/api/schedule",
+      {
+        label: "First dance",
+        starts_at_minutes: 20 * 60,
+        responsible: "Anna (maid of honour)",
+        couple_supplier_id: supplierId,
+      },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    expect(created.data.event.responsible).toBe("Anna (maid of honour)");
+    expect(created.data.event.couple_supplier_id).toBe(supplierId);
+
+    // PATCH can clear them with null.
+    const patched = await req<{
+      event: { responsible: string | null; couple_supplier_id: string | null };
+    }>(
+      "PATCH",
+      `/api/schedule/${created.data.event.id}`,
+      { responsible: null, couple_supplier_id: null },
+      { token },
+    );
+    expect(patched.status).toBe(200);
+    expect(patched.data.event.responsible).toBeNull();
+    expect(patched.data.event.couple_supplier_id).toBeNull();
+  });
+
+  test("duplicate carries the run-sheet fields", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("sched-dup@weddly.test");
+    const created = await req<{ event: { id: number } }>(
+      "POST",
+      "/api/schedule",
+      { label: "Speeches", starts_at_minutes: 21 * 60, responsible: "Best man" },
+      { token },
+    );
+    const dup = await req<{ event: { responsible: string | null; label: string } }>(
+      "POST",
+      `/api/schedule/${created.data.event.id}/duplicate`,
+      {},
+      { token },
+    );
+    expect(dup.status).toBe(201);
+    expect(dup.data.event.responsible).toBe("Best man");
+    expect(dup.data.event.label).toContain("copy");
+  });
+
+  test("responsible over the length cap is rejected", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("sched-toolong@weddly.test");
+    const r = await req(
+      "POST",
+      "/api/schedule",
+      { label: "X", starts_at_minutes: 600, responsible: "z".repeat(81) },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+});

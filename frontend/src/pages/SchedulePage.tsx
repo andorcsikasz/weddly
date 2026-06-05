@@ -3,6 +3,7 @@
 // PDF via `schedulePdfUrl`. Times are stored as minutes-from-midnight so a
 // last-minute date shift doesn't rewrite every row.
 
+import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import {
   SCHEDULE_DAY_TWO_MINUTES,
@@ -10,14 +11,26 @@ import {
   SCHEDULE_MAX_LABEL_LEN,
   SCHEDULE_MAX_LOCATION_LEN,
   SCHEDULE_MAX_NOTES_LEN,
+  SCHEDULE_MAX_RESPONSIBLE_LEN,
   SCHEDULE_MIN_DURATION,
 } from "@shared/schedule";
-import { Clock, Download, MapPin, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
+import {
+  Briefcase,
+  Clock,
+  Download,
+  MapPin,
+  Pencil,
+  Plus,
+  Trash2,
+  User,
+  Wand2,
+  X,
+} from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { fetchPdfBlob, scheduleApi, schedulePdfUrl } from "../lib/endpoints";
+import { coupleSupplierApi, fetchPdfBlob, scheduleApi, schedulePdfUrl } from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
 import {
   SCHEDULE_TEMPLATE,
@@ -99,6 +112,7 @@ export default function SchedulePage() {
   const toast = useToast();
   const confirm = useConfirm();
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
+  const [suppliers, setSuppliers] = useState<CoupleSupplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -114,7 +128,22 @@ export default function SchedulePage() {
     } finally {
       setLoading(false);
     }
+    // Suppliers power the run-sheet "supplier" select only — best-effort, so a
+    // failure here never blanks the schedule itself.
+    try {
+      const s = await coupleSupplierApi.list();
+      setSuppliers(s.suppliers ?? []);
+    } catch {
+      // ignore — the select just stays empty
+    }
   }
+
+  // id → name for rendering the supplier a run-sheet beat belongs to.
+  const supplierNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of suppliers) m.set(s.id, s.name);
+    return m;
+  }, [suppliers]);
 
   useEffect(() => {
     void refresh();
@@ -306,6 +335,18 @@ export default function SchedulePage() {
                         {event.location}
                       </span>
                     )}
+                    {event.responsible && (
+                      <span className="inline-flex items-center gap-1">
+                        <User size={12} aria-hidden="true" />
+                        {event.responsible}
+                      </span>
+                    )}
+                    {event.couple_supplier_id && supplierNameById.get(event.couple_supplier_id) && (
+                      <span className="inline-flex items-center gap-1 text-umber-600 dark:text-umber-300">
+                        <Briefcase size={12} aria-hidden="true" />
+                        {supplierNameById.get(event.couple_supplier_id)}
+                      </span>
+                    )}
                     {event.notes && (
                       <span className="truncate">
                         {event.notes.length > 80 ? `${event.notes.slice(0, 80)}…` : event.notes}
@@ -343,6 +384,7 @@ export default function SchedulePage() {
         <ScheduleEventDialog
           init={editing}
           events={events}
+          suppliers={suppliers}
           onClose={() => setEditing(null)}
           onSaved={(saved) => {
             setEditing(null);
@@ -407,6 +449,7 @@ function ScheduleListSkeleton() {
 function ScheduleEventDialog({
   init,
   events,
+  suppliers,
   onClose,
   onSaved,
   onConflict,
@@ -415,6 +458,8 @@ function ScheduleEventDialog({
   /** All current rows, used to reject a new start time that lands inside
    *  another event's booked window. Excludes the row being edited via its id. */
   events: ScheduleEvent[];
+  /** The couple's booked suppliers — offered in the run-sheet "supplier" select. */
+  suppliers: CoupleSupplier[];
   onClose: () => void;
   onSaved: (event: ScheduleEvent) => void;
   onConflict: () => Promise<void>;
@@ -438,6 +483,10 @@ function ScheduleEventDialog({
   );
   const [location, setLocation] = useState(existing?.location ?? "");
   const [notes, setNotes] = useState(existing?.notes ?? "");
+  const [responsible, setResponsible] = useState(existing?.responsible ?? "");
+  const [coupleSupplierId, setCoupleSupplierId] = useState<string>(
+    existing?.couple_supplier_id ?? "",
+  );
   const [submitting, setSubmitting] = useState(false);
   const [labelError, setLabelError] = useState<string | null>(null);
   const [timeError, setTimeError] = useState<string | null>(null);
@@ -479,6 +528,10 @@ function ScheduleEventDialog({
       duration_minutes: durationMinutes,
       location: location.trim() ? location.trim().slice(0, SCHEDULE_MAX_LOCATION_LEN) : null,
       notes: notes.trim() ? notes.trim().slice(0, SCHEDULE_MAX_NOTES_LEN) : null,
+      responsible: responsible.trim()
+        ? responsible.trim().slice(0, SCHEDULE_MAX_RESPONSIBLE_LEN)
+        : null,
+      couple_supplier_id: coupleSupplierId || null,
     };
     setSubmitting(true);
     try {
@@ -603,6 +656,34 @@ function ScheduleEventDialog({
               placeholder={t("schedule.field_notes_placeholder")}
             />
           </FormRow>
+
+          {/* Run-sheet fields: who runs this beat + which booked supplier. */}
+          <div className="grid grid-cols-2 gap-3">
+            <FormRow label={t("schedule.field_responsible")}>
+              <input
+                className="input"
+                type="text"
+                value={responsible}
+                maxLength={SCHEDULE_MAX_RESPONSIBLE_LEN}
+                onChange={(e) => setResponsible(e.target.value)}
+                placeholder={t("schedule.field_responsible_placeholder")}
+              />
+            </FormRow>
+            <FormRow label={t("schedule.field_supplier")}>
+              <select
+                className="input"
+                value={coupleSupplierId}
+                onChange={(e) => setCoupleSupplierId(e.target.value)}
+              >
+                <option value="">{t("schedule.field_supplier_none")}</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </FormRow>
+          </div>
         </div>
         <div className="flex gap-2 border-t border-paper-200 px-6 py-4 dark:border-umber-700">
           <button type="button" className="btn-ghost flex-1" onClick={onClose}>

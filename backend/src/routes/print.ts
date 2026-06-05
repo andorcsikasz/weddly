@@ -5,6 +5,7 @@ import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
 import { recordExport } from "../domain/exports";
 import { type Ctx, HttpError, requireAuth, type Router } from "../lib/http";
+import { listByCoupleId as listCoupleSuppliers } from "../domain/couple_suppliers";
 import { renderPlaceCardsPdf, renderSchedulePdf, renderSeatingChartPdf } from "../domain/pdf";
 import { listScheduleEvents } from "../domain/schedule";
 import { listGuestsByCouple, toGuest } from "../domain/guests";
@@ -242,10 +243,13 @@ async function handleSchedule(ctx: Ctx): Promise<Response> {
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
   const events = listScheduleEvents(couple.id);
+  const supplierNames: Record<string, string> = {};
+  for (const s of listCoupleSuppliers(couple.id)) supplierNames[s.id] = s.name;
   const pdf = await renderSchedulePdf({
     couple_display_name: couple.display_name,
     wedding_date: couple.wedding_date,
     events,
+    supplier_names: supplierNames,
   });
   addAuditLog({
     actor_user_id: userId,

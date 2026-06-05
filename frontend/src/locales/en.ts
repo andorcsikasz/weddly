@@ -205,7 +205,7 @@ const en: LocaleMessages = {
     banner_cta: "Subscribe",
     founding_banner_title: "You're in the first 200 🎉",
     founding_banner_body:
-      "You're one of our first 200 couples, so Weddly is free for you until your wedding day ({date}). Enjoy the full platform.",
+      "You're one of our first 200 couples, so Weddly is free for you until your wedding day. Enjoy the full platform.",
     solo_banner_title: "Invite your partner",
     solo_banner_body:
       "The first 200 couples use Weddly free until their wedding day. Invite your partner so you can keep planning together, free.",
@@ -1635,6 +1635,10 @@ const en: LocaleMessages = {
     field_location_placeholder: "e.g. Main hall",
     field_notes: "Notes",
     field_notes_placeholder: "Details, cues for the crew…",
+    field_responsible: "Responsible",
+    field_responsible_placeholder: "e.g. Anna (maid of honour)",
+    field_supplier: "Supplier",
+    field_supplier_none: "None",
     save: "Save",
     saving: "Saving…",
     delete_confirm_title: "Delete this event?",
