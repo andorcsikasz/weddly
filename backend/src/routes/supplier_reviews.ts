@@ -19,7 +19,7 @@ import {
   softDeleteReview,
   updateReview,
 } from "../domain/reviews";
-import { requireAdmin } from "../domain/users";
+import { requireAdmin, viewerIsAdmin } from "../domain/users";
 
 const VALID_TAG_SET: ReadonlySet<string> = new Set(SUPPLIER_REVIEW_TAGS);
 
@@ -54,10 +54,10 @@ function parseTags(raw: unknown): SupplierReviewTag[] {
 }
 
 async function handleList(ctx: Ctx): Promise<Response> {
-  // Reads are admin-gated in v1 (the detail page itself is admin-only). Phase
-  // 3 will downgrade this to requireAuth + filter to published rows for
-  // non-admins.
-  requireAdmin(ctx);
+  // Reads are open to any authed viewer now that the detail page serves
+  // couples. Admins see every review (including unpublished drafts) for
+  // moderation; couples see only published rows.
+  const { isAdmin } = viewerIsAdmin(ctx);
   const supplierId = ctx.params.supplier_id?.trim();
   if (!supplierId) throw new HttpError(400, "supplier_id required");
 
@@ -69,7 +69,7 @@ async function handleList(ctx: Ctx): Promise<Response> {
   const page = listReviewsForSupplier(supplierId, {
     limit: Number.isFinite(limit) ? limit : 20,
     cursor: cursor !== null && Number.isFinite(cursor) ? cursor : null,
-    includeUnpublished: true,
+    includeUnpublished: isAdmin,
   });
   const summary = getReviewSummary(supplierId);
   return json({ items: page.items, nextCursor: page.nextCursor, summary });

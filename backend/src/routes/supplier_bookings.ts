@@ -11,7 +11,7 @@
 
 import type { BookingStatus, CreateBookingBody } from "@shared/suppliers";
 import { addAuditLog } from "../lib/audit";
-import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 import {
   buildIcsForBooking,
@@ -36,7 +36,10 @@ const VALID_STATUSES = new Set<BookingStatus>([
 ]);
 
 async function handleAvailability(ctx: Ctx): Promise<Response> {
-  requireAdmin(ctx);
+  // Open to any authed viewer — the availability shape (bookable flag + booked
+  // days + next free date) is what the couple-facing busy calendar reads. The
+  // per-couple bookings LIST below stays admin-only.
+  requireAuth(ctx);
   const supplierId = ctx.params.supplier_id?.trim();
   if (!supplierId) throw new HttpError(400, "supplier_id required");
   return json(getAvailability(supplierId));

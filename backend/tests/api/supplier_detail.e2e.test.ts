@@ -281,3 +281,116 @@ describe("GET /api/suppliers/:supplier_id detail endpoint", () => {
     expect(r.data.comments_count).toBeUndefined();
   });
 });
+
+// The detail page is now couple-facing: reads are open to any authed viewer
+// but role-scoped, while every write + the operational bookings list stay
+// admin-only. These lock in that a couple can never see internal/admin notes,
+// vendor-only notes, or unpublished review drafts.
+describe("supplier detail opened to couples (role-scoped reads)", () => {
+  test("couple sees only public comments — admin_internal and vendor_only are hidden", async () => {
+    const adminToken = await registerAdmin();
+    const sid = curatedSupplierId();
+    for (const visibility of ["admin_internal", "public", "vendor_only"] as const) {
+      const c = await req(
+        "POST",
+        `/api/suppliers/${encodeURIComponent(sid)}/comments`,
+        { body: `${visibility} note`, visibility },
+        { token: adminToken },
+      );
+      expect(c.status).toBe(201);
+    }
+
+    const { token } = await bootstrapCouple("couple@test.test");
+    const list = await req<{ items: Array<{ visibility: string }> }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(sid)}/comments`,
+      undefined,
+      { token },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.items.length).toBe(1);
+    expect(list.data.items[0]?.visibility).toBe("public");
+
+    // Admin still sees every tier.
+    const adminList = await req<{ items: unknown[] }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(sid)}/comments`,
+      undefined,
+      { token: adminToken },
+    );
+    expect(adminList.data.items.length).toBe(3);
+  });
+
+  test("couple sees only published reviews — drafts are hidden", async () => {
+    const adminToken = await registerAdmin();
+    const sid = curatedSupplierId();
+    const now = Date.now();
+    const adminUserId = (
+      db.prepare("SELECT id FROM users WHERE email = ?").get("admin@test.test") as { id: number }
+    ).id;
+    const stmt = db.prepare(
+      `INSERT INTO supplier_reviews
+         (supplier_id, author_user_id, couple_id, rating, body, published, created_at, updated_at)
+       VALUES (?, ?, NULL, ?, ?, ?, ?, ?)`,
+    );
+    stmt.run(sid, adminUserId, 5, "published one", 1, now, now);
+    stmt.run(sid, adminUserId, 2, "draft one", 0, now, now);
+
+    const { token } = await bootstrapCouple("couple@test.test");
+    const list = await req<{ items: Array<{ published: boolean }> }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(sid)}/reviews`,
+      undefined,
+      { token },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.items.length).toBe(1);
+    expect(list.data.items[0]?.published).toBe(true);
+
+    // Admin sees both the published row and the draft.
+    const adminList = await req<{ items: unknown[] }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(sid)}/reviews`,
+      undefined,
+      { token: adminToken },
+    );
+    expect(adminList.data.items.length).toBe(2);
+  });
+
+  test("couple can read availability (200)", async () => {
+    const { token } = await bootstrapCouple("couple@test.test");
+    const sid = curatedSupplierId();
+    const r = await req<{ bookable: boolean }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(sid)}/availability`,
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(typeof r.data.bookable).toBe("boolean");
+  });
+
+  test("couple still gets 403 on comment write (writes stay admin-only)", async () => {
+    const { token } = await bootstrapCouple("couple@test.test");
+    const sid = curatedSupplierId();
+    const r = await req(
+      "POST",
+      `/api/suppliers/${encodeURIComponent(sid)}/comments`,
+      { body: "can I ask something?", visibility: "public" },
+      { token },
+    );
+    expect(r.status).toBe(403);
+  });
+
+  test("couple still gets 403 on the per-supplier bookings list (operational view)", async () => {
+    const { token } = await bootstrapCouple("couple@test.test");
+    const sid = curatedSupplierId();
+    const r = await req(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(sid)}/bookings`,
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(403);
+  });
+});

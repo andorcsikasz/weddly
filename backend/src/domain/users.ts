@@ -90,3 +90,13 @@ export function requireAdmin(ctx: Ctx): UserRow {
   if (!isAdminEmail(row.email)) throw new HttpError(403, "Admin only");
   return row;
 }
+
+/** Non-throwing admin check for endpoints that serve BOTH couples and admins
+ *  with role-scoped data (e.g. the supplier detail page once it opens to
+ *  couples). Still requires auth, but returns `isAdmin: false` instead of a
+ *  403 for a regular couple — the caller decides what each role may see. */
+export function viewerIsAdmin(ctx: Ctx): { userId: number; isAdmin: boolean } {
+  const userId = requireAuth(ctx);
+  const row = getUserById(userId);
+  return { userId, isAdmin: !!row && isAdminEmail(row.email) };
+}

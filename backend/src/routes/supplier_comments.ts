@@ -16,7 +16,7 @@ import {
   listCommentsForSupplier,
   softDeleteComment,
 } from "../domain/supplier_comments";
-import { requireAdmin } from "../domain/users";
+import { requireAdmin, viewerIsAdmin } from "../domain/users";
 
 const VALID_VISIBILITIES = new Set<CommentVisibility>(["admin_internal", "public", "vendor_only"]);
 
@@ -39,12 +39,15 @@ function parseBody(raw: unknown): string {
 }
 
 async function handleList(ctx: Ctx): Promise<Response> {
-  const admin = requireAdmin(ctx);
+  const { isAdmin } = viewerIsAdmin(ctx);
   const supplierId = ctx.params.supplier_id?.trim();
   if (!supplierId) throw new HttpError(400, "supplier_id required");
-  // Admin viewers see every visibility tier; this becomes a per-visibility
-  // filter in Phase 3 when couples and vendors get scoped views.
-  void admin;
+  // Admins see every tier; couples see only public Q&A. admin_internal and
+  // vendor_only notes must never reach a couple's view now that the detail
+  // page is open to couples.
+  const visibilities: CommentVisibility[] = isAdmin
+    ? ["admin_internal", "public", "vendor_only"]
+    : ["public"];
 
   const cursorRaw = ctx.url.searchParams.get("cursor");
   const cursor = cursorRaw ? Number.parseInt(cursorRaw, 10) : null;
@@ -54,7 +57,7 @@ async function handleList(ctx: Ctx): Promise<Response> {
   const page = listCommentsForSupplier(supplierId, {
     limit: Number.isFinite(limit) ? limit : 20,
     cursor: cursor !== null && Number.isFinite(cursor) ? cursor : null,
-    visibilities: ["admin_internal", "public", "vendor_only"],
+    visibilities,
   });
   return json(page);
 }

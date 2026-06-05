@@ -77,6 +77,7 @@ import { ComposeDialog } from "../components/OutreachInbox";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import {
   reviewApi,
   supplierApi,
@@ -227,6 +228,8 @@ export default function SupplierDetailPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const confirm = useConfirm();
+  const { user } = useAuth();
+  const isAdmin = user?.is_admin ?? false;
   const { supplier_id: supplierIdRaw } = useParams<{ supplier_id: string }>();
   const supplierId = supplierIdRaw ?? "";
 
@@ -239,31 +242,39 @@ export default function SupplierDetailPage() {
   const [mapOpen, setMapOpen] = useState(false);
 
   useEffect(() => {
-    document.title = detail ? `${detail.name} · ${t("suppliers.detail.adminTitle")}` : "Supplier";
-  }, [detail, t]);
+    if (!detail) {
+      document.title = "Supplier";
+      return;
+    }
+    // Couples see the bare supplier name; the "Admin view" suffix is an
+    // internal label and stays admin-only.
+    document.title = isAdmin ? `${detail.name} · ${t("suppliers.detail.adminTitle")}` : detail.name;
+  }, [detail, isAdmin, t]);
 
   const refresh = useCallback(async () => {
     if (!supplierId) return;
     try {
-      const [d, rs, cs, av, bs] = await Promise.all([
+      // The per-couple bookings LIST stays admin-only (operational moderation
+      // view). Couples skip that call entirely — fetching it would 403 and
+      // reject the whole Promise.all.
+      const [d, rs, cs, av] = await Promise.all([
         supplierApi.detail(supplierId),
         reviewApi.list(supplierId, { limit: 50 }),
         supplierCommentApi.list(supplierId, { limit: 50 }),
         supplierBookingApi.availability(supplierId),
-        supplierBookingApi.list(supplierId),
       ]);
       setDetail(d);
       setReviews(rs.items);
       setComments(cs.items);
       setAvailability(av);
-      setBookings(bs.items);
+      setBookings(isAdmin ? (await supplierBookingApi.list(supplierId)).items : []);
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : "Load failed";
       toast.error(msg);
     } finally {
       setLoading(false);
     }
-  }, [supplierId, toast]);
+  }, [supplierId, toast, isAdmin]);
 
   useEffect(() => {
     setLoading(true);
@@ -316,9 +327,10 @@ export default function SupplierDetailPage() {
   return (
     // data-admin-shell opts every h1..h6 inside into the sans typography
     // override defined in index.css. Mirrors the /app/admin/* shell so the
-    // admin-only detail page reads as an operational tool, not editorial copy.
+    // admin operational view reads as a tool. Couples get the editorial
+    // typography (Cormorant headings) the rest of /app uses.
     <div
-      data-admin-shell="true"
+      data-admin-shell={isAdmin ? "true" : undefined}
       className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-6 xl:px-10"
     >
       <button
@@ -462,6 +474,7 @@ export default function SupplierDetailPage() {
             confirm={confirm}
             toast={toast}
             locale={locale}
+            isAdmin={isAdmin}
             t={t}
           />
 
@@ -473,11 +486,15 @@ export default function SupplierDetailPage() {
             confirm={confirm}
             toast={toast}
             locale={locale}
+            isAdmin={isAdmin}
             t={t}
           />
 
-          {/* Bookings list (the mini-calendar moved to the right rail) */}
-          <BookingsSection bookings={bookings} bookable={detail.bookable} t={t} />
+          {/* Bookings list — admin-only operational view. Couples read
+              availability from the right-rail busy calendar instead. */}
+          {isAdmin && (
+            <BookingsSection bookings={bookings} bookable={detail.bookable} t={t} />
+          )}
 
           {/* Owner-side claim CTA. Renders only on unclaimed listings; once
               vendor_account_id is set, the slot disappears. Armed-confirm
@@ -489,8 +506,8 @@ export default function SupplierDetailPage() {
             <ClaimCtaSection supplierId={detail.id} toast={toast} t={t} />
           )}
 
-          {/* Admin meta */}
-          <AdminMetaSection detail={detail} t={t} />
+          {/* Admin meta — internal ids / source / redirect. Admin-only. */}
+          {isAdmin && <AdminMetaSection detail={detail} t={t} />}
         </main>
 
         {/* ─── SIDEBAR (sticky on lg+) ───────────────────────────────────── */}
@@ -599,6 +616,9 @@ interface SectionCtx {
   toast: ReturnType<typeof useToast>;
   confirm: ReturnType<typeof useConfirm>;
   locale: string;
+  /** True only for Weddly admins. Gates the moderation affordances (compose,
+   *  publish, delete, internal-visibility controls) that couples never see. */
+  isAdmin: boolean;
   t: (k: string, vars?: Record<string, string | number>) => string;
 }
 
@@ -608,7 +628,7 @@ function ReviewsSection({
   count,
   ...ctx
 }: SectionCtx & { reviews: SupplierReview[]; avg: number | null; count: number }) {
-  const { supplierId, onChange, toast, confirm, locale, t } = ctx;
+  const { supplierId, onChange, toast, confirm, locale, isAdmin, t } = ctx;
   // Default 0 = no rating picked yet. Stars render as hollow glyphs and the
   // Beküldés button stays disabled until the user actually clicks one.
   // Avoids the "everyone defaults to 5 stars" trap that inflates aggregates.
@@ -688,6 +708,10 @@ function ReviewsSection({
         )}
       </div>
 
+      {/* Review composer is admin-only in this cut. Couple-authored reviews
+          ride a Phase-3 anti-spam (engagement-proof) gate the backend doesn't
+          enforce yet, so couples read published reviews but can't post. */}
+      {isAdmin && (
       <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
         <div className="mb-3 flex items-center gap-3">
           <span className="text-sm text-ink-600 dark:text-umber-200">
@@ -747,6 +771,7 @@ function ReviewsSection({
           </button>
         </div>
       </div>
+      )}
 
       {reviews.length === 0 ? (
         <p className="text-sm italic text-ink-500 dark:text-umber-300">
@@ -772,15 +797,17 @@ function ReviewsSection({
                   <span className="text-xs text-ink-500 dark:text-umber-300">
                     {formatDate(r.created_at, locale)}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => remove(r.id)}
-                    aria-label={t("common.delete")}
-                    title={t("common.delete")}
-                    className="text-ink-400 hover:text-rose-600 dark:text-umber-400"
-                  >
-                    <Trash2 size={14} aria-hidden />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => remove(r.id)}
+                      aria-label={t("common.delete")}
+                      title={t("common.delete")}
+                      className="text-ink-400 hover:text-rose-600 dark:text-umber-400"
+                    >
+                      <Trash2 size={14} aria-hidden />
+                    </button>
+                  )}
                 </div>
               </div>
               {r.body && (
@@ -809,7 +836,7 @@ function ReviewsSection({
 }
 
 function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: SupplierComment[] }) {
-  const { supplierId, onChange, toast, confirm, locale, t } = ctx;
+  const { supplierId, onChange, toast, confirm, locale, isAdmin, t } = ctx;
   const [body, setBody] = useState("");
   const [visibility, setVisibility] = useState<CommentVisibility>("admin_internal");
   const [submitting, setSubmitting] = useState(false);
@@ -853,6 +880,10 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
         {t("suppliers.detail.comments.title")}
       </h2>
 
+      {/* Q&A composer is admin-only in this cut. The visibility dropdown
+          (admin_internal / public / vendor_only) is a moderation control, and
+          couple-authored questions are a separate Phase-3 surface. */}
+      {isAdmin && (
       <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
         <textarea
           className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
@@ -884,6 +915,7 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
           </button>
         </div>
       </div>
+      )}
 
       {comments.length === 0 ? (
         <p className="text-sm italic text-ink-500 dark:text-umber-300">
@@ -902,23 +934,28 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
                     {c.author.display_name}
                   </span>
                   {c.author.is_admin && <Pill tone="violet">Weddly</Pill>}
-                  <Pill tone="muted">
-                    {t(`suppliers.detail.comments.visibility.${c.visibility}`)}
-                  </Pill>
+                  {/* Visibility tier is an internal moderation label. */}
+                  {isAdmin && (
+                    <Pill tone="muted">
+                      {t(`suppliers.detail.comments.visibility.${c.visibility}`)}
+                    </Pill>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-ink-500 dark:text-umber-300">
                     {formatDate(c.created_at, locale)}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => remove(c.id)}
-                    aria-label={t("common.delete")}
-                    title={t("common.delete")}
-                    className="text-ink-400 hover:text-rose-600 dark:text-umber-400"
-                  >
-                    <Trash2 size={14} aria-hidden />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => remove(c.id)}
+                      aria-label={t("common.delete")}
+                      title={t("common.delete")}
+                      className="text-ink-400 hover:text-rose-600 dark:text-umber-400"
+                    >
+                      <Trash2 size={14} aria-hidden />
+                    </button>
+                  )}
                 </div>
               </div>
               <p className="whitespace-pre-line text-sm text-ink-800 dark:text-umber-100">

@@ -670,9 +670,9 @@ export default function App() {
             path="suppliers/:supplier_id"
             element={
               <Page>
-                <RequireAdmin>
+                <RequireAuth>
                   <SupplierDetailPage />
-                </RequireAdmin>
+                </RequireAuth>
               </Page>
             }
           />
