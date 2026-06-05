@@ -491,7 +491,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Read-only billing banner — renders only when the couple's free
           period has lapsed and they aren't subscribed. No-ops otherwise. */}
       <SubscriptionBanner />
-      <header className="sticky top-0 z-20 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
+      <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
           {/* When signed in, the wordmark routes to the in-app dashboard so
               users don't get punted to the marketing landing (which reads as
