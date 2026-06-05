@@ -167,7 +167,7 @@ export function BookedSupplierCard({
       // Matches the directory supplier cards (the `card` utility) so the
       // "already booked" form reads as one of them — same solid border,
       // surface, radius, and padding.
-      className="card !p-4 relative flex flex-col"
+      className="card !px-4 !py-3 relative flex flex-col"
       aria-label={t("suppliers.bookedCard.title")}
     >
       <button
