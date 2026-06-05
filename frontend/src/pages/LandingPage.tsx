@@ -158,7 +158,7 @@ export default function LandingPage() {
               </h1>
               {/* Subline removed from the visible hero per request; the
                   hero_sub string still feeds the SEO prerender body. */}
-              <div className="mt-8 max-w-[18ch] sm:max-w-md">
+              <div className="mt-4 max-w-[18ch] sm:mt-8 sm:max-w-md">
                 {/* Single primary CTA only. Login moved to the public header
                     (PublicShell) since "I already have an account" is a
                     secondary intent that doesn't deserve hero real-estate. */}
@@ -239,7 +239,7 @@ export default function LandingPage() {
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
-              <ul className="mt-7 space-y-3">
+              <ul className="mt-7 space-y-1">
                 <IconRow icon={<Wallet size={16} />}>{t("landing.block_budget_bullet_1")}</IconRow>
                 <IconRow icon={<Users size={16} />}>{t("landing.block_budget_bullet_2")}</IconRow>
                 <IconRow icon={<History size={16} />}>{t("landing.block_budget_bullet_3")}</IconRow>
