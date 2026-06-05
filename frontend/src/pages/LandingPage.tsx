@@ -419,14 +419,13 @@ export default function LandingPage() {
                 <span className="inline-flex items-start font-serif text-6xl leading-[0.9] text-umber-900 dark:text-paper-50 sm:text-7xl">
                   <span>{t("landing.pricing_amount")}</span>
                   {t("landing.pricing_amount_decimal") && (
-                    // pt nudges the small decimal down so its top sits level with
-                    // the "5" cap-top instead of floating above it. The em is the
-                    // big font's (this wrapper inherits text-6xl/7xl), so the
+                    // Decimal rides high as a superscript (e.g. 5·⁵⁰): a small
+                    // top pad drops it just enough that its cap-top sits level
+                    // with the big "5" cap-top, not buried mid-numeral. The em
+                    // here is the big font's (inherited text-6xl/7xl), so the
                     // offset scales with the responsive numeral.
-                    <span className="pt-[0.18em] leading-none">
-                      <span className="text-[0.4em] leading-none">
-                        .{t("landing.pricing_amount_decimal")}
-                      </span>
+                    <span className="self-start pt-[0.05em] text-[0.4em] leading-none">
+                      .{t("landing.pricing_amount_decimal")}
                     </span>
                   )}
                 </span>
