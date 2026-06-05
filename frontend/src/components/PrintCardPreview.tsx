@@ -29,7 +29,7 @@ function DecorDivider({ decor, color }: { decor: CoupleDesign["decor"]; color: s
   if (decor === "botanical") {
     return (
       <span className="text-lg leading-none" style={{ color }} aria-hidden>
-        ❧
+        {"❧︎"}
       </span>
     );
   }

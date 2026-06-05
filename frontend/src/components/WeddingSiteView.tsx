@@ -296,7 +296,7 @@ export function WeddingSiteView({
             )}
             {decor === "botanical" && (
               <span className="text-xl" style={{ color: "var(--wt-accent)" }}>
-                ❧
+                {"❧︎"}
               </span>
             )}
           </div>

@@ -94,31 +94,92 @@ function PresetTile({
 /** A selectable font chip that renders its own label in the font it represents,
  *  so the couple previews the typeface before choosing. `fontFamily` omitted =
  *  the "Use preset" chip (rendered in the UI font). */
+/** A font chip that PREVIEWS the typeface: it shows a large "Aa" rendered in
+ *  the font it represents (no name text). `label` is the accessible name (the
+ *  family name / "use preset") since the visible "Aa" carries no meaning to a
+ *  screen reader. */
 function FontChip({
   active,
   onClick,
   fontFamily,
-  children,
+  label,
 }: {
   active: boolean;
   onClick: () => void;
   fontFamily?: string;
-  children: React.ReactNode;
+  label: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
+      aria-label={label}
+      title={label}
       style={fontFamily ? { fontFamily } : undefined}
-      className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+      className={`inline-flex h-11 min-w-[3rem] items-center justify-center rounded-xl border px-3 text-xl leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
         active
           ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
           : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
       }`}
     >
-      {children}
+      Aa
     </button>
+  );
+}
+
+/** A discrete slider over a small ordered catalog (e.g. card radius / shadow):
+ *  one continuous control with the option names as ticks beneath, instead of
+ *  separate tiles. */
+function OptionSlider<T extends string>({
+  heading,
+  options,
+  value,
+  onChange,
+}: {
+  heading: string;
+  options: readonly { slug: T; nameKey: string }[];
+  value: T;
+  onChange: (slug: T) => void;
+}) {
+  const { t } = useT();
+  const idx = Math.max(
+    0,
+    options.findIndex((o) => o.slug === value),
+  );
+  return (
+    <section>
+      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        {heading}
+      </h2>
+      <input
+        type="range"
+        min={0}
+        max={options.length - 1}
+        step={1}
+        value={idx}
+        onChange={(e) => {
+          const o = options[Number(e.target.value)];
+          if (o) onChange(o.slug);
+        }}
+        aria-label={heading}
+        className="block w-full accent-ink-900 dark:accent-paper-100"
+      />
+      <div className="mt-1 flex justify-between text-[11px]">
+        {options.map((o, i) => (
+          <span
+            key={o.slug}
+            className={
+              i === idx
+                ? "font-semibold text-ink-900 dark:text-paper-50"
+                : "text-ink-400 dark:text-umber-300"
+            }
+          >
+            {t(o.nameKey)}
+          </span>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -529,18 +590,19 @@ export default function DesignPage() {
                       {t(`design.font.${which}_label`)}
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      <FontChip active={current === null} onClick={() => setter(null)}>
-                        {t("design.font.use_preset")}
-                      </FontChip>
+                      <FontChip
+                        active={current === null}
+                        onClick={() => setter(null)}
+                        label={t("design.font.use_preset")}
+                      />
                       {FONT_FAMILIES.map((fam) => (
                         <FontChip
                           key={fam.slug}
                           active={current === fam.slug}
                           onClick={() => setter(fam.slug)}
                           fontFamily={fam.stack}
-                        >
-                          {t(fam.nameKey)}
-                        </FontChip>
+                          label={t(fam.nameKey)}
+                        />
                       ))}
                     </div>
                   </div>
@@ -650,7 +712,7 @@ export default function DesignPage() {
                       {dec.slug === "frame" && (
                         <span className="h-7 w-16 rounded border border-ink-300 dark:border-umber-500" />
                       )}
-                      {dec.slug === "botanical" && <span className="text-xl">❧</span>}
+                      {dec.slug === "botanical" && <span className="text-xl">{"❧︎"}</span>}
                     </span>
                   </PresetTile>
                 ))}
@@ -672,52 +734,18 @@ export default function DesignPage() {
                 <p className="text-sm text-ink-500 dark:text-umber-300">
                   {t("design.website.helper")}
                 </p>
-                {/* Card corner rounding */}
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.web.card_radius_label")}
-                  </h2>
-                  <div className="grid grid-cols-3 gap-2">
-                    {CARD_RADII.map((r) => (
-                      <PresetTile
-                        key={r.slug}
-                        active={design.web.cardRadius === r.slug}
-                        onSelect={() => chooseCardRadius(r.slug)}
-                        label={t(r.nameKey)}
-                        ariaLabel={t(r.nameKey)}
-                      >
-                        <span
-                          className="block h-8 w-full border border-paper-300 bg-paper-100 dark:border-umber-600 dark:bg-umber-700"
-                          style={{ borderRadius: r.css }}
-                          aria-hidden
-                        />
-                      </PresetTile>
-                    ))}
-                  </div>
-                </section>
-                {/* Card elevation / shadow */}
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.web.shadow_label")}
-                  </h2>
-                  <div className="grid grid-cols-3 gap-2">
-                    {SHADOWS.map((s) => (
-                      <PresetTile
-                        key={s.slug}
-                        active={design.web.shadow === s.slug}
-                        onSelect={() => chooseShadow(s.slug)}
-                        label={t(s.nameKey)}
-                        ariaLabel={t(s.nameKey)}
-                      >
-                        <span
-                          className="block h-8 w-full rounded-lg border border-paper-200 bg-white dark:border-umber-600 dark:bg-umber-700"
-                          style={{ boxShadow: s.css === "none" ? undefined : s.css }}
-                          aria-hidden
-                        />
-                      </PresetTile>
-                    ))}
-                  </div>
-                </section>
+                <OptionSlider
+                  heading={t("design.web.card_radius_label")}
+                  options={CARD_RADII}
+                  value={design.web.cardRadius}
+                  onChange={chooseCardRadius}
+                />
+                <OptionSlider
+                  heading={t("design.web.shadow_label")}
+                  options={SHADOWS}
+                  value={design.web.shadow}
+                  onChange={chooseShadow}
+                />
               </div>
             ) : (
               <div className="space-y-6">
