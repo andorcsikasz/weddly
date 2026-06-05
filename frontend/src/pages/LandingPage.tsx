@@ -508,7 +508,10 @@ export default function LandingPage() {
           <h2 className="mt-8 whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-umber-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
             {t("landing.closing_title")}
           </h2>
-          <div className="mt-10 flex justify-center">
+          {/* Closing CTA shown on desktop only. On mobile/tablet the persistent
+              MobileStickySignup bar already keeps "Start planning" a thumb-tap
+              away, so a second button here just duplicates it. */}
+          <div className="mt-10 hidden justify-center lg:flex">
             <Link
               to="/signup"
               className="btn-primary btn-lifted btn-landing btn-lg w-full max-w-sm sm:w-auto sm:max-w-none"
