@@ -140,7 +140,7 @@ export default function LandingPage() {
         {/* Tighter top padding on mobile so the CTA pair stays above the
             fold on 360x640 Android. The hero is H1 + subline + single
             primary CTA. */}
-        <div className="relative mx-auto flex min-h-[75svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:block sm:min-h-0 sm:px-6 sm:pt-24 lg:pt-28 lg:pb-12">
+        <div className="relative mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:block sm:min-h-0 sm:px-6 sm:pt-24 lg:pt-28 lg:pb-12">
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
               {/* Cap with `max-w-[18ch]` on mobile — HU translations are
@@ -970,7 +970,7 @@ function BlogTeaser() {
           return (
             <li
               key={post.slug}
-              className="w-[80vw] max-w-[20rem] shrink-0 snap-start first:ml-2 last:mr-4"
+              className="w-[80vw] max-w-[20rem] shrink-0 snap-start first:ml-4 last:mr-4"
             >
               <Link
                 to={`/blog/${post.slug}`}
