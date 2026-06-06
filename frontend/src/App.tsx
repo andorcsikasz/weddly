@@ -629,8 +629,20 @@ export default function App() {
               </Page>
             }
           />
+          {/* Design splits into two sub-pages — guest website vs printable
+              cards — sharing DesignPage's state + auto-save (the surface is
+              derived from the URL). /app/design redirects to the website tab. */}
+          <Route path="design" element={<Navigate to="/app/design/website" replace />} />
           <Route
-            path="design"
+            path="design/website"
+            element={
+              <Page>
+                <DesignPage />
+              </Page>
+            }
+          />
+          <Route
+            path="design/print"
             element={
               <Page>
                 <DesignPage />

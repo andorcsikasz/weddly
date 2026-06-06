@@ -37,11 +37,12 @@ import {
 import { getContrastRatio } from "@shared/wcag";
 import type { Couple } from "@shared/types";
 import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
-import { Check, Download, Eye, Loader2 } from "lucide-react";
+import { Check, Download, Eye, Loader2, Pencil } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
 import { WeddingSiteView } from "../components/WeddingSiteView";
+import { Link, useLocation } from "react-router-dom";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
@@ -203,7 +204,10 @@ export default function DesignPage() {
   const [readOnly, setReadOnly] = useState(false);
   // Which top-level tab is showing: the Style kit pickers, or the Cards &
   // printables download hub. Both share the same persisted design blob.
-  const [tab, setTab] = useState<"website" | "print">("website");
+  // Which surface this is editing is driven by the URL: /app/design/website vs
+  // /app/design/print are two sub-pages over the same shared state + auto-save.
+  const { pathname } = useLocation();
+  const tab: "website" | "print" = pathname.endsWith("/print") ? "print" : "website";
   // Which printable the live print preview shows (Print tab only).
   const [printTemplate, setPrintTemplate] = useState<PrintTemplate>("place_card");
   // On-demand exact-PDF preview (blob: URL shown in an iframe under the live
@@ -470,12 +474,13 @@ export default function DesignPage() {
     },
   ];
 
+  // Surface sub-page links — each is its own URL so the two design surfaces are
+  // genuinely separate pages (back/forward, deep-link), sharing this state.
   const tabBtn = (key: "website" | "print", label: string) => (
-    <button
-      type="button"
+    <Link
+      to={`/app/design/${key}`}
       role="tab"
       aria-selected={tab === key}
-      onClick={() => setTab(key)}
       className={`rounded-full px-4 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
         tab === key
           ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
@@ -483,7 +488,7 @@ export default function DesignPage() {
       }`}
     >
       {label}
-    </button>
+    </Link>
   );
 
   return (
@@ -552,30 +557,44 @@ export default function DesignPage() {
                 <InfoHint text={t("design.colors.hint")} />
               </div>
               <div className="rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {/* Swatch row: each role is a colour block with a pencil badge;
+                    clicking it opens the native colour editor (the swatch IS the
+                    input label). Reset clears the override back to the palette. */}
+                <div className="flex flex-wrap gap-4">
                   {COLOR_ROLES.map((role) => {
                     const resolved = design.colors[role] ?? activePalette[role].hex;
                     const overridden = design.colors[role] !== undefined;
                     return (
-                      <div key={role} className="flex flex-col gap-1">
-                        <label className="flex items-center gap-2 text-xs text-ink-700 dark:text-paper-100">
+                      <div key={role} className="flex flex-col items-center gap-1">
+                        <label
+                          className="relative block h-12 w-12 cursor-pointer rounded-xl border border-paper-300 shadow-soft dark:border-umber-700"
+                          style={{ backgroundColor: resolved }}
+                          title={t(`design.colors.${role}`)}
+                        >
                           <input
                             type="color"
                             value={resolved}
                             onChange={(ev) => chooseColor(role, ev.target.value)}
                             aria-label={t(`design.colors.${role}`)}
-                            className="h-8 w-8 shrink-0 cursor-pointer rounded-md border border-paper-300 bg-transparent p-0.5 dark:border-umber-700"
+                            className="sr-only"
                           />
-                          <span className="min-w-0 truncate">{t(`design.colors.${role}`)}</span>
+                          <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
+                            <Pencil size={11} aria-hidden />
+                          </span>
                         </label>
-                        {overridden && (
+                        <span className="text-[11px] text-ink-600 dark:text-umber-200">
+                          {t(`design.colors.${role}`)}
+                        </span>
+                        {overridden ? (
                           <button
                             type="button"
                             onClick={() => clearColor(role)}
-                            className="self-start text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+                            className="text-[10px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
                           >
                             {t("design.colors.reset")}
                           </button>
+                        ) : (
+                          <span className="h-[14px]" aria-hidden />
                         )}
                       </div>
                     );
