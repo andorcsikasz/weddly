@@ -753,7 +753,7 @@ export default function GuestPageEditorPage() {
   }
 
   // Köszöntő ghost → reveal the intro textarea (the type-in) and focus it. The
-  // 3 starter-welcome suggestions render right below it while it's empty, so a
+  // 5 starter-welcome suggestions render right below it while it's empty, so a
   // click lands the couple on both the field and the pick-one shortcuts.
   function focusIntroField() {
     const el = revealField("guest-page-intro");

@@ -329,6 +329,16 @@ export function WeddingSiteView({
             {t("wedding_site.ghost.date_cta")}
             <Plus size={12} aria-hidden />
           </button>
+        ) : isPreview && e.onEditDate ? (
+          // Filled date in the editor preview — clickable, jumps to the field.
+          <button
+            type="button"
+            onClick={e.onEditDate}
+            title={editHint}
+            className="mt-4 inline-flex items-center justify-center gap-2 rounded-md px-1.5 py-0.5 font-serif text-sm italic text-ink-700 transition hover:bg-paper-100 hover:text-ink-900 dark:text-paper-100 dark:hover:bg-umber-800 sm:text-base"
+          >
+            <Calendar size={14} aria-hidden /> {dateLine}
+          </button>
         ) : (
           <p className="mt-4 inline-flex items-center justify-center gap-2 font-serif text-sm italic text-ink-700 dark:text-paper-100 sm:text-base">
             <Calendar size={14} aria-hidden /> {dateLine}
@@ -336,12 +346,25 @@ export function WeddingSiteView({
         )}
 
         {/* Venue — name when set; an approximate marker on the live public
-            page; a ghost button in the editor preview when still empty. */}
+            page; a ghost button in the editor preview when still empty. In the
+            editor preview a filled venue is clickable and jumps to the field. */}
         {view.venue_name ? (
-          <p className="mt-2 ml-4 inline-flex items-center justify-center gap-2 font-serif text-sm font-normal italic text-ink-700 dark:text-paper-100 sm:text-base">
-            <MapPin size={14} aria-hidden />
-            {view.venue_name}
-          </p>
+          isPreview && e.onEditVenue ? (
+            <button
+              type="button"
+              onClick={e.onEditVenue}
+              title={editHint}
+              className="mt-2 ml-4 inline-flex items-center justify-center gap-2 rounded-md px-1.5 py-0.5 font-serif text-sm font-normal italic text-ink-700 transition hover:bg-paper-100 hover:text-ink-900 dark:text-paper-100 dark:hover:bg-umber-800 sm:text-base"
+            >
+              <MapPin size={14} aria-hidden />
+              {view.venue_name}
+            </button>
+          ) : (
+            <p className="mt-2 ml-4 inline-flex items-center justify-center gap-2 font-serif text-sm font-normal italic text-ink-700 dark:text-paper-100 sm:text-base">
+              <MapPin size={14} aria-hidden />
+              {view.venue_name}
+            </p>
+          )
         ) : isPreview ? (
           <div>
             <button
