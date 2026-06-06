@@ -855,15 +855,31 @@ export default function DashboardPage() {
           <section
             id="invite-partner"
             data-coach-target="partner-invite"
-            className="card stationery mb-8 scroll-mt-24 !border-ink-900 dark:!border-paper-100/40"
+            className="card stationery mb-6 scroll-mt-24 !border-ink-900 !p-4 dark:!border-paper-100/40"
           >
-            <h2>{t("dashboard.invite_partner")}</h2>
-            <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
-              {t("dashboard.invite_partner_help")}
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="!text-base">{t("dashboard.invite_partner")}</h2>
+                <p className="mt-0.5 text-xs text-ink-700 dark:text-paper-100">
+                  {t("dashboard.invite_partner_help")}
+                </p>
+              </div>
+              {inviteUrl && (
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm shrink-0 text-ink-500 dark:text-umber-300"
+                  onClick={onCancelInvite}
+                  disabled={inviteCancelling}
+                >
+                  {inviteCancelling
+                    ? t("dashboard.invite_cancelling")
+                    : t("dashboard.invite_cancel")}
+                </button>
+              )}
+            </div>
 
             {!inviteUrl ? (
-              <form className="mt-4" onSubmit={onSendInvite}>
+              <form className="mt-3" onSubmit={onSendInvite}>
                 <label htmlFor="partner-email" className="field-label">
                   {t("dashboard.invite_email_label")}
                 </label>
@@ -895,23 +911,15 @@ export default function DashboardPage() {
               </form>
             ) : (
               // Link-only path: submitted without an email, so we show the
-              // shareable URL to copy. Cancel voids it back to the form.
-              <div className="mt-4 space-y-3">
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input className="input flex-1" readOnly value={inviteUrl} />
-                  <button type="button" className="btn-outline" onClick={onCopy}>
-                    {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className="btn-ghost btn-sm text-ink-500 dark:text-umber-300"
-                  onClick={onCancelInvite}
-                  disabled={inviteCancelling}
-                >
-                  {inviteCancelling
-                    ? t("dashboard.invite_cancelling")
-                    : t("dashboard.invite_cancel")}
+              // shareable URL to copy. Cancel (in the header row) voids it.
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <input
+                  className="input flex-1 !min-h-0 !py-1.5 font-mono !text-xs"
+                  readOnly
+                  value={inviteUrl}
+                />
+                <button type="button" className="btn-outline btn-sm" onClick={onCopy}>
+                  {copied ? t("dashboard.link_copied") : t("dashboard.copy_link")}
                 </button>
               </div>
             )}
