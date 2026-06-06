@@ -8,7 +8,7 @@
 // toPublicDesign (override-or-palette), reaching the DOM as inline values that
 // are design DATA, not authored literals (same pattern as the palette swatches).
 
-import { type CoupleDesign, buildMonogram, toPublicDesign } from "@shared/design";
+import { type CoupleDesign, buildMonogram, getBorderCss, toPublicDesign } from "@shared/design";
 import type { Locale } from "../lib/i18n";
 import { useT } from "../lib/i18n";
 
@@ -70,7 +70,7 @@ export function PrintCardPreview({
           backgroundColor: d.background,
           color: d.text,
           fontFamily: d.body_font,
-          border: design.print.border ? `1px solid ${d.accent}` : "1px solid transparent",
+          border: getBorderCss(design.borderStyle, d.accent),
           borderRadius: 6,
         }}
       >

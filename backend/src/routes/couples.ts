@@ -27,6 +27,7 @@ import {
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
 import {
+  type BorderStyleSlug,
   type ButtonStyleSlug,
   type CardRadiusSlug,
   COLOR_ROLES,
@@ -41,6 +42,7 @@ import {
   type PaletteSlug,
   type ShadowSlug,
   type StylePresetSlug,
+  VALID_BORDER_STYLES,
   VALID_BUTTON_STYLES,
   VALID_CARD_RADII,
   VALID_DATE_FORMATS,
@@ -1845,6 +1847,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       monogram: { ...prev.monogram },
       dateFormat: prev.dateFormat,
       decor: prev.decor,
+      borderStyle: prev.borderStyle,
       print: { ...prev.print },
       web: { ...prev.web },
     };
@@ -1897,6 +1900,13 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         throw new HttpError(400, "design.decor is not a valid decorative style");
       }
       next.decor = v as DecorSlug;
+    }
+    if ("borderStyle" in obj) {
+      const v = obj.borderStyle;
+      if (typeof v !== "string" || !VALID_BORDER_STYLES.has(v as BorderStyleSlug)) {
+        throw new HttpError(400, "design.borderStyle is not a valid border style");
+      }
+      next.borderStyle = v as BorderStyleSlug;
     }
     // Custom colour overrides - the `colors` object, when present, is the
     // AUTHORITATIVE full set of overrides (replace, not merge): the client
@@ -1993,6 +2003,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.monogram.separator !== prev.monogram.separator ||
       next.dateFormat !== prev.dateFormat ||
       next.decor !== prev.decor ||
+      next.borderStyle !== prev.borderStyle ||
       next.print.border !== prev.print.border ||
       next.print.ornament !== prev.print.ornament ||
       next.print.qr !== prev.print.qr ||

@@ -7,9 +7,12 @@
 // page can never drift.
 
 import {
+  BORDER_STYLES,
+  type BorderStyleSlug,
   BUTTON_STYLES,
   type ButtonStyleSlug,
   CARD_RADII,
+  getBorderCss,
   type CardRadiusSlug,
   COLOR_ROLES,
   type ColorRole,
@@ -316,6 +319,11 @@ export default function DesignPage() {
   }
   function chooseButtonStyle(slug: ButtonStyleSlug) {
     setDesign((d) => ({ ...d, web: { ...d.web, buttonStyle: slug } }));
+  }
+  function chooseBorderStyle(slug: BorderStyleSlug) {
+    // Keep the legacy `print.border` boolean in sync (on/off) so the current
+    // PDF path stays consistent until pdf.ts reads the style directly.
+    setDesign((d) => ({ ...d, borderStyle: slug, print: { ...d.print, border: slug !== "none" } }));
   }
   function toggleSection(slug: WebsiteSectionSlug) {
     setDesign((d) => {
@@ -901,14 +909,47 @@ export default function DesignPage() {
                   </div>
                 </section>
 
-                {/* Print options — only the toggles that affect the printed
-                    card; the live card preview is in the right column. */}
+                {/* Border style — 4 selectable looks for the card frame
+                    (supersedes the old on/off border toggle). Visual tiles: the
+                    box shows the actual border in the resolved accent colour. */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.print.border")}
+                  </h2>
+                  <div className="grid grid-cols-4 gap-2">
+                    {BORDER_STYLES.map((b) => {
+                      const active = design.borderStyle === b.slug;
+                      return (
+                        <button
+                          key={b.slug}
+                          type="button"
+                          onClick={() => chooseBorderStyle(b.slug)}
+                          aria-pressed={active}
+                          aria-label={b.slug}
+                          className={`flex h-12 items-center justify-center rounded-xl border bg-white p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
+                            active
+                              ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+                              : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+                          }`}
+                        >
+                          <span
+                            className="h-7 w-full rounded"
+                            style={{ border: getBorderCss(b.slug, resolvedColors.accent) }}
+                            aria-hidden
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {/* Remaining print options. */}
                 <section>
                   <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                     {t("design.section.print")}
                   </h2>
                   <div className="flex flex-wrap gap-2">
-                    {(["border", "ornament", "qr"] as const).map((key) => {
+                    {(["ornament", "qr"] as const).map((key) => {
                       const on = design.print[key];
                       return (
                         <button

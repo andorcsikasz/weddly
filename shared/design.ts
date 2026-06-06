@@ -92,6 +92,8 @@ export interface CoupleDesignInput {
   monogram?: Partial<MonogramOptions>;
   dateFormat?: DateFormatSlug;
   decor?: DecorSlug;
+  /** Card border / frame style. Supersedes `print.border`. */
+  borderStyle?: BorderStyleSlug;
   print?: Partial<DesignPrintOptions>;
   /** Website-only chrome (guest page; never touches print). */
   web?: Partial<DesignWebsiteOptions>;
@@ -119,6 +121,7 @@ export interface CoupleDesign {
   monogram: MonogramOptions;
   dateFormat: DateFormatSlug;
   decor: DecorSlug;
+  borderStyle: BorderStyleSlug;
   print: DesignPrintOptions;
   web: DesignWebsiteOptions;
 }
@@ -344,6 +347,35 @@ export const VALID_DATE_FORMATS: ReadonlySet<DateFormatSlug> = new Set(
 );
 export const VALID_DECOR: ReadonlySet<DecorSlug> = new Set(DECOR_STYLES.map((d) => d.slug));
 
+/** Card border / frame style — a COMMON flat field that supersedes the legacy
+ *  on/off `print.border` boolean (folded in {@link resolveDesign}). Drives the
+ *  printable cards (and, later, the guest-page cards). */
+export type BorderStyleSlug = "none" | "hairline" | "double" | "thick";
+
+export const BORDER_STYLES: readonly { slug: BorderStyleSlug; nameKey: string }[] = [
+  { slug: "none", nameKey: "design.border.none" },
+  { slug: "hairline", nameKey: "design.border.hairline" },
+  { slug: "double", nameKey: "design.border.double" },
+  { slug: "thick", nameKey: "design.border.thick" },
+];
+export const VALID_BORDER_STYLES: ReadonlySet<BorderStyleSlug> = new Set(
+  BORDER_STYLES.map((b) => b.slug),
+);
+
+/** CSS `border` shorthand for a style + colour. "none" → no border. */
+export function getBorderCss(slug: BorderStyleSlug, color: string): string {
+  switch (slug) {
+    case "none":
+      return "none";
+    case "double":
+      return `3px double ${color}`;
+    case "thick":
+      return `2px solid ${color}`;
+    default:
+      return `1px solid ${color}`;
+  }
+}
+
 // ─── Website-only design (the `web` sub-object) ────────────────────────────
 // Surface-scoped chrome that affects ONLY the guest page, never the printed
 // cards (pdf.ts never reads design.web). Each control resolves to a concrete
@@ -434,6 +466,7 @@ export const DEFAULT_DESIGN: CoupleDesign = {
   monogram: { enabled: true, separator: "amp" },
   dateFormat: "long",
   decor: "line",
+  borderStyle: "hairline",
   print: { border: true, ornament: false, qr: false },
   // Defaults reproduce today's hardcoded guest-page look, so a legacy blob
   // (no `web` key) restyles to nothing.
@@ -486,6 +519,17 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
         ? i.dateFormat
         : DEFAULT_DESIGN.dateFormat,
     decor: i.decor && VALID_DECOR.has(i.decor) ? i.decor : DEFAULT_DESIGN.decor,
+    // Border style supersedes the legacy `print.border` boolean: an explicit
+    // slug wins; otherwise fold the old boolean (true → hairline, false → none);
+    // otherwise the default.
+    borderStyle:
+      i.borderStyle && VALID_BORDER_STYLES.has(i.borderStyle)
+        ? i.borderStyle
+        : typeof i.print?.border === "boolean"
+          ? i.print.border
+            ? "hairline"
+            : "none"
+          : DEFAULT_DESIGN.borderStyle,
     print: {
       border: typeof i.print?.border === "boolean" ? i.print.border : DEFAULT_DESIGN.print.border,
       ornament:

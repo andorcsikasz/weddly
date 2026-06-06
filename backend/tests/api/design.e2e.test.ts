@@ -26,6 +26,7 @@ interface CoupleDesign {
   monogram: { enabled: boolean; separator: string };
   dateFormat: string;
   decor: string;
+  borderStyle: string;
   print: { border: boolean; ornament: boolean; qr: boolean };
   web: {
     cardRadius: string;
@@ -82,6 +83,7 @@ describe("design: default resolution", () => {
       monogram: { enabled: true, separator: "amp" },
       dateFormat: "long",
       decor: "line",
+      borderStyle: "hairline",
       print: { border: true, ornament: false, qr: false },
       web: { cardRadius: "soft", shadow: "soft", buttonStyle: "lifted", hiddenSections: [] },
     });
@@ -461,6 +463,48 @@ describe("design: website-only `web` sub-object", () => {
       { token },
     );
     expect(r.status).toBe(400);
+  });
+});
+
+describe("design: border style (supersedes the legacy print.border boolean)", () => {
+  test("a valid border style round-trips; an invalid one 400s", async () => {
+    wipeAll();
+    const token = await registerVerified("design-border@weddly.test");
+    await onboard(token);
+    const r = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { borderStyle: "double" } },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.design.borderStyle).toBe("double");
+
+    const bad = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { borderStyle: "groovy" } },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  test("a legacy blob with print.border true/false folds to hairline/none", async () => {
+    wipeAll();
+    const token = await registerVerified("design-border-legacy@weddly.test");
+    const { couple } = await onboard(token);
+    // Legacy blob: no borderStyle key, only the old print.border boolean.
+    db.prepare("UPDATE couples SET design_json = ? WHERE id = ?").run(
+      JSON.stringify({ print: { border: false } }),
+      couple.id,
+    );
+    const me = await req<{ couple: { design: CoupleDesign } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(me.data.couple.design.borderStyle).toBe("none");
   });
 });
 
