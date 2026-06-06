@@ -10,11 +10,16 @@ export function InfoHint({
   text,
   label,
   className = "",
+  onClick,
 }: {
   text: string;
   /** Accessible name for the button. Defaults to the hint text. */
   label?: string;
   className?: string;
+  /** When provided, clicking the icon runs this action (e.g. open a dialog)
+   *  instead of just toggling the tooltip. The tooltip text still reveals on
+   *  hover / focus, so the icon can carry both a hint and an action. */
+  onClick?: () => void;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -24,8 +29,8 @@ export function InfoHint({
         type="button"
         aria-label={label ?? text}
         aria-describedby={id}
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        aria-expanded={onClick ? undefined : open}
+        onClick={onClick ?? (() => setOpen((v) => !v))}
         onBlur={() => setOpen(false)}
         className="inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-400 transition-colors hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-umber-300 dark:hover:text-paper-50"
       >

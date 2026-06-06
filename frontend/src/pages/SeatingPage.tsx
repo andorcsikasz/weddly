@@ -17,7 +17,6 @@ import {
   Copy,
   Crown,
   Gem,
-  HelpCircle,
   LayoutGrid,
   Link2,
   Minus,
@@ -1106,22 +1105,20 @@ export default function SeatingPage() {
       </span>
       <header className="mb-6 flex items-center gap-2">
         <h1 className="font-grotesk">{t("seating.title")}</h1>
-        <InfoHint text={t("seating.sub")} />
+        {/* The "i" icon carries both: hover shows the page hint, click opens
+            the keyboard-shortcuts dialog (folded in from a separate toolbar
+            button so the chrome stays clean). */}
+        <InfoHint
+          text={t("seating.sub")}
+          label={t("seating.shortcuts_button_label")}
+          onClick={() => setShortcutsOpen(true)}
+        />
       </header>
 
       {/* Action toolbar sits just above the floor plan so the title + sub
           read as a clean intro, and the print/add affordances stay close
           to the thing they act on. */}
       <div className="seating-toolbar mb-4 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          className="btn-outline"
-          onClick={() => setShortcutsOpen(true)}
-          aria-label={t("seating.shortcuts_button_label")}
-          title={t("seating.shortcuts_button_label")}
-        >
-          <HelpCircle size={16} aria-hidden />
-        </button>
         <PrintChartMenu
           disabled={previewLoading !== null}
           onPick={(format) =>
