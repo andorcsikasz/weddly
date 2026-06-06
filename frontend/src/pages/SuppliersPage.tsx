@@ -805,11 +805,11 @@ export default function SuppliersPage() {
           title={t("suppliers.saved_filter", { n: saved.size })}
           className={
             showSavedOnly
-              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 bg-ink-700 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-3 text-sm font-medium text-paper-100"
-              : "inline-flex h-9 items-center gap-1.5 rounded-full border border-umber-600 dark:border-umber-700 dark:bg-umber-800 px-3 text-sm text-ink-700 dark:text-paper-100 hover:border-umber-700 dark:hover:border-umber-600"
+              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 dark:border-paper-50 px-3 text-sm font-medium text-ink-900 dark:text-paper-50"
+              : "inline-flex h-9 items-center gap-1.5 rounded-full border border-umber-600 dark:border-umber-700 px-3 text-sm text-ink-700 dark:text-paper-100 hover:border-umber-700 dark:hover:border-umber-600"
           }
         >
-          <Star size={14} className={showSavedOnly ? "fill-paper-100" : ""} aria-hidden />
+          <Star size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
           <span className="tabular-nums">{saved.size}</span>
         </button>
         <button
@@ -827,11 +827,11 @@ export default function SuppliersPage() {
           )}
           className={
             showPickedOnly
-              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-sage-600 bg-sage-600 px-3 text-sm font-medium text-paper-100 dark:border-sage-300 dark:bg-sage-300 dark:text-umber-900"
+              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-sage-600 px-3 text-sm font-medium text-sage-700 dark:border-sage-300 dark:text-sage-300"
               : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
                   Object.keys(selection).length > 0
-                    ? "border-sage-400 bg-sage-50 text-sage-700 hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
-                    : "border-umber-600 text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300"
+                    ? "border-sage-400 text-sage-700 hover:border-sage-500 dark:border-sage-400/40 dark:text-sage-300"
+                    : "border-umber-600 text-ink-500 dark:border-umber-700 dark:text-umber-300"
                 }`
           }
         >
