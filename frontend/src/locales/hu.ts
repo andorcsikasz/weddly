@@ -1452,7 +1452,7 @@ const hu: LocaleMessages = {
       "Az esküvő után feltölthetitek a képeket, és egy kattintással elküldhetitek a letöltési linket minden vendégnek, aki igent mondott, közvetlenül innen, külön galéria-fiók nélkül.",
     collect_guests: "A vendégektől",
     collect_photographer: "A fotóstól",
-    collect_other: "Egyéb",
+    collect_other: "A vendégeknek",
     collect_add: "Link hozzáadása",
     collect_open: "Album megnyitása",
     collect_placeholder: "https://drive.google.com/…",

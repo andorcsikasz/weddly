@@ -1435,9 +1435,9 @@ const en: LocaleMessages = {
     coming_soon_title: "Coming soon",
     coming_soon_body:
       "Upload the photos after the wedding and send a download link to every guest who said yes, straight from this page, no separate gallery account needed.",
-    collect_guests: "From the guests",
-    collect_photographer: "From the photographer",
-    collect_other: "Other",
+    collect_guests: "From guests",
+    collect_photographer: "By photographer",
+    collect_other: "To guests",
     collect_add: "Add a link",
     collect_open: "Open album",
     collect_placeholder: "https://drive.google.com/…",

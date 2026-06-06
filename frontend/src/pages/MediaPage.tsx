@@ -10,8 +10,10 @@ import { useToast } from "../components/ui";
 import { coupleApi, feedbackApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
-/** Fixed photo-share slots, in display order. Mirrors MEDIA_SOURCES backend. */
-const MEDIA_SOURCES: readonly MediaSource[] = ["guests", "photographer", "other"];
+/** Fixed photo-share slots, in display order: From guests → To guests → By
+ *  photographer. The persisted `other` key backs the "To guests" slot (kept as
+ *  `other` so no stored value needs migrating). */
+const MEDIA_SOURCES: readonly MediaSource[] = ["guests", "other", "photographer"];
 
 const EMPTY_LINKS: MediaLinks = { guests: null, photographer: null, other: null };
 
