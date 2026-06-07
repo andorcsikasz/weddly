@@ -975,17 +975,14 @@ function BlogTeaser() {
        *  through swiping in one viewport. The first card peeks at ~80vw so
        *  the user immediately sees there's more to scroll. Tablet+ keeps
        *  the existing 3-up grid (re-rendered below). */}
-      <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-6 sm:hidden [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-6 scroll-pl-6 sm:hidden [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {posts.map((post) => {
           const copy = post[locale];
           const [y, m, d] = post.published_at.split("-").map(Number);
           const dateLabel =
             y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
           return (
-            <li
-              key={post.slug}
-              className="w-[80vw] max-w-[20rem] shrink-0 snap-start first:ml-6 last:mr-4"
-            >
+            <li key={post.slug} className="w-[80vw] max-w-[20rem] shrink-0 snap-start">
               <Link
                 to={`/blog/${post.slug}`}
                 className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-800 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:border-ink-700 dark:bg-umber-800"
