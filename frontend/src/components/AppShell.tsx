@@ -884,11 +884,12 @@ function SideLink({
   darkActive?: boolean;
 }) {
   // Base classes describe the icon-only shape used at md (tablet) and at
-  // lg+ when `collapsed` is true. `lg:` overrides flip to the padded row
-  // shape when the user has the laptop rail expanded.
+  // lg+ when `collapsed` is true. The expanded variant keeps the same fixed
+  // `h-9` row height and just grows the width to fit the label (`lg:w-auto`
+  // + left-aligned padding), so every row is the same height in every state.
   const shape = collapsed
     ? "h-9 w-9 justify-center"
-    : "h-9 w-9 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1";
+    : "h-9 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
   return (
     <NavLink
       to={to}
@@ -943,7 +944,7 @@ function AdminSideLink({
 }) {
   const shape = collapsed
     ? "h-9 w-9 justify-center"
-    : "h-9 w-9 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1";
+    : "h-9 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
   return (
     <NavLink
       to={to}
