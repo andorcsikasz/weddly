@@ -900,8 +900,6 @@ function HouseholdCard({
   onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
   const { t } = useT();
-  const invitedCount = members.filter((g) => g.invited_at != null).length;
-  const deliveredCount = members.filter((g) => g.invitation_delivered_at != null).length;
   const isHosts = household.is_couple_household;
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -997,30 +995,6 @@ function HouseholdCard({
              * share button, so the inline slug is desktop-only. */
             <span className="hidden font-mono uppercase md:col-start-3 md:row-start-1 md:inline">
               {coupleSlug}
-            </span>
-          )}
-          {!isHosts && members.length > 0 && (
-            <span className="flex items-baseline gap-3 md:col-start-5 md:row-start-1">
-              <span
-                className={
-                  invitedCount === members.length
-                    ? "text-ink-700 dark:text-paper-100"
-                    : invitedCount > 0
-                      ? "text-ink-600 dark:text-umber-200"
-                      : "text-ink-400 dark:text-umber-300"
-                }
-                title={t("guests.invited_progress_help")}
-              >
-                {invitedCount}/{members.length} {t("guests.invited_short")}
-              </span>
-              {deliveredCount > 0 && (
-                <span
-                  className="text-sage-700 dark:text-sage-300"
-                  title={t("guests.delivered_progress_help")}
-                >
-                  {deliveredCount}/{members.length} {t("guests.delivered_short")}
-                </span>
-              )}
             </span>
           )}
         </div>
