@@ -2,7 +2,7 @@
 // SPA static files are served from frontend/dist when SERVE_FRONTEND=1.
 
 import { existsSync } from "node:fs";
-import { join, sep } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { extractToken, verifySessionToken } from "./auth/session";
 import { CONFIG } from "./config";
 import "./db"; // open DB + apply schema
@@ -311,8 +311,14 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
     // can't slip past it, and null-out malformed escapes rather than throwing.
     const decodedRel = rel ? safeDecodeURIComponent(rel) : null;
     if (!decodedRel || decodedRel.includes("..")) return null;
-    const uploadPath = join(CONFIG.uploadsDir, decodedRel);
-    if (!isInsideDir(uploadPath, CONFIG.uploadsDir)) return null;
+    // Resolve both to absolute before the containment check. `uploadsDir` is
+    // relative in dev ("./data/uploads"), and `join` strips the leading "./",
+    // so a raw isInsideDir() comparison would reject every real file locally
+    // (prod's absolute "/data/uploads" happened to dodge this). resolve()
+    // normalises both sides so the guard is correct in dev and prod alike.
+    const baseDir = resolve(CONFIG.uploadsDir);
+    const uploadPath = resolve(baseDir, decodedRel);
+    if (!isInsideDir(uploadPath, baseDir)) return null;
     if (existsSync(uploadPath)) {
       const f = Bun.file(uploadPath);
       if (await f.exists()) {

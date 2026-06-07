@@ -142,6 +142,21 @@ describe("moodboard image upload + delete", () => {
     }
   });
 
+  test("an uploaded image is served back from /uploads (200, image/png)", async () => {
+    // Regression guard for the static-serve containment check: `uploadsDir` is
+    // relative in dev/test, so a naive isInsideDir() rejected every real file
+    // (only prod's absolute path dodged it). The byte-serve below would 404
+    // before that fix.
+    const { token } = await bootstrapCouple("mb-serve@weddly.test");
+    const up = await uploadImages(token, [tinyPngBlob()]);
+    const state = (await up.json()) as MoodboardState;
+    const url = state.images[0]?.image_url as string;
+    const served = await fetch(`${BASE}${url}`);
+    expect(served.status).toBe(200);
+    expect(served.headers.get("content-type")).toContain("image/png");
+    expect((await served.arrayBuffer()).byteLength).toBeGreaterThan(0);
+  });
+
   test("missing file field → 400", async () => {
     const { token } = await bootstrapCouple("mb-nofile@weddly.test");
     const form = new FormData();
