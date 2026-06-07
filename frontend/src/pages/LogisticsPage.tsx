@@ -181,6 +181,23 @@ export default function LogisticsPage() {
     );
   }, [couple, guests, tab, t]);
 
+  // The bride and groom are one joint party — they share a room / car. When
+  // BOTH partner rows exist and neither is placed yet, collapse the two pinned
+  // slots into a single joint row that drags and assigns them together. Mixed
+  // states (one partner missing, or one already assigned) fall back to the
+  // per-role `partnerSlots` above so the remaining partner can still be placed.
+  const couplePair = useMemo<{ bride: Guest; groom: Guest; name: string } | null>(() => {
+    if (!couple) return null;
+    const isAssigned = (g: Guest): boolean =>
+      tab === "accommodation" ? g.accommodation_id != null : g.transfer_id != null;
+    const bride = guests.find((g) => g.partner_role === "bride") ?? null;
+    const groom = guests.find((g) => g.partner_role === "groom") ?? null;
+    if (!bride || !groom || isAssigned(bride) || isAssigned(groom)) return null;
+    const brideName = couple.bride_name?.trim() || t("logistics.bride_label");
+    const groomName = couple.groom_name?.trim() || t("logistics.groom_label");
+    return { bride, groom, name: `${brideName} & ${groomName}` };
+  }, [couple, guests, tab, t]);
+
   // Partner rows are rendered separately above the household groups, so drop
   // them from the general unassigned list to avoid the duplicate render the
   // user noticed (Andor + Sári appearing both pinned + in the flat list).
@@ -422,14 +439,20 @@ export default function LogisticsPage() {
   const handleTapGuest = (g: Guest) => {
     setSelectedGuestId((cur) => (cur === g.id ? null : g.id));
   };
+  // When the active tap selection is one of the joint couple's partners, place
+  // both together — they render as a single joint row. Any other guest is solo.
+  const tapTargetIds = (id: number): number[] =>
+    couplePair && (id === couplePair.bride.id || id === couplePair.groom.id)
+      ? [couplePair.bride.id, couplePair.groom.id]
+      : [id];
   const handleTapAccommodation = (a: Accommodation) => {
     if (selectedGuestId == null) return;
-    void assignAccommodationMany([selectedGuestId], a);
+    void assignAccommodationMany(tapTargetIds(selectedGuestId), a);
     setSelectedGuestId(null);
   };
   const handleTapTransfer = (tr: Transfer) => {
     if (selectedGuestId == null) return;
-    void assignTransferMany([selectedGuestId], tr);
+    void assignTransferMany(tapTargetIds(selectedGuestId), tr);
     setSelectedGuestId(null);
   };
 
@@ -614,27 +637,44 @@ export default function LogisticsPage() {
             // implicit horizontal clipping. space-y-2 widens the gap between
             // households so the stacks read as separate parties.
             <ul className="-ml-1.5 mt-3 max-h-[60vh] space-y-2 overflow-y-auto pl-1.5 pt-2">
-              {partnerSlots.map((slot) =>
-                slot.guest ? (
-                  <li key={slot.role}>
-                    <DraggableGuestRow
-                      guest={slot.guest}
-                      onDragStart={onDragStart}
-                      tapMode={tapMode}
-                      selected={selectedGuestId === slot.guest.id}
-                      onTap={() => slot.guest && handleTapGuest(slot.guest)}
-                      partnerRole={slot.role}
-                    />
-                  </li>
-                ) : (
-                  <li key={slot.role}>
-                    <PartnerSlotPlaceholder
-                      role={slot.role}
-                      name={slot.name}
-                      hint={t("logistics.partner_placeholder_hint")}
-                    />
-                  </li>
-                ),
+              {couplePair ? (
+                <li key="couple">
+                  <CouplePairRow
+                    bride={couplePair.bride}
+                    groom={couplePair.groom}
+                    name={couplePair.name}
+                    onDragStart={onDragStart}
+                    tapMode={tapMode}
+                    selected={
+                      selectedGuestId === couplePair.bride.id ||
+                      selectedGuestId === couplePair.groom.id
+                    }
+                    onTap={() => couplePair && handleTapGuest(couplePair.bride)}
+                  />
+                </li>
+              ) : (
+                partnerSlots.map((slot) =>
+                  slot.guest ? (
+                    <li key={slot.role}>
+                      <DraggableGuestRow
+                        guest={slot.guest}
+                        onDragStart={onDragStart}
+                        tapMode={tapMode}
+                        selected={selectedGuestId === slot.guest.id}
+                        onTap={() => slot.guest && handleTapGuest(slot.guest)}
+                        partnerRole={slot.role}
+                      />
+                    </li>
+                  ) : (
+                    <li key={slot.role}>
+                      <PartnerSlotPlaceholder
+                        role={slot.role}
+                        name={slot.name}
+                        hint={t("logistics.partner_placeholder_hint")}
+                      />
+                    </li>
+                  ),
+                )
               )}
               {unassignedEntries.map((entry) =>
                 entry.kind === "household" ? (
@@ -831,6 +871,53 @@ function DraggableGuestRow({
           <Link2 size={12} aria-hidden />
         </button>
       )}
+    </div>
+  );
+}
+
+/** The bride + groom as one joint, draggable row. They share a room / seat in
+ *  a car, so the logistics sidebar treats them as a single party: one drag
+ *  carries both guest ids, and a tap-mode select places them together. Shows
+ *  both host marks (Gem + Crown) and the combined "Bride & Groom" label. */
+function CouplePairRow({
+  bride,
+  groom,
+  name,
+  onDragStart,
+  tapMode,
+  selected,
+  onTap,
+}: {
+  bride: Guest;
+  groom: Guest;
+  name: string;
+  onDragStart: (e: DragEvent<HTMLElement>, guestId: number, groupIds?: number[]) => void;
+  tapMode: boolean;
+  selected: boolean;
+  onTap: () => void;
+}) {
+  const groupIds = [bride.id, groom.id];
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, bride.id, groupIds)}
+      onClick={(e) => {
+        if (!tapMode) return;
+        if ((e.target as HTMLElement).closest("button")) return;
+        onTap();
+      }}
+      aria-label={name}
+      className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm transition-colors ${
+        selected
+          ? "border-blush-500 bg-blush-50 ring-2 ring-blush-400 dark:border-blush-400 dark:bg-blush-400/15"
+          : "border-paper-300 bg-paper-100 hover:border-blush-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-blush-400/60"
+      } ${tapMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"}`}
+    >
+      <span className="flex shrink-0 items-center gap-0.5 text-blush-600 dark:text-blush-300">
+        <Gem size={14} aria-hidden />
+        <Crown size={14} aria-hidden />
+      </span>
+      <span className="flex-1 truncate">{name}</span>
     </div>
   );
 }
