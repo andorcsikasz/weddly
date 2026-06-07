@@ -489,7 +489,7 @@ export default function DesignPage() {
       to={`/app/design/${key}`}
       role="tab"
       aria-selected={tab === key}
-      className={`rounded-full px-4 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+      className={`flex-1 rounded-full px-4 py-2 text-center text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
         tab === key
           ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
           : "text-ink-600 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
@@ -511,7 +511,20 @@ export default function DesignPage() {
       {loading ? (
         <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+        <>
+          {/* ── Surface switcher: Website vs Print, pinned full-width at the top.
+              The common identity below drives BOTH; each tab owns only its
+              surface-specific controls. ──────────────────────────────────── */}
+          <div
+            role="tablist"
+            aria-label={t("design.title")}
+            className="mb-6 flex w-full items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800"
+          >
+            {tabBtn("website", t("design.tab.website"))}
+            {tabBtn("print", t("design.tab.print"))}
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
           {/* ── Left column: the COMMON identity (drives BOTH surfaces), then
               the Website / Print surface tabs with only surface-specific
               controls. ───────────────────────────────────────────────────── */}
@@ -792,17 +805,6 @@ export default function DesignPage() {
                 ))}
               </div>
             </section>
-            {/* ── Surface tabs: Website vs Print. The common identity above
-                drives both; each tab owns only its surface-specific controls. */}
-            <div
-              role="tablist"
-              aria-label={t("design.title")}
-              className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800"
-            >
-              {tabBtn("website", t("design.tab.website"))}
-              {tabBtn("print", t("design.tab.print"))}
-            </div>
-
             {tab === "website" ? (
               <div className="space-y-6">
                 <p className="text-sm text-ink-500 dark:text-umber-300">
@@ -1073,7 +1075,8 @@ export default function DesignPage() {
               )
             )}
           </aside>
-        </div>
+          </div>
+        </>
       )}
     </>
   );
