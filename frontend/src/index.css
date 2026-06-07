@@ -434,6 +434,11 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
 }
 .wedding-theme :is(h1, h2, h3) {
   font-family: var(--wt-heading-font);
+  /* Inherit the band colour (light on dark bands, --wt-text on light ones)
+     instead of the global base `h2 { color: ink.900 }` / dark-mode override,
+     which made headings like the dark "A nap menete" schedule band invisible.
+     Unlayered, so it outranks the @layer base heading colour in both modes. */
+  color: inherit;
 }
 /* Accent TEXT (eyebrows, monogram) uses the contrast-safe `--wt-accent-text`
    the resolver computes (brand primary when legible on the background, else
