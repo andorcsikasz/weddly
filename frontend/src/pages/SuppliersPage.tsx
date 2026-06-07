@@ -99,6 +99,11 @@ import {
   subscribeSelection,
   unselectById,
 } from "../lib/supplier_selection";
+import {
+  readSaved as readSavedStore,
+  setSaved as setSavedStore,
+  subscribeSaved,
+} from "../lib/supplier_saved";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -161,29 +166,6 @@ function trackSupplierClick(supplierId: string, type: "website_click" | "phone_c
   supplierApi.recordEvents([{ supplier_id: supplierId, type }]).catch(() => undefined);
 }
 
-const SAVED_LS_KEY = "weddly.suppliers.saved";
-
-function readSaved(): Set<string> {
-  try {
-    const raw = localStorage.getItem(SAVED_LS_KEY);
-    if (!raw) return new Set();
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed))
-      return new Set(parsed.filter((v): v is string => typeof v === "string"));
-  } catch {
-    // ignore
-  }
-  return new Set();
-}
-
-function writeSaved(set: Set<string>) {
-  try {
-    localStorage.setItem(SAVED_LS_KEY, JSON.stringify(Array.from(set)));
-  } catch {
-    // ignore quota / private mode
-  }
-}
-
 // Progressive render: only the first page of filtered suppliers is laid out
 // up front; the rest expands in via a "load more" button. Keeps the initial
 // paint cheap on broad filters (the directory can run to hundreds of cards).
@@ -224,7 +206,9 @@ export default function SuppliersPage() {
   const [claimTarget, setClaimTarget] = useState<{ id: string; name: string } | null>(null);
   const { user } = useAuth();
   const [highlightId, setHighlightId] = useState<string | null>(null);
-  const [saved, setSaved] = useState<Set<string>>(() => readSaved());
+  // Couple shortlist ("saved" star). Server-side + shared between partners via
+  // the supplier_saved store; starts empty and hydrates once we know the couple.
+  const [saved, setSavedState] = useState<Set<string>>(new Set());
   // Step-chain overflow detection. We render the right-edge fade only when
   // the row actually overflows so the gradient doesn't leave a phantom
   // white slab on wide screens where every group already fits.
@@ -413,7 +397,10 @@ export default function SuppliersPage() {
         // fetched so the Vendégszám filter and the /app/budget slider
         // start on the same value.
         if (couple.couple) hydrateCostPlanningCount(couple.couple);
-        if (id !== null) setSelectionState(readSelection(id));
+        if (id !== null) {
+          setSelectionState(readSelection(id));
+          setSavedState(readSavedStore(id));
+        }
         // One-shot view ping per mount: tell the analytics ingest which
         // directory cards this session actually loaded. The admin directory
         // view aggregates these into total/30d/7d windows. We swallow errors
@@ -443,6 +430,13 @@ export default function SuppliersPage() {
   useEffect(() => {
     if (coupleId === null) return;
     return subscribeSelection(coupleId, (next) => setSelectionState(next));
+  }, [coupleId]);
+
+  // Cross-tab shortlist sync — partner B saves a photographer elsewhere, the
+  // star + saved filter count reflect it here without a refresh.
+  useEffect(() => {
+    if (coupleId === null) return;
+    return subscribeSaved(coupleId, (next) => setSavedState(next));
   }, [coupleId]);
 
   const togglePicked = useCallback(
@@ -495,15 +489,13 @@ export default function SuppliersPage() {
     return () => window.clearTimeout(tid);
   }, [highlightId]);
 
-  const toggleSaved = useCallback((id: string) => {
-    setSaved((cur) => {
-      const next = new Set(cur);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      writeSaved(next);
-      return next;
-    });
-  }, []);
+  const toggleSaved = useCallback(
+    (id: string) => {
+      if (coupleId === null) return;
+      setSavedState(setSavedStore(coupleId, id, !saved.has(id)));
+    },
+    [coupleId, saved],
+  );
 
   // Cities derived from the loaded list. Sorted alphabetically by locale rules.
   const cities = useMemo(() => {

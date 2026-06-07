@@ -173,6 +173,10 @@ interface OnboardBody {
   /** Publish toggle for the public wedding website at `/w/:slug`.
    *  Default off — couples opt in explicitly from the wedding-site editor. */
   is_public?: unknown;
+  /** Gift-list publish toggle. When true the confirmed-tier guest page shows
+   *  the wishlist (gifts + requests) with a warm intro; false keeps it private
+   *  to the couple. Default off — flipped from the wishlist editor. */
+  wishlist_published?: unknown;
   /** Free-text venue name shown on the public wedding site. Empty string
    *  clears the column (couple goes back to "no venue set"). */
   venue_name?: unknown;
@@ -1295,6 +1299,14 @@ function parseIsPublic(raw: unknown): boolean {
   return raw;
 }
 
+/** Gift-list publish toggle for the guest page. */
+function parseWishlistPublished(raw: unknown): boolean {
+  if (typeof raw !== "boolean") {
+    throw new HttpError(400, "wishlist_published must be a boolean");
+  }
+  return raw;
+}
+
 function parseWelcomeDeskActive(raw: unknown): boolean {
   if (typeof raw !== "boolean") {
     throw new HttpError(400, "welcome_desk_active must be a boolean");
@@ -1722,6 +1734,19 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.is_public_update",
         before: { is_public: prev },
         after: { is_public: next },
+      });
+    }
+  }
+
+  if (body.wishlist_published !== undefined) {
+    const next = parseWishlistPublished(body.wishlist_published);
+    const prev = Boolean(couple.wishlist_published);
+    if (next !== prev) {
+      updates.push({ col: "wishlist_published", val: next ? 1 : 0 });
+      auditEntries.push({
+        action: "couple.wishlist_published_update",
+        before: { wishlist_published: prev },
+        after: { wishlist_published: next },
       });
     }
   }
@@ -2599,6 +2624,7 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   "couple.rsvp_offers_accommodation_update",
   "couple.rsvp_collects_meal_update",
   "couple.is_public_update",
+  "couple.wishlist_published_update",
   "couple.venue_name_update",
   "couple.cover_image_url_update",
   "couple.cover_image_url_upload",
@@ -2667,6 +2693,9 @@ const ACTIVITY_VISIBLE_ACTIONS: ReadonlySet<string> = new Set([
   // Loop C₁: per-category supplier picks (shared across partners)
   "pick.upsert",
   "pick.remove",
+  // Shared shortlist ("saved" star) — both partners see what the other added
+  "saved.add",
+  "saved.remove",
 ]);
 
 interface ActivityRow {

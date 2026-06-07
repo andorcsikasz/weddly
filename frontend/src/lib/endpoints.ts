@@ -83,6 +83,7 @@ import type {
   VendorWaitlistEntry,
 } from "@shared/vendor_waitlist";
 import type { CouplePick } from "@shared/picks";
+import type { SavedSupplier } from "@shared/saved";
 import type {
   AdminActivityAnalytics,
   AdminDemoAnalytics,
@@ -392,6 +393,9 @@ export const coupleApi = {
     rsvp_collects_meal?: boolean;
     /** Publish toggle for the public wedding website at `/w/:slug`. */
     is_public?: boolean;
+    /** Gift-list publish toggle. When true the confirmed-tier guest page
+     *  shows the wishlist with a warm intro; false keeps it couple-only. */
+    wishlist_published?: boolean;
     /** Free-text venue name shown on the public wedding site. */
     venue_name?: string | null;
     /** http(s) URL the couple pastes for the wedding site's hero image. */
@@ -1144,6 +1148,14 @@ export const picksApi = {
     }),
   clear: (category: string) =>
     apiFetch<{ ok: true }>("DELETE", `/api/picks/${encodeURIComponent(category)}`),
+};
+
+export const savedApi = {
+  list: () => apiFetch<{ saved: SavedSupplier[] }>("GET", "/api/saved-suppliers"),
+  add: (supplier_id: string) =>
+    apiFetch<{ ok: true }>("PUT", `/api/saved-suppliers/${encodeURIComponent(supplier_id)}`),
+  remove: (supplier_id: string) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/saved-suppliers/${encodeURIComponent(supplier_id)}`),
 };
 
 export const adminUserApi = {

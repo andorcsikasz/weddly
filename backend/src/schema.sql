@@ -585,6 +585,22 @@ CREATE TABLE IF NOT EXISTS couple_picks (
 );
 CREATE INDEX IF NOT EXISTS idx_couple_picks_couple ON couple_picks(couple_id);
 
+-- Couple shortlist ("saved" star on /app/suppliers). Many rows per couple —
+-- one per saved supplier, no per-category cap (a couple shortlists 3
+-- photographers to compare them). Couple-scoped so partner A and partner B
+-- share the same shortlist; migrating off per-device localStorage. Same
+-- `supplier_id` shape as couple_picks (curated slug, "c{N}", or DIY hex), no
+-- FK because curated suppliers live in code.
+CREATE TABLE IF NOT EXISTS saved_suppliers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  supplier_id TEXT NOT NULL,                                   -- curated slug, "c{N}", or DIY hex
+  saved_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  saved_at INTEGER NOT NULL,
+  UNIQUE(couple_id, supplier_id)
+);
+CREATE INDEX IF NOT EXISTS idx_saved_suppliers_couple ON saved_suppliers(couple_id);
+
 -- Free-form planning surface for the /app/planning page. One table, three
 -- "kinds": tasks (checklist with optional due_date), ideas (note-style free
 -- text), schedule (wedding-day timeline with optional HH:MM slot). Couple-

@@ -15,6 +15,7 @@ export type SyncTopic =
   | "seating:changed"
   | "guests:changed"
   | "picks:changed"
+  | "saved:changed"
   | "planning_count:changed";
 
 interface SyncMessage {
