@@ -428,7 +428,7 @@ function ReceivedGiftsTable({
 
   /** Normalise the trailing empties: keep every row up to the last filled one
    *  (stable keys), then ensure there are exactly enough blank rows for a
-   *  max(5, filled+2) total, always at least 2 to type into. EXISTING trailing
+   *  max(3, filled+2) total, always at least 2 to type into. EXISTING trailing
    *  empties are preserved (not regenerated) so a row the couple just tabbed
    *  into doesn't remount and lose focus; only the surplus is trimmed / the
    *  shortfall appended. */
@@ -438,7 +438,7 @@ function ReceivedGiftsTable({
       if (rgNonEmpty(r)) lastFilled = i;
     });
     const filled = rows.slice(0, lastFilled + 1);
-    const targetEmpties = Math.max(2, 5 - filled.length);
+    const targetEmpties = Math.max(2, 3 - filled.length);
     const empties = rows.slice(lastFilled + 1).slice(0, targetEmpties);
     while (empties.length < targetEmpties) empties.push(makeEmpty());
     return [...filled, ...empties];
@@ -543,8 +543,13 @@ function ReceivedGiftsTable({
                 className="border-b border-paper-200 last:border-0 dark:border-umber-700"
               >
                 <td className="border-r border-paper-200 align-middle dark:border-umber-700">
+                  {/* Native arrow kept (no appearance-none) as the only
+                      affordance, since the unassigned state shows a blank label
+                      rather than repeating "no guest" down every row. */}
                   <select
-                    className={`${cellInput} cursor-pointer appearance-none font-grotesk`}
+                    className={`${cellInput} cursor-pointer font-grotesk ${
+                      r.guest_id === null ? "text-ink-400 dark:text-umber-400" : ""
+                    }`}
                     value={r.guest_id ?? ""}
                     onChange={(e) => {
                       const v = e.target.value;
@@ -553,7 +558,7 @@ function ReceivedGiftsTable({
                     onBlur={() => void commit(r.key)}
                     aria-label={t("wishlist_editor.received_col_guest")}
                   >
-                    <option value="">{t("wishlist_editor.received_guest_none")}</option>
+                    <option value="" aria-label={t("wishlist_editor.received_guest_none")} />
                     {guests.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.full_name}
@@ -567,7 +572,6 @@ function ReceivedGiftsTable({
                     className={`${cellInput} font-grotesk`}
                     value={r.title}
                     maxLength={RECEIVED_GIFT_MAX_TITLE_LEN}
-                    placeholder={t("wishlist_editor.received_gift_placeholder")}
                     onChange={(e) => patchRow(r.key, { title: e.target.value })}
                     onBlur={() => void commit(r.key)}
                   />
@@ -578,7 +582,6 @@ function ReceivedGiftsTable({
                     className={`${cellInput} font-grotesk`}
                     value={r.note}
                     maxLength={RECEIVED_GIFT_MAX_NOTE_LEN}
-                    placeholder={t("wishlist_editor.received_note_placeholder")}
                     onChange={(e) => patchRow(r.key, { note: e.target.value })}
                     onBlur={() => void commit(r.key)}
                   />
