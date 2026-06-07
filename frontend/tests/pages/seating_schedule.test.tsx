@@ -461,9 +461,12 @@ describe("<SeatingPage>", () => {
 
     await renderPage(<SeatingPage />);
 
-    const a4Button = await screen.findByRole("button", { name: /A4 seating chart/i });
+    // Export is a single Print button that opens a paper-size menu; pick A4.
+    const printTrigger = await screen.findByRole("button", { name: /^print$/i });
+    fireEvent.click(printTrigger);
+    const a4Item = await screen.findByRole("menuitem", { name: /^a4$/i });
     await act(async () => {
-      fireEvent.click(a4Button);
+      fireEvent.click(a4Item);
       // PDF fetch + preview dialog setup take an extra microtask.
       await Promise.resolve();
       await Promise.resolve();
@@ -490,9 +493,12 @@ describe("<SeatingPage>", () => {
 
     await renderPage(<SeatingPage />);
 
-    const a3Button = await screen.findByRole("button", { name: /A3 seating chart/i });
+    // Export is a single Print button that opens a paper-size menu; pick A3.
+    const printTrigger = await screen.findByRole("button", { name: /^print$/i });
+    fireEvent.click(printTrigger);
+    const a3Item = await screen.findByRole("menuitem", { name: /^a3$/i });
     await act(async () => {
-      fireEvent.click(a3Button);
+      fireEvent.click(a3Item);
       await Promise.resolve();
       await Promise.resolve();
     });

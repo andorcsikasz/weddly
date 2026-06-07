@@ -527,7 +527,7 @@ describe("<GuestsPage>", () => {
     // The Download-template button is rendered in both the toolbar and the
     // empty-state CTA cluster; assert at least one exists.
     expect(
-      screen.getAllByRole("button", { name: /download template/i }).length,
+      screen.getAllByRole("button", { name: /^template$/i }).length,
     ).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole("button", { name: /^meals$/i })).toBeInTheDocument();
   });
