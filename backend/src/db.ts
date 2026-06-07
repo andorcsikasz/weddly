@@ -651,6 +651,17 @@ addColumnIfMissing(
 addColumnIfMissing("couples", "venue_name", "venue_name TEXT");
 addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 
+// Moodboard source state. Every couple defaults to 'preset' — a curated
+// Pinterest board rendered automatically so /app/moodboard is never blank.
+// Switching to 'pinterest' stores the couple's own board link in
+// moodboard_url; 'upload' renders the rows in the moodboard_images table.
+addColumnIfMissing(
+  "couples",
+  "moodboard_source",
+  "moodboard_source TEXT NOT NULL DEFAULT 'preset'",
+);
+addColumnIfMissing("couples", "moodboard_url", "moodboard_url TEXT");
+
 // Vendégoldal Phase 2 — markdown blocks the couple authors for the guest
 // page. Both nullable / NULL by default; the editor surfaces them in the
 // Public and Post-RSVP sections respectively.

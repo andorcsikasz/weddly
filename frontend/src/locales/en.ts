@@ -683,6 +683,18 @@ const en: LocaleMessages = {
     task_add_tables: "Add a seating table",
     task_seat_guests: "Seat all confirmed guests",
     quick_links_title: "Shortcuts",
+    charts: {
+      title: "Spending at a glance",
+      paid_title: "Paid so far",
+      paid_center: "paid",
+      planned_label: "Planned",
+      paid_label: "Paid",
+      remaining_label: "Remaining",
+      distribution_title: "Where the budget goes",
+      distribution_empty: "Add planned costs to see how your budget splits across categories.",
+      other: "Other",
+      of_total: "{pct}% of planned",
+    },
     next_action_label: "Next step: {label}",
     set_date_dialog_title: "Lock the wedding date",
     set_date_dialog_body: "Pick the date you're getting married. You can change it later.",
@@ -1619,7 +1631,7 @@ const en: LocaleMessages = {
   },
   moodboard: {
     title: "Moodboard",
-    sub: "Paste your Pinterest board link and the most recent pins from your board will appear here.",
+    sub: "Start from a suggested board, upload your own images, or paste a Pinterest board link.",
     url_label: "Pinterest board link",
     url_placeholder: "https://www.pinterest.com/username/wedding/",
     url_help:
@@ -1642,6 +1654,19 @@ const en: LocaleMessages = {
     error_empty:
       "This board is empty — no pins yet. Pin a few images on Pinterest, then come back here.",
     error_fetch: "We couldn't reach Pinterest just now. Please try again in a few minutes.",
+    preset_badge: "Suggested",
+    replace_title: "Make it yours",
+    choose_upload: "Upload your own images",
+    choose_pinterest: "Link a Pinterest board",
+    upload_help: "JPEG, PNG or WebP, up to 4 MB each. You can add up to 12.",
+    add_images: "Add images",
+    delete_image: "Remove image",
+    uploading: "Uploading…",
+    upload_error: "Couldn't upload those images. Please try again.",
+    upload_too_large: "That image is over 4 MB. Pick a smaller one.",
+    upload_bad_type: "Only JPEG, PNG or WebP images are supported.",
+    upload_limit: "You can upload up to 12 images.",
+    back_to_preset: "Back to the suggested board",
   },
   guest_portal: {
     date_tbd: "Wedding date — to be confirmed",
@@ -3671,6 +3696,8 @@ const en: LocaleMessages = {
       "A confirmation email is on its way — if it doesn't arrive in a few minutes, check spam too.",
     thanks_open_site: "Open the wedding page →",
     thanks_plan_your_own: "Planning your own wedding? Try Weddly free →",
+    redirect_hint: "Opening the wedding page in {n}s…",
+    edit_responses: "Edit my responses",
     update_response: "Update",
     checkin_title: "RSVP check-in",
     checkin_intro: "Type the couple's name and the 4-digit code from your invite.",
@@ -4762,8 +4789,8 @@ const en: LocaleMessages = {
       deck_number_label: "Level {n}",
       deck_count_label: "{n} cards",
       deck_soon_label: "Soon",
-      deck_greenflag_title: "Greenflag",
-      deck_greenflag_blurb:
+      deck_firstdate_title: "First Date",
+      deck_firstdate_blurb:
         "A light first-date deck. Easy, curious openers for the very beginning.",
       deck_roots_title: "Roots",
       deck_roots_blurb:

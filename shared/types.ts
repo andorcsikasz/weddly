@@ -1003,6 +1003,33 @@ export interface MoodboardPin {
   title: string | null;
 }
 
+/** Where a couple's moodboard content comes from. `preset` is the default for
+ *  every couple — a curated Pinterest board scraped server-side so the page is
+ *  never blank. `pinterest` is the couple's own linked board. `upload` is
+ *  their own images uploaded from-device (rows in `moodboard_images`). */
+export type MoodboardSource = "preset" | "pinterest" | "upload";
+
+/** One image the couple uploaded to their moodboard (source = "upload"). */
+export interface MoodboardImage {
+  id: number;
+  /** Public URL served by the `/uploads/*` static handler. */
+  image_url: string;
+  sort_order: number;
+}
+
+/** Persisted moodboard state for the current couple — returned by
+ *  GET /api/moodboard so the page renders the same board for both partners
+ *  across devices (the choice lives on the couple row, not in localStorage). */
+export interface MoodboardState {
+  source: MoodboardSource;
+  /** The couple's own Pinterest board link when source = "pinterest". */
+  url: string | null;
+  /** The curated default board, rendered when source = "preset". */
+  preset_url: string;
+  /** Uploaded images, ordered by `sort_order` then id, when source = "upload". */
+  images: MoodboardImage[];
+}
+
 export type PlanningKind = "task" | "idea" | "schedule";
 
 /** Sub-topic a planning item belongs to. Drives which surface shows it —

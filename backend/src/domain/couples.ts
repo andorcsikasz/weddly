@@ -151,6 +151,13 @@ export interface CoupleRow {
   /** Couple-pasted http(s) URL for the hero image on the public site.
    *  No upload pipeline yet; this is BYO-URL with boundary validation. */
   cover_image_url: string | null;
+  /** Moodboard source: 'preset' (curated default board), 'pinterest' (own
+   *  board link in moodboard_url) or 'upload' (rows in moodboard_images).
+   *  Defaults to 'preset' so /app/moodboard is never blank. */
+  moodboard_source: string;
+  /** The couple's own Pinterest board link when moodboard_source='pinterest'.
+   *  NULL otherwise. */
+  moodboard_url: string | null;
   /** Pre-RSVP welcome block (Vendégoldal Phase 2). Visible at every tier
    *  of the public wedding endpoint — the couple authors it for "anyone
    *  with the link". Null when unset. */

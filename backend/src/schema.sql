@@ -1129,7 +1129,7 @@ CREATE INDEX IF NOT EXISTS idx_couple_card_feedback_created
 -- next copy iteration; nothing is auto-promoted.
 CREATE TABLE IF NOT EXISTS couple_card_suggestions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  deck_id TEXT NOT NULL,                        -- 'roots' | 'everyday' | 'closeness' | 'deepwater' | 'lemonade' | 'greenflag'
+  deck_id TEXT NOT NULL,                        -- 'roots' | 'everyday' | 'closeness' | 'deepwater' | 'lemonade' | 'firstdate'
   locale TEXT NOT NULL,                         -- 'hu' | 'en'
   suggestion TEXT NOT NULL,
   created_at INTEGER NOT NULL
@@ -1213,3 +1213,16 @@ CREATE TABLE IF NOT EXISTS received_gifts (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+-- Moodboard uploads. A couple's moodboard has three sources (couples.moodboard_source):
+-- 'preset' (a curated default Pinterest board, scraped), 'pinterest' (the couple's own
+-- board link, in couples.moodboard_url), or 'upload' (the rows below — images the couple
+-- uploaded from their own device, served from /uploads/couples/<id>/moodboard/).
+CREATE TABLE IF NOT EXISTS moodboard_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  image_path TEXT NOT NULL,                                   -- public URL, e.g. /uploads/couples/12/moodboard/3.jpg
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_moodboard_images_couple ON moodboard_images(couple_id, sort_order);

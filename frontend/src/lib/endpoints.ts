@@ -30,6 +30,7 @@ import type {
   Household,
   MediaLinks,
   MoodboardPin,
+  MoodboardState,
   PlaceSuggestion,
   PublicCheckinView,
   PublicRsvpView,
@@ -564,15 +565,54 @@ export const dietaryApi = {
   summary: () => apiFetch<DietarySummary>("GET", "/api/guests/dietary-summary"),
 };
 
-/** Moodboard — proxies a public Pinterest board's RSS feed and returns its
- *  pins. The backend distinguishes private/missing/empty boards so the page
- *  can surface a specific error instead of a blank widget. */
+/** Moodboard — the couple's board state lives on the couple row (preset /
+ *  linked Pinterest board / own uploads), so both partners see the same thing.
+ *  `preview` proxies a Pinterest board's RSS feed; the backend distinguishes
+ *  private/missing/empty boards so the page can show a specific error. */
 export const moodboardApi = {
+  /** Persisted state for the current couple: source + linked url + preset url
+   *  + uploaded images. */
+  get: () => apiFetch<MoodboardState>("GET", "/api/moodboard"),
   preview: (url: string) =>
     apiFetch<{ pins: MoodboardPin[] }>(
       "GET",
       `/api/moodboard/preview?url=${encodeURIComponent(url)}`,
     ),
+  /** Switch to the curated preset, or link the couple's own Pinterest board. */
+  setSource: (body: { source: "preset" | "pinterest"; url?: string }) =>
+    apiFetch<MoodboardState>("PATCH", "/api/moodboard", body),
+  /** Multipart upload of own images (JPEG/PNG/WebP, ≤4 MB each). JSON-shaped
+   *  `apiFetch` doesn't speak FormData, so we hit fetch directly with the same
+   *  auth header — mirrors `coupleApi.uploadCover`. Flips source to 'upload'. */
+  uploadImages: async (files: File[]): Promise<MoodboardState> => {
+    const form = new FormData();
+    for (const file of files) form.append("file", file);
+    const token = getToken();
+    const res = await fetch("/api/moodboard/images", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Upload failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as MoodboardState;
+  },
+  /** Remove one uploaded image; the server flips back to 'preset' when the last
+   *  one goes. */
+  deleteImage: (id: number) => apiFetch<MoodboardState>("DELETE", `/api/moodboard/images/${id}`),
 };
 
 /** Place-name autocomplete — proxies OpenStreetMap Nominatim. Pass `country`

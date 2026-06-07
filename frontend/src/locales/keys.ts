@@ -784,6 +784,19 @@ export interface LocaleMessages {
     task_add_tables: string;
     task_seat_guests: string;
     quick_links_title: string;
+    /** Dashboard spending donuts: paid-vs-planned + category breakdown. */
+    charts: {
+      title: string;
+      paid_title: string;
+      paid_center: string;
+      planned_label: string;
+      paid_label: string;
+      remaining_label: string;
+      distribution_title: string;
+      distribution_empty: string;
+      other: string;
+      of_total: string;
+    };
     /** "Next action" hero CTA above the KPIs. */
     next_action_label: string;
     /** Inline set-date dialog opened from the "Next step: lock the wedding date"
@@ -1799,6 +1812,21 @@ export interface LocaleMessages {
     error_private: string;
     error_empty: string;
     error_fetch: string;
+    /** Three-source moodboard: a curated preset (default), the couple's own
+     *  uploaded images, or a linked Pinterest board. */
+    preset_badge: string;
+    replace_title: string;
+    choose_upload: string;
+    choose_pinterest: string;
+    upload_help: string;
+    add_images: string;
+    delete_image: string;
+    uploading: string;
+    upload_error: string;
+    upload_too_large: string;
+    upload_bad_type: string;
+    upload_limit: string;
+    back_to_preset: string;
   };
   /** Read-only "for guests" surface — the same JSX renders the public page
    *  at /g/:slug/:code AND the couple-side preview at /app/guest-portal. */
@@ -4170,6 +4198,10 @@ export interface LocaleMessages {
     /** Post-submit referral copy — see HouseholdRsvpForm.tsx. */
     thanks_open_site: string;
     thanks_plan_your_own: string;
+    /** Countdown caption on the post-RSVP auto-redirect runner. {n} = seconds. */
+    redirect_hint: string;
+    /** Re-opens the collapsed RSVP inputs after a self-serve guest submitted. */
+    edit_responses: string;
     update_response: string;
     /** Airport check-in lookup screen. */
     checkin_title: string;
@@ -5287,8 +5319,8 @@ export interface LocaleMessages {
       deck_number_label: string;
       deck_count_label: string;
       deck_soon_label: string;
-      deck_greenflag_title: string;
-      deck_greenflag_blurb: string;
+      deck_firstdate_title: string;
+      deck_firstdate_blurb: string;
       deck_roots_title: string;
       deck_roots_blurb: string;
       deck_everyday_title: string;

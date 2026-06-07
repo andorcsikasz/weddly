@@ -690,6 +690,18 @@ const hu: LocaleMessages = {
     task_add_tables: "Első ültetési asztal",
     task_seat_guests: "Minden visszajelzett vendég leültetve",
     quick_links_title: "Gyorslinkek",
+    charts: {
+      title: "Költés egy pillantásra",
+      paid_title: "Eddig kifizetve",
+      paid_center: "kifizetve",
+      planned_label: "Tervezett",
+      paid_label: "Kifizetve",
+      remaining_label: "Hátralévő",
+      distribution_title: "Hová megy a keret",
+      distribution_empty: "Adj hozzá tervezett költséget, és látod, hogyan oszlik meg a kereted.",
+      other: "Egyéb",
+      of_total: "a tervezett {pct}%-a",
+    },
     next_action_label: "Következő lépés: {label}",
     set_date_dialog_title: "Esküvő dátumának véglegesítése",
     set_date_dialog_body: "Válaszd ki az esküvő dátumát. Később bármikor módosítható.",
@@ -1635,7 +1647,7 @@ const hu: LocaleMessages = {
   },
   moodboard: {
     title: "Moodboard",
-    sub: "Illesszétek be a Pinterest tábla linkjét, és a táblátok legutóbbi képei itt jelennek meg.",
+    sub: "Induljatok egy ajánlott tábláról, töltsetek fel saját képeket, vagy illesszetek be egy Pinterest tábla linket.",
     url_label: "Pinterest tábla linkje",
     url_placeholder: "https://www.pinterest.com/felhasznalo/eskuvo/",
     url_help:
@@ -1658,6 +1670,19 @@ const hu: LocaleMessages = {
     error_empty:
       "A tábla még üres — nincs rajta egy pin sem. Tűzz fel néhány képet a Pinteresten, aztán térj vissza ide.",
     error_fetch: "Nem tudtuk most elérni a Pinterestet. Próbáld újra pár perc múlva.",
+    preset_badge: "Ajánlott",
+    replace_title: "Tegyétek a sajátotokká",
+    choose_upload: "Saját képek feltöltése",
+    choose_pinterest: "Pinterest tábla linkelése",
+    upload_help: "JPEG, PNG vagy WebP, képenként max 4 MB. Legfeljebb 12 kép.",
+    add_images: "Képek hozzáadása",
+    delete_image: "Kép eltávolítása",
+    uploading: "Feltöltés…",
+    upload_error: "Nem sikerült feltölteni a képeket. Próbáld újra.",
+    upload_too_large: "Ez a kép nagyobb mint 4 MB. Válassz kisebbet.",
+    upload_bad_type: "Csak JPEG, PNG vagy WebP képek tölthetők fel.",
+    upload_limit: "Legfeljebb 12 képet tölthetsz fel.",
+    back_to_preset: "Vissza az ajánlotthoz",
   },
   guest_portal: {
     date_tbd: "Esküvő dátuma — még pontosítás alatt",
@@ -3709,6 +3734,8 @@ const hu: LocaleMessages = {
       "Egy megerősítő email is érkezni fog — ha pár percen belül nem látod, nézd meg a spam mappát is.",
     thanks_open_site: "Esküvői oldal megnyitása →",
     thanks_plan_your_own: "Ti is most terveztek? Próbáljátok ki a Weddlyt ingyen →",
+    redirect_hint: "Az esküvői oldal megnyílik {n} mp múlva…",
+    edit_responses: "Válaszok szerkesztése",
     update_response: "Frissítés",
     checkin_title: "RSVP check-in",
     checkin_intro: "Írd be a jegyes pár nevét és a 4 jegyű kódot a meghívóról.",
@@ -4808,8 +4835,8 @@ const hu: LocaleMessages = {
       deck_number_label: "{n}. szint",
       deck_count_label: "{n} kártya",
       deck_soon_label: "Hamarosan",
-      deck_greenflag_title: "Greenflag",
-      deck_greenflag_blurb:
+      deck_firstdate_title: "Első randi",
+      deck_firstdate_blurb:
         "Egy könnyed első randis pakli. Kíváncsi, oldott kérdések a legelejére.",
       deck_roots_title: "Gyökerek",
       deck_roots_blurb:

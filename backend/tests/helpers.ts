@@ -106,6 +106,7 @@ export function wipeAll(): void {
     "wishlist_items",
     "received_gifts",
     "planning_items",
+    "moodboard_images",
     "guests",
     "households",
     "budget_snapshots",

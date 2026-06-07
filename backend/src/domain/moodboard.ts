@@ -5,15 +5,60 @@
 // so the frontend can show a specific message (private board, missing board,
 // empty board) instead of a generic failure.
 
+import type { MoodboardImage, MoodboardSource, MoodboardState } from "@shared/types";
 import type { MoodboardPin } from "@shared/types";
+import { db } from "../db";
 import { HttpError } from "../lib/http";
+import { getCoupleById } from "./couples";
 
 const FETCH_TIMEOUT_MS = 8000;
+
+/** Curated default board every couple sees until they link their own board or
+ *  upload images. Single source of truth — handed to the client via
+ *  GET /api/moodboard so the page never hardcodes it. */
+export const MOODBOARD_PRESET_URL = "https://hu.pinterest.com/weddlyxyz/when-i-get-married/";
+
+const MOODBOARD_SOURCES: ReadonlySet<MoodboardSource> = new Set(["preset", "pinterest", "upload"]);
+
+interface MoodboardImageRow {
+  id: number;
+  image_path: string;
+  sort_order: number;
+}
+
+export function toMoodboardImage(row: MoodboardImageRow): MoodboardImage {
+  return { id: row.id, image_url: row.image_path, sort_order: row.sort_order };
+}
+
+/** Reads the persisted moodboard state for a couple: the source flag + its own
+ *  board link off the couples row, plus any uploaded images. The frontend uses
+ *  `source` to decide whether to scrape Pinterest (preset/pinterest) or render
+ *  the uploaded grid. */
+export function getMoodboardState(coupleId: number): MoodboardState {
+  const couple = getCoupleById(coupleId);
+  const rawSource = couple?.moodboard_source ?? "preset";
+  const source: MoodboardSource = MOODBOARD_SOURCES.has(rawSource as MoodboardSource)
+    ? (rawSource as MoodboardSource)
+    : "preset";
+  const images = (
+    db
+      .prepare(
+        "SELECT id, image_path, sort_order FROM moodboard_images WHERE couple_id = ? ORDER BY sort_order, id",
+      )
+      .all(coupleId) as MoodboardImageRow[]
+  ).map(toMoodboardImage);
+  return {
+    source,
+    url: couple?.moodboard_url ?? null,
+    preset_url: MOODBOARD_PRESET_URL,
+    images,
+  };
+}
 const PIN_USER_AGENT = "Mozilla/5.0 (compatible; Weddly/1.0; +https://weddly.hu)";
 
 /** Parsed `<user>/<board>` segments from a Pinterest board URL.
  *  `null` means the URL didn't look like a board link at all. */
-function parseBoardUrl(raw: string): { user: string; slug: string } | null {
+export function parseBoardUrl(raw: string): { user: string; slug: string } | null {
   try {
     const u = new URL(raw.trim());
     if (!/(^|\.)pinterest\.[a-z.]+$/i.test(u.hostname)) return null;
