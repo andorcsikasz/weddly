@@ -794,23 +794,26 @@ export function AppShell({ children }: { children: ReactNode }) {
  *  the rail is forced icon-only regardless, so the labelled header is
  *  hidden via `lg:flex` and a hairline is shown via `md:block lg:hidden`. */
 function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: boolean }) {
+  // Fixed-height (h-7) row in every state — labelled when the laptop rail is
+  // expanded, a centred hairline at tablet / when collapsed. Because a section
+  // break takes the same vertical space either way, every icon below it lands
+  // on the exact same row when the user toggles the rail.
   return (
-    <>
-      {/* Hairline only — shown at md (icon-only rail) and at lg+ when the
-          user has collapsed the rail. */}
-      <div
-        className={`mx-2 my-1 h-px bg-paper-300 dark:bg-umber-700 ${collapsed ? "" : "lg:hidden"}`}
-        aria-hidden
-      />
-      {/* Labelled header — only renders in the fully-expanded rail. */}
+    <div className="flex h-7 items-center px-2">
+      {/* Labelled header — fully-expanded laptop rail only. */}
       {!collapsed && (
-        <div className="mt-1 hidden items-center gap-2 px-3 pb-0.5 pt-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
+        <div className="hidden w-full items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
           <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
           <span>{label}</span>
           <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
         </div>
       )}
-    </>
+      {/* Hairline — tablet (icon-only) always, and laptop when collapsed. */}
+      <div
+        className={`h-px w-full bg-paper-300 dark:bg-umber-700 ${collapsed ? "" : "lg:hidden"}`}
+        aria-hidden
+      />
+    </div>
   );
 }
 
@@ -828,28 +831,29 @@ function AdminSidebarGroupHeader({
   collapsed?: boolean;
   isFirst?: boolean;
 }) {
+  // Fixed-height (h-7) row in every state so it occupies the same vertical
+  // space whether labelled (expanded) or a hairline (collapsed/tablet) — keeps
+  // admin nav icons on the same row across a collapse toggle, matching the
+  // couple SidebarGroupHeader.
   return (
-    <>
-      {/* Hairline-only fallback for icon-only modes. Skipped above the first
-          group so the "Admin" eyebrow already provides the visual break. */}
+    <div className="flex h-7 items-center px-2">
+      {/* `.eyebrow` subhead — fully-expanded rail only. */}
+      {!collapsed && (
+        <div className="eyebrow hidden w-full lg:block" aria-hidden>
+          {label}
+        </div>
+      )}
+      {/* Hairline — icon-only modes. Skipped above the first group so the
+          "Admin" eyebrow already provides the visual break. */}
       {!isFirst && (
         <div
-          className={`mx-2 my-1 h-px bg-neutral-200/50 dark:bg-neutral-800/40 ${
+          className={`h-px w-full bg-neutral-200/50 dark:bg-neutral-800/40 ${
             collapsed ? "" : "lg:hidden"
           }`}
           aria-hidden
         />
       )}
-      {/* `.eyebrow` subhead — fully-expanded rail only. */}
-      {!collapsed && (
-        <div
-          className={`eyebrow hidden px-3 pb-0.5 lg:block ${isFirst ? "pt-0.5" : "pt-2"}`}
-          aria-hidden
-        >
-          {label}
-        </div>
-      )}
-    </>
+    </div>
   );
 }
 
@@ -874,11 +878,14 @@ function SideLink({
   darkActive?: boolean;
 }) {
   // Base classes describe the icon-only shape used at md (tablet) and at
-  // lg+ when `collapsed` is true. `lg:` overrides flip to the padded row
-  // shape (auto height + py-1) when the user has the laptop rail expanded.
+  // lg+ when `collapsed` is true. The expanded variant keeps the same fixed
+  // `h-9` height and just grows its width to fit the label — so every row is
+  // the same height collapsed or expanded, and an icon stays on the exact
+  // same row when the user toggles the rail (paired with the fixed-height
+  // SidebarGroupHeader below, which does the same for section breaks).
   const shape = collapsed
     ? "h-9 w-9 justify-center"
-    : "h-9 w-9 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1";
+    : "h-9 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
   return (
     <NavLink
       to={to}
@@ -933,7 +940,7 @@ function AdminSideLink({
 }) {
   const shape = collapsed
     ? "h-9 w-9 justify-center"
-    : "h-9 w-9 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1";
+    : "h-9 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
   return (
     <NavLink
       to={to}
