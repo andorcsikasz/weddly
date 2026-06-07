@@ -321,6 +321,32 @@ export function listGuestsByCouple(coupleId: number): Guest[] {
   return rows.map(toGuest);
 }
 
+/** Couple-wide RSVP progress for the "% responded so far" line in couple
+ *  notification emails. Denominator is every guest row for the couple (no
+ *  supplier/kind filter) so the number matches what /app/guests shows.
+ *  "Responded" = anyone off the pending pile (yes / no / maybe). */
+export interface CoupleRsvpProgress {
+  total: number;
+  responded: number;
+  /** responded / total, rounded to a whole percent. 0 when there are no guests. */
+  pct: number;
+}
+export function getCoupleRsvpProgress(coupleId: number): CoupleRsvpProgress {
+  const row = db
+    .prepare(
+      `SELECT
+          COUNT(*) AS total,
+          SUM(CASE WHEN rsvp_status IN ('yes','no','maybe') THEN 1 ELSE 0 END) AS responded
+         FROM guests
+        WHERE couple_id = ?`,
+    )
+    .get(coupleId) as { total: number; responded: number | null };
+  const total = row.total ?? 0;
+  const responded = row.responded ?? 0;
+  const pct = total > 0 ? Math.round((responded / total) * 100) : 0;
+  return { total, responded, pct };
+}
+
 export function getGuestByInviteCode(code: string): GuestRow | null {
   return (
     (db.prepare("SELECT * FROM guests WHERE invite_code = ?").get(code) as GuestRow | undefined) ??

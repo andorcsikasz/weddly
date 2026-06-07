@@ -28,6 +28,7 @@ import {
 } from "../domain/households";
 import {
   type GuestRow,
+  getCoupleRsvpProgress,
   getGuestByInviteCode,
   isGuestKind,
   isMealChoice,
@@ -251,6 +252,11 @@ function notifyCouple(
   }
   if (changed.length === 0) return;
 
+  // Whole-list progress so the partner sees how far the RSVP push has come,
+  // not just this one household. Counted once per submission, shared by both
+  // partners' mails.
+  const progress = getCoupleRsvpProgress(couple.id);
+
   for (const partnerId of [couple.partner_a_id, couple.partner_b_id]) {
     if (!partnerId) continue;
     const partner = getUserById(partnerId);
@@ -259,7 +265,7 @@ function notifyCouple(
       const only = changed[0]!;
       void sendKind(
         "rsvp_received_for_couple",
-        { guestName: only.name, rsvpStatus: only.rsvpStatus, guestPageUrl },
+        { guestName: only.name, rsvpStatus: only.rsvpStatus, guestPageUrl, progress },
         {
           user: { id: partner.id, email: partner.email, full_name: partner.full_name },
           couple_id: couple.id,
@@ -268,7 +274,7 @@ function notifyCouple(
     } else {
       void sendKind(
         "rsvp_received_household_for_couple",
-        { householdLabel: household.label, guests: changed, guestPageUrl },
+        { householdLabel: household.label, guests: changed, guestPageUrl, progress },
         {
           user: { id: partner.id, email: partner.email, full_name: partner.full_name },
           couple_id: couple.id,

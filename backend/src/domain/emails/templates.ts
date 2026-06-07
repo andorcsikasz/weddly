@@ -142,13 +142,22 @@ export interface AccountFlagClearedPayload {
    *  Empty string when admin chose not to add one — body softens accordingly. */
   note: string;
 }
+/** Couple-wide RSVP progress shown as a "% replied so far" line. Matches the
+ *  /app/guests denominator (every guest row). Optional so older enqueued jobs
+ *  without it still render — the line is simply omitted. */
+export interface RsvpProgress {
+  total: number;
+  responded: number;
+  pct: number;
+}
 export interface RsvpReceivedForCouplePayload {
   guestName: string;
   rsvpStatus: "yes" | "no" | "maybe";
   guestPageUrl: string;
+  progress?: RsvpProgress;
 }
 export interface RsvpReceivedHouseholdForCouplePayload {
-  /** Household label as it sits in /app/guests — "Anna & Mark" etc. */
+  /** Household label as it sits in /app/guests, e.g. "Anna & Mark". */
   householdLabel: string;
   /** One row per guest whose status moved in this submission. Order is
    *  preserved so the email reads naturally. */
@@ -157,6 +166,7 @@ export interface RsvpReceivedHouseholdForCouplePayload {
     rsvpStatus: "yes" | "no" | "maybe";
   }[];
   guestPageUrl: string;
+  progress?: RsvpProgress;
 }
 export interface RsvpThanksForGuestPayload {
   coupleDisplayName: string;
@@ -944,16 +954,18 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         `${p.guestName} most válaszolt a meghívóra: ${rsvpStatusHu(p.rsvpStatus)}.`,
-        "Megnézheted a részleteket — ételválasztás, +1, szállásigény, zenekívánság — a vendéglistán.",
-      ],
+        rsvpProgressLineHu(p.progress),
+        "A vendéglistán látod az ételválasztást, a +1-eket, a szállásigényt és a zenekívánságokat.",
+      ].filter((line): line is string => line !== null),
       cta: "Vendéglista megnyitása",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
         `${p.guestName} just responded: ${rsvpStatusEn(p.rsvpStatus)}.`,
-        "Open the guest list to see meal choice, +1, accommodation, and song requests.",
-      ],
+        rsvpProgressLineEn(p.progress),
+        "The guest list has their meal choice, +1, accommodation, and song requests.",
+      ].filter((line): line is string => line !== null),
       cta: "Open guest list",
     },
   }),
@@ -964,20 +976,25 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     hu: {
       preheader: `${p.householdLabel}: ${p.guests.length} fő válaszolt.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      // Each guest gets its own paragraph so they stack one-per-line in every
+      // client (the renderer collapses "\n" inside a single <p>, which used to
+      // run the whole household onto one line).
       paragraphs: [
         `${p.householdLabel} (${p.guests.length} fő) most töltötte ki a meghívót:`,
-        p.guests.map((g) => `• ${g.name} — ${rsvpStatusHu(g.rsvpStatus)}`).join("\n"),
-        "Megnézheted a részleteket — ételválasztás, +1, szállásigény, zenekívánság — a vendéglistán.",
-      ],
+        ...p.guests.map((g) => `• ${g.name} · ${rsvpStatusHu(g.rsvpStatus)}`),
+        rsvpProgressLineHu(p.progress),
+        "A vendéglistán látod az ételválasztást, a +1-eket, a szállásigényt és a zenekívánságokat.",
+      ].filter((line): line is string => line !== null),
       cta: "Vendéglista megnyitása",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
         `${p.householdLabel} (${p.guests.length} guests) just RSVPd together:`,
-        p.guests.map((g) => `• ${g.name} — ${rsvpStatusEn(g.rsvpStatus)}`).join("\n"),
-        "Open the guest list to see meal choice, +1, accommodation, and song requests.",
-      ],
+        ...p.guests.map((g) => `• ${g.name} · ${rsvpStatusEn(g.rsvpStatus)}`),
+        rsvpProgressLineEn(p.progress),
+        "The guest list has their meal choices, +1s, accommodation, and song requests.",
+      ].filter((line): line is string => line !== null),
       cta: "Open guest list",
     },
   }),
@@ -1656,6 +1673,17 @@ function rsvpStatusEn(status: "yes" | "no" | "maybe"): string {
   return "maybe";
 }
 
+/** "Eddig a vendégek 34%-a válaszolt (12/35)." Returns null when there are no
+ *  guests to divide by, so the builder drops the line cleanly. */
+function rsvpProgressLineHu(p?: RsvpProgress): string | null {
+  if (!p || p.total === 0) return null;
+  return `Eddig a vendégek ${p.pct}%-a válaszolt (${p.responded}/${p.total}).`;
+}
+function rsvpProgressLineEn(p?: RsvpProgress): string | null {
+  if (!p || p.total === 0) return null;
+  return `So far ${p.pct}% of your guests have replied (${p.responded}/${p.total}).`;
+}
+
 function rsvpReceivedSubject(p: RsvpReceivedForCouplePayload): string {
   if (p.rsvpStatus === "yes") return `${p.guestName} jön / ${p.guestName} is in`;
   if (p.rsvpStatus === "no") return `${p.guestName} sajnos nem / ${p.guestName} can't make it`;
@@ -1675,7 +1703,7 @@ function rsvpHouseholdSubject(p: RsvpReceivedHouseholdForCouplePayload): string 
       : yesCount > 0
         ? `${yesCount}/${p.guests.length} jön / ${yesCount}/${p.guests.length} in`
         : "válasz / response";
-  return `${headHu} — ${tally}`;
+  return `${headHu}: ${tally}`;
 }
 
 function rsvpThanksDetailHu(p: RsvpThanksForGuestPayload): string {
