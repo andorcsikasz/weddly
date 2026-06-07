@@ -226,6 +226,29 @@ describe("WishlistEditorPage", () => {
     expect(screen.getByText("A weekend away")).toBeInTheDocument();
   });
 
+  it("collapses the Gifts section when its header chevron is clicked", async () => {
+    on(
+      ({ url, method }) => method === "GET" && url.includes("/api/couples/current"),
+      () => jsonResponse(200, { couple: makeCouple() }),
+    );
+    on(
+      ({ url, method }) => method === "GET" && url.endsWith("/api/wishlist"),
+      () => jsonResponse(200, { items: [makeItem({ id: 1, title: "Espresso machine" })] }),
+    );
+
+    await renderPage(<WishlistEditorPage />);
+    expect(await screen.findByText("Espresso machine")).toBeInTheDocument();
+
+    // The section header is a toggle button labelled by its title ("Gifts");
+    // clicking it collapses the body and hides the item. (The add button is
+    // labelled "Gift", so the exact-name query targets the header, not it.)
+    const toggle = screen.getByRole("button", { name: "Gifts" });
+    await act(async () => {
+      fireEvent.click(toggle);
+    });
+    expect(screen.queryByText("Espresso machine")).not.toBeInTheDocument();
+  });
+
   it("adding an item POSTs the title + kind (EUR amount → minor units ×100)", async () => {
     setLocale("en");
     on(

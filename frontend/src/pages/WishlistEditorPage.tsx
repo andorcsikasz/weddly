@@ -27,6 +27,7 @@ import {
   ChevronDown,
   ExternalLink,
   Gift,
+  HandHeart,
   LayoutGrid,
   PackageCheck,
   Pencil,
@@ -58,9 +59,19 @@ function minorToWhole(minor: number, currency: Couple["currency"]): number {
 }
 
 /** Square thumbnail for a wishlist row: the link's resolved og:image when we
- *  have one, otherwise a muted gift-icon placeholder so every row keeps the
- *  same line height. */
-function WishlistThumb({ imageUrl, size = 40 }: { imageUrl: string | null; size?: number }) {
+ *  have one, otherwise a muted placeholder so every row keeps the same line
+ *  height. The placeholder glyph depends on the kind: a gift box for gifts, an
+ *  offered-heart for personal requests (a letter / photo / song is a gesture,
+ *  not a boxed gift). */
+function WishlistThumb({
+  imageUrl,
+  size = 40,
+  Icon = Gift,
+}: {
+  imageUrl: string | null;
+  size?: number;
+  Icon?: typeof Gift;
+}) {
   const cls = "shrink-0 rounded-lg border border-paper-200 object-cover dark:border-umber-700";
   if (imageUrl) {
     return (
@@ -81,7 +92,7 @@ function WishlistThumb({ imageUrl, size = 40 }: { imageUrl: string | null; size?
       style={{ width: size, height: size }}
       aria-hidden
     >
-      <Gift size={Math.round(size * 0.45)} />
+      <Icon size={Math.round(size * 0.45)} />
     </span>
   );
 }
@@ -218,7 +229,10 @@ function WishlistRow({ item, currency, locale, t, onEdit, onDelete }: ItemViewPr
         aria-label={t("common.edit")}
         className="flex min-w-0 flex-1 items-center gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
       >
-        <WishlistThumb imageUrl={item.image_url} />
+        <WishlistThumb
+          imageUrl={item.image_url}
+          Icon={item.kind === "request" ? HandHeart : Gift}
+        />
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
             {item.title}
@@ -262,7 +276,7 @@ function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete }: ItemV
     // Fixed card height with a 3/5 image · 2/5 text split. The whole row of
     // cards stretches to a uniform height, so pinning the ratio keeps every
     // card consistent regardless of how much text each item carries.
-    <li className="card flex h-[26rem] flex-col overflow-hidden p-0 dark:border-umber-700">
+    <li className="card flex h-[20.8rem] flex-col overflow-hidden p-0 dark:border-umber-700">
       <button
         type="button"
         onClick={onEdit}
