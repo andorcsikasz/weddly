@@ -422,6 +422,40 @@ describe("RsvpCheckinPage — lookup form", () => {
     });
   });
 
+  it("collapses the inputs and runs the redirect countdown after a self-serve submit", async () => {
+    const view = makeView({ wedding_site_published: true });
+    globalThis.fetch = mock(async (url: string | URL) => {
+      const u = typeof url === "string" ? url : url.toString();
+      if (u.includes("/api/rsvp/lookup")) return jsonResponse(200, { rsvp: view });
+      if (u.includes("/api/rsvp/checkin")) return jsonResponse(200, { rsvp: view });
+      return jsonResponse(404, { error: "unmocked" });
+    }) as unknown as typeof fetch;
+
+    renderCheckin(["/rsvp?couple=MIALUCAS&code=1234"]);
+    await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
+
+    for (const g of screen.getAllByRole("radiogroup", { name: /Anna Kovács|Bence Kovács/ })) {
+      const yes = within(g)
+        .getAllByRole("radio")
+        .find((b) => /igen/i.test(b.textContent ?? ""));
+      fireEvent.click(yes!);
+    }
+    fireEvent.click(screen.getByRole("button", { name: /check-in befejezése/i }));
+    await waitFor(() => expect(screen.getByText(/igen, beküldöm/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByText(/igen, beküldöm/i));
+
+    // The 10s redirect runner caption shows ("…megnyílik {n} mp múlva…"),
+    await waitFor(() => expect(screen.getByText(/megnyílik/i)).toBeInTheDocument());
+    // an "edit my responses" escape re-opens the form,
+    expect(screen.getByRole("button", { name: /szerkesztése/i })).toBeInTheDocument();
+    // and the RSVP inputs are folded into the collapsed (hidden) wrapper.
+    const groups = screen.getAllByRole("radiogroup", {
+      name: /Anna Kovács|Bence Kovács/,
+      hidden: true,
+    });
+    expect(groups[0]?.closest(".hidden")).not.toBeNull();
+  });
+
   it("baby chip toggles a name input slot, distinct from the +1 chip", async () => {
     globalThis.fetch = mock(async () =>
       jsonResponse(200, { rsvp: makeView() }),
