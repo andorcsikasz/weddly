@@ -511,24 +511,21 @@ export default function DesignPage() {
       {loading ? (
         <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
       ) : (
-        <>
-          {/* ── Surface switcher: Website vs Print, pinned full-width at the top.
-              The common identity below drives BOTH; each tab owns only its
-              surface-specific controls. ──────────────────────────────────── */}
-          <div
-            role="tablist"
-            aria-label={t("design.title")}
-            className="mb-6 flex w-full items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800"
-          >
-            {tabBtn("website", t("design.tab.website"))}
-            {tabBtn("print", t("design.tab.print"))}
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-          {/* ── Left column: the COMMON identity (drives BOTH surfaces), then
-              the Website / Print surface tabs with only surface-specific
-              controls. ───────────────────────────────────────────────────── */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+          {/* ── Left column: the Website / Print surface switcher pinned at the
+              top (full-width within this column, so it never reaches over the
+              preview), then the COMMON identity (drives BOTH surfaces) and the
+              surface-specific controls. ─────────────────────────────────────── */}
           <div className="space-y-6">
+            {/* Surface switcher: Website vs Print. */}
+            <div
+              role="tablist"
+              aria-label={t("design.title")}
+              className="flex w-full items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800"
+            >
+              {tabBtn("website", t("design.tab.website"))}
+              {tabBtn("print", t("design.tab.print"))}
+            </div>
             {/* Wedding style */}
             <section>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
@@ -1075,8 +1072,7 @@ export default function DesignPage() {
               )
             )}
           </aside>
-          </div>
-        </>
+        </div>
       )}
     </>
   );
