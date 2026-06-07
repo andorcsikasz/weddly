@@ -25,7 +25,7 @@ const DECK_LABELS: Record<string, string> = {
   closeness: "Közelség",
   deepwater: "Mély víz",
   lemonade: "Limonádé",
-  greenflag: "Greenflag",
+  firstdate: "Első randi",
 };
 
 // Canonical current question text per (deck_id : card_index : locale).

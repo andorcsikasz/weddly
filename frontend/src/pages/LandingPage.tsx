@@ -1106,22 +1106,22 @@ function CoupleCardsTeaser() {
 
   // Mirror the tool-page easter egg here: a horizontal swipe on the deck
   // row reveals a hidden accent card tucked off the edge. Right-swipe
-  // reveals lemonade (off the RIGHT edge); left-swipe reveals greenflag
+  // reveals lemonade (off the RIGHT edge); left-swipe reveals firstdate
   // (off the LEFT edge). Lemonade reveal is persisted via the shared
   // localStorage key so unlocking on either surface lights both up;
-  // greenflag stays session-ephemeral like the tool page.
+  // firstdate stays session-ephemeral like the tool page.
   const [isLemonadeRevealed, setIsLemonadeRevealed] = useState<boolean>(() =>
     loadLemonadeRevealed(),
   );
-  const [isGreenflagRevealed, setIsGreenflagRevealed] = useState<boolean>(false);
+  const [isFirstDateRevealed, setIsFirstDateRevealed] = useState<boolean>(false);
   const visibleDecks = useMemo(
     () =>
       COUPLE_CARD_DECKS.filter(
         (deck) =>
           (deck.id !== "lemonade" || isLemonadeRevealed) &&
-          (deck.id !== "greenflag" || isGreenflagRevealed),
+          (deck.id !== "firstdate" || isFirstDateRevealed),
       ),
-    [isLemonadeRevealed, isGreenflagRevealed],
+    [isLemonadeRevealed, isFirstDateRevealed],
   );
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const wheelAcc = useRef(0);
@@ -1140,9 +1140,9 @@ function CoupleCardsTeaser() {
     const dy = e.clientY - start.y;
     if (Math.abs(dx) <= 50 || Math.abs(dx) <= Math.abs(dy)) return;
     // Right-swipe pulls the row right → reveals lemonade off the right
-    // edge; left-swipe reveals greenflag off the left edge.
+    // edge; left-swipe reveals firstdate off the left edge.
     if (dx > 0) revealLemonade();
-    else setIsGreenflagRevealed(true);
+    else setIsFirstDateRevealed(true);
   };
   // macOS trackpad horizontal swipes fire wheel events with deltaX, not
   // pointer events. Accumulate horizontal deltaX and trip the matching
@@ -1155,7 +1155,7 @@ function CoupleCardsTeaser() {
         revealLemonade();
         wheelAcc.current = 0;
       } else if (wheelAcc.current < -60) {
-        setIsGreenflagRevealed(true);
+        setIsFirstDateRevealed(true);
         wheelAcc.current = 0;
       }
     } else {
@@ -1198,7 +1198,7 @@ function CoupleCardsTeaser() {
         >
           {visibleDecks.map((deck) => {
             const isLemonade = deck.id === "lemonade";
-            const isGreenflag = deck.id === "greenflag";
+            const isFirstDate = deck.id === "firstdate";
             const isAccent = isAccentDeck(deck.id);
             const hasCards = deck.questionsEn.length > 0;
             return (
@@ -1208,8 +1208,8 @@ function CoupleCardsTeaser() {
                   className={`group flex aspect-[2/3] h-full flex-col items-center justify-between overflow-hidden rounded-2xl px-3 py-4 text-center transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:aspect-[3/4] sm:px-5 sm:py-6 lg:px-6 lg:py-7 ${
                     isLemonade
                       ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
-                      : isGreenflag
-                        ? "bg-greenflag-green text-greenflag-ink shadow-[0_18px_36px_-18px_rgba(21,128,61,0.4)] focus-visible:ring-greenflag-green"
+                      : isFirstDate
+                        ? "bg-firstdate-blue text-white shadow-[0_18px_36px_-18px_rgba(30,58,138,0.5)] focus-visible:ring-firstdate-blue"
                         : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
                   }`}
                 >
@@ -1323,7 +1323,7 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
           const rot = clamp(-p * 34, -38, 38);
           const opacity = hidden ? 0 : Math.max(0, 1 - 0.42 * ap);
           const isLemonade = deck.id === "lemonade";
-          const isGreenflag = deck.id === "greenflag";
+          const isFirstDate = deck.id === "firstdate";
           const isAccent = isAccentDeck(deck.id);
           const hasCards = deck.questionsEn.length > 0;
           return (
@@ -1362,8 +1362,8 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
                 className={`flex aspect-[3/2] w-full flex-col items-center justify-between overflow-hidden rounded-2xl px-7 py-8 text-center ${
                   isLemonade
                     ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_24px_50px_-20px_rgba(161,98,7,0.6)]"
-                    : isGreenflag
-                      ? "bg-greenflag-green text-greenflag-ink shadow-[0_24px_50px_-20px_rgba(21,128,61,0.45)]"
+                    : isFirstDate
+                      ? "bg-firstdate-blue text-white shadow-[0_24px_50px_-20px_rgba(30,58,138,0.5)]"
                       : "bg-wnrs-red text-white shadow-[0_24px_50px_-20px_rgba(204,31,40,0.6)]"
                 }`}
               >

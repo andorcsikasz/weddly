@@ -116,17 +116,19 @@ export default {
           ink: "#261606",
           yellowInk: "#A16207",
         },
-        // Greenflag — soft pastel mint for the hidden "first date" deck
-        // tucked off the LEFT edge of the couple-cards mini-row (the
-        // mirror of lemonade on the right). Revealed only after a
-        // left-swipe across the row.
-        greenflag: {
-          // Soft sage-mint card face — greener than a pure pastel but still
-          // elegant against Weddly's cream/navy world. Per user spec.
-          green: "#BFE8C9",
-          // Deep forest green for type + flair on every greenflag surface.
-          ink: "#234B32",
-          greenInk: "#234B32",
+        // First-date deck — deep blue card paired with white type, the
+        // hidden pack tucked off the LEFT edge of the couple-cards mini-row
+        // (the mirror of lemonade on the right). Revealed only after a
+        // left-swipe across the row. Unlike the pastel lemonade, this is a
+        // dark surface, so card type is white and the on-cream accent text
+        // uses the deep blue itself.
+        firstdate: {
+          // Rich royal-navy card face: clearly blue (not near-black) so it
+          // pops against Weddly's cream world, with strong white contrast.
+          blue: "#1e3a8a",
+          // Same deep blue reused as ink for accent text sitting on the
+          // cream page background (e.g. the card-position counter).
+          ink: "#1e3a8a",
         },
       },
       fontFamily: {

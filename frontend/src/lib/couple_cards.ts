@@ -8,7 +8,7 @@
 // localStorage so a returning visitor doesn't get the same shuffle twice
 // in a session.
 
-export type DeckId = "greenflag" | "roots" | "everyday" | "closeness" | "deepwater" | "lemonade";
+export type DeckId = "firstdate" | "roots" | "everyday" | "closeness" | "deepwater" | "lemonade";
 
 export interface Deck {
   id: DeckId;
@@ -303,10 +303,10 @@ const LEMONADE_EN: readonly string[] = [
 ];
 
 // Hidden easter-egg deck tucked off the LEFT edge of the mini-deck row,
-// the mirror of lemonade on the right. A light "first date" pack: pastel
-// green, revealed after a left-swipe. Easy, curious openers for the very
+// the mirror of lemonade on the right. The "First Date" pack: a deep blue
+// card, revealed after a left-swipe. Easy, curious openers for the very
 // beginning of a relationship.
-const GREENFLAG_HU: readonly string[] = [
+const FIRSTDATE_HU: readonly string[] = [
   "Mi az az apróság, amitől rögtön jobb kedved lesz?",
   "Felébredsz, és semmi dolgod aznap. Hogyan töltenéd a napot?",
   "Mi az, amitől egy első randin azt érzed: na, ez green flag?",
@@ -333,7 +333,7 @@ const GREENFLAG_HU: readonly string[] = [
   "Mi az az ártalmatlan véleményed, ami mellett meglepően lelkesen tudsz érvelni?",
   "Ha lenne második randi, szerinted mi lenne egy jó közös program?",
 ];
-const GREENFLAG_EN: readonly string[] = [
+const FIRSTDATE_EN: readonly string[] = [
   "What is one small thing that instantly improves your mood?",
   "You wake up with a completely free day and no responsibilities. What do you do?",
   "What is something someone can do on a first date that feels like a green flag to you?",
@@ -363,11 +363,11 @@ const GREENFLAG_EN: readonly string[] = [
 
 export const COUPLE_CARD_DECKS: readonly Deck[] = [
   {
-    id: "greenflag",
-    titleKey: "tools.couple_cards.deck_greenflag_title",
-    blurbKey: "tools.couple_cards.deck_greenflag_blurb",
-    questionsHu: GREENFLAG_HU,
-    questionsEn: GREENFLAG_EN,
+    id: "firstdate",
+    titleKey: "tools.couple_cards.deck_firstdate_title",
+    blurbKey: "tools.couple_cards.deck_firstdate_blurb",
+    questionsHu: FIRSTDATE_HU,
+    questionsEn: FIRSTDATE_EN,
   },
   {
     id: "roots",
@@ -413,14 +413,14 @@ export const COUPLE_CARD_DECKS: readonly Deck[] = [
 export const DECK_SIZE = 25;
 
 // The numbered "Level 1-4" red decks, in fixed order. Accent decks
-// (greenflag, lemonade) sit outside this set: greenflag is the hidden
+// (firstdate, lemonade) sit outside this set: firstdate is the hidden
 // first-date pack tucked off the LEFT edge of the deck row, lemonade the
-// playful pack off the RIGHT. Both render with their own pastel palette
+// playful pack off the RIGHT. Both render with their own palette
 // and a name instead of a Level number.
 export const RED_DECK_ORDER: readonly DeckId[] = ["roots", "everyday", "closeness", "deepwater"];
 
 export function isAccentDeck(id: DeckId): boolean {
-  return id === "greenflag" || id === "lemonade";
+  return id === "firstdate" || id === "lemonade";
 }
 
 /** 1-based Level number for a red deck; 0 for accent decks. */

@@ -23,7 +23,7 @@ const VALID_DECKS = new Set([
   "closeness",
   "deepwater",
   "lemonade",
-  "greenflag",
+  "firstdate",
 ]);
 const VALID_RATINGS = new Set(["bad", "ok", "great"]);
 const VALID_LOCALES = new Set(["hu", "en"]);

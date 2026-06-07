@@ -124,7 +124,7 @@ function isValidProgress(p: unknown): p is DeckProgress {
 const DEFAULT_SELECTED: DeckId = "roots";
 
 const VALID_DECK_IDS: ReadonlySet<DeckId> = new Set([
-  "greenflag",
+  "firstdate",
   "roots",
   "everyday",
   "closeness",
@@ -238,8 +238,8 @@ export default function CoupleCardsPage() {
   // Lazy-init a deck's progress the first time the user opens it.
   // Existing progress is preserved across visits.
   const openDeck = useCallback((id: DeckId) => {
-    // Decks without questions yet (e.g. greenflag, "coming soon") can't be
-    // drawn — the card view assumes a full DECK_SIZE bag. Selecting them in
+    // Decks without questions yet (e.g. a "coming soon" pack) can't be
+    // drawn; the card view assumes a full DECK_SIZE bag. Selecting them in
     // the picker still works; "Draw a card" is just a no-op until they ship.
     const def = COUPLE_CARD_DECKS.find((d) => d.id === id);
     if (!def || def.questionsEn.length === 0) return;
@@ -531,19 +531,19 @@ function DeckShowcase({
   const selectedIdx = COUPLE_CARD_DECKS.findIndex((d) => d.id === selectedId);
   const selected = COUPLE_CARD_DECKS[selectedIdx];
 
-  // Easter-egg carousel shift state. The row holds 6 fixed-width cards —
-  // [greenflag, 4 reds, lemonade] — inside a 4-slot viewport. "none" (the
-  // default) frames the 4 reds, with greenflag tucked off the LEFT edge and
+  // Easter-egg carousel shift state. The row holds 6 fixed-width cards:
+  // [firstdate, 4 reds, lemonade] inside a 4-slot viewport. "none" (the
+  // default) frames the 4 reds, with firstdate tucked off the LEFT edge and
   // lemonade off the RIGHT. A left-swipe slides the row right to reveal
-  // greenflag; a right-swipe slides it left to reveal lemonade. Revealing
-  // only shifts the row — it does NOT auto-select; the visitor still taps
-  // the pastel tile to lift it into the centre. Card sizes never change.
-  type Shift = "green" | "none" | "lemon";
+  // firstdate; a right-swipe slides it left to reveal lemonade. Revealing
+  // only shifts the row; it does NOT auto-select. The visitor still taps
+  // the accent tile to lift it into the centre. Card sizes never change.
+  type Shift = "first" | "none" | "lemon";
   const shiftFor = (id: DeckId): Shift =>
-    id === "greenflag" ? "green" : id === "lemonade" ? "lemon" : "none";
+    id === "firstdate" ? "first" : id === "lemonade" ? "lemon" : "none";
   const [shift, setShift] = useState<Shift>(() => shiftFor(selectedId));
   // Keep the shift in sync with the centred deck: picking a red deck tucks
-  // both accent tiles back off-edge; picking (or ?deck=) greenflag/lemonade
+  // both accent tiles back off-edge; picking (or ?deck=) firstdate/lemonade
   // keeps the matching empty slot inside the viewport.
   useEffect(() => {
     setShift(shiftFor(selectedId));
@@ -573,11 +573,11 @@ function DeckShowcase({
     const dy = e.clientY - start.y;
     if (Math.abs(dx) <= 50 || Math.abs(dx) <= Math.abs(dy)) return;
     // Direction maps to the accent side, from ANY current framing: swipe
-    // right reveals lemonade (right edge), swipe left reveals greenflag
-    // (left edge). So from the revealed-greenflag state a right-swipe slides
-    // straight over to lemonade, and vice-versa — no need to return to the
+    // right reveals lemonade (right edge), swipe left reveals firstdate
+    // (left edge). So from the revealed-firstdate state a right-swipe slides
+    // straight over to lemonade, and vice-versa, no need to return to the
     // red row first.
-    const next: Shift = dx > 0 ? "lemon" : "green";
+    const next: Shift = dx > 0 ? "lemon" : "first";
     if (next === shift) return;
     swipeStart.current = null;
     swipeFired.current = true;
@@ -587,12 +587,12 @@ function DeckShowcase({
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       wheelAcc.current += e.deltaX;
       // Same any-state mapping as the pointer swipe: scroll right → lemonade,
-      // scroll left → greenflag, regardless of where the row currently sits.
+      // scroll left → firstdate, regardless of where the row currently sits.
       if (wheelAcc.current > 60) {
         if (shift !== "lemon") setShift("lemon");
         wheelAcc.current = 0;
       } else if (wheelAcc.current < -60) {
-        if (shift !== "green") setShift("green");
+        if (shift !== "first") setShift("first");
         wheelAcc.current = 0;
       }
     } else {
@@ -656,11 +656,11 @@ function DeckShowcase({
               touchAction: "pan-y",
               gap: "var(--card-gap)",
               // "none" frames the 4 reds (row shifted one slot left so the
-              // off-left greenflag clears the viewport). "green" slides back
-              // to 0 to reveal greenflag; "lemon" shifts two slots to reveal
+              // off-left firstdate clears the viewport). "first" slides back
+              // to 0 to reveal firstdate; "lemon" shifts two slots to reveal
               // lemonade. One slot = 25% + gap/4 of the 4-slot viewport.
               transform:
-                shift === "green"
+                shift === "first"
                   ? "translateX(0)"
                   : shift === "lemon"
                     ? "translateX(calc(-50% - var(--card-gap) / 2))"
@@ -671,8 +671,8 @@ function DeckShowcase({
             {COUPLE_CARD_DECKS.map((deck) => {
               const isSelected = deck.id === selectedId;
               const isLemonade = deck.id === "lemonade";
-              const isGreenflag = deck.id === "greenflag";
-              const isAccent = isLemonade || isGreenflag;
+              const isFirstDate = deck.id === "firstdate";
+              const isAccent = isLemonade || isFirstDate;
               return (
                 <li
                   key={deck.id}
@@ -693,12 +693,12 @@ function DeckShowcase({
                         }
                         onSelect(deck.id);
                       }}
-                      // Accent decks (greenflag / lemonade) never participate
+                      // Accent decks (firstdate / lemonade) never participate
                       // in the centre/mini morph view transition. With a name
                       // on every tile the snapshot pulled the off-viewport
-                      // accent card into frame during red-↔-red swaps, so it
+                      // accent card into frame during red-to-red swaps, so it
                       // flashed visible on swap. The red decks still morph
-                      // against the centre card — same as before.
+                      // against the centre card, same as before.
                       style={
                         isAccent
                           ? undefined
@@ -709,8 +709,8 @@ function DeckShowcase({
                       className={`group flex h-full w-full flex-col items-center justify-between overflow-hidden rounded-xl px-2 py-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-3 sm:py-3 ${
                         isLemonade
                           ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_18px_36px_-18px_rgba(161,98,7,0.55)] focus-visible:ring-lemonade-yellow"
-                          : isGreenflag
-                            ? "bg-greenflag-green text-greenflag-ink shadow-[0_18px_36px_-18px_rgba(21,128,61,0.4)] focus-visible:ring-greenflag-green"
+                          : isFirstDate
+                            ? "bg-firstdate-blue text-white shadow-[0_18px_36px_-18px_rgba(30,58,138,0.5)] focus-visible:ring-firstdate-blue"
                             : "bg-wnrs-red text-white shadow-[0_18px_36px_-18px_rgba(204,31,40,0.5)] focus-visible:ring-wnrs-red"
                       }`}
                     >
@@ -775,8 +775,8 @@ function DeckShowcase({
               className={`relative z-10 flex aspect-[3/2] w-full flex-col items-center justify-between rounded-2xl px-7 py-8 text-center transition-all hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900 sm:px-12 sm:py-10 ${
                 selectedId === "lemonade"
                   ? "bg-lemonade-yellow text-lemonade-ink shadow-[0_24px_50px_-22px_rgba(161,98,7,0.6)] focus-visible:ring-lemonade-yellow"
-                  : selectedId === "greenflag"
-                    ? "bg-greenflag-green text-greenflag-ink shadow-[0_24px_50px_-22px_rgba(21,128,61,0.45)] focus-visible:ring-greenflag-green"
+                  : selectedId === "firstdate"
+                    ? "bg-firstdate-blue text-white shadow-[0_24px_50px_-22px_rgba(30,58,138,0.55)] focus-visible:ring-firstdate-blue"
                     : "bg-wnrs-red text-white shadow-[0_24px_50px_-22px_rgba(204,31,40,0.55)] focus-visible:ring-wnrs-red"
               }`}
             >
@@ -797,8 +797,8 @@ function DeckShowcase({
                 className={`font-display text-[10px] font-bold uppercase tracking-[0.28em] sm:text-xs ${
                   selectedId === "lemonade"
                     ? "text-lemonade-ink"
-                    : selectedId === "greenflag"
-                      ? "text-greenflag-ink"
+                    : selectedId === "firstdate"
+                      ? "text-white"
                       : "text-white"
                 }`}
               >
@@ -889,8 +889,8 @@ function CardView({
             className={`mt-6 text-center font-display text-[11px] font-bold uppercase tracking-[0.32em] ${
               deckId === "lemonade"
                 ? "text-lemonade-ink dark:text-paper-50"
-                : deckId === "greenflag"
-                  ? "text-greenflag-ink dark:text-paper-50"
+                : deckId === "firstdate"
+                  ? "text-firstdate-ink dark:text-paper-50"
                   : "text-wnrs-red"
             }`}
           >
@@ -921,8 +921,8 @@ function CardView({
               className={`couple-card group relative flex aspect-[3/2] w-full cursor-pointer flex-col items-center justify-between rounded-[2.25rem] px-7 py-8 text-left transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-12 sm:py-12 ${
                 deckId === "lemonade"
                   ? "bg-lemonade-yellow shadow-[0_30px_60px_-25px_rgba(161,98,7,0.55)] ring-1 ring-lemonade-yellowInk/30 focus-visible:ring-lemonade-yellow"
-                  : deckId === "greenflag"
-                    ? "bg-greenflag-green shadow-[0_30px_60px_-25px_rgba(21,128,61,0.45)] ring-1 ring-greenflag-greenInk/30 focus-visible:ring-greenflag-green"
+                  : deckId === "firstdate"
+                    ? "bg-firstdate-blue shadow-[0_30px_60px_-25px_rgba(30,58,138,0.5)] ring-1 ring-white/20 focus-visible:ring-firstdate-blue"
                     : "bg-white shadow-[0_30px_60px_-25px_rgba(28,32,56,0.35)] ring-1 ring-paper-200 focus-visible:ring-wnrs-red"
               }`}
             >
@@ -944,8 +944,8 @@ function CardView({
                   className={`text-balance text-center font-display text-sm font-bold uppercase leading-[1.15] tracking-[0.02em] sm:text-2xl lg:text-3xl ${
                     deckId === "lemonade"
                       ? "text-lemonade-ink"
-                      : deckId === "greenflag"
-                        ? "text-greenflag-ink"
+                      : deckId === "firstdate"
+                        ? "text-white"
                         : "text-wnrs-red"
                   }`}
                 >
@@ -961,8 +961,8 @@ function CardView({
                   className={`font-display text-[9px] font-bold uppercase tracking-[0.28em] sm:text-[10px] ${
                     deckId === "lemonade"
                       ? "text-lemonade-ink"
-                      : deckId === "greenflag"
-                        ? "text-greenflag-ink"
+                      : deckId === "firstdate"
+                        ? "text-white"
                         : "text-wnrs-red"
                   }`}
                 >
@@ -977,8 +977,8 @@ function CardView({
                   className={`mt-0.5 font-display text-[8px] uppercase tracking-[0.24em] sm:text-[9px] ${
                     deckId === "lemonade"
                       ? "text-lemonade-ink/70"
-                      : deckId === "greenflag"
-                        ? "text-greenflag-ink/70"
+                      : deckId === "firstdate"
+                        ? "text-white/70"
                         : "text-wnrs-redInk"
                   }`}
                 >
