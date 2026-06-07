@@ -104,6 +104,7 @@ export function wipeAll(): void {
     "schedule_events",
     "wishlist_interests",
     "wishlist_items",
+    "received_gifts",
     "planning_items",
     "guests",
     "households",

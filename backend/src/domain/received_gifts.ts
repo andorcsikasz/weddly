@@ -1,0 +1,182 @@
+// Received-gifts ledger CRUD helpers. Couple-scoped, every query takes a
+// coupleId and the route layer derives it from the session via
+// getCoupleForUser, same contract as wishlist.ts / schedule.ts. Private,
+// couple-only data: never surfaced on the guest page. No money moves.
+
+import {
+  RECEIVED_GIFT_MAX_NOTE_LEN,
+  RECEIVED_GIFT_MAX_TITLE_LEN,
+  type ReceivedGift,
+  type UpsertReceivedGiftInput,
+} from "@shared/received_gifts";
+import { db, now } from "../db";
+import { HttpError } from "../lib/http";
+
+export interface ReceivedGiftRow {
+  id: number;
+  couple_id: number;
+  guest_id: number | null;
+  title: string;
+  note: string | null;
+  sort_order: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export function toReceivedGift(row: ReceivedGiftRow): ReceivedGift {
+  return {
+    id: row.id,
+    couple_id: row.couple_id,
+    guest_id: row.guest_id,
+    title: row.title,
+    note: row.note,
+    sort_order: row.sort_order,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+// ── Boundary validation (hand-written, no Zod). Mirrors wishlist.ts. ──────────
+
+export interface ParsedReceivedGift {
+  guest_id: number | null;
+  title: string;
+  note: string | null;
+  sort_order: number;
+}
+
+/** Resolve a guest id, ensuring it belongs to THIS couple, a cross-couple id
+ *  is rejected so the allocation can't leak another workspace's guest. Null /
+ *  undefined / "" all mean "unallocated". */
+function parseGuestId(raw: unknown, coupleId: number): number | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n <= 0)
+    throw new HttpError(400, "guest_id must be a positive integer");
+  const owned = db
+    .prepare("SELECT 1 FROM guests WHERE id = ? AND couple_id = ? LIMIT 1")
+    .get(n, coupleId) as { 1: number } | null;
+  if (owned == null) throw new HttpError(400, "guest_id not in this couple's guest list");
+  return n;
+}
+
+/** Gift name, optional here (a row may carry only a guest + note), capped. */
+function parseTitle(raw: unknown): string {
+  if (raw === null || raw === undefined) return "";
+  if (typeof raw !== "string") throw new HttpError(400, "title must be a string");
+  const trimmed = raw.trim();
+  if (trimmed.length > RECEIVED_GIFT_MAX_TITLE_LEN) {
+    throw new HttpError(400, `title too long (max ${RECEIVED_GIFT_MAX_TITLE_LEN} chars)`);
+  }
+  return trimmed;
+}
+
+function parseNote(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "note must be a string");
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > RECEIVED_GIFT_MAX_NOTE_LEN) {
+    throw new HttpError(400, `note too long (max ${RECEIVED_GIFT_MAX_NOTE_LEN} chars)`);
+  }
+  return trimmed;
+}
+
+function parseSortOrder(raw: unknown, fallback: number): number {
+  if (raw === undefined) return fallback;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < -1_000_000 || n > 1_000_000) {
+    throw new HttpError(400, "sort_order out of range");
+  }
+  return n;
+}
+
+/** A row must carry at least one meaningful field, the grid only persists a
+ *  row once it gains content, so an all-empty create is a client bug. */
+function ensureNonEmpty(p: ParsedReceivedGift): void {
+  if (p.guest_id === null && p.title === "" && p.note === null) {
+    throw new HttpError(400, "received gift must have a guest, a name, or a note");
+  }
+}
+
+export function parseCreate(
+  body: Partial<UpsertReceivedGiftInput>,
+  coupleId: number,
+): ParsedReceivedGift {
+  const parsed: ParsedReceivedGift = {
+    guest_id: parseGuestId(body.guest_id, coupleId),
+    title: parseTitle(body.title),
+    note: parseNote(body.note),
+    sort_order: parseSortOrder(body.sort_order, 0),
+  };
+  ensureNonEmpty(parsed);
+  return parsed;
+}
+
+/** Partial parse for PATCH, missing fields keep the existing row's value. */
+export function parsePatch(
+  body: Partial<UpsertReceivedGiftInput>,
+  existing: ReceivedGiftRow,
+  coupleId: number,
+): ParsedReceivedGift {
+  return {
+    guest_id:
+      body.guest_id === undefined ? existing.guest_id : parseGuestId(body.guest_id, coupleId),
+    title: body.title === undefined ? existing.title : parseTitle(body.title),
+    note: body.note === undefined ? existing.note : parseNote(body.note),
+    sort_order: parseSortOrder(body.sort_order, existing.sort_order),
+  };
+}
+
+// ── CRUD ─────────────────────────────────────────────────────────────────────
+
+export function listReceivedGifts(coupleId: number): ReceivedGift[] {
+  const rows = db
+    .prepare(
+      `SELECT * FROM received_gifts
+         WHERE couple_id = ?
+         ORDER BY sort_order ASC, id ASC`,
+    )
+    .all(coupleId) as ReceivedGiftRow[];
+  return rows.map(toReceivedGift);
+}
+
+export function getReceivedGiftScoped(id: number, coupleId: number): ReceivedGiftRow | null {
+  return (
+    (db.prepare("SELECT * FROM received_gifts WHERE id = ? AND couple_id = ?").get(id, coupleId) as
+      | ReceivedGiftRow
+      | undefined) ?? null
+  );
+}
+
+export function insertReceivedGift(coupleId: number, parsed: ParsedReceivedGift): ReceivedGiftRow {
+  const ts = now();
+  const result = db
+    .prepare(
+      `INSERT INTO received_gifts (couple_id, guest_id, title, note, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(coupleId, parsed.guest_id, parsed.title, parsed.note, parsed.sort_order, ts, ts);
+  const id = Number(result.lastInsertRowid);
+  return db.prepare("SELECT * FROM received_gifts WHERE id = ?").get(id) as ReceivedGiftRow;
+}
+
+export function updateReceivedGift(
+  id: number,
+  coupleId: number,
+  parsed: ParsedReceivedGift,
+): ReceivedGiftRow {
+  const ts = now();
+  db.prepare(
+    `UPDATE received_gifts SET guest_id = ?, title = ?, note = ?, sort_order = ?, updated_at = ?
+     WHERE id = ? AND couple_id = ?`,
+  ).run(parsed.guest_id, parsed.title, parsed.note, parsed.sort_order, ts, id, coupleId);
+  return db.prepare("SELECT * FROM received_gifts WHERE id = ?").get(id) as ReceivedGiftRow;
+}
+
+export function deleteReceivedGift(id: number, coupleId: number): boolean {
+  const result = db
+    .prepare("DELETE FROM received_gifts WHERE id = ? AND couple_id = ?")
+    .run(id, coupleId);
+  return result.changes > 0;
+}

@@ -84,6 +84,7 @@ import { seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
 import { registerUserCoupleRoutes } from "./routes/user_couple";
 import { registerUserProfileRoutes } from "./routes/user_profile";
+import { registerReceivedGiftsRoutes } from "./routes/received_gifts";
 import { registerWishlistRoutes } from "./routes/wishlist";
 
 seedSupplierTaxonomy();
@@ -125,6 +126,7 @@ registerPublicStatsRoutes(router);
 registerPublicWeddingRoutes(router);
 registerScheduleRoutes(router);
 registerWishlistRoutes(router);
+registerReceivedGiftsRoutes(router);
 registerSeatingRoutes(router);
 registerAccommodationRoutes(router);
 registerTransferRoutes(router);

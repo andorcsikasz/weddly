@@ -55,6 +55,7 @@ import type { CoupleDesignInput } from "@shared/design";
 import type { BlogPost } from "@shared/blog_posts";
 import type { GuestPortalView } from "@shared/guest_portal";
 import type { PublicWeddingResponse } from "@shared/wedding_website";
+import type { ReceivedGift, UpsertReceivedGiftInput } from "@shared/received_gifts";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type {
   UpsertWishlistItemInput,
@@ -648,6 +649,23 @@ export const wishlistApi = {
       "GET",
       `/api/wishlist/link-preview?url=${encodeURIComponent(url)}`,
     ),
+};
+
+/** Received-gifts ledger: the couple's private thank-you tracking grid. No
+ *  guest-side surface. Same optimistic-concurrency contract as wishlistApi. */
+export const receivedGiftApi = {
+  list: () => apiFetch<{ items: ReceivedGift[] }>("GET", "/api/received-gifts"),
+  create: (body: UpsertReceivedGiftInput) =>
+    apiFetch<{ item: ReceivedGift }>("POST", "/api/received-gifts", body),
+  update: (
+    id: number,
+    body: Partial<UpsertReceivedGiftInput>,
+    opts: { ifMatch?: number | string } = {},
+  ) =>
+    apiFetch<{ item: ReceivedGift }>("PATCH", `/api/received-gifts/${id}`, body, {
+      headers: opts.ifMatch !== undefined ? { "If-Match": String(opts.ifMatch) } : undefined,
+    }),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/received-gifts/${id}`),
 };
 
 /** Per-user couple membership + self-edit endpoints. */

@@ -1873,6 +1873,16 @@ const hu: LocaleMessages = {
     publish_off: "Csak ti látjátok",
     publish_toast_on: "Kész! Az ajándéklista mostantól ott van a vendégoldalon.",
     publish_toast_off: "Rejtve. Az ajándéklista újra csak a tiétek.",
+    section_received_title: "Beérkezett ajándékok",
+    section_received_subtitle:
+      "Privát lista, csak ti látjátok: ki mit hozott, plusz egy jegyzet (pl. köszönőlevél elküldve). A vendégoldalon soha nem jelenik meg.",
+    received_private_badge: "Csak nektek",
+    received_col_guest: "Vendég",
+    received_col_gift: "Ajándék",
+    received_col_note: "Megjegyzés",
+    received_guest_none: "Nincs hozzárendelve",
+    received_gift_placeholder: "pl. Mosógép",
+    received_note_placeholder: "pl. köszönőlevél elküldve",
   },
   schedule: {
     title: "Programterv",

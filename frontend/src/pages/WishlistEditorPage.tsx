@@ -9,7 +9,12 @@
 // cents), and convert to/from the couple's-currency whole-unit value the
 // couple types into the form.
 
-import type { Couple } from "@shared/types";
+import {
+  RECEIVED_GIFT_MAX_NOTE_LEN,
+  RECEIVED_GIFT_MAX_TITLE_LEN,
+  type ReceivedGift,
+} from "@shared/received_gifts";
+import type { Couple, Guest } from "@shared/types";
 import { CURRENCIES, type Currency } from "@shared/types";
 import type { UpsertWishlistItemInput, WishlistItem, WishlistKind } from "@shared/wishlist";
 import {
@@ -19,21 +24,22 @@ import {
   WISHLIST_MAX_URL_LEN,
 } from "@shared/wishlist";
 import {
+  ChevronDown,
   ExternalLink,
   Gift,
   LayoutGrid,
+  PackageCheck,
   Pencil,
   Plus,
   Rows3,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { coupleApi, wishlistApi } from "../lib/endpoints";
+import { coupleApi, guestApi, receivedGiftApi, wishlistApi } from "../lib/endpoints";
 import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -94,6 +100,10 @@ interface DrawerInit {
  *  per device so the couple's preferred view sticks across visits. */
 type WishlistView = "list" | "cards";
 const VIEW_STORAGE_KEY = "weddly.wishlist.view";
+
+/** The three collapsible sections on the page. */
+type SectionKey = "gifts" | "requests" | "received";
+const COLLAPSE_STORAGE_KEY = "weddly.wishlist.collapsed";
 
 /** Example request prompts shown as quick-add chips on the empty requests
  *  section — they prefill the dialog title, nothing is persisted until saved
@@ -310,6 +320,277 @@ function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete }: ItemV
   );
 }
 
+/** A section whose body collapses behind a chevron. The header (title + the
+ *  optional action buttons) stays visible when collapsed so the couple can
+ *  still add items / flip the view without expanding. */
+function CollapsibleSection({
+  title,
+  open,
+  onToggle,
+  actions,
+  children,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          className="-ml-1 flex items-center gap-1.5 rounded-lg p-1 text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-800"
+        >
+          <ChevronDown
+            size={18}
+            aria-hidden
+            className={`shrink-0 text-ink-500 transition-transform dark:text-umber-300 ${
+              open ? "" : "-rotate-90"
+            }`}
+          />
+          <h2 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">{title}</h2>
+        </button>
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
+      </div>
+      {open && children}
+    </section>
+  );
+}
+
+// ── Received-gifts grid ──────────────────────────────────────────────────────
+
+/** One editable grid row. `id` is null until the row gains content and is
+ *  persisted; `savedSig` is the signature of the last-persisted state so a
+ *  blur with no change skips the network. */
+interface RGRow {
+  key: string;
+  id: number | null;
+  guest_id: number | null;
+  title: string;
+  note: string;
+  updated_at: number | null;
+  savedSig: string;
+}
+
+/** Signature of a row's persistable content (trimmed): drives change
+ *  detection + the non-empty check. */
+function rgSig(guestId: number | null, title: string, note: string): string {
+  return JSON.stringify([guestId, title.trim(), note.trim()]);
+}
+function rgNonEmpty(r: RGRow): boolean {
+  return r.guest_id !== null || r.title.trim() !== "" || r.note.trim() !== "";
+}
+
+/** The couple's private "what we received" ledger as an auto-growing grid:
+ *  always at least 5 rows and always 2 trailing empties, so there's room to
+ *  keep typing. Each row persists on blur (create / update / delete) with the
+ *  same optimistic-concurrency contract as the wishlist. */
+function ReceivedGiftsTable({
+  initialItems,
+  guests,
+  t,
+}: {
+  initialItems: ReceivedGift[];
+  guests: Guest[];
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const toast = useToast();
+  const keySeq = useRef(0);
+  const nextKey = () => `rg-${keySeq.current++}`;
+
+  const makeEmpty = (): RGRow => ({
+    key: nextKey(),
+    id: null,
+    guest_id: null,
+    title: "",
+    note: "",
+    updated_at: null,
+    savedSig: rgSig(null, "", ""),
+  });
+
+  /** Normalise the trailing empties: keep every row up to the last filled one
+   *  (stable keys), then ensure there are exactly enough blank rows for a
+   *  max(5, filled+2) total, always at least 2 to type into. EXISTING trailing
+   *  empties are preserved (not regenerated) so a row the couple just tabbed
+   *  into doesn't remount and lose focus; only the surplus is trimmed / the
+   *  shortfall appended. */
+  function withTail(rows: RGRow[]): RGRow[] {
+    let lastFilled = -1;
+    rows.forEach((r, i) => {
+      if (rgNonEmpty(r)) lastFilled = i;
+    });
+    const filled = rows.slice(0, lastFilled + 1);
+    const targetEmpties = Math.max(2, 5 - filled.length);
+    const empties = rows.slice(lastFilled + 1).slice(0, targetEmpties);
+    while (empties.length < targetEmpties) empties.push(makeEmpty());
+    return [...filled, ...empties];
+  }
+
+  const [rows, setRows] = useState<RGRow[]>(() =>
+    withTail(
+      initialItems.map((it) => ({
+        key: `rg-init-${it.id}`,
+        id: it.id,
+        guest_id: it.guest_id,
+        title: it.title,
+        note: it.note ?? "",
+        updated_at: it.updated_at,
+        savedSig: rgSig(it.guest_id, it.title, it.note ?? ""),
+      })),
+    ),
+  );
+
+  function patchRow(key: string, patch: Partial<RGRow>) {
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+
+  /** Persist a row on blur / select change. Creates when a draft gains content,
+   *  updates a changed persisted row, deletes one cleared back to empty. */
+  async function commit(key: string) {
+    // Read the latest row off state via the functional updater pattern below;
+    // we snapshot it synchronously here for the async work.
+    const r = rows.find((x) => x.key === key);
+    if (!r) return;
+    const sig = rgSig(r.guest_id, r.title, r.note);
+    if (sig === r.savedSig) {
+      setRows((prev) => withTail(prev));
+      return;
+    }
+    const body = {
+      guest_id: r.guest_id,
+      title: r.title.trim(),
+      note: r.note.trim() || null,
+    };
+    try {
+      if (r.id === null) {
+        if (!rgNonEmpty(r)) return; // empty draft, nothing to do
+        const res = await receivedGiftApi.create(body);
+        patchRow(key, { id: res.item.id, updated_at: res.item.updated_at, savedSig: sig });
+        setRows((prev) => withTail(prev));
+      } else if (!rgNonEmpty(r)) {
+        await receivedGiftApi.remove(r.id);
+        patchRow(key, { id: null, updated_at: null, savedSig: rgSig(null, "", "") });
+        setRows((prev) => withTail(prev));
+      } else {
+        // Last-write-wins by design: this is an auto-saving grid where tabbing
+        // between two fields in the same row fires two near-simultaneous
+        // commits. Sending the (now-stale) updated_at as If-Match here would
+        // self-inflict a 409 on the second one, so we don't. The whole row is
+        // sent on every blur. The backend still supports If-Match for callers
+        // that want it.
+        const res = await receivedGiftApi.update(r.id, body);
+        patchRow(key, { updated_at: res.item.updated_at, savedSig: sig });
+        setRows((prev) => withTail(prev));
+      }
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  async function removeRow(r: RGRow) {
+    if (r.id !== null) {
+      try {
+        await receivedGiftApi.remove(r.id);
+      } catch (e) {
+        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+        return;
+      }
+    }
+    setRows((prev) => withTail(prev.filter((x) => x.key !== r.key)));
+  }
+
+  const cellInput =
+    "w-full bg-transparent px-3 py-2 text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none focus:bg-paper-100 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:bg-umber-800";
+
+  return (
+    <div className="card overflow-hidden p-0 dark:border-umber-700">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-paper-200 bg-paper-100/60 text-left text-xs font-medium text-ink-500 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-300">
+              <th className="w-[28%] min-w-[10rem] px-3 py-2 font-medium">
+                {t("wishlist_editor.received_col_guest")}
+              </th>
+              <th className="w-[30%] min-w-[10rem] px-3 py-2 font-medium">
+                {t("wishlist_editor.received_col_gift")}
+              </th>
+              <th className="px-3 py-2 font-medium">{t("wishlist_editor.received_col_note")}</th>
+              <th className="w-10 px-1 py-2" aria-hidden />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr
+                key={r.key}
+                className="border-b border-paper-200 last:border-0 dark:border-umber-700"
+              >
+                <td className="border-r border-paper-200 align-middle dark:border-umber-700">
+                  <select
+                    className={`${cellInput} cursor-pointer appearance-none font-grotesk`}
+                    value={r.guest_id ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      patchRow(r.key, { guest_id: v === "" ? null : Number(v) });
+                    }}
+                    onBlur={() => void commit(r.key)}
+                    aria-label={t("wishlist_editor.received_col_guest")}
+                  >
+                    <option value="">{t("wishlist_editor.received_guest_none")}</option>
+                    {guests.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="border-r border-paper-200 align-middle dark:border-umber-700">
+                  <input
+                    type="text"
+                    className={`${cellInput} font-grotesk`}
+                    value={r.title}
+                    maxLength={RECEIVED_GIFT_MAX_TITLE_LEN}
+                    placeholder={t("wishlist_editor.received_gift_placeholder")}
+                    onChange={(e) => patchRow(r.key, { title: e.target.value })}
+                    onBlur={() => void commit(r.key)}
+                  />
+                </td>
+                <td className="align-middle">
+                  <input
+                    type="text"
+                    className={`${cellInput} font-grotesk`}
+                    value={r.note}
+                    maxLength={RECEIVED_GIFT_MAX_NOTE_LEN}
+                    placeholder={t("wishlist_editor.received_note_placeholder")}
+                    onChange={(e) => patchRow(r.key, { note: e.target.value })}
+                    onBlur={() => void commit(r.key)}
+                  />
+                </td>
+                <td className="px-1 text-center align-middle">
+                  {r.id !== null && (
+                    <button
+                      type="button"
+                      aria-label={t("common.remove")}
+                      title={t("common.remove")}
+                      onClick={() => void removeRow(r)}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function WishlistEditorPage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.guest_page_title", "seo.guest_page_description");
@@ -336,6 +617,32 @@ export default function WishlistEditorPage() {
 
   const currency = couple?.currency ?? "HUF";
   const [publishing, setPublishing] = useState(false);
+  // Guest list (for the received-gifts allocation dropdown) + the received
+  // gifts themselves. Fetched alongside the wishlist on load.
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [received, setReceived] = useState<ReceivedGift[]>([]);
+
+  // Per-section collapse state, persisted per device. Default: all expanded.
+  const [collapsed, setCollapsed] = useState<Record<SectionKey, boolean>>(() => {
+    const base = { gifts: false, requests: false, received: false };
+    try {
+      const raw = localStorage.getItem(COLLAPSE_STORAGE_KEY);
+      return raw ? { ...base, ...(JSON.parse(raw) as Partial<Record<SectionKey, boolean>>) } : base;
+    } catch {
+      return base;
+    }
+  });
+  function toggleSection(key: SectionKey) {
+    setCollapsed((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Private-mode / disabled storage: the in-memory state still toggles.
+      }
+      return next;
+    });
+  }
 
   // Publish toggle: flips `couples.wishlist_published`. When on, confirmed
   // guests see the gift + request decks on the guest page (with the warm
@@ -362,9 +669,16 @@ export default function WishlistEditorPage() {
 
   async function refresh() {
     try {
-      const [cR, wR] = await Promise.all([coupleApi.current(), wishlistApi.list()]);
+      const [cR, wR, gR, rR] = await Promise.all([
+        coupleApi.current(),
+        wishlistApi.list(),
+        guestApi.list(),
+        receivedGiftApi.list(),
+      ]);
       setCouple(cR.couple);
       setItems(wR.items);
+      setGuests(gR.guests);
+      setReceived(rR.items);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
@@ -413,8 +727,7 @@ export default function WishlistEditorPage() {
         {couple && (
           <div className="ml-auto flex items-center gap-3">
             <div className="text-right">
-              <p className="flex items-center justify-end gap-1.5 text-sm font-medium text-ink-900 dark:text-paper-50">
-                <Sparkles size={14} className="text-umber-600 dark:text-umber-300" aria-hidden />
+              <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
                 {t("wishlist_editor.publish_title")}
               </p>
               <p className="text-xs text-ink-500 dark:text-umber-300">
@@ -423,6 +736,8 @@ export default function WishlistEditorPage() {
                   : t("wishlist_editor.publish_off")}
               </p>
             </div>
+            {/* On = green fill + dark outline; off = muted track. A constant
+                2px border keeps the thumb geometry stable across states. */}
             <button
               type="button"
               role="switch"
@@ -430,14 +745,14 @@ export default function WishlistEditorPage() {
               aria-label={t("wishlist_editor.publish_title")}
               disabled={publishing}
               onClick={() => void togglePublish()}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 disabled:opacity-60 ${
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 disabled:opacity-60 ${
                 couple.wishlist_published
-                  ? "bg-ink-900 dark:bg-paper-50"
-                  : "bg-paper-300 dark:bg-umber-700"
+                  ? "border-ink-900 bg-emerald-500 dark:border-paper-50"
+                  : "border-transparent bg-paper-300 dark:bg-umber-700"
               }`}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform dark:bg-umber-900 ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
                   couple.wishlist_published ? "translate-x-5" : "translate-x-0.5"
                 }`}
               />
@@ -451,12 +766,12 @@ export default function WishlistEditorPage() {
       ) : (
         <div className="space-y-10">
           {/* ── Gifts ───────────────────────────────────────────────── */}
-          <section>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">
-                {t("wishlist_editor.section_gifts_title")}
-              </h2>
-              <div className="flex items-center gap-2">
+          <CollapsibleSection
+            title={t("wishlist_editor.section_gifts_title")}
+            open={!collapsed.gifts}
+            onToggle={() => toggleSection("gifts")}
+            actions={
+              <>
                 {gifts.length > 0 && (
                   // Single toggle: shows the icon of the *other* layout and
                   // flips to it on click.
@@ -481,8 +796,9 @@ export default function WishlistEditorPage() {
                   <Plus size={16} />
                   {t("wishlist_editor.add_gift")}
                 </button>
-              </div>
-            </div>
+              </>
+            }
+          >
             {gifts.length === 0 ? (
               <div className="card stationery text-center">
                 <Gift size={28} className="mx-auto text-ink-400 dark:text-umber-300" aria-hidden />
@@ -519,14 +835,14 @@ export default function WishlistEditorPage() {
                 ))}
               </ul>
             )}
-          </section>
+          </CollapsibleSection>
 
           {/* ── Requests (personal, no money) ───────────────────────── */}
-          <section>
-            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">
-                {t("wishlist_editor.section_requests_title")}
-              </h2>
+          <CollapsibleSection
+            title={t("wishlist_editor.section_requests_title")}
+            open={!collapsed.requests}
+            onToggle={() => toggleSection("requests")}
+            actions={
               <button
                 type="button"
                 className="btn-outline"
@@ -535,7 +851,8 @@ export default function WishlistEditorPage() {
                 <Plus size={16} />
                 {t("wishlist_editor.add_request")}
               </button>
-            </div>
+            }
+          >
             <p className="mb-3 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
               {t("wishlist_editor.section_requests_subtitle")}
             </p>
@@ -584,7 +901,25 @@ export default function WishlistEditorPage() {
                 ))}
               </ul>
             )}
-          </section>
+          </CollapsibleSection>
+
+          {/* ── Received gifts (private ledger, never published) ─────── */}
+          <CollapsibleSection
+            title={t("wishlist_editor.section_received_title")}
+            open={!collapsed.received}
+            onToggle={() => toggleSection("received")}
+            actions={
+              <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+                <PackageCheck size={14} aria-hidden />
+                {t("wishlist_editor.received_private_badge")}
+              </span>
+            }
+          >
+            <p className="mb-3 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
+              {t("wishlist_editor.section_received_subtitle")}
+            </p>
+            <ReceivedGiftsTable initialItems={received} guests={guests} t={t} />
+          </CollapsibleSection>
         </div>
       )}
 

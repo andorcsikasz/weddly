@@ -2054,6 +2054,16 @@ export interface LocaleMessages {
     /** Toasts after flipping the publish toggle. */
     publish_toast_on: string;
     publish_toast_off: string;
+    /** Received-gifts ledger: private "what we got" tracking grid. */
+    section_received_title: string;
+    section_received_subtitle: string;
+    received_private_badge: string;
+    received_col_guest: string;
+    received_col_gift: string;
+    received_col_note: string;
+    received_guest_none: string;
+    received_gift_placeholder: string;
+    received_note_placeholder: string;
   };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {

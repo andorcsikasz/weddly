@@ -183,6 +183,18 @@ beforeEach(() => {
   fetchCalls.length = 0;
   setLocale("en");
   installFetch();
+  // The page loads guests (for the received-gifts allocation dropdown) + the
+  // received-gifts ledger alongside the wishlist. Default both to empty so the
+  // wishlist-focused tests below don't each have to register them; a test that
+  // cares can push its own handler first.
+  on(
+    ({ url, method }) => method === "GET" && url.includes("/api/guests"),
+    () => jsonResponse(200, { guests: [] }),
+  );
+  on(
+    ({ url, method }) => method === "GET" && url.includes("/api/received-gifts"),
+    () => jsonResponse(200, { items: [] }),
+  );
 });
 
 afterEach(() => {

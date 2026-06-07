@@ -899,6 +899,13 @@ db.exec(
 );
 db.exec("CREATE INDEX IF NOT EXISTS idx_wishlist_interests_item ON wishlist_interests(item_id)");
 
+// Received-gifts ledger index. The table is created in schema.sql; its index
+// lives here per the additive-table ordering rule. Listed couple-scoped + in
+// grid order.
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_received_gifts_couple ON received_gifts(couple_id, sort_order, id)",
+);
+
 export function now(): number {
   return Date.now();
 }

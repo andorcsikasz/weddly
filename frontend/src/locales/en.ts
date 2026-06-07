@@ -1852,6 +1852,16 @@ const en: LocaleMessages = {
     publish_off: "Only you can see it",
     publish_toast_on: "Done! Your gift list is now on the guest page.",
     publish_toast_off: "Hidden. Your gift list is yours again.",
+    section_received_title: "Received gifts",
+    section_received_subtitle:
+      "A private list only you can see: who gave what, plus a note (e.g. thank-you sent). It never shows on your guest page.",
+    received_private_badge: "Private to you",
+    received_col_guest: "Guest",
+    received_col_gift: "Gift",
+    received_col_note: "Note",
+    received_guest_none: "Unassigned",
+    received_gift_placeholder: "e.g. Washing machine",
+    received_note_placeholder: "e.g. thank-you sent",
   },
   schedule: {
     title: "Run of show",

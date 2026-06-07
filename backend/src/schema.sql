@@ -1196,3 +1196,20 @@ CREATE TABLE IF NOT EXISTS wishlist_interests (
   created_at INTEGER NOT NULL,
   UNIQUE(item_id, household_id)
 );
+
+-- Received-gifts ledger: a private, couple-only thank-you tracking table for
+-- gifts that have actually arrived. Distinct from wishlist_items (what the
+-- couple WANTS, surfaced to confirmed guests): this is what they GOT, never
+-- published. `guest_id` optionally attributes the gift to a guest from the
+-- couple's list (ON DELETE SET NULL so removing a guest keeps the gift row).
+-- No money moves. See shared/received_gifts.ts. Index lives in db.ts.
+CREATE TABLE IF NOT EXISTS received_gifts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  guest_id INTEGER REFERENCES guests(id) ON DELETE SET NULL,
+  title TEXT NOT NULL DEFAULT '',                             -- free-text gift name; '' when the row carries only a guest/note
+  note TEXT,                                                  -- free-text note (thank-you sent?, …); NULL when unset
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
