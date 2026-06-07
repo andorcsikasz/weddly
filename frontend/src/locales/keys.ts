@@ -2254,6 +2254,11 @@ export interface LocaleMessages {
     total_summary_households_unit: string;
     total_summary_invited_unit: string;
     total_summary_planned_unit: string;
+    stat_planned_action: string;
+    stat_total_action: string;
+    stat_households_action: string;
+    stat_invited_action: string;
+    invited_filter_label: string;
     /** Adult / child / baby kind selector. */
     kind_label: string;
     kind_help: string;

@@ -56,7 +56,7 @@ import {
   X,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { guestCountBaseline } from "../lib/budget";
@@ -106,6 +106,13 @@ export default function GuestsPage() {
     next.delete("rsvp");
     setParams(next, { replace: true });
   }
+  // The "invited" header stat filters the flat list to guests with an
+  // invitation logged (`?invited=1`), mirroring the rsvp-status filter above.
+  const invitedFilter = params.get("invited") === "1";
+  const navigate = useNavigate();
+  // Anchor for the "households" header stat — clicking it clears any filter and
+  // smooth-scrolls down to the household list.
+  const listRef = useRef<HTMLDivElement>(null);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [households, setHouseholds] = useState<Household[]>([]);
@@ -430,6 +437,41 @@ export default function GuestsPage() {
     () => (rsvpFilter ? guests.filter((g) => g.rsvp_status === rsvpFilter) : []),
     [guests, rsvpFilter],
   );
+  const invitedFilteredGuests = useMemo(
+    () => (invitedFilter ? guests.filter((g) => g.invited_at != null) : []),
+    [guests, invitedFilter],
+  );
+
+  // ── Header-stat clicks ───────────────────────────────────────────────
+  // Drop the search query immediately (not just the debounced copy) so the
+  // household view re-renders this tick and the scroll target exists.
+  function showAllGuests() {
+    const next = new URLSearchParams(params);
+    next.delete("rsvp");
+    next.delete("invited");
+    setParams(next, { replace: true });
+    setQuery("");
+    setDebouncedQuery("");
+  }
+  function showInvitedOnly() {
+    const next = new URLSearchParams(params);
+    next.set("invited", "1");
+    next.delete("rsvp");
+    setParams(next, { replace: true });
+    setQuery("");
+    setDebouncedQuery("");
+  }
+  function clearInvitedFilter() {
+    const next = new URLSearchParams(params);
+    next.delete("invited");
+    setParams(next, { replace: true });
+  }
+  function scrollToHouseholds() {
+    showAllGuests();
+    requestAnimationFrame(() =>
+      listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }
 
   // Planned headcount shown alongside the live counts so couples see actual vs
   // target at a glance. Mirrors the single number the couple set on the budget
@@ -454,6 +496,8 @@ export default function GuestsPage() {
                   value={plannedGuests}
                   label={t("guests.total_summary_planned_unit")}
                   icon={<Target size={18} aria-hidden />}
+                  onClick={() => navigate("/app/budget")}
+                  actionTitle={t("guests.stat_planned_action")}
                 />
               )}
               <GuestStat
@@ -461,16 +505,22 @@ export default function GuestsPage() {
                 label={t("guests.total_summary_unit")}
                 icon={<Users size={18} aria-hidden />}
                 tone="primary"
+                onClick={showAllGuests}
+                actionTitle={t("guests.stat_total_action")}
               />
               <GuestStat
                 value={households.length}
                 label={t("guests.total_summary_households_unit")}
                 icon={<Home size={18} aria-hidden />}
+                onClick={scrollToHouseholds}
+                actionTitle={t("guests.stat_households_action")}
               />
               <GuestStat
                 value={guests.filter((g) => g.invited_at != null).length}
                 label={t("guests.total_summary_invited_unit")}
                 icon={<Send size={18} aria-hidden />}
+                onClick={showInvitedOnly}
+                actionTitle={t("guests.stat_invited_action")}
               />
             </dl>
           ) : (
@@ -573,6 +623,23 @@ export default function GuestsPage() {
         </div>
       )}
 
+      {invitedFilter && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full bg-paper-100 px-3 py-1 text-sm text-ink-700 ring-1 ring-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700">
+            <Send size={13} aria-hidden className="text-ink-500 dark:text-umber-300" />
+            <span className="font-medium">{t("guests.invited_filter_label")}</span>
+            <button
+              type="button"
+              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+              onClick={clearInvitedFilter}
+              aria-label={t("guests.search_clear")}
+            >
+              <X size={12} />
+            </button>
+          </span>
+        </div>
+      )}
+
       {loading ? (
         <HouseholdListSkeleton />
       ) : households.length === 0 && guests.length === 0 ? (
@@ -629,8 +696,15 @@ export default function GuestsPage() {
           onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
           onPrintPlaceCard={onPrintPlaceCard}
         />
+      ) : invitedFilter ? (
+        <SearchResults
+          loading={false}
+          guests={invitedFilteredGuests}
+          onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+          onPrintPlaceCard={onPrintPlaceCard}
+        />
       ) : (
-        <div className="space-y-4">
+        <div ref={listRef} className="space-y-4">
           {(virtualReveal ? households : households.slice(0, 100)).map((hh) => (
             // `content-visibility: auto` lets the browser skip layout +
             // paint for offscreen household cards. `contain-intrinsic-size`
@@ -3262,12 +3336,18 @@ function GuestStat({
   label,
   icon,
   tone = "secondary",
+  onClick,
+  actionTitle,
 }: {
   value: number | string;
   label: string;
   /** Icon shown inline after the number, inheriting its color (lucide, aria-hidden). */
   icon: ReactNode;
   tone?: "primary" | "secondary";
+  /** When set, the stat becomes a button that filters / jumps the guest list. */
+  onClick?: () => void;
+  /** Tooltip + accessible name describing the click action (used with onClick). */
+  actionTitle?: string;
 }) {
   // One cool navy family per stat — the icon inherits the number's token so it
   // can't drift to a mismatched (warm-looking) lighter shade. Hierarchy is
@@ -3276,11 +3356,28 @@ function GuestStat({
     tone === "primary"
       ? "text-2xl font-semibold tabular-nums text-ink-900 dark:text-paper-50"
       : "text-2xl font-semibold tabular-nums text-ink-600 dark:text-umber-300";
-  return (
-    <div className={`inline-flex items-center gap-1 leading-none ${cls}`} title={label}>
+  const inner = (
+    <>
       <dd>{value}</dd>
       <dt aria-hidden>{icon}</dt>
-      <span className="sr-only">{label}</span>
+      <span className="sr-only">{actionTitle ?? label}</span>
+    </>
+  );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={actionTitle ?? label}
+        className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition-colors hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:hover:text-blush-300 ${cls}`}
+      >
+        {inner}
+      </button>
+    );
+  }
+  return (
+    <div className={`inline-flex items-center gap-1 leading-none ${cls}`} title={label}>
+      {inner}
     </div>
   );
 }
