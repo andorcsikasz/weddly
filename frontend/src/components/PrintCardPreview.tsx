@@ -13,7 +13,7 @@ import type { Locale } from "../lib/i18n";
 import { useT } from "../lib/i18n";
 
 /** Which printable the preview renders. */
-export type PrintTemplate = "place_card" | "table_number" | "menu";
+export type PrintTemplate = "place_card" | "table_number" | "menu" | "schedule";
 
 /** Decorative divider mirroring WeddingSiteView's decor glyphs, tinted with the
  *  resolved accent so web + print read as one decor system. */
@@ -59,13 +59,14 @@ export function PrintCardPreview({
     ? buildMonogram(brideName, groomName, design.monogram.separator, locale)
     : "";
 
-  // Menu cards are taller (portrait); place cards + table numbers are landscape.
-  const aspect = template === "menu" ? "aspect-[3/4]" : "aspect-[3/2]";
+  // Menu + schedule cards are taller (portrait); place cards + table numbers
+  // are landscape.
+  const aspect = template === "menu" || template === "schedule" ? "aspect-[3/4]" : "aspect-[3/2]";
 
   return (
     <div className="flex flex-col items-center gap-3">
       <div
-        className={`relative flex ${aspect} w-full max-w-[20rem] flex-col items-center justify-center px-6 py-5 text-center shadow-soft`}
+        className={`relative flex ${aspect} w-full max-w-[26rem] flex-col items-center justify-center px-7 py-6 text-center shadow-soft`}
         style={{
           backgroundColor: d.background,
           color: d.text,
@@ -147,6 +148,36 @@ export function PrintCardPreview({
             <div className="flex flex-col gap-2 text-sm" style={{ color: d.text }}>
               {(["menu_starter", "menu_main", "menu_dessert"] as const).map((key) => (
                 <span key={key}>{t(`design.print_preview.${key}`)}</span>
+              ))}
+            </div>
+          </>
+        )}
+
+        {template === "schedule" && (
+          <>
+            <span
+              className="mt-1 text-xl uppercase tracking-[0.18em]"
+              style={{ color: d.text, fontFamily: d.heading_font }}
+            >
+              {t("design.print_preview.tpl.schedule")}
+            </span>
+            <span className="my-3 flex items-center justify-center">
+              <DecorDivider decor={design.decor} color={d.accent} />
+            </span>
+            <div className="flex flex-col gap-2.5 text-sm" style={{ color: d.text }}>
+              {(
+                [
+                  { time: "15:00", key: "ceremony" },
+                  { time: "18:00", key: "dinner" },
+                  { time: "21:00", key: "party" },
+                ] as const
+              ).map((row) => (
+                <span key={row.key} className="flex items-baseline justify-center gap-2">
+                  <span className="tabular-nums" style={{ color: d.accent_text }}>
+                    {row.time}
+                  </span>
+                  <span>{t(`design.print_preview.sample_program.${row.key}`)}</span>
+                </span>
               ))}
             </div>
           </>

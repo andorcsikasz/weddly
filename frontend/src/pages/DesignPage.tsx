@@ -374,6 +374,7 @@ export default function DesignPage() {
     place_card: placeCardsUrl(),
     table_number: "/api/print/table-numbers",
     menu: "/api/print/menu",
+    schedule: schedulePdfUrl,
   };
 
   // Fetch the real PDF and show it in the iframe below the live card. Revokes
@@ -511,11 +512,14 @@ export default function DesignPage() {
       {loading ? (
         <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-          {/* ── Left column: the Website / Print surface switcher pinned at the
-              top (full-width within this column, so it never reaches over the
-              preview), then the COMMON identity (drives BOTH surfaces) and the
-              surface-specific controls. ─────────────────────────────────────── */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,23rem)_minmax(0,1fr)]">
+          {/* ── Left column: a compact editor panel. The Website / Print
+              switcher is pinned at the top (full-width within this column, so
+              it never reaches over the preview). In print mode the card-type
+              picker comes FIRST so the couple knows which physical card they're
+              designing; the COMMON identity (drives BOTH surfaces) sits under a
+              "shared identity" label, then the card-specific controls. The big
+              live canvas lives in the right column. ───────────────────────── */}
           <div className="space-y-6">
             {/* Surface switcher: Website vs Print. */}
             <div
@@ -526,6 +530,73 @@ export default function DesignPage() {
               {tabBtn("website", t("design.tab.website"))}
               {tabBtn("print", t("design.tab.print"))}
             </div>
+
+            {/* Per-surface heading. In print mode it names the SELECTED card
+                ("Asztalszám tervezése") so the editor reads as a card editor,
+                not a generic brand panel. */}
+            {tab === "print" ? (
+              <div>
+                <h2 className="font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+                  {t("design.print_preview.editing_title", {
+                    name: t(`design.print_preview.tpl.${printTemplate}`),
+                  })}
+                </h2>
+                <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+                  {t("design.print_preview.editing_helper")}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-ink-500 dark:text-umber-300">
+                {t("design.website.helper")}
+              </p>
+            )}
+
+            {/* Print mode: WHICH card am I designing? This is the first and most
+                important choice, so it sits above the shared identity. Real
+                card types only (each maps to a live preview + a PDF endpoint). */}
+            {tab === "print" && (
+              <section>
+                <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                  {t("design.print_preview.template_label")}
+                </h2>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["place_card", "table_number", "menu", "schedule"] as const).map((tpl) => {
+                    const active = printTemplate === tpl;
+                    return (
+                      <button
+                        key={tpl}
+                        type="button"
+                        onClick={() => {
+                          setPrintTemplate(tpl);
+                          setPdfPreviewUrl((p) => {
+                            if (p) URL.revokeObjectURL(p);
+                            return null;
+                          });
+                        }}
+                        aria-pressed={active}
+                        className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                          active
+                            ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+                            : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                        }`}
+                      >
+                        {active && <Check size={12} strokeWidth={3} aria-hidden />}
+                        {t(`design.print_preview.tpl.${tpl}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Shared identity — the common look that drives BOTH surfaces. In
+                print mode we label it so the hierarchy (card type → shared
+                identity → card specifics) is obvious. */}
+            {tab === "print" && (
+              <h2 className="-mb-2 border-t border-paper-200 pt-5 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:text-umber-300">
+                {t("design.print_preview.common_identity")}
+              </h2>
+            )}
             {/* Wedding style */}
             <section>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
@@ -804,9 +875,6 @@ export default function DesignPage() {
             </section>
             {tab === "website" ? (
               <div className="space-y-6">
-                <p className="text-sm text-ink-500 dark:text-umber-300">
-                  {t("design.website.helper")}
-                </p>
                 <OptionSlider
                   heading={t("design.web.card_radius_label")}
                   options={CARD_RADII}
@@ -877,36 +945,9 @@ export default function DesignPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Which printable the live preview (right column) shows. */}
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.print_preview.template_label")}
-                  </h2>
-                  <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800">
-                    {(["place_card", "table_number", "menu"] as const).map((tpl) => (
-                      <button
-                        key={tpl}
-                        type="button"
-                        onClick={() => {
-                          setPrintTemplate(tpl);
-                          setPdfPreviewUrl((p) => {
-                            if (p) URL.revokeObjectURL(p);
-                            return null;
-                          });
-                        }}
-                        aria-pressed={printTemplate === tpl}
-                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                          printTemplate === tpl
-                            ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                            : "text-ink-600 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
-                        }`}
-                      >
-                        {t(`design.print_preview.tpl.${tpl}`)}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
+                {/* The card-type picker moved to the top of the panel (above the
+                    shared identity); the print branch now starts with the
+                    card-specific look controls. */}
                 {/* Border style — 4 selectable looks for the card frame
                     (supersedes the old on/off border toggle). Visual tiles: the
                     box shows the actual border in the resolved accent colour. */}
@@ -1016,60 +1057,74 @@ export default function DesignPage() {
             )}
           </div>
 
-          {/* ── Preview column: the guest page on the Website tab, the live
-              print card on the Print tab. ──────────────────────────────── */}
+          {/* ── Preview column: a large live canvas. The guest page on the
+              Website tab, the print card centred on a "desk" backdrop on the
+              Print tab. ───────────────────────────────────────────────────── */}
           <aside className="lg:sticky lg:top-6 lg:self-start">
-            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200">
-              {t("design.preview_label")}
-            </p>
             {tab === "print" ? (
               <div className="space-y-3">
-                <PrintCardPreview
-                  design={design}
-                  template={printTemplate}
-                  brideName={couple?.bride_name ?? null}
-                  groomName={couple?.groom_name ?? null}
-                  locale={locale}
-                />
-                <button
-                  type="button"
-                  onClick={() => void previewExactPdf()}
-                  disabled={pdfPreviewBusy}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-paper-400 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
-                >
-                  {pdfPreviewBusy ? (
-                    <Loader2 size={14} className="animate-spin" aria-hidden />
-                  ) : (
-                    <Eye size={14} aria-hidden />
-                  )}
-                  {t("design.print_preview.preview_exact_pdf")}
-                </button>
+                {/* Canvas toolbar: label on the left, exact-PDF toggle on the
+                    right (the live card already updates instantly). */}
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200">
+                    {t("design.preview_label")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void previewExactPdf()}
+                    disabled={pdfPreviewBusy}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-paper-400 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
+                  >
+                    {pdfPreviewBusy ? (
+                      <Loader2 size={14} className="animate-spin" aria-hidden />
+                    ) : (
+                      <Eye size={14} aria-hidden />
+                    )}
+                    {t("design.print_preview.preview_exact_pdf")}
+                  </button>
+                </div>
+                {/* The desk: a warm, large backdrop that frames the single card
+                    so it reads as a physical object, not a thumbnail. */}
+                <div className="grid min-h-[30rem] place-items-center rounded-2xl border border-paper-200 bg-paper-100 p-8 dark:border-umber-700 dark:bg-umber-900">
+                  <PrintCardPreview
+                    design={design}
+                    template={printTemplate}
+                    brideName={couple?.bride_name ?? null}
+                    groomName={couple?.groom_name ?? null}
+                    locale={locale}
+                  />
+                </div>
                 {pdfPreviewUrl && (
                   <iframe
                     src={pdfPreviewUrl}
                     title={t("design.print_preview.preview_exact_pdf")}
-                    className="h-96 w-full rounded-xl border border-paper-200 dark:border-umber-700"
+                    className="h-[32rem] w-full rounded-xl border border-paper-200 dark:border-umber-700"
                   />
                 )}
               </div>
             ) : (
-              previewView && (
-                <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
-                  {/* Full guest page: below lg it scrolls with the page; on lg+
-                      the sticky aside caps to the viewport and scrolls internally
-                      so the whole page stays reachable without clipping. */}
-                  <div className="p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
-                    <WeddingSiteView
-                      view={previewView}
-                      household={null}
-                      tier="public"
-                      locale={locale}
-                      isPreview={false}
-                      showFooter={false}
-                    />
+              <>
+                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200">
+                  {t("design.preview_label")}
+                </p>
+                {previewView && (
+                  <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
+                    {/* Full guest page: below lg it scrolls with the page; on
+                        lg+ the sticky aside caps to the viewport and scrolls
+                        internally so the whole page stays reachable. */}
+                    <div className="p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+                      <WeddingSiteView
+                        view={previewView}
+                        household={null}
+                        tier="public"
+                        locale={locale}
+                        isPreview={false}
+                        showFooter={false}
+                      />
+                    </div>
                   </div>
-                </div>
-              )
+                )}
+              </>
             )}
           </aside>
         </div>
