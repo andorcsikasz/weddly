@@ -33,6 +33,7 @@ import {
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
 import { Link } from "react-router-dom";
 import { buildMonogram, formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
+import { pickKeyMoments } from "@shared/schedule";
 import { formatDate, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { GuestWishlistCard } from "./GuestWishlistCard";
@@ -464,9 +465,16 @@ export function WeddingSiteView({
         <Band tone="dark" onEdit={isPreview ? e.onEditSchedule : undefined} hint={editHint}>
           <div className="text-center">
             <Heading>{t("wedding_site.schedule_title")}</Heading>
-            <ul className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-6">
-              {view.schedule.map((entry) => (
-                <li key={entry.id} className="flex min-w-[4.5rem] flex-col items-center gap-1">
+            {/* Only the day's headline beats (arrival / ceremony / dinner /
+             *  first dance by default, or whatever the couple flagged), kept on
+             *  a single row. `overflow-x-auto` lets the row scroll on a narrow
+             *  phone rather than wrapping back into a ragged grid. */}
+            <ul className="mt-8 flex flex-nowrap justify-center gap-x-8 overflow-x-auto sm:gap-x-12">
+              {pickKeyMoments(view.schedule).map((entry) => (
+                <li
+                  key={entry.id}
+                  className="flex min-w-[4.5rem] shrink-0 flex-col items-center gap-1"
+                >
                   <span
                     className="text-2xl tabular-nums sm:text-3xl"
                     style={{ fontFamily: "var(--wt-heading-font)" }}

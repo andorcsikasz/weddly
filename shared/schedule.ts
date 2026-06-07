@@ -68,3 +68,67 @@ export const SCHEDULE_MAX_LOCATION_LEN = 200;
 export const SCHEDULE_MAX_NOTES_LEN = 2000;
 export const SCHEDULE_MAX_RESPONSIBLE_LEN = 80;
 export const SCHEDULE_MAX_SUPPLIER_ID_LEN = 64;
+
+/** The public wedding site surfaces only the day's headline beats — at most
+ *  this many — as a single tidy row, instead of the full internal run-sheet. */
+export const MAX_KEY_MOMENTS = 4;
+
+/** Minimal shape `pickKeyMoments` needs. `is_key_moment` is optional so the
+ *  helper works against both the in-app `ScheduleEvent` and the public DTO,
+ *  and degrades to the heuristic when the flag isn't carried yet. */
+export interface KeyMomentCandidate {
+  label: string;
+  starts_at_minutes: number;
+  is_key_moment?: boolean;
+}
+
+// Accent-folded keyword buckets for the default "headline beats" pick, in the
+// order a wedding day reads: arrival -> ceremony -> dinner -> first dance. Both
+// Hungarian and English stems are covered. Only consulted when the couple
+// hasn't hand-picked any key moments of their own.
+const KEY_MOMENT_BUCKETS: readonly (readonly string[])[] = [
+  ["erkez", "arriv", "welcome", "gather"],
+  ["szertart", "ceremon", "vows", "esku"],
+  ["vacsor", "dinner", "feast", "supper"],
+  ["tanc", "dance"],
+];
+
+function foldLabel(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
+/** Pick the day's headline beats for the public site, capped at
+ *  `MAX_KEY_MOMENTS` and time-ordered. If the couple flagged any entries as key
+ *  moments, those win verbatim. Otherwise fall back to the default
+ *  arrival/ceremony/dinner/dance heuristic, padding with the earliest remaining
+ *  entries so an unlabelled schedule still fills the row instead of showing
+ *  one or two stragglers. */
+export function pickKeyMoments<T extends KeyMomentCandidate>(entries: T[]): T[] {
+  const byTime = [...entries].sort((a, b) => a.starts_at_minutes - b.starts_at_minutes);
+
+  const flagged = byTime.filter((e) => e.is_key_moment);
+  if (flagged.length > 0) return flagged.slice(0, MAX_KEY_MOMENTS);
+
+  const chosen: T[] = [];
+  const used = new Set<T>();
+  for (const bucket of KEY_MOMENT_BUCKETS) {
+    const hit = byTime.find(
+      (e) => !used.has(e) && bucket.some((kw) => foldLabel(e.label).includes(kw)),
+    );
+    if (hit) {
+      chosen.push(hit);
+      used.add(hit);
+    }
+  }
+  for (const e of byTime) {
+    if (chosen.length >= MAX_KEY_MOMENTS) break;
+    if (!used.has(e)) {
+      chosen.push(e);
+      used.add(e);
+    }
+  }
+  return chosen.sort((a, b) => a.starts_at_minutes - b.starts_at_minutes);
+}
