@@ -15,6 +15,7 @@ import {
   Building2,
   Bus,
   Cake,
+  Calculator,
   Camera,
   ChefHat,
   ArrowBigDown,
@@ -61,6 +62,7 @@ import type { ComponentType, SVGProps } from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { BookedSupplierCard } from "../components/BookedSupplierCard";
+import { CakeDrinksCalculator } from "../components/CakeDrinksCalculator";
 import { InfoHint } from "../components/InfoHint";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { ClaimListingModal } from "../components/ClaimListingModal";
@@ -140,6 +142,11 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
   transport: Bus,
 };
 
+/** Categories the cake & drinks calculator is relevant to. The tool estimates
+ *  sweets, cake and drink quantities from the guest count, so it surfaces only
+ *  when one of these food/drink categories is the active filter. */
+const CALC_CATEGORIES = new Set<SupplierCategory>(["cake_dessert", "bar_drinks", "catering"]);
+
 /** Diacritic-folded lower-case for case- and accent-insensitive matching. */
 function normalize(s: string): string {
   return s
@@ -206,6 +213,7 @@ export default function SuppliersPage() {
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
   const [diyOpen, setDiyOpen] = useState(false);
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
   // Report dialog state. `reporting` holds the numeric id + name; null when closed.
@@ -1065,6 +1073,24 @@ export default function SuppliersPage() {
         </div>
       )}
 
+      {/* Cake & drinks calculator — only for the food/drink categories the
+          tool actually estimates (sweets, cake, drinks). Couple-wide, so it's
+          a single entry point above the filtered cards rather than per-card. */}
+      {activeCat && CALC_CATEGORIES.has(activeCat) && (
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setCalcOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
+            aria-label={t("suppliers.calc.open_aria")}
+            title={t("suppliers.calc.open_aria")}
+          >
+            <Calculator size={14} aria-hidden />
+            <span>{t("suppliers.calc.open")}</span>
+          </button>
+        </div>
+      )}
+
       {activeCat === "accommodation" && (
         <section
           aria-labelledby="accommodation-external-heading"
@@ -1805,6 +1831,12 @@ export default function SuppliersPage() {
             setSelectionState(unselectById(coupleId, id));
           }
         }}
+      />
+      <CakeDrinksCalculator
+        open={calcOpen}
+        onClose={() => setCalcOpen(false)}
+        currency={currency}
+        defaultGuests={targetGuestCount}
       />
       {compareIds.length > 0 && (
         <div

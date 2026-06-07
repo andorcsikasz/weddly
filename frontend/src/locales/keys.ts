@@ -2780,6 +2780,48 @@ export interface LocaleMessages {
     self_pill: string;
     self_pill_tooltip: string;
     drop_your_own: string;
+    /** Cake & drinks calculator — surfaced from the food/drink category header. */
+    calc: {
+      open: string;
+      open_aria: string;
+      title: string;
+      intro: string;
+      powered_by: string;
+      guests_label: string;
+      sweets_buffer_label: string;
+      drinks_buffer_label: string;
+      portions_heading: string;
+      col_item: string;
+      col_qty: string;
+      col_unit_price: string;
+      col_total: string;
+      item_sweet_pastry: string;
+      item_savory_pastry: string;
+      item_cake: string;
+      item_spirits: string;
+      item_wine: string;
+      item_champagne: string;
+      item_beer: string;
+      unit_kg: string;
+      unit_slice: string;
+      unit_liter: string;
+      unit_bottle: string;
+      portion_sweet: string;
+      portion_savory: string;
+      portion_cake: string;
+      portion_spirits: string;
+      portion_wine: string;
+      portion_champagne: string;
+      portion_beer_mugs: string;
+      portion_beer_mug_size: string;
+      subtotal_sweets: string;
+      subtotal_cake: string;
+      subtotal_drinks: string;
+      grand_total: string;
+      note: string;
+      reset: string;
+      close: string;
+    };
     /** "Csinálom magam" / DIY flow — couple-private supplier entries. */
     diy_pill: string;
     diy_button: string;
