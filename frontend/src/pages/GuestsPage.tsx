@@ -3338,6 +3338,7 @@ function GuestStat({
   tone = "secondary",
   onClick,
   actionTitle,
+  dimmed = false,
 }: {
   value: number | string;
   label: string;
@@ -3348,6 +3349,9 @@ function GuestStat({
   onClick?: () => void;
   /** Tooltip + accessible name describing the click action (used with onClick). */
   actionTitle?: string;
+  /** Faded out because a sibling stat is the active view — number + icon both
+   *  drop opacity so the active filter reads at a glance. */
+  dimmed?: boolean;
 }) {
   // One cool navy family per stat — the icon inherits the number's token so it
   // can't drift to a mismatched (warm-looking) lighter shade. Hierarchy is

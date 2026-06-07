@@ -462,9 +462,7 @@ export function WeddingSiteView({
       {view.schedule.length > 0 && !sectionHidden("schedule") ? (
         <section
           className={`mt-6 overflow-hidden rounded-3xl px-6 py-10 text-center sm:px-10 sm:py-14${
-            isPreview && e.onEditSchedule
-              ? " cursor-pointer transition hover:opacity-95"
-              : ""
+            isPreview && e.onEditSchedule ? " cursor-pointer transition hover:opacity-95" : ""
           }`}
           style={{ backgroundColor: "var(--wt-text)", color: "var(--wt-bg)" }}
           {...(isPreview ? editAffordance(e.onEditSchedule, editHint) : {})}
