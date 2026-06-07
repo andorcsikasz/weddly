@@ -380,15 +380,16 @@ export interface SupplierAvailability {
 }
 
 /** Returned by `GET /api/suppliers/:id`. Wraps the standard DirectorySupplier
- *  with the detail-page-only fields. Admin-only fields (comments_count,
- *  next_available) are omitted server-side when the caller isn't admin. */
+ *  with the detail-page-only fields. The admin-only `comments_count` is
+ *  omitted server-side when the caller isn't admin. */
 export interface SupplierDetail extends DirectorySupplier {
   reviews_summary: ReviewSummary;
   /** Number of non-deleted comments on this supplier. Admin-only field —
    *  undefined when the caller is not admin. */
   comments_count?: number;
-  /** Earliest available date if the supplier is claimed; null otherwise.
-   *  Admin-only field. */
+  /** Earliest available date if the supplier is a claimed vendor account;
+   *  null for the unclaimed majority. Public — feeds the shortlist
+   *  comparison dialog's "available date" row. */
   next_available?: string | null;
   /** Whether the supplier accepts booking inquiries today (claimed + has a
    *  vendor_account_id). Always present so the CTA logic can branch. */

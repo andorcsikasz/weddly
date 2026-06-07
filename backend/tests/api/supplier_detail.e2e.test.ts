@@ -268,17 +268,23 @@ describe("GET /api/suppliers/:supplier_id detail endpoint", () => {
     expect(r.data.bookable).toBe(false);
   });
 
-  test("non-admin viewer also gets reviews_summary but no comments_count", async () => {
+  test("non-admin viewer gets reviews_summary + next_available but no comments_count", async () => {
     const { token } = await bootstrapCouple("couple@test.test");
     const sid = curatedSupplierId();
     const r = await req<{
       reviews_summary: { reviews_count: number };
       comments_count?: number;
+      next_available?: string | null;
       bookable: boolean;
     }>("GET", `/api/suppliers/${encodeURIComponent(sid)}`, undefined, { token });
     expect(r.status).toBe(200);
     expect(r.data.reviews_summary.reviews_count).toBe(0);
+    // comments_count stays admin-only — a moderation signal, not couple-facing.
     expect(r.data.comments_count).toBeUndefined();
+    // next_available is now public (feeds the shortlist comparison dialog).
+    // The key is present even for an unclaimed curated supplier, where it's null.
+    expect("next_available" in r.data).toBe(true);
+    expect(r.data.next_available).toBeNull();
   });
 });
 

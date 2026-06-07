@@ -263,8 +263,12 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
   const reviewsSummary = getReviewSummary(supplierId);
   const availability = getAvailability(supplierId);
 
-  // Admin viewer gets two extra fields. Non-admins (Phase 3) only see
-  // bookable + the public review summary.
+  // `next_available` is public: couples compare suppliers on it in the
+  // shortlist comparison dialog. It's only ever non-null for claimed vendor
+  // accounts (the rest stay null and render an "ask to confirm" fallback),
+  // so exposing it leaks nothing an unclaimed listing didn't already imply.
+  // `comments_count` stays admin-only — it's a moderation signal, not a
+  // couple-facing fact.
   const userRow = db.prepare("SELECT email FROM users WHERE id = ?").get(userId) as
     | { email: string }
     | undefined;
@@ -274,12 +278,8 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
     ...directory,
     reviews_summary: reviewsSummary,
     bookable: availability.bookable,
-    ...(viewerIsAdmin
-      ? {
-          comments_count: countNonDeletedComments(supplierId),
-          next_available: availability.next_available,
-        }
-      : {}),
+    next_available: availability.next_available,
+    ...(viewerIsAdmin ? { comments_count: countNonDeletedComments(supplierId) } : {}),
   };
   return json(payload);
 }
