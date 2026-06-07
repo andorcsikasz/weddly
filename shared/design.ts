@@ -27,9 +27,20 @@ export type StylePresetSlug =
   | "modern_minimal"
   | "romantic_soft"
   | "rustic_natural"
-  | "editorial";
+  | "editorial"
+  | "mediterranean_terracotta"
+  | "blue_porcelain";
 
-export type PaletteSlug = "botanical_green" | "espresso" | "blush" | "stone_minimal" | "sage_cream";
+export type PaletteSlug =
+  | "botanical_green"
+  | "espresso"
+  | "blush"
+  | "stone_minimal"
+  | "sage_cream"
+  | "champagne"
+  | "terracotta"
+  | "blue_porcelain"
+  | "ink_gold";
 
 export type FontPresetSlug = "classic_serif" | "modern_clean" | "soft_romantic";
 
@@ -154,10 +165,13 @@ export interface FontPreset {
 export interface StylePreset {
   slug: StylePresetSlug;
   nameKey: string;
-  /** Picking a style pre-selects these, but the couple can still override the
-   *  palette and font independently afterwards. */
+  /** Picking a style pre-selects palette + fonts + decor, but the couple can
+   *  still override any of them independently afterwards. The decor is part of
+   *  the preset so each style reads as a distinct *world* (a botanical leaf vs a
+   *  framed editorial vs bare minimal), not just a recoloured layout. */
   defaultPalette: PaletteSlug;
   defaultFonts: FontPresetSlug;
+  defaultDecor: DecorSlug;
 }
 
 /** hex (`#RRGGBB`) → rgb 0..1 triple, rounded to 3dp. Pure + total. */
@@ -170,16 +184,23 @@ function pair(hex: string): ColorPair {
   return { hex, rgb: [round(r), round(g), round(b)] };
 }
 
+// Each palette anchors one wedding STYLE, so they're deliberately far apart in
+// hue + mood (sage green vs porcelain blue vs terracotta) — that distance is
+// what makes the style presets read as genuinely different worlds, not tints of
+// the same look. All keep a near-black text on a light background so contrast
+// stays WCAG-safe; the accent_text fallback in toPublicDesign handles any
+// low-contrast primary.
 export const PALETTES: readonly Palette[] = [
   {
     slug: "botanical_green",
     nameKey: "design.palette.botanical_green",
     primary: pair("#6F8F72"),
-    background: pair("#F6F3EC"),
-    accent: pair("#D8CDBB"),
-    text: pair("#2F332E"),
+    background: pair("#F4F1E8"),
+    accent: pair("#D6CBB5"),
+    text: pair("#243128"),
   },
   {
+    // Warm specialty-coffee browns — the house favourite accent family.
     slug: "espresso",
     nameKey: "design.palette.espresso",
     primary: pair("#4A3B32"),
@@ -188,28 +209,68 @@ export const PALETTES: readonly Palette[] = [
     text: pair("#2A211C"),
   },
   {
+    // Romantic powder: warm off-white, dusty rose, soft blush accent.
     slug: "blush",
     nameKey: "design.palette.blush",
-    primary: pair("#C98B86"),
-    background: pair("#FBF6F4"),
-    accent: pair("#E4C9C2"),
-    text: pair("#3A2E2C"),
+    primary: pair("#C9827F"),
+    background: pair("#FFF7F4"),
+    accent: pair("#E8C9C3"),
+    text: pair("#3A2A27"),
   },
   {
+    // Modern minimal: cool near-white, graphite ink, pale stone accent.
     slug: "stone_minimal",
     nameKey: "design.palette.stone_minimal",
-    primary: pair("#6B6F73"),
-    background: pair("#F5F5F3"),
-    accent: pair("#C9C7C1"),
-    text: pair("#2C2E30"),
+    primary: pair("#111111"),
+    background: pair("#FAFAF7"),
+    accent: pair("#DAD7CD"),
+    text: pair("#1A1A1A"),
   },
   {
+    // Repurposed as the RUSTIC sand/olive palette: kraft-paper warmth.
     slug: "sage_cream",
     nameKey: "design.palette.sage_cream",
-    primary: pair("#8A9A7B"),
-    background: pair("#F7F4EC"),
-    accent: pair("#D9D2BE"),
-    text: pair("#33372D"),
+    primary: pair("#8A6F4D"),
+    background: pair("#F3EBDD"),
+    accent: pair("#A3A883"),
+    text: pair("#3A3328"),
+  },
+  {
+    // Classic elegant: champagne ivory, warm charcoal, antique-gold accent.
+    slug: "champagne",
+    nameKey: "design.palette.champagne",
+    primary: pair("#2B2620"),
+    background: pair("#F7F2E8"),
+    accent: pair("#BFA46F"),
+    text: pair("#1E1A16"),
+  },
+  {
+    // Mediterranean terracotta: sun-warmed clay with an olive accent.
+    slug: "terracotta",
+    nameKey: "design.palette.terracotta",
+    primary: pair("#C96F4A"),
+    background: pair("#FAF0E6"),
+    accent: pair("#8E9A65"),
+    text: pair("#2E211B"),
+  },
+  {
+    // Blue porcelain: cool ivory, deep delft blue, pale china-blue accent.
+    slug: "blue_porcelain",
+    nameKey: "design.palette.blue_porcelain",
+    primary: pair("#2F4A6D"),
+    background: pair("#F7F5EF"),
+    accent: pair("#B8C7D9"),
+    text: pair("#1B2430"),
+  },
+  {
+    // Editorial black-tie: near-black ink on warm ivory with antique gold.
+    // Magazine contrast, the most dramatic palette in the set.
+    slug: "ink_gold",
+    nameKey: "design.palette.ink_gold",
+    primary: pair("#161311"),
+    background: pair("#F7F1E7"),
+    accent: pair("#A67C52"),
+    text: pair("#1A1411"),
   },
 ];
 
@@ -274,38 +335,58 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
   {
     slug: "classic_elegant",
     nameKey: "design.style.classic_elegant",
-    defaultPalette: "stone_minimal",
+    defaultPalette: "champagne",
     defaultFonts: "classic_serif",
+    defaultDecor: "line",
   },
   {
     slug: "botanical_green",
     nameKey: "design.style.botanical_green",
     defaultPalette: "botanical_green",
     defaultFonts: "classic_serif",
+    defaultDecor: "botanical",
   },
   {
     slug: "modern_minimal",
     nameKey: "design.style.modern_minimal",
     defaultPalette: "stone_minimal",
     defaultFonts: "modern_clean",
+    defaultDecor: "none",
   },
   {
     slug: "romantic_soft",
     nameKey: "design.style.romantic_soft",
     defaultPalette: "blush",
     defaultFonts: "soft_romantic",
+    defaultDecor: "dots",
   },
   {
     slug: "rustic_natural",
     nameKey: "design.style.rustic_natural",
     defaultPalette: "sage_cream",
     defaultFonts: "classic_serif",
+    defaultDecor: "line",
   },
   {
     slug: "editorial",
     nameKey: "design.style.editorial",
-    defaultPalette: "espresso",
-    defaultFonts: "modern_clean",
+    defaultPalette: "ink_gold",
+    defaultFonts: "classic_serif",
+    defaultDecor: "frame",
+  },
+  {
+    slug: "mediterranean_terracotta",
+    nameKey: "design.style.mediterranean_terracotta",
+    defaultPalette: "terracotta",
+    defaultFonts: "classic_serif",
+    defaultDecor: "botanical",
+  },
+  {
+    slug: "blue_porcelain",
+    nameKey: "design.style.blue_porcelain",
+    defaultPalette: "blue_porcelain",
+    defaultFonts: "classic_serif",
+    defaultDecor: "line",
   },
 ];
 

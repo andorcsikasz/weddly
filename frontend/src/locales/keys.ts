@@ -1643,6 +1643,8 @@ export interface LocaleMessages {
       romantic_soft: string;
       rustic_natural: string;
       editorial: string;
+      mediterranean_terracotta: string;
+      blue_porcelain: string;
     };
     /** Colour-palette names. */
     palette: {
@@ -1651,6 +1653,10 @@ export interface LocaleMessages {
       blush: string;
       stone_minimal: string;
       sage_cream: string;
+      champagne: string;
+      terracotta: string;
+      blue_porcelain: string;
+      ink_gold: string;
     };
     /** Font-preset names. */
     font: {

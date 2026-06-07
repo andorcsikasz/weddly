@@ -18,8 +18,10 @@ import {
   type ColorRole,
   type CoupleDesign,
   DATE_FORMATS,
+  type DecorSlug,
   type ShadowSlug,
   SHADOWS,
+  type StylePreset,
   WEBSITE_SECTIONS,
   type WebsiteSectionSlug,
   DECOR_STYLES,
@@ -96,6 +98,69 @@ function PresetTile({
       {children}
       <span className="text-sm font-medium text-ink-900 dark:text-paper-50">{label}</span>
     </button>
+  );
+}
+
+/** Mini decor glyph for the style mood card — mirrors the guest-page / print
+ *  decor vocabulary so the card previews the REAL decoration a style applies. */
+function MoodDecor({ decor, color }: { decor: DecorSlug; color: string }) {
+  if (decor === "line") {
+    return <span className="block h-px w-10" style={{ backgroundColor: color }} aria-hidden />;
+  }
+  if (decor === "dots") {
+    return (
+      <span className="text-xs leading-none tracking-[0.4em]" style={{ color }} aria-hidden>
+        · · ·
+      </span>
+    );
+  }
+  if (decor === "botanical") {
+    return (
+      <span className="text-base leading-none" style={{ color }} aria-hidden>
+        {"❧︎"}
+      </span>
+    );
+  }
+  if (decor === "frame") {
+    return <span className="block h-3 w-12 border" style={{ borderColor: color }} aria-hidden />;
+  }
+  // "none" — keep the vertical rhythm so minimal cards don't jump.
+  return <span className="block h-2" aria-hidden />;
+}
+
+/** A whole STYLE previewed as a mini invitation: the palette's colours, the
+ *  preset's heading + body fonts AND its decor, so the couple chooses by feel
+ *  (a botanical world vs an editorial one) rather than by a name over four
+ *  colour bars. Rendered entirely from the catalog — no authored hex. */
+function StyleMoodCard({ preset }: { preset: StylePreset }) {
+  const palette = getPalette(preset.defaultPalette);
+  const fonts = getFontPreset(preset.defaultFonts);
+  return (
+    <span
+      className="flex flex-col items-center gap-1.5 rounded-lg border border-black/5 px-3 py-4 text-center dark:border-white/10"
+      style={{ backgroundColor: palette.background.hex, color: palette.text.hex }}
+      aria-hidden
+    >
+      <span className="text-lg leading-tight" style={{ fontFamily: fonts.headingStack }}>
+        Anna &amp; Bence
+      </span>
+      <MoodDecor decor={preset.defaultDecor} color={palette.primary.hex} />
+      <span
+        className="text-[10px] uppercase tracking-[0.18em]"
+        style={{ fontFamily: fonts.bodyStack }}
+      >
+        2027.06.04.
+      </span>
+      <span className="mt-1 flex gap-1">
+        {[palette.primary, palette.accent, palette.text].map((c) => (
+          <span
+            key={c.hex}
+            className="h-2.5 w-2.5 rounded-full ring-1 ring-black/10"
+            style={{ backgroundColor: c.hex }}
+          />
+        ))}
+      </span>
+    </span>
   );
 }
 
@@ -276,13 +341,14 @@ export default function DesignPage() {
   function chooseStyle(slug: StylePresetSlug) {
     const preset = STYLE_PRESETS.find((s) => s.slug === slug);
     if (!preset) return;
-    // A style is a full reset: it re-seeds palette + fonts AND drops any
+    // A style is a full reset: it re-seeds palette + fonts + decor AND drops any
     // custom colour / font-family overrides so the tile is the obvious reset.
     setDesign((d) => ({
       ...d,
       style: slug,
       palette: preset.defaultPalette,
       fonts: preset.defaultFonts,
+      decor: preset.defaultDecor,
       colors: {},
       headingFont: null,
       bodyFont: null,
@@ -602,34 +668,18 @@ export default function DesignPage() {
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("design.section.style")}
               </h2>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {STYLE_PRESETS.map((s) => {
-                  const palette = getPalette(s.defaultPalette);
-                  return (
-                    <PresetTile
-                      key={s.slug}
-                      active={design.style === s.slug}
-                      onSelect={() => chooseStyle(s.slug)}
-                      label={t(s.nameKey)}
-                      ariaLabel={t(s.nameKey)}
-                    >
-                      <span
-                        className="flex h-12 overflow-hidden rounded-lg border border-paper-200 dark:border-umber-700"
-                        aria-hidden
-                      >
-                        {[palette.background, palette.accent, palette.primary, palette.text].map(
-                          (c) => (
-                            <span
-                              key={c.hex}
-                              className="flex-1"
-                              style={{ backgroundColor: c.hex }}
-                            />
-                          ),
-                        )}
-                      </span>
-                    </PresetTile>
-                  );
-                })}
+              <div className="grid grid-cols-2 gap-3">
+                {STYLE_PRESETS.map((s) => (
+                  <PresetTile
+                    key={s.slug}
+                    active={design.style === s.slug}
+                    onSelect={() => chooseStyle(s.slug)}
+                    label={t(s.nameKey)}
+                    ariaLabel={t(s.nameKey)}
+                  >
+                    <StyleMoodCard preset={s} />
+                  </PresetTile>
+                ))}
               </div>
             </section>
 
