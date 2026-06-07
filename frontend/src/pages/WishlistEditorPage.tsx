@@ -867,7 +867,10 @@ export default function WishlistEditorPage() {
               </button>
             }
           >
-            <p className="mb-3 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
+            {/* No max-width cap so the line uses the full content width and
+                stays on one row on desktop; it still wraps naturally on
+                narrow / mobile viewports. */}
+            <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">
               {t("wishlist_editor.section_requests_subtitle")}
             </p>
             {requests.length === 0 ? (
