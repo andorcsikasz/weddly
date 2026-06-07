@@ -455,33 +455,47 @@ export function WeddingSiteView({
         </section>
       )}
 
-      {/* Schedule — exposed at every tier. Ghost in preview when empty. */}
+      {/* Schedule — exposed at every tier. The filled state is a DARK editorial
+          band (themed from the couple's text colour, so each style gets its own
+          dark) with a horizontal time-line, mirroring the reference's "schedule"
+          section. Empty preview falls back to a light ghost card. */}
       {view.schedule.length > 0 && !sectionHidden("schedule") ? (
-        <CardSection onEdit={isPreview ? e.onEditSchedule : undefined} hint={editHint}>
-          <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
+        <section
+          className={`mt-6 overflow-hidden rounded-3xl px-6 py-10 text-center sm:px-10 sm:py-14${
+            isPreview && e.onEditSchedule
+              ? " cursor-pointer transition hover:opacity-95"
+              : ""
+          }`}
+          style={{ backgroundColor: "var(--wt-text)", color: "var(--wt-bg)" }}
+          {...(isPreview ? editAffordance(e.onEditSchedule, editHint) : {})}
+        >
+          <h2
+            className="text-3xl tracking-tight sm:text-4xl"
+            style={{ fontFamily: "var(--wt-heading-font)" }}
+          >
             {t("wedding_site.schedule_title")}
           </h2>
-          <ul className="mt-4 space-y-3">
+          <ul className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-6">
             {view.schedule.map((entry) => (
-              <li
-                key={entry.id}
-                className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-paper-300 pb-3 last:border-0 last:pb-0 dark:border-umber-700"
-              >
-                <span className="font-grotesk text-base tabular-nums text-ink-900 dark:text-paper-50">
+              <li key={entry.id} className="flex min-w-[4.5rem] flex-col items-center gap-1">
+                <span
+                  className="text-2xl tabular-nums sm:text-3xl"
+                  style={{ fontFamily: "var(--wt-heading-font)" }}
+                >
                   {formatTimeOfDay(entry.starts_at_minutes)}
                 </span>
-                <span className="font-grotesk text-base text-ink-700 dark:text-paper-100">
+                <span className="text-[11px] uppercase tracking-[0.18em]" style={{ opacity: 0.85 }}>
                   {entry.label}
                 </span>
                 {entry.location && (
-                  <span className="text-xs text-ink-500 dark:text-umber-300">
-                    · {entry.location}
+                  <span className="text-[10px]" style={{ opacity: 0.65 }}>
+                    {entry.location}
                   </span>
                 )}
               </li>
             ))}
           </ul>
-        </CardSection>
+        </section>
       ) : isPreview ? (
         <CardSection onEdit={e.onEditSchedule} hint={editHint}>
           <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
