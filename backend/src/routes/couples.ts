@@ -38,6 +38,7 @@ import {
   type FontFamilySlug,
   type FontPresetSlug,
   HEX_COLOR_RE,
+  type ImageTreatmentSlug,
   type MonogramSeparatorSlug,
   type PaletteSlug,
   type ShadowSlug,
@@ -49,6 +50,7 @@ import {
   VALID_DECOR,
   VALID_FONT_FAMILIES,
   VALID_FONTS,
+  VALID_IMAGE_TREATMENTS,
   VALID_PALETTES,
   VALID_SEPARATORS,
   VALID_SHADOWS,
@@ -2016,6 +2018,13 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         }
         next.web.hiddenSections = [...new Set(v as WebsiteSectionSlug[])];
       }
+      if ("imageTreatment" in w) {
+        const v = w.imageTreatment;
+        if (typeof v !== "string" || !VALID_IMAGE_TREATMENTS.has(v as ImageTreatmentSlug)) {
+          throw new HttpError(400, "design.web.imageTreatment is not a valid image treatment");
+        }
+        next.web.imageTreatment = v as ImageTreatmentSlug;
+      }
     }
     const changed =
       next.style !== prev.style ||
@@ -2035,6 +2044,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.web.cardRadius !== prev.web.cardRadius ||
       next.web.shadow !== prev.web.shadow ||
       next.web.buttonStyle !== prev.web.buttonStyle ||
+      next.web.imageTreatment !== prev.web.imageTreatment ||
       JSON.stringify(next.web.hiddenSections) !== JSON.stringify(prev.web.hiddenSections);
     if (changed) {
       updates.push({ col: "design_json", val: JSON.stringify(next) });

@@ -265,33 +265,32 @@ export default function WeddingWebsitePage() {
     : `/rsvp?couple=${encodeURIComponent(view.couple_slug)}`;
 
   return (
-    <Shell hideHeader>
-      <div className="mx-auto max-w-3xl">
-        {/* No app chrome on a guest-facing wedding site — just a compact
-            icon-only language toggle pinned to the top-right corner. The
-            Weddly brand moves to the footer instead. */}
-        <div className="mb-4 flex justify-end">
-          <button
-            type="button"
-            className="btn-ghost btn-sm !px-2"
-            onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
-            aria-label={t("nav.switch_language")}
-            title={t("nav.switch_language")}
-          >
-            <Languages size={18} aria-hidden="true" />
-          </button>
-        </div>
-        <WeddingSiteView
-          view={view}
-          household={household}
-          tier={tier}
-          locale={locale}
-          hasCode={hasCode}
-          rsvpHref={rsvpHref}
-          onToggleWishlistInterest={onToggleWishlistInterest}
-          confirmedHeadingRef={confirmedHeadingRef}
-        />
+    // No app chrome on a guest-facing wedding site, and no Shell width cap — the
+    // editorial layout is full-bleed (alternating light/dark bands run edge to
+    // edge). A compact icon-only language toggle floats over the hero; the
+    // Weddly brand lives in the footer.
+    <div className="relative min-h-full">
+      <div className="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
+        <button
+          type="button"
+          className="btn-ghost btn-sm !px-2"
+          onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+          aria-label={t("nav.switch_language")}
+          title={t("nav.switch_language")}
+        >
+          <Languages size={18} aria-hidden="true" />
+        </button>
       </div>
-    </Shell>
+      <WeddingSiteView
+        view={view}
+        household={household}
+        tier={tier}
+        locale={locale}
+        hasCode={hasCode}
+        rsvpHref={rsvpHref}
+        onToggleWishlistInterest={onToggleWishlistInterest}
+        confirmedHeadingRef={confirmedHeadingRef}
+      />
+    </div>
   );
 }

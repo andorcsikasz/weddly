@@ -287,6 +287,7 @@ export interface LocaleMessages {
     eyebrow: string;
     date_tbd: string;
     venue_approx: string;
+    location_eyebrow: string;
     schedule_title: string;
     rsvp_title: string;
     rsvp_body: string;
@@ -1658,6 +1659,7 @@ export interface LocaleMessages {
       editorial: string;
       mediterranean_terracotta: string;
       blue_porcelain: string;
+      black_tie_editorial: string;
     };
     /** Colour-palette names. */
     palette: {
@@ -1670,6 +1672,7 @@ export interface LocaleMessages {
       terracotta: string;
       blue_porcelain: string;
       ink_gold: string;
+      noir_ivory: string;
     };
     /** Font-preset names. */
     font: {
@@ -1718,10 +1721,12 @@ export interface LocaleMessages {
       shadow_label: string;
       button_style_label: string;
       sections_label: string;
+      image_treatment_label: string;
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };
       button_style: { lifted: string; flat: string; outline: string };
       section: { intro: string; schedule: string; useful_info: string; wishlist: string };
+      image_treatment: { none: string; grayscale: string };
     };
     /** Instant print-card preview (right column on the Print tab). */
     print_preview: {

@@ -32,6 +32,8 @@ import {
   formatWeddingDate,
   getFontPreset,
   getPalette,
+  IMAGE_TREATMENTS,
+  type ImageTreatmentSlug,
   MONOGRAM_SEPARATORS,
   monogramSeparatorGlyph,
   resolveDesign,
@@ -343,6 +345,8 @@ export default function DesignPage() {
     if (!preset) return;
     // A style is a full reset: it re-seeds palette + fonts + decor AND drops any
     // custom colour / font-family overrides so the tile is the obvious reset.
+    // Styles may also seed website chrome (e.g. the editorial style turns on
+    // grayscale photos + sharp/shadowless/outline) via `defaultWeb`.
     setDesign((d) => ({
       ...d,
       style: slug,
@@ -352,6 +356,7 @@ export default function DesignPage() {
       colors: {},
       headingFont: null,
       bodyFont: null,
+      web: { ...d.web, ...(preset.defaultWeb ?? {}) },
     }));
   }
   function chooseFonts(slug: FontPresetSlug) {
@@ -385,6 +390,9 @@ export default function DesignPage() {
   }
   function chooseButtonStyle(slug: ButtonStyleSlug) {
     setDesign((d) => ({ ...d, web: { ...d.web, buttonStyle: slug } }));
+  }
+  function chooseImageTreatment(slug: ImageTreatmentSlug) {
+    setDesign((d) => ({ ...d, web: { ...d.web, imageTreatment: slug } }));
   }
   function chooseBorderStyle(slug: BorderStyleSlug) {
     // Keep the legacy `print.border` boolean in sync (on/off) so the current
@@ -964,6 +972,34 @@ export default function DesignPage() {
                     })}
                   </div>
                 </section>
+                {/* Photo treatment — full colour vs desaturated black-and-white
+                    (the editorial look). */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.web.image_treatment_label")}
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {IMAGE_TREATMENTS.map((it) => {
+                      const active = design.web.imageTreatment === it.slug;
+                      return (
+                        <button
+                          key={it.slug}
+                          type="button"
+                          onClick={() => chooseImageTreatment(it.slug)}
+                          aria-pressed={active}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                            active
+                              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+                              : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                          }`}
+                        >
+                          {active && <Check size={12} strokeWidth={3} aria-hidden />}
+                          {t(it.nameKey)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
                 {/* Section visibility — a pressed chip = visible; unpress to hide
                     it from the guest page. RSVP is never hideable. */}
                 <section>
@@ -1159,10 +1195,11 @@ export default function DesignPage() {
                 </p>
                 {previewView && (
                   <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
-                    {/* Full guest page: below lg it scrolls with the page; on
-                        lg+ the sticky aside caps to the viewport and scrolls
+                    {/* Full guest page, edge-to-edge so the editorial light/dark
+                        bands reach the frame. Below lg it scrolls with the page;
+                        on lg+ the sticky aside caps to the viewport and scrolls
                         internally so the whole page stays reachable. */}
-                    <div className="p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+                    <div className="lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
                       <WeddingSiteView
                         view={previewView}
                         household={null}

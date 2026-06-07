@@ -33,6 +33,7 @@ interface CoupleDesign {
     shadow: string;
     buttonStyle: string;
     hiddenSections: string[];
+    imageTreatment: string;
   };
 }
 
@@ -85,7 +86,13 @@ describe("design: default resolution", () => {
       decor: "line",
       borderStyle: "hairline",
       print: { border: true, ornament: false, qr: false },
-      web: { cardRadius: "soft", shadow: "soft", buttonStyle: "lifted", hiddenSections: [] },
+      web: {
+        cardRadius: "soft",
+        shadow: "soft",
+        buttonStyle: "lifted",
+        hiddenSections: [],
+        imageTreatment: "none",
+      },
     });
   });
 });
@@ -382,6 +389,7 @@ describe("design: website-only `web` sub-object", () => {
       shadow: "soft",
       buttonStyle: "lifted",
       hiddenSections: [],
+      imageTreatment: "none",
     });
   });
 
@@ -450,6 +458,62 @@ describe("design: website-only `web` sub-object", () => {
     // Resolved to a concrete CSS length / box-shadow, not the slug.
     expect(pub.data.wedding.design.website_card_radius).toBe("1.5rem");
     expect(pub.data.wedding.design.website_shadow).toContain("rgba");
+  });
+
+  test("image treatment round-trips, reaches the public payload, and rejects junk", async () => {
+    wipeAll();
+    const token = await registerVerified("design-web-img@weddly.test");
+    const { couple } = await onboard(token);
+    const r = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { imageTreatment: "grayscale" } } },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.design.web.imageTreatment).toBe("grayscale");
+
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(couple.id);
+    const slug = (
+      db.prepare("SELECT slug FROM couples WHERE id = ?").get(couple.id) as { slug: string }
+    ).slug;
+    const pub = await req<{ wedding: { design: { website_image_treatment: string } } }>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(pub.data.wedding.design.website_image_treatment).toBe("grayscale");
+
+    const bad = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { imageTreatment: "sepia" } } },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  test("the Black Tie Editorial style resolves its monochrome palette + grayscale chrome", async () => {
+    wipeAll();
+    const token = await registerVerified("design-blacktie@weddly.test");
+    await onboard(token);
+    const r = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      // The frontend applies the style's web defaults; mirror that here so the
+      // persisted bundle is exercised end-to-end.
+      {
+        design: {
+          style: "black_tie_editorial",
+          palette: "noir_ivory",
+          web: { imageTreatment: "grayscale", buttonStyle: "outline" },
+        },
+      },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.design.style).toBe("black_tie_editorial");
+    expect(r.data.couple.design.palette).toBe("noir_ivory");
+    expect(r.data.couple.design.web.imageTreatment).toBe("grayscale");
   });
 
   test("an invalid web slug is rejected with 400", async () => {

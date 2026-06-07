@@ -4,19 +4,24 @@
 //   - Live mode  (WeddingWebsitePage at /w/:slug[/:code]): tier-aware
 //     progressive disclosure. Gated fields are already omitted server-side, so
 //     the rendering here is presentational (null check + render).
-//   - Preview mode (GuestPageEditorPage at /app/guest-page): `isPreview` turns
-//     empty sections into dashed "ghost" placeholders that scroll-and-focus the
-//     matching editor field via the `edit` callbacks, and the post-RSVP block is
-//     shown as a labelled "unlocks after RSVP" preview regardless of tier.
+//   - Preview mode (GuestPageEditorPage at /app/guest-page + DesignPage): the
+//     `isPreview` flag turns empty sections into dashed "ghost" placeholders
+//     that scroll-and-focus the matching editor field via the `edit` callbacks,
+//     and the post-RSVP block is shown as a labelled "unlocks after RSVP"
+//     preview regardless of tier.
 //
-// The component renders the section stack only (cover through footer); the
-// caller owns the page chrome (Shell + language toggle on the live page, the
-// app shell on the editor) and the `max-w-3xl` container width.
+// Editorial layout: a full-bleed magazine page of alternating light / dark
+// bands (NOT app cards). Every colour comes from the couple's Design via the
+// `--wt-*` custom properties on the `.wedding-theme` root, so the page is
+// LIGHT-LOCKED — it ignores the app's global `.dark` class (no `dark:` variants
+// here). Light bands paint `--wt-bg` / `--wt-text`; dark bands invert to
+// `--wt-text` / `--wt-bg`, giving every palette its own near-black band. The
+// caller renders this full-width (no max-w wrapper); each section owns its
+// inner max-width.
 
 import {
   Calendar,
   Camera,
-  ExternalLink,
   Gift,
   Heart,
   HeartHandshake,
@@ -28,7 +33,7 @@ import {
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
 import { Link } from "react-router-dom";
 import { buildMonogram, formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
-import { formatDate, formatMoney, isPlausibleDateIso, localeCurrency } from "../lib/format";
+import { formatDate, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { GuestWishlistCard } from "./GuestWishlistCard";
 import { WeddingCountdown } from "./WeddingCountdown";
@@ -101,8 +106,68 @@ function editAffordance(handler: (() => void) | undefined, hint: string) {
   };
 }
 
-/** Dashed "add this" placeholder shown in the editor preview where a section is
- *  still empty. Clickable when `onAdd` is given — jumps to the editor field. */
+/** A full-bleed band. `tone="dark"` inverts to the palette's near-black; light
+ *  bands inherit the page `--wt-bg`/`--wt-text`. The inner content is capped to
+ *  a readable column. */
+function Band({
+  children,
+  tone = "light",
+  onEdit,
+  hint,
+  className = "",
+  ariaLive,
+}: {
+  children: ReactNode;
+  tone?: "light" | "dark";
+  onEdit?: () => void;
+  hint?: string;
+  className?: string;
+  ariaLive?: "polite";
+}) {
+  const dark = tone === "dark";
+  const style: CSSProperties = dark
+    ? { backgroundColor: "var(--wt-text)", color: "var(--wt-bg)" }
+    : {};
+  return (
+    <section
+      aria-live={ariaLive}
+      className={`w-full px-6 sm:px-8 ${dark ? "py-14 sm:py-20" : "py-12 sm:py-16"}${
+        onEdit ? " cursor-pointer transition hover:opacity-95" : ""
+      }${className ? ` ${className}` : ""}`}
+      style={style}
+      {...editAffordance(onEdit, hint ?? "")}
+    >
+      <div className="mx-auto max-w-3xl">{children}</div>
+    </section>
+  );
+}
+
+/** Small uppercase eyebrow above a section heading. */
+function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
+  return (
+    <p
+      className="text-[11px] font-semibold uppercase tracking-[0.24em]"
+      style={dark ? { opacity: 0.7 } : { color: "var(--wt-accent-text)" }}
+    >
+      {children}
+    </p>
+  );
+}
+
+/** Section heading in the couple's heading font, inheriting the band colour. */
+function Heading({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <h2
+      className={`text-3xl tracking-tight sm:text-4xl ${className}`}
+      style={{ fontFamily: "var(--wt-heading-font)" }}
+    >
+      {children}
+    </h2>
+  );
+}
+
+/** Dashed "add this" placeholder for an empty section in the editor preview.
+ *  Light-locked (no dark: variants) so it reads as part of the guest theme. */
 function Ghost({
   icon: Icon,
   title,
@@ -119,59 +184,24 @@ function Ghost({
   const clickable = Boolean(onAdd);
   return (
     <div
-      className={`flex items-center gap-3 rounded-2xl border border-dashed border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-800/40${
-        clickable
-          ? " cursor-pointer transition hover:border-ink-300 hover:bg-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
-          : ""
+      className={`mx-auto flex max-w-xl flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-8 text-center${
+        clickable ? " cursor-pointer transition hover:opacity-80" : ""
       }`}
+      style={{ borderColor: "var(--wt-accent)" }}
       {...editAffordance(onAdd, hint)}
     >
-      <span
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dashed border-paper-300 bg-white/60 text-ink-300 dark:border-umber-700 dark:bg-umber-900/40 dark:text-umber-400"
-        aria-hidden
+      <Icon size={22} aria-hidden style={{ opacity: 0.5 }} />
+      <p
+        className="text-lg tracking-tight"
+        style={{ fontFamily: "var(--wt-heading-font)", opacity: 0.7 }}
       >
-        <Icon size={18} />
-      </span>
-      <div className="min-w-0">
-        <p className="font-grotesk text-base font-medium tracking-tight text-ink-400 dark:text-umber-300">
-          {title}
-        </p>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-500 dark:text-umber-200">
-          <Plus size={12} aria-hidden />
-          {cta}
-        </p>
-      </div>
+        {title}
+      </p>
+      <p className="inline-flex items-center gap-1 text-xs" style={{ opacity: 0.6 }}>
+        <Plus size={12} aria-hidden />
+        {cta}
+      </p>
     </div>
-  );
-}
-
-/** A `card` section that doubles as an edit shortcut in preview mode (whole
- *  card is clickable + a hover affordance). On the live page it's a plain card. */
-function CardSection({
-  children,
-  onEdit,
-  hint,
-  className = "",
-  ...rest
-}: {
-  children: ReactNode;
-  onEdit?: () => void;
-  hint: string;
-  className?: string;
-} & Record<string, unknown>) {
-  const editable = Boolean(onEdit);
-  return (
-    <section
-      className={`card mt-6${
-        editable
-          ? " cursor-pointer transition hover:border-ink-300 dark:hover:border-umber-600"
-          : ""
-      }${className ? ` ${className}` : ""}`}
-      {...editAffordance(onEdit, hint)}
-      {...rest}
-    >
-      {children}
-    </section>
   );
 }
 
@@ -222,7 +252,6 @@ export function WeddingSiteView({
     : "";
   const decor = view.design.decor;
 
-  // Website-only chrome from the Design feature's `web` sub-object.
   // Section hiding applies to the LIVE page only — the editor preview keeps
   // every section visible so the couple can still edit hidden ones.
   const hiddenSet = new Set(view.design.website_hidden_sections);
@@ -235,11 +264,14 @@ export function WeddingSiteView({
         ? "btn-primary"
         : "btn-primary btn-lifted";
 
+  // Black-and-white editorial treatment for cover/venue imagery.
+  const imgFilter =
+    view.design.website_image_treatment === "grayscale" ? "grayscale(1)" : undefined;
+
   // Visual identity from the couple's Design selection, fed in as CSS custom
-  // properties on the `.wedding-theme` wrapper. index.css consumes these to
-  // retarget the heading font + accent colour (unlayered, so it beats the
-  // Tailwind utility classes still on the elements). No raw hex here — the
-  // values are resolved data from the shared catalog.
+  // properties on the `.wedding-theme` wrapper (consumed by index.css, unlayered
+  // so it beats the Tailwind utilities). The root also paints the page bg/text
+  // from the palette so every light band inherits it. No raw hex here.
   const themeStyle = {
     "--wt-primary": view.design.primary,
     "--wt-accent": view.design.accent,
@@ -250,36 +282,47 @@ export function WeddingSiteView({
     "--wt-body-font": view.design.body_font,
     "--wt-card-radius": view.design.website_card_radius,
     "--wt-card-shadow": view.design.website_shadow,
+    backgroundColor: "var(--wt-bg)",
+    color: "var(--wt-text)",
   } as CSSProperties;
 
+  const hairline = (
+    <span
+      aria-hidden
+      className="mx-auto block h-px w-16"
+      style={{ backgroundColor: "var(--wt-accent)" }}
+    />
+  );
+
   return (
-    <div className="wedding-theme" style={themeStyle}>
-      {/* ── Editorial hero ─────────────────────────────────────────────────
-          Names as a centered header, the wedding date set big + letter-spaced
-          (the page's signature element) overlapping the cover photo below it,
-          then the venue. All themed from the couple's Design; the editor
-          preview keeps every ghost + click-to-edit affordance. */}
-      <section className="stationery overflow-hidden rounded-3xl border border-paper-200 text-center dark:border-umber-700">
-        <div className="px-6 pt-9 sm:px-10">
-          {monogram && (
-            <p
-              className="wt-accent wt-heading mb-2 text-2xl tracking-[0.2em]"
+    <div className="wedding-theme w-full" style={themeStyle}>
+      {/* ── Hero ────────────────────────────────────────────────────────────
+          Minimal top bar (monogram), couple names, the date set BIG + letter-
+          spaced as the signature element, then a full-width cover photo the
+          date overlaps. */}
+      <section className="w-full">
+        <div className="w-full border-b" style={{ borderColor: "var(--wt-accent)" }}>
+          <div className="mx-auto flex max-w-5xl items-center justify-center px-6 py-3 sm:px-8">
+            <span
+              className="text-sm tracking-[0.34em]"
               style={{ color: "var(--wt-accent-text)", fontFamily: "var(--wt-heading-font)" }}
-              aria-hidden
             >
-              {monogram}
-            </p>
-          )}
-          <h1 className="font-grotesk text-2xl leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-3xl">
+              {monogram || view.couple_display_name}
+            </span>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
+          <h1
+            className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
+            style={{ fontFamily: "var(--wt-heading-font)" }}
+          >
             {view.couple_display_name}
           </h1>
 
-          {/* Decorative divider under the names, driven by the Design selection. */}
           {decor !== "none" && (
-            <div className="mt-3 flex justify-center" aria-hidden>
-              {decor === "line" && (
-                <span className="h-px w-20" style={{ backgroundColor: "var(--wt-accent)" }} />
-              )}
+            <div className="mt-4 flex justify-center" aria-hidden>
+              {decor === "line" && hairline}
               {decor === "dots" && (
                 <span className="text-lg tracking-[0.4em]" style={{ color: "var(--wt-accent)" }}>
                   · · ·
@@ -299,22 +342,22 @@ export function WeddingSiteView({
             </div>
           )}
 
-          {/* Signature date — big + letter-spaced. Filled date is a click-to-edit
-              target in preview; a missing date is a dashed ghost button. */}
+          {/* Signature date — big + letter-spaced. Click-to-edit in preview;
+              a missing date is a dashed ghost button. */}
           {heroDateBig ? (
             isPreview && e.onEditDate ? (
               <button
                 type="button"
                 onClick={e.onEditDate}
                 title={editHint}
-                className="relative z-10 mx-auto mt-6 block rounded-md px-2 py-1 text-4xl tracking-[0.18em] transition hover:bg-black/5 dark:hover:bg-white/10 sm:text-6xl"
+                className="relative z-10 mx-auto mt-7 block rounded-md px-2 py-1 text-5xl tracking-[0.18em] transition hover:opacity-80 sm:text-7xl"
                 style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
               >
                 {heroDateBig}
               </button>
             ) : (
               <p
-                className="relative z-10 mx-auto mt-6 text-4xl tracking-[0.18em] sm:text-6xl"
+                className="relative z-10 mx-auto mt-7 text-5xl tracking-[0.18em] sm:text-7xl"
                 style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
                 aria-label={dateLine}
               >
@@ -327,7 +370,8 @@ export function WeddingSiteView({
               onClick={e.onEditDate}
               disabled={!e.onEditDate}
               title={editHint}
-              className="mx-auto mt-6 inline-flex items-center gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 disabled:cursor-default dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
+              className="mx-auto mt-7 inline-flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm transition hover:opacity-80 disabled:cursor-default"
+              style={{ borderColor: "var(--wt-accent)", opacity: 0.7 }}
             >
               <Calendar size={14} aria-hidden />
               {t("wedding_site.ghost.date_cta")}
@@ -336,91 +380,55 @@ export function WeddingSiteView({
           ) : null}
         </div>
 
-        {/* Cover photo — pulled up under the date so the big numerals overlap its
-            top edge. Dashed ghost in the editor preview when still empty. */}
+        {/* Cover photo — full-width, pulled up under the date so the big
+            numerals overlap its top edge. Dashed ghost when still empty. */}
         {view.cover_image_url ? (
-          <div className={heroDateBig ? "-mt-5" : "mt-6"}>
+          <div className={heroDateBig ? "-mt-4 w-full sm:-mt-6" : "mt-8 w-full"}>
             <img
               src={view.cover_image_url}
               alt=""
               loading="lazy"
-              className="aspect-[4/3] w-full object-cover sm:aspect-[16/9]"
+              className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
+              style={imgFilter ? { filter: imgFilter } : undefined}
             />
           </div>
         ) : isPreview ? (
-          <div className="px-6 pt-6 sm:px-10">
+          <div className="mx-auto mt-8 max-w-4xl px-6 sm:px-8">
             <div
-              className={`flex aspect-[16/6] min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-paper-300 bg-paper-50 text-center dark:border-umber-700 dark:bg-umber-800/40${
-                e.onEditCover
-                  ? " cursor-pointer transition hover:border-ink-300 hover:bg-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
-                  : ""
+              className={`flex aspect-[16/6] min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center${
+                e.onEditCover ? " cursor-pointer transition hover:opacity-80" : ""
               }`}
+              style={{ borderColor: "var(--wt-accent)" }}
               {...editAffordance(e.onEditCover, editHint)}
             >
-              <Camera size={28} className="text-ink-300 dark:text-umber-400" aria-hidden />
-              <p className="font-grotesk text-base font-medium tracking-tight text-ink-400 dark:text-umber-300">
+              <Camera size={28} aria-hidden style={{ opacity: 0.5 }} />
+              <p
+                className="text-lg tracking-tight"
+                style={{ fontFamily: "var(--wt-heading-font)", opacity: 0.7 }}
+              >
                 {t("wedding_site.ghost.cover_title")}
               </p>
-              <p className="flex items-center gap-1 text-xs text-ink-500 dark:text-umber-200">
+              <p className="inline-flex items-center gap-1 text-xs" style={{ opacity: 0.6 }}>
                 <Plus size={12} aria-hidden />
                 {t("wedding_site.ghost.cover_cta")}
               </p>
             </div>
           </div>
         ) : null}
-
-        {/* Venue line under the photo. */}
-        <div className="px-6 pb-8 pt-6 sm:px-10">
-          {view.venue_name ? (
-            isPreview && e.onEditVenue ? (
-              <button
-                type="button"
-                onClick={e.onEditVenue}
-                title={editHint}
-                className="inline-flex items-center justify-center gap-2 rounded-md px-1.5 py-0.5 font-serif text-sm font-normal italic text-ink-700 transition hover:bg-paper-100 hover:text-ink-900 dark:text-paper-100 dark:hover:bg-umber-800 sm:text-base"
-              >
-                <MapPin size={14} aria-hidden />
-                {view.venue_name}
-              </button>
-            ) : (
-              <p className="inline-flex items-center justify-center gap-2 font-serif text-sm font-normal italic text-ink-700 dark:text-paper-100 sm:text-base">
-                <MapPin size={14} aria-hidden />
-                {view.venue_name}
-              </p>
-            )
-          ) : isPreview ? (
-            <button
-              type="button"
-              onClick={e.onEditVenue}
-              disabled={!e.onEditVenue}
-              title={editHint}
-              className="inline-flex items-center gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 disabled:cursor-default dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
-            >
-              <MapPin size={14} aria-hidden />
-              {t("wedding_site.ghost.venue_cta")}
-              <Plus size={12} aria-hidden />
-            </button>
-          ) : (
-            !showConfirmedExtras &&
-            view.location_radius_km !== null && (
-              <p className="inline-flex items-center justify-center gap-2 text-xs text-ink-500 dark:text-umber-300">
-                <MapPin size={14} aria-hidden />
-                {t("wedding_site.venue_approx")}
-              </p>
-            )
-          )}
-        </div>
       </section>
 
-      {/* Pre-RSVP welcome block — same at every tier. */}
+      {/* ── Welcome / intro — same at every tier. ───────────────────────── */}
       {view.guest_page_intro && !sectionHidden("intro") ? (
-        <CardSection onEdit={isPreview ? e.onEditIntro : undefined} hint={editHint}>
-          <p className="whitespace-pre-line text-base text-ink-800 dark:text-paper-100">
+        <Band onEdit={isPreview ? e.onEditIntro : undefined} hint={editHint}>
+          <p
+            className="whitespace-pre-line text-center text-lg leading-relaxed"
+            style={{ opacity: 0.92 }}
+          >
             {view.guest_page_intro}
           </p>
-        </CardSection>
+        </Band>
       ) : isPreview ? (
-        <div className="mt-6">
+        <Band>
           <Ghost
             icon={Heart}
             title={t("wedding_site.ghost.welcome_title")}
@@ -428,126 +436,181 @@ export function WeddingSiteView({
             onAdd={e.onEditIntro}
             hint={editHint}
           />
-        </div>
+        </Band>
       ) : null}
 
-      {/* Invited tier — personal hello + member list (live page only). */}
+      {/* ── Invited tier — personal hello + member list (live page only). ── */}
       {!isPreview && showInvitedExtras && household && (
-        <section className="card mt-6">
-          <p className="wt-accent text-[11px] font-semibold uppercase tracking-[0.2em]">
-            {t("wedding_site.invited_eyebrow")}
-          </p>
-          <h2 className="mt-1 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
-            {household.household_label}
-          </h2>
+        <Band className="text-center">
+          <Eyebrow>{t("wedding_site.invited_eyebrow")}</Eyebrow>
+          <Heading className="mt-2">{household.household_label}</Heading>
           {household.members.length > 0 && (
-            <ul className="mt-4 space-y-1 text-sm text-ink-700 dark:text-paper-100">
+            <ul className="mx-auto mt-6 max-w-md space-y-1 text-sm" style={{ opacity: 0.85 }}>
               {household.members.map((m) => (
                 <li key={m.id} className="flex items-center justify-between gap-3">
                   <span>{m.full_name}</span>
-                  <span className="text-xs text-ink-500 dark:text-umber-300">
+                  <span style={{ opacity: 0.7 }}>
                     {t(`wedding_site.rsvp_status_${m.rsvp_status}`)}
                   </span>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Band>
       )}
 
-      {/* Schedule — exposed at every tier. The filled state is a DARK editorial
-          band (themed from the couple's text colour, so each style gets its own
-          dark) with a horizontal time-line, mirroring the reference's "schedule"
-          section. Empty preview falls back to a light ghost card. */}
+      {/* ── Schedule — DARK band with a horizontal time-line. ───────────── */}
       {view.schedule.length > 0 && !sectionHidden("schedule") ? (
-        <section
-          className={`mt-6 overflow-hidden rounded-3xl px-6 py-10 text-center sm:px-10 sm:py-14${
-            isPreview && e.onEditSchedule ? " cursor-pointer transition hover:opacity-95" : ""
-          }`}
-          style={{ backgroundColor: "var(--wt-text)", color: "var(--wt-bg)" }}
-          {...(isPreview ? editAffordance(e.onEditSchedule, editHint) : {})}
-        >
-          <h2
-            className="text-3xl tracking-tight sm:text-4xl"
-            style={{ fontFamily: "var(--wt-heading-font)" }}
-          >
-            {t("wedding_site.schedule_title")}
-          </h2>
-          <ul className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-6">
-            {view.schedule.map((entry) => (
-              <li key={entry.id} className="flex min-w-[4.5rem] flex-col items-center gap-1">
-                <span
-                  className="text-2xl tabular-nums sm:text-3xl"
-                  style={{ fontFamily: "var(--wt-heading-font)" }}
-                >
-                  {formatTimeOfDay(entry.starts_at_minutes)}
-                </span>
-                <span className="text-[11px] uppercase tracking-[0.18em]" style={{ opacity: 0.85 }}>
-                  {entry.label}
-                </span>
-                {entry.location && (
-                  <span className="text-[10px]" style={{ opacity: 0.65 }}>
-                    {entry.location}
+        <Band tone="dark" onEdit={isPreview ? e.onEditSchedule : undefined} hint={editHint}>
+          <div className="text-center">
+            <Heading>{t("wedding_site.schedule_title")}</Heading>
+            <ul className="mt-8 flex flex-wrap justify-center gap-x-10 gap-y-6">
+              {view.schedule.map((entry) => (
+                <li key={entry.id} className="flex min-w-[4.5rem] flex-col items-center gap-1">
+                  <span
+                    className="text-2xl tabular-nums sm:text-3xl"
+                    style={{ fontFamily: "var(--wt-heading-font)" }}
+                  >
+                    {formatTimeOfDay(entry.starts_at_minutes)}
                   </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
+                  <span
+                    className="text-[11px] uppercase tracking-[0.18em]"
+                    style={{ opacity: 0.85 }}
+                  >
+                    {entry.label}
+                  </span>
+                  {entry.location && (
+                    <span className="text-[10px]" style={{ opacity: 0.6 }}>
+                      {entry.location}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Band>
       ) : isPreview ? (
-        <CardSection onEdit={e.onEditSchedule} hint={editHint}>
-          <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
-            {t("wedding_site.schedule_title")}
-          </h2>
-          <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-ink-400 dark:text-umber-300">
-            <Plus size={14} aria-hidden />
-            {t("wedding_site.ghost.schedule_cta")}
-          </p>
-        </CardSection>
+        <Band tone="dark" onEdit={e.onEditSchedule} hint={editHint}>
+          <div className="text-center">
+            <Heading>{t("wedding_site.schedule_title")}</Heading>
+            <p className="mt-4 inline-flex items-center gap-1.5 text-sm" style={{ opacity: 0.7 }}>
+              <Plus size={14} aria-hidden />
+              {t("wedding_site.ghost.schedule_cta")}
+            </p>
+          </div>
+        </Band>
       ) : null}
 
-      {/* "Good to know" — parking, getting there, accommodation, … */}
+      {/* ── Location — venue name + (confirmed-tier) exact map link. ─────── */}
+      {view.venue_name ? (
+        <Band
+          onEdit={isPreview ? e.onEditVenue : undefined}
+          hint={editHint}
+          className="text-center"
+        >
+          <Eyebrow>{t("wedding_site.location_eyebrow")}</Eyebrow>
+          <Heading className="mt-2">{view.venue_name}</Heading>
+          <div className="mt-4 flex justify-center">{hairline}</div>
+          {view.location_lat !== null && view.location_lng !== null ? (
+            <p className="mt-5">
+              <a
+                className="btn-outline inline-flex items-center gap-2"
+                href={`https://www.openstreetmap.org/?mlat=${view.location_lat}&mlon=${view.location_lng}#map=17/${view.location_lat}/${view.location_lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(ev) => ev.stopPropagation()}
+              >
+                <MapPin size={15} aria-hidden />
+                {t("wedding_site.confirmed_open_map")}
+              </a>
+            </p>
+          ) : null}
+        </Band>
+      ) : isPreview ? (
+        <Band className="text-center">
+          <Eyebrow>{t("wedding_site.location_eyebrow")}</Eyebrow>
+          <div className="mt-3">
+            <Ghost
+              icon={MapPin}
+              title={t("wedding_site.ghost.venue_cta")}
+              cta={t("wedding_site.ghost.venue_cta")}
+              onAdd={e.onEditVenue}
+              hint={editHint}
+            />
+          </div>
+        </Band>
+      ) : (
+        !showConfirmedExtras &&
+        view.location_radius_km !== null && (
+          <Band className="text-center">
+            <p
+              className="inline-flex items-center justify-center gap-2 text-sm"
+              style={{ opacity: 0.7 }}
+            >
+              <MapPin size={14} aria-hidden />
+              {t("wedding_site.venue_approx")}
+            </p>
+          </Band>
+        )
+      )}
+
+      {/* ── Countdown — DARK band, big numerals. ────────────────────────── */}
+      {(view.wedding_date || isPreview) && (
+        <WeddingCountdown
+          date={view.wedding_date}
+          isPreview={isPreview}
+          onEdit={isPreview ? e.onEditDate : undefined}
+          variant="band"
+        />
+      )}
+
+      {/* ── Good to know — parking, getting there, accommodation, … ─────── */}
       {view.useful_info && !sectionHidden("useful_info") ? (
-        <CardSection onEdit={isPreview ? e.onEditUsefulInfo : undefined} hint={editHint}>
-          <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
-            {t("guest_portal.useful_info_title")}
-          </h2>
-          <p className="mt-3 whitespace-pre-line text-base text-ink-800 dark:text-paper-100">
+        <Band onEdit={isPreview ? e.onEditUsefulInfo : undefined} hint={editHint}>
+          <Heading>{t("guest_portal.useful_info_title")}</Heading>
+          <p
+            className="mt-4 whitespace-pre-line text-base leading-relaxed"
+            style={{ opacity: 0.92 }}
+          >
             {view.useful_info}
           </p>
-        </CardSection>
+        </Band>
       ) : isPreview ? (
-        <CardSection onEdit={e.onEditUsefulInfo} hint={editHint}>
-          <h2 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
-            {t("guest_portal.useful_info_title")}
-          </h2>
-          <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-ink-400 dark:text-umber-300">
+        <Band onEdit={e.onEditUsefulInfo} hint={editHint}>
+          <Heading>{t("guest_portal.useful_info_title")}</Heading>
+          <p className="mt-4 inline-flex items-center gap-1.5 text-sm" style={{ opacity: 0.7 }}>
             <Plus size={14} aria-hidden />
             {t("wedding_site.ghost.useful_info_cta")}
           </p>
-        </CardSection>
+        </Band>
       ) : null}
 
-      {/* Confirmed-tier unlocked block. Live: shown only at confirmed tier.
-          Preview: always shown as a labelled "unlocks after RSVP" block so the
-          couple can preview + jump to edit the post-RSVP content. */}
-      {(isPreview ||
-        (showConfirmedExtras && (view.post_rsvp_content || view.location_lat !== null))) && (
-        <section className="card mt-6" aria-live={isPreview ? undefined : "polite"}>
+      {/* ── Confirmed-tier unlocked block. Live: confirmed only. Preview:
+          always shown, labelled "unlocks after RSVP". ──────────────────── */}
+      {(isPreview || (showConfirmedExtras && view.post_rsvp_content)) && (
+        <Band ariaLive={isPreview ? undefined : "polite"}>
           {isPreview && (
-            <p className="wt-accent mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]">
+            <p
+              className="mb-3 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]"
+              style={{ color: "var(--wt-accent-text)" }}
+            >
               <Lock size={12} aria-hidden /> {t("wedding_site.ghost.locked_eyebrow")}
             </p>
           )}
-          <h2
-            ref={confirmedHeadingRef}
-            tabIndex={isPreview ? undefined : -1}
-            className="font-grotesk text-2xl tracking-tight text-ink-900 outline-none dark:text-paper-50"
-          >
-            {t("wedding_site.confirmed_title")}
-          </h2>
+          <Heading>
+            <span
+              ref={confirmedHeadingRef}
+              tabIndex={isPreview ? undefined : -1}
+              className="outline-none"
+            >
+              {t("wedding_site.confirmed_title")}
+            </span>
+          </Heading>
           {view.post_rsvp_content ? (
-            <p className="mt-3 whitespace-pre-line text-base text-ink-800 dark:text-paper-100">
+            <p
+              className="mt-4 whitespace-pre-line text-base leading-relaxed"
+              style={{ opacity: 0.92 }}
+            >
               {view.post_rsvp_content}
             </p>
           ) : isPreview ? (
@@ -556,50 +619,38 @@ export function WeddingSiteView({
               onClick={e.onEditPostRsvp}
               disabled={!e.onEditPostRsvp}
               title={editHint}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 disabled:cursor-default dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-sm transition hover:opacity-80 disabled:cursor-default"
+              style={{ borderColor: "var(--wt-accent)", opacity: 0.7 }}
             >
               <Plus size={14} aria-hidden />
               {t("wedding_site.ghost.post_rsvp_cta")}
             </button>
           ) : null}
-          {view.location_lat !== null && view.location_lng !== null && (
-            <p className="mt-4 inline-flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
-              <MapPin size={14} aria-hidden />
-              <a
-                className="underline"
-                href={`https://www.openstreetmap.org/?mlat=${view.location_lat}&mlon=${view.location_lng}#map=17/${view.location_lat}/${view.location_lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(ev) => ev.stopPropagation()}
-              >
-                {t("wedding_site.confirmed_open_map")}
-              </a>
-            </p>
-          )}
-        </section>
+        </Band>
       )}
 
-      {/* Wishlist decks — confirmed-tier live page only (server returns null
-          otherwise, and the editor preview has no household context). Gifts and
-          personal requests render as two separate sections. */}
+      {/* ── Wishlist decks — confirmed-tier live page only. ─────────────── */}
       {!isPreview &&
         !sectionHidden("wishlist") &&
         view.wishlist &&
         view.wishlist.length > 0 &&
         (() => {
-          const gifts = view.wishlist.filter((e) => e.kind === "gift");
-          const requests = view.wishlist.filter((e) => e.kind === "request");
+          const gifts = view.wishlist.filter((x) => x.kind === "gift");
+          const requests = view.wishlist.filter((x) => x.kind === "request");
           return (
-            <>
+            <Band>
               {gifts.length > 0 && (
-                <section className="card mt-6">
-                  <h2 className="flex items-center gap-2 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
-                    <Gift size={20} aria-hidden /> {t("guest_portal.wishlist_section_title")}
-                  </h2>
-                  <p className="mt-3 max-w-2xl whitespace-pre-line text-base text-ink-700 dark:text-paper-100">
+                <div>
+                  <Heading className="flex items-center gap-2">
+                    <Gift size={22} aria-hidden /> {t("guest_portal.wishlist_section_title")}
+                  </Heading>
+                  <p
+                    className="mt-3 max-w-2xl whitespace-pre-line text-base"
+                    style={{ opacity: 0.9 }}
+                  >
                     {t("guest_portal.wishlist_intro")}
                   </p>
-                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <ul className="mt-5 grid gap-3 sm:grid-cols-2">
                     {gifts.map((entry) => (
                       <GuestWishlistCard
                         key={entry.id}
@@ -611,15 +662,15 @@ export function WeddingSiteView({
                       />
                     ))}
                   </ul>
-                </section>
+                </div>
               )}
               {requests.length > 0 && (
-                <section className="card mt-6">
-                  <h2 className="flex items-center gap-2 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
-                    <HeartHandshake size={20} aria-hidden />{" "}
+                <div className={gifts.length > 0 ? "mt-10" : ""}>
+                  <Heading className="flex items-center gap-2">
+                    <HeartHandshake size={22} aria-hidden />{" "}
                     {t("guest_portal.wishlist_requests_title")}
-                  </h2>
-                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  </Heading>
+                  <ul className="mt-5 grid gap-3 sm:grid-cols-2">
                     {requests.map((entry) => (
                       <GuestWishlistCard
                         key={entry.id}
@@ -631,41 +682,49 @@ export function WeddingSiteView({
                       />
                     ))}
                   </ul>
-                </section>
+                </div>
               )}
-            </>
+            </Band>
           );
         })()}
 
-      {/* RSVP CTA — generic at the public tier, personal at invited. In preview
-          it's representative (non-navigating), so the couple sees the button
-          their guests get without leaving the editor. */}
+      {/* ── RSVP CTA — generic at the public tier, personal at invited. ─── */}
       {(isPreview || !showConfirmedExtras) && (
-        <section className="card stationery mt-6 text-center">
-          <Heart size={28} className="wt-accent mx-auto" />
-          <h2 className="mt-3 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
-            {hasCode ? t("wedding_site.rsvp_personal_title") : t("wedding_site.rsvp_title")}
-          </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-ink-600 dark:text-umber-200">
-            {hasCode ? t("wedding_site.rsvp_personal_body") : t("wedding_site.rsvp_body")}
-          </p>
-          {isPreview ? (
-            <span
-              className={`${rsvpBtnClass} mt-5 inline-flex cursor-default opacity-90`}
+        <section
+          className="w-full border-t px-6 py-14 text-center sm:px-8 sm:py-20"
+          style={{ borderColor: "var(--wt-accent)" }}
+        >
+          <div className="mx-auto max-w-2xl">
+            <Heart
+              size={28}
+              className="mx-auto"
+              style={{ color: "var(--wt-accent-text)" }}
               aria-hidden
-            >
-              {t("wedding_site.rsvp_cta")}
-            </span>
-          ) : (
-            <Link to={rsvpHref ?? "/"} className={`${rsvpBtnClass} mt-5 inline-flex`}>
-              {hasCode ? t("wedding_site.rsvp_personal_cta") : t("wedding_site.rsvp_cta")}
-            </Link>
-          )}
+            />
+            <Heading className="mt-4">
+              {hasCode ? t("wedding_site.rsvp_personal_title") : t("wedding_site.rsvp_title")}
+            </Heading>
+            <p className="mx-auto mt-3 max-w-md text-sm" style={{ opacity: 0.8 }}>
+              {hasCode ? t("wedding_site.rsvp_personal_body") : t("wedding_site.rsvp_body")}
+            </p>
+            {isPreview ? (
+              <span
+                className={`${rsvpBtnClass} mt-6 inline-flex cursor-default opacity-90`}
+                aria-hidden
+              >
+                {t("wedding_site.rsvp_cta")}
+              </span>
+            ) : (
+              <Link to={rsvpHref ?? "/"} className={`${rsvpBtnClass} mt-6 inline-flex`}>
+                {hasCode ? t("wedding_site.rsvp_personal_cta") : t("wedding_site.rsvp_cta")}
+              </Link>
+            )}
+          </div>
         </section>
       )}
 
       {!isPreview && showConfirmedExtras && rsvpHref && (
-        <section className="mt-6 text-center text-xs text-ink-500 dark:text-umber-300">
+        <section className="w-full px-6 py-8 text-center text-xs sm:px-8" style={{ opacity: 0.7 }}>
           <Lock size={12} aria-hidden className="mr-1 inline" />
           <Link to={rsvpHref} className="underline">
             {t("wedding_site.rsvp_manage_cta")}
@@ -673,27 +732,16 @@ export function WeddingSiteView({
         </section>
       )}
 
-      {/* Live countdown to the wedding day at the bottom of the page. */}
-      {(view.wedding_date || isPreview) && (
-        <div className="mt-6">
-          <WeddingCountdown
-            date={view.wedding_date}
-            isPreview={isPreview}
-            onEdit={isPreview ? e.onEditDate : undefined}
-          />
-        </div>
-      )}
-
-      {/* Weddly branding — a centered wordmark over a hairline. Live page only. */}
+      {/* ── Weddly branding — centered wordmark over a hairline. Live only. ── */}
       {footer && (
-        <footer className="mt-12 flex flex-col items-center gap-2 border-t border-paper-300 pt-8 dark:border-umber-700">
-          <Link
-            to="/"
-            className="text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
-          >
+        <footer
+          className="flex w-full flex-col items-center gap-2 border-t px-6 py-10 sm:px-8"
+          style={{ borderColor: "var(--wt-accent)" }}
+        >
+          <Link to="/" style={{ color: "var(--wt-text)" }}>
             <Wordmark size="md" />
           </Link>
-          <p className="text-center text-[11px] text-ink-400 dark:text-umber-400">
+          <p className="text-center text-[11px]" style={{ opacity: 0.55 }}>
             {t("wedding_site.footer_built_with")}
           </p>
         </footer>

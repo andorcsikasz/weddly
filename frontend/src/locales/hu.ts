@@ -225,6 +225,7 @@ const hu: LocaleMessages = {
     eyebrow: "Esküvő · Weddly",
     date_tbd: "A dátum még kiderül",
     venue_approx: "Helyszín — pontos cím a meghívóban",
+    location_eyebrow: "Helyszín",
     schedule_title: "A nap menete",
     rsvp_title: "Részt veszel?",
     rsvp_body:
@@ -1515,9 +1516,10 @@ const hu: LocaleMessages = {
       modern_minimal: "Modern minimál",
       romantic_soft: "Romantikus púder",
       rustic_natural: "Rusztikus natúr",
-      editorial: "Editorial black tie",
+      editorial: "Editorial",
       mediterranean_terracotta: "Mediterrán terrakotta",
       blue_porcelain: "Kék porcelán",
+      black_tie_editorial: "Black tie",
     },
     palette: {
       botanical_green: "Botanikus zöld",
@@ -1529,6 +1531,7 @@ const hu: LocaleMessages = {
       terracotta: "Terrakotta",
       blue_porcelain: "Kék porcelán",
       ink_gold: "Tinta és arany",
+      noir_ivory: "Fekete-fehér",
     },
     font: {
       classic_serif: "Klasszikus serif",
@@ -1570,6 +1573,7 @@ const hu: LocaleMessages = {
       shadow_label: "Kártya árnyék",
       button_style_label: "Gomb stílusa",
       sections_label: "Látható szakaszok",
+      image_treatment_label: "Fotók",
       card_radius: { sharp: "Éles", soft: "Lágy", full: "Erős" },
       shadow: { none: "Nincs", soft: "Lágy", pop: "Erős" },
       button_style: { lifted: "Kiemelt", flat: "Lapos", outline: "Körvonal" },
@@ -1579,6 +1583,7 @@ const hu: LocaleMessages = {
         useful_info: "Tudnivalók",
         wishlist: "Kívánságlista",
       },
+      image_treatment: { none: "Színes", grayscale: "Fekete-fehér" },
     },
     print_preview: {
       sample_name: "Vendég neve",

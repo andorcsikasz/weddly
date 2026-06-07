@@ -223,6 +223,7 @@ const en: LocaleMessages = {
     eyebrow: "Wedding · Weddly",
     date_tbd: "Date to be confirmed",
     venue_approx: "Venue — exact address on your invitation",
+    location_eyebrow: "Location",
     schedule_title: "Schedule",
     rsvp_title: "Are you coming?",
     rsvp_body:
@@ -1500,9 +1501,10 @@ const en: LocaleMessages = {
       modern_minimal: "Modern Minimal",
       romantic_soft: "Romantic Powder",
       rustic_natural: "Rustic Natural",
-      editorial: "Editorial Black Tie",
+      editorial: "Editorial",
       mediterranean_terracotta: "Mediterranean Terracotta",
       blue_porcelain: "Blue Porcelain",
+      black_tie_editorial: "Black Tie",
     },
     palette: {
       botanical_green: "Botanical Green",
@@ -1514,6 +1516,7 @@ const en: LocaleMessages = {
       terracotta: "Terracotta",
       blue_porcelain: "Blue Porcelain",
       ink_gold: "Ink & Gold",
+      noir_ivory: "Noir & Ivory",
     },
     font: {
       classic_serif: "Classic Serif",
@@ -1554,6 +1557,7 @@ const en: LocaleMessages = {
       shadow_label: "Card shadow",
       button_style_label: "Button style",
       sections_label: "Visible sections",
+      image_treatment_label: "Photos",
       card_radius: { sharp: "Sharp", soft: "Soft", full: "Round" },
       shadow: { none: "None", soft: "Soft", pop: "Pop" },
       button_style: { lifted: "Lifted", flat: "Flat", outline: "Outline" },
@@ -1563,6 +1567,7 @@ const en: LocaleMessages = {
         useful_info: "Good to know",
         wishlist: "Wishlist",
       },
+      image_treatment: { none: "Colour", grayscale: "Black & white" },
     },
     print_preview: {
       sample_name: "Guest name",

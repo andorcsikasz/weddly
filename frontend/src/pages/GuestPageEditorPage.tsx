@@ -848,7 +848,9 @@ export default function GuestPageEditorPage() {
         {loading ? (
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
         ) : previewView ? (
-          <div className="mx-auto max-w-3xl">
+          // Full-bleed editorial preview inside a framed "device" so the couple
+          // sees the real guest-site structure (alternating bands), not a card.
+          <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
             <WeddingSiteView
               view={previewView}
               household={null}

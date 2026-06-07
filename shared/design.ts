@@ -28,6 +28,7 @@ export type StylePresetSlug =
   | "romantic_soft"
   | "rustic_natural"
   | "editorial"
+  | "black_tie_editorial"
   | "mediterranean_terracotta"
   | "blue_porcelain";
 
@@ -40,7 +41,8 @@ export type PaletteSlug =
   | "champagne"
   | "terracotta"
   | "blue_porcelain"
-  | "ink_gold";
+  | "ink_gold"
+  | "noir_ivory";
 
 export type FontPresetSlug = "classic_serif" | "modern_clean" | "soft_romantic";
 
@@ -172,6 +174,10 @@ export interface StylePreset {
   defaultPalette: PaletteSlug;
   defaultFonts: FontPresetSlug;
   defaultDecor: DecorSlug;
+  /** Optional website-chrome defaults a style seeds when picked (e.g. the
+   *  editorial style turns on grayscale photos + sharp, shadowless, outline
+   *  chrome). Omitted on styles that keep today's web defaults. */
+  defaultWeb?: Partial<DesignWebsiteOptions>;
 }
 
 /** hex (`#RRGGBB`) → rgb 0..1 triple, rounded to 3dp. Pure + total. */
@@ -271,6 +277,18 @@ export const PALETTES: readonly Palette[] = [
     background: pair("#F7F1E7"),
     accent: pair("#A67C52"),
     text: pair("#1A1411"),
+  },
+  {
+    // Black-tie monochrome: near-black ink on warm ivory with a soft greige
+    // hairline accent (used for 1px rules only — never text). The "Black Tie
+    // Editorial" preset's base; pairs with grayscale photos for the high-end
+    // black-and-white magazine look.
+    slug: "noir_ivory",
+    nameKey: "design.palette.noir_ivory",
+    primary: pair("#16140F"),
+    background: pair("#F6F2EA"),
+    accent: pair("#B9B2A6"),
+    text: pair("#16140F"),
   },
 ];
 
@@ -375,6 +393,22 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     defaultDecor: "frame",
   },
   {
+    // Premium black-and-white magazine look: monochrome palette, high-contrast
+    // serif, thin-rule decor, and grayscale photos with sharp, shadowless,
+    // outline chrome — the full "black tie" world.
+    slug: "black_tie_editorial",
+    nameKey: "design.style.black_tie_editorial",
+    defaultPalette: "noir_ivory",
+    defaultFonts: "classic_serif",
+    defaultDecor: "line",
+    defaultWeb: {
+      imageTreatment: "grayscale",
+      buttonStyle: "outline",
+      cardRadius: "sharp",
+      shadow: "none",
+    },
+  },
+  {
     slug: "mediterranean_terracotta",
     nameKey: "design.style.mediterranean_terracotta",
     defaultPalette: "terracotta",
@@ -472,6 +506,9 @@ export type ButtonStyleSlug = "lifted" | "flat" | "outline";
 /** Guest-page sections the couple may hide. RSVP is intentionally NOT hideable
  *  (a couple shouldn't be able to silently turn off responses). */
 export type WebsiteSectionSlug = "intro" | "schedule" | "useful_info" | "wishlist";
+/** Photo rendering on the guest page. "grayscale" desaturates cover/venue
+ *  imagery for the black-and-white editorial look; "none" is full colour. */
+export type ImageTreatmentSlug = "none" | "grayscale";
 
 export const CARD_RADII: readonly { slug: CardRadiusSlug; nameKey: string; css: string }[] = [
   { slug: "sharp", nameKey: "design.web.card_radius.sharp", css: "0.375rem" },
@@ -506,6 +543,11 @@ export const WEBSITE_SECTIONS: readonly { slug: WebsiteSectionSlug; nameKey: str
   { slug: "wishlist", nameKey: "design.web.section.wishlist" },
 ];
 
+export const IMAGE_TREATMENTS: readonly { slug: ImageTreatmentSlug; nameKey: string }[] = [
+  { slug: "none", nameKey: "design.web.image_treatment.none" },
+  { slug: "grayscale", nameKey: "design.web.image_treatment.grayscale" },
+];
+
 export const VALID_CARD_RADII: ReadonlySet<CardRadiusSlug> = new Set(CARD_RADII.map((r) => r.slug));
 export const VALID_SHADOWS: ReadonlySet<ShadowSlug> = new Set(SHADOWS.map((s) => s.slug));
 export const VALID_BUTTON_STYLES: ReadonlySet<ButtonStyleSlug> = new Set(
@@ -513,6 +555,9 @@ export const VALID_BUTTON_STYLES: ReadonlySet<ButtonStyleSlug> = new Set(
 );
 export const VALID_WEBSITE_SECTIONS: ReadonlySet<WebsiteSectionSlug> = new Set(
   WEBSITE_SECTIONS.map((s) => s.slug),
+);
+export const VALID_IMAGE_TREATMENTS: ReadonlySet<ImageTreatmentSlug> = new Set(
+  IMAGE_TREATMENTS.map((i) => i.slug),
 );
 
 /** Website-only options (guest page chrome). Always fully populated on the
@@ -523,6 +568,8 @@ export interface DesignWebsiteOptions {
   buttonStyle: ButtonStyleSlug;
   /** Sections the couple chose to hide (deduped, validated). */
   hiddenSections: WebsiteSectionSlug[];
+  /** Photo rendering — desaturate cover/venue imagery or leave full colour. */
+  imageTreatment: ImageTreatmentSlug;
 }
 
 /** Resolve a card-radius slug to its CSS length; never throws. */
@@ -551,7 +598,13 @@ export const DEFAULT_DESIGN: CoupleDesign = {
   print: { border: true, ornament: false, qr: false },
   // Defaults reproduce today's hardcoded guest-page look, so a legacy blob
   // (no `web` key) restyles to nothing.
-  web: { cardRadius: "soft", shadow: "soft", buttonStyle: "lifted", hiddenSections: [] },
+  web: {
+    cardRadius: "soft",
+    shadow: "soft",
+    buttonStyle: "lifted",
+    hiddenSections: [],
+    imageTreatment: "none",
+  },
 };
 
 /** Look up a palette by slug; never throws — an unknown slug falls back to the
@@ -632,6 +685,10 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
       hiddenSections: Array.isArray(i.web?.hiddenSections)
         ? [...new Set(i.web.hiddenSections.filter((s) => VALID_WEBSITE_SECTIONS.has(s)))]
         : [],
+      imageTreatment:
+        i.web?.imageTreatment && VALID_IMAGE_TREATMENTS.has(i.web.imageTreatment)
+          ? i.web.imageTreatment
+          : DEFAULT_DESIGN.web.imageTreatment,
     },
   };
 }
@@ -664,6 +721,8 @@ export interface PublicDesign {
   website_button_style: ButtonStyleSlug;
   /** Sections the couple hid; the guest page skips these. */
   website_hidden_sections: WebsiteSectionSlug[];
+  /** Photo rendering on the guest page (full colour or desaturated). */
+  website_image_treatment: ImageTreatmentSlug;
 }
 
 /** Build the public, presentation-only payload from a resolved design. */
@@ -699,6 +758,7 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
     website_shadow: getShadowCss(design.web.shadow),
     website_button_style: design.web.buttonStyle,
     website_hidden_sections: design.web.hiddenSections,
+    website_image_treatment: design.web.imageTreatment,
   };
 }
 
