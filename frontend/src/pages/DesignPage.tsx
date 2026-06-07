@@ -506,7 +506,6 @@ export default function DesignPage() {
           <h1 className="font-grotesk font-semibold tracking-tight">{t("design.title")}</h1>
           <InfoHint text={t("design.hint")} />
         </div>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("design.subtitle")}</p>
       </header>
 
       {loading ? (
