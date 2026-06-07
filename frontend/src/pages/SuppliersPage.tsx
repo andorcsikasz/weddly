@@ -183,6 +183,12 @@ export default function SuppliersPage() {
    *  state cleanly. */
   const [currency, setCurrency] = useState<Currency>("HUF");
   const [targetGuestCount, setTargetGuestCount] = useState<number | null>(null);
+  // Wedding-venue pin (couple.location_lat/lng). Feeds the comparison dialog's
+  // distance row — null until the couple sets a venue in onboarding/settings.
+  const [coupleLocation, setCoupleLocation] = useState<{
+    lat: number | null;
+    lng: number | null;
+  }>({ lat: null, lng: null });
   // Couple-side context for the comparison dialog. We pre-load both so
   // opening the dialog doesn't trigger a network round-trip — the payloads
   // are small (a few rows each) and they also feed other parts of the page.
@@ -392,7 +398,13 @@ export default function SuppliersPage() {
         const id = couple.couple?.id ?? null;
         setCoupleId(id);
         setTargetGuestCount(couple.couple?.target_guest_count ?? null);
-        if (couple.couple) setCurrency(couple.couple.currency ?? "HUF");
+        if (couple.couple) {
+          setCurrency(couple.couple.currency ?? "HUF");
+          setCoupleLocation({
+            lat: couple.couple.location_lat,
+            lng: couple.couple.location_lng,
+          });
+        }
         // Seed the shared cost-planning cache from the couple we just
         // fetched so the Vendégszám filter and the /app/budget slider
         // start on the same value.
@@ -1870,6 +1882,7 @@ export default function SuppliersPage() {
         budgetLines={budgetLines}
         targetGuestCount={targetGuestCount}
         coupleCityFilter={cityFilter}
+        coupleLocation={coupleLocation}
         currency={currency}
         locale={locale}
         onRemove={toggleCompare}

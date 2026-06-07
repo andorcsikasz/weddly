@@ -5,16 +5,39 @@
 // is to surface trade-offs at a glance — like comparing two iPhones and
 // realising the cheaper one's camera is good enough.
 
-import { Check, Mail, MapPin, Phone, ScanEye, Users, Wallet, X } from "lucide-react";
-import { type ReactElement, type ReactNode, useMemo } from "react";
+import {
+  CalendarCheck,
+  Check,
+  Mail,
+  MapPin,
+  Navigation,
+  Phone,
+  ScanEye,
+  Star,
+  Users,
+  Wallet,
+  X,
+} from "lucide-react";
+import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
 import type { DirectorySupplier } from "@shared/suppliers";
 import { SUPPLIER_TO_BUDGET } from "@shared/suppliers";
 import type { BudgetCategory, BudgetLine, Currency } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
+import { supplierApi } from "../lib/endpoints";
 import { formatMoney } from "../lib/format";
+import { haversineKm } from "../lib/geo";
 import { Dialog } from "./ui/Dialog";
 
 type Locale = "hu" | "en";
+
+/** The detail-only facts the comparison needs that aren't on the list DTO:
+ *  the published rating + how many reviews back it, and the earliest free
+ *  date (claimed vendors only). Fetched per column when the dialog opens. */
+interface CompareDetail {
+  avg_rating: number | null;
+  reviews_count: number;
+  next_available: string | null;
+}
 
 type Props = {
   open: boolean;
@@ -30,6 +53,9 @@ type Props = {
   /** City the couple is actively filtering to on /app/suppliers, if any —
    *  the closest signal we have for "this is where we want to get married". */
   coupleCityFilter: string;
+  /** The couple's wedding-venue pin (location_lat/lng on the couple). Drives
+   *  the distance row. Null lat/lng → the row shows a "set your venue" hint. */
+  coupleLocation: { lat: number | null; lng: number | null };
   currency: Currency;
   locale: Locale;
   /** Called when a column's × is clicked. Same toggle used on the cards. */
@@ -147,6 +173,39 @@ function quoteCell(
   };
 }
 
+/** Great-circle km from the couple's venue pin to a supplier, or null when
+ *  either end has no coordinates. */
+function supplierDistanceKm(
+  supplier: DirectorySupplier,
+  origin: { lat: number | null; lng: number | null },
+): number | null {
+  if (origin.lat === null || origin.lng === null) return null;
+  if (supplier.lat === null || supplier.lng === null) return null;
+  return haversineKm(origin.lat, origin.lng, supplier.lat, supplier.lng);
+}
+
+/** Format the earliest available date, or a neutral "ask to confirm" when the
+ *  supplier is unclaimed (next_available null). */
+function availableCell(
+  detail: CompareDetail | undefined,
+  loading: boolean,
+  locale: Locale,
+  t: Props["t"],
+): { text: string; tone: "ok" | "muted" } {
+  if (loading && detail === undefined) return { text: "…", tone: "muted" };
+  const iso = detail?.next_available ?? null;
+  if (!iso) return { text: t("suppliers.compare.available_ask"), tone: "muted" };
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime()))
+    return { text: t("suppliers.compare.available_ask"), tone: "muted" };
+  const text = d.toLocaleDateString(locale === "hu" ? "hu-HU" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+  return { text, tone: "ok" };
+}
+
 function VerdictIcon({ kind }: { kind: "ok" | "warn" | "info" | "none" }) {
   if (kind === "ok")
     return <Check size={14} aria-hidden className="text-sage-600 dark:text-sage-300" />;
@@ -175,6 +234,7 @@ export function SupplierCompareDialog({
   budgetLines,
   targetGuestCount,
   coupleCityFilter,
+  coupleLocation,
   currency,
   locale,
   onRemove,
@@ -187,6 +247,49 @@ export function SupplierCompareDialog({
       .map((id) => resolveSupplier(id, items))
       .filter((s): s is DirectorySupplier => s !== null);
   }, [compareIds, items]);
+
+  // Rating + earliest-free-date live on the detail payload, not the list DTO.
+  // Fetch them per column when the dialog opens (≤4 small requests). The map
+  // keeps whatever has resolved so far; rows render a dash until each lands.
+  const [details, setDetails] = useState<Map<string, CompareDetail>>(new Map());
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const columnIds = useMemo(() => columns.map((s) => s.id).join(","), [columns]);
+  useEffect(() => {
+    if (!open || columns.length === 0) return;
+    let cancelled = false;
+    setDetailsLoading(true);
+    Promise.all(
+      columns.map((s) =>
+        supplierApi
+          .detail(s.id)
+          .then((d): [string, CompareDetail] => [
+            s.id,
+            {
+              avg_rating: d.reviews_summary.avg_rating,
+              reviews_count: d.reviews_summary.reviews_count,
+              next_available: d.next_available ?? null,
+            },
+          ])
+          .catch((): [string, CompareDetail] | null => null),
+      ),
+    ).then((entries) => {
+      if (cancelled) return;
+      const next = new Map<string, CompareDetail>();
+      for (const e of entries) if (e) next.set(e[0], e[1]);
+      setDetails(next);
+      setDetailsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, columnIds, columns]);
+
+  // Nearest column among those we can actually measure — only used to tint a
+  // "winner" when there's more than one measurable distance to compare.
+  const measuredDistances = columns
+    .map((s) => supplierDistanceKm(s, coupleLocation))
+    .filter((d): d is number => d !== null);
+  const closestKm = measuredDistances.length > 1 ? Math.min(...measuredDistances) : null;
 
   return (
     <Dialog
@@ -292,6 +395,42 @@ export function SupplierCompareDialog({
               </Cell>
             ))}
 
+            {/* Row: published rating + review count. Null below the 3-review
+                cold-start gate → "no ratings yet". */}
+            <RowLabel
+              icon={<Star size={14} aria-hidden />}
+              label={t("suppliers.compare.row_rating")}
+            />
+            {columns.map((s) => {
+              const d = details.get(s.id);
+              const rating = d?.avg_rating ?? null;
+              return (
+                <Cell key={`r-${s.id}`}>
+                  {detailsLoading && d === undefined ? (
+                    <span className="text-sm text-ink-400 dark:text-umber-400">…</span>
+                  ) : rating === null ? (
+                    <span className="text-[11px] text-ink-500 dark:text-umber-300">
+                      {t("suppliers.compare.rating_none")}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-ink-900 dark:text-paper-50">
+                        <Star
+                          size={13}
+                          aria-hidden
+                          className="fill-current text-amber-500 dark:text-amber-300"
+                        />
+                        {rating.toFixed(1)}
+                      </span>
+                      <span className="mt-0.5 text-[11px] text-ink-500 dark:text-umber-300">
+                        {t("suppliers.compare.rating_count", { n: d?.reviews_count ?? 0 })}
+                      </span>
+                    </>
+                  )}
+                </Cell>
+              );
+            })}
+
             {/* Row: capacity (with tailored verdict against target). */}
             <RowLabel
               icon={<Users size={14} aria-hidden />}
@@ -347,6 +486,63 @@ export function SupplierCompareDialog({
                         : t("suppliers.compare.different_city")}
                     </span>
                   )}
+                </Cell>
+              );
+            })}
+
+            {/* Row: distance from the couple's venue pin. Falls back to a
+                "set your venue" hint when the couple has no pin, or "—" when a
+                supplier lacks coordinates. */}
+            <RowLabel
+              icon={<Navigation size={14} aria-hidden />}
+              label={t("suppliers.compare.row_distance")}
+            />
+            {columns.map((s) => {
+              const km = supplierDistanceKm(s, coupleLocation);
+              const noOrigin = coupleLocation.lat === null || coupleLocation.lng === null;
+              const isClosest = km !== null && closestKm !== null && Math.abs(km - closestKm) < 0.5;
+              return (
+                <Cell key={`d-${s.id}`}>
+                  {noOrigin ? (
+                    <span className="text-[11px] text-ink-500 dark:text-umber-300">
+                      {t("suppliers.compare.distance_no_origin")}
+                    </span>
+                  ) : km === null ? (
+                    <span className="text-ink-400 dark:text-umber-400">—</span>
+                  ) : (
+                    <span
+                      className={
+                        isClosest
+                          ? "inline-flex items-center gap-1 text-sm font-semibold text-sage-700 dark:text-sage-300"
+                          : "text-sm text-ink-800 dark:text-paper-100"
+                      }
+                    >
+                      {isClosest && <VerdictIcon kind="ok" />}
+                      {t("suppliers.compare.distance_km", { km: Math.max(0, Math.round(km)) })}
+                    </span>
+                  )}
+                </Cell>
+              );
+            })}
+
+            {/* Row: earliest available date (claimed vendors only). */}
+            <RowLabel
+              icon={<CalendarCheck size={14} aria-hidden />}
+              label={t("suppliers.compare.row_available")}
+            />
+            {columns.map((s) => {
+              const cell = availableCell(details.get(s.id), detailsLoading, locale, t);
+              return (
+                <Cell key={`av-${s.id}`}>
+                  <span
+                    className={
+                      cell.tone === "ok"
+                        ? "text-sm text-ink-800 dark:text-paper-100"
+                        : "text-[11px] text-ink-500 dark:text-umber-300"
+                    }
+                  >
+                    {cell.text}
+                  </span>
                 </Cell>
               );
             })}
