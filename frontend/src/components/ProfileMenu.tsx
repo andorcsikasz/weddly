@@ -19,10 +19,9 @@ import { useAuth } from "../lib/auth";
 import { coupleApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
-/** `onOpenFeedback` is supplied by AppShell so the mobile entry point for
- *  the feedback dialog (otherwise hidden inside the header on phones)
- *  lives here in the profile dropdown. Omit on screens that don't host
- *  a feedback dialog. */
+/** `onOpenFeedback` is supplied by AppShell. The feedback dialog's entry
+ *  point lives here in the profile dropdown for every viewport (it used to
+ *  be a header icon). Omit on screens that don't host a feedback dialog. */
 export function ProfileMenu({ onOpenFeedback }: { onOpenFeedback?: () => void } = {}) {
   const { user, logout } = useAuth();
   const { t, locale, setLocale } = useT();
@@ -166,10 +165,24 @@ export function ProfileMenu({ onOpenFeedback }: { onOpenFeedback?: () => void } 
             <Layers size={16} aria-hidden="true" />
             <span>{t("profile.menu_couple_cards")}</span>
           </Link>
-          {/* Mobile-only entries — feedback + language toggles are hidden
-           *  from the header on phones; their canonical home below `sm`
-           *  is here in the profile dropdown. Tablet+ users keep using
-           *  the inline header icons (these stay hidden via `sm:hidden`). */}
+          {/* Feedback lives here in the dropdown for every viewport (it was
+           *  moved out of the header icon row). The language toggle stays a
+           *  mobile-only entry — tablet+ keeps the inline header icon, so it's
+           *  `sm:hidden` here. */}
+          {onOpenFeedback && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onOpenFeedback();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              <MessageCircle size={16} aria-hidden="true" />
+              <span>{t("landing.nav_feedback")}</span>
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"
@@ -187,20 +200,6 @@ export function ProfileMenu({ onOpenFeedback }: { onOpenFeedback?: () => void } 
               {locale} → {locale === "hu" ? "en" : "hu"}
             </span>
           </button>
-          {onOpenFeedback && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                onOpenFeedback();
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 sm:hidden dark:text-paper-100 dark:hover:bg-umber-700"
-            >
-              <MessageCircle size={16} aria-hidden="true" />
-              <span>{t("landing.nav_feedback")}</span>
-            </button>
-          )}
           {user.is_admin && (
             <>
               <Link

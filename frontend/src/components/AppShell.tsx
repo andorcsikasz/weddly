@@ -530,20 +530,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               gap-1 is plenty between square buttons; gap-2 made the row
               spread out beyond the wordmark on narrow viewports. */}
           <div className="flex items-center gap-1">
-            {/* Feedback + language live inline on tablet+ where the header
-             *  has the horizontal room. On phones they move into the
-             *  ProfileMenu dropdown via `onOpenFeedback` (below) — the
-             *  header chrome was four icons + workspace chip, which on
-             *  360px viewports ate every inch of breathing room. */}
-            <button
-              type="button"
-              className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-              aria-label={t("landing.nav_feedback")}
-              title={t("landing.nav_feedback")}
-              onClick={() => setFeedbackOpen(true)}
-            >
-              <MessageCircle size={18} aria-hidden="true" />
-            </button>
+            {/* Feedback now lives in the ProfileMenu dropdown for everyone
+             *  (passed down via `onOpenFeedback` below). Language stays inline
+             *  on tablet+ where the header has horizontal room, and drops into
+             *  the dropdown on phones via `sm:inline-flex`. */}
             <button
               type="button"
               className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
