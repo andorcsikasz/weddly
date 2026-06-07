@@ -484,6 +484,12 @@ export default function GuestsPage() {
       ? String(couple.planning_count ?? guestCountBaseline(couple, guests.length))
       : null;
 
+  // Which header stat is the live view, so the others can fade. Only the two
+  // filter states (all vs invited) own a persistent view; while an rsvp filter
+  // or a search is active none of these four applies, so nothing dims.
+  const activeStat: "total" | "invited" | null =
+    invitedFilter ? "invited" : rsvpFilter || debouncedQuery ? null : "total";
+
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -498,6 +504,7 @@ export default function GuestsPage() {
                   icon={<Target size={18} aria-hidden />}
                   onClick={() => navigate("/app/budget")}
                   actionTitle={t("guests.stat_planned_action")}
+                  dimmed={activeStat !== null}
                 />
               )}
               <GuestStat
@@ -507,6 +514,7 @@ export default function GuestsPage() {
                 tone="primary"
                 onClick={showAllGuests}
                 actionTitle={t("guests.stat_total_action")}
+                dimmed={activeStat !== null && activeStat !== "total"}
               />
               <GuestStat
                 value={households.length}
@@ -514,6 +522,7 @@ export default function GuestsPage() {
                 icon={<Home size={18} aria-hidden />}
                 onClick={scrollToHouseholds}
                 actionTitle={t("guests.stat_households_action")}
+                dimmed={activeStat !== null}
               />
               <GuestStat
                 value={guests.filter((g) => g.invited_at != null).length}
@@ -521,6 +530,7 @@ export default function GuestsPage() {
                 icon={<Send size={18} aria-hidden />}
                 onClick={showInvitedOnly}
                 actionTitle={t("guests.stat_invited_action")}
+                dimmed={activeStat !== null && activeStat !== "invited"}
               />
             </dl>
           ) : (
@@ -3373,7 +3383,10 @@ function GuestStat({
         type="button"
         onClick={onClick}
         title={actionTitle ?? label}
-        className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition-colors hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:hover:text-blush-300 ${cls}`}
+        aria-pressed={dimmed ? false : undefined}
+        className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:hover:text-blush-300 ${cls} ${
+          dimmed ? "opacity-35 hover:opacity-100" : ""
+        }`}
       >
         {inner}
       </button>
