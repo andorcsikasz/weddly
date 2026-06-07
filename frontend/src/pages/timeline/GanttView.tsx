@@ -256,8 +256,13 @@ function layoutTask(item: PlanningItem, geo: Geometry): BarLayout | null {
  *  supplier chip on the right, narrow enough to leave the chart room. */
 const TASK_GUTTER_WIDTH = 220;
 /** 44px gives the 24px bars (h-6) generous vertical padding so a long task
- *  list reads as airy, not crammed. */
+ *  list reads as airy, not crammed. Kept in sync with the 44px period of the
+ *  `.ghost-row-stripes` utility used for the empty-state row striping. */
 const ROW_HEIGHT = 44;
+/** How many "+ add a task" placeholder rows to render in the empty gutter.
+ *  The striped filler below them keeps the ruled-row feel running full height
+ *  regardless of how tall the card is. */
+const GHOST_PLUS_ROWS = 6;
 /** Fixed pixel width per day per zoom level. The chart canvas overflows
  *  the card horizontally on purpose: at 3M a comfortable week is ~125px
  *  (so the whole quarter is ~1650px and overflows a typical 1100px card
@@ -340,6 +345,11 @@ export default function GanttView({
   const weddingLeftPct = weddingInWindow
     ? (diffDays(geometry.windowStart, weddingDate as Date) / geometry.totalDays) * 100
     : null;
+
+  // True fresh-install state: no tasks anywhere (not just off-window). Drives
+  // the ruled-row striping + "+ add a task" placeholder rows so the empty
+  // chart reads as "your tasks will land here" rather than a blank canvas.
+  const fullyEmpty = visible.length === 0 && beforeCount === 0 && afterCount === 0;
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -473,21 +483,47 @@ export default function GanttView({
               className="sticky left-0 z-10 shrink-0 border-r border-paper-200 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95"
               style={{ width: TASK_GUTTER_WIDTH }}
             >
-              {visible.length === 0 && beforeCount === 0 && afterCount === 0 ? (
-                <div className="flex flex-col items-start gap-3 px-4 py-5">
-                  <p className="font-grotesk text-[15px] text-ink-700 dark:text-paper-100">
-                    {t("timeline.empty_gutter_title")}
-                  </p>
-                  <p className="text-xs leading-relaxed text-ink-500 dark:text-umber-300">
-                    {t("timeline.empty_gutter_sub")}
-                  </p>
-                  <Link
-                    to="/app/planning"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-ink-800 px-3 py-1.5 text-xs font-medium text-paper-50 transition-colors hover:bg-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-100 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900"
-                  >
-                    <Plus size={13} aria-hidden="true" />
-                    <span>{t("timeline.empty_gutter_cta")}</span>
-                  </Link>
+              {fullyEmpty ? (
+                <div className="flex h-full flex-col">
+                  {/* Editorial CTA — the wand-generate path stays the hero action. */}
+                  <div className="flex flex-col items-start gap-3 px-4 py-5">
+                    <p className="font-grotesk text-[15px] text-ink-700 dark:text-paper-100">
+                      {t("timeline.empty_gutter_title")}
+                    </p>
+                    <p className="text-xs leading-relaxed text-ink-500 dark:text-umber-300">
+                      {t("timeline.empty_gutter_sub")}
+                    </p>
+                    <Link
+                      to="/app/planning"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-ink-800 px-3 py-1.5 text-xs font-medium text-paper-50 transition-colors hover:bg-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-100 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900"
+                    >
+                      <Plus size={13} aria-hidden="true" />
+                      <span>{t("timeline.empty_gutter_cta")}</span>
+                    </Link>
+                  </div>
+                  {/* Ruled placeholder rows — each one a "+" that drops the couple
+                      onto /app/planning to add a task by hand. The striped filler
+                      keeps the ruling running past the last row to the card edge. */}
+                  <div className="ghost-row-stripes flex-1 border-t border-paper-200 dark:border-umber-700/60">
+                    {Array.from({ length: GHOST_PLUS_ROWS }).map((_, i) => (
+                      <Link
+                        key={i}
+                        to="/app/planning"
+                        aria-label={t("timeline.empty_add_task")}
+                        title={t("timeline.empty_add_task")}
+                        className="group flex items-center gap-2.5 border-b border-paper-200/70 px-4 transition-colors hover:bg-paper-100/70 focus:outline-none focus-visible:bg-paper-100 dark:border-umber-700/40 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
+                        style={{ height: ROW_HEIGHT }}
+                      >
+                        <span className="grid h-5 w-5 place-items-center rounded-full border border-dashed border-ink-300 text-ink-400 transition-colors group-hover:border-blush-400 group-hover:bg-blush-50 group-hover:text-blush-600 dark:border-umber-600 dark:text-umber-400 dark:group-hover:border-blush-300/60 dark:group-hover:bg-blush-400/10 dark:group-hover:text-blush-300">
+                          <Plus size={12} aria-hidden="true" />
+                        </span>
+                        <span
+                          className="h-1.5 flex-1 rounded-full bg-paper-200/70 transition-colors group-hover:bg-blush-100 dark:bg-umber-700/50 dark:group-hover:bg-blush-400/20"
+                          aria-hidden="true"
+                        />
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 visible.map((bar, idx) => {
@@ -551,6 +587,16 @@ export default function GanttView({
             {/* Chart — bands + dividers + markers + bars. Fixed pixel width;
               percentage positions inside compute relative to this width. */}
             <div className="relative shrink-0" style={{ width: chartWidthPx }}>
+              {/* Empty-state ruled rows — subtle horizontal striping so the
+                  blank canvas reads as "task rows land here". Lowest layer:
+                  month bands, dividers, and the today line all paint above it. */}
+              {fullyEmpty && (
+                <div
+                  className="ghost-row-stripes pointer-events-none absolute inset-0 z-0"
+                  aria-hidden="true"
+                />
+              )}
+
               {/* Alternating month bands */}
               {geometry.months.map((m, idx) => (
                 <div

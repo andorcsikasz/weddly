@@ -872,6 +872,28 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     );
   }
 
+  /* Horizontal "ruled rows" striping for the empty timeline Gantt body, so a
+     couple with no tasks yet sees where task rows will land. The 44px period
+     matches GanttView's ROW_HEIGHT constant; keep the two in sync. */
+  .ghost-row-stripes {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(16, 24, 48, 0.022) 0,
+      rgba(16, 24, 48, 0.022) 44px,
+      transparent 44px,
+      transparent 88px
+    );
+  }
+  html.dark .ghost-row-stripes {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(246, 242, 231, 0.03) 0,
+      rgba(246, 242, 231, 0.03) 44px,
+      transparent 44px,
+      transparent 88px
+    );
+  }
+
   /* Slightly lighter stationery — paper-100 base. For surfaces that
      want the same texture as .stationery but want to read as paper-50's
      close neighbour instead of the warmer paper-200 letterhead. */

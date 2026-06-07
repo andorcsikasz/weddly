@@ -134,6 +134,7 @@ export interface LocaleMessages {
     empty_gutter_title: string;
     empty_gutter_sub: string;
     empty_gutter_cta: string;
+    empty_add_task: string;
     /** "+N earlier" / "+N later" pluralized hints under the gutter when tasks
      *  sit before or after the visible Gantt window. */
     outside_before_one: string;
@@ -152,6 +153,12 @@ export interface LocaleMessages {
     countdown_today: string;
     countdown_past_one: string;
     countdown_past_other: string;
+    /** Four-month traditional calendar board below the task chart. */
+    calendar_title: string;
+    calendar_sub: string;
+    calendar_event_one: string;
+    calendar_event_other: string;
+    calendar_no_tasks: string;
   };
   a11y: {
     /** Generic close button label (dialogs, sheets). */

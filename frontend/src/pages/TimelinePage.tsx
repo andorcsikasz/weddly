@@ -46,6 +46,7 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Skeleton, useToast } from "../components/ui";
+import CalendarBoard from "./timeline/CalendarBoard";
 import DayView from "./timeline/DayView";
 import GanttView, { computeAllRange } from "./timeline/GanttView";
 import MonthView from "./timeline/MonthView";
@@ -171,6 +172,7 @@ export default function TimelinePage() {
   const [editing, setEditing] = useState<PlanningItem | null>(null);
   const [chartMode, setChartMode] = useState<ChartMode>(() => readStoredMode() ?? "month");
   const [currentDate, setCurrentDate] = useState<Date>(() => startOfDay(new Date()));
+  const today = useMemo(() => startOfDay(new Date()), []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -308,6 +310,10 @@ export default function TimelinePage() {
           onOpenTask={(item) => setEditing(item)}
           onSupplierChipClick={scrollToPoc}
         />
+
+        {!loading && (
+          <CalendarBoard today={today} tasks={datedTasks} onOpenTask={(item) => setEditing(item)} />
+        )}
 
         <UndatedCard
           loading={loading}
