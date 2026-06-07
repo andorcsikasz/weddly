@@ -303,7 +303,7 @@ const LEMONADE_EN: readonly string[] = [
 ];
 
 // Hidden easter-egg deck tucked off the LEFT edge of the mini-deck row,
-// the mirror of lemonade on the right. A light "first date" pack — pastel
+// the mirror of lemonade on the right. A light "first date" pack: pastel
 // green, revealed after a left-swipe. Easy, curious openers for the very
 // beginning of a relationship.
 const GREENFLAG_HU: readonly string[] = [
@@ -400,7 +400,7 @@ export const COUPLE_CARD_DECKS: readonly Deck[] = [
   // Hidden easter-egg deck: a 5th pack of light, playful questions, only
   // revealed after the visitor swipes horizontally across the mini-deck
   // row. Stays in this array unconditionally so the data shape stays
-  // simple — the gating lives in CoupleCardsPage state.
+  // simple; the gating lives in CoupleCardsPage state.
   {
     id: "lemonade",
     titleKey: "tools.couple_cards.deck_lemonade_title",
@@ -438,7 +438,7 @@ export function redLevel(id: DeckId): number {
 export const LEMONADE_REVEAL_KEY = "weddly.couple_cards.lemonade_revealed";
 
 export function loadLemonadeRevealed(): boolean {
-  // Always start hidden — the swipe is the unlock. No-op localStorage
+  // Always start hidden: the swipe is the unlock. No-op localStorage
   // read keeps the easter egg feeling like an easter egg.
   if (typeof window !== "undefined") {
     try {
@@ -446,7 +446,7 @@ export function loadLemonadeRevealed(): boolean {
       // returning visitors actually re-experience the hidden state.
       window.localStorage.removeItem(LEMONADE_REVEAL_KEY);
     } catch {
-      // localStorage blocked — nothing to clean up anyway.
+      // localStorage blocked: nothing to clean up anyway.
     }
   }
   return false;
