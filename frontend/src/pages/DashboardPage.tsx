@@ -42,6 +42,7 @@ import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "r
 import { Link, Navigate } from "react-router-dom";
 import { ActivityPanel } from "../components/ActivityPanel";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
+import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -1417,6 +1418,9 @@ export default function DashboardPage() {
               amountLinkTo="/app/budget"
             />
           </section>
+
+          {/* ── Spending charts — paid-vs-planned + category breakdown. ── */}
+          <SpendingCharts lines={lines} currency={currency} locale={locale} t={t} />
 
           {/* ── Quick links ───────────────────────────────────────────── */}
           {/* Compact icon-only strip mirroring the sidebar (minus the current
