@@ -809,12 +809,12 @@ function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: b
       {/* Hairline only — shown at md (icon-only rail) and at lg+ when the
           user has collapsed the rail. */}
       <div
-        className={`mx-2 my-2 h-px bg-paper-300 dark:bg-umber-700 ${collapsed ? "" : "lg:hidden"}`}
+        className={`mx-2 my-1 h-px bg-paper-300 dark:bg-umber-700 ${collapsed ? "" : "lg:hidden"}`}
         aria-hidden
       />
       {/* Labelled header — only renders in the fully-expanded rail. */}
       {!collapsed && (
-        <div className="mt-1.5 hidden items-center gap-2 px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
+        <div className="mt-1 hidden items-center gap-2 px-3 pb-0.5 pt-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
           <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
           <span>{label}</span>
           <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
@@ -844,7 +844,7 @@ function AdminSidebarGroupHeader({
           group so the "Admin" eyebrow already provides the visual break. */}
       {!isFirst && (
         <div
-          className={`mx-2 my-2 h-px bg-neutral-200/50 dark:bg-neutral-800/40 ${
+          className={`mx-2 my-1 h-px bg-neutral-200/50 dark:bg-neutral-800/40 ${
             collapsed ? "" : "lg:hidden"
           }`}
           aria-hidden
@@ -853,7 +853,7 @@ function AdminSidebarGroupHeader({
       {/* `.eyebrow` subhead — fully-expanded rail only. */}
       {!collapsed && (
         <div
-          className={`eyebrow hidden px-3 pb-1 lg:block ${isFirst ? "pt-1" : "pt-3"}`}
+          className={`eyebrow hidden px-3 pb-0.5 lg:block ${isFirst ? "pt-0.5" : "pt-2"}`}
           aria-hidden
         >
           {label}
@@ -887,8 +887,8 @@ function SideLink({
   // lg+ when `collapsed` is true. `lg:` overrides flip to the padded row
   // shape when the user has the laptop rail expanded.
   const shape = collapsed
-    ? "h-10 w-10 justify-center"
-    : "h-10 w-10 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1.5";
+    ? "h-9 w-9 justify-center"
+    : "h-9 w-9 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1";
   return (
     <NavLink
       to={to}
@@ -942,8 +942,8 @@ function AdminSideLink({
   badgeCount?: number;
 }) {
   const shape = collapsed
-    ? "h-10 w-10 justify-center"
-    : "h-10 w-10 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1.5";
+    ? "h-9 w-9 justify-center"
+    : "h-9 w-9 justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-1";
   return (
     <NavLink
       to={to}
