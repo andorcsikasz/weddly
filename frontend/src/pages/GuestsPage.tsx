@@ -1118,15 +1118,17 @@ function HouseholdCard({
               </div>
             </li>
           ))}
-          <li className="px-4 py-2.5">
-            <button
-              type="button"
-              className="btn-ghost btn-sm w-full justify-start"
-              onClick={onAddMember}
-            >
-              <UserPlus size={14} /> {t("guests.household_add_member")}
-            </button>
-          </li>
+          {!isHosts && (
+            <li className="px-4 py-2.5">
+              <button
+                type="button"
+                className="btn-ghost btn-sm w-full justify-start"
+                onClick={onAddMember}
+              >
+                <UserPlus size={14} /> {t("guests.household_add_member")}
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </div>
