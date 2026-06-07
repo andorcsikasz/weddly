@@ -299,7 +299,9 @@ export default function MonthView({
                           {day.getDate()}
                         </span>
                       ) : (
-                        <span className={`font-grotesk text-sm ${dayNumClass}`}>{day.getDate()}</span>
+                        <span className={`font-grotesk text-sm ${dayNumClass}`}>
+                          {day.getDate()}
+                        </span>
                       )}
                     </div>
                   </div>

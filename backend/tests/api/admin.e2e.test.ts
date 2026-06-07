@@ -324,7 +324,12 @@ describe("admin users — list, engagement, badges", () => {
   test("sidebar users badge ignores freshly generated demo accounts", async () => {
     const adminToken = await bootstrapAdmin();
     // Watermark the users section so existing rows don't count.
-    await req("POST", "/api/admin/sidebar-badges/seen", { section: "users" }, { token: adminToken });
+    await req(
+      "POST",
+      "/api/admin/sidebar-badges/seen",
+      { section: "users" },
+      { token: adminToken },
+    );
     const before = await req<{ users: number }>("GET", "/api/admin/sidebar-badges", undefined, {
       token: adminToken,
     });

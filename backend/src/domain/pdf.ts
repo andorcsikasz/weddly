@@ -16,12 +16,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { type PDFFont, type PDFPage, PDFDocument, degrees, rgb } from "pdf-lib";
-import {
-  buildMonogram,
-  type CoupleDesign,
-  formatWeddingDate,
-  getPalette,
-} from "@shared/design";
+import { buildMonogram, type CoupleDesign, formatWeddingDate, getPalette } from "@shared/design";
 import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets } from "@shared/seating";
 import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";

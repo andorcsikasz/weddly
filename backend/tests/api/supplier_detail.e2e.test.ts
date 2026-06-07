@@ -385,12 +385,9 @@ describe("supplier detail opened to couples (role-scoped reads)", () => {
   test("couple still gets 403 on the per-supplier bookings list (operational view)", async () => {
     const { token } = await bootstrapCouple("couple@test.test");
     const sid = curatedSupplierId();
-    const r = await req(
-      "GET",
-      `/api/suppliers/${encodeURIComponent(sid)}/bookings`,
-      undefined,
-      { token },
-    );
+    const r = await req("GET", `/api/suppliers/${encodeURIComponent(sid)}/bookings`, undefined, {
+      token,
+    });
     expect(r.status).toBe(403);
   });
 });

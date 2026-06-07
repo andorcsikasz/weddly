@@ -1839,7 +1839,9 @@ describe("couples_lifecycle: welcome-desk mode toggle", () => {
 
 describe("couples_lifecycle: media_links", () => {
   type MediaLinksResp = {
-    couple: { media_links: { guests: string | null; photographer: string | null; other: string | null } };
+    couple: {
+      media_links: { guests: string | null; photographer: string | null; other: string | null };
+    };
   };
 
   test("defaults to all-null on a brand-new couple", async () => {
@@ -1886,9 +1888,14 @@ describe("couples_lifecycle: media_links", () => {
 
   test("empty string clears a slot back to null", async () => {
     const { token } = await bootstrapCouple("media-clear@weddly.test");
-    await req("PATCH", "/api/couples/current", { media_links: { other: "https://x.test/a" } }, {
-      token,
-    });
+    await req(
+      "PATCH",
+      "/api/couples/current",
+      { media_links: { other: "https://x.test/a" } },
+      {
+        token,
+      },
+    );
     const cleared = await req<MediaLinksResp>(
       "PATCH",
       "/api/couples/current",
