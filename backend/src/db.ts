@@ -639,6 +639,15 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_couples_is_demo ON couples(is_demo, crea
 //   pipeline yet — that's a v2 storage decision once we see the access
 //   patterns. Validated at the boundary (≤2048 chars, http(s) scheme).
 addColumnIfMissing("couples", "is_public", "is_public INTEGER NOT NULL DEFAULT 0");
+// - wishlist_published: gift-list publish toggle for the guest page. 0 by
+//   default; the couple flips it from the wishlist editor. The confirmed-tier
+//   public-wedding embed is gated on this, so an unpublished list never ships
+//   even to a guest who already RSVP'd yes.
+addColumnIfMissing(
+  "couples",
+  "wishlist_published",
+  "wishlist_published INTEGER NOT NULL DEFAULT 0",
+);
 addColumnIfMissing("couples", "venue_name", "venue_name TEXT");
 addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 

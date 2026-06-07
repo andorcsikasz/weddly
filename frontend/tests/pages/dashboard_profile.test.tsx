@@ -88,6 +88,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     rsvp_collects_meal: true,
     is_demo: false,
     is_public: false,
+    wishlist_published: false,
     welcome_desk_active: false,
     venue_name: null,
     cover_image_url: null,

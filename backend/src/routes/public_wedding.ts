@@ -137,12 +137,13 @@ function buildView(
     // unless the credential allows it.
     post_rsvp_content: isConfirmed ? couple.post_rsvp_content : null,
     schedule,
-    // Couple-curated wishlist — confirmed tier only. Same server-side omission
-    // rule as the exact pin / post_rsvp_content: the caller passes the
-    // populated array only at confirmed tier and null otherwise, so a tampered
-    // client can never surface it. Empty array when the couple is confirmed-
-    // eligible but authored no items.
-    wishlist: isConfirmed ? (wishlist ?? []) : null,
+    // Couple-curated wishlist: confirmed tier AND the couple flipped publish.
+    // Same server-side omission rule as the exact pin / post_rsvp_content: the
+    // caller passes the array only when confirmed + published (null otherwise),
+    // so a tampered client can never surface it. The `isConfirmed` guard is
+    // belt-and-suspenders on the tier; the null pass-through carries the
+    // unpublished case. Empty array when published with no items authored.
+    wishlist: isConfirmed ? wishlist : null,
     // Visual identity — presentation-only, never gated (styling is public).
     // Resolved to hex + font stacks; the guest page reads these straight into
     // CSS custom properties. NULL/legacy design_json → Botanical Green.
@@ -240,7 +241,7 @@ function handleGetWeddingWebsite(ctx: Ctx): Response {
   // lower tiers we pass null so buildView omits it server-side — same omission
   // rule as the exact pin / post_rsvp_content.
   const wishlist =
-    tier === "confirmed" && householdId !== null
+    tier === "confirmed" && householdId !== null && couple.wishlist_published === 1
       ? buildWishlistEntries(couple.id, householdId)
       : null;
 

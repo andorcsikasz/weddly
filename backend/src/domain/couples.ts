@@ -141,6 +141,10 @@ export interface CoupleRow {
    *  1 = couple has explicitly published. Public endpoint 404s when 0 so
    *  every existing couple stays private until they flip the toggle. */
   is_public: number;
+  /** Gift-list publish toggle for the guest page. 0 = unpublished (default),
+   *  1 = the couple flipped publish on the wishlist editor. The confirmed-tier
+   *  guest-page embed is gated on this so an unpublished list never ships. */
+  wishlist_published: number;
   /** Free-text venue name shown on the public wedding site. Null when the
    *  couple hasn't set one — the site falls back to the lat/lng pin only. */
   venue_name: string | null;
@@ -364,6 +368,7 @@ export function toCouple(row: CoupleRow): Couple {
     rsvp_collects_meal: Boolean(row.rsvp_collects_meal),
     is_demo: Boolean(row.is_demo),
     is_public: Boolean(row.is_public),
+    wishlist_published: Boolean(row.wishlist_published),
     welcome_desk_active: Boolean(row.welcome_desk_active),
     venue_name: row.venue_name,
     cover_image_url: row.cover_image_url,

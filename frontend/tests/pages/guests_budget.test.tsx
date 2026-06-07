@@ -196,6 +196,7 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
     rsvp_collects_meal: true,
     is_demo: false,
     is_public: false,
+    wishlist_published: false,
     welcome_desk_active: false,
     venue_name: null,
     cover_image_url: null,
@@ -526,9 +527,7 @@ describe("<GuestsPage>", () => {
     await waitFor(() => expect(screen.getByText(/no guests yet/i)).toBeInTheDocument());
     // The Download-template button is rendered in both the toolbar and the
     // empty-state CTA cluster; assert at least one exists.
-    expect(
-      screen.getAllByRole("button", { name: /^template$/i }).length,
-    ).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("button", { name: /^template$/i }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole("button", { name: /^meals$/i })).toBeInTheDocument();
   });
 

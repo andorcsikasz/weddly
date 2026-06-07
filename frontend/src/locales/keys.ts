@@ -1709,14 +1709,20 @@ export interface LocaleMessages {
       sample_name: string;
       sample_table: string;
       caption: string;
-      /** Template segmented control + per-template sample copy. */
+      /** Card-type picker heading + per-card sample copy. */
       template_label: string;
-      tpl: { place_card: string; table_number: string; menu: string };
+      tpl: { place_card: string; table_number: string; menu: string; schedule: string };
+      /** Print-editor framing: dynamic "{name} design" title, helper line, and
+       *  the "shared identity" group label that wraps the common controls. */
+      editing_title: string;
+      editing_helper: string;
+      common_identity: string;
       table_label: string;
       menu_title: string;
       menu_starter: string;
       menu_main: string;
       menu_dessert: string;
+      sample_program: { ceremony: string; dinner: string; party: string };
       preview_exact_pdf: string;
     };
     /** Style-kit subtitle under the tab. */
@@ -1808,6 +1814,9 @@ export interface LocaleMessages {
      *  framing: a group-gift card shows how many households are coordinating
      *  + a non-binding "I'd like to help" toggle. */
     wishlist_section_title: string;
+    /** Warm intro paragraph above the gift deck: "you being here is the gift,
+     *  but if you'd like ideas, here's what we'd love". */
+    wishlist_intro: string;
     /** Heading for the separate "personal requests" deck (letter, photo, ...). */
     wishlist_requests_title: string;
     wishlist_group_gift_help_cta: string;
@@ -2037,6 +2046,14 @@ export interface LocaleMessages {
     view_cards: string;
     /** Receives `{count}` — guests who pledged toward a group gift. */
     pledged_count: string;
+    /** Publish toggle in the editor header: share the list on the guest page. */
+    publish_title: string;
+    /** Toggle state labels. */
+    publish_on: string;
+    publish_off: string;
+    /** Toasts after flipping the publish toggle. */
+    publish_toast_on: string;
+    publish_toast_off: string;
   };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {
@@ -3126,8 +3143,11 @@ export interface LocaleMessages {
       /** Row labels. */
       row_quote: string;
       row_price_band: string;
+      row_rating: string;
       row_capacity: string;
       row_city: string;
+      row_distance: string;
+      row_available: string;
       row_votes: string;
       row_contact: string;
       row_about: string;
@@ -3136,6 +3156,8 @@ export interface LocaleMessages {
       quote_vs_budget_under: string;
       quote_vs_budget_over: string;
       quote_no_budget: string;
+      rating_none: string;
+      rating_count: string;
       capacity_fits: string;
       capacity_too_small: string;
       capacity_too_large: string;
@@ -3143,6 +3165,10 @@ export interface LocaleMessages {
       capacity_no_target: string;
       same_city: string;
       different_city: string;
+      distance_no_origin: string;
+      distance_unknown: string;
+      distance_km: string;
+      available_ask: string;
       contact_website: string;
       contact_email: string;
       contact_phone: string;

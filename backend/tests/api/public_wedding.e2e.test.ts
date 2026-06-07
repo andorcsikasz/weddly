@@ -57,7 +57,9 @@ describe("GET /api/public/wedding/:slug — minimal coverage", () => {
     // Next-7 introduced couples.is_public, default 0. Every existing slug
     // 404s until the couple opts in via the Profile toggle. Flip it here
     // so the happy-path assertion runs against a published workspace.
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slugRow = db.prepare("SELECT slug FROM couples WHERE id = ?").get(coupleId) as
       | { slug: string }
       | undefined;
@@ -230,7 +232,9 @@ describe("PATCH /api/couples/current — wedding-site fields (is_public, venue_n
   test("flipping is_public back to false re-hides the page (404)", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("ws-editor-unpublish@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slugRow = db.prepare("SELECT slug FROM couples WHERE id = ?").get(coupleId) as
       | { slug: string }
       | undefined;
@@ -397,7 +401,9 @@ describe("/api/public/wedding tier ladder", () => {
     expect(patch.data.couple.useful_info).toBe(body);
 
     // Visible at the public tier on the wedding page.
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const r = await req<PublicWeddingResponse>(
       "GET",
@@ -584,7 +590,9 @@ describe("/api/public/wedding tier ladder", () => {
   test("unknown code → 404 (same response shape, doesn't leak slug existence)", async () => {
     wipeAll();
     const { coupleId } = await bootstrapCouple("phase2-unknown-code@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const r = await req("GET", `/api/public/wedding/${encodeURIComponent(slug)}/9999`);
     expect(r.status).toBe(404);
@@ -593,7 +601,9 @@ describe("/api/public/wedding tier ladder", () => {
   test("rate-limit guards the code-lookup path against enumeration", async () => {
     wipeAll();
     const { coupleId } = await bootstrapCouple("phase2-ratelimit@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const attackerIp = "10.99.99.99";
 
@@ -653,7 +663,9 @@ describe("/api/public/wedding wishlist embed", () => {
   test("wishlist is null at public + invited tiers, populated array at confirmed", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("wishlist-tiers@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     await createWishlistItem(token, { title: "Honeymoon fund", kind: "group_gift" });
     await createWishlistItem(token, { title: "A letter", kind: "personal" });
@@ -696,7 +708,9 @@ describe("/api/public/wedding wishlist embed", () => {
   test("confirmed couple with no items → empty array (not null)", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("wishlist-empty@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const { household_code, guest_id } = await createHouseholdWithGuest(token, "Empty-fam");
     await confirmHousehold(slug, household_code, guest_id);
@@ -709,13 +723,53 @@ describe("/api/public/wedding wishlist embed", () => {
     expect(Array.isArray(r.data.wedding.wishlist)).toBe(true);
     expect(r.data.wedding.wishlist!.length).toBe(0);
   });
+
+  test("unpublished gift list is omitted even at confirmed tier", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("wishlist-unpublished@weddly.test");
+    // is_public on (so the slug resolves) but wishlist_published deliberately
+    // OFF (the publish toggle gates the embed independently of the confirmed
+    // tier), so a guest who RSVP'd yes still sees no list.
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 0 WHERE id = ?").run(
+      coupleId,
+    );
+    const slug = await getSlug(coupleId);
+    await createWishlistItem(token, { title: "Honeymoon fund", kind: "group_gift" });
+    const { household_code, guest_id } = await createHouseholdWithGuest(token, "Unpub-fam");
+    await confirmHousehold(slug, household_code, guest_id);
+
+    const r = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(household_code)}`,
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.tier).toBe("confirmed");
+    expect(r.data.wedding.wishlist).toBeNull();
+
+    // Flip publish on via the couple PATCH → the embed now appears.
+    const patch = await req(
+      "PATCH",
+      "/api/couples/current",
+      { wishlist_published: true },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    const after = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(household_code)}`,
+    );
+    expect(Array.isArray(after.data.wedding.wishlist)).toBe(true);
+    expect(after.data.wedding.wishlist!.length).toBe(1);
+  });
 });
 
 describe("POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest", () => {
   test("403 below confirmed tier (no RSVP yes on the household)", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("wishlist-interest-403@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const itemId = await createWishlistItem(token, { title: "Group fund", kind: "group_gift" });
     const { household_code } = await createHouseholdWithGuest(token, "NotYet");
@@ -731,7 +785,9 @@ describe("POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest", () =>
   test("request item (no money) → 400", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("wishlist-interest-kind@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const itemId = await createWishlistItem(token, { title: "A letter", kind: "request" });
     const { household_code, guest_id } = await createHouseholdWithGuest(token, "Confirmed");
@@ -747,7 +803,9 @@ describe("POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest", () =>
   test("200 toggle on at confirmed, idempotent second tap toggles off, counts correct", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("wishlist-interest-toggle@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const itemId = await createWishlistItem(token, { title: "Group fund", kind: "group_gift" });
     const { household_code, guest_id } = await createHouseholdWithGuest(token, "Helper");
@@ -780,7 +838,9 @@ describe("POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest", () =>
   test("two distinct households each count once toward interest_count", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("wishlist-interest-two@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const itemId = await createWishlistItem(token, { title: "Group fund", kind: "group_gift" });
 
@@ -813,7 +873,9 @@ describe("POST /api/public/wedding/:slug/:code/wishlist/:itemId/interest", () =>
   test("soft pledge: set amount, sum on embed + editor list, update, reject junk", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("wishlist-pledge@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const itemId = await createWishlistItem(token, {
       title: "Group fund",
@@ -881,7 +943,9 @@ describe("GET /api/guest/portal — legacy redirect-shim", () => {
   test("forwards through the unified resolver, still 200s on confirmed", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("legacy-shim-yes@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const { household_code, guest_id } = await createHouseholdWithGuest(token, "Shim");
     await req("POST", "/api/rsvp/checkin", {
@@ -902,7 +966,9 @@ describe("GET /api/guest/portal — legacy redirect-shim", () => {
   test("legacy shim still 403s with not_rsvpd when nobody on the household RSVP'd yes", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("legacy-shim-noyes@weddly.test");
-    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
     const slug = await getSlug(coupleId);
     const { household_code } = await createHouseholdWithGuest(token, "NoYes");
 

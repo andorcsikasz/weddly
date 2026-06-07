@@ -18,7 +18,17 @@ import {
   WISHLIST_MAX_TITLE_LEN,
   WISHLIST_MAX_URL_LEN,
 } from "@shared/wishlist";
-import { ExternalLink, Gift, LayoutGrid, Pencil, Plus, Rows3, Trash2, X } from "lucide-react";
+import {
+  ExternalLink,
+  Gift,
+  LayoutGrid,
+  Pencil,
+  Plus,
+  Rows3,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
@@ -325,6 +335,30 @@ export default function WishlistEditorPage() {
   }
 
   const currency = couple?.currency ?? "HUF";
+  const [publishing, setPublishing] = useState(false);
+
+  // Publish toggle: flips `couples.wishlist_published`. When on, confirmed
+  // guests see the gift + request decks on the guest page (with the warm
+  // intro); when off the server omits them entirely. Optimistic with a
+  // rollback on failure, mirroring the row-delete flow above.
+  async function togglePublish() {
+    if (!couple || publishing) return;
+    const next = !couple.wishlist_published;
+    setPublishing(true);
+    setCouple({ ...couple, wishlist_published: next });
+    try {
+      const r = await coupleApi.update({ wishlist_published: next });
+      setCouple(r.couple);
+      toast.success(
+        next ? t("wishlist_editor.publish_toast_on") : t("wishlist_editor.publish_toast_off"),
+      );
+    } catch (e) {
+      setCouple((prev) => (prev ? { ...prev, wishlist_published: !next } : prev));
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   async function refresh() {
     try {
@@ -370,12 +404,46 @@ export default function WishlistEditorPage() {
 
   return (
     <>
-      <header className="mb-6 flex flex-wrap items-center gap-2">
+      <header className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-3">
         <h1 className="font-grotesk">{t("wishlist_editor.title")}</h1>
         <span className="inline-flex shrink-0 items-center rounded-full border border-umber-300 bg-umber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-umber-700 dark:border-umber-600 dark:bg-umber-700/40 dark:text-umber-200">
           {t("wishlist_editor.dev_badge")}
         </span>
         <InfoHint text={t("wishlist_editor.subtitle")} />
+        {couple && (
+          <div className="ml-auto flex items-center gap-3">
+            <div className="text-right">
+              <p className="flex items-center justify-end gap-1.5 text-sm font-medium text-ink-900 dark:text-paper-50">
+                <Sparkles size={14} className="text-umber-600 dark:text-umber-300" aria-hidden />
+                {t("wishlist_editor.publish_title")}
+              </p>
+              <p className="text-xs text-ink-500 dark:text-umber-300">
+                {couple.wishlist_published
+                  ? t("wishlist_editor.publish_on")
+                  : t("wishlist_editor.publish_off")}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={couple.wishlist_published}
+              aria-label={t("wishlist_editor.publish_title")}
+              disabled={publishing}
+              onClick={() => void togglePublish()}
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 disabled:opacity-60 ${
+                couple.wishlist_published
+                  ? "bg-ink-900 dark:bg-paper-50"
+                  : "bg-paper-300 dark:bg-umber-700"
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform dark:bg-umber-900 ${
+                  couple.wishlist_published ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        )}
       </header>
 
       {loading ? (
@@ -472,12 +540,15 @@ export default function WishlistEditorPage() {
               {t("wishlist_editor.section_requests_subtitle")}
             </p>
             {requests.length === 0 ? (
-              <div className="card stationery">
-                <p className="text-sm text-ink-600 dark:text-umber-200">
+              // Compact empty state: roughly half the height of a full card so
+              // the request examples don't dominate the page. Smaller padding +
+              // tighter type than the gifts empty card above.
+              <div className="card stationery p-3">
+                <p className="text-xs text-ink-600 dark:text-umber-200">
                   {t("wishlist_editor.requests_empty")}
                 </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium text-ink-500 dark:text-umber-300">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-ink-500 dark:text-umber-300">
                     {t("wishlist_editor.request_examples_label")}
                   </span>
                   {REQUEST_EXAMPLE_KEYS.map((key) => {

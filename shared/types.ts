@@ -325,6 +325,10 @@ export interface Couple {
    *  Defaults to false — couples publish explicitly via the Profile
    *  toggle; the public endpoint 404s when this is false. */
   is_public: boolean;
+  /** Couple published their gift list to the guest page. Default false;
+   *  the wishlist editor flips this. When false the confirmed-tier guest
+   *  page omits the gift/request decks entirely (server-side). */
+  wishlist_published: boolean;
   /** Free-text venue name shown on the public wedding site. Null when
    *  the couple hasn't set one. */
   venue_name: string | null;

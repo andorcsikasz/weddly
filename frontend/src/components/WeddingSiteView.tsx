@@ -562,6 +562,9 @@ export function WeddingSiteView({
                   <h2 className="flex items-center gap-2 font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
                     <Gift size={20} aria-hidden /> {t("guest_portal.wishlist_section_title")}
                   </h2>
+                  <p className="mt-3 max-w-2xl whitespace-pre-line text-base text-ink-700 dark:text-paper-100">
+                    {t("guest_portal.wishlist_intro")}
+                  </p>
                   <ul className="mt-4 grid gap-3 sm:grid-cols-2">
                     {gifts.map((entry) => (
                       <GuestWishlistCard
