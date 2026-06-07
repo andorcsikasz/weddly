@@ -577,6 +577,16 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_guests_transfer ON guests(transfer_id)")
 // historical row stays in the visible set.
 addColumnIfMissing("households", "auto_created", "auto_created INTEGER NOT NULL DEFAULT 0");
 
+// Marks the single per-couple household that collects suppliers (DJ,
+// photographer, …). Guests flagged is_supplier are routed here; the first
+// supplier creates the row. Default 0 so every existing household is a normal
+// guest party.
+addColumnIfMissing(
+  "households",
+  "is_supplier_household",
+  "is_supplier_household INTEGER NOT NULL DEFAULT 0",
+);
+
 // Multi-workspace membership: a user can belong to several couple
 // workspaces (Alpha / Bravo / Charlie for a wedding with multiple events).
 // `users.couple_id` continues to mean "the workspace this user is currently

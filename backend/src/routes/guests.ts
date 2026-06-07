@@ -26,7 +26,11 @@ import {
   toGuest,
   uniqueInviteCode,
 } from "../domain/guests";
-import { createHousehold, getHouseholdById } from "../domain/households";
+import {
+  createHousehold,
+  getHouseholdById,
+  getOrCreateSupplierHousehold,
+} from "../domain/households";
 import { getUserById } from "../domain/users";
 import {
   type Ctx,
@@ -239,6 +243,40 @@ function resolveHouseholdForCreate(
   return { id: created.id, group_tag: guestGroupTag };
 }
 
+/** Turn a filled-in "+1" into a real guest row — a plain adult in the same
+ *  household as the parent, RSVP pending, fully editable afterwards. The couple
+ *  fills the plus-one on the guest's behalf; we materialise it rather than
+ *  keeping a soft `plus_one_name` string so it shows up in counts/seating. The
+ *  caller is responsible for clearing the parent's carrier columns so a re-save
+ *  doesn't duplicate. */
+function materializePlusOne(
+  coupleId: number,
+  parent: { household_id: number | null; group_tag: string },
+  name: string,
+  meal: MealChoice | null,
+  userId: number,
+): void {
+  const ts = now();
+  const res = db
+    .prepare(
+      `INSERT INTO guests
+        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, rsvp_status,
+         meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
+         song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
+         created_at, updated_at, household_id)
+       VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 0, 'pending', ?, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, ?, ?, ?)`,
+    )
+    .run(coupleId, name, parent.group_tag, uniqueInviteCode(), meal, ts, ts, parent.household_id);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "guest.create",
+    target_kind: "guest",
+    target_id: Number(res.lastInsertRowid),
+    after: { full_name: name, materialized_plus_one: true, household_id: parent.household_id },
+  });
+}
+
 async function handleCreate(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -248,12 +286,29 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const parsed = parseUpsert(body);
   const ts = now();
   const code = uniqueInviteCode();
-  const household = resolveHouseholdForCreate(body, couple.id, parsed.full_name, parsed.group_tag);
-  // Household is the source of truth for group_tag — override the per-guest
-  // value the client may have sent. (Matches existing-household join; for new
-  // households the resolver already seeded the household with parsed.group_tag.)
-  parsed.group_tag = household.group_tag;
-  const householdId = household.id;
+  // Suppliers (DJ, photographer, …) are auto-routed to the couple's single
+  // supplier household, which takes precedence over the household picker.
+  let householdId: number;
+  if (parsed.is_supplier) {
+    const sh = getOrCreateSupplierHousehold(couple.id, couple.country ?? "HU");
+    householdId = sh.id;
+    parsed.group_tag = isGuestGroupTag(sh.group_tag) ? sh.group_tag : "other";
+  } else {
+    const household = resolveHouseholdForCreate(
+      body,
+      couple.id,
+      parsed.full_name,
+      parsed.group_tag,
+    );
+    // Household is the source of truth for group_tag — override the per-guest
+    // value the client may have sent. (Matches existing-household join; for new
+    // households the resolver already seeded the household with parsed.group_tag.)
+    parsed.group_tag = household.group_tag;
+    householdId = household.id;
+  }
+  // Stamp when the couple records a real answer on the guest's behalf (the
+  // public RSVP path stamps separately). Pending stays unstamped.
+  const respondedAt = parsed.rsvp_status === "pending" ? null : ts;
 
   // `invited` / `delivered` are optional — when truthy, the create call stamps
   // both timestamps at `ts`. `delivered=true` implies `invited=true` (you
@@ -271,7 +326,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
          created_at, updated_at, household_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -290,6 +345,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       parsed.accommodation_needed,
       parsed.song_request,
       parsed.notes,
+      respondedAt,
       invitedAt,
       deliveredAt,
       ts,
@@ -306,6 +362,21 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     target_id: guestId,
     after: { full_name: parsed.full_name, group_tag: parsed.group_tag, household_id: householdId },
   });
+
+  // A filled-in "+1" becomes a real guest in the same household; clear the
+  // carrier so re-saving doesn't duplicate it.
+  if (parsed.plus_one_name) {
+    materializePlusOne(
+      couple.id,
+      { household_id: householdId, group_tag: parsed.group_tag },
+      parsed.plus_one_name,
+      parsed.plus_one_meal,
+      userId,
+    );
+    db.prepare("UPDATE guests SET plus_one_name = NULL, plus_one_meal = NULL WHERE id = ?").run(
+      guestId,
+    );
+  }
 
   const row = getGuestByIdScoped(guestId, couple.id) as GuestRow;
 
@@ -396,6 +467,26 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     parsed.group_tag = inheritedGroupTag;
   }
 
+  // Supplier flag takes precedence over the household picker: a supplier is
+  // auto-routed to the couple's supplier household; clearing the flag moves a
+  // guest back out of it so the supplier household stays pure.
+  if (parsed.is_supplier) {
+    const sh = getOrCreateSupplierHousehold(couple.id, couple.country ?? "HU");
+    nextHouseholdId = sh.id;
+    if (existing.partner_role === null) {
+      parsed.group_tag = isGuestGroupTag(sh.group_tag) ? sh.group_tag : "other";
+    }
+  } else if (nextHouseholdId !== null) {
+    const cur = getHouseholdById(nextHouseholdId, couple.id);
+    if (cur?.is_supplier_household) nextHouseholdId = null;
+  }
+
+  // Stamp the first real answer the couple records (preserve the original on
+  // later edits; clear when set back to pending). The public RSVP path stamps
+  // separately via applyMemberCheckin.
+  const nextRespondedAt =
+    parsed.rsvp_status === "pending" ? null : (existing.rsvp_responded_at ?? ts);
+
   // Tri-state `invited` + `delivered`: omitted = leave as-is; true = stamp;
   // false = clear. The 3-state chip on /app/guests sends explicit pairs that
   // encode the target state: not-invited (invited:false, delivered:false),
@@ -421,7 +512,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     `UPDATE guests SET
         full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, is_supplier = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
-        accommodation_needed = ?, song_request = ?, notes = ?, household_id = ?,
+        accommodation_needed = ?, song_request = ?, notes = ?, rsvp_responded_at = ?, household_id = ?,
         invited_at = ?, invitation_delivered_at = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
   ).run(
@@ -439,6 +530,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     parsed.accommodation_needed,
     parsed.song_request,
     parsed.notes,
+    nextRespondedAt,
     nextHouseholdId,
     nextInvitedAt,
     nextDeliveredAt,
@@ -456,6 +548,19 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     before: { full_name: existing.full_name, household_id: existing.household_id },
     after: { full_name: parsed.full_name, household_id: nextHouseholdId },
   });
+
+  // A filled-in "+1" becomes a real guest in the same household; clear the
+  // carrier so re-saving doesn't duplicate it.
+  if (parsed.plus_one_name) {
+    materializePlusOne(
+      couple.id,
+      { household_id: nextHouseholdId, group_tag: parsed.group_tag },
+      parsed.plus_one_name,
+      parsed.plus_one_meal,
+      userId,
+    );
+    db.prepare("UPDATE guests SET plus_one_name = NULL, plus_one_meal = NULL WHERE id = ?").run(id);
+  }
 
   const row = getGuestByIdScoped(id, couple.id) as GuestRow;
   return json({ guest: toGuest(row) });

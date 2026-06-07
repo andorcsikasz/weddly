@@ -33,6 +33,9 @@ export interface HouseholdRow {
    *  when the user deliberately created it via the households route or
    *  with an explicit `new_household_label`. */
   auto_created: number;
+  /** 1 for the single per-couple household that collects suppliers (DJ,
+   *  photographer, …). Guests flagged is_supplier are auto-routed here. */
+  is_supplier_household: number;
   created_at: number;
   updated_at: number;
 }
@@ -128,13 +131,15 @@ export function createHousehold(input: {
    *  Couples can opt-in at creation time from the AddGuestDrawer; absent
    *  (or false) preserves the schema default of OFF. */
   rsvp_offers_accommodation?: boolean;
+  /** Marks the per-couple supplier household. See `getOrCreateSupplierHousehold`. */
+  is_supplier_household?: boolean;
 }): HouseholdRow {
   const ts = now();
   const code = uniqueHouseholdCode(input.couple_id);
   const groupTag: GuestGroupTag = input.group_tag ?? "other";
   const result = db
     .prepare(
-      "INSERT INTO households (couple_id, code, label, notes, group_tag, auto_created, rsvp_offers_accommodation, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO households (couple_id, code, label, notes, group_tag, auto_created, rsvp_offers_accommodation, is_supplier_household, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       input.couple_id,
@@ -144,6 +149,7 @@ export function createHousehold(input: {
       groupTag,
       input.auto_created ? 1 : 0,
       input.rsvp_offers_accommodation ? 1 : 0,
+      input.is_supplier_household ? 1 : 0,
       ts,
       ts,
     );
@@ -151,6 +157,25 @@ export function createHousehold(input: {
   const row = getHouseholdById(id, input.couple_id);
   if (!row) throw new Error("createHousehold: insert succeeded but row missing");
   return row;
+}
+
+/** Return the couple's single supplier household, creating it on first use.
+ *  Suppliers (DJ, photographer, …) are grouped here instead of in a normal
+ *  guest party. The label follows the couple's country so it reads naturally
+ *  in their locale. */
+export function getOrCreateSupplierHousehold(coupleId: number, country: string): HouseholdRow {
+  const existing = db
+    .prepare(
+      "SELECT * FROM households WHERE couple_id = ? AND is_supplier_household = 1 ORDER BY id LIMIT 1",
+    )
+    .get(coupleId) as HouseholdRow | undefined;
+  if (existing) return existing;
+  return createHousehold({
+    couple_id: coupleId,
+    label: country === "HU" ? "Szolgáltatók" : "Suppliers",
+    group_tag: "other",
+    is_supplier_household: true,
+  });
 }
 
 /** Set the household's group_tag and propagate to every NON-partner member

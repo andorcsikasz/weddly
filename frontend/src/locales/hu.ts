@@ -2163,6 +2163,12 @@ const hu: LocaleMessages = {
     kind_adult: "Felnőtt",
     kind_child: "Gyerek",
     kind_baby: "Baba",
+    kind_supplier: "Szolgáltató",
+    rsvp_filled_at: "Kitöltve: {date}",
+    plus_one_label: "Kísérő (+1)",
+    plus_one_help:
+      "Töltsd ki helyette a kísérőjét — vendégként hozzáadjuk ugyanabba a háztartásba.",
+    plus_one_placeholder: "Kísérő neve",
     partner_role_bride: "Menyasszony",
     partner_role_groom: "Vőlegény",
     search_label: "Keresés a vendégek között",

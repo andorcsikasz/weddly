@@ -2274,6 +2274,16 @@ export interface LocaleMessages {
     kind_adult: string;
     kind_child: string;
     kind_baby: string;
+    /** 4th guest type — supersedes the old supplier checkbox; routes the guest
+     *  into the dedicated supplier household. */
+    kind_supplier: string;
+    /** "Filled {date}" stamp under the RSVP row once an answer is recorded. */
+    rsvp_filled_at: string;
+    /** Plus-one block in the guest drawer — the couple fills the guest's +1,
+     *  which materialises as a real guest on save. */
+    plus_one_label: string;
+    plus_one_help: string;
+    plus_one_placeholder: string;
     /** Tooltip + a11y label on the Crown icon next to bride / groom rows. */
     partner_role_bride: string;
     partner_role_groom: string;

@@ -80,7 +80,6 @@ const GROUPS: GuestGroupTag[] = [
 ];
 
 const MEALS: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
-const RSVPS: RsvpStatus[] = ["pending", "yes", "no", "maybe"];
 
 interface DrawerInit {
   guest: Guest | null;
@@ -487,8 +486,11 @@ export default function GuestsPage() {
   // Which header stat is the live view, so the others can fade. Only the two
   // filter states (all vs invited) own a persistent view; while an rsvp filter
   // or a search is active none of these four applies, so nothing dims.
-  const activeStat: "total" | "invited" | null =
-    invitedFilter ? "invited" : rsvpFilter || debouncedQuery ? null : "total";
+  const activeStat: "total" | "invited" | null = invitedFilter
+    ? "invited"
+    : rsvpFilter || debouncedQuery
+      ? null
+      : "total";
 
   return (
     <>
@@ -1793,7 +1795,7 @@ function GuestDrawer({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const guest = init.guest;
 
   // Default-collapse the "filled by the guest via RSVP" block for new guests
@@ -2075,152 +2077,145 @@ function GuestDrawer({
 
           <div className="mb-3">
             <label className="field-label">{t("guests.kind_label")}</label>
-            <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">{t("guests.kind_help")}</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+              {form.is_supplier ? t("guests.supplier_help") : t("guests.kind_help")}
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {(["adult", "child", "baby"] as GuestKind[]).map((k) => (
                 <SegmentButton
                   key={k}
-                  active={(form.kind ?? "adult") === k}
-                  onClick={() => setForm({ ...form, kind: k })}
+                  active={!form.is_supplier && (form.kind ?? "adult") === k}
+                  onClick={() => setForm({ ...form, is_supplier: false, kind: k })}
                   icon={<KindIcon kind={k} />}
                   label={t(`guests.kind_${k}`)}
                 />
               ))}
+              <SegmentButton
+                active={form.is_supplier ?? false}
+                onClick={() => setForm({ ...form, is_supplier: true })}
+                icon={<Briefcase size={14} aria-hidden className="shrink-0" />}
+                label={t("guests.kind_supplier")}
+              />
             </div>
           </div>
 
-          <div className="mb-3">
-            <label
-              htmlFor="guest-supplier"
-              className="flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100"
-            >
-              <input
-                id="guest-supplier"
-                type="checkbox"
-                className="h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-400 dark:border-umber-700"
-                checked={form.is_supplier ?? false}
-                onChange={(e) => setForm({ ...form, is_supplier: e.target.checked })}
-              />
-              <span>{t("guests.supplier_label")}</span>
-            </label>
-            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-              {t("guests.supplier_help")}
-            </p>
-          </div>
-
-          <div className="mb-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-3 dark:border-umber-700 dark:bg-umber-700/60">
-            <label className="field-label">{t("guests.household_label")}</label>
-            <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
-              {t("guests.household_assign_help")}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <SegmentButton
-                active={householdMode === "existing"}
-                onClick={() => setHouseholdMode("existing")}
-                disabled={households.length === 0}
-                label={t("guests.household_existing")}
-              />
-              <SegmentButton
-                active={householdMode === "new"}
-                onClick={() => setHouseholdMode("new")}
-                label={t("guests.household_new")}
-              />
-            </div>
-            {householdMode === "existing" ? (
-              <select
-                className="input mt-2"
-                value={householdId ?? ""}
-                onChange={(e) => setHouseholdId(Number(e.target.value) || null)}
-              >
-                {households.map((h) => (
-                  <option key={h.id} value={h.id}>
-                    {h.label} · {h.code}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="mt-2">
-                <input
-                  className="input"
-                  placeholder={t("guests.household_new_label")}
-                  value={newHouseholdLabel}
-                  onChange={(e) => setNewHouseholdLabel(e.target.value)}
+          {/* Suppliers are auto-routed to the supplier household server-side,
+              so the manual picker is hidden while the supplier type is active. */}
+          {!form.is_supplier && (
+            <div className="mb-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-3 dark:border-umber-700 dark:bg-umber-700/60">
+              <label className="field-label">{t("guests.household_label")}</label>
+              <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+                {t("guests.household_assign_help")}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <SegmentButton
+                  active={householdMode === "existing"}
+                  onClick={() => setHouseholdMode("existing")}
+                  disabled={households.length === 0}
+                  label={t("guests.household_existing")}
                 />
-                {/* Autocomplete results — clicking a row switches the form
+                <SegmentButton
+                  active={householdMode === "new"}
+                  onClick={() => setHouseholdMode("new")}
+                  label={t("guests.household_new")}
+                />
+              </div>
+              {householdMode === "existing" ? (
+                <select
+                  className="input mt-2"
+                  value={householdId ?? ""}
+                  onChange={(e) => setHouseholdId(Number(e.target.value) || null)}
+                >
+                  {households.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.label} · {h.code}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="mt-2">
+                  <input
+                    className="input"
+                    placeholder={t("guests.household_new_label")}
+                    value={newHouseholdLabel}
+                    onChange={(e) => setNewHouseholdLabel(e.target.value)}
+                  />
+                  {/* Autocomplete results — clicking a row switches the form
                     to "existing household" mode and attaches the new guest
                     to that household. The new-label input is cleared so
                     submit doesn't ALSO create a fresh household with the
                     same name. */}
-                <label className="mt-2 flex items-start gap-2 text-sm text-ink-700 dark:text-paper-100">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5"
-                    checked={newHouseholdOffersAccommodation}
-                    onChange={(e) => setNewHouseholdOffersAccommodation(e.target.checked)}
-                  />
-                  <span className="inline-flex items-center gap-1.5">
-                    <Bed
-                      size={14}
-                      aria-hidden
-                      className="shrink-0 text-ink-500 dark:text-umber-300"
+                  <label className="mt-2 flex items-start gap-2 text-sm text-ink-700 dark:text-paper-100">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5"
+                      checked={newHouseholdOffersAccommodation}
+                      onChange={(e) => setNewHouseholdOffersAccommodation(e.target.checked)}
                     />
-                    {t("guests.rsvp_offers_accommodation_short")}
-                  </span>
-                </label>
-                {householdSuggestions.length > 0 && (
-                  <ul className="mt-2 divide-y divide-paper-200 overflow-hidden rounded-xl border border-paper-300 bg-paper-50 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
-                    {householdSuggestions.map((s) => {
-                      const targetHouseholdId =
-                        s.kind === "household" ? s.household.id : (s.household?.id ?? null);
-                      const targetHouseholdLabel =
-                        s.kind === "household" ? s.household.label : (s.household?.label ?? null);
-                      return (
-                        <li
-                          key={s.kind === "household" ? `h-${s.household.id}` : `g-${s.guest.id}`}
-                        >
-                          <button
-                            type="button"
-                            disabled={targetHouseholdId === null}
-                            onClick={() => {
-                              if (targetHouseholdId === null) return;
-                              setHouseholdMode("existing");
-                              setHouseholdId(targetHouseholdId);
-                              setNewHouseholdLabel("");
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-900 hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-paper-100 dark:hover:bg-umber-700"
+                    <span className="inline-flex items-center gap-1.5">
+                      <Bed
+                        size={14}
+                        aria-hidden
+                        className="shrink-0 text-ink-500 dark:text-umber-300"
+                      />
+                      {t("guests.rsvp_offers_accommodation_short")}
+                    </span>
+                  </label>
+                  {householdSuggestions.length > 0 && (
+                    <ul className="mt-2 divide-y divide-paper-200 overflow-hidden rounded-xl border border-paper-300 bg-paper-50 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
+                      {householdSuggestions.map((s) => {
+                        const targetHouseholdId =
+                          s.kind === "household" ? s.household.id : (s.household?.id ?? null);
+                        const targetHouseholdLabel =
+                          s.kind === "household" ? s.household.label : (s.household?.label ?? null);
+                        return (
+                          <li
+                            key={s.kind === "household" ? `h-${s.household.id}` : `g-${s.guest.id}`}
                           >
-                            {s.kind === "household" ? (
-                              <Home
-                                size={14}
-                                aria-hidden
-                                className="shrink-0 text-ink-500 dark:text-umber-300"
-                              />
-                            ) : (
-                              <User
-                                size={14}
-                                aria-hidden
-                                className="shrink-0 text-ink-500 dark:text-umber-300"
-                              />
-                            )}
-                            <span className="truncate">
-                              {s.kind === "household"
-                                ? `${s.household.label} (${s.household.member_ids.length})`
-                                : s.guest.full_name}
-                            </span>
-                            {s.kind === "guest" && targetHouseholdLabel && (
-                              <span className="ml-auto truncate text-xs text-ink-500 dark:text-umber-300">
-                                {targetHouseholdLabel}
+                            <button
+                              type="button"
+                              disabled={targetHouseholdId === null}
+                              onClick={() => {
+                                if (targetHouseholdId === null) return;
+                                setHouseholdMode("existing");
+                                setHouseholdId(targetHouseholdId);
+                                setNewHouseholdLabel("");
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-900 hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-paper-100 dark:hover:bg-umber-700"
+                            >
+                              {s.kind === "household" ? (
+                                <Home
+                                  size={14}
+                                  aria-hidden
+                                  className="shrink-0 text-ink-500 dark:text-umber-300"
+                                />
+                              ) : (
+                                <User
+                                  size={14}
+                                  aria-hidden
+                                  className="shrink-0 text-ink-500 dark:text-umber-300"
+                                />
+                              )}
+                              <span className="truncate">
+                                {s.kind === "household"
+                                  ? `${s.household.label} (${s.household.member_ids.length})`
+                                  : s.guest.full_name}
                               </span>
-                            )}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
+                              {s.kind === "guest" && targetHouseholdLabel && (
+                                <span className="ml-auto truncate text-xs text-ink-500 dark:text-umber-300">
+                                  {targetHouseholdLabel}
+                                </span>
+                              )}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Guest-fills divider ─────────────────────────────────────
               Visual break so the couple sees at a glance which fields are
@@ -2253,19 +2248,39 @@ function GuestDrawer({
             <div id="guest-section-by-rsvp">
               <div className="mb-3">
                 <label className="field-label">{t("guests.rsvp")}</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {RSVPS.map((s) => (
-                    <SegmentButton
-                      key={s}
-                      active={(form.rsvp_status ?? "pending") === s}
-                      onClick={() => setForm({ ...form, rsvp_status: s })}
-                      icon={<RsvpGlyph status={s} />}
-                      label={t(`guests.rsvp_${s}`)}
-                      compact
-                      tone={s}
-                    />
-                  ))}
+                <div className="grid grid-cols-3 gap-2">
+                  {(["yes", "no", "maybe"] as RsvpStatus[]).map((s) => {
+                    const chosen = form.rsvp_status === s;
+                    const hasAnswer =
+                      form.rsvp_status === "yes" ||
+                      form.rsvp_status === "no" ||
+                      form.rsvp_status === "maybe";
+                    return (
+                      <SegmentButton
+                        key={s}
+                        active={chosen}
+                        // No standalone Pending: an unanswered RSVP reads all-grey,
+                        // and re-clicking the chosen answer clears back to pending.
+                        onClick={() => setForm({ ...form, rsvp_status: chosen ? "pending" : s })}
+                        icon={<RsvpGlyph status={s} />}
+                        label={t(`guests.rsvp_${s}`)}
+                        compact
+                        small={hasAnswer && !chosen}
+                        tone={chosen ? s : "default"}
+                      />
+                    );
+                  })}
                 </div>
+                {guest?.rsvp_responded_at != null && (
+                  <p className="mt-1.5 text-xs text-ink-500 dark:text-umber-300">
+                    {t("guests.rsvp_filled_at", {
+                      date: new Date(guest.rsvp_responded_at).toLocaleDateString(
+                        locale === "hu" ? "hu-HU" : "en-US",
+                        { year: "numeric", month: "short", day: "numeric" },
+                      ),
+                    })}
+                  </p>
+                )}
               </div>
 
               <div className="mb-3">
@@ -2305,11 +2320,31 @@ function GuestDrawer({
                   ))}
                 </div>
                 <input
-                  className="input"
+                  className="input text-sm font-sans"
                   type="text"
                   value={dietaryFree}
                   onChange={(e) => setDietaryFree(e.target.value)}
                   placeholder={t("guests.allergies_placeholder")}
+                />
+              </div>
+
+              {/* Plus-one — the couple fills the guest's +1 on their behalf;
+                  on save the backend materialises it as a real guest in the
+                  same household, then clears this field. */}
+              <div className="mb-3">
+                <label className="field-label" htmlFor="guest-plus-one">
+                  {t("guests.plus_one_label")}
+                </label>
+                <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+                  {t("guests.plus_one_help")}
+                </p>
+                <input
+                  id="guest-plus-one"
+                  className="input font-sans text-sm"
+                  type="text"
+                  value={form.plus_one_name ?? ""}
+                  onChange={(e) => setForm({ ...form, plus_one_name: e.target.value || null })}
+                  placeholder={t("guests.plus_one_placeholder")}
                 />
               </div>
 
@@ -2431,6 +2466,7 @@ function SegmentButton({
   label,
   disabled,
   compact,
+  small,
   iconOnly,
   tone = "default",
 }: {
@@ -2440,13 +2476,22 @@ function SegmentButton({
   label: string;
   disabled?: boolean;
   compact?: boolean;
+  /** Shrink an unchosen option so a selected sibling reads as the headline —
+   *  used by the RSVP row once an answer is picked. */
+  small?: boolean;
   /** Render the icon only — keep the label as `title` + `aria-label`. Used
    *  by the group-tag picker where 7 options would never fit horizontally
    *  with text on mobile. */
   iconOnly?: boolean;
   tone?: SegmentTone;
 }) {
-  const pad = iconOnly ? "px-2 py-2" : compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm";
+  const pad = iconOnly
+    ? "px-2 py-2"
+    : small
+      ? "px-1.5 py-1 text-[11px]"
+      : compact
+        ? "px-2 py-1.5 text-xs"
+        : "px-3 py-2 text-sm";
   const base = `flex items-center justify-center gap-1.5 rounded-xl ${pad} transition-colors`;
   const toneCls = active ? SEGMENT_TONE_ACTIVE[tone] : SEGMENT_TONE_IDLE[tone];
   return (
