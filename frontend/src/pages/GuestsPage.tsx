@@ -2478,9 +2478,10 @@ function HouseholdGroupChip({
  *  in the RSVP form". When ON, the public RSVP form for this household
  *  shows the "needs accommodation?" checkbox (gated on
  *  `view.rsvp_offers_accommodation`); when OFF, the question is hidden.
- *  Renders as a Bed icon button — filled sage when on, muted outline when
- *  off — so the household card header doubles as a quick at-a-glance map
- *  of which families have been offered lodging. */
+ *  Renders as a Bed icon button — a clearly-green, ringed pill when on, and a
+ *  barely-there faded icon (revealing on hover) when off — so the household
+ *  card header doubles as a quick at-a-glance map of which families have been
+ *  offered lodging. */
 function AccommodationToggle({
   on,
   onChange,
@@ -2501,8 +2502,8 @@ function AccommodationToggle({
       title={label}
       className={
         on
-          ? "btn-ghost btn-sm bg-sage-100 text-sage-700 hover:bg-sage-200 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:bg-sage-400/25"
-          : "btn-ghost btn-sm text-ink-400 dark:text-umber-300"
+          ? "btn-ghost btn-sm bg-sage-100 text-sage-700 ring-1 ring-inset ring-sage-300 hover:bg-sage-200 dark:bg-sage-400/20 dark:text-sage-200 dark:ring-sage-400/40 dark:hover:bg-sage-400/30"
+          : "btn-ghost btn-sm text-ink-300 opacity-40 transition-opacity hover:opacity-100 dark:text-umber-400"
       }
     >
       <Bed size={14} aria-hidden />
