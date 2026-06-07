@@ -203,6 +203,17 @@ export function WeddingSiteView({
       formatDate(view.wedding_date, locale)
     : t("wedding_site.date_tbd");
 
+  // The editorial hero sets the date BIG + letter-spaced as the page's
+  // signature element (e.g. "2026 · 09 · 12"). Always numeric-spaced regardless
+  // of the couple's text date_format, since the long month name doesn't carry
+  // the same poster feel. Null when there's no plausible date yet.
+  const heroDateBig = isPlausibleDateIso(view.wedding_date)
+    ? formatWeddingDate(view.wedding_date, "numeric_dot", locale)
+        .replace(/\.$/, "")
+        .split(".")
+        .join(" · ")
+    : null;
+
   // Monogram (the couple's joined initials) + a decorative divider beneath the
   // names, both driven by the Design selection. Empty monogram (no names yet)
   // skips the block; "none" decor renders nothing.
@@ -243,151 +254,162 @@ export function WeddingSiteView({
 
   return (
     <div className="wedding-theme" style={themeStyle}>
-      {/* Cover — 16:9 hero image, or a dashed ghost in the editor preview. */}
-      {view.cover_image_url ? (
-        <div className="mb-6 overflow-hidden rounded-3xl border border-paper-200 dark:border-umber-700">
-          <img
-            src={view.cover_image_url}
-            alt=""
-            loading="lazy"
-            className="aspect-[16/9] w-full object-cover"
-          />
-        </div>
-      ) : isPreview ? (
-        <div
-          className={`mb-6 flex aspect-[16/6] min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-paper-300 bg-paper-50 text-center dark:border-umber-700 dark:bg-umber-800/40${
-            e.onEditCover
-              ? " cursor-pointer transition hover:border-ink-300 hover:bg-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
-              : ""
-          }`}
-          {...editAffordance(e.onEditCover, editHint)}
-        >
-          <Camera size={28} className="text-ink-300 dark:text-umber-400" aria-hidden />
-          <p className="font-grotesk text-base font-medium tracking-tight text-ink-400 dark:text-umber-300">
-            {t("wedding_site.ghost.cover_title")}
-          </p>
-          <p className="flex items-center gap-1 text-xs text-ink-500 dark:text-umber-200">
-            <Plus size={12} aria-hidden />
-            {t("wedding_site.ghost.cover_cta")}
-          </p>
-        </div>
-      ) : null}
+      {/* ── Editorial hero ─────────────────────────────────────────────────
+          Names as a centered header, the wedding date set big + letter-spaced
+          (the page's signature element) overlapping the cover photo below it,
+          then the venue. All themed from the couple's Design; the editor
+          preview keeps every ghost + click-to-edit affordance. */}
+      <section className="stationery overflow-hidden rounded-3xl border border-paper-200 text-center dark:border-umber-700">
+        <div className="px-6 pt-9 sm:px-10">
+          {monogram && (
+            <p
+              className="wt-accent wt-heading mb-2 text-2xl tracking-[0.2em]"
+              style={{ color: "var(--wt-accent-text)", fontFamily: "var(--wt-heading-font)" }}
+              aria-hidden
+            >
+              {monogram}
+            </p>
+          )}
+          <h1 className="font-grotesk text-2xl leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-3xl">
+            {view.couple_display_name}
+          </h1>
 
-      {/* Hero — names + date (+ venue). Stationery aesthetic mirroring the
-          landing page so the public site reads as part of the same brand. */}
-      <section className="card stationery text-center">
-        {monogram && (
-          <p
-            className="wt-accent wt-heading mb-2 text-2xl tracking-[0.2em]"
-            style={{ color: "var(--wt-accent-text)", fontFamily: "var(--wt-heading-font)" }}
-            aria-hidden
-          >
-            {monogram}
-          </p>
-        )}
-        <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 sm:text-5xl">
-          {view.couple_display_name}
-        </h1>
+          {/* Decorative divider under the names, driven by the Design selection. */}
+          {decor !== "none" && (
+            <div className="mt-3 flex justify-center" aria-hidden>
+              {decor === "line" && (
+                <span className="h-px w-20" style={{ backgroundColor: "var(--wt-accent)" }} />
+              )}
+              {decor === "dots" && (
+                <span className="text-lg tracking-[0.4em]" style={{ color: "var(--wt-accent)" }}>
+                  · · ·
+                </span>
+              )}
+              {decor === "frame" && (
+                <span
+                  className="h-5 w-20 rounded border"
+                  style={{ borderColor: "var(--wt-accent)" }}
+                />
+              )}
+              {decor === "botanical" && (
+                <span className="text-xl" style={{ color: "var(--wt-accent)" }}>
+                  {"❧︎"}
+                </span>
+              )}
+            </div>
+          )}
 
-        {/* Decorative divider under the names: subtle, driven by the Design
-            selection. "none" renders nothing. */}
-        {decor !== "none" && (
-          <div className="mt-3 flex justify-center" aria-hidden>
-            {decor === "line" && (
-              <span className="h-px w-20" style={{ backgroundColor: "var(--wt-accent)" }} />
-            )}
-            {decor === "dots" && (
-              <span className="text-lg tracking-[0.4em]" style={{ color: "var(--wt-accent)" }}>
-                · · ·
-              </span>
-            )}
-            {decor === "frame" && (
-              <span
-                className="h-5 w-20 rounded border"
-                style={{ borderColor: "var(--wt-accent)" }}
-              />
-            )}
-            {decor === "botanical" && (
-              <span className="text-xl" style={{ color: "var(--wt-accent)" }}>
-                {"❧︎"}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Date — real line on the live page; in preview an empty/placeholder
-            date becomes a ghost button that jumps to the dashboard. */}
-        {isPreview && !isPlausibleDateIso(view.wedding_date) ? (
-          <button
-            type="button"
-            onClick={e.onEditDate}
-            disabled={!e.onEditDate}
-            title={editHint}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 disabled:cursor-default dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
-          >
-            <Calendar size={14} aria-hidden />
-            {t("wedding_site.ghost.date_cta")}
-            <Plus size={12} aria-hidden />
-          </button>
-        ) : isPreview && e.onEditDate ? (
-          // Filled date in the editor preview — clickable, jumps to the field.
-          <button
-            type="button"
-            onClick={e.onEditDate}
-            title={editHint}
-            className="mt-4 inline-flex items-center justify-center gap-2 rounded-md px-1.5 py-0.5 font-serif text-sm italic text-ink-700 transition hover:bg-paper-100 hover:text-ink-900 dark:text-paper-100 dark:hover:bg-umber-800 sm:text-base"
-          >
-            <Calendar size={14} aria-hidden /> {dateLine}
-          </button>
-        ) : (
-          <p className="mt-4 inline-flex items-center justify-center gap-2 font-serif text-sm italic text-ink-700 dark:text-paper-100 sm:text-base">
-            <Calendar size={14} aria-hidden /> {dateLine}
-          </p>
-        )}
-
-        {/* Venue — name when set; an approximate marker on the live public
-            page; a ghost button in the editor preview when still empty. In the
-            editor preview a filled venue is clickable and jumps to the field. */}
-        {view.venue_name ? (
-          isPreview && e.onEditVenue ? (
+          {/* Signature date — big + letter-spaced. Filled date is a click-to-edit
+              target in preview; a missing date is a dashed ghost button. */}
+          {heroDateBig ? (
+            isPreview && e.onEditDate ? (
+              <button
+                type="button"
+                onClick={e.onEditDate}
+                title={editHint}
+                className="relative z-10 mx-auto mt-6 block rounded-md px-2 py-1 text-4xl tracking-[0.18em] transition hover:bg-black/5 dark:hover:bg-white/10 sm:text-6xl"
+                style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
+              >
+                {heroDateBig}
+              </button>
+            ) : (
+              <p
+                className="relative z-10 mx-auto mt-6 text-4xl tracking-[0.18em] sm:text-6xl"
+                style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
+                aria-label={dateLine}
+              >
+                <span aria-hidden>{heroDateBig}</span>
+              </p>
+            )
+          ) : isPreview ? (
             <button
               type="button"
-              onClick={e.onEditVenue}
+              onClick={e.onEditDate}
+              disabled={!e.onEditDate}
               title={editHint}
-              className="mt-2 ml-4 inline-flex items-center justify-center gap-2 rounded-md px-1.5 py-0.5 font-serif text-sm font-normal italic text-ink-700 transition hover:bg-paper-100 hover:text-ink-900 dark:text-paper-100 dark:hover:bg-umber-800 sm:text-base"
+              className="mx-auto mt-6 inline-flex items-center gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 disabled:cursor-default dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
             >
-              <MapPin size={14} aria-hidden />
-              {view.venue_name}
+              <Calendar size={14} aria-hidden />
+              {t("wedding_site.ghost.date_cta")}
+              <Plus size={12} aria-hidden />
             </button>
-          ) : (
-            <p className="mt-2 ml-4 inline-flex items-center justify-center gap-2 font-serif text-sm font-normal italic text-ink-700 dark:text-paper-100 sm:text-base">
-              <MapPin size={14} aria-hidden />
-              {view.venue_name}
-            </p>
-          )
+          ) : null}
+        </div>
+
+        {/* Cover photo — pulled up under the date so the big numerals overlap its
+            top edge. Dashed ghost in the editor preview when still empty. */}
+        {view.cover_image_url ? (
+          <div className={heroDateBig ? "-mt-5" : "mt-6"}>
+            <img
+              src={view.cover_image_url}
+              alt=""
+              loading="lazy"
+              className="aspect-[4/3] w-full object-cover sm:aspect-[16/9]"
+            />
+          </div>
         ) : isPreview ? (
-          <div>
+          <div className="px-6 pt-6 sm:px-10">
+            <div
+              className={`flex aspect-[16/6] min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-paper-300 bg-paper-50 text-center dark:border-umber-700 dark:bg-umber-800/40${
+                e.onEditCover
+                  ? " cursor-pointer transition hover:border-ink-300 hover:bg-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
+                  : ""
+              }`}
+              {...editAffordance(e.onEditCover, editHint)}
+            >
+              <Camera size={28} className="text-ink-300 dark:text-umber-400" aria-hidden />
+              <p className="font-grotesk text-base font-medium tracking-tight text-ink-400 dark:text-umber-300">
+                {t("wedding_site.ghost.cover_title")}
+              </p>
+              <p className="flex items-center gap-1 text-xs text-ink-500 dark:text-umber-200">
+                <Plus size={12} aria-hidden />
+                {t("wedding_site.ghost.cover_cta")}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Venue line under the photo. */}
+        <div className="px-6 pb-8 pt-6 sm:px-10">
+          {view.venue_name ? (
+            isPreview && e.onEditVenue ? (
+              <button
+                type="button"
+                onClick={e.onEditVenue}
+                title={editHint}
+                className="inline-flex items-center justify-center gap-2 rounded-md px-1.5 py-0.5 font-serif text-sm font-normal italic text-ink-700 transition hover:bg-paper-100 hover:text-ink-900 dark:text-paper-100 dark:hover:bg-umber-800 sm:text-base"
+              >
+                <MapPin size={14} aria-hidden />
+                {view.venue_name}
+              </button>
+            ) : (
+              <p className="inline-flex items-center justify-center gap-2 font-serif text-sm font-normal italic text-ink-700 dark:text-paper-100 sm:text-base">
+                <MapPin size={14} aria-hidden />
+                {view.venue_name}
+              </p>
+            )
+          ) : isPreview ? (
             <button
               type="button"
               onClick={e.onEditVenue}
               disabled={!e.onEditVenue}
               title={editHint}
-              className="mt-2 inline-flex items-center gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 disabled:cursor-default dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
+              className="inline-flex items-center gap-2 rounded-lg border border-dashed border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-400 transition hover:border-ink-300 hover:bg-paper-100 disabled:cursor-default dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300 dark:hover:border-umber-600"
             >
               <MapPin size={14} aria-hidden />
               {t("wedding_site.ghost.venue_cta")}
               <Plus size={12} aria-hidden />
             </button>
-          </div>
-        ) : (
-          !showConfirmedExtras &&
-          view.location_radius_km !== null && (
-            <p className="mt-2 inline-flex items-center justify-center gap-2 text-xs text-ink-500 dark:text-umber-300">
-              <MapPin size={14} aria-hidden />
-              {t("wedding_site.venue_approx")}
-            </p>
-          )
-        )}
+          ) : (
+            !showConfirmedExtras &&
+            view.location_radius_km !== null && (
+              <p className="inline-flex items-center justify-center gap-2 text-xs text-ink-500 dark:text-umber-300">
+                <MapPin size={14} aria-hidden />
+                {t("wedding_site.venue_approx")}
+              </p>
+            )
+          )}
+        </div>
       </section>
 
       {/* Pre-RSVP welcome block — same at every tier. */}
