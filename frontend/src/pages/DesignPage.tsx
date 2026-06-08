@@ -570,7 +570,6 @@ export default function DesignPage() {
                     key={s.slug}
                     active={design.style === s.slug}
                     onSelect={() => chooseStyle(s.slug)}
-                    label={t(s.nameKey)}
                     ariaLabel={t(s.nameKey)}
                   >
                     <StyleMoodCard preset={s} />

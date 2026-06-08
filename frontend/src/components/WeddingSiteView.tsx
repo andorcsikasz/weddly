@@ -463,7 +463,11 @@ export function WeddingSiteView({
         <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
           <h1
             className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
-            style={{ fontFamily: "var(--wt-heading-font)" }}
+            // `color: inherit` so the name takes the theme `--wt-text` (set on
+            // the page root) instead of the global base `h1 { color: ink.900 }`
+            // — without it a dark-background style (Black Tie) renders the
+            // names dark-on-dark and invisible.
+            style={{ fontFamily: "var(--wt-heading-font)", color: "inherit" }}
           >
             {view.couple_display_name}
           </h1>

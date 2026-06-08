@@ -116,6 +116,14 @@ describe("WeddingSiteView — live mode", () => {
     expect(cta.getAttribute("href")).toContain("/rsvp?couple=MIALUCAS");
   });
 
+  it("renders the hero name with color:inherit so dark-bg styles stay legible", () => {
+    // Without inline color:inherit the global `h1 { color: ink.900 }` wins and a
+    // dark-background style (e.g. Black Tie) paints the names dark-on-dark.
+    renderView(<WeddingSiteView view={filledView()} household={null} tier="public" locale="hu" />);
+    const h1 = screen.getByRole("heading", { name: "Mia & Lucas", level: 1 });
+    expect(h1.style.color).toBe("inherit");
+  });
+
   it("shows no ghost placeholders or edit affordances in live mode", () => {
     renderView(<WeddingSiteView view={emptyView()} household={null} tier="public" locale="hu" />);
     // None of the ghost titles render when not in preview.
