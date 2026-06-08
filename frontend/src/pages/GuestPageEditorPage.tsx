@@ -484,7 +484,7 @@ export default function GuestPageEditorPage() {
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   // Which structured field is being edited in a modal sheet (click-to-edit on
   // the preview opens these instead of scrolling to a form). null = closed.
-  const [editPanel, setEditPanel] = useState<"cover" | null>(null);
+  const [editPanel, setEditPanel] = useState<"cover" | "useful" | null>(null);
 
   const postRsvpTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -954,11 +954,6 @@ export default function GuestPageEditorPage() {
     if (el) window.setTimeout(() => el.focus(), 350);
   }
 
-  function focusUsefulInfoField() {
-    const el = revealField("guest-page-useful-info");
-    if (el) window.setTimeout(() => el.focus(), 350);
-  }
-
   function focusPostRsvpField() {
     const el = revealField("guest-page-post-rsvp");
     if (el) window.setTimeout(() => el.focus(), 350);
@@ -1049,7 +1044,7 @@ export default function GuestPageEditorPage() {
                 onEditSchedule: () => navigate("/app/schedule"),
                 onEditVenue: focusVenueField,
                 onEditIntro: focusIntroField,
-                onEditUsefulInfo: focusUsefulInfoField,
+                onEditUsefulInfo: () => setEditPanel("useful"),
                 onEditPostRsvp: focusPostRsvpField,
               }}
               // Direct in-place editing of the prose fields. The setters feed
@@ -1418,55 +1413,6 @@ export default function GuestPageEditorPage() {
                   </div>
                 )}
               </div>
-              <div className="mt-3">
-                <span className="field-label">{t("guest_page_editor.useful_info_label")}</span>
-                <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
-                  {t("guest_page_editor.useful_info_hint")}
-                </p>
-                {/* Pre-made rows. Each only appears on the guest page once it
-                    has a value (empty rows are dropped on serialize). The first
-                    input carries the reveal id so the preview ghost shortcut
-                    still lands here. */}
-                <div className="flex flex-col gap-2">
-                  {USEFUL_INFO_FIELDS.map((f, i) => (
-                    <div key={f.key} className="flex items-center gap-2">
-                      <label
-                        htmlFor={`guest-page-useful-${f.key}`}
-                        className="w-28 shrink-0 text-sm text-ink-600 dark:text-umber-200"
-                      >
-                        {t(f.labelKey)}
-                      </label>
-                      <input
-                        id={i === 0 ? "guest-page-useful-info" : `guest-page-useful-${f.key}`}
-                        type="text"
-                        className="input flex-1"
-                        value={usefulFields[f.key]}
-                        onChange={(e) =>
-                          setUsefulFields((prev) => ({ ...prev, [f.key]: e.target.value }))
-                        }
-                        maxLength={500}
-                      />
-                    </div>
-                  ))}
-                  <div className="mt-1">
-                    <label
-                      htmlFor="guest-page-useful-other"
-                      className="mb-1 block text-sm text-ink-600 dark:text-umber-200"
-                    >
-                      {t("guest_page_editor.useful_field_other_label")}
-                    </label>
-                    <textarea
-                      id="guest-page-useful-other"
-                      className="input"
-                      rows={3}
-                      value={usefulOther}
-                      onChange={(e) => setUsefulOther(e.target.value)}
-                      placeholder={t("guest_page_editor.useful_field_other_placeholder")}
-                      maxLength={4000}
-                    />
-                  </div>
-                </div>
-              </div>
             </details>
 
             {/* ── Post-RSVP unlocked content (collapsible) ──────────────── */}
@@ -1662,6 +1608,64 @@ export default function GuestPageEditorPage() {
               hint={t("wedding_site_editor.cover_position_hint")}
             />
           )}
+        </div>
+      </Dialog>
+
+      {/* Good-to-know editor — opened by clicking the useful-info band in the
+          preview. The 4 labelled rows + free-form box, lifted from the bottom
+          form; serialize/parse stays in the editor so the shared renderer never
+          carries the USEFUL_INFO_FIELDS catalog. */}
+      <Dialog
+        open={editPanel === "useful"}
+        role="dialog"
+        closeOnBackdrop
+        title={t("guest_page_editor.useful_info_label")}
+        onClose={() => setEditPanel(null)}
+        footer={
+          <button type="button" className="btn-primary" onClick={() => setEditPanel(null)}>
+            {t("common.done")}
+          </button>
+        }
+      >
+        <p className="mb-3 text-xs text-ink-500 dark:text-umber-300">
+          {t("guest_page_editor.useful_info_hint")}
+        </p>
+        <div className="flex flex-col gap-2">
+          {USEFUL_INFO_FIELDS.map((f) => (
+            <div key={f.key} className="flex items-center gap-2">
+              <label
+                htmlFor={`guest-page-useful-${f.key}`}
+                className="w-28 shrink-0 text-sm text-ink-600 dark:text-umber-200"
+              >
+                {t(f.labelKey)}
+              </label>
+              <input
+                id={`guest-page-useful-${f.key}`}
+                type="text"
+                className="input flex-1"
+                value={usefulFields[f.key]}
+                onChange={(e) => setUsefulFields((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                maxLength={500}
+              />
+            </div>
+          ))}
+          <div className="mt-1">
+            <label
+              htmlFor="guest-page-useful-other"
+              className="mb-1 block text-sm text-ink-600 dark:text-umber-200"
+            >
+              {t("guest_page_editor.useful_field_other_label")}
+            </label>
+            <textarea
+              id="guest-page-useful-other"
+              className="input"
+              rows={3}
+              value={usefulOther}
+              onChange={(e) => setUsefulOther(e.target.value)}
+              placeholder={t("guest_page_editor.useful_field_other_placeholder")}
+              maxLength={4000}
+            />
+          </div>
         </div>
       </Dialog>
     </>
