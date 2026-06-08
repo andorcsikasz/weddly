@@ -585,7 +585,6 @@ export default function GuestPageEditorPage() {
 
   const slug = couple?.slug ?? "";
   const publicUrl = slug ? `${window.location.origin}/w/${slug}` : null;
-  const rsvpUrl = typeof window !== "undefined" && slug ? `${window.location.origin}/rsvp` : "";
 
   // Eye-preview button: the bare /w/:slug page is only reachable once the
   // couple has a slug AND is_public (private == not-found by design), so we
@@ -929,12 +928,23 @@ export default function GuestPageEditorPage() {
 
   return (
     <>
-      <header className="mb-6 flex items-center justify-between gap-2">
+      {/* Title bar — carries the live autosave status next to the title so the
+          couple always sees "saved" without hunting for it, plus "view live"
+          (the public URL) one reach away. */}
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex items-center gap-2">
           <h1 className="font-grotesk font-semibold tracking-tight">
             {t("guest_page_editor.title")}
           </h1>
           <InfoHint text={t("guest_page_editor.subtitle")} />
+          <span
+            className="hidden text-xs text-ink-500 sm:inline dark:text-umber-300"
+            aria-live="polite"
+          >
+            {saving || dirty
+              ? t("wedding_site_editor.save_saving")
+              : t("wedding_site_editor.save_success")}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/app/design" className="btn-outline btn-sm">
@@ -1098,35 +1108,19 @@ export default function GuestPageEditorPage() {
             )}
 
             {slug && (
-              <div className="mt-3 grid gap-x-4 gap-y-2 border-t border-paper-300 pt-3 sm:grid-cols-2 dark:border-umber-700">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
-                    {t("guest_preview.share_slug_label")}
-                  </span>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-md border border-paper-300 px-2 py-0.5 font-mono text-sm uppercase tracking-[0.2em] text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
-                    onClick={() => copyText(slug, "share_copied")}
-                    aria-label={t("guest_preview.share_copy_slug_aria")}
-                  >
-                    {slug}
-                    <Copy size={14} aria-hidden />
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300 shrink-0">
-                    {t("guest_preview.share_link_label")}
-                  </span>
-                  <button
-                    type="button"
-                    className="inline-flex min-w-0 items-center gap-2 rounded-md border border-paper-300 px-2 py-0.5 text-sm text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
-                    onClick={() => copyText(rsvpUrl, "share_copied")}
-                    aria-label={t("guest_preview.share_copy_link_aria")}
-                  >
-                    <span className="truncate">{rsvpUrl}</span>
-                    <Copy size={14} aria-hidden className="shrink-0" />
-                  </button>
-                </div>
+              <div className="mt-3 flex items-center gap-2 border-t border-paper-300 pt-3 dark:border-umber-700">
+                <span className="text-[11px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
+                  {t("guest_preview.share_slug_label")}
+                </span>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-md border border-paper-300 px-2 py-0.5 font-mono text-sm uppercase tracking-[0.2em] text-ink-800 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
+                  onClick={() => copyText(slug, "share_copied")}
+                  aria-label={t("guest_preview.share_copy_slug_aria")}
+                >
+                  {slug}
+                  <Copy size={14} aria-hidden />
+                </button>
               </div>
             )}
 
@@ -1280,17 +1274,6 @@ export default function GuestPageEditorPage() {
                 {error}
               </p>
             )}
-
-            <div className="mt-6">
-              <p
-                className="flex items-center gap-1.5 text-sm text-ink-500 dark:text-umber-300"
-                aria-live="polite"
-              >
-                {saving || dirty
-                  ? t("wedding_site_editor.save_saving")
-                  : t("wedding_site_editor.save_success")}
-              </p>
-            </div>
           </form>
         </div>
       </details>
