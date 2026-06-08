@@ -801,16 +801,17 @@ export function AppShell({ children }: { children: ReactNode }) {
  *  the rail is forced icon-only regardless, so the labelled header is
  *  hidden via `lg:flex` and a hairline is shown via `md:block lg:hidden`. */
 function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: boolean }) {
-  // Fixed-height (h-7) row in every state — labelled when the laptop rail is
+  // Fixed-height (h-6) row in every state — labelled when the laptop rail is
   // expanded, a centred hairline at tablet / when collapsed. Because a section
   // break takes the same vertical space either way, every icon below it lands
   // on the exact same row when the user toggles the rail.
   return (
-    // `mt-2` sets a small, deliberate gap before each category so sections
+    // `mt-1` sets a small, deliberate gap before each category so sections
     // read as distinct, while the items inside a category sit flush (the
-    // parent nav uses `gap-0`). The fixed `h-7` is unchanged so an icon lands
-    // on the same row whether the rail is expanded or collapsed.
-    <div className="mt-2 flex h-7 items-center px-2">
+    // parent nav uses `gap-0`). The fixed `h-6` keeps an icon landing on the
+    // same row whether the rail is expanded or collapsed, and the tightened
+    // rhythm lets all 15 links + 4 headers fit one desktop screen unscrolled.
+    <div className="mt-1 flex h-6 items-center px-2">
       {/* Labelled header — fully-expanded laptop rail only. */}
       {!collapsed && (
         <div className="hidden w-full items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
@@ -895,8 +896,8 @@ function SideLink({
   // same row when the user toggles the rail (paired with the fixed-height
   // SidebarGroupHeader below, which does the same for section breaks).
   const shape = collapsed
-    ? "h-9 w-9 justify-center"
-    : "h-9 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
+    ? "h-8 w-9 justify-center"
+    : "h-8 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
   return (
     <NavLink
       to={to}
@@ -950,8 +951,8 @@ function AdminSideLink({
   badgeCount?: number;
 }) {
   const shape = collapsed
-    ? "h-9 w-9 justify-center"
-    : "h-9 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
+    ? "h-8 w-9 justify-center"
+    : "h-8 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
   return (
     <NavLink
       to={to}
