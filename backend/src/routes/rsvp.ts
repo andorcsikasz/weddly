@@ -318,6 +318,8 @@ interface AddedMemberRaw {
   rsvp_status?: unknown;
   meal_choice?: unknown;
   dietary?: unknown;
+  is_plus_one?: unknown;
+  parent_member_id?: unknown;
 }
 
 function parseAddedMember(raw: AddedMemberRaw): CheckinAddedMember {
@@ -334,12 +336,20 @@ function parseAddedMember(raw: AddedMemberRaw): CheckinAddedMember {
   const mealRaw = typeof raw.meal_choice === "string" ? raw.meal_choice : null;
   const meal = mealRaw && isMealChoice(mealRaw) ? mealRaw : null;
 
+  const isPlusOne = raw.is_plus_one === true;
+  const parentId =
+    typeof raw.parent_member_id === "number" && Number.isFinite(raw.parent_member_id)
+      ? raw.parent_member_id
+      : null;
+
   return {
     full_name: fullNameRaw,
     kind,
     rsvp_status: rsvpStatus,
     meal_choice: meal,
     dietary: strOrNull(raw.dietary, 500),
+    is_plus_one: isPlusOne,
+    parent_member_id: isPlusOne ? parentId : null,
   };
 }
 
@@ -353,22 +363,39 @@ function persistAddedMembers(
 ): GuestRow[] {
   if (added.length === 0) return [];
   const ts = Date.now();
+  // Existing household members a "+1" is allowed to hang off — must already be
+  // in this household and must NOT themselves be a +1 (a +1 can't carry its own
+  // +1). Mirrors the UI guard so a hand-crafted payload can't sneak one in.
+  const hostable = new Set(
+    (
+      db
+        .prepare("SELECT id FROM guests WHERE household_id = ? AND is_plus_one = 0")
+        .all(household.id) as { id: number }[]
+    ).map((r) => r.id),
+  );
   const insert = db.prepare(
     `INSERT INTO guests
-       (couple_id, full_name, email, phone, group_tag, invite_code, kind, rsvp_status,
+       (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_plus_one, plus_one_of, rsvp_status,
         meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
         song_request, notes, rsvp_responded_at, created_at, updated_at, household_id)
-     VALUES (?, ?, NULL, NULL, 'other', ?, ?, ?, ?, ?, NULL, NULL, 0, NULL, NULL, ?, ?, ?, ?)`,
+     VALUES (?, ?, NULL, NULL, 'other', ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, NULL, NULL, ?, ?, ?, ?)`,
   );
   const inserted: GuestRow[] = [];
   const tx = db.transaction(() => {
     for (const m of added) {
       const code = uniqueInviteCode();
+      const plusOneOf =
+        m.is_plus_one && m.parent_member_id != null && hostable.has(m.parent_member_id)
+          ? m.parent_member_id
+          : null;
+      const isPlusOne = plusOneOf != null ? 1 : 0;
       const result = insert.run(
         couple.id,
         m.full_name,
         code,
         m.kind,
+        isPlusOne,
+        plusOneOf,
         m.rsvp_status,
         m.meal_choice,
         m.dietary,

@@ -104,6 +104,7 @@ function makeGuest(name: string, overrides: Partial<Guest> = {}): Guest {
     kind: "adult",
     is_supplier: false,
     is_plus_one: false,
+    plus_one_of: null,
     partner_role: null,
     rsvp_status: "pending",
     meal_choice: null,

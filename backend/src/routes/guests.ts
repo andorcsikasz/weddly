@@ -251,7 +251,7 @@ function resolveHouseholdForCreate(
  *  doesn't duplicate. */
 function materializePlusOne(
   coupleId: number,
-  parent: { household_id: number | null; group_tag: string },
+  parent: { id: number; household_id: number | null; group_tag: string },
   name: string,
   meal: MealChoice | null,
   userId: number,
@@ -260,20 +260,35 @@ function materializePlusOne(
   const res = db
     .prepare(
       `INSERT INTO guests
-        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, is_plus_one, rsvp_status,
+        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, is_plus_one, plus_one_of, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
          created_at, updated_at, household_id)
-       VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 0, 1, 'pending', ?, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, ?, ?, ?)`,
+       VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 0, 1, ?, 'pending', ?, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, ?, ?, ?)`,
     )
-    .run(coupleId, name, parent.group_tag, uniqueInviteCode(), meal, ts, ts, parent.household_id);
+    .run(
+      coupleId,
+      name,
+      parent.group_tag,
+      uniqueInviteCode(),
+      parent.id,
+      meal,
+      ts,
+      ts,
+      parent.household_id,
+    );
   addAuditLog({
     actor_user_id: userId,
     couple_id: coupleId,
     action: "guest.create",
     target_kind: "guest",
     target_id: Number(res.lastInsertRowid),
-    after: { full_name: name, materialized_plus_one: true, household_id: parent.household_id },
+    after: {
+      full_name: name,
+      materialized_plus_one: true,
+      plus_one_of: parent.id,
+      household_id: parent.household_id,
+    },
   });
 }
 
@@ -368,7 +383,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   if (parsed.plus_one_name) {
     materializePlusOne(
       couple.id,
-      { household_id: householdId, group_tag: parsed.group_tag },
+      { id: guestId, household_id: householdId, group_tag: parsed.group_tag },
       parsed.plus_one_name,
       parsed.plus_one_meal,
       userId,
@@ -554,7 +569,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   if (parsed.plus_one_name) {
     materializePlusOne(
       couple.id,
-      { household_id: nextHouseholdId, group_tag: parsed.group_tag },
+      { id, household_id: nextHouseholdId, group_tag: parsed.group_tag },
       parsed.plus_one_name,
       parsed.plus_one_meal,
       userId,

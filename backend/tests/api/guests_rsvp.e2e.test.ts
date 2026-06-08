@@ -1473,6 +1473,69 @@ describe("rsvp checkin: validation + idempotency + isolation", () => {
     expect(r.status).toBe(400);
   });
 
+  test("POST /api/rsvp/checkin links a +1 added_member to its host; refuses a +1-of-a-+1", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("ck-plus-link@weddly.test");
+    const anna = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna" },
+      { token },
+    );
+    const slug = await getSlug(token);
+    const code = (await listHouseholds(token))[0]!.code;
+
+    type GuestLite = {
+      id: number;
+      full_name: string;
+      is_plus_one: boolean;
+      plus_one_of: number | null;
+    };
+
+    const r = await req("POST", "/api/rsvp/checkin", {
+      couple_slug: slug,
+      household_code: code,
+      members: [{ guest_id: anna.data.guest.id, rsvp_status: "yes" }],
+      added_members: [
+        {
+          full_name: "Mark",
+          kind: "adult",
+          rsvp_status: "yes",
+          is_plus_one: true,
+          parent_member_id: anna.data.guest.id,
+        },
+      ],
+    });
+    expect(r.status).toBe(200);
+
+    const list1 = await req<{ guests: GuestLite[] }>("GET", "/api/guests", undefined, { token });
+    const mark = list1.data.guests.find((g) => g.full_name === "Mark")!;
+    expect(mark.is_plus_one).toBe(true);
+    expect(mark.plus_one_of).toBe(anna.data.guest.id);
+
+    // A +1 can't host its own +1: pointing parent_member_id at Mark (himself a
+    // +1) must NOT link — the new row lands as a plain, unlinked guest.
+    const r2 = await req("POST", "/api/rsvp/checkin", {
+      couple_slug: slug,
+      household_code: code,
+      members: [{ guest_id: anna.data.guest.id, rsvp_status: "yes" }],
+      added_members: [
+        {
+          full_name: "Zed",
+          kind: "adult",
+          rsvp_status: "yes",
+          is_plus_one: true,
+          parent_member_id: mark.id,
+        },
+      ],
+    });
+    expect(r2.status).toBe(200);
+    const list2 = await req<{ guests: GuestLite[] }>("GET", "/api/guests", undefined, { token });
+    const zed = list2.data.guests.find((g) => g.full_name === "Zed")!;
+    expect(zed.plus_one_of).toBeNull();
+    expect(zed.is_plus_one).toBe(false);
+  });
+
   test("POST /api/rsvp/checkin rejects malformed JSON", async () => {
     const r = await fetch(`${BASE}/api/rsvp/checkin`, {
       method: "POST",

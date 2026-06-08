@@ -579,6 +579,10 @@ export interface Guest {
   /** True when this guest was auto-created from another guest's "+1" field.
    *  Drives the "+1" badge in the guest list. */
   is_plus_one: boolean;
+  /** Guest id of the host this +1 hangs off — the person who brought them and
+   *  fills in their RSVP on their behalf. `null` on every primary guest. The
+   *  guest list nests the +1 directly under this host with a connecting line. */
+  plus_one_of: number | null;
   /** Set on the two host guest rows that mirror `couples.bride_name` /
    *  `couples.groom_name`. `null` on every other guest. Server-derived only —
    *  PATCH/POST `/api/guests` ignores this field. The seating page reads it to
@@ -662,6 +666,10 @@ export interface HouseholdMember {
   dietary: string | null;
   accommodation_needed: boolean;
   song_request: string | null;
+  /** True when this member is themselves a +1 brought by another member. The
+   *  check-in form hides the "+1" chip on these rows so a +1 can't carry its
+   *  own +1. */
+  is_plus_one: boolean;
 }
 
 /** Public-facing — what the /rsvp check-in page sees. No couple PII / admin notes. */
@@ -716,6 +724,12 @@ export interface CheckinAddedMember {
   rsvp_status: RsvpStatus;
   meal_choice: MealChoice | null;
   dietary: string | null;
+  /** Set when this addition is a "+1" — flags the new row as a plus-one and
+   *  nests it under `parent_member_id`. Babies/children leave this false. */
+  is_plus_one?: boolean;
+  /** Existing household member id this addition hangs off (the +1's host).
+   *  Server validates it belongs to the same household before linking. */
+  parent_member_id?: number | null;
 }
 
 /** Catering-side aggregate over the guest list. Surfaced on the day-of

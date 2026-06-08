@@ -189,8 +189,10 @@ interface AttachedDraft {
 interface MemberDraft {
   id: number;
   full_name: string;
-  /** Non-null only for members the form considers a "+1 placeholder" (auto-
-   *  named, e.g. "Anna +1"). Editing is allowed so guests can rename them. */
+  /** True when this member is themselves a +1 — either a real materialised
+   *  plus-one the server flagged, or an auto-named "+1 placeholder" (e.g.
+   *  "Anna +1"). Drives the inline rename input and, crucially, suppresses
+   *  the "Family additions" block so a +1 can't carry its own +1. */
   is_plus_one: boolean;
   /** Has the guest actively clicked a status pill in THIS session? On first
    *  render this is false even when the server already has a status — the
@@ -211,10 +213,10 @@ interface MemberDraft {
   baby: AttachedDraft | null;
 }
 
-/** Heuristic — backend doesn't expose `is_plus_one`, but the convention
- *  established by the CSV import / household creation flow is to label
- *  unnamed plus-ones as "<host> +1" or "+1". This lets us at least flag
- *  obvious placeholders so guests can rename them inline. */
+/** Fallback heuristic for legacy rows the server hasn't flagged with
+ *  `is_plus_one` — the CSV import / household creation flow labels unnamed
+ *  plus-ones as "<host> +1" or "+1". Catches those so guests can rename them
+ *  inline; real materialised +1s come through `HouseholdMember.is_plus_one`. */
 function looksLikePlusOnePlaceholder(name: string): boolean {
   return /\+\s*1\b/.test(name) || /\bplus[ -]?one\b/i.test(name);
 }
@@ -224,7 +226,7 @@ function fromMember(m: HouseholdMember): MemberDraft {
   return {
     id: m.id,
     full_name: m.full_name,
-    is_plus_one: looksLikePlusOnePlaceholder(m.full_name),
+    is_plus_one: m.is_plus_one || looksLikePlusOnePlaceholder(m.full_name),
     interacted: false,
     rsvp_status: m.rsvp_status,
     meal_choice: m.meal_choice,
@@ -484,6 +486,10 @@ export function HouseholdRsvpForm({
           // Reuse the same tag→string encoding the main member rows use so
           // the dietary string round-trips through to the admin icons.
           dietary: buildDietary(d.plus_one.dietary_tags, ""),
+          // Tie the new row to its host so the admin list nests it underneath
+          // and the server can refuse a +1-of-a-+1.
+          is_plus_one: true,
+          parent_member_id: d.id,
         });
       }
       if (d.baby) {
@@ -893,60 +899,64 @@ export function HouseholdRsvpForm({
 
                     {/* Family additions — visually separated from the allergen
                     block above so guests don't conflate "bringing a +1"
-                    with a dietary attribute. */}
-                    <div className="mt-6 border-t border-paper-200 pt-4 dark:border-umber-700">
-                      <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                        {t("rsvp.additions_section_title")}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        <Chip
-                          on={d.plus_one !== null}
-                          onClick={() => togglePlusOne(d)}
-                          icon={<Plus size={14} aria-hidden />}
-                          label={t("rsvp.tag_plus_one")}
-                          controlsId={`plus-one-${d.id}`}
-                          expanded={d.plus_one !== null}
-                        />
-                        <Chip
-                          on={d.baby !== null}
-                          onClick={() => toggleBaby(d)}
-                          icon={<Baby size={14} aria-hidden />}
-                          label={t("rsvp.tag_baby")}
-                          controlsId={`baby-${d.id}`}
-                          expanded={d.baby !== null}
-                        />
+                    with a dietary attribute. Hidden for members who are
+                    themselves a +1: a +1 can't carry its own +1 or baby —
+                    their host fills the RSVP on their behalf. */}
+                    {!d.is_plus_one && (
+                      <div className="mt-6 border-t border-paper-200 pt-4 dark:border-umber-700">
+                        <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                          {t("rsvp.additions_section_title")}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Chip
+                            on={d.plus_one !== null}
+                            onClick={() => togglePlusOne(d)}
+                            icon={<Plus size={14} aria-hidden />}
+                            label={t("rsvp.tag_plus_one")}
+                            controlsId={`plus-one-${d.id}`}
+                            expanded={d.plus_one !== null}
+                          />
+                          <Chip
+                            on={d.baby !== null}
+                            onClick={() => toggleBaby(d)}
+                            icon={<Baby size={14} aria-hidden />}
+                            label={t("rsvp.tag_baby")}
+                            controlsId={`baby-${d.id}`}
+                            expanded={d.baby !== null}
+                          />
+                        </div>
+                        {d.plus_one && (
+                          <div className="mt-3 space-y-3">
+                            <AttachedNameField
+                              id={`plus-one-${d.id}`}
+                              label={t("rsvp.added_name_plus_one")}
+                              placeholder={t("rsvp.added_name_placeholder")}
+                              value={d.plus_one.full_name}
+                              onChange={(v) => updateAttached(d.id, "plus_one", v)}
+                            />
+                            <AttachedDietary
+                              member={d.plus_one}
+                              onMealChange={(meal) =>
+                                patchAttached(d.id, "plus_one", { meal_choice: meal })
+                              }
+                              onToggleTag={(tag) => toggleAttachedDietaryTag(d.id, "plus_one", tag)}
+                              showMeal={view.rsvp_collects_meal}
+                            />
+                          </div>
+                        )}
+                        {d.baby && (
+                          <div className="mt-3">
+                            <AttachedNameField
+                              id={`baby-${d.id}`}
+                              label={t("rsvp.added_name_baby")}
+                              placeholder={t("rsvp.added_name_placeholder")}
+                              value={d.baby.full_name}
+                              onChange={(v) => updateAttached(d.id, "baby", v)}
+                            />
+                          </div>
+                        )}
                       </div>
-                      {d.plus_one && (
-                        <div className="mt-3 space-y-3">
-                          <AttachedNameField
-                            id={`plus-one-${d.id}`}
-                            label={t("rsvp.added_name_plus_one")}
-                            placeholder={t("rsvp.added_name_placeholder")}
-                            value={d.plus_one.full_name}
-                            onChange={(v) => updateAttached(d.id, "plus_one", v)}
-                          />
-                          <AttachedDietary
-                            member={d.plus_one}
-                            onMealChange={(meal) =>
-                              patchAttached(d.id, "plus_one", { meal_choice: meal })
-                            }
-                            onToggleTag={(tag) => toggleAttachedDietaryTag(d.id, "plus_one", tag)}
-                            showMeal={view.rsvp_collects_meal}
-                          />
-                        </div>
-                      )}
-                      {d.baby && (
-                        <div className="mt-3">
-                          <AttachedNameField
-                            id={`baby-${d.id}`}
-                            label={t("rsvp.added_name_baby")}
-                            placeholder={t("rsvp.added_name_placeholder")}
-                            value={d.baby.full_name}
-                            onChange={(v) => updateAttached(d.id, "baby", v)}
-                          />
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

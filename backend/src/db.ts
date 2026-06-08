@@ -119,6 +119,12 @@ addColumnIfMissing("guests", "is_supplier", "is_supplier INTEGER NOT NULL DEFAUL
 // guest's "+1" field (so the list can flag it). Default 0 for every normal row.
 addColumnIfMissing("guests", "is_plus_one", "is_plus_one INTEGER NOT NULL DEFAULT 0");
 
+// Parent guest a materialised plus-one hangs off — the guest who "brought" them
+// and who fills in their RSVP on their behalf. Null on every primary guest.
+// Lets /app/guests nest the +1 directly under its host with a connecting line,
+// and lets the public check-in form refuse a +1-of-a-+1.
+addColumnIfMissing("guests", "plus_one_of", "plus_one_of INTEGER REFERENCES guests(id)");
+
 // "Invited?" check on the guest row. Nullable timestamp — null = not yet
 // invited, non-null = ms since epoch when the couple marked them invited.
 // Drives the per-guest checkbox + the x/n indicator on the household header.

@@ -955,6 +955,40 @@ function SearchResults({
   );
 }
 
+/** Order a household's members so each materialised +1 sits directly under its
+ *  host. Primaries keep their natural order; a host's +1 children slot in right
+ *  after them. A +1 whose host isn't in this household (rare cross-household
+ *  edit) falls back to the tail so it never vanishes. Each row is tagged with
+ *  whether it should render as an indented, connected +1. */
+function orderHouseholdMembers(members: Guest[]): { guest: Guest; isPlusOne: boolean }[] {
+  const present = new Set(members.map((m) => m.id));
+  const childrenByParent = new Map<number, Guest[]>();
+  for (const g of members) {
+    if (g.plus_one_of != null && present.has(g.plus_one_of)) {
+      const arr = childrenByParent.get(g.plus_one_of) ?? [];
+      arr.push(g);
+      childrenByParent.set(g.plus_one_of, arr);
+    }
+  }
+  const out: { guest: Guest; isPlusOne: boolean }[] = [];
+  const emitted = new Set<number>();
+  for (const g of members) {
+    // Children are emitted under their parent below, never on their own pass.
+    if (g.plus_one_of != null && present.has(g.plus_one_of)) continue;
+    out.push({ guest: g, isPlusOne: false });
+    emitted.add(g.id);
+    for (const child of childrenByParent.get(g.id) ?? []) {
+      out.push({ guest: child, isPlusOne: true });
+      emitted.add(child.id);
+    }
+  }
+  // Safety net: a +1 whose host left the household still shows, at the tail.
+  for (const g of members) {
+    if (!emitted.has(g.id)) out.push({ guest: g, isPlusOne: g.plus_one_of != null });
+  }
+  return out;
+}
+
 function HouseholdCard({
   household,
   members,
@@ -988,6 +1022,7 @@ function HouseholdCard({
 }) {
   const { t } = useT();
   const isHosts = household.is_couple_household;
+  const orderedMembers = useMemo(() => orderHouseholdMembers(members), [members]);
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -1146,7 +1181,7 @@ function HouseholdCard({
 
       {!collapsed && (
         <ul className="divide-y divide-paper-200 dark:divide-umber-700">
-          {members.map((g) => (
+          {orderedMembers.map(({ guest: g, isPlusOne }) => (
             <li
               key={g.id}
               /* Single non-wrapping row at every viewport — the prior two-
@@ -1156,9 +1191,22 @@ function HouseholdCard({
                *  depending on whether the guest had a meal/dietary icon.
                *  Now: invite-pip → name (with role + kind + meal icons all
                *  inline) → flexible spacer → RSVP badge + edit/print/
-               *  delete pinned right. Same layout for every guest. */
-              className="flex items-center gap-2 px-3 py-2 md:gap-3 md:px-4 md:py-2.5"
+               *  delete pinned right. Same layout for every guest.
+               *  A materialised +1 is nudged right and gets an L-shaped
+               *  hairline connector tying it back up to its host above. */
+              className={`flex items-center gap-2 py-2 md:gap-3 md:py-2.5 ${
+                isPlusOne ? "relative pl-9 pr-3 md:pl-12 md:pr-4" : "px-3 md:px-4"
+              }`}
             >
+              {isPlusOne && (
+                <span
+                  aria-hidden
+                  /* L-connector: drops from the row's top edge to its middle,
+                   *  then turns right (rounded bottom-left corner) toward the
+                   *  +1's name — a quiet visual tether to the host above. */
+                  className="pointer-events-none absolute left-4 top-0 h-1/2 w-3 rounded-bl-md border-b border-l border-paper-300 dark:border-umber-600 md:left-6"
+                />
+              )}
               <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
               <p className="flex min-w-0 flex-1 items-center gap-1 truncate text-sm text-ink-900 dark:text-paper-50">
                 <PartnerRoleIcon role={g.partner_role} />
