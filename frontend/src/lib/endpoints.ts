@@ -407,6 +407,9 @@ export const coupleApi = {
     venue_city?: string | null;
     /** http(s) URL the couple pastes for the wedding site's hero image. */
     cover_image_url?: string | null;
+    /** Cover-photo focal point as object-position percentages (0..100). */
+    cover_position_x?: number;
+    cover_position_y?: number;
     /** Pre-RSVP welcome block on the merged Vendégoldal (markdown,
      *  ≤4000 chars). Empty string clears the column. */
     guest_page_intro?: string | null;
