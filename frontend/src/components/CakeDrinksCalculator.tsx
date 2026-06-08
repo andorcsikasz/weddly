@@ -8,7 +8,7 @@
 // supplier), so a single shared instance is opened from the category header.
 
 import type { Currency } from "@shared/types";
-import { Calculator, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { currencySymbol, formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -140,6 +140,9 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
   const [fields, setFields] = useState<Fields>(() => initialFields(currency, defaultGuests));
   // Which row's per-head portion editor is open (tapped quantity), if any.
   const [editingRow, setEditingRow] = useState<string | null>(null);
+  // Row keys the couple struck out (tapped the item name) — their total counts
+  // as 0 and they drop out of every subtotal.
+  const [excluded, setExcluded] = useState<Set<string>>(() => new Set());
 
   // Reset to fresh defaults each time the modal opens, so a new guest count or
   // currency from the page is picked up.
@@ -147,11 +150,21 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
     if (open) {
       setFields(initialFields(currency, defaultGuests));
       setEditingRow(null);
+      setExcluded(new Set());
     }
   }, [open, currency, defaultGuests]);
 
   function set(key: FieldKey, value: string) {
     setFields((cur) => ({ ...cur, [key]: value }));
+  }
+
+  function toggleExcluded(key: string) {
+    setExcluded((cur) => {
+      const next = new Set(cur);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   const { sweets, cake, drinks, sweetsTotal, cakeTotal, drinksTotal, grandTotal } = useMemo(() => {
@@ -181,7 +194,8 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
       unitKey,
       priceField,
       portions,
-      total: Math.round(qty * num(fields[priceField])),
+      // Struck-out rows count as 0 in their subtotal and the grand total.
+      total: excluded.has(key) ? 0 : Math.round(qty * num(fields[priceField])),
     });
 
     const sweets: Row[] = [
@@ -211,7 +225,7 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
       drinksTotal,
       grandTotal: sweetsTotal + cakeTotal + drinksTotal,
     };
-  }, [fields]);
+  }, [fields, excluded]);
 
   const symbol = currencySymbol(currency, loc);
   // Quantities (kg, litres, bottles) carry a meaningful decimal — 7.7 kg, 46.2
@@ -242,11 +256,27 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
     rows.map((r) => {
       const itemLabel = t(`suppliers.calc.${r.labelKey}`);
       const isEditing = editingRow === r.key;
+      const isExcluded = excluded.has(r.key);
       return (
         <Fragment key={r.key}>
           <tr className="border-t border-paper-200 dark:border-umber-700">
-            <td className="py-2 pr-2 text-ink-800 dark:text-paper-100">{itemLabel}</td>
-            <td className="py-1.5 px-2 text-right">
+            <td className="py-2 pr-2">
+              {/* Tap the item name to strike it out — its total drops to 0. */}
+              <button
+                type="button"
+                onClick={() => toggleExcluded(r.key)}
+                aria-pressed={isExcluded}
+                title={t("suppliers.calc.item_toggle_hint")}
+                className={`rounded-md px-1.5 py-0.5 text-left hover:bg-paper-100 dark:hover:bg-umber-700/60 ${
+                  isExcluded
+                    ? "text-ink-400 line-through dark:text-umber-300"
+                    : "text-ink-800 dark:text-paper-100"
+                }`}
+              >
+                {itemLabel}
+              </button>
+            </td>
+            <td className={`py-1.5 px-2 text-right ${isExcluded ? "opacity-40" : ""}`}>
               {/* Tap the quantity to fine-tune the per-head portion(s) inline. */}
               <button
                 type="button"
@@ -265,7 +295,7 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
                 <Pencil size={11} className="text-ink-400 dark:text-umber-300" aria-hidden />
               </button>
             </td>
-            <td className="py-1.5 px-2">
+            <td className={`py-1.5 px-2 ${isExcluded ? "opacity-40" : ""}`}>
               <div className="flex items-center justify-end gap-1">
                 <input
                   type="number"
@@ -280,7 +310,11 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
                 <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
               </div>
             </td>
-            <td className="py-2 pl-2 text-right tabular-nums font-medium text-ink-900 dark:text-paper-50">
+            <td
+              className={`py-2 pl-2 text-right tabular-nums font-medium text-ink-900 dark:text-paper-50 ${
+                isExcluded ? "opacity-40" : ""
+              }`}
+            >
               {formatMoney(r.total, currency, loc)}
             </td>
           </tr>
@@ -395,10 +429,6 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
 
         <p className="rounded-xl bg-paper-100 dark:bg-umber-700/60 px-3 py-2 text-xs text-ink-500 dark:text-umber-300">
           {t("suppliers.calc.note")}
-        </p>
-        <p className="flex items-center gap-1.5 text-xs text-ink-400 dark:text-umber-300">
-          <Calculator size={12} aria-hidden />
-          {t("suppliers.calc.powered_by")}
         </p>
       </div>
     </Dialog>

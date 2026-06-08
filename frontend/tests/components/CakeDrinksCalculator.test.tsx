@@ -68,4 +68,15 @@ describe("<CakeDrinksCalculator>", () => {
     fireEvent.click(qtyBtn);
     expect(screen.queryByLabelText("Sweet pastries (kg/guest)")).toBeNull();
   });
+
+  it("strikes an item out on tap, zeroing its total and the grand total", () => {
+    renderCalc("HUF", 70);
+    // Cake contributes 84 000 to the 500 570 grand total.
+    expect(digits(document.body)).toContain("500570");
+    fireEvent.click(screen.getByRole("button", { name: "Wedding cake" }));
+    const text = digits(document.body);
+    // Cake total gone → grand total drops to 416 570, cake subtotal to 0.
+    expect(text).not.toContain("500570");
+    expect(text).toContain("416570");
+  });
 });

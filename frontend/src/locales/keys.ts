@@ -2951,7 +2951,7 @@ export interface LocaleMessages {
       open_aria: string;
       title: string;
       intro: string;
-      powered_by: string;
+      item_toggle_hint: string;
       guests_label: string;
       sweets_buffer_label: string;
       drinks_buffer_label: string;

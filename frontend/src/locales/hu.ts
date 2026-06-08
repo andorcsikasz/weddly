@@ -2631,7 +2631,7 @@ const hu: LocaleMessages = {
       title: "Süti & ital kalkulátor",
       intro:
         "Add meg a vendégszámot és a saját áraitokat — a szükséges mennyiségeket és a becsült költséget automatikusan kiszámoljuk.",
-      powered_by: "Készítette: Cilinderesek",
+      item_toggle_hint: "Kihúzás (a tétel végösszege 0 lesz)",
       guests_label: "Vendégszám (fő)",
       sweets_buffer_label: "Ráhagyás süteményre (%)",
       drinks_buffer_label: "Ráhagyás italra (%)",

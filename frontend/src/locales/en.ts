@@ -2598,7 +2598,7 @@ const en: LocaleMessages = {
       title: "Cake & drinks calculator",
       intro:
         "Enter your guest count and your own prices — we work out the quantities you need and the estimated cost automatically.",
-      powered_by: "Made by Cilinderesek",
+      item_toggle_hint: "Strike out (this item's total becomes 0)",
       guests_label: "Guest count",
       sweets_buffer_label: "Pastry buffer (%)",
       drinks_buffer_label: "Drinks buffer (%)",
