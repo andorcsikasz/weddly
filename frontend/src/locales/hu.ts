@@ -1974,7 +1974,7 @@ const hu: LocaleMessages = {
     add_item: "Új kívánság",
     empty_state: "Még nincs egy kívánság sem. Vegyétek fel az elsőt.",
     title_label: "Megnevezés",
-    title_placeholder: "pl. Egy hosszú hétvége, a kávégépünk, egy kézzel írt levél",
+    title_placeholder: "pl. Egy hosszú hétvége, a kávégépünk",
     kind_label: "Típus",
     kind_gift: "Ajándék",
     kind_request: "Kérés",

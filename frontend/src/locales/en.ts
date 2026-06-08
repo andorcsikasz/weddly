@@ -1954,7 +1954,7 @@ const en: LocaleMessages = {
     add_item: "Add a wish",
     empty_state: "No wishes yet. Add the first thing you'd love.",
     title_label: "Title",
-    title_placeholder: "e.g. A weekend away, our espresso machine, a handwritten letter",
+    title_placeholder: "e.g. A weekend away, our espresso machine",
     kind_label: "Type",
     kind_gift: "Gift",
     kind_request: "Request",
