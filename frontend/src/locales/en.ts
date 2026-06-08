@@ -2053,7 +2053,11 @@ const en: LocaleMessages = {
   guests: {
     title: "Guest list",
     add: "Add guest",
+    add_hint: "Add a single guest by hand",
     import_csv: "Import CSV",
+    import_csv_hint: "Bulk-import guests from a CSV file",
+    download_template_hint: "Download a CSV template to fill in, then import",
+    meals_hint: "Set meal options and see the per-meal tally",
     csv_help:
       "CSV must have a 'full_name' column. Optional: email, phone, group_tag, plus_one_name, dietary, notes.",
     full_name: "Name",

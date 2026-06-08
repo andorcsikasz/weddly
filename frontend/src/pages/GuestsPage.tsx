@@ -544,11 +544,14 @@ export default function GuestsPage() {
             type="button"
             className="btn-outline !border-ink-700 dark:!border-paper-100"
             onClick={downloadCsvTemplate}
-            title={t("guests.download_template")}
+            title={t("guests.download_template_hint")}
           >
             <Download size={16} aria-hidden /> {t("guests.download_template")}
           </button>
-          <label className="btn-outline !border-ink-700 cursor-pointer dark:!border-paper-100">
+          <label
+            className="btn-outline !border-ink-700 cursor-pointer dark:!border-paper-100"
+            title={t("guests.import_csv_hint")}
+          >
             <Upload size={16} aria-hidden /> {t("guests.import_csv")}
             <input
               type="file"
@@ -566,7 +569,7 @@ export default function GuestsPage() {
             type="button"
             className="btn-outline !border-neutral-400 !bg-neutral-200 !text-neutral-700 hover:!bg-neutral-300 dark:!border-neutral-500 dark:!bg-neutral-700 dark:!text-neutral-100 dark:hover:!bg-neutral-600"
             onClick={() => setMealsOpen(true)}
-            title={t("guests.meals_title")}
+            title={t("guests.meals_hint")}
           >
             <Utensils size={16} aria-hidden /> {t("guests.meals_button")}
           </button>
@@ -574,6 +577,7 @@ export default function GuestsPage() {
             type="button"
             className="btn-primary"
             onClick={() => setEditing({ guest: null, defaultHouseholdId: null })}
+            title={t("guests.add_hint")}
           >
             <Plus size={16} /> {t("guests.add")}
           </button>

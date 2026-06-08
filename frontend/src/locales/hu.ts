@@ -2075,7 +2075,11 @@ const hu: LocaleMessages = {
   guests: {
     title: "Vendéglista",
     add: "Új vendég",
+    add_hint: "Egyetlen vendég hozzáadása kézzel",
     import_csv: "CSV importálás",
+    import_csv_hint: "Vendégek tömeges importálása CSV-fájlból",
+    download_template_hint: "Tölts le egy kitölthető CSV-sablont, majd importáld",
+    meals_hint: "Étkezési opciók beállítása és a fogásonkénti összesítés",
     csv_help:
       "A CSV-nek legyen 'full_name' oszlopa. Választható: email, phone, group_tag, plus_one_name, dietary, notes.",
     full_name: "Név",

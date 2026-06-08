@@ -2285,7 +2285,11 @@ export interface LocaleMessages {
   guests: {
     title: string;
     add: string;
+    add_hint: string;
     import_csv: string;
+    import_csv_hint: string;
+    download_template_hint: string;
+    meals_hint: string;
     csv_help: string;
     full_name: string;
     email: string;
