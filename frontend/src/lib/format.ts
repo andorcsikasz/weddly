@@ -12,6 +12,16 @@ import type {
 
 type Locale = "hu" | "en";
 
+/** The single BCP-47 tag every date/number formatter on the platform uses for
+ *  a given UI locale: HU → `hu-HU`, everything else → `en-GB`. English surfaces
+ *  format with en-GB platform-wide (day-month-year ordering, 24h clock, "8 June
+ *  2026") — NEVER en-US — so a date reads identically no matter which screen
+ *  renders it. Always derive Intl/`toLocale*` locale args from this, never inline
+ *  the ternary, so the convention can never drift back to en-US in new code. */
+export function intlLocale(locale: Locale): "hu-HU" | "en-GB" {
+  return locale === "hu" ? "hu-HU" : "en-GB";
+}
+
 /** Best-guess currency for a UI locale. HU → HUF, anything else → EUR. Used
  *  by public surfaces (landing pricing, the budget try-it widget, feedback
  *  value slider) that need to read as native to the visitor BEFORE they sign
@@ -22,7 +32,7 @@ export function localeCurrency(locale: Locale): Currency {
 }
 
 const MONEY = (locale: Locale, currency: Currency) =>
-  new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency,
     // `narrowSymbol` forces the glyph (€ / $ / Ft) instead of the ISO code.
@@ -36,7 +46,7 @@ const MONEY = (locale: Locale, currency: Currency) =>
   });
 
 const NUMBER = (locale: Locale) =>
-  new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", { maximumFractionDigits: 0 });
+  new Intl.NumberFormat(intlLocale(locale), { maximumFractionDigits: 0 });
 
 // Memoise formatter instances — `new Intl.NumberFormat` per call is enough
 // CPU to show up under flame-graph in the budget table.
@@ -75,7 +85,7 @@ export function formatHuf(amount: number, locale: Locale = "hu"): string {
 }
 
 const COMPACT = (locale: Locale) =>
-  new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  new Intl.NumberFormat(intlLocale(locale), {
     notation: "compact",
     maximumFractionDigits: 1,
   });
@@ -96,7 +106,7 @@ export function formatHufCompact(amount: number, locale: Locale = "hu"): string 
 export function currencySymbol(currency: Currency, locale: Locale = "hu"): string {
   // currencyDisplay: "narrowSymbol" picks `$` over `US$` etc. when the
   // locale would otherwise prefix the code.
-  const parts = new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  const parts = new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency,
     currencyDisplay: "narrowSymbol",
@@ -195,15 +205,29 @@ export function formatDate(ymd: string | null, locale: Locale = "hu"): string {
   if (!ymd) return "";
   const d = new Date(`${ymd}T00:00:00`);
   if (Number.isNaN(d.getTime())) return ymd;
-  return d.toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
+  return d.toLocaleDateString(intlLocale(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 }
 
+/** Long date for a millisecond timestamp (e.g. an `created_at`), read from the
+ *  user's LOCAL timezone. The couple-facing companion to `formatDate`, which
+ *  takes a `YYYY-MM-DD` string. Use this instead of re-deriving an
+ *  `Intl.DateTimeFormat` in each component so every screen renders the same
+ *  "2026. június 8." / "8 June 2026". */
+export function formatDateMs(ms: number, locale: Locale = "hu"): string {
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) return "";
+  const yyyy = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return formatDate(`${yyyy}-${mo}-${dd}`, locale);
+}
+
 const MONTH_FORMATTER = (locale: Locale) =>
-  new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", { month: "long", year: "numeric" });
+  new Intl.DateTimeFormat(intlLocale(locale), { month: "long", year: "numeric" });
 
 const monthFmt = MONTH_FORMATTER("hu");
 const monthFmtEn = MONTH_FORMATTER("en");
