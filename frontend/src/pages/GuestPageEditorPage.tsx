@@ -109,9 +109,10 @@ function parseUsefulInfo(text: string): { fields: UsefulInfoFields; other: strin
   const otherLines: string[] = [];
   for (const line of text.split("\n")) {
     const m = line.match(/^\s*([^:]+?)\s*:\s*(.*)$/);
-    const key = m ? USEFUL_INFO_PREFIXES[m[1].trim().toLowerCase()] : undefined;
-    if (m && key && !fields[key]) {
-      fields[key] = m[2].trim();
+    const label = m?.[1]?.trim().toLowerCase();
+    const key = label ? USEFUL_INFO_PREFIXES[label] : undefined;
+    if (key && !fields[key]) {
+      fields[key] = (m?.[2] ?? "").trim();
     } else {
       otherLines.push(line);
     }
