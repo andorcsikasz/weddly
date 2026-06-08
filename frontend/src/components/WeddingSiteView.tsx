@@ -332,16 +332,22 @@ export function WeddingSiteView({
           spaced as the signature element, then a full-width cover photo the
           date overlaps. */}
       <section className="w-full">
-        <div className="w-full border-b" style={{ borderColor: "var(--wt-accent)" }}>
-          <div className="mx-auto flex max-w-5xl items-center justify-center px-6 py-3 sm:px-8">
-            <span
-              className="text-sm tracking-[0.34em]"
-              style={{ color: "var(--wt-accent-text)", fontFamily: "var(--wt-heading-font)" }}
-            >
-              {monogram || view.couple_display_name}
-            </span>
+        {/* Monogram eyebrow — only when there's an actual monogram. Falling back
+            to the full couple name here echoed the <h1> directly below it (the
+            name appeared twice). No monogram → no bar, and the hero opens on the
+            name. */}
+        {monogram && (
+          <div className="w-full border-b" style={{ borderColor: "var(--wt-accent)" }}>
+            <div className="mx-auto flex max-w-5xl items-center justify-center px-6 py-3 sm:px-8">
+              <span
+                className="text-sm tracking-[0.34em]"
+                style={{ color: "var(--wt-accent-text)", fontFamily: "var(--wt-heading-font)" }}
+              >
+                {monogram}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
           <h1
