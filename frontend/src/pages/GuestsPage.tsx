@@ -1577,7 +1577,7 @@ function PlusOneBadge({ show }: { show: boolean | undefined }) {
     <span
       title={t("guests.plus_one_badge")}
       aria-label={t("guests.plus_one_badge")}
-      className="shrink-0 rounded-full border border-paper-300 bg-paper-100 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-ink-600 dark:border-umber-700 dark:bg-umber-700 dark:text-paper-100"
+      className="shrink-0 rounded-full border border-paper-300 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-ink-600 dark:border-umber-700 dark:text-paper-100"
     >
       +1
     </span>
@@ -2673,7 +2673,7 @@ function AccommodationToggle({
       title={label}
       className={
         on
-          ? "btn-ghost btn-sm bg-sage-100 text-sage-700 ring-1 ring-inset ring-sage-300 hover:bg-sage-200 dark:bg-sage-400/20 dark:text-sage-200 dark:ring-sage-400/40 dark:hover:bg-sage-400/30"
+          ? "btn-ghost btn-sm text-sage-700 ring-1 ring-inset ring-sage-300 dark:text-sage-200 dark:ring-sage-400/40"
           : "btn-ghost btn-sm text-ink-300 opacity-40 transition-opacity hover:opacity-100 dark:text-umber-400"
       }
     >
