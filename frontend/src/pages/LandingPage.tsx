@@ -133,18 +133,46 @@ export default function LandingPage() {
     }
   }, []);
 
-  // Ticket cut-outs: the pricing card is masked with two side notches that
-  // must sit exactly on the perforation row. We measure the row's vertical
-  // center relative to the card (its offsetParent) so the holes track the
-  // divider across locales and breakpoints instead of a guessed percentage.
+  // Ticket cut-outs: the pricing card outline is clipped to a rounded rect
+  // with a semicircle bitten out of each side edge, centered on the
+  // perforation row. We use clip-path: path() rather than a mask because two
+  // masked "holes" need cross-browser composite handling that silently falls
+  // back to additive (filling the holes back in); path() is deterministic.
+  // The path is rebuilt from the measured card size + row center so the
+  // notches track the divider across locales and breakpoints.
   const pricingCardRef = useRef<HTMLDivElement>(null);
   const perforationRef = useRef<HTMLDivElement>(null);
-  const [notchY, setNotchY] = useState<number | null>(null);
+  const [ticketClip, setTicketClip] = useState<string | null>(null);
   useEffect(() => {
     const card = pricingCardRef.current;
     const perf = perforationRef.current;
     if (!card || !perf) return;
-    const measure = () => setNotchY(perf.offsetTop + perf.offsetHeight / 2);
+    const measure = () => {
+      const w = card.offsetWidth;
+      const h = card.offsetHeight;
+      const y = perf.offsetTop + perf.offsetHeight / 2; // row center, card coords
+      const r = 16; // corner radius, matches rounded-2xl (1rem)
+      const n = 22; // notch radius — the half-circle bitten into each edge
+      // Clockwise outline (y-down). Convex corners use sweep-flag 1; the two
+      // side notches use sweep-flag 0 so the arc bulges inward (a bite).
+      const d = [
+        `M${r},0`,
+        `H${w - r}`,
+        `A${r},${r} 0 0 1 ${w},${r}`,
+        `V${y - n}`,
+        `A${n},${n} 0 0 0 ${w},${y + n}`,
+        `V${h - r}`,
+        `A${r},${r} 0 0 1 ${w - r},${h}`,
+        `H${r}`,
+        `A${r},${r} 0 0 1 0,${h - r}`,
+        `V${y + n}`,
+        `A${n},${n} 0 0 0 0,${y - n}`,
+        `V${r}`,
+        `A${r},${r} 0 0 1 ${r},0`,
+        "Z",
+      ].join(" ");
+      setTicketClip(`path('${d}')`);
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(card);
@@ -417,26 +445,21 @@ export default function LandingPage() {
           couples), with the standard 5 €/mo as the muted after-price. */}
       <section className="relative stationery">
         <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-20">
-          <div className="relative mx-auto max-w-lg">
+          {/* The lift shadow lives on the wrapper as a drop-shadow filter, not
+              on the card, because clip-path clips a box-shadow away. As a
+              filter on the parent it follows the card's clipped ticket outline,
+              so the shadow gets the side notches too. */}
+          <div className="relative mx-auto max-w-lg [filter:drop-shadow(0_22px_30px_rgba(16,24,48,0.20))]">
             <div
               ref={pricingCardRef}
-              className="relative rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8"
+              className="relative rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 border border-paper-300 dark:border-umber-700 sm:p-8"
               style={
-                notchY == null
+                ticketClip == null
                   ? undefined
-                  : // Punch a 48px-diameter transparent semicircle into each
-                    // side edge, centered on the perforation row. Two radial
-                    // "hole" masks combined with intersect so both notches cut
-                    // through to the textured background behind — a real
-                    // cut-out, no painted fill.
-                    {
-                      WebkitMaskImage: `radial-gradient(circle 24px at 0 ${notchY}px, transparent 23px, #000 24px), radial-gradient(circle 24px at 100% ${notchY}px, transparent 23px, #000 24px)`,
-                      WebkitMaskComposite: "source-in",
-                      WebkitMaskRepeat: "no-repeat",
-                      maskImage: `radial-gradient(circle 24px at 0 ${notchY}px, transparent 23px, #000 24px), radial-gradient(circle 24px at 100% ${notchY}px, transparent 23px, #000 24px)`,
-                      maskComposite: "intersect",
-                      maskRepeat: "no-repeat",
-                    }
+                  : // Clip the card to the ticket outline so the side notches
+                    // are real cut-outs that reveal the textured background
+                    // behind — no painted fill.
+                    { clipPath: ticketClip, WebkitClipPath: ticketClip }
               }
             >
               {/* Value-prop "burger" mark, pinned to the card's top-right corner.
@@ -509,11 +532,7 @@ export default function LandingPage() {
                   punched by the card mask (see the card's style above, which
                   measures this row's center). Inset so the dashes clear the
                   notches. */}
-              <div
-                ref={perforationRef}
-                className="my-5 -mx-6 sm:-mx-8"
-                aria-hidden="true"
-              >
+              <div ref={perforationRef} className="my-5 -mx-6 sm:-mx-8" aria-hidden="true">
                 <div className="mx-7 border-t border-dashed border-paper-300 dark:border-umber-700" />
               </div>
               <ul className="space-y-2">
