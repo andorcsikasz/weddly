@@ -55,6 +55,10 @@ interface UpsertBody {
   dietary?: unknown;
   plus_one_name?: unknown;
   plus_one_meal?: unknown;
+  /** Guest id this guest is a "+1" of. A number turns the guest into an
+   *  explicit +1 of that host (same household, RSVP-suppressed); `null`
+   *  detaches an existing +1 back to a standalone guest. Omitted = no change. */
+  plus_one_of?: unknown;
   accommodation_needed?: unknown;
   song_request?: unknown;
   notes?: unknown;
@@ -95,6 +99,9 @@ interface ParsedGuest {
   dietary: string | null;
   plus_one_name: string | null;
   plus_one_meal: MealChoice | null;
+  /** undefined = caller didn't touch the +1 link; number = assign to that host;
+   *  null = detach an existing +1. */
+  plus_one_of: number | null | undefined;
   accommodation_needed: number;
   song_request: string | null;
   notes: string | null;
@@ -117,6 +124,22 @@ function parseGroupTag(raw: unknown): GuestGroupTag {
 function parseKind(raw: unknown): GuestKind {
   if (typeof raw === "string" && isGuestKind(raw)) return raw;
   return "adult";
+}
+
+/** Resolve + validate the host a "+1" is assigned to. A host must be a real
+ *  guest in this couple that isn't itself a +1 (no chains), isn't a supplier,
+ *  and isn't the guest being saved. Returns the host row so the +1 inherits its
+ *  household + group_tag. */
+function resolvePlusOneHost(coupleId: number, hostId: number, selfId: number | null): GuestRow {
+  if (selfId !== null && hostId === selfId) {
+    throw new HttpError(400, "A +1 cannot be assigned to itself");
+  }
+  const host = getGuestByIdScoped(hostId, coupleId);
+  if (!host) throw new HttpError(400, "plus_one_of host not found in this couple");
+  if (host.is_plus_one) throw new HttpError(400, "A +1 cannot host another +1");
+  if (host.is_supplier) throw new HttpError(400, "A supplier cannot host a +1");
+  if (host.household_id === null) throw new HttpError(400, "Host has no household");
+  return host;
 }
 
 function parseRsvp(raw: unknown): RsvpStatus {
@@ -145,6 +168,16 @@ function parseUpsert(body: UpsertBody, requireName = true): ParsedGuest {
     dietary: parseStr(body.dietary, 500),
     plus_one_name: parseStr(body.plus_one_name, 200),
     plus_one_meal: parseMeal(body.plus_one_meal),
+    // Omitted → undefined (no change); explicit null → detach; finite number →
+    // assign to that host. NaN/garbage is treated as "no change".
+    plus_one_of:
+      body.plus_one_of === undefined
+        ? undefined
+        : body.plus_one_of === null
+          ? null
+          : typeof body.plus_one_of === "number" && Number.isFinite(body.plus_one_of)
+            ? body.plus_one_of
+            : undefined,
     accommodation_needed: body.accommodation_needed ? 1 : 0,
     song_request: parseStr(body.song_request, 500),
     notes: parseStr(body.notes, 2000),
@@ -304,7 +337,19 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   // Suppliers (DJ, photographer, …) are auto-routed to the couple's single
   // supplier household, which takes precedence over the household picker.
   let householdId: number;
-  if (parsed.is_supplier) {
+  let isPlusOne = 0;
+  let plusOneOf: number | null = null;
+  if (typeof parsed.plus_one_of === "number") {
+    // Explicit "+1" type: assign to a host, inherit its household + group, and
+    // force a plain adult (a +1 carries no supplier flag / own +1).
+    const host = resolvePlusOneHost(couple.id, parsed.plus_one_of, null);
+    isPlusOne = 1;
+    plusOneOf = host.id;
+    householdId = host.household_id as number;
+    parsed.group_tag = isGuestGroupTag(host.group_tag) ? host.group_tag : "other";
+    parsed.kind = "adult";
+    parsed.is_supplier = 0;
+  } else if (parsed.is_supplier) {
     const sh = getOrCreateSupplierHousehold(couple.id, couple.country ?? "HU");
     householdId = sh.id;
     parsed.group_tag = isGuestGroupTag(sh.group_tag) ? sh.group_tag : "other";
@@ -348,11 +393,11 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const result = db
     .prepare(
       `INSERT INTO guests
-        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, rsvp_status,
+        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, is_plus_one, plus_one_of, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
          created_at, updated_at, household_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -363,6 +408,8 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       code,
       parsed.kind,
       parsed.is_supplier,
+      isPlusOne,
+      plusOneOf,
       parsed.rsvp_status,
       parsed.meal_choice,
       parsed.dietary,
@@ -390,8 +437,9 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   });
 
   // A filled-in "+1" becomes a real guest in the same household; clear the
-  // carrier so re-saving doesn't duplicate it.
-  if (parsed.plus_one_name) {
+  // carrier so re-saving doesn't duplicate it. Skipped when this guest is
+  // itself a +1 — a +1 can't carry its own +1.
+  if (!isPlusOne && parsed.plus_one_name) {
     materializePlusOne(
       couple.id,
       { id: guestId, household_id: householdId, group_tag: parsed.group_tag },
@@ -453,6 +501,27 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   const parsed = parseUpsert(body);
   const ts = now();
 
+  // "+1" link transition. undefined = leave as-is; a number (re)assigns this
+  // guest as a +1 of that host; null detaches it back to a standalone guest. A
+  // guest that already hosts +1s can't itself become a +1 (no chains).
+  let nextIsPlusOne = existing.is_plus_one;
+  let nextPlusOneOf = existing.plus_one_of;
+  let plusOneHost: GuestRow | null = null;
+  if (typeof parsed.plus_one_of === "number") {
+    const hosted = db
+      .prepare("SELECT COUNT(*) AS n FROM guests WHERE plus_one_of = ? AND couple_id = ?")
+      .get(id, couple.id) as { n: number };
+    if (hosted.n > 0) throw new HttpError(400, "This guest already hosts a +1");
+    plusOneHost = resolvePlusOneHost(couple.id, parsed.plus_one_of, id);
+    nextIsPlusOne = 1;
+    nextPlusOneOf = plusOneHost.id;
+    parsed.kind = "adult";
+    parsed.is_supplier = 0;
+  } else if (parsed.plus_one_of === null) {
+    nextIsPlusOne = 0;
+    nextPlusOneOf = null;
+  }
+
   // Optional household reassignment. `household_id` may be: omitted (no change),
   // a number (move to that household), or paired with `new_household_label` to
   // spawn a new household for this guest. The resulting household's group_tag
@@ -507,6 +576,15 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     if (cur?.is_supplier_household) nextHouseholdId = null;
   }
 
+  // A "+1" always lives in its host's household — override whatever the picker
+  // / supplier logic above resolved.
+  if (plusOneHost) {
+    nextHouseholdId = plusOneHost.household_id;
+    if (existing.partner_role === null) {
+      parsed.group_tag = isGuestGroupTag(plusOneHost.group_tag) ? plusOneHost.group_tag : "other";
+    }
+  }
+
   // Stamp the first real answer the couple records (preserve the original on
   // later edits; clear when set back to pending). The public RSVP path stamps
   // separately via applyMemberCheckin.
@@ -536,7 +614,8 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 
   db.prepare(
     `UPDATE guests SET
-        full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, is_supplier = ?, rsvp_status = ?,
+        full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, is_supplier = ?,
+        is_plus_one = ?, plus_one_of = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
         accommodation_needed = ?, song_request = ?, notes = ?, rsvp_responded_at = ?, household_id = ?,
         invited_at = ?, invitation_delivered_at = ?, updated_at = ?
@@ -548,6 +627,8 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     parsed.group_tag,
     parsed.kind,
     parsed.is_supplier,
+    nextIsPlusOne,
+    nextPlusOneOf,
     parsed.rsvp_status,
     parsed.meal_choice,
     parsed.dietary,
@@ -576,8 +657,9 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   });
 
   // A filled-in "+1" becomes a real guest in the same household; clear the
-  // carrier so re-saving doesn't duplicate it.
-  if (parsed.plus_one_name) {
+  // carrier so re-saving doesn't duplicate it. Skipped when this guest is
+  // itself a +1.
+  if (!nextIsPlusOne && parsed.plus_one_name) {
     materializePlusOne(
       couple.id,
       { id, household_id: nextHouseholdId, group_tag: parsed.group_tag },

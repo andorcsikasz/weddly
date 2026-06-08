@@ -194,6 +194,10 @@ interface MemberDraft {
    *  "Anna +1"). Drives the inline rename input and, crucially, suppresses
    *  the "Family additions" block so a +1 can't carry its own +1. */
   is_plus_one: boolean;
+  /** True when another member in this household is already this member's
+   *  assigned +1 (the couple paired them explicitly). Suppresses the "+1?"
+   *  question so the host isn't asked to bring a +1 they already have. */
+  hosts_plus_one: boolean;
   /** Has the guest actively clicked a status pill in THIS session? On first
    *  render this is false even when the server already has a status — the
    *  pills render neutral and the meal/dietary block stays hidden until the
@@ -221,12 +225,13 @@ function looksLikePlusOnePlaceholder(name: string): boolean {
   return /\+\s*1\b/.test(name) || /\bplus[ -]?one\b/i.test(name);
 }
 
-function fromMember(m: HouseholdMember): MemberDraft {
+function fromMember(m: HouseholdMember, hostsPlusOne = false): MemberDraft {
   const { tags, free } = parseDietary(m.dietary);
   return {
     id: m.id,
     full_name: m.full_name,
     is_plus_one: m.is_plus_one || looksLikePlusOnePlaceholder(m.full_name),
+    hosts_plus_one: hostsPlusOne,
     interacted: false,
     rsvp_status: m.rsvp_status,
     meal_choice: m.meal_choice,
@@ -296,7 +301,14 @@ export function HouseholdRsvpForm({
   const navigate = useNavigate();
   const confirm = useConfirm();
   const toast = useToast();
-  const [drafts, setDrafts] = useState<MemberDraft[]>(() => view.members.map(fromMember));
+  const [drafts, setDrafts] = useState<MemberDraft[]>(() => {
+    // Member ids that already carry an explicitly-assigned +1 — their "+1?"
+    // question is suppressed (and the +1 itself never gets the question).
+    const hostIds = new Set(
+      view.members.map((m) => m.plus_one_of).filter((x): x is number => x != null),
+    );
+    return view.members.map((m) => fromMember(m, hostIds.has(m.id)));
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -908,14 +920,18 @@ export function HouseholdRsvpForm({
                           {t("rsvp.additions_section_title")}
                         </p>
                         <div className="flex flex-wrap gap-1.5">
-                          <Chip
-                            on={d.plus_one !== null}
-                            onClick={() => togglePlusOne(d)}
-                            icon={<Plus size={14} aria-hidden />}
-                            label={t("rsvp.tag_plus_one")}
-                            controlsId={`plus-one-${d.id}`}
-                            expanded={d.plus_one !== null}
-                          />
+                          {/* "+1?" is hidden when the couple already assigned
+                              this member an explicit +1 — they have one. */}
+                          {!d.hosts_plus_one && (
+                            <Chip
+                              on={d.plus_one !== null}
+                              onClick={() => togglePlusOne(d)}
+                              icon={<Plus size={14} aria-hidden />}
+                              label={t("rsvp.tag_plus_one")}
+                              controlsId={`plus-one-${d.id}`}
+                              expanded={d.plus_one !== null}
+                            />
+                          )}
                           <Chip
                             on={d.baby !== null}
                             onClick={() => toggleBaby(d)}

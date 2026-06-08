@@ -2431,6 +2431,13 @@ export interface LocaleMessages {
     /** 4th guest type — supersedes the old supplier checkbox; routes the guest
      *  into the dedicated supplier household. */
     kind_supplier: string;
+    kind_plus_one: string;
+    plus_one_type_help: string;
+    plus_one_assign_label: string;
+    plus_one_assign_help: string;
+    plus_one_assign_placeholder: string;
+    plus_one_assign_empty: string;
+    plus_one_assign_required: string;
     /** "Filled {date}" stamp under the RSVP row once an answer is recorded. */
     rsvp_filled_at: string;
     /** Plus-one block in the guest drawer — the couple fills the guest's +1,

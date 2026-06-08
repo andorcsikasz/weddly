@@ -694,6 +694,11 @@ export interface HouseholdMember {
    *  check-in form hides the "+1" chip on these rows so a +1 can't carry its
    *  own +1. */
   is_plus_one: boolean;
+  /** Guest id of the member this +1 was assigned to (null on primary guests).
+   *  The check-in form also hides the "+1?" question on a host that already
+   *  carries an assigned +1, so the couple's explicit pairing isn't asked
+   *  again. */
+  plus_one_of: number | null;
 }
 
 /** Public-facing — what the /rsvp check-in page sees. No couple PII / admin notes. */

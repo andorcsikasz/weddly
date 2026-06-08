@@ -281,6 +281,7 @@ export function toHouseholdMember(row: GuestRow): HouseholdMember {
     accommodation_needed: g.accommodation_needed,
     song_request: g.song_request,
     is_plus_one: g.is_plus_one,
+    plus_one_of: g.plus_one_of,
   };
 }
 

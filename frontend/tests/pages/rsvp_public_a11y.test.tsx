@@ -60,6 +60,7 @@ function makeView(overrides: Partial<PublicCheckinView> = {}): PublicCheckinView
         accommodation_needed: false,
         song_request: null,
         is_plus_one: false,
+        plus_one_of: null,
       },
       {
         id: 12,
@@ -71,6 +72,7 @@ function makeView(overrides: Partial<PublicCheckinView> = {}): PublicCheckinView
         accommodation_needed: false,
         song_request: null,
         is_plus_one: false,
+        plus_one_of: null,
       },
     ],
     rsvp_offers_accommodation: true,

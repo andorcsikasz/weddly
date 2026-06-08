@@ -219,3 +219,133 @@ describe("guest drawer: plus-one materialises a real guest", () => {
     expect(after.data.guests.filter((g) => g.full_name === "Dan")).toHaveLength(1);
   });
 });
+
+describe("guest drawer: explicit +1 type assigned to a host", () => {
+  interface FullGuest {
+    guest: {
+      id: number;
+      household_id: number | null;
+      is_supplier: boolean;
+      is_plus_one: boolean;
+      plus_one_of: number | null;
+      kind: string;
+    };
+  }
+
+  test("creating a +1 with plus_one_of links it and inherits the host's household", async () => {
+    const { token } = await bootstrapCouple("gd-p1-type@weddly.test");
+    const host = await req<FullGuest>(
+      "POST",
+      "/api/guests",
+      { full_name: "Host Hanna", new_household_label: "Hanna ház" },
+      { token },
+    );
+    const hostId = host.data.guest.id;
+    const hostHh = host.data.guest.household_id;
+
+    const plusOne = await req<FullGuest>(
+      "POST",
+      "/api/guests",
+      // A household picker value is sent too — the +1 branch must ignore it and
+      // follow the host's household instead.
+      { full_name: "Companion Cili", plus_one_of: hostId, kind: "baby" },
+      { token },
+    );
+    expect(plusOne.status).toBe(201);
+    expect(plusOne.data.guest.is_plus_one).toBe(true);
+    expect(plusOne.data.guest.plus_one_of).toBe(hostId);
+    expect(plusOne.data.guest.household_id).toBe(hostHh);
+    // A +1 is always a plain adult, never a supplier.
+    expect(plusOne.data.guest.kind).toBe("adult");
+    expect(plusOne.data.guest.is_supplier).toBe(false);
+  });
+
+  test("a +1 cannot host another +1, be its own host, or hang off a supplier", async () => {
+    const { token } = await bootstrapCouple("gd-p1-guard@weddly.test");
+    const host = await req<FullGuest>("POST", "/api/guests", { full_name: "A" }, { token });
+    const p1 = await req<FullGuest>(
+      "POST",
+      "/api/guests",
+      { full_name: "B", plus_one_of: host.data.guest.id },
+      { token },
+    );
+    expect(p1.status).toBe(201);
+
+    // Chain: assigning a +1 onto an existing +1 is rejected.
+    const chain = await req(
+      "POST",
+      "/api/guests",
+      { full_name: "C", plus_one_of: p1.data.guest.id },
+      { token },
+    );
+    expect(chain.status).toBe(400);
+
+    // Unknown host id is rejected.
+    const ghost = await req(
+      "POST",
+      "/api/guests",
+      { full_name: "D", plus_one_of: 999999 },
+      { token },
+    );
+    expect(ghost.status).toBe(400);
+
+    // A supplier can't host a +1.
+    const sup = await req<FullGuest>(
+      "POST",
+      "/api/guests",
+      { full_name: "DJ", is_supplier: true },
+      { token },
+    );
+    const onSupplier = await req(
+      "POST",
+      "/api/guests",
+      { full_name: "E", plus_one_of: sup.data.guest.id },
+      { token },
+    );
+    expect(onSupplier.status).toBe(400);
+  });
+
+  test("detaching a +1 (plus_one_of: null) turns it back into a standalone guest", async () => {
+    const { token } = await bootstrapCouple("gd-p1-detach@weddly.test");
+    const host = await req<FullGuest>("POST", "/api/guests", { full_name: "Host" }, { token });
+    const p1 = await req<FullGuest>(
+      "POST",
+      "/api/guests",
+      { full_name: "Plus", plus_one_of: host.data.guest.id },
+      { token },
+    );
+    expect(p1.data.guest.is_plus_one).toBe(true);
+
+    const detached = await req<FullGuest>(
+      "PATCH",
+      `/api/guests/${p1.data.guest.id}`,
+      { full_name: "Plus", plus_one_of: null },
+      { token },
+    );
+    expect(detached.data.guest.is_plus_one).toBe(false);
+    expect(detached.data.guest.plus_one_of).toBeNull();
+  });
+
+  test("a guest that already hosts a +1 cannot itself be turned into one", async () => {
+    const { token } = await bootstrapCouple("gd-p1-nochain@weddly.test");
+    const host = await req<FullGuest>("POST", "/api/guests", { full_name: "Host" }, { token });
+    const other = await req<FullGuest>("POST", "/api/guests", { full_name: "Other" }, { token });
+    // Host now hosts a +1.
+    await req(
+      "POST",
+      "/api/guests",
+      { full_name: "Plus", plus_one_of: host.data.guest.id },
+      {
+        token,
+      },
+    );
+    // Turning the host into Other's +1 would orphan its own +1 — rejected.
+    const becomes = await req(
+      "PATCH",
+      `/api/guests/${host.data.guest.id}`,
+      { full_name: "Host", plus_one_of: other.data.guest.id },
+      { token },
+    );
+    expect(becomes.status).toBe(400);
+  });
+});

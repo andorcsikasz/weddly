@@ -2301,6 +2301,13 @@ const hu: LocaleMessages = {
     kind_child: "Gyerek",
     kind_baby: "Baba",
     kind_supplier: "Szolgáltató",
+    kind_plus_one: "+1",
+    plus_one_type_help: "A +1 a kiválasztott vendég kísérője, az ő háztartásába kerül.",
+    plus_one_assign_label: "Kihez tartozik?",
+    plus_one_assign_help: "A +1 a kiválasztott vendég háztartásába kerül.",
+    plus_one_assign_placeholder: "Válassz vendéget",
+    plus_one_assign_empty: "Előbb vegyél fel egy vendéget, akihez a +1 tartozhat.",
+    plus_one_assign_required: "Válaszd ki, kihez tartozik a +1.",
     rsvp_filled_at: "Kitöltve: {date}",
     plus_one_label: "Kísérő (+1)",
     plus_one_help:
