@@ -9,9 +9,7 @@ import {
   FlagOff,
   FlaskConical,
   Gift,
-  Lightbulb,
   Mail,
-  MessageCircle,
   Search,
   Trash2,
   X,
@@ -537,30 +535,6 @@ export default function AdminUsersPage() {
             >
               <Pill tone="paper" icon={<Flag size={11} aria-hidden />}>
                 {u.activity.prior_flag_count}
-              </Pill>
-            </span>
-          )}
-          {u.activity.supplier_tip_count > 0 && (
-            <span
-              title={t("admin.activity_supplier_tips_tooltip", {
-                n: u.activity.supplier_tip_count,
-                when: formatRelative(u.activity.supplier_tip_last_at, locale, t),
-              })}
-            >
-              <Pill tone="violet" icon={<Lightbulb size={11} aria-hidden />}>
-                {t("admin.activity_supplier_tips", { n: u.activity.supplier_tip_count })}
-              </Pill>
-            </span>
-          )}
-          {u.activity.feedback_count > 0 && (
-            <span
-              title={t("admin.activity_feedback_tooltip", {
-                n: u.activity.feedback_count,
-                when: formatRelative(u.activity.feedback_last_at, locale, t),
-              })}
-            >
-              <Pill tone="violet" icon={<MessageCircle size={11} aria-hidden />}>
-                {t("admin.activity_feedback", { n: u.activity.feedback_count })}
               </Pill>
             </span>
           )}
