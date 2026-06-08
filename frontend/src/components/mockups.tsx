@@ -36,7 +36,7 @@ export function WorkspaceMockup({ className }: Common) {
   // January (2027 while we're in 2026, 2028 once 2026 ends, and so on) since
   // the year is derived from the current year + 1.
   const weddingDay = new Date(new Date().getFullYear() + 1, 6, 27); // month 6 = July
-  const mockupDate = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  const mockupDate = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     year: "numeric",
     month: "long",
     day: "numeric",

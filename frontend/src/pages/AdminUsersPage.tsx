@@ -31,7 +31,7 @@ import { useT } from "../lib/i18n";
 function formatDate(unixMs: number, locale: string): string {
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     year: "numeric",
     month: "short",
     day: "numeric",

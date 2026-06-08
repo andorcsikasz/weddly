@@ -8,7 +8,7 @@ import { useSearchParams } from "react-router-dom";
 import type { BillingStatusResponse, SubscriptionStatus } from "@shared/billing";
 import { useToast } from "../components/ui";
 import { billingApi } from "../lib/endpoints";
-import { formatMoney } from "../lib/format";
+import { formatDateMs, formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 const PLAN_LABEL_KEY: Record<SubscriptionStatus, `billing.plan_${string}`> = {
@@ -49,11 +49,7 @@ export default function BillingSettings() {
 
   function fmtDate(ms: number | null): string {
     if (!ms) return "";
-    return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(new Date(ms));
+    return formatDateMs(ms, locale);
   }
 
   async function go(kind: "checkout" | "portal") {

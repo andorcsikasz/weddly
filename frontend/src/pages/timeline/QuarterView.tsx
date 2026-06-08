@@ -234,7 +234,7 @@ export default function QuarterView({
   // consistent across locales.
   const monthDayFmt = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
         month: "short",
         day: "numeric",
       }),
@@ -242,7 +242,7 @@ export default function QuarterView({
   );
   const dayOnlyFmt = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
         day: "numeric",
       }),
     [locale],

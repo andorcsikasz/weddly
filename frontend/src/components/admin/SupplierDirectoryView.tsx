@@ -84,7 +84,7 @@ function formatTimestamp(unixMs: number | null, locale: string): string {
   if (!unixMs) return "";
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     year: "numeric",
     month: "short",
     day: "numeric",

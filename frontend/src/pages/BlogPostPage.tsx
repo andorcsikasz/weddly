@@ -514,7 +514,7 @@ function formatDate(iso: string, locale: "hu" | "en"): string {
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   const date = new Date(Date.UTC(y, m - 1, d));
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     year: "numeric",
     month: "long",
     day: "numeric",

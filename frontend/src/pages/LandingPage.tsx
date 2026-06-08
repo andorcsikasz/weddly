@@ -817,7 +817,7 @@ function StatCounter({
   run: boolean;
 }) {
   const display = useFlipTo(value, run);
-  const fmt = useMemo(() => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US"), [locale]);
+  const fmt = useMemo(() => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB"), [locale]);
   return (
     <div className="text-center">
       {/* Vintage split-flap tile — espresso card, cream serif digit, and a
@@ -962,7 +962,7 @@ function BlogTeaser() {
 
   if (!posts || posts.length === 0) return null;
 
-  const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     year: "numeric",
     month: "long",
     day: "numeric",

@@ -103,7 +103,7 @@ export default function DayView({
     }
   }, [currentDate, today]);
 
-  const intl = locale === "hu" ? "hu-HU" : "en-US";
+  const intl = locale === "hu" ? "hu-HU" : "en-GB";
   const dayStart = startOfDay(currentDate);
   const isToday = dayStart.getTime() === startOfDay(today).getTime();
   const dow = dayStart.getDay(); // 0 = Sun, 6 = Sat

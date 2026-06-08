@@ -198,7 +198,7 @@ function availableCell(
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime()))
     return { text: t("suppliers.compare.available_ask"), tone: "muted" };
-  const text = d.toLocaleDateString(locale === "hu" ? "hu-HU" : "en-US", {
+  const text = d.toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
     year: "numeric",
     month: "short",
     day: "numeric",

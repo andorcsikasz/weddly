@@ -135,7 +135,7 @@ export function SubscriptionBanner() {
   if (mode === "founding") {
     if (dismissed) return null;
     const until = foundingUntil
-      ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+      ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
           year: "numeric",
           month: "long",
         }).format(new Date(foundingUntil))

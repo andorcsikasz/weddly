@@ -47,7 +47,7 @@ interface FormState {
 function formatBlockedDate(iso: string, locale: string): string {
   const d = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     year: "numeric",
     month: "short",
     day: "numeric",

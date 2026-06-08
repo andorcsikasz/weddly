@@ -175,7 +175,7 @@ export default function HalfYearView({
 
   const monthFmt = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
         month: "long",
       }),
     [locale],

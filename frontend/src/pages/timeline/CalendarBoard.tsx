@@ -65,7 +65,7 @@ function sameDay(a: Date, b: Date): boolean {
 
 export default function CalendarBoard({ today, tasks, onOpenTask }: CalendarBoardProps) {
   const { t, locale } = useT();
-  const intl = locale === "hu" ? "hu-HU" : "en-US";
+  const intl = locale === "hu" ? "hu-HU" : "en-GB";
 
   // One month of lookback so TODAY sits in the SECOND of the four months.
   const months = useMemo(() => {

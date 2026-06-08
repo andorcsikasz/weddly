@@ -143,7 +143,7 @@ const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_o
 function formatDate(unixMs: number, locale: string): string {
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -1313,7 +1313,7 @@ function BusyCalendarCard({
 
   const monthLabel = useMemo(() => {
     const d = new Date(cursor.year, cursor.month, 1);
-    return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
       month: "long",
       year: "numeric",
     }).format(d);
@@ -1335,7 +1335,7 @@ function BusyCalendarCard({
   }, [cursor]);
 
   const dayLabels = useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
       weekday: "narrow",
     });
     // 2026-05-25 is a Monday — use it as the anchor for Mon..Sun ordering.
