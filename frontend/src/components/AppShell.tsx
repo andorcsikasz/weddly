@@ -583,15 +583,20 @@ export function AppShell({ children }: { children: ReactNode }) {
               tightened row rhythm below keeps it scrollbar-free on most
               displays. `min-h-0` lets the inner nav shrink so overflow works. */}
           <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] min-h-0 flex-col gap-1 overflow-y-auto [scrollbar-width:thin]">
-            {/* Collapse toggle — sits above the nav so it's the same
-                affordance in both couple and admin views. Aligns right when
-                expanded so the chevron sits flush with the rail edge;
-                centered when collapsed. Hidden on tablet (md) because the
-                rail is forced icon-only there — there's nothing to collapse
-                into. */}
+            {/* Collapse toggle — same affordance in both couple and admin
+                views. When expanded it floats into the top-right corner
+                (absolute, out of flow) so it stops reserving a whole row —
+                the first nav item rises to the top, and the freed ~40px of
+                vertical space goes to the bottom of the rail instead of
+                sitting empty above. When collapsed it keeps a small centered
+                row (a top-right float would collide with the first icon).
+                Hidden on tablet (md) because the rail is forced icon-only
+                there — there's nothing to collapse into. */}
             <div
-              className={`hidden pb-1 lg:flex ${
-                sidebarCollapsed ? "justify-center" : "justify-end pr-1"
+              className={`hidden lg:flex ${
+                sidebarCollapsed
+                  ? "justify-center pb-1"
+                  : "lg:absolute lg:right-1 lg:top-0 lg:z-10 lg:justify-end"
               }`}
             >
               <button
@@ -657,7 +662,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 })()}
               </nav>
             ) : (
-              <nav className="flex flex-col gap-0.5">
+              <nav className="flex flex-col gap-0">
                 {(() => {
                   // Render items in stable order, injecting a small section
                   // header (or, when collapsed, a thin divider) whenever the
@@ -799,7 +804,11 @@ function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: b
   // break takes the same vertical space either way, every icon below it lands
   // on the exact same row when the user toggles the rail.
   return (
-    <div className="flex h-7 items-center px-2">
+    // `mt-2` sets a small, deliberate gap before each category so sections
+    // read as distinct, while the items inside a category sit flush (the
+    // parent nav uses `gap-0`). The fixed `h-7` is unchanged so an icon lands
+    // on the same row whether the rail is expanded or collapsed.
+    <div className="mt-2 flex h-7 items-center px-2">
       {/* Labelled header — fully-expanded laptop rail only. */}
       {!collapsed && (
         <div className="hidden w-full items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
