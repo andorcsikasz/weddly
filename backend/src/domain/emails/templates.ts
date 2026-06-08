@@ -395,6 +395,7 @@ export type KindPayload = {
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
   guest_invite: GuestInvitePayload;
   onboarding_nudge: OnboardingNudgePayload;
+  onboarding_nudge_week: OnboardingNudgePayload;
   milestone_t90: MilestonePayload;
   milestone_t30: MilestonePayload;
   milestone_t7: MilestonePayload;
@@ -1074,6 +1075,30 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If now's not a good time, you can opt out of these reminders from the footer below.",
       ],
       cta: "Finish my planner",
+    },
+  }),
+
+  onboarding_nudge_week: (p, ctx) => ({
+    subject: "Egy hét telt el. Kész vagy elkezdeni? / A week in: ready to start?",
+    ctaUrl: p.onboardingUrl,
+    hu: {
+      preheader: "Egy hét telt el. Kezdjük el az esküvőtök tervezését?",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        "Egy hete regisztráltál a Weddly-n, de a terveződ még üres.",
+        "Pár perc az egész: pár adat (nevek, dátum, vendégszám), és máris kapsz egy szabható költségvetést, vendéglistát és ülésrend-vázat.",
+        "Ha most nem alkalmas, leiratkozhatsz az emlékeztetőkről a levél alján.",
+      ],
+      cta: "Elkezdem a tervezést",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        "It's been a week since you joined Weddly, and your planner is still empty.",
+        "A few minutes is all it takes: a few facts (names, date, guest count), and we'll seed a budget, guest list, and seating skeleton you can shape.",
+        "If now's not a good time, you can opt out of these reminders from the footer below.",
+      ],
+      cta: "Start planning",
     },
   }),
 

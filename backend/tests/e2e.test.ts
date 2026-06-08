@@ -3475,6 +3475,46 @@ describe("email pipeline", () => {
     expect(logs.length).toBe(1);
   });
 
+  test("week-later nudge fires once for a user still without a workspace", async () => {
+    wipeAll();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "weeknudge@weddly.test",
+      password: "supersafe123",
+      full_name: "Week Nudge",
+    });
+    // Age the account past the 7-day mark; still no couple.
+    db.prepare("UPDATE users SET created_at = ? WHERE id = ?").run(
+      now() - 1000 * 60 * 60 * 24 * 8,
+      reg.data.user.id,
+    );
+
+    const first = runEmailSweep();
+    // The 8-day-old orphan trips both the 24h and the 1-week nudge on the
+    // same sweep — distinct kinds, one send each.
+    expect(first.nudges).toBe(1);
+    expect(first.nudgesWeek).toBe(1);
+    const second = runEmailSweep();
+    expect(second.nudgesWeek).toBe(0);
+
+    const logs = db
+      .prepare("SELECT id FROM email_log WHERE user_id = ? AND kind = 'onboarding_nudge_week'")
+      .all(reg.data.user.id) as { id: number }[];
+    expect(logs.length).toBe(1);
+  });
+
+  test("week-later nudge skips users who created a workspace", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("weeknudge-has-couple@weddly.test");
+    // Age the owner past 7 days — but they have a workspace, so no nudge.
+    db.prepare("UPDATE users SET created_at = ? WHERE couple_id = ?").run(
+      now() - 1000 * 60 * 60 * 24 * 8,
+      coupleId,
+    );
+
+    const sweep = runEmailSweep();
+    expect(sweep.nudgesWeek).toBe(0);
+  });
+
   test("milestone reminders fire for couples whose wedding is in 7/30/90 days", async () => {
     wipeAll();
     const { coupleId } = await bootstrapCouple("milestones@weddly.test");

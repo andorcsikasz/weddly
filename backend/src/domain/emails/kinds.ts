@@ -26,6 +26,7 @@ export type EmailKind =
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
   | "guest_invite" // sent to a guest with a one-click /rsvp/{code} link
   | "onboarding_nudge" // 24h after signup if they haven't onboarded a couple
+  | "onboarding_nudge_week" // 7 days after signup, still no workspace — second, warmer nudge
   | "milestone_t90" // 90 days before the wedding
   | "milestone_t30" // 30 days before
   | "milestone_t7" // 7 days before
@@ -106,6 +107,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // guest in /app/guests — the recipient is waiting on the link.
   guest_invite: "transactional",
   onboarding_nudge: "lifecycle",
+  onboarding_nudge_week: "lifecycle",
   milestone_t90: "lifecycle",
   milestone_t30: "lifecycle",
   milestone_t7: "lifecycle",

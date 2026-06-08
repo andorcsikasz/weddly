@@ -16,6 +16,7 @@ import type { EmailKind } from "./kinds";
 import { markDispatched, sendKind } from "./send";
 
 const ONBOARDING_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24; // 24h
+const ONBOARDING_NUDGE_WEEK_AFTER_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const INVITE_PARTNER_AUTO_AFTER_MS = 1000 * 60 * 60 * 48; // 48h
 // Solo workspaces are auto-nudged at the first 10:00 UTC at or after the 48h
 // mark ("48h utáni legközelebbi 10:00"). The worker runs hourly, so the real
@@ -44,6 +45,7 @@ interface CouplePartnerRow {
 /** Run all lifecycle sweeps. Returns counts so tests can assert behavior. */
 export function runEmailSweep(): {
   nudges: number;
+  nudgesWeek: number;
   invitePartnerAuto: number;
   milestones: number;
   weddings: number;
@@ -55,6 +57,7 @@ export function runEmailSweep(): {
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
+  const nudgesWeek = sweepOnboardingNudgesWeek(ts);
   const invitePartnerAuto = sweepInvitePartnerAuto(ts);
   const milestones = sweepMilestones(ts);
   const weddings = sweepWeddingDay(ts);
@@ -65,6 +68,7 @@ export function runEmailSweep(): {
   const rsvpDigests = sweepRsvpWeeklyDigest(ts);
   return {
     nudges,
+    nudgesWeek,
     invitePartnerAuto,
     milestones,
     weddings,
@@ -98,6 +102,39 @@ function sweepOnboardingNudges(ts: number): number {
     if (!markDispatched({ kind: "onboarding_nudge", couple_id: null, user_id: u.id })) continue;
     void sendKind(
       "onboarding_nudge",
+      { onboardingUrl: `${CONFIG.frontendBaseUrl}/onboarding` },
+      { user: { id: u.id, email: u.email, full_name: u.full_name } },
+    );
+    count++;
+  }
+  return count;
+}
+
+function sweepOnboardingNudgesWeek(ts: number): number {
+  // Second, warmer nudge for users still without a workspace a week after
+  // signup. Distinct kind from the 24h nudge, so the email_dispatches index
+  // lets both fire once each — a 24h + 1-week drip. A user who created a
+  // couple in between is excluded by `couple_id IS NULL`.
+  const cutoff = ts - ONBOARDING_NUDGE_WEEK_AFTER_MS;
+  const rows = db
+    .prepare(
+      `SELECT u.id, u.email, u.full_name, u.couple_id, u.status, u.created_at
+         FROM users u
+        WHERE u.couple_id IS NULL
+          AND u.status = 'active'
+          AND u.created_at <= ?
+          AND NOT EXISTS (
+            SELECT 1 FROM email_dispatches d
+             WHERE d.user_id = u.id AND d.kind = 'onboarding_nudge_week'
+          )`,
+    )
+    .all(cutoff) as UserRow[];
+
+  let count = 0;
+  for (const u of rows) {
+    if (!markDispatched({ kind: "onboarding_nudge_week", couple_id: null, user_id: u.id })) continue;
+    void sendKind(
+      "onboarding_nudge_week",
       { onboardingUrl: `${CONFIG.frontendBaseUrl}/onboarding` },
       { user: { id: u.id, email: u.email, full_name: u.full_name } },
     );
@@ -584,6 +621,7 @@ export function startEmailWorker(): void {
     const r = runEmailSweep();
     if (
       r.nudges +
+        r.nudgesWeek +
         r.invitePartnerAuto +
         r.milestones +
         r.weddings +
