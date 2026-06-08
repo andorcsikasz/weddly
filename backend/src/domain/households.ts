@@ -134,6 +134,11 @@ export function createHousehold(input: {
    *  Couples can opt-in at creation time from the AddGuestDrawer; absent
    *  (or false) preserves the schema default of OFF. */
   rsvp_offers_accommodation?: boolean;
+  /** Initial value for the household's `rsvp_collects_meal` flag. Meal
+   *  collection is opt-in, so absent (or false) keeps it OFF. Set explicitly
+   *  here (not left to the column default) so older DBs whose column was
+   *  created with the legacy DEFAULT 1 still start new households OFF. */
+  rsvp_collects_meal?: boolean;
   /** Marks the per-couple supplier household. See `getOrCreateSupplierHousehold`. */
   is_supplier_household?: boolean;
 }): HouseholdRow {
@@ -142,7 +147,7 @@ export function createHousehold(input: {
   const groupTag: GuestGroupTag = input.group_tag ?? "other";
   const result = db
     .prepare(
-      "INSERT INTO households (couple_id, code, label, notes, group_tag, auto_created, rsvp_offers_accommodation, is_supplier_household, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO households (couple_id, code, label, notes, group_tag, auto_created, rsvp_offers_accommodation, rsvp_collects_meal, is_supplier_household, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .run(
       input.couple_id,
@@ -152,6 +157,7 @@ export function createHousehold(input: {
       groupTag,
       input.auto_created ? 1 : 0,
       input.rsvp_offers_accommodation ? 1 : 0,
+      input.rsvp_collects_meal ? 1 : 0,
       input.is_supplier_household ? 1 : 0,
       ts,
       ts,

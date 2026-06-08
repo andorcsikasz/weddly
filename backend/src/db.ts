@@ -572,17 +572,18 @@ addColumnIfMissing(
   "rsvp_offers_accommodation INTEGER NOT NULL DEFAULT 0",
 );
 
-// Opt-out toggle for the meal-choice row on the public RSVP form. Most
-// weddings serve a plated menu so the icon row of meat/fish/veg/vegan/child/
-// none is useful, and existing couples shouldn't lose it on upgrade — hence
-// the DEFAULT 1. When a couple flips it off from the Profile page (e.g. a
-// buffet wedding), the meal-icon row is hidden on the public form. The
-// per-member `meal_choice` value isn't touched server-side; if the toggle
-// flips back on later, prior selections re-appear.
+// Opt-IN toggle for the meal-choice row on the public RSVP form (legacy
+// couple-level mirror; the live gate is the per-household column below). It
+// now defaults OFF: many couples run a buffet or decide the menu themselves,
+// so the meat/fish/veg/vegan/child/none row is opt-in, not opt-out. Existing
+// couples keep their stored value (this DEFAULT only applies to fresh DBs).
+// When on, a flip-off hides the row on the public form; the per-member
+// `meal_choice` value isn't touched, so prior selections re-appear if turned
+// back on.
 addColumnIfMissing(
   "couples",
   "rsvp_collects_meal",
-  "rsvp_collects_meal INTEGER NOT NULL DEFAULT 1",
+  "rsvp_collects_meal INTEGER NOT NULL DEFAULT 0",
 );
 
 // Household-level group tag — one source of truth for the whole party (his
@@ -621,7 +622,7 @@ addColumnIfMissing(
 addColumnIfMissing(
   "households",
   "rsvp_collects_meal",
-  "rsvp_collects_meal INTEGER NOT NULL DEFAULT 1",
+  "rsvp_collects_meal INTEGER NOT NULL DEFAULT 0",
 );
 // One-time backfill — when these per-household columns were first added,
 // pull the couple-level setting forward so existing weddings don't silently
@@ -636,8 +637,11 @@ db.exec(`
    WHERE rsvp_offers_accommodation = 0
      AND couple_id IN (SELECT id FROM couples WHERE rsvp_offers_accommodation = 1)
 `);
-// Households whose couple has meal collection OFF: flip the household OFF
-// (the per-household column was just initialised to 1).
+// Households whose couple has meal collection OFF: flip the household OFF.
+// Historical: ran once when the per-household column was first added with a
+// DEFAULT 1. The column now defaults to 0 (meal collection is opt-in), so on
+// fresh DBs nothing matches this and it is a no-op; on DBs that pre-date the
+// change it already reconciled the legacy global setting.
 db.exec(`
   UPDATE households
      SET rsvp_collects_meal = 0

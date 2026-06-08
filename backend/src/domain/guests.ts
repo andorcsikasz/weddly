@@ -190,8 +190,11 @@ export function ensurePartnerGuests(input: {
       ORDER BY h.created_at ASC
       LIMIT 1`,
   );
+  // rsvp_collects_meal is set explicitly to 0 (meal collection is opt-in) so
+  // older DBs whose column was created with the legacy DEFAULT 1 still start
+  // new households with the menu row OFF.
   const insertHh = db.prepare(
-    "INSERT INTO households (couple_id, code, label, notes, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?)",
+    "INSERT INTO households (couple_id, code, label, notes, rsvp_collects_meal, created_at, updated_at) VALUES (?, ?, ?, NULL, 0, ?, ?)",
   );
   const updateHhLabel = db.prepare("UPDATE households SET label = ?, updated_at = ? WHERE id = ?");
   const countMembers = db.prepare("SELECT COUNT(*) AS n FROM guests WHERE household_id = ?");

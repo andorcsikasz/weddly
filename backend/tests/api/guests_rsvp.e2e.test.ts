@@ -2263,4 +2263,39 @@ describe("households: RSVP toggles surface in PublicCheckinView", () => {
     }>("GET", `/api/rsvp/lookup?couple=${slug}&code=${hh.data.household.code}`);
     expect(r.data.rsvp.rsvp_collects_meal).toBe(false);
   });
+
+  test("meal collection is OFF by default on freshly created households", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("hh-mealdefault@weddly.test");
+
+    // Implicit household-of-one created by adding a name-only guest.
+    await req("POST", "/api/guests", { full_name: "Béla" }, { token });
+    // Explicit household via the CRUD route, no meal flag passed.
+    const explicit = await req<{ household: { id: number; code: string } }>(
+      "POST",
+      "/api/households",
+      { label: "Explicit" },
+      { token },
+    );
+
+    const list = await req<{ households: { rsvp_collects_meal: boolean }[] }>(
+      "GET",
+      "/api/households",
+      undefined,
+      { token },
+    );
+    expect(list.data.households.length).toBeGreaterThan(0);
+    // Every freshly created household starts with the menu row OFF.
+    for (const h of list.data.households) {
+      expect(h.rsvp_collects_meal).toBe(false);
+    }
+
+    // And it flows through to the public RSVP form (no meal row by default).
+    const slug = await getSlug(token);
+    const pub = await req<{ rsvp: { rsvp_collects_meal: boolean } }>(
+      "GET",
+      `/api/rsvp/lookup?couple=${slug}&code=${explicit.data.household.code}`,
+    );
+    expect(pub.data.rsvp.rsvp_collects_meal).toBe(false);
+  });
 });
