@@ -135,6 +135,7 @@ function makeEvent(overrides: Partial<ScheduleEvent> = {}): ScheduleEvent {
     responsible: null,
     couple_supplier_id: null,
     sort_order: 0,
+    is_key_moment: false,
     created_at: 1,
     updated_at: 1,
     ...overrides,

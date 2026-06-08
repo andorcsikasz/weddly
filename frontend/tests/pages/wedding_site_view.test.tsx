@@ -61,6 +61,7 @@ function filledView(overrides: Partial<PublicWeddingWebsiteView> = {}): PublicWe
         duration_minutes: 30,
         location: "Kert",
         notes: null,
+        is_key_moment: false,
       },
     ],
     wishlist: null,

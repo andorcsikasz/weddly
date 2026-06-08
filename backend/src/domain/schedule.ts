@@ -26,6 +26,7 @@ export interface ScheduleEventRow {
   responsible: string | null;
   couple_supplier_id: string | null;
   sort_order: number;
+  is_key_moment: number;
   created_at: number;
   updated_at: number;
 }
@@ -42,6 +43,7 @@ export function toScheduleEvent(row: ScheduleEventRow): ScheduleEvent {
     responsible: row.responsible,
     couple_supplier_id: row.couple_supplier_id,
     sort_order: row.sort_order,
+    is_key_moment: row.is_key_moment === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -58,6 +60,7 @@ export interface ParsedScheduleEvent {
   responsible: string | null;
   couple_supplier_id: string | null;
   sort_order: number;
+  is_key_moment: boolean;
 }
 
 function parseLabel(raw: unknown): string {
@@ -99,6 +102,13 @@ function parseOptionalString(raw: unknown, max: number, field: string): string |
   return trimmed;
 }
 
+function parseKeyMoment(raw: unknown, fallback: boolean): boolean {
+  if (raw === undefined) return fallback;
+  if (typeof raw === "boolean") return raw;
+  if (raw === 1 || raw === 0) return raw === 1;
+  throw new HttpError(400, "is_key_moment must be a boolean");
+}
+
 function parseSortOrder(raw: unknown, fallback: number): number {
   if (raw === undefined) return fallback;
   const n = Number(raw);
@@ -123,6 +133,7 @@ export function parseUpsertCreate(body: Partial<UpsertScheduleEventInput>): Pars
       "couple_supplier_id",
     ),
     sort_order: parseSortOrder(body.sort_order, 0),
+    is_key_moment: parseKeyMoment(body.is_key_moment, false),
   };
 }
 
@@ -163,6 +174,10 @@ export function parseUpsertPatch(
             "couple_supplier_id",
           ),
     sort_order: parseSortOrder(body.sort_order, existing.sort_order),
+    is_key_moment:
+      body.is_key_moment === undefined
+        ? existing.is_key_moment === 1
+        : parseKeyMoment(body.is_key_moment, false),
   };
 }
 
@@ -194,8 +209,8 @@ export function insertScheduleEvent(
     .prepare(
       `INSERT INTO schedule_events
          (couple_id, label, starts_at_minutes, duration_minutes, location, notes,
-          responsible, couple_supplier_id, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          responsible, couple_supplier_id, sort_order, is_key_moment, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -207,6 +222,7 @@ export function insertScheduleEvent(
       parsed.responsible,
       parsed.couple_supplier_id,
       parsed.sort_order,
+      parsed.is_key_moment ? 1 : 0,
       ts,
       ts,
     );
@@ -223,7 +239,8 @@ export function updateScheduleEvent(
   db.prepare(
     `UPDATE schedule_events SET
        label = ?, starts_at_minutes = ?, duration_minutes = ?, location = ?,
-       notes = ?, responsible = ?, couple_supplier_id = ?, sort_order = ?, updated_at = ?
+       notes = ?, responsible = ?, couple_supplier_id = ?, sort_order = ?,
+       is_key_moment = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.label,
@@ -234,11 +251,24 @@ export function updateScheduleEvent(
     parsed.responsible,
     parsed.couple_supplier_id,
     parsed.sort_order,
+    parsed.is_key_moment ? 1 : 0,
     ts,
     id,
     coupleId,
   );
   return db.prepare("SELECT * FROM schedule_events WHERE id = ?").get(id) as ScheduleEventRow;
+}
+
+/** How many events the couple has already flagged as key moments, optionally
+ *  excluding one id (the row being updated). Used to enforce MAX_KEY_MOMENTS. */
+export function countKeyMoments(coupleId: number, exceptId?: number): number {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM schedule_events
+        WHERE couple_id = ? AND is_key_moment = 1 AND id != ?`,
+    )
+    .get(coupleId, exceptId ?? -1) as { n: number };
+  return row.n;
 }
 
 export function deleteScheduleEvent(id: number, coupleId: number): boolean {

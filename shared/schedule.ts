@@ -35,6 +35,10 @@ export interface ScheduleEvent {
   /** Tiebreaker for events that share the same `starts_at_minutes`. Server
    *  returns rows ordered by (starts_at_minutes, sort_order, id). */
   sort_order: number;
+  /** Couple-flagged "headline beat" surfaced on the public wedding site's
+   *  "A nap menete" row. At most `MAX_KEY_MOMENTS` per couple (server-enforced).
+   *  When none are flagged the public site falls back to a heuristic default. */
+  is_key_moment: boolean;
   created_at: UnixMs;
   /** Used by the frontend as the `If-Match` value for optimistic concurrency
    *  guarding on PATCH. Server-set on every write. */
@@ -51,6 +55,7 @@ export interface UpsertScheduleEventInput {
   responsible?: string | null;
   couple_supplier_id?: string | null;
   sort_order?: number;
+  is_key_moment?: boolean;
 }
 
 /** Time bounds — exported so the page agents validate identically. Two-day

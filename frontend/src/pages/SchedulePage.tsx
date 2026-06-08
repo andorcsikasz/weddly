@@ -6,6 +6,7 @@
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import {
+  MAX_KEY_MOMENTS,
   SCHEDULE_DAY_TWO_MINUTES,
   SCHEDULE_MAX_DURATION,
   SCHEDULE_MAX_LABEL_LEN,
@@ -21,6 +22,7 @@ import {
   MapPin,
   Pencil,
   Plus,
+  Star,
   Trash2,
   User,
   Wand2,
@@ -162,6 +164,32 @@ export default function SchedulePage() {
     setEvents((prev) => prev.filter((e) => e.id !== event.id));
     try {
       await scheduleApi.remove(event.id);
+    } catch (e) {
+      setEvents(snapshot);
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  /** Flip a beat's "key moment" flag — these are the (max 4) events the public
+   *  wedding site shows in its one-row "A nap menete". Optimistic, with a
+   *  client-side cap check so we don't even round-trip a doomed 5th. */
+  async function onToggleKey(event: ScheduleEvent) {
+    const turningOn = !event.is_key_moment;
+    if (turningOn && events.filter((e) => e.is_key_moment).length >= MAX_KEY_MOMENTS) {
+      toast.error(t("schedule.key_moment_max", { n: MAX_KEY_MOMENTS }));
+      return;
+    }
+    const snapshot = events;
+    setEvents((prev) =>
+      prev.map((e) => (e.id === event.id ? { ...e, is_key_moment: turningOn } : e)),
+    );
+    try {
+      const r = await scheduleApi.update(
+        event.id,
+        { is_key_moment: turningOn },
+        { ifMatch: event.updated_at },
+      );
+      setEvents((prev) => prev.map((e) => (e.id === event.id ? r.event : e)));
     } catch (e) {
       setEvents(snapshot);
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -356,6 +384,20 @@ export default function SchedulePage() {
                 </span>
               </button>
               <div className="ml-auto flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  aria-label={t("schedule.key_moment_toggle")}
+                  title={t("schedule.key_moment_toggle")}
+                  aria-pressed={event.is_key_moment}
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                    event.is_key_moment
+                      ? "text-blush-600 hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                      : "text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                  }`}
+                  onClick={() => void onToggleKey(event)}
+                >
+                  <Star size={14} fill={event.is_key_moment ? "currentColor" : "none"} />
+                </button>
                 <button
                   type="button"
                   aria-label={t("schedule.edit_event")}

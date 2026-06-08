@@ -26,6 +26,10 @@ export interface PublicWeddingScheduleEntry {
   duration_minutes: number | null;
   location: string | null;
   notes: string | null;
+  /** Couple-flagged headline beat. The public site renders only the key
+   *  moments (capped) as a single row; falls back to a heuristic when none
+   *  are flagged. See `pickKeyMoments` in shared/schedule.ts. */
+  is_key_moment: boolean;
 }
 
 /** Tier discriminator returned alongside the payload. The frontend reads

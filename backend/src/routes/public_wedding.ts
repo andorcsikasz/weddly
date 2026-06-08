@@ -219,6 +219,7 @@ function handleGetWeddingWebsite(ctx: Ctx): Response {
     duration_minutes: e.duration_minutes,
     location: e.location,
     notes: e.notes,
+    is_key_moment: e.is_key_moment,
   }));
 
   // Funnel event — every successful fetch counts. We split by tier so
@@ -288,6 +289,7 @@ function handleLegacyGuestPortal(ctx: Ctx): Response {
     duration_minutes: e.duration_minutes,
     location: e.location,
     notes: e.notes,
+    is_key_moment: e.is_key_moment,
   }));
 
   const ceremonyKind: CeremonyKind | null =

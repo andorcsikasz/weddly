@@ -1905,6 +1905,8 @@ const en: LocaleMessages = {
     add_event: "New event",
     edit_event: "Edit event",
     delete_event: "Delete event",
+    key_moment_toggle: "Show on the wedding site as a key moment",
+    key_moment_max: "You can highlight up to {n} key moments on the wedding site.",
     download_pdf: "Download PDF",
     field_label: "Label",
     field_label_placeholder: "e.g. Civil ceremony",

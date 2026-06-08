@@ -724,6 +724,7 @@ export default function GuestPageEditorPage() {
             duration_minutes: ev.duration_minutes,
             location: ev.location,
             notes: ev.notes,
+            is_key_moment: ev.is_key_moment,
           }),
         ),
         wishlist: null,

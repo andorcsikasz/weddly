@@ -1926,6 +1926,8 @@ const hu: LocaleMessages = {
     add_event: "Új programpont",
     edit_event: "Programpont szerkesztése",
     delete_event: "Programpont törlése",
+    key_moment_toggle: "Megjelenítés kiemelt pontként az esküvői oldalon",
+    key_moment_max: "Legfeljebb {n} kiemelt pontot mutathatsz az esküvői oldalon.",
     download_pdf: "PDF letöltése",
     field_label: "Megnevezés",
     field_label_placeholder: "pl. Polgári szertartás",

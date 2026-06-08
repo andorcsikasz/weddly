@@ -2,10 +2,11 @@
 // requireAuth and getCoupleForUser. PATCH honours `If-Match: <updated_at>`
 // for optimistic concurrency, matching budget / seating.
 
-import type { UpsertScheduleEventInput } from "@shared/schedule";
+import { MAX_KEY_MOMENTS, type UpsertScheduleEventInput } from "@shared/schedule";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
 import {
+  countKeyMoments,
   deleteScheduleEvent,
   getScheduleEventScoped,
   insertScheduleEvent,
@@ -31,6 +32,9 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
 
   const body = await readJson<Partial<UpsertScheduleEventInput>>(ctx.req);
   const parsed = parseUpsertCreate(body);
+  if (parsed.is_key_moment && countKeyMoments(couple.id) >= MAX_KEY_MOMENTS) {
+    throw new HttpError(400, `At most ${MAX_KEY_MOMENTS} key moments`, { code: "key_moment_max" });
+  }
   const row = insertScheduleEvent(couple.id, parsed);
 
   addAuditLog({
@@ -75,6 +79,15 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 
   const body = await readJson<Partial<UpsertScheduleEventInput>>(ctx.req);
   const parsed = parseUpsertPatch(body, existing);
+  // Only block when this PATCH is the one flipping the flag on — re-saving an
+  // already-key event (or any other field) must not trip the cap.
+  if (
+    parsed.is_key_moment &&
+    existing.is_key_moment !== 1 &&
+    countKeyMoments(couple.id, id) >= MAX_KEY_MOMENTS
+  ) {
+    throw new HttpError(400, `At most ${MAX_KEY_MOMENTS} key moments`, { code: "key_moment_max" });
+  }
   const row = updateScheduleEvent(id, couple.id, parsed);
 
   addAuditLog({
@@ -124,6 +137,9 @@ function handleDuplicate(ctx: Ctx): Response {
     responsible: existing.responsible,
     couple_supplier_id: existing.couple_supplier_id,
     sort_order: existing.sort_order,
+    // A clone never inherits the key-moment flag — it would silently eat one of
+    // the four slots and could push the couple over the cap.
+    is_key_moment: false,
   });
 
   addAuditLog({

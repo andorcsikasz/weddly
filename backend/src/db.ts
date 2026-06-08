@@ -164,6 +164,10 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_planning_topic ON planning_items(couple_
 // production script the couple can hand to a helper.
 addColumnIfMissing("schedule_events", "responsible", "responsible TEXT");
 addColumnIfMissing("schedule_events", "couple_supplier_id", "couple_supplier_id TEXT");
+// Couple-flagged "key moment" — the public wedding site shows only these (max
+// MAX_KEY_MOMENTS) as a single headline row, falling back to a heuristic when
+// none are set. Boolean stored as 0/1.
+addColumnIfMissing("schedule_events", "is_key_moment", "is_key_moment INTEGER NOT NULL DEFAULT 0");
 
 // Global slug uniqueness — couples.slug paired with the 4-digit household
 // code is the public RSVP credential, so two weddings must never share a

@@ -2111,6 +2111,8 @@ export interface LocaleMessages {
     add_event: string;
     edit_event: string;
     delete_event: string;
+    key_moment_toggle: string;
+    key_moment_max: string;
     download_pdf: string;
     field_label: string;
     field_label_placeholder: string;

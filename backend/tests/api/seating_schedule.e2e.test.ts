@@ -1917,3 +1917,99 @@ describe("schedule: run-sheet fields (responsible + supplier)", () => {
     expect(r.status).toBe(400);
   });
 });
+
+describe("schedule: key moments", () => {
+  test("defaults to false, round-trips true on create, and PATCH toggles it", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("sched-key-1@weddly.test");
+
+    const plain = await makeEvent(token, { label: "Arrival", starts_at_minutes: 900 });
+    expect(plain).toBeDefined();
+    const listed = await req<{ events: { id: number; is_key_moment: boolean }[] }>(
+      "GET",
+      "/api/schedule",
+      undefined,
+      { token },
+    );
+    expect(listed.data.events.find((e) => e.id === plain.id)?.is_key_moment).toBe(false);
+
+    const keyed = await req<{ event: { id: number; is_key_moment: boolean } }>(
+      "POST",
+      "/api/schedule",
+      { label: "Ceremony", starts_at_minutes: 930, is_key_moment: true },
+      { token },
+    );
+    expect(keyed.status).toBe(201);
+    expect(keyed.data.event.is_key_moment).toBe(true);
+
+    const patched = await req<{ event: { is_key_moment: boolean } }>(
+      "PATCH",
+      `/api/schedule/${plain.id}`,
+      { is_key_moment: true },
+      { token },
+    );
+    expect(patched.status).toBe(200);
+    expect(patched.data.event.is_key_moment).toBe(true);
+  });
+
+  test("rejects a 5th key moment, on both create and PATCH", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("sched-key-2@weddly.test");
+
+    for (let i = 0; i < 4; i++) {
+      const r = await req(
+        "POST",
+        "/api/schedule",
+        { label: `Beat ${i}`, starts_at_minutes: 600 + i * 30, is_key_moment: true },
+        { token },
+      );
+      expect(r.status).toBe(201);
+    }
+
+    // 5th key moment via create → 400 key_moment_max
+    const fifth = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/schedule",
+      { label: "Beat 5", starts_at_minutes: 800, is_key_moment: true },
+      { token },
+    );
+    expect(fifth.status).toBe(400);
+    expect(fifth.data.detail?.code).toBe("key_moment_max");
+
+    // A plain create still works, but flipping it on via PATCH is blocked.
+    const plain = await makeEvent(token, { label: "Plain", starts_at_minutes: 810 });
+    const flip = await req<{ detail?: { code?: string } }>(
+      "PATCH",
+      `/api/schedule/${plain.id}`,
+      { is_key_moment: true },
+      { token },
+    );
+    expect(flip.status).toBe(400);
+    expect(flip.data.detail?.code).toBe("key_moment_max");
+  });
+
+  test("re-saving an already-key event does not trip the cap", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("sched-key-3@weddly.test");
+    const ids: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      const r = await req<{ event: { id: number; updated_at: number } }>(
+        "POST",
+        "/api/schedule",
+        { label: `Beat ${i}`, starts_at_minutes: 600 + i * 30, is_key_moment: true },
+        { token },
+      );
+      ids.push(r.data.event.id);
+    }
+    // Edit the label of one of the four key moments — it stays key, cap intact.
+    const r = await req<{ event: { is_key_moment: boolean; label: string } }>(
+      "PATCH",
+      `/api/schedule/${ids[0]}`,
+      { label: "Renamed beat", is_key_moment: true },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.event.is_key_moment).toBe(true);
+    expect(r.data.event.label).toBe("Renamed beat");
+  });
+});
