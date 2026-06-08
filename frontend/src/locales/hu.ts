@@ -1254,6 +1254,23 @@ const hu: LocaleMessages = {
     priority_set_important: "Jelöld fontosnak (!)",
     priority_set_sos: "Jelöld SOS-nek (!!)",
     priority_clear: "Prioritás levétele",
+    // Safe-timeline generator button + dialog on the Tasks tab.
+    timeline_gen_button: "Ütemterv összeállítása",
+    timeline_gen_button_hint:
+      "A biztonságos esküvői ütemterv — minden teendő a határidejével, az esküvő dátumából kiszámolva.",
+    timeline_gen_dialog_title: "Ütemterv összeállítása",
+    timeline_gen_dialog_body:
+      "Ezek a teendők egy bevált esküvői ütemtervet adnak, mindegyik a saját ideális határidejével. Nézzétek át, igazítsatok a dátumokon, és vegyétek ki amire nincs szükség — utána bármikor módosítható.",
+    timeline_gen_no_date:
+      "Még nincs pontos esküvői dátumotok, ezért a határidők üresek. Hozzáadhatjátok a teendőket most, és később beírhatjátok a dátumokat.",
+    timeline_gen_already: "Már a listátokon",
+    timeline_gen_confirm_count_one: "{count} teendő hozzáadása",
+    timeline_gen_confirm_count_other: "{count} teendő hozzáadása",
+    timeline_gen_done_one: "{count} teendő hozzáadva az ütemtervhez",
+    timeline_gen_done_other: "{count} teendő hozzáadva az ütemtervhez",
+    // Task row status chips.
+    status_overdue: "Csúszik",
+    status_due_soon: "Hamarosan",
     // Task tab wand (varázspálca) + dialog.
     task_template_button: "Sablon feladatok",
     task_template_button_hint:

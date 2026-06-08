@@ -1406,6 +1406,22 @@ export interface LocaleMessages {
     priority_set_important: string;
     priority_set_sos: string;
     priority_clear: string;
+    /** Safe-timeline generator button + dialog on the Tasks tab. Turns the
+     *  canonical wedding timeline into dated tasks behind a confirm step.
+     *  `*_confirm_count` + `*_done` use plural variants. */
+    timeline_gen_button: string;
+    timeline_gen_button_hint: string;
+    timeline_gen_dialog_title: string;
+    timeline_gen_dialog_body: string;
+    timeline_gen_no_date: string;
+    timeline_gen_already: string;
+    timeline_gen_confirm_count_one: string;
+    timeline_gen_confirm_count_other: string;
+    timeline_gen_done_one: string;
+    timeline_gen_done_other: string;
+    /** Task row status chips (overdue / due-soon), derived from the due date. */
+    status_overdue: string;
+    status_due_soon: string;
     /** Task tab wand button + dialog. */
     task_template_button: string;
     task_template_button_hint: string;

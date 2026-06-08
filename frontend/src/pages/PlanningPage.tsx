@@ -5,10 +5,19 @@
 // model with duration, location, sort, PDF export). One quick-add row per tab;
 // rows are inline-editable on click.
 
+import {
+  type TimelineTemplateItem,
+  WEDDING_TIMELINE,
+  parseIsoDate,
+  timelineDatesFor,
+  timelineStatus,
+  toIsoDate,
+} from "@shared/planning_timeline";
 import type { PlanningItem, PlanningKind } from "@shared/types";
 import {
   ArrowRight,
   Calendar,
+  CalendarClock,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -107,6 +116,8 @@ export default function PlanningPage() {
   // (different field shapes). The wedding-day program template lives on
   // /app/schedule, so there's no schedule wand here.
   const [taskWandOpen, setTaskWandOpen] = useState(false);
+  const [timelineGenOpen, setTimelineGenOpen] = useState(false);
+  const [weddingDate, setWeddingDate] = useState<string | null>(null);
   const [ideaWandOpen, setIdeaWandOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
   const [bulkApplying, setBulkApplying] = useState(false);
@@ -129,6 +140,7 @@ export default function PlanningPage() {
       .current()
       .then((r) => {
         if (!r.couple) return;
+        setWeddingDate(r.couple.wedding_date ?? null);
         const bride = r.couple.bride_name?.trim() || t("planning.assignee_bride");
         const groom = r.couple.groom_name?.trim() || t("planning.assignee_groom");
         setPartnerNames([...new Set([bride, groom].filter(Boolean))]);
@@ -344,6 +356,15 @@ export default function PlanningPage() {
   const hasTaskItems = useMemo(() => items.some((i) => i.kind === "task"), [items]);
   const hasIdeaItems = useMemo(() => items.some((i) => i.kind === "idea"), [items]);
 
+  /** Lower-cased titles of existing tasks — lets the timeline generator mark
+   *  items the couple already has so it never creates a duplicate "Book the
+   *  venue". Matches on the localized title the generator would write. */
+  const existingTaskTitles = useMemo(() => {
+    const set = new Set<string>();
+    for (const i of items) if (i.kind === "task") set.add(i.title.trim().toLowerCase());
+    return set;
+  }, [items]);
+
   /** Generic bulk-creator: takes an array of CreateInputs, POSTs sequentially,
    *  pushes successes into state, surfaces the count via toast. Used by all
    *  three wand variants + the dice "add this one" CTA. */
@@ -353,6 +374,8 @@ export default function PlanningPage() {
       body?: string | null;
       assignee?: string | null;
       topic?: "wedding" | "honeymoon" | null;
+      start_date?: string | null;
+      due_date?: string | null;
     }[],
     kind: PlanningKind,
     successKey: string,
@@ -409,6 +432,34 @@ export default function PlanningPage() {
     if (entries.length === 0) return;
     const added = await bulkCreate(entries, "task", "planning.template_tasks_done");
     if (added > 0) setTaskWandOpen(false);
+  }
+
+  /** Apply the safe-timeline generator: each picked template item becomes a
+   *  dated task. The due date may have been edited in the dialog; the start
+   *  date trails it by the item's action window so the Gantt bar gets a span.
+   *  Items the couple left undated (no wedding date set) persist as plain
+   *  checklist tasks they can date later. */
+  async function onApplyTimeline(picked: { item: TimelineTemplateItem; dueDate: string | null }[]) {
+    if (picked.length === 0) return;
+    const entries = picked.map(({ item, dueDate }) => {
+      const due = dueDate || null;
+      let start: string | null = null;
+      if (due) {
+        const d = parseIsoDate(due);
+        if (d) {
+          d.setDate(d.getDate() - item.windowDays);
+          start = toIsoDate(d);
+        }
+      }
+      return {
+        title: localizeText(item.title, locale),
+        topic: item.topic,
+        due_date: due,
+        start_date: start,
+      };
+    });
+    const added = await bulkCreate(entries, "task", "planning.timeline_gen_done");
+    if (added > 0) setTimelineGenOpen(false);
   }
 
   async function onApplyIdeaTemplate(selected: Set<number>) {
@@ -481,6 +532,15 @@ export default function PlanningPage() {
                   <span>{t("planning.timeline_link")}</span>
                   <ArrowRight size={12} aria-hidden="true" />
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => setTimelineGenOpen(true)}
+                  className="btn-outline btn-sm inline-flex items-center gap-1.5"
+                  title={t("planning.timeline_gen_button_hint")}
+                >
+                  <CalendarClock size={14} aria-hidden="true" />
+                  <span>{t("planning.timeline_gen_button")}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setTaskWandOpen(true)}
@@ -609,6 +669,17 @@ export default function PlanningPage() {
         )}
       </div>
 
+      {timelineGenOpen && (
+        <TimelineGeneratorDialog
+          applying={bulkApplying}
+          weddingDate={weddingDate}
+          existingTitles={existingTaskTitles}
+          locale={locale}
+          onClose={() => setTimelineGenOpen(false)}
+          onApply={onApplyTimeline}
+        />
+      )}
+
       {taskWandOpen && (
         <TaskTemplateDialog
           existing={hasTaskItems}
@@ -651,6 +722,226 @@ export default function PlanningPage() {
         />
       )}
     </>
+  );
+}
+
+/** Compact status chip on a task row. Renders ONLY for the two states that
+ *  need action — overdue (filled blush, urgent) and due-soon (light blush,
+ *  a heads-up). On-track / done / undated tasks show nothing so the list
+ *  stays quiet until something actually needs attention. */
+function TaskStatusPill({ item }: { item: PlanningItem }) {
+  const { t } = useT();
+  const status = timelineStatus(item.due_date, item.done, todayIso());
+  if (status === "overdue") {
+    return (
+      <span className="inline-flex shrink-0 items-center rounded-full bg-blush-500 px-2 py-0.5 text-[11px] font-medium text-paper-50">
+        {t("planning.status_overdue")}
+      </span>
+    );
+  }
+  if (status === "due_soon") {
+    return (
+      <span className="inline-flex shrink-0 items-center rounded-full bg-blush-50 px-2 py-0.5 text-[11px] font-medium text-blush-700 ring-1 ring-blush-200 dark:bg-blush-400/15 dark:text-blush-300 dark:ring-blush-400/30">
+        {t("planning.status_due_soon")}
+      </span>
+    );
+  }
+  return null;
+}
+
+/** "Build my timeline" generator. Turns the canonical WEDDING_TIMELINE into a
+ *  preview the couple confirms BEFORE anything is written: each row carries a
+ *  deadline pre-computed from the wedding date (editable inline), items the
+ *  couple already has are shown greyed + excluded, and apply creates the picked
+ *  rows as dated tasks. With no exact wedding date the deadlines start blank —
+ *  the couple can still add the tasks and date them later. */
+function TimelineGeneratorDialog({
+  applying,
+  weddingDate,
+  existingTitles,
+  locale,
+  onClose,
+  onApply,
+}: {
+  applying: boolean;
+  weddingDate: string | null;
+  existingTitles: Set<string>;
+  locale: Locale;
+  onClose: () => void;
+  onApply: (picked: { item: TimelineTemplateItem; dueDate: string | null }[]) => Promise<void>;
+}) {
+  const { t } = useT();
+
+  // Which template items the couple already has — matched on the localized
+  // title we would write, so a generated "Book the venue" is recognised.
+  const alreadyHave = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of WEDDING_TIMELINE) {
+      if (existingTitles.has(localizeText(item.title, locale).trim().toLowerCase()))
+        set.add(item.key);
+    }
+    return set;
+  }, [existingTitles, locale]);
+
+  // Default selection: everything the couple doesn't already have.
+  const [selected, setSelected] = useState<Set<string>>(
+    () => new Set(WEDDING_TIMELINE.filter((i) => !alreadyHave.has(i.key)).map((i) => i.key)),
+  );
+  // Editable due dates, pre-filled from the wedding date (blank when there's
+  // no exact date to anchor on).
+  const [dueDates, setDueDates] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const item of WEDDING_TIMELINE) {
+      map[item.key] = timelineDatesFor(weddingDate, item)?.due_date ?? "";
+    }
+    return map;
+  });
+
+  const selectable = WEDDING_TIMELINE.filter((i) => !alreadyHave.has(i.key));
+  const allSelected = selectable.length > 0 && selected.size === selectable.length;
+
+  function toggle(key: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function apply() {
+    const picked = WEDDING_TIMELINE.filter((i) => selected.has(i.key)).map((item) => ({
+      item,
+      dueDate: dueDates[item.key]?.trim() || null,
+    }));
+    void onApply(picked);
+  }
+
+  return (
+    <Dialog
+      open
+      title={t("planning.timeline_gen_dialog_title")}
+      role="dialog"
+      closeOnBackdrop
+      onClose={() => {
+        if (!applying) onClose();
+      }}
+      footer={
+        <>
+          <button type="button" className="btn-ghost" onClick={onClose} disabled={applying}>
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={apply}
+            disabled={applying || selected.size === 0}
+          >
+            {applying
+              ? t("common.loading")
+              : t("planning.timeline_gen_confirm_count", { count: selected.size })}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-ink-700 dark:text-paper-100">{t("planning.timeline_gen_dialog_body")}</p>
+        {!weddingDate && (
+          <p className="rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-700/60 dark:text-umber-200">
+            {t("planning.timeline_gen_no_date")}
+          </p>
+        )}
+        <div className="rounded-lg border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-800">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {t("planning.template_select_label", {
+                count: selected.size,
+                total: selectable.length,
+              })}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                setSelected(allSelected ? new Set() : new Set(selectable.map((i) => i.key)))
+              }
+              disabled={selectable.length === 0}
+              className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900 disabled:opacity-40 dark:text-umber-200 dark:hover:text-paper-50"
+            >
+              {allSelected ? t("planning.template_select_none") : t("planning.template_select_all")}
+            </button>
+          </div>
+          <ul className="space-y-0.5">
+            {WEDDING_TIMELINE.map((item) => {
+              const have = alreadyHave.has(item.key);
+              const on = selected.has(item.key);
+              const title = localizeText(item.title, locale);
+              const hint = item.hint ? localizeText(item.hint, locale) : null;
+              return (
+                <li
+                  key={item.key}
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
+                >
+                  <button
+                    type="button"
+                    onClick={() => !have && toggle(item.key)}
+                    aria-pressed={on}
+                    disabled={have}
+                    className={`flex min-w-0 flex-1 items-start gap-2 text-left transition-colors ${
+                      have
+                        ? "cursor-default text-ink-300 dark:text-umber-400"
+                        : on
+                          ? "text-ink-900 dark:text-paper-50"
+                          : "text-ink-400 hover:text-ink-600 dark:text-umber-300 dark:hover:text-paper-100"
+                    }`}
+                  >
+                    {have ? (
+                      <CheckCircle2
+                        size={14}
+                        className="mt-0.5 shrink-0 text-sage-500 dark:text-sage-400"
+                        aria-hidden="true"
+                      />
+                    ) : on ? (
+                      <CheckCircle2
+                        size={14}
+                        className="mt-0.5 shrink-0 text-sage-700 dark:text-sage-300"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <Circle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                    )}
+                    <span className="min-w-0">
+                      <span className="block truncate">{title}</span>
+                      {have ? (
+                        <span className="block text-[11px] italic text-ink-400 dark:text-umber-400">
+                          {t("planning.timeline_gen_already")}
+                        </span>
+                      ) : (
+                        hint && (
+                          <span className="block text-[11px] text-ink-400 dark:text-umber-400">
+                            {hint}
+                          </span>
+                        )
+                      )}
+                    </span>
+                  </button>
+                  {!have && (
+                    <input
+                      type="date"
+                      value={dueDates[item.key] ?? ""}
+                      onChange={(e) =>
+                        setDueDates((prev) => ({ ...prev, [item.key]: e.target.value }))
+                      }
+                      aria-label={t("planning.due_date_label")}
+                      className="shrink-0 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-xs text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 
@@ -1387,6 +1678,7 @@ function PlanningRow({
                       : (item.start_date ?? item.due_date)}
                   </span>
                 )}
+                {item.kind === "task" && <TaskStatusPill item={item} />}
                 {item.kind === "task" &&
                   (editingAssignee ? (
                     <>

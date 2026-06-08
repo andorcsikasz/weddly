@@ -1241,6 +1241,23 @@ const en: LocaleMessages = {
     priority_set_important: "Mark as important (!)",
     priority_set_sos: "Mark as SOS (!!)",
     priority_clear: "Clear priority",
+    // Safe-timeline generator button + dialog on the Tasks tab.
+    timeline_gen_button: "Build my timeline",
+    timeline_gen_button_hint:
+      "The safe wedding timeline — every to-do with its deadline, worked out from your wedding date.",
+    timeline_gen_dialog_title: "Build my timeline",
+    timeline_gen_dialog_body:
+      "These to-dos lay out a proven wedding runway, each with its ideal deadline. Review them, tweak the dates, and drop anything you don't need — you can change it all later.",
+    timeline_gen_no_date:
+      "You haven't set an exact wedding date yet, so the deadlines are blank. You can add the to-dos now and date them later.",
+    timeline_gen_already: "Already on your list",
+    timeline_gen_confirm_count_one: "Add {count} to-do",
+    timeline_gen_confirm_count_other: "Add {count} to-dos",
+    timeline_gen_done_one: "{count} to-do added to your timeline",
+    timeline_gen_done_other: "{count} to-dos added to your timeline",
+    // Task row status chips.
+    status_overdue: "Overdue",
+    status_due_soon: "Due soon",
     // Task tab wand + dialog.
     task_template_button: "Task template",
     task_template_button_hint:
