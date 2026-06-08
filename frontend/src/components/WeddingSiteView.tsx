@@ -33,7 +33,7 @@ import {
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { buildMonogram, formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
+import { formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
 import { pickKeyMoments } from "@shared/schedule";
 import { formatDate, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -412,12 +412,6 @@ export function WeddingSiteView({
         .join(" · ")
     : null;
 
-  // Monogram (the couple's joined initials), driven by the Design selection.
-  // Empty monogram (no names yet) skips the block.
-  const monogram = view.design.monogram_enabled
-    ? buildMonogram(view.bride_name, view.groom_name, view.design.monogram_separator, locale)
-    : "";
-
   // Section hiding applies to the LIVE page only — the editor preview keeps
   // every section visible so the couple can still edit hidden ones.
   const hiddenSet = new Set(view.design.website_hidden_sections);
@@ -463,27 +457,9 @@ export function WeddingSiteView({
   return (
     <div className="wedding-theme w-full" style={themeStyle}>
       {/* ── Hero ────────────────────────────────────────────────────────────
-          Minimal top bar (monogram), couple names, the date set BIG + letter-
-          spaced as the signature element, then a full-width cover photo the
-          date overlaps. */}
+          Couple names, the date set BIG + letter-spaced as the signature
+          element, then a full-width cover photo the date overlaps. */}
       <section className="w-full">
-        {/* Monogram eyebrow — only when there's an actual monogram. Falling back
-            to the full couple name here echoed the <h1> directly below it (the
-            name appeared twice). No monogram → no bar, and the hero opens on the
-            name. */}
-        {monogram && (
-          <div className="w-full border-b" style={{ borderColor: "var(--wt-accent)" }}>
-            <div className="mx-auto flex max-w-5xl items-center justify-center px-6 py-3 sm:px-8">
-              <span
-                className="text-sm tracking-[0.34em]"
-                style={{ color: "var(--wt-text)", fontFamily: "var(--wt-heading-font)" }}
-              >
-                {monogram}
-              </span>
-            </div>
-          </div>
-        )}
-
         <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
           <h1
             className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"

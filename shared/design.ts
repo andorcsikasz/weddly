@@ -42,7 +42,8 @@ export type PaletteSlug =
   | "terracotta"
   | "blue_porcelain"
   | "ink_gold"
-  | "noir_ivory";
+  | "noir_ivory"
+  | "midnight";
 
 export type FontPresetSlug = "classic_serif" | "modern_clean" | "soft_romantic";
 
@@ -184,9 +185,12 @@ function pair(hex: string): ColorPair {
 // Each palette anchors one wedding STYLE, so they're deliberately far apart in
 // hue + mood (sage green vs porcelain blue vs terracotta) — that distance is
 // what makes the style presets read as genuinely different worlds, not tints of
-// the same look. All keep a near-black text on a light background so contrast
-// stays WCAG-safe; the accent_text fallback in toPublicDesign handles any
-// low-contrast primary.
+// the same look. Most keep a near-black text on a light background so contrast
+// stays WCAG-safe; `midnight` is the deliberate inverse (warm ivory text on a
+// near-black background) for the dark "Black Tie" style. The accent_text
+// fallback in toPublicDesign handles any low-contrast primary either way, and
+// the guest page's bands flip automatically (a dark palette's "dark" band
+// renders light, preserving the alternating rhythm).
 export const PALETTES: readonly Palette[] = [
   {
     slug: "botanical_green",
@@ -281,6 +285,18 @@ export const PALETTES: readonly Palette[] = [
     accent: pair("#B9B2A6"),
     text: pair("#16140F"),
   },
+  {
+    // Midnight: the only DARK-background palette. Warm ivory on near-black ink
+    // with antique gold, for a candlelit black-tie evening look. Inverts the
+    // usual light-page assumption — the guest page flips its bands automatically
+    // so the rhythm still alternates.
+    slug: "midnight",
+    nameKey: "design.palette.midnight",
+    primary: pair("#C9A96C"), // Antique gold (headings / eyebrows on the dark bg)
+    background: pair("#16130F"), // Deep warm near-black
+    accent: pair("#9E8455"), // Muted bronze (hairlines / dividers)
+    text: pair("#F2EBDB"), // Warm ivory
+  },
 ];
 
 export const FONT_PRESETS: readonly FontPreset[] = [
@@ -340,17 +356,18 @@ export function getFontFamilyStack(slug: FontFamilySlug): string {
   return FONT_FAMILIES.find((f) => f.slug === slug)?.stack ?? FONT_FAMILIES[0]!.stack;
 }
 
+// Four deliberately distinct styles so the choice is a real one, spanning light
+// AND dark: warm champagne-gold classic, cool stone minimal, blush romantic, and
+// a dark "Black Tie" (warm ivory + gold on near-black). Removed/renamed slugs
+// stay in StylePresetSlug for backward-compat (a legacy couple's stored style
+// just degrades to the default selection; their palette/fonts render unchanged
+// since rendering reads those fields directly — e.g. the old light "editorial"
+// pick still resolves its ink_gold palette).
 export const STYLE_PRESETS: readonly StylePreset[] = [
   {
     slug: "classic_elegant",
     nameKey: "design.style.classic_elegant",
     defaultPalette: "champagne",
-    defaultFonts: "classic_serif",
-  },
-  {
-    slug: "botanical_green",
-    nameKey: "design.style.botanical_green",
-    defaultPalette: "botanical_green",
     defaultFonts: "classic_serif",
   },
   {
@@ -366,42 +383,11 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     defaultFonts: "soft_romantic",
   },
   {
-    slug: "rustic_natural",
-    nameKey: "design.style.rustic_natural",
-    defaultPalette: "sage_cream",
-    defaultFonts: "classic_serif",
-  },
-  {
-    slug: "editorial",
-    nameKey: "design.style.editorial",
-    defaultPalette: "ink_gold",
-    defaultFonts: "classic_serif",
-  },
-  {
-    // Premium black-and-white magazine look: monochrome palette, high-contrast
-    // serif and grayscale photos with sharp, shadowless,
-    // outline chrome — the full "black tie" world.
+    // Dark style: warm ivory + antique gold on a near-black background. The
+    // serif heading keeps it formal-elegant rather than stark.
     slug: "black_tie_editorial",
     nameKey: "design.style.black_tie_editorial",
-    defaultPalette: "noir_ivory",
-    defaultFonts: "classic_serif",
-    defaultWeb: {
-      imageTreatment: "grayscale",
-      buttonStyle: "outline",
-      cardRadius: "sharp",
-      shadow: "none",
-    },
-  },
-  {
-    slug: "mediterranean_terracotta",
-    nameKey: "design.style.mediterranean_terracotta",
-    defaultPalette: "terracotta",
-    defaultFonts: "classic_serif",
-  },
-  {
-    slug: "blue_porcelain",
-    nameKey: "design.style.blue_porcelain",
-    defaultPalette: "blue_porcelain",
+    defaultPalette: "midnight",
     defaultFonts: "classic_serif",
   },
 ];
@@ -554,12 +540,12 @@ export function getShadowCss(slug: ShadowSlug): string {
   return SHADOWS.find((s) => s.slug === slug)?.css ?? SHADOWS[1]!.css;
 }
 
-/** The Design feature's own default — Botanical Green + classic serif. NULL /
- *  legacy `design_json` rows resolve to this; it drives only the guest page +
- *  wired print templates, NOT the app-shell accent. */
+/** The Design feature's own default — Classic Elegant (champagne + classic
+ *  serif). NULL / legacy `design_json` rows resolve to this; it drives only the
+ *  guest page + wired print templates, NOT the app-shell accent. */
 export const DEFAULT_DESIGN: CoupleDesign = {
-  style: "botanical_green",
-  palette: "botanical_green",
+  style: "classic_elegant",
+  palette: "champagne",
   fonts: "classic_serif",
   colors: {},
   headingFont: null,

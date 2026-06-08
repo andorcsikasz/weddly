@@ -16,7 +16,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { type PDFFont, type PDFPage, PDFDocument, degrees, rgb } from "pdf-lib";
-import { buildMonogram, type CoupleDesign, formatWeddingDate, getPalette } from "@shared/design";
+import { type CoupleDesign, formatWeddingDate, getPalette } from "@shared/design";
 import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets } from "@shared/seating";
 import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";
@@ -717,11 +717,8 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       return cjkFont;
     },
   };
-  // Resolved visual identity - palette colours, monogram, border.
+  // Resolved visual identity - palette colours, border.
   const colors = designColors(input.design);
-  const monogram =
-    input.design.monogram.enabled &&
-    buildMonogram(input.bride_name, input.groom_name, input.design.monogram.separator, "en");
 
   const cardW = FORMATS.place_card.width_mm;
   const cardH = FORMATS.place_card.height_mm;
@@ -770,20 +767,6 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
         borderColor: colors.accent,
         color: colors.background,
       });
-
-      // Monogram across the top of the card, in the accent/primary tone.
-      if (monogram) {
-        const mFont = await pickFontAsync(fontPair, monogram, "bold");
-        const mSafe = safe(monogram);
-        const mw = mFont.widthOfTextAtSize(mSafe, 10);
-        page.drawText(mSafe, {
-          x: cxPt - mw / 2,
-          y: mm(y_mm0_top + cardH * 0.78),
-          size: 10,
-          font: mFont,
-          color: colors.primary,
-        });
-      }
 
       const name = safe(g.full_name);
       const nameSize = name.length > 22 ? 14 : 18;
@@ -852,9 +835,6 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
   const fontPair = await buildFontPair(pdf);
   const { regular: helv } = fontPair;
   const colors = designColors(input.design);
-  const monogram =
-    input.design.monogram.enabled &&
-    buildMonogram(input.bride_name, input.groom_name, input.design.monogram.separator, "en");
 
   // A6 = 105x148mm - half of A5, the matching set size for the place cards.
   const W = 105;
@@ -886,20 +866,6 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
       borderColor: colors.accent,
       color: colors.background,
     });
-    // Monogram at the top.
-    if (monogram) {
-      const mFont = await pickFontAsync(fontPair, monogram, "bold");
-      const mSafe = safe(monogram);
-      const mw = mFont.widthOfTextAtSize(mSafe, 14);
-      page.drawText(mSafe, {
-        x: cxPt - mw / 2,
-        y: mm(H - 28),
-        size: 14,
-        font: mFont,
-        color: colors.primary,
-      });
-    }
-
     // Big centred table label, fitted to the card width.
     const labelFit = await fitText(fontPair, t.label, 44, mm(W - 24), "bold");
     const labelW = labelFit.font.widthOfTextAtSize(labelFit.text, 44);
@@ -933,9 +899,6 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
   const fontPair = await buildFontPair(pdf);
   const { regular: helv } = fontPair;
   const colors = designColors(input.design);
-  const monogram =
-    input.design.monogram.enabled &&
-    buildMonogram(input.bride_name, input.groom_name, input.design.monogram.separator, "en");
   const dateText = formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
 
   const page = pdf.addPage([mm(W), mm(H)]);
@@ -951,20 +914,6 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     borderColor: colors.accent,
     color: colors.background,
   });
-  // Monogram.
-  if (monogram) {
-    const mFont = await pickFontAsync(fontPair, monogram, "bold");
-    const mSafe = safe(monogram);
-    const mw = mFont.widthOfTextAtSize(mSafe, 14);
-    page.drawText(mSafe, {
-      x: cxPt - mw / 2,
-      y: mm(H - 26),
-      size: 14,
-      font: mFont,
-      color: colors.primary,
-    });
-  }
-
   // Couple display name.
   const nameSafe = safe(input.couple_display_name);
   const nameFont = await pickFontAsync(fontPair, nameSafe, "bold");

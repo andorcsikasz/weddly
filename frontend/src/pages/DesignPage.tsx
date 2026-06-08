@@ -21,8 +21,6 @@ import {
   type ShadowSlug,
   SHADOWS,
   type StylePreset,
-  WEBSITE_SECTIONS,
-  type WebsiteSectionSlug,
   FONT_FAMILIES,
   FONT_PRESETS,
   type FontFamilySlug,
@@ -32,8 +30,6 @@ import {
   getPalette,
   IMAGE_TREATMENTS,
   type ImageTreatmentSlug,
-  MONOGRAM_SEPARATORS,
-  monogramSeparatorGlyph,
   resolveDesign,
   STYLE_PRESETS,
   type StylePresetSlug,
@@ -71,7 +67,9 @@ function PresetTile({
 }: {
   active: boolean;
   onSelect: () => void;
-  label: string;
+  /** Visible caption under the preview. Omit to render no caption (the font
+   *  tiles preview the typeface itself, so a redundant name is dropped). */
+  label?: string;
   ariaLabel: string;
   children: React.ReactNode;
 }) {
@@ -96,7 +94,9 @@ function PresetTile({
         </span>
       )}
       {children}
-      <span className="text-sm font-medium text-ink-900 dark:text-paper-50">{label}</span>
+      {label && (
+        <span className="text-sm font-medium text-ink-900 dark:text-paper-50">{label}</span>
+      )}
     </button>
   );
 }
@@ -369,20 +369,6 @@ export default function DesignPage() {
     // PDF path stays consistent until pdf.ts reads the style directly.
     setDesign((d) => ({ ...d, borderStyle: slug, print: { ...d.print, border: slug !== "none" } }));
   }
-  function toggleSection(slug: WebsiteSectionSlug) {
-    setDesign((d) => {
-      const hidden = d.web.hiddenSections.includes(slug)
-        ? d.web.hiddenSections.filter((s) => s !== slug)
-        : [...d.web.hiddenSections, slug];
-      return { ...d, web: { ...d.web, hiddenSections: hidden } };
-    });
-  }
-  function toggleMonogram() {
-    setDesign((d) => ({ ...d, monogram: { ...d.monogram, enabled: !d.monogram.enabled } }));
-  }
-  function chooseSeparator(slug: (typeof MONOGRAM_SEPARATORS)[number]["slug"]) {
-    setDesign((d) => ({ ...d, monogram: { ...d.monogram, separator: slug } }));
-  }
   function chooseDateFormat(slug: (typeof DATE_FORMATS)[number]["slug"]) {
     setDesign((d) => ({ ...d, dateFormat: slug }));
   }
@@ -587,11 +573,7 @@ export default function DesignPage() {
                   {t("design.print_preview.editing_helper")}
                 </p>
               </div>
-            ) : (
-              <p className="text-sm text-ink-500 dark:text-umber-300">
-                {t("design.website.helper")}
-              </p>
-            )}
+            ) : null}
 
             {/* Print mode: WHICH card am I designing? This is the first and most
                 important choice, so it sits above the shared identity. Real
@@ -733,22 +715,14 @@ export default function DesignPage() {
                     key={f.slug}
                     active={design.fonts === f.slug}
                     onSelect={() => chooseFonts(f.slug)}
-                    label={t(f.nameKey)}
                     ariaLabel={t(f.nameKey)}
                   >
-                    <span className="flex flex-col" aria-hidden>
-                      <span
-                        className="text-xl leading-tight text-ink-900 dark:text-paper-50"
-                        style={{ fontFamily: f.headingStack }}
-                      >
-                        Anna & Bence
-                      </span>
-                      <span
-                        className="truncate text-[11px] text-ink-500 dark:text-umber-300"
-                        style={{ fontFamily: f.bodyStack }}
-                      >
-                        {t("design.font_sample_body")}
-                      </span>
+                    <span
+                      className="block text-xl leading-tight text-ink-900 dark:text-paper-50"
+                      style={{ fontFamily: f.headingStack }}
+                      aria-hidden
+                    >
+                      Anna & Bence
                     </span>
                   </PresetTile>
                 ))}
@@ -789,56 +763,6 @@ export default function DesignPage() {
                   </div>
                 ))}
               </div>
-            </section>
-
-            {/* Monogram */}
-            <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("design.section.monogram")}
-              </h2>
-              <button
-                type="button"
-                onClick={toggleMonogram}
-                aria-pressed={design.monogram.enabled}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                  design.monogram.enabled
-                    ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                    : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                }`}
-              >
-                {design.monogram.enabled && <Check size={12} strokeWidth={3} aria-hidden />}
-                {t("design.monogram.enable")}
-              </button>
-              {design.monogram.enabled && (
-                <div className="mt-4">
-                  <p className="mb-2 text-xs font-medium text-ink-500 dark:text-umber-300">
-                    {t("design.monogram.separator_label")}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {MONOGRAM_SEPARATORS.map((sep) => {
-                      const glyph =
-                        sep.slug === "and" ? monogramSeparatorGlyph("and", locale) : sep.glyph;
-                      const active = design.monogram.separator === sep.slug;
-                      return (
-                        <button
-                          key={sep.slug}
-                          type="button"
-                          onClick={() => chooseSeparator(sep.slug)}
-                          aria-pressed={active}
-                          aria-label={glyph}
-                          className={`inline-flex h-10 min-w-[2.5rem] items-center justify-center rounded-xl border px-3 font-serif text-base transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                            active
-                              ? "border-ink-900 ring-1 ring-ink-900 text-ink-900 dark:border-paper-100 dark:ring-paper-100 dark:text-paper-50"
-                              : "border-paper-300 text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
-                          }`}
-                        >
-                          {glyph}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </section>
 
             {/* Date format */}
@@ -930,34 +854,6 @@ export default function DesignPage() {
                         >
                           {active && <Check size={12} strokeWidth={3} aria-hidden />}
                           {t(it.nameKey)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-                {/* Section visibility — a pressed chip = visible; unpress to hide
-                    it from the guest page. RSVP is never hideable. */}
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.web.sections_label")}
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {WEBSITE_SECTIONS.map((sec) => {
-                      const visible = !design.web.hiddenSections.includes(sec.slug);
-                      return (
-                        <button
-                          key={sec.slug}
-                          type="button"
-                          onClick={() => toggleSection(sec.slug)}
-                          aria-pressed={visible}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                            visible
-                              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                              : "border-paper-300 bg-white text-ink-400 line-through hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300"
-                          }`}
-                        >
-                          {visible && <Check size={12} strokeWidth={3} aria-hidden />}
-                          {t(sec.nameKey)}
                         </button>
                       );
                     })}
@@ -1111,8 +1007,6 @@ export default function DesignPage() {
                     design={design}
                     template={printTemplate}
                     brideName={couple?.bride_name ?? null}
-                    groomName={couple?.groom_name ?? null}
-                    locale={locale}
                   />
                 </div>
                 {pdfPreviewUrl && (

@@ -1,7 +1,7 @@
 // Design feature — the curated visual identity persisted on couples.design_json
 // and exposed (resolved) on the couple DTO + the public wedding-website view.
 // Owns the wire contract: PATCH persistence + slug validation + merge-on-
-// partial, the Botanical Green default for NULL rows, the public payload at
+// partial, the Classic Elegant default for NULL rows, the public payload at
 // every tier, and the per-cluster audit row. The catalog values themselves
 // live in shared/design.ts.
 
@@ -64,7 +64,7 @@ async function onboard(token: string): Promise<{ couple: { id: number; design: C
 }
 
 describe("design: default resolution", () => {
-  test("a fresh couple (NULL design_json) reads back as Botanical Green", async () => {
+  test("a fresh couple (NULL design_json) reads back as Classic Elegant", async () => {
     wipeAll();
     const token = await registerVerified("design-default@weddly.test");
     const { couple } = await onboard(token);
@@ -74,8 +74,8 @@ describe("design: default resolution", () => {
     };
     expect(stored.design_json).toBeNull();
     expect(couple.design).toEqual({
-      style: "botanical_green",
-      palette: "botanical_green",
+      style: "classic_elegant",
+      palette: "champagne",
       fonts: "classic_serif",
       colors: {},
       headingFont: null,
@@ -492,27 +492,25 @@ describe("design: website-only `web` sub-object", () => {
     expect(bad.status).toBe(400);
   });
 
-  test("the Black Tie Editorial style resolves its monochrome palette + grayscale chrome", async () => {
+  test("a style with explicit web chrome round-trips end-to-end", async () => {
     wipeAll();
-    const token = await registerVerified("design-blacktie@weddly.test");
+    const token = await registerVerified("design-editorial@weddly.test");
     await onboard(token);
     const r = await req<{ couple: { design: CoupleDesign } }>(
       "PATCH",
       "/api/couples/current",
-      // The frontend applies the style's web defaults; mirror that here so the
-      // persisted bundle is exercised end-to-end.
       {
         design: {
-          style: "black_tie_editorial",
-          palette: "noir_ivory",
+          style: "editorial",
+          palette: "ink_gold",
           web: { imageTreatment: "grayscale", buttonStyle: "outline" },
         },
       },
       { token },
     );
     expect(r.status).toBe(200);
-    expect(r.data.couple.design.style).toBe("black_tie_editorial");
-    expect(r.data.couple.design.palette).toBe("noir_ivory");
+    expect(r.data.couple.design.style).toBe("editorial");
+    expect(r.data.couple.design.palette).toBe("ink_gold");
     expect(r.data.couple.design.web.imageTreatment).toBe("grayscale");
   });
 

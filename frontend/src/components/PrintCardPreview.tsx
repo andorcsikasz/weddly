@@ -1,6 +1,6 @@
 // Instant, in-browser preview of the printable cards. Themed entirely from the
 // resolved CoupleDesign (the SAME object the server PDF renderer consumes), so
-// toggling border / QR / palette / monogram / fonts updates the card
+// toggling border / QR / palette / fonts updates the card
 // live with zero round-trip. The pdf-lib render stays the source of truth for
 // the actual download; this is the "azonnali nézet" the couple edits against.
 //
@@ -8,8 +8,7 @@
 // toPublicDesign (override-or-palette), reaching the DOM as inline values that
 // are design DATA, not authored literals (same pattern as the palette swatches).
 
-import { type CoupleDesign, buildMonogram, getBorderCss, toPublicDesign } from "@shared/design";
-import type { Locale } from "../lib/i18n";
+import { type CoupleDesign, getBorderCss, toPublicDesign } from "@shared/design";
 import { useT } from "../lib/i18n";
 
 /** Which printable the preview renders. */
@@ -19,20 +18,13 @@ export function PrintCardPreview({
   design,
   template,
   brideName,
-  groomName,
-  locale,
 }: {
   design: CoupleDesign;
   template: PrintTemplate;
   brideName: string | null;
-  groomName: string | null;
-  locale: Locale;
 }) {
   const { t } = useT();
   const d = toPublicDesign(design);
-  const monogram = design.monogram.enabled
-    ? buildMonogram(brideName, groomName, design.monogram.separator, locale)
-    : "";
 
   // Menu + schedule cards are taller (portrait); place cards + table numbers
   // are landscape.
@@ -50,16 +42,6 @@ export function PrintCardPreview({
           borderRadius: 6,
         }}
       >
-        {monogram && (
-          <span
-            className="text-sm tracking-[0.2em]"
-            style={{ color: d.accent_text, fontFamily: d.heading_font }}
-            aria-hidden
-          >
-            {monogram}
-          </span>
-        )}
-
         {template === "place_card" && (
           <>
             <span
