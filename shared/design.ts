@@ -279,16 +279,15 @@ export const PALETTES: readonly Palette[] = [
     text: pair("#1A1411"),
   },
   {
-    // Black-tie monochrome: near-black ink on warm ivory with a soft greige
-    // hairline accent (used for 1px rules only — never text). The "Black Tie
-    // Editorial" preset's base; pairs with grayscale photos for the high-end
-    // black-and-white magazine look.
+    // Black-tie monochrome: warm-ivory text + hairline on a near-black ground
+    // for the high-end black-and-white look. Inverted from the old ivory-base
+    // so "Black tie" reads as an actually-dark theme (white letters on black).
     slug: "noir_ivory",
     nameKey: "design.palette.noir_ivory",
-    primary: pair("#16140F"),
-    background: pair("#F6F2EA"),
+    primary: pair("#F6F2EA"),
+    background: pair("#16140F"),
     accent: pair("#B9B2A6"),
-    text: pair("#16140F"),
+    text: pair("#F6F2EA"),
   },
 ];
 
@@ -349,27 +348,21 @@ export function getFontFamilyStack(slug: FontFamilySlug): string {
   return FONT_FAMILIES.find((f) => f.slug === slug)?.stack ?? FONT_FAMILIES[0]!.stack;
 }
 
+// Four curated wedding styles, deliberately far apart so the choice is a real
+// one across every axis — palette (sage green / blush pink / graphite grey /
+// black-and-white), font (serif / romantic serif / clean sans / serif), decor
+// (line / dots / none / line) and mood (natural / romantic / modern / black
+// tie). Removed/renamed slugs stay in StylePresetSlug for backward-compat: a
+// legacy couple's stored style just degrades to the default selection, while
+// their palette/fonts/decor render unchanged since the guest page reads those
+// fields directly, not the style slug.
 export const STYLE_PRESETS: readonly StylePreset[] = [
-  {
-    slug: "classic_elegant",
-    nameKey: "design.style.classic_elegant",
-    defaultPalette: "champagne",
-    defaultFonts: "classic_serif",
-    defaultDecor: "line",
-  },
   {
     slug: "botanical_green",
     nameKey: "design.style.botanical_green",
     defaultPalette: "botanical_green",
     defaultFonts: "classic_serif",
     defaultDecor: "botanical",
-  },
-  {
-    slug: "modern_minimal",
-    nameKey: "design.style.modern_minimal",
-    defaultPalette: "stone_minimal",
-    defaultFonts: "modern_clean",
-    defaultDecor: "none",
   },
   {
     slug: "romantic_soft",
@@ -379,18 +372,11 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     defaultDecor: "dots",
   },
   {
-    slug: "rustic_natural",
-    nameKey: "design.style.rustic_natural",
-    defaultPalette: "sage_cream",
-    defaultFonts: "classic_serif",
-    defaultDecor: "line",
-  },
-  {
-    slug: "editorial",
-    nameKey: "design.style.editorial",
-    defaultPalette: "ink_gold",
-    defaultFonts: "classic_serif",
-    defaultDecor: "frame",
+    slug: "modern_minimal",
+    nameKey: "design.style.modern_minimal",
+    defaultPalette: "stone_minimal",
+    defaultFonts: "modern_clean",
+    defaultDecor: "none",
   },
   {
     // Premium black-and-white magazine look: monochrome palette, high-contrast
@@ -407,20 +393,6 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
       cardRadius: "sharp",
       shadow: "none",
     },
-  },
-  {
-    slug: "mediterranean_terracotta",
-    nameKey: "design.style.mediterranean_terracotta",
-    defaultPalette: "terracotta",
-    defaultFonts: "classic_serif",
-    defaultDecor: "botanical",
-  },
-  {
-    slug: "blue_porcelain",
-    nameKey: "design.style.blue_porcelain",
-    defaultPalette: "blue_porcelain",
-    defaultFonts: "classic_serif",
-    defaultDecor: "line",
   },
 ];
 
@@ -439,12 +411,14 @@ export const DATE_FORMATS: readonly { slug: DateFormatSlug; nameKey: string }[] 
   { slug: "slash", nameKey: "design.date.slash" },
 ];
 
+// Only the three decors that read as tasteful at any scale are offered: a thin
+// rule, a dot trio, or nothing. "botanical" + "frame" stay in DecorSlug for
+// backward-compat (a legacy blob degrades to the default on resolve) but are no
+// longer selectable.
 export const DECOR_STYLES: readonly { slug: DecorSlug; nameKey: string }[] = [
   { slug: "none", nameKey: "design.decor.none" },
   { slug: "line", nameKey: "design.decor.line" },
-  { slug: "botanical", nameKey: "design.decor.botanical" },
   { slug: "dots", nameKey: "design.decor.dots" },
-  { slug: "frame", nameKey: "design.decor.frame" },
 ];
 
 export const VALID_STYLES: ReadonlySet<StylePresetSlug> = new Set(STYLE_PRESETS.map((s) => s.slug));
@@ -593,7 +567,8 @@ export const DEFAULT_DESIGN: CoupleDesign = {
   bodyFont: null,
   monogram: { enabled: true, separator: "amp" },
   dateFormat: "long",
-  decor: "line",
+  // Decorative style retired — no surface renders a glyph (see resolveDesign).
+  decor: "none",
   borderStyle: "hairline",
   print: { border: true, ornament: false, qr: false },
   // Defaults reproduce today's hardcoded guest-page look, so a legacy blob
@@ -652,7 +627,10 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
       i.dateFormat && VALID_DATE_FORMATS.has(i.dateFormat)
         ? i.dateFormat
         : DEFAULT_DESIGN.dateFormat,
-    decor: i.decor && VALID_DECOR.has(i.decor) ? i.decor : DEFAULT_DESIGN.decor,
+    // Decorative style was retired — the editor control is gone and no surface
+    // renders a glyph. Forced to "none" here so legacy blobs that still carry a
+    // `line`/`dots`/`frame` value never paint one (web hero, print card, PDF).
+    decor: "none",
     // Border style supersedes the legacy `print.border` boolean: an explicit
     // slug wins; otherwise fold the old boolean (true → hairline, false → none);
     // otherwise the default.
