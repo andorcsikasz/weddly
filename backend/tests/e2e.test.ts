@@ -10360,9 +10360,10 @@ describe("admin analytics", () => {
       token: adminToken,
     });
     expect(activity.status).toBe(200);
-    // Admin's own signup is the only registered user.
-    expect(activity.data.signups.total).toBe(1);
-    expect(activity.data.onboarding_funnel.registered).toBe(1);
+    // Default audience excludes admins (the only account here is the admin),
+    // so the real headline is empty.
+    expect(activity.data.signups.total).toBe(0);
+    expect(activity.data.onboarding_funnel.registered).toBe(0);
     expect(activity.data.onboarding_funnel.pct_verified).toBeGreaterThanOrEqual(0);
     expect(activity.data.onboarding_funnel.pct_verified).toBeLessThanOrEqual(1);
     // Couples table is empty so every status reads zero.
@@ -10511,8 +10512,9 @@ describe("admin analytics", () => {
     expect(day12Bucket?.count).toBe(1);
     // 20-day-old user must not show up in the 14-day window.
     expect(activity.data.signups_daily.length).toBe(14);
-    // Total signups still counts everyone non-purged (admin + 3 inserted).
-    expect(activity.data.signups.total).toBe(4);
+    // Total signups counts the 3 inserted real users; the admin is excluded
+    // from the real headline by default.
+    expect(activity.data.signups.total).toBe(3);
     expect(activity.data.signups.last_7d).toBeGreaterThanOrEqual(1); // the 5d user
     expect(activity.data.signups.last_30d).toBeGreaterThanOrEqual(3); // 5d + 12d + 20d users
 

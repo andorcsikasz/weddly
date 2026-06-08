@@ -22,10 +22,12 @@ import type {
   AdminPicksAnalytics,
   AdminTrafficAnalytics,
   AdminWeddingAnalytics,
+  AnalyticsAudience,
   WeddingSeason,
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
+import { Check, Plus } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pill, type PillTone } from "../components/admin";
@@ -76,6 +78,24 @@ const SECTIONS: ReadonlyArray<SectionDef> = [
   { id: "demo", labelKey: "admin.analytics_nav_demo" },
 ];
 
+/** The clean default lens — every cohort flag off. */
+const REAL_USERS_ONLY: AnalyticsAudience = {
+  includeAdmins: false,
+  includeTest: false,
+  includeDemos: false,
+  includeArchived: false,
+  includeDeleting: false,
+};
+
+/** The five audience toggles, rendered as a chip row above the sections. */
+const AUDIENCE_TOGGLES: ReadonlyArray<{ key: keyof AnalyticsAudience; labelKey: string }> = [
+  { key: "includeAdmins", labelKey: "admin.analytics_audience_admins" },
+  { key: "includeTest", labelKey: "admin.analytics_audience_test" },
+  { key: "includeDemos", labelKey: "admin.analytics_audience_demos" },
+  { key: "includeArchived", labelKey: "admin.analytics_audience_archived" },
+  { key: "includeDeleting", labelKey: "admin.analytics_audience_deleting" },
+];
+
 export default function AdminAnalyticsPage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.admin_analytics_title", "seo.admin_analytics_description");
@@ -94,6 +114,13 @@ export default function AdminAnalyticsPage() {
     status: "loading",
   });
   const [guests, setGuests] = useState<Loadable<AdminGuestAnalytics>>({ status: "loading" });
+
+  // Audience filter. Default is the clean "real users only" lens — admins,
+  // test accounts, demos, archived + deleting couples are all excluded until
+  // toggled back in, so the team's own usage never silently distorts the
+  // headline numbers. Applies to every lens except Demo (the demo view
+  // itself) and Traffic (external GA4).
+  const [audience, setAudience] = useState<AnalyticsAudience>(REAL_USERS_ONLY);
 
   // `nonce` lets the refresh button re-run the effect without remounting the
   // whole tree — bumping it triggers a re-fetch and resets the five slots
@@ -130,18 +157,27 @@ export default function AdminAnalyticsPage() {
   useEffect(() => {
     let cancelled = false;
     let anyError = false;
+    // Audience-dependent lenses go back to skeletons while the filtered
+    // refetch is in flight (a no-op on first mount — they start loading).
+    setMoney({ status: "loading" });
+    setActivity({ status: "loading" });
+    setPicks({ status: "loading" });
+    setEngagement({ status: "loading" });
+    setWeddings({ status: "loading" });
+    setHoneymoon({ status: "loading" });
+    setGuests({ status: "loading" });
     Promise.all([
-      adminAnalyticsApi.money().catch((e) => {
+      adminAnalyticsApi.money(audience).catch((e) => {
         anyError = true;
         if (!cancelled) setMoney({ status: "error" });
         throw e;
       }),
-      adminAnalyticsApi.activity().catch((e) => {
+      adminAnalyticsApi.activity(audience).catch((e) => {
         anyError = true;
         if (!cancelled) setActivity({ status: "error" });
         throw e;
       }),
-      adminAnalyticsApi.picks().catch((e) => {
+      adminAnalyticsApi.picks(audience).catch((e) => {
         anyError = true;
         if (!cancelled) setPicks({ status: "error" });
         throw e;
@@ -161,7 +197,7 @@ export default function AdminAnalyticsPage() {
       });
 
     adminAnalyticsApi
-      .engagement()
+      .engagement(audience)
       .then((e) => {
         if (!cancelled) {
           setEngagement({ status: "ok", data: e });
@@ -197,7 +233,7 @@ export default function AdminAnalyticsPage() {
       });
 
     adminAnalyticsApi
-      .weddings()
+      .weddings(audience)
       .then((d) => {
         if (!cancelled) {
           setWeddings({ status: "ok", data: d });
@@ -209,7 +245,7 @@ export default function AdminAnalyticsPage() {
       });
 
     adminAnalyticsApi
-      .honeymoon()
+      .honeymoon(audience)
       .then((d) => {
         if (!cancelled) {
           setHoneymoon({ status: "ok", data: d });
@@ -221,7 +257,7 @@ export default function AdminAnalyticsPage() {
       });
 
     adminAnalyticsApi
-      .guests()
+      .guests(audience)
       .then((d) => {
         if (!cancelled) {
           setGuests({ status: "ok", data: d });
@@ -235,7 +271,7 @@ export default function AdminAnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [nonce, toast, t]);
+  }, [nonce, audience, toast, t]);
 
   const hasAnyError =
     money.status === "error" || activity.status === "error" || picks.status === "error";
@@ -249,6 +285,8 @@ export default function AdminAnalyticsPage() {
         hasError={hasAnyError}
         locale={locale}
       />
+
+      <AudienceFilterBar audience={audience} onChange={setAudience} />
 
       <div className="flex flex-col gap-6">
         <SectionAnchor id="money">
@@ -291,6 +329,53 @@ function SectionAnchor({ id, children }: { id: SectionId; children: React.ReactN
   return (
     <div id={`analytics-${id}`} data-analytics-section={id} className="scroll-mt-32">
       {children}
+    </div>
+  );
+}
+
+// ─── Audience filter (real-users-only baseline + cohort include toggles) ──
+
+const AUDIENCE_CHIP_ACTIVE =
+  "inline-flex items-center gap-1 rounded-full bg-ink-900 px-3 py-1 text-xs font-medium text-paper-50 dark:bg-paper-100 dark:text-umber-900";
+const AUDIENCE_CHIP_IDLE =
+  "inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white px-3 py-1 text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600";
+
+function AudienceFilterBar({
+  audience,
+  onChange,
+}: {
+  audience: AnalyticsAudience;
+  onChange: (a: AnalyticsAudience) => void;
+}) {
+  const { t } = useT();
+  const anyOn = AUDIENCE_TOGGLES.some((x) => audience[x.key]);
+  return (
+    <div className="admin-card mb-6 flex flex-wrap items-center gap-2">
+      <span className="eyebrow mr-1">{t("admin.analytics_audience_label")}</span>
+      <button
+        type="button"
+        aria-pressed={!anyOn}
+        onClick={() => onChange(REAL_USERS_ONLY)}
+        className={!anyOn ? AUDIENCE_CHIP_ACTIVE : AUDIENCE_CHIP_IDLE}
+      >
+        {t("admin.analytics_audience_real_only")}
+      </button>
+      <span className="text-neutral-300 dark:text-umber-600">·</span>
+      {AUDIENCE_TOGGLES.map((tg) => {
+        const on = audience[tg.key];
+        return (
+          <button
+            key={tg.key}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange({ ...audience, [tg.key]: !on })}
+            className={on ? AUDIENCE_CHIP_ACTIVE : AUDIENCE_CHIP_IDLE}
+          >
+            {on ? <Check size={12} aria-hidden /> : <Plus size={12} aria-hidden />}
+            {t(tg.labelKey)}
+          </button>
+        );
+      })}
     </div>
   );
 }

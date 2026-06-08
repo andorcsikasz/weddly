@@ -7,6 +7,20 @@ import type { BudgetCategory, UnixMs } from "./types";
 import type { CoupleStatus } from "./types";
 import type { SupplierCategory } from "./suppliers";
 
+/** Audience filter shared by every couple-/user-shaped analytics lens (all
+ *  but the demo lens, which is itself the demo view, and traffic, which is
+ *  external GA4 data). The baseline — every flag false — is "real users
+ *  only"; each flag adds one cohort back. See backend
+ *  domain/analytics_audience.ts for the cohort definitions. Purged tombstones
+ *  are always excluded. */
+export interface AnalyticsAudience {
+  includeAdmins: boolean;
+  includeTest: boolean;
+  includeDemos: boolean;
+  includeArchived: boolean;
+  includeDeleting: boolean;
+}
+
 /** Quartile distribution used by every "money" rollup. Compute from a
  *  sorted ascending array of values:
  *   - count: number of contributing rows

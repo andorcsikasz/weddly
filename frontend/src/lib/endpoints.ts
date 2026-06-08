@@ -96,6 +96,7 @@ import type {
   AdminPicksAnalytics,
   AdminTrafficAnalytics,
   AdminWeddingAnalytics,
+  AnalyticsAudience,
 } from "@shared/admin_analytics";
 import type {
   AdminDirectoryFilters,
@@ -1498,16 +1499,41 @@ export const adminFinancialPlannerApi = {
   fx: () => apiFetch<FxRates | null>("GET", "/api/admin/financial-planner/fx"),
 };
 
+/** Serialise the audience toggles to a query string. Only the flipped-on
+ *  flags are emitted, so the bare/default call is a clean "real users only"
+ *  request. */
+function audienceQuery(a?: AnalyticsAudience): string {
+  if (!a) return "";
+  const p = new URLSearchParams();
+  if (a.includeAdmins) p.set("include_admins", "1");
+  if (a.includeTest) p.set("include_test", "1");
+  if (a.includeDemos) p.set("include_demos", "1");
+  if (a.includeArchived) p.set("include_archived", "1");
+  if (a.includeDeleting) p.set("include_deleting", "1");
+  const s = p.toString();
+  return s ? `?${s}` : "";
+}
+
 export const adminAnalyticsApi = {
-  money: () => apiFetch<AdminMoneyAnalytics>("GET", "/api/admin/analytics/money"),
-  activity: () => apiFetch<AdminActivityAnalytics>("GET", "/api/admin/analytics/activity"),
-  picks: () => apiFetch<AdminPicksAnalytics>("GET", "/api/admin/analytics/picks"),
-  engagement: () => apiFetch<AdminEngagementAnalytics>("GET", "/api/admin/analytics/engagement"),
+  // The couple-/user-shaped lenses honour the audience filter.
+  money: (a?: AnalyticsAudience) =>
+    apiFetch<AdminMoneyAnalytics>("GET", `/api/admin/analytics/money${audienceQuery(a)}`),
+  activity: (a?: AnalyticsAudience) =>
+    apiFetch<AdminActivityAnalytics>("GET", `/api/admin/analytics/activity${audienceQuery(a)}`),
+  picks: (a?: AnalyticsAudience) =>
+    apiFetch<AdminPicksAnalytics>("GET", `/api/admin/analytics/picks${audienceQuery(a)}`),
+  engagement: (a?: AnalyticsAudience) =>
+    apiFetch<AdminEngagementAnalytics>("GET", `/api/admin/analytics/engagement${audienceQuery(a)}`),
+  honeymoon: (a?: AnalyticsAudience) =>
+    apiFetch<AdminHoneymoonAnalytics>("GET", `/api/admin/analytics/honeymoon${audienceQuery(a)}`),
+  weddings: (a?: AnalyticsAudience) =>
+    apiFetch<AdminWeddingAnalytics>("GET", `/api/admin/analytics/weddings${audienceQuery(a)}`),
+  guests: (a?: AnalyticsAudience) =>
+    apiFetch<AdminGuestAnalytics>("GET", `/api/admin/analytics/guests${audienceQuery(a)}`),
+  // Demo is itself the demo lens; traffic is external GA4 — neither takes the
+  // audience filter.
   demo: () => apiFetch<AdminDemoAnalytics>("GET", "/api/admin/analytics/demo"),
   traffic: () => apiFetch<AdminTrafficAnalytics>("GET", "/api/admin/analytics/traffic"),
-  honeymoon: () => apiFetch<AdminHoneymoonAnalytics>("GET", "/api/admin/analytics/honeymoon"),
-  weddings: () => apiFetch<AdminWeddingAnalytics>("GET", "/api/admin/analytics/weddings"),
-  guests: () => apiFetch<AdminGuestAnalytics>("GET", "/api/admin/analytics/guests"),
 };
 
 export const adminFeedbackApi = {

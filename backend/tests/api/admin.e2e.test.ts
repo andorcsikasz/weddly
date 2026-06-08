@@ -1482,15 +1482,51 @@ describe("admin analytics", () => {
       signups_daily: Array<{ date: string; count: number }>;
     }>("GET", "/api/admin/analytics/activity", undefined, { token: adminToken });
     expect(r.status).toBe(200);
-    // Admin user itself counts in the signup total.
-    expect(r.data.signups.total).toBe(1);
-    expect(r.data.onboarding_funnel.registered).toBe(1);
-    expect(r.data.onboarding_funnel.verified).toBe(1);
+    // Default audience is "real users only" — the admin@test.test account is
+    // on the ADMIN_EMAILS allowlist, so it's excluded from every headline.
+    expect(r.data.signups.total).toBe(0);
+    expect(r.data.onboarding_funnel.registered).toBe(0);
+    expect(r.data.onboarding_funnel.verified).toBe(0);
     expect(r.data.onboarding_funnel.onboarded).toBe(0);
     expect(r.data.couples_by_status.active).toBe(0);
     expect(Array.isArray(r.data.top_actions)).toBe(true);
     // 14 daily points always present.
     expect(r.data.signups_daily.length).toBe(14);
+  });
+
+  test("activity — include_admins=1 brings the admin account back into the headline", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req<{ signups: { total: number } }>(
+      "GET",
+      "/api/admin/analytics/activity?include_admins=1",
+      undefined,
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.signups.total).toBe(1);
+  });
+
+  test("weddings — demo couples excluded by default, in with include_demos=1", async () => {
+    const adminToken = await bootstrapAdmin();
+    // A real demo workspace (is_demo=1 couple) via the public CTA.
+    const demo = await req("POST", "/api/demo/start");
+    expect(demo.status).toBe(201);
+
+    const def = await req<{ total_couples: number }>(
+      "GET",
+      "/api/admin/analytics/weddings",
+      undefined,
+      { token: adminToken },
+    );
+    expect(def.data.total_couples).toBe(0);
+
+    const incl = await req<{ total_couples: number }>(
+      "GET",
+      "/api/admin/analytics/weddings?include_demos=1",
+      undefined,
+      { token: adminToken },
+    );
+    expect(incl.data.total_couples).toBe(1);
   });
 
   test("activity — onboarded couple flips couples_by_status.active to 1", async () => {
@@ -1500,7 +1536,8 @@ describe("admin analytics", () => {
       onboarding_funnel: { registered: number; onboarded: number };
       couples_by_status: Record<string, number>;
     }>("GET", "/api/admin/analytics/activity", undefined, { token: adminToken });
-    expect(r.data.onboarding_funnel.registered).toBe(2);
+    // Admin excluded by default → only the real onboarded couple is counted.
+    expect(r.data.onboarding_funnel.registered).toBe(1);
     expect(r.data.onboarding_funnel.onboarded).toBe(1);
     expect(r.data.couples_by_status.active).toBe(1);
   });
@@ -1516,16 +1553,16 @@ describe("admin analytics", () => {
       token: adminToken,
     });
 
-    // Real headline: only the admin (1 signup, verified, no workspace). The
-    // demo user/couple must NOT leak into any of these.
-    expect(r.data.signups.total).toBe(1);
-    expect(r.data.signups.last_24h).toBe(1);
-    expect(r.data.onboarding_funnel.registered).toBe(1);
-    expect(r.data.onboarding_funnel.verified).toBe(1);
+    // Real headline: the admin is excluded by default (ADMIN_EMAILS) and the
+    // demo user/couple must NOT leak in either, so the real headline is empty.
+    expect(r.data.signups.total).toBe(0);
+    expect(r.data.signups.last_24h).toBe(0);
+    expect(r.data.onboarding_funnel.registered).toBe(0);
+    expect(r.data.onboarding_funnel.verified).toBe(0);
     expect(r.data.onboarding_funnel.onboarded).toBe(0);
     expect(r.data.couples_by_status.active).toBe(0);
-    // Daily series excludes the demo signup too.
-    expect(r.data.signups_daily.reduce((s, d) => s + d.count, 0)).toBe(1);
+    // Daily series excludes both the admin and the demo signup.
+    expect(r.data.signups_daily.reduce((s, d) => s + d.count, 0)).toBe(0);
 
     // Demo block: the one demo workspace shows up here instead.
     expect(r.data.demo.signups.total).toBe(1);
@@ -2127,14 +2164,14 @@ describe("feedback — admin list/status/delete", () => {
     expect(messages).toContain("second");
   });
 
-  test("admin can move status new → read → resolved → dismissed", async () => {
+  test("admin can move status new → reviewed → fixed → rejected", async () => {
     const adminToken = await bootstrapAdmin();
     await req("POST", "/api/feedback", { message: "moving" });
     const list = await req<{ entries: FeedbackRow[] }>("GET", "/api/admin/feedback", undefined, {
       token: adminToken,
     });
     const id = list.data.entries[0]!.id;
-    for (const status of ["read", "resolved", "dismissed"] as const) {
+    for (const status of ["reviewed", "fixed", "rejected"] as const) {
       const r = await req<{ entry: FeedbackRow }>(
         "PATCH",
         `/api/admin/feedback/${id}/status`,
@@ -2151,7 +2188,7 @@ describe("feedback — admin list/status/delete", () => {
     const r = await req(
       "PATCH",
       "/api/admin/feedback/99999/status",
-      { status: "read" },
+      { status: "reviewed" },
       { token: adminToken },
     );
     expect(r.status).toBe(404);

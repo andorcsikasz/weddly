@@ -25,6 +25,12 @@ import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
 import { CONFIG } from "../config";
 import { db } from "../db";
+import {
+  type AnalyticsAudience,
+  coupleAudienceSql,
+  parseAudience,
+  userAudienceSql,
+} from "../domain/analytics_audience";
 import { listActiveCommunitySuppliers } from "../domain/community_suppliers";
 import { DIRECTORY } from "../domain/suppliers_data";
 import { requireAdmin } from "../domain/users";
@@ -127,12 +133,13 @@ function quantiles(values: number[]): AdminAnalyticsStats {
 
 // ─── /api/admin/analytics/money ──────────────────────────────────────────
 
-function moneyAnalytics(): AdminMoneyAnalytics {
-  // Active universe: every couple that is NOT in the `deleting` tombstone
-  // state. Purged couples have their PII scrubbed but rows linger; they'd
-  // otherwise drag the averages toward zero.
+function moneyAnalytics(audience: AnalyticsAudience): AdminMoneyAnalytics {
+  // Active universe: every couple the audience filter admits. The baseline
+  // excludes demo / admin / test / archived / deleting; toggles add them back.
   const couples = db
-    .prepare("SELECT id, budget_ceiling_huf FROM couples WHERE status NOT IN ('deleting')")
+    .prepare(
+      `SELECT id, budget_ceiling_huf FROM couples WHERE ${coupleAudienceSql("couples", audience)}`,
+    )
     .all() as { id: number; budget_ceiling_huf: number | null }[];
 
   const coupleIds = new Set(couples.map((c) => c.id));
@@ -259,12 +266,12 @@ function moneyAnalytics(): AdminMoneyAnalytics {
 
 function handleMoney(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json(moneyAnalytics());
+  return json(moneyAnalytics(parseAudience(ctx.url.searchParams)));
 }
 
 // ─── /api/admin/analytics/activity ───────────────────────────────────────
 
-function activityAnalytics(): AdminActivityAnalytics {
+function activityAnalytics(audience: AnalyticsAudience): AdminActivityAnalytics {
   const now = Date.now();
   const w24h = now - DAY_MS;
   const w7d = now - 7 * DAY_MS;
@@ -279,9 +286,11 @@ function activityAnalytics(): AdminActivityAnalytics {
   // inflate every headline — a demo signs up verified + onboarded in one
   // shot. So the headline numbers are REAL (non-demo) traffic, and we
   // surface a parallel `demo` breakdown the UI renders as a small note.
-  const NOT_DEMO = "email NOT LIKE '%@demo.weddly.local'";
   const IS_DEMO = "email LIKE '%@demo.weddly.local'";
-  const REAL = `${NOT_PURGED} AND ${NOT_DEMO}`;
+  // Headline traffic obeys the audience filter (real-only by default). The
+  // DEMO cohort is always surfaced separately as a small "demo: N" note,
+  // independent of the filter, so we keep its own predicate.
+  const REAL = userAudienceSql("users", audience);
   const DEMO = `${NOT_PURGED} AND ${IS_DEMO}`;
 
   const countSince = (cond: string, since: number): number =>
@@ -428,7 +437,7 @@ function activityAnalytics(): AdminActivityAnalytics {
 
 function handleActivity(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json(activityAnalytics());
+  return json(activityAnalytics(parseAudience(ctx.url.searchParams)));
 }
 
 // ─── /api/admin/analytics/picks ──────────────────────────────────────────
@@ -448,24 +457,38 @@ function classifySource(
   return "diy";
 }
 
-function picksAnalytics(): AdminPicksAnalytics {
-  const totalPicks = (db.prepare("SELECT COUNT(*) AS n FROM couple_picks").get() as { n: number })
-    .n;
+function picksAnalytics(audience: AnalyticsAudience): AdminPicksAnalytics {
+  // Every pick query joins through to the owning couple so the audience
+  // filter applies — without it, demo + admin picks inflate the volume.
+  const COUPLE_OK = coupleAudienceSql("c", audience);
+  const totalPicks = (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM couple_picks p JOIN couples c ON c.id = p.couple_id WHERE ${COUPLE_OK}`,
+      )
+      .get() as { n: number }
+  ).n;
 
   // Per-couple pick counts. Couples with zero picks are intentionally
   // excluded so the median doesn't get dragged to 0 — the analytics
   // surface documents this behaviour.
   const perCoupleRows = db
-    .prepare("SELECT couple_id, COUNT(*) AS n FROM couple_picks GROUP BY couple_id")
+    .prepare(
+      `SELECT p.couple_id AS couple_id, COUNT(*) AS n
+         FROM couple_picks p JOIN couples c ON c.id = p.couple_id
+        WHERE ${COUPLE_OK}
+        GROUP BY p.couple_id`,
+    )
     .all() as { couple_id: number; n: number }[];
   const picksPerCouple = quantiles(perCoupleRows.map((r) => r.n));
 
   // Top picks. Tie-broken on supplier_id ASC for a stable response shape.
   const topRows = db
     .prepare(
-      `SELECT supplier_id, category, COUNT(*) AS n
-         FROM couple_picks
-        GROUP BY supplier_id, category
+      `SELECT p.supplier_id AS supplier_id, p.category AS category, COUNT(*) AS n
+         FROM couple_picks p JOIN couples c ON c.id = p.couple_id
+        WHERE ${COUPLE_OK}
+        GROUP BY p.supplier_id, p.category
         ORDER BY n DESC, supplier_id ASC
         LIMIT 20`,
     )
@@ -507,7 +530,11 @@ function picksAnalytics(): AdminPicksAnalytics {
   // couples that haven't engaged with picks at all don't appear in either
   // half of the picked/missing split.
   const allPicks = db
-    .prepare("SELECT couple_id, category, supplier_id FROM couple_picks")
+    .prepare(
+      `SELECT p.couple_id AS couple_id, p.category AS category, p.supplier_id AS supplier_id
+         FROM couple_picks p JOIN couples c ON c.id = p.couple_id
+        WHERE ${COUPLE_OK}`,
+    )
     .all() as { couple_id: number; category: string; supplier_id: string }[];
   const couplesWithAny = new Set(allPicks.map((p) => p.couple_id));
   const couplesByCategory = new Map<string, Set<number>>();
@@ -548,7 +575,7 @@ function picksAnalytics(): AdminPicksAnalytics {
 
 function handlePicks(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json(picksAnalytics());
+  return json(picksAnalytics(parseAudience(ctx.url.searchParams)));
 }
 
 // ─── /api/admin/analytics/engagement ─────────────────────────────────────
@@ -564,9 +591,10 @@ const SESSION_GAP_MS = SESSION_GAP_MINUTES * MS_PER_MINUTE;
 const TOP_FEATURE_LIMIT = 8;
 const TOP_USER_LIMIT = 10;
 
-function engagementAnalytics(): AdminEngagementAnalytics {
+function engagementAnalytics(audience: AnalyticsAudience): AdminEngagementAnalytics {
   const now = Date.now();
   const windowStart = now - 30 * DAY_MS;
+  const USER_OK = userAudienceSql("u", audience);
 
   // Pull the 30-day audit window in one shot, pre-sorted by actor + time so
   // the JS-side session walker is a single linear pass. Anonymous rows
@@ -574,9 +602,10 @@ function engagementAnalytics(): AdminEngagementAnalytics {
   // excluded; sessions are inherently a per-user concept.
   const auditRows = db
     .prepare(
-      `SELECT actor_user_id, action, created_at FROM audit_log
-        WHERE created_at >= ? AND actor_user_id IS NOT NULL
-        ORDER BY actor_user_id ASC, created_at ASC`,
+      `SELECT a.actor_user_id AS actor_user_id, a.action AS action, a.created_at AS created_at
+         FROM audit_log a JOIN users u ON u.id = a.actor_user_id
+        WHERE a.created_at >= ? AND a.actor_user_id IS NOT NULL AND ${USER_OK}
+        ORDER BY a.actor_user_id ASC, a.created_at ASC`,
     )
     .all(windowStart) as { actor_user_id: number; action: string; created_at: number }[];
 
@@ -625,8 +654,8 @@ function engagementAnalytics(): AdminEngagementAnalytics {
   const cohortCutoff = now - 30 * DAY_MS;
   const cohortRows = db
     .prepare(
-      `SELECT id, created_at, last_seen_at FROM users
-        WHERE status = 'active' AND email NOT LIKE '%@purged.local' AND created_at <= ?`,
+      `SELECT u.id AS id, u.created_at AS created_at, u.last_seen_at AS last_seen_at FROM users u
+        WHERE u.status = 'active' AND u.created_at <= ? AND ${USER_OK}`,
     )
     .all(cohortCutoff) as {
     id: number;
@@ -642,9 +671,10 @@ function engagementAnalytics(): AdminEngagementAnalytics {
   if (cohortRows.length > 0) {
     const auditAll = db
       .prepare(
-        `SELECT actor_user_id, created_at FROM audit_log
-          WHERE actor_user_id IS NOT NULL
-          ORDER BY actor_user_id ASC, created_at ASC`,
+        `SELECT a.actor_user_id AS actor_user_id, a.created_at AS created_at
+           FROM audit_log a JOIN users u ON u.id = a.actor_user_id
+          WHERE a.actor_user_id IS NOT NULL AND ${USER_OK}
+          ORDER BY a.actor_user_id ASC, a.created_at ASC`,
       )
       .all() as { actor_user_id: number; created_at: number }[];
     for (const r of auditAll) {
@@ -723,15 +753,16 @@ function engagementAnalytics(): AdminEngagementAnalytics {
     .slice(0, TOP_FEATURE_LIMIT);
 
   // ─── Top users: per-actor event counts across the same 30d window. ─────
-  // Demo users (email ending in @demo.weddly.local) are excluded — they
-  // get their own surface so the leaderboard reflects real engagement.
+  // The audience filter already scoped `auditRows` (demo / admin / test are
+  // dropped by default), so the leaderboard inherits it without a second
+  // cohort check here.
   const eventsByUser = new Map<number, number>();
   for (const row of auditRows) {
     eventsByUser.set(row.actor_user_id, (eventsByUser.get(row.actor_user_id) ?? 0) + 1);
   }
   const topUserIds = [...eventsByUser.entries()]
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 25) // hydrate a few extra so the demo filter doesn't underfill
+    .slice(0, TOP_USER_LIMIT)
     .map(([id]) => id);
   const userRows =
     topUserIds.length === 0
@@ -752,7 +783,6 @@ function engagementAnalytics(): AdminEngagementAnalytics {
     .map((id) => {
       const u = userMap.get(id);
       if (!u) return null;
-      if (u.email.endsWith("@demo.weddly.local")) return null;
       return {
         user_id: u.id,
         full_name: u.full_name,
@@ -938,7 +968,7 @@ function handleDemo(ctx: Ctx): Response {
 
 function handleEngagement(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json(engagementAnalytics());
+  return json(engagementAnalytics(parseAudience(ctx.url.searchParams)));
 }
 
 // ─── /api/admin/analytics/growth-funnel ────────────────────────────────────
@@ -1248,10 +1278,8 @@ async function handleTraffic(ctx: Ctx): Promise<Response> {
 
 // ─── Shared date helpers for the wedding / honeymoon rollups ─────────────
 
-// The real universe for every couple-shaped rollup below: live couples that
-// aren't the landing's "Try the demo" seeds and aren't mid-deletion. Mirrors
-// the demo exclusion the activity surface applies to users.
-const REAL_COUPLES_WHERE = "status NOT IN ('deleting') AND is_demo = 0";
+// Couple-shaped rollups below scope their universe via coupleAudienceSql()
+// (domain/analytics_audience.ts) so the same cohort rules apply everywhere.
 
 /** Parse a `YYYY-MM-DD` text date into UTC {year, month (1..12), day}. Returns
  *  null for null / malformed input so callers can filter fuzzy or empty dates
@@ -1284,11 +1312,11 @@ function seasonForMonth(month: number): WeddingSeason {
 
 // ─── /api/admin/analytics/honeymoon ──────────────────────────────────────
 
-function honeymoonAnalytics(): AdminHoneymoonAnalytics {
+function honeymoonAnalytics(audience: AnalyticsAudience): AdminHoneymoonAnalytics {
   const couples = db
     .prepare(
       `SELECT honeymoon_destination, honeymoon_start_date, honeymoon_end_date, honeymoon_origin_iata
-         FROM couples WHERE ${REAL_COUPLES_WHERE}`,
+         FROM couples WHERE ${coupleAudienceSql("couples", audience)}`,
     )
     .all() as {
     honeymoon_destination: string | null;
@@ -1380,17 +1408,17 @@ function honeymoonAnalytics(): AdminHoneymoonAnalytics {
 
 function handleHoneymoon(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json(honeymoonAnalytics());
+  return json(honeymoonAnalytics(parseAudience(ctx.url.searchParams)));
 }
 
 // ─── /api/admin/analytics/weddings ───────────────────────────────────────
 
-function weddingAnalytics(): AdminWeddingAnalytics {
+function weddingAnalytics(audience: AnalyticsAudience): AdminWeddingAnalytics {
   const couples = db
     .prepare(
       `SELECT wedding_date, created_at, currency, country, style_tags_json,
               target_guest_count, target_guest_count_min, target_guest_count_max
-         FROM couples WHERE ${REAL_COUPLES_WHERE}`,
+         FROM couples WHERE ${coupleAudienceSql("couples", audience)}`,
     )
     .all() as {
     wedding_date: string | null;
@@ -1464,9 +1492,9 @@ function weddingAnalytics(): AdminWeddingAnalytics {
   // "unknown" so the row total reconciles with the user count.
   const localeRows = db
     .prepare(
-      `SELECT COALESCE(NULLIF(TRIM(LOWER(locale)), ''), 'unknown') AS locale, COUNT(*) AS n
+      `SELECT COALESCE(NULLIF(TRIM(LOWER(users.locale)), ''), 'unknown') AS locale, COUNT(*) AS n
          FROM users
-        WHERE email NOT LIKE '%@purged.local' AND email NOT LIKE '%@demo.weddly.local'
+        WHERE ${userAudienceSql("users", audience)}
         GROUP BY locale ORDER BY n DESC`,
     )
     .all() as { locale: string; n: number }[];
@@ -1502,7 +1530,7 @@ function weddingAnalytics(): AdminWeddingAnalytics {
 
 function handleWeddings(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json(weddingAnalytics());
+  return json(weddingAnalytics(parseAudience(ctx.url.searchParams)));
 }
 
 // ─── /api/admin/analytics/guests ─────────────────────────────────────────
@@ -1518,16 +1546,16 @@ const DIETARY_KEYWORDS: Record<"gluten" | "lactose" | "nut" | "vegetarian" | "ve
   vegan: ["vegán", "vegan", "növényi"],
 };
 
-function guestAnalytics(): AdminGuestAnalytics {
-  // Restrict to guests owned by real couples. One join keeps demo/deleting
-  // residue out without a second couple_id round-trip.
+function guestAnalytics(audience: AnalyticsAudience): AdminGuestAnalytics {
+  // Restrict to guests owned by couples the audience admits. One join keeps
+  // demo / admin / test / deleting residue out without a second round-trip.
   const guests = db
     .prepare(
       `SELECT g.couple_id, g.rsvp_status, g.kind, g.plus_one_name, g.accommodation_needed,
               g.song_request, g.dietary
          FROM guests g
          JOIN couples c ON c.id = g.couple_id
-        WHERE c.status NOT IN ('deleting') AND c.is_demo = 0`,
+        WHERE ${coupleAudienceSql("c", audience)}`,
     )
     .all() as {
     couple_id: number;
@@ -1601,7 +1629,7 @@ function guestAnalytics(): AdminGuestAnalytics {
 
 function handleGuests(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json(guestAnalytics());
+  return json(guestAnalytics(parseAudience(ctx.url.searchParams)));
 }
 
 export function registerAdminAnalyticsRoutes(router: Router) {

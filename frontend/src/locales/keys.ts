@@ -4060,6 +4060,15 @@ export interface LocaleMessages {
     analytics_nav_picks: string;
     analytics_nav_engagement: string;
     analytics_nav_demo: string;
+    /** Audience filter (real-users-only baseline + cohort include toggles).
+     *  Applies to every lens except Demo and Traffic. */
+    analytics_audience_label: string;
+    analytics_audience_real_only: string;
+    analytics_audience_admins: string;
+    analytics_audience_test: string;
+    analytics_audience_demos: string;
+    analytics_audience_archived: string;
+    analytics_audience_deleting: string;
     analytics_nav_traffic: string;
     analytics_nav_weddings: string;
     analytics_nav_honeymoon: string;
