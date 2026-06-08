@@ -332,6 +332,9 @@ export interface Couple {
   /** Free-text venue name shown on the public wedding site. Null when
    *  the couple hasn't set one. */
   venue_name: string | null;
+  /** Settlement (city/town) shown next to the venue name, e.g. "Dunakiliti".
+   *  Auto-filled from the place picker; null when unset. */
+  venue_city: string | null;
   /** Couple-pasted http(s) URL for the wedding site's hero image. */
   cover_image_url: string | null;
   /** Pre-RSVP welcome block on the merged Vendégoldal (`/w/:slug`).

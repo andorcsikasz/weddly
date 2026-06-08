@@ -360,6 +360,10 @@ export interface LocaleMessages {
     venue_label: string;
     venue_placeholder: string;
     venue_hint: string;
+    /** Separate city/town field shown next to the venue name on the public
+     *  site, auto-filled from the place picker. */
+    venue_city_label: string;
+    venue_city_placeholder: string;
     cover_image_label: string;
     cover_image_placeholder: string;
     cover_image_hint: string;

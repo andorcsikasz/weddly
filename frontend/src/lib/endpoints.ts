@@ -400,6 +400,8 @@ export const coupleApi = {
     wishlist_published?: boolean;
     /** Free-text venue name shown on the public wedding site. */
     venue_name?: string | null;
+    /** City/town shown next to the venue name. */
+    venue_city?: string | null;
     /** http(s) URL the couple pastes for the wedding site's hero image. */
     cover_image_url?: string | null;
     /** Pre-RSVP welcome block on the merged Vendégoldal (markdown,

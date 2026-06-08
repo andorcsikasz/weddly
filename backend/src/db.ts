@@ -663,6 +663,11 @@ addColumnIfMissing(
   "wishlist_published INTEGER NOT NULL DEFAULT 0",
 );
 addColumnIfMissing("couples", "venue_name", "venue_name TEXT");
+// Settlement (city/town) shown alongside the venue name on the public site,
+// e.g. venue_name "Sári Csárda" + venue_city "Dunakiliti". Auto-filled from the
+// place picker's locality; the display also falls back to the part of
+// venue_name after a comma when this is empty.
+addColumnIfMissing("couples", "venue_city", "venue_city TEXT");
 addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 
 // Moodboard source state. Every couple defaults to 'preset' — a curated

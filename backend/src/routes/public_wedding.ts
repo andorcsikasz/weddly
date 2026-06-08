@@ -122,6 +122,7 @@ function buildView(
     wedding_date: couple.wedding_date,
     ceremony_kind: ceremonyKind,
     venue_name: couple.venue_name,
+    venue_city: couple.venue_city,
     cover_image_url: couple.cover_image_url,
     guest_page_intro: couple.guest_page_intro,
     useful_info: couple.useful_info,

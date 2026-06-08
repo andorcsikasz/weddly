@@ -74,12 +74,16 @@ const MISSING_OUTLINE =
 function VenueNameField({
   value,
   onChange,
+  onPickCity,
   savedVenues,
   country,
   missing,
 }: {
   value: string;
   onChange: (v: string) => void;
+  /** Called when a place is picked from the autocomplete so the parent can
+   *  auto-fill the separate City field from the result's settlement. */
+  onPickCity?: (city: string) => void;
   savedVenues: { id: string; name: string }[];
   /** ISO 3166-1 alpha-2 — scopes the autocomplete to the couple's country so
    *  a HU couple isn't offered cross-border (e.g. Austrian) venues. */
@@ -147,18 +151,20 @@ function VenueNameField({
     onChange(name);
   }
 
-  /** Commit a Nominatim suggestion as "{venue name}, {town}" so a POI like
-   *  "Sári Csárda" keeps its settlement ("Dunakiliti") as context. We skip
-   *  the suffix when the name already IS the settlement (a plain town search)
-   *  or already contains it, to avoid "Dunakiliti, Dunakiliti". */
+  /** Commit a Nominatim suggestion: the POI name ("Sári Csárda") goes in the
+   *  venue field, and the settlement ("Dunakiliti") auto-fills the separate
+   *  City field. We skip the city when the name already IS the settlement (a
+   *  plain town search) or already contains it, to avoid "Dunakiliti" twice. */
   function pickSuggestion(s: PlaceSuggestion) {
     const name = s.primary.trim();
     const loc = s.locality?.trim();
     const nameLc = name.toLowerCase();
     const locLc = loc?.toLowerCase();
-    const composed =
-      loc && locLc && nameLc !== locLc && !nameLc.includes(locLc) ? `${name}, ${loc}` : name;
-    pick(composed);
+    pick(name);
+    if (onPickCity) {
+      const distinct = loc && locLc && nameLc !== locLc && !nameLc.includes(locLc);
+      onPickCity(distinct ? (loc as string) : "");
+    }
   }
 
   function onKey(e: KeyboardEvent<HTMLInputElement>) {
@@ -280,6 +286,7 @@ export default function GuestPageEditorPage() {
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [venueName, setVenueName] = useState("");
+  const [venueCity, setVenueCity] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [guestPageIntro, setGuestPageIntro] = useState("");
   const [usefulInfo, setUsefulInfo] = useState("");
@@ -355,6 +362,7 @@ export default function GuestPageEditorPage() {
           setCouple(cR.couple);
           setIsPublic(cR.couple.is_public);
           setVenueName(cR.couple.venue_name ?? "");
+          setVenueCity(cR.couple.venue_city ?? "");
           setCoverImageUrl(cR.couple.cover_image_url ?? "");
           setGuestPageIntro(cR.couple.guest_page_intro ?? "");
           setUsefulInfo(cR.couple.useful_info ?? "");
@@ -443,6 +451,8 @@ export default function GuestPageEditorPage() {
   // in markdown (lists, code fences). The backend treats an empty string
   // as "clear the column" so the dirty check just compares to current.
   const venueChanged = venueTrimmed !== (couple?.venue_name ?? "");
+  const venueCityTrimmed = venueCity.trim();
+  const venueCityChanged = venueCityTrimmed !== (couple?.venue_city ?? "");
   const coverChanged = coverTrimmed !== (couple?.cover_image_url ?? "");
   const introChanged = guestPageIntro !== (couple?.guest_page_intro ?? "");
   const usefulInfoChanged = usefulInfo !== (couple?.useful_info ?? "");
@@ -450,6 +460,7 @@ export default function GuestPageEditorPage() {
   const publishChanged = isPublic !== Boolean(couple?.is_public);
   const dirty =
     venueChanged ||
+    venueCityChanged ||
     coverChanged ||
     publishChanged ||
     introChanged ||
@@ -482,6 +493,7 @@ export default function GuestPageEditorPage() {
       const body: Parameters<typeof coupleApi.update>[0] = {};
       if (publishChanged) body.is_public = isPublic;
       if (venueChanged) body.venue_name = venueTrimmed === "" ? null : venueTrimmed;
+      if (venueCityChanged) body.venue_city = venueCityTrimmed === "" ? null : venueCityTrimmed;
       if (coverChanged) body.cover_image_url = coverTrimmed === "" ? null : coverTrimmed;
       if (introChanged) body.guest_page_intro = guestPageIntro === "" ? null : guestPageIntro;
       if (usefulInfoChanged) body.useful_info = usefulInfo === "" ? null : usefulInfo;
@@ -490,6 +502,7 @@ export default function GuestPageEditorPage() {
       setCouple(r.couple);
       setIsPublic(r.couple.is_public);
       setVenueName(r.couple.venue_name ?? "");
+      setVenueCity(r.couple.venue_city ?? "");
       setCoverImageUrl(r.couple.cover_image_url ?? "");
       setGuestPageIntro(r.couple.guest_page_intro ?? "");
       setUsefulInfo(r.couple.useful_info ?? "");
@@ -521,6 +534,7 @@ export default function GuestPageEditorPage() {
     dirty,
     saving,
     venueName,
+    venueCity,
     coverImageUrl,
     guestPageIntro,
     usefulInfo,
@@ -709,6 +723,7 @@ export default function GuestPageEditorPage() {
         wedding_date: couple.wedding_date,
         ceremony_kind: couple.ceremony_kind,
         venue_name: venueName.trim() === "" ? null : venueName.trim(),
+        venue_city: venueCity.trim() === "" ? null : venueCity.trim(),
         cover_image_url: coverImageUrl.trim() === "" ? null : coverImageUrl.trim(),
         guest_page_intro: guestPageIntro.trim() === "" ? null : guestPageIntro,
         useful_info: usefulInfo.trim() === "" ? null : usefulInfo,
@@ -1156,9 +1171,23 @@ export default function GuestPageEditorPage() {
                 <VenueNameField
                   value={venueName}
                   onChange={setVenueName}
+                  onPickCity={setVenueCity}
                   savedVenues={savedVenues}
                   country={couple?.country ?? "HU"}
                   missing={todoVenue}
+                />
+              </div>
+              <div className="mt-3">
+                <label htmlFor="guest-page-venue-city" className="field-label">
+                  {t("wedding_site_editor.venue_city_label")}
+                </label>
+                <input
+                  id="guest-page-venue-city"
+                  className="input"
+                  type="text"
+                  value={venueCity}
+                  onChange={(e) => setVenueCity(e.target.value)}
+                  placeholder={t("wedding_site_editor.venue_city_placeholder")}
                 />
               </div>
               <div className="mt-3">

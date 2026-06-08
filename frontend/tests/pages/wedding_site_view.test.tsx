@@ -46,6 +46,7 @@ function filledView(overrides: Partial<PublicWeddingWebsiteView> = {}): PublicWe
     wedding_date: "2026-09-12",
     ceremony_kind: "both",
     venue_name: "Sári Udvar",
+    venue_city: "Dunakiliti",
     cover_image_url: "https://example.test/cover.jpg",
     guest_page_intro: "Köszönjük, hogy velünk ünnepeltek!",
     useful_info: "Parkolás: az udvarban.",
@@ -77,6 +78,7 @@ function emptyView(): PublicWeddingWebsiteView {
   return filledView({
     wedding_date: null,
     venue_name: null,
+    venue_city: null,
     cover_image_url: null,
     guest_page_intro: null,
     useful_info: null,

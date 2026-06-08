@@ -285,6 +285,8 @@ const en: LocaleMessages = {
     venue_label: "Venue name",
     venue_placeholder: "e.g. Sári Udvar Estate",
     venue_hint: "Name only. The exact address belongs on the invitation itself.",
+    venue_city_label: "City / town",
+    venue_city_placeholder: "e.g. Dunakiliti",
     cover_image_label: "Cover image",
     cover_image_placeholder: "https://…",
     cover_image_hint: "Upload a file, or paste an http(s) link to a publicly hosted image.",

@@ -286,6 +286,8 @@ const hu: LocaleMessages = {
     venue_label: "Helyszín neve",
     venue_placeholder: "pl. Sári Udvar Birtok",
     venue_hint: "Csak a név. A pontos címet a meghívóban érdemes megadni.",
+    venue_city_label: "Város / település",
+    venue_city_placeholder: "pl. Dunakiliti",
     cover_image_label: "Borítókép",
     cover_image_placeholder: "https://…",
     cover_image_hint:

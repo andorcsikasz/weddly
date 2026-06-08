@@ -51,6 +51,9 @@ export interface PublicWeddingWebsiteView {
    *  unset — the page falls back to the approximate lat/lng pin only.
    *  Visible at every tier; the post-RSVP exact pin is the gated piece. */
   venue_name: string | null;
+  /** Settlement (city/town) shown next to the venue name. Visible at every
+   *  tier; null when unset. */
+  venue_city: string | null;
   /** Couple-pasted http(s) URL for the page's hero image. Null when
    *  unset — the page falls back to the stationery palette without a
    *  cover photo. Visible at every tier. */

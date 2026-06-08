@@ -279,6 +279,32 @@ describe("PATCH /api/couples/current — wedding-site fields (is_public, venue_n
     expect(fresh.data.couple.cover_image_url).toBe(cover);
   });
 
+  test("venue_city persists, round-trips, and surfaces on the public view", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("ws-editor-city@weddly.test");
+    const patch = await req<{ couple: { venue_name: string | null; venue_city: string | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { venue_name: "Sári Csárda", venue_city: "Dunakiliti" },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.couple.venue_name).toBe("Sári Csárda");
+    expect(patch.data.couple.venue_city).toBe("Dunakiliti");
+
+    // Publish so the public page is reachable, then confirm the city is in the view.
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const slug = await getSlug(coupleId);
+    const pub = await req<{ wedding: { venue_name: string | null; venue_city: string | null } }>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+      undefined,
+    );
+    expect(pub.status).toBe(200);
+    expect(pub.data.wedding.venue_name).toBe("Sári Csárda");
+    expect(pub.data.wedding.venue_city).toBe("Dunakiliti");
+  });
+
   test("empty string clears venue_name + cover_image_url (back to null)", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("ws-editor-clear@weddly.test");

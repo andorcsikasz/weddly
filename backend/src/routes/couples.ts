@@ -182,6 +182,8 @@ interface OnboardBody {
   /** Free-text venue name shown on the public wedding site. Empty string
    *  clears the column (couple goes back to "no venue set"). */
   venue_name?: unknown;
+  /** Settlement (city/town) shown next to the venue name. Empty string clears. */
+  venue_city?: unknown;
   /** http(s) URL the couple pastes for the wedding-site hero image. Empty
    *  string clears. We validate scheme + length only — no fetch/probe at
    *  the API boundary, that's a v2 concern once upload pipeline lands. */
@@ -1775,6 +1777,19 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.venue_name_update",
         before: { venue_name: prev },
         after: { venue_name: next },
+      });
+    }
+  }
+
+  if (body.venue_city !== undefined) {
+    const next = parseVenueName(body.venue_city);
+    const prev = couple.venue_city;
+    if (next !== prev) {
+      updates.push({ col: "venue_city", val: next });
+      auditEntries.push({
+        action: "couple.venue_name_update",
+        before: { venue_city: prev },
+        after: { venue_city: next },
       });
     }
   }

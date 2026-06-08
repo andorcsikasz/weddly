@@ -148,6 +148,8 @@ export interface CoupleRow {
   /** Free-text venue name shown on the public wedding site. Null when the
    *  couple hasn't set one — the site falls back to the lat/lng pin only. */
   venue_name: string | null;
+  /** Settlement (city/town) shown next to the venue name. Null when unset. */
+  venue_city: string | null;
   /** Couple-pasted http(s) URL for the hero image on the public site.
    *  No upload pipeline yet; this is BYO-URL with boundary validation. */
   cover_image_url: string | null;
@@ -378,6 +380,7 @@ export function toCouple(row: CoupleRow): Couple {
     wishlist_published: Boolean(row.wishlist_published),
     welcome_desk_active: Boolean(row.welcome_desk_active),
     venue_name: row.venue_name,
+    venue_city: row.venue_city,
     cover_image_url: row.cover_image_url,
     guest_page_intro: row.guest_page_intro,
     useful_info: row.useful_info,

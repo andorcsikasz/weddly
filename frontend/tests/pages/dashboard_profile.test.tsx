@@ -91,6 +91,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     wishlist_published: false,
     welcome_desk_active: false,
     venue_name: null,
+    venue_city: null,
     cover_image_url: null,
     guest_page_intro: null,
     useful_info: null,
