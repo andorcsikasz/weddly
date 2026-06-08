@@ -762,10 +762,10 @@ export default function WishlistEditorPage() {
               aria-label={t("wishlist_editor.publish_title")}
               disabled={publishing}
               onClick={() => void togglePublish()}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 disabled:opacity-60 ${
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 disabled:opacity-60 ${
                 couple.wishlist_published
-                  ? "border-ink-900 bg-emerald-500 dark:border-paper-50"
-                  : "border-transparent bg-paper-300 dark:bg-umber-700"
+                  ? "bg-emerald-600 dark:bg-emerald-500"
+                  : "bg-paper-300 dark:bg-umber-700"
               }`}
             >
               <span
