@@ -21,7 +21,7 @@ import {
 } from "./lib/http";
 import { maybeCompress, negotiateEncoding } from "./lib/compression";
 import { log, makeLogger } from "./lib/logger";
-import { localeForHost, renderIndexHtml } from "./lib/seo_ssr";
+import { GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } from "./lib/seo_ssr";
 import { entitlementBlock } from "./domain/billing";
 import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
 import { startEmailWorker } from "./domain/emails/worker";
@@ -179,7 +179,11 @@ const CSP = [
   // Sign in with Apple JS (https://appleid.cdn-apple.com/appleauth/static/jsapi/
   // appleid/1/<locale>/appleid.auth.js) renders the "Continue with Apple"
   // button + drives the popup, so its CDN origin needs script + style here.
-  "script-src 'self' https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com",
+  // GTM_INLINE_CSP_HASH allow-lists the one inline GTM bootstrap snippet (the
+  // dataLayer `gtm.js` push) without opening the policy to 'unsafe-inline'.
+  // Harmless when GTM is disabled — it just allow-lists a script that never
+  // appears in the page.
+  `script-src 'self' ${GTM_INLINE_CSP_HASH} https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com`,
   "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com https://appleid.cdn-apple.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.

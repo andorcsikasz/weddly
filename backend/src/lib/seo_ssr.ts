@@ -351,18 +351,38 @@ function gtmContainerIdEnv(): string {
   return (process.env.GTM_CONTAINER_ID ?? "").trim();
 }
 
-/** The GTM loader <script> or "" when unset. We load gtm.js directly with a
- *  plain async <script src> instead of Google's inline bootstrap snippet: the
- *  inline variant would be blocked by our CSP (script-src has no
- *  'unsafe-inline'), and gtm.js creates window.dataLayer itself, so the only
- *  thing the inline snippet adds is the non-essential `gtm.start` timing push.
- *  The GA4 config tag (G-…) is wired up inside the GTM web UI, not in code, so
- *  it does not appear here. Container ids are public by design; we still guard
- *  the format to keep anything odd in the env out of the page source. */
+/** The exact inline bootstrap from GTM's canonical snippet. It pushes the
+ *  `gtm.js` event onto the dataLayer BEFORE gtm.js loads — that event is what
+ *  fires the Page View ("All Pages") trigger. Without it gtm.js only ever
+ *  emits `gtm.dom` + `gtm.load`, so every tag bound to the standard Page View
+ *  trigger silently never fires (the symptom we shipped with for months). The
+ *  earlier "gtm.js creates dataLayer itself so the push is non-essential"
+ *  reasoning was wrong: gtm.js does NOT synthesise its own `gtm.js` event.
+ *  Kept byte-identical so its CSP hash below stays stable. */
+const GTM_INLINE_BOOTSTRAP =
+  "window.dataLayer=window.dataLayer||[];window.dataLayer.push({'gtm.start':new Date().getTime(),event:'gtm.js'});";
+
+/** CSP `script-src` source token that allow-lists GTM_INLINE_BOOTSTRAP under a
+ *  policy with no 'unsafe-inline'. Computed from the snippet at module load so
+ *  it can never drift out of sync with the emitted bytes. server.ts splices
+ *  this into the script-src directive. */
+export const GTM_INLINE_CSP_HASH = `'sha256-${new Bun.CryptoHasher("sha256")
+  .update(GTM_INLINE_BOOTSTRAP)
+  .digest("base64")}'`;
+
+/** The GTM head snippet (inline bootstrap + async loader) or "" when unset.
+ *  The inline bootstrap is allow-listed via the hash above, so it runs under
+ *  our hash-based CSP without 'unsafe-inline'. The GA4 config tag (G-…) is
+ *  wired up inside the GTM web UI, not in code, so it does not appear here.
+ *  Container ids are public by design; we still guard the format to keep
+ *  anything odd in the env out of the page source. */
 function gtmScriptTag(): string {
   const id = gtmContainerIdEnv();
   if (!id || !/^GTM-[A-Z0-9]+$/.test(id)) return "";
-  return `<script async src="https://www.googletagmanager.com/gtm.js?id=${id}"></script>`;
+  return (
+    `<script>${GTM_INLINE_BOOTSTRAP}</script>` +
+    `<script async src="https://www.googletagmanager.com/gtm.js?id=${id}"></script>`
+  );
 }
 
 /** True when the request landed on the configured EN canonical host. Used
