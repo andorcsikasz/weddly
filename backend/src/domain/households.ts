@@ -232,6 +232,7 @@ export function toHousehold(
     member_ids: members.map((m) => m.id),
     group_tag: isGuestGroupTag(row.group_tag) ? row.group_tag : "other",
     is_couple_household: isCouple,
+    is_supplier_household: row.is_supplier_household === 1,
     rsvp_offers_accommodation: row.rsvp_offers_accommodation === 1,
     rsvp_collects_meal: row.rsvp_collects_meal === 1,
     auto_created: row.auto_created === 1,

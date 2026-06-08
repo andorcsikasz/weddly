@@ -321,6 +321,17 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     parsed.group_tag = household.group_tag;
     householdId = household.id;
   }
+  // Members of the couple's "Suppliers" (Szolgáltatók) household are booked
+  // vendors, not invitees waiting to reply. Whether they arrived via the
+  // supplier toggle or by being added straight into that household from its
+  // card, flag them as suppliers and — unless the request set a status
+  // explicitly — count them as a sure participant (RSVP "yes"). The flag is
+  // authoritative so it can't drift from the household membership.
+  const targetHousehold = getHouseholdById(householdId, couple.id);
+  if (targetHousehold?.is_supplier_household === 1) {
+    parsed.is_supplier = 1;
+    if (body.rsvp_status === undefined) parsed.rsvp_status = "yes";
+  }
   // Stamp when the couple records a real answer on the guest's behalf (the
   // public RSVP path stamps separately). Pending stays unstamped.
   const respondedAt = parsed.rsvp_status === "pending" ? null : ts;

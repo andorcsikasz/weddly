@@ -234,6 +234,7 @@ function makeHousehold(over: Partial<Household> = {}): Household {
     member_ids: [1001],
     group_tag: "his_family",
     is_couple_household: false,
+    is_supplier_household: false,
     rsvp_offers_accommodation: false,
     rsvp_collects_meal: true,
     auto_created: false,

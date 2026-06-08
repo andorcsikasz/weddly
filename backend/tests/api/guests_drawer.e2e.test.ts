@@ -110,6 +110,80 @@ describe("guest drawer: supplier type → supplier household", () => {
   });
 });
 
+describe("guest drawer: supplier household members are sure participants", () => {
+  // A member added straight INTO the Szolgáltatók/Suppliers household (via that
+  // card's "Add a member", i.e. household_id without the supplier toggle) is a
+  // booked vendor: the backend flags is_supplier and defaults RSVP to "yes".
+  interface SupplierGuestEnvelope {
+    guest: {
+      id: number;
+      household_id: number | null;
+      is_supplier: boolean;
+      rsvp_status: string;
+      rsvp_responded_at: number | null;
+    };
+  }
+
+  async function supplierHouseholdId(token: string): Promise<number> {
+    // Seed the couple's single supplier household by adding one supplier.
+    const seed = await req<SupplierGuestEnvelope>(
+      "POST",
+      "/api/guests",
+      { full_name: "Seed DJ", is_supplier: true },
+      { token },
+    );
+    const id = seed.data.guest.household_id;
+    expect(id).not.toBeNull();
+    return id as number;
+  }
+
+  test("is_supplier=true defaults RSVP to yes and stamps responded_at", async () => {
+    const { token } = await bootstrapCouple("gd-sup-yes@weddly.test");
+    const r = await req<SupplierGuestEnvelope>(
+      "POST",
+      "/api/guests",
+      { full_name: "DJ Sure", is_supplier: true },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.guest.is_supplier).toBe(true);
+    expect(r.data.guest.rsvp_status).toBe("yes");
+    expect(r.data.guest.rsvp_responded_at).not.toBeNull();
+  });
+
+  test("member added by household_id into the supplier group is flagged + RSVP yes", async () => {
+    const { token } = await bootstrapCouple("gd-sup-hh@weddly.test");
+    const hhId = await supplierHouseholdId(token);
+    // No is_supplier toggle, no rsvp_status — exactly what the "Add a member"
+    // button on the Suppliers card sends for a plain new member.
+    const r = await req<SupplierGuestEnvelope>(
+      "POST",
+      "/api/guests",
+      { full_name: "Florist Fi", household_id: hhId },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.guest.household_id).toBe(hhId);
+    expect(r.data.guest.is_supplier).toBe(true);
+    expect(r.data.guest.rsvp_status).toBe("yes");
+    expect(r.data.guest.rsvp_responded_at).not.toBeNull();
+  });
+
+  test("an explicit rsvp_status into the supplier group is respected", async () => {
+    const { token } = await bootstrapCouple("gd-sup-explicit@weddly.test");
+    const hhId = await supplierHouseholdId(token);
+    const r = await req<SupplierGuestEnvelope>(
+      "POST",
+      "/api/guests",
+      { full_name: "Cant Come", household_id: hhId, rsvp_status: "no" },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.guest.is_supplier).toBe(true); // flag is still authoritative
+    expect(r.data.guest.rsvp_status).toBe("no"); // but the chosen status wins
+  });
+});
+
 describe("guest drawer: plus-one materialises a real guest", () => {
   test("filling plus_one_name spawns a sibling guest and clears the carrier; no dup on re-save", async () => {
     const { token } = await bootstrapCouple("gd-plus@weddly.test");

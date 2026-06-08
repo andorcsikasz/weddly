@@ -1879,6 +1879,15 @@ function GuestDrawer({
       (guest.notes !== null && guest.notes.trim() !== ""));
   const [rsvpSectionExpanded, setRsvpSectionExpanded] = useState(guestSectionHasData);
 
+  // Adding straight into the couple's "Suppliers" (Szolgáltatók) household —
+  // via that card's "Add a member" button — pre-selects RSVP "yes": booked
+  // vendors count as sure participants, not invitees waiting to reply. The
+  // backend enforces the matching is_supplier flag for this group regardless.
+  const intoSupplierHousehold =
+    guest == null &&
+    init.defaultHouseholdId != null &&
+    households.some((h) => h.id === init.defaultHouseholdId && h.is_supplier_household);
+
   const [form, setForm] = useState<Partial<Guest>>(
     guest ?? {
       full_name: "",
@@ -1886,7 +1895,7 @@ function GuestDrawer({
       phone: null,
       group_tag: "other",
       kind: "adult",
-      rsvp_status: "pending",
+      rsvp_status: intoSupplierHousehold ? "yes" : "pending",
       meal_choice: null,
       dietary: null,
       accommodation_needed: false,

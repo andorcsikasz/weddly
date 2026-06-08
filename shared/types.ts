@@ -645,6 +645,12 @@ export interface Household {
    *  hides the slug / code / share-link metadata — the hosts don't need to
    *  check themselves in. */
   is_couple_household: boolean;
+  /** True for the couple's single "Suppliers" (Szolgáltatók) household — the
+   *  group that holds booked vendors (DJ, photographer, …). Members added here
+   *  are auto-flagged as suppliers and default to RSVP "yes" (they're booked,
+   *  not invitees waiting to reply). The /app/guests UI uses this to drive that
+   *  default in the add-member drawer. */
+  is_supplier_household: boolean;
   /** Per-household opt-in for the "needs accommodation?" question on the
    *  public RSVP form. Default `false`. Replaces the older couple-level
    *  toggle so each party can carry its own decision (e.g. the venue-block
