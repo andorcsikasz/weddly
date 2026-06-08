@@ -730,10 +730,6 @@ export default function HoneymoonPage() {
           </section>
         ))}
 
-      {couple?.honeymoon_destination && (
-        <TravelSafetyBlock destination={couple.honeymoon_destination} t={t} />
-      )}
-
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -804,6 +800,12 @@ export default function HoneymoonPage() {
         onAdd={addHoneymoonTask}
         onDelete={deleteHoneymoonTask}
       />
+
+      {/* Hungarian consular info is only relevant when the couple is getting
+       *  married in Hungary (i.e. they're Hungarian travellers abroad). */}
+      {couple?.country === "HU" && couple?.honeymoon_destination && (
+        <TravelSafetyBlock destination={couple.honeymoon_destination} t={t} />
+      )}
     </>
   );
 }
@@ -1526,6 +1528,10 @@ function TravelSafetyBlock({
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const [info, setInfo] = useState<KonzinfoInfo | null>(null);
+  // Collapsed by default — the block is reference material, not a primary
+  // action, so it sits at the bottom of the page as a single compact row that
+  // expands on demand (mirrors the flight-estimate card's footprint).
+  const [collapsed, setCollapsed] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -1563,139 +1569,168 @@ function TravelSafetyBlock({
 
   return (
     <section className="card stationery-light mt-4 mx-4 !p-5 sm:mx-8">
-      <header className="flex items-start gap-3">
+      {/* Compact, single-row header that doubles as the collapse toggle. */}
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        aria-expanded={!collapsed}
+        className="flex w-full items-center gap-3 text-left"
+      >
         <ShieldCheck
           size={18}
           aria-hidden="true"
-          className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-50"
+          className="shrink-0 text-ink-900 dark:text-paper-50"
         />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("travel_safety.title")}
           </p>
-          <p className="mt-0.5 text-sm text-ink-700 dark:text-paper-100">
+          <p className="mt-0.5 truncate text-sm text-ink-700 dark:text-paper-100">
             {t("travel_safety.intro")}
           </p>
         </div>
-      </header>
-
-      {/* Official country card — the prominent, authoritative source. */}
-      <div className="mt-4 rounded-xl border border-paper-300 bg-paper-50/60 p-3 dark:border-umber-700 dark:bg-umber-900/40">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-          {t("travel_safety.block_title")}
-        </p>
-        {info === null ? (
-          <p className="mt-1 text-sm text-ink-400 dark:text-umber-300">
-            {t("travel_safety.loading")}
-          </p>
-        ) : matched ? (
-          <>
-            <p className="mt-1 inline-flex items-center gap-1.5 text-base font-semibold text-ink-900 dark:text-paper-50">
-              <MapPin size={15} aria-hidden="true" className="shrink-0" />
-              {matched.country_hu}
-            </p>
-            <dl className="mt-2 space-y-1 text-xs text-ink-700 dark:text-paper-100">
-              {status?.safety_category && (
-                <div className="flex flex-wrap gap-x-1.5">
-                  <dt className="text-ink-500 dark:text-umber-300">
-                    {t("travel_safety.safety_label")}:
-                  </dt>
-                  <dd className="font-medium">{status.safety_category}</dd>
-                </div>
-              )}
-              {status?.last_modified && (
-                <div className="flex flex-wrap gap-x-1.5">
-                  <dt className="text-ink-500 dark:text-umber-300">
-                    {t("travel_safety.last_update_label")}:
-                  </dt>
-                  <dd className="font-medium">{status.last_modified}</dd>
-                </div>
-              )}
-              {status?.valid_today && (
-                <div className="flex flex-wrap gap-x-1.5">
-                  <dt className="text-ink-500 dark:text-umber-300">
-                    {t("travel_safety.valid_today_label")}:
-                  </dt>
-                  <dd className="font-medium">{status.valid_today}</dd>
-                </div>
-              )}
-            </dl>
-            <a
-              href={matched.konzinfo_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`mt-2.5 ${KONZINFO_LINK_CLS}`}
-            >
-              {t("travel_safety.konzinfo_link")}
-              <ExternalLink size={12} aria-hidden="true" />
-            </a>
-          </>
+        {collapsed ? (
+          <ChevronDown
+            size={18}
+            aria-hidden="true"
+            className="shrink-0 text-ink-500 dark:text-umber-300"
+          />
         ) : (
-          <>
-            <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
-              {t("travel_safety.no_match")}
+          <ChevronUp
+            size={18}
+            aria-hidden="true"
+            className="shrink-0 text-ink-500 dark:text-umber-300"
+          />
+        )}
+      </button>
+
+      {!collapsed && (
+        <>
+          {/* Official country card — the prominent, authoritative source. The
+           *  open-page link sits to the right of the country, not below it. */}
+          <div className="mt-4 rounded-xl border border-paper-300 bg-paper-50/60 p-3 dark:border-umber-700 dark:bg-umber-900/40">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              {t("travel_safety.block_title")}
             </p>
+            {info === null ? (
+              <p className="mt-1 text-sm text-ink-400 dark:text-umber-300">
+                {t("travel_safety.loading")}
+              </p>
+            ) : matched ? (
+              <>
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                  <p className="inline-flex items-center gap-1.5 text-base font-semibold text-ink-900 dark:text-paper-50">
+                    <MapPin size={15} aria-hidden="true" className="shrink-0" />
+                    {matched.country_hu}
+                  </p>
+                  <a
+                    href={matched.konzinfo_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={KONZINFO_LINK_CLS}
+                  >
+                    {t("travel_safety.konzinfo_link")}
+                    <ExternalLink size={12} aria-hidden="true" />
+                  </a>
+                </div>
+                {(status?.safety_category || status?.last_modified || status?.valid_today) && (
+                  <dl className="mt-2 space-y-1 text-xs text-ink-700 dark:text-paper-100">
+                    {status?.safety_category && (
+                      <div className="flex flex-wrap gap-x-1.5">
+                        <dt className="text-ink-500 dark:text-umber-300">
+                          {t("travel_safety.safety_label")}:
+                        </dt>
+                        <dd className="font-medium">{status.safety_category}</dd>
+                      </div>
+                    )}
+                    {status?.last_modified && (
+                      <div className="flex flex-wrap gap-x-1.5">
+                        <dt className="text-ink-500 dark:text-umber-300">
+                          {t("travel_safety.last_update_label")}:
+                        </dt>
+                        <dd className="font-medium">{status.last_modified}</dd>
+                      </div>
+                    )}
+                    {status?.valid_today && (
+                      <div className="flex flex-wrap gap-x-1.5">
+                        <dt className="text-ink-500 dark:text-umber-300">
+                          {t("travel_safety.valid_today_label")}:
+                        </dt>
+                        <dd className="font-medium">{status.valid_today}</dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+              </>
+            ) : (
+              <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-ink-700 dark:text-paper-100">
+                  {t("travel_safety.no_match")}
+                </p>
+                <a
+                  href={indexUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={KONZINFO_LINK_CLS}
+                >
+                  {t("travel_safety.index_link")}
+                  <ExternalLink size={12} aria-hidden="true" />
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* Honeymoon pre-trip checklist — reassuring, not alarming. Two
+           *  columns on wider viewports to keep the expanded block shallow. */}
+          <p className="mt-4 text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("travel_safety.checklist_title")}
+          </p>
+          <ul className="mt-1.5 grid gap-1.5 text-sm text-ink-700 dark:text-paper-100 sm:grid-cols-2">
+            {checklist.map((item) => (
+              <li key={item} className="flex items-start gap-1.5">
+                <Check
+                  size={14}
+                  aria-hidden="true"
+                  className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-50"
+                />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Consular protection + app + insurance. */}
+          <div className="mt-4 flex flex-wrap gap-2">
             <a
-              href={indexUrl}
+              href={KONZINFO_REGISTER_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className={`mt-2.5 ${KONZINFO_LINK_CLS}`}
+              className={KONZINFO_LINK_CLS}
             >
-              {t("travel_safety.index_link")}
-              <ExternalLink size={12} aria-hidden="true" />
+              <BadgeCheck size={12} aria-hidden="true" />
+              {t("travel_safety.register_link")}
             </a>
-          </>
-        )}
-      </div>
+            <a
+              href={KONZINFO_APP_INFO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={KONZINFO_LINK_CLS}
+            >
+              <Smartphone size={12} aria-hidden="true" />
+              {t("travel_safety.app_link")}
+            </a>
+          </div>
 
-      {/* Honeymoon pre-trip checklist — reassuring, not alarming. */}
-      <p className="mt-4 text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        {t("travel_safety.checklist_title")}
-      </p>
-      <ul className="mt-1.5 grid gap-1.5 text-sm text-ink-700 dark:text-paper-100">
-        {checklist.map((item) => (
-          <li key={item} className="flex items-start gap-1.5">
-            <Check
-              size={14}
-              aria-hidden="true"
-              className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-50"
-            />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
+          <p className="mt-3 inline-flex items-start gap-1.5 text-xs text-ink-600 dark:text-paper-100">
+            <Umbrella size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
+            <span>{t("travel_safety.insurance_reminder")}</span>
+          </p>
 
-      {/* Consular protection + app + insurance. */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <a
-          href={KONZINFO_REGISTER_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={KONZINFO_LINK_CLS}
-        >
-          <BadgeCheck size={12} aria-hidden="true" />
-          {t("travel_safety.register_link")}
-        </a>
-        <a
-          href={KONZINFO_APP_INFO_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={KONZINFO_LINK_CLS}
-        >
-          <Smartphone size={12} aria-hidden="true" />
-          {t("travel_safety.app_link")}
-        </a>
-      </div>
-
-      <p className="mt-3 inline-flex items-start gap-1.5 text-xs text-ink-600 dark:text-paper-100">
-        <Umbrella size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
-        <span>{t("travel_safety.insurance_reminder")}</span>
-      </p>
-
-      <p className="mt-2 inline-flex items-start gap-1.5 text-[11px] text-ink-400 dark:text-umber-300">
-        <AlertTriangle size={12} aria-hidden="true" className="mt-0.5 shrink-0" />
-        <span>{t("travel_safety.disclaimer")}</span>
-      </p>
+          <p className="mt-2 inline-flex items-start gap-1.5 text-[11px] text-ink-400 dark:text-umber-300">
+            <AlertTriangle size={12} aria-hidden="true" className="mt-0.5 shrink-0" />
+            <span>{t("travel_safety.disclaimer")}</span>
+          </p>
+        </>
+      )}
     </section>
   );
 }
