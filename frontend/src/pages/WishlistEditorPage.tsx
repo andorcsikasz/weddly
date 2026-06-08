@@ -88,7 +88,7 @@ function WishlistThumb({
   }
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-lg border border-paper-200 bg-paper-100 text-ink-400 dark:border-umber-700 dark:bg-umber-700/40 dark:text-umber-300"
+      className="flex shrink-0 items-center justify-center rounded-lg border border-paper-300 bg-paper-200 text-ink-400 dark:border-umber-700 dark:bg-umber-700/40 dark:text-umber-300"
       style={{ width: size, height: size }}
       aria-hidden
     >
@@ -286,7 +286,7 @@ function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete }: ItemV
         {item.image_url ? (
           <img src={item.image_url} alt="" loading="lazy" className="h-full w-full object-cover" />
         ) : (
-          <span className="flex h-full w-full items-center justify-center bg-paper-100 text-ink-300 dark:bg-umber-700/40 dark:text-umber-300">
+          <span className="flex h-full w-full items-center justify-center bg-paper-200 text-ink-300 dark:bg-umber-700/40 dark:text-umber-300">
             <Gift size={28} aria-hidden />
           </span>
         )}
