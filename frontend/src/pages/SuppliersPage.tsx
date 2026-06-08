@@ -1056,42 +1056,36 @@ export default function SuppliersPage() {
               </button>
             );
           })}
-          {/* "Csinálom magam" — pre-fills the modal with the active sub-
-              category. On sm+ it sits flush-right of the pill row via
-              `ml-auto` so its sage accent reads as the personal twin of
-              the dark category pills. On mobile the row is a horizontal
-              scroller — `ml-auto` is meaningless there, so the button
-              just rides as the last shrink-0 chip. shrink-0 keeps the
-              full label visible at the end of the scroll. */}
-          <button
-            type="button"
-            onClick={() => {
-              setDiyEditing(null);
-              setDiyOpen(true);
-            }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 sm:ml-auto dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
-          >
-            <Pencil size={13} aria-hidden />
-            <span className="lowercase">{t("suppliers.diy_button_short")}</span>
-          </button>
-        </div>
-      )}
-
-      {/* Cake & drinks calculator — only for the food/drink categories the
-          tool actually estimates (sweets, cake, drinks). Couple-wide, so it's
-          a single entry point above the filtered cards rather than per-card. */}
-      {activeCat && CALC_CATEGORIES.has(activeCat) && (
-        <div className="mb-3 flex justify-end">
-          <button
-            type="button"
-            onClick={() => setCalcOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
-            aria-label={t("suppliers.calc.open_aria")}
-            title={t("suppliers.calc.open_aria")}
-          >
-            <Calculator size={14} aria-hidden />
-            <span>{t("suppliers.calc.open")}</span>
-          </button>
+          {/* Right-floating action group: the cake & drinks calculator (only
+              for the food/drink categories it estimates) sits just left of
+              "Csinálom magam". On sm+ the pair sits flush-right of the pill
+              row via `ml-auto`; on mobile the row is a horizontal scroller so
+              they ride as the last shrink-0 chips. */}
+          <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
+            {activeCat && CALC_CATEGORIES.has(activeCat) && (
+              <button
+                type="button"
+                onClick={() => setCalcOpen(true)}
+                aria-label={t("suppliers.calc.open_aria")}
+                title={t("suppliers.calc.open_aria")}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
+              >
+                <Calculator size={13} aria-hidden />
+                <span>{t("suppliers.calc.open")}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setDiyEditing(null);
+                setDiyOpen(true);
+              }}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
+            >
+              <Pencil size={13} aria-hidden />
+              <span className="lowercase">{t("suppliers.diy_button_short")}</span>
+            </button>
+          </div>
         </div>
       )}
 
