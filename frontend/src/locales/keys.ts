@@ -88,6 +88,38 @@ export interface LocaleMessages {
     wedding_site_description: string;
   };
   /** Gantt-style task timeline + point-of-contact panel. */
+  notifications: {
+    /** Bell button + dropdown chrome. */
+    aria_label: string;
+    title: string;
+    empty: string;
+    /** Per-kind row labels. `{task}` / `{guest}` / `{status}` / `{name}` /
+     *  `{count}` / `{household}` are interpolated client-side from the item's
+     *  data payload. */
+    timeline_overdue: string;
+    timeline_due: string;
+    rsvp_received: string;
+    rsvp_received_household: string;
+    partner_task_added: string;
+    partner_task_added_named: string;
+    timeline_email_sent: string;
+    /** RSVP status words used inside `rsvp_received`. */
+    rsvp_yes: string;
+    rsvp_no: string;
+    rsvp_maybe: string;
+    /** Profile setting: timeline email escalation. */
+    email_setting_label: string;
+    email_setting_hint: string;
+    email_setting_off: string;
+    email_setting_overdue: string;
+    email_setting_overdue_due_soon: string;
+    /** Dashboard "how are you doing" card. */
+    dash_title: string;
+    dash_on_track: string;
+    dash_overdue: string;
+    dash_due_soon: string;
+    dash_cta: string;
+  };
   timeline: {
     title: string;
     sub: string;
@@ -4086,6 +4118,7 @@ export interface LocaleMessages {
     analytics_audience_archived: string;
     analytics_audience_deleting: string;
     analytics_nav_traffic: string;
+    analytics_nav_acquisition: string;
     analytics_nav_weddings: string;
     analytics_nav_honeymoon: string;
     analytics_nav_guests: string;
@@ -4159,6 +4192,37 @@ export interface LocaleMessages {
     analytics_guests_diet_other: string;
     // Traffic section (Google Analytics 4, pulled live via the Data API).
     analytics_section_traffic: string;
+    analytics_section_acquisition: string;
+    analytics_acq_window: string;
+    analytics_acq_load_error: string;
+    analytics_acq_empty: string;
+    analytics_acq_unknown: string;
+    analytics_acq_total_signups: string;
+    analytics_acq_onboarded_rate: string;
+    analytics_acq_active_rate: string;
+    analytics_acq_top_channel: string;
+    analytics_acq_unknown_country: string;
+    analytics_acq_conversion_sub: string;
+    analytics_acq_by_country_title: string;
+    analytics_acq_by_channel_title: string;
+    analytics_acq_by_device_title: string;
+    analytics_acq_campaigns_title: string;
+    analytics_acq_campaigns_sub: string;
+    analytics_acq_country_locale_title: string;
+    analytics_acq_col_signups: string;
+    analytics_acq_col_onboarded: string;
+    analytics_acq_col_active: string;
+    analytics_acq_col_country: string;
+    analytics_acq_col_channel: string;
+    analytics_acq_col_campaign: string;
+    analytics_acq_col_locale: string;
+    analytics_acq_col_count: string;
+    analytics_acq_channel_paid: string;
+    analytics_acq_channel_social: string;
+    analytics_acq_channel_email: string;
+    analytics_acq_channel_organic: string;
+    analytics_acq_channel_referral: string;
+    analytics_acq_channel_direct: string;
     analytics_traffic_source: string;
     analytics_traffic_load_error: string;
     analytics_traffic_empty: string;

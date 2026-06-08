@@ -6,6 +6,8 @@
 // same ADMIN_EMAILS allowlist as the rest of /api/admin/*.
 
 import type {
+  AcquisitionDimensionRow,
+  AdminAcquisitionAnalytics,
   AdminActivityAnalytics,
   AdminAnalyticsStats,
   AdminDemoAnalytics,
@@ -33,6 +35,7 @@ import {
 } from "../domain/analytics_audience";
 import { listActiveCommunitySuppliers } from "../domain/community_suppliers";
 import { DIRECTORY } from "../domain/suppliers_data";
+import { channelFromUtm } from "../domain/signup_meta";
 import { requireAdmin } from "../domain/users";
 import { type Ga4ReportResponse, isGa4Configured, runGa4Report } from "../lib/ga4";
 import { type Ctx, json, type Router } from "../lib/http";
@@ -1090,6 +1093,138 @@ function handleGrowthFunnel(ctx: Ctx): Response {
   return json(growthFunnelAnalytics());
 }
 
+// ─── /api/admin/analytics/acquisition ───────────────────────────────────────
+//
+// Where signups come from, joined to the onboarding funnel. Reads the
+// users.signup_country / device_type / locale / utm_* columns captured at
+// registration, scoped by the audience filter. The headline is conversion BY
+// dimension (signup → onboarded → active), so raw volume from a channel that
+// never onboards can't masquerade as success.
+
+const ACQUISITION_WINDOW_DAYS = 30;
+
+interface AcqUserRow {
+  created_at: number;
+  signup_country: string | null;
+  device_type: string | null;
+  locale: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  couple_id: number | null;
+  couple_status: string | null;
+}
+
+/** Accumulate signup/onboarded/active counts per dimension key. null keys are
+ *  kept (they're meaningful: unknown country, untagged campaign). */
+function rollupDimension(
+  rows: AcqUserRow[],
+  keyOf: (r: AcqUserRow) => string | null,
+  opts: { skipNull?: boolean } = {},
+): AcquisitionDimensionRow[] {
+  const map = new Map<string | null, AcquisitionDimensionRow>();
+  for (const r of rows) {
+    const key = keyOf(r);
+    if (opts.skipNull && key === null) continue;
+    let row = map.get(key);
+    if (!row) {
+      row = { key, signups: 0, onboarded: 0, active: 0 };
+      map.set(key, row);
+    }
+    row.signups += 1;
+    if (r.couple_id !== null) row.onboarded += 1;
+    if (r.couple_id !== null && r.couple_status === "active") row.active += 1;
+  }
+  // Sort by signups desc; the frontend re-sorts campaigns by activation quality.
+  return [...map.values()].sort((a, b) => b.signups - a.signups);
+}
+
+function utcDateKey(ms: number): string {
+  const d = new Date(ms);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+
+function acquisitionAnalytics(audience: AnalyticsAudience): AdminAcquisitionAnalytics {
+  const now = Date.now();
+  const since = now - ACQUISITION_WINDOW_DAYS * DAY_MS;
+  const USER_OK = userAudienceSql("u", audience);
+
+  const rows = db
+    .prepare(
+      `SELECT u.created_at AS created_at,
+              u.signup_country AS signup_country,
+              u.device_type AS device_type,
+              u.locale AS locale,
+              u.utm_source AS utm_source,
+              u.utm_medium AS utm_medium,
+              u.utm_campaign AS utm_campaign,
+              u.couple_id AS couple_id,
+              c.status AS couple_status
+         FROM users u
+         LEFT JOIN couples c ON c.id = u.couple_id
+        WHERE u.created_at >= ? AND ${USER_OK}`,
+    )
+    .all(since) as AcqUserRow[];
+
+  const by_country = rollupDimension(rows, (r) => r.signup_country);
+  const by_channel = rollupDimension(rows, (r) => channelFromUtm(r.utm_source, r.utm_medium));
+  const by_locale = rollupDimension(rows, (r) => r.locale);
+  const by_device = rollupDimension(rows, (r) => r.device_type);
+  const by_campaign = rollupDimension(rows, (r) => r.utm_campaign, { skipNull: true });
+
+  const unknown_country = by_country.find((r) => r.key === null)?.signups ?? 0;
+
+  // Country × locale cross-tab. Cap to the top 20 buckets so the response and
+  // the table stay small; the long tail is rarely actionable.
+  const clMap = new Map<string, { country: string | null; locale: string | null; count: number }>();
+  for (const r of rows) {
+    const k = `${r.signup_country ?? ""}|${r.locale ?? ""}`;
+    let cell = clMap.get(k);
+    if (!cell) {
+      cell = { country: r.signup_country, locale: r.locale, count: 0 };
+      clMap.set(k, cell);
+    }
+    cell.count += 1;
+  }
+  const country_locale = [...clMap.values()].sort((a, b) => b.count - a.count).slice(0, 20);
+
+  // Channel mix over the last 14 days, one row per (UTC date, channel). Zero
+  // buckets are omitted; the frontend fills the 14-day x-axis itself.
+  const since14 = now - 13 * DAY_MS;
+  const cdMap = new Map<string, { date: string; channel: string; count: number }>();
+  for (const r of rows) {
+    if (r.created_at < since14) continue;
+    const date = utcDateKey(r.created_at);
+    const channel = channelFromUtm(r.utm_source, r.utm_medium);
+    const k = `${date}|${channel}`;
+    let cell = cdMap.get(k);
+    if (!cell) {
+      cell = { date, channel, count: 0 };
+      cdMap.set(k, cell);
+    }
+    cell.count += 1;
+  }
+  const channel_daily = [...cdMap.values()].sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    window_days: ACQUISITION_WINDOW_DAYS,
+    total_signups: rows.length,
+    unknown_country,
+    by_country,
+    by_channel,
+    by_locale,
+    by_device,
+    by_campaign,
+    country_locale,
+    channel_daily,
+  };
+}
+
+function handleAcquisition(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(acquisitionAnalytics(parseAudience(ctx.url.searchParams)));
+}
+
 // ─── /api/admin/analytics/traffic (Google Analytics 4) ──────────────────────
 //
 // The one rollup not backed by our own SQLite — it pulls live numbers from the
@@ -1639,6 +1774,7 @@ export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/engagement", handleEngagement, true);
   router.get("/api/admin/analytics/demo", handleDemo, true);
   router.get("/api/admin/analytics/growth-funnel", handleGrowthFunnel, true);
+  router.get("/api/admin/analytics/acquisition", handleAcquisition, true);
   router.get("/api/admin/analytics/traffic", handleTraffic, true);
   router.get("/api/admin/analytics/honeymoon", handleHoneymoon, true);
   router.get("/api/admin/analytics/weddings", handleWeddings, true);

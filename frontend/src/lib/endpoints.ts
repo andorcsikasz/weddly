@@ -87,6 +87,7 @@ import type {
 import type { CouplePick } from "@shared/picks";
 import type { SavedSupplier } from "@shared/saved";
 import type {
+  AdminAcquisitionAnalytics,
   AdminActivityAnalytics,
   AdminDemoAnalytics,
   AdminEngagementAnalytics,
@@ -421,6 +422,8 @@ export const coupleApi = {
     country?: string;
     rsvp_offers_accommodation?: boolean;
     rsvp_collects_meal?: boolean;
+    /** Proactive-timeline email escalation trigger. */
+    timeline_email_escalation?: import("@shared/notifications").TimelineEmailEscalation;
     /** Publish toggle for the public wedding website at `/w/:slug`. */
     is_public?: boolean;
     /** Gift-list publish toggle. When true the confirmed-tier guest page
@@ -793,6 +796,16 @@ export const planningApi = {
   update: (id: number, body: PlanningItemPatch) =>
     apiFetch<{ item: import("@shared/types").PlanningItem }>("PATCH", `/api/planning/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/planning/${id}`),
+};
+
+export const notificationApi = {
+  /** Merged bell feed: live timeline items + stored events, with the unread
+   *  count + the overdue / due-soon rollup the dashboard card headlines. */
+  list: () =>
+    apiFetch<import("@shared/notifications").NotificationFeed>("GET", "/api/notifications"),
+  /** Stamp the read watermark ("I opened the bell"). Per-user, so it never
+   *  clears the partner's badge. */
+  markSeen: () => apiFetch<{ seen_at: number | null }>("POST", "/api/notifications/seen", {}),
 };
 
 export const householdApi = {
@@ -1538,6 +1551,11 @@ export const adminAnalyticsApi = {
     apiFetch<AdminWeddingAnalytics>("GET", `/api/admin/analytics/weddings${audienceQuery(a)}`),
   guests: (a?: AnalyticsAudience) =>
     apiFetch<AdminGuestAnalytics>("GET", `/api/admin/analytics/guests${audienceQuery(a)}`),
+  acquisition: (a?: AnalyticsAudience) =>
+    apiFetch<AdminAcquisitionAnalytics>(
+      "GET",
+      `/api/admin/analytics/acquisition${audienceQuery(a)}`,
+    ),
   // Demo is itself the demo lens; traffic is external GA4 — neither takes the
   // audience filter.
   demo: () => apiFetch<AdminDemoAnalytics>("GET", "/api/admin/analytics/demo"),

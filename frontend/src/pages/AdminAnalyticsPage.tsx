@@ -12,6 +12,8 @@
 // fallback card rather than dragging the whole page into the error state.
 
 import type {
+  AcquisitionDimensionRow,
+  AdminAcquisitionAnalytics,
   AdminActivityAnalytics,
   AdminAnalyticsStats,
   AdminDemoAnalytics,
@@ -54,6 +56,7 @@ type SectionId =
   | "money"
   | "activity"
   | "traffic"
+  | "acquisition"
   | "picks"
   | "engagement"
   | "demo"
@@ -70,6 +73,7 @@ const SECTIONS: ReadonlyArray<SectionDef> = [
   { id: "money", labelKey: "admin.analytics_nav_money" },
   { id: "activity", labelKey: "admin.analytics_nav_activity" },
   { id: "traffic", labelKey: "admin.analytics_nav_traffic" },
+  { id: "acquisition", labelKey: "admin.analytics_nav_acquisition" },
   { id: "weddings", labelKey: "admin.analytics_nav_weddings" },
   { id: "honeymoon", labelKey: "admin.analytics_nav_honeymoon" },
   { id: "guests", labelKey: "admin.analytics_nav_guests" },
@@ -114,6 +118,9 @@ export default function AdminAnalyticsPage() {
     status: "loading",
   });
   const [guests, setGuests] = useState<Loadable<AdminGuestAnalytics>>({ status: "loading" });
+  const [acquisition, setAcquisition] = useState<Loadable<AdminAcquisitionAnalytics>>({
+    status: "loading",
+  });
 
   // Audience filter. Default is the clean "real users only" lens — admins,
   // test accounts, demos, archived + deleting couples are all excluded until
@@ -139,7 +146,8 @@ export default function AdminAnalyticsPage() {
     traffic.status === "loading" ||
     weddings.status === "loading" ||
     honeymoon.status === "loading" ||
-    guests.status === "loading";
+    guests.status === "loading" ||
+    acquisition.status === "loading";
 
   const loadAll = useCallback(() => {
     setMoney({ status: "loading" });
@@ -151,6 +159,7 @@ export default function AdminAnalyticsPage() {
     setWeddings({ status: "loading" });
     setHoneymoon({ status: "loading" });
     setGuests({ status: "loading" });
+    setAcquisition({ status: "loading" });
     setNonce((n) => n + 1);
   }, []);
 
@@ -166,6 +175,7 @@ export default function AdminAnalyticsPage() {
     setWeddings({ status: "loading" });
     setHoneymoon({ status: "loading" });
     setGuests({ status: "loading" });
+    setAcquisition({ status: "loading" });
     Promise.all([
       adminAnalyticsApi.money(audience).catch((e) => {
         anyError = true;
@@ -268,6 +278,18 @@ export default function AdminAnalyticsPage() {
         if (!cancelled) setGuests({ status: "error" });
       });
 
+    adminAnalyticsApi
+      .acquisition(audience)
+      .then((d) => {
+        if (!cancelled) {
+          setAcquisition({ status: "ok", data: d });
+          setLastLoadedAt(Date.now());
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAcquisition({ status: "error" });
+      });
+
     return () => {
       cancelled = true;
     };
@@ -297,6 +319,9 @@ export default function AdminAnalyticsPage() {
         </SectionAnchor>
         <SectionAnchor id="traffic">
           <TrafficSection state={traffic} locale={locale} />
+        </SectionAnchor>
+        <SectionAnchor id="acquisition">
+          <AcquisitionSection state={acquisition} locale={locale} />
         </SectionAnchor>
         <SectionAnchor id="weddings">
           <WeddingsSection state={weddings} locale={locale} />
@@ -1242,6 +1267,265 @@ function TrafficSection({
                       </td>
                       <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                         {formatNumber(row.users, locale)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </InnerCard>
+      </div>
+    </SectionCard>
+  );
+}
+
+// ─── Acquisition (where signups come from, joined to onboarding funnel) ─────
+
+const ACQ_CHANNELS = new Set(["paid", "social", "email", "organic", "referral", "direct"]);
+
+/** Localized label for a nullable dimension key. null → "unknown"; the six
+ *  known channel keys map to translated channel names; everything else renders
+ *  verbatim (country codes, campaign names, locale codes). */
+function acqKeyLabel(key: string | null, t: ReturnType<typeof useT>["t"]): string {
+  if (key === null) return t("admin.analytics_acq_unknown");
+  if (ACQ_CHANNELS.has(key)) return t(`admin.analytics_acq_channel_${key}`);
+  return key;
+}
+
+function pct(part: number, whole: number): string {
+  if (whole <= 0) return "—";
+  return `${Math.round((part / whole) * 100)}%`;
+}
+
+/** Dimension table: key, signups bar, onboarded%, active%. Reused for the
+ *  country breakdown and (re-sorted by activation) the campaign breakdown. */
+function AcqDimTable({
+  rows,
+  keyHeader,
+  locale,
+}: {
+  rows: AcquisitionDimensionRow[];
+  keyHeader: string;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  if (rows.length === 0) {
+    return (
+      <p className="text-sm text-neutral-500 dark:text-umber-300">
+        {t("admin.analytics_acq_empty")}
+      </p>
+    );
+  }
+  const max = Math.max(0, ...rows.map((r) => r.signups));
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="eyebrow text-left">
+            <th className="py-1 pr-2">{keyHeader}</th>
+            <th className="py-1 pl-2 text-right">{t("admin.analytics_acq_col_signups")}</th>
+            <th className="py-1 pl-2 text-right">{t("admin.analytics_acq_col_onboarded")}</th>
+            <th className="py-1 pl-2 text-right">{t("admin.analytics_acq_col_active")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.slice(0, 10).map((r) => (
+            <tr
+              key={r.key ?? "__null__"}
+              className="border-t border-paper-200 dark:border-umber-700"
+            >
+              <td className="py-1 pr-2 text-left text-neutral-800 dark:text-paper-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-16 truncate">{acqKeyLabel(r.key, t)}</span>
+                  <span className="hidden flex-1 sm:block">
+                    <HBar pct={max > 0 ? (r.signups / max) * 100 : 0} ariaLabel={`${r.signups}`} />
+                  </span>
+                </div>
+              </td>
+              <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
+                {formatNumber(r.signups, locale)}
+              </td>
+              <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
+                {pct(r.onboarded, r.signups)}
+              </td>
+              <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
+                {pct(r.active, r.signups)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function AcqBarList({
+  rows,
+  locale,
+}: {
+  rows: AcquisitionDimensionRow[];
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  if (rows.length === 0) {
+    return (
+      <p className="text-sm text-neutral-500 dark:text-umber-300">
+        {t("admin.analytics_acq_empty")}
+      </p>
+    );
+  }
+  const max = Math.max(0, ...rows.map((r) => r.signups));
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {rows.slice(0, 6).map((r) => (
+        <li
+          key={r.key ?? "__null__"}
+          className="grid grid-cols-[6rem_1fr_3rem] items-center gap-2 text-xs"
+        >
+          <span className="truncate text-left text-neutral-700 dark:text-paper-100">
+            {acqKeyLabel(r.key, t)}
+          </span>
+          <HBar pct={max > 0 ? (r.signups / max) * 100 : 0} ariaLabel={`${r.signups}`} />
+          <span className="stat-num text-right font-medium text-neutral-700 dark:text-paper-100">
+            {formatNumber(r.signups, locale)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AcquisitionSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminAcquisitionAnalytics>;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const title = t("admin.analytics_section_acquisition");
+  if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
+  if (state.status === "error")
+    return (
+      <SectionStatus title={title} variant="error" message={t("admin.analytics_acq_load_error")} />
+    );
+
+  const d = state.data;
+  const subtitle = t("admin.analytics_acq_window", { n: d.window_days });
+
+  if (d.total_signups === 0) {
+    return (
+      <SectionCard title={title} subtitle={subtitle}>
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
+          {t("admin.analytics_acq_empty")}
+        </p>
+      </SectionCard>
+    );
+  }
+
+  const totalOnboarded = d.by_country.reduce((s, r) => s + r.onboarded, 0);
+  const totalActive = d.by_country.reduce((s, r) => s + r.active, 0);
+  const topChannel = d.by_channel[0];
+  // Campaigns ranked by activation quality (active/signups), not raw volume —
+  // a 500-signup campaign at 2% activation is worse than 50 at 40%.
+  const campaignsByQuality = [...d.by_campaign].sort(
+    (a, b) => b.active / Math.max(1, b.signups) - a.active / Math.max(1, a.signups),
+  );
+
+  return (
+    <SectionCard title={title} subtitle={subtitle}>
+      <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <KpiTile
+          label={t("admin.analytics_acq_total_signups")}
+          value={formatNumber(d.total_signups, locale)}
+          emphasis
+        />
+        <KpiTile
+          label={t("admin.analytics_acq_onboarded_rate")}
+          value={pct(totalOnboarded, d.total_signups)}
+          sub={formatNumber(totalOnboarded, locale)}
+        />
+        <KpiTile
+          label={t("admin.analytics_acq_active_rate")}
+          value={pct(totalActive, d.total_signups)}
+          sub={formatNumber(totalActive, locale)}
+        />
+        <KpiTile
+          label={t("admin.analytics_acq_top_channel")}
+          value={topChannel ? acqKeyLabel(topChannel.key, t) : "—"}
+          sub={topChannel ? formatNumber(topChannel.signups, locale) : undefined}
+        />
+        <KpiTile
+          label={t("admin.analytics_acq_unknown_country")}
+          value={formatNumber(d.unknown_country, locale)}
+          sub={pct(d.unknown_country, d.total_signups)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
+        <InnerCard
+          title={t("admin.analytics_acq_by_country_title")}
+          subtitle={t("admin.analytics_acq_conversion_sub")}
+        >
+          <AcqDimTable
+            rows={d.by_country}
+            keyHeader={t("admin.analytics_acq_col_country")}
+            locale={locale}
+          />
+        </InnerCard>
+
+        <div className="flex flex-col gap-3">
+          <InnerCard title={t("admin.analytics_acq_by_channel_title")}>
+            <AcqBarList rows={d.by_channel} locale={locale} />
+          </InnerCard>
+          <InnerCard title={t("admin.analytics_acq_by_device_title")}>
+            <AcqBarList rows={d.by_device} locale={locale} />
+          </InnerCard>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <InnerCard
+          title={t("admin.analytics_acq_campaigns_title")}
+          subtitle={t("admin.analytics_acq_campaigns_sub")}
+        >
+          <AcqDimTable
+            rows={campaignsByQuality}
+            keyHeader={t("admin.analytics_acq_col_campaign")}
+            locale={locale}
+          />
+        </InnerCard>
+
+        <InnerCard title={t("admin.analytics_acq_country_locale_title")}>
+          {d.country_locale.length === 0 ? (
+            <p className="text-sm text-neutral-500 dark:text-umber-300">
+              {t("admin.analytics_acq_empty")}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="eyebrow text-left">
+                    <th className="py-1 pr-2">{t("admin.analytics_acq_col_country")}</th>
+                    <th className="py-1 px-2">{t("admin.analytics_acq_col_locale")}</th>
+                    <th className="py-1 pl-2 text-right">{t("admin.analytics_acq_col_count")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.country_locale.slice(0, 10).map((r) => (
+                    <tr
+                      key={`${r.country ?? "?"}|${r.locale ?? "?"}`}
+                      className="border-t border-paper-200 dark:border-umber-700"
+                    >
+                      <td className="py-1 pr-2 text-left text-neutral-800 dark:text-paper-100">
+                        {r.country ?? t("admin.analytics_acq_unknown")}
+                      </td>
+                      <td className="py-1 px-2 text-left text-neutral-700 dark:text-paper-100">
+                        {r.locale ?? t("admin.analytics_acq_unknown")}
+                      </td>
+                      <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
+                        {formatNumber(r.count, locale)}
                       </td>
                     </tr>
                   ))}

@@ -50,6 +50,33 @@ function coerceUtm(raw: unknown): string | null {
   return trimmed.slice(0, UTM_MAX_LEN);
 }
 
+/** Canonical acquisition channels, low cardinality so dashboards stay readable.
+ *  "direct" = no UTM tag was captured (organic / typed-in / untracked). */
+export type AcquisitionChannel = "paid" | "social" | "email" | "organic" | "referral" | "direct";
+
+/** Derive a coarse channel bucket from the UTM source + medium. UTM-only (the
+ *  raw HTTP referrer isn't stored on the user), so an untagged signup is
+ *  "direct" by definition. Pure + deterministic for unit testing. */
+export function channelFromUtm(
+  source: string | null | undefined,
+  medium: string | null | undefined,
+): AcquisitionChannel {
+  const s = (source ?? "").toLowerCase();
+  const m = (medium ?? "").toLowerCase();
+  if (!s && !m) return "direct";
+  if (/\b(cpc|ppc|paid|ads?|display|retargeting)\b/.test(m)) return "paid";
+  const both = `${s} ${m}`;
+  if (
+    /facebook|instagram|tiktok|pinterest|youtube|twitter|linkedin|social|reddit|snapchat/.test(both)
+  ) {
+    return "social";
+  }
+  if (/email|newsletter|mailing/.test(both)) return "email";
+  if (/organic|seo/.test(m)) return "organic";
+  // Tagged but uncategorised (e.g. a partner link with utm_source set) → referral.
+  return "referral";
+}
+
 /** Build the acquisition row for a fresh signup. `ctx` provides the request IP
  *  (→ country) and User-Agent (→ device); `body` provides the UTM params. */
 export function buildSignupAcquisition(ctx: Ctx, body: UtmInput): SignupAcquisition {

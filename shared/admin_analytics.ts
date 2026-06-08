@@ -287,6 +287,55 @@ export interface AdminGrowthFunnelAnalytics {
   }>;
 }
 
+// ─── /api/admin/analytics/acquisition ────────────────────────────────────
+//
+// Where signups come from, joined to the onboarding funnel. Built from the
+// users.signup_country / device_type / locale / utm_* columns captured at
+// registration (see backend/src/domain/signup_meta.ts). Every rollup honours
+// the audience filter (real users by default). The international-expansion
+// lens: which countries / channels / campaigns actually convert, not just
+// which drive raw signups.
+
+/** One dimension bucket (a country, channel, locale, device, or campaign) with
+ *  its signup count and how far those signups progressed down the funnel. */
+export interface AcquisitionDimensionRow {
+  /** The bucket value. null = unknown/untagged (e.g. no country resolved, or
+   *  no UTM). The frontend renders null as a localized "unknown" label. */
+  key: string | null;
+  /** Signups in the window that fall in this bucket. */
+  signups: number;
+  /** Of those, how many reached a workspace (couple_id set = onboarded). */
+  onboarded: number;
+  /** Of those, how many have an active (non-archived/deleting) workspace —
+   *  the "stuck around" proxy that turns volume into quality. */
+  active: number;
+}
+
+export interface AdminAcquisitionAnalytics {
+  /** Lookback window for every dimension rollup below, in days. */
+  window_days: number;
+  /** Total signups in the window (the denominator for every bucket). */
+  total_signups: number;
+  /** Signups whose country never resolved (VPN / datacenter IP / no GeoLite2
+   *  DB). Surfaced so a high number flags a capture gap, not real demand. */
+  unknown_country: number;
+  by_country: AcquisitionDimensionRow[];
+  /** Derived acquisition channel (paid / social / email / organic / referral /
+   *  direct) from the UTM params. "direct" = no UTM tag captured. */
+  by_channel: AcquisitionDimensionRow[];
+  by_locale: AcquisitionDimensionRow[];
+  by_device: AcquisitionDimensionRow[];
+  /** Only signups with a utm_campaign, ranked by the frontend on activation
+   *  quality (active/signups), not raw volume. */
+  by_campaign: AcquisitionDimensionRow[];
+  /** Country × locale cross-tab — surfaces "we have FR signups but no FR
+   *  locale" gaps. Sorted by count desc, capped to the top buckets. */
+  country_locale: Array<{ country: string | null; locale: string | null; count: number }>;
+  /** Last 14 days, one row per (UTC date, channel) with a non-zero count.
+   *  The frontend pivots this into a stacked daily chart. */
+  channel_daily: Array<{ date: string; channel: string; count: number }>;
+}
+
 // ─── /api/admin/analytics/honeymoon ──────────────────────────────────────
 //
 // Aggregates the honeymoon trip fields couples fill in on /app/honeymoon
