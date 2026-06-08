@@ -4,7 +4,7 @@
 
 import type { Couple, MediaLinks, MediaSource } from "@shared/types";
 import { CheckCircle2, ExternalLink, Pencil } from "lucide-react";
-import { type FormEvent, type SVGProps, useEffect, useState } from "react";
+import { type FormEvent, type SVGProps, useEffect, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { useToast } from "../components/ui";
 import { coupleApi, feedbackApi } from "../lib/endpoints";
@@ -61,6 +61,16 @@ export default function MediaPage() {
   const [savingSource, setSavingSource] = useState<MediaSource | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
 
+  // Click-outside auto-save: the open card commits its draft the moment you
+  // click anywhere off it, the same as hitting Mentés. We keep the live draft
+  // in a ref so the document listener (bound once per open) always reads the
+  // latest value without re-binding on every keystroke.
+  const editingCardRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef("");
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
+
   useEffect(() => {
     let cancelled = false;
     coupleApi
@@ -96,6 +106,14 @@ export default function MediaPage() {
       setLinkError(t("media.collect_invalid"));
       return;
     }
+    // Saving the same value is a no-op — just close the editor instead of
+    // round-tripping (the backend rejects an empty diff with "No fields to
+    // update"). This lets Mentés / click-outside always close cleanly.
+    if (trimmed === (links[source] ?? "")) {
+      setEditing(null);
+      setLinkError(null);
+      return;
+    }
     setSavingSource(source);
     setLinkError(null);
     try {
@@ -109,6 +127,23 @@ export default function MediaPage() {
       setSavingSource(null);
     }
   }
+
+  // Commit the open card when the click lands anywhere outside it. The Mentés /
+  // Mégse buttons live inside the card, so they're handled by their own
+  // handlers; only off-card clicks trigger this. We re-bind only when the open
+  // slot changes; the live draft is read fresh via draftRef.
+  useEffect(() => {
+    if (!editing) return;
+    const source = editing;
+    function onPointerDown(e: MouseEvent) {
+      const card = editingCardRef.current;
+      if (card && !card.contains(e.target as Node)) {
+        saveLink(source, draftRef.current);
+      }
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [editing]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -134,9 +169,6 @@ export default function MediaPage() {
     <>
       <header className="mb-4 flex items-center gap-2">
         <h1 className="font-grotesk">{t("media.title")}</h1>
-        <span className="inline-flex shrink-0 items-center rounded-full border border-umber-300 bg-umber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-umber-700 dark:border-umber-600 dark:bg-umber-700/40 dark:text-umber-200">
-          {t("media.dev_badge")}
-        </span>
         <InfoHint text={t("media.sub")} />
       </header>
 
@@ -161,9 +193,10 @@ export default function MediaPage() {
             return (
               <div
                 key={source}
+                ref={isEditing ? editingCardRef : undefined}
                 className={`flex flex-col items-center gap-2 rounded-2xl px-4 py-6 text-center ${
                   url && !isEditing
-                    ? "border-2 border-ink-200 dark:border-umber-600"
+                    ? "border-2 border-umber-600 dark:border-umber-400"
                     : "border-2 border-dashed border-ink-200 dark:border-umber-600"
                 }`}
               >

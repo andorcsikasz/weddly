@@ -1468,7 +1468,6 @@ const hu: LocaleMessages = {
   },
   media: {
     title: "Képek",
-    dev_badge: "Fejlesztés alatt",
     sub: "Töltsétek fel ide a fotókat, miután visszaértek a fotóstól.",
     coming_soon_title: "Hamarosan",
     coming_soon_body:
@@ -1870,7 +1869,6 @@ const hu: LocaleMessages = {
   },
   wishlist_editor: {
     title: "Kívánságlista",
-    dev_badge: "Fejlesztés alatt",
     subtitle:
       "Egy kedves lista azokról, amiknek örülnétek — egy nagyobb közös ajándék, kisebb meglepetések vagy egy személyes gesztus. A visszajelzett vendégek a vendégoldalon látják. A Weddlyn keresztül nem mozog pénz.",
     add_item: "Új kívánság",

@@ -1606,7 +1606,6 @@ export interface LocaleMessages {
   };
   media: {
     title: string;
-    dev_badge: string;
     sub: string;
     coming_soon_title: string;
     coming_soon_body: string;
@@ -2050,7 +2049,6 @@ export interface LocaleMessages {
    *  money moves; the target amount is a wish, not an invoice. */
   wishlist_editor: {
     title: string;
-    dev_badge: string;
     subtitle: string;
     add_item: string;
     empty_state: string;
