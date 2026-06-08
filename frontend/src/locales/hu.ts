@@ -78,7 +78,7 @@ const hu: LocaleMessages = {
       "Pár perc beállítás: nevek, dátum, létszám, költségvetés. Ennyiből pontosan indul a tervezés.",
     rsvp_checkin_title: "RSVP check-in — Wēddly",
     rsvp_checkin_description:
-      "Add meg a páros kódot és a 4 jegyű azonosítót a meghívóról, és nézd meg a háztartásod RSVP-jét.",
+      "Add meg a páros kódot és a 8 karakteres azonosítót a meghívóról, és nézd meg a háztartásod RSVP-jét.",
     rsvp_legacy_title: "RSVP — Wēddly",
     rsvp_legacy_description: "Visszajelzés a meghívóhoz tartozó kóddal.",
     reset_password_title: "Új jelszó megadása — Wēddly",
@@ -747,7 +747,7 @@ const hu: LocaleMessages = {
     day_of_tomorrow_label: "Holnap lesz",
     day_of_checkin_title: "Vendég bejelentkezés",
     day_of_checkin_intro:
-      "Mutasd a vendégeknek ezt a linket — beírják a 4 jegyű kódot a meghívóról.",
+      "Mutasd a vendégeknek ezt a linket — beírják a 8 karakteres kódot a meghívóról.",
     day_of_checkin_copy: "Link másolása",
     day_of_checkin_copied: "Kimásolva!",
     day_of_checkin_no_slug:
@@ -1957,7 +1957,7 @@ const hu: LocaleMessages = {
       "Adjatok meg esküvői dátumot, helyszínt és menetrendpontokat, hogy az előnézet megteljen.",
     share_title: "Megosztás a vendégekkel",
     share_body:
-      "A vendégek a /rsvp oldalon érik el a meghívót a páros kódotokkal + a saját 4 jegyű háztartáskódjukkal. Ha igennel jelölik vissza, ők is ugyanezt látják.",
+      "A vendégek a /rsvp oldalon érik el a meghívót a páros kódotokkal + a saját 8 karakteres háztartáskódjukkal. Ha igennel jelölik vissza, ők is ugyanezt látják.",
     share_slug_label: "Páros kód",
     share_link_label: "RSVP oldal",
     share_copy_slug_aria: "Páros kód másolása",
@@ -2219,7 +2219,7 @@ const hu: LocaleMessages = {
     meals_summary_header: "Étkezési összesítő",
     meals_close: "Bezárás",
     household_label: "Háztartás",
-    household_assign_help: "Akik együtt válaszolnak, közös 4 jegyű kódot kapnak.",
+    household_assign_help: "Akik együtt válaszolnak, közös 8 karakteres kódot kapnak.",
     household_new: "Új háztartás",
     household_new_label: "Háztartás neve",
     household_existing: "Meglévő háztartás",
@@ -2229,7 +2229,7 @@ const hu: LocaleMessages = {
     household_regenerate_code: "Új kód",
     household_regenerate_confirm_title: "Új kódot generálsz?",
     household_regenerate_confirm_body:
-      "A régi 4 jegyű kóddal nem fog menni a check-in. Az újat küldd el a vendégeknek.",
+      "A régi 8 karakteres kóddal nem fog menni a check-in. Az újat küldd el a vendégeknek.",
     household_add_member: "Tag hozzáadása",
     household_remove_confirm_title: "Háztartás törlése?",
     household_remove_confirm_body:
@@ -2244,16 +2244,16 @@ const hu: LocaleMessages = {
       "Csoportosítsd egy háztartásba azokat, akik együtt válaszolnak (pár, család). A check-in oldalon egymást is látják.",
     couple_slug_title: "Jegyes pár azonosítója",
     couple_slug_help:
-      "A vendégek ezt írják be a /rsvp oldalon a 4 jegyű kódjuk mellé. Csak betűk és számok.",
+      "A vendégek ezt írják be a /rsvp oldalon a 8 karakteres kódjuk mellé. Csak betűk és számok.",
     couple_slug_save: "Mentés",
     couple_slug_invalid: "Csak betűk és számok (3–24 karakter).",
     couple_slug_taken: "Ez az azonosító már foglalt — válassz másikat.",
     checkin_pill_lead: "Check-in",
-    checkin_pill_suffix: "+ 4 jegyű kód háztartásonként",
+    checkin_pill_suffix: "+ 8 karakteres kód háztartásonként",
     checkin_pill_show: "Részletek",
     checkin_pill_hide: "Bezárás",
     checkin_pill_url_hint:
-      "A vendégek a weddly.hu/rsvp oldalon írják be a jegyes pár azonosítóját és a 4 jegyű kódjukat.",
+      "A vendégek a weddly.hu/rsvp oldalon írják be a jegyes pár azonosítóját és a 8 karakteres kódjukat.",
     couple_slug_help_locked:
       "Az azonosító a meghívókra és a check-in oldalra is rákerül — zárolva, hogy a kiosztott linkek továbbra is működjenek.",
     invited_check_label: "Megjelölve meghívottnak",
@@ -4035,17 +4035,17 @@ const hu: LocaleMessages = {
     edit_responses: "Válaszok szerkesztése",
     update_response: "Frissítés",
     checkin_title: "RSVP check-in",
-    checkin_intro: "Írd be a jegyes pár nevét és a 4 jegyű kódot a meghívóról.",
+    checkin_intro: "Írd be a jegyes pár nevét és a 8 karakteres kódot a meghívóról.",
     checkin_couple_label: "Jegyes pár",
     checkin_couple_help: "pl. MIALUCAS",
     checkin_code_label: "Kód",
-    checkin_code_help: "4 számjegy a meghívódról",
+    checkin_code_help: "8 karakter a meghívódról",
     checkin_submit: "Check-in",
     checkin_lookup_failed:
       "Ezt a kombinációt nem találjuk. Ellenőrizd a jegyes pár nevét és a kódot.",
     checkin_lookup_couple_unknown: "Ezt a jegyes párt nem találjuk. Ellenőrizd a meghívódat.",
-    checkin_lookup_code_unknown: "A 4 jegyű kód nem stimmel ehhez a jegyes párhoz.",
-    checkin_lookup_missing: "Mindkét mezőt töltsd ki — jegyes pár neve és 4 jegyű kód.",
+    checkin_lookup_code_unknown: "A 8 karakteres kód nem stimmel ehhez a jegyes párhoz.",
+    checkin_lookup_missing: "Mindkét mezőt töltsd ki — jegyes pár neve és 8 karakteres kód.",
     checkin_contact_hosts: "Vedd fel a kapcsolatot a házigazdákkal",
     checkin_contact_hosts_email: "mailto:support@weddly.hu",
     checkin_household_for: "Visszajelzés ide:",

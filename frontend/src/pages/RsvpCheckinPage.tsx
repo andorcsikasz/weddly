@@ -1,7 +1,7 @@
-// Public airport-style RSVP check-in. Two big fields (couple slug + 4-digit
+// Public airport-style RSVP check-in. Two big fields (couple slug + 8-character
 // code) → one resolved household → one RSVP submission for everyone in it.
 
-import type { PublicCheckinView } from "@shared/types";
+import { HOUSEHOLD_CODE_LENGTH, type PublicCheckinView } from "@shared/types";
 import { Languages, Lock } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -300,20 +300,22 @@ export default function RsvpCheckinPage() {
                 id="rsvp-code"
                 className={
                   errorField === "code" || errorField === "both"
-                    ? "input font-mono tracking-[0.5em] text-center text-2xl min-h-14 border-blush-400 focus:border-blush-500 placeholder:text-ink-300"
-                    : "input font-mono tracking-[0.5em] text-center text-2xl min-h-14 placeholder:text-ink-300"
+                    ? "input font-mono uppercase tracking-[0.25em] text-center text-2xl min-h-14 border-blush-400 focus:border-blush-500 placeholder:text-ink-300"
+                    : "input font-mono uppercase tracking-[0.25em] text-center text-2xl min-h-14 placeholder:text-ink-300"
                 }
                 value={codeInput}
-                inputMode="numeric"
-                pattern="[0-9]*"
+                inputMode="text"
+                autoCapitalize="characters"
                 autoComplete="one-time-code"
                 enterKeyHint="go"
-                placeholder="0000"
-                onChange={(e) => setCodeInput(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder={"·".repeat(HOUSEHOLD_CODE_LENGTH)}
+                onChange={(e) =>
+                  setCodeInput(e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, ""))
+                }
                 onFocus={(e) =>
                   e.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" })
                 }
-                maxLength={4}
+                maxLength={HOUSEHOLD_CODE_LENGTH}
                 aria-invalid={errorField === "code" || errorField === "both"}
                 aria-describedby="rsvp-code-help"
               />

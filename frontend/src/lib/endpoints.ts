@@ -919,7 +919,7 @@ export const incomeApi = {
 };
 
 export const rsvpApi = {
-  /** New airport-style check-in: couple slug + 4-digit household code. */
+  /** New airport-style check-in: couple slug + 8-character household code. */
   lookup: (couple: string, code: string) =>
     apiFetch<{ rsvp: PublicCheckinView }>(
       "GET",

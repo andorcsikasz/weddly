@@ -2050,7 +2050,7 @@ function DayOfPanel({
   const [printing, setPrinting] = useState(false);
 
   // Public check-in URL — guests visit this on their phones at the door
-  // and punch in the 4-digit household code from their invite. Built from
+  // and punch in the 8-character household code from their invite. Built from
   // window.location.origin so it tracks the deployment domain at runtime.
   const checkinUrl = typeof window !== "undefined" ? `${window.location.origin}/rsvp` : "/rsvp";
 

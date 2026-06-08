@@ -209,7 +209,7 @@ addColumnIfMissing("schedule_events", "couple_supplier_id", "couple_supplier_id 
 // none are set. Boolean stored as 0/1.
 addColumnIfMissing("schedule_events", "is_key_moment", "is_key_moment INTEGER NOT NULL DEFAULT 0");
 
-// Global slug uniqueness — couples.slug paired with the 4-digit household
+// Global slug uniqueness — couples.slug paired with the 8-character household
 // code is the public RSVP credential, so two weddings must never share a
 // slug. Application code (uniqueCoupleSlug + PATCH /api/couples/slug)
 // already enforces this on write, but a unique index is the belt

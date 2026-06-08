@@ -118,7 +118,7 @@ CREATE INDEX IF NOT EXISTS idx_guests_couple ON guests(couple_id);
 CREATE INDEX IF NOT EXISTS idx_guests_invite ON guests(invite_code);
 
 -- Airport-style "check-in": one household = one party that RSVPs together.
--- Solo guests still get a household-of-one. The 4-digit `code` is unique per
+-- Solo guests still get a household-of-one. The 8-character `code` is unique per
 -- couple (UNIQUE(couple_id, code)); paired with `couples.slug` it's the public
 -- credential a guest types into /rsvp.
 CREATE TABLE IF NOT EXISTS households (

@@ -1,5 +1,5 @@
 // Guest list manager, grouped by household. Each household carries the
-// 4-digit RSVP check-in code and a copy-link button for the airport-style
+// 8-character RSVP check-in code and a copy-link button for the airport-style
 // "couple slug + code" credential. The guest drawer assigns or creates
 // households so couples can pre-link plus-ones, families, etc.
 
@@ -1362,7 +1362,7 @@ function HouseholdCard({
 }
 
 /**
- * Compact "Check-in: ANDORSARI · + 4-digit code" pill at the top of
+ * Compact "Check-in: ANDORSARI · + 8-character code" pill at the top of
  * /app/guests. Collapsed by default — first-time visitors get the airport
  * concept at a glance without the page being top-heavy. Click expands the
  * panel for slug edit + URL hint + the household-grouping reminder.

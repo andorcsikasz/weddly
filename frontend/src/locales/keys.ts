@@ -2365,7 +2365,7 @@ export interface LocaleMessages {
     couple_slug_save: string;
     couple_slug_invalid: string;
     couple_slug_taken: string;
-    /** Compact "Check-in: ANDORSARI · + 4-digit code (?)" pill at the top
+    /** Compact "Check-in: ANDORSARI · + 8-character code (?)" pill at the top
      *  of /app/guests. Expands to slug edit + help text on click. */
     checkin_pill_lead: string;
     checkin_pill_suffix: string;

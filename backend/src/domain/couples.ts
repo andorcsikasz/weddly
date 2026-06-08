@@ -549,7 +549,7 @@ interface HouseholdSeedRow {
  *  invitation_delivered_at clear, partner_role clears (the bride/groom on
  *  Alpha are not auto-partners on Bravo — the new workspace will spawn
  *  its own host guest rows via `ensurePartnerGuests`). Every guest gets a
- *  fresh invite_code; every household gets a fresh 4-digit code. */
+ *  fresh invite_code; every household gets a fresh 8-character code. */
 export function seedCoupleFromCouple(
   srcCoupleId: number,
   dstCoupleId: number,
@@ -604,7 +604,7 @@ export function seedCoupleFromCouple(
   const ts = Date.now();
   const tx = db.transaction(() => {
     // Map old household id → new household id so guest INSERTs can resolve
-    // their FK. Each dst household gets a freshly minted 4-digit code so
+    // their FK. Each dst household gets a freshly minted 8-character code so
     // the public RSVP credential stays per-workspace.
     const hhIdMap = new Map<number, number>();
     const insertHousehold = db.prepare(
