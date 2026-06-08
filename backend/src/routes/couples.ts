@@ -34,7 +34,6 @@ import {
   type ColorRole,
   type CoupleDesign,
   type DateFormatSlug,
-  type DecorSlug,
   type FontFamilySlug,
   type FontPresetSlug,
   HEX_COLOR_RE,
@@ -47,7 +46,6 @@ import {
   VALID_BUTTON_STYLES,
   VALID_CARD_RADII,
   VALID_DATE_FORMATS,
-  VALID_DECOR,
   VALID_FONT_FAMILIES,
   VALID_FONTS,
   VALID_IMAGE_TREATMENTS,
@@ -188,9 +186,6 @@ interface OnboardBody {
    *  string clears. We validate scheme + length only — no fetch/probe at
    *  the API boundary, that's a v2 concern once upload pipeline lands. */
   cover_image_url?: unknown;
-  /** Cover focal point — object-position percentages (0..100). */
-  cover_position_x?: unknown;
-  cover_position_y?: unknown;
   /** Vendégoldal Phase 2 — pre-RSVP welcome block (markdown). Empty
    *  string clears. Cap ≤4000 chars. */
   guest_page_intro?: unknown;
@@ -1809,20 +1804,6 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       });
     }
   }
-  // Cover focal point (object-position %). Cosmetic micro-adjustment from the
-  // editor drag — not audited (it would spam the activity feed during a drag).
-  if (body.cover_position_x !== undefined) {
-    const x = parseOptionalInt(body.cover_position_x, "cover_position_x", 0, 100);
-    if (x !== null && x !== couple.cover_position_x) {
-      updates.push({ col: "cover_position_x", val: x });
-    }
-  }
-  if (body.cover_position_y !== undefined) {
-    const y = parseOptionalInt(body.cover_position_y, "cover_position_y", 0, 100);
-    if (y !== null && y !== couple.cover_position_y) {
-      updates.push({ col: "cover_position_y", val: y });
-    }
-  }
 
   if (body.guest_page_intro !== undefined) {
     const next = parseMarkdownBlock(body.guest_page_intro, "guest_page_intro", 4000);
@@ -1905,7 +1886,6 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       bodyFont: prev.bodyFont,
       monogram: { ...prev.monogram },
       dateFormat: prev.dateFormat,
-      decor: prev.decor,
       borderStyle: prev.borderStyle,
       print: { ...prev.print },
       web: { ...prev.web },
@@ -1952,13 +1932,6 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         throw new HttpError(400, "design.dateFormat is not a valid date format");
       }
       next.dateFormat = v as DateFormatSlug;
-    }
-    if ("decor" in obj) {
-      const v = obj.decor;
-      if (typeof v !== "string" || !VALID_DECOR.has(v as DecorSlug)) {
-        throw new HttpError(400, "design.decor is not a valid decorative style");
-      }
-      next.decor = v as DecorSlug;
     }
     if ("borderStyle" in obj) {
       const v = obj.borderStyle;
@@ -2068,7 +2041,6 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.monogram.enabled !== prev.monogram.enabled ||
       next.monogram.separator !== prev.monogram.separator ||
       next.dateFormat !== prev.dateFormat ||
-      next.decor !== prev.decor ||
       next.borderStyle !== prev.borderStyle ||
       next.print.border !== prev.print.border ||
       next.print.ornament !== prev.print.ornament ||

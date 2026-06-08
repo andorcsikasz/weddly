@@ -275,13 +275,11 @@ export function WeddingSiteView({
         .join(" · ")
     : null;
 
-  // Monogram (the couple's joined initials) + a decorative divider beneath the
-  // names, both driven by the Design selection. Empty monogram (no names yet)
-  // skips the block; "none" decor renders nothing.
+  // Monogram (the couple's joined initials), driven by the Design selection.
+  // Empty monogram (no names yet) skips the block.
   const monogram = view.design.monogram_enabled
     ? buildMonogram(view.bride_name, view.groom_name, view.design.monogram_separator, locale)
     : "";
-  const decor = view.design.decor;
 
   // Section hiding applies to the LIVE page only — the editor preview keeps
   // every section visible so the couple can still edit hidden ones.
@@ -351,37 +349,11 @@ export function WeddingSiteView({
 
         <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
           <h1
-            data-preview-anchor="hero-names"
             className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
-            // Set the colour inline (like the date + venue below) so the name
-            // follows --wt-text instead of the global base `h1 { color: ink.900 }`
-            // — otherwise it vanishes dark-on-dark on a dark palette (Black tie).
-            style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
+            style={{ fontFamily: "var(--wt-heading-font)" }}
           >
             {view.couple_display_name}
           </h1>
-
-          {decor !== "none" && (
-            <div data-preview-anchor="hero-decor" className="mt-4 flex justify-center" aria-hidden>
-              {decor === "line" && hairline}
-              {decor === "dots" && (
-                <span className="text-lg tracking-[0.4em]" style={{ color: "var(--wt-accent)" }}>
-                  · · ·
-                </span>
-              )}
-              {decor === "frame" && (
-                <span
-                  className="h-5 w-20 rounded border"
-                  style={{ borderColor: "var(--wt-accent)" }}
-                />
-              )}
-              {decor === "botanical" && (
-                <span className="text-xl" style={{ color: "var(--wt-accent)" }}>
-                  {"❧︎"}
-                </span>
-              )}
-            </div>
-          )}
 
           {/* Signature date — big + letter-spaced. Click-to-edit in preview;
               a missing date is a dashed ghost button. */}
@@ -389,7 +361,6 @@ export function WeddingSiteView({
             isPreview && e.onEditDate ? (
               <button
                 type="button"
-                data-preview-anchor="hero-date"
                 onClick={e.onEditDate}
                 title={editHint}
                 className="relative z-10 mx-auto mt-7 block rounded-md px-2 py-1 text-5xl tracking-[0.18em] transition hover:opacity-80 sm:text-7xl"
@@ -399,7 +370,6 @@ export function WeddingSiteView({
               </button>
             ) : (
               <p
-                data-preview-anchor="hero-date"
                 className="relative z-10 mx-auto mt-7 text-5xl tracking-[0.18em] sm:text-7xl"
                 style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
                 aria-label={dateLine}
@@ -423,23 +393,16 @@ export function WeddingSiteView({
           ) : null}
         </div>
 
-        {/* Cover photo — full-width, sitting below the date with a clear gap so
-            the big numerals stay entirely on the page (not straddling the
-            photo's top edge). Dashed ghost when still empty. */}
+        {/* Cover photo — full-width, pulled up under the date so the big
+            numerals overlap its top edge. Dashed ghost when still empty. */}
         {view.cover_image_url ? (
-          <div
-            data-preview-anchor="cover-image"
-            className={heroDateBig ? "mt-6 w-full sm:mt-8" : "mt-8 w-full"}
-          >
+          <div className={heroDateBig ? "-mt-4 w-full sm:-mt-6" : "mt-8 w-full"}>
             <img
               src={view.cover_image_url}
               alt=""
               loading="lazy"
               className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
-              style={{
-                objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
-                filter: imgFilter || undefined,
-              }}
+              style={imgFilter ? { filter: imgFilter } : undefined}
             />
           </div>
         ) : isPreview ? (
@@ -513,7 +476,8 @@ export function WeddingSiteView({
       {view.schedule.length > 0 && !sectionHidden("schedule") ? (
         <Band tone="dark" onEdit={isPreview ? e.onEditSchedule : undefined} hint={editHint}>
           <div className="text-center">
-            <Heading>{t("wedding_site.schedule_title")}</Heading>
+            <Eyebrow dark>{t("wedding_site.schedule_eyebrow")}</Eyebrow>
+            <Heading className="mt-2">{t("wedding_site.schedule_title")}</Heading>
             {/* Only the day's headline beats (arrival / ceremony / dinner /
              *  first dance by default, or whatever the couple flagged), kept on
              *  a single row. `overflow-x-auto` lets the row scroll on a narrow
@@ -549,7 +513,8 @@ export function WeddingSiteView({
       ) : isPreview ? (
         <Band tone="dark" onEdit={e.onEditSchedule} hint={editHint}>
           <div className="text-center">
-            <Heading>{t("wedding_site.schedule_title")}</Heading>
+            <Eyebrow dark>{t("wedding_site.schedule_eyebrow")}</Eyebrow>
+            <Heading className="mt-2">{t("wedding_site.schedule_title")}</Heading>
             <p className="mt-4 inline-flex items-center gap-1.5 text-sm" style={{ opacity: 0.7 }}>
               <Plus size={14} aria-hidden />
               {t("wedding_site.ghost.schedule_cta")}
@@ -778,18 +743,13 @@ export function WeddingSiteView({
             </p>
             {isPreview ? (
               <span
-                data-preview-anchor="rsvp-button"
                 className={`${rsvpBtnClass} mt-6 inline-flex cursor-default opacity-90`}
                 aria-hidden
               >
                 {t("wedding_site.rsvp_cta")}
               </span>
             ) : (
-              <Link
-                to={rsvpHref ?? "/"}
-                data-preview-anchor="rsvp-button"
-                className={`${rsvpBtnClass} mt-6 inline-flex`}
-              >
+              <Link to={rsvpHref ?? "/"} className={`${rsvpBtnClass} mt-6 inline-flex`}>
                 {hasCode ? t("wedding_site.rsvp_personal_cta") : t("wedding_site.rsvp_cta")}
               </Link>
             )}

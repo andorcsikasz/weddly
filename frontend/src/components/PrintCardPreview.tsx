@@ -1,6 +1,6 @@
 // Instant, in-browser preview of the printable cards. Themed entirely from the
 // resolved CoupleDesign (the SAME object the server PDF renderer consumes), so
-// toggling border / QR / decor / palette / monogram / fonts updates the card
+// toggling border / QR / palette / monogram / fonts updates the card
 // live with zero round-trip. The pdf-lib render stays the source of truth for
 // the actual download; this is the "azonnali nézet" the couple edits against.
 //
@@ -14,31 +14,6 @@ import { useT } from "../lib/i18n";
 
 /** Which printable the preview renders. */
 export type PrintTemplate = "place_card" | "table_number" | "menu" | "schedule";
-
-/** Decorative divider mirroring WeddingSiteView's decor glyphs, tinted with the
- *  resolved accent so web + print read as one decor system. */
-function DecorDivider({ decor, color }: { decor: CoupleDesign["decor"]; color: string }) {
-  if (decor === "none") return null;
-  if (decor === "line") {
-    return <span className="block h-px w-16" style={{ backgroundColor: color }} aria-hidden />;
-  }
-  if (decor === "dots") {
-    return (
-      <span className="text-sm tracking-[0.4em]" style={{ color }} aria-hidden>
-        · · ·
-      </span>
-    );
-  }
-  if (decor === "botanical") {
-    return (
-      <span className="text-lg leading-none" style={{ color }} aria-hidden>
-        {"❧︎"}
-      </span>
-    );
-  }
-  // "frame" has no inline divider; the inset frame is drawn on the card itself.
-  return null;
-}
 
 export function PrintCardPreview({
   design,
@@ -75,15 +50,6 @@ export function PrintCardPreview({
           borderRadius: 6,
         }}
       >
-        {/* "frame" decor: a hairline inset box. */}
-        {design.decor === "frame" && (
-          <span
-            className="pointer-events-none absolute inset-2 rounded"
-            style={{ border: `1px solid ${d.accent}` }}
-            aria-hidden
-          />
-        )}
-
         {monogram && (
           <span
             className="text-sm tracking-[0.2em]"
@@ -102,9 +68,6 @@ export function PrintCardPreview({
             >
               {brideName?.trim() || t("design.print_preview.sample_name")}
             </span>
-            <span className="mt-2 flex items-center justify-center">
-              <DecorDivider decor={design.decor} color={d.accent} />
-            </span>
             <span
               className="mt-2 text-[11px] uppercase tracking-[0.18em]"
               style={{ color: d.text }}
@@ -116,9 +79,6 @@ export function PrintCardPreview({
 
         {template === "table_number" && (
           <>
-            <span className="mt-1 flex items-center justify-center">
-              <DecorDivider decor={design.decor} color={d.accent} />
-            </span>
             <span
               className="text-6xl leading-none tabular-nums"
               style={{ color: d.text, fontFamily: d.heading_font }}
@@ -142,10 +102,7 @@ export function PrintCardPreview({
             >
               {t("design.print_preview.menu_title")}
             </span>
-            <span className="my-3 flex items-center justify-center">
-              <DecorDivider decor={design.decor} color={d.accent} />
-            </span>
-            <div className="flex flex-col gap-2 text-sm" style={{ color: d.text }}>
+            <div className="mt-3 flex flex-col gap-2 text-sm" style={{ color: d.text }}>
               {(["menu_starter", "menu_main", "menu_dessert"] as const).map((key) => (
                 <span key={key}>{t(`design.print_preview.${key}`)}</span>
               ))}
@@ -161,10 +118,7 @@ export function PrintCardPreview({
             >
               {t("design.print_preview.tpl.schedule")}
             </span>
-            <span className="my-3 flex items-center justify-center">
-              <DecorDivider decor={design.decor} color={d.accent} />
-            </span>
-            <div className="flex flex-col gap-2.5 text-sm" style={{ color: d.text }}>
+            <div className="mt-3 flex flex-col gap-2.5 text-sm" style={{ color: d.text }}>
               {(
                 [
                   { time: "15:00", key: "ceremony" },

@@ -25,7 +25,6 @@ interface CoupleDesign {
   bodyFont: string | null;
   monogram: { enabled: boolean; separator: string };
   dateFormat: string;
-  decor: string;
   borderStyle: string;
   print: { border: boolean; ornament: boolean; qr: boolean };
   web: {
@@ -83,7 +82,6 @@ describe("design: default resolution", () => {
       bodyFont: null,
       monogram: { enabled: true, separator: "amp" },
       dateFormat: "long",
-      decor: "line",
       borderStyle: "hairline",
       print: { border: true, ornament: false, qr: false },
       web: {
@@ -105,11 +103,11 @@ describe("design: PATCH /api/couples/current", () => {
     const r = await req<{ couple: { design: CoupleDesign } }>(
       "PATCH",
       "/api/couples/current",
-      { design: { style: "editorial", palette: "espresso", fonts: "modern_clean" } },
+      { design: { style: "modern_minimal", palette: "espresso", fonts: "modern_clean" } },
       { token },
     );
     expect(r.status).toBe(200);
-    expect(r.data.couple.design.style).toBe("editorial");
+    expect(r.data.couple.design.style).toBe("modern_minimal");
     expect(r.data.couple.design.palette).toBe("espresso");
     expect(r.data.couple.design.fonts).toBe("modern_clean");
 
@@ -357,7 +355,7 @@ describe("design: design-aware print templates", () => {
     await req(
       "PATCH",
       "/api/couples/current",
-      { design: { palette: "espresso", fonts: "modern_clean", decor: "dots" } },
+      { design: { palette: "espresso", fonts: "modern_clean" } },
       { token },
     );
 
@@ -384,6 +382,8 @@ describe("design: website-only `web` sub-object", () => {
       { token },
     );
     expect(me.data.couple.design.palette).toBe("espresso");
+    // A legacy `decor` key in a stored blob is silently ignored now that the
+    // decorative-style feature is gone (the resolved design has no such field).
     expect(me.data.couple.design.web).toEqual({
       cardRadius: "soft",
       shadow: "soft",

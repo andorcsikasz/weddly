@@ -685,53 +685,13 @@ function designColors(design: CoupleDesign): {
   };
 }
 
-/** Draw the chosen decorative divider centred on (cxPt, yPt), within maxWidthPt.
- *  Curated set only: a thin rule, a dotted run, or a sprig glyph. `frame` and
- *  `none` are handled at the card level (frame = inset rectangle), so they draw
- *  nothing here. Returns nothing; purely decorative. */
-function drawDecorDivider(
-  page: PDFPage,
-  font: PDFFont,
-  decor: CoupleDesign["decor"],
-  cxPt: number,
-  yPt: number,
-  maxWidthPt: number,
-  color: ReturnType<typeof rgb>,
-): void {
-  if (decor === "none" || decor === "frame") return;
-  if (decor === "line") {
-    const half = Math.min(maxWidthPt, mm(18)) / 2;
-    page.drawLine({
-      start: { x: cxPt - half, y: yPt },
-      end: { x: cxPt + half, y: yPt },
-      thickness: 0.6,
-      color,
-    });
-    return;
-  }
-  // `dots` and `botanical` both render as a short centred glyph run. Botanical
-  // has no embedded sprig face, so it falls back to a tasteful dotted motif -
-  // the divider still reads as an intentional ornament, never a missing glyph.
-  const glyph = decor === "dots" ? "· · ·" : "❦";
-  const safeGlyph = safe(glyph);
-  const size = 9;
-  const w = font.widthOfTextAtSize(safeGlyph, size);
-  page.drawText(safeGlyph, {
-    x: cxPt - w / 2,
-    y: yPt - size * 0.35,
-    size,
-    font,
-    color,
-  });
-}
-
 interface PlaceCardInput {
   couple_display_name: string;
   wedding_date: string | null;
   /** Partner names - used to build the monogram via the shared catalog. */
   bride_name: string;
   groom_name: string;
-  /** Resolved visual identity. Drives palette, monogram, decor, border. */
+  /** Resolved visual identity. Drives palette, monogram, border. */
   design: CoupleDesign;
   guests: Guest[];
   /** When provided, prints the table label below the guest name. */
@@ -757,7 +717,7 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       return cjkFont;
     },
   };
-  // Resolved visual identity - palette colours, monogram, decor, border.
+  // Resolved visual identity - palette colours, monogram, border.
   const colors = designColors(input.design);
   const monogram =
     input.design.monogram.enabled &&
@@ -800,8 +760,7 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       const cxPt = mm(x_mm0 + cardW / 2);
 
       // Card background in the palette background tone. The hairline frame is
-      // honoured per design.print.border; a `frame` decor draws a second inset
-      // rule for a stationery double-border look.
+      // honoured per design.print.border.
       page.drawRectangle({
         x: mm(x_mm0),
         y: mm(y_mm0_top),
@@ -811,18 +770,6 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
         borderColor: colors.accent,
         color: colors.background,
       });
-      if (input.design.decor === "frame") {
-        const inset = mm(3);
-        page.drawRectangle({
-          x: mm(x_mm0) + inset,
-          y: mm(y_mm0_top) + inset,
-          width: mm(cardW) - 2 * inset,
-          height: mm(cardH) - 2 * inset,
-          borderWidth: 0.5,
-          borderColor: colors.accent,
-          color: colors.background,
-        });
-      }
 
       // Monogram across the top of the card, in the accent/primary tone.
       if (monogram) {
@@ -853,17 +800,6 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
         font: nameFont,
         color: colors.text,
       });
-
-      // Decorative divider between the name and the table label, in accent.
-      drawDecorDivider(
-        page,
-        helv,
-        input.design.decor,
-        cxPt,
-        mm(y_mm0_top + cardH * 0.36),
-        mm(cardW * 0.6),
-        colors.accent,
-      );
 
       if (tableLabel) {
         const t = safe(tableLabel);
@@ -909,7 +845,7 @@ interface TableNumbersInput {
 }
 
 /** A6 table-number cards - one per seating table, a big centred label with a
- *  small monogram on top. Palette, decor, and border match the place cards so
+ *  small monogram on top. Palette and border match the place cards so
  *  the two sit together as a set. One card per A6 page. */
 export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
@@ -950,18 +886,6 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
       borderColor: colors.accent,
       color: colors.background,
     });
-    if (input.design.decor === "frame") {
-      page.drawRectangle({
-        x: mm(10),
-        y: mm(10),
-        width: mm(W - 20),
-        height: mm(H - 20),
-        borderWidth: 0.5,
-        borderColor: colors.accent,
-        color: colors.background,
-      });
-    }
-
     // Monogram at the top.
     if (monogram) {
       const mFont = await pickFontAsync(fontPair, monogram, "bold");
@@ -975,9 +899,6 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
         color: colors.primary,
       });
     }
-
-    // Divider under the monogram.
-    drawDecorDivider(page, helv, input.design.decor, cxPt, mm(H - 40), mm(W * 0.5), colors.accent);
 
     // Big centred table label, fitted to the card width.
     const labelFit = await fitText(fontPair, t.label, 44, mm(W - 24), "bold");
@@ -1030,18 +951,6 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     borderColor: colors.accent,
     color: colors.background,
   });
-  if (input.design.decor === "frame") {
-    page.drawRectangle({
-      x: mm(12),
-      y: mm(12),
-      width: mm(W - 24),
-      height: mm(H - 24),
-      borderWidth: 0.5,
-      borderColor: colors.accent,
-      color: colors.background,
-    });
-  }
-
   // Monogram.
   if (monogram) {
     const mFont = await pickFontAsync(fontPair, monogram, "bold");
@@ -1082,7 +991,7 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     });
   }
 
-  // "Menu" heading + divider.
+  // "Menu" heading.
   const heading = "Menu";
   const hFont = await pickFontAsync(fontPair, heading, "bold");
   const hw = hFont.widthOfTextAtSize(heading, 13);
@@ -1093,7 +1002,6 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     font: hFont,
     color: colors.primary,
   });
-  drawDecorDivider(page, helv, input.design.decor, cxPt, mm(H - 70), mm(W * 0.5), colors.accent);
 
   // Course sections - generic labels only, each over a blank writing rule the
   // couple fills in by hand. No invented dishes.

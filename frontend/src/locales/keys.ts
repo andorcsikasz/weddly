@@ -288,6 +288,7 @@ export interface LocaleMessages {
     date_tbd: string;
     venue_approx: string;
     location_eyebrow: string;
+    schedule_eyebrow: string;
     schedule_title: string;
     rsvp_title: string;
     rsvp_body: string;
@@ -366,14 +367,11 @@ export interface LocaleMessages {
     venue_city_placeholder: string;
     cover_image_label: string;
     cover_image_placeholder: string;
-    cover_position_hint: string;
     cover_image_hint: string;
     cover_image_invalid: string;
     cover_upload_button: string;
     cover_upload_uploading: string;
     cover_upload_replace: string;
-    /** Red-outline trash that clears the chosen cover image. */
-    cover_image_remove: string;
     cover_upload_success: string;
     cover_upload_error_generic: string;
     cover_upload_error_too_large: string;
@@ -794,6 +792,7 @@ export interface LocaleMessages {
     quick_links_title: string;
     /** Dashboard spending donuts: paid-vs-planned + category breakdown. */
     charts: {
+      title: string;
       paid_title: string;
       paid_center: string;
       planned_label: string;
@@ -1379,10 +1378,6 @@ export interface LocaleMessages {
      *  the dashed "+ owner" affordance shown on tasks with no owner set. */
     assignee_label: string;
     assignee_placeholder: string;
-    /** Generic role labels seeded into the assignee datalist when a partner's
-     *  name isn't set yet. */
-    assignee_bride: string;
-    assignee_groom: string;
     assignee_add: string;
     assignee_edit_hint: string;
     idea_suggested_by: string;
@@ -1449,32 +1444,6 @@ export interface LocaleMessages {
     template_first_dance: string;
     template_party: string;
     template_bride_dance: string;
-  };
-  /** Official Hungarian consular (Konzinfo) travel-advice block on the honeymoon
-   *  page — destination → country page, security rating, pre-trip checklist. */
-  travel_safety: {
-    title: string;
-    intro: string;
-    block_title: string;
-    loading: string;
-    konzinfo_link: string;
-    safety_label: string;
-    last_update_label: string;
-    valid_today_label: string;
-    no_match: string;
-    index_link: string;
-    checklist_title: string;
-    check_passport: string;
-    check_visa: string;
-    check_entry: string;
-    check_health: string;
-    check_insurance: string;
-    check_copies: string;
-    check_register: string;
-    register_link: string;
-    app_link: string;
-    insurance_reminder: string;
-    disclaimer: string;
   };
   /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */
   honeymoon: {
@@ -1568,8 +1537,6 @@ export interface LocaleMessages {
      *  string covers the submit button. */
     todo_add_placeholder: string;
     todo_add_aria: string;
-    /** Per-row trash button that removes a honeymoon task. */
-    todo_delete_aria: string;
     /** Wand dialog scoped to honeymoon tasks — slimmer cousin of the
      *  planning page's TaskTemplateDialog. `_confirm` receives `{count}` =
      *  picked items; `_already_added` is the per-row badge for entries
@@ -1636,6 +1603,7 @@ export interface LocaleMessages {
   };
   media: {
     title: string;
+    dev_badge: string;
     sub: string;
     coming_soon_title: string;
     coming_soon_body: string;
@@ -1670,7 +1638,6 @@ export interface LocaleMessages {
       print: string;
       monogram: string;
       date: string;
-      decor: string;
     };
     /** Print-template toggle labels. */
     print: {
@@ -1716,15 +1683,10 @@ export interface LocaleMessages {
       classic_serif: string;
       modern_clean: string;
       soft_romantic: string;
-      /** Heading / body font-family override pickers, behind a disclosure. */
+      /** Heading / body font-family override pickers + the "use preset" option. */
       heading_label: string;
       body_label: string;
-      /** Disclosure toggle revealing the per-element override rows. */
-      customize_toggle: string;
-      /** Badge on the toggle while a heading/body override is active. */
-      custom_badge: string;
-      /** Per-row link that clears the override back to the preset. */
-      reset_to_preset: string;
+      use_preset: string;
     };
     /** Individually-assignable font families (the editable layer). */
     family: {
@@ -1803,14 +1765,6 @@ export interface LocaleMessages {
       numeric_dot: string;
       long: string;
       slash: string;
-    };
-    /** Decorative-style names. */
-    decor: {
-      none: string;
-      line: string;
-      botanical: string;
-      dots: string;
-      frame: string;
     };
     /** Cards & printables hub. */
     cards: {
@@ -1998,13 +1952,6 @@ export interface LocaleMessages {
     useful_info_label: string;
     useful_info_placeholder: string;
     useful_info_hint: string;
-    /** Pre-made "Good to know" row labels + the free-form catch-all. */
-    useful_field_parking: string;
-    useful_field_getting_there: string;
-    useful_field_transfer: string;
-    useful_field_accommodation: string;
-    useful_field_other_label: string;
-    useful_field_other_placeholder: string;
     /** Phase 2 — markdown textarea bound to `couples.post_rsvp_content`.
      *  Lives under the Post-RSVP section. */
     post_rsvp_label: string;
@@ -2086,6 +2033,7 @@ export interface LocaleMessages {
    *  money moves; the target amount is a wish, not an invoice. */
   wishlist_editor: {
     title: string;
+    dev_badge: string;
     subtitle: string;
     add_item: string;
     empty_state: string;

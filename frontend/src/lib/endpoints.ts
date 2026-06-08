@@ -85,7 +85,6 @@ import type {
   VendorWaitlistEntry,
 } from "@shared/vendor_waitlist";
 import type { CouplePick } from "@shared/picks";
-import type { KonzinfoInfo } from "@shared/konzinfo";
 import type { SavedSupplier } from "@shared/saved";
 import type {
   AdminActivityAnalytics,
@@ -408,9 +407,6 @@ export const coupleApi = {
     venue_city?: string | null;
     /** http(s) URL the couple pastes for the wedding site's hero image. */
     cover_image_url?: string | null;
-    /** Cover-photo focal point as object-position percentages (0..100). */
-    cover_position_x?: number;
-    cover_position_y?: number;
     /** Pre-RSVP welcome block on the merged Vendégoldal (markdown,
      *  ≤4000 chars). Empty string clears the column. */
     guest_page_intro?: string | null;
@@ -647,9 +643,6 @@ export const placesApi = {
 export const honeymoonApi = {
   flightEstimate: () =>
     apiFetch<{ estimate: FlightEstimate | null }>("GET", "/api/honeymoon/flight-estimate"),
-  /** Official Hungarian consular travel advice for the couple's honeymoon
-   *  destination (resolved server-side from the stored destination). */
-  konzinfo: () => apiFetch<KonzinfoInfo>("GET", "/api/honeymoon/konzinfo"),
 };
 
 /** Day-of run-of-show timeline. Times are minutes from midnight in wedding-
@@ -1649,7 +1642,7 @@ export function placeCardsUrl(opts: { onlyConfirmed?: boolean; guestIds?: number
 export const schedulePdfUrl = "/api/print/schedule";
 
 /** A6 table-number cards - one card per seating table. Styled from the
- *  couple's design (palette + fonts + decor). Download via `fetchPdfBlob`. */
+ *  couple's design (palette + fonts). Download via `fetchPdfBlob`. */
 export const tableNumbersPdfUrl = "/api/print/table-numbers";
 
 /** A5 menu cards in the couple's wedding style. Download via `fetchPdfBlob`. */

@@ -224,6 +224,7 @@ const en: LocaleMessages = {
     date_tbd: "Date to be confirmed",
     venue_approx: "Venue — exact address on your invitation",
     location_eyebrow: "Location",
+    schedule_eyebrow: "Here's a sneak peek of",
     schedule_title: "Schedule",
     rsvp_title: "Are you coming?",
     rsvp_body:
@@ -289,13 +290,11 @@ const en: LocaleMessages = {
     venue_city_placeholder: "e.g. Dunakiliti",
     cover_image_label: "Cover image",
     cover_image_placeholder: "https://…",
-    cover_position_hint: "Drag the photo to reposition",
     cover_image_hint: "Upload a file, or paste an http(s) link to a publicly hosted image.",
     cover_image_invalid: "Must be an http(s) URL — other schemes aren't accepted.",
     cover_upload_button: "Upload image",
     cover_upload_uploading: "Uploading…",
     cover_upload_replace: "Replace image",
-    cover_image_remove: "Remove cover",
     cover_upload_success: "Cover image uploaded.",
     cover_upload_error_generic: "Couldn't upload the image. Try again.",
     cover_upload_error_too_large: "The image must be 4 MB or smaller.",
@@ -689,6 +688,7 @@ const en: LocaleMessages = {
     task_seat_guests: "Seat all confirmed guests",
     quick_links_title: "Shortcuts",
     charts: {
+      title: "Spending at a glance",
       paid_title: "Paid so far",
       paid_center: "paid",
       planned_label: "Planned",
@@ -1222,8 +1222,6 @@ const en: LocaleMessages = {
     // Assignee chip + idea suggester display.
     assignee_label: "Owner",
     assignee_placeholder: "Owner",
-    assignee_bride: "Bride",
-    assignee_groom: "Groom",
     assignee_add: "Owner",
     assignee_edit_hint: "Click to change the owner",
     idea_suggested_by: "— suggested by {name}",
@@ -1343,38 +1341,6 @@ const en: LocaleMessages = {
     calendar_event_other: "{count} tasks",
     calendar_no_tasks: "No scheduled tasks yet, so the days are clear.",
   },
-  travel_safety: {
-    title: "Official consular information for Hungarian travellers",
-    intro:
-      "Before you travel, always check the Hungarian Consular Service's official country page — entry, security, health and local rules can change at any time. Before a honeymoon, pay special attention to passport validity, visa or entry requirements, travel insurance, and the destination's current security rating.",
-    block_title: "Official Hungarian consular information",
-    loading: "Loading official information…",
-    konzinfo_link: "Open the current Konzinfo page",
-    safety_label: "Security rating",
-    last_update_label: "Last updated",
-    valid_today_label: "Confirmed valid today",
-    no_match:
-      "We couldn't match this destination to a country page directly. Find it in the Consular Service's country-by-country advice.",
-    index_link: "Country-by-country consular advice",
-    checklist_title: "Check before you travel",
-    check_passport:
-      "Passport valid for at least 6 months after your return or final exit from the region.",
-    check_visa: "Visa-free entry or a visa requirement for the destination.",
-    check_entry:
-      "Whether a prior online entry registration, arrival card or health declaration is needed.",
-    check_health: "Recommended vaccinations and health advice.",
-    check_insurance:
-      "Adequate travel insurance that also covers honeymoon activities: diving, boat trips, scooter rental, hiking, water sports.",
-    check_copies:
-      "Digital and offline copies of your passport, insurance, flight tickets and accommodation booking.",
-    check_register: "Register the trip for consular protection.",
-    register_link: "Register your trip for consular protection",
-    app_link: "KonzInfo Utazom app",
-    insurance_reminder:
-      "Tip: choose honeymoon travel insurance that also covers your planned active programmes (diving, water sports, hiking).",
-    disclaimer:
-      "This is a short summary only. The official and always up-to-date information is on the Consular Service's site, and it can change at any time.",
-  },
   honeymoon: {
     title: "Honeymoon",
     sub: "Plan the trip — destination, dates, costs — without leaving the workspace.",
@@ -1438,11 +1404,10 @@ const en: LocaleMessages = {
     todo_uncheck_aria: "Mark as not done",
     todo_add_placeholder: "Add a honeymoon task…",
     todo_add_aria: "Add task",
-    todo_delete_aria: "Delete task",
     todo_wand_button: "Wand",
     todo_wand_dialog_title: "Honeymoon task pack",
     todo_wand_dialog_body:
-      "Tick the ones to add. Checked items slide to the bottom and a fresh suggestion takes their place, so you can work through the whole pack in one view.",
+      "Drop the trip-prep starter set onto your list. Untick the ones you don't need.",
     todo_wand_confirm: "Add {count}",
     todo_wand_already_added: "Already on list",
     tile_days: "Days",
@@ -1487,6 +1452,7 @@ const en: LocaleMessages = {
   },
   media: {
     title: "Photos",
+    dev_badge: "Under development",
     sub: "Drop the wedding photos here once they're back from the photographer.",
     coming_soon_title: "Coming soon",
     coming_soon_body:
@@ -1520,7 +1486,6 @@ const en: LocaleMessages = {
       print: "Print options",
       monogram: "Monogram",
       date: "Date format",
-      decor: "Decorative style",
     },
     print: {
       border: "Border",
@@ -1561,9 +1526,7 @@ const en: LocaleMessages = {
       soft_romantic: "Soft Romantic",
       heading_label: "Heading font",
       body_label: "Body font",
-      customize_toggle: "Customize fonts individually",
-      custom_badge: "Custom",
-      reset_to_preset: "Reset to preset",
+      use_preset: "Use preset",
     },
     family: {
       cormorant: "Cormorant (serif)",
@@ -1641,13 +1604,6 @@ const en: LocaleMessages = {
       numeric_dot: "Numeric",
       long: "Long",
       slash: "Slashes",
-    },
-    decor: {
-      none: "None",
-      line: "Thin line",
-      botanical: "Botanical",
-      dots: "Dots",
-      frame: "Frame",
     },
     cards: {
       subtitle: "Create matching printed materials using your wedding style kit.",
@@ -1811,13 +1767,8 @@ const en: LocaleMessages = {
     intro_suggestion_5: "Thank you for being part of our day with your love and your presence.",
     useful_info_label: "Good to know",
     useful_info_placeholder: "Parking: ...\nGetting there: ...\nAccommodation: ...",
-    useful_info_hint: "Only the rows you fill in appear on the guest page.",
-    useful_field_parking: "Parking",
-    useful_field_getting_there: "Getting there",
-    useful_field_transfer: "Transfer",
-    useful_field_accommodation: "Accommodation",
-    useful_field_other_label: "Other info",
-    useful_field_other_placeholder: "Anything else good to know…",
+    useful_info_hint:
+      "Parking, getting there, accommodation and anything good to know. Shown on the guest page.",
     post_rsvp_label: "Details for confirmed guests",
     post_rsvp_placeholder: "Click a suggested topic above, or just type the details freely.",
     post_rsvp_hint:
@@ -1888,6 +1839,7 @@ const en: LocaleMessages = {
   },
   wishlist_editor: {
     title: "Wishlist",
+    dev_badge: "Under development",
     subtitle:
       "A gentle list of things you'd love — a bigger gift to coordinate on, smaller gifts, or a personal gesture. Confirmed guests see it on your guest page. Nothing is paid through Weddly.",
     add_item: "Add a wish",

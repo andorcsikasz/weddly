@@ -226,6 +226,7 @@ const hu: LocaleMessages = {
     date_tbd: "A dátum még kiderül",
     venue_approx: "Helyszín — pontos cím a meghívóban",
     location_eyebrow: "Helyszín",
+    schedule_eyebrow: "Egy kis ízelítő",
     schedule_title: "A nap menete",
     rsvp_title: "Részt veszel?",
     rsvp_body:
@@ -290,14 +291,12 @@ const hu: LocaleMessages = {
     venue_city_placeholder: "pl. Dunakiliti",
     cover_image_label: "Borítókép",
     cover_image_placeholder: "https://…",
-    cover_position_hint: "Húzd a fotót az igazításhoz",
     cover_image_hint:
       "Tölts fel egy fájlt, vagy másold be egy nyilvánosan elérhető kép http(s) linkjét.",
     cover_image_invalid: "Ennek http(s) linknek kell lennie — más sémát nem fogadunk el.",
     cover_upload_button: "Kép feltöltése",
     cover_upload_uploading: "Feltöltés…",
     cover_upload_replace: "Másik kép",
-    cover_image_remove: "Borítókép törlése",
     cover_upload_success: "Borítókép feltöltve.",
     cover_upload_error_generic: "Nem sikerült feltölteni a képet. Próbáld újra.",
     cover_upload_error_too_large: "A kép max 4 MB lehet.",
@@ -696,6 +695,7 @@ const hu: LocaleMessages = {
     task_seat_guests: "Minden visszajelzett vendég leültetve",
     quick_links_title: "Gyorslinkek",
     charts: {
+      title: "Költés egy pillantásra",
       paid_title: "Eddig kifizetve",
       paid_center: "kifizetve",
       planned_label: "Tervezett",
@@ -1235,8 +1235,6 @@ const hu: LocaleMessages = {
     // Assignee chip + idea suggester display.
     assignee_label: "Felelős",
     assignee_placeholder: "Felelős",
-    assignee_bride: "Menyasszony",
-    assignee_groom: "Vőlegény",
     assignee_add: "Felelős",
     assignee_edit_hint: "Kattints a felelős átírásához",
     idea_suggested_by: "— {name} javasolta",
@@ -1356,38 +1354,6 @@ const hu: LocaleMessages = {
     calendar_event_other: "{count} feladat",
     calendar_no_tasks: "Még nincs ütemezett feladat, a napok üresek.",
   },
-  travel_safety: {
-    title: "Hivatalos konzuli információk magyar utazóknak",
-    intro:
-      "Utazás előtt mindig ellenőrizzétek a Konzuli Szolgálat hivatalos országoldalát, mert a beutazási, biztonsági, egészségügyi és helyi szabályok bármikor változhatnak. Nászút előtt különösen fontos az útlevél érvényessége, a vízum- vagy belépési feltételek, az utasbiztosítás, valamint a célország aktuális biztonsági besorolása.",
-    block_title: "Hivatalos magyar konzuli információk",
-    loading: "Hivatalos információk betöltése…",
-    konzinfo_link: "Aktuális Konzinfo oldal megnyitása",
-    safety_label: "Biztonsági besorolás",
-    last_update_label: "Utolsó frissítés",
-    valid_today_label: "Mai napon is érvényes",
-    no_match:
-      "A célországhoz nem találtunk közvetlen országoldalt. Keressétek ki a Konzuli Szolgálat országonkénti tanácsai közül.",
-    index_link: "Országonkénti konzuli tanácsok",
-    checklist_title: "Utazás előtt ellenőrizzétek",
-    check_passport:
-      "Az útlevél legalább 6 hónapig érvényes a hazautazás vagy a régióból való végső kilépés után.",
-    check_visa: "Vízummentesség vagy vízumkötelezettség a célországban.",
-    check_entry:
-      "Kell-e előzetes online belépési regisztráció, arrival card vagy egészségügyi nyilatkozat.",
-    check_health: "Ajánlott oltások és egészségügyi tudnivalók.",
-    check_insurance:
-      "Megfelelő utasbiztosítás, amely a nászút programjait is fedezi: búvárkodás, hajókirándulás, robogóbérlés, túrázás, vízi sportok.",
-    check_copies:
-      "Digitális és offline másolat az útlevélről, biztosításról, repülőjegyről és szállásfoglalásról.",
-    check_register: "Az utazás regisztrálása konzuli védelemre.",
-    register_link: "Utazás regisztrálása konzuli védelemre",
-    app_link: "KonzInfo Utazom alkalmazás",
-    insurance_reminder:
-      "Tipp: a nászúti utasbiztosítást úgy válasszátok, hogy fedezze a tervezett aktív programokat is (búvárkodás, vízi sportok, túrázás).",
-    disclaimer:
-      "Ez csak rövid tájékoztató kivonat. A hivatalos és mindenkor aktuális információ a Konzuli Szolgálat oldalán található, amely bármikor változhat.",
-  },
   honeymoon: {
     title: "Nászút",
     sub: "Tervezzétek meg a nászutatokat — úti cél, dátumok, költségek — egy helyen.",
@@ -1452,11 +1418,10 @@ const hu: LocaleMessages = {
     todo_uncheck_aria: "Visszajelölés",
     todo_add_placeholder: "Új nászúti teendő…",
     todo_add_aria: "Teendő hozzáadása",
-    todo_delete_aria: "Teendő törlése",
     todo_wand_button: "Varázspálca",
     todo_wand_dialog_title: "Nászúti teendőcsomag",
     todo_wand_dialog_body:
-      "Pipáld ki, amit felveszel a listára. A kipipált tételek lecsúsznak alulra, és új javaslat lép a helyükre, így egy nézetben végigmehetsz az egészen.",
+      "Tedd a listára az indulás előtti alap teendőket. A nem kellőket vedd ki a pipából.",
     todo_wand_confirm: "Hozzáadás ({count})",
     todo_wand_already_added: "Már a listán",
     tile_days: "Hány nap",
@@ -1502,6 +1467,7 @@ const hu: LocaleMessages = {
   },
   media: {
     title: "Képek",
+    dev_badge: "Fejlesztés alatt",
     sub: "Töltsétek fel ide a fotókat, miután visszaértek a fotóstól.",
     coming_soon_title: "Hamarosan",
     coming_soon_body:
@@ -1535,7 +1501,6 @@ const hu: LocaleMessages = {
       print: "Nyomtatási beállítások",
       monogram: "Monogram",
       date: "Dátumformátum",
-      decor: "Díszítőstílus",
     },
     print: {
       border: "Keret",
@@ -1576,9 +1541,7 @@ const hu: LocaleMessages = {
       soft_romantic: "Lágy romantikus",
       heading_label: "Címsor betűtípusa",
       body_label: "Szövegtörzs betűtípusa",
-      customize_toggle: "Betűtípusok egyenkénti beállítása",
-      custom_badge: "Egyéni",
-      reset_to_preset: "Vissza a presethez",
+      use_preset: "Preset szerint",
     },
     family: {
       cormorant: "Cormorant (serif)",
@@ -1657,13 +1620,6 @@ const hu: LocaleMessages = {
       numeric_dot: "Számjegyes",
       long: "Hosszú",
       slash: "Perjeles",
-    },
-    decor: {
-      none: "Nincs",
-      line: "Vékony vonal",
-      botanical: "Botanikus",
-      dots: "Pontok",
-      frame: "Keret",
     },
     cards: {
       subtitle: "Készítsetek összehangolt nyomtatványokat a stíluscsomagotok alapján.",
@@ -1829,13 +1785,7 @@ const hu: LocaleMessages = {
     useful_info_label: "Hasznos infók",
     useful_info_placeholder: "Parkolás: ...\nMegközelítés: ...\nSzállás: ...",
     useful_info_hint:
-      "Csak a kitöltött sorok jelennek meg a vendégoldalon.",
-    useful_field_parking: "Parkolás",
-    useful_field_getting_there: "Megközelítés",
-    useful_field_transfer: "Transzfer",
-    useful_field_accommodation: "Szállás",
-    useful_field_other_label: "Egyéb információ",
-    useful_field_other_placeholder: "Bármi más, amit jó tudni…",
+      "Parkolás, megközelítés, szállás és minden, amit jó tudni. A vendégoldalon jelenik meg.",
     post_rsvp_label: "Részletek a visszajelölteknek",
     post_rsvp_placeholder: "Kattints fent egy javasolt témára, vagy írd be a részleteket szabadon.",
     post_rsvp_hint:
@@ -1909,6 +1859,7 @@ const hu: LocaleMessages = {
   },
   wishlist_editor: {
     title: "Kívánságlista",
+    dev_badge: "Fejlesztés alatt",
     subtitle:
       "Egy kedves lista azokról, amiknek örülnétek — egy nagyobb közös ajándék, kisebb meglepetések vagy egy személyes gesztus. A visszajelzett vendégek a vendégoldalon látják. A Weddlyn keresztül nem mozog pénz.",
     add_item: "Új kívánság",
