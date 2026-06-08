@@ -11,18 +11,12 @@ import {
   type BorderStyleSlug,
   BUTTON_STYLES,
   type ButtonStyleSlug,
-  CARD_RADII,
   getBorderCss,
-  type CardRadiusSlug,
   COLOR_ROLES,
   type ColorRole,
   type CoupleDesign,
   DATE_FORMATS,
-  type DecorSlug,
-  type ShadowSlug,
-  SHADOWS,
   type StylePreset,
-  DECOR_STYLES,
   FONT_FAMILIES,
   FONT_PRESETS,
   type FontFamilySlug,
@@ -103,33 +97,6 @@ function PresetTile({
   );
 }
 
-/** Mini decor glyph for the style mood card — mirrors the guest-page / print
- *  decor vocabulary so the card previews the REAL decoration a style applies. */
-function MoodDecor({ decor, color }: { decor: DecorSlug; color: string }) {
-  if (decor === "line") {
-    return <span className="block h-px w-10" style={{ backgroundColor: color }} aria-hidden />;
-  }
-  if (decor === "dots") {
-    return (
-      <span className="text-xs leading-none tracking-[0.4em]" style={{ color }} aria-hidden>
-        · · ·
-      </span>
-    );
-  }
-  if (decor === "botanical") {
-    return (
-      <span className="text-base leading-none" style={{ color }} aria-hidden>
-        {"❧︎"}
-      </span>
-    );
-  }
-  if (decor === "frame") {
-    return <span className="block h-3 w-12 border" style={{ borderColor: color }} aria-hidden />;
-  }
-  // "none" — keep the vertical rhythm so minimal cards don't jump.
-  return <span className="block h-2" aria-hidden />;
-}
-
 /** A whole STYLE previewed as a mini invitation: the palette's colours, the
  *  preset's heading + body fonts AND its decor, so the couple chooses by feel
  *  (a botanical world vs an editorial one) rather than by a name over four
@@ -146,7 +113,6 @@ function StyleMoodCard({ preset }: { preset: StylePreset }) {
       <span className="text-lg leading-tight" style={{ fontFamily: fonts.headingStack }}>
         Anna &amp; Bence
       </span>
-      <MoodDecor decor={preset.defaultDecor} color={palette.primary.hex} />
       <span
         className="text-[10px] uppercase tracking-[0.18em]"
         style={{ fontFamily: fonts.bodyStack }}
@@ -206,57 +172,6 @@ function FontChip({
 /** A discrete slider over a small ordered catalog (e.g. card radius / shadow):
  *  one continuous control with the option names as ticks beneath, instead of
  *  separate tiles. */
-function OptionSlider<T extends string>({
-  heading,
-  options,
-  value,
-  onChange,
-}: {
-  heading: string;
-  options: readonly { slug: T; nameKey: string }[];
-  value: T;
-  onChange: (slug: T) => void;
-}) {
-  const { t } = useT();
-  const idx = Math.max(
-    0,
-    options.findIndex((o) => o.slug === value),
-  );
-  return (
-    <section>
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        {heading}
-      </h2>
-      <input
-        type="range"
-        min={0}
-        max={options.length - 1}
-        step={1}
-        value={idx}
-        onChange={(e) => {
-          const o = options[Number(e.target.value)];
-          if (o) onChange(o.slug);
-        }}
-        aria-label={heading}
-        className="block w-full accent-ink-900 dark:accent-paper-100"
-      />
-      <div className="mt-1 flex justify-between text-[11px]">
-        {options.map((o, i) => (
-          <span
-            key={o.slug}
-            className={
-              i === idx
-                ? "font-semibold text-ink-900 dark:text-paper-50"
-                : "text-ink-400 dark:text-umber-300"
-            }
-          >
-            {t(o.nameKey)}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 export default function DesignPage() {
   const { t, locale } = useT();
@@ -358,7 +273,6 @@ export default function DesignPage() {
     let anchor: string | null = null;
     if (design.style !== prev.style) anchor = "hero-names";
     else if (design.dateFormat !== prev.dateFormat) anchor = "hero-date";
-    else if (design.decor !== prev.decor) anchor = "hero-decor";
     else if (design.web.buttonStyle !== prev.web.buttonStyle) anchor = "rsvp-button";
     else if (design.web.imageTreatment !== prev.web.imageTreatment) anchor = "cover-image";
     else if (
@@ -423,7 +337,6 @@ export default function DesignPage() {
       style: slug,
       palette: preset.defaultPalette,
       fonts: preset.defaultFonts,
-      decor: preset.defaultDecor,
       colors: {},
       headingFont: null,
       bodyFont: null,
@@ -456,12 +369,6 @@ export default function DesignPage() {
   function togglePrint(key: "border" | "ornament" | "qr") {
     setDesign((d) => ({ ...d, print: { ...d.print, [key]: !d.print[key] } }));
   }
-  function chooseCardRadius(slug: CardRadiusSlug) {
-    setDesign((d) => ({ ...d, web: { ...d.web, cardRadius: slug } }));
-  }
-  function chooseShadow(slug: ShadowSlug) {
-    setDesign((d) => ({ ...d, web: { ...d.web, shadow: slug } }));
-  }
   function chooseButtonStyle(slug: ButtonStyleSlug) {
     setDesign((d) => ({ ...d, web: { ...d.web, buttonStyle: slug } }));
   }
@@ -475,9 +382,6 @@ export default function DesignPage() {
   }
   function chooseDateFormat(slug: (typeof DATE_FORMATS)[number]["slug"]) {
     setDesign((d) => ({ ...d, dateFormat: slug }));
-  }
-  function chooseDecor(slug: (typeof DECOR_STYLES)[number]["slug"]) {
-    setDesign((d) => ({ ...d, decor: slug }));
   }
 
   // Download an auth-protected printable PDF as a blob and save it. Same pattern
@@ -555,6 +459,8 @@ export default function DesignPage() {
         venue_name: couple.venue_name,
         venue_city: couple.venue_city,
         cover_image_url: couple.cover_image_url,
+        cover_position_x: couple.cover_position_x,
+        cover_position_y: couple.cover_position_y,
         guest_page_intro: couple.guest_page_intro,
         useful_info: couple.useful_info,
         location_lat: null,
@@ -680,11 +586,7 @@ export default function DesignPage() {
                   {t("design.print_preview.editing_helper")}
                 </p>
               </div>
-            ) : (
-              <p className="text-sm text-ink-500 dark:text-umber-300">
-                {t("design.website.helper")}
-              </p>
-            )}
+            ) : null}
 
             {/* Print mode: WHICH card am I designing? This is the first and most
                 important choice, so it sits above the shared identity. Real
@@ -764,7 +666,7 @@ export default function DesignPage() {
                 </h2>
                 <InfoHint text={t("design.colors.hint")} />
               </div>
-              <div className="mx-auto w-fit rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
+              <div className="mx-auto w-fit rounded-2xl border border-paper-300 bg-white px-4 pb-2 pt-3 dark:border-umber-700 dark:bg-umber-800">
                 {/* Swatch row: each role is a colour block with a pencil badge;
                     clicking it opens the native colour editor (the swatch IS the
                     input label). Reset clears the override back to the palette.
@@ -794,7 +696,7 @@ export default function DesignPage() {
                         <span className="text-[11px] text-ink-600 dark:text-umber-200">
                           {t(`design.colors.${role}`)}
                         </span>
-                        {overridden ? (
+                        {overridden && (
                           <button
                             type="button"
                             onClick={() => clearColor(role)}
@@ -802,8 +704,6 @@ export default function DesignPage() {
                           >
                             {t("design.colors.reset")}
                           </button>
-                        ) : (
-                          <span className="h-[14px]" aria-hidden />
                         )}
                       </div>
                     );
@@ -921,71 +821,43 @@ export default function DesignPage() {
                 {t("design.section.date")}
               </h2>
               <div className="grid grid-cols-3 gap-2">
-                {DATE_FORMATS.map((df) => (
-                  <PresetTile
-                    key={df.slug}
-                    active={design.dateFormat === df.slug}
-                    onSelect={() => chooseDateFormat(df.slug)}
-                    ariaLabel={t(df.nameKey)}
-                  >
-                    <span
-                      className="flex min-h-[3rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-xs italic tracking-tight text-ink-900 dark:text-paper-50"
-                      aria-hidden
+                {DATE_FORMATS.map((df) => {
+                  const active = design.dateFormat === df.slug;
+                  return (
+                    <button
+                      key={df.slug}
+                      type="button"
+                      onClick={() => chooseDateFormat(df.slug)}
+                      aria-pressed={active}
+                      aria-label={t(df.nameKey)}
+                      className={`relative flex items-center justify-center overflow-hidden rounded-2xl border px-2 py-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                        active
+                          ? "border-ink-900 bg-white ring-1 ring-ink-900 dark:border-paper-100 dark:bg-umber-800 dark:ring-paper-100"
+                          : "border-paper-300 bg-white hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+                      }`}
                     >
-                      {formatWeddingDate(sampleDateIso, df.slug, locale)}
-                    </span>
-                  </PresetTile>
-                ))}
+                      {active && (
+                        <span
+                          className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                          aria-hidden
+                        >
+                          <Check size={10} strokeWidth={3} />
+                        </span>
+                      )}
+                      <span
+                        className="whitespace-nowrap font-serif text-sm italic leading-none tracking-tight text-ink-900 dark:text-paper-50"
+                        aria-hidden
+                      >
+                        {formatWeddingDate(sampleDateIso, df.slug, locale)}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </section>
 
-            {/* Decorative style */}
-            <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("design.section.decor")}
-              </h2>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {DECOR_STYLES.map((dec) => (
-                  <PresetTile
-                    key={dec.slug}
-                    active={design.decor === dec.slug}
-                    onSelect={() => chooseDecor(dec.slug)}
-                    label={t(dec.nameKey)}
-                    ariaLabel={t(dec.nameKey)}
-                  >
-                    <span
-                      className="flex h-8 items-center justify-center text-ink-400 dark:text-umber-300"
-                      aria-hidden
-                    >
-                      {dec.slug === "line" && (
-                        <span className="h-px w-16 bg-ink-300 dark:bg-umber-500" />
-                      )}
-                      {dec.slug === "dots" && (
-                        <span className="text-lg tracking-[0.4em]">· · ·</span>
-                      )}
-                      {dec.slug === "frame" && (
-                        <span className="h-7 w-16 rounded border border-ink-300 dark:border-umber-500" />
-                      )}
-                      {dec.slug === "botanical" && <span className="text-xl">{"❧︎"}</span>}
-                    </span>
-                  </PresetTile>
-                ))}
-              </div>
-            </section>
             {tab === "website" ? (
               <div className="space-y-6">
-                <OptionSlider
-                  heading={t("design.web.card_radius_label")}
-                  options={CARD_RADII}
-                  value={design.web.cardRadius}
-                  onChange={chooseCardRadius}
-                />
-                <OptionSlider
-                  heading={t("design.web.shadow_label")}
-                  options={SHADOWS}
-                  value={design.web.shadow}
-                  onChange={chooseShadow}
-                />
                 {/* RSVP button look */}
                 <section>
                   <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
