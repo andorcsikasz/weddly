@@ -29,6 +29,25 @@ const EXPORTABLE_TABLES = [
 ] as const;
 type ExportableTable = (typeof EXPORTABLE_TABLES)[number];
 
+/** Partner DTO for the GDPR export. Extends the public User DTO with the
+ *  signup acquisition fields (country / device / UTM) — Art 15 requires
+ *  disclosing all personal data held, including derived attribution. These are
+ *  deliberately NOT on the general User DTO (they're admin-only there). */
+function exportUser(row: UserRow) {
+  return {
+    ...toUser(row),
+    acquisition: {
+      signup_country: row.signup_country ?? null,
+      device_type: row.device_type ?? null,
+      utm_source: row.utm_source ?? null,
+      utm_medium: row.utm_medium ?? null,
+      utm_campaign: row.utm_campaign ?? null,
+      utm_content: row.utm_content ?? null,
+      utm_term: row.utm_term ?? null,
+    },
+  };
+}
+
 function rowsByCouple<T>(table: ExportableTable, coupleId: number): T[] {
   if (!EXPORTABLE_TABLES.includes(table)) {
     throw new HttpError(500, "Invalid export table");
@@ -117,8 +136,8 @@ function handleExport(ctx: Ctx): Response {
     exported_at: new Date().toISOString(),
     couple: toCouple(couple),
     partners: {
-      partner_a: partnerA ? toUser(partnerA) : null,
-      partner_b: partnerB ? toUser(partnerB) : null,
+      partner_a: partnerA ? exportUser(partnerA) : null,
+      partner_b: partnerB ? exportUser(partnerB) : null,
     },
     guests,
     households,

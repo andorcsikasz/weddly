@@ -4292,7 +4292,7 @@ const en: LocaleMessages = {
       "The data controller is Andor Csíkász (a natural person, Hungary) — the operator of Weddly. Full operator details are on the Imprint page. For any data-related question, write to andor.csikasz@gmail.com or hello@weddly.xyz; we respond within seven days. Processing is governed by the GDPR (EU 2016/679) and applicable Hungarian law (Infotv. — Act CXII of 2011, Ektv. — Act CVIII of 2001, Grtv. — Act XLVIII of 2008).",
     data_categories_title: "What we collect",
     data_categories_intro:
-      "We only collect the data we need to run your wedding workspace. Today that's four buckets:",
+      "We only collect the data we need to run your wedding workspace. Today that's five buckets:",
     data_categories_auth:
       "Authentication — your email address and an Argon2id hash of your password. We never see the password itself.",
     data_categories_profile:
@@ -4300,7 +4300,7 @@ const en: LocaleMessages = {
     data_categories_workspace:
       "Wedding workspace — the dates, budget categories, guest list, RSVPs, seating layout and supplier notes you add. Each change is recorded in an append-only audit log so you can see who edited what.",
     data_categories_analytics:
-      "Analytics — none today. The site's CSP allows Plausible and Sentry domains so we can wire them in later, but no analytics script currently loads. If we ever turn them on, we'll update this page first.",
+      "Analytics and attribution — at sign-up, server-side only, we record three derived data points on your account so we can see where our users come from: a country code (computed from your IP at the moment of registration, after which the IP is immediately discarded and never stored), the campaign parameters that brought you here (UTM), and your device type (mobile / tablet / desktop). We do this under legitimate interest (GDPR Art. 6(1)(f)) and you can object at any time at hello@weddly.xyz. No third-party analytics script loads and we set no tracking cookies.",
     legal_bases_title: "Legal bases for processing (GDPR Art. 6)",
     legal_bases_intro:
       "Every processing activity we run is based on one of the legal grounds in Art. 6(1) GDPR. The ones we rely on are:",

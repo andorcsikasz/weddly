@@ -66,6 +66,9 @@ export default function RegisterPage() {
       } catch {
         // sessionStorage blocked — drop attribution, keep the signup.
       }
+      // UTM campaign params the LandingPage stashed this session. Spread into
+      // the register body; the backend coerces + length-caps each field.
+      const utm = readUtm();
       const session = await authApi.register({
         email: email.trim(),
         password,
@@ -77,12 +80,14 @@ export default function RegisterPage() {
         // the i18n layer actually supports flow through.
         locale,
         referrer,
+        ...utm,
       });
       // Clear after a successful register so a re-signup attempt on the
       // same tab doesn't double-attribute. Failures keep the value so the
       // user's retry still carries the source.
       try {
         window.sessionStorage.removeItem("weddly.ref");
+        window.sessionStorage.removeItem("weddly.utm");
       } catch {
         /* non-fatal */
       }
@@ -290,6 +295,31 @@ export default function RegisterPage() {
       </div>
     </Shell>
   );
+}
+
+/** UTM params the LandingPage stashed to sessionStorage this session. Returns
+ *  only the canonical keys with string values; a blocked/empty/corrupt store
+ *  yields {} so the signup proceeds without attribution. */
+function readUtm(): {
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+} {
+  try {
+    const raw = window.sessionStorage.getItem("weddly.utm");
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<string, string> = {};
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+      const v = parsed[key];
+      if (typeof v === "string" && v.length > 0) out[key] = v.slice(0, 200);
+    }
+    return out;
+  } catch {
+    return {};
+  }
 }
 
 function messageFor(err: unknown, t: ReturnType<typeof useT>["t"]): string {

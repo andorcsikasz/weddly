@@ -473,6 +473,32 @@ addColumnIfMissing("users", "known_devices_json", "known_devices_json TEXT NOT N
 // unlike user_flags: purely a grouping signal, no email and no auto-purge.
 addColumnIfMissing("users", "is_beta_tester", "is_beta_tester INTEGER NOT NULL DEFAULT 0");
 
+// Signup acquisition analytics — where a user came from, captured once at
+// registration and surfaced only in the admin "Acquisition" dashboard. All
+// nullable: legacy rows, organic (no-UTM) signups, and unresolvable IPs all
+// stay null. Privacy posture (GDPR Art 6(1)(f) legitimate interest):
+//   - signup_country  : ISO-3166-1 alpha-2, derived from the request IP via
+//                       GeoLite2 at signup; the IP itself is NEVER stored here.
+//   - device_type     : coarse 'mobile' | 'tablet' | 'desktop' bucket — no raw
+//                       User-Agent, OS, or browser version (no fingerprint).
+//   - utm_*           : marketing campaign params, length-capped at the route
+//                       boundary. Not personal data on their own.
+// Scrubbed to NULL on account purge (see domain/purge.ts) and surfaced in the
+// GDPR data export (see routes/export.ts).
+addColumnIfMissing("users", "signup_country", "signup_country TEXT");
+addColumnIfMissing("users", "device_type", "device_type TEXT");
+addColumnIfMissing("users", "utm_source", "utm_source TEXT");
+addColumnIfMissing("users", "utm_medium", "utm_medium TEXT");
+addColumnIfMissing("users", "utm_campaign", "utm_campaign TEXT");
+addColumnIfMissing("users", "utm_content", "utm_content TEXT");
+addColumnIfMissing("users", "utm_term", "utm_term TEXT");
+
+// Group the acquisition dashboard's hottest breakdowns. Index AFTER the column
+// adds (the May 2026 prod-crash rule: indexes on addColumnIfMissing columns
+// live in db.ts, never schema.sql).
+db.exec("CREATE INDEX IF NOT EXISTS idx_users_signup_country ON users(signup_country)");
+db.exec("CREATE INDEX IF NOT EXISTS idx_users_utm_campaign ON users(utm_campaign)");
+
 // One-shot stamp so the cron sweep doesn't re-send the "you forgot to pick
 // a meal" nudge every hour. NULL until we send, then frozen — the guest is
 // expected to revisit the RSVP link if they actually want to update their
@@ -488,6 +514,19 @@ addColumnIfMissing(
   "couples",
   "rsvp_digest_mode",
   "rsvp_digest_mode TEXT NOT NULL DEFAULT 'per_event'",
+);
+
+// Per-couple trigger for the proactive-timeline EMAIL escalation (the in-app
+// bell is always on; email is the push when the couple is slipping). The hourly
+// worker emails a nudge only when a task is in the configured trigger set and a
+// weekly cooldown has elapsed. 'overdue' (default) is the "only when it really
+// matters" push the product asked for; 'overdue_due_soon' also warns ahead of
+// the deadline; 'off' silences email entirely. TEXT so the union can grow.
+// Honors lifecycle_opt_out like every other lifecycle mail.
+addColumnIfMissing(
+  "couples",
+  "timeline_email_escalation",
+  "timeline_email_escalation TEXT NOT NULL DEFAULT 'overdue'",
 );
 
 // Opt-in toggle for the "needs accommodation?" question on the RSVP flow.

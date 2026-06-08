@@ -100,6 +100,18 @@ export const CONFIG = {
    *  them in the Stripe dashboard (or via scripts/stripe_setup.ts). */
   stripePriceEur: process.env.STRIPE_PRICE_EUR ?? "",
   stripePriceHuf: process.env.STRIPE_PRICE_HUF ?? "",
+  /** Path to the MaxMind GeoLite2-Country `.mmdb` on disk. Lives on the `/data`
+   *  persistent volume in prod so it survives redeploys. The file is NEVER
+   *  committed (MaxMind's EULA forbids redistribution + it would bloat the
+   *  `git archive` pre-push snapshot); it's fetched at boot by `ensureGeoDb()`
+   *  when a license key is set. Absent file = country lookup returns null and
+   *  the app boots fine (graceful degrade, like the GA4/Stripe "configured?"
+   *  pattern). */
+  geoIpDbPath: process.env.GEOIP_DB_PATH ?? "./data/GeoLite2-Country.mmdb",
+  /** MaxMind license key (free, from maxmind.com). When set, `ensureGeoDb()`
+   *  downloads the GeoLite2-Country DB to `geoIpDbPath` at boot if it's
+   *  missing. Empty = no download attempt, every country lookup returns null. */
+  maxmindLicenseKey: process.env.MAXMIND_LICENSE_KEY ?? "",
 };
 
 /** True when a Stripe secret key is configured. Billing endpoints check this

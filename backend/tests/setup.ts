@@ -67,6 +67,15 @@ process.env.GTM_CONTAINER_ID = "";
 process.env.GA4_PROPERTY_ID = "";
 process.env.GA4_SERVICE_ACCOUNT_JSON = "";
 
+// GeoIP country lookup (signup acquisition capture). Pin the license key empty
+// so the suite NEVER attempts a MaxMind download, and point the DB path at a
+// guaranteed-absent file so the reader stays null regardless of what's on the
+// dev's ./data volume. This forces the production-realistic "reader absent →
+// null country" branch deterministically — tests assert the null-degrade
+// contract (country null + register still 201), never a specific ISO code.
+process.env.MAXMIND_LICENSE_KEY = "";
+process.env.GEOIP_DB_PATH = "./data/test-geoip-does-not-exist.mmdb";
+
 // Stripe billing stays disabled in tests (STRIPE_ENABLED=false) so checkout /
 // portal endpoints 503 and no live API calls fire. The webhook is exercised
 // with a forged-but-secret-signed payload using this test webhook secret.

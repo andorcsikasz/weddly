@@ -243,6 +243,14 @@ export const authApi = {
      *  sessionStorage; RegisterPage hands it off. Backend allow-list:
      *  `rsvp` | `site` | `share`. */
     referrer?: string;
+    /** Marketing attribution: UTM params the LandingPage read off the landing
+     *  URL and stashed to sessionStorage. Backend coerces + length-caps each;
+     *  stored on users.utm_* for the admin Acquisition dashboard. */
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_content?: string;
+    utm_term?: string;
   }) => apiFetch<AuthSession>("POST", "/api/auth/register", body),
   /** Sign in OR register with a Google Identity Services credential JWT.
    *  Both version stamps are required so the GDPR consent ledger lands when

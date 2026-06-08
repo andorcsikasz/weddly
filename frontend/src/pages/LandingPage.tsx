@@ -108,6 +108,8 @@ const MOCKUP_AR_WORKSPACE = "656 / 456";
 // should carry the attribution; a re-visit from organic search a week
 // later should not be tagged the same.
 const REFERRER_SESSION_KEY = "weddly.ref";
+const UTM_SESSION_KEY = "weddly.utm";
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
 
 export default function LandingPage() {
   const { t, locale } = useT();
@@ -123,10 +125,28 @@ export default function LandingPage() {
   // ?ref=<xss> can't survive into the register payload.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const ref = new URLSearchParams(window.location.search).get("ref");
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
     if (ref === "rsvp" || ref === "site" || ref === "share") {
       try {
         window.sessionStorage.setItem(REFERRER_SESSION_KEY, ref);
+      } catch {
+        // sessionStorage blocked — drop attribution rather than crash.
+      }
+    }
+    // Capture UTM campaign params the same session-scoped way as `?ref`: a
+    // signup later in this session carries them; an organic revisit a week
+    // later does not. Only the canonical five keys, trimmed and length-capped,
+    // so a hostile `?utm_source=<huge>` can't bloat the payload. Stored only
+    // when at least one is present so we don't clobber a real capture with {}.
+    const utm: Record<string, string> = {};
+    for (const key of UTM_KEYS) {
+      const raw = params.get(key);
+      if (raw) utm[key] = raw.slice(0, 200);
+    }
+    if (Object.keys(utm).length > 0) {
+      try {
+        window.sessionStorage.setItem(UTM_SESSION_KEY, JSON.stringify(utm));
       } catch {
         // sessionStorage blocked — drop attribution rather than crash.
       }

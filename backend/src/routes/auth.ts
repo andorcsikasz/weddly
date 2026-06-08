@@ -10,6 +10,7 @@ import { addAuditLog } from "../lib/audit";
 import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails";
 import { recordGrowthEvent } from "../domain/growth_events";
+import { buildSignupAcquisition } from "../domain/signup_meta";
 import { deviceFingerprint, recordKnownDevice } from "../domain/known_devices";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
@@ -36,6 +37,14 @@ interface RegisterBody {
    *  here. Anything else is dropped at the boundary; the growth_events
    *  row gets a null source rather than user-controlled junk. */
   referrer?: unknown;
+  /** Marketing campaign params the frontend read off the landing URL. Coerced
+   *  + length-capped in buildSignupAcquisition; stored on users.utm_* for the
+   *  admin Acquisition dashboard. (UtmInput shape.) */
+  utm_source?: unknown;
+  utm_medium?: unknown;
+  utm_campaign?: unknown;
+  utm_content?: unknown;
+  utm_term?: unknown;
 }
 
 interface LoginBody {
@@ -93,12 +102,30 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   // Coerce locale at the boundary — only persist values the frontend +
   // backend i18n actually understand. Anything else stays null.
   const persistedLocale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
+  // Acquisition snapshot: country (from IP, IP discarded), device bucket, UTM.
+  const acq = buildSignupAcquisition(ctx, body);
   const result = db
     .prepare(
-      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, locale, created_at, updated_at)
-       VALUES (?, ?, ?, 'active', 'owner', 0, ?, ?, ?)`,
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, locale,
+                          signup_country, device_type, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+                          created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'owner', 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(email, passwordHash, fullName, persistedLocale, ts, ts);
+    .run(
+      email,
+      passwordHash,
+      fullName,
+      persistedLocale,
+      acq.signup_country,
+      acq.device_type,
+      acq.utm_source,
+      acq.utm_medium,
+      acq.utm_campaign,
+      acq.utm_content,
+      acq.utm_term,
+      ts,
+      ts,
+    );
   const userId = Number(result.lastInsertRowid);
 
   const ip = ctx.clientIp;
@@ -193,6 +220,13 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     created_at: ts,
     updated_at: ts,
     last_seen_at: null,
+    signup_country: acq.signup_country,
+    device_type: acq.device_type,
+    utm_source: acq.utm_source,
+    utm_medium: acq.utm_medium,
+    utm_campaign: acq.utm_campaign,
+    utm_content: acq.utm_content,
+    utm_term: acq.utm_term,
   };
   const session: AuthSession = { token, user: toUser(userRow) };
   return json(session, { status: 201 });

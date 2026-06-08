@@ -4338,7 +4338,7 @@ const hu: LocaleMessages = {
       "Az adatkezelő Csíkász Andor (magánszemély, Magyarország) — a Wēddly üzemeltetője. A teljes operátori adatok az Impresszum oldalon olvashatóak. Adatkezeléssel kapcsolatos kérdésekkel közvetlenül az andor.csikasz@gmail.com címen vagy a hello@weddly.xyz címen tudtok jelentkezni, és hét napon belül választ kaptok. Az adatkezelés a GDPR (EU 2016/679) és a vonatkozó magyar jogszabályok (Infotv. — 2011. évi CXII. tv., Ektv. — 2001. évi CVIII. tv., Grtv. — 2008. évi XLVIII. tv.) szerint történik.",
     data_categories_title: "Mit gyűjtünk",
     data_categories_intro:
-      "Csak azokat az adatokat gyűjtjük, amelyek a workspace-etek működtetéséhez kellenek. Ma ez négy kategória:",
+      "Csak azokat az adatokat gyűjtjük, amelyek a workspace-etek működtetéséhez kellenek. Ma ez öt kategória:",
     data_categories_auth:
       "Hitelesítés — az e-mail-címetek és a jelszavatok Argon2id hash-e. Magát a jelszót sosem látjuk.",
     data_categories_profile:
@@ -4346,7 +4346,7 @@ const hu: LocaleMessages = {
     data_categories_workspace:
       "Esküvői workspace — a dátumok, költségvetési kategóriák, vendéglista, RSVP-k, ültetési rend és szolgáltatói jegyzetek, amiket hozzáadtok. Minden változás bekerül egy csak-hozzáfűzhető auditnaplóba, így bármikor láthatjátok, ki mit módosított.",
     data_categories_analytics:
-      "Analitika — ma még semmi. A site CSP-je engedi a Plausible és Sentry domaineket, hogy később bekapcsolhassuk őket, de jelenleg egyetlen analitikai script sem fut. Ha valaha bekapcsolnánk, előbb frissítjük ezt az oldalt.",
+      "Analitika és attribúció — a regisztrációkor, kizárólag a szerveroldalon, három származtatott adatot rögzítünk a fiókodhoz, hogy lássuk, honnan érkeznek a felhasználóink: az ország kódját (az IP-címedből számoljuk ki a regisztráció pillanatában, majd az IP-címet azonnal eldobjuk — nem tároljuk), a hozzánk vezető kampányparamétereket (UTM), és az eszköz típusát (mobil / tablet / asztali). Ezt jogos érdek alapján (GDPR 6. cikk (1) f) tesszük, és bármikor tiltakozhatsz ellene a hello@weddly.xyz címen. Külső analitikai script nem fut, követő sütit nem állítunk be.",
     legal_bases_title: "Az adatkezelés jogalapja (GDPR 6. cikk)",
     legal_bases_intro:
       "Minden adatkezelésünk egy konkrét jogalapra épül a GDPR 6. cikkének (1) bekezdéséből. A felhasznált jogalapok:",

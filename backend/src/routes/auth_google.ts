@@ -28,6 +28,7 @@ import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
 import { CONFIG } from "../config";
 import { verifyGoogleCredential } from "../lib/google_oauth";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
+import { buildSignupAcquisition } from "../domain/signup_meta";
 
 interface GoogleAuthBody {
   credential?: unknown;
@@ -39,6 +40,13 @@ interface GoogleAuthBody {
    *  /api/auth/register. Only 'hu' | 'en' are kept; the column is
    *  nullable so the existing-account branch never touches it. */
   locale?: unknown;
+  /** Acquisition UTM params — same contract as /api/auth/register. Applied
+   *  only on the new-registration branch. (UtmInput shape.) */
+  utm_source?: unknown;
+  utm_medium?: unknown;
+  utm_campaign?: unknown;
+  utm_content?: unknown;
+  utm_term?: unknown;
 }
 
 async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
@@ -128,14 +136,32 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
   // door from working on accounts the legitimate user never put a password
   // on, see [[security_google_only_password_reset]].
   const persistedLocale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
+  const acq = buildSignupAcquisition(ctx, body);
   const result = db
     .prepare(
       `INSERT INTO users
          (email, password_hash, full_name, status, role, verified_email,
-          google_sub, password_set, locale, created_at, updated_at)
-       VALUES (?, ?, ?, 'active', 'owner', 1, ?, 0, ?, ?, ?)`,
+          google_sub, password_set, locale,
+          signup_country, device_type, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+          created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'owner', 1, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(identity.email, passwordHash, fullName, identity.sub, persistedLocale, ts, ts);
+    .run(
+      identity.email,
+      passwordHash,
+      fullName,
+      identity.sub,
+      persistedLocale,
+      acq.signup_country,
+      acq.device_type,
+      acq.utm_source,
+      acq.utm_medium,
+      acq.utm_campaign,
+      acq.utm_content,
+      acq.utm_term,
+      ts,
+      ts,
+    );
   const userId = Number(result.lastInsertRowid);
 
   const ip = ctx.clientIp;

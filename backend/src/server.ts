@@ -23,6 +23,7 @@ import { maybeCompress, negotiateEncoding } from "./lib/compression";
 import { log, makeLogger } from "./lib/logger";
 import { GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } from "./lib/seo_ssr";
 import { entitlementBlock } from "./domain/billing";
+import { ensureGeoDb } from "./lib/geoip";
 import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
@@ -63,6 +64,7 @@ import { registerHealthRoutes } from "./routes/health";
 import { registerHoneymoonRoutes } from "./routes/honeymoon";
 import { registerHouseholdRoutes } from "./routes/households";
 import { registerMoodboardRoutes } from "./routes/moodboard";
+import { registerNotificationRoutes } from "./routes/notifications";
 import { registerPasswordResetRoutes } from "./routes/password_reset";
 import { registerPlacesRoutes } from "./routes/places";
 import { registerPlanningRoutes } from "./routes/planning";
@@ -121,6 +123,7 @@ registerBudgetRoutes(router);
 registerIncomeRoutes(router);
 registerHoneymoonRoutes(router);
 registerMoodboardRoutes(router);
+registerNotificationRoutes(router);
 registerPlacesRoutes(router);
 registerPlanningRoutes(router);
 registerRsvpRoutes(router);
@@ -602,6 +605,11 @@ if (process.env.NODE_ENV !== "test") {
   // flagged it; this scan emits a `mailer.integrity.violation` warning at boot
   // when anything outside the central dispatcher imports sendEmail.
   assertEmailIntegrityAtBoot(join(import.meta.dir, "..", ".."));
+  // Load (or download, if a MaxMind key is set) the GeoLite2 country DB used to
+  // tag signups with a country. Fire-and-forget: a download can take a moment
+  // and must never block the listener; signups before it finishes just get a
+  // null country. Absent file + no key = country lookup stays disabled.
+  void ensureGeoDb();
 }
 
 log.info("server.listening", {

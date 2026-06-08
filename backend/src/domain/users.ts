@@ -37,6 +37,18 @@ export interface UserRow {
    *  Buckets the account + its workspace into the admin "Beta testers"
    *  group. Non-destructive label. Defaults to 0. */
   is_beta_tester?: number;
+  /** Acquisition analytics, captured once at signup (see domain/signup_meta.ts).
+   *  All nullable. signup_country = ISO-3166-1 alpha-2 derived from the request
+   *  IP (IP not stored); device_type = coarse mobile/tablet/desktop bucket; the
+   *  utm_* fields are the campaign params from the landing URL. Surfaced only in
+   *  the admin Acquisition dashboard + the GDPR export; NULL'd on purge. */
+  signup_country?: string | null;
+  device_type?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_content?: string | null;
+  utm_term?: string | null;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var

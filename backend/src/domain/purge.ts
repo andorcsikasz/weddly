@@ -144,11 +144,20 @@ export function purgeOneCouple(
     ).run(coupleId);
 
     // Users: scrub PII but keep the row (FK target for audit_log + couples).
+    // Acquisition fields are NULL'd too — a purged user must not retain
+    // country / UTM / device attribution (GDPR Art 17 erasure).
     db.prepare(
       `UPDATE users SET email = 'deleted-' || id || '@purged.local',
                       password_hash = '!purged!',
                       full_name = 'Purged user',
                       status = 'suspended',
+                      signup_country = NULL,
+                      device_type = NULL,
+                      utm_source = NULL,
+                      utm_medium = NULL,
+                      utm_campaign = NULL,
+                      utm_content = NULL,
+                      utm_term = NULL,
                       updated_at = ?
        WHERE couple_id = ?`,
     ).run(ts, coupleId);
@@ -280,6 +289,13 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
                       password_hash = '!purged!',
                       full_name = 'Purged user',
                       status = 'suspended',
+                      signup_country = NULL,
+                      device_type = NULL,
+                      utm_source = NULL,
+                      utm_medium = NULL,
+                      utm_campaign = NULL,
+                      utm_content = NULL,
+                      utm_term = NULL,
                       updated_at = ?
        WHERE id = ?`,
   ).run(ts, userId);
