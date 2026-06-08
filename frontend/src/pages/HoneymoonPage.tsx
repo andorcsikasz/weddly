@@ -44,6 +44,7 @@ import {
   lazy,
   Suspense,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -2006,41 +2007,93 @@ function HoneymoonTodoSection({
     for (const item of items) set.add(item.title);
     return set;
   }, [items]);
-  // For every base item already on the list, surface one fresh suggestion from
-  // the reserve pool at the bottom (skipping any reserve task already added) so
-  // the pack always offers a full set of things still worth doing. The already-
-  // on-the-list base items stay visible (greyed, "Már a listán"); the extras are
-  // brand-new and so default to selected.
-  const wandItems = useMemo(() => {
-    const isOnList = (it: { title: { hu: string; en: string } }) =>
-      existingTitles.has(it.title.hu) || existingTitles.has(it.title.en);
-    const dupeCount = wandBaseItems.filter(isOnList).length;
-    if (dupeCount === 0) return wandBaseItems;
-    const extras = HONEYMOON_EXTRA_TASKS.filter((it) => !isOnList(it)).slice(0, dupeCount);
-    return [...wandBaseItems, ...extras];
-  }, [wandBaseItems, existingTitles]);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  // Reset the selection every time the dialog opens — default to "every
-  // template item not already in the list".
+  // The pack is one ordered pool: the honeymoon base set first, then the reserve
+  // extras. The dialog reveals a sliding window of it — a full batch of
+  // actionable rows stays at the top, and as each gets checked it drops to the
+  // "queued / already on the list" pile at the bottom while the next reserve
+  // suggestion slides up into its place. So the couple can work the whole pool
+  // in one view, then commit the batch with a single confirm.
+  const wandPool = useMemo(() => [...wandBaseItems, ...HONEYMOON_EXTRA_TASKS], [wandBaseItems]);
+  const isOnList = useMemo(
+    () => (it: { title: { hu: string; en: string } }) =>
+      existingTitles.has(it.title.hu) || existingTitles.has(it.title.en),
+    [existingTitles],
+  );
+  // Selection keyed by EN title so a row keeps its identity as the window slides.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Reset to an empty selection each time the dialog opens — the couple opts in
+  // by checking, rather than opting out of a pre-checked set.
   useEffect(() => {
-    if (!wandOpen) return;
-    const next = new Set<number>();
-    wandItems.forEach((it, idx) => {
-      if (!existingTitles.has(it.title.hu) && !existingTitles.has(it.title.en)) next.add(idx);
-    });
-    setSelected(next);
-  }, [wandOpen, wandItems, existingTitles]);
+    if (wandOpen) setSelected(new Set());
+  }, [wandOpen]);
+
+  // Reveal the smallest prefix of the pool that still surfaces a full batch of
+  // actionable rows (not yet checked, not already on the list). Checking a row —
+  // or finding one already on the list — frees a slot, so the window grows to
+  // pull in the next reserve suggestion, until the pool runs out.
+  const activeTarget = wandBaseItems.length;
+  const revealCount = useMemo(() => {
+    let active = 0;
+    for (let i = 0; i < wandPool.length; i++) {
+      const it = wandPool[i];
+      if (!it) continue;
+      if (!isOnList(it) && !selected.has(it.title.en)) {
+        active++;
+        if (active >= activeTarget) return i + 1;
+      }
+    }
+    return wandPool.length;
+  }, [wandPool, isOnList, selected, activeTarget]);
+
+  // Top: still-actionable rows. Bottom: checked (queued) + already-on-list rows.
+  const wandItems = useMemo(() => {
+    const revealed = wandPool.slice(0, revealCount);
+    const active: typeof revealed = [];
+    const settled: typeof revealed = [];
+    for (const it of revealed) {
+      if (!isOnList(it) && !selected.has(it.title.en)) active.push(it);
+      else settled.push(it);
+    }
+    return [...active, ...settled];
+  }, [wandPool, revealCount, isOnList, selected]);
+
+  // FLIP: when the window reorders (a checked row drops, a reserve row appears),
+  // animate each surviving row from its prior position to its new one so the
+  // change reads as a slide rather than a jump. No-ops where layout metrics are
+  // absent (test DOM reports zeroes), so it never affects behaviour.
+  const rowRefs = useRef<Map<string, HTMLLIElement>>(new Map());
+  const prevRects = useRef<Map<string, DOMRect>>(new Map());
+  const orderKey = wandItems.map((it) => it.title.en).join("|");
+  useLayoutEffect(() => {
+    const refs = rowRefs.current;
+    for (const [key, el] of refs) {
+      const next = el.getBoundingClientRect();
+      const prev = prevRects.current.get(key);
+      const dy = prev ? prev.top - next.top : 0;
+      if (dy) {
+        el.style.transform = `translateY(${dy}px)`;
+        el.style.transition = "none";
+        void el.offsetHeight;
+        requestAnimationFrame(() => {
+          el.style.transition = "transform 220ms ease";
+          el.style.transform = "";
+        });
+      }
+      prevRects.current.set(key, next);
+    }
+    for (const key of prevRects.current.keys()) {
+      if (!refs.has(key)) prevRects.current.delete(key);
+    }
+  }, [orderKey]);
 
   async function applyWand() {
     if (wandApplying) return;
     setWandApplying(true);
     let added = 0;
     try {
-      for (let i = 0; i < wandItems.length; i++) {
-        if (!selected.has(i)) continue;
-        const tmpl = wandItems[i];
-        if (!tmpl) continue;
-        const ok = await onAdd(localizeText(tmpl.title, locale));
+      for (const it of wandPool) {
+        if (!selected.has(it.title.en)) continue;
+        const ok = await onAdd(localizeText(it.title, locale));
         if (ok) added++;
       }
     } finally {
@@ -2049,14 +2102,21 @@ function HoneymoonTodoSection({
     }
   }
 
-  function toggleSelected(idx: number) {
+  function toggleSelected(key: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx);
-      else next.add(idx);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
+  // Select-all targets the whole pool (minus already-on-list rows); selecting
+  // everything naturally reveals the full pool as each row settles.
+  const selectableKeys = useMemo(
+    () => wandPool.filter((it) => !isOnList(it)).map((it) => it.title.en),
+    [wandPool, isOnList],
+  );
+  const allSelected = selectableKeys.length > 0 && selectableKeys.every((k) => selected.has(k));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -2216,39 +2276,45 @@ function HoneymoonTodoSection({
               <p className="text-[11px] font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
                 {t("planning.template_select_label", {
                   count: selected.size,
-                  total: wandItems.length,
+                  total: revealCount,
                 })}
               </p>
               <button
                 type="button"
-                onClick={() =>
-                  setSelected(
-                    selected.size === wandItems.length
-                      ? new Set()
-                      : new Set(wandItems.map((_, idx) => idx)),
-                  )
-                }
+                onClick={() => setSelected(allSelected ? new Set() : new Set(selectableKeys))}
                 className="text-xs text-ink-600 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
               >
-                {selected.size === wandItems.length
+                {allSelected
                   ? t("planning.template_select_none")
                   : t("planning.template_select_all")}
               </button>
             </div>
             <ul className="space-y-0.5">
-              {wandItems.map((tmpl, idx) => {
-                const on = selected.has(idx);
-                const dupe = existingTitles.has(tmpl.title.hu) || existingTitles.has(tmpl.title.en);
+              {wandItems.map((tmpl) => {
+                const key = tmpl.title.en;
+                const on = selected.has(key);
+                const onList = isOnList(tmpl);
                 return (
-                  <li key={tmpl.title.en}>
+                  <li
+                    key={key}
+                    ref={(el) => {
+                      if (el) rowRefs.current.set(key, el);
+                      else rowRefs.current.delete(key);
+                    }}
+                  >
                     <button
                       type="button"
-                      onClick={() => toggleSelected(idx)}
-                      aria-pressed={on}
+                      onClick={() => {
+                        if (!onList) toggleSelected(key);
+                      }}
+                      aria-pressed={onList ? undefined : on}
+                      disabled={onList}
                       className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
                         on
                           ? "bg-paper-100 text-ink-900 hover:bg-paper-200 dark:bg-umber-700/60 dark:text-paper-50 dark:hover:bg-umber-700"
-                          : "text-ink-400 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                          : onList
+                            ? "cursor-default text-ink-400 dark:text-umber-300"
+                            : "text-ink-700 hover:bg-paper-100 hover:text-ink-900 dark:text-paper-100 dark:hover:bg-umber-700 dark:hover:text-paper-50"
                       }`}
                     >
                       {on ? (
@@ -2260,10 +2326,10 @@ function HoneymoonTodoSection({
                       ) : (
                         <Circle size={14} className="shrink-0" aria-hidden="true" />
                       )}
-                      <span className={on ? "" : "line-through"}>
+                      <span className={onList ? "line-through" : ""}>
                         {localizeText(tmpl.title, locale)}
                       </span>
-                      {dupe && (
+                      {onList && (
                         <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wide text-ink-400 dark:text-umber-300">
                           {t("honeymoon.todo_wand_already_added")}
                         </span>
