@@ -1369,7 +1369,26 @@ function HouseholdCard({
  */
 function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => void }) {
   const { t } = useT();
+  const toast = useToast();
   const [expanded, setExpanded] = useState(false);
+  // General check-in link: the couple identifier pre-filled, no household code.
+  // The couple can open it to preview, or share it so guests land straight on
+  // /rsvp with the couple field done and only their own code left to type.
+  const generalUrl =
+    typeof window !== "undefined" && couple.slug
+      ? `${window.location.origin}/rsvp?couple=${encodeURIComponent(couple.slug)}`
+      : null;
+
+  async function copyGeneralLink() {
+    if (!generalUrl) return;
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("no_clipboard");
+      await navigator.clipboard.writeText(generalUrl);
+      toast.success(t("guests.checkin_link_copied"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    }
+  }
   // The slug is read-only — it's pre-printed on invites + the public RSVP
   // page, so changing it after the fact would orphan everything in
   // circulation. The pre-existing PATCH /api/couples/slug endpoint stays
@@ -1414,6 +1433,33 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
               {t("guests.checkin_pill_suffix")}
             </p>
           </div>
+
+          {generalUrl && (
+            <div className="rounded-xl border border-paper-200 bg-paper-50 px-3 py-3 dark:border-umber-700 dark:bg-umber-800">
+              <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                {t("guests.checkin_open_title")}
+              </p>
+              <p className="mt-1 text-xs text-ink-600 dark:text-umber-200">
+                {t("guests.checkin_open_help")}
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <a
+                  href={generalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-outline btn-sm"
+                >
+                  <Link2 size={14} aria-hidden="true" /> {t("guests.checkin_open_rsvp")}
+                </a>
+                <button type="button" className="btn-ghost btn-sm" onClick={copyGeneralLink}>
+                  <ClipboardCopy size={14} aria-hidden="true" /> {t("guests.checkin_copy_link")}
+                </button>
+              </div>
+              <p className="mt-2 break-all font-mono text-xs text-ink-500 dark:text-umber-300">
+                {generalUrl.replace(/^https?:\/\//, "")}
+              </p>
+            </div>
+          )}
 
           <div className="rounded-xl border border-paper-200 bg-paper-50 px-3 py-3 dark:border-umber-700 dark:bg-umber-800">
             <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">

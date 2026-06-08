@@ -2379,6 +2379,12 @@ export interface LocaleMessages {
     checkin_pill_show: string;
     checkin_pill_hide: string;
     checkin_pill_url_hint: string;
+    /** General RSVP check-in link card (couple identifier pre-filled). */
+    checkin_open_title: string;
+    checkin_open_help: string;
+    checkin_open_rsvp: string;
+    checkin_copy_link: string;
+    checkin_link_copied: string;
     /** Read-only slug copy — the slug is no longer editable in-app. */
     couple_slug_help_locked: string;
     /** "Invited?" checkbox UX on the household card list. */

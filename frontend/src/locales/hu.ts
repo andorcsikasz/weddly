@@ -2259,6 +2259,12 @@ const hu: LocaleMessages = {
     checkin_pill_hide: "Bezárás",
     checkin_pill_url_hint:
       "A vendégek a weddly.hu/rsvp oldalon írják be a jegyes pár azonosítóját és a 8 karakteres kódjukat.",
+    checkin_open_title: "Általános check-in link",
+    checkin_open_help:
+      "A jegyes pár azonosítója már kitöltve. A vendég csak a saját 8 karakteres kódját írja be.",
+    checkin_open_rsvp: "RSVP oldal megnyitása",
+    checkin_copy_link: "Link másolása",
+    checkin_link_copied: "Link a vágólapra másolva.",
     couple_slug_help_locked:
       "Az azonosító a meghívókra és a check-in oldalra is rákerül — zárolva, hogy a kiosztott linkek továbbra is működjenek.",
     invited_check_label: "Megjelölve meghívottnak",

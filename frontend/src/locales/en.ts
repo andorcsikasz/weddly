@@ -2235,6 +2235,12 @@ const en: LocaleMessages = {
     checkin_pill_hide: "Hide check-in details",
     checkin_pill_url_hint:
       "Guests visit weddly.hu/rsvp and enter your couple identifier + their 8-character code.",
+    checkin_open_title: "General check-in link",
+    checkin_open_help:
+      "The couple identifier is pre-filled. Guests just add their own 8-character code.",
+    checkin_open_rsvp: "Open RSVP page",
+    checkin_copy_link: "Copy link",
+    checkin_link_copied: "Link copied to clipboard.",
     couple_slug_help_locked:
       "Pre-printed on invites and the public check-in page — locked so links you've already shared keep working.",
     invited_check_label: "Mark as invited",
