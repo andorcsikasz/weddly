@@ -12,10 +12,14 @@ import type {
   AdminEngagementAnalytics,
   AdminGrowthFunnelAnalytics,
   AdminGrowthFunnelStep,
+  AdminGuestAnalytics,
+  AdminHoneymoonAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
   AdminTrafficAnalytics,
   AdminTrafficTotals,
+  AdminWeddingAnalytics,
+  WeddingSeason,
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
@@ -1242,6 +1246,364 @@ async function handleTraffic(ctx: Ctx): Promise<Response> {
   return json(await trafficAnalytics());
 }
 
+// ─── Shared date helpers for the wedding / honeymoon rollups ─────────────
+
+// The real universe for every couple-shaped rollup below: live couples that
+// aren't the landing's "Try the demo" seeds and aren't mid-deletion. Mirrors
+// the demo exclusion the activity surface applies to users.
+const REAL_COUPLES_WHERE = "status NOT IN ('deleting') AND is_demo = 0";
+
+/** Parse a `YYYY-MM-DD` text date into UTC {year, month (1..12), day}. Returns
+ *  null for null / malformed input so callers can filter fuzzy or empty dates
+ *  out of the distributions. Only the leading date portion is read — a stored
+ *  `YYYY-MM-DD` with trailing noise still parses. */
+function parseIsoDate(raw: string | null): { year: number; month: number; day: number } | null {
+  if (!raw) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw.trim());
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return { year, month, day };
+}
+
+/** ISO weekday (1=Mon .. 7=Sun) for a parsed date. */
+function isoWeekday(d: { year: number; month: number; day: number }): number {
+  const dow = new Date(Date.UTC(d.year, d.month - 1, d.day)).getUTCDay(); // 0=Sun
+  return ((dow + 6) % 7) + 1;
+}
+
+/** Meteorological N-hemisphere season for a calendar month (1..12). */
+function seasonForMonth(month: number): WeddingSeason {
+  if (month >= 3 && month <= 5) return "spring";
+  if (month >= 6 && month <= 8) return "summer";
+  if (month >= 9 && month <= 11) return "autumn";
+  return "winter";
+}
+
+// ─── /api/admin/analytics/honeymoon ──────────────────────────────────────
+
+function honeymoonAnalytics(): AdminHoneymoonAnalytics {
+  const couples = db
+    .prepare(
+      `SELECT honeymoon_destination, honeymoon_start_date, honeymoon_end_date, honeymoon_origin_iata
+         FROM couples WHERE ${REAL_COUPLES_WHERE}`,
+    )
+    .all() as {
+    honeymoon_destination: string | null;
+    honeymoon_start_date: string | null;
+    honeymoon_end_date: string | null;
+    honeymoon_origin_iata: string | null;
+  }[];
+
+  const totalCouples = couples.length;
+
+  // Destinations grouped case-insensitively. For each normalized key we keep a
+  // tally of the original spellings so the display label is whatever couples
+  // actually typed most often (e.g. "Bali" beats "bali").
+  const destGroups = new Map<string, { count: number; spellings: Map<string, number> }>();
+  const originCounts = new Map<string, number>();
+  const tripNights: number[] = [];
+  const startMonthCounts = new Array<number>(12).fill(0);
+  let couplesWithDestination = 0;
+  let couplesWithDates = 0;
+
+  for (const c of couples) {
+    const destRaw = c.honeymoon_destination?.trim();
+    if (destRaw) {
+      couplesWithDestination += 1;
+      const key = destRaw.toLowerCase().replace(/\s+/g, " ");
+      let group = destGroups.get(key);
+      if (!group) {
+        group = { count: 0, spellings: new Map() };
+        destGroups.set(key, group);
+      }
+      group.count += 1;
+      group.spellings.set(destRaw, (group.spellings.get(destRaw) ?? 0) + 1);
+    }
+
+    const iata = c.honeymoon_origin_iata?.trim().toUpperCase();
+    if (iata) originCounts.set(iata, (originCounts.get(iata) ?? 0) + 1);
+
+    const start = parseIsoDate(c.honeymoon_start_date);
+    const end = parseIsoDate(c.honeymoon_end_date);
+    if (start) {
+      const idx = start.month - 1;
+      startMonthCounts[idx] = (startMonthCounts[idx] ?? 0) + 1;
+    }
+    if (start && end) {
+      const startMs = Date.UTC(start.year, start.month - 1, start.day);
+      const endMs = Date.UTC(end.year, end.month - 1, end.day);
+      const nights = Math.round((endMs - startMs) / DAY_MS);
+      if (nights >= 0) {
+        couplesWithDates += 1;
+        tripNights.push(nights);
+      }
+    }
+  }
+
+  const topDestinations = [...destGroups.entries()]
+    .map(([, group]) => {
+      // Pick the most-frequent original spelling; alphabetical tie-break.
+      let label = "";
+      let best = -1;
+      for (const [spelling, n] of group.spellings) {
+        if (n > best || (n === best && spelling < label)) {
+          best = n;
+          label = spelling;
+        }
+      }
+      return { destination: label, count: group.count };
+    })
+    .sort((a, b) => b.count - a.count || a.destination.localeCompare(b.destination))
+    .slice(0, 12);
+
+  const topOrigins = [...originCounts.entries()]
+    .map(([iata, count]) => ({ iata, count }))
+    .sort((a, b) => b.count - a.count || a.iata.localeCompare(b.iata))
+    .slice(0, 10);
+
+  const startMonth = startMonthCounts.map((count, i) => ({ month: i + 1, count }));
+
+  return {
+    total_couples: totalCouples,
+    couples_with_destination: couplesWithDestination,
+    couples_with_dates: couplesWithDates,
+    adoption_pct: totalCouples > 0 ? couplesWithDestination / totalCouples : 0,
+    top_destinations: topDestinations,
+    top_origins: topOrigins,
+    trip_nights: quantiles(tripNights),
+    start_month: startMonth,
+  };
+}
+
+function handleHoneymoon(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(honeymoonAnalytics());
+}
+
+// ─── /api/admin/analytics/weddings ───────────────────────────────────────
+
+function weddingAnalytics(): AdminWeddingAnalytics {
+  const couples = db
+    .prepare(
+      `SELECT wedding_date, created_at, currency, country, style_tags_json,
+              target_guest_count, target_guest_count_min, target_guest_count_max
+         FROM couples WHERE ${REAL_COUPLES_WHERE}`,
+    )
+    .all() as {
+    wedding_date: string | null;
+    created_at: number;
+    currency: string | null;
+    country: string | null;
+    style_tags_json: string | null;
+    target_guest_count: number | null;
+    target_guest_count_min: number | null;
+    target_guest_count_max: number | null;
+  }[];
+
+  const totalCouples = couples.length;
+  const monthCounts = new Array<number>(12).fill(0);
+  const weekdayCounts = new Array<number>(7).fill(0);
+  const seasonCounts: Record<WeddingSeason, number> = {
+    spring: 0,
+    summer: 0,
+    autumn: 0,
+    winter: 0,
+  };
+  const leadTimeDays: number[] = [];
+  const guestTargets: number[] = [];
+  const currencyCounts = new Map<string, number>();
+  const countryCounts = new Map<string, number>();
+  const tagCounts = new Map<string, number>();
+  let couplesWithDate = 0;
+
+  for (const c of couples) {
+    const d = parseIsoDate(c.wedding_date);
+    if (d) {
+      couplesWithDate += 1;
+      const mi = d.month - 1;
+      monthCounts[mi] = (monthCounts[mi] ?? 0) + 1;
+      const wi = isoWeekday(d) - 1;
+      weekdayCounts[wi] = (weekdayCounts[wi] ?? 0) + 1;
+      seasonCounts[seasonForMonth(d.month)] += 1;
+      // Lead time signup → wedding. Drop dates set in the past (negative) so
+      // the median reflects forward planning, not back-dated test rows.
+      const weddingMs = Date.UTC(d.year, d.month - 1, d.day);
+      const days = Math.round((weddingMs - c.created_at) / DAY_MS);
+      if (days >= 0) leadTimeDays.push(days);
+    }
+
+    const guests = c.target_guest_count ?? c.target_guest_count_max ?? c.target_guest_count_min;
+    if (guests !== null && guests !== undefined && guests > 0) guestTargets.push(guests);
+
+    const currency = (c.currency ?? "").trim().toUpperCase() || "HUF";
+    currencyCounts.set(currency, (currencyCounts.get(currency) ?? 0) + 1);
+    const country = (c.country ?? "").trim().toUpperCase() || "HU";
+    countryCounts.set(country, (countryCounts.get(country) ?? 0) + 1);
+
+    if (c.style_tags_json) {
+      try {
+        const tags = JSON.parse(c.style_tags_json) as unknown;
+        if (Array.isArray(tags)) {
+          for (const raw of tags) {
+            if (typeof raw !== "string") continue;
+            const tag = raw.trim();
+            if (tag) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+          }
+        }
+      } catch {
+        // Malformed JSON on a single row shouldn't sink the whole rollup.
+      }
+    }
+  }
+
+  // UI-locale split over real, non-purged users (locale lives on `users`, not
+  // `couples`). Null / empty locales (pre-capture signups) collapse to
+  // "unknown" so the row total reconciles with the user count.
+  const localeRows = db
+    .prepare(
+      `SELECT COALESCE(NULLIF(TRIM(LOWER(locale)), ''), 'unknown') AS locale, COUNT(*) AS n
+         FROM users
+        WHERE email NOT LIKE '%@purged.local' AND email NOT LIKE '%@demo.weddly.local'
+        GROUP BY locale ORDER BY n DESC`,
+    )
+    .all() as { locale: string; n: number }[];
+
+  const toSorted = (m: Map<string, number>, key: "currency" | "country") =>
+    [...m.entries()]
+      .map(
+        ([k, count]) =>
+          ({ [key]: k, count }) as { currency?: string; country?: string; count: number },
+      )
+      .sort((a, b) => b.count - a.count);
+
+  return {
+    total_couples: totalCouples,
+    couples_with_date: couplesWithDate,
+    wedding_month: monthCounts.map((count, i) => ({ month: i + 1, count })),
+    wedding_weekday: weekdayCounts.map((count, i) => ({ weekday: i + 1, count })),
+    wedding_season: (["spring", "summer", "autumn", "winter"] as const).map((season) => ({
+      season,
+      count: seasonCounts[season],
+    })),
+    lead_time_days: quantiles(leadTimeDays),
+    guest_count_target: quantiles(guestTargets),
+    by_currency: toSorted(currencyCounts, "currency") as Array<{ currency: string; count: number }>,
+    by_country: toSorted(countryCounts, "country") as Array<{ country: string; count: number }>,
+    by_locale: localeRows.map((r) => ({ locale: r.locale, count: r.n })),
+    top_style_tags: [...tagCounts.entries()]
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+      .slice(0, 12),
+  };
+}
+
+function handleWeddings(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(weddingAnalytics());
+}
+
+// ─── /api/admin/analytics/guests ─────────────────────────────────────────
+
+// Free-text dietary keyword buckets. Each entry is a list of lowercase
+// substrings (HU + EN) that map a note into the bucket. A note can match more
+// than one bucket; a non-empty note that matches none falls into `other_text`.
+const DIETARY_KEYWORDS: Record<"gluten" | "lactose" | "nut" | "vegetarian" | "vegan", string[]> = {
+  gluten: ["glut", "gluten", "lisztérz", "coeliac", "celiac"],
+  lactose: ["lakt", "lactose", "tejcuk", "tejérz", "dairy"],
+  nut: ["mogyor", "dió", "dio", "nut", "peanut", "mandula", "almond", "cashew"],
+  vegetarian: ["vegetár", "vegetar", "húsmentes", "veggie"],
+  vegan: ["vegán", "vegan", "növényi"],
+};
+
+function guestAnalytics(): AdminGuestAnalytics {
+  // Restrict to guests owned by real couples. One join keeps demo/deleting
+  // residue out without a second couple_id round-trip.
+  const guests = db
+    .prepare(
+      `SELECT g.couple_id, g.rsvp_status, g.kind, g.plus_one_name, g.accommodation_needed,
+              g.song_request, g.dietary
+         FROM guests g
+         JOIN couples c ON c.id = g.couple_id
+        WHERE c.status NOT IN ('deleting') AND c.is_demo = 0`,
+    )
+    .all() as {
+    couple_id: number;
+    rsvp_status: string;
+    kind: string;
+    plus_one_name: string | null;
+    accommodation_needed: number;
+    song_request: string | null;
+    dietary: string | null;
+  }[];
+
+  const totalGuests = guests.length;
+  const perCouple = new Map<number, number>();
+  const rsvp = { pending: 0, yes: 0, no: 0, maybe: 0 };
+  const kindBreakdown = { adult: 0, child: 0, baby: 0 };
+  const dietary = { gluten: 0, lactose: 0, nut: 0, vegetarian: 0, vegan: 0, other_text: 0 };
+  let plusOne = 0;
+  let accommodation = 0;
+  let songRequests = 0;
+  let guestsWithDietary = 0;
+
+  for (const g of guests) {
+    perCouple.set(g.couple_id, (perCouple.get(g.couple_id) ?? 0) + 1);
+
+    if (g.rsvp_status === "yes" || g.rsvp_status === "no" || g.rsvp_status === "maybe") {
+      rsvp[g.rsvp_status] += 1;
+    } else {
+      rsvp.pending += 1;
+    }
+
+    if (g.kind === "child" || g.kind === "baby") kindBreakdown[g.kind] += 1;
+    else kindBreakdown.adult += 1;
+
+    if (g.plus_one_name?.trim()) plusOne += 1;
+    if (g.accommodation_needed === 1) accommodation += 1;
+    if (g.song_request?.trim()) songRequests += 1;
+
+    const note = g.dietary?.trim();
+    if (note) {
+      guestsWithDietary += 1;
+      const lower = note.toLowerCase();
+      let matched = false;
+      for (const bucket of ["gluten", "lactose", "nut", "vegetarian", "vegan"] as const) {
+        if (DIETARY_KEYWORDS[bucket].some((kw) => lower.includes(kw))) {
+          dietary[bucket] += 1;
+          matched = true;
+        }
+      }
+      if (!matched) dietary.other_text += 1;
+    }
+  }
+
+  const answered = rsvp.yes + rsvp.no + rsvp.maybe;
+  const definite = rsvp.yes + rsvp.no;
+
+  return {
+    couples_with_guests: perCouple.size,
+    total_guests: totalGuests,
+    guests_per_couple: quantiles([...perCouple.values()]),
+    rsvp_breakdown: rsvp,
+    response_rate: totalGuests > 0 ? answered / totalGuests : 0,
+    acceptance_rate: definite > 0 ? rsvp.yes / definite : 0,
+    kind_breakdown: kindBreakdown,
+    plus_one_count: plusOne,
+    accommodation_needed_count: accommodation,
+    song_request_count: songRequests,
+    dietary,
+    guests_with_dietary: guestsWithDietary,
+  };
+}
+
+function handleGuests(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(guestAnalytics());
+}
+
 export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/money", handleMoney, true);
   router.get("/api/admin/analytics/activity", handleActivity, true);
@@ -1250,4 +1612,7 @@ export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/demo", handleDemo, true);
   router.get("/api/admin/analytics/growth-funnel", handleGrowthFunnel, true);
   router.get("/api/admin/analytics/traffic", handleTraffic, true);
+  router.get("/api/admin/analytics/honeymoon", handleHoneymoon, true);
+  router.get("/api/admin/analytics/weddings", handleWeddings, true);
+  router.get("/api/admin/analytics/guests", handleGuests, true);
 }

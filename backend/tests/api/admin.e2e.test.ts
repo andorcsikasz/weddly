@@ -1,7 +1,12 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import type { AdminActivityAnalytics } from "@shared/admin_analytics";
+import type {
+  AdminActivityAnalytics,
+  AdminGuestAnalytics,
+  AdminHoneymoonAnalytics,
+  AdminWeddingAnalytics,
+} from "@shared/admin_analytics";
 import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
 import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
@@ -122,6 +127,9 @@ describe("admin gate — 403 for verified non-admin token on every /api/admin/* 
     { method: "GET", path: "/api/admin/analytics/activity" },
     { method: "GET", path: "/api/admin/analytics/picks" },
     { method: "GET", path: "/api/admin/analytics/growth-funnel" },
+    { method: "GET", path: "/api/admin/analytics/weddings" },
+    { method: "GET", path: "/api/admin/analytics/honeymoon" },
+    { method: "GET", path: "/api/admin/analytics/guests" },
     // vendor_waitlist.ts (admin half)
     { method: "GET", path: "/api/admin/vendor-waitlist" },
     {
@@ -192,6 +200,9 @@ describe("admin gate — 401 with no token on every /api/admin/* route", () => {
     { method: "GET", path: "/api/admin/analytics/activity" },
     { method: "GET", path: "/api/admin/analytics/picks" },
     { method: "GET", path: "/api/admin/analytics/growth-funnel" },
+    { method: "GET", path: "/api/admin/analytics/weddings" },
+    { method: "GET", path: "/api/admin/analytics/honeymoon" },
+    { method: "GET", path: "/api/admin/analytics/guests" },
     { method: "GET", path: "/api/admin/vendor-waitlist" },
     { method: "GET", path: "/api/admin/feedback" },
     {
@@ -1542,6 +1553,209 @@ describe("admin analytics", () => {
     expect(r.data.source_breakdown.curated).toBe(0);
     expect(r.data.source_breakdown.community).toBe(0);
     expect(r.data.source_breakdown.diy).toBe(0);
+  });
+
+  // ── Weddings / honeymoon / guests rollups ──────────────────────────────
+
+  /** Insert a guest row straight into SQLite — bypasses the create API's
+   *  plus-one auto-guest + household side-effects so the analytics counts
+   *  stay exactly what the test sets. */
+  function insertGuest(
+    coupleId: number,
+    code: string,
+    fields: {
+      rsvp_status?: string;
+      kind?: string;
+      plus_one_name?: string | null;
+      accommodation_needed?: number;
+      song_request?: string | null;
+      dietary?: string | null;
+    } = {},
+  ): void {
+    const ts = now();
+    db.prepare(
+      `INSERT INTO guests
+         (couple_id, full_name, invite_code, rsvp_status, kind, plus_one_name,
+          accommodation_needed, song_request, dietary, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      coupleId,
+      `Guest ${code}`,
+      code,
+      fields.rsvp_status ?? "pending",
+      fields.kind ?? "adult",
+      fields.plus_one_name ?? null,
+      fields.accommodation_needed ?? 0,
+      fields.song_request ?? null,
+      fields.dietary ?? null,
+      ts,
+      ts,
+    );
+  }
+
+  test("weddings — empty: zeroed totals + full month/weekday/season scaffold", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req<AdminWeddingAnalytics>("GET", "/api/admin/analytics/weddings", undefined, {
+      token: adminToken,
+    });
+    expect(r.status).toBe(200);
+    // The admin has no couple workspace, so the real-couple universe is empty.
+    expect(r.data.total_couples).toBe(0);
+    expect(r.data.couples_with_date).toBe(0);
+    expect(r.data.wedding_month.length).toBe(12);
+    expect(r.data.wedding_weekday.length).toBe(7);
+    expect(r.data.wedding_season.length).toBe(4);
+    expect(r.data.guest_count_target.count).toBe(0);
+  });
+
+  test("weddings — a bootstrapped couple lands in the month + season + guest target", async () => {
+    const adminToken = await bootstrapAdmin();
+    // bootstrapCouple onboards with wedding_date 2026-09-12 (September → autumn)
+    // and target_guest_count 80.
+    await bootstrapCouple("wed@weddly.test");
+    const r = await req<AdminWeddingAnalytics>("GET", "/api/admin/analytics/weddings", undefined, {
+      token: adminToken,
+    });
+    expect(r.data.total_couples).toBe(1);
+    expect(r.data.couples_with_date).toBe(1);
+    expect(r.data.wedding_month.find((m) => m.month === 9)?.count).toBe(1);
+    expect(r.data.wedding_season.find((s) => s.season === "autumn")?.count).toBe(1);
+    expect(r.data.guest_count_target.count).toBe(1);
+    expect(r.data.guest_count_target.median).toBe(80);
+    expect(r.data.by_currency.find((c) => c.currency === "HUF")?.count).toBe(1);
+    expect(r.data.by_country.find((c) => c.country === "HU")?.count).toBe(1);
+  });
+
+  test("honeymoon — empty: zero destinations, adoption 0", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req<AdminHoneymoonAnalytics>(
+      "GET",
+      "/api/admin/analytics/honeymoon",
+      undefined,
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couples_with_destination).toBe(0);
+    expect(r.data.adoption_pct).toBe(0);
+    expect(r.data.top_destinations.length).toBe(0);
+    expect(r.data.start_month.length).toBe(12);
+  });
+
+  test("honeymoon — destination + dates roll up into the leaderboard + trip nights", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { coupleId } = await bootstrapCouple("honey@weddly.test");
+    db.prepare(
+      `UPDATE couples SET honeymoon_destination = ?, honeymoon_start_date = ?,
+         honeymoon_end_date = ?, honeymoon_origin_iata = ? WHERE id = ?`,
+    ).run("Bali", "2026-10-01", "2026-10-10", "bud", coupleId);
+
+    const r = await req<AdminHoneymoonAnalytics>(
+      "GET",
+      "/api/admin/analytics/honeymoon",
+      undefined,
+      { token: adminToken },
+    );
+    expect(r.data.total_couples).toBe(1);
+    expect(r.data.couples_with_destination).toBe(1);
+    expect(r.data.adoption_pct).toBe(1);
+    expect(r.data.top_destinations[0]?.destination).toBe("Bali");
+    expect(r.data.top_destinations[0]?.count).toBe(1);
+    // IATA is normalised to upper-case.
+    expect(r.data.top_origins[0]?.iata).toBe("BUD");
+    expect(r.data.couples_with_dates).toBe(1);
+    expect(r.data.trip_nights.median).toBe(9);
+    // October departure.
+    expect(r.data.start_month.find((m) => m.month === 10)?.count).toBe(1);
+  });
+
+  test("honeymoon — case-insensitive grouping keeps the most common spelling", async () => {
+    const adminToken = await bootstrapAdmin();
+    const a = await bootstrapCouple("h1@weddly.test");
+    const b = await bootstrapCouple("h2@weddly.test");
+    const c = await bootstrapCouple("h3@weddly.test");
+    db.prepare("UPDATE couples SET honeymoon_destination = ? WHERE id = ?").run("Bali", a.coupleId);
+    db.prepare("UPDATE couples SET honeymoon_destination = ? WHERE id = ?").run("bali", b.coupleId);
+    db.prepare("UPDATE couples SET honeymoon_destination = ? WHERE id = ?").run(
+      "Paris",
+      c.coupleId,
+    );
+
+    const r = await req<AdminHoneymoonAnalytics>(
+      "GET",
+      "/api/admin/analytics/honeymoon",
+      undefined,
+      { token: adminToken },
+    );
+    // "Bali"/"bali" collapse to one group of 2; display picks the spelling that
+    // is alphabetically first on a frequency tie → "Bali".
+    expect(r.data.top_destinations[0]?.destination).toBe("Bali");
+    expect(r.data.top_destinations[0]?.count).toBe(2);
+    expect(r.data.top_destinations.find((d) => d.destination === "Paris")?.count).toBe(1);
+  });
+
+  test("guests — empty returns zeroed funnel + rates", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req<AdminGuestAnalytics>("GET", "/api/admin/analytics/guests", undefined, {
+      token: adminToken,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.total_guests).toBe(0);
+    expect(r.data.couples_with_guests).toBe(0);
+    expect(r.data.response_rate).toBe(0);
+    expect(r.data.acceptance_rate).toBe(0);
+    expect(r.data.guests_with_dietary).toBe(0);
+  });
+
+  test("guests — RSVP funnel, kinds, plus-one, dietary keyword buckets", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { coupleId } = await bootstrapCouple("guesthost@weddly.test");
+    insertGuest(coupleId, "G1", {
+      rsvp_status: "yes",
+      plus_one_name: "Partner A",
+      accommodation_needed: 1,
+      song_request: "ABBA",
+      dietary: "gluténmentes",
+    });
+    insertGuest(coupleId, "G2", { rsvp_status: "no", dietary: "vegan, no dairy" });
+    insertGuest(coupleId, "G3", { rsvp_status: "maybe", kind: "child" });
+    insertGuest(coupleId, "G4", { rsvp_status: "pending", kind: "baby" });
+
+    const r = await req<AdminGuestAnalytics>("GET", "/api/admin/analytics/guests", undefined, {
+      token: adminToken,
+    });
+    expect(r.data.total_guests).toBe(4);
+    expect(r.data.couples_with_guests).toBe(1);
+    expect(r.data.rsvp_breakdown).toEqual({ pending: 1, yes: 1, no: 1, maybe: 1 });
+    // (yes+no+maybe)/total = 3/4
+    expect(r.data.response_rate).toBeCloseTo(0.75, 5);
+    // yes/(yes+no) = 1/2
+    expect(r.data.acceptance_rate).toBeCloseTo(0.5, 5);
+    expect(r.data.kind_breakdown).toEqual({ adult: 2, child: 1, baby: 1 });
+    expect(r.data.plus_one_count).toBe(1);
+    expect(r.data.accommodation_needed_count).toBe(1);
+    expect(r.data.song_request_count).toBe(1);
+    // "gluténmentes" → gluten bucket; "vegan, no dairy" → vegan + lactose.
+    expect(r.data.dietary.gluten).toBe(1);
+    expect(r.data.dietary.vegan).toBe(1);
+    expect(r.data.dietary.lactose).toBe(1);
+    expect(r.data.guests_with_dietary).toBe(2);
+  });
+
+  test("weddings/honeymoon/guests — demo workspaces are excluded", async () => {
+    const adminToken = await bootstrapAdmin();
+    // A real demo workspace (is_demo=1) seeded through the public CTA.
+    const demo = await req("POST", "/api/demo/start");
+    expect(demo.status).toBe(201);
+
+    const w = await req<AdminWeddingAnalytics>("GET", "/api/admin/analytics/weddings", undefined, {
+      token: adminToken,
+    });
+    const g = await req<AdminGuestAnalytics>("GET", "/api/admin/analytics/guests", undefined, {
+      token: adminToken,
+    });
+    // The demo couple + its seeded guests must not leak into the real universe.
+    expect(w.data.total_couples).toBe(0);
+    expect(g.data.total_guests).toBe(0);
   });
 });
 

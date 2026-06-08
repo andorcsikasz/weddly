@@ -90,9 +90,12 @@ import type {
   AdminActivityAnalytics,
   AdminDemoAnalytics,
   AdminEngagementAnalytics,
+  AdminGuestAnalytics,
+  AdminHoneymoonAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
   AdminTrafficAnalytics,
+  AdminWeddingAnalytics,
 } from "@shared/admin_analytics";
 import type {
   AdminDirectoryFilters,
@@ -1470,6 +1473,9 @@ export const adminAnalyticsApi = {
   engagement: () => apiFetch<AdminEngagementAnalytics>("GET", "/api/admin/analytics/engagement"),
   demo: () => apiFetch<AdminDemoAnalytics>("GET", "/api/admin/analytics/demo"),
   traffic: () => apiFetch<AdminTrafficAnalytics>("GET", "/api/admin/analytics/traffic"),
+  honeymoon: () => apiFetch<AdminHoneymoonAnalytics>("GET", "/api/admin/analytics/honeymoon"),
+  weddings: () => apiFetch<AdminWeddingAnalytics>("GET", "/api/admin/analytics/weddings"),
+  guests: () => apiFetch<AdminGuestAnalytics>("GET", "/api/admin/analytics/guests"),
 };
 
 export const adminFeedbackApi = {

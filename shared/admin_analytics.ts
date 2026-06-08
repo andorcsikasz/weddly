@@ -273,6 +273,124 @@ export interface AdminGrowthFunnelAnalytics {
   }>;
 }
 
+// ─── /api/admin/analytics/honeymoon ──────────────────────────────────────
+//
+// Aggregates the honeymoon trip fields couples fill in on /app/honeymoon
+// (`honeymoon_destination`, `honeymoon_start_date`, `honeymoon_end_date`,
+// `honeymoon_origin_iata`). The headline the founder asked for is "most
+// popular honeymoon destination". Demo + `deleting` couples are excluded so
+// the seeds don't dominate the leaderboard.
+
+export interface AdminHoneymoonAnalytics {
+  /** Real couples (non-demo, not `deleting`) — the denominator for adoption. */
+  total_couples: number;
+  /** Couples with a non-empty `honeymoon_destination`. */
+  couples_with_destination: number;
+  /** Couples with BOTH start + end dates set (drives `trip_nights`). */
+  couples_with_dates: number;
+  /** `couples_with_destination / total_couples`, 0..1. */
+  adoption_pct: number;
+  /** Most popular destinations by couple count. Grouped case-insensitively on
+   *  the trimmed text; the most frequently-typed original spelling becomes the
+   *  display label. Top 12, ties broken alphabetically. */
+  top_destinations: Array<{ destination: string; count: number }>;
+  /** Most popular departure airports (`honeymoon_origin_iata`, upper-cased) by
+   *  couple count. Top 10. */
+  top_origins: Array<{ iata: string; count: number }>;
+  /** Trip length in nights (`end - start`) across couples with both dates set
+   *  and `end >= start`. Integer nights. */
+  trip_nights: AdminAnalyticsStats;
+  /** Departure seasonality — `honeymoon_start_date` bucketed by calendar month.
+   *  Always 12 rows (`month` 1..12) so the bar row never develops gaps. */
+  start_month: Array<{ month: number; count: number }>;
+}
+
+// ─── /api/admin/analytics/weddings ───────────────────────────────────────
+//
+// "What do the weddings themselves look like?" — date seasonality, day-of-week
+// preference, planning lead time, guest-count ambition, and the locale / style
+// distribution of the couples. All over the real (non-demo, non-`deleting`)
+// universe.
+
+export type WeddingSeason = "spring" | "summer" | "autumn" | "winter";
+
+export interface AdminWeddingAnalytics {
+  /** Real couples in the universe. */
+  total_couples: number;
+  /** Couples with a parseable `wedding_date`. */
+  couples_with_date: number;
+  /** Weddings per calendar month (1..12) across couples with a parseable date.
+   *  Always 12 rows. */
+  wedding_month: Array<{ month: number; count: number }>;
+  /** Weddings per ISO weekday (1=Mon .. 7=Sun). Always 7 rows — Saturday
+   *  dominance is the expected shape. */
+  wedding_weekday: Array<{ weekday: number; count: number }>;
+  /** Weddings per meteorological (N-hemisphere) season. */
+  wedding_season: Array<{ season: WeddingSeason; count: number }>;
+  /** Lead time in days between `created_at` (signup) and `wedding_date`, across
+   *  couples with a parseable future-or-past date. Negative values (date set in
+   *  the past) are excluded. */
+  lead_time_days: AdminAnalyticsStats;
+  /** Effective guest-count target — `COALESCE(target_guest_count,
+   *  target_guest_count_max, target_guest_count_min)` — across couples that set
+   *  one. */
+  guest_count_target: AdminAnalyticsStats;
+  /** Couple display-currency split (`couples.currency`). */
+  by_currency: Array<{ currency: string; count: number }>;
+  /** Couple country split (`couples.country`). */
+  by_country: Array<{ country: string; count: number }>;
+  /** UI-locale split over real, non-purged users (`users.locale`). `unknown`
+   *  collects rows with a null/empty locale (pre-capture signups). */
+  by_locale: Array<{ locale: string; count: number }>;
+  /** Most-used wedding style tags (`couples.style_tags_json`) by couple count.
+   *  Top 12. */
+  top_style_tags: Array<{ tag: string; count: number }>;
+}
+
+// ─── /api/admin/analytics/guests ─────────────────────────────────────────
+//
+// Guest-list shape across the real universe — RSVP funnel, dietary load,
+// plus-one + accommodation demand. Guests belong to couples; rows owned by
+// demo / `deleting` couples are excluded.
+
+export interface AdminGuestAnalytics {
+  /** Real couples that have at least one guest row. */
+  couples_with_guests: number;
+  /** Total guest rows in the real universe. */
+  total_guests: number;
+  /** Guests per couple across couples with ≥1 guest (zero-guest couples are
+   *  excluded so the median isn't dragged to 0). */
+  guests_per_couple: AdminAnalyticsStats;
+  /** RSVP status split across every guest row. */
+  rsvp_breakdown: { pending: number; yes: number; no: number; maybe: number };
+  /** `(yes + no + maybe) / total` — fraction of invited guests who replied. */
+  response_rate: number;
+  /** `yes / (yes + no)` — of guests who gave a definite answer, the fraction
+   *  attending. Excludes pending + maybe. */
+  acceptance_rate: number;
+  /** Guest-kind split. */
+  kind_breakdown: { adult: number; child: number; baby: number };
+  /** Guests carrying a non-empty `plus_one_name`. */
+  plus_one_count: number;
+  /** Guests with `accommodation_needed = 1`. */
+  accommodation_needed_count: number;
+  /** Guests with a non-empty `song_request`. */
+  song_request_count: number;
+  /** Heuristic keyword scan of the free-text `dietary` field (HU + EN terms).
+   *  A single note can hit more than one bucket. `other_text` counts non-empty
+   *  notes that matched no keyword. */
+  dietary: {
+    gluten: number;
+    lactose: number;
+    nut: number;
+    vegetarian: number;
+    vegan: number;
+    other_text: number;
+  };
+  /** Guests with any non-empty `dietary` note (denominator for `dietary`). */
+  guests_with_dietary: number;
+}
+
 // ─── Traffic (Google Analytics 4) ──────────────────────────────────────────
 //
 // Unlike the other six rollups, these numbers don't come from our SQLite —

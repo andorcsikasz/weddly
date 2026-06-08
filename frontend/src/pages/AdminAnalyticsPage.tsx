@@ -16,9 +16,13 @@ import type {
   AdminAnalyticsStats,
   AdminDemoAnalytics,
   AdminEngagementAnalytics,
+  AdminGuestAnalytics,
+  AdminHoneymoonAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
   AdminTrafficAnalytics,
+  AdminWeddingAnalytics,
+  WeddingSeason,
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
@@ -44,7 +48,16 @@ const CARD_TITLE = "text-sm font-semibold text-neutral-900 dark:text-paper-50";
 
 // ─── Section anchor list (used by the sticky pills + scroll spy) ──────────
 
-type SectionId = "money" | "activity" | "traffic" | "picks" | "engagement" | "demo";
+type SectionId =
+  | "money"
+  | "activity"
+  | "traffic"
+  | "picks"
+  | "engagement"
+  | "demo"
+  | "weddings"
+  | "honeymoon"
+  | "guests";
 
 interface SectionDef {
   id: SectionId;
@@ -55,6 +68,9 @@ const SECTIONS: ReadonlyArray<SectionDef> = [
   { id: "money", labelKey: "admin.analytics_nav_money" },
   { id: "activity", labelKey: "admin.analytics_nav_activity" },
   { id: "traffic", labelKey: "admin.analytics_nav_traffic" },
+  { id: "weddings", labelKey: "admin.analytics_nav_weddings" },
+  { id: "honeymoon", labelKey: "admin.analytics_nav_honeymoon" },
+  { id: "guests", labelKey: "admin.analytics_nav_guests" },
   { id: "picks", labelKey: "admin.analytics_nav_picks" },
   { id: "engagement", labelKey: "admin.analytics_nav_engagement" },
   { id: "demo", labelKey: "admin.analytics_nav_demo" },
@@ -73,6 +89,11 @@ export default function AdminAnalyticsPage() {
   });
   const [demo, setDemo] = useState<Loadable<AdminDemoAnalytics>>({ status: "loading" });
   const [traffic, setTraffic] = useState<Loadable<AdminTrafficAnalytics>>({ status: "loading" });
+  const [weddings, setWeddings] = useState<Loadable<AdminWeddingAnalytics>>({ status: "loading" });
+  const [honeymoon, setHoneymoon] = useState<Loadable<AdminHoneymoonAnalytics>>({
+    status: "loading",
+  });
+  const [guests, setGuests] = useState<Loadable<AdminGuestAnalytics>>({ status: "loading" });
 
   // `nonce` lets the refresh button re-run the effect without remounting the
   // whole tree — bumping it triggers a re-fetch and resets the five slots
@@ -88,7 +109,10 @@ export default function AdminAnalyticsPage() {
     picks.status === "loading" ||
     engagement.status === "loading" ||
     demo.status === "loading" ||
-    traffic.status === "loading";
+    traffic.status === "loading" ||
+    weddings.status === "loading" ||
+    honeymoon.status === "loading" ||
+    guests.status === "loading";
 
   const loadAll = useCallback(() => {
     setMoney({ status: "loading" });
@@ -97,6 +121,9 @@ export default function AdminAnalyticsPage() {
     setEngagement({ status: "loading" });
     setDemo({ status: "loading" });
     setTraffic({ status: "loading" });
+    setWeddings({ status: "loading" });
+    setHoneymoon({ status: "loading" });
+    setGuests({ status: "loading" });
     setNonce((n) => n + 1);
   }, []);
 
@@ -169,6 +196,42 @@ export default function AdminAnalyticsPage() {
         if (!cancelled) setTraffic({ status: "error" });
       });
 
+    adminAnalyticsApi
+      .weddings()
+      .then((d) => {
+        if (!cancelled) {
+          setWeddings({ status: "ok", data: d });
+          setLastLoadedAt(Date.now());
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setWeddings({ status: "error" });
+      });
+
+    adminAnalyticsApi
+      .honeymoon()
+      .then((d) => {
+        if (!cancelled) {
+          setHoneymoon({ status: "ok", data: d });
+          setLastLoadedAt(Date.now());
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setHoneymoon({ status: "error" });
+      });
+
+    adminAnalyticsApi
+      .guests()
+      .then((d) => {
+        if (!cancelled) {
+          setGuests({ status: "ok", data: d });
+          setLastLoadedAt(Date.now());
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setGuests({ status: "error" });
+      });
+
     return () => {
       cancelled = true;
     };
@@ -196,6 +259,15 @@ export default function AdminAnalyticsPage() {
         </SectionAnchor>
         <SectionAnchor id="traffic">
           <TrafficSection state={traffic} locale={locale} />
+        </SectionAnchor>
+        <SectionAnchor id="weddings">
+          <WeddingsSection state={weddings} locale={locale} />
+        </SectionAnchor>
+        <SectionAnchor id="honeymoon">
+          <HoneymoonSection state={honeymoon} locale={locale} />
+        </SectionAnchor>
+        <SectionAnchor id="guests">
+          <GuestsSection state={guests} locale={locale} />
         </SectionAnchor>
         <SectionAnchor id="picks">
           <PicksSection state={picks} locale={locale} />
@@ -1094,6 +1166,420 @@ function TrafficSection({
           )}
         </InnerCard>
       </div>
+    </SectionCard>
+  );
+}
+
+// ─── Shared helpers for the wedding / honeymoon / guest sections ───────────
+
+/** Short month label (1..12) in the admin's locale via Intl — keeps the
+ *  seasonality bars label-free of 12 hand-maintained i18n keys. */
+function monthLabel(month: number, locale: "hu" | "en"): string {
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    month: "short",
+  }).format(new Date(Date.UTC(2020, month - 1, 1)));
+}
+
+/** Short weekday label for ISO weekday (1=Mon..7=Sun). June 1 2020 was a
+ *  Monday, so Date.UTC(2020, 5, weekday) maps 1→Mon … 7→Sun cleanly. */
+function weekdayLabel(weekday: number, locale: "hu" | "en"): string {
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    weekday: "short",
+  }).format(new Date(Date.UTC(2020, 5, weekday)));
+}
+
+/** Median + IQR sub-line shared by the quartile-backed KPI tiles. */
+function statSub(
+  s: AdminAnalyticsStats,
+  locale: "hu" | "en",
+  t: (k: string, v?: Record<string, string | number>) => string,
+): string {
+  return t("admin.analytics_stat_sub", {
+    median: formatNumber(s.median, locale),
+    p25: formatNumber(s.p25, locale),
+    p75: formatNumber(s.p75, locale),
+  });
+}
+
+/** Generic ranked horizontal-bar list. `rows` are pre-sorted by the caller;
+ *  this just normalizes the bar width against the max and renders a
+ *  label / bar / count grid. `labelWidth` lets callers widen the label column
+ *  for long destination names. */
+function DistBars({
+  rows,
+  locale,
+  emptyLabel,
+  labelWidth = "7rem",
+}: {
+  rows: Array<{ label: string; count: number; sub?: string }>;
+  locale: "hu" | "en";
+  emptyLabel: string;
+  labelWidth?: string;
+}) {
+  if (rows.length === 0) {
+    return <p className="text-sm text-neutral-500 dark:text-umber-300">{emptyLabel}</p>;
+  }
+  const max = rows.reduce((m, r) => Math.max(m, r.count), 0);
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {rows.map((row) => {
+        const pct = max > 0 ? (row.count / max) * 100 : 0;
+        return (
+          <li
+            key={row.label}
+            className="grid items-center gap-2 text-xs"
+            style={{ gridTemplateColumns: `${labelWidth} 1fr 3rem` }}
+          >
+            <div className="min-w-0">
+              <div className="truncate text-left font-medium text-neutral-800 dark:text-paper-100">
+                {row.label}
+              </div>
+              {row.sub && (
+                <div className="text-[10px] text-neutral-500 dark:text-umber-300">{row.sub}</div>
+              )}
+            </div>
+            <HBar pct={pct} ariaLabel={`${row.label}: ${row.count}`} />
+            <span className="stat-num text-right font-semibold text-neutral-800 dark:text-paper-50">
+              {formatNumber(row.count, locale)}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// ─── Weddings section ──────────────────────────────────────────────────────
+
+function WeddingsSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminWeddingAnalytics>;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const title = t("admin.analytics_section_weddings");
+  if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
+  if (state.status === "error")
+    return (
+      <SectionStatus title={title} variant="error" message={t("admin.analytics_load_error")} />
+    );
+
+  const w = state.data;
+  const monthRows = w.wedding_month.map((r) => ({
+    label: monthLabel(r.month, locale),
+    count: r.count,
+  }));
+  const weekdayRows = w.wedding_weekday.map((r) => ({
+    label: weekdayLabel(r.weekday, locale),
+    count: r.count,
+  }));
+  const seasonRows = w.wedding_season.map((r) => ({
+    label: t(`admin.analytics_season_${r.season}` as `admin.analytics_season_${WeddingSeason}`),
+    count: r.count,
+  }));
+  const currencyRows = w.by_currency.map((r) => ({ label: r.currency, count: r.count }));
+  const countryRows = w.by_country.map((r) => ({ label: r.country, count: r.count }));
+  const localeRows = w.by_locale.map((r) => ({
+    label: r.locale === "unknown" ? t("admin.analytics_locale_unknown") : r.locale.toUpperCase(),
+    count: r.count,
+  }));
+  const tagRows = w.top_style_tags.map((r) => ({ label: r.tag, count: r.count }));
+
+  return (
+    <SectionCard title={title}>
+      <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiTile
+          label={t("admin.analytics_weddings_total")}
+          value={formatNumber(w.total_couples, locale)}
+          sub={t("admin.analytics_weddings_with_date", {
+            count: formatNumber(w.couples_with_date, locale),
+          })}
+          emphasis
+        />
+        <KpiTile
+          label={t("admin.analytics_weddings_lead_time")}
+          value={t("admin.analytics_days", {
+            count: formatNumber(w.lead_time_days.median, locale),
+          })}
+          sub={statSub(w.lead_time_days, locale, t)}
+        />
+        <KpiTile
+          label={t("admin.analytics_weddings_guest_target")}
+          value={formatNumber(w.guest_count_target.median, locale)}
+          sub={statSub(w.guest_count_target, locale, t)}
+        />
+        <KpiTile
+          label={t("admin.analytics_weddings_peak_season")}
+          value={
+            seasonRows.reduce(
+              (best, r) => (r.count > best.count ? r : best),
+              seasonRows[0] ?? { label: "—", count: 0 },
+            ).label
+          }
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <InnerCard title={t("admin.analytics_weddings_by_month")}>
+          <DistBars
+            rows={monthRows}
+            locale={locale}
+            emptyLabel={t("admin.analytics_weddings_empty")}
+            labelWidth="3rem"
+          />
+        </InnerCard>
+        <InnerCard title={t("admin.analytics_weddings_by_weekday")}>
+          <DistBars
+            rows={weekdayRows}
+            locale={locale}
+            emptyLabel={t("admin.analytics_weddings_empty")}
+            labelWidth="4rem"
+          />
+        </InnerCard>
+        <InnerCard title={t("admin.analytics_weddings_style_tags")}>
+          <DistBars
+            rows={tagRows}
+            locale={locale}
+            emptyLabel={t("admin.analytics_weddings_tags_empty")}
+            labelWidth="9rem"
+          />
+        </InnerCard>
+        <InnerCard title={t("admin.analytics_weddings_locale_mix")}>
+          <div className="mb-2 eyebrow">{t("admin.analytics_weddings_by_currency")}</div>
+          <DistBars
+            rows={currencyRows}
+            locale={locale}
+            emptyLabel={t("admin.analytics_weddings_empty")}
+            labelWidth="4rem"
+          />
+          <div className="mt-3 mb-2 eyebrow">{t("admin.analytics_weddings_by_country")}</div>
+          <DistBars
+            rows={countryRows}
+            locale={locale}
+            emptyLabel={t("admin.analytics_weddings_empty")}
+            labelWidth="4rem"
+          />
+          <div className="mt-3 mb-2 eyebrow">{t("admin.analytics_weddings_by_locale")}</div>
+          <DistBars
+            rows={localeRows}
+            locale={locale}
+            emptyLabel={t("admin.analytics_weddings_empty")}
+            labelWidth="4rem"
+          />
+        </InnerCard>
+      </div>
+    </SectionCard>
+  );
+}
+
+// ─── Honeymoon section ─────────────────────────────────────────────────────
+
+function HoneymoonSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminHoneymoonAnalytics>;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const title = t("admin.analytics_section_honeymoon");
+  if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
+  if (state.status === "error")
+    return (
+      <SectionStatus title={title} variant="error" message={t("admin.analytics_load_error")} />
+    );
+
+  const h = state.data;
+  const adoptionPct = Math.round(h.adoption_pct * 100);
+  const destRows = h.top_destinations.map((r) => ({ label: r.destination, count: r.count }));
+  const originRows = h.top_origins.map((r) => ({ label: r.iata, count: r.count }));
+  const monthRows = h.start_month.map((r) => ({
+    label: monthLabel(r.month, locale),
+    count: r.count,
+  }));
+
+  return (
+    <SectionCard title={title}>
+      {h.couples_with_destination === 0 ? (
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
+          {t("admin.analytics_honeymoon_empty")}
+        </p>
+      ) : (
+        <>
+          <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <KpiTile
+              label={t("admin.analytics_honeymoon_with_destination")}
+              value={formatNumber(h.couples_with_destination, locale)}
+              sub={t("admin.analytics_honeymoon_adoption", { pct: adoptionPct })}
+              emphasis
+            />
+            <KpiTile
+              label={t("admin.analytics_honeymoon_top_destination")}
+              value={destRows[0]?.label ?? "—"}
+              sub={
+                destRows[0]
+                  ? t("admin.analytics_honeymoon_couples", {
+                      count: formatNumber(destRows[0].count, locale),
+                    })
+                  : undefined
+              }
+            />
+            <KpiTile
+              label={t("admin.analytics_honeymoon_trip_nights")}
+              value={formatNumber(h.trip_nights.median, locale)}
+              sub={statSub(h.trip_nights, locale, t)}
+            />
+            <KpiTile
+              label={t("admin.analytics_honeymoon_with_dates")}
+              value={formatNumber(h.couples_with_dates, locale)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.3fr_1fr]">
+            <InnerCard title={t("admin.analytics_honeymoon_top_destinations")}>
+              <DistBars
+                rows={destRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_honeymoon_empty")}
+                labelWidth="9rem"
+              />
+            </InnerCard>
+            <InnerCard title={t("admin.analytics_honeymoon_origins")}>
+              <DistBars
+                rows={originRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_honeymoon_origins_empty")}
+                labelWidth="4rem"
+              />
+              <div className="mt-3 mb-2 eyebrow">{t("admin.analytics_honeymoon_start_month")}</div>
+              <DistBars
+                rows={monthRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_honeymoon_empty")}
+                labelWidth="3rem"
+              />
+            </InnerCard>
+          </div>
+        </>
+      )}
+    </SectionCard>
+  );
+}
+
+// ─── Guests section ────────────────────────────────────────────────────────
+
+function GuestsSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminGuestAnalytics>;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const title = t("admin.analytics_section_guests");
+  if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
+  if (state.status === "error")
+    return (
+      <SectionStatus title={title} variant="error" message={t("admin.analytics_load_error")} />
+    );
+
+  const g = state.data;
+  const gpc = g.guests_per_couple;
+  const rsvpRows = [
+    { label: t("admin.analytics_guests_rsvp_yes"), count: g.rsvp_breakdown.yes },
+    { label: t("admin.analytics_guests_rsvp_maybe"), count: g.rsvp_breakdown.maybe },
+    { label: t("admin.analytics_guests_rsvp_no"), count: g.rsvp_breakdown.no },
+    { label: t("admin.analytics_guests_rsvp_pending"), count: g.rsvp_breakdown.pending },
+  ];
+  const kindRows = [
+    { label: t("admin.analytics_guests_kind_adult"), count: g.kind_breakdown.adult },
+    { label: t("admin.analytics_guests_kind_child"), count: g.kind_breakdown.child },
+    { label: t("admin.analytics_guests_kind_baby"), count: g.kind_breakdown.baby },
+  ];
+  const dietaryRows = [
+    { label: t("admin.analytics_guests_diet_vegetarian"), count: g.dietary.vegetarian },
+    { label: t("admin.analytics_guests_diet_vegan"), count: g.dietary.vegan },
+    { label: t("admin.analytics_guests_diet_gluten"), count: g.dietary.gluten },
+    { label: t("admin.analytics_guests_diet_lactose"), count: g.dietary.lactose },
+    { label: t("admin.analytics_guests_diet_nut"), count: g.dietary.nut },
+    { label: t("admin.analytics_guests_diet_other"), count: g.dietary.other_text },
+  ];
+
+  return (
+    <SectionCard title={title}>
+      {g.total_guests === 0 ? (
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
+          {t("admin.analytics_guests_empty")}
+        </p>
+      ) : (
+        <>
+          <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <KpiTile
+              label={t("admin.analytics_guests_total")}
+              value={formatNumber(g.total_guests, locale)}
+              sub={t("admin.analytics_guests_per_couple", {
+                avg: formatNumber(gpc.avg, locale),
+                couples: formatNumber(g.couples_with_guests, locale),
+              })}
+              emphasis
+            />
+            <KpiTile
+              label={t("admin.analytics_guests_response_rate")}
+              value={`${Math.round(g.response_rate * 100)}%`}
+            />
+            <KpiTile
+              label={t("admin.analytics_guests_acceptance_rate")}
+              value={`${Math.round(g.acceptance_rate * 100)}%`}
+            />
+            <KpiTile
+              label={t("admin.analytics_guests_plus_one")}
+              value={formatNumber(g.plus_one_count, locale)}
+              sub={t("admin.analytics_guests_accommodation", {
+                count: formatNumber(g.accommodation_needed_count, locale),
+              })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <InnerCard title={t("admin.analytics_guests_rsvp_title")}>
+              <DistBars
+                rows={rsvpRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_guests_empty")}
+                labelWidth="5rem"
+              />
+            </InnerCard>
+            <InnerCard title={t("admin.analytics_guests_kind_title")}>
+              <DistBars
+                rows={kindRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_guests_empty")}
+                labelWidth="5rem"
+              />
+              <div className="mt-3 text-xs text-neutral-500 dark:text-umber-300">
+                {t("admin.analytics_guests_song_requests", {
+                  count: formatNumber(g.song_request_count, locale),
+                })}
+              </div>
+            </InnerCard>
+            <InnerCard
+              title={t("admin.analytics_guests_dietary_title")}
+              subtitle={t("admin.analytics_guests_dietary_sub", {
+                count: formatNumber(g.guests_with_dietary, locale),
+              })}
+            >
+              <DistBars
+                rows={dietaryRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_guests_dietary_empty")}
+                labelWidth="6rem"
+              />
+            </InnerCard>
+          </div>
+        </>
+      )}
     </SectionCard>
   );
 }
