@@ -5,6 +5,7 @@ const en: LocaleMessages = {
     save: "Save",
     saving: "Saving…",
     edit: "Edit",
+    done: "Done",
     cancel: "Cancel",
     next: "Next",
     back: "Back",

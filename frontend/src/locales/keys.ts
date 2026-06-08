@@ -5,6 +5,7 @@ export interface LocaleMessages {
     save: string;
     saving: string;
     edit: string;
+    done: string;
     cancel: string;
     next: string;
     back: string;

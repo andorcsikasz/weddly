@@ -43,7 +43,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { InfoHint } from "../components/InfoHint";
-import { useConfirm, useToast } from "../components/ui";
+import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
   coupleApi,
@@ -482,6 +482,9 @@ export default function GuestPageEditorPage() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverDragOver, setCoverDragOver] = useState(false);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
+  // Which structured field is being edited in a modal sheet (click-to-edit on
+  // the preview opens these instead of scrolling to a form). null = closed.
+  const [editPanel, setEditPanel] = useState<"cover" | null>(null);
 
   const postRsvpTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -961,14 +964,6 @@ export default function GuestPageEditorPage() {
     if (el) window.setTimeout(() => el.focus(), 350);
   }
 
-  // Cover ghost in the preview is a shortcut to the cover dropzone below —
-  // reveal it and open the file picker.
-  function focusCoverDropzone() {
-    if (revealField("guest-page-cover-dropzone")) {
-      window.setTimeout(() => coverFileInputRef.current?.click(), 350);
-    }
-  }
-
   // Double-verify before flipping publish on/off — it controls whether the
   // /w/… link is reachable by anyone, so it shouldn't toggle on a stray click.
   async function onTogglePublish() {
@@ -1049,7 +1044,7 @@ export default function GuestPageEditorPage() {
               locale={locale}
               isPreview
               edit={{
-                onEditCover: focusCoverDropzone,
+                onEditCover: () => setEditPanel("cover"),
                 onEditDate: () => navigate("/app"),
                 onEditSchedule: () => navigate("/app/schedule"),
                 onEditVenue: focusVenueField,
@@ -1380,111 +1375,6 @@ export default function GuestPageEditorPage() {
                 />
               </div>
               <div className="mt-3">
-                <label htmlFor="guest-page-cover" className="field-label">
-                  {t("wedding_site_editor.cover_image_label")}
-                </label>
-                {/* Upload row — thumbnail of the current cover (if any) +
-                 *  Tallózás button. Hidden <input type="file"> so we can style
-                 *  the trigger as a regular outline button. Accept attribute
-                 *  mirrors the server-side MIME allowlist. */}
-                <div
-                  id="guest-page-cover-dropzone"
-                  tabIndex={-1}
-                  onDragOver={onCoverDragOver}
-                  onDragLeave={onCoverDragLeave}
-                  onDrop={onCoverDrop}
-                  className={`flex flex-col gap-3 rounded-xl border border-dashed p-4 transition ${
-                    coverDragOver
-                      ? "border-sage-400 bg-sage-50 dark:border-sage-500 dark:bg-umber-800"
-                      : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {coverImageUrl ? (
-                      <img
-                        src={coverImageUrl}
-                        alt={t("wedding_site_editor.cover_upload_preview_alt")}
-                        className="h-14 w-20 shrink-0 rounded-md border border-paper-300 object-cover dark:border-umber-700"
-                      />
-                    ) : (
-                      <div
-                        className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-dashed border-paper-300 text-ink-400 dark:border-umber-700 dark:text-umber-300"
-                        aria-hidden
-                      >
-                        <Upload size={18} />
-                      </div>
-                    )}
-                    <input
-                      ref={coverFileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="sr-only"
-                      onChange={onCoverFileChange}
-                    />
-                    <button
-                      type="button"
-                      className="btn-outline btn-sm"
-                      disabled={coverUploading}
-                      onClick={() => coverFileInputRef.current?.click()}
-                    >
-                      <Upload size={14} aria-hidden />
-                      {coverUploading
-                        ? t("wedding_site_editor.cover_upload_uploading")
-                        : coverImageUrl
-                          ? t("wedding_site_editor.cover_upload_replace")
-                          : t("wedding_site_editor.cover_upload_button")}
-                    </button>
-                    {/* Red-outline trash — clears the cover. Setting the URL
-                        to "" is treated as "clear the column" by the save
-                        path. Only shown once a cover exists. */}
-                    {coverImageUrl && !coverUploading && (
-                      <button
-                        type="button"
-                        onClick={() => setCoverImageUrl("")}
-                        aria-label={t("wedding_site_editor.cover_image_remove")}
-                        title={t("wedding_site_editor.cover_image_remove")}
-                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-500 text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 dark:border-red-400/60 dark:text-red-300 dark:hover:bg-red-400/15"
-                      >
-                        <Trash2 size={14} aria-hidden />
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-xs text-ink-400 dark:text-umber-300">
-                    {coverDragOver
-                      ? t("wedding_site_editor.cover_drop_active")
-                      : t("wedding_site_editor.cover_drop_hint")}
-                  </p>
-                </div>
-                <input
-                  id="guest-page-cover"
-                  type="text"
-                  className="input mt-2"
-                  value={coverImageUrl}
-                  onChange={(e) => setCoverImageUrl(e.target.value)}
-                  placeholder={t("wedding_site_editor.cover_image_placeholder")}
-                  maxLength={2048}
-                  inputMode="url"
-                  autoComplete="off"
-                />
-                {coverTrimmed !== "" && (
-                  <CoverPositioner
-                    src={coverTrimmed}
-                    x={coverPositionX}
-                    y={coverPositionY}
-                    onChange={(nx, ny) => {
-                      setCoverPositionX(nx);
-                      setCoverPositionY(ny);
-                    }}
-                    onCommit={(nx, ny) => {
-                      void coupleApi
-                        .update({ cover_position_x: nx, cover_position_y: ny })
-                        .catch(() => undefined);
-                    }}
-                    hint={t("wedding_site_editor.cover_position_hint")}
-                  />
-                )}
-              </div>
-              <div className="mt-3">
                 <label htmlFor="guest-page-intro" className="field-label">
                   {t("guest_page_editor.intro_label")}
                 </label>
@@ -1674,6 +1564,106 @@ export default function GuestPageEditorPage() {
           </form>
         </div>
       </details>
+
+      {/* Cover editor — opened by clicking the hero / cover ghost in the
+          preview. A modal sheet (bottom sheet on mobile) so the couple never
+          scrolls to a form. Hosts upload + drag-drop + remove + the focal-point
+          positioner; the raw URL input was dropped as a pre-upload relic. */}
+      <Dialog
+        open={editPanel === "cover"}
+        role="dialog"
+        closeOnBackdrop
+        title={t("wedding_site_editor.cover_image_label")}
+        onClose={() => setEditPanel(null)}
+        footer={
+          <button type="button" className="btn-primary" onClick={() => setEditPanel(null)}>
+            {t("common.done")}
+          </button>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <div
+            onDragOver={onCoverDragOver}
+            onDragLeave={onCoverDragLeave}
+            onDrop={onCoverDrop}
+            className={`flex flex-col gap-3 rounded-xl border border-dashed p-4 transition ${
+              coverDragOver
+                ? "border-sage-400 bg-sage-50 dark:border-sage-500 dark:bg-umber-800"
+                : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800/40"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {coverImageUrl ? (
+                <img
+                  src={coverImageUrl}
+                  alt={t("wedding_site_editor.cover_upload_preview_alt")}
+                  className="h-14 w-20 shrink-0 rounded-md border border-paper-300 object-cover dark:border-umber-700"
+                />
+              ) : (
+                <div
+                  className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-dashed border-paper-300 text-ink-400 dark:border-umber-700 dark:text-umber-300"
+                  aria-hidden
+                >
+                  <Upload size={18} />
+                </div>
+              )}
+              <input
+                ref={coverFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={onCoverFileChange}
+              />
+              <button
+                type="button"
+                className="btn-outline btn-sm"
+                disabled={coverUploading}
+                onClick={() => coverFileInputRef.current?.click()}
+              >
+                <Upload size={14} aria-hidden />
+                {coverUploading
+                  ? t("wedding_site_editor.cover_upload_uploading")
+                  : coverImageUrl
+                    ? t("wedding_site_editor.cover_upload_replace")
+                    : t("wedding_site_editor.cover_upload_button")}
+              </button>
+              {coverImageUrl && !coverUploading && (
+                <button
+                  type="button"
+                  onClick={() => setCoverImageUrl("")}
+                  aria-label={t("wedding_site_editor.cover_image_remove")}
+                  title={t("wedding_site_editor.cover_image_remove")}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-500 text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 dark:border-red-400/60 dark:text-red-300 dark:hover:bg-red-400/15"
+                >
+                  <Trash2 size={14} aria-hidden />
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-ink-400 dark:text-umber-300">
+              {coverDragOver
+                ? t("wedding_site_editor.cover_drop_active")
+                : t("wedding_site_editor.cover_drop_hint")}
+            </p>
+          </div>
+          {coverTrimmed !== "" && (
+            <CoverPositioner
+              src={coverTrimmed}
+              x={coverPositionX}
+              y={coverPositionY}
+              onChange={(nx, ny) => {
+                setCoverPositionX(nx);
+                setCoverPositionY(ny);
+              }}
+              onCommit={(nx, ny) => {
+                void coupleApi
+                  .update({ cover_position_x: nx, cover_position_y: ny })
+                  .catch(() => undefined);
+              }}
+              hint={t("wedding_site_editor.cover_position_hint")}
+            />
+          )}
+        </div>
+      </Dialog>
     </>
   );
 }

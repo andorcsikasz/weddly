@@ -5,6 +5,7 @@ const hu: LocaleMessages = {
     save: "Mentés",
     saving: "Mentés…",
     edit: "Szerkesztés",
+    done: "Kész",
     cancel: "Mégse",
     next: "Tovább",
     back: "Vissza",

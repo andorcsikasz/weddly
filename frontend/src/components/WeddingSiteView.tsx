@@ -513,7 +513,12 @@ export function WeddingSiteView({
         {/* Cover photo — full-width, pulled up under the date so the big
             numerals overlap its top edge. Dashed ghost when still empty. */}
         {view.cover_image_url ? (
-          <div className={heroDateBig ? "-mt-4 w-full sm:-mt-6" : "mt-8 w-full"}>
+          <div
+            className={`${heroDateBig ? "-mt-4 w-full sm:-mt-6" : "mt-8 w-full"}${
+              isPreview && e.onEditCover ? " cursor-pointer transition hover:opacity-95" : ""
+            }`}
+            {...(isPreview ? editAffordance(e.onEditCover, editHint) : {})}
+          >
             <img
               src={view.cover_image_url}
               alt=""
