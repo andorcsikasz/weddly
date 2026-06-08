@@ -2296,6 +2296,18 @@ export interface LocaleMessages {
     send_invite_label: string;
     send_invite_help: string;
     send_invite_disabled_help: string;
+    invite_send: string;
+    invite_send_count: string;
+    invite_send_hint: string;
+    invite_none_eligible: string;
+    invite_confirm_title: string;
+    invite_confirm_intro: string;
+    invite_confirm_eligible: string;
+    invite_confirm_already: string;
+    invite_confirm_no_email: string;
+    invite_confirm_send: string;
+    invite_sent_toast: string;
+    invite_failed_toast: string;
     phone: string;
     group: string;
     rsvp: string;

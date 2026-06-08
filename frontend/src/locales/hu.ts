@@ -2089,6 +2089,20 @@ const hu: LocaleMessages = {
       "Egy gombnyomásra a vendég megkapja a meghívót a megadott e-mail címre, benne egy egykattintásos visszajelző-linkkel.",
     send_invite_disabled_help:
       "Add meg az e-mail címet, hogy a meghívót automatikusan elküldhessük.",
+    invite_send: "Meghívók kiküldése",
+    invite_send_count: "Meghívók kiküldése ({count})",
+    invite_send_hint:
+      "Háztartásonként egy meghívó megy ki azoknak, akiknek van e-mail címük és még nem kaptak.",
+    invite_none_eligible:
+      "Nincs kinek kiküldeni: vagy mindenki megkapta már, vagy nincs megadva e-mail cím.",
+    invite_confirm_title: "Meghívók kiküldése",
+    invite_confirm_intro: "{count} háztartásnak küldünk most meghívót e-mailben.",
+    invite_confirm_eligible: "{count} új meghívó megy ki",
+    invite_confirm_already: "{count} már kapott korábban, ezért kimarad",
+    invite_confirm_no_email: "{count} háztartásnak nincs e-mail címe, ők kimaradnak",
+    invite_confirm_send: "Kiküldés ({count})",
+    invite_sent_toast: "{count} meghívó elküldve.",
+    invite_failed_toast: "{count} meghívót nem sikerült elküldeni, próbáld újra.",
     phone: "Telefon",
     group: "Csoport",
     rsvp: "Visszajelzés",

@@ -683,6 +683,13 @@ addColumnIfMissing(
   "is_supplier_household INTEGER NOT NULL DEFAULT 0",
 );
 
+// Set the first time a digital invite goes out to the household (the
+// `POST /api/households/invite-batch` mass-send, or a future single send).
+// Drives the "never invite twice" guard: the batch send only targets
+// households where this is still NULL. A failed send leaves it NULL so a
+// retry re-sends. Mapped to `Household.invited_at` in `toHousehold`.
+addColumnIfMissing("households", "invited_at", "invited_at INTEGER");
+
 // Multi-workspace membership: a user can belong to several couple
 // workspaces (Alpha / Bravo / Charlie for a wedding with multiple events).
 // `users.couple_id` continues to mean "the workspace this user is currently

@@ -239,6 +239,7 @@ function makeHousehold(over: Partial<Household> = {}): Household {
     rsvp_offers_accommodation: false,
     rsvp_collects_meal: true,
     auto_created: false,
+    invited_at: null,
     created_at: 0,
     updated_at: 0,
     ...over,

@@ -861,6 +861,24 @@ export const householdApi = {
       `/api/households/${id}/rotate-code`,
       {},
     ),
+  /** Mass invite send. With `household_ids` omitted the backend targets every
+   *  eligible household; we pass the explicit eligible set computed on the
+   *  client so the confirm dialog and the actual send agree. The backend is
+   *  authoritative: it re-checks `invited_at` so a household is never invited
+   *  twice even if two planners click at once. */
+  inviteBatch: (body: { household_ids?: number[]; resend?: boolean }) =>
+    apiFetch<{
+      sent: number;
+      failed: number;
+      skipped_already_invited: number;
+      skipped_no_email: number;
+      results: Array<{
+        household_id: number;
+        label: string;
+        status: "sent" | "failed" | "skipped_already_invited" | "skipped_no_email";
+        email: string | null;
+      }>;
+    }>("POST", "/api/households/invite-batch", body),
 };
 
 export const budgetApi = {

@@ -4,14 +4,18 @@
 // ("rotated for security" vs "renamed label").
 
 import type { GuestGroupTag, Household } from "@shared/types";
+import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { type CoupleRow, getCoupleForUser } from "../domain/couples";
+import { sendKind } from "../domain/emails";
 import { isGuestGroupTag } from "../domain/guests";
 import {
   createHousehold,
   getHouseholdById,
+  householdContactMember,
   listHouseholdsByCouple,
   listMembers,
+  markHouseholdInvited,
   regenerateHouseholdCode,
   setHouseholdGroupTag,
   toHousehold,
@@ -19,6 +23,12 @@ import {
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
+
+// Mass invite send is a bursty, expensive operation (one outbound email per
+// household). Cap it well below the per-guest single send: 6 batch calls up
+// front, then one refill every 30s. Keyed per couple so one workspace can't
+// starve another.
+const INVITE_BATCH_BUCKET = { capacity: 6, refillRate: 1 / 30 };
 
 function viewOf(
   row: { id: number },
@@ -301,9 +311,150 @@ function handleRotateCode(ctx: Ctx): Response {
   return json({ household: { id, code: newCode } });
 }
 
+interface InviteBatchBody {
+  /** Households to target. Omitted / empty = every eligible household in the
+   *  workspace (the "send to everyone who hasn't been invited" path). */
+  household_ids?: unknown;
+  /** Re-send to households already stamped `invited_at`. Default false — the
+   *  whole point of the feature is to never invite a household twice, so a
+   *  re-send is an explicit opt-in (e.g. address corrected). */
+  resend?: unknown;
+}
+
+type InviteOutcome = "sent" | "failed" | "skipped_already_invited" | "skipped_no_email";
+
+/** Mass invite send — one email per household to its contact address, carrying
+ *  the shared check-in link. The dedup guard lives here: a household whose
+ *  `invited_at` is already set is skipped unless `resend` is true, and a
+ *  household with no member email is reported (never silently dropped). A
+ *  failed send leaves `invited_at` null so the next run retries it. */
+async function handleInviteBatch(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  rateLimit(`couple:${couple.id}`, "household:invite_batch", INVITE_BATCH_BUCKET);
+
+  if (!couple.slug) {
+    throw new HttpError(400, "Set up your wedding slug before sending invites");
+  }
+
+  const body = await readJson<InviteBatchBody>(ctx.req);
+  const resend = body.resend === true;
+  let candidates: ReturnType<typeof getHouseholdById>[];
+  if (Array.isArray(body.household_ids)) {
+    if (body.household_ids.length > 1000) throw new HttpError(400, "Too many households");
+    const ids = body.household_ids.filter((v): v is number => typeof v === "number");
+    candidates = ids.map((id) => getHouseholdById(id, couple.id));
+  } else {
+    candidates = listHouseholdsByCouple(couple.id);
+  }
+
+  const ts = now();
+  const results: Array<{
+    household_id: number;
+    label: string;
+    status: InviteOutcome;
+    email: string | null;
+  }> = [];
+  let sent = 0;
+  let failed = 0;
+  let skippedAlready = 0;
+  let skippedNoEmail = 0;
+
+  for (const hh of candidates) {
+    if (!hh) continue;
+    // Suppliers (booked vendors) and the hosts' own household are never RSVP
+    // invitees — skip them silently rather than reporting them as "no email".
+    if (hh.is_supplier_household === 1) continue;
+    const members = listMembers(hh.id);
+    if (members.some((m) => m.partner_role !== null && m.partner_role !== undefined)) continue;
+
+    const contact = householdContactMember(members);
+    if (!contact || !contact.email) {
+      skippedNoEmail++;
+      results.push({
+        household_id: hh.id,
+        label: hh.label,
+        status: "skipped_no_email",
+        email: null,
+      });
+      continue;
+    }
+    if (hh.invited_at !== null && !resend) {
+      skippedAlready++;
+      results.push({
+        household_id: hh.id,
+        label: hh.label,
+        status: "skipped_already_invited",
+        email: contact.email,
+      });
+      continue;
+    }
+
+    const rsvpUrl = `${CONFIG.frontendBaseUrl}/rsvp?couple=${couple.slug}&code=${hh.code}`;
+    const res = await sendKind(
+      "guest_invite",
+      {
+        coupleDisplayName: couple.display_name,
+        guestName: contact.full_name,
+        weddingDate: couple.wedding_date,
+        rsvpUrl,
+      },
+      {
+        user: null,
+        guest: { email: contact.email, full_name: contact.full_name },
+        couple_id: couple.id,
+        submitterUserId: userId,
+      },
+    );
+
+    if (res.status === "failed") {
+      // A real send failure stays uninvited so the next batch retries it (the
+      // "never 0x" half of the guarantee). Every other outcome — "sent", or
+      // "skipped_no_provider" in a billing-less dev/test env — counts as
+      // dispatched and gets stamped so we never double-send.
+      failed++;
+      results.push({
+        household_id: hh.id,
+        label: hh.label,
+        status: "failed",
+        email: contact.email,
+      });
+    } else {
+      markHouseholdInvited(hh.id, couple.id, ts);
+      sent++;
+      results.push({ household_id: hh.id, label: hh.label, status: "sent", email: contact.email });
+    }
+  }
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "household.invite_batch",
+    target_kind: "household",
+    target_id: results[0]?.household_id ?? 0,
+    after: {
+      sent,
+      failed,
+      skipped_already_invited: skippedAlready,
+      skipped_no_email: skippedNoEmail,
+    },
+  });
+
+  return json({
+    sent,
+    failed,
+    skipped_already_invited: skippedAlready,
+    skipped_no_email: skippedNoEmail,
+    results,
+  });
+}
+
 export function registerHouseholdRoutes(router: Router) {
   router.get("/api/households", handleList, true);
   router.post("/api/households", handleCreate, true);
+  router.post("/api/households/invite-batch", handleInviteBatch, true);
   router.patch("/api/households/:id", handleUpdate, true);
   router.delete("/api/households/:id", handleDelete, true);
   router.post("/api/households/:id/regenerate-code", handleRegenCode, true);

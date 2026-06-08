@@ -121,6 +121,7 @@ export default function GuestsPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [mealsOpen, setMealsOpen] = useState(false);
   const [orphanFixing, setOrphanFixing] = useState(false);
+  const [sendingInvites, setSendingInvites] = useState(false);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   // ── Search state ────────────────────────────────────────────────────
   // `query` is the raw text in the input; `debouncedQuery` is what we
@@ -247,6 +248,79 @@ export default function GuestsPage() {
     if (!ok) return;
     await householdApi.regenerateCode(hh.id);
     refresh();
+  }
+
+  // Mass invite send breakdown, computed from the loaded data so the confirm
+  // dialog shows exactly who gets a letter before anything goes out. The
+  // backend re-derives and re-checks `invited_at`, so this is a preview, not
+  // the source of truth. Three buckets:
+  //   • eligible        — has a contact email AND not yet invited → will send
+  //   • alreadyInvited  — invited_at set → skipped (no double send)
+  //   • noEmail         — no member has an email → can't send, surfaced so the
+  //                       couple can add an address (no silent 0x)
+  // Suppliers and the hosts' own household are never invitees.
+  const inviteBreakdown = useMemo(() => {
+    const membersByHh = new Map<number, Guest[]>();
+    for (const g of guests) {
+      if (g.household_id == null) continue;
+      const arr = membersByHh.get(g.household_id);
+      if (arr) arr.push(g);
+      else membersByHh.set(g.household_id, [g]);
+    }
+    const eligible: Household[] = [];
+    const alreadyInvited: Household[] = [];
+    const noEmail: Household[] = [];
+    for (const hh of households) {
+      if (hh.is_supplier_household || hh.is_couple_household) continue;
+      const contact = (membersByHh.get(hh.id) ?? [])
+        .filter((m) => !m.is_supplier && m.email && m.email.trim().length > 0)
+        .sort((a, b) => a.id - b.id)[0];
+      if (!contact) noEmail.push(hh);
+      else if (hh.invited_at != null) alreadyInvited.push(hh);
+      else eligible.push(hh);
+    }
+    return { eligible, alreadyInvited, noEmail };
+  }, [households, guests]);
+
+  async function onMassInvite() {
+    const { eligible, alreadyInvited, noEmail } = inviteBreakdown;
+    if (eligible.length === 0) {
+      toast.info(t("guests.invite_none_eligible"));
+      return;
+    }
+    const ok = await confirm({
+      title: t("guests.invite_confirm_title"),
+      body: (
+        <div className="space-y-2 text-sm">
+          <p>{t("guests.invite_confirm_intro", { count: eligible.length })}</p>
+          <ul className="space-y-1 text-ink-600 dark:text-umber-200">
+            <li>{t("guests.invite_confirm_eligible", { count: eligible.length })}</li>
+            {alreadyInvited.length > 0 && (
+              <li>{t("guests.invite_confirm_already", { count: alreadyInvited.length })}</li>
+            )}
+            {noEmail.length > 0 && (
+              <li className="text-blush-700 dark:text-blush-300">
+                {t("guests.invite_confirm_no_email", { count: noEmail.length })}
+              </li>
+            )}
+          </ul>
+        </div>
+      ),
+      confirmLabel: t("guests.invite_confirm_send", { count: eligible.length }),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setSendingInvites(true);
+    try {
+      const res = await householdApi.inviteBatch({ household_ids: eligible.map((h) => h.id) });
+      toast.success(t("guests.invite_sent_toast", { count: res.sent }));
+      if (res.failed > 0) toast.error(t("guests.invite_failed_toast", { count: res.failed }));
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setSendingInvites(false);
+    }
   }
 
   async function onRenameHousehold(id: number, label: string) {
@@ -572,6 +646,18 @@ export default function GuestsPage() {
             title={t("guests.meals_hint")}
           >
             <Utensils size={16} aria-hidden /> {t("guests.meals_button")}
+          </button>
+          <button
+            type="button"
+            className="btn-outline !border-ink-700 dark:!border-paper-100"
+            onClick={onMassInvite}
+            disabled={sendingInvites || inviteBreakdown.eligible.length === 0}
+            title={t("guests.invite_send_hint")}
+          >
+            <Send size={16} aria-hidden />{" "}
+            {inviteBreakdown.eligible.length > 0
+              ? t("guests.invite_send_count", { count: inviteBreakdown.eligible.length })
+              : t("guests.invite_send")}
           </button>
           <button
             type="button"

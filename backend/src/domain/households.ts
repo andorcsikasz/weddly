@@ -36,6 +36,9 @@ export interface HouseholdRow {
   /** 1 for the single per-couple household that collects suppliers (DJ,
    *  photographer, …). Guests flagged is_supplier are auto-routed here. */
   is_supplier_household: number;
+  /** Unix ms the household's first digital invite was sent, or null. The
+   *  mass-send dedup key — see the column comment in db.ts. */
+  invited_at: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -200,6 +203,30 @@ export function setHouseholdGroupTag(
   ).run(groupTag, ts, householdId, coupleId);
 }
 
+/** The single address a household's invite is sent to. We send ONE email per
+ *  household (the check-in code is shared), so pick the lowest-id member that
+ *  actually carries an address. Suppliers are skipped — booked vendors aren't
+ *  RSVP invitees. Returns null when nobody in the household has an email, which
+ *  the mass-send reports as "skipped, no address" rather than silently. */
+export function householdContactMember(members: GuestRow[]): GuestRow | null {
+  const candidate = members
+    .filter((m) => m.is_supplier !== 1 && typeof m.email === "string" && m.email.trim().length > 0)
+    .sort((a, b) => a.id - b.id)[0];
+  return candidate ?? null;
+}
+
+/** Stamp the household as invited and propagate to its members' `invited_at`
+ *  (only where still null) so the per-guest 3-state chip on /app/guests reflects
+ *  the digital send. Idempotent: a re-send keeps the original member stamps. */
+export function markHouseholdInvited(householdId: number, coupleId: number, ts: number): void {
+  db.prepare(
+    "UPDATE households SET invited_at = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+  ).run(ts, ts, householdId, coupleId);
+  db.prepare(
+    "UPDATE guests SET invited_at = ?, updated_at = ? WHERE household_id = ? AND couple_id = ? AND invited_at IS NULL",
+  ).run(ts, ts, householdId, coupleId);
+}
+
 export function regenerateHouseholdCode(householdId: number, coupleId: number): string {
   const code = uniqueHouseholdCode(coupleId);
   db.prepare("UPDATE households SET code = ?, updated_at = ? WHERE id = ? AND couple_id = ?").run(
@@ -236,6 +263,7 @@ export function toHousehold(
     rsvp_offers_accommodation: row.rsvp_offers_accommodation === 1,
     rsvp_collects_meal: row.rsvp_collects_meal === 1,
     auto_created: row.auto_created === 1,
+    invited_at: row.invited_at ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

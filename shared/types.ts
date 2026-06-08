@@ -672,6 +672,10 @@ export interface Household {
    *  Lets the household tab optionally hide stub singletons via
    *  `GET /api/households?exclude_auto_singletons=1`. */
   auto_created: boolean;
+  /** Set the first time a digital invite is sent to this household (mass-send
+   *  on /app/guests). `null` = not yet invited. The mass-send only targets
+   *  households where this is null, so nobody gets invited twice. */
+  invited_at: UnixMs | null;
   created_at: UnixMs;
   updated_at: UnixMs;
 }
