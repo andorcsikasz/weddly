@@ -430,89 +430,91 @@ export default function PlanningPage() {
   return (
     <>
       <div>
-        <header className="mb-6">
+        <header className="mb-4">
           <h1 className="text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
             {t("planning.title")}
           </h1>
-          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">{t("planning.sub")}</p>
+          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{t("planning.sub")}</p>
         </header>
 
-        <nav
-          role="tablist"
-          aria-label={t("planning.tabs_aria")}
-          className="mb-5 flex gap-1 rounded-2xl border border-paper-300 bg-paper-100/50 p-1 dark:border-umber-700 dark:bg-umber-700/60"
-        >
-          {TABS.map((tab) => {
-            const active = tab.kind === activeKind;
-            const Icon = tab.kind === "task" ? CheckCircle2 : Lightbulb;
-            return (
-              <button
-                key={tab.kind}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveKind(tab.kind)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
-                  active
-                    ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-paper-50 dark:text-umber-900"
-                    : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
-                }`}
-              >
-                <Icon size={16} aria-hidden="true" />
-                <span>{t(tab.labelKey)}</span>
-              </button>
-            );
-          })}
-        </nav>
+        {/* Tabs and the per-tab actions share one row to keep the header
+         *  compact. Tabs anchor left; actions push right via ml-auto, and the
+         *  whole row stacks on narrow screens. */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <nav
+            role="tablist"
+            aria-label={t("planning.tabs_aria")}
+            className="inline-flex gap-1 rounded-2xl border border-paper-300 bg-paper-100/50 p-1 dark:border-umber-700 dark:bg-umber-700/60"
+          >
+            {TABS.map((tab) => {
+              const active = tab.kind === activeKind;
+              const Icon = tab.kind === "task" ? CheckCircle2 : Lightbulb;
+              return (
+                <button
+                  key={tab.kind}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setActiveKind(tab.kind)}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm transition-colors sm:flex-none ${
+                    active
+                      ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-paper-50 dark:text-umber-900"
+                      : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
+                  }`}
+                >
+                  <Icon size={16} aria-hidden="true" />
+                  <span>{t(tab.labelKey)}</span>
+                </button>
+              );
+            })}
+          </nav>
 
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          {activeKind === "task" && (
-            <>
-              {/* Discoverability: surface the timeline view from the same row
-               *  as the wand. mr-auto pushes the wand button to the right
-               *  edge so the cross-page link stays visually anchored left. */}
-              <Link
-                to="/app/timeline"
-                className="btn-outline btn-sm mr-auto inline-flex items-center gap-1.5"
-                title={t("planning.timeline_link_hint")}
-              >
-                <GanttChartSquare size={14} aria-hidden="true" />
-                <span>{t("planning.timeline_link")}</span>
-                <ArrowRight size={12} aria-hidden="true" />
-              </Link>
-              <button
-                type="button"
-                onClick={() => setTaskWandOpen(true)}
-                className="btn-ghost btn-sm inline-flex items-center gap-1.5"
-                title={t("planning.task_template_button_hint")}
-              >
-                <Wand2 size={14} aria-hidden="true" />
-                <span>{t("planning.task_template_button")}</span>
-              </button>
-            </>
-          )}
-          {activeKind === "idea" && (
-            <>
-              <button
-                type="button"
-                onClick={() => setIdeaWandOpen(true)}
-                className="btn-ghost btn-sm ml-auto inline-flex items-center gap-1.5"
-                title={t("planning.idea_template_button_hint")}
-              >
-                <Wand2 size={14} aria-hidden="true" />
-                <span>{t("planning.idea_template_button")}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDiceOpen(true)}
-                className="btn-ghost btn-sm inline-flex items-center gap-1.5"
-                title={t("planning.dice_button_hint")}
-              >
-                <Dices size={14} aria-hidden="true" />
-                <span>{t("planning.dice_button")}</span>
-              </button>
-            </>
-          )}
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+            {activeKind === "task" && (
+              <>
+                <Link
+                  to="/app/timeline"
+                  className="btn-outline btn-sm inline-flex items-center gap-1.5"
+                  title={t("planning.timeline_link_hint")}
+                >
+                  <GanttChartSquare size={14} aria-hidden="true" />
+                  <span>{t("planning.timeline_link")}</span>
+                  <ArrowRight size={12} aria-hidden="true" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setTaskWandOpen(true)}
+                  className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+                  title={t("planning.task_template_button_hint")}
+                >
+                  <Wand2 size={14} aria-hidden="true" />
+                  <span>{t("planning.task_template_button")}</span>
+                </button>
+              </>
+            )}
+            {activeKind === "idea" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIdeaWandOpen(true)}
+                  className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+                  title={t("planning.idea_template_button_hint")}
+                >
+                  <Wand2 size={14} aria-hidden="true" />
+                  <span>{t("planning.idea_template_button")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDiceOpen(true)}
+                  className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+                  title={t("planning.dice_button_hint")}
+                >
+                  <Dices size={14} aria-hidden="true" />
+                  <span>{t("planning.dice_button")}</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <QuickAddForm
