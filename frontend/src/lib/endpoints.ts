@@ -77,7 +77,7 @@ import type {
   UpdateInstallmentInput,
 } from "@shared/couple_suppliers";
 import type { CoupleSupplierCost, UpsertCoupleSupplierCostInput } from "@shared/supplier_costs";
-import type { FeedbackEntry, FeedbackStatus } from "@shared/feedback";
+import type { FeedbackEntry, FeedbackPriority, FeedbackStatus } from "@shared/feedback";
 import type {
   DecideVendorWaitlistInput,
   SubmitVendorWaitlistInput,
@@ -1414,6 +1414,8 @@ export interface FeedbackInput {
   /** In-app route the dialog was opened from (e.g. "/app/media"), so admins
    *  can see which surface in-product feedback is about. App-source only. */
   context?: string;
+  /** Full URL (window.location.href) so admins can reproduce exactly. */
+  url?: string;
   message?: string;
   rating?: number;
   monthly_value_ft?: number;
@@ -1512,6 +1514,16 @@ export const adminFeedbackApi = {
   list: () => apiFetch<{ entries: FeedbackEntry[] }>("GET", "/api/admin/feedback"),
   setStatus: (id: number, status: FeedbackStatus) =>
     apiFetch<{ entry: FeedbackEntry }>("PATCH", `/api/admin/feedback/${id}/status`, { status }),
+  /** Update triage fields. Omit a key to leave it unchanged; pass null to
+   *  clear it. */
+  triage: (
+    id: number,
+    patch: {
+      priority?: FeedbackPriority | null;
+      feature_area?: string | null;
+      admin_notes?: string | null;
+    },
+  ) => apiFetch<{ entry: FeedbackEntry }>("PATCH", `/api/admin/feedback/${id}`, patch),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/feedback/${id}`),
 };
 

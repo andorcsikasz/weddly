@@ -1,64 +1,123 @@
-// Admin triage for in-product Visszajelzés submissions. Lists every
-// entry newest-first, with status pills + actions to mark read /
-// resolved / dismissed / re-open / delete. A multi-select filter chip
-// row at the top scopes the table; the default selection is "new + read"
-// ("untriaged") so the work that needs attention is what the page loads
-// into. The fetch is tri-state — loading skeleton → list / error inline
-// with retry — so an API outage doesn't disguise itself as an empty inbox.
+// Admin triage for in-product Visszajelzés submissions. Lists every entry
+// newest-first with status + priority + product-area pills and an expandable
+// triage panel per row (lifecycle, priority, area, internal notes, captured
+// technical context). A multi-select filter chip row scopes the table; the
+// default selection is the open working set (new + reviewed + planned) so the
+// page loads into the work that needs attention. The fetch is tri-state —
+// loading skeleton → list / error inline with retry — so an API outage
+// doesn't disguise itself as an empty inbox.
 
-import type { FeedbackEntry, FeedbackStatus } from "@shared/feedback";
-import { CheckCircle2, Eye, Inbox, Mail, RotateCcw, Trash2, X } from "lucide-react";
+import type { FeedbackEntry, FeedbackPriority, FeedbackStatus } from "@shared/feedback";
+import {
+  Archive,
+  Ban,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Eye,
+  ExternalLink,
+  Inbox,
+  ListChecks,
+  Mail,
+  Monitor,
+  RotateCcw,
+  Smartphone,
+  Tablet,
+  Trash2,
+  X,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
 import type { PillTone } from "../components/admin";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
-import { useDocumentMeta } from "../lib/seo";
 import { ApiError } from "../lib/api";
 import { adminFeedbackApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
-/** Tri-state load envelope. Mirrors AdminAnalyticsPage so an API outage
- *  shows a real error card with retry — the previous `.catch(() =>
- *  setLoading(false))` silently disguised network failures as an empty
- *  inbox, which is the worst possible failure mode for triage. */
 type Loadable<T> = { status: "loading" } | { status: "ok"; data: T } | { status: "error" };
 
-/** All filterable statuses. The FeedbackStatus type ships with four; the
- *  panel critique mentioned a fifth (spam) that isn't in the type yet —
- *  picking it up here without a backend change would just dead-code a
- *  chip, so we stick to the four real statuses. When spam lands in
- *  shared/feedback.ts, add it to this array + the maps below. */
-const FILTERS: FeedbackStatus[] = ["new", "read", "resolved", "dismissed"];
+/** Full triage lifecycle, in workflow order. Drives the filter chips, the
+ *  status pill, and the segmented status control in the triage panel. */
+const STATUS_ORDER: readonly FeedbackStatus[] = [
+  "new",
+  "reviewed",
+  "planned",
+  "fixed",
+  "rejected",
+  "archived",
+];
 
-/** Default multi-select on mount — the untriaged bucket. Keeps the
- *  resting page focused on work that needs attention, instead of dumping
- *  every historical entry into view. */
-const DEFAULT_FILTER: ReadonlySet<FeedbackStatus> = new Set(["new", "read"]);
+/** Default multi-select on mount — the open working set. Keeps the resting
+ *  page on items that still need attention instead of dumping closed history
+ *  (fixed / rejected / archived) into view. */
+const DEFAULT_FILTER: ReadonlySet<FeedbackStatus> = new Set(["new", "reviewed", "planned"]);
 
-/** Pill tone + icon per status. The previous StatusPill was colour-only,
- *  which is bad for low-vision users; the icon adds a second signal so
- *  the status reads even when the hue doesn't land (light/dark mode,
- *  desaturated, monochrome printout). */
 const STATUS_TONES: Record<FeedbackStatus, PillTone> = {
   new: "violet",
-  read: "paper",
-  resolved: "sage",
-  dismissed: "muted",
+  reviewed: "paper",
+  planned: "ink",
+  fixed: "sage",
+  rejected: "muted",
+  archived: "muted",
 };
 
-const FILTER_KEY: Record<FeedbackStatus, string> = {
-  new: "admin.feedback_filter_new",
-  read: "admin.feedback_filter_read",
-  resolved: "admin.feedback_filter_resolved",
-  dismissed: "admin.feedback_filter_dismissed",
+function statusIcon(status: FeedbackStatus, size = 11) {
+  switch (status) {
+    case "new":
+      return <Inbox size={size} aria-hidden />;
+    case "reviewed":
+      return <Eye size={size} aria-hidden />;
+    case "planned":
+      return <Clock size={size} aria-hidden />;
+    case "fixed":
+      return <CheckCircle2 size={size} aria-hidden />;
+    case "rejected":
+      return <Ban size={size} aria-hidden />;
+    case "archived":
+      return <Archive size={size} aria-hidden />;
+  }
+}
+
+const PRIORITY_ORDER: readonly FeedbackPriority[] = ["low", "medium", "high"];
+const PRIORITY_TONES: Record<FeedbackPriority, PillTone> = {
+  low: "muted",
+  medium: "violet",
+  high: "blush",
 };
+
+/** Product-area options for the triage select. Aligned with the app's nav
+ *  surfaces; the value stored is the slug auto-inferred from the in-app route
+ *  at submission (overridable here). Any stored value outside this list is
+ *  prepended at render so it stays visible + selectable. */
+const FEATURE_AREAS: readonly string[] = [
+  "dashboard",
+  "budget",
+  "guests",
+  "seating",
+  "vendors",
+  "planning",
+  "timeline",
+  "schedule",
+  "logistics",
+  "moodboard",
+  "honeymoon",
+  "media",
+  "guest-page",
+  "design",
+  "wishlist",
+  "account",
+  "billing",
+  "admin",
+  "landing",
+  "other",
+];
 
 /** Maps the in-app pathname captured at submission (FeedbackEntry.context)
  *  to a human page label, reusing the same nav.* / admin.nav_* keys the
- *  sidebar already translates — so "Photos"/"Képek" stays in lockstep with
- *  the nav rename instead of drifting in a parallel string table. Longest,
- *  most specific prefix first; "/app" is the catch-all (dashboard + any
- *  unmapped surface). Matching is path-boundary aware so "/app/guests"
+ *  sidebar already translates. Longest, most specific prefix first; "/app"
+ *  is the catch-all. Matching is path-boundary aware so "/app/guests"
  *  doesn't swallow "/app/guest-page". */
 const APP_PAGE_LABELS: ReadonlyArray<{ prefix: string; key: string }> = [
   { prefix: "/app/admin/suppliers", key: "admin.nav_suppliers" },
@@ -84,9 +143,6 @@ const APP_PAGE_LABELS: ReadonlyArray<{ prefix: string; key: string }> = [
   { prefix: "/app", key: "nav.dashboard" },
 ];
 
-/** Friendly "where from" label for an entry. In-app rows resolve to the
- *  page they were submitted from (e.g. "Képek"); landing rows and in-app
- *  rows with no/unrecognised context fall back to the coarse source label. */
 function sourceLabel(
   entry: Pick<FeedbackEntry, "source" | "context">,
   t: (k: string) => string,
@@ -108,6 +164,8 @@ export default function AdminFeedbackPage() {
   const [loadable, setLoadable] = useState<Loadable<FeedbackEntry[]>>({ status: "loading" });
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [filter, setFilter] = useState<Set<FeedbackStatus>>(() => new Set(DEFAULT_FILTER));
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [notesDraft, setNotesDraft] = useState<Record<number, string>>({});
   const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
@@ -121,14 +179,11 @@ export default function AdminFeedbackPage() {
       .catch((e) => {
         if (cancelled) return;
         setLoadable({ status: "error" });
-        // Surface the underlying message in a toast too — the inline card
-        // shows a generic line + retry, the toast gives the specific reason.
         toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
       });
     return () => {
       cancelled = true;
     };
-    // toast/t are stable per render; reloadNonce is what drives a refetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadNonce]);
 
@@ -158,6 +213,52 @@ export default function AdminFeedbackPage() {
     }
   }
 
+  async function setPriority(id: number, next: FeedbackPriority | null) {
+    setPendingId(id);
+    try {
+      const r = await adminFeedbackApi.triage(id, { priority: next });
+      replaceEntry(r.entry);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function setArea(id: number, next: string | null) {
+    setPendingId(id);
+    try {
+      const r = await adminFeedbackApi.triage(id, { feature_area: next });
+      replaceEntry(r.entry);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function saveNotes(id: number) {
+    setPendingId(id);
+    try {
+      const r = await adminFeedbackApi.triage(id, { admin_notes: notesDraft[id] ?? "" });
+      replaceEntry(r.entry);
+      toast.success(t("admin.feedback_notes_saved"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  function toggleExpand(entry: FeedbackEntry) {
+    setExpandedId((cur) => {
+      if (cur === entry.id) return null;
+      // Seed the notes draft from the persisted value when opening.
+      setNotesDraft((d) => ({ ...d, [entry.id]: entry.admin_notes ?? "" }));
+      return entry.id;
+    });
+  }
+
   async function remove(id: number) {
     const ok = await confirm({
       title: t("admin.feedback_delete_confirm_title"),
@@ -182,10 +283,7 @@ export default function AdminFeedbackPage() {
     setFilter((cur) => {
       const next = new Set(cur);
       if (next.has(s)) {
-        // Don't allow zero-active — flipping the last one off would render an
-        // unconditionally empty page that looks like a bug. Clicking the
-        // active chip when it's the only one is a no-op.
-        if (next.size === 1) return cur;
+        if (next.size === 1) return cur; // never zero-active
         next.delete(s);
       } else {
         next.add(s);
@@ -197,7 +295,14 @@ export default function AdminFeedbackPage() {
   const entries = loadable.status === "ok" ? loadable.data : [];
 
   const counts = useMemo(() => {
-    const m: Record<FeedbackStatus, number> = { new: 0, read: 0, resolved: 0, dismissed: 0 };
+    const m: Record<FeedbackStatus, number> = {
+      new: 0,
+      reviewed: 0,
+      planned: 0,
+      fixed: 0,
+      rejected: 0,
+      archived: 0,
+    };
     for (const e of entries) m[e.status] += 1;
     return m;
   }, [entries]);
@@ -213,28 +318,25 @@ export default function AdminFeedbackPage() {
       month: "short",
       day: "numeric",
     });
-  // The `monthly_value_ft` column is unit-tagged by `entry.locale`: HU rows
-  // are HUF (0–15 000 range), EN rows are EUR (0–50 range). Column name is
-  // historic — see FeedbackDialog.tsx for the per-locale slider range.
-  // Rendering always uses the *admin's* locale for number grouping (so
-  // 1 234 vs 1,234), but the *entry's* locale picks the symbol.
   const fmtMoney = (amount: number, entryLocale: string | null) => {
     const symbol = entryLocale === "en" ? "€" : "Ft";
     const formatted = amount.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB");
     return entryLocale === "en" ? `${symbol}${formatted}` : `${formatted} ${symbol}`;
   };
 
+  const colSpan = 8;
+
   return (
     <>
       <AdminPageHeader title={t("admin.feedback_title")} subtitle={t("admin.feedback_sub")} />
 
       <div className="mb-3 flex flex-wrap gap-2">
-        {FILTERS.map((f) => {
+        {STATUS_ORDER.map((f) => {
           const count = counts[f];
           return (
             <AdminFilterChip
               key={f}
-              label={`${t(FILTER_KEY[f])}${count > 0 ? ` · ${count}` : ""}`}
+              label={`${t(`admin.feedback_filter_${f}`)}${count > 0 ? ` · ${count}` : ""}`}
               active={filter.has(f)}
               onClick={() => toggleFilter(f)}
             />
@@ -243,63 +345,7 @@ export default function AdminFeedbackPage() {
       </div>
 
       {loadable.status === "loading" ? (
-        <div className="admin-card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="eyebrow text-left">
-              <tr>
-                <th className="pb-3">{t("admin.feedback_col_submitter")}</th>
-                <th className="pb-3">{t("admin.feedback_col_message")}</th>
-                <th className="hidden pb-3 sm:table-cell">{t("admin.feedback_col_rating")}</th>
-                <th className="hidden pb-3 md:table-cell">{t("admin.feedback_col_monthly")}</th>
-                <th className="hidden pb-3 md:table-cell">{t("admin.feedback_col_source")}</th>
-                <th className="hidden pb-3 sm:table-cell">{t("admin.feedback_col_submitted")}</th>
-                <th className="pb-3">{t("admin.feedback_col_status")}</th>
-                <th className="pb-3 text-right">{t("admin.feedback_col_actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="border-t border-paper-200 dark:border-umber-700 align-top">
-                  <td className="py-3 pr-4">
-                    <div className="flex flex-col gap-1.5">
-                      <Skeleton width={120} height={14} />
-                      <Skeleton width={180} height={12} />
-                    </div>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <div className="flex max-w-md flex-col gap-1.5">
-                      <Skeleton width="100%" height={12} />
-                      <Skeleton width="85%" height={12} />
-                      <Skeleton width="60%" height={12} />
-                    </div>
-                  </td>
-                  <td className="hidden py-3 pr-4 sm:table-cell">
-                    <Skeleton width={36} height={14} />
-                  </td>
-                  <td className="hidden py-3 pr-4 md:table-cell">
-                    <Skeleton width={64} height={14} />
-                  </td>
-                  <td className="hidden py-3 pr-4 md:table-cell">
-                    <Skeleton width={56} height={12} />
-                  </td>
-                  <td className="hidden py-3 pr-4 sm:table-cell">
-                    <Skeleton width={80} height={12} />
-                  </td>
-                  <td className="py-3 pr-4">
-                    <Skeleton width={56} height={18} rounded="full" />
-                  </td>
-                  <td className="py-3">
-                    <div className="inline-flex flex-wrap justify-end gap-1">
-                      <Skeleton width={72} height={28} rounded="md" />
-                      <Skeleton width={72} height={28} rounded="md" />
-                      <Skeleton width={28} height={28} rounded="md" />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <FeedbackSkeleton t={t} />
       ) : loadable.status === "error" ? (
         <div className="admin-card flex flex-col items-center justify-center space-y-2 py-8 text-center">
           <p className="text-sm text-neutral-700 dark:text-paper-100">
@@ -331,8 +377,8 @@ export default function AdminFeedbackPage() {
               <tr>
                 <th className="pb-3">{t("admin.feedback_col_submitter")}</th>
                 <th className="pb-3">{t("admin.feedback_col_message")}</th>
-                <th className="hidden pb-3 sm:table-cell">{t("admin.feedback_col_rating")}</th>
-                <th className="hidden pb-3 md:table-cell">{t("admin.feedback_col_monthly")}</th>
+                <th className="hidden pb-3 lg:table-cell">{t("admin.feedback_col_area")}</th>
+                <th className="hidden pb-3 lg:table-cell">{t("admin.feedback_col_priority")}</th>
                 <th className="hidden pb-3 md:table-cell">{t("admin.feedback_col_source")}</th>
                 <th className="hidden pb-3 sm:table-cell">{t("admin.feedback_col_submitted")}</th>
                 <th className="pb-3">{t("admin.feedback_col_status")}</th>
@@ -344,131 +390,129 @@ export default function AdminFeedbackPage() {
                 const displayEmail = e.user_email ?? e.from_email;
                 const displayName =
                   e.user_full_name ?? (displayEmail ? "" : t("admin.feedback_anon"));
+                const expanded = expandedId === e.id;
                 return (
-                  <tr
-                    key={e.id}
-                    className="border-t border-paper-200 align-top transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-800/60"
-                  >
-                    <td className="py-3 pr-4">
-                      {displayName && (
-                        <p className="font-medium text-neutral-900 dark:text-paper-50">
-                          {displayName}
-                        </p>
-                      )}
-                      {displayEmail && (
-                        <a
-                          href={`mailto:${displayEmail}`}
-                          className="mt-0.5 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-800 dark:text-umber-300 dark:hover:text-paper-50"
+                  <FeedbackRowGroup key={e.id}>
+                    <tr className="border-t border-paper-200 align-top transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-800/60">
+                      <td className="py-3 pr-4">
+                        {displayName && (
+                          <p className="font-medium text-neutral-900 dark:text-paper-50">
+                            {displayName}
+                          </p>
+                        )}
+                        {displayEmail && (
+                          <a
+                            href={`mailto:${displayEmail}`}
+                            className="mt-0.5 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-800 dark:text-umber-300 dark:hover:text-paper-50"
+                          >
+                            <Mail size={11} aria-hidden />
+                            {displayEmail}
+                          </a>
+                        )}
+                        {!displayName && !displayEmail && (
+                          <span className="text-xs text-neutral-500 dark:text-umber-300">
+                            {t("admin.feedback_anon")}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {e.message ? (
+                          <p className="max-w-md whitespace-pre-wrap text-sm text-neutral-800 dark:text-paper-100">
+                            {e.message}
+                          </p>
+                        ) : (
+                          <span className="text-xs text-neutral-500 dark:text-umber-300">
+                            {t("admin.feedback_no_message")}
+                          </span>
+                        )}
+                        <div className="mt-1 flex gap-3 text-xs text-neutral-500 dark:text-umber-300 lg:hidden">
+                          {e.rating !== null && <span>★ {e.rating}/10</span>}
+                          {e.monthly_value_ft !== null && e.monthly_value_ft > 0 && (
+                            <span>{fmtMoney(e.monthly_value_ft, e.locale)}</span>
+                          )}
+                          {e.priority && <span>{t(`admin.feedback_priority_${e.priority}`)}</span>}
+                        </div>
+                      </td>
+                      <td className="hidden py-3 pr-4 lg:table-cell">
+                        {e.feature_area ? (
+                          <span className="text-xs text-neutral-700 dark:text-paper-100">
+                            {e.feature_area}
+                          </span>
+                        ) : (
+                          <span className="text-neutral-300 dark:text-umber-300">—</span>
+                        )}
+                      </td>
+                      <td className="hidden py-3 pr-4 lg:table-cell">
+                        {e.priority ? (
+                          <Pill tone={PRIORITY_TONES[e.priority]}>
+                            {t(`admin.feedback_priority_${e.priority}`)}
+                          </Pill>
+                        ) : (
+                          <span className="text-neutral-300 dark:text-umber-300">—</span>
+                        )}
+                      </td>
+                      <td className="hidden py-3 pr-4 text-xs text-neutral-500 dark:text-umber-300 md:table-cell">
+                        {sourceLabel(e, t)}
+                      </td>
+                      <td className="hidden py-3 pr-4 text-xs text-neutral-500 dark:text-umber-300 sm:table-cell">
+                        {fmtDate(e.created_at)}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <Pill tone={STATUS_TONES[e.status]} icon={statusIcon(e.status)}>
+                          {t(`admin.feedback_status_${e.status}`)}
+                        </Pill>
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="inline-flex flex-wrap justify-end gap-1">
+                          <button
+                            type="button"
+                            className="btn-ghost btn-sm"
+                            aria-expanded={expanded}
+                            onClick={() => toggleExpand(e)}
+                          >
+                            <ChevronDown
+                              size={13}
+                              aria-hidden
+                              className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+                            />
+                            {expanded
+                              ? t("admin.feedback_details_hide")
+                              : t("admin.feedback_details_show")}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-alert btn-sm"
+                            disabled={pendingId === e.id}
+                            onClick={() => remove(e.id)}
+                          >
+                            <Trash2 size={13} aria-hidden /> {t("admin.feedback_delete")}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expanded && (
+                      <tr className="border-t border-paper-200 dark:border-umber-700">
+                        <td
+                          colSpan={colSpan}
+                          className="bg-paper-50/60 px-4 py-4 dark:bg-umber-900/40"
                         >
-                          <Mail size={11} aria-hidden />
-                          {displayEmail}
-                        </a>
-                      )}
-                      {!displayName && !displayEmail && (
-                        <span className="text-xs text-neutral-500 dark:text-umber-300">
-                          {t("admin.feedback_anon")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 pr-4">
-                      {e.message ? (
-                        <p className="max-w-md whitespace-pre-wrap text-sm text-neutral-800 dark:text-paper-100">
-                          {e.message}
-                        </p>
-                      ) : (
-                        <span className="text-xs text-neutral-500 dark:text-umber-300">
-                          {t("admin.feedback_no_message")}
-                        </span>
-                      )}
-                      {/* Mobile fallback: surface rating/monthly inline when hidden columns are off. */}
-                      <div className="mt-1 flex gap-3 text-xs text-neutral-500 dark:text-umber-300 sm:hidden">
-                        {e.rating !== null && <span>★ {e.rating}/10</span>}
-                        {e.monthly_value_ft !== null && e.monthly_value_ft > 0 && (
-                          <span>{fmtMoney(e.monthly_value_ft, e.locale)}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="hidden py-3 pr-4 sm:table-cell">
-                      {e.rating === null ? (
-                        <span className="text-neutral-300 dark:text-umber-300">—</span>
-                      ) : (
-                        <span className="font-medium text-neutral-900 dark:text-paper-50">
-                          {e.rating}/10
-                        </span>
-                      )}
-                    </td>
-                    <td className="hidden py-3 pr-4 md:table-cell">
-                      {e.monthly_value_ft === null || e.monthly_value_ft === 0 ? (
-                        <span className="text-neutral-300 dark:text-umber-300">—</span>
-                      ) : (
-                        <span className="text-neutral-900 dark:text-paper-50">
-                          {fmtMoney(e.monthly_value_ft, e.locale)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="hidden py-3 pr-4 text-xs text-neutral-500 dark:text-umber-300 md:table-cell">
-                      {sourceLabel(e, t)}
-                    </td>
-                    <td className="hidden py-3 pr-4 text-xs text-neutral-500 dark:text-umber-300 sm:table-cell">
-                      {fmtDate(e.created_at)}
-                    </td>
-                    <td className="py-3 pr-4">
-                      <StatusPill status={e.status} t={t} />
-                    </td>
-                    <td className="py-3 text-right">
-                      <div className="inline-flex flex-wrap justify-end gap-1">
-                        {e.status === "new" && (
-                          <button
-                            type="button"
-                            className="btn-ghost btn-sm"
-                            disabled={pendingId === e.id}
-                            onClick={() => setStatus(e.id, "read")}
-                          >
-                            <Eye size={13} aria-hidden /> {t("admin.feedback_mark_read")}
-                          </button>
-                        )}
-                        {e.status !== "resolved" && (
-                          <button
-                            type="button"
-                            className="btn-ghost btn-sm"
-                            disabled={pendingId === e.id}
-                            onClick={() => setStatus(e.id, "resolved")}
-                          >
-                            <CheckCircle2 size={13} aria-hidden />{" "}
-                            {t("admin.feedback_mark_resolved")}
-                          </button>
-                        )}
-                        {e.status !== "dismissed" && (
-                          <button
-                            type="button"
-                            className="btn-ghost btn-sm"
-                            disabled={pendingId === e.id}
-                            onClick={() => setStatus(e.id, "dismissed")}
-                          >
-                            <X size={13} aria-hidden /> {t("admin.feedback_dismiss")}
-                          </button>
-                        )}
-                        {(e.status === "resolved" || e.status === "dismissed") && (
-                          <button
-                            type="button"
-                            className="btn-ghost btn-sm"
-                            disabled={pendingId === e.id}
-                            onClick={() => setStatus(e.id, "new")}
-                          >
-                            <RotateCcw size={13} aria-hidden /> {t("admin.feedback_reopen")}
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="btn-alert btn-sm"
-                          disabled={pendingId === e.id}
-                          onClick={() => remove(e.id)}
-                        >
-                          <Trash2 size={13} aria-hidden /> {t("admin.feedback_delete")}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                          <TriagePanel
+                            entry={e}
+                            t={t}
+                            locale={locale}
+                            sourceLabel={sourceLabel(e, t)}
+                            busy={pendingId === e.id}
+                            notesDraft={notesDraft[e.id] ?? ""}
+                            onNotesChange={(v) => setNotesDraft((d) => ({ ...d, [e.id]: v }))}
+                            onSaveNotes={() => saveNotes(e.id)}
+                            onSetStatus={(s) => setStatus(e.id, s)}
+                            onSetPriority={(p) => setPriority(e.id, p)}
+                            onSetArea={(a) => setArea(e.id, a)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </FeedbackRowGroup>
                 );
               })}
             </tbody>
@@ -479,30 +523,286 @@ export default function AdminFeedbackPage() {
   );
 }
 
-/** Status pill — routes through the shared <Pill> primitive so the
- *  tone palette + dark-mode contrast lives in one place. Each status
- *  carries an icon as a second signal so the chip reads even when the
- *  hue doesn't land (low-vision, monochrome). */
-function StatusPill({
-  status,
+/** Wraps the row + its expansion in a fragment without breaking the
+ *  <tbody> → <tr> nesting rule (a div here would be invalid table markup). */
+function FeedbackRowGroup({ children }: { children: ReactNode }) {
+  return <>{children}</>;
+}
+
+function deviceIcon(device: string | null) {
+  if (device === "mobile") return <Smartphone size={13} aria-hidden />;
+  if (device === "tablet") return <Tablet size={13} aria-hidden />;
+  return <Monitor size={13} aria-hidden />;
+}
+
+/** Expanded triage controls for one feedback entry: captured technical
+ *  context, the status lifecycle, priority, product area, and internal
+ *  notes. All mutations flow up through the page-level handlers. */
+function TriagePanel({
+  entry,
   t,
+  locale,
+  sourceLabel,
+  busy,
+  notesDraft,
+  onNotesChange,
+  onSaveNotes,
+  onSetStatus,
+  onSetPriority,
+  onSetArea,
 }: {
-  status: FeedbackStatus;
-  t: (k: string) => string;
+  entry: FeedbackEntry;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  locale: string;
+  sourceLabel: string;
+  busy: boolean;
+  notesDraft: string;
+  onNotesChange: (v: string) => void;
+  onSaveNotes: () => void;
+  onSetStatus: (s: FeedbackStatus) => void;
+  onSetPriority: (p: FeedbackPriority | null) => void;
+  onSetArea: (a: string | null) => void;
 }) {
-  const icon =
-    status === "new" ? (
-      <Eye size={11} aria-hidden />
-    ) : status === "read" ? (
-      <Eye size={11} aria-hidden />
-    ) : status === "resolved" ? (
-      <CheckCircle2 size={11} aria-hidden />
-    ) : (
-      <X size={11} aria-hidden />
-    );
+  // Keep any stored area value visible even if it's outside the curated list.
+  const areaOptions = useMemo(() => {
+    const set = new Set(FEATURE_AREAS);
+    if (entry.feature_area && !set.has(entry.feature_area)) {
+      return [entry.feature_area, ...FEATURE_AREAS];
+    }
+    return FEATURE_AREAS;
+  }, [entry.feature_area]);
+
+  const techRows: Array<{ label: string; value: string | null }> = [
+    { label: t("admin.feedback_tech_device"), value: entry.device },
+    { label: t("admin.feedback_tech_browser"), value: entry.browser },
+    { label: t("admin.feedback_tech_os"), value: entry.os },
+    { label: t("admin.feedback_tech_locale"), value: entry.locale },
+  ];
+
   return (
-    <Pill tone={STATUS_TONES[status]} icon={icon}>
-      {t(`admin.feedback_status_${status}`)}
-    </Pill>
+    <div className="grid gap-6 lg:grid-cols-2">
+      {/* Left: lifecycle + priority + area */}
+      <div className="space-y-4">
+        <div>
+          <p className="field-label mb-1.5">{t("admin.feedback_triage_status_label")}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {STATUS_ORDER.map((s) => {
+              const active = entry.status === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={busy || active}
+                  onClick={() => onSetStatus(s)}
+                  className={
+                    active
+                      ? "inline-flex items-center gap-1 rounded-full bg-ink-900 px-2.5 py-1 text-xs font-medium text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                      : "inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 disabled:opacity-50 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                  }
+                >
+                  {statusIcon(s, 12)}
+                  {t(`admin.feedback_status_${s}`)}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-2">
+            <button
+              type="button"
+              className="btn-outline btn-sm"
+              disabled={busy || entry.status === "planned"}
+              onClick={() => onSetStatus("planned")}
+            >
+              <ListChecks size={13} aria-hidden /> {t("admin.feedback_convert_action")}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <p className="field-label mb-1.5">{t("admin.feedback_priority_label")}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {PRIORITY_ORDER.map((p) => {
+              const active = entry.priority === p;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onSetPriority(active ? null : p)}
+                  className={
+                    active
+                      ? "inline-flex items-center rounded-full bg-ink-900 px-2.5 py-1 text-xs font-medium text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                      : "inline-flex items-center rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                  }
+                >
+                  {t(`admin.feedback_priority_${p}`)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="max-w-xs">
+          <label htmlFor={`fb-area-${entry.id}`} className="field-label mb-1.5 block">
+            {t("admin.feedback_area_label")}
+          </label>
+          <select
+            id={`fb-area-${entry.id}`}
+            className="input"
+            value={entry.feature_area ?? ""}
+            disabled={busy}
+            onChange={(ev) => onSetArea(ev.target.value === "" ? null : ev.target.value)}
+          >
+            <option value="">{t("admin.feedback_area_unset")}</option>
+            {areaOptions.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Right: technical context + internal notes */}
+      <div className="space-y-4">
+        <div>
+          <p className="field-label mb-1.5">{t("admin.feedback_tech_label")}</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-600 dark:text-umber-200">
+            <span className="inline-flex items-center gap-1">
+              {deviceIcon(entry.device)}
+              {entry.device ?? "—"}
+            </span>
+            {techRows.slice(1).map((r) => (
+              <span key={r.label}>
+                <span className="text-neutral-400 dark:text-umber-400">{r.label}:</span>{" "}
+                {r.value ?? "—"}
+              </span>
+            ))}
+            <span>
+              <span className="text-neutral-400 dark:text-umber-400">
+                {t("admin.feedback_col_source")}:
+              </span>{" "}
+              {sourceLabel}
+            </span>
+          </div>
+          {entry.url && (
+            <a
+              href={entry.url}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-xs text-neutral-500 hover:text-neutral-800 dark:text-umber-300 dark:hover:text-paper-50"
+            >
+              <ExternalLink size={11} aria-hidden className="shrink-0" />
+              <span className="truncate">{entry.url}</span>
+            </a>
+          )}
+          {(entry.rating !== null || (entry.monthly_value_ft ?? 0) > 0) && (
+            <div className="mt-1.5 flex gap-3 text-xs text-neutral-600 dark:text-umber-200">
+              {entry.rating !== null && (
+                <span>
+                  {t("admin.feedback_col_rating")}: {entry.rating}/10
+                </span>
+              )}
+              {(entry.monthly_value_ft ?? 0) > 0 && (
+                <span>
+                  {t("admin.feedback_col_monthly")}: {(() => {
+                    const symbol = entry.locale === "en" ? "€" : "Ft";
+                    const amt = (entry.monthly_value_ft ?? 0).toLocaleString(
+                      locale === "hu" ? "hu-HU" : "en-GB",
+                    );
+                    return entry.locale === "en" ? `${symbol}${amt}` : `${amt} ${symbol}`;
+                  })()}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor={`fb-notes-${entry.id}`} className="field-label mb-1.5 block">
+            {t("admin.feedback_notes_label")}
+          </label>
+          <textarea
+            id={`fb-notes-${entry.id}`}
+            className="input min-h-[5rem] resize-y"
+            value={notesDraft}
+            disabled={busy}
+            placeholder={t("admin.feedback_notes_placeholder")}
+            maxLength={4000}
+            onChange={(ev) => onNotesChange(ev.target.value)}
+          />
+          <div className="mt-2">
+            <button
+              type="button"
+              className="btn-outline btn-sm"
+              disabled={busy || notesDraft === (entry.admin_notes ?? "")}
+              onClick={onSaveNotes}
+            >
+              {t("admin.feedback_notes_save")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeedbackSkeleton({ t }: { t: (k: string) => string }) {
+  return (
+    <div className="admin-card overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="eyebrow text-left">
+          <tr>
+            <th className="pb-3">{t("admin.feedback_col_submitter")}</th>
+            <th className="pb-3">{t("admin.feedback_col_message")}</th>
+            <th className="hidden pb-3 lg:table-cell">{t("admin.feedback_col_area")}</th>
+            <th className="hidden pb-3 lg:table-cell">{t("admin.feedback_col_priority")}</th>
+            <th className="hidden pb-3 md:table-cell">{t("admin.feedback_col_source")}</th>
+            <th className="hidden pb-3 sm:table-cell">{t("admin.feedback_col_submitted")}</th>
+            <th className="pb-3">{t("admin.feedback_col_status")}</th>
+            <th className="pb-3 text-right">{t("admin.feedback_col_actions")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <tr key={i} className="border-t border-paper-200 dark:border-umber-700 align-top">
+              <td className="py-3 pr-4">
+                <div className="flex flex-col gap-1.5">
+                  <Skeleton width={120} height={14} />
+                  <Skeleton width={180} height={12} />
+                </div>
+              </td>
+              <td className="py-3 pr-4">
+                <div className="flex max-w-md flex-col gap-1.5">
+                  <Skeleton width="100%" height={12} />
+                  <Skeleton width="60%" height={12} />
+                </div>
+              </td>
+              <td className="hidden py-3 pr-4 lg:table-cell">
+                <Skeleton width={56} height={12} />
+              </td>
+              <td className="hidden py-3 pr-4 lg:table-cell">
+                <Skeleton width={48} height={18} rounded="full" />
+              </td>
+              <td className="hidden py-3 pr-4 md:table-cell">
+                <Skeleton width={56} height={12} />
+              </td>
+              <td className="hidden py-3 pr-4 sm:table-cell">
+                <Skeleton width={80} height={12} />
+              </td>
+              <td className="py-3 pr-4">
+                <Skeleton width={64} height={18} rounded="full" />
+              </td>
+              <td className="py-3">
+                <div className="inline-flex flex-wrap justify-end gap-1">
+                  <Skeleton width={72} height={28} rounded="md" />
+                  <Skeleton width={72} height={28} rounded="md" />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

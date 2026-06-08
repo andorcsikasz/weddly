@@ -7393,7 +7393,7 @@ describe("feedback admin triage", () => {
     expect(entry.user_full_name).toBe("Test User");
   });
 
-  test("admin can move status through new → read → resolved → re-open", async () => {
+  test("admin can move status through new → reviewed → fixed → re-open", async () => {
     wipeAll();
     const adminToken = await newAdmin();
     await req("POST", "/api/feedback", { message: "Move me through statuses." });
@@ -7410,19 +7410,19 @@ describe("feedback admin triage", () => {
     const r1 = await req<{ entry: { status: string } }>(
       "PATCH",
       `/api/admin/feedback/${id}/status`,
-      { status: "read" },
+      { status: "reviewed" },
       { token: adminToken },
     );
     expect(r1.status).toBe(200);
-    expect(r1.data.entry.status).toBe("read");
+    expect(r1.data.entry.status).toBe("reviewed");
 
     const r2 = await req<{ entry: { status: string } }>(
       "PATCH",
       `/api/admin/feedback/${id}/status`,
-      { status: "resolved" },
+      { status: "fixed" },
       { token: adminToken },
     );
-    expect(r2.data.entry.status).toBe("resolved");
+    expect(r2.data.entry.status).toBe("fixed");
 
     const r3 = await req<{ entry: { status: string } }>(
       "PATCH",

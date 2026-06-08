@@ -913,6 +913,25 @@ addColumnIfMissing("flight_estimates", "offers_json", "offers_json TEXT");
 // triage list can label it "Photos", "Budget", etc. Null for landing rows
 // and for any pre-existing in-app rows written before this column existed.
 addColumnIfMissing("feedback_submissions", "context", "context TEXT");
+// Triage workflow (see shared/feedback.ts). Full URL the dialog was opened
+// from (context is just the route); admin-set priority / product area /
+// internal notes; and User-Agent-derived device/browser/os captured at
+// submission so admins can reproduce. All nullable — older rows stay valid.
+addColumnIfMissing("feedback_submissions", "url", "url TEXT");
+addColumnIfMissing("feedback_submissions", "priority", "priority TEXT");
+addColumnIfMissing("feedback_submissions", "feature_area", "feature_area TEXT");
+addColumnIfMissing("feedback_submissions", "admin_notes", "admin_notes TEXT");
+addColumnIfMissing("feedback_submissions", "device", "device TEXT");
+addColumnIfMissing("feedback_submissions", "browser", "browser TEXT");
+addColumnIfMissing("feedback_submissions", "os", "os TEXT");
+// One-time data migration: fold the legacy four-state model onto the new
+// triage lifecycle. Idempotent — after the first boot no rows match. read →
+// reviewed (looked at), resolved → fixed (shipped), dismissed → rejected.
+db.exec(
+  `UPDATE feedback_submissions SET status = 'reviewed' WHERE status = 'read';
+   UPDATE feedback_submissions SET status = 'fixed'    WHERE status = 'resolved';
+   UPDATE feedback_submissions SET status = 'rejected' WHERE status = 'dismissed';`,
+);
 // Relax the NOT NULL on `price_amount` for the multi-offer cache rows where
 // no offer came back. SQLite doesn't support "ALTER COLUMN", so the schema
 // migration is a no-op; the bug only bites on prod DBs that already hit the

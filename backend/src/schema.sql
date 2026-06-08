@@ -462,7 +462,7 @@ CREATE TABLE IF NOT EXISTS feedback_submissions (
   monthly_value_ft INTEGER,                                    -- 0..15000
   from_email TEXT,
   locale TEXT,                                                 -- 'hu' | 'en'
-  status TEXT NOT NULL DEFAULT 'new',                          -- 'new' | 'read' | 'resolved' | 'dismissed'
+  status TEXT NOT NULL DEFAULT 'new',                          -- triage lifecycle, see shared/feedback.ts (new|reviewed|planned|fixed|rejected|archived; legacy read/resolved/dismissed migrated in db.ts)
   reviewed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   reviewed_at INTEGER,
   created_at INTEGER NOT NULL

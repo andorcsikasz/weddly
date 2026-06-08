@@ -63,6 +63,9 @@ export function FeedbackDialog({
       await feedbackApi.submit({
         source,
         context: source === "app" ? context : undefined,
+        // Full URL (incl. query string) so admins can reproduce the exact
+        // page; the backend also derives device/browser/os from the request.
+        url: typeof window !== "undefined" ? window.location.href : undefined,
         message: msg || undefined,
         rating: rating ?? undefined,
         from_email: wantReply ? email.trim() || undefined : undefined,

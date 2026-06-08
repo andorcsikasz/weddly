@@ -4003,6 +4003,48 @@ export interface LocaleMessages {
     feedback_load_error_title: string;
     feedback_load_error_body: string;
     feedback_retry: string;
+    /** Triage workflow (see shared/feedback.ts). Status lifecycle, priority,
+     *  product area, internal notes, and the captured technical context. */
+    feedback_status_reviewed: string;
+    feedback_status_planned: string;
+    feedback_status_fixed: string;
+    feedback_status_rejected: string;
+    feedback_status_archived: string;
+    feedback_filter_reviewed: string;
+    feedback_filter_planned: string;
+    feedback_filter_fixed: string;
+    feedback_filter_rejected: string;
+    feedback_filter_archived: string;
+    feedback_col_area: string;
+    feedback_col_priority: string;
+    feedback_mark_reviewed: string;
+    feedback_mark_planned: string;
+    feedback_mark_fixed: string;
+    feedback_mark_rejected: string;
+    feedback_mark_archived: string;
+    feedback_convert_action: string;
+    feedback_priority_label: string;
+    feedback_priority_low: string;
+    feedback_priority_medium: string;
+    feedback_priority_high: string;
+    feedback_priority_unset: string;
+    feedback_priority_none: string;
+    feedback_area_label: string;
+    feedback_area_unset: string;
+    feedback_notes_label: string;
+    feedback_notes_placeholder: string;
+    feedback_notes_save: string;
+    feedback_notes_saved: string;
+    feedback_tech_label: string;
+    feedback_tech_device: string;
+    feedback_tech_browser: string;
+    feedback_tech_os: string;
+    feedback_tech_locale: string;
+    feedback_tech_url: string;
+    feedback_tech_open_url: string;
+    feedback_triage_status_label: string;
+    feedback_details_show: string;
+    feedback_details_hide: string;
     /** /app/admin/analytics page — three orthogonal rollups (money,
      *  activity, picks) rendered as KPI tiles + tables + CSS bar charts.
      *  Read-only — no actions, no per-row drilldown. */
