@@ -85,6 +85,7 @@ import type {
   VendorWaitlistEntry,
 } from "@shared/vendor_waitlist";
 import type { CouplePick } from "@shared/picks";
+import type { KonzinfoInfo } from "@shared/konzinfo";
 import type { SavedSupplier } from "@shared/saved";
 import type {
   AdminActivityAnalytics,
@@ -643,6 +644,9 @@ export const placesApi = {
 export const honeymoonApi = {
   flightEstimate: () =>
     apiFetch<{ estimate: FlightEstimate | null }>("GET", "/api/honeymoon/flight-estimate"),
+  /** Official Hungarian consular travel advice for the couple's honeymoon
+   *  destination (resolved server-side from the stored destination). */
+  konzinfo: () => apiFetch<KonzinfoInfo>("GET", "/api/honeymoon/konzinfo"),
 };
 
 /** Day-of run-of-show timeline. Times are minutes from midnight in wedding-

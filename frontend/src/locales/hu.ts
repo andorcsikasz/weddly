@@ -1355,6 +1355,38 @@ const hu: LocaleMessages = {
     calendar_event_other: "{count} feladat",
     calendar_no_tasks: "Még nincs ütemezett feladat, a napok üresek.",
   },
+  travel_safety: {
+    title: "Hivatalos konzuli információk magyar utazóknak",
+    intro:
+      "Utazás előtt mindig ellenőrizzétek a Konzuli Szolgálat hivatalos országoldalát, mert a beutazási, biztonsági, egészségügyi és helyi szabályok bármikor változhatnak. Nászút előtt különösen fontos az útlevél érvényessége, a vízum- vagy belépési feltételek, az utasbiztosítás, valamint a célország aktuális biztonsági besorolása.",
+    block_title: "Hivatalos magyar konzuli információk",
+    loading: "Hivatalos információk betöltése…",
+    konzinfo_link: "Aktuális Konzinfo oldal megnyitása",
+    safety_label: "Biztonsági besorolás",
+    last_update_label: "Utolsó frissítés",
+    valid_today_label: "Mai napon is érvényes",
+    no_match:
+      "A célországhoz nem találtunk közvetlen országoldalt. Keressétek ki a Konzuli Szolgálat országonkénti tanácsai közül.",
+    index_link: "Országonkénti konzuli tanácsok",
+    checklist_title: "Utazás előtt ellenőrizzétek",
+    check_passport:
+      "Az útlevél legalább 6 hónapig érvényes a hazautazás vagy a régióból való végső kilépés után.",
+    check_visa: "Vízummentesség vagy vízumkötelezettség a célországban.",
+    check_entry:
+      "Kell-e előzetes online belépési regisztráció, arrival card vagy egészségügyi nyilatkozat.",
+    check_health: "Ajánlott oltások és egészségügyi tudnivalók.",
+    check_insurance:
+      "Megfelelő utasbiztosítás, amely a nászút programjait is fedezi: búvárkodás, hajókirándulás, robogóbérlés, túrázás, vízi sportok.",
+    check_copies:
+      "Digitális és offline másolat az útlevélről, biztosításról, repülőjegyről és szállásfoglalásról.",
+    check_register: "Az utazás regisztrálása konzuli védelemre.",
+    register_link: "Utazás regisztrálása konzuli védelemre",
+    app_link: "KonzInfo Utazom alkalmazás",
+    insurance_reminder:
+      "Tipp: a nászúti utasbiztosítást úgy válasszátok, hogy fedezze a tervezett aktív programokat is (búvárkodás, vízi sportok, túrázás).",
+    disclaimer:
+      "Ez csak rövid tájékoztató kivonat. A hivatalos és mindenkor aktuális információ a Konzuli Szolgálat oldalán található, amely bármikor változhat.",
+  },
   honeymoon: {
     title: "Nászút",
     sub: "Tervezzétek meg a nászutatokat — úti cél, dátumok, költségek — egy helyen.",
@@ -1419,6 +1451,7 @@ const hu: LocaleMessages = {
     todo_uncheck_aria: "Visszajelölés",
     todo_add_placeholder: "Új nászúti teendő…",
     todo_add_aria: "Teendő hozzáadása",
+    todo_delete_aria: "Teendő törlése",
     todo_wand_button: "Varázspálca",
     todo_wand_dialog_title: "Nászúti teendőcsomag",
     todo_wand_dialog_body:

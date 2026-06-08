@@ -1342,6 +1342,38 @@ const en: LocaleMessages = {
     calendar_event_other: "{count} tasks",
     calendar_no_tasks: "No scheduled tasks yet, so the days are clear.",
   },
+  travel_safety: {
+    title: "Official consular information for Hungarian travellers",
+    intro:
+      "Before you travel, always check the Hungarian Consular Service's official country page — entry, security, health and local rules can change at any time. Before a honeymoon, pay special attention to passport validity, visa or entry requirements, travel insurance, and the destination's current security rating.",
+    block_title: "Official Hungarian consular information",
+    loading: "Loading official information…",
+    konzinfo_link: "Open the current Konzinfo page",
+    safety_label: "Security rating",
+    last_update_label: "Last updated",
+    valid_today_label: "Confirmed valid today",
+    no_match:
+      "We couldn't match this destination to a country page directly. Find it in the Consular Service's country-by-country advice.",
+    index_link: "Country-by-country consular advice",
+    checklist_title: "Check before you travel",
+    check_passport:
+      "Passport valid for at least 6 months after your return or final exit from the region.",
+    check_visa: "Visa-free entry or a visa requirement for the destination.",
+    check_entry:
+      "Whether a prior online entry registration, arrival card or health declaration is needed.",
+    check_health: "Recommended vaccinations and health advice.",
+    check_insurance:
+      "Adequate travel insurance that also covers honeymoon activities: diving, boat trips, scooter rental, hiking, water sports.",
+    check_copies:
+      "Digital and offline copies of your passport, insurance, flight tickets and accommodation booking.",
+    check_register: "Register the trip for consular protection.",
+    register_link: "Register your trip for consular protection",
+    app_link: "KonzInfo Utazom app",
+    insurance_reminder:
+      "Tip: choose honeymoon travel insurance that also covers your planned active programmes (diving, water sports, hiking).",
+    disclaimer:
+      "This is a short summary only. The official and always up-to-date information is on the Consular Service's site, and it can change at any time.",
+  },
   honeymoon: {
     title: "Honeymoon",
     sub: "Plan the trip — destination, dates, costs — without leaving the workspace.",
@@ -1405,6 +1437,7 @@ const en: LocaleMessages = {
     todo_uncheck_aria: "Mark as not done",
     todo_add_placeholder: "Add a honeymoon task…",
     todo_add_aria: "Add task",
+    todo_delete_aria: "Delete task",
     todo_wand_button: "Wand",
     todo_wand_dialog_title: "Honeymoon task pack",
     todo_wand_dialog_body:

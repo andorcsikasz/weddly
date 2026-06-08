@@ -1,0 +1,1196 @@
+[
+  {
+    "country_hu": "Afganisztán",
+    "slug": "afganisztan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/afganisztan",
+    "node_id": 72
+  },
+  {
+    "country_hu": "Albánia",
+    "slug": "albania",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/albania",
+    "node_id": 73
+  },
+  {
+    "country_hu": "Algéria",
+    "slug": "algeria",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/algeria",
+    "node_id": 74
+  },
+  {
+    "country_hu": "Amerikai Egyesült Államok",
+    "slug": "amerikai-egyesult-allamok",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/amerikai-egyesult-allamok",
+    "node_id": 75
+  },
+  {
+    "country_hu": "Andorra",
+    "slug": "andorra",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/andorra",
+    "node_id": 76
+  },
+  {
+    "country_hu": "Angola",
+    "slug": "angola",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/angola",
+    "node_id": 77
+  },
+  {
+    "country_hu": "Antigua és Barbuda",
+    "slug": "antigua-es-barbuda",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/antigua-es-barbuda",
+    "node_id": 78
+  },
+  {
+    "country_hu": "Argentína",
+    "slug": "argentina",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/argentina",
+    "node_id": 79
+  },
+  {
+    "country_hu": "Ausztria",
+    "slug": "ausztria",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/ausztria",
+    "node_id": 81
+  },
+  {
+    "country_hu": "Ausztrália",
+    "slug": "ausztralia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/ausztralia",
+    "node_id": 80
+  },
+  {
+    "country_hu": "Azerbajdzsán",
+    "slug": "azerbajdzsan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/azerbajdzsan",
+    "node_id": 82
+  },
+  {
+    "country_hu": "Bahama-szigetek",
+    "slug": "bahama-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/bahama-szigetek",
+    "node_id": 83
+  },
+  {
+    "country_hu": "Bahrein",
+    "slug": "bahrein",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/bahrein",
+    "node_id": 84
+  },
+  {
+    "country_hu": "Banglades",
+    "slug": "banglades",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/banglades",
+    "node_id": 85
+  },
+  {
+    "country_hu": "Barbados",
+    "slug": "barbados",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/barbados",
+    "node_id": 86
+  },
+  {
+    "country_hu": "Belarusz Köztársaság (Fehéroroszország)",
+    "slug": "belarusz-koztarsasag-feheroroszorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/belarusz-koztarsasag-feheroroszorszag",
+    "node_id": 87
+  },
+  {
+    "country_hu": "Belgium",
+    "slug": "belgium",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/belgium",
+    "node_id": 88
+  },
+  {
+    "country_hu": "Belize",
+    "slug": "belize",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/belize",
+    "node_id": 89
+  },
+  {
+    "country_hu": "Benin",
+    "slug": "benin",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/benin",
+    "node_id": 90
+  },
+  {
+    "country_hu": "Bhután",
+    "slug": "bhutan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/bhutan",
+    "node_id": 91
+  },
+  {
+    "country_hu": "Bissau-Guinea",
+    "slug": "bissau-guinea",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/bissau-guinea",
+    "node_id": 92
+  },
+  {
+    "country_hu": "Bolívia",
+    "slug": "bolivia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/bolivia",
+    "node_id": 93
+  },
+  {
+    "country_hu": "Bosznia-Hercegovina",
+    "slug": "bosznia-hercegovina",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/bosznia-hercegovina",
+    "node_id": 94
+  },
+  {
+    "country_hu": "Botswana",
+    "slug": "botswana",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/botswana",
+    "node_id": 95
+  },
+  {
+    "country_hu": "Brazília",
+    "slug": "brazilia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/brazilia",
+    "node_id": 96
+  },
+  {
+    "country_hu": "Brunei",
+    "slug": "brunei",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/brunei",
+    "node_id": 97
+  },
+  {
+    "country_hu": "Bulgária",
+    "slug": "bulgaria",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/bulgaria",
+    "node_id": 98
+  },
+  {
+    "country_hu": "Burkina Faso",
+    "slug": "burkina-faso",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/burkina-faso",
+    "node_id": 99
+  },
+  {
+    "country_hu": "Burundi",
+    "slug": "burundi",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/burundi",
+    "node_id": 100
+  },
+  {
+    "country_hu": "Chile",
+    "slug": "chile",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/chile",
+    "node_id": 101
+  },
+  {
+    "country_hu": "Ciprus",
+    "slug": "ciprus",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/ciprus",
+    "node_id": 102
+  },
+  {
+    "country_hu": "Comore-szigeteki Unió ",
+    "slug": "comore-szigeteki-unio",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/comore-szigeteki-unio",
+    "node_id": 103
+  },
+  {
+    "country_hu": "Cook-szigetek",
+    "slug": "cook-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/cook-szigetek",
+    "node_id": 104
+  },
+  {
+    "country_hu": "Costa Rica",
+    "slug": "costa-rica",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/costa-rica",
+    "node_id": 105
+  },
+  {
+    "country_hu": "Csehország",
+    "slug": "csehorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/csehorszag",
+    "node_id": 107
+  },
+  {
+    "country_hu": "Csád",
+    "slug": "csad",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/csad",
+    "node_id": 106
+  },
+  {
+    "country_hu": "Dominikai Köztársaság",
+    "slug": "dominikai-koztarsasag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/dominikai-koztarsasag",
+    "node_id": 113
+  },
+  {
+    "country_hu": "Dominikai Közösség",
+    "slug": "dominikai-kozosseg",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/dominikai-kozosseg",
+    "node_id": 112
+  },
+  {
+    "country_hu": "Dzsibuti",
+    "slug": "dzsibuti",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/dzsibuti",
+    "node_id": 114
+  },
+  {
+    "country_hu": "Dánia",
+    "slug": "dania",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/dania",
+    "node_id": 108
+  },
+  {
+    "country_hu": "Dél-afrikai Köztársaság",
+    "slug": "del-afrikai-koztarsasag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/del-afrikai-koztarsasag",
+    "node_id": 109
+  },
+  {
+    "country_hu": "Dél-Szudán",
+    "slug": "del-szudan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/del-szudan",
+    "node_id": 110
+  },
+  {
+    "country_hu": "Ecuador",
+    "slug": "ecuador",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/ecuador",
+    "node_id": 115
+  },
+  {
+    "country_hu": "Egyenlítői-Guinea",
+    "slug": "egyenlitoi-guinea",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/egyenlitoi-guinea",
+    "node_id": 116
+  },
+  {
+    "country_hu": "Egyesült Arab Emírségek",
+    "slug": "egyesult-arab-emirsegek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/egyesult-arab-emirsegek",
+    "node_id": 117
+  },
+  {
+    "country_hu": "Egyiptom",
+    "slug": "egyiptom",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/egyiptom",
+    "node_id": 118
+  },
+  {
+    "country_hu": "El Salvador",
+    "slug": "el-salvador",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/el-salvador",
+    "node_id": 228
+  },
+  {
+    "country_hu": "Elefántcsontpart",
+    "slug": "elefantcsontpart",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/elefantcsontpart",
+    "node_id": 119
+  },
+  {
+    "country_hu": "Eritrea",
+    "slug": "eritrea",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/eritrea",
+    "node_id": 120
+  },
+  {
+    "country_hu": "Etiópia",
+    "slug": "etiopia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/etiopia",
+    "node_id": 123
+  },
+  {
+    "country_hu": "Fidzsi-szigetek",
+    "slug": "fidzsi-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/fidzsi-szigetek",
+    "node_id": 124
+  },
+  {
+    "country_hu": "Finnország",
+    "slug": "finnorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/finnorszag",
+    "node_id": 125
+  },
+  {
+    "country_hu": "Franciaország",
+    "slug": "franciaorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/franciaorszag",
+    "node_id": 126
+  },
+  {
+    "country_hu": "Franciaország tengeren túli területei",
+    "slug": "franciaorszag-tengeren-tuli-teruletei",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/franciaorszag-tengeren-tuli-teruletei",
+    "node_id": 127
+  },
+  {
+    "country_hu": "Fülöp-szigetek",
+    "slug": "fulop-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/fulop-szigetek",
+    "node_id": 128
+  },
+  {
+    "country_hu": "Gabon",
+    "slug": "gabon",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/gabon",
+    "node_id": 129
+  },
+  {
+    "country_hu": "Gambia",
+    "slug": "gambia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/gambia",
+    "node_id": 130
+  },
+  {
+    "country_hu": "Georgia (Grúzia)",
+    "slug": "georgia-gruzia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/georgia-gruzia",
+    "node_id": 134
+  },
+  {
+    "country_hu": "Ghána",
+    "slug": "ghana",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/ghana",
+    "node_id": 131
+  },
+  {
+    "country_hu": "Grenada",
+    "slug": "grenada",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/grenada",
+    "node_id": 133
+  },
+  {
+    "country_hu": "Guatemala",
+    "slug": "guatemala",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/guatemala",
+    "node_id": 135
+  },
+  {
+    "country_hu": "Guinea",
+    "slug": "guinea",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/guinea",
+    "node_id": 136
+  },
+  {
+    "country_hu": "Guyana",
+    "slug": "guyana",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/guyana",
+    "node_id": 137
+  },
+  {
+    "country_hu": "Görögország",
+    "slug": "gorogorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/gorogorszag",
+    "node_id": 132
+  },
+  {
+    "country_hu": "Haiti",
+    "slug": "haiti",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/haiti",
+    "node_id": 138
+  },
+  {
+    "country_hu": "Holland Királyság részét képező karib-tengeri szigetek",
+    "slug": "holland-kiralysag-reszet-kepezo-karib-tengeri-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/holland-kiralysag-reszet-kepezo-karib-tengeri-szigetek",
+    "node_id": 139
+  },
+  {
+    "country_hu": "Hollandia",
+    "slug": "hollandia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/hollandia",
+    "node_id": 140
+  },
+  {
+    "country_hu": "Honduras",
+    "slug": "honduras",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/honduras",
+    "node_id": 141
+  },
+  {
+    "country_hu": "Horvátország",
+    "slug": "horvatorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/horvatorszag",
+    "node_id": 142
+  },
+  {
+    "country_hu": "India",
+    "slug": "india",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/india",
+    "node_id": 143
+  },
+  {
+    "country_hu": "Indonézia",
+    "slug": "indonezia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/indonezia",
+    "node_id": 144
+  },
+  {
+    "country_hu": "Irak",
+    "slug": "irak",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/irak",
+    "node_id": 145
+  },
+  {
+    "country_hu": "Irán",
+    "slug": "iran",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/iran",
+    "node_id": 146
+  },
+  {
+    "country_hu": "Izland",
+    "slug": "izland",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/izland",
+    "node_id": 148
+  },
+  {
+    "country_hu": "Izrael",
+    "slug": "izrael",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/izrael",
+    "node_id": 149
+  },
+  {
+    "country_hu": "Jamaica",
+    "slug": "jamaica",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/jamaica",
+    "node_id": 150
+  },
+  {
+    "country_hu": "Japán",
+    "slug": "japan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/japan",
+    "node_id": 151
+  },
+  {
+    "country_hu": "Jemen",
+    "slug": "jemen",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/jemen",
+    "node_id": 152
+  },
+  {
+    "country_hu": "Jordánia",
+    "slug": "jordania",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/jordania",
+    "node_id": 153
+  },
+  {
+    "country_hu": "Kambodzsa",
+    "slug": "kambodzsa",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kambodzsa",
+    "node_id": 154
+  },
+  {
+    "country_hu": "Kamerun",
+    "slug": "kamerun",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kamerun",
+    "node_id": 155
+  },
+  {
+    "country_hu": "Kanada",
+    "slug": "kanada",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kanada",
+    "node_id": 156
+  },
+  {
+    "country_hu": "Katar",
+    "slug": "katar",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/katar",
+    "node_id": 157
+  },
+  {
+    "country_hu": "Kazahsztán",
+    "slug": "kazahsztan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kazahsztan",
+    "node_id": 158
+  },
+  {
+    "country_hu": "Kelet-Timor",
+    "slug": "kelet-timor",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kelet-timor",
+    "node_id": 159
+  },
+  {
+    "country_hu": "Kenya",
+    "slug": "kenya",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kenya",
+    "node_id": 160
+  },
+  {
+    "country_hu": "Kirgizisztán",
+    "slug": "kirgizisztan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kirgizisztan",
+    "node_id": 162
+  },
+  {
+    "country_hu": "Kiribati (Gilbert-, Phoenix és Line-szigetek)",
+    "slug": "kiribati-gilbert-phoenix-es-line-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kiribati-gilbert-phoenix-es-line-szigetek",
+    "node_id": 163
+  },
+  {
+    "country_hu": "Kolumbia",
+    "slug": "kolumbia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kolumbia",
+    "node_id": 164
+  },
+  {
+    "country_hu": "Kongói Demokratikus Köztársaság",
+    "slug": "kongoi-demokratikus-koztarsasag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kongoi-demokratikus-koztarsasag",
+    "node_id": 165
+  },
+  {
+    "country_hu": "Kongói Köztársaság (Kongó)",
+    "slug": "kongoi-koztarsasag-kongo",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kongoi-koztarsasag-kongo",
+    "node_id": 166
+  },
+  {
+    "country_hu": "Koreai Köztársaság, (Dél-Korea)",
+    "slug": "koreai-koztarsasag-del-korea",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/koreai-koztarsasag-del-korea",
+    "node_id": 111
+  },
+  {
+    "country_hu": "Koreai Népi Demokratikus Köztársaság (Észak-Korea)",
+    "slug": "koreai-nepi-demokratikus-koztarsasag-eszak-korea",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/koreai-nepi-demokratikus-koztarsasag-eszak-korea",
+    "node_id": 121
+  },
+  {
+    "country_hu": "Koszovó",
+    "slug": "koszovo",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/koszovo",
+    "node_id": 167
+  },
+  {
+    "country_hu": "Kuba",
+    "slug": "kuba",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kuba",
+    "node_id": 169
+  },
+  {
+    "country_hu": "Kuvait",
+    "slug": "kuvait",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kuvait",
+    "node_id": 170
+  },
+  {
+    "country_hu": "Kína",
+    "slug": "kina",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kina",
+    "node_id": 161
+  },
+  {
+    "country_hu": "Közép-Afrika",
+    "slug": "kozep-afrika",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/kozep-afrika",
+    "node_id": 168
+  },
+  {
+    "country_hu": "Laosz",
+    "slug": "laosz",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/laosz",
+    "node_id": 171
+  },
+  {
+    "country_hu": "Lengyelország",
+    "slug": "lengyelorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/lengyelorszag",
+    "node_id": 172
+  },
+  {
+    "country_hu": "Lesotho",
+    "slug": "lesotho",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/lesotho",
+    "node_id": 173
+  },
+  {
+    "country_hu": "Lettország",
+    "slug": "lettorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/lettorszag",
+    "node_id": 174
+  },
+  {
+    "country_hu": "Libanon",
+    "slug": "libanon",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/libanon",
+    "node_id": 175
+  },
+  {
+    "country_hu": "Libéria",
+    "slug": "liberia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/liberia",
+    "node_id": 176
+  },
+  {
+    "country_hu": "Liechtenstein",
+    "slug": "liechtenstein",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/liechtenstein",
+    "node_id": 178
+  },
+  {
+    "country_hu": "Litvánia",
+    "slug": "litvania",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/litvania",
+    "node_id": 179
+  },
+  {
+    "country_hu": "Luxemburg",
+    "slug": "luxemburg",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/luxemburg",
+    "node_id": 180
+  },
+  {
+    "country_hu": "Líbia Állam",
+    "slug": "libia-allam",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/libia-allam",
+    "node_id": 177
+  },
+  {
+    "country_hu": "Madagaszkár",
+    "slug": "madagaszkar",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/madagaszkar",
+    "node_id": 182
+  },
+  {
+    "country_hu": "Malajzia",
+    "slug": "malajzia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/malajzia",
+    "node_id": 183
+  },
+  {
+    "country_hu": "Malawi",
+    "slug": "malawi",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/malawi",
+    "node_id": 184
+  },
+  {
+    "country_hu": "Maldív-szigetek",
+    "slug": "maldiv-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/maldiv-szigetek",
+    "node_id": 185
+  },
+  {
+    "country_hu": "Mali",
+    "slug": "mali",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/mali",
+    "node_id": 186
+  },
+  {
+    "country_hu": "Marokkó",
+    "slug": "marokko",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/marokko",
+    "node_id": 188
+  },
+  {
+    "country_hu": "Marshall-szigetek",
+    "slug": "marshall-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/marshall-szigetek",
+    "node_id": 189
+  },
+  {
+    "country_hu": "Mauritius",
+    "slug": "mauritius",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/mauritius",
+    "node_id": 191
+  },
+  {
+    "country_hu": "Mauritánia",
+    "slug": "mauritania",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/mauritania",
+    "node_id": 190
+  },
+  {
+    "country_hu": "Mexikó",
+    "slug": "mexiko",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/mexiko",
+    "node_id": 192
+  },
+  {
+    "country_hu": "Mianmar",
+    "slug": "mianmar",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/mianmar",
+    "node_id": 193
+  },
+  {
+    "country_hu": "Mikronézia",
+    "slug": "mikronezia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/mikronezia",
+    "node_id": 194
+  },
+  {
+    "country_hu": "Moldova",
+    "slug": "moldova",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/moldova",
+    "node_id": 195
+  },
+  {
+    "country_hu": "Monaco",
+    "slug": "monaco",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/monaco",
+    "node_id": 196
+  },
+  {
+    "country_hu": "Mongólia",
+    "slug": "mongolia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/mongolia",
+    "node_id": 197
+  },
+  {
+    "country_hu": "Montenegró",
+    "slug": "montenegro",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/montenegro",
+    "node_id": 198
+  },
+  {
+    "country_hu": "Mozambik",
+    "slug": "mozambik",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/mozambik",
+    "node_id": 199
+  },
+  {
+    "country_hu": "Málta",
+    "slug": "malta",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/malta",
+    "node_id": 187
+  },
+  {
+    "country_hu": "Nagy-Britannia tengeren túli területei",
+    "slug": "nagy-britannia-tengeren-tuli-teruletei",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/nagy-britannia-tengeren-tuli-teruletei",
+    "node_id": 201
+  },
+  {
+    "country_hu": "Nagy-Britannia és Észak-Írország Egyesült Királysága",
+    "slug": "nagy-britannia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/nagy-britannia",
+    "node_id": 200
+  },
+  {
+    "country_hu": "Namíbia",
+    "slug": "namibia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/namibia",
+    "node_id": 202
+  },
+  {
+    "country_hu": "Nauru",
+    "slug": "nauru",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/nauru",
+    "node_id": 203
+  },
+  {
+    "country_hu": "Nepál",
+    "slug": "nepal",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/nepal",
+    "node_id": 205
+  },
+  {
+    "country_hu": "Nicaragua",
+    "slug": "nicaragua",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/nicaragua",
+    "node_id": 206
+  },
+  {
+    "country_hu": "Niger",
+    "slug": "niger",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/niger",
+    "node_id": 207
+  },
+  {
+    "country_hu": "Nigéria",
+    "slug": "nigeria",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/nigeria",
+    "node_id": 208
+  },
+  {
+    "country_hu": "Norvégia",
+    "slug": "norvegia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/norvegia",
+    "node_id": 209
+  },
+  {
+    "country_hu": "Németország",
+    "slug": "nemetorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/nemetorszag",
+    "node_id": 204
+  },
+  {
+    "country_hu": "Olaszország",
+    "slug": "olaszorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/olaszorszag",
+    "node_id": 210
+  },
+  {
+    "country_hu": "Omán",
+    "slug": "oman",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/oman",
+    "node_id": 211
+  },
+  {
+    "country_hu": "Oroszország",
+    "slug": "oroszorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/oroszorszag",
+    "node_id": 212
+  },
+  {
+    "country_hu": "Pakisztán",
+    "slug": "pakisztan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/pakisztan",
+    "node_id": 214
+  },
+  {
+    "country_hu": "Palau",
+    "slug": "palau",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/palau",
+    "node_id": 215
+  },
+  {
+    "country_hu": "Palesztina",
+    "slug": "palesztina",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/palesztina",
+    "node_id": 216
+  },
+  {
+    "country_hu": "Panama",
+    "slug": "panama",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/panama",
+    "node_id": 217
+  },
+  {
+    "country_hu": "Paraguay",
+    "slug": "paraguay",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/paraguay",
+    "node_id": 219
+  },
+  {
+    "country_hu": "Peru",
+    "slug": "peru",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/peru",
+    "node_id": 220
+  },
+  {
+    "country_hu": "Portugália",
+    "slug": "portugalia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/portugalia",
+    "node_id": 221
+  },
+  {
+    "country_hu": "Pápua Új-Guinea",
+    "slug": "papua-uj-guinea",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/papua-uj-guinea",
+    "node_id": 218
+  },
+  {
+    "country_hu": "Románia",
+    "slug": "romania",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/romania",
+    "node_id": 222
+  },
+  {
+    "country_hu": "Ruanda",
+    "slug": "ruanda",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/ruanda",
+    "node_id": 223
+  },
+  {
+    "country_hu": "Saint Kitts és Nevis",
+    "slug": "saint-kitts-es-nevis",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/saint-kitts-es-nevis",
+    "node_id": 224
+  },
+  {
+    "country_hu": "Saint Lucia",
+    "slug": "saint-lucia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/saint-lucia",
+    "node_id": 225
+  },
+  {
+    "country_hu": "Saint Vincent és a Grenadine-szigetek",
+    "slug": "saint-vincent-es-grenadine-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/saint-vincent-es-grenadine-szigetek",
+    "node_id": 226
+  },
+  {
+    "country_hu": "Salamon-szigetek",
+    "slug": "salamon-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/salamon-szigetek",
+    "node_id": 227
+  },
+  {
+    "country_hu": "San Marino",
+    "slug": "san-marino",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/san-marino",
+    "node_id": 229
+  },
+  {
+    "country_hu": "Seychelle-szigetek",
+    "slug": "seychelle-szigetek",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/seychelle-szigetek",
+    "node_id": 230
+  },
+  {
+    "country_hu": "Sierra Leone",
+    "slug": "sierra-leone",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/sierra-leone",
+    "node_id": 231
+  },
+  {
+    "country_hu": "Spanyolország",
+    "slug": "spanyolorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/spanyolorszag",
+    "node_id": 232
+  },
+  {
+    "country_hu": "Srí Lanka",
+    "slug": "sri-lanka",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/sri-lanka",
+    "node_id": 233
+  },
+  {
+    "country_hu": "Suriname",
+    "slug": "suriname",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/suriname",
+    "node_id": 234
+  },
+  {
+    "country_hu": "Svájc",
+    "slug": "svajc",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/svajc",
+    "node_id": 235
+  },
+  {
+    "country_hu": "Svédország",
+    "slug": "svedorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/svedorszag",
+    "node_id": 236
+  },
+  {
+    "country_hu": "Szamoai Független Állam",
+    "slug": "szamoai-fuggetlen-allam",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szamoai-fuggetlen-allam",
+    "node_id": 237
+  },
+  {
+    "country_hu": "Szaúd-Arábia",
+    "slug": "szaud-arabia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szaud-arabia",
+    "node_id": 238
+  },
+  {
+    "country_hu": "Szenegál",
+    "slug": "szenegal",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szenegal",
+    "node_id": 239
+  },
+  {
+    "country_hu": "Szerbia",
+    "slug": "szerbia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szerbia",
+    "node_id": 240
+  },
+  {
+    "country_hu": "Szingapúr",
+    "slug": "szingapur",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szingapur",
+    "node_id": 241
+  },
+  {
+    "country_hu": "Szlovákia",
+    "slug": "szlovakia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szlovakia",
+    "node_id": 243
+  },
+  {
+    "country_hu": "Szlovénia",
+    "slug": "szlovenia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szlovenia",
+    "node_id": 244
+  },
+  {
+    "country_hu": "Szomália",
+    "slug": "szomalia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szomalia",
+    "node_id": 245
+  },
+  {
+    "country_hu": "Szudán",
+    "slug": "szudan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szudan",
+    "node_id": 246
+  },
+  {
+    "country_hu": "Szváziföld",
+    "slug": "szvazifold",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/szvazifold",
+    "node_id": 247
+  },
+  {
+    "country_hu": "Szíria",
+    "slug": "sziria",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/sziria",
+    "node_id": 242
+  },
+  {
+    "country_hu": "São Tomé és Príncipe",
+    "slug": "sao-tome-es-principe",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/sao-tome-es-principe",
+    "node_id": 270
+  },
+  {
+    "country_hu": "Tajvan",
+    "slug": "tajvan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/tajvan",
+    "node_id": 249
+  },
+  {
+    "country_hu": "Tanzánia",
+    "slug": "tanzania",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/tanzania",
+    "node_id": 250
+  },
+  {
+    "country_hu": "Thaiföld",
+    "slug": "thaifold",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/thaifold",
+    "node_id": 251
+  },
+  {
+    "country_hu": "Togo",
+    "slug": "togo",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/togo",
+    "node_id": 252
+  },
+  {
+    "country_hu": "Tonga",
+    "slug": "tonga",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/tonga",
+    "node_id": 253
+  },
+  {
+    "country_hu": "Trinidad és Tobago",
+    "slug": "trinidad-es-tobago",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/trinidad-es-tobago",
+    "node_id": 255
+  },
+  {
+    "country_hu": "Tunézia",
+    "slug": "tunezia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/tunezia",
+    "node_id": 256
+  },
+  {
+    "country_hu": "Tuvalu",
+    "slug": "tuvalu",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/tuvalu",
+    "node_id": 257
+  },
+  {
+    "country_hu": "Tádzsikisztán",
+    "slug": "tadzsikisztan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/tadzsikisztan",
+    "node_id": 248
+  },
+  {
+    "country_hu": "Törökország",
+    "slug": "torokorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/torokorszag",
+    "node_id": 254
+  },
+  {
+    "country_hu": "Türkmenisztán",
+    "slug": "turkmenisztan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/turkmenisztan",
+    "node_id": 258
+  },
+  {
+    "country_hu": "Uganda",
+    "slug": "uganda",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/uganda",
+    "node_id": 259
+  },
+  {
+    "country_hu": "Ukrajna",
+    "slug": "ukrajna",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/ukrajna",
+    "node_id": 261
+  },
+  {
+    "country_hu": "Uruguay",
+    "slug": "uruguay",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/uruguay",
+    "node_id": 262
+  },
+  {
+    "country_hu": "Vanuatu",
+    "slug": "vanuatu",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/vanuatu",
+    "node_id": 264
+  },
+  {
+    "country_hu": "Venezuela",
+    "slug": "venezuela",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/venezuela",
+    "node_id": 265
+  },
+  {
+    "country_hu": "Vietnám",
+    "slug": "vietnam",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/vietnam",
+    "node_id": 266
+  },
+  {
+    "country_hu": "Zambia",
+    "slug": "zambia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/zambia",
+    "node_id": 267
+  },
+  {
+    "country_hu": "Zimbabwe",
+    "slug": "zimbabwe",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/zimbabwe",
+    "node_id": 268
+  },
+  {
+    "country_hu": "Zöld-foki Köztársaság",
+    "slug": "zold-foki-koztarsasag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/zold-foki-koztarsasag",
+    "node_id": 269
+  },
+  {
+    "country_hu": "Észak-Macedónia",
+    "slug": "eszak-macedonia",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/eszak-macedonia",
+    "node_id": 181
+  },
+  {
+    "country_hu": "Észtország",
+    "slug": "esztorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/esztorszag",
+    "node_id": 122
+  },
+  {
+    "country_hu": "Írország",
+    "slug": "irorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/irorszag",
+    "node_id": 147
+  },
+  {
+    "country_hu": "Örményország",
+    "slug": "ormenyorszag",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/ormenyorszag",
+    "node_id": 213
+  },
+  {
+    "country_hu": "Új-Zéland",
+    "slug": "uj-zeland",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/uj-zeland",
+    "node_id": 260
+  },
+  {
+    "country_hu": "Üzbegisztán",
+    "slug": "uzbegisztan",
+    "konzinfo_url": "https://konzinfo.mfa.gov.hu/utazasi-tanacsok-orszagonkent/uzbegisztan",
+    "node_id": 263
+  }
+]

@@ -1448,6 +1448,32 @@ export interface LocaleMessages {
     template_party: string;
     template_bride_dance: string;
   };
+  /** Official Hungarian consular (Konzinfo) travel-advice block on the honeymoon
+   *  page — destination → country page, security rating, pre-trip checklist. */
+  travel_safety: {
+    title: string;
+    intro: string;
+    block_title: string;
+    loading: string;
+    konzinfo_link: string;
+    safety_label: string;
+    last_update_label: string;
+    valid_today_label: string;
+    no_match: string;
+    index_link: string;
+    checklist_title: string;
+    check_passport: string;
+    check_visa: string;
+    check_entry: string;
+    check_health: string;
+    check_insurance: string;
+    check_copies: string;
+    check_register: string;
+    register_link: string;
+    app_link: string;
+    insurance_reminder: string;
+    disclaimer: string;
+  };
   /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */
   honeymoon: {
     title: string;
@@ -1540,6 +1566,8 @@ export interface LocaleMessages {
      *  string covers the submit button. */
     todo_add_placeholder: string;
     todo_add_aria: string;
+    /** Per-row trash button that removes a honeymoon task. */
+    todo_delete_aria: string;
     /** Wand dialog scoped to honeymoon tasks — slimmer cousin of the
      *  planning page's TaskTemplateDialog. `_confirm` receives `{count}` =
      *  picked items; `_already_added` is the per-row badge for entries

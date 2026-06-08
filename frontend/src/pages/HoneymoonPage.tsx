@@ -14,6 +14,7 @@ import type {
   PlanningItem,
 } from "@shared/types";
 import {
+  BadgeCheck,
   BedDouble,
   Briefcase,
   Calendar,
@@ -33,7 +34,9 @@ import {
   Plane,
   Plus,
   ShieldCheck,
+  Smartphone,
   Trash2,
+  Umbrella,
   UtensilsCrossed,
   Wallet,
   Wand2,
@@ -57,6 +60,12 @@ import {
   TASK_TEMPLATE_GROUPS,
   localizeText,
 } from "../lib/planning_templates";
+import {
+  type KonzinfoInfo,
+  KONZINFO_APP_INFO_URL,
+  KONZINFO_INDEX_URL,
+  KONZINFO_REGISTER_URL,
+} from "@shared/konzinfo";
 import { ApiError } from "../lib/api";
 import { type AirportOrigin, searchAirportOrigins } from "../lib/airport_origins";
 import { budgetApi, coupleApi, honeymoonApi, placesApi, planningApi } from "../lib/endpoints";
@@ -303,6 +312,17 @@ export default function HoneymoonPage() {
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
       return false;
+    }
+  }
+
+  async function deleteHoneymoonTask(item: PlanningItem) {
+    // Optimistic removal; restore the row in place on failure.
+    setHoneymoonTasks((prev) => prev.filter((i) => i.id !== item.id));
+    try {
+      await planningApi.remove(item.id);
+    } catch (e) {
+      setHoneymoonTasks((prev) => (prev.some((i) => i.id === item.id) ? prev : [...prev, item]));
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     }
   }
 
@@ -710,6 +730,10 @@ export default function HoneymoonPage() {
           </section>
         ))}
 
+      {couple?.honeymoon_destination && (
+        <TravelSafetyBlock destination={couple.honeymoon_destination} t={t} />
+      )}
+
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -778,6 +802,7 @@ export default function HoneymoonPage() {
         items={honeymoonTasks}
         onToggle={toggleTaskDone}
         onAdd={addHoneymoonTask}
+        onDelete={deleteHoneymoonTask}
       />
     </>
   );
@@ -1483,6 +1508,198 @@ function CostRow({
   );
 }
 
+// Shared outbound-link chip styling for the Konzinfo block.
+const KONZINFO_LINK_CLS =
+  "inline-flex items-center gap-1 rounded border border-paper-300 bg-white px-2 py-1 text-xs font-medium text-ink-700 hover:border-blush-400 hover:text-blush-700 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100";
+
+/** "Travel Safety & Entry Basics" — the official Hungarian consular info block
+ *  for the couple's honeymoon destination. Resolves the destination to a
+ *  Konzinfo country page server-side and shows its security rating + last-update
+ *  date when scrapable. Honeymoon-friendly tone (a reassuring checklist, not a
+ *  warning wall); the official link is always the prominent, authoritative
+ *  source, and a failed fetch still renders at least the country-picker link. */
+function TravelSafetyBlock({
+  destination,
+  t,
+}: {
+  destination: string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const [info, setInfo] = useState<KonzinfoInfo | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setInfo(null);
+    honeymoonApi
+      .konzinfo()
+      .then((data) => {
+        if (!cancelled) setInfo(data);
+      })
+      .catch(() => {
+        // Even on a transport error, keep the block useful: show the generic
+        // country-picker index so the couple can still reach the official source.
+        if (!cancelled) {
+          setInfo({ destination, matched: null, status: null, index_url: KONZINFO_INDEX_URL });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [destination]);
+
+  const matched = info?.matched ?? null;
+  const status = info?.status ?? null;
+  const indexUrl = info?.index_url ?? KONZINFO_INDEX_URL;
+
+  const checklist = [
+    t("travel_safety.check_passport"),
+    t("travel_safety.check_visa"),
+    t("travel_safety.check_entry"),
+    t("travel_safety.check_health"),
+    t("travel_safety.check_insurance"),
+    t("travel_safety.check_copies"),
+    t("travel_safety.check_register"),
+  ];
+
+  return (
+    <section className="card stationery-light mt-4 mx-4 !p-5 sm:mx-8">
+      <header className="flex items-start gap-3">
+        <ShieldCheck
+          size={18}
+          aria-hidden="true"
+          className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-50"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("travel_safety.title")}
+          </p>
+          <p className="mt-0.5 text-sm text-ink-700 dark:text-paper-100">
+            {t("travel_safety.intro")}
+          </p>
+        </div>
+      </header>
+
+      {/* Official country card — the prominent, authoritative source. */}
+      <div className="mt-4 rounded-xl border border-paper-300 bg-paper-50/60 p-3 dark:border-umber-700 dark:bg-umber-900/40">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          {t("travel_safety.block_title")}
+        </p>
+        {info === null ? (
+          <p className="mt-1 text-sm text-ink-400 dark:text-umber-300">
+            {t("travel_safety.loading")}
+          </p>
+        ) : matched ? (
+          <>
+            <p className="mt-1 inline-flex items-center gap-1.5 text-base font-semibold text-ink-900 dark:text-paper-50">
+              <MapPin size={15} aria-hidden="true" className="shrink-0" />
+              {matched.country_hu}
+            </p>
+            <dl className="mt-2 space-y-1 text-xs text-ink-700 dark:text-paper-100">
+              {status?.safety_category && (
+                <div className="flex flex-wrap gap-x-1.5">
+                  <dt className="text-ink-500 dark:text-umber-300">
+                    {t("travel_safety.safety_label")}:
+                  </dt>
+                  <dd className="font-medium">{status.safety_category}</dd>
+                </div>
+              )}
+              {status?.last_modified && (
+                <div className="flex flex-wrap gap-x-1.5">
+                  <dt className="text-ink-500 dark:text-umber-300">
+                    {t("travel_safety.last_update_label")}:
+                  </dt>
+                  <dd className="font-medium">{status.last_modified}</dd>
+                </div>
+              )}
+              {status?.valid_today && (
+                <div className="flex flex-wrap gap-x-1.5">
+                  <dt className="text-ink-500 dark:text-umber-300">
+                    {t("travel_safety.valid_today_label")}:
+                  </dt>
+                  <dd className="font-medium">{status.valid_today}</dd>
+                </div>
+              )}
+            </dl>
+            <a
+              href={matched.konzinfo_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`mt-2.5 ${KONZINFO_LINK_CLS}`}
+            >
+              {t("travel_safety.konzinfo_link")}
+              <ExternalLink size={12} aria-hidden="true" />
+            </a>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-sm text-ink-700 dark:text-paper-100">
+              {t("travel_safety.no_match")}
+            </p>
+            <a
+              href={indexUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`mt-2.5 ${KONZINFO_LINK_CLS}`}
+            >
+              {t("travel_safety.index_link")}
+              <ExternalLink size={12} aria-hidden="true" />
+            </a>
+          </>
+        )}
+      </div>
+
+      {/* Honeymoon pre-trip checklist — reassuring, not alarming. */}
+      <p className="mt-4 text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        {t("travel_safety.checklist_title")}
+      </p>
+      <ul className="mt-1.5 grid gap-1.5 text-sm text-ink-700 dark:text-paper-100">
+        {checklist.map((item) => (
+          <li key={item} className="flex items-start gap-1.5">
+            <Check
+              size={14}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-50"
+            />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+
+      {/* Consular protection + app + insurance. */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <a
+          href={KONZINFO_REGISTER_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={KONZINFO_LINK_CLS}
+        >
+          <BadgeCheck size={12} aria-hidden="true" />
+          {t("travel_safety.register_link")}
+        </a>
+        <a
+          href={KONZINFO_APP_INFO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={KONZINFO_LINK_CLS}
+        >
+          <Smartphone size={12} aria-hidden="true" />
+          {t("travel_safety.app_link")}
+        </a>
+      </div>
+
+      <p className="mt-3 inline-flex items-start gap-1.5 text-xs text-ink-600 dark:text-paper-100">
+        <Umbrella size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
+        <span>{t("travel_safety.insurance_reminder")}</span>
+      </p>
+
+      <p className="mt-2 inline-flex items-start gap-1.5 text-[11px] text-ink-400 dark:text-umber-300">
+        <AlertTriangle size={12} aria-hidden="true" className="mt-0.5 shrink-0" />
+        <span>{t("travel_safety.disclaimer")}</span>
+      </p>
+    </section>
+  );
+}
+
 /** Suggestion card showing Amadeus's three cheapest round-trip offers for
  *  the couple's destination + dates, with an inline-editable origin IATA.
  *  Hidden by the caller when the estimate is null. */
@@ -1975,6 +2192,7 @@ function HoneymoonTodoSection({
   items,
   onToggle,
   onAdd,
+  onDelete,
 }: {
   items: PlanningItem[];
   onToggle: (item: PlanningItem) => Promise<void>;
@@ -1982,6 +2200,8 @@ function HoneymoonTodoSection({
    *  success so the inline form can clear its input; false leaves the typed
    *  value in place so the user can retry without re-typing. */
   onAdd: (title: string) => Promise<boolean>;
+  /** Remove a task from the list (optimistic; parent restores on failure). */
+  onDelete: (item: PlanningItem) => Promise<void>;
 }) {
   const { t, locale } = useT();
   const done = items.filter((i) => i.done).length;
@@ -2230,6 +2450,17 @@ function HoneymoonTodoSection({
                     {item.assignee}
                   </span>
                 )}
+                {/* Per-row delete. Always visible (subtle) so it works on touch
+                    too; darkens on hover/focus on pointer devices. */}
+                <button
+                  type="button"
+                  onClick={() => void onDelete(item)}
+                  aria-label={t("honeymoon.todo_delete_aria")}
+                  title={t("honeymoon.todo_delete_aria")}
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                </button>
               </li>
             ))}
             <li className="px-4 py-2.5">{addForm}</li>

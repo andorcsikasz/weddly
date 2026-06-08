@@ -1,0 +1,293 @@
+[
+  {
+    "country_hu": "Amerikai Egyesült Államok",
+    "match": [
+      "california",
+      "florida",
+      "hawaii",
+      "honolulu",
+      "kauai",
+      "las vegas",
+      "maui",
+      "new york",
+      "oahu",
+      "united states",
+      "usa"
+    ]
+  },
+  {
+    "country_hu": "Bahama-szigetek",
+    "match": ["bahama", "bahamas", "nassau"]
+  },
+  {
+    "country_hu": "Barbados",
+    "match": ["barbados", "bridgetown"]
+  },
+  {
+    "country_hu": "Cook-szigetek",
+    "match": ["aitutaki", "cook islands", "cook-szigetek", "rarotonga"]
+  },
+  {
+    "country_hu": "Costa Rica",
+    "match": ["costa rica", "guanacaste", "manuel antonio", "tamarindo"]
+  },
+  {
+    "country_hu": "Dominikai Köztársaság",
+    "match": ["bavaro", "dominican", "dominikai", "puerto plata", "punta cana"]
+  },
+  {
+    "country_hu": "Dél-afrikai Köztársaság",
+    "match": [
+      "cape town",
+      "del-afrika",
+      "fokvaros",
+      "garden route",
+      "johannesburg",
+      "kruger",
+      "south africa"
+    ]
+  },
+  {
+    "country_hu": "Egyesült Arab Emírségek",
+    "match": ["abu dhabi", "abu-dhabi", "dubai", "dubaj", "emirates", "emirsegek", "uae"]
+  },
+  {
+    "country_hu": "Egyiptom",
+    "match": [
+      "cairo",
+      "egyiptom",
+      "egypt",
+      "hurghada",
+      "kairo",
+      "luxor",
+      "marsa alam",
+      "sharm",
+      "sharm el sheikh"
+    ]
+  },
+  {
+    "country_hu": "Fidzsi-szigetek",
+    "match": ["fidzsi", "fiji", "nadi", "viti levu"]
+  },
+  {
+    "country_hu": "Franciaország tengeren túli területei",
+    "match": [
+      "bora bora",
+      "bora-bora",
+      "francia polinezia",
+      "french polynesia",
+      "guadeloupe",
+      "martinique",
+      "moorea",
+      "polynesia",
+      "reunion",
+      "saint martin",
+      "tahiti"
+    ]
+  },
+  {
+    "country_hu": "Görögország",
+    "match": [
+      "corfu",
+      "crete",
+      "gorogorszag",
+      "greece",
+      "korfu",
+      "kreta",
+      "mykonos",
+      "naxos",
+      "paros",
+      "rhodes",
+      "rodosz",
+      "santorini",
+      "zakynthos"
+    ]
+  },
+  {
+    "country_hu": "Horvátország",
+    "match": [
+      "brac",
+      "croatia",
+      "dubrovnik",
+      "horvatorszag",
+      "hvar",
+      "istria",
+      "isztria",
+      "korcula",
+      "rovinj",
+      "split"
+    ]
+  },
+  {
+    "country_hu": "Indonézia",
+    "match": [
+      "bali",
+      "gili",
+      "indonesia",
+      "indonezia",
+      "jakarta",
+      "lombok",
+      "nusa",
+      "seminyak",
+      "ubud"
+    ]
+  },
+  {
+    "country_hu": "Jamaica",
+    "match": ["jamaica", "montego bay", "negril", "ocho rios"]
+  },
+  {
+    "country_hu": "Japán",
+    "match": ["japan", "kioto", "kyoto", "okinawa", "osaka", "tokio", "tokyo"]
+  },
+  {
+    "country_hu": "Jordánia",
+    "match": ["amman", "aqaba", "jordan", "jordania", "petra", "wadi rum"]
+  },
+  {
+    "country_hu": "Kenya",
+    "match": ["diani", "kenya", "masai mara", "mombasa", "nairobi"]
+  },
+  {
+    "country_hu": "Kuba",
+    "match": ["cuba", "havana", "havanna", "kuba", "varadero"]
+  },
+  {
+    "country_hu": "Maldív-szigetek",
+    "match": ["maldiv", "maldives", "male"]
+  },
+  {
+    "country_hu": "Marokkó",
+    "match": [
+      "agadir",
+      "casablanca",
+      "essaouira",
+      "fez",
+      "marokko",
+      "marrakech",
+      "marrakes",
+      "marrakesh",
+      "morocco"
+    ]
+  },
+  {
+    "country_hu": "Mauritius",
+    "match": ["flic en flac", "mauritius", "port louis"]
+  },
+  {
+    "country_hu": "Mexikó",
+    "match": [
+      "cabo",
+      "cancun",
+      "cozumel",
+      "los cabos",
+      "mexico",
+      "mexiko",
+      "playa del carmen",
+      "riviera maya",
+      "tulum"
+    ]
+  },
+  {
+    "country_hu": "Olaszország",
+    "match": [
+      "amalfi",
+      "capri",
+      "como",
+      "italia",
+      "italy",
+      "olaszorszag",
+      "positano",
+      "roma",
+      "rome",
+      "sardegna",
+      "sardinia",
+      "sicilia",
+      "sicily",
+      "szardinia",
+      "szicilia",
+      "toscana",
+      "tuscany",
+      "velence",
+      "venice"
+    ]
+  },
+  {
+    "country_hu": "Portugália",
+    "match": [
+      "algarve",
+      "azores",
+      "azori",
+      "lisbon",
+      "lisszabon",
+      "madeira",
+      "porto",
+      "portugal",
+      "portugalia"
+    ]
+  },
+  {
+    "country_hu": "Seychelle-szigetek",
+    "match": ["la digue", "mahe", "praslin", "seychelle", "seychelles", "victoria"]
+  },
+  {
+    "country_hu": "Spanyolország",
+    "match": [
+      "barcelona",
+      "espana",
+      "gran canaria",
+      "granada",
+      "ibiza",
+      "majorca",
+      "mallorca",
+      "marbella",
+      "menorca",
+      "sevilla",
+      "spain",
+      "spanyolorszag",
+      "tenerife"
+    ]
+  },
+  {
+    "country_hu": "Srí Lanka",
+    "match": ["colombo", "ella", "galle", "kandy", "sri lanka"]
+  },
+  {
+    "country_hu": "Tanzánia",
+    "match": ["kendwa", "nungwi", "stone town", "tanzania", "zanzibar"]
+  },
+  {
+    "country_hu": "Thaiföld",
+    "match": [
+      "bangkok",
+      "chiang mai",
+      "koh phangan",
+      "koh samui",
+      "koh tao",
+      "krabi",
+      "phi phi",
+      "phuket",
+      "samui",
+      "thaifold",
+      "thailand"
+    ]
+  },
+  {
+    "country_hu": "Törökország",
+    "match": [
+      "antalya",
+      "bodrum",
+      "cappadocia",
+      "istanbul",
+      "isztambul",
+      "kappadokia",
+      "torokorszag",
+      "turkey",
+      "turkiye"
+    ]
+  },
+  {
+    "country_hu": "Vietnám",
+    "match": ["da nang", "ha long", "halong", "hoi an", "nha trang", "phu quoc", "vietnam"]
+  }
+]
