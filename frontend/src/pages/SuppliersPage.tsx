@@ -1262,7 +1262,7 @@ export default function SuppliersPage() {
                     <article
                       key={s.id}
                       data-supplier-id={s.id}
-                      className={`relative flex items-center gap-3 rounded-2xl border border-sage-200 border-l-4 border-l-sage-500 bg-sage-50/60 px-4 py-3 transition hover:border-sage-300 hover:shadow-sm dark:border-sage-400/40 dark:bg-sage-400/15 dark:hover:border-sage-400/60 ${
+                      className={`relative flex items-center gap-3 rounded-2xl border border-sage-300 bg-sage-50/60 px-4 py-3 transition hover:border-sage-400 hover:shadow-sm dark:border-sage-400/40 dark:bg-sage-400/15 dark:hover:border-sage-400/60 ${
                         isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                       }`}
                     >
@@ -1312,7 +1312,7 @@ export default function SuppliersPage() {
                   <article
                     key={s.id}
                     data-supplier-id={s.id}
-                    className={`card !p-4 relative flex h-full flex-col border-l-4 border-l-sage-500 !bg-sage-50/60 dark:!bg-sage-400/15 ${
+                    className={`card !p-4 relative flex h-full flex-col border-sage-400 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15 ${
                       isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
                     }`}
                   >
@@ -1379,7 +1379,7 @@ export default function SuppliersPage() {
                     data-supplier-id={s.id}
                     className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition hover:shadow-sm ${
                       isPicked
-                        ? "border-sage-400 border-l-4 border-l-sage-500 bg-sage-50/70 dark:border-sage-400/40 dark:bg-sage-400/15"
+                        ? "border-sage-400 bg-sage-50/70 dark:border-sage-400/40 dark:bg-sage-400/15"
                         : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
                     } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                   >
@@ -1546,7 +1546,7 @@ export default function SuppliersPage() {
                   data-supplier-id={s.id}
                   className={`card !p-4 relative flex h-full flex-col ${
                     isPicked
-                      ? "border-sage-400 border-l-4 border-l-sage-500 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15"
+                      ? "border-sage-400 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15"
                       : ""
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
