@@ -46,23 +46,31 @@ describe("konzinfo — destination matcher", () => {
 // ─── Live-status HTML parser (deterministic, against a saved snapshot) ──────
 
 describe("konzinfo — live status parser", () => {
-  // Mirrors the real Konzinfo country-page markup (label/value pairs in adjacent
-  // elements, the rating inside a <strong> after the advice sentence).
+  // Mirrors the real Konzinfo country-page markup: the rating lives in the
+  // <meta name="description"> summary, and the dates in label/value pairs in
+  // adjacent elements.
   const SAMPLE = `
+    <meta name="description" content="Szingapúr biztonsági besorolását tekintve a zöld, (IV.) kategóriába tartozik." />
     <div class="field__label">Utolsó módosítás dátuma</div>
     <div class="field__item">2026.05.27.</div>
     <div class="field"><div class="field__label">Mai napon is érvényes</div>
     <div class="field__item">2026.06.08.</div></div>
-    <p>Szingapúr biztonsági besorolását tekintve a <strong>zöld, (IV.) kategóriába</strong> tartozik.</p>
     <div class="field__label">Biztonsági besorolás utolsó módosítása 2022.03.21.</div>
   `;
 
-  test("extracts the dates and the security rating", () => {
+  test("extracts the dates and a concise security rating", () => {
     const s = parseKonzinfoStatus(SAMPLE);
     expect(s.last_modified).toBe("2026.05.27");
     expect(s.valid_today).toBe("2026.06.08");
     expect(s.safety_modified).toBe("2022.03.21");
-    expect(s.safety_category).toBe("zöld, (IV.) kategória");
+    expect(s.safety_category).toBe("Zöld (IV.)");
+  });
+
+  test("distils a two-tier rating to a compact form", () => {
+    const s = parseKonzinfoStatus(
+      '<meta name="description" content="Thaiföld biztonsági besorolása a IV-es és III-as biztonsági besorolási kategória." />',
+    );
+    expect(s.safety_category).toBe("IV–III. kategória");
   });
 
   test("missing fields degrade to null, never throw", () => {

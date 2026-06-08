@@ -56,26 +56,64 @@ function firstMatch(text: string, re: RegExp): string | null {
   return m?.[1] ?? null;
 }
 
-/** Pull the security rating off the page. Primary: the `<strong>` the advice
- *  text wraps the rating in ("...besorolását tekintve a <strong>zöld, (IV.)
- *  kategóriába</strong>..."). Fallback: a colour + roman-numeral scan of the
- *  plain text. Normalises the trailing case ("kategóriába" → "kategória"). */
-function parseSafetyCategory(html: string, text: string): string | null {
-  const strong = /biztons[aá]gi besorol[\s\S]{0,160}?<strong>\s*([^<]+?)\s*<\/strong>/i.exec(html);
-  let raw = strong?.[1] ?? null;
-  if (!raw) {
-    const fallback =
-      /(z[öo]ld|s[áa]rga|narancss[áa]rga|narancs|piros)[,\s(]*\(?\s*(I{1,3}V?|IV)\.?\)?/i.exec(
-        text,
-      );
-    raw = fallback ? `${fallback[1]}, (${fallback[2]}.)` : null;
+function decodeBasicEntities(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/gi, " ");
+}
+
+/** Distil a concise security rating ("IV. kategória", "IV–III. kategória",
+ *  "Zöld (IV.)") out of a sentence. The rating is always a roman numeral (and
+ *  sometimes a colour) sitting near the word "kategória"; the exact wording
+ *  varies country to country ("a IV. kategória", "a IV-es és III-as ...
+ *  kategória", "a zöld, (IV.) kategóriába"). We take the window from the first
+ *  "besorol" to just past "kategóri", pull up to two distinct roman numerals
+ *  plus an optional colour, and format. Returns null when the sentence carries
+ *  no rating (some pages lead with other text) — the UI then just omits the
+ *  line. */
+function distillSafetyRating(source: string): string | null {
+  const lower = source.toLowerCase();
+  const besorol = lower.indexOf("besorol");
+  const start = besorol >= 0 ? besorol : 0;
+  const kat = lower.indexOf("kategóri", start);
+  const win = source.slice(start, kat >= 0 ? kat + 10 : start + 80);
+
+  const romans: string[] = [];
+  for (const m of win.matchAll(/\b(IV|III|II|I|V)\b/g)) {
+    const r = (m[1] ?? "").toUpperCase();
+    if (r && !romans.includes(r)) romans.push(r);
   }
-  if (!raw) return null;
-  return raw
-    .replace(/kategóri[aá]b[ae].*$/i, "kategória")
-    .replace(/kategóri[aá].*$/i, "kategória")
-    .replace(/\s+/g, " ")
-    .trim();
+  const top = romans.slice(0, 2);
+  const color = /(z[öo]ld|s[áa]rga|narancss[áa]rga|narancs|piros)/i.exec(win)?.[1] ?? null;
+  if (top.length === 0 && !color) return null;
+
+  const roman = top.join("–");
+  if (color) {
+    const c = color.charAt(0).toUpperCase() + color.slice(1).toLowerCase();
+    return roman ? `${c} (${roman}.)` : c;
+  }
+  return roman ? `${roman}. kategória` : null;
+}
+
+/** Pull the security rating off the page. Primary source is the `<meta
+ *  name="description">` summary, which carries the rating sentence in a clean,
+ *  consistent form on every country page. Falls back to the advice-body
+ *  `<strong>` the rating is sometimes wrapped in. */
+function parseSafetyCategory(html: string): string | null {
+  const desc =
+    /<meta\s+name="description"\s+content="([^"]*)"/i.exec(html)?.[1] ??
+    /<meta\s+property="og:description"\s+content="([^"]*)"/i.exec(html)?.[1] ??
+    null;
+  if (desc) {
+    const fromDesc = distillSafetyRating(decodeBasicEntities(desc));
+    if (fromDesc) return fromDesc;
+  }
+  const strong = /biztons[aá]gi besorol[\s\S]{0,160}?<strong>\s*([^<]+?)\s*<\/strong>/i.exec(
+    html,
+  )?.[1];
+  return strong ? distillSafetyRating(strong) : null;
 }
 
 /** Parse the three live values off a country page's HTML. Exported so tests can
@@ -90,7 +128,7 @@ export function parseKonzinfoStatus(html: string): KonzinfoLiveStatus {
       text,
       new RegExp(`Biztonsági besorolás utolsó módosítása\\s*${DATE}`, "i"),
     ),
-    safety_category: parseSafetyCategory(html, text),
+    safety_category: parseSafetyCategory(html),
   };
 }
 
