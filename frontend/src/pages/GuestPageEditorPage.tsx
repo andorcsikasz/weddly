@@ -40,7 +40,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useToast } from "../components/ui";
@@ -434,13 +434,16 @@ export default function GuestPageEditorPage() {
   useDocumentMeta("seo.guest_page_title", "seo.guest_page_description");
   const toast = useToast();
   const confirm = useConfirm();
-  const navigate = useNavigate();
 
   const [couple, setCouple] = useState<Couple | null>(null);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [venueName, setVenueName] = useState("");
   const [venueCity, setVenueCity] = useState("");
+  // Exact wedding date (ISO YYYY-MM-DD, or "" for none/fuzzy). Editable here
+  // because the date is the hero's signature element; saving folds it into an
+  // `exact` goal server-side, which also updates the dashboard.
+  const [weddingDate, setWeddingDate] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
   // Cover focal point (object-position %, 0..100). Adjusted by dragging the
   // cover in the positioner below; persisted separately from the debounced
@@ -484,7 +487,7 @@ export default function GuestPageEditorPage() {
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   // Which structured field is being edited in a modal sheet (click-to-edit on
   // the preview opens these instead of scrolling to a form). null = closed.
-  const [editPanel, setEditPanel] = useState<"cover" | "useful" | null>(null);
+  const [editPanel, setEditPanel] = useState<"cover" | "useful" | "date" | "schedule" | null>(null);
 
   const postRsvpTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -533,6 +536,7 @@ export default function GuestPageEditorPage() {
           setIsPublic(cR.couple.is_public);
           setVenueName(cR.couple.venue_name ?? "");
           setVenueCity(cR.couple.venue_city ?? "");
+          setWeddingDate(cR.couple.wedding_date ?? "");
           setCoverImageUrl(cR.couple.cover_image_url ?? "");
           setCoverPositionX(cR.couple.cover_position_x ?? 50);
           setCoverPositionY(cR.couple.cover_position_y ?? 50);
@@ -637,6 +641,7 @@ export default function GuestPageEditorPage() {
   const venueChanged = venueTrimmed !== (couple?.venue_name ?? "");
   const venueCityTrimmed = venueCity.trim();
   const venueCityChanged = venueCityTrimmed !== (couple?.venue_city ?? "");
+  const weddingDateChanged = weddingDate !== (couple?.wedding_date ?? "");
   const coverChanged = coverTrimmed !== (couple?.cover_image_url ?? "");
   const introChanged = guestPageIntro !== (couple?.guest_page_intro ?? "");
   // The labelled rows + free-form rest, composed back into the persisted text.
@@ -647,6 +652,7 @@ export default function GuestPageEditorPage() {
   const dirty =
     venueChanged ||
     venueCityChanged ||
+    weddingDateChanged ||
     coverChanged ||
     publishChanged ||
     introChanged ||
@@ -666,6 +672,7 @@ export default function GuestPageEditorPage() {
       if (publishChanged) body.is_public = isPublic;
       if (venueChanged) body.venue_name = venueTrimmed === "" ? null : venueTrimmed;
       if (venueCityChanged) body.venue_city = venueCityTrimmed === "" ? null : venueCityTrimmed;
+      if (weddingDateChanged) body.wedding_date = weddingDate === "" ? null : weddingDate;
       if (coverChanged) body.cover_image_url = coverTrimmed === "" ? null : coverTrimmed;
       if (introChanged) body.guest_page_intro = guestPageIntro === "" ? null : guestPageIntro;
       if (usefulInfoChanged) body.useful_info = usefulInfoText === "" ? null : usefulInfoText;
@@ -675,6 +682,7 @@ export default function GuestPageEditorPage() {
       setIsPublic(r.couple.is_public);
       setVenueName(r.couple.venue_name ?? "");
       setVenueCity(r.couple.venue_city ?? "");
+      setWeddingDate(r.couple.wedding_date ?? "");
       setCoverImageUrl(r.couple.cover_image_url ?? "");
       setGuestPageIntro(r.couple.guest_page_intro ?? "");
       {
@@ -896,7 +904,7 @@ export default function GuestPageEditorPage() {
         couple_display_name: couple.display_name,
         bride_name: null,
         groom_name: null,
-        wedding_date: couple.wedding_date,
+        wedding_date: weddingDate === "" ? null : weddingDate,
         ceremony_kind: couple.ceremony_kind,
         venue_name: venueName.trim() === "" ? null : venueName.trim(),
         venue_city: venueCity.trim() === "" ? null : venueCity.trim(),
@@ -1040,8 +1048,8 @@ export default function GuestPageEditorPage() {
               isPreview
               edit={{
                 onEditCover: () => setEditPanel("cover"),
-                onEditDate: () => navigate("/app"),
-                onEditSchedule: () => navigate("/app/schedule"),
+                onEditDate: () => setEditPanel("date"),
+                onEditSchedule: () => setEditPanel("schedule"),
                 onEditVenue: focusVenueField,
                 onEditIntro: focusIntroField,
                 onEditUsefulInfo: () => setEditPanel("useful"),
@@ -1667,6 +1675,70 @@ export default function GuestPageEditorPage() {
             />
           </div>
         </div>
+      </Dialog>
+
+      {/* Date editor — clicking the hero date opens it here rather than jumping
+          to the dashboard. Saving folds the scalar into an `exact` goal
+          server-side, so the dashboard reflects it too. */}
+      <Dialog
+        open={editPanel === "date"}
+        role="dialog"
+        closeOnBackdrop
+        title={t("guest_page_editor.date_panel_title")}
+        onClose={() => setEditPanel(null)}
+        footer={
+          <button type="button" className="btn-primary" onClick={() => setEditPanel(null)}>
+            {t("common.done")}
+          </button>
+        }
+      >
+        <div className="flex flex-col gap-2">
+          <input
+            type="date"
+            className="input"
+            value={weddingDate}
+            onChange={(e) => setWeddingDate(e.target.value)}
+            aria-label={t("guest_page_editor.date_panel_title")}
+          />
+          <p className="text-xs text-ink-500 dark:text-umber-300">
+            {t("guest_page_editor.date_panel_hint")}
+          </p>
+        </div>
+      </Dialog>
+
+      {/* Schedule — clicking the schedule band shows the day's moments read-only
+          plus an explicit link to the full editor (its CRUD is too rich to
+          inline). No more surprise redirect. */}
+      <Dialog
+        open={editPanel === "schedule"}
+        role="dialog"
+        closeOnBackdrop
+        title={t("guest_page_editor.schedule_panel_title")}
+        onClose={() => setEditPanel(null)}
+        footer={
+          <Link to="/app/schedule" className="btn-primary">
+            {t("guest_page_editor.schedule_panel_open_full")}
+          </Link>
+        }
+      >
+        {events.length === 0 ? (
+          <p className="text-sm text-ink-500 dark:text-umber-300">
+            {t("guest_page_editor.schedule_panel_empty")}
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1.5">
+            {events.map((ev) => (
+              <li key={ev.id} className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="text-ink-700 dark:text-paper-100">{ev.label}</span>
+                <span className="shrink-0 tabular-nums text-ink-500 dark:text-umber-300">
+                  {`${Math.floor(ev.starts_at_minutes / 60)}:${String(
+                    ev.starts_at_minutes % 60,
+                  ).padStart(2, "0")}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Dialog>
     </>
   );

@@ -446,6 +446,10 @@ export const coupleApi = {
     /** Post-RSVP unlocked block (markdown, ≤8000 chars). Empty string
      *  clears the column. */
     post_rsvp_content?: string | null;
+    /** Exact wedding date (YYYY-MM-DD). The backend folds a present scalar
+     *  into an `exact` wedding_date_goal; null sets it back to TBD. The
+     *  guest-page editor sets this when the couple edits the hero date. */
+    wedding_date?: string | null;
     /** Wedding-day Welcome Desk mode toggle. Persistent on the couple
      *  row so the Settings card shows a stable status across reloads. */
     welcome_desk_active?: boolean;

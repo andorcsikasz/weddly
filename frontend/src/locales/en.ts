@@ -1879,6 +1879,11 @@ const en: LocaleMessages = {
     useful_field_accommodation: "Accommodation",
     useful_field_other_label: "Anything else",
     useful_field_other_placeholder: "Anything else good for your guests to know.",
+    date_panel_title: "Wedding date",
+    date_panel_hint: "This also updates the date on your dashboard.",
+    schedule_panel_title: "Schedule",
+    schedule_panel_open_full: "Edit the schedule",
+    schedule_panel_empty: "No moments yet. Open the schedule editor to add them.",
     post_rsvp_label: "Details for confirmed guests",
     post_rsvp_placeholder: "Click a suggested topic above, or just type the details freely.",
     post_rsvp_hint:

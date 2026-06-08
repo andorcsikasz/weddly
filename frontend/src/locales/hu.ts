@@ -1896,6 +1896,11 @@ const hu: LocaleMessages = {
     useful_field_accommodation: "Szállás",
     useful_field_other_label: "Egyéb tudnivaló",
     useful_field_other_placeholder: "Bármi más, amit jó tudni a vendégeknek.",
+    date_panel_title: "Az esküvő dátuma",
+    date_panel_hint: "Ezzel az áttekintő oldal (irányítópult) dátuma is frissül.",
+    schedule_panel_title: "A nap menete",
+    schedule_panel_open_full: "Menetrend szerkesztése",
+    schedule_panel_empty: "Még nincs program. Nyisd meg a menetrend-szerkesztőt.",
     post_rsvp_label: "Részletek a visszajelölteknek",
     post_rsvp_placeholder: "Kattints fent egy javasolt témára, vagy írd be a részleteket szabadon.",
     post_rsvp_hint:

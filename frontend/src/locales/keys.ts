@@ -2077,6 +2077,13 @@ export interface LocaleMessages {
     useful_field_accommodation: string;
     useful_field_other_label: string;
     useful_field_other_placeholder: string;
+    /** Date editor sheet (click the hero date) + schedule sheet (click the
+     *  schedule band) — replace the old jumps to other pages. */
+    date_panel_title: string;
+    date_panel_hint: string;
+    schedule_panel_title: string;
+    schedule_panel_open_full: string;
+    schedule_panel_empty: string;
     /** Phase 2 — markdown textarea bound to `couples.post_rsvp_content`.
      *  Lives under the Post-RSVP section. */
     post_rsvp_label: string;
