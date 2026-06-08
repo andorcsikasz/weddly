@@ -826,65 +826,6 @@ export function WeddingSiteView({
         </Band>
       )}
 
-      {/* ── Wishlist decks — confirmed-tier live page only. ─────────────── */}
-      {!isPreview &&
-        !sectionHidden("wishlist") &&
-        view.wishlist &&
-        view.wishlist.length > 0 &&
-        (() => {
-          const gifts = view.wishlist.filter((x) => x.kind === "gift");
-          const requests = view.wishlist.filter((x) => x.kind === "request");
-          return (
-            <Band>
-              {gifts.length > 0 && (
-                <div>
-                  <Heading className="flex items-center gap-2">
-                    <Gift size={22} aria-hidden /> {t("guest_portal.wishlist_section_title")}
-                  </Heading>
-                  <p
-                    className="mt-3 max-w-2xl whitespace-pre-line text-base"
-                    style={{ opacity: 0.9 }}
-                  >
-                    {t("guest_portal.wishlist_intro")}
-                  </p>
-                  <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-                    {gifts.map((entry) => (
-                      <GuestWishlistCard
-                        key={entry.id}
-                        entry={entry}
-                        currency={localeCurrency(locale)}
-                        locale={locale}
-                        onToggleInterest={onToggleWishlistInterest}
-                        t={t}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {requests.length > 0 && (
-                <div className={gifts.length > 0 ? "mt-10" : ""}>
-                  <Heading className="flex items-center gap-2">
-                    <HeartHandshake size={22} aria-hidden />{" "}
-                    {t("guest_portal.wishlist_requests_title")}
-                  </Heading>
-                  <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-                    {requests.map((entry) => (
-                      <GuestWishlistCard
-                        key={entry.id}
-                        entry={entry}
-                        currency={localeCurrency(locale)}
-                        locale={locale}
-                        onToggleInterest={onToggleWishlistInterest}
-                        t={t}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </Band>
-          );
-        })()}
-
       {/* ── RSVP CTA — generic at the public tier, personal at invited. ─── */}
       {(isPreview || !showConfirmedExtras) && (
         <section
@@ -928,6 +869,67 @@ export function WeddingSiteView({
           </Link>
         </section>
       )}
+
+      {/* ── Wishlist — compact closing section, confirmed-tier live page only.
+       *  Sits at the very bottom (below the RSVP / manage links, above the
+       *  footer) so the gift list reads as a gentle footnote rather than a
+       *  headline band. Eyebrow-sized headers keep it small. ─────────────── */}
+      {!isPreview &&
+        !sectionHidden("wishlist") &&
+        view.wishlist &&
+        view.wishlist.length > 0 &&
+        (() => {
+          const gifts = view.wishlist.filter((x) => x.kind === "gift");
+          const requests = view.wishlist.filter((x) => x.kind === "request");
+          return (
+            <Band className="!py-10 sm:!py-12">
+              {gifts.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Gift size={16} aria-hidden style={{ color: "var(--wt-accent-text)" }} />
+                    <Eyebrow>{t("guest_portal.wishlist_section_title")}</Eyebrow>
+                  </div>
+                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {gifts.map((entry) => (
+                      <GuestWishlistCard
+                        key={entry.id}
+                        entry={entry}
+                        currency={localeCurrency(locale)}
+                        locale={locale}
+                        onToggleInterest={onToggleWishlistInterest}
+                        t={t}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {requests.length > 0 && (
+                <div className={gifts.length > 0 ? "mt-8" : ""}>
+                  <div className="flex items-center gap-2">
+                    <HeartHandshake
+                      size={16}
+                      aria-hidden
+                      style={{ color: "var(--wt-accent-text)" }}
+                    />
+                    <Eyebrow>{t("guest_portal.wishlist_requests_title")}</Eyebrow>
+                  </div>
+                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {requests.map((entry) => (
+                      <GuestWishlistCard
+                        key={entry.id}
+                        entry={entry}
+                        currency={localeCurrency(locale)}
+                        locale={locale}
+                        onToggleInterest={onToggleWishlistInterest}
+                        t={t}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Band>
+          );
+        })()}
 
       {/* ── Weddly branding — centered wordmark over a hairline. Live only. ── */}
       {footer && (
