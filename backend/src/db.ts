@@ -167,6 +167,36 @@ addColumnIfMissing("planning_items", "topic", "topic TEXT");
 // per-couple slice and filtering in memory.
 db.exec("CREATE INDEX IF NOT EXISTS idx_planning_topic ON planning_items(couple_id, kind, topic)");
 
+// "Döntések" (decision-prompt) layer on planning tasks: the long tail of small
+// yes/no decisions and "did you think of this?" prompts (entrance music, ring
+// bearer, the venue's default coffee, rain plan...). A prompt is just a
+// kind='task' row carrying a stable `seed_key` (matching shared/planning_prompts
+// PROMPT_SEEDS) so it inherits the existing Gantt / notification plumbing for
+// free, and the immutable seed metadata (prompt_kind, target, supplier category,
+// hint, group) is derived frontend-side from the master by seed_key rather than
+// duplicated into columns. `seed_key IS NOT NULL` is the discriminator that
+// keeps these rows out of the dated Tasks list until they're promoted.
+//   decision_status: 'open' | 'decided' | 'not_relevant' | 'promoted'. Orthogonal
+//     to `done`: an open prompt has no due_date, so summarizeTimeline / the Gantt
+//     treat it as 'undated' and it never pollutes the bell badge.
+//   resolution: free-text answer / decision log ("Bevonulás: Canon in D",
+//     "Igen, van koffeinmentes kávé").
+addColumnIfMissing("planning_items", "seed_key", "seed_key TEXT");
+addColumnIfMissing("planning_items", "decision_status", "decision_status TEXT");
+addColumnIfMissing("planning_items", "resolution", "resolution TEXT");
+// One prompt row per (couple, seed): the generator dedupes on this when it
+// lazily materialises a group, so re-opening a group never double-inserts.
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_planning_seed ON planning_items(couple_id, seed_key) WHERE seed_key IS NOT NULL",
+);
+// Lightweight intake for the decision layer: the couple's manual answers to the
+// 6 conditional dimensions (outdoor? pets? destination?...) that aren't already
+// derivable from couples.ceremony_kind / the guest list. Stored as a small JSON
+// blob ({ "outdoor": "yes", "pets": "no", ... }); absent dimensions stay
+// "unanswered" and the prompt resolver keeps their tagged prompts visible
+// (inclusive by design: a missed rain plan is costlier than one extra card).
+addColumnIfMissing("couples", "planning_profile", "planning_profile TEXT");
+
 // Run-sheet ("forgatókönyv") fields on the day-of schedule: who runs each beat
 // (free-text, like planning_items.assignee) and which booked supplier it ties
 // to (loose reference to couple_suppliers.id, no hard FK — same as

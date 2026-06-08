@@ -26,6 +26,7 @@ import {
   Flag,
   GanttChartSquare,
   Lightbulb,
+  ListChecks,
   Plus,
   Trash2,
   User,
@@ -43,6 +44,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
+import { DecisionsPanel } from "./DecisionsPanel";
 import { ApiError } from "../lib/api";
 import { coupleApi, planningApi } from "../lib/endpoints";
 import { maxIsoDate, todayIso } from "../lib/format";
@@ -60,11 +62,22 @@ import {
 import { useDocumentMeta } from "../lib/seo";
 
 type PlanningTabKind = Exclude<PlanningKind, "schedule">;
+/** The decision-prompt deck is a fourth surface over the same table, but its
+ *  rows aren't a distinct PlanningKind (they're kind='task' with a seed_key) —
+ *  so the tab key is its own union member, not a PlanningKind. */
+type PlanningTab = PlanningTabKind | "decision";
 
-const TABS: { kind: PlanningTabKind; labelKey: string }[] = [
+const TABS: { kind: PlanningTab; labelKey: string }[] = [
   { kind: "task", labelKey: "planning.tab_tasks" },
   { kind: "idea", labelKey: "planning.tab_ideas" },
+  { kind: "decision", labelKey: "planning.tab_decisions" },
 ];
+
+const TAB_ICON: Record<PlanningTab, typeof CheckCircle2> = {
+  task: CheckCircle2,
+  idea: Lightbulb,
+  decision: ListChecks,
+};
 
 /** Lookup table mapping every TASK_TEMPLATE title (HU + EN) to the group it
  *  came from. Lets us render a divider between Esküvő and Nászút tasks in
@@ -111,7 +124,7 @@ export default function PlanningPage() {
   const confirm = useConfirm();
   const [items, setItems] = useState<PlanningItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeKind, setActiveKind] = useState<PlanningTabKind>("task");
+  const [activeKind, setActiveKind] = useState<PlanningTab>("task");
   // Per-kind wand modal flags. Task + idea each open their own previewer
   // (different field shapes). The wedding-day program template lives on
   // /app/schedule, so there's no schedule wand here.
@@ -170,6 +183,9 @@ export default function PlanningPage() {
     () =>
       items
         .filter((i) => i.kind === activeKind)
+        // Decision-prompts are kind='task' rows; keep them out of the dated
+        // Tasks list until they're promoted into real tasks.
+        .filter((i) => !(i.kind === "task" && i.seed_key && i.decision_status !== "promoted"))
         .filter(
           (i) => i.kind !== "task" || priorityFilter === 0 || (i.priority ?? 0) === priorityFilter,
         )
@@ -207,6 +223,7 @@ export default function PlanningPage() {
     let p2 = 0;
     for (const i of items) {
       if (i.kind !== "task") continue;
+      if (i.seed_key && i.decision_status !== "promoted") continue;
       const p = i.priority ?? 0;
       if (p === 1) p1++;
       if (p === 2) p2++;
@@ -221,6 +238,9 @@ export default function PlanningPage() {
     due_date?: string | null;
     assignee?: string | null;
   }) {
+    // The decision tab has no quick-add form; this guard also narrows
+    // activeKind to a real PlanningKind for the create call.
+    if (activeKind === "decision") return;
     try {
       const r = await planningApi.create({ kind: activeKind, ...input });
       setItems((prev) => [...prev, r.item]);
@@ -353,7 +373,10 @@ export default function PlanningPage() {
     }
   }
 
-  const hasTaskItems = useMemo(() => items.some((i) => i.kind === "task"), [items]);
+  const hasTaskItems = useMemo(
+    () => items.some((i) => i.kind === "task" && !(i.seed_key && i.decision_status !== "promoted")),
+    [items],
+  );
   const hasIdeaItems = useMemo(() => items.some((i) => i.kind === "idea"), [items]);
 
   /** Lower-cased titles of existing tasks — lets the timeline generator mark
@@ -361,7 +384,8 @@ export default function PlanningPage() {
    *  venue". Matches on the localized title the generator would write. */
   const existingTaskTitles = useMemo(() => {
     const set = new Set<string>();
-    for (const i of items) if (i.kind === "task") set.add(i.title.trim().toLowerCase());
+    for (const i of items)
+      if (i.kind === "task" && !i.seed_key) set.add(i.title.trim().toLowerCase());
     return set;
   }, [items]);
 
@@ -499,7 +523,7 @@ export default function PlanningPage() {
           >
             {TABS.map((tab) => {
               const active = tab.kind === activeKind;
-              const Icon = tab.kind === "task" ? CheckCircle2 : Lightbulb;
+              const Icon = TAB_ICON[tab.kind];
               return (
                 <button
                   key={tab.kind}
@@ -577,95 +601,106 @@ export default function PlanningPage() {
           </div>
         </div>
 
-        <QuickAddForm
-          kind={activeKind}
-          assigneeSuggestions={assigneeSuggestions}
-          onCreate={onCreate}
-        />
-
-        {activeKind === "task" &&
-          (taskPriorityCounts.p1 > 0 || taskPriorityCounts.p2 > 0 || priorityFilter !== 0) && (
-            <div
-              role="radiogroup"
-              aria-label={t("planning.priority_filter_aria")}
-              className="mt-4 flex flex-wrap items-center gap-2 text-xs"
-            >
-              <PriorityFilterPill
-                active={priorityFilter === 0}
-                onClick={() => setPriorityFilter(0)}
-                label={t("planning.priority_filter_all")}
-              />
-              <PriorityFilterPill
-                active={priorityFilter === 1}
-                onClick={() => setPriorityFilter(1)}
-                label={
-                  <>
-                    <span className="font-bold text-blush-700 dark:text-blush-300">!</span>
-                    <span>{t("planning.priority_filter_important")}</span>
-                    {taskPriorityCounts.p1 > 0 && (
-                      <span className="text-ink-400 dark:text-umber-300">
-                        ({taskPriorityCounts.p1})
-                      </span>
-                    )}
-                  </>
-                }
-              />
-              <PriorityFilterPill
-                active={priorityFilter === 2}
-                onClick={() => setPriorityFilter(2)}
-                label={
-                  <>
-                    <span className="font-bold text-blush-700 dark:text-blush-300">!!</span>
-                    <span>{t("planning.priority_filter_sos")}</span>
-                    {taskPriorityCounts.p2 > 0 && (
-                      <span className="text-ink-400 dark:text-umber-300">
-                        ({taskPriorityCounts.p2})
-                      </span>
-                    )}
-                  </>
-                }
-              />
-            </div>
-          )}
-
-        {loading ? (
-          <PlanningListSkeleton kind={activeKind} />
-        ) : scoped.length === 0 ? (
-          <EmptyState kind={activeKind} />
+        {activeKind === "decision" ? (
+          <DecisionsPanel
+            items={items}
+            loading={loading}
+            locale={locale}
+            onItemsChange={setItems}
+          />
         ) : (
-          <div className="mt-4 space-y-6">
-            {taskSections.map((section) => {
-              // Section header only on the tasks tab AND only when there are
-              // at least two distinct groups visible — a single-group list
-              // doesn't need a label, that's just noise.
-              const showHeader = activeKind === "task" && taskSections.length > 1;
-              return (
-                <section key={section.group}>
-                  {showHeader && (
-                    <h2 className="mb-2 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                      {t(TASK_GROUP_LABEL_KEY[section.group])}
-                    </h2>
-                  )}
-                  <ul className="space-y-2">
-                    {section.items.map((item, idx) => (
-                      <PlanningRow
-                        key={item.id}
-                        item={item}
-                        assigneeSuggestions={assigneeSuggestions}
-                        canMoveUp={idx > 0}
-                        canMoveDown={idx < section.items.length - 1}
-                        onToggleDone={() => onToggleDone(item)}
-                        onPatch={(patch) => onPatch(item, patch)}
-                        onCyclePriority={() => onCyclePriority(item)}
-                        onMove={(direction) => onMove(item, direction)}
-                        onDelete={() => onDelete(item)}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              );
-            })}
-          </div>
+          <>
+            <QuickAddForm
+              kind={activeKind}
+              assigneeSuggestions={assigneeSuggestions}
+              onCreate={onCreate}
+            />
+
+            {activeKind === "task" &&
+              (taskPriorityCounts.p1 > 0 || taskPriorityCounts.p2 > 0 || priorityFilter !== 0) && (
+                <div
+                  role="radiogroup"
+                  aria-label={t("planning.priority_filter_aria")}
+                  className="mt-4 flex flex-wrap items-center gap-2 text-xs"
+                >
+                  <PriorityFilterPill
+                    active={priorityFilter === 0}
+                    onClick={() => setPriorityFilter(0)}
+                    label={t("planning.priority_filter_all")}
+                  />
+                  <PriorityFilterPill
+                    active={priorityFilter === 1}
+                    onClick={() => setPriorityFilter(1)}
+                    label={
+                      <>
+                        <span className="font-bold text-blush-700 dark:text-blush-300">!</span>
+                        <span>{t("planning.priority_filter_important")}</span>
+                        {taskPriorityCounts.p1 > 0 && (
+                          <span className="text-ink-400 dark:text-umber-300">
+                            ({taskPriorityCounts.p1})
+                          </span>
+                        )}
+                      </>
+                    }
+                  />
+                  <PriorityFilterPill
+                    active={priorityFilter === 2}
+                    onClick={() => setPriorityFilter(2)}
+                    label={
+                      <>
+                        <span className="font-bold text-blush-700 dark:text-blush-300">!!</span>
+                        <span>{t("planning.priority_filter_sos")}</span>
+                        {taskPriorityCounts.p2 > 0 && (
+                          <span className="text-ink-400 dark:text-umber-300">
+                            ({taskPriorityCounts.p2})
+                          </span>
+                        )}
+                      </>
+                    }
+                  />
+                </div>
+              )}
+
+            {loading ? (
+              <PlanningListSkeleton kind={activeKind} />
+            ) : scoped.length === 0 ? (
+              <EmptyState kind={activeKind} />
+            ) : (
+              <div className="mt-4 space-y-6">
+                {taskSections.map((section) => {
+                  // Section header only on the tasks tab AND only when there are
+                  // at least two distinct groups visible — a single-group list
+                  // doesn't need a label, that's just noise.
+                  const showHeader = activeKind === "task" && taskSections.length > 1;
+                  return (
+                    <section key={section.group}>
+                      {showHeader && (
+                        <h2 className="mb-2 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+                          {t(TASK_GROUP_LABEL_KEY[section.group])}
+                        </h2>
+                      )}
+                      <ul className="space-y-2">
+                        {section.items.map((item, idx) => (
+                          <PlanningRow
+                            key={item.id}
+                            item={item}
+                            assigneeSuggestions={assigneeSuggestions}
+                            canMoveUp={idx > 0}
+                            canMoveDown={idx < section.items.length - 1}
+                            onToggleDone={() => onToggleDone(item)}
+                            onPatch={(patch) => onPatch(item, patch)}
+                            onCyclePriority={() => onCyclePriority(item)}
+                            onMove={(direction) => onMove(item, direction)}
+                            onDelete={() => onDelete(item)}
+                          />
+                        ))}
+                      </ul>
+                    </section>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 

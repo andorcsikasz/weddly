@@ -3,7 +3,7 @@
 // All queries take a coupleId; the caller is responsible for scoping to the
 // authenticated couple via getCoupleForUser.
 
-import type { PlanningItem, PlanningKind, PlanningTopic } from "@shared/types";
+import type { DecisionStatus, PlanningItem, PlanningKind, PlanningTopic } from "@shared/types";
 import { db } from "../db";
 
 const VALID_KINDS: ReadonlySet<PlanningKind> = new Set(["task", "idea", "schedule"]);
@@ -35,6 +35,13 @@ export interface PlanningItemRow {
   /** 0 = no flag, 1 = important ("!"), 2 = SOS ("!!"). Tasks only. */
   priority: number;
   position: number;
+  /** "Döntések" layer - stable seed identifier; NULL on normal rows. */
+  seed_key: string | null;
+  /** "Döntések" layer - 'open' | 'decided' | 'not_relevant' | 'promoted'; NULL
+   *  on non-prompt rows. */
+  decision_status: string | null;
+  /** "Döntések" layer - resolved decision / supplier answer; NULL until decided. */
+  resolution: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -65,9 +72,23 @@ export function toPlanningItem(row: PlanningItemJoinedRow): PlanningItem {
     supplier_id: row.supplier_id,
     priority: row.priority === 1 || row.priority === 2 ? (row.priority as 1 | 2) : 0,
     position: row.position,
+    seed_key: row.seed_key,
+    decision_status: isDecisionStatus(row.decision_status) ? row.decision_status : null,
+    resolution: row.resolution,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
+}
+
+const VALID_DECISION_STATUSES: ReadonlySet<DecisionStatus> = new Set([
+  "open",
+  "decided",
+  "not_relevant",
+  "promoted",
+]);
+
+export function isDecisionStatus(s: string | null): s is DecisionStatus {
+  return s !== null && VALID_DECISION_STATUSES.has(s as DecisionStatus);
 }
 
 const LIST_SELECT = `
@@ -92,6 +113,24 @@ export function listPlanningItemsByCouple(coupleId: number): PlanningItem[] {
     )
     .all(coupleId) as PlanningItemJoinedRow[];
   return rows.map(toPlanningItem);
+}
+
+/** Guest-derived inputs for the decision-prompt visibility resolver. `guestCount`
+ *  is null when the couple hasn't built a list yet (so conditional prompts stay
+ *  inclusively visible rather than being hidden on an empty list). */
+export function promptGuestStats(coupleId: number): {
+  guestCount: number | null;
+  hasChildren: boolean;
+} {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN kind IN ('child', 'baby') THEN 1 ELSE 0 END) AS kids
+         FROM guests WHERE couple_id = ?`,
+    )
+    .get(coupleId) as { total: number; kids: number | null } | undefined;
+  const total = Number(row?.total ?? 0);
+  return { guestCount: total > 0 ? total : null, hasChildren: Number(row?.kids ?? 0) > 0 };
 }
 
 export function getPlanningItemScoped(id: number, coupleId: number): PlanningItemRow | null {

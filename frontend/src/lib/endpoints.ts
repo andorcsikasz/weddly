@@ -787,7 +787,17 @@ export interface PlanningItemCreate {
   position?: number;
 }
 
-export type PlanningItemPatch = Partial<Omit<PlanningItemCreate, "kind">>;
+export type PlanningItemPatch = Partial<Omit<PlanningItemCreate, "kind">> & {
+  /** "Döntések" layer — move a prompt through its lifecycle. */
+  decision_status?: import("@shared/types").DecisionStatus | null;
+  /** "Döntések" layer — the recorded decision / supplier answer. */
+  resolution?: string | null;
+};
+
+/** Manual intake answers for the decision-prompt conditional dimensions. */
+export type PlanningPromptTags = Partial<
+  Record<import("@shared/planning_prompts").ConditionTag, "yes" | "no">
+>;
 
 export const planningApi = {
   list: () => apiFetch<{ items: import("@shared/types").PlanningItem[] }>("GET", "/api/planning"),
@@ -796,6 +806,19 @@ export const planningApi = {
   update: (id: number, body: PlanningItemPatch) =>
     apiFetch<{ item: import("@shared/types").PlanningItem }>("PATCH", `/api/planning/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/planning/${id}`),
+  /** Read the saved intake answers for the conditional decision-prompts. */
+  getPromptProfile: () =>
+    apiFetch<{ tags: PlanningPromptTags }>("GET", "/api/planning/prompts/profile"),
+  /** Persist the intake answers. */
+  savePromptProfile: (tags: PlanningPromptTags) =>
+    apiFetch<{ tags: PlanningPromptTags }>("PUT", "/api/planning/prompts/profile", { tags }),
+  /** Lazily materialise a theme group's prompts; returns the refreshed list. */
+  generatePrompts: (group: import("@shared/planning_prompts").PromptGroup) =>
+    apiFetch<{ items: import("@shared/types").PlanningItem[]; created: number }>(
+      "POST",
+      "/api/planning/prompts/generate",
+      { group },
+    ),
 };
 
 export const notificationApi = {

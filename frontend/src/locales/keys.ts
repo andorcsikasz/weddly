@@ -1378,7 +1378,35 @@ export interface LocaleMessages {
     tabs_aria: string;
     tab_tasks: string;
     tab_ideas: string;
+    tab_decisions: string;
     tab_schedule: string;
+    /** "Döntések" decision-prompt deck. */
+    decisions: {
+      intro: string;
+      intake_title: string;
+      generate_error: string;
+      save_error: string;
+      open_count: string;
+      consider_count: string;
+      group_empty: string;
+      kind_decision: string;
+      kind_check: string;
+      kind_todo: string;
+      ask_supplier: string;
+      resolution_placeholder: string;
+      decided_label: string;
+      action_decide: string;
+      action_record_answer: string;
+      action_done: string;
+      action_promote: string;
+      action_not_relevant: string;
+      action_edit: string;
+      action_reopen: string;
+      action_restore: string;
+      promoted_toast: string;
+      show_dismissed: string;
+      hide_dismissed: string;
+    };
     /** Quick-add form CTA. */
     add: string;
     /** Per-tab placeholder for the quick-add title input. */

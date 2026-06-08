@@ -1079,6 +1079,16 @@ export type PlanningKind = "task" | "idea" | "schedule";
  *  rows that pre-date the column. */
 export type PlanningTopic = "wedding" | "honeymoon";
 
+/** Lifecycle of a "Döntések" decision-prompt (a planning task carrying a
+ *  `seed_key`). Orthogonal to `done`:
+ *   - `open`        the prompt is unanswered (default at generation);
+ *   - `decided`     the couple resolved it (the answer lives in `resolution`);
+ *   - `not_relevant` dismissed — hidden from the deck, recoverable via "show all";
+ *   - `promoted`    converted into a dated task (gets a due_date + assignee) and
+ *                   now appears on the normal Tasks list / Gantt instead.
+ *  `null` on every non-prompt row (normal tasks, ideas, schedule entries). */
+export type DecisionStatus = "open" | "decided" | "not_relevant" | "promoted";
+
 export interface PlanningItem {
   id: number;
   couple_id: number;
@@ -1119,6 +1129,17 @@ export interface PlanningItem {
   suggested_by_name: string | null;
   /** Manual ordering within a tab. Lower = earlier in the list. */
   position: number;
+  /** "Döntések" layer - stable identifier matching a `PROMPT_SEEDS` entry in
+   *  shared/planning_prompts.ts. `null` on normal tasks/ideas/schedule rows; set
+   *  only on generated decision-prompts. The immutable seed metadata
+   *  (prompt_kind, target, supplier category, hint, group) is looked up from the
+   *  master by this key on the frontend rather than stored per row. */
+  seed_key: string | null;
+  /** "Döntések" layer - see `DecisionStatus`. `null` on non-prompt rows. */
+  decision_status: DecisionStatus | null;
+  /** "Döntések" layer - the resolved decision / supplier answer, free text.
+   *  `null` until the prompt is decided. */
+  resolution: string | null;
   created_at: UnixMs;
   updated_at: UnixMs;
 }
