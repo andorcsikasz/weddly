@@ -31,6 +31,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { buildMonogram, formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
 import { pickKeyMoments } from "@shared/schedule";
@@ -58,6 +59,19 @@ export interface WeddingSiteEditHandlers {
   onEditPostRsvp?: () => void;
 }
 
+/** Editor preview — direct inline editing of the prose fields. When provided
+ *  (preview only), the matching text in the preview becomes click-to-edit in
+ *  place: clicking turns it into an input that commits back through these
+ *  setters, and the editor's debounced autosave persists it. Fields without a
+ *  setter (and empty sections) fall back to the scroll-to-field `edit`
+ *  handlers. Venue commits name + city together so the split never loses the
+ *  city when only one half is edited. */
+export interface WeddingSiteInlineEdit {
+  intro?: (value: string) => void;
+  venue?: (name: string, city: string) => void;
+  postRsvp?: (value: string) => void;
+}
+
 export interface WeddingSiteViewProps {
   view: PublicWeddingWebsiteView;
   household: PublicWeddingHouseholdContext | null;
@@ -78,6 +92,8 @@ export interface WeddingSiteViewProps {
   isPreview?: boolean;
   /** Editor preview — the per-section jump-to-field shortcuts. */
   edit?: WeddingSiteEditHandlers;
+  /** Editor preview — inline (in-place) editing of the prose fields. */
+  inlineEdit?: WeddingSiteInlineEdit;
   /** Weddly wordmark footer. Defaults to on for the live page, off in the
    *  editor preview (the app shell already brands the surface). */
   showFooter?: boolean;
@@ -236,6 +252,118 @@ function Ghost({
   );
 }
 
+/** Click-to-edit prose, styled to match the rendered text exactly. In display
+ *  mode it's a span carrying the caller's text classes (so it looks identical to
+ *  the static text, with a faint editable affordance on hover); clicking swaps
+ *  in an auto-styled input/textarea that inherits the same typography. Commits
+ *  on blur and on Enter (single-line) / Cmd+Enter (multiline); Escape cancels.
+ *  Empty value shows a muted placeholder so an unfilled field is still clickable. */
+function InlineText({
+  value,
+  onCommit,
+  multiline = false,
+  className = "",
+  style,
+  placeholder,
+  ariaLabel,
+}: {
+  value: string;
+  onCommit: (next: string) => void;
+  multiline?: boolean;
+  className?: string;
+  style?: CSSProperties;
+  placeholder?: string;
+  ariaLabel?: string;
+}) {
+  const { t } = useT();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const fieldRef = useRef<HTMLTextAreaElement & HTMLInputElement>(null);
+
+  // Focus + place the caret at the end the moment the field appears (the user
+  // clicked to edit, so they expect to type straight away). A ref-driven focus
+  // keeps us off `autoFocus` (which steals focus on mount in other contexts).
+  useEffect(() => {
+    if (!editing) return;
+    const el = fieldRef.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, [editing]);
+
+  const begin = () => {
+    setDraft(value);
+    setEditing(true);
+  };
+  const commit = () => {
+    setEditing(false);
+    if (draft !== value) onCommit(draft);
+  };
+  const cancel = () => {
+    setEditing(false);
+    setDraft(value);
+  };
+
+  if (editing) {
+    const fieldCls = `${className} block w-full resize-none appearance-none rounded-md border-0 bg-[var(--wt-bg)] p-1 outline-none ring-2 ring-[var(--wt-accent)]`;
+    const fieldStyle: CSSProperties = { ...style, color: "inherit", fontFamily: "inherit" };
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        cancel();
+      } else if (ev.key === "Enter" && (!multiline || ev.metaKey || ev.ctrlKey)) {
+        ev.preventDefault();
+        commit();
+      }
+    };
+    return multiline ? (
+      <textarea
+        ref={fieldRef}
+        rows={3}
+        value={draft}
+        onChange={(ev) => setDraft(ev.target.value)}
+        onBlur={commit}
+        onKeyDown={onKeyDown}
+        className={fieldCls}
+        style={fieldStyle}
+        aria-label={ariaLabel}
+      />
+    ) : (
+      <input
+        ref={fieldRef}
+        type="text"
+        value={draft}
+        onChange={(ev) => setDraft(ev.target.value)}
+        onBlur={commit}
+        onKeyDown={onKeyDown}
+        className={fieldCls}
+        style={fieldStyle}
+        aria-label={ariaLabel}
+      />
+    );
+  }
+
+  const empty = value.trim() === "";
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      title={t("wedding_site.inline_edit_hint")}
+      onClick={begin}
+      onKeyDown={(ev) => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          begin();
+        }
+      }}
+      className={`${className} inline-edit-text block cursor-text rounded-md transition`}
+      style={style}
+    >
+      {empty ? <span style={{ opacity: 0.5 }}>{placeholder}</span> : value}
+    </span>
+  );
+}
+
 export function WeddingSiteView({
   view,
   household,
@@ -247,12 +375,21 @@ export function WeddingSiteView({
   confirmedHeadingRef,
   isPreview = false,
   edit,
+  inlineEdit,
   showFooter,
 }: WeddingSiteViewProps) {
   const { t } = useT();
   const e = edit ?? {};
   const editHint = t("wedding_site.edit_hint");
   const footer = showFooter ?? !isPreview;
+
+  // Inline editing is available (preview only) when the parent wired a setter
+  // for the field. When it is, the section's text becomes click-to-edit in
+  // place and the band-level scroll-to-field affordance is dropped (so the
+  // nested edit control isn't swallowed by an outer role="button").
+  const introInline = isPreview && Boolean(inlineEdit?.intro);
+  const venueInline = isPreview && Boolean(inlineEdit?.venue);
+  const postRsvpInline = isPreview && Boolean(inlineEdit?.postRsvp);
 
   // Tier gates on the live page; in preview we author everything, so the
   // post-RSVP block is shown as a labelled locked preview regardless of tier.
@@ -432,13 +569,24 @@ export function WeddingSiteView({
 
       {/* ── Welcome / intro — same at every tier. ───────────────────────── */}
       {view.guest_page_intro && !sectionHidden("intro") ? (
-        <Band onEdit={isPreview ? e.onEditIntro : undefined} hint={editHint}>
-          <p
-            className="whitespace-pre-line text-center text-lg leading-relaxed"
-            style={{ opacity: 0.92 }}
-          >
-            {view.guest_page_intro}
-          </p>
+        <Band onEdit={isPreview && !introInline ? e.onEditIntro : undefined} hint={editHint}>
+          {introInline && inlineEdit?.intro ? (
+            <InlineText
+              value={view.guest_page_intro}
+              onCommit={inlineEdit.intro}
+              multiline
+              className="whitespace-pre-line text-center text-lg leading-relaxed"
+              style={{ opacity: 0.92 }}
+              ariaLabel={t("guest_page_editor.intro_label")}
+            />
+          ) : (
+            <p
+              className="whitespace-pre-line text-center text-lg leading-relaxed"
+              style={{ opacity: 0.92 }}
+            >
+              {view.guest_page_intro}
+            </p>
+          )}
         </Band>
       ) : isPreview ? (
         <Band>
@@ -526,13 +674,41 @@ export function WeddingSiteView({
       {/* ── Location — venue name + (confirmed-tier) exact map link. ─────── */}
       {view.venue_name ? (
         <Band
-          onEdit={isPreview ? e.onEditVenue : undefined}
+          onEdit={isPreview && !venueInline ? e.onEditVenue : undefined}
           hint={editHint}
           className="text-center"
         >
           <Eyebrow>{t("wedding_site.location_eyebrow")}</Eyebrow>
           {(() => {
             const venue = splitVenue(view.venue_name, view.venue_city);
+            // Commit name + city as a pair so editing one half never drops the
+            // other (the displayed split may have derived the city from a
+            // "Name, City" venue_name with no separate venue_city set).
+            const commitVenue = inlineEdit?.venue;
+            if (venueInline && commitVenue) {
+              return (
+                <>
+                  <Heading className="mt-2">
+                    <InlineText
+                      value={venue.name ?? ""}
+                      onCommit={(name) => commitVenue(name, venue.city ?? "")}
+                      className="text-3xl tracking-tight sm:text-4xl"
+                      placeholder={t("wedding_site_editor.venue_label")}
+                      ariaLabel={t("wedding_site_editor.venue_label")}
+                    />
+                  </Heading>
+                  <p className="mt-1.5 text-base tracking-wide" style={{ opacity: 0.7 }}>
+                    <InlineText
+                      value={venue.city ?? ""}
+                      onCommit={(city) => commitVenue(venue.name ?? "", city)}
+                      className="text-base tracking-wide"
+                      placeholder={t("wedding_site_editor.venue_city_label")}
+                      ariaLabel={t("wedding_site_editor.venue_city_label")}
+                    />
+                  </p>
+                </>
+              );
+            }
             return (
               <>
                 <Heading className="mt-2">{venue.name}</Heading>
@@ -640,7 +816,18 @@ export function WeddingSiteView({
               {t("wedding_site.confirmed_title")}
             </span>
           </Heading>
-          {view.post_rsvp_content ? (
+          {view.post_rsvp_content && postRsvpInline && inlineEdit?.postRsvp ? (
+            <p className="mt-4">
+              <InlineText
+                value={view.post_rsvp_content}
+                onCommit={inlineEdit.postRsvp}
+                multiline
+                className="whitespace-pre-line text-base leading-relaxed"
+                style={{ opacity: 0.92 }}
+                ariaLabel={t("guest_page_editor.post_rsvp_label")}
+              />
+            </p>
+          ) : view.post_rsvp_content ? (
             <p
               className="mt-4 whitespace-pre-line text-base leading-relaxed"
               style={{ opacity: 0.92 }}

@@ -1075,6 +1075,17 @@ export default function GuestPageEditorPage() {
                 onEditUsefulInfo: focusUsefulInfoField,
                 onEditPostRsvp: focusPostRsvpField,
               }}
+              // Direct in-place editing of the prose fields. The setters feed
+              // the same form state the sidebar inputs use, so the existing
+              // debounced autosave persists an inline edit just like a typed one.
+              inlineEdit={{
+                intro: setGuestPageIntro,
+                venue: (name, city) => {
+                  setVenueName(name);
+                  setVenueCity(city);
+                },
+                postRsvp: setPostRsvpContent,
+              }}
             />
           </div>
         ) : (

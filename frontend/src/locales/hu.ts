@@ -246,6 +246,7 @@ const hu: LocaleMessages = {
     rsvp_status_maybe: "talán",
     footer_built_with: "Weddly · Az esküvő-tervező",
     edit_hint: "Kattints a szerkesztéshez",
+    inline_edit_hint: "Kattints, és írd át itt helyben",
     ghost: {
       cover_title: "Borítókép",
       cover_cta: "Adj hozzá borítóképet",

@@ -197,3 +197,86 @@ describe("WeddingSiteView — preview mode", () => {
     expect(screen.queryByText("Borítókép")).toBeNull(); // cover present, no ghost
   });
 });
+
+describe("WeddingSiteView — inline editing", () => {
+  it("clicking the intro turns it into a field and commits the new text on blur", () => {
+    const intro = mock((_v: string) => {});
+    renderView(
+      <WeddingSiteView
+        view={filledView()}
+        household={null}
+        tier="public"
+        locale="hu"
+        isPreview
+        edit={{}}
+        inlineEdit={{ intro }}
+      />,
+    );
+    // The rendered intro text is click-to-edit.
+    fireEvent.click(screen.getByText(/köszönjük, hogy velünk/i));
+    const field = screen.getByLabelText(/üdvözlő szöveg/i);
+    fireEvent.change(field, { target: { value: "Új köszöntő szöveg" } });
+    fireEvent.blur(field);
+    expect(intro).toHaveBeenCalledWith("Új köszöntő szöveg");
+  });
+
+  it("editing the venue name commits name + city together (no city loss)", () => {
+    const venue = mock((_n: string, _c: string) => {});
+    renderView(
+      <WeddingSiteView
+        view={filledView()}
+        household={null}
+        tier="public"
+        locale="hu"
+        isPreview
+        edit={{}}
+        inlineEdit={{ venue }}
+      />,
+    );
+    fireEvent.click(screen.getByText("Sári Udvar"));
+    const input = screen.getByLabelText(/helyszín neve/i);
+    fireEvent.change(input, { target: { value: "Achilles Park Győr" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(venue).toHaveBeenCalledWith("Achilles Park Győr", "Dunakiliti");
+  });
+
+  it("Escape cancels an inline edit without committing", () => {
+    const intro = mock((_v: string) => {});
+    renderView(
+      <WeddingSiteView
+        view={filledView()}
+        household={null}
+        tier="public"
+        locale="hu"
+        isPreview
+        edit={{}}
+        inlineEdit={{ intro }}
+      />,
+    );
+    fireEvent.click(screen.getByText(/köszönjük, hogy velünk/i));
+    const field = screen.getByLabelText(/üdvözlő szöveg/i);
+    fireEvent.change(field, { target: { value: "elvetve" } });
+    fireEvent.keyDown(field, { key: "Escape" });
+    expect(intro).not.toHaveBeenCalled();
+    // Original text is back, no field.
+    expect(screen.getByText(/köszönjük, hogy velünk/i)).toBeInTheDocument();
+  });
+
+  it("without an inlineEdit setter the section stays a scroll-to-field shortcut", () => {
+    const onEditIntro = mock(() => {});
+    renderView(
+      <WeddingSiteView
+        view={filledView()}
+        household={null}
+        tier="public"
+        locale="hu"
+        isPreview
+        edit={{ onEditIntro }}
+      />,
+    );
+    // No inline field; clicking the intro band fires the jump-to-field handler.
+    fireEvent.click(screen.getByText(/köszönjük, hogy velünk/i));
+    expect(screen.queryByLabelText(/üdvözlő szöveg/i)).toBeNull();
+    expect(onEditIntro).toHaveBeenCalledTimes(1);
+  });
+});

@@ -315,6 +315,9 @@ export interface LocaleMessages {
      *  ghost placeholders + the click-to-edit hint on /app/guest-page when a
      *  section is still empty; the live public page just omits empty sections. */
     edit_hint: string;
+    /** Title on the in-place editable prose (intro / venue / post-RSVP) in the
+     *  guest-page preview — clicking the text edits it right there. */
+    inline_edit_hint: string;
     ghost: {
       cover_title: string;
       cover_cta: string;

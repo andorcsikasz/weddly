@@ -243,6 +243,7 @@ const en: LocaleMessages = {
     rsvp_status_maybe: "maybe",
     footer_built_with: "Weddly · Wedding planning",
     edit_hint: "Click to edit",
+    inline_edit_hint: "Click to edit in place",
     ghost: {
       cover_title: "Cover photo",
       cover_cta: "Add a cover photo",
