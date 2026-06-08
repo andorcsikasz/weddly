@@ -133,6 +133,24 @@ export default function LandingPage() {
     }
   }, []);
 
+  // Ticket cut-outs: the pricing card is masked with two side notches that
+  // must sit exactly on the perforation row. We measure the row's vertical
+  // center relative to the card (its offsetParent) so the holes track the
+  // divider across locales and breakpoints instead of a guessed percentage.
+  const pricingCardRef = useRef<HTMLDivElement>(null);
+  const perforationRef = useRef<HTMLDivElement>(null);
+  const [notchY, setNotchY] = useState<number | null>(null);
+  useEffect(() => {
+    const card = pricingCardRef.current;
+    const perf = perforationRef.current;
+    if (!card || !perf) return;
+    const measure = () => setNotchY(perf.offsetTop + perf.offsetHeight / 2);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(card);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <PublicShell>
       {/* ════════════════════════ 01 · HERO ════════════════════════
@@ -400,7 +418,27 @@ export default function LandingPage() {
       <section className="relative stationery">
         <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-20">
           <div className="relative mx-auto max-w-lg">
-            <div className="relative rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8">
+            <div
+              ref={pricingCardRef}
+              className="relative rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 ring-1 ring-paper-300 dark:ring-umber-700 shadow-[0_30px_60px_-20px_rgba(16,24,48,0.25)] sm:p-8"
+              style={
+                notchY == null
+                  ? undefined
+                  : // Punch a 48px-diameter transparent semicircle into each
+                    // side edge, centered on the perforation row. Two radial
+                    // "hole" masks combined with intersect so both notches cut
+                    // through to the textured background behind — a real
+                    // cut-out, no painted fill.
+                    {
+                      WebkitMaskImage: `radial-gradient(circle 24px at 0 ${notchY}px, transparent 23px, #000 24px), radial-gradient(circle 24px at 100% ${notchY}px, transparent 23px, #000 24px)`,
+                      WebkitMaskComposite: "source-in",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskImage: `radial-gradient(circle 24px at 0 ${notchY}px, transparent 23px, #000 24px), radial-gradient(circle 24px at 100% ${notchY}px, transparent 23px, #000 24px)`,
+                      maskComposite: "intersect",
+                      maskRepeat: "no-repeat",
+                    }
+              }
+            >
               {/* Value-prop "burger" mark, pinned to the card's top-right corner.
                   Tooltip opens downward since there's no room above at the top. */}
               <span className="group absolute right-5 top-5 sm:right-6 sm:top-6">
@@ -466,7 +504,19 @@ export default function LandingPage() {
                   </span>
                 </span>
               </div>
-              <ul className="mt-5 space-y-2">
+              {/* Ticket perforation between the price block and the feature
+                  list: a dashed tear-line, with the side half-circle cut-outs
+                  punched by the card mask (see the card's style above, which
+                  measures this row's center). Inset so the dashes clear the
+                  notches. */}
+              <div
+                ref={perforationRef}
+                className="my-5 -mx-6 sm:-mx-8"
+                aria-hidden="true"
+              >
+                <div className="mx-7 border-t border-dashed border-paper-300 dark:border-umber-700" />
+              </div>
+              <ul className="space-y-2">
                 <IconRow tone="coffee" icon={<Gift size={16} />}>
                   {t("landing.pricing_bullet_1")}
                 </IconRow>
