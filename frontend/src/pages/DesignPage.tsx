@@ -60,6 +60,7 @@ function PresetTile({
   label,
   ariaLabel,
   children,
+  compact = false,
 }: {
   active: boolean;
   onSelect: () => void;
@@ -68,6 +69,10 @@ function PresetTile({
   label?: string;
   ariaLabel: string;
   children: React.ReactNode;
+  /** Tighter padding + a smaller check badge, for short single-line previews
+   *  (date formats) where the full tile padding wastes space and crowds the
+   *  text against the badge. */
+  compact?: boolean;
 }) {
   return (
     <button
@@ -75,7 +80,9 @@ function PresetTile({
       onClick={onSelect}
       aria-pressed={active}
       aria-label={ariaLabel}
-      className={`group relative flex flex-col gap-3 rounded-2xl border bg-white p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
+      className={`group relative flex flex-col text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
+        compact ? "gap-2 rounded-xl border bg-white p-2" : "gap-3 rounded-2xl border bg-white p-3"
+      } ${
         active
           ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
           : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
@@ -83,10 +90,12 @@ function PresetTile({
     >
       {active && (
         <span
-          className="absolute right-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+          className={`absolute inline-flex items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900 ${
+            compact ? "right-1.5 top-1.5 h-4 w-4" : "right-2 top-2 h-5 w-5"
+          }`}
           aria-hidden
         >
-          <Check size={12} strokeWidth={3} />
+          <Check size={compact ? 10 : 12} strokeWidth={3} />
         </span>
       )}
       {children}
@@ -729,9 +738,10 @@ export default function DesignPage() {
                     active={design.dateFormat === df.slug}
                     onSelect={() => chooseDateFormat(df.slug)}
                     ariaLabel={t(df.nameKey)}
+                    compact
                   >
                     <span
-                      className="flex min-h-[2.5rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-xs italic tracking-tight text-ink-900 dark:text-paper-50"
+                      className="flex min-h-[1.75rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-[11px] italic leading-tight tracking-tight text-ink-900 dark:text-paper-50"
                       aria-hidden
                     >
                       {formatWeddingDate(sampleDateIso, df.slug, locale)}
