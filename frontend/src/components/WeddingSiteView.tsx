@@ -89,6 +89,33 @@ function formatTimeOfDay(minutes: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+/** Split the stored venue into a display name + city. Prefers the explicit
+ *  `venue_city`; otherwise falls back to the part of `venue_name` after the
+ *  first comma (legacy "Name, City" values composed by the place picker). When
+ *  both are set, a city already baked into the name is stripped so it doesn't
+ *  echo twice. */
+function splitVenue(
+  venueName: string | null,
+  venueCity: string | null,
+): { name: string | null; city: string | null } {
+  const vn = venueName?.trim() || null;
+  let city = venueCity?.trim() || null;
+  let name = vn;
+  if (vn && !city) {
+    const i = vn.indexOf(",");
+    if (i > 0) {
+      name = vn.slice(0, i).trim() || vn;
+      city = vn.slice(i + 1).trim() || null;
+    }
+  } else if (vn && city) {
+    const suffix = `, ${city}`.toLowerCase();
+    if (vn.toLowerCase().endsWith(suffix)) {
+      name = vn.slice(0, vn.length - suffix.length).trim() || vn;
+    }
+  }
+  return { name, city };
+}
+
 /** Keyboard + click affordance bundle for a section that doubles as an
  *  edit shortcut in the preview. Empty object when no handler (live page). */
 function editAffordance(handler: (() => void) | undefined, hint: string) {
@@ -155,12 +182,15 @@ function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boole
   );
 }
 
-/** Section heading in the couple's heading font, inheriting the band colour. */
+/** Section heading in the couple's heading font, inheriting the band colour.
+ *  `color: inherit` is set inline so it beats the global base `h2 { color:
+ *  ink.900 }` unconditionally — without it the heading on a dark band (e.g.
+ *  the "A nap menete" schedule) rendered dark-on-dark and vanished. */
 function Heading({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <h2
       className={`text-3xl tracking-tight sm:text-4xl ${className}`}
-      style={{ fontFamily: "var(--wt-heading-font)" }}
+      style={{ fontFamily: "var(--wt-heading-font)", color: "inherit" }}
     >
       {children}
     </h2>
@@ -517,7 +547,19 @@ export function WeddingSiteView({
           className="text-center"
         >
           <Eyebrow>{t("wedding_site.location_eyebrow")}</Eyebrow>
-          <Heading className="mt-2">{view.venue_name}</Heading>
+          {(() => {
+            const venue = splitVenue(view.venue_name, view.venue_city);
+            return (
+              <>
+                <Heading className="mt-2">{venue.name}</Heading>
+                {venue.city ? (
+                  <p className="mt-1.5 text-base tracking-wide" style={{ opacity: 0.7 }}>
+                    {venue.city}
+                  </p>
+                ) : null}
+              </>
+            );
+          })()}
           <div className="mt-4 flex justify-center">{hairline}</div>
           {view.location_lat !== null && view.location_lng !== null ? (
             <p className="mt-5">
