@@ -1200,12 +1200,15 @@ CREATE TABLE IF NOT EXISTS wishlist_interests (
 -- Received-gifts ledger: a private, couple-only thank-you tracking table for
 -- gifts that have actually arrived. Distinct from wishlist_items (what the
 -- couple WANTS, surfaced to confirmed guests): this is what they GOT, never
--- published. `guest_id` optionally attributes the gift to a guest from the
--- couple's list (ON DELETE SET NULL so removing a guest keeps the gift row).
+-- published. `household_id` / `guest_id` optionally attribute the gift to a
+-- whole household or a single guest (mutually exclusive; ON DELETE SET NULL so
+-- removing the household / guest keeps the gift row). `household_id` is added in
+-- db.ts via addColumnIfMissing for DBs created before it existed.
 -- No money moves. See shared/received_gifts.ts. Index lives in db.ts.
 CREATE TABLE IF NOT EXISTS received_gifts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  household_id INTEGER REFERENCES households(id) ON DELETE SET NULL,         -- gift from a whole household; mutually exclusive with guest_id
   guest_id INTEGER REFERENCES guests(id) ON DELETE SET NULL,
   title TEXT NOT NULL DEFAULT '',                             -- free-text gift name; '' when the row carries only a guest/note
   note TEXT,                                                  -- free-text note (thank-you sent?, …); NULL when unset

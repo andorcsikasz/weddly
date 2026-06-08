@@ -14,7 +14,7 @@ import {
   RECEIVED_GIFT_MAX_TITLE_LEN,
   type ReceivedGift,
 } from "@shared/received_gifts";
-import type { Couple, Guest } from "@shared/types";
+import type { Couple, Guest, Household } from "@shared/types";
 import { CURRENCIES, type Currency } from "@shared/types";
 import type { UpsertWishlistItemInput, WishlistItem, WishlistKind } from "@shared/wishlist";
 import {
@@ -40,7 +40,7 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "rea
 import { InfoHint } from "../components/InfoHint";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { coupleApi, guestApi, receivedGiftApi, wishlistApi } from "../lib/endpoints";
+import { coupleApi, guestApi, householdApi, receivedGiftApi, wishlistApi } from "../lib/endpoints";
 import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -383,6 +383,9 @@ function CollapsibleSection({
 interface RGRow {
   key: string;
   id: number | null;
+  /** Attribution: a household OR a guest, never both (mutually exclusive, same
+   *  as the server contract). */
+  household_id: number | null;
   guest_id: number | null;
   title: string;
   note: string;
@@ -392,11 +395,31 @@ interface RGRow {
 
 /** Signature of a row's persistable content (trimmed): drives change
  *  detection + the non-empty check. */
-function rgSig(guestId: number | null, title: string, note: string): string {
-  return JSON.stringify([guestId, title.trim(), note.trim()]);
+function rgSig(
+  householdId: number | null,
+  guestId: number | null,
+  title: string,
+  note: string,
+): string {
+  return JSON.stringify([householdId, guestId, title.trim(), note.trim()]);
 }
 function rgNonEmpty(r: RGRow): boolean {
-  return r.guest_id !== null || r.title.trim() !== "" || r.note.trim() !== "";
+  return (
+    r.household_id !== null || r.guest_id !== null || r.title.trim() !== "" || r.note.trim() !== ""
+  );
+}
+
+/** Encode/decode the attribution as the <select> value: "h:<id>" for a
+ *  household, "g:<id>" for a guest, "" for unassigned. */
+function rgSelectValue(r: RGRow): string {
+  if (r.household_id !== null) return `h:${r.household_id}`;
+  if (r.guest_id !== null) return `g:${r.guest_id}`;
+  return "";
+}
+function rgParseSelectValue(v: string): { household_id: number | null; guest_id: number | null } {
+  if (v.startsWith("h:")) return { household_id: Number(v.slice(2)), guest_id: null };
+  if (v.startsWith("g:")) return { household_id: null, guest_id: Number(v.slice(2)) };
+  return { household_id: null, guest_id: null };
 }
 
 /** The couple's private "what we received" ledger as an auto-growing grid:
@@ -406,24 +429,37 @@ function rgNonEmpty(r: RGRow): boolean {
 function ReceivedGiftsTable({
   initialItems,
   guests,
+  households,
   t,
 }: {
   initialItems: ReceivedGift[];
   guests: Guest[];
+  households: Household[];
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const toast = useToast();
   const keySeq = useRef(0);
   const nextKey = () => `rg-${keySeq.current++}`;
 
+  // The attribution picker: each non-couple household, its non-supplier members
+  // nested underneath. Couple households (the hosts) and supplier guests are
+  // excluded (they don't give the couple gifts). Empty households drop out.
+  const eligibleGuests = guests.filter((g) => !g.is_supplier);
+  const allocationGroups = households
+    .filter((h) => !h.is_couple_household)
+    .map((h) => ({ h, members: eligibleGuests.filter((g) => g.household_id === h.id) }))
+    .filter((grp) => grp.members.length > 0)
+    .sort((a, b) => a.h.label.localeCompare(b.h.label));
+
   const makeEmpty = (): RGRow => ({
     key: nextKey(),
     id: null,
+    household_id: null,
     guest_id: null,
     title: "",
     note: "",
     updated_at: null,
-    savedSig: rgSig(null, "", ""),
+    savedSig: rgSig(null, null, "", ""),
   });
 
   /** Normalise the trailing empties: keep every row up to the last filled one
@@ -449,11 +485,12 @@ function ReceivedGiftsTable({
       initialItems.map((it) => ({
         key: `rg-init-${it.id}`,
         id: it.id,
+        household_id: it.household_id,
         guest_id: it.guest_id,
         title: it.title,
         note: it.note ?? "",
         updated_at: it.updated_at,
-        savedSig: rgSig(it.guest_id, it.title, it.note ?? ""),
+        savedSig: rgSig(it.household_id, it.guest_id, it.title, it.note ?? ""),
       })),
     ),
   );
@@ -469,12 +506,15 @@ function ReceivedGiftsTable({
     // we snapshot it synchronously here for the async work.
     const r = rows.find((x) => x.key === key);
     if (!r) return;
-    const sig = rgSig(r.guest_id, r.title, r.note);
+    const sig = rgSig(r.household_id, r.guest_id, r.title, r.note);
     if (sig === r.savedSig) {
       setRows((prev) => withTail(prev));
       return;
     }
+    // Always send both attribution fields (one null) so the server's
+    // mutual-exclusivity resolver swaps cleanly between household and guest.
     const body = {
+      household_id: r.household_id,
       guest_id: r.guest_id,
       title: r.title.trim(),
       note: r.note.trim() || null,
@@ -487,7 +527,7 @@ function ReceivedGiftsTable({
         setRows((prev) => withTail(prev));
       } else if (!rgNonEmpty(r)) {
         await receivedGiftApi.remove(r.id);
-        patchRow(key, { id: null, updated_at: null, savedSig: rgSig(null, "", "") });
+        patchRow(key, { id: null, updated_at: null, savedSig: rgSig(null, null, "", "") });
         setRows((prev) => withTail(prev));
       } else {
         // Last-write-wins by design: this is an auto-saving grid where tabbing
@@ -543,27 +583,33 @@ function ReceivedGiftsTable({
                 className="border-b border-paper-200 last:border-0 dark:border-umber-700"
               >
                 <td className="border-r border-paper-200 align-middle dark:border-umber-700">
-                  {/* Native arrow kept (no appearance-none) as the only
-                      affordance, since the unassigned state shows a blank label
-                      rather than repeating "no guest" down every row. */}
+                  {/* Household-or-guest picker. Native arrow kept (no
+                      appearance-none) as the only affordance, since the
+                      unassigned state shows a blank label rather than repeating
+                      "no one" down every row. Households are top-level options;
+                      their members are indented beneath. */}
                   <select
                     className={`${cellInput} cursor-pointer font-grotesk ${
-                      r.guest_id === null ? "text-ink-400 dark:text-umber-400" : ""
+                      r.household_id === null && r.guest_id === null
+                        ? "text-ink-400 dark:text-umber-400"
+                        : ""
                     }`}
-                    value={r.guest_id ?? ""}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      patchRow(r.key, { guest_id: v === "" ? null : Number(v) });
-                    }}
+                    value={rgSelectValue(r)}
+                    onChange={(e) => patchRow(r.key, rgParseSelectValue(e.target.value))}
                     onBlur={() => void commit(r.key)}
                     aria-label={t("wishlist_editor.received_col_guest")}
                   >
                     <option value="" aria-label={t("wishlist_editor.received_guest_none")} />
-                    {guests.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.full_name}
-                      </option>
-                    ))}
+                    {allocationGroups.flatMap(({ h, members }) => [
+                      <option key={`h-${h.id}`} value={`h:${h.id}`}>
+                        {h.label}
+                      </option>,
+                      ...members.map((m) => (
+                        <option key={`g-${m.id}`} value={`g:${m.id}`}>
+                          {`  ${m.full_name}`}
+                        </option>
+                      )),
+                    ])}
                   </select>
                 </td>
                 <td className="border-r border-paper-200 align-middle dark:border-umber-700">
@@ -634,9 +680,10 @@ export default function WishlistEditorPage() {
 
   const currency = couple?.currency ?? "HUF";
   const [publishing, setPublishing] = useState(false);
-  // Guest list (for the received-gifts allocation dropdown) + the received
-  // gifts themselves. Fetched alongside the wishlist on load.
+  // Guest + household lists (for the received-gifts allocation dropdown) + the
+  // received gifts themselves. Fetched alongside the wishlist on load.
   const [guests, setGuests] = useState<Guest[]>([]);
+  const [households, setHouseholds] = useState<Household[]>([]);
   const [received, setReceived] = useState<ReceivedGift[]>([]);
 
   // Per-section collapse state, persisted per device. Default: all expanded.
@@ -686,15 +733,17 @@ export default function WishlistEditorPage() {
 
   async function refresh() {
     try {
-      const [cR, wR, gR, rR] = await Promise.all([
+      const [cR, wR, gR, hR, rR] = await Promise.all([
         coupleApi.current(),
         wishlistApi.list(),
         guestApi.list(),
+        householdApi.list(),
         receivedGiftApi.list(),
       ]);
       setCouple(cR.couple);
       setItems(wR.items);
       setGuests(gR.guests);
+      setHouseholds(hR.households);
       setReceived(rR.items);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -935,7 +984,12 @@ export default function WishlistEditorPage() {
             <p className="mb-3 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
               {t("wishlist_editor.section_received_subtitle")}
             </p>
-            <ReceivedGiftsTable initialItems={received} guests={guests} t={t} />
+            <ReceivedGiftsTable
+              initialItems={received}
+              guests={guests}
+              households={households}
+              t={t}
+            />
           </CollapsibleSection>
         </div>
       )}

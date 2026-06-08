@@ -42,7 +42,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     action: "received_gift.create",
     target_kind: "received_gift",
     target_id: row.id,
-    after: { title: parsed.title, guest_id: parsed.guest_id },
+    after: { title: parsed.title, household_id: parsed.household_id, guest_id: parsed.guest_id },
   });
 
   return json({ item: toReceivedGift(row) }, { status: 201 });
@@ -95,7 +95,11 @@ function handleDelete(ctx: Ctx): Response {
     action: "received_gift.delete",
     target_kind: "received_gift",
     target_id: id,
-    before: { title: existing.title, guest_id: existing.guest_id },
+    before: {
+      title: existing.title,
+      household_id: existing.household_id,
+      guest_id: existing.guest_id,
+    },
   });
 
   return json({ ok: true });

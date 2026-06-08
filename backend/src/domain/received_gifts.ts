@@ -15,6 +15,7 @@ import { HttpError } from "../lib/http";
 export interface ReceivedGiftRow {
   id: number;
   couple_id: number;
+  household_id: number | null;
   guest_id: number | null;
   title: string;
   note: string | null;
@@ -27,6 +28,7 @@ export function toReceivedGift(row: ReceivedGiftRow): ReceivedGift {
   return {
     id: row.id,
     couple_id: row.couple_id,
+    household_id: row.household_id,
     guest_id: row.guest_id,
     title: row.title,
     note: row.note,
@@ -39,6 +41,7 @@ export function toReceivedGift(row: ReceivedGiftRow): ReceivedGift {
 // ── Boundary validation (hand-written, no Zod). Mirrors wishlist.ts. ──────────
 
 export interface ParsedReceivedGift {
+  household_id: number | null;
   guest_id: number | null;
   title: string;
   note: string | null;
@@ -58,6 +61,45 @@ function parseGuestId(raw: unknown, coupleId: number): number | null {
     .get(n, coupleId) as { 1: number } | null;
   if (owned == null) throw new HttpError(400, "guest_id not in this couple's guest list");
   return n;
+}
+
+/** Same as parseGuestId, but scoped to the couple's households. */
+function parseHouseholdId(raw: unknown, coupleId: number): number | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n <= 0)
+    throw new HttpError(400, "household_id must be a positive integer");
+  const owned = db
+    .prepare("SELECT 1 FROM households WHERE id = ? AND couple_id = ? LIMIT 1")
+    .get(n, coupleId) as { 1: number } | null;
+  if (owned == null) throw new HttpError(400, "household_id not in this couple's households");
+  return n;
+}
+
+/** Resolve the household/guest attribution. They are mutually exclusive: a
+ *  gift comes from a whole household OR one named guest. Setting one explicitly
+ *  (non-null) clears the other, so the auto-saving grid can swap between them by
+ *  sending just the changed dimension; sending BOTH non-null is a client bug. */
+function resolveAllocation(
+  body: Partial<UpsertReceivedGiftInput>,
+  existing: ReceivedGiftRow | null,
+  coupleId: number,
+): { household_id: number | null; guest_id: number | null } {
+  const hExplicit = body.household_id !== undefined;
+  const gExplicit = body.guest_id !== undefined;
+  let household_id = hExplicit
+    ? parseHouseholdId(body.household_id, coupleId)
+    : (existing?.household_id ?? null);
+  let guest_id = gExplicit ? parseGuestId(body.guest_id, coupleId) : (existing?.guest_id ?? null);
+  // Setting one dimension clears the other ONLY when the other wasn't sent in
+  // the same request, so a single-field PATCH swaps cleanly, but a request
+  // that names both non-null is a real conflict (falls through to the 400).
+  if (hExplicit && household_id !== null && !gExplicit) guest_id = null;
+  if (gExplicit && guest_id !== null && !hExplicit) household_id = null;
+  if (household_id !== null && guest_id !== null) {
+    throw new HttpError(400, "attribute a gift to a household OR a guest, not both");
+  }
+  return { household_id, guest_id };
 }
 
 /** Gift name, optional here (a row may carry only a guest + note), capped. */
@@ -94,8 +136,8 @@ function parseSortOrder(raw: unknown, fallback: number): number {
 /** A row must carry at least one meaningful field, the grid only persists a
  *  row once it gains content, so an all-empty create is a client bug. */
 function ensureNonEmpty(p: ParsedReceivedGift): void {
-  if (p.guest_id === null && p.title === "" && p.note === null) {
-    throw new HttpError(400, "received gift must have a guest, a name, or a note");
+  if (p.household_id === null && p.guest_id === null && p.title === "" && p.note === null) {
+    throw new HttpError(400, "received gift must have a household, a guest, a name, or a note");
   }
 }
 
@@ -103,8 +145,10 @@ export function parseCreate(
   body: Partial<UpsertReceivedGiftInput>,
   coupleId: number,
 ): ParsedReceivedGift {
+  const alloc = resolveAllocation(body, null, coupleId);
   const parsed: ParsedReceivedGift = {
-    guest_id: parseGuestId(body.guest_id, coupleId),
+    household_id: alloc.household_id,
+    guest_id: alloc.guest_id,
     title: parseTitle(body.title),
     note: parseNote(body.note),
     sort_order: parseSortOrder(body.sort_order, 0),
@@ -119,9 +163,10 @@ export function parsePatch(
   existing: ReceivedGiftRow,
   coupleId: number,
 ): ParsedReceivedGift {
+  const alloc = resolveAllocation(body, existing, coupleId);
   return {
-    guest_id:
-      body.guest_id === undefined ? existing.guest_id : parseGuestId(body.guest_id, coupleId),
+    household_id: alloc.household_id,
+    guest_id: alloc.guest_id,
     title: body.title === undefined ? existing.title : parseTitle(body.title),
     note: body.note === undefined ? existing.note : parseNote(body.note),
     sort_order: parseSortOrder(body.sort_order, existing.sort_order),
@@ -153,10 +198,19 @@ export function insertReceivedGift(coupleId: number, parsed: ParsedReceivedGift)
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO received_gifts (couple_id, guest_id, title, note, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO received_gifts (couple_id, household_id, guest_id, title, note, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(coupleId, parsed.guest_id, parsed.title, parsed.note, parsed.sort_order, ts, ts);
+    .run(
+      coupleId,
+      parsed.household_id,
+      parsed.guest_id,
+      parsed.title,
+      parsed.note,
+      parsed.sort_order,
+      ts,
+      ts,
+    );
   const id = Number(result.lastInsertRowid);
   return db.prepare("SELECT * FROM received_gifts WHERE id = ?").get(id) as ReceivedGiftRow;
 }
@@ -168,9 +222,18 @@ export function updateReceivedGift(
 ): ReceivedGiftRow {
   const ts = now();
   db.prepare(
-    `UPDATE received_gifts SET guest_id = ?, title = ?, note = ?, sort_order = ?, updated_at = ?
+    `UPDATE received_gifts SET household_id = ?, guest_id = ?, title = ?, note = ?, sort_order = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
-  ).run(parsed.guest_id, parsed.title, parsed.note, parsed.sort_order, ts, id, coupleId);
+  ).run(
+    parsed.household_id,
+    parsed.guest_id,
+    parsed.title,
+    parsed.note,
+    parsed.sort_order,
+    ts,
+    id,
+    coupleId,
+  );
   return db.prepare("SELECT * FROM received_gifts WHERE id = ?").get(id) as ReceivedGiftRow;
 }
 

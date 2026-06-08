@@ -1889,7 +1889,7 @@ const en: LocaleMessages = {
     section_received_subtitle:
       "A private list only you can see: who gave what, plus a note (e.g. thank-you sent). It never shows on your guest page.",
     received_private_badge: "Private to you",
-    received_col_guest: "Guest",
+    received_col_guest: "From",
     received_col_gift: "Gift",
     received_col_note: "Note",
     received_guest_none: "Unassigned",

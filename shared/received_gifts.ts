@@ -2,7 +2,8 @@
 // have actually arrived ("Mosógép, from the Kovács family, thank-you note sent").
 // Distinct from the wishlist (what the couple WANTS, surfaced to guests): this
 // is what they GOT, never published anywhere. Each row optionally allocates the
-// gift to a guest from the guest list, plus a free-text gift name + note.
+// gift to a whole household OR a single guest from the list, plus a free-text
+// gift name + note.
 //
 // No money moves here either, it's a thank-you-tracking scratchpad. The editor
 // renders it as an auto-growing spreadsheet (always two trailing empty rows), so
@@ -19,9 +20,14 @@ export const RECEIVED_GIFT_MAX_NOTE_LEN = 1000;
 export interface ReceivedGift {
   id: number;
   couple_id: number;
+  /** Household this gift is attributed to (FK into the couple's households),
+   *  or null. The common case: a gift comes from a whole household / family,
+   *  not one person. Mutually exclusive with `guest_id`. */
+  household_id: number | null;
   /** Guest this gift is attributed to (FK into the couple's guest list), or
-   *  null when unallocated / from someone not on the list. The guest's display
-   *  name is resolved client-side from the loaded guest list. */
+   *  null when unallocated / attributed to a whole household instead. Mutually
+   *  exclusive with `household_id`. The display name is resolved client-side
+   *  from the loaded guest / household lists. */
   guest_id: number | null;
   /** Free-text gift name ("Mosógép"). May be empty when the row carries only a
    *  guest + note; a fully-empty row is never persisted. */
@@ -38,6 +44,9 @@ export interface ReceivedGift {
  *  guest_id / title / note must be meaningful, else the row is rejected
  *  (the grid only persists a row once it gains content). */
 export interface UpsertReceivedGiftInput {
+  /** Allocate to a whole household. Mutually exclusive with `guest_id` (the
+   *  boundary clears the other when one is set). */
+  household_id?: number | null;
   guest_id?: number | null;
   title?: string;
   note?: string | null;

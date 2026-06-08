@@ -1910,7 +1910,7 @@ const hu: LocaleMessages = {
     section_received_subtitle:
       "Privát lista, csak ti látjátok: ki mit hozott, plusz egy jegyzet (pl. köszönőlevél elküldve). A vendégoldalon soha nem jelenik meg.",
     received_private_badge: "Csak nektek",
-    received_col_guest: "Vendég",
+    received_col_guest: "Kitől",
     received_col_gift: "Ajándék",
     received_col_note: "Megjegyzés",
     received_guest_none: "Nincs hozzárendelve",

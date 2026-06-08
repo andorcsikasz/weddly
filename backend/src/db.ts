@@ -950,6 +950,13 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_wishlist_interests_item ON wishlist_inte
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_received_gifts_couple ON received_gifts(couple_id, sort_order, id)",
 );
+// household_id shipped after the table did (guest-only at first). Nullable FK
+// with a NULL default, so ALTER ADD COLUMN with the REFERENCES clause is allowed.
+addColumnIfMissing(
+  "received_gifts",
+  "household_id",
+  "household_id INTEGER REFERENCES households(id) ON DELETE SET NULL",
+);
 
 export function now(): number {
   return Date.now();

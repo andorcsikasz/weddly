@@ -16,6 +16,18 @@ async function createGuest(token: string, full_name: string): Promise<number> {
   return r.data.guest.id;
 }
 
+/** Create a household on the couple, return its id. */
+async function createHousehold(token: string, label: string): Promise<number> {
+  const r = await req<{ household: { id: number } }>(
+    "POST",
+    "/api/households",
+    { label },
+    { token },
+  );
+  if (r.status !== 201) throw new Error(`household create failed: ${r.status}`);
+  return r.data.household.id;
+}
+
 describe("/api/received-gifts CRUD", () => {
   test("list is empty for a fresh couple", async () => {
     wipeAll();
@@ -64,6 +76,73 @@ describe("/api/received-gifts CRUD", () => {
     expect(c.data.item.title).toBe("Kávéfőző");
   });
 
+  test("attribute to a whole household", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rg-household@weddly.test");
+    const hid = await createHousehold(token, "Kovács család");
+    const c = await req<{ item: ReceivedGift }>(
+      "POST",
+      "/api/received-gifts",
+      { household_id: hid, title: "Mosógép" },
+      { token },
+    );
+    expect(c.status).toBe(201);
+    expect(c.data.item.household_id).toBe(hid);
+    expect(c.data.item.guest_id).toBeNull();
+  });
+
+  test("setting a guest clears a previously-set household (mutually exclusive)", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rg-switch@weddly.test");
+    const hid = await createHousehold(token, "Nagy család");
+    const gid = await createGuest(token, "Nagy Béla");
+    const c = await req<{ item: ReceivedGift }>(
+      "POST",
+      "/api/received-gifts",
+      { household_id: hid, title: "Váza" },
+      { token },
+    );
+    const id = c.data.item.id;
+    // Switch the attribution to a guest; the household must drop to null.
+    const u = await req<{ item: ReceivedGift }>(
+      "PATCH",
+      `/api/received-gifts/${id}`,
+      { guest_id: gid, household_id: null },
+      { token },
+    );
+    expect(u.status).toBe(200);
+    expect(u.data.item.guest_id).toBe(gid);
+    expect(u.data.item.household_id).toBeNull();
+  });
+
+  test("attributing to both a household and a guest is rejected with 400", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rg-both@weddly.test");
+    const hid = await createHousehold(token, "Egy család");
+    const gid = await createGuest(token, "Egy Ember");
+    const r = await req(
+      "POST",
+      "/api/received-gifts",
+      { household_id: hid, guest_id: gid, title: "Tál" },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("a household from another couple cannot be allocated", async () => {
+    wipeAll();
+    const a = await bootstrapCouple("rg-hh-couple-a@weddly.test");
+    const b = await bootstrapCouple("rg-hh-couple-b@weddly.test");
+    const bHid = await createHousehold(b.token, "B háza");
+    const r = await req(
+      "POST",
+      "/api/received-gifts",
+      { household_id: bHid, title: "Lopott" },
+      { token: a.token },
+    );
+    expect(r.status).toBe(400);
+  });
+
   test("all-empty row is rejected with 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("rg-empty-row@weddly.test");
@@ -109,12 +188,14 @@ describe("/api/received-gifts CRUD", () => {
     expect(u.data.item.title).toBe("Új név");
     expect(u.data.item.note).toBe("köszi");
 
-    // The first PATCH bumped updated_at, so re-using the original stamp is stale.
+    // A clearly out-of-date stamp must be rejected with 409. (Using
+    // staleStamp - 1 keeps this deterministic regardless of whether the first
+    // PATCH landed in the same millisecond as the create.)
     const conflict = await req(
       "PATCH",
       `/api/received-gifts/${id}`,
       { title: "Még újabb" },
-      { token, headers: { "If-Match": String(staleStamp) } },
+      { token, headers: { "If-Match": String(staleStamp - 1) } },
     );
     expect(conflict.status).toBe(409);
   });
