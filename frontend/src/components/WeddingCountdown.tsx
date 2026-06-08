@@ -13,12 +13,48 @@
 //     the app's global dark mode.
 
 import { CalendarDays, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { useT } from "../lib/i18n";
 
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
 const MIN_MS = 60_000;
+
+/** A countdown number whose footprint never changes as it ticks. The wedding
+ *  heading font is a serif WITHOUT tabular figures, so `tabular-nums` is a
+ *  no-op and proportional digits (1 vs 8) make the row jitter every second.
+ *  We give each digit a fixed em-width cell and a fixed-width container, so any
+ *  value occupies exactly the same space and neighbours never shift. */
+function CountdownNum({
+  value,
+  cells,
+  pad,
+  className = "",
+  style,
+}: {
+  value: number;
+  /** Reserved digit columns — sized for the unit's largest expected value. */
+  cells: number;
+  /** Zero-pad to `cells` (hours/minutes/seconds) vs. natural + centred (days). */
+  pad: boolean;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  const text = pad ? String(value).padStart(cells, "0") : String(value);
+  return (
+    <span
+      className={`inline-flex justify-center ${className}`}
+      style={{ ...style, width: `${cells * 0.62}em` }}
+    >
+      {text.split("").map((ch, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: fixed positional digit cells
+        <span key={i} className="inline-block text-center" style={{ width: "0.62em" }}>
+          {ch}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export function WeddingCountdown({
   date,
@@ -92,10 +128,32 @@ export function WeddingCountdown({
 
   const diff = Math.max(0, new Date(`${date}T00:00:00`).getTime() - now);
   const units = [
-    { value: Math.floor(diff / DAY_MS), label: t("guest_portal.countdown_days") },
-    { value: Math.floor((diff % DAY_MS) / HOUR_MS), label: t("guest_portal.countdown_hours") },
-    { value: Math.floor((diff % HOUR_MS) / MIN_MS), label: t("guest_portal.countdown_minutes") },
-    { value: Math.floor((diff % MIN_MS) / 1000), label: t("guest_portal.countdown_seconds") },
+    // Days: up to 3 digits (well over two years out), shown natural + centred.
+    // The rest are always 2-digit zero-padded.
+    {
+      value: Math.floor(diff / DAY_MS),
+      label: t("guest_portal.countdown_days"),
+      cells: 3,
+      pad: false,
+    },
+    {
+      value: Math.floor((diff % DAY_MS) / HOUR_MS),
+      label: t("guest_portal.countdown_hours"),
+      cells: 2,
+      pad: true,
+    },
+    {
+      value: Math.floor((diff % HOUR_MS) / MIN_MS),
+      label: t("guest_portal.countdown_minutes"),
+      cells: 2,
+      pad: true,
+    },
+    {
+      value: Math.floor((diff % MIN_MS) / 1000),
+      label: t("guest_portal.countdown_seconds"),
+      cells: 2,
+      pad: true,
+    },
   ];
 
   if (band) {
@@ -113,13 +171,14 @@ export function WeddingCountdown({
           </p>
           <div className="mt-6 flex justify-center gap-6 sm:gap-12">
             {units.map((u) => (
-              <div key={u.label} className="flex min-w-[3.5rem] flex-col items-center">
-                <span
-                  className="text-4xl tabular-nums sm:text-6xl"
+              <div key={u.label} className="flex flex-col items-center">
+                <CountdownNum
+                  value={u.value}
+                  cells={u.cells}
+                  pad={u.pad}
+                  className="text-4xl sm:text-6xl"
                   style={{ fontFamily: "var(--wt-heading-font)" }}
-                >
-                  {String(u.value).padStart(2, "0")}
-                </span>
+                />
                 <span
                   className="mt-2 text-[10px] font-medium uppercase tracking-[0.18em]"
                   style={{ opacity: 0.65 }}
@@ -141,10 +200,13 @@ export function WeddingCountdown({
       </p>
       <div className="mt-4 flex justify-center gap-3 sm:gap-6">
         {units.map((u) => (
-          <div key={u.label} className="flex min-w-[3.25rem] flex-col items-center">
-            <span className="stat-num text-3xl font-bold tabular-nums text-ink-900 sm:text-4xl dark:text-paper-50">
-              {String(u.value).padStart(2, "0")}
-            </span>
+          <div key={u.label} className="flex flex-col items-center">
+            <CountdownNum
+              value={u.value}
+              cells={u.cells}
+              pad={u.pad}
+              className="stat-num text-3xl font-bold text-ink-900 sm:text-4xl dark:text-paper-50"
+            />
             <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {u.label}
             </span>
