@@ -356,6 +356,9 @@ export interface LocaleMessages {
     /** Title on the in-place editable prose (intro / venue / post-RSVP) in the
      *  guest-page preview — clicking the text edits it right there. */
     inline_edit_hint: string;
+    /** Muted placeholder shown in the editor preview when the welcome note is
+     *  empty — clicking it edits in place (replaces the scroll-to-form ghost). */
+    welcome_placeholder: string;
     ghost: {
       cover_title: string;
       cover_cta: string;

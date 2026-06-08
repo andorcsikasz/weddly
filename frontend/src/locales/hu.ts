@@ -250,6 +250,7 @@ const hu: LocaleMessages = {
     footer_built_with: "Weddly · Az esküvő-tervező",
     edit_hint: "Kattints a szerkesztéshez",
     inline_edit_hint: "Kattints, és írd át itt helyben",
+    welcome_placeholder: "Írj egy köszöntőt a vendégeknek…",
     ghost: {
       cover_title: "Borítókép",
       cover_cta: "Adj hozzá borítóképet",

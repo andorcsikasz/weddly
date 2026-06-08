@@ -554,15 +554,20 @@ export function WeddingSiteView({
       </section>
 
       {/* ── Welcome / intro — same at every tier. ───────────────────────── */}
-      {view.guest_page_intro && !sectionHidden("intro") ? (
+      {/* When inline editing is available (editor preview) an EMPTY intro stays
+          in this branch as a click-to-edit placeholder — no scroll-to-form
+          ghost. The Ghost below only survives for the (now rare) preview
+          without an inline setter. */}
+      {(view.guest_page_intro || introInline) && !sectionHidden("intro") ? (
         <Band onEdit={isPreview && !introInline ? e.onEditIntro : undefined} hint={editHint}>
           {introInline && inlineEdit?.intro ? (
             <InlineText
-              value={view.guest_page_intro}
+              value={view.guest_page_intro ?? ""}
               onCommit={inlineEdit.intro}
               multiline
               className="whitespace-pre-line text-center text-lg leading-relaxed"
               style={{ opacity: 0.92 }}
+              placeholder={t("wedding_site.welcome_placeholder")}
               ariaLabel={t("guest_page_editor.intro_label")}
             />
           ) : (
@@ -658,7 +663,10 @@ export function WeddingSiteView({
       ) : null}
 
       {/* ── Location — venue name + (confirmed-tier) exact map link. ─────── */}
-      {view.venue_name ? (
+      {/* Inline editing available → an empty venue stays here as two click-to-
+          edit placeholders (name + city), committed as a pair. The Ghost
+          fallback only fires for a preview without an inline setter. */}
+      {view.venue_name || (isPreview && venueInline && inlineEdit?.venue) ? (
         <Band
           onEdit={isPreview && !venueInline ? e.onEditVenue : undefined}
           hint={editHint}

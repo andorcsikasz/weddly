@@ -296,6 +296,54 @@ describe("WeddingSiteView — inline editing", () => {
     expect(screen.getByText(/köszönjük, hogy velünk/i)).toBeInTheDocument();
   });
 
+  it("renders an empty intro as an inline placeholder (not a scroll ghost) when inline editing is on", () => {
+    const intro = mock((_v: string) => {});
+    const venue = mock((_n: string, _c: string) => {});
+    renderView(
+      <WeddingSiteView
+        view={emptyView()}
+        household={null}
+        tier="public"
+        locale="hu"
+        isPreview
+        edit={{}}
+        inlineEdit={{ intro, venue }}
+      />,
+    );
+    // The scroll-to-form welcome ghost is gone…
+    expect(screen.queryByText(/írj köszöntőt a vendégeknek/i)).toBeNull();
+    // …replaced by a click-to-edit placeholder that commits in place.
+    fireEvent.click(screen.getByText(/írj egy köszöntőt/i));
+    const field = screen.getByLabelText(/üdvözlő szöveg/i);
+    fireEvent.change(field, { target: { value: "Sziasztok!" } });
+    fireEvent.blur(field);
+    expect(intro).toHaveBeenCalledWith("Sziasztok!");
+  });
+
+  it("renders an empty venue as inline placeholders committing name + city as a pair", () => {
+    const venue = mock((_n: string, _c: string) => {});
+    renderView(
+      <WeddingSiteView
+        view={emptyView()}
+        household={null}
+        tier="public"
+        locale="hu"
+        isPreview
+        edit={{}}
+        inlineEdit={{ venue }}
+      />,
+    );
+    // The scroll-to-form venue ghost is gone.
+    expect(screen.queryByText("Add meg a helyszínt")).toBeNull();
+    // The empty name placeholder is click-to-edit; committing pairs it with the
+    // (still empty) city, exercising the splitVenue(null, null) path.
+    fireEvent.click(screen.getByText("Helyszín neve"));
+    const input = screen.getByLabelText("Helyszín neve");
+    fireEvent.change(input, { target: { value: "Sári Udvar" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(venue).toHaveBeenCalledWith("Sári Udvar", "");
+  });
+
   it("without an inlineEdit setter the section stays a scroll-to-field shortcut", () => {
     const onEditIntro = mock(() => {});
     renderView(
