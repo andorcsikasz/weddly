@@ -57,6 +57,34 @@ export interface BlogPost {
   en: BlogPostLocale;
 }
 
+/** Cover photo per seed slug. The image bytes are committed under
+ *  `frontend/public/blog-covers/<slug>.jpg`, which Vite copies to
+ *  `frontend/dist/blog-covers/<slug>.jpg`; the backend's direct-file-hit
+ *  handler serves them at `/blog-covers/<slug>.jpg` in prod, and Vite serves
+ *  the same path from `public/` in dev. This map is the single source of
+ *  truth for seed covers — the boot seeder (`seedBlogPostsIfEmpty`) applies a
+ *  slug's cover on insert and backfills it onto any existing row whose
+ *  `cover_image_url` is still NULL (admin uploads, being non-null, are never
+ *  overwritten). Keep keys in sync with the slugs in SEED_BLOG_POSTS. */
+export const SEED_COVER_BY_SLUG: Record<string, string> = {
+  "miert-hazasodunk-a-biblia-szerint": "/blog-covers/miert-hazasodunk-a-biblia-szerint.jpg",
+  "bibliai-idezetek-eskuvore": "/blog-covers/bibliai-idezetek-eskuvore.jpg",
+  "eskuvoi-koltsegvetes-keszitese": "/blog-covers/eskuvoi-koltsegvetes-keszitese.jpg",
+  "eskuvoi-vendeglista-keszitese": "/blog-covers/eskuvoi-vendeglista-keszitese.jpg",
+  "eskuvoi-ultetesi-rend-keszitese": "/blog-covers/eskuvoi-ultetesi-rend-keszitese.jpg",
+  "eskuvoi-rsvp-kerdesek": "/blog-covers/eskuvoi-rsvp-kerdesek.jpg",
+  "eskuvoszervezesi-checklist-12-honapra": "/blog-covers/eskuvoszervezesi-checklist-12-honapra.jpg",
+  "digitalis-eskuvoi-meghivo-vagy-papir-meghivo":
+    "/blog-covers/digitalis-eskuvoi-meghivo-vagy-papir-meghivo.jpg",
+  "eskuvoi-hagyomanyok-praktikusan": "/blog-covers/eskuvoi-hagyomanyok-praktikusan.jpg",
+  "eskuvoi-szertartas-menete": "/blog-covers/eskuvoi-szertartas-menete.jpg",
+  "eskuvoszervezesi-checklist-6-honapra": "/blog-covers/eskuvoszervezesi-checklist-6-honapra.jpg",
+  "eskuvoi-ugyintezes-lepesrol-lepesre": "/blog-covers/eskuvoi-ugyintezes-lepesrol-lepesre.jpg",
+  "where-to-get-married-in-hungary": "/blog-covers/where-to-get-married-in-hungary.jpg",
+  "where-to-get-married-in-austria": "/blog-covers/where-to-get-married-in-austria.jpg",
+  "where-to-get-married-in-slovakia": "/blog-covers/where-to-get-married-in-slovakia.jpg",
+};
+
 export const SEED_BLOG_POSTS: BlogPost[] = [
   // ── 0a. Miért házasodunk a Biblia szerint? ─────────────────────────
   {
@@ -3835,8 +3863,6 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     published_at: "2026-05-30",
     read_minutes: 9,
     category: { hu: "Helyszínek", en: "Venues" },
-    cover_image_url:
-      "https://commons.wikimedia.org/wiki/Special:FilePath/Festetics_Palace,_Keszthely,_Hungary.jpg",
     hu: {
       title: "Hol házasodjunk Magyarországon? 6 mesés esküvői helyszín",
       lead: "Barokk kastélyoktól a Balaton-parti apátságig: a legszebb magyar esküvői helyszínek régióról régióra, képekkel és gyakorlati tippekkel.",
@@ -4055,8 +4081,6 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     published_at: "2026-05-31",
     read_minutes: 9,
     category: { hu: "Helyszínek", en: "Venues" },
-    cover_image_url:
-      "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial_image_of_Schloss_Leopoldskron_(view_from_the_southwest).jpg",
     hu: {
       title: "Hol házasodjunk Ausztriában? 7 romantikus esküvői helyszín",
       lead: "Császári palotáktól az alpesi panorámáig: a legszebb osztrák esküvői helyszínek Bécstől Salzburgon át a Wachau borvidékéig, képekkel.",
@@ -4303,8 +4327,6 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     published_at: "2026-06-01",
     read_minutes: 9,
     category: { hu: "Helyszínek", en: "Venues" },
-    cover_image_url:
-      "https://commons.wikimedia.org/wiki/Special:FilePath/Bojnice_(Bojnitz)_Castle_(by_Pudelek).jpg",
     hu: {
       title: "Hol házasodjunk Szlovákiában? 7 mesés esküvői helyszín",
       lead: "Mesebeli váraktól a Magas-Tátra tópartjáig: a legszebb szlovák esküvői helyszínek, képekkel és gyakorlati tippekkel.",

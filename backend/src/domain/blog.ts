@@ -6,7 +6,7 @@
 // admin can then edit, publish or delete them.
 
 import type { BlogBlock, BlogPost } from "../../../shared/blog_posts";
-import { SEED_BLOG_POSTS } from "../../../shared/blog_posts";
+import { SEED_BLOG_POSTS, SEED_COVER_BY_SLUG } from "../../../shared/blog_posts";
 import { db, now } from "../db";
 import { log } from "../lib/logger";
 
@@ -118,7 +118,7 @@ export function seedBlogPostsIfEmpty(): void {
       hu_category, hu_title, hu_lead, hu_seo_title, hu_seo_description, hu_body_json,
       en_category, en_title, en_lead, en_seo_title, en_seo_description, en_body_json,
       created_at, updated_at
-    ) VALUES (?, ?, ?, NULL, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   let inserted = 0;
@@ -128,6 +128,7 @@ export function seedBlogPostsIfEmpty(): void {
       post.slug,
       post.published_at,
       post.read_minutes,
+      SEED_COVER_BY_SLUG[post.slug] ?? post.cover_image_url ?? null,
       post.category.hu,
       post.hu.title,
       post.hu.lead,
@@ -146,6 +147,21 @@ export function seedBlogPostsIfEmpty(): void {
     inserted += 1;
   }
   if (inserted > 0) log.info("blog.seeded", { inserted });
+
+  // Backfill covers onto rows that predate SEED_COVER_BY_SLUG. Posts seeded by
+  // earlier releases landed with cover_image_url = NULL (the old INSERT
+  // hardcoded NULL), so editing the seed alone would never reach them. We only
+  // touch rows that are still NULL, so an admin-uploaded cover (non-null) is
+  // never clobbered. Runs every boot but is a no-op once every slug has a cover.
+  const backfill = db.prepare(
+    "UPDATE blog_posts SET cover_image_url = ?, updated_at = ? WHERE slug = ? AND cover_image_url IS NULL",
+  );
+  let covered = 0;
+  for (const [slug, url] of Object.entries(SEED_COVER_BY_SLUG)) {
+    const info = backfill.run(url, ts, slug);
+    covered += info.changes;
+  }
+  if (covered > 0) log.info("blog.covers_backfilled", { covered });
 }
 
 export interface BlogPostWritePayload {
