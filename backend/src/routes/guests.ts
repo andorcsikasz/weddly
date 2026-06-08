@@ -670,6 +670,19 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     db.prepare("UPDATE guests SET plus_one_name = NULL, plus_one_meal = NULL WHERE id = ?").run(id);
   }
 
+  // Cascade invite state to materialized +1s: when a host's invited/delivered
+  // flags change, its plus-ones inherit the same state (single check = invited,
+  // double check = delivered). Only fires when the request actually touched the
+  // invite flags, so a plain name/meal edit never disturbs a +1's own state.
+  // Runs after materializePlusOne so a +1 added in the same save inherits too.
+  const inviteFlagsTouched = body.invited !== undefined || body.delivered !== undefined;
+  if (inviteFlagsTouched && !nextIsPlusOne) {
+    db.prepare(
+      `UPDATE guests SET invited_at = ?, invitation_delivered_at = ?, updated_at = ?
+         WHERE plus_one_of = ? AND couple_id = ?`,
+    ).run(nextInvitedAt, nextDeliveredAt, ts, id, couple.id);
+  }
+
   const row = getGuestByIdScoped(id, couple.id) as GuestRow;
   return json({ guest: toGuest(row) });
 }
