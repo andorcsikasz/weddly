@@ -2602,7 +2602,7 @@ const en: LocaleMessages = {
       guests_label: "Guest count",
       sweets_buffer_label: "Pastry buffer (%)",
       drinks_buffer_label: "Drinks buffer (%)",
-      portions_heading: "Fine-tune portions (per guest)",
+      qty_edit_hint: "Fine-tune portion (per guest)",
       col_item: "Item",
       col_qty: "Quantity",
       col_unit_price: "Unit price",

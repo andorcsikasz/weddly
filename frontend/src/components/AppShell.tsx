@@ -45,6 +45,7 @@ import { SubscriptionBanner } from "./SubscriptionBanner";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { KeyboardShortcutsSheet, useShortcutsHotkey } from "./KeyboardShortcutsSheet";
+import { NotificationBell } from "./NotificationBell";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -543,6 +544,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <Languages size={18} aria-hidden="true" />
             </button>
+            {user && <NotificationBell />}
             <button
               type="button"
               className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"

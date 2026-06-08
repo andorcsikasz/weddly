@@ -5,6 +5,7 @@ import type { PlanningKind, PlanningTopic } from "@shared/types";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
+import { insertCoupleNotification } from "../domain/notifications";
 import {
   getPlanningItemJoined,
   getPlanningItemScoped,
@@ -13,6 +14,7 @@ import {
   listPlanningItemsByCouple,
   toPlanningItem,
 } from "../domain/planning";
+import { getUserById } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 const MAX_TITLE = 200;
@@ -214,6 +216,20 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     target_kind: "planning_item",
     target_id: id,
     after: { kind, title },
+  });
+
+  // In-app "your partner added a to-do" event for the OTHER partner (the feed
+  // hides a row from its own actor). Hour-bucketed dedupe collapses a burst —
+  // the timeline generator creates ~20 tasks at once — into a single row, so
+  // the partner sees "Anna added to-dos", not 20 pings.
+  const actor = getUserById(userId);
+  insertCoupleNotification({
+    couple_id: couple.id,
+    kind: "partner_task_added",
+    actor_user_id: userId,
+    data: { actorName: actor?.full_name?.trim() || "" },
+    link: "/app/planning",
+    dedupe_key: `task_added:${userId}:${Math.floor(ts / 3_600_000)}`,
   });
 
   const row = getPlanningItemJoined(id, couple.id);

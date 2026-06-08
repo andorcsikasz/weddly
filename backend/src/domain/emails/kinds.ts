@@ -30,6 +30,7 @@ export type EmailKind =
   | "milestone_t90" // 90 days before the wedding
   | "milestone_t30" // 30 days before
   | "milestone_t7" // 7 days before
+  | "timeline_escalation" // proactive-timeline push: tasks overdue/due-soon + couple opted into email
   | "wedding_today" // morning-of congratulations
   | "wedding_today_followup" // T+7 days — quick how-was-it / NPS nudge
   | "wedding_date_changed" // couple edited the wedding date, notify guests
@@ -111,6 +112,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   milestone_t90: "lifecycle",
   milestone_t30: "lifecycle",
   milestone_t7: "lifecycle",
+  timeline_escalation: "lifecycle",
   wedding_today: "lifecycle",
   wedding_today_followup: "lifecycle",
   // Transactional: a guest explicitly opted into the wedding by RSVPing, and

@@ -1229,3 +1229,45 @@ CREATE TABLE IF NOT EXISTS moodboard_images (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_moodboard_images_couple ON moodboard_images(couple_id, sort_order);
+
+-- In-app notification feed: discrete, point-in-time EVENTS only (an RSVP came
+-- in, a partner added a to-do, "we emailed you a timeline nudge"). Timeline
+-- overdue / due-soon status is deliberately NOT stored here — it is computed
+-- live from planning_items via summarizeTimeline at read time and merged into
+-- the feed by the endpoint, so a completed / re-dated task's nudge updates for
+-- free with no invalidation sweep. Rows are COUPLE-scoped (one row per event,
+-- both partners share it); per-user read state lives in notification_seen, NOT
+-- on the row, so partner A opening the bell never clears partner B's badge —
+-- mirrors how email_dispatches fans out per (couple,user). actor_user_id is the
+-- partner who caused the event (NULL for guest / system); the reader hides a row
+-- from its own actor. data_json carries the render params (guest name, task
+-- title, counts) — the human label is composed client-side via t() so locale
+-- isn't frozen at write time. dedupe_key (nullable) collapses bursts (a family
+-- RSVP, a bulk edit) into one row via the partial unique index below.
+CREATE TABLE IF NOT EXISTS couple_notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  data_json TEXT,
+  link TEXT,
+  dedupe_key TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_couple_notifications_couple ON couple_notifications(couple_id, id DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_couple_notifications_dedupe
+  ON couple_notifications(couple_id, dedupe_key) WHERE dedupe_key IS NOT NULL;
+
+-- Per-(user,couple) read watermark for the notification bell. The timeline half
+-- of the feed is computed, not stored, so "have I seen it?" can't be a per-row
+-- flag — instead we stamp the moment the member last opened the bell, and any
+-- feed item (computed or stored) whose timestamp is at or before seen_at counts
+-- as read. Same shape + intent as admin_section_seen. A user can belong to more
+-- than one couple over time, hence the composite key. NULL row = never opened
+-- the bell, so everything actionable reads as unread.
+CREATE TABLE IF NOT EXISTS notification_seen (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  seen_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, couple_id)
+);

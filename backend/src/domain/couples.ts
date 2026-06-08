@@ -7,6 +7,7 @@ import {
   SUBSCRIPTION_STATUSES,
 } from "@shared/billing";
 import { type CoupleDesign, type CoupleDesignInput, resolveDesign } from "@shared/design";
+import { type TimelineEmailEscalation, isTimelineEmailEscalation } from "@shared/notifications";
 import type {
   BudgetCategory,
   BudgetGoal,
@@ -135,6 +136,7 @@ export interface CoupleRow {
   currency: string | null;
   rsvp_offers_accommodation: number;
   rsvp_collects_meal: number;
+  timeline_email_escalation: string | null;
   is_demo: number;
   welcome_desk_active: number;
   /** Public wedding-website (/w/:slug) opt-in toggle. 0 = private (default),
@@ -378,6 +380,9 @@ export function toCouple(row: CoupleRow): Couple {
     currency: rowToCurrency(row.currency),
     rsvp_offers_accommodation: Boolean(row.rsvp_offers_accommodation),
     rsvp_collects_meal: Boolean(row.rsvp_collects_meal),
+    timeline_email_escalation: isTimelineEmailEscalation(row.timeline_email_escalation ?? "")
+      ? (row.timeline_email_escalation as TimelineEmailEscalation)
+      : "overdue",
     is_demo: Boolean(row.is_demo),
     is_public: Boolean(row.is_public),
     wishlist_published: Boolean(row.wishlist_published),

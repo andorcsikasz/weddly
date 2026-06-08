@@ -15,8 +15,10 @@ import type {
   ExportKind,
 } from "@shared/types";
 import { CURRENCIES } from "@shared/types";
+import { TIMELINE_EMAIL_ESCALATION_VALUES } from "@shared/notifications";
 import {
   Archive,
+  BellRing,
   ChevronDown,
   Copy,
   Download,
@@ -630,6 +632,22 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
     }
   }
 
+  /** Persist the proactive-timeline email-escalation trigger. The in-app bell
+   *  is always on; this only governs when an email push fires. */
+  async function saveEscalation(next: string) {
+    if (next === couple?.timeline_email_escalation) return;
+    const parsed = (TIMELINE_EMAIL_ESCALATION_VALUES as readonly string[]).includes(next)
+      ? (next as (typeof TIMELINE_EMAIL_ESCALATION_VALUES)[number])
+      : null;
+    if (!parsed) return;
+    try {
+      const r = await coupleApi.update({ timeline_email_escalation: parsed });
+      setCouple(r.couple);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+    }
+  }
+
   return (
     <>
       {/* Visually-hidden h1 — hero band IS the visual heading but doesn't
@@ -983,6 +1001,34 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
               }}
               label={t("profile.country_label")}
             />
+          </div>
+        </section>
+      )}
+
+      {showPlanning && couple && (
+        <section className="card mt-6">
+          <h2 className="flex items-center gap-2 font-grotesk text-lg">
+            <BellRing size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("notifications.email_setting_label")}
+          </h2>
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+            {t("notifications.email_setting_hint")}
+          </p>
+          <div className="mt-4 max-w-sm">
+            <select
+              value={couple.timeline_email_escalation}
+              onChange={(e) => {
+                void saveEscalation(e.target.value);
+              }}
+              aria-label={t("notifications.email_setting_label")}
+              className="input w-full"
+            >
+              <option value="overdue">{t("notifications.email_setting_overdue")}</option>
+              <option value="overdue_due_soon">
+                {t("notifications.email_setting_overdue_due_soon")}
+              </option>
+              <option value="off">{t("notifications.email_setting_off")}</option>
+            </select>
           </div>
         </section>
       )}

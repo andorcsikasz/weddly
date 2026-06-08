@@ -18,6 +18,7 @@ import { CONFIG } from "../config";
 import { db } from "../db";
 import { type CoupleRow, getCoupleById } from "../domain/couples";
 import { sendKind } from "../domain/emails";
+import { insertCoupleNotification } from "../domain/notifications";
 import {
   applyMemberCheckin,
   getHouseholdById,
@@ -230,12 +231,6 @@ function notifyCouple(
   members: GuestRow[],
   previous: GuestRow[],
 ) {
-  // Couples on digest mode opted out of per-event mail in Profile — the
-  // weekly cron sweep rolls these up into a single Monday digest. Skip the
-  // per-event send entirely; the email_log row would otherwise misrepresent
-  // intent ("we sent X mails" vs "we suppressed X mails for digest").
-  if ((couple as { rsvp_digest_mode?: string }).rsvp_digest_mode === "weekly") return;
-
   const guestPageUrl = `${CONFIG.frontendBaseUrl}/app/guests`;
   const prevById = new Map(previous.map((p) => [p.id, p]));
 
@@ -251,6 +246,33 @@ function notifyCouple(
     changed.push({ name: m.full_name, rsvpStatus: status as "yes" | "no" | "maybe" });
   }
   if (changed.length === 0) return;
+
+  // In-app bell notification — fires regardless of the EMAIL digest mode below
+  // (digest only governs the inbox cadence, not the in-app feed). One couple-
+  // scoped row per submission; a single guest names the guest, a family RSVP
+  // collapses into a count.
+  if (changed.length === 1) {
+    const only = changed[0]!;
+    insertCoupleNotification({
+      couple_id: couple.id,
+      kind: "rsvp_received",
+      data: { guestName: only.name, rsvpStatus: only.rsvpStatus },
+      link: "/app/guests",
+    });
+  } else {
+    insertCoupleNotification({
+      couple_id: couple.id,
+      kind: "rsvp_received_household",
+      data: { householdLabel: household.label, count: changed.length },
+      link: "/app/guests",
+    });
+  }
+
+  // Couples on digest mode opted out of per-event mail in Profile — the
+  // weekly cron sweep rolls these up into a single Monday digest. Skip the
+  // per-event send entirely; the email_log row would otherwise misrepresent
+  // intent ("we sent X mails" vs "we suppressed X mails for digest").
+  if ((couple as { rsvp_digest_mode?: string }).rsvp_digest_mode === "weekly") return;
 
   // Whole-list progress so the partner sees how far the RSVP push has come,
   // not just this one household. Counted once per submission, shared by both

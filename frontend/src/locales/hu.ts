@@ -2635,7 +2635,7 @@ const hu: LocaleMessages = {
       guests_label: "Vendégszám (fő)",
       sweets_buffer_label: "Ráhagyás süteményre (%)",
       drinks_buffer_label: "Ráhagyás italra (%)",
-      portions_heading: "Adagok finomhangolása (/fő)",
+      qty_edit_hint: "Adag finomhangolása (/fő)",
       col_item: "Tétel",
       col_qty: "Mennyiség",
       col_unit_price: "Egységár",

@@ -8,10 +8,12 @@
 // `email_dispatches(couple_id, user_id, kind)` — `markDispatched()` returns
 // false on duplicate, in which case we skip.
 
+import { toIsoDate } from "@shared/planning_timeline";
 import { CONFIG } from "../../config";
 import { db, now } from "../../db";
 import { log } from "../../lib/logger";
 import { reportError } from "../../lib/observability";
+import { insertCoupleNotification, listActionableTimelineTasks } from "../notifications";
 import type { EmailKind } from "./kinds";
 import { markDispatched, sendKind } from "./send";
 
@@ -54,6 +56,7 @@ export function runEmailSweep(): {
   mealFollowups: number;
   adminDigests: number;
   rsvpDigests: number;
+  timelineEscalations: number;
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
@@ -66,6 +69,7 @@ export function runEmailSweep(): {
   const mealFollowups = sweepRsvpMealFollowup(ts);
   const adminDigests = sweepAdminModerationDigest(ts);
   const rsvpDigests = sweepRsvpWeeklyDigest(ts);
+  const timelineEscalations = sweepTimelineEscalation(ts);
   return {
     nudges,
     nudgesWeek,
@@ -77,6 +81,7 @@ export function runEmailSweep(): {
     mealFollowups,
     adminDigests,
     rsvpDigests,
+    timelineEscalations,
   };
 }
 
@@ -524,6 +529,87 @@ function sweepAdminModerationDigest(ts: number): number {
   return count;
 }
 
+interface TimelineEscalationRow {
+  couple_id: number;
+  display_name: string;
+  mode: string;
+  user_id: number;
+  email: string;
+  full_name: string;
+}
+
+function sweepTimelineEscalation(ts: number): number {
+  // Proactive-timeline EMAIL push. The in-app bell is always on; this only
+  // fires email when a couple opted in (couples.timeline_email_escalation !=
+  // 'off') AND has tasks in the configured trigger set. Re-nudges at most
+  // weekly per partner via the digest-style 7-day cooldown (NOT markDispatched,
+  // which is once-forever — we want to keep reminding a couple who stays behind).
+  const todayIso = toIsoDate(new Date(ts));
+  const oneWeekAgo = ts - 7 * 24 * 60 * 60 * 1000;
+  const rows = db
+    .prepare(
+      `SELECT c.id AS couple_id, c.display_name, c.timeline_email_escalation AS mode,
+              u.id AS user_id, u.email, u.full_name
+         FROM couples c
+         JOIN users u ON u.couple_id = c.id
+        WHERE c.status = 'active'
+          AND c.is_demo = 0
+          AND c.timeline_email_escalation != 'off'
+          AND u.status = 'active'
+          AND u.email NOT LIKE '%@purged.local'`,
+    )
+    .all() as TimelineEscalationRow[];
+
+  let count = 0;
+  for (const r of rows) {
+    const lastSent = db
+      .prepare(
+        "SELECT MAX(dispatched_at) AS at FROM email_dispatches WHERE kind = 'timeline_escalation' AND user_id = ?",
+      )
+      .get(r.user_id) as { at: number | null };
+    if (lastSent.at !== null && lastSent.at > oneWeekAgo) continue;
+
+    const tasks = listActionableTimelineTasks(r.couple_id, todayIso);
+    const overdue = tasks.filter((t) => t.status === "overdue");
+    const dueSoon = tasks.filter((t) => t.status === "due_soon");
+    const trigger = r.mode === "overdue_due_soon" ? [...overdue, ...dueSoon] : overdue;
+    if (trigger.length === 0) continue;
+
+    // Stamp the dispatch BEFORE the fire-and-forget send so a silent mailer
+    // hiccup skips rather than re-sends on the next sweep.
+    db.prepare(
+      "INSERT INTO email_dispatches (couple_id, user_id, kind, dispatched_at) VALUES (?, ?, 'timeline_escalation', ?)",
+    ).run(r.couple_id, r.user_id, ts);
+    void sendKind(
+      "timeline_escalation",
+      {
+        coupleDisplayName: r.display_name,
+        overdueCount: overdue.length,
+        dueSoonCount: r.mode === "overdue_due_soon" ? dueSoon.length : 0,
+        sampleTitles: trigger.slice(0, 4).map((t) => t.title),
+        timelineUrl: `${CONFIG.frontendBaseUrl}/app/timeline`,
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
+    );
+    count++;
+
+    // In-app trace so the bell reflects "we emailed you about the timeline".
+    // One couple-scoped row per week (deduped) so both partners' sends don't
+    // double it.
+    insertCoupleNotification({
+      couple_id: r.couple_id,
+      kind: "timeline_email_sent",
+      data: { overdueCount: overdue.length },
+      link: "/app/timeline",
+      dedupe_key: `timeline_email:${Math.floor(ts / (7 * 24 * 60 * 60 * 1000))}`,
+    });
+  }
+  return count;
+}
+
 function scalar(sql: string): number {
   const row = db.prepare(sql).get() as { n: number };
   return row.n;
@@ -630,7 +716,8 @@ export function startEmailWorker(): void {
         r.weddingFollowups +
         r.mealFollowups +
         r.adminDigests +
-        r.rsvpDigests >
+        r.rsvpDigests +
+        r.timelineEscalations >
       0
     ) {
       log.info("emails.boot_sweep", r);
@@ -651,7 +738,8 @@ export function startEmailWorker(): void {
             r.weddingFollowups +
             r.mealFollowups +
             r.adminDigests +
-            r.rsvpDigests >
+            r.rsvpDigests +
+            r.timelineEscalations >
           0
         ) {
           log.info("emails.hourly_sweep", r);

@@ -236,6 +236,18 @@ export interface MilestonePayload {
   /** Where in the app to land — usually the dashboard. */
   dashboardUrl: string;
 }
+export interface TimelineEscalationPayload {
+  /** Couple's friendly display name — "Mia & Lucas". */
+  coupleDisplayName: string;
+  /** How many tasks are overdue right now. */
+  overdueCount: number;
+  /** How many are due soon. Only > 0 when the couple's trigger includes due-soon. */
+  dueSoonCount: number;
+  /** A few task titles to name concretely (already localized at the task level). */
+  sampleTitles: string[];
+  /** Deep link into the timeline view. */
+  timelineUrl: string;
+}
 export interface WeddingTodayPayload {
   coupleDisplayName: string;
 }
@@ -399,6 +411,7 @@ export type KindPayload = {
   milestone_t90: MilestonePayload;
   milestone_t30: MilestonePayload;
   milestone_t7: MilestonePayload;
+  timeline_escalation: TimelineEscalationPayload;
   wedding_today: WeddingTodayPayload;
   wedding_today_followup: WeddingTodayFollowupPayload;
   wedding_date_changed: WeddingDateChangedPayload;
@@ -1171,6 +1184,47 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       cta: "Open print tab",
     },
   }),
+
+  timeline_escalation: (p, ctx) => {
+    const titles = p.sampleTitles.slice(0, 4);
+    const listHu = titles.length > 0 ? titles.join(", ") : "";
+    const listEn = titles.length > 0 ? titles.join(", ") : "";
+    const headlineHu =
+      p.overdueCount > 0
+        ? `${p.overdueCount} teendő már csúszik${p.dueSoonCount > 0 ? `, és ${p.dueSoonCount} hamarosan esedékes` : ""}.`
+        : `${p.dueSoonCount} teendő hamarosan esedékes.`;
+    const headlineEn =
+      p.overdueCount > 0
+        ? `${p.overdueCount} to-do${p.overdueCount > 1 ? "s are" : " is"} now overdue${p.dueSoonCount > 0 ? `, and ${p.dueSoonCount} ${p.dueSoonCount > 1 ? "are" : "is"} coming up` : ""}.`
+        : `${p.dueSoonCount} to-do${p.dueSoonCount > 1 ? "s are" : " is"} coming up.`;
+    return {
+      subject: "Csúszik pár dolog az ütemtervből / A few timeline items need you",
+      ctaUrl: p.timelineUrl,
+      hu: {
+        preheader: `${p.coupleDisplayName} — ${headlineHu}`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          headlineHu,
+          listHu ? `Ezek várnak rátok: ${listHu}.` : "Nézzétek át az ütemterveteket.",
+          "Egy kattintással megnyithatjátok az idővonalat, kipipálhatjátok ami kész, és átütemezhetitek a többit.",
+        ],
+        cta: "Idővonal megnyitása",
+        footnote:
+          "Ezt azért kaptátok, mert bekapcsoltátok az ütemterv-emlékeztetőt. A Profilban bármikor kikapcsolható.",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          headlineEn,
+          listEn ? `Waiting on you: ${listEn}.` : "Take a look at your timeline.",
+          "Open the timeline to tick off what's done and reschedule the rest — it's one click away.",
+        ],
+        cta: "Open timeline",
+        footnote:
+          "You're getting this because timeline reminders are on. Turn them off anytime in Profile.",
+      },
+    };
+  },
 
   wedding_date_changed: (p, ctx) => {
     const fromHu = p.previousWeddingDate ? `${p.previousWeddingDate} → ` : "";

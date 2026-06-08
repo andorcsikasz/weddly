@@ -3,6 +3,7 @@
 
 import type { CoupleBilling } from "./billing";
 import type { CoupleDesign } from "./design";
+import type { TimelineEmailEscalation } from "./notifications";
 
 export type UnixMs = number;
 /** Integer Forint. Treat as a whole-number currency unit. */
@@ -314,6 +315,10 @@ export interface Couple {
    *  the public form. Per-member `meal_choice` values are preserved server
    *  side, so flipping it back on re-surfaces them. */
   rsvp_collects_meal: boolean;
+  /** Per-couple trigger for the proactive-timeline EMAIL escalation. The in-app
+   *  bell is always on; this only governs the email push. Defaults to 'overdue'
+   *  (push only when a task is genuinely late). See `TimelineEmailEscalation`. */
+  timeline_email_escalation: TimelineEmailEscalation;
   /** True for ephemeral demo couples created via `POST /api/demo/start`.
    *  The /app UI uses this to render the persistent "Demo wedding" banner
    *  and fire the conversion popup after a few minutes. Demo couples are

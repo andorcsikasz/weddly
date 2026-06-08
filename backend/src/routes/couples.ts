@@ -26,6 +26,7 @@ import {
   type WeddingStyleTag,
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
+import { isTimelineEmailEscalation } from "@shared/notifications";
 import {
   type BorderStyleSlug,
   type ButtonStyleSlug,
@@ -162,6 +163,8 @@ interface OnboardBody {
   frozen_categories?: unknown;
   /** Display currency for every money field on this couple. */
   currency?: unknown;
+  /** Proactive-timeline email escalation trigger: 'off' | 'overdue' | 'overdue_due_soon'. */
+  timeline_email_escalation?: unknown;
   /** Boolean — when true, the RSVP flow surfaces a "needs accommodation?"
    *  checkbox on each member; when false (the default) the question is
    *  hidden on both the public form and the in-app guest drawer. */
@@ -1682,6 +1685,28 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.currency_update",
         before: { currency: prev },
         after: { currency: next },
+      });
+    }
+  }
+
+  if (body.timeline_email_escalation !== undefined) {
+    if (
+      typeof body.timeline_email_escalation !== "string" ||
+      !isTimelineEmailEscalation(body.timeline_email_escalation)
+    ) {
+      throw new HttpError(
+        400,
+        "timeline_email_escalation must be off, overdue, or overdue_due_soon",
+      );
+    }
+    const next = body.timeline_email_escalation;
+    const prev = couple.timeline_email_escalation ?? "overdue";
+    if (next !== prev) {
+      updates.push({ col: "timeline_email_escalation", val: next });
+      auditEntries.push({
+        action: "couple.timeline_email_escalation_update",
+        before: { timeline_email_escalation: prev },
+        after: { timeline_email_escalation: next },
       });
     }
   }

@@ -44,6 +44,7 @@ import { ActivityPanel } from "../components/ActivityPanel";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
 import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
+import { TimelineStatusCard } from "../components/TimelineStatusCard";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -1124,6 +1125,10 @@ export default function DashboardPage() {
         daysUntil <= 7 &&
         dietary !== null &&
         dietary.counted_guests > 0 && <CatererSummaryCard dietary={dietary} />}
+
+      {/* Proactive-timeline nudge — only renders when something's overdue or
+          due soon, so an on-track couple sees no clutter. */}
+      {!dayOfMode && !weddingPast && <TimelineStatusCard />}
 
       {/* ── KPI tiles — hidden in day-of mode; the DayOfPanel above
           surfaces a compact stat row instead. ──────────────────────── */}
