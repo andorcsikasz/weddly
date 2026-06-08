@@ -11,7 +11,7 @@
 // couple flips back to the preset, so switching is non-destructive.
 
 import type { MoodboardPin, MoodboardState } from "@shared/types";
-import { AlertTriangle, ExternalLink, ImagePlus, Trash2, UploadCloud } from "lucide-react";
+import { AlertTriangle, ExternalLink, ImagePlus, Lock, Trash2, UploadCloud } from "lucide-react";
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { Skeleton, useToast } from "../components/ui";
@@ -51,6 +51,13 @@ function looksLikePinterestLink(raw: string): boolean {
   if (host === "pin.it") return segments >= 1;
   if (/(^|\.)pinterest\.[a-z.]+$/i.test(host)) return segments >= 2;
   return false;
+}
+
+/** A lapsed couple's workspace is read-only: saving a board / uploading images
+ *  returns 402. That's a billing state, NOT a Pinterest failure — surface it as
+ *  such instead of letting it fall through to a misleading "fetch failed". */
+function isReadOnlyBlock(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 402;
 }
 
 function classifyPreviewError(err: unknown): ErrorCode {
@@ -152,6 +159,8 @@ export default function MoodboardPage() {
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Set when a save/upload is refused because the workspace is read-only (402).
+  const [readOnly, setReadOnly] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initial state load + one-time migration of the legacy localStorage url.
@@ -236,6 +245,7 @@ export default function MoodboardPage() {
       e.target.value = ""; // allow re-picking the same file
       if (files.length === 0) return;
       setUploadError(null);
+      setReadOnly(false);
       setUploading(true);
       moodboardApi
         .uploadImages(files)
@@ -243,7 +253,10 @@ export default function MoodboardPage() {
           setState(s);
           setChoosing(false);
         })
-        .catch((err) => setUploadError(t(uploadErrorKey(err))))
+        .catch((err) => {
+          if (isReadOnlyBlock(err)) setReadOnly(true);
+          else setUploadError(t(uploadErrorKey(err)));
+        })
         .finally(() => setUploading(false));
     },
     [t],
@@ -256,6 +269,7 @@ export default function MoodboardPage() {
       return;
     }
     setLinkError(null);
+    setReadOnly(false);
     moodboardApi
       .setSource({ source: "pinterest", url: trimmed })
       .then((s) => {
@@ -263,7 +277,10 @@ export default function MoodboardPage() {
         setChoosing(false);
         setLinkDraft("");
       })
-      .catch((err) => setLinkError(classifyPreviewError(err)));
+      .catch((err) => {
+        if (isReadOnlyBlock(err)) setReadOnly(true);
+        else setLinkError(classifyPreviewError(err));
+      });
   }, [linkDraft]);
 
   const backToPreset = useCallback(() => {
@@ -356,6 +373,7 @@ export default function MoodboardPage() {
                   setLinkDraft(source === "pinterest" ? (state.url ?? "") : "");
                   setLinkError(null);
                   setUploadError(null);
+                  setReadOnly(false);
                 }}
               >
                 {t("moodboard.change")}
@@ -386,6 +404,21 @@ export default function MoodboardPage() {
               {t("common.cancel")}
             </button>
           </div>
+
+          {readOnly && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-2xl border border-blush-200 bg-blush-50 p-4 text-sm dark:border-blush-700/60 dark:bg-blush-950/40"
+            >
+              <Lock size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-blush-700" />
+              <p className="text-blush-900 dark:text-blush-100">
+                <span className="font-medium">{t("billing.banner_title")}</span>{" "}
+                <span className="text-blush-800 dark:text-blush-200">
+                  {t("billing.banner_body")}
+                </span>
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-3 sm:grid-cols-2">
             {/* Upload your own images */}
