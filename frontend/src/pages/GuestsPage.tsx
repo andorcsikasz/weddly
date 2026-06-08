@@ -89,6 +89,10 @@ const GUEST_TOOL_BTN =
   "group flex items-center px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-700/5 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:hover:bg-paper-100/10";
 const GUEST_TOOL_LABEL =
   "max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-[14rem] group-hover:opacity-100";
+// Meal segment keeps a distinct grey fill (its own hover bg so it doesn't
+// collide with the default segment's hover overlay).
+const GUEST_TOOL_BTN_MEAL =
+  "group flex items-center px-3 py-2 text-sm font-medium text-ink-700 transition-colors bg-neutral-200 hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:bg-neutral-700 dark:hover:bg-neutral-600";
 
 interface DrawerInit {
   guest: Guest | null;
@@ -659,7 +663,7 @@ export default function GuestsPage() {
             </label>
             <button
               type="button"
-              className={GUEST_TOOL_BTN}
+              className={GUEST_TOOL_BTN_MEAL}
               onClick={() => setMealsOpen(true)}
               title={t("guests.meals_hint")}
               aria-label={t("guests.meals_button")}
