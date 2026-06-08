@@ -646,6 +646,17 @@ export const placesApi = {
 export const honeymoonApi = {
   flightEstimate: () =>
     apiFetch<{ estimate: FlightEstimate | null }>("GET", "/api/honeymoon/flight-estimate"),
+  /** Official Hungarian consular travel advice for the couple's destination.
+   *  The server reads the saved destination off the couple row; pass an
+   *  override to preview advice for a not-yet-saved destination. Never errors
+   *  server-side: an unresolved destination still returns the index link. */
+  konzinfo: (destination?: string) =>
+    apiFetch<import("@shared/konzinfo").KonzinfoInfo>(
+      "GET",
+      destination
+        ? `/api/honeymoon/konzinfo?destination=${encodeURIComponent(destination)}`
+        : "/api/honeymoon/konzinfo",
+    ),
 };
 
 /** Day-of run-of-show timeline. Times are minutes from midnight in wedding-
