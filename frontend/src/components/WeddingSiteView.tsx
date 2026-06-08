@@ -423,12 +423,13 @@ export function WeddingSiteView({
           ) : null}
         </div>
 
-        {/* Cover photo — full-width, pulled up under the date so the big
-            numerals overlap its top edge. Dashed ghost when still empty. */}
+        {/* Cover photo — full-width, sitting below the date with a clear gap so
+            the big numerals stay entirely on the page (not straddling the
+            photo's top edge). Dashed ghost when still empty. */}
         {view.cover_image_url ? (
           <div
             data-preview-anchor="cover-image"
-            className={heroDateBig ? "-mt-4 w-full sm:-mt-6" : "mt-8 w-full"}
+            className={heroDateBig ? "mt-6 w-full sm:mt-8" : "mt-8 w-full"}
           >
             <img
               src={view.cover_image_url}
