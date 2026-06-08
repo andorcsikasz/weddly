@@ -157,6 +157,10 @@ export interface FontPreset {
    *  Garamond, Inter, General Sans) — no new webfont / CDN request. */
   headingStack: string;
   bodyStack: string;
+  /** The {@link FontFamilySlug} each stack maps to, so the per-family picker can
+   *  highlight the typeface a preset resolves to while no override is set. */
+  headingFamily: FontFamilySlug;
+  bodyFamily: FontFamilySlug;
 }
 
 export interface StylePreset {
@@ -305,18 +309,24 @@ export const FONT_PRESETS: readonly FontPreset[] = [
     nameKey: "design.font.classic_serif",
     headingStack: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
     bodyStack: '"Inter Variable", Inter, system-ui, sans-serif',
+    headingFamily: "cormorant",
+    bodyFamily: "inter",
   },
   {
     slug: "modern_clean",
     nameKey: "design.font.modern_clean",
     headingStack: '"General Sans", "Helvetica Neue", Inter, system-ui, sans-serif',
     bodyStack: '"Inter Variable", Inter, system-ui, sans-serif',
+    headingFamily: "general_sans",
+    bodyFamily: "inter",
   },
   {
     slug: "soft_romantic",
     nameKey: "design.font.soft_romantic",
     headingStack: '"Cormorant Garamond", Georgia, serif',
     bodyStack: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+    headingFamily: "cormorant",
+    bodyFamily: "cormorant",
   },
 ];
 

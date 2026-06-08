@@ -8,6 +8,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
+import { FONT_FAMILIES, FONT_PRESETS, getFontFamilyStack } from "@shared/design";
 import { db } from "../../src/db";
 import { req, verifyUserEmail, wipeAll } from "../helpers";
 
@@ -62,6 +63,24 @@ async function onboard(token: string): Promise<{ couple: { id: number; design: C
   expect(r.status).toBe(201);
   return r.data;
 }
+
+describe("design: font preset → family mapping", () => {
+  // The per-family picker highlights the family a preset resolves to while no
+  // override is set, so each preset's headingFamily/bodyFamily must be a real
+  // family whose typeface leads the preset's matching stack. If a mapping drifts
+  // the picker would highlight the wrong "Aa" chip.
+  test("every preset maps to a real family whose typeface matches its stack", () => {
+    const slugs = new Set(FONT_FAMILIES.map((f) => f.slug));
+    for (const p of FONT_PRESETS) {
+      expect(slugs.has(p.headingFamily)).toBe(true);
+      expect(slugs.has(p.bodyFamily)).toBe(true);
+      const headLead = getFontFamilyStack(p.headingFamily).split(",")[0]!;
+      const bodyLead = getFontFamilyStack(p.bodyFamily).split(",")[0]!;
+      expect(p.headingStack.startsWith(headLead)).toBe(true);
+      expect(p.bodyStack.startsWith(bodyLead)).toBe(true);
+    }
+  });
+});
 
 describe("design: default resolution", () => {
   test("a fresh couple (NULL design_json) reads back as Classic Elegant", async () => {

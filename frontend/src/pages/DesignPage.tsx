@@ -668,37 +668,52 @@ export default function DesignPage() {
               {/* Independent heading / body family overrides on top of the
                   preset, united in one card (a thin divider between the two
                   rows) so the typeface controls read as a single block. Each
-                  chip renders its own name in its actual font; "Use preset"
-                  clears the override; only bundled families are offered. */}
+                  chip renders its own name in its actual font; only bundled
+                  families are offered. The active chip is the EFFECTIVE
+                  typeface — the explicit override, or the family the chosen
+                  preset resolves to while no override is set — so switching the
+                  preset above always re-highlights the right family here.
+                  Picking the preset's own family re-links to it (null override),
+                  so a later preset change keeps following. */}
               <div className="mt-3 divide-y divide-paper-200 rounded-2xl border border-paper-300 bg-white p-3 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
                 {(
                   [
-                    ["heading", design.headingFont, chooseHeadingFont] as const,
-                    ["body", design.bodyFont, chooseBodyFont] as const,
+                    [
+                      "heading",
+                      design.headingFont,
+                      chooseHeadingFont,
+                      getFontPreset(design.fonts).headingFamily,
+                    ] as const,
+                    [
+                      "body",
+                      design.bodyFont,
+                      chooseBodyFont,
+                      getFontPreset(design.fonts).bodyFamily,
+                    ] as const,
                   ] as const
-                ).map(([which, current, setter]) => (
-                  <div key={which} className="py-2 first:pt-0 last:pb-0">
-                    <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
-                      {t(`design.font.${which}_label`)}
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      <FontChip
-                        active={current === null}
-                        onClick={() => setter(null)}
-                        label={t("design.font.use_preset")}
-                      />
-                      {FONT_FAMILIES.map((fam) => (
-                        <FontChip
-                          key={fam.slug}
-                          active={current === fam.slug}
-                          onClick={() => setter(fam.slug)}
-                          fontFamily={fam.stack}
-                          label={t(fam.nameKey)}
-                        />
-                      ))}
+                ).map(([which, current, setter, presetFamily]) => {
+                  const effective = current ?? presetFamily;
+                  return (
+                    <div key={which} className="py-2 first:pt-0 last:pb-0">
+                      <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
+                        {t(`design.font.${which}_label`)}
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {FONT_FAMILIES.map((fam) => (
+                          <FontChip
+                            key={fam.slug}
+                            active={effective === fam.slug}
+                            // Re-selecting the preset's family clears the override
+                            // (null) so it keeps tracking later preset changes.
+                            onClick={() => setter(fam.slug === presetFamily ? null : fam.slug)}
+                            fontFamily={fam.stack}
+                            label={t(fam.nameKey)}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
 
