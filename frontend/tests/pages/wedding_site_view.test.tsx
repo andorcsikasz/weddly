@@ -124,6 +124,32 @@ describe("WeddingSiteView — live mode", () => {
     expect(h1.style.color).toBe("inherit");
   });
 
+  it("applies the couple's cover focal point as object-position on the hero image", () => {
+    const { container } = renderView(
+      <WeddingSiteView
+        view={filledView({ cover_position_x: 20, cover_position_y: 80 })}
+        household={null}
+        tier="public"
+        locale="hu"
+      />,
+    );
+    const img = container.querySelector(
+      'img[src="https://example.test/cover.jpg"]',
+    ) as HTMLImageElement;
+    expect(img).not.toBeNull();
+    expect(img.style.objectPosition).toBe("20% 80%");
+  });
+
+  it("defaults the hero focal point to centre when position is unset", () => {
+    const { container } = renderView(
+      <WeddingSiteView view={filledView()} household={null} tier="public" locale="hu" />,
+    );
+    const img = container.querySelector(
+      'img[src="https://example.test/cover.jpg"]',
+    ) as HTMLImageElement;
+    expect(img.style.objectPosition).toBe("50% 50%");
+  });
+
   it("shows no ghost placeholders or edit affordances in live mode", () => {
     renderView(<WeddingSiteView view={emptyView()} household={null} tier="public" locale="hu" />);
     // None of the ghost titles render when not in preview.

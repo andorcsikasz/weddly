@@ -519,7 +519,13 @@ export function WeddingSiteView({
               alt=""
               loading="lazy"
               className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
-              style={imgFilter ? { filter: imgFilter } : undefined}
+              // Honour the couple's chosen focal point (CoverPositioner writes
+              // cover_position_x/y, 0–100, default centre). Without this the
+              // public page always centre-crops and ignores the positioner.
+              style={{
+                objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
+                ...(imgFilter ? { filter: imgFilter } : {}),
+              }}
             />
           </div>
         ) : isPreview ? (
