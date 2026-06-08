@@ -1604,6 +1604,32 @@ export interface LocaleMessages {
       other: string;
     };
   };
+  /** Honeymoon travel-safety block — Hungarian Konzuli Szolgálat (KonzInfo)
+   *  country card + pre-trip checklist. Rendered on HoneymoonPage. */
+  travel_safety: {
+    title: string;
+    intro: string;
+    block_title: string;
+    loading: string;
+    konzinfo_link: string;
+    safety_label: string;
+    last_update_label: string;
+    valid_today_label: string;
+    no_match: string;
+    index_link: string;
+    checklist_title: string;
+    check_passport: string;
+    check_visa: string;
+    check_entry: string;
+    check_health: string;
+    check_insurance: string;
+    check_copies: string;
+    check_register: string;
+    register_link: string;
+    app_link: string;
+    insurance_reminder: string;
+    disclaimer: string;
+  };
   media: {
     title: string;
     dev_badge: string;
