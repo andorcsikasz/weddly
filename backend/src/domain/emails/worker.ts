@@ -132,7 +132,8 @@ function sweepOnboardingNudgesWeek(ts: number): number {
 
   let count = 0;
   for (const u of rows) {
-    if (!markDispatched({ kind: "onboarding_nudge_week", couple_id: null, user_id: u.id })) continue;
+    if (!markDispatched({ kind: "onboarding_nudge_week", couple_id: null, user_id: u.id }))
+      continue;
     void sendKind(
       "onboarding_nudge_week",
       { onboardingUrl: `${CONFIG.frontendBaseUrl}/onboarding` },

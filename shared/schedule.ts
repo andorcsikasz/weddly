@@ -99,10 +99,7 @@ const KEY_MOMENT_BUCKETS: readonly (readonly string[])[] = [
 ];
 
 function foldLabel(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
 /** Pick the day's headline beats for the public site, capped at
