@@ -22,8 +22,6 @@ import {
   type ShadowSlug,
   SHADOWS,
   type StylePreset,
-  WEBSITE_SECTIONS,
-  type WebsiteSectionSlug,
   DECOR_STYLES,
   FONT_FAMILIES,
   FONT_PRESETS,
@@ -34,8 +32,6 @@ import {
   getPalette,
   IMAGE_TREATMENTS,
   type ImageTreatmentSlug,
-  MONOGRAM_SEPARATORS,
-  monogramSeparatorGlyph,
   resolveDesign,
   STYLE_PRESETS,
   type StylePresetSlug,
@@ -44,7 +40,7 @@ import {
 import { getContrastRatio } from "@shared/wcag";
 import type { Couple } from "@shared/types";
 import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
-import { Check, Download, Eye, Loader2, Pencil } from "lucide-react";
+import { Check, ChevronDown, Download, Eye, Loader2, Pencil } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
@@ -73,7 +69,9 @@ function PresetTile({
 }: {
   active: boolean;
   onSelect: () => void;
-  label: string;
+  /** Visible caption under the preview. Omit to render no caption — the font
+   *  tiles preview the typeface itself, so a redundant style name is dropped. */
+  label?: string;
   ariaLabel: string;
   children: React.ReactNode;
 }) {
@@ -98,7 +96,9 @@ function PresetTile({
         </span>
       )}
       {children}
-      <span className="text-sm font-medium text-ink-900 dark:text-paper-50">{label}</span>
+      {label && (
+        <span className="text-sm font-medium text-ink-900 dark:text-paper-50">{label}</span>
+      )}
     </button>
   );
 }
@@ -286,6 +286,14 @@ export default function DesignPage() {
   const [pdfPreviewBusy, setPdfPreviewBusy] = useState(false);
   // Per-tile download-in-flight flag, keyed by the printable's slug.
   const [downloading, setDownloading] = useState<string | null>(null);
+  // The per-element heading/body font overrides live behind a disclosure so the
+  // preset cards stay the single primary font control (the two used to read as
+  // rival pickers). Closed by default; the effect below opens it whenever an
+  // override is actually set so a live customisation is never hidden.
+  const [customizeFontsOpen, setCustomizeFontsOpen] = useState(false);
+  // The scrollable website-preview viewport (Website tab). Editing a control
+  // nudges this to the matching region so the couple sees what they changed.
+  const previewScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -304,6 +312,69 @@ export default function DesignPage() {
       cancelled = true;
     };
   }, []);
+
+  // Reveal the per-element override panel whenever a heading/body override is
+  // present (on load or after a change). Picking a preset clears the overrides
+  // and re-collapses the panel via chooseFonts/chooseStyle, so this only ever
+  // opens — it never fights a manual close while the row sits on "preset".
+  useEffect(() => {
+    if (design.headingFont !== null || design.bodyFont !== null) setCustomizeFontsOpen(true);
+  }, [design.headingFont, design.bodyFont]);
+
+  // Scroll the website preview so the region a control drives is centred. Stays
+  // within the preview's own scroll box — never yanks the page. No-ops when the
+  // anchor isn't rendered (e.g. no cover photo), so editing simply leaves the
+  // preview where it is rather than jumping somewhere blank.
+  function scrollPreviewTo(anchor: string) {
+    const container = previewScrollRef.current;
+    if (!container) return;
+    const el = container.querySelector<HTMLElement>(`[data-preview-anchor="${anchor}"]`);
+    if (!el) return;
+    const cRect = container.getBoundingClientRect();
+    const eRect = el.getBoundingClientRect();
+    const centred = eRect.top - cRect.top - (container.clientHeight - eRect.height) / 2;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    container.scrollTo({
+      top: Math.max(0, container.scrollTop + centred),
+      behavior: reduce ? "auto" : "smooth",
+    });
+  }
+
+  // Map each changed design field to its preview region and scroll there. One
+  // central effect (rather than a call in every handler) keeps the handlers
+  // pure. Armed only after the initial load so hydrating the saved design never
+  // moves the preview. A full-style change reseeds many fields at once, so it's
+  // treated as a jump to the hero rather than to whichever field diffs first.
+  const designForScrollRef = useRef(design);
+  const scrollArmedRef = useRef(false);
+  useEffect(() => {
+    const prev = designForScrollRef.current;
+    designForScrollRef.current = design;
+    if (loading) return;
+    if (!scrollArmedRef.current) {
+      scrollArmedRef.current = true;
+      return;
+    }
+    let anchor: string | null = null;
+    if (design.style !== prev.style) anchor = "hero-names";
+    else if (design.dateFormat !== prev.dateFormat) anchor = "hero-date";
+    else if (design.decor !== prev.decor) anchor = "hero-decor";
+    else if (design.web.buttonStyle !== prev.web.buttonStyle) anchor = "rsvp-button";
+    else if (design.web.imageTreatment !== prev.web.imageTreatment) anchor = "cover-image";
+    else if (
+      design.fonts !== prev.fonts ||
+      design.headingFont !== prev.headingFont ||
+      design.bodyFont !== prev.bodyFont ||
+      design.palette !== prev.palette ||
+      JSON.stringify(design.colors) !== JSON.stringify(prev.colors)
+    )
+      anchor = "hero-names";
+    if (!anchor) return;
+    // Let the preview re-render with the new design before measuring.
+    const target = anchor;
+    const id = requestAnimationFrame(() => scrollPreviewTo(target));
+    return () => cancelAnimationFrame(id);
+  }, [design, loading]);
 
   const dirty = useMemo(() => JSON.stringify(design) !== JSON.stringify(saved), [design, saved]);
 
@@ -358,10 +429,13 @@ export default function DesignPage() {
       bodyFont: null,
       web: { ...d.web, ...(preset.defaultWeb ?? {}) },
     }));
+    setCustomizeFontsOpen(false);
   }
   function chooseFonts(slug: FontPresetSlug) {
-    // Picking a font preset clears the independent family overrides.
+    // Picking a font preset clears the independent family overrides and
+    // re-collapses the customise panel so the cards read as the reset.
     setDesign((d) => ({ ...d, fonts: slug, headingFont: null, bodyFont: null }));
+    setCustomizeFontsOpen(false);
   }
   function chooseColor(role: ColorRole, hex: string) {
     setDesign((d) => ({ ...d, colors: { ...d.colors, [role]: hex.toLowerCase() } }));
@@ -398,20 +472,6 @@ export default function DesignPage() {
     // Keep the legacy `print.border` boolean in sync (on/off) so the current
     // PDF path stays consistent until pdf.ts reads the style directly.
     setDesign((d) => ({ ...d, borderStyle: slug, print: { ...d.print, border: slug !== "none" } }));
-  }
-  function toggleSection(slug: WebsiteSectionSlug) {
-    setDesign((d) => {
-      const hidden = d.web.hiddenSections.includes(slug)
-        ? d.web.hiddenSections.filter((s) => s !== slug)
-        : [...d.web.hiddenSections, slug];
-      return { ...d, web: { ...d.web, hiddenSections: hidden } };
-    });
-  }
-  function toggleMonogram() {
-    setDesign((d) => ({ ...d, monogram: { ...d.monogram, enabled: !d.monogram.enabled } }));
-  }
-  function chooseSeparator(slug: (typeof MONOGRAM_SEPARATORS)[number]["slug"]) {
-    setDesign((d) => ({ ...d, monogram: { ...d.monogram, separator: slug } }));
   }
   function chooseDateFormat(slug: (typeof DATE_FORMATS)[number]["slug"]) {
     setDesign((d) => ({ ...d, dateFormat: slug }));
@@ -683,7 +743,8 @@ export default function DesignPage() {
                     key={s.slug}
                     active={design.style === s.slug}
                     onSelect={() => chooseStyle(s.slug)}
-                    label={t(s.nameKey)}
+                    // No visible caption — the mini invitation previews the
+                    // style by feel; the name lives in the aria-label only.
                     ariaLabel={t(s.nameKey)}
                   >
                     <StyleMoodCard preset={s} />
@@ -703,11 +764,12 @@ export default function DesignPage() {
                 </h2>
                 <InfoHint text={t("design.colors.hint")} />
               </div>
-              <div className="rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
+              <div className="mx-auto w-fit rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
                 {/* Swatch row: each role is a colour block with a pencil badge;
                     clicking it opens the native colour editor (the swatch IS the
-                    input label). Reset clears the override back to the palette. */}
-                <div className="flex flex-wrap gap-4">
+                    input label). Reset clears the override back to the palette.
+                    Centred + card hugs the swatches so there's no dead white. */}
+                <div className="flex flex-wrap justify-center gap-4">
                   {COLOR_ROLES.map((role) => {
                     const resolved = design.colors[role] ?? activePalette[role].hex;
                     const overridden = design.colors[role] !== undefined;
@@ -766,7 +828,6 @@ export default function DesignPage() {
                     key={f.slug}
                     active={design.fonts === f.slug}
                     onSelect={() => chooseFonts(f.slug)}
-                    label={t(f.nameKey)}
                     ariaLabel={t(f.nameKey)}
                   >
                     <span className="flex flex-col" aria-hidden>
@@ -787,91 +848,71 @@ export default function DesignPage() {
                 ))}
               </div>
 
-              {/* Independent heading / body family overrides on top of the
-                  preset, one row each. Each chip renders its own name in its
-                  actual font so the couple sees the typeface before picking.
-                  "Use preset" clears the override; only bundled families are
-                  offered (no new webfont request). */}
-              <div className="mt-3 space-y-3">
-                {(
-                  [
-                    ["heading", design.headingFont, chooseHeadingFont] as const,
-                    ["body", design.bodyFont, chooseBodyFont] as const,
-                  ] as const
-                ).map(([which, current, setter]) => (
-                  <div key={which}>
-                    <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
-                      {t(`design.font.${which}_label`)}
+              {/* Per-element heading / body family overrides live behind a
+                  disclosure so the preset cards above stay the single primary
+                  font control — the two used to read as rival pickers. The
+                  toggle carries a "custom" badge while an override is active;
+                  inside, each row resets to the preset via a link (no separate
+                  "use preset" chip, which looked like just another font). Only
+                  bundled families are offered (no new webfont request). */}
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => setCustomizeFontsOpen((v) => !v)}
+                  aria-expanded={customizeFontsOpen}
+                  className="inline-flex items-center gap-1.5 rounded-lg py-1 text-xs font-medium text-ink-600 transition-colors hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:text-umber-200 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+                >
+                  <ChevronDown
+                    size={14}
+                    aria-hidden
+                    className={`transition-transform ${customizeFontsOpen ? "rotate-180" : ""}`}
+                  />
+                  {t("design.font.customize_toggle")}
+                  {(design.headingFont !== null || design.bodyFont !== null) && (
+                    <span className="rounded-full bg-ink-900 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-paper-50 dark:bg-paper-100 dark:text-umber-900">
+                      {t("design.font.custom_badge")}
                     </span>
-                    <div className="flex flex-wrap gap-2">
-                      <FontChip
-                        active={current === null}
-                        onClick={() => setter(null)}
-                        label={t("design.font.use_preset")}
-                      />
-                      {FONT_FAMILIES.map((fam) => (
-                        <FontChip
-                          key={fam.slug}
-                          active={current === fam.slug}
-                          onClick={() => setter(fam.slug)}
-                          fontFamily={fam.stack}
-                          label={t(fam.nameKey)}
-                        />
-                      ))}
-                    </div>
+                  )}
+                </button>
+                {customizeFontsOpen && (
+                  <div className="mt-2 space-y-3 border-l border-paper-300 pl-4 dark:border-umber-700">
+                    {(
+                      [
+                        ["heading", design.headingFont, chooseHeadingFont] as const,
+                        ["body", design.bodyFont, chooseBodyFont] as const,
+                      ] as const
+                    ).map(([which, current, setter]) => (
+                      <div key={which}>
+                        <div className="mb-1.5 flex items-center gap-2">
+                          <span className="text-xs font-medium text-ink-600 dark:text-umber-200">
+                            {t(`design.font.${which}_label`)}
+                          </span>
+                          {current !== null && (
+                            <button
+                              type="button"
+                              onClick={() => setter(null)}
+                              className="text-[11px] font-medium text-ink-500 underline-offset-2 hover:text-ink-900 hover:underline dark:text-umber-300 dark:hover:text-paper-50"
+                            >
+                              {t("design.font.reset_to_preset")}
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {FONT_FAMILIES.map((fam) => (
+                            <FontChip
+                              key={fam.slug}
+                              active={current === fam.slug}
+                              onClick={() => setter(fam.slug)}
+                              fontFamily={fam.stack}
+                              label={t(fam.nameKey)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            </section>
-
-            {/* Monogram */}
-            <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("design.section.monogram")}
-              </h2>
-              <button
-                type="button"
-                onClick={toggleMonogram}
-                aria-pressed={design.monogram.enabled}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                  design.monogram.enabled
-                    ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                    : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                }`}
-              >
-                {design.monogram.enabled && <Check size={12} strokeWidth={3} aria-hidden />}
-                {t("design.monogram.enable")}
-              </button>
-              {design.monogram.enabled && (
-                <div className="mt-4">
-                  <p className="mb-2 text-xs font-medium text-ink-500 dark:text-umber-300">
-                    {t("design.monogram.separator_label")}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {MONOGRAM_SEPARATORS.map((sep) => {
-                      const glyph =
-                        sep.slug === "and" ? monogramSeparatorGlyph("and", locale) : sep.glyph;
-                      const active = design.monogram.separator === sep.slug;
-                      return (
-                        <button
-                          key={sep.slug}
-                          type="button"
-                          onClick={() => chooseSeparator(sep.slug)}
-                          aria-pressed={active}
-                          aria-label={glyph}
-                          className={`inline-flex h-10 min-w-[2.5rem] items-center justify-center rounded-xl border px-3 font-serif text-base transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                            active
-                              ? "border-ink-900 ring-1 ring-ink-900 text-ink-900 dark:border-paper-100 dark:ring-paper-100 dark:text-paper-50"
-                              : "border-paper-300 text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
-                          }`}
-                        >
-                          {glyph}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </section>
 
             {/* Date format */}
@@ -885,11 +926,10 @@ export default function DesignPage() {
                     key={df.slug}
                     active={design.dateFormat === df.slug}
                     onSelect={() => chooseDateFormat(df.slug)}
-                    label={t(df.nameKey)}
                     ariaLabel={t(df.nameKey)}
                   >
                     <span
-                      className="font-serif text-base italic text-ink-900 dark:text-paper-50"
+                      className="flex min-h-[3rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-xs italic tracking-tight text-ink-900 dark:text-paper-50"
                       aria-hidden
                     >
                       {formatWeddingDate(sampleDateIso, df.slug, locale)}
@@ -996,34 +1036,6 @@ export default function DesignPage() {
                         >
                           {active && <Check size={12} strokeWidth={3} aria-hidden />}
                           {t(it.nameKey)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-                {/* Section visibility — a pressed chip = visible; unpress to hide
-                    it from the guest page. RSVP is never hideable. */}
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.web.sections_label")}
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {WEBSITE_SECTIONS.map((sec) => {
-                      const visible = !design.web.hiddenSections.includes(sec.slug);
-                      return (
-                        <button
-                          key={sec.slug}
-                          type="button"
-                          onClick={() => toggleSection(sec.slug)}
-                          aria-pressed={visible}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                            visible
-                              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                              : "border-paper-300 bg-white text-ink-400 line-through hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300"
-                          }`}
-                        >
-                          {visible && <Check size={12} strokeWidth={3} aria-hidden />}
-                          {t(sec.nameKey)}
                         </button>
                       );
                     })}
@@ -1200,7 +1212,10 @@ export default function DesignPage() {
                         bands reach the frame. Below lg it scrolls with the page;
                         on lg+ the sticky aside caps to the viewport and scrolls
                         internally so the whole page stays reachable. */}
-                    <div className="lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+                    <div
+                      ref={previewScrollRef}
+                      className="lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto"
+                    >
                       <WeddingSiteView
                         view={previewView}
                         household={null}
