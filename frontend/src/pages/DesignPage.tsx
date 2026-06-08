@@ -110,8 +110,11 @@ function StyleMoodCard({ preset }: { preset: StylePreset }) {
       style={{ backgroundColor: palette.background.hex, color: palette.text.hex }}
       aria-hidden
     >
-      <span className="text-lg leading-tight" style={{ fontFamily: fonts.headingStack }}>
-        Anna &amp; Bence
+      {/* Name-free heading-font specimen: a lone ampersand reads as a wedding
+       *  monogram and previews the heading typeface without putting any
+       *  couple's name on every style tile. */}
+      <span className="text-2xl leading-none" style={{ fontFamily: fonts.headingStack }}>
+        &amp;
       </span>
       <span className="block h-2" aria-hidden />
       <span
