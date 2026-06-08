@@ -124,6 +124,8 @@ function buildView(
     venue_name: couple.venue_name,
     venue_city: couple.venue_city,
     cover_image_url: couple.cover_image_url,
+    cover_position_x: couple.cover_position_x,
+    cover_position_y: couple.cover_position_y,
     guest_page_intro: couple.guest_page_intro,
     useful_info: couple.useful_info,
     // Exact venue pin — confirmed tier only. The privacy buffer

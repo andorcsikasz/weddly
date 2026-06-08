@@ -58,6 +58,11 @@ export interface PublicWeddingWebsiteView {
    *  unset — the page falls back to the stationery palette without a
    *  cover photo. Visible at every tier. */
   cover_image_url: string | null;
+  /** Cover-photo focal point as object-position percentages (0..100, 50 =
+   *  centred) so the hero crop frames the part the couple chose. Optional
+   *  (defaults to 50/50 at render) so SSR/fixture literals can omit it. */
+  cover_position_x?: number;
+  cover_position_y?: number;
   /** Pre-RSVP welcome block (markdown). Visible at every tier — the
    *  couple authors this for "anyone with the link". Null when unset. */
   guest_page_intro: string | null;

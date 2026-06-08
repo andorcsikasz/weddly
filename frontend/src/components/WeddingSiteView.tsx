@@ -435,7 +435,10 @@ export function WeddingSiteView({
               alt=""
               loading="lazy"
               className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
-              style={imgFilter ? { filter: imgFilter } : undefined}
+              style={{
+                objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
+                filter: imgFilter || undefined,
+              }}
             />
           </div>
         ) : isPreview ? (

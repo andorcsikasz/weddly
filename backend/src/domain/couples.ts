@@ -153,6 +153,9 @@ export interface CoupleRow {
   /** Couple-pasted http(s) URL for the hero image on the public site.
    *  No upload pipeline yet; this is BYO-URL with boundary validation. */
   cover_image_url: string | null;
+  /** Cover-photo focal point (object-position %, 0..100, 50 = centred). */
+  cover_position_x: number;
+  cover_position_y: number;
   /** Moodboard source: 'preset' (curated default board), 'pinterest' (own
    *  board link in moodboard_url) or 'upload' (rows in moodboard_images).
    *  Defaults to 'preset' so /app/moodboard is never blank. */
@@ -382,6 +385,8 @@ export function toCouple(row: CoupleRow): Couple {
     venue_name: row.venue_name,
     venue_city: row.venue_city,
     cover_image_url: row.cover_image_url,
+    cover_position_x: row.cover_position_x ?? 50,
+    cover_position_y: row.cover_position_y ?? 50,
     guest_page_intro: row.guest_page_intro,
     useful_info: row.useful_info,
     post_rsvp_content: row.post_rsvp_content,

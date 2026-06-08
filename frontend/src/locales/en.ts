@@ -1811,8 +1811,13 @@ const en: LocaleMessages = {
     intro_suggestion_5: "Thank you for being part of our day with your love and your presence.",
     useful_info_label: "Good to know",
     useful_info_placeholder: "Parking: ...\nGetting there: ...\nAccommodation: ...",
-    useful_info_hint:
-      "Parking, getting there, accommodation and anything good to know. Shown on the guest page.",
+    useful_info_hint: "Only the rows you fill in appear on the guest page.",
+    useful_field_parking: "Parking",
+    useful_field_getting_there: "Getting there",
+    useful_field_transfer: "Transfer",
+    useful_field_accommodation: "Accommodation",
+    useful_field_other_label: "Other info",
+    useful_field_other_placeholder: "Anything else good to know…",
     post_rsvp_label: "Details for confirmed guests",
     post_rsvp_placeholder: "Click a suggested topic above, or just type the details freely.",
     post_rsvp_hint:

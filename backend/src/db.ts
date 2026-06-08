@@ -679,6 +679,11 @@ addColumnIfMissing("couples", "venue_name", "venue_name TEXT");
 // venue_name after a comma when this is empty.
 addColumnIfMissing("couples", "venue_city", "venue_city TEXT");
 addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
+// Cover-photo focal point as object-position percentages (0..100, default 50 =
+// centred). The hero crops the cover to a wide band, so the couple drags the
+// photo in the guest-page editor to choose which part stays in frame.
+addColumnIfMissing("couples", "cover_position_x", "cover_position_x INTEGER NOT NULL DEFAULT 50");
+addColumnIfMissing("couples", "cover_position_y", "cover_position_y INTEGER NOT NULL DEFAULT 50");
 
 // Moodboard source state. Every couple defaults to 'preset' — a curated
 // Pinterest board rendered automatically so /app/moodboard is never blank.

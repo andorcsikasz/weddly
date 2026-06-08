@@ -188,6 +188,9 @@ interface OnboardBody {
    *  string clears. We validate scheme + length only — no fetch/probe at
    *  the API boundary, that's a v2 concern once upload pipeline lands. */
   cover_image_url?: unknown;
+  /** Cover focal point — object-position percentages (0..100). */
+  cover_position_x?: unknown;
+  cover_position_y?: unknown;
   /** Vendégoldal Phase 2 — pre-RSVP welcome block (markdown). Empty
    *  string clears. Cap ≤4000 chars. */
   guest_page_intro?: unknown;
@@ -1804,6 +1807,20 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         before: { cover_image_url: prev },
         after: { cover_image_url: next },
       });
+    }
+  }
+  // Cover focal point (object-position %). Cosmetic micro-adjustment from the
+  // editor drag — not audited (it would spam the activity feed during a drag).
+  if (body.cover_position_x !== undefined) {
+    const x = parseOptionalInt(body.cover_position_x, "cover_position_x", 0, 100);
+    if (x !== null && x !== couple.cover_position_x) {
+      updates.push({ col: "cover_position_x", val: x });
+    }
+  }
+  if (body.cover_position_y !== undefined) {
+    const y = parseOptionalInt(body.cover_position_y, "cover_position_y", 0, 100);
+    if (y !== null && y !== couple.cover_position_y) {
+      updates.push({ col: "cover_position_y", val: y });
     }
   }
 

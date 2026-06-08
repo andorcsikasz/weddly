@@ -21,10 +21,12 @@ import {
   Globe,
   Lock,
   MessageCircle,
+  Move,
   Palette,
   Plus,
   RefreshCcw,
   MapPin,
+  Trash2,
   Unlock,
   Upload,
 } from "lucide-react";
@@ -61,6 +63,79 @@ import { useDocumentMeta } from "../lib/seo";
  *  is still empty; shared by every field + jump-to link on this editor. */
 const MISSING_OUTLINE =
   "border-2 border-red-400 focus:border-red-500 focus:ring-red-100 dark:border-red-400/60 dark:focus:border-red-400";
+
+/** Pre-made "Good to know" rows. They serialize back into the single
+ *  `useful_info` text column as "Label: value" lines — ONLY the filled ones —
+ *  so the guest page (which renders that column as pre-line text and hides the
+ *  whole band when empty) shows exactly the rows the couple filled, with no
+ *  schema change. */
+const USEFUL_INFO_FIELDS = [
+  { key: "parking", labelKey: "guest_page_editor.useful_field_parking" },
+  { key: "getting_there", labelKey: "guest_page_editor.useful_field_getting_there" },
+  { key: "transfer", labelKey: "guest_page_editor.useful_field_transfer" },
+  { key: "accommodation", labelKey: "guest_page_editor.useful_field_accommodation" },
+] as const;
+
+type UsefulInfoKey = (typeof USEFUL_INFO_FIELDS)[number]["key"];
+type UsefulInfoFields = Record<UsefulInfoKey, string>;
+
+const EMPTY_USEFUL_FIELDS: UsefulInfoFields = {
+  parking: "",
+  getting_there: "",
+  transfer: "",
+  accommodation: "",
+};
+
+/** Label variants (lowercased, no colon) recognised when re-parsing the stored
+ *  text back into rows — current HU + EN labels, so the structured rows survive
+ *  a locale switch. A line that matches none falls through to the free-form
+ *  "other" box, so nothing the couple typed is ever lost. */
+const USEFUL_INFO_PREFIXES: Record<string, UsefulInfoKey> = {
+  parkolás: "parking",
+  parking: "parking",
+  megközelítés: "getting_there",
+  "getting there": "getting_there",
+  transzfer: "transfer",
+  transfer: "transfer",
+  szállás: "accommodation",
+  accommodation: "accommodation",
+};
+
+/** Split the stored `useful_info` text into the known rows + a free-form rest.
+ *  Each "Label: value" line whose label is recognised fills its row (first hit
+ *  wins); every other line is preserved verbatim in `other`. */
+function parseUsefulInfo(text: string): { fields: UsefulInfoFields; other: string } {
+  const fields: UsefulInfoFields = { ...EMPTY_USEFUL_FIELDS };
+  const otherLines: string[] = [];
+  for (const line of text.split("\n")) {
+    const m = line.match(/^\s*([^:]+?)\s*:\s*(.*)$/);
+    const key = m ? USEFUL_INFO_PREFIXES[m[1].trim().toLowerCase()] : undefined;
+    if (m && key && !fields[key]) {
+      fields[key] = m[2].trim();
+    } else {
+      otherLines.push(line);
+    }
+  }
+  return { fields, other: otherLines.join("\n").trim() };
+}
+
+/** Compose the filled rows (in catalog order) + the free-form rest back into a
+ *  single text blob for the `useful_info` column. Empty rows are dropped, so the
+ *  guest page only ever shows lines the couple actually wrote. */
+function serializeUsefulInfo(
+  fields: UsefulInfoFields,
+  other: string,
+  t: (key: string) => string,
+): string {
+  const lines: string[] = [];
+  for (const f of USEFUL_INFO_FIELDS) {
+    const v = fields[f.key].trim();
+    if (v) lines.push(`${t(f.labelKey)}: ${v}`);
+  }
+  const rest = other.trim();
+  if (rest) lines.push(rest);
+  return lines.join("\n");
+}
 
 /** Venue-name input with two assists:
  *  - a debounced Nominatim-backed autocomplete (the /api/places/search proxy
@@ -275,6 +350,88 @@ function VenueNameField({
   );
 }
 
+/** Drag-to-reposition control for the cover photo. The hero crops the cover to
+ *  a wide band, so the couple drags the photo inside this same-shape frame to
+ *  choose the focal point. `x`/`y` are object-position percentages (0..100);
+ *  `onChange` fires live during the drag (updates the preview), `onCommit` fires
+ *  on release (persists). Dragging the photo right reveals its left edge, so a
+ *  rightward drag lowers object-position-x — the natural "move the photo" feel. */
+function CoverPositioner({
+  src,
+  x,
+  y,
+  onChange,
+  onCommit,
+  hint,
+}: {
+  src: string;
+  x: number;
+  y: number;
+  onChange: (x: number, y: number) => void;
+  onCommit: (x: number, y: number) => void;
+  hint: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ sx: number; sy: number; px: number; py: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+
+  function nextFrom(e: { clientX: number; clientY: number }): [number, number] | null {
+    const el = ref.current;
+    const d = drag.current;
+    if (!el || !d) return null;
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    const dxPct = ((e.clientX - d.sx) / rect.width) * 100;
+    const dyPct = ((e.clientY - d.sy) / rect.height) * 100;
+    return [clamp(d.px - dxPct), clamp(d.py - dyPct)];
+  }
+
+  return (
+    <div className="mt-2">
+      <div
+        ref={ref}
+        className={`relative w-full select-none overflow-hidden rounded-lg border border-paper-300 dark:border-umber-700 ${
+          dragging ? "cursor-grabbing" : "cursor-grab"
+        }`}
+        style={{ aspectRatio: "21 / 9", touchAction: "none" }}
+        onPointerDown={(e) => {
+          ref.current?.setPointerCapture(e.pointerId);
+          drag.current = { sx: e.clientX, sy: e.clientY, px: x, py: y };
+          setDragging(true);
+        }}
+        onPointerMove={(e) => {
+          if (!drag.current) return;
+          const n = nextFrom(e);
+          if (n) onChange(n[0], n[1]);
+        }}
+        onPointerUp={(e) => {
+          const n = nextFrom(e);
+          ref.current?.releasePointerCapture(e.pointerId);
+          drag.current = null;
+          setDragging(false);
+          if (n) {
+            onChange(n[0], n[1]);
+            onCommit(n[0], n[1]);
+          }
+        }}
+      >
+        <img
+          src={src}
+          alt=""
+          draggable={false}
+          className="pointer-events-none h-full w-full object-cover"
+          style={{ objectPosition: `${x}% ${y}%` }}
+        />
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-gradient-to-t from-black/55 to-transparent px-2 py-1.5 text-[11px] font-medium text-white">
+          <Move size={12} aria-hidden />
+          {hint}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function GuestPageEditorPage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.guest_page_title", "seo.guest_page_description");
@@ -288,9 +445,22 @@ export default function GuestPageEditorPage() {
   const [venueName, setVenueName] = useState("");
   const [venueCity, setVenueCity] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  // Cover focal point (object-position %, 0..100). Adjusted by dragging the
+  // cover in the positioner below; persisted separately from the debounced
+  // text auto-save (a drag commits on release).
+  const [coverPositionX, setCoverPositionX] = useState(50);
+  const [coverPositionY, setCoverPositionY] = useState(50);
   const [guestPageIntro, setGuestPageIntro] = useState("");
-  const [usefulInfo, setUsefulInfo] = useState("");
+  // "Good to know" is edited as pre-made labelled rows (+ a free-form rest),
+  // but still persisted into the single `useful_info` text column.
+  const [usefulFields, setUsefulFields] = useState<UsefulInfoFields>(EMPTY_USEFUL_FIELDS);
+  const [usefulOther, setUsefulOther] = useState("");
   const [postRsvpContent, setPostRsvpContent] = useState("");
+  // Public-content disclosure. Starts open so an incomplete page nudges the
+  // couple to fill it; once the core fields are all set, it defaults collapsed
+  // (set after load). Controlled + onToggle so revealField's DOM-level open
+  // (preview ghost shortcuts) stays in sync with this state.
+  const [publicOpen, setPublicOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -364,9 +534,23 @@ export default function GuestPageEditorPage() {
           setVenueName(cR.couple.venue_name ?? "");
           setVenueCity(cR.couple.venue_city ?? "");
           setCoverImageUrl(cR.couple.cover_image_url ?? "");
+          setCoverPositionX(cR.couple.cover_position_x ?? 50);
+          setCoverPositionY(cR.couple.cover_position_y ?? 50);
           setGuestPageIntro(cR.couple.guest_page_intro ?? "");
-          setUsefulInfo(cR.couple.useful_info ?? "");
+          {
+            const parsed = parseUsefulInfo(cR.couple.useful_info ?? "");
+            setUsefulFields(parsed.fields);
+            setUsefulOther(parsed.other);
+          }
           setPostRsvpContent(cR.couple.post_rsvp_content ?? "");
+          // Collapse the public section when the couple has already filled the
+          // core fields (venue + cover + welcome text); keep it open otherwise.
+          const publicComplete = Boolean(
+            (cR.couple.venue_name ?? "").trim() &&
+              (cR.couple.cover_image_url ?? "").trim() &&
+              (cR.couple.guest_page_intro ?? "").trim(),
+          );
+          setPublicOpen(!publicComplete);
         }
         setEvents(sR.events);
         // Hide the host-couple's own household — they don't need a personal
@@ -455,7 +639,9 @@ export default function GuestPageEditorPage() {
   const venueCityChanged = venueCityTrimmed !== (couple?.venue_city ?? "");
   const coverChanged = coverTrimmed !== (couple?.cover_image_url ?? "");
   const introChanged = guestPageIntro !== (couple?.guest_page_intro ?? "");
-  const usefulInfoChanged = usefulInfo !== (couple?.useful_info ?? "");
+  // The labelled rows + free-form rest, composed back into the persisted text.
+  const usefulInfoText = serializeUsefulInfo(usefulFields, usefulOther, t);
+  const usefulInfoChanged = usefulInfoText !== (couple?.useful_info ?? "");
   const postRsvpChanged = postRsvpContent !== (couple?.post_rsvp_content ?? "");
   const publishChanged = isPublic !== Boolean(couple?.is_public);
   const dirty =
@@ -496,7 +682,7 @@ export default function GuestPageEditorPage() {
       if (venueCityChanged) body.venue_city = venueCityTrimmed === "" ? null : venueCityTrimmed;
       if (coverChanged) body.cover_image_url = coverTrimmed === "" ? null : coverTrimmed;
       if (introChanged) body.guest_page_intro = guestPageIntro === "" ? null : guestPageIntro;
-      if (usefulInfoChanged) body.useful_info = usefulInfo === "" ? null : usefulInfo;
+      if (usefulInfoChanged) body.useful_info = usefulInfoText === "" ? null : usefulInfoText;
       if (postRsvpChanged) body.post_rsvp_content = postRsvpContent === "" ? null : postRsvpContent;
       const r = await coupleApi.update(body);
       setCouple(r.couple);
@@ -505,7 +691,11 @@ export default function GuestPageEditorPage() {
       setVenueCity(r.couple.venue_city ?? "");
       setCoverImageUrl(r.couple.cover_image_url ?? "");
       setGuestPageIntro(r.couple.guest_page_intro ?? "");
-      setUsefulInfo(r.couple.useful_info ?? "");
+      {
+        const parsed = parseUsefulInfo(r.couple.useful_info ?? "");
+        setUsefulFields(parsed.fields);
+        setUsefulOther(parsed.other);
+      }
       setPostRsvpContent(r.couple.post_rsvp_content ?? "");
     } catch (err) {
       const msg =
@@ -537,7 +727,7 @@ export default function GuestPageEditorPage() {
     venueCity,
     coverImageUrl,
     guestPageIntro,
-    usefulInfo,
+    usefulInfoText,
     postRsvpContent,
     isPublic,
   ]);
@@ -725,8 +915,10 @@ export default function GuestPageEditorPage() {
         venue_name: venueName.trim() === "" ? null : venueName.trim(),
         venue_city: venueCity.trim() === "" ? null : venueCity.trim(),
         cover_image_url: coverImageUrl.trim() === "" ? null : coverImageUrl.trim(),
+        cover_position_x: coverPositionX,
+        cover_position_y: coverPositionY,
         guest_page_intro: guestPageIntro.trim() === "" ? null : guestPageIntro,
-        useful_info: usefulInfo.trim() === "" ? null : usefulInfo,
+        useful_info: usefulInfoText.trim() === "" ? null : usefulInfoText,
         location_lat: couple.location_lat,
         location_lng: couple.location_lng,
         location_radius_km: couple.location_radius_km,
@@ -1148,7 +1340,11 @@ export default function GuestPageEditorPage() {
             </section>
 
             {/* ── Public content (anyone with the link) ──────────────────── */}
-            <details className="card mt-6 group/pub">
+            <details
+              open={publicOpen}
+              onToggle={(e) => setPublicOpen((e.currentTarget as HTMLDetailsElement).open)}
+              className="card mt-6 group/pub"
+            >
               <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <ChevronRight
@@ -1245,6 +1441,20 @@ export default function GuestPageEditorPage() {
                           ? t("wedding_site_editor.cover_upload_replace")
                           : t("wedding_site_editor.cover_upload_button")}
                     </button>
+                    {/* Red-outline trash — clears the cover. Setting the URL
+                        to "" is treated as "clear the column" by the save
+                        path. Only shown once a cover exists. */}
+                    {coverImageUrl && !coverUploading && (
+                      <button
+                        type="button"
+                        onClick={() => setCoverImageUrl("")}
+                        aria-label={t("wedding_site_editor.cover_image_remove")}
+                        title={t("wedding_site_editor.cover_image_remove")}
+                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-500 text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 dark:border-red-400/60 dark:text-red-300 dark:hover:bg-red-400/15"
+                      >
+                        <Trash2 size={14} aria-hidden />
+                      </button>
+                    )}
                   </div>
                   <p className="text-xs text-ink-400 dark:text-umber-300">
                     {coverDragOver
@@ -1264,6 +1474,23 @@ export default function GuestPageEditorPage() {
                   autoComplete="off"
                   aria-invalid={todoCover || undefined}
                 />
+                {coverTrimmed !== "" && (
+                  <CoverPositioner
+                    src={coverTrimmed}
+                    x={coverPositionX}
+                    y={coverPositionY}
+                    onChange={(nx, ny) => {
+                      setCoverPositionX(nx);
+                      setCoverPositionY(ny);
+                    }}
+                    onCommit={(nx, ny) => {
+                      void coupleApi
+                        .update({ cover_position_x: nx, cover_position_y: ny })
+                        .catch(() => undefined);
+                    }}
+                    hint={t("wedding_site_editor.cover_position_hint")}
+                  />
+                )}
               </div>
               <div className="mt-3">
                 <label htmlFor="guest-page-intro" className="field-label">
@@ -1285,7 +1512,7 @@ export default function GuestPageEditorPage() {
                       {t("guest_page_editor.intro_suggestions_heading")}
                     </span>
                     <div className="flex flex-col gap-1.5">
-                      {([1, 2, 3, 4, 5] as const).map((n) => {
+                      {([1, 3, 4] as const).map((n, i) => {
                         const text = t(`guest_page_editor.intro_suggestion_${n}`);
                         return (
                           <button
@@ -1295,7 +1522,7 @@ export default function GuestPageEditorPage() {
                             className="flex items-start gap-2.5 rounded-xl border border-paper-300 bg-paper-50 p-3 text-left transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-500 dark:hover:bg-umber-800"
                           >
                             <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-paper-200 text-[11px] font-semibold tabular-nums text-ink-600 dark:bg-umber-700 dark:text-umber-200">
-                              {n}
+                              {i + 1}
                             </span>
                             <span className="text-sm leading-relaxed text-ink-700 dark:text-paper-100">
                               {text}
@@ -1308,18 +1535,53 @@ export default function GuestPageEditorPage() {
                 )}
               </div>
               <div className="mt-3">
-                <label htmlFor="guest-page-useful-info" className="field-label">
-                  {t("guest_page_editor.useful_info_label")}
-                </label>
-                <textarea
-                  id="guest-page-useful-info"
-                  className="input"
-                  rows={5}
-                  value={usefulInfo}
-                  onChange={(e) => setUsefulInfo(e.target.value)}
-                  placeholder={t("guest_page_editor.useful_info_placeholder")}
-                  maxLength={6000}
-                />
+                <span className="field-label">{t("guest_page_editor.useful_info_label")}</span>
+                <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+                  {t("guest_page_editor.useful_info_hint")}
+                </p>
+                {/* Pre-made rows. Each only appears on the guest page once it
+                    has a value (empty rows are dropped on serialize). The first
+                    input carries the reveal id so the preview ghost shortcut
+                    still lands here. */}
+                <div className="flex flex-col gap-2">
+                  {USEFUL_INFO_FIELDS.map((f, i) => (
+                    <div key={f.key} className="flex items-center gap-2">
+                      <label
+                        htmlFor={`guest-page-useful-${f.key}`}
+                        className="w-28 shrink-0 text-sm text-ink-600 dark:text-umber-200"
+                      >
+                        {t(f.labelKey)}
+                      </label>
+                      <input
+                        id={i === 0 ? "guest-page-useful-info" : `guest-page-useful-${f.key}`}
+                        type="text"
+                        className="input flex-1"
+                        value={usefulFields[f.key]}
+                        onChange={(e) =>
+                          setUsefulFields((prev) => ({ ...prev, [f.key]: e.target.value }))
+                        }
+                        maxLength={500}
+                      />
+                    </div>
+                  ))}
+                  <div className="mt-1">
+                    <label
+                      htmlFor="guest-page-useful-other"
+                      className="mb-1 block text-sm text-ink-600 dark:text-umber-200"
+                    >
+                      {t("guest_page_editor.useful_field_other_label")}
+                    </label>
+                    <textarea
+                      id="guest-page-useful-other"
+                      className="input"
+                      rows={3}
+                      value={usefulOther}
+                      onChange={(e) => setUsefulOther(e.target.value)}
+                      placeholder={t("guest_page_editor.useful_field_other_placeholder")}
+                      maxLength={4000}
+                    />
+                  </div>
+                </div>
               </div>
             </details>
 

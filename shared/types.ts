@@ -337,6 +337,12 @@ export interface Couple {
   venue_city: string | null;
   /** Couple-pasted http(s) URL for the wedding site's hero image. */
   cover_image_url: string | null;
+  /** Cover-photo focal point as object-position percentages (0..100, 50 =
+   *  centred). The couple drags the photo in the editor to pick which part of
+   *  the image stays in frame when the hero crops it to a wide band. Optional
+   *  (defaults to 50/50 at the render site) so legacy/fixture literals omit it. */
+  cover_position_x?: number;
+  cover_position_y?: number;
   /** Pre-RSVP welcome block on the merged Vendégoldal (`/w/:slug`).
    *  Visible at every tier of the public endpoint. Null when unset. */
   guest_page_intro: string | null;
