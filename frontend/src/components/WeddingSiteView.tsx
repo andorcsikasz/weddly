@@ -351,14 +351,18 @@ export function WeddingSiteView({
 
         <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
           <h1
+            data-preview-anchor="hero-names"
             className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
-            style={{ fontFamily: "var(--wt-heading-font)" }}
+            // Set the colour inline (like the date + venue below) so the name
+            // follows --wt-text instead of the global base `h1 { color: ink.900 }`
+            // — otherwise it vanishes dark-on-dark on a dark palette (Black tie).
+            style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
           >
             {view.couple_display_name}
           </h1>
 
           {decor !== "none" && (
-            <div className="mt-4 flex justify-center" aria-hidden>
+            <div data-preview-anchor="hero-decor" className="mt-4 flex justify-center" aria-hidden>
               {decor === "line" && hairline}
               {decor === "dots" && (
                 <span className="text-lg tracking-[0.4em]" style={{ color: "var(--wt-accent)" }}>
@@ -385,6 +389,7 @@ export function WeddingSiteView({
             isPreview && e.onEditDate ? (
               <button
                 type="button"
+                data-preview-anchor="hero-date"
                 onClick={e.onEditDate}
                 title={editHint}
                 className="relative z-10 mx-auto mt-7 block rounded-md px-2 py-1 text-5xl tracking-[0.18em] transition hover:opacity-80 sm:text-7xl"
@@ -394,6 +399,7 @@ export function WeddingSiteView({
               </button>
             ) : (
               <p
+                data-preview-anchor="hero-date"
                 className="relative z-10 mx-auto mt-7 text-5xl tracking-[0.18em] sm:text-7xl"
                 style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
                 aria-label={dateLine}
@@ -420,7 +426,10 @@ export function WeddingSiteView({
         {/* Cover photo — full-width, pulled up under the date so the big
             numerals overlap its top edge. Dashed ghost when still empty. */}
         {view.cover_image_url ? (
-          <div className={heroDateBig ? "-mt-4 w-full sm:-mt-6" : "mt-8 w-full"}>
+          <div
+            data-preview-anchor="cover-image"
+            className={heroDateBig ? "-mt-4 w-full sm:-mt-6" : "mt-8 w-full"}
+          >
             <img
               src={view.cover_image_url}
               alt=""
@@ -765,13 +774,18 @@ export function WeddingSiteView({
             </p>
             {isPreview ? (
               <span
+                data-preview-anchor="rsvp-button"
                 className={`${rsvpBtnClass} mt-6 inline-flex cursor-default opacity-90`}
                 aria-hidden
               >
                 {t("wedding_site.rsvp_cta")}
               </span>
             ) : (
-              <Link to={rsvpHref ?? "/"} className={`${rsvpBtnClass} mt-6 inline-flex`}>
+              <Link
+                to={rsvpHref ?? "/"}
+                data-preview-anchor="rsvp-button"
+                className={`${rsvpBtnClass} mt-6 inline-flex`}
+              >
                 {hasCode ? t("wedding_site.rsvp_personal_cta") : t("wedding_site.rsvp_cta")}
               </Link>
             )}
