@@ -1206,17 +1206,31 @@ function WishlistItemDialog({
           </FormRow>
 
           <FormRow label={t("wishlist_editor.kind_label")}>
-            <select
-              className="input font-grotesk"
-              value={kind}
-              onChange={(e) => setKind(e.target.value as WishlistKind)}
-            >
-              {WISHLIST_KINDS.map((k) => (
-                <option key={k} value={k}>
-                  {t(`wishlist_editor.kind_${k}`)}
-                </option>
-              ))}
-            </select>
+            {/* Segmented control rather than a native <select> so each type
+                carries its icon (a gift box vs the request hand-heart) — the
+                same glyphs used on the cards and the guest page. */}
+            <div className="grid grid-cols-2 gap-2">
+              {WISHLIST_KINDS.map((k) => {
+                const Icon = k === "request" ? HandHeart : Gift;
+                const active = kind === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setKind(k)}
+                    aria-pressed={active}
+                    className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                      active
+                        ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+                        : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                    }`}
+                  >
+                    <Icon size={16} aria-hidden />
+                    {t(`wishlist_editor.kind_${k}`)}
+                  </button>
+                );
+              })}
+            </div>
           </FormRow>
 
           <FormRow label={t("wishlist_editor.description_label")}>
