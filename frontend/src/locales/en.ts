@@ -1520,6 +1520,7 @@ const en: LocaleMessages = {
       blue_porcelain: "Blue Porcelain",
       ink_gold: "Ink & Gold",
       noir_ivory: "Noir & Ivory",
+      midnight: "Midnight Gold",
     },
     font: {
       classic_serif: "Classic Serif",

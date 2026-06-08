@@ -1680,6 +1680,7 @@ export interface LocaleMessages {
       blue_porcelain: string;
       ink_gold: string;
       noir_ivory: string;
+      midnight: string;
     };
     /** Font-preset names. */
     font: {

@@ -501,16 +501,16 @@ describe("design: website-only `web` sub-object", () => {
       "/api/couples/current",
       {
         design: {
-          style: "editorial",
-          palette: "ink_gold",
+          style: "black_tie_editorial",
+          palette: "midnight",
           web: { imageTreatment: "grayscale", buttonStyle: "outline" },
         },
       },
       { token },
     );
     expect(r.status).toBe(200);
-    expect(r.data.couple.design.style).toBe("editorial");
-    expect(r.data.couple.design.palette).toBe("ink_gold");
+    expect(r.data.couple.design.style).toBe("black_tie_editorial");
+    expect(r.data.couple.design.palette).toBe("midnight");
     expect(r.data.couple.design.web.imageTreatment).toBe("grayscale");
   });
 

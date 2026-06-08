@@ -1535,6 +1535,7 @@ const hu: LocaleMessages = {
       blue_porcelain: "Kék porcelán",
       ink_gold: "Tinta és arany",
       noir_ivory: "Fekete-fehér",
+      midnight: "Éjféli arany",
     },
     font: {
       classic_serif: "Klasszikus serif",
