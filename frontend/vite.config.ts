@@ -17,6 +17,14 @@ export default defineConfig({
         target: "http://localhost:8787",
         changeOrigin: true,
       },
+      // Uploaded files (cover photos, moodboard images, listing heroes) are
+      // served by the backend at /uploads/*. Without this the dev server (5173)
+      // 404s them — they only worked in prod where one origin serves both — so
+      // a couple's cover photo showed a broken-image icon in the editor preview.
+      "/uploads": {
+        target: "http://localhost:8787",
+        changeOrigin: true,
+      },
     },
   },
   build: {
