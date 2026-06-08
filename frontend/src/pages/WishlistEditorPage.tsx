@@ -797,7 +797,7 @@ export default function WishlistEditorPage() {
                         : t("wishlist_editor.view_list")
                     }
                     onClick={() => changeView(view === "list" ? "cards" : "list")}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-ink-900 text-ink-900 transition-colors hover:bg-paper-100 dark:border-paper-100 dark:text-paper-50 dark:hover:bg-umber-700"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-900 transition-colors hover:bg-paper-100 dark:text-paper-50 dark:hover:bg-umber-700"
                   >
                     {view === "list" ? <LayoutGrid size={16} /> : <Rows3 size={16} />}
                   </button>
@@ -894,7 +894,7 @@ export default function WishlistEditorPage() {
                         onClick={() =>
                           setEditing({ item: null, presetKind: "request", presetTitle: label })
                         }
-                        className="inline-flex items-center gap-1 rounded-full border border-paper-300 px-3 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-paper-100 dark:hover:bg-umber-800"
+                        className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white px-3 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
                       >
                         <Plus size={12} aria-hidden />
                         {label}
