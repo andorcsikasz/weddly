@@ -2064,6 +2064,15 @@ export interface LocaleMessages {
     useful_info_label: string;
     useful_info_placeholder: string;
     useful_info_hint: string;
+    /** Row labels for the structured "Good to know" fields. The label text
+     *  (lowercased) must stay in sync with USEFUL_INFO_PREFIXES in
+     *  GuestPageEditorPage so saved rows re-parse after a reload / locale flip. */
+    useful_field_parking: string;
+    useful_field_getting_there: string;
+    useful_field_transfer: string;
+    useful_field_accommodation: string;
+    useful_field_other_label: string;
+    useful_field_other_placeholder: string;
     /** Phase 2 — markdown textarea bound to `couples.post_rsvp_content`.
      *  Lives under the Post-RSVP section. */
     post_rsvp_label: string;

@@ -1888,6 +1888,12 @@ const hu: LocaleMessages = {
     useful_info_placeholder: "Parkolás: ...\nMegközelítés: ...\nSzállás: ...",
     useful_info_hint:
       "Parkolás, megközelítés, szállás és minden, amit jó tudni. A vendégoldalon jelenik meg.",
+    useful_field_parking: "Parkolás",
+    useful_field_getting_there: "Megközelítés",
+    useful_field_transfer: "Transzfer",
+    useful_field_accommodation: "Szállás",
+    useful_field_other_label: "Egyéb tudnivaló",
+    useful_field_other_placeholder: "Bármi más, amit jó tudni a vendégeknek.",
     post_rsvp_label: "Részletek a visszajelölteknek",
     post_rsvp_placeholder: "Kattints fent egy javasolt témára, vagy írd be a részleteket szabadon.",
     post_rsvp_hint:

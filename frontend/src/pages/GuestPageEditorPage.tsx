@@ -99,6 +99,14 @@ const USEFUL_INFO_PREFIXES: Record<string, UsefulInfoKey> = {
   transfer: "transfer",
   szállás: "accommodation",
   accommodation: "accommodation",
+  // Recovery: before these i18n keys existed, t() echoed the raw key, so rows
+  // saved during that window were serialized with the key string as their
+  // label. Recognise those too so a reload re-homes them into the right field
+  // instead of dumping them into the free-form "other" box.
+  "guest_page_editor.useful_field_parking": "parking",
+  "guest_page_editor.useful_field_getting_there": "getting_there",
+  "guest_page_editor.useful_field_transfer": "transfer",
+  "guest_page_editor.useful_field_accommodation": "accommodation",
 };
 
 /** Split the stored `useful_info` text into the known rows + a free-form rest.
