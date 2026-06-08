@@ -11,15 +11,11 @@ import {
   type BorderStyleSlug,
   BUTTON_STYLES,
   type ButtonStyleSlug,
-  CARD_RADII,
   getBorderCss,
-  type CardRadiusSlug,
   COLOR_ROLES,
   type ColorRole,
   type CoupleDesign,
   DATE_FORMATS,
-  type ShadowSlug,
-  SHADOWS,
   type StylePreset,
   FONT_FAMILIES,
   FONT_PRESETS,
@@ -174,61 +170,6 @@ function FontChip({
   );
 }
 
-/** A discrete slider over a small ordered catalog (e.g. card radius / shadow):
- *  one continuous control with the option names as ticks beneath, instead of
- *  separate tiles. */
-function OptionSlider<T extends string>({
-  heading,
-  options,
-  value,
-  onChange,
-}: {
-  heading: string;
-  options: readonly { slug: T; nameKey: string }[];
-  value: T;
-  onChange: (slug: T) => void;
-}) {
-  const { t } = useT();
-  const idx = Math.max(
-    0,
-    options.findIndex((o) => o.slug === value),
-  );
-  return (
-    <section>
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        {heading}
-      </h2>
-      <input
-        type="range"
-        min={0}
-        max={options.length - 1}
-        step={1}
-        value={idx}
-        onChange={(e) => {
-          const o = options[Number(e.target.value)];
-          if (o) onChange(o.slug);
-        }}
-        aria-label={heading}
-        className="block w-full accent-ink-900 dark:accent-paper-100"
-      />
-      <div className="mt-1 flex justify-between text-[11px]">
-        {options.map((o, i) => (
-          <span
-            key={o.slug}
-            className={
-              i === idx
-                ? "font-semibold text-ink-900 dark:text-paper-50"
-                : "text-ink-400 dark:text-umber-300"
-            }
-          >
-            {t(o.nameKey)}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function DesignPage() {
   const { t, locale } = useT();
   const toast = useToast();
@@ -351,12 +292,6 @@ export default function DesignPage() {
   }
   function togglePrint(key: "border" | "ornament" | "qr") {
     setDesign((d) => ({ ...d, print: { ...d.print, [key]: !d.print[key] } }));
-  }
-  function chooseCardRadius(slug: CardRadiusSlug) {
-    setDesign((d) => ({ ...d, web: { ...d.web, cardRadius: slug } }));
-  }
-  function chooseShadow(slug: ShadowSlug) {
-    setDesign((d) => ({ ...d, web: { ...d.web, shadow: slug } }));
   }
   function chooseButtonStyle(slug: ButtonStyleSlug) {
     setDesign((d) => ({ ...d, web: { ...d.web, buttonStyle: slug } }));
@@ -652,11 +587,11 @@ export default function DesignPage() {
                 </h2>
                 <InfoHint text={t("design.colors.hint")} />
               </div>
-              <div className="rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
+              <div className="mx-auto w-fit max-w-full rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
                 {/* Swatch row: each role is a colour block with a pencil badge;
                     clicking it opens the native colour editor (the swatch IS the
                     input label). Reset clears the override back to the palette. */}
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap justify-center gap-4">
                   {COLOR_ROLES.map((role) => {
                     const resolved = design.colors[role] ?? activePalette[role].hex;
                     const overridden = design.colors[role] !== undefined;
@@ -729,18 +664,18 @@ export default function DesignPage() {
               </div>
 
               {/* Independent heading / body family overrides on top of the
-                  preset, one row each. Each chip renders its own name in its
-                  actual font so the couple sees the typeface before picking.
-                  "Use preset" clears the override; only bundled families are
-                  offered (no new webfont request). */}
-              <div className="mt-3 space-y-3">
+                  preset, united in one card (a thin divider between the two
+                  rows) so the typeface controls read as a single block. Each
+                  chip renders its own name in its actual font; "Use preset"
+                  clears the override; only bundled families are offered. */}
+              <div className="mt-3 divide-y divide-paper-200 rounded-2xl border border-paper-300 bg-white p-3 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
                 {(
                   [
                     ["heading", design.headingFont, chooseHeadingFont] as const,
                     ["body", design.bodyFont, chooseBodyFont] as const,
                   ] as const
                 ).map(([which, current, setter]) => (
-                  <div key={which}>
+                  <div key={which} className="py-2 first:pt-0 last:pb-0">
                     <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
                       {t(`design.font.${which}_label`)}
                     </span>
@@ -776,11 +711,10 @@ export default function DesignPage() {
                     key={df.slug}
                     active={design.dateFormat === df.slug}
                     onSelect={() => chooseDateFormat(df.slug)}
-                    label={t(df.nameKey)}
                     ariaLabel={t(df.nameKey)}
                   >
                     <span
-                      className="font-serif text-base italic text-ink-900 dark:text-paper-50"
+                      className="flex min-h-[2.5rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-xs italic tracking-tight text-ink-900 dark:text-paper-50"
                       aria-hidden
                     >
                       {formatWeddingDate(sampleDateIso, df.slug, locale)}
@@ -792,18 +726,6 @@ export default function DesignPage() {
 
             {tab === "website" ? (
               <div className="space-y-6">
-                <OptionSlider
-                  heading={t("design.web.card_radius_label")}
-                  options={CARD_RADII}
-                  value={design.web.cardRadius}
-                  onChange={chooseCardRadius}
-                />
-                <OptionSlider
-                  heading={t("design.web.shadow_label")}
-                  options={SHADOWS}
-                  value={design.web.shadow}
-                  onChange={chooseShadow}
-                />
                 {/* RSVP button look */}
                 <section>
                   <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
