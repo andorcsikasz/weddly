@@ -1755,7 +1755,7 @@ const hu: LocaleMessages = {
     url_label: "Pinterest tábla linkje",
     url_placeholder: "https://www.pinterest.com/felhasznalo/eskuvo/",
     url_help:
-      "Pinterest > a tábla megnyitása > a böngésző címsorából másold a linket. Csak publikus táblák jelennek meg.",
+      "Másold be a tábla linkjét, vagy a Pinterest Megosztás gombjával kapott pin.it linket. Csak publikus táblák jelennek meg.",
     suggestion_label: "Próbálj ki egy mintatáblát",
     save: "Mentés",
     change: "Csere",

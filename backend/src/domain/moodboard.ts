@@ -56,11 +56,24 @@ export function getMoodboardState(coupleId: number): MoodboardState {
 }
 const PIN_USER_AGENT = "Mozilla/5.0 (compatible; Weddly/1.0; +https://weddly.hu)";
 
-/** Parsed `<user>/<board>` segments from a Pinterest board URL.
- *  `null` means the URL didn't look like a board link at all. */
+// Pinterest's own share links (the "Share" / "Copy link" buttons, and most of
+// what the mobile app hands out) are short URLs on these hosts. They 30x to the
+// real board URL, so we follow them server-side before parsing.
+const SHORTENER_HOSTS: ReadonlySet<string> = new Set(["pin.it", "api.pinterest.com"]);
+
+/** Prepend `https://` when the user pasted a bare host. People copy
+ *  "pinterest.com/user/board" without the scheme constantly, and `new URL`
+ *  rejects it outright otherwise. */
+function withScheme(raw: string): string {
+  const s = raw.trim();
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : `https://${s}`;
+}
+
+/** Parsed `<user>/<board>` segments from a Pinterest board URL. Tolerates a
+ *  missing scheme. `null` means the URL didn't look like a board link at all. */
 export function parseBoardUrl(raw: string): { user: string; slug: string } | null {
   try {
-    const u = new URL(raw.trim());
+    const u = new URL(withScheme(raw));
     if (!/(^|\.)pinterest\.[a-z.]+$/i.test(u.hostname)) return null;
     const parts = u.pathname.split("/").filter(Boolean);
     if (parts.length < 2) return null;
@@ -76,6 +89,39 @@ export function parseBoardUrl(raw: string): { user: string; slug: string } | nul
   }
 }
 
+/** Resolves any Pinterest board reference into the canonical
+ *  `https://www.pinterest.com/<user>/<slug>/` form. Handles the three things
+ *  people actually paste:
+ *    - a full board URL (with/without scheme, locale subdomain, trailing section)
+ *    - a bare host URL ("pinterest.com/user/board")
+ *    - a pin.it / shortener share link — followed server-side to its target
+ *  Only the shortener case makes a network call. Returns `null` when the input
+ *  can't be resolved to a board. */
+export async function resolveBoardUrl(raw: string): Promise<string | null> {
+  let candidate = withScheme(raw);
+  let host: string;
+  try {
+    host = new URL(candidate).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  if (SHORTENER_HOSTS.has(host)) {
+    try {
+      const res = await fetch(candidate, {
+        redirect: "follow",
+        headers: { "User-Agent": PIN_USER_AGENT },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+      candidate = res.url; // where the redirect chain landed
+    } catch {
+      return null;
+    }
+  }
+  const board = parseBoardUrl(candidate);
+  if (!board) return null;
+  return `https://www.pinterest.com/${board.user}/${board.slug}/`;
+}
+
 /** Fetches the public RSS feed for `https://www.pinterest.com/<user>/<board>/`
  *  and returns every pin the feed yields. Throws `HttpError` with an
  *  `extra.code` set to one of:
@@ -87,7 +133,8 @@ export function parseBoardUrl(raw: string): { user: string; slug: string } | nul
  *    - "fetch_failed"  — network timeout / unexpected upstream status
  */
 export async function fetchPinterestBoardPins(rawUrl: string): Promise<MoodboardPin[]> {
-  const board = parseBoardUrl(rawUrl);
+  const canonical = await resolveBoardUrl(rawUrl);
+  const board = canonical ? parseBoardUrl(canonical) : null;
   if (!board) {
     throw new HttpError(400, "Invalid Pinterest board URL", { code: "invalid_url" });
   }

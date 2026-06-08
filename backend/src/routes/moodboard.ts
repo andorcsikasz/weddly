@@ -16,7 +16,7 @@ import { join } from "node:path";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { getCoupleForUser } from "../domain/couples";
-import { fetchPinterestBoardPins, getMoodboardState, parseBoardUrl } from "../domain/moodboard";
+import { fetchPinterestBoardPins, getMoodboardState, resolveBoardUrl } from "../domain/moodboard";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { sniffUploadedImage } from "../lib/image_sniff";
@@ -67,21 +67,23 @@ async function handlePatch(ctx: Ctx): Promise<Response> {
   const ts = now();
 
   if (body.source === "pinterest") {
-    const board = parseBoardUrl(body.url ?? "");
-    if (!board) {
+    // resolveBoardUrl follows pin.it / shortener share links and canonicalises
+    // the result, so a couple can paste whatever Pinterest's Share button gave
+    // them (short link, bare host, locale subdomain) and we store a clean URL.
+    const canonical = await resolveBoardUrl(body.url ?? "");
+    if (!canonical) {
       throw new HttpError(400, "Invalid Pinterest board URL", { code: "invalid_url" });
     }
-    const trimmed = (body.url ?? "").trim();
     db.prepare(
       "UPDATE couples SET moodboard_source = 'pinterest', moodboard_url = ?, updated_at = ? WHERE id = ?",
-    ).run(trimmed, ts, couple.id);
+    ).run(canonical, ts, couple.id);
     addAuditLog({
       actor_user_id: userId,
       couple_id: couple.id,
       action: "moodboard.link_board",
       target_kind: "couple",
       target_id: couple.id,
-      after: { moodboard_url: trimmed },
+      after: { moodboard_url: canonical },
     });
   } else if (body.source === "preset") {
     db.prepare(

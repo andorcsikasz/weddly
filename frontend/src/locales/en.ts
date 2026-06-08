@@ -1739,7 +1739,7 @@ const en: LocaleMessages = {
     url_label: "Pinterest board link",
     url_placeholder: "https://www.pinterest.com/username/wedding/",
     url_help:
-      "Open the board on Pinterest, then copy the link from the address bar. Only public boards will load.",
+      "Paste the board link, or the pin.it link from Pinterest's Share button. Only public boards will load.",
     suggestion_label: "Try a sample board",
     save: "Save",
     change: "Replace",

@@ -33,14 +33,24 @@ const PREVIEW_ERROR_KEY: Record<ErrorCode, string> = {
   fetch_failed: "moodboard.error_fetch",
 };
 
-function isPinterestBoardUrl(raw: string): boolean {
+// Light client gate — just keeps obvious garbage from round-tripping. The
+// backend does the authoritative resolve: it follows pin.it / share links and
+// canonicalises, so we accept all three things people paste (full board URL,
+// bare host without scheme, and pin.it share link).
+function looksLikePinterestLink(raw: string): boolean {
+  const s = raw.trim();
+  if (!s) return false;
+  let u: URL;
   try {
-    const u = new URL(raw.trim());
-    if (!/(^|\.)pinterest\.[a-z.]+$/i.test(u.hostname)) return false;
-    return u.pathname.split("/").filter(Boolean).length >= 2;
+    u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : `https://${s}`);
   } catch {
     return false;
   }
+  const host = u.hostname.toLowerCase();
+  const segments = u.pathname.split("/").filter(Boolean).length;
+  if (host === "pin.it") return segments >= 1;
+  if (/(^|\.)pinterest\.[a-z.]+$/i.test(host)) return segments >= 2;
+  return false;
 }
 
 function classifyPreviewError(err: unknown): ErrorCode {
@@ -153,7 +163,7 @@ export default function MoodboardPage() {
         let next = s;
         const legacy =
           typeof window !== "undefined" ? window.localStorage.getItem(LEGACY_URL_KEY) : null;
-        if (s.source === "preset" && legacy && isPinterestBoardUrl(legacy)) {
+        if (s.source === "preset" && legacy && looksLikePinterestLink(legacy)) {
           try {
             next = await moodboardApi.setSource({ source: "pinterest", url: legacy });
           } catch {
@@ -241,7 +251,7 @@ export default function MoodboardPage() {
 
   const saveLink = useCallback(() => {
     const trimmed = linkDraft.trim();
-    if (!isPinterestBoardUrl(trimmed)) {
+    if (!looksLikePinterestLink(trimmed)) {
       setLinkError("invalid_url");
       return;
     }

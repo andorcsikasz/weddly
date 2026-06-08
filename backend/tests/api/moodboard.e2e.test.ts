@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type { MoodboardState } from "@shared/types";
 import { db } from "../../src/db";
 import { setBillingEnforcement } from "../../src/domain/billing";
+import { resolveBoardUrl } from "../../src/domain/moodboard";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
@@ -82,6 +83,31 @@ describe("moodboard state + source switching", () => {
     expect(r.data.url).toBe(url);
   });
 
+  test("PATCH accepts a scheme-less board url and stores it canonicalised", async () => {
+    const { token } = await bootstrapCouple("mb-noscheme@weddly.test");
+    const r = await req<MoodboardState>(
+      "PATCH",
+      "/api/moodboard",
+      { source: "pinterest", url: "pinterest.com/someone/wedding-ideas" },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.source).toBe("pinterest");
+    expect(r.data.url).toBe("https://www.pinterest.com/someone/wedding-ideas/");
+  });
+
+  test("PATCH canonicalises a locale subdomain + trailing section to www/board", async () => {
+    const { token } = await bootstrapCouple("mb-locale@weddly.test");
+    const r = await req<MoodboardState>(
+      "PATCH",
+      "/api/moodboard",
+      { source: "pinterest", url: "https://hu.pinterest.com/someone/wedding-ideas/the-section/" },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.url).toBe("https://www.pinterest.com/someone/wedding-ideas/");
+  });
+
   test("PATCH with a non-Pinterest url → 400 invalid_url", async () => {
     const { token } = await bootstrapCouple("mb-badurl@weddly.test");
     const r = await req<{ detail?: { code?: string } }>(
@@ -117,6 +143,26 @@ describe("moodboard state + source switching", () => {
   test("anon → 401 on GET", async () => {
     const r = await req("GET", "/api/moodboard");
     expect(r.status).toBe(401);
+  });
+});
+
+describe("resolveBoardUrl — board link normalisation (no network for direct urls)", () => {
+  test("canonicalises direct, scheme-less, and locale-subdomain board urls", async () => {
+    const canonical = "https://www.pinterest.com/someone/wedding-ideas/";
+    expect(await resolveBoardUrl("https://www.pinterest.com/someone/wedding-ideas/")).toBe(
+      canonical,
+    );
+    expect(await resolveBoardUrl("pinterest.com/someone/wedding-ideas")).toBe(canonical);
+    expect(await resolveBoardUrl("https://hu.pinterest.com/someone/wedding-ideas/sec/")).toBe(
+      canonical,
+    );
+  });
+
+  test("rejects non-board and non-Pinterest urls", async () => {
+    expect(await resolveBoardUrl("https://example.com/someone/board")).toBeNull();
+    expect(await resolveBoardUrl("https://www.pinterest.com/justauser")).toBeNull();
+    expect(await resolveBoardUrl("https://www.pinterest.com/pin/12345/")).toBeNull();
+    expect(await resolveBoardUrl("")).toBeNull();
   });
 });
 
