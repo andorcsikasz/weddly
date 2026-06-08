@@ -1234,6 +1234,8 @@ const hu: LocaleMessages = {
     // Assignee chip + idea suggester display.
     assignee_label: "Felelős",
     assignee_placeholder: "Felelős",
+    assignee_bride: "Menyasszony",
+    assignee_groom: "Vőlegény",
     assignee_add: "Felelős",
     assignee_edit_hint: "Kattints a felelős átírásához",
     idea_suggested_by: "— {name} javasolta",
@@ -1420,7 +1422,7 @@ const hu: LocaleMessages = {
     todo_wand_button: "Varázspálca",
     todo_wand_dialog_title: "Nászúti teendőcsomag",
     todo_wand_dialog_body:
-      "Tedd a listára az indulás előtti alap teendőket. A nem kellőket vedd ki a pipából.",
+      "Pipáld ki, amit felveszel a listára. A kipipált tételek lecsúsznak alulra, és új javaslat lép a helyükre, így egy nézetben végigmehetsz az egészen.",
     todo_wand_confirm: "Hozzáadás ({count})",
     todo_wand_already_added: "Már a listán",
     tile_days: "Hány nap",
@@ -1541,7 +1543,9 @@ const hu: LocaleMessages = {
       soft_romantic: "Lágy romantikus",
       heading_label: "Címsor betűtípusa",
       body_label: "Szövegtörzs betűtípusa",
-      use_preset: "Preset szerint",
+      customize_toggle: "Betűtípusok egyenkénti beállítása",
+      custom_badge: "Egyéni",
+      reset_to_preset: "Vissza a presethez",
     },
     family: {
       cormorant: "Cormorant (serif)",

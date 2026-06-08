@@ -1377,6 +1377,10 @@ export interface LocaleMessages {
      *  the dashed "+ owner" affordance shown on tasks with no owner set. */
     assignee_label: string;
     assignee_placeholder: string;
+    /** Generic role labels seeded into the assignee datalist when a partner's
+     *  name isn't set yet. */
+    assignee_bride: string;
+    assignee_groom: string;
     assignee_add: string;
     assignee_edit_hint: string;
     idea_suggested_by: string;
@@ -1683,10 +1687,15 @@ export interface LocaleMessages {
       classic_serif: string;
       modern_clean: string;
       soft_romantic: string;
-      /** Heading / body font-family override pickers + the "use preset" option. */
+      /** Heading / body font-family override pickers, behind a disclosure. */
       heading_label: string;
       body_label: string;
-      use_preset: string;
+      /** Disclosure toggle revealing the per-element override rows. */
+      customize_toggle: string;
+      /** Badge on the toggle while a heading/body override is active. */
+      custom_badge: string;
+      /** Per-row link that clears the override back to the preset. */
+      reset_to_preset: string;
     };
     /** Individually-assignable font families (the editable layer). */
     family: {

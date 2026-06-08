@@ -1221,6 +1221,8 @@ const en: LocaleMessages = {
     // Assignee chip + idea suggester display.
     assignee_label: "Owner",
     assignee_placeholder: "Owner",
+    assignee_bride: "Bride",
+    assignee_groom: "Groom",
     assignee_add: "Owner",
     assignee_edit_hint: "Click to change the owner",
     idea_suggested_by: "— suggested by {name}",
@@ -1406,7 +1408,7 @@ const en: LocaleMessages = {
     todo_wand_button: "Wand",
     todo_wand_dialog_title: "Honeymoon task pack",
     todo_wand_dialog_body:
-      "Drop the trip-prep starter set onto your list. Untick the ones you don't need.",
+      "Tick the ones to add. Checked items slide to the bottom and a fresh suggestion takes their place, so you can work through the whole pack in one view.",
     todo_wand_confirm: "Add {count}",
     todo_wand_already_added: "Already on list",
     tile_days: "Days",
@@ -1526,7 +1528,9 @@ const en: LocaleMessages = {
       soft_romantic: "Soft Romantic",
       heading_label: "Heading font",
       body_label: "Body font",
-      use_preset: "Use preset",
+      customize_toggle: "Customize fonts individually",
+      custom_badge: "Custom",
+      reset_to_preset: "Reset to preset",
     },
     family: {
       cormorant: "Cormorant (serif)",

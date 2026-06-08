@@ -35,7 +35,7 @@ import {
 import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { planningApi } from "../lib/endpoints";
+import { coupleApi, planningApi } from "../lib/endpoints";
 import { maxIsoDate, todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import {
@@ -119,6 +119,23 @@ export default function PlanningPage() {
     if (activeKind !== "task") setPriorityFilter(0);
   }, [activeKind]);
 
+  // The two partners, surfaced as ready-made options in the task "assignee"
+  // datalist (the common case — a task is owned by one of them). Their actual
+  // names when set, else the generic bride / groom role labels. Best-effort:
+  // a failed fetch just leaves the datalist with the typed-history suggestions.
+  const [partnerNames, setPartnerNames] = useState<string[]>([]);
+  useEffect(() => {
+    coupleApi
+      .current()
+      .then((r) => {
+        if (!r.couple) return;
+        const bride = r.couple.bride_name?.trim() || t("planning.assignee_bride");
+        const groom = r.couple.groom_name?.trim() || t("planning.assignee_groom");
+        setPartnerNames([...new Set([bride, groom].filter(Boolean))]);
+      })
+      .catch(() => undefined);
+  }, [t]);
+
   async function refresh() {
     try {
       const r = await planningApi.list();
@@ -200,15 +217,21 @@ export default function PlanningPage() {
     }
   }
 
-  // Unique assignees across all existing tasks — feeds the QuickAddForm
-  // datalist so the second + Nth tasks get the first one's owner as one click.
+  // Datalist for the task "assignee" field: the two partners first (the common
+  // owners), then every other assignee already used across existing tasks. The
+  // partners lead so they're a one-click pick; the rest stay alphabetical.
   const assigneeSuggestions = useMemo(() => {
-    const seen = new Set<string>();
+    const seen = new Set<string>(partnerNames);
+    const rest: string[] = [];
     for (const i of items) {
-      if (i.kind === "task" && i.assignee && !seen.has(i.assignee)) seen.add(i.assignee);
+      if (i.kind === "task" && i.assignee && !seen.has(i.assignee)) {
+        seen.add(i.assignee);
+        rest.push(i.assignee);
+      }
     }
-    return [...seen].sort((a, b) => a.localeCompare(b, "hu"));
-  }, [items]);
+    rest.sort((a, b) => a.localeCompare(b, "hu"));
+    return [...partnerNames, ...rest];
+  }, [items, partnerNames]);
 
   async function onToggleDone(item: PlanningItem) {
     const nextDone = !item.done;
