@@ -8,8 +8,8 @@
 // supplier), so a single shared instance is opened from the category header.
 
 import type { Currency } from "@shared/types";
-import { Calculator } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Calculator, Pencil } from "lucide-react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { currencySymbol, formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Button, Dialog } from "./ui";
@@ -107,6 +107,19 @@ function num(s: string): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
+/** Per-head portion field → its i18n label key under suppliers.calc. Drives the
+ *  inline editor that opens when a quantity cell is tapped. */
+const PORTION_LABEL_KEY: Partial<Record<FieldKey, string>> = {
+  pSweet: "portion_sweet",
+  pSavory: "portion_savory",
+  pCake: "portion_cake",
+  pSpirits: "portion_spirits",
+  pWine: "portion_wine",
+  pChampagne: "portion_champagne",
+  pBeerMugs: "portion_beer_mugs",
+  pBeerMugSize: "portion_beer_mug_size",
+};
+
 interface Row {
   key: string;
   /** i18n key under suppliers.calc for the item label. */
@@ -115,6 +128,9 @@ interface Row {
   /** Unit i18n key under suppliers.calc (unit_kg, unit_liter, …). */
   unitKey: string;
   priceField: FieldKey;
+  /** Per-head portion field(s) that drive this row's quantity. Surfaced in the
+   *  inline editor when the quantity cell is tapped. */
+  portions: FieldKey[];
   total: number;
 }
 
@@ -122,11 +138,16 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
   const { t, locale } = useT();
   const loc = locale === "hu" ? "hu" : "en";
   const [fields, setFields] = useState<Fields>(() => initialFields(currency, defaultGuests));
+  // Which row's per-head portion editor is open (tapped quantity), if any.
+  const [editingRow, setEditingRow] = useState<string | null>(null);
 
   // Reset to fresh defaults each time the modal opens, so a new guest count or
   // currency from the page is picked up.
   useEffect(() => {
-    if (open) setFields(initialFields(currency, defaultGuests));
+    if (open) {
+      setFields(initialFields(currency, defaultGuests));
+      setEditingRow(null);
+    }
   }, [open, currency, defaultGuests]);
 
   function set(key: FieldKey, value: string) {
@@ -152,25 +173,29 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
       qty: number,
       unitKey: string,
       priceField: FieldKey,
+      portions: FieldKey[],
     ): Row => ({
       key,
       labelKey,
       qty,
       unitKey,
       priceField,
+      portions,
       total: Math.round(qty * num(fields[priceField])),
     });
 
     const sweets: Row[] = [
-      mk("sweet", "item_sweet_pastry", qtySweet, "unit_kg", "priceSweet"),
-      mk("savory", "item_savory_pastry", qtySavory, "unit_kg", "priceSavory"),
+      mk("sweet", "item_sweet_pastry", qtySweet, "unit_kg", "priceSweet", ["pSweet"]),
+      mk("savory", "item_savory_pastry", qtySavory, "unit_kg", "priceSavory", ["pSavory"]),
     ];
-    const cake: Row[] = [mk("cake", "item_cake", qtyCake, "unit_slice", "priceCake")];
+    const cake: Row[] = [mk("cake", "item_cake", qtyCake, "unit_slice", "priceCake", ["pCake"])];
     const drinks: Row[] = [
-      mk("spirits", "item_spirits", qtySpirits, "unit_liter", "priceSpirits"),
-      mk("wine", "item_wine", qtyWine, "unit_bottle", "priceWine"),
-      mk("champagne", "item_champagne", qtyChampagne, "unit_bottle", "priceChampagne"),
-      mk("beer", "item_beer", qtyBeer, "unit_liter", "priceBeer"),
+      mk("spirits", "item_spirits", qtySpirits, "unit_liter", "priceSpirits", ["pSpirits"]),
+      mk("wine", "item_wine", qtyWine, "unit_bottle", "priceWine", ["pWine"]),
+      mk("champagne", "item_champagne", qtyChampagne, "unit_bottle", "priceChampagne", [
+        "pChampagne",
+      ]),
+      mk("beer", "item_beer", qtyBeer, "unit_liter", "priceBeer", ["pBeerMugs", "pBeerMugSize"]),
     ];
 
     const sum = (rows: Row[]) => rows.reduce((a, r) => a + r.total, 0);
@@ -214,37 +239,75 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
   );
 
   const renderRows = (rows: Row[]) =>
-    rows.map((r) => (
-      <tr key={r.key} className="border-t border-paper-200 dark:border-umber-700">
-        <td className="py-2 pr-2 text-ink-800 dark:text-paper-100">
-          {t(`suppliers.calc.${r.labelKey}`)}
-        </td>
-        <td className="py-2 px-2 text-right tabular-nums text-ink-700 dark:text-paper-100">
-          {qtyFmt.format(r.qty)}{" "}
-          <span className="text-xs text-ink-500 dark:text-umber-300">
-            {t(`suppliers.calc.${r.unitKey}`)}
-          </span>
-        </td>
-        <td className="py-1.5 px-2">
-          <div className="flex items-center justify-end gap-1">
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={100}
-              aria-label={`${t(`suppliers.calc.${r.labelKey}`)} — ${t("suppliers.calc.col_unit_price")}`}
-              className="input !py-1 w-24 text-right text-sm"
-              value={fields[r.priceField]}
-              onChange={(e) => set(r.priceField, e.target.value)}
-            />
-            <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
-          </div>
-        </td>
-        <td className="py-2 pl-2 text-right tabular-nums font-medium text-ink-900 dark:text-paper-50">
-          {formatMoney(r.total, currency, loc)}
-        </td>
-      </tr>
-    ));
+    rows.map((r) => {
+      const itemLabel = t(`suppliers.calc.${r.labelKey}`);
+      const isEditing = editingRow === r.key;
+      return (
+        <Fragment key={r.key}>
+          <tr className="border-t border-paper-200 dark:border-umber-700">
+            <td className="py-2 pr-2 text-ink-800 dark:text-paper-100">{itemLabel}</td>
+            <td className="py-1.5 px-2 text-right">
+              {/* Tap the quantity to fine-tune the per-head portion(s) inline. */}
+              <button
+                type="button"
+                onClick={() => setEditingRow(isEditing ? null : r.key)}
+                aria-expanded={isEditing}
+                aria-label={`${itemLabel} — ${t("suppliers.calc.qty_edit_hint")}`}
+                title={t("suppliers.calc.qty_edit_hint")}
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 tabular-nums text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700/60"
+              >
+                <span className="border-b border-dashed border-ink-300 dark:border-umber-400">
+                  {qtyFmt.format(r.qty)}{" "}
+                  <span className="text-xs text-ink-500 dark:text-umber-300">
+                    {t(`suppliers.calc.${r.unitKey}`)}
+                  </span>
+                </span>
+                <Pencil size={11} className="text-ink-400 dark:text-umber-300" aria-hidden />
+              </button>
+            </td>
+            <td className="py-1.5 px-2">
+              <div className="flex items-center justify-end gap-1">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={100}
+                  aria-label={`${itemLabel} — ${t("suppliers.calc.col_unit_price")}`}
+                  className="input !py-1 w-24 text-right text-sm"
+                  value={fields[r.priceField]}
+                  onChange={(e) => set(r.priceField, e.target.value)}
+                />
+                <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
+              </div>
+            </td>
+            <td className="py-2 pl-2 text-right tabular-nums font-medium text-ink-900 dark:text-paper-50">
+              {formatMoney(r.total, currency, loc)}
+            </td>
+          </tr>
+          {isEditing && (
+            <tr className="bg-paper-100/60 dark:bg-umber-700/40">
+              <td colSpan={4} className="px-2 pb-3 pt-1">
+                <div className="flex flex-wrap items-end gap-3">
+                  <span className="self-center text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("suppliers.calc.qty_edit_hint")}
+                  </span>
+                  {r.portions.map((pf) => (
+                    <Fragment key={pf}>
+                      {numField(
+                        pf,
+                        t(`suppliers.calc.${PORTION_LABEL_KEY[pf] ?? ""}`),
+                        "any",
+                        "w-28",
+                      )}
+                    </Fragment>
+                  ))}
+                </div>
+              </td>
+            </tr>
+          )}
+        </Fragment>
+      );
+    });
 
   const subtotalRow = (labelKey: string, value: number) => (
     <tr className="border-t border-paper-300 dark:border-umber-600 bg-paper-100/60 dark:bg-umber-700/40">
@@ -329,24 +392,6 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
             </tbody>
           </table>
         </div>
-
-        {/* Fine-tuning: per-head portions live behind a fold — most couples
-            only touch the guest count + prices above. */}
-        <details className="rounded-xl border border-paper-200 dark:border-umber-700 px-3 py-2">
-          <summary className="cursor-pointer text-sm font-medium text-ink-700 dark:text-paper-100">
-            {t("suppliers.calc.portions_heading")}
-          </summary>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {numField("pSweet", t("suppliers.calc.portion_sweet"))}
-            {numField("pSavory", t("suppliers.calc.portion_savory"))}
-            {numField("pCake", t("suppliers.calc.portion_cake"))}
-            {numField("pSpirits", t("suppliers.calc.portion_spirits"))}
-            {numField("pWine", t("suppliers.calc.portion_wine"))}
-            {numField("pChampagne", t("suppliers.calc.portion_champagne"))}
-            {numField("pBeerMugs", t("suppliers.calc.portion_beer_mugs"))}
-            {numField("pBeerMugSize", t("suppliers.calc.portion_beer_mug_size"))}
-          </div>
-        </details>
 
         <p className="rounded-xl bg-paper-100 dark:bg-umber-700/60 px-3 py-2 text-xs text-ink-500 dark:text-umber-300">
           {t("suppliers.calc.note")}

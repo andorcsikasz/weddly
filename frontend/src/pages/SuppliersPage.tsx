@@ -1840,7 +1840,7 @@ export default function SuppliersPage() {
         open={calcOpen}
         onClose={() => setCalcOpen(false)}
         currency={currency}
-        defaultGuests={targetGuestCount}
+        defaultGuests={guestsFilter ?? targetGuestCount}
       />
       {compareIds.length > 0 && (
         <div

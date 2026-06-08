@@ -2955,7 +2955,7 @@ export interface LocaleMessages {
       guests_label: string;
       sweets_buffer_label: string;
       drinks_buffer_label: string;
-      portions_heading: string;
+      qty_edit_hint: string;
       col_item: string;
       col_qty: string;
       col_unit_price: string;

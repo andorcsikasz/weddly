@@ -6,7 +6,7 @@
 // etc.) these numbers move and the test fails.
 
 import { describe, expect, it, mock } from "bun:test";
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { CakeDrinksCalculator } from "@/components/CakeDrinksCalculator";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { I18nProvider } from "@/lib/i18n";
@@ -52,5 +52,20 @@ describe("<CakeDrinksCalculator>", () => {
     const { container } = renderCalc("EUR", 70);
     // No seeded prices → every total is 0, so the big HUF figure must be absent.
     expect(digits(container)).not.toContain("500570");
+  });
+
+  it("reveals the per-head portion editor inline when a quantity is tapped", () => {
+    renderCalc("HUF", 70);
+    // No standalone fold + the portion input is hidden until the qty is tapped.
+    expect(screen.queryByLabelText("Sweet pastries (kg/guest)")).toBeNull();
+    const qtyBtn = screen.getByRole("button", {
+      name: "Sweet pastries — Fine-tune portion (per guest)",
+    });
+    fireEvent.click(qtyBtn);
+    const portionInput = screen.getByLabelText("Sweet pastries (kg/guest)") as HTMLInputElement;
+    expect(portionInput.value).toBe("0.1");
+    // Tapping again collapses it.
+    fireEvent.click(qtyBtn);
+    expect(screen.queryByLabelText("Sweet pastries (kg/guest)")).toBeNull();
   });
 });
