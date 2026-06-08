@@ -86,10 +86,22 @@ function overview(): AdminFinancialPlannerOverview {
     )
     .all(nowMs) as Array<{ month: string; n: number }>;
 
+  // Paid-conversion funnel top: how many couples reached the Stripe pay
+  // screen, from the checkout.started growth events.
+  const checkoutStarted = db
+    .prepare(
+      `SELECT COUNT(DISTINCT couple_id) AS couples, COUNT(*) AS total
+         FROM growth_events
+        WHERE kind = 'checkout.started'`,
+    )
+    .get() as { couples: number; total: number };
+
   return {
     generated_at: nowMs,
     counts,
     total_couples: total,
+    checkout_started_couples: checkoutStarted.couples,
+    checkout_started_total: checkoutStarted.total,
     founding_active: activeFoundingCount(nowMs),
     founding_spots_left: Math.max(0, FOUNDING_CAP - foundingSlotsUsed()),
     trialing: counts.trialing,

@@ -17,6 +17,7 @@ import {
   stripe,
 } from "../domain/billing";
 import { getCoupleForUser, toCoupleBilling } from "../domain/couples";
+import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { getUserById } from "../domain/users";
 import {
   type Ctx,
@@ -92,6 +93,12 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
     allow_promotion_codes: true,
     success_url: `${CONFIG.frontendBaseUrl}/app/settings/billing?checkout=success`,
     cancel_url: `${CONFIG.frontendBaseUrl}/app/settings/billing?checkout=cancel`,
+  });
+  // Top-of-funnel signal: the couple reached the Stripe pay screen. Recorded
+  // after the session mints so a Stripe hiccup doesn't inflate the count.
+  recordGrowthEventFromRequest("checkout.started", ctx.req, {
+    couple_id: couple.id,
+    user_id: userId,
   });
   return json({ url: session.url });
 }

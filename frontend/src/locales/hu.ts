@@ -3101,6 +3101,9 @@ const hu: LocaleMessages = {
     fin_kpi_founding_active: "Első 200 (ingyenes)",
     fin_kpi_founding_left: "Szabad hely a 200-ból",
     fin_kpi_trialing: "Próbaidőben",
+    fin_kpi_checkout_started: "Fizetést indított",
+    fin_kpi_checkout_started_hint:
+      "Hány pár jutott el a Stripe fizetőképernyőig (legalább egyszer). A fizetési folyamat eleje.",
     fin_cohorts_title: "Párok csomag szerint",
     fin_mrr_by_currency_title: "MRR pénznem szerint",
     fin_assumptions_title: "Előrejelzési feltételezések",

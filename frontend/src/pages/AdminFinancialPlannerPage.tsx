@@ -268,6 +268,11 @@ export default function AdminFinancialPlannerPage() {
         <Kpi label={t("admin.fin_kpi_founding_active")} value={String(data.founding_active)} />
         <Kpi label={t("admin.fin_kpi_founding_left")} value={String(data.founding_spots_left)} />
         <Kpi label={t("admin.fin_kpi_trialing")} value={String(data.trialing)} />
+        <Kpi
+          label={t("admin.fin_kpi_checkout_started")}
+          value={String(data.checkout_started_couples)}
+          hint={t("admin.fin_kpi_checkout_started_hint")}
+        />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -993,7 +998,7 @@ function BillingLaunchCard({
             {t("admin.fin_enforce_progress_label")}
           </span>
           <span className="tabular-nums font-semibold text-neutral-900 dark:text-paper-50">
-            {new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US").format(total)} /{" "}
+            {new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB").format(total)} /{" "}
             {FOUNDING_CAP}
           </span>
         </div>

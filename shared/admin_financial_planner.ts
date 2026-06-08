@@ -70,6 +70,12 @@ export interface AdminFinancialPlannerOverview {
   /** True once the founding cohort is full (total non-demo couples >= 200),
    *  i.e. the freeze is ready to be turned on. Drives the admin go-live signal. */
   enforcement_ready: boolean;
+  /** Distinct couples who started the payment process (reached the Stripe
+   *  Checkout screen) at least once — top of the paid-conversion funnel.
+   *  Counted from `checkout.started` growth events. */
+  checkout_started_couples: number;
+  /** Total checkout starts including repeat attempts by the same couple. */
+  checkout_started_total: number;
 }
 
 /** Stripe connection + config health for the admin planner. Surfaces what we

@@ -3066,6 +3066,9 @@ const en: LocaleMessages = {
     fin_kpi_founding_active: "First 200 (free)",
     fin_kpi_founding_left: "First-200 spots left",
     fin_kpi_trialing: "In trial",
+    fin_kpi_checkout_started: "Checkout started",
+    fin_kpi_checkout_started_hint:
+      "Couples who reached the Stripe pay screen at least once. The top of the payment funnel.",
     fin_cohorts_title: "Couples by plan",
     fin_mrr_by_currency_title: "MRR by currency",
     fin_assumptions_title: "Forecast assumptions",

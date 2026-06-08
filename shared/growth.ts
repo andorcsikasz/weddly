@@ -46,7 +46,12 @@ export type GrowthEventKind =
    *  guest.portal.view but for the cover-letter URL the couple shares
    *  on social. `payload.couple_id` carries the workspace; the slug
    *  itself is not duplicated into payload (it's the URL). */
-  | "wedding_site.view";
+  | "wedding_site.view"
+  /** Couple started the payment process — a Stripe Checkout session was
+   *  minted for them via POST /api/billing/checkout (they're about to be
+   *  redirected to Stripe). Top of the paid-conversion funnel: lets the
+   *  admin see how many couples reached the pay screen vs. converted. */
+  | "checkout.started";
 
 export interface GrowthEvent {
   id: number;

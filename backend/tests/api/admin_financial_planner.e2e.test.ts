@@ -10,6 +10,7 @@ import {
   subscriptionUnitEconomics,
 } from "@shared/admin_financial_planner";
 import { db } from "../../src/db";
+import { recordGrowthEvent } from "../../src/domain/growth_events";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 
 /** Seed N placeholder non-demo couples (negative ids) so later real couples
@@ -68,6 +69,28 @@ describe("GET /api/admin/financial-planner/overview", () => {
     expect(r.data.arr_eur_total).toBe(60);
     expect(r.data.founding_spots_left).toBe(200);
     expect(r.data.price_huf).toBe(1990);
+  });
+
+  test("counts checkout-started couples (distinct) and total attempts", async () => {
+    wipeAll();
+    const a = await bootstrapCouple("fin-checkout-a@weddly.test");
+    const b = await bootstrapCouple("fin-checkout-b@weddly.test");
+    // Couple A reached the pay screen twice (re-tried), couple B once. The
+    // headline counts distinct couples; total includes the repeat.
+    recordGrowthEvent("checkout.started", { couple_id: a.coupleId });
+    recordGrowthEvent("checkout.started", { couple_id: a.coupleId });
+    recordGrowthEvent("checkout.started", { couple_id: b.coupleId });
+    const adminToken = await addAdmin();
+
+    const r = await req<AdminFinancialPlannerOverview>(
+      "GET",
+      "/api/admin/financial-planner/overview",
+      undefined,
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.checkout_started_couples).toBe(2);
+    expect(r.data.checkout_started_total).toBe(3);
   });
 
   test("buckets founding-window expiries by month", async () => {
