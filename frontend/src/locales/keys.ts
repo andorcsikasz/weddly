@@ -4209,6 +4209,11 @@ export interface LocaleMessages {
     analytics_acq_campaigns_title: string;
     analytics_acq_campaigns_sub: string;
     analytics_acq_country_locale_title: string;
+    analytics_acq_map_title: string;
+    analytics_acq_map_sub: string;
+    analytics_acq_map_less: string;
+    analytics_acq_map_more: string;
+    analytics_acq_map_other: string;
     analytics_acq_col_signups: string;
     analytics_acq_col_onboarded: string;
     analytics_acq_col_active: string;

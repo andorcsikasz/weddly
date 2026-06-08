@@ -33,6 +33,7 @@ import { Check, Plus } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pill, type PillTone } from "../components/admin";
+import { EUROPE_NAMES, EUROPE_PATHS, EUROPE_VIEWBOX } from "../lib/europeGeo";
 import { Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminAnalyticsApi } from "../lib/endpoints";
@@ -1396,6 +1397,95 @@ function AcqBarList({
   );
 }
 
+// Choropleth fill ramp — token classes only (no raw hex, JIT-safe literals).
+// Index 0 = no signups (faint base); 1..5 = increasing signup density.
+const ACQ_CHORO_FILL = [
+  "fill-umber-100 dark:fill-umber-800",
+  "fill-umber-200 dark:fill-umber-600",
+  "fill-umber-300 dark:fill-umber-500",
+  "fill-umber-500 dark:fill-umber-400",
+  "fill-umber-700 dark:fill-umber-300",
+  "fill-umber-900 dark:fill-umber-200",
+];
+
+/** Europe choropleth: every mapped country filled by its signup density.
+ *  Non-European countries fold into an "other" tally, null into "unknown" —
+ *  both shown beside the map so the colored area never silently drops them.
+ *  Hand-rolled inline SVG (see lib/europeGeo.ts), no map dependency. */
+function EuropeChoropleth({
+  rows,
+  locale,
+}: {
+  rows: AcquisitionDimensionRow[];
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const counts = new Map<string, number>();
+  let other = 0;
+  let unknown = 0;
+  for (const r of rows) {
+    if (r.key === null) {
+      unknown += r.signups;
+    } else if (EUROPE_PATHS[r.key]) {
+      counts.set(r.key, (counts.get(r.key) ?? 0) + r.signups);
+    } else {
+      other += r.signups;
+    }
+  }
+  const max = Math.max(0, ...counts.values());
+  const bucket = (c: number): number => {
+    if (c <= 0) return 0;
+    if (max <= 0) return 1;
+    return Math.min(5, Math.ceil((c / max) * 5));
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <svg
+        viewBox={EUROPE_VIEWBOX}
+        className="h-auto w-full"
+        role="img"
+        aria-label={t("admin.analytics_acq_map_title")}
+      >
+        <g strokeWidth={0.6} className="stroke-paper-100 dark:stroke-umber-900">
+          {Object.entries(EUROPE_PATHS).map(([iso, d]) => {
+            const c = counts.get(iso) ?? 0;
+            return (
+              <path key={iso} d={d} className={ACQ_CHORO_FILL[bucket(c)]}>
+                <title>{`${EUROPE_NAMES[iso] ?? iso}: ${formatNumber(c, locale)}`}</title>
+              </path>
+            );
+          })}
+        </g>
+      </svg>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-neutral-500 dark:text-umber-300">
+        <div className="flex items-center gap-1">
+          <span>{t("admin.analytics_acq_map_less")}</span>
+          {ACQ_CHORO_FILL.slice(1).map((cls) => (
+            <svg key={cls} width="14" height="10" aria-hidden="true">
+              <rect width="14" height="10" rx="2" className={cls} />
+            </svg>
+          ))}
+          <span>{t("admin.analytics_acq_map_more")}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {other > 0 && (
+            <span>
+              {t("admin.analytics_acq_map_other")}: {formatNumber(other, locale)}
+            </span>
+          )}
+          {unknown > 0 && (
+            <span>
+              {t("admin.analytics_acq_unknown")}: {formatNumber(unknown, locale)}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AcquisitionSection({
   state,
   locale,
@@ -1461,6 +1551,15 @@ function AcquisitionSection({
           value={formatNumber(d.unknown_country, locale)}
           sub={pct(d.unknown_country, d.total_signups)}
         />
+      </div>
+
+      <div className="mb-3">
+        <InnerCard
+          title={t("admin.analytics_acq_map_title")}
+          subtitle={t("admin.analytics_acq_map_sub")}
+        >
+          <EuropeChoropleth rows={d.by_country} locale={locale} />
+        </InnerCard>
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
