@@ -210,9 +210,6 @@ export function SpendingCharts({
 
   return (
     <section className="mb-8">
-      <h2 className="mb-3 font-grotesk text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
-        {t("dashboard.charts.title")}
-      </h2>
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Paid-vs-planned progress ring. */}
         <Card title={t("dashboard.charts.paid_title")}>

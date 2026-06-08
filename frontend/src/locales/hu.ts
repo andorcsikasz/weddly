@@ -290,12 +290,14 @@ const hu: LocaleMessages = {
     venue_city_placeholder: "pl. Dunakiliti",
     cover_image_label: "Borítókép",
     cover_image_placeholder: "https://…",
+    cover_position_hint: "Húzd a fotót az igazításhoz",
     cover_image_hint:
       "Tölts fel egy fájlt, vagy másold be egy nyilvánosan elérhető kép http(s) linkjét.",
     cover_image_invalid: "Ennek http(s) linknek kell lennie — más sémát nem fogadunk el.",
     cover_upload_button: "Kép feltöltése",
     cover_upload_uploading: "Feltöltés…",
     cover_upload_replace: "Másik kép",
+    cover_image_remove: "Borítókép törlése",
     cover_upload_success: "Borítókép feltöltve.",
     cover_upload_error_generic: "Nem sikerült feltölteni a képet. Próbáld újra.",
     cover_upload_error_too_large: "A kép max 4 MB lehet.",
@@ -694,7 +696,6 @@ const hu: LocaleMessages = {
     task_seat_guests: "Minden visszajelzett vendég leültetve",
     quick_links_title: "Gyorslinkek",
     charts: {
-      title: "Költés egy pillantásra",
       paid_title: "Eddig kifizetve",
       paid_center: "kifizetve",
       planned_label: "Tervezett",

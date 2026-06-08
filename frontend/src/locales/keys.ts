@@ -366,11 +366,14 @@ export interface LocaleMessages {
     venue_city_placeholder: string;
     cover_image_label: string;
     cover_image_placeholder: string;
+    cover_position_hint: string;
     cover_image_hint: string;
     cover_image_invalid: string;
     cover_upload_button: string;
     cover_upload_uploading: string;
     cover_upload_replace: string;
+    /** Red-outline trash that clears the chosen cover image. */
+    cover_image_remove: string;
     cover_upload_success: string;
     cover_upload_error_generic: string;
     cover_upload_error_too_large: string;
@@ -791,7 +794,6 @@ export interface LocaleMessages {
     quick_links_title: string;
     /** Dashboard spending donuts: paid-vs-planned + category breakdown. */
     charts: {
-      title: string;
       paid_title: string;
       paid_center: string;
       planned_label: string;
