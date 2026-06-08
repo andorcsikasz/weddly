@@ -583,7 +583,7 @@ function ChartCard({
   }
 
   const title = useMemo(() => {
-    const intl = locale === "hu" ? "hu-HU" : "en-US";
+    const intl = locale === "hu" ? "hu-HU" : "en-GB";
     if (mode === "day") {
       return new Intl.DateTimeFormat(intl, {
         year: "numeric",

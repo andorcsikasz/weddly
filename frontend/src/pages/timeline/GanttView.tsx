@@ -175,7 +175,7 @@ function buildGeometry(
   const windowEnd = addDays(addMonths(windowStart, monthCount), -1);
   const totalDays = diffDays(windowStart, windowEnd) + 1;
 
-  const intl = locale === "hu" ? "hu-HU" : "en-US";
+  const intl = locale === "hu" ? "hu-HU" : "en-GB";
   const monthFmt = new Intl.DateTimeFormat(intl, { month: "short" });
   const yearFmt = new Intl.DateTimeFormat(intl, { year: "numeric" });
   const months: MonthBand[] = [];
