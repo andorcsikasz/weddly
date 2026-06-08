@@ -260,11 +260,11 @@ function materializePlusOne(
   const res = db
     .prepare(
       `INSERT INTO guests
-        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, rsvp_status,
+        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, is_plus_one, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
          created_at, updated_at, household_id)
-       VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 0, 'pending', ?, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, ?, ?, ?)`,
+       VALUES (?, ?, NULL, NULL, ?, ?, 'adult', 0, 1, 'pending', ?, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, ?, ?, ?)`,
     )
     .run(coupleId, name, parent.group_tag, uniqueInviteCode(), meal, ts, ts, parent.household_id);
   addAuditLog({

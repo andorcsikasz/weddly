@@ -255,6 +255,7 @@ function makeGuest(over: Partial<Guest> = {}): Guest {
     invite_code: "ABC123",
     kind: "adult",
     is_supplier: false,
+    is_plus_one: false,
     partner_role: null,
     rsvp_status: "pending",
     meal_choice: null,

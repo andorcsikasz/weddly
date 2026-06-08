@@ -122,15 +122,13 @@ describe("guest drawer: plus-one materialises a real guest", () => {
     expect(cara.data.guest.plus_one_name).toBeNull();
     const hh = cara.data.guest.household_id;
 
-    const list = await req<{ guests: { full_name: string; household_id: number | null }[] }>(
-      "GET",
-      "/api/guests",
-      undefined,
-      { token },
-    );
+    const list = await req<{
+      guests: { full_name: string; household_id: number | null; is_plus_one: boolean }[];
+    }>("GET", "/api/guests", undefined, { token });
     const dan = list.data.guests.filter((g) => g.full_name === "Dan");
     expect(dan).toHaveLength(1);
     expect(dan[0]?.household_id).toBe(hh);
+    expect(dan[0]?.is_plus_one).toBe(true);
 
     // Re-saving the parent without a plus-one must not spawn another Dan.
     await req("PATCH", `/api/guests/${cara.data.guest.id}`, { full_name: "Cara" }, { token });

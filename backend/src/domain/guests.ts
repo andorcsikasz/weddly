@@ -22,6 +22,7 @@ export interface GuestRow {
   invite_code: string;
   kind: string;
   is_supplier: number;
+  is_plus_one: number;
   rsvp_status: string;
   meal_choice: string | null;
   dietary: string | null;
@@ -98,6 +99,7 @@ export function toGuest(row: GuestRow): Guest {
     invite_code: row.invite_code,
     kind: (isGuestKind(row.kind) ? row.kind : "adult") as GuestKind,
     is_supplier: Boolean(row.is_supplier),
+    is_plus_one: Boolean(row.is_plus_one),
     rsvp_status: (isRsvpStatus(row.rsvp_status) ? row.rsvp_status : "pending") as RsvpStatus,
     meal_choice: row.meal_choice && isMealChoice(row.meal_choice) ? row.meal_choice : null,
     dietary: row.dietary,

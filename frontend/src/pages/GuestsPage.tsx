@@ -920,6 +920,7 @@ function SearchResults({
               <PartnerRoleIcon role={g.partner_role} />
               <KindIcon kind={g.kind} />
               <SupplierIcon show={g.is_supplier} />
+              <PlusOneBadge show={g.is_plus_one} />
               <span className="truncate">{g.full_name}</span>
               <MealIcons meal={g.meal_choice} dietary={g.dietary} />
             </p>
@@ -1163,6 +1164,7 @@ function HouseholdCard({
                 <PartnerRoleIcon role={g.partner_role} />
                 <KindIcon kind={g.kind} />
                 <SupplierIcon show={g.is_supplier} />
+                <PlusOneBadge show={g.is_plus_one} />
                 <span className="truncate">{g.full_name}</span>
                 <span className="inline-flex shrink-0">
                   <MealIcons meal={g.meal_choice} dietary={g.dietary} />
@@ -1515,6 +1517,22 @@ function SupplierIcon({ show }: { show: boolean | undefined }) {
       aria-label={t("guests.supplier_badge")}
       className="shrink-0 text-umber-600 dark:text-umber-300"
     />
+  );
+}
+
+/** "+1" chip next to a guest auto-created from someone's plus-one, so the
+ *  couple can tell materialised plus-ones apart from primary guests. */
+function PlusOneBadge({ show }: { show: boolean | undefined }) {
+  const { t } = useT();
+  if (!show) return null;
+  return (
+    <span
+      title={t("guests.plus_one_badge")}
+      aria-label={t("guests.plus_one_badge")}
+      className="shrink-0 rounded-full border border-paper-300 bg-paper-100 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-ink-600 dark:border-umber-700 dark:bg-umber-700 dark:text-paper-100"
+    >
+      +1
+    </span>
   );
 }
 
@@ -2275,7 +2293,7 @@ function GuestDrawer({
                   <p className="mt-1.5 text-xs text-ink-500 dark:text-umber-300">
                     {t("guests.rsvp_filled_at", {
                       date: new Date(guest.rsvp_responded_at).toLocaleDateString(
-                        locale === "hu" ? "hu-HU" : "en-US",
+                        locale === "hu" ? "hu-HU" : "en-GB",
                         { year: "numeric", month: "short", day: "numeric" },
                       ),
                     })}

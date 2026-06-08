@@ -576,6 +576,9 @@ export interface Guest {
    *  can be counted on a reduced "supplier menu" and seated apart. Orthogonal
    *  to `kind` and `group_tag`. Defaults to false. */
   is_supplier: boolean;
+  /** True when this guest was auto-created from another guest's "+1" field.
+   *  Drives the "+1" badge in the guest list. */
+  is_plus_one: boolean;
   /** Set on the two host guest rows that mirror `couples.bride_name` /
    *  `couples.groom_name`. `null` on every other guest. Server-derived only —
    *  PATCH/POST `/api/guests` ignores this field. The seating page reads it to

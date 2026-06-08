@@ -2277,6 +2277,8 @@ export interface LocaleMessages {
     supplier_label: string;
     supplier_help: string;
     supplier_badge: string;
+    /** "+1" chip on a guest auto-created from another guest's plus-one. */
+    plus_one_badge: string;
     kind_adult: string;
     kind_child: string;
     kind_baby: string;
@@ -3987,9 +3989,77 @@ export interface LocaleMessages {
     analytics_nav_engagement: string;
     analytics_nav_demo: string;
     analytics_nav_traffic: string;
+    analytics_nav_weddings: string;
+    analytics_nav_honeymoon: string;
+    analytics_nav_guests: string;
     /** aria-label for the mobile section dropdown that replaces the
      *  anchor pills below the `sm:` breakpoint. */
     analytics_jump_to_section: string;
+    // Shared helpers for the weddings / honeymoon / guests rollups.
+    analytics_stat_sub: string;
+    analytics_days: string;
+    analytics_season_spring: string;
+    analytics_season_summer: string;
+    analytics_season_autumn: string;
+    analytics_season_winter: string;
+    analytics_locale_unknown: string;
+    // Weddings section (date seasonality, lead time, locale / style mix).
+    analytics_section_weddings: string;
+    analytics_weddings_total: string;
+    analytics_weddings_with_date: string;
+    analytics_weddings_lead_time: string;
+    analytics_weddings_guest_target: string;
+    analytics_weddings_peak_season: string;
+    analytics_weddings_by_month: string;
+    analytics_weddings_by_weekday: string;
+    analytics_weddings_style_tags: string;
+    analytics_weddings_locale_mix: string;
+    analytics_weddings_by_currency: string;
+    analytics_weddings_by_country: string;
+    analytics_weddings_by_locale: string;
+    analytics_weddings_empty: string;
+    analytics_weddings_tags_empty: string;
+    // Honeymoon section (destinations, origins, trip length, seasonality).
+    analytics_section_honeymoon: string;
+    analytics_honeymoon_empty: string;
+    analytics_honeymoon_with_destination: string;
+    analytics_honeymoon_adoption: string;
+    analytics_honeymoon_top_destination: string;
+    analytics_honeymoon_couples: string;
+    analytics_honeymoon_trip_nights: string;
+    analytics_honeymoon_with_dates: string;
+    analytics_honeymoon_top_destinations: string;
+    analytics_honeymoon_origins: string;
+    analytics_honeymoon_origins_empty: string;
+    analytics_honeymoon_start_month: string;
+    // Guests section (RSVP funnel, kind, plus-one, dietary load).
+    analytics_section_guests: string;
+    analytics_guests_empty: string;
+    analytics_guests_total: string;
+    analytics_guests_per_couple: string;
+    analytics_guests_response_rate: string;
+    analytics_guests_acceptance_rate: string;
+    analytics_guests_plus_one: string;
+    analytics_guests_accommodation: string;
+    analytics_guests_rsvp_title: string;
+    analytics_guests_rsvp_yes: string;
+    analytics_guests_rsvp_maybe: string;
+    analytics_guests_rsvp_no: string;
+    analytics_guests_rsvp_pending: string;
+    analytics_guests_kind_title: string;
+    analytics_guests_kind_adult: string;
+    analytics_guests_kind_child: string;
+    analytics_guests_kind_baby: string;
+    analytics_guests_song_requests: string;
+    analytics_guests_dietary_title: string;
+    analytics_guests_dietary_sub: string;
+    analytics_guests_dietary_empty: string;
+    analytics_guests_diet_vegetarian: string;
+    analytics_guests_diet_vegan: string;
+    analytics_guests_diet_gluten: string;
+    analytics_guests_diet_lactose: string;
+    analytics_guests_diet_nut: string;
+    analytics_guests_diet_other: string;
     // Traffic section (Google Analytics 4, pulled live via the Data API).
     analytics_section_traffic: string;
     analytics_traffic_source: string;

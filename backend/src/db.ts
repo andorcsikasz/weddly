@@ -115,6 +115,10 @@ addColumnIfMissing("guests", "kind", "kind TEXT NOT NULL DEFAULT 'adult'");
 // separate supplier table, so the couple tags them to count + seat them apart.
 addColumnIfMissing("guests", "is_supplier", "is_supplier INTEGER NOT NULL DEFAULT 0");
 
+// Materialised plus-one marker. 1 when this guest was auto-created from another
+// guest's "+1" field (so the list can flag it). Default 0 for every normal row.
+addColumnIfMissing("guests", "is_plus_one", "is_plus_one INTEGER NOT NULL DEFAULT 0");
+
 // "Invited?" check on the guest row. Nullable timestamp — null = not yet
 // invited, non-null = ms since epoch when the couple marked them invited.
 // Drives the per-guest checkbox + the x/n indicator on the household header.
