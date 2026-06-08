@@ -57,13 +57,6 @@ import {
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
-/** Required-but-empty fields get a red, one-step-thicker outline (border-2 vs
- *  the `.input` / `.btn-outline` 1px default) instead of a separate "MISSING"
- *  pill next to the label. Appended to the control's className when its value
- *  is still empty; shared by every field + jump-to link on this editor. */
-const MISSING_OUTLINE =
-  "border-2 border-red-400 focus:border-red-500 focus:ring-red-100 dark:border-red-400/60 dark:focus:border-red-400";
-
 /** Pre-made "Good to know" rows. They serialize back into the single
  *  `useful_info` text column as "Label: value" lines — ONLY the filled ones —
  *  so the guest page (which renders that column as pre-line text and hides the
@@ -161,7 +154,6 @@ function VenueNameField({
   onPickCity,
   savedVenues,
   country,
-  missing,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -172,9 +164,6 @@ function VenueNameField({
   /** ISO 3166-1 alpha-2 — scopes the autocomplete to the couple's country so
    *  a HU couple isn't offered cross-border (e.g. Austrian) venues. */
   country: string;
-  /** Empty/required → red input outline + aria-invalid, in place of a
-   *  separate "MISSING" pill next to the label. */
-  missing?: boolean;
 }) {
   const { t } = useT();
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -282,7 +271,7 @@ function VenueNameField({
       <input
         id="guest-page-venue"
         type="text"
-        className={`input${missing ? ` ${MISSING_OUTLINE}` : ""}`}
+        className="input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
@@ -292,7 +281,6 @@ function VenueNameField({
         autoComplete="off"
         aria-autocomplete="list"
         aria-expanded={open}
-        aria-invalid={missing || undefined}
       />
       {open && suggestions.length > 0 && (
         <ul
@@ -662,20 +650,6 @@ export default function GuestPageEditorPage() {
     usefulInfoChanged ||
     postRsvpChanged;
 
-  // Completeness flags — derived from the live form state for fields the
-  // couple edits in this page, and from the loaded couple/events for the
-  // ones that live on sibling pages (coords, schedule). We use these to
-  // (1) flag empty fields inline next to their label and (2) build a
-  // one-line summary above the editor that survives <details> being
-  // collapsed. Venue name is included since the public landing falls back
-  // to a generic title without one; the cover image, welcome text, and
-  // post-RSVP block are optional but visually-impactful.
-  const todoCover = coverTrimmed.length === 0;
-  const todoIntro = guestPageIntro.trim().length === 0;
-  const todoPostRsvp = postRsvpContent.trim().length === 0;
-  const todoVenue = venueTrimmed.length === 0;
-  const todoCoords = couple ? couple.location_lat === null || couple.location_lng === null : false;
-  const todoSchedule = !loading && events.length === 0;
   // Persist the current form state. No manual Save button — edits auto-save
   // (debounced) via the effect below, and the venue input's Enter also calls
   // this through onSubmit. Quiet on success (the inline status line reflects
@@ -1390,7 +1364,6 @@ export default function GuestPageEditorPage() {
                   onPickCity={setVenueCity}
                   savedVenues={savedVenues}
                   country={couple?.country ?? "HU"}
-                  missing={todoVenue}
                 />
               </div>
               <div className="mt-3">
@@ -1485,14 +1458,13 @@ export default function GuestPageEditorPage() {
                 <input
                   id="guest-page-cover"
                   type="text"
-                  className={`input mt-2${todoCover ? ` ${MISSING_OUTLINE}` : ""}`}
+                  className="input mt-2"
                   value={coverImageUrl}
                   onChange={(e) => setCoverImageUrl(e.target.value)}
                   placeholder={t("wedding_site_editor.cover_image_placeholder")}
                   maxLength={2048}
                   inputMode="url"
                   autoComplete="off"
-                  aria-invalid={todoCover || undefined}
                 />
                 {coverTrimmed !== "" && (
                   <CoverPositioner
@@ -1516,15 +1488,17 @@ export default function GuestPageEditorPage() {
                 <label htmlFor="guest-page-intro" className="field-label">
                   {t("guest_page_editor.intro_label")}
                 </label>
+                {/* The welcome note is optional, so it never gets the red
+                    required outline — an empty one just shows the starter-note
+                    suggestions below instead of reading as an error. */}
                 <textarea
                   id="guest-page-intro"
-                  className={`input${todoIntro ? ` ${MISSING_OUTLINE}` : ""}`}
+                  className="input"
                   rows={4}
                   value={guestPageIntro}
                   onChange={(e) => setGuestPageIntro(e.target.value)}
                   placeholder={t("guest_page_editor.intro_placeholder")}
                   maxLength={4000}
-                  aria-invalid={todoIntro || undefined}
                 />
                 {guestPageIntro.trim() === "" && (
                   <div className="mt-2 flex flex-col gap-1.5">
@@ -1624,18 +1598,12 @@ export default function GuestPageEditorPage() {
               </summary>
               <ul className="mt-4 flex flex-wrap items-center gap-2">
                 <li className="inline-flex items-center">
-                  <Link
-                    to="/app/schedule"
-                    className={`btn-outline btn-sm${todoSchedule ? ` ${MISSING_OUTLINE}` : ""}`}
-                  >
+                  <Link to="/app/schedule" className="btn-outline btn-sm">
                     {t("guest_page_editor.section_unlocked_link_schedule")}
                   </Link>
                 </li>
                 <li className="inline-flex items-center">
-                  <Link
-                    to="/app/settings/workspace"
-                    className={`btn-outline btn-sm${todoCoords ? ` ${MISSING_OUTLINE}` : ""}`}
-                  >
+                  <Link to="/app/settings/workspace" className="btn-outline btn-sm">
                     {t("guest_page_editor.section_unlocked_link_profile")}
                   </Link>
                 </li>
@@ -1677,13 +1645,12 @@ export default function GuestPageEditorPage() {
                 <textarea
                   ref={postRsvpTextareaRef}
                   id="guest-page-post-rsvp"
-                  className={`input${todoPostRsvp ? ` ${MISSING_OUTLINE}` : ""}`}
+                  className="input"
                   rows={6}
                   value={postRsvpContent}
                   onChange={(e) => setPostRsvpContent(e.target.value)}
                   placeholder={t("guest_page_editor.post_rsvp_placeholder")}
                   maxLength={8000}
-                  aria-invalid={todoPostRsvp || undefined}
                 />
               </div>
             </details>
