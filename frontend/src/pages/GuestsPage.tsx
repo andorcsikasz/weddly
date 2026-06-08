@@ -81,6 +81,15 @@ const GROUPS: GuestGroupTag[] = [
 
 const MEALS: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
 
+// Collapsed icon-tool group (Sablon / CSV / Étkezés / Meghívók). Each segment
+// shows only its icon until hovered, when its label slides open (max-width +
+// opacity) and the native `title` tooltip appears. Literal class strings so
+// Tailwind's JIT picks them up.
+const GUEST_TOOL_BTN =
+  "group flex items-center px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-700/5 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:hover:bg-paper-100/10";
+const GUEST_TOOL_LABEL =
+  "max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-[14rem] group-hover:opacity-100";
+
 interface DrawerInit {
   guest: Guest | null;
   /** When opening "add another to existing household", we pre-select it. */
@@ -614,51 +623,66 @@ export default function GuestsPage() {
           )}
         </div>
         <div className="flex flex-wrap gap-2 sm:ml-auto">
-          <button
-            type="button"
-            className="btn-outline !border-ink-700 dark:!border-paper-100"
-            onClick={downloadCsvTemplate}
-            title={t("guests.download_template_hint")}
-          >
-            <Download size={16} aria-hidden /> {t("guests.download_template")}
-          </button>
-          <label
-            className="btn-outline !border-ink-700 cursor-pointer dark:!border-paper-100"
-            title={t("guests.import_csv_hint")}
-          >
-            <Upload size={16} aria-hidden /> {t("guests.import_csv")}
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) onImport(f);
-                e.target.value = "";
-              }}
-              disabled={importing}
-            />
-          </label>
-          <button
-            type="button"
-            className="btn-outline !border-neutral-400 !bg-neutral-200 !text-neutral-700 hover:!bg-neutral-300 dark:!border-neutral-500 dark:!bg-neutral-700 dark:!text-neutral-100 dark:hover:!bg-neutral-600"
-            onClick={() => setMealsOpen(true)}
-            title={t("guests.meals_hint")}
-          >
-            <Utensils size={16} aria-hidden /> {t("guests.meals_button")}
-          </button>
-          <button
-            type="button"
-            className="btn-outline !border-ink-700 dark:!border-paper-100"
-            onClick={onMassInvite}
-            disabled={sendingInvites || inviteBreakdown.eligible.length === 0}
-            title={t("guests.invite_send_hint")}
-          >
-            <Send size={16} aria-hidden />{" "}
-            {inviteBreakdown.eligible.length > 0
-              ? t("guests.invite_send_count", { count: inviteBreakdown.eligible.length })
-              : t("guests.invite_send")}
-          </button>
+          {/* Icon-only segmented group: collapsed to icons, each expands its
+              label on hover (max-width + opacity transition) and surfaces a
+              native tooltip via title. Keeps the toolbar compact while the
+              primary "Add" CTA stays full beside it. */}
+          <div className="inline-flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100">
+            <button
+              type="button"
+              className={GUEST_TOOL_BTN}
+              onClick={downloadCsvTemplate}
+              title={t("guests.download_template_hint")}
+              aria-label={t("guests.download_template")}
+            >
+              <Download size={16} aria-hidden />
+              <span className={GUEST_TOOL_LABEL}>{t("guests.download_template")}</span>
+            </button>
+            <label
+              className={`${GUEST_TOOL_BTN} cursor-pointer`}
+              title={t("guests.import_csv_hint")}
+              aria-label={t("guests.import_csv")}
+            >
+              <Upload size={16} aria-hidden />
+              <span className={GUEST_TOOL_LABEL}>{t("guests.import_csv")}</span>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onImport(f);
+                  e.target.value = "";
+                }}
+                disabled={importing}
+              />
+            </label>
+            <button
+              type="button"
+              className={GUEST_TOOL_BTN}
+              onClick={() => setMealsOpen(true)}
+              title={t("guests.meals_hint")}
+              aria-label={t("guests.meals_button")}
+            >
+              <Utensils size={16} aria-hidden />
+              <span className={GUEST_TOOL_LABEL}>{t("guests.meals_button")}</span>
+            </button>
+            <button
+              type="button"
+              className={GUEST_TOOL_BTN}
+              onClick={onMassInvite}
+              disabled={sendingInvites || inviteBreakdown.eligible.length === 0}
+              title={t("guests.invite_send_hint")}
+              aria-label={t("guests.invite_send")}
+            >
+              <Send size={16} aria-hidden />
+              <span className={GUEST_TOOL_LABEL}>
+                {inviteBreakdown.eligible.length > 0
+                  ? t("guests.invite_send_count", { count: inviteBreakdown.eligible.length })
+                  : t("guests.invite_send")}
+              </span>
+            </button>
+          </div>
           <button
             type="button"
             className="btn-primary"
@@ -2118,14 +2142,23 @@ function GuestDrawer({
       dietary: buildDietary(dietaryTags, dietaryFree),
       song_request: serializeSongRequests(songs),
     };
-    if (householdMode === "existing" && householdId) {
-      body.household_id = householdId;
-    } else if (householdMode === "new") {
-      body.household_id = null;
-      const label = newHouseholdLabel.trim();
-      if (label) body.new_household_label = label;
-      if (newHouseholdOffersAccommodation) {
-        body.new_household_offers_accommodation = true;
+    // A "+1" carries its host id and inherits the host's household — the manual
+    // household picker is hidden, so don't send household fields. Anything else
+    // explicitly detaches (plus_one_of: null) so re-saving a former +1 as a
+    // normal guest clears the link server-side.
+    if (form.is_plus_one) {
+      body.plus_one_of = form.plus_one_of ?? null;
+    } else {
+      body.plus_one_of = null;
+      if (householdMode === "existing" && householdId) {
+        body.household_id = householdId;
+      } else if (householdMode === "new") {
+        body.household_id = null;
+        const label = newHouseholdLabel.trim();
+        if (label) body.new_household_label = label;
+        if (newHouseholdOffersAccommodation) {
+          body.new_household_offers_accommodation = true;
+        }
       }
     }
     if (!guest && sendInvite && (form.email ?? "").trim()) {
@@ -2138,6 +2171,10 @@ function GuestDrawer({
     e.preventDefault();
     if (!form.full_name?.trim()) {
       setError(t("guests.full_name"));
+      return;
+    }
+    if (form.is_plus_one && !form.plus_one_of) {
+      setError(t("guests.plus_one_assign_required"));
       return;
     }
     setSubmitting(true);
@@ -2289,30 +2326,92 @@ function GuestDrawer({
           <div className="mb-3">
             <label className="field-label">{t("guests.kind_label")}</label>
             <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
-              {form.is_supplier ? t("guests.supplier_help") : t("guests.kind_help")}
+              {form.is_plus_one
+                ? t("guests.plus_one_type_help")
+                : form.is_supplier
+                  ? t("guests.supplier_help")
+                  : t("guests.kind_help")}
             </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
               {(["adult", "child", "baby"] as GuestKind[]).map((k) => (
                 <SegmentButton
                   key={k}
-                  active={!form.is_supplier && (form.kind ?? "adult") === k}
-                  onClick={() => setForm({ ...form, is_supplier: false, kind: k })}
+                  active={!form.is_supplier && !form.is_plus_one && (form.kind ?? "adult") === k}
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      is_supplier: false,
+                      is_plus_one: false,
+                      plus_one_of: null,
+                      kind: k,
+                    })
+                  }
                   icon={<KindIcon kind={k} />}
                   label={t(`guests.kind_${k}`)}
                 />
               ))}
               <SegmentButton
-                active={form.is_supplier ?? false}
-                onClick={() => setForm({ ...form, is_supplier: true })}
+                active={form.is_plus_one ?? false}
+                onClick={() => setForm({ ...form, is_plus_one: true, is_supplier: false })}
+                icon={<UserPlus size={14} aria-hidden className="shrink-0" />}
+                label={t("guests.kind_plus_one")}
+              />
+              <SegmentButton
+                active={(form.is_supplier ?? false) && !form.is_plus_one}
+                onClick={() =>
+                  setForm({ ...form, is_supplier: true, is_plus_one: false, plus_one_of: null })
+                }
                 icon={<Briefcase size={14} aria-hidden className="shrink-0" />}
                 label={t("guests.kind_supplier")}
               />
             </div>
           </div>
 
+          {/* "+1" host picker — a +1 is assigned to an existing guest and joins
+              that guest's household. Eligible hosts exclude suppliers, other
+              +1s (no chains), and the guest being edited. */}
+          {form.is_plus_one &&
+            (() => {
+              const hosts = guests.filter(
+                (g) => g.id !== guest?.id && !g.is_supplier && !g.is_plus_one,
+              );
+              return (
+                <div className="mb-3">
+                  <label className="field-label" htmlFor="guest-plus-one-of">
+                    {t("guests.plus_one_assign_label")}
+                  </label>
+                  <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+                    {t("guests.plus_one_assign_help")}
+                  </p>
+                  {hosts.length === 0 ? (
+                    <p className="rounded-xl bg-paper-100 px-3 py-2 text-sm text-ink-500 dark:bg-umber-700/60 dark:text-umber-300">
+                      {t("guests.plus_one_assign_empty")}
+                    </p>
+                  ) : (
+                    <select
+                      id="guest-plus-one-of"
+                      className="input"
+                      value={form.plus_one_of ?? ""}
+                      onChange={(e) =>
+                        setForm({ ...form, plus_one_of: Number(e.target.value) || null })
+                      }
+                    >
+                      <option value="">{t("guests.plus_one_assign_placeholder")}</option>
+                      {hosts.map((h) => (
+                        <option key={h.id} value={h.id}>
+                          {h.full_name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              );
+            })()}
+
           {/* Suppliers are auto-routed to the supplier household server-side,
-              so the manual picker is hidden while the supplier type is active. */}
-          {!form.is_supplier && (
+              and a "+1" inherits its host's household — so the manual picker is
+              hidden for both. */}
+          {!form.is_supplier && !form.is_plus_one && (
             <div className="mb-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-3 dark:border-umber-700 dark:bg-umber-700/60">
               <label className="field-label">{t("guests.household_label")}</label>
               <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
@@ -2541,23 +2640,26 @@ function GuestDrawer({
 
               {/* Plus-one — the couple fills the guest's +1 on their behalf;
                   on save the backend materialises it as a real guest in the
-                  same household, then clears this field. */}
-              <div className="mb-3">
-                <label className="field-label" htmlFor="guest-plus-one">
-                  {t("guests.plus_one_label")}
-                </label>
-                <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
-                  {t("guests.plus_one_help")}
-                </p>
-                <input
-                  id="guest-plus-one"
-                  className="input font-sans text-sm"
-                  type="text"
-                  value={form.plus_one_name ?? ""}
-                  onChange={(e) => setForm({ ...form, plus_one_name: e.target.value || null })}
-                  placeholder={t("guests.plus_one_placeholder")}
-                />
-              </div>
+                  same household, then clears this field. Hidden when the guest
+                  is itself a +1 (a +1 can't carry its own +1). */}
+              {!form.is_plus_one && (
+                <div className="mb-3">
+                  <label className="field-label" htmlFor="guest-plus-one">
+                    {t("guests.plus_one_label")}
+                  </label>
+                  <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+                    {t("guests.plus_one_help")}
+                  </p>
+                  <input
+                    id="guest-plus-one"
+                    className="input font-sans text-sm"
+                    type="text"
+                    value={form.plus_one_name ?? ""}
+                    onChange={(e) => setForm({ ...form, plus_one_name: e.target.value || null })}
+                    placeholder={t("guests.plus_one_placeholder")}
+                  />
+                </div>
+              )}
 
               {/* Per-household opt-in for the accommodation field. The
                   toggle moved off `couples` in May 2026; we now resolve it
