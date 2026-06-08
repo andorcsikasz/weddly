@@ -37,6 +37,9 @@ export interface User {
   /** True when the user has a linked Google account (`users.google_sub` set).
    *  Drives the SessionExpiredDialog's choice of re-auth method. */
   has_google: boolean;
+  /** True when the user has a linked Apple account (`users.apple_sub` set).
+   *  Drives the SessionExpiredDialog's choice of re-auth method. */
+  has_apple: boolean;
   created_at: UnixMs;
 }
 

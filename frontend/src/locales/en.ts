@@ -140,6 +140,9 @@ const en: LocaleMessages = {
     or: "or",
     google_failed: "Google sign-in failed. Please try again.",
     google_unavailable: "Google sign-in isn't available right now.",
+    continue_with_apple: "Continue with Apple",
+    apple_failed: "Apple sign-in failed. Please try again.",
+    apple_unavailable: "Apple sign-in isn't available right now.",
   },
   verify: {
     banner_title: "Confirm your email",

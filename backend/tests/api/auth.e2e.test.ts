@@ -1673,6 +1673,210 @@ describe("POST /api/auth/google", () => {
   });
 });
 
+// ─── /api/auth/apple ───────────────────────────────────────────────────────
+
+describe("POST /api/auth/apple", () => {
+  const importMint = () => import("../../src/lib/apple_oauth");
+
+  test("missing credential returns 400", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/auth/apple", {});
+    expect(r.status).toBe(400);
+  });
+
+  test("empty credential returns 400", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/auth/apple", { credential: "" });
+    expect(r.status).toBe(400);
+  });
+
+  test("non-string credential returns 400", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/auth/apple", { credential: 42 });
+    expect(r.status).toBe(400);
+  });
+
+  test("malformed JWT (not three segments) returns 401", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/auth/apple", { credential: "abc.def" });
+    expect(r.status).toBe(401);
+  });
+
+  test("garbage credential returns 401", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/auth/apple", {
+      credential: "totally-not-a-jwt-or-bypass",
+    });
+    expect(r.status).toBe(401);
+  });
+
+  test("test bypass with wrong HMAC returns 401", async () => {
+    wipeAll();
+    const tampered = "apple-test:sub-x:tamper%40example.com:1:" + "0".repeat(64);
+    const r = await req("POST", "/api/auth/apple", { credential: tampered });
+    expect(r.status).toBe(401);
+  });
+
+  test("valid bypass + new email creates verified user with forwarded name", async () => {
+    wipeAll();
+    const { PRIVACY_VERSION } = await import("@shared/legal");
+    const { mintAppleTestBearer } = await importMint();
+    const credential = mintAppleTestBearer({
+      sub: "a-new-001",
+      email: "a-new@example.com",
+    });
+    const r = await req<{
+      token: string;
+      user: { email: string; full_name: string; verified_email: boolean };
+    }>("POST", "/api/auth/apple", {
+      credential,
+      full_name: "A New",
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(r.status).toBe(201);
+    expect(r.data.user.email).toBe("a-new@example.com");
+    expect(r.data.user.full_name).toBe("A New");
+    expect(r.data.user.verified_email).toBe(true);
+  });
+
+  test("new account without a forwarded name falls back to the email", async () => {
+    wipeAll();
+    const { PRIVACY_VERSION } = await import("@shared/legal");
+    const { mintAppleTestBearer } = await importMint();
+    const credential = mintAppleTestBearer({
+      sub: "a-noname-001",
+      email: "a-noname@example.com",
+    });
+    const r = await req<{ user: { full_name: string } }>("POST", "/api/auth/apple", {
+      credential,
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(r.status).toBe(201);
+    expect(r.data.user.full_name).toBe("a-noname@example.com");
+  });
+
+  test("brand-new Apple sign-in WITHOUT privacy_version returns 400", async () => {
+    wipeAll();
+    const { mintAppleTestBearer } = await importMint();
+    const credential = mintAppleTestBearer({
+      sub: "a-noprivacy",
+      email: "a-noprivacy@example.com",
+    });
+    const r = await req("POST", "/api/auth/apple", {
+      credential,
+      privacy_version: "1999-01-01",
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test("links to an existing verified email-only account (no duplicate)", async () => {
+    wipeAll();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "a-link@example.com",
+      password: "supersafe123",
+      full_name: "Link",
+    });
+    db.prepare("UPDATE users SET verified_email = 1 WHERE email = ?").run("a-link@example.com");
+
+    const { mintAppleTestBearer } = await importMint();
+    const credential = mintAppleTestBearer({
+      sub: "a-link-001",
+      email: "a-link@example.com",
+    });
+    // Link path doesn't need privacy_version (existing user) — leave it off.
+    const r = await req<{ user: { id: number } }>("POST", "/api/auth/apple", { credential });
+    expect(r.status).toBe(200);
+    expect(r.data.user.id).toBe(reg.data.user.id);
+    const row = db
+      .prepare("SELECT apple_sub FROM users WHERE email = ?")
+      .get("a-link@example.com") as { apple_sub: string | null };
+    expect(row.apple_sub).toBe("a-link-001");
+  });
+
+  test("refuses to link onto an unverified password account (409)", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "a-unverified@example.com",
+      password: "supersafe123",
+      full_name: "Unverified",
+    });
+    const { mintAppleTestBearer } = await importMint();
+    const credential = mintAppleTestBearer({
+      sub: "a-unv-001",
+      email: "a-unverified@example.com",
+    });
+    const r = await req("POST", "/api/auth/apple", { credential });
+    expect(r.status).toBe(409);
+  });
+
+  test("rejects an unverified Apple email claim (400)", async () => {
+    wipeAll();
+    const { mintAppleTestBearer } = await importMint();
+    const credential = mintAppleTestBearer({
+      sub: "a-unverif-claim",
+      email: "a-unverif@example.com",
+      emailVerified: false,
+    });
+    const r = await req("POST", "/api/auth/apple", { credential });
+    expect(r.status).toBe(400);
+  });
+
+  test("rejects suspended Apple-linked account (403)", async () => {
+    wipeAll();
+    const { PRIVACY_VERSION } = await import("@shared/legal");
+    const { mintAppleTestBearer } = await importMint();
+    const credential = mintAppleTestBearer({
+      sub: "a-susp-001",
+      email: "a-susp@example.com",
+    });
+    const first = await req("POST", "/api/auth/apple", {
+      credential,
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(first.status).toBe(201);
+    db.prepare("UPDATE users SET status = 'suspended' WHERE email = ?").run("a-susp@example.com");
+    const second = await req("POST", "/api/auth/apple", { credential });
+    expect(second.status).toBe(403);
+  });
+
+  test("repeat Apple sign-in for an existing apple_sub is 200 (login), not 201", async () => {
+    wipeAll();
+    const { PRIVACY_VERSION } = await import("@shared/legal");
+    const { mintAppleTestBearer } = await importMint();
+    const credential = mintAppleTestBearer({
+      sub: "a-repeat-001",
+      email: "a-repeat@example.com",
+    });
+    const a = await req<{ user: { id: number } }>("POST", "/api/auth/apple", {
+      credential,
+      privacy_version: PRIVACY_VERSION,
+    });
+    expect(a.status).toBe(201);
+    const b = await req<{ user: { id: number } }>("POST", "/api/auth/apple", { credential });
+    expect(b.status).toBe(200);
+    expect(b.data.user.id).toBe(a.data.user.id);
+  });
+
+  test("a brand-new Apple account exposes has_apple = true", async () => {
+    wipeAll();
+    const { PRIVACY_VERSION } = await import("@shared/legal");
+    const { mintAppleTestBearer } = await importMint();
+    const credential = mintAppleTestBearer({
+      sub: "a-flag-001",
+      email: "a-flag@example.com",
+    });
+    const r = await req<{ user: { has_apple: boolean; password_set: boolean } }>(
+      "POST",
+      "/api/auth/apple",
+      { credential, privacy_version: PRIVACY_VERSION },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.user.has_apple).toBe(true);
+    // Apple-only signup gets a synthetic placeholder hash — no real password.
+    expect(r.data.user.password_set).toBe(false);
+  });
+});
+
 // ─── Cross-couple isolation on email prefs ──────────────────────────────────
 
 describe("cross-account isolation: email prefs", () => {

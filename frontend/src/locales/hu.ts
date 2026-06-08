@@ -141,6 +141,9 @@ const hu: LocaleMessages = {
     or: "vagy",
     google_failed: "A Google bejelentkezés nem sikerült. Próbáld újra.",
     google_unavailable: "A Google bejelentkezés most nem elérhető.",
+    continue_with_apple: "Folytatás Apple-fiókkal",
+    apple_failed: "Az Apple bejelentkezés nem sikerült. Próbáld újra.",
+    apple_unavailable: "Az Apple bejelentkezés most nem elérhető.",
   },
   verify: {
     banner_title: "Erősítsd meg az e-mail címed",

@@ -1,5 +1,6 @@
 import { type FormEvent, type Ref, useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { AppleSignInButton } from "../components/AppleSignInButton";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { Shell } from "../components/Shell";
 import { Button, PasswordField } from "../components/ui";
@@ -51,8 +52,9 @@ export default function LoginPage() {
       <div className="mx-auto max-w-md">
         <div className="card">
           <h1 className="text-2xl">{t("auth.login_title")}</h1>
-          <div className="mt-6">
+          <div className="mt-6 space-y-3">
             <GoogleSignInButton mode="signin" redirectTo={redirectTo} oneTap autoSelect />
+            <AppleSignInButton mode="signin" redirectTo={redirectTo} />
           </div>
           <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-ink-500">
             <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />

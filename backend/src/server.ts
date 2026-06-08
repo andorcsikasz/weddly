@@ -34,6 +34,7 @@ import { registerAdminSupplierRoutes } from "./routes/admin_suppliers";
 import { registerAdminUserRoutes } from "./routes/admin_users";
 import { registerVendorWaitlistRoutes } from "./routes/vendor_waitlist";
 import { registerAuthRoutes } from "./routes/auth";
+import { registerAuthAppleRoutes } from "./routes/auth_apple";
 import { registerAuthGoogleRoutes } from "./routes/auth_google";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerBlogRoutes, seedBlogPostsIfEmpty } from "./routes/blog";
@@ -103,6 +104,7 @@ const router = new Router();
 registerHealthRoutes(router);
 registerAuthRoutes(router);
 registerAuthGoogleRoutes(router);
+registerAuthAppleRoutes(router);
 registerPasswordResetRoutes(router);
 registerEmailVerifyRoutes(router);
 registerEmailChangeRoutes(router);
@@ -174,8 +176,11 @@ const CSP = [
   // the GTM container) the gtag/js library it injects. Activated only when
   // GTM_CONTAINER_ID is set; the origins stay whitelisted regardless so the
   // header is identical across deploys.
-  "script-src 'self' https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com",
-  "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com",
+  // Sign in with Apple JS (https://appleid.cdn-apple.com/appleauth/static/jsapi/
+  // appleid/1/<locale>/appleid.auth.js) renders the "Continue with Apple"
+  // button + drives the popup, so its CDN origin needs script + style here.
+  "script-src 'self' https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com",
+  "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com https://appleid.cdn-apple.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.
   // *.pinimg.com hosts the Pinterest pin thumbnails rendered by /app/moodboard —
@@ -196,13 +201,16 @@ const CSP = [
   // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
   // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may
   // also XHR the container config from googletagmanager.com.
-  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
+  // appleid.apple.com is the authorization origin the Sign in with Apple JS
+  // XHRs against while it runs the popup handshake.
+  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://appleid.apple.com",
   // OSM's /export/embed.html is iframed by the honeymoon map modal.
   // `blob:` is for the /app/seating PDF preview modal — the generated chart
   // is handed to <iframe src="blob:..."> so the browser's native PDF viewer
   // renders it inline. Without blob: in frame-src the iframe loads blank.
   // accounts.google.com renders the GSI one-tap / button iframe.
-  "frame-src https://www.openstreetmap.org https://accounts.google.com blob:",
+  // appleid.apple.com renders the Sign in with Apple popup/iframe.
+  "frame-src https://www.openstreetmap.org https://accounts.google.com https://appleid.apple.com blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

@@ -256,6 +256,22 @@ export const authApi = {
      *  existing user. */
     locale?: "hu" | "en";
   }) => apiFetch<AuthSession>("POST", "/api/auth/google", body),
+  /** Sign in OR register with a Sign in with Apple `id_token` JWT. Apple omits
+   *  the display name from the token and only hands it to the JS client on the
+   *  first authorization, so `full_name` is forwarded separately (display only,
+   *  applied to brand-new accounts). Both version stamps are required so the
+   *  GDPR consent ledger lands when this creates a brand-new account; the
+   *  server ignores them when the credential maps to an existing user. */
+  apple: (body: {
+    credential: string;
+    full_name?: string;
+    privacy_version: string;
+    terms_version: string;
+    /** Same persistence semantics as `register.locale` — only applied to
+     *  brand-new accounts; ignored when the credential matches an
+     *  existing user. */
+    locale?: "hu" | "en";
+  }) => apiFetch<AuthSession>("POST", "/api/auth/apple", body),
   login: (body: { email: string; password: string }) =>
     apiFetch<AuthSession>("POST", "/api/auth/login", body),
   logout: () => apiFetch<{ ok: true }>("POST", "/api/auth/logout"),

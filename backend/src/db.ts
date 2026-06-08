@@ -426,6 +426,19 @@ db.exec(
     "ON users(google_sub) WHERE google_sub IS NOT NULL",
 );
 
+// Apple account linkage. Mirrors `google_sub` exactly: `users.apple_sub` is the
+// Apple-issued `sub` claim — a stable, opaque user id scoped to our Services ID
+// that never changes. Null for accounts that never used Sign in with Apple.
+// Partial unique index (NULL excluded) so a second Apple sign-in for the same
+// account is caught at the DB layer too, not just by the application check.
+// Index lives in db.ts (not schema.sql) because the column is added by
+// addColumnIfMissing — see [[project_schema_additive_ordering]].
+addColumnIfMissing("users", "apple_sub", "apple_sub TEXT");
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_apple_sub_unique " +
+    "ON users(apple_sub) WHERE apple_sub IS NOT NULL",
+);
+
 // "Did this user ever set a real password?" — 1 = yes (default for back-compat,
 // every legacy user signed up with password), 0 = Google-only signup, no local
 // password ever set. Gates `/api/auth/forgot` and `/api/auth/reset` so an

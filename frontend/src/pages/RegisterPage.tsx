@@ -3,6 +3,7 @@ import type { AuthSession } from "@shared/types";
 import { Mail } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AppleSignInButton } from "../components/AppleSignInButton";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { Shell } from "../components/Shell";
 import { Button, PasswordField, useToast } from "../components/ui";
@@ -177,13 +178,14 @@ export default function RegisterPage() {
           <h1 className="font-grotesk text-2xl text-umber-900 dark:text-paper-50">
             {t("auth.register_title")}
           </h1>
-          <div className="mt-6">
+          <div className="mt-6 space-y-3">
             {/* oneTap (without autoSelect) means a returning Google user
                 lands here, gets the floating prompt, and one-taps to sign
                 in. We deliberately leave autoSelect off on /signup so a
                 visitor who came specifically to register doesn't get
                 silently signed in as an existing account. */}
             <GoogleSignInButton mode="signup" redirectTo="/onboarding" oneTap />
+            <AppleSignInButton mode="signup" redirectTo="/onboarding" />
           </div>
           <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-umber-600">
             <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />

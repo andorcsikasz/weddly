@@ -58,6 +58,7 @@ interface RenderOpts {
   userId?: number | null;
   passwordSet?: boolean;
   hasGoogle?: boolean;
+  hasApple?: boolean;
   onClose?: () => void;
   onLoggedIn?: () => void;
 }
@@ -76,6 +77,7 @@ function renderDialog(opts: RenderOpts = {}) {
               userId={opts.userId ?? 42}
               passwordSet={opts.passwordSet ?? true}
               hasGoogle={opts.hasGoogle ?? false}
+              hasApple={opts.hasApple ?? false}
               onClose={onClose}
               onLoggedIn={onLoggedIn}
             />

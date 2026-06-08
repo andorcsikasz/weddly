@@ -21,6 +21,9 @@ export interface UserRow {
   /** Google-issued `sub` claim, set when a user signs in / signs up with
    *  Google. Null for password-only accounts. */
   google_sub?: string | null;
+  /** Apple-issued `sub` claim, set when a user signs in / signs up with Apple.
+   *  Null for accounts that never used Sign in with Apple. */
+  apple_sub?: string | null;
   /** 1 = user has set a real local password; 0 = Google-only signup with a
    *  synthetic placeholder hash. Password-reset is refused when 0 so an
    *  attacker with knowledge of the email can't quietly install a password
@@ -58,6 +61,7 @@ export function toUser(row: UserRow): User {
     // the password form in the re-auth modal.
     password_set: row.password_set !== 0,
     has_google: Boolean(row.google_sub),
+    has_apple: Boolean(row.apple_sub),
     created_at: row.created_at,
   };
 }

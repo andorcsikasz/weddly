@@ -55,7 +55,7 @@ export const CONFIG = {
   supportEmail: process.env.SUPPORT_EMAIL ?? "hello@weddly.hu",
   /** Comma-separated email allowlist. Members get `is_admin: true` on the User
    *  DTO and access to /app/admin/* routes. Reversible via env edit. */
-  adminEmails: (process.env.ADMIN_EMAILS ?? "andor.csikasz@gmail.com")
+  adminEmails: (process.env.ADMIN_EMAILS ?? "andor.csikasz@gmail.com,saraazawiasa@gmail.com")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
@@ -69,6 +69,17 @@ export const CONFIG = {
    *  with `jwtSecret`, so only callers who already own the secret (i.e. the
    *  E2E test process) can mint one. Never set this in production. */
   googleTestBypass: process.env.NODE_ENV !== "production" && process.env.GOOGLE_TEST_BYPASS === "1",
+  /** Apple "Sign in with Apple" Services ID (e.g. "hu.weddly.signin"). This is
+   *  the `client_id` the Apple JS SDK is initialised with AND the `aud` claim
+   *  the id-token verifier checks. When empty, `/api/auth/apple` returns 503 so
+   *  the rest of the app keeps working in dev without Apple credentials. Same
+   *  value is baked into the frontend at build time as `VITE_APPLE_CLIENT_ID`. */
+  appleClientId: process.env.APPLE_CLIENT_ID ?? "",
+  /** Test-only escape hatch: when `1`, the Apple ID-token verifier accepts a
+   *  signed "test bearer" instead of a real Apple JWT. The bearer is HMAC'd
+   *  with `jwtSecret`, so only callers who already own the secret (i.e. the
+   *  E2E test process) can mint one. Never set this in production. */
+  appleTestBypass: process.env.NODE_ENV !== "production" && process.env.APPLE_TEST_BYPASS === "1",
   /** Numeric GA4 property id (e.g. "493210114") the admin Traffic section
    *  reports against. NOT the "G-…" measurement id — that one lives in the
    *  GTM container. Empty = GA4 traffic endpoint returns `configured:false`. */

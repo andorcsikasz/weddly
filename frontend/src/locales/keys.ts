@@ -204,6 +204,12 @@ export interface LocaleMessages {
     google_failed: string;
     /** Toast when /api/auth/google returns 503 (not configured on this env). */
     google_unavailable: string;
+    /** Label on the hand-rolled "Continue with Apple" button. */
+    continue_with_apple: string;
+    /** Toast when /api/auth/apple returns a non-recoverable error. */
+    apple_failed: string;
+    /** Toast when /api/auth/apple returns 503 (not configured on this env). */
+    apple_unavailable: string;
   };
   verify: {
     banner_title: string;

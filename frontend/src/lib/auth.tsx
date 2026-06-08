@@ -154,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userId={user?.id ?? null}
         passwordSet={user?.password_set ?? false}
         hasGoogle={user?.has_google ?? false}
+        hasApple={user?.has_apple ?? false}
         onClose={() => setSessionExpired(false)}
         onLoggedIn={() => setSessionExpired(false)}
       />

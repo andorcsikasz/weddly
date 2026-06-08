@@ -6,8 +6,10 @@
 //
 // Re-auth method follows the user's capability flags from before the 401:
 //   - has_google → render Google block
+//   - has_apple → render Apple block
 //   - password_set → render password block
-// Both flags can be true (account has both methods linked). If neither is
+// Any combination of flags can be true (account has multiple methods linked).
+// If none is
 // known (legacy session where we don't have flags), both blocks are shown
 // — they degrade to "the wrong button" being an obvious dead-end but not a
 // hard footgun.
@@ -20,6 +22,7 @@
 import type { AuthSession } from "@shared/types";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { Button, Dialog, PasswordField } from "./ui";
+import { AppleSignInButton } from "./AppleSignInButton";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { ApiError, setToken } from "../lib/api";
 import { authApi } from "../lib/endpoints";
@@ -42,6 +45,10 @@ interface Props {
    *  Google button (it would create a new account or sign into the wrong
    *  one). */
   hasGoogle: boolean;
+  /** Whether the original user is linked to Apple. Same rationale as
+   *  `hasGoogle` — hide the Apple button unless we know it'll resolve to the
+   *  same account. */
+  hasApple: boolean;
   onClose: () => void;
   onLoggedIn: () => void;
 }
@@ -52,6 +59,7 @@ export function SessionExpiredDialog({
   userId,
   passwordSet,
   hasGoogle,
+  hasApple,
   onClose,
   onLoggedIn,
 }: Props) {
@@ -71,11 +79,13 @@ export function SessionExpiredDialog({
     }
   }, [open]);
 
-  // If we don't know either capability (e.g. legacy session, fresh page
-  // reload before /api/auth/me hydrates), fall back to showing both so the
+  // If we don't know any capability (e.g. legacy session, fresh page reload
+  // before /api/auth/me hydrates), fall back to showing every method so the
   // user has at least one path that works.
-  const showGoogle = hasGoogle || (!passwordSet && !hasGoogle);
-  const showPassword = passwordSet || (!passwordSet && !hasGoogle);
+  const knowNothing = !passwordSet && !hasGoogle && !hasApple;
+  const showGoogle = hasGoogle || knowNothing;
+  const showApple = hasApple || knowNothing;
+  const showPassword = passwordSet || knowNothing;
 
   function applySession(session: AuthSession) {
     // ID-lock: refuse a session that lands on a different user. Google's
@@ -158,18 +168,27 @@ export function SessionExpiredDialog({
     >
       <p className="text-sm text-ink-700 dark:text-paper-100">{t("session.expired_body")}</p>
 
-      {showGoogle && (
-        <div className="mt-4">
-          <GoogleSignInButton
-            mode="signin"
-            loginHint={email || undefined}
-            onSuccess={applySession}
-            onError={(msg) => setError(msg)}
-          />
+      {(showGoogle || showApple) && (
+        <div className="mt-4 space-y-3">
+          {showGoogle && (
+            <GoogleSignInButton
+              mode="signin"
+              loginHint={email || undefined}
+              onSuccess={applySession}
+              onError={(msg) => setError(msg)}
+            />
+          )}
+          {showApple && (
+            <AppleSignInButton
+              mode="signin"
+              onSuccess={applySession}
+              onError={(msg) => setError(msg)}
+            />
+          )}
         </div>
       )}
 
-      {showGoogle && showPassword && (
+      {(showGoogle || showApple) && showPassword && (
         <div className="my-4 flex items-center gap-3" aria-hidden="true">
           <div className="h-px flex-1 bg-ink-200 dark:bg-paper-700" />
           <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-paper-300">

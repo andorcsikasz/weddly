@@ -46,6 +46,11 @@ process.env.FX_DISABLED = "1"; // no outbound FX call in tests; fx endpoint retu
 // bearers via mintTestBearer(); see backend/src/lib/google_oauth.ts.
 process.env.GOOGLE_TEST_BYPASS = "1";
 process.env.GOOGLE_CLIENT_ID = "test-google-client.apps.googleusercontent.com";
+// Same escape hatch for the Apple ID-token verifier — the E2E suite exercises
+// /api/auth/apple via HMAC'd test bearers (mintAppleTestBearer) instead of
+// hitting Apple; see backend/src/lib/apple_oauth.ts.
+process.env.APPLE_TEST_BYPASS = "1";
+process.env.APPLE_CLIENT_ID = "hu.weddly.signin.test";
 // Plausible analytics is injected into the SSR <head> only when this is set
 // (see seo_ssr.ts plausibleScriptTag). Pinned empty so a stray .env value
 // can't leak a real analytics tag into rendered test HTML; the SEO test that
