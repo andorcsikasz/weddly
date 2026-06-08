@@ -341,7 +341,7 @@ export function WeddingSiteView({
             <div className="mx-auto flex max-w-5xl items-center justify-center px-6 py-3 sm:px-8">
               <span
                 className="text-sm tracking-[0.34em]"
-                style={{ color: "var(--wt-accent-text)", fontFamily: "var(--wt-heading-font)" }}
+                style={{ color: "var(--wt-text)", fontFamily: "var(--wt-heading-font)" }}
               >
                 {monogram}
               </span>
