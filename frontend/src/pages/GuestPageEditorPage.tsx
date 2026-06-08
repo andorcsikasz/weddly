@@ -19,7 +19,6 @@ import {
   ExternalLink,
   Eye,
   Globe,
-  Lock,
   MessageCircle,
   Move,
   Palette,
@@ -27,7 +26,6 @@ import {
   RefreshCcw,
   MapPin,
   Trash2,
-  Unlock,
   Upload,
 } from "lucide-react";
 import {
@@ -456,11 +454,6 @@ export default function GuestPageEditorPage() {
   const [usefulFields, setUsefulFields] = useState<UsefulInfoFields>(EMPTY_USEFUL_FIELDS);
   const [usefulOther, setUsefulOther] = useState("");
   const [postRsvpContent, setPostRsvpContent] = useState("");
-  // Public-content disclosure. Starts open so an incomplete page nudges the
-  // couple to fill it; once the core fields are all set, it defaults collapsed
-  // (set after load). Controlled + onToggle so revealField's DOM-level open
-  // (preview ghost shortcuts) stays in sync with this state.
-  const [publicOpen, setPublicOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -487,7 +480,9 @@ export default function GuestPageEditorPage() {
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   // Which structured field is being edited in a modal sheet (click-to-edit on
   // the preview opens these instead of scrolling to a form). null = closed.
-  const [editPanel, setEditPanel] = useState<"cover" | "useful" | "date" | "schedule" | null>(null);
+  const [editPanel, setEditPanel] = useState<
+    "cover" | "useful" | "date" | "schedule" | "postrsvp" | "venue" | null
+  >(null);
 
   const postRsvpTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -512,20 +507,6 @@ export default function GuestPageEditorPage() {
     });
   }
 
-  // Drop a ready-made welcome note into the intro field. Offered only while
-  // the field is empty so we never clobber something the couple already wrote;
-  // they can edit the picked text freely afterwards.
-  function applyIntroSuggestion(text: string) {
-    setGuestPageIntro(text);
-    requestAnimationFrame(() => {
-      const el = document.getElementById("guest-page-intro");
-      if (el instanceof HTMLTextAreaElement) {
-        el.focus();
-        el.setSelectionRange(text.length, text.length);
-      }
-    });
-  }
-
   useEffect(() => {
     let cancelled = false;
     Promise.all([coupleApi.current(), scheduleApi.list(), householdApi.list()])
@@ -547,14 +528,6 @@ export default function GuestPageEditorPage() {
             setUsefulOther(parsed.other);
           }
           setPostRsvpContent(cR.couple.post_rsvp_content ?? "");
-          // Collapse the public section when the couple has already filled the
-          // core fields (venue + cover + welcome text); keep it open otherwise.
-          const publicComplete = Boolean(
-            (cR.couple.venue_name ?? "").trim() &&
-              (cR.couple.cover_image_url ?? "").trim() &&
-              (cR.couple.guest_page_intro ?? "").trim(),
-          );
-          setPublicOpen(!publicComplete);
         }
         setEvents(sR.events);
         // Hide the host-couple's own household — they don't need a personal
@@ -934,39 +907,6 @@ export default function GuestPageEditorPage() {
       }
     : null;
 
-  // Reveal an editor field that may live inside a collapsed <details> section:
-  // open the section FIRST, then scroll it into view. The public-content fields
-  // (venue, cover, intro, useful-info) sit inside a collapsed disclosure, so
-  // without the open step a click on a preview ghost scrolls to (and focuses)
-  // an element that's still display:none and nothing visible happens.
-  function revealField(id: string): HTMLElement | null {
-    const el = document.getElementById(id);
-    if (!(el instanceof HTMLElement)) return null;
-    el.closest("details")?.setAttribute("open", "");
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    return el;
-  }
-
-  // Venue card in the preview is a shortcut to its editor field below — reveal
-  // it and focus the input so the couple lands right on it.
-  function focusVenueField() {
-    const el = revealField("guest-page-venue");
-    if (el) window.setTimeout(() => el.focus(), 350);
-  }
-
-  // Köszöntő ghost → reveal the intro textarea (the type-in) and focus it. The
-  // 5 starter-welcome suggestions render right below it while it's empty, so a
-  // click lands the couple on both the field and the pick-one shortcuts.
-  function focusIntroField() {
-    const el = revealField("guest-page-intro");
-    if (el) window.setTimeout(() => el.focus(), 350);
-  }
-
-  function focusPostRsvpField() {
-    const el = revealField("guest-page-post-rsvp");
-    if (el) window.setTimeout(() => el.focus(), 350);
-  }
-
   // Double-verify before flipping publish on/off — it controls whether the
   // /w/… link is reachable by anyone, so it shouldn't toggle on a stray click.
   async function onTogglePublish() {
@@ -1050,22 +990,26 @@ export default function GuestPageEditorPage() {
                 onEditCover: () => setEditPanel("cover"),
                 onEditDate: () => setEditPanel("date"),
                 onEditSchedule: () => setEditPanel("schedule"),
-                onEditVenue: focusVenueField,
-                onEditIntro: focusIntroField,
+                onEditVenue: () => setEditPanel("venue"),
                 onEditUsefulInfo: () => setEditPanel("useful"),
-                onEditPostRsvp: focusPostRsvpField,
+                onEditPostRsvp: () => setEditPanel("postrsvp"),
               }}
               // Direct in-place editing of the prose fields. The setters feed
-              // the same form state the sidebar inputs use, so the existing
-              // debounced autosave persists an inline edit just like a typed one.
+              // the same form state the dialogs use, so the existing debounced
+              // autosave persists an inline edit just like a typed one. Venue is
+              // edited in its own dialog (it needs the address autocomplete), so
+              // it's not wired for inline here.
               inlineEdit={{
                 intro: setGuestPageIntro,
-                venue: (name, city) => {
-                  setVenueName(name);
-                  setVenueCity(city);
-                },
                 postRsvp: setPostRsvpContent,
               }}
+              // Starter welcome-note suggestions render under the empty inline
+              // intro (relocated from the deleted bottom form).
+              introSuggestions={[
+                t("guest_page_editor.intro_suggestion_1"),
+                t("guest_page_editor.intro_suggestion_3"),
+                t("guest_page_editor.intro_suggestion_4"),
+              ]}
             />
           </div>
         ) : (
@@ -1331,174 +1275,6 @@ export default function GuestPageEditorPage() {
               </div>
             </section>
 
-            {/* ── Public content (anyone with the link) ──────────────────── */}
-            <details
-              open={publicOpen}
-              onToggle={(e) => setPublicOpen((e.currentTarget as HTMLDetailsElement).open)}
-              className="card mt-6 group/pub"
-            >
-              <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <ChevronRight
-                    size={16}
-                    aria-hidden
-                    className="shrink-0 text-ink-400 transition-transform group-open/pub:rotate-90 dark:text-umber-300"
-                  />
-                  <h2 className="font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-                    {t("guest_page_editor.section_public_title")}
-                  </h2>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
-                    <Unlock size={12} aria-hidden /> {t("guest_page_editor.section_public_eyebrow")}
-                  </span>
-                </div>
-              </summary>
-              <div className="mt-4">
-                <label htmlFor="guest-page-venue" className="field-label">
-                  {t("wedding_site_editor.venue_label")}
-                </label>
-                <VenueNameField
-                  value={venueName}
-                  onChange={setVenueName}
-                  onPickCity={setVenueCity}
-                  savedVenues={savedVenues}
-                  country={couple?.country ?? "HU"}
-                />
-              </div>
-              <div className="mt-3">
-                <label htmlFor="guest-page-venue-city" className="field-label">
-                  {t("wedding_site_editor.venue_city_label")}
-                </label>
-                <input
-                  id="guest-page-venue-city"
-                  className="input"
-                  type="text"
-                  value={venueCity}
-                  onChange={(e) => setVenueCity(e.target.value)}
-                  placeholder={t("wedding_site_editor.venue_city_placeholder")}
-                />
-              </div>
-              <div className="mt-3">
-                <label htmlFor="guest-page-intro" className="field-label">
-                  {t("guest_page_editor.intro_label")}
-                </label>
-                {/* The welcome note is optional, so it never gets the red
-                    required outline — an empty one just shows the starter-note
-                    suggestions below instead of reading as an error. */}
-                <textarea
-                  id="guest-page-intro"
-                  className="input"
-                  rows={4}
-                  value={guestPageIntro}
-                  onChange={(e) => setGuestPageIntro(e.target.value)}
-                  placeholder={t("guest_page_editor.intro_placeholder")}
-                  maxLength={4000}
-                />
-                {guestPageIntro.trim() === "" && (
-                  <div className="mt-2 flex flex-col gap-1.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500 dark:text-umber-200">
-                      {t("guest_page_editor.intro_suggestions_heading")}
-                    </span>
-                    <div className="flex flex-col gap-1.5">
-                      {([1, 3, 4] as const).map((n, i) => {
-                        const text = t(`guest_page_editor.intro_suggestion_${n}`);
-                        return (
-                          <button
-                            key={n}
-                            type="button"
-                            onClick={() => applyIntroSuggestion(text)}
-                            className="flex items-start gap-2.5 rounded-xl border border-paper-300 bg-paper-50 p-3 text-left transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-500 dark:hover:bg-umber-800"
-                          >
-                            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-paper-200 text-[11px] font-semibold tabular-nums text-ink-600 dark:bg-umber-700 dark:text-umber-200">
-                              {i + 1}
-                            </span>
-                            <span className="text-sm leading-relaxed text-ink-700 dark:text-paper-100">
-                              {text}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </details>
-
-            {/* ── Post-RSVP unlocked content (collapsible) ──────────────── */}
-            <details className="card mt-6 group/rsvp">
-              <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <ChevronRight
-                    size={16}
-                    aria-hidden
-                    className="shrink-0 text-ink-400 transition-transform group-open/rsvp:rotate-90 dark:text-umber-300"
-                  />
-                  <h2 className="font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-                    {t("guest_page_editor.section_unlocked_title")}
-                  </h2>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blush-700 dark:text-blush-300">
-                    <Lock size={12} aria-hidden /> {t("guest_page_editor.section_unlocked_eyebrow")}
-                  </span>
-                </div>
-              </summary>
-              <ul className="mt-4 flex flex-wrap items-center gap-2">
-                <li className="inline-flex items-center">
-                  <Link to="/app/schedule" className="btn-outline btn-sm">
-                    {t("guest_page_editor.section_unlocked_link_schedule")}
-                  </Link>
-                </li>
-                <li className="inline-flex items-center">
-                  <Link to="/app/settings/workspace" className="btn-outline btn-sm">
-                    {t("guest_page_editor.section_unlocked_link_profile")}
-                  </Link>
-                </li>
-              </ul>
-              <div className="mt-3">
-                <label htmlFor="guest-page-post-rsvp" className="field-label">
-                  {t("guest_page_editor.post_rsvp_label")}
-                </label>
-                <div className="mb-2 flex flex-col gap-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500 dark:text-umber-200">
-                    {t("guest_page_editor.post_rsvp_suggestions_heading")}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(
-                      [
-                        "parking",
-                        "dress_code",
-                        "gifts",
-                        "accommodation",
-                        "kids",
-                        "getting_there",
-                      ] as const
-                    ).map((slug) => {
-                      const label = t(`guest_page_editor.post_rsvp_suggestion_${slug}`);
-                      return (
-                        <button
-                          key={slug}
-                          type="button"
-                          className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-800"
-                          onClick={() => insertPostRsvpSection(label)}
-                        >
-                          <Plus size={11} aria-hidden />
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <textarea
-                  ref={postRsvpTextareaRef}
-                  id="guest-page-post-rsvp"
-                  className="input"
-                  rows={6}
-                  value={postRsvpContent}
-                  onChange={(e) => setPostRsvpContent(e.target.value)}
-                  placeholder={t("guest_page_editor.post_rsvp_placeholder")}
-                  maxLength={8000}
-                />
-              </div>
-            </details>
-
             {error && (
               <p className="field-error mt-4" role="alert">
                 {error}
@@ -1739,6 +1515,100 @@ export default function GuestPageEditorPage() {
             ))}
           </ul>
         )}
+      </Dialog>
+
+      {/* Post-RSVP details — clicking the locked "unlocks after RSVP yes" block
+          in the preview opens it here: the markdown body + the quick section
+          inserter chips, lifted from the bottom form. */}
+      <Dialog
+        open={editPanel === "postrsvp"}
+        role="dialog"
+        closeOnBackdrop
+        title={t("guest_page_editor.section_unlocked_title")}
+        onClose={() => setEditPanel(null)}
+        footer={
+          <button type="button" className="btn-primary" onClick={() => setEditPanel(null)}>
+            {t("common.done")}
+          </button>
+        }
+      >
+        <div className="mb-2 flex flex-col gap-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500 dark:text-umber-200">
+            {t("guest_page_editor.post_rsvp_suggestions_heading")}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {(
+              ["parking", "dress_code", "gifts", "accommodation", "kids", "getting_there"] as const
+            ).map((slug) => {
+              const label = t(`guest_page_editor.post_rsvp_suggestion_${slug}`);
+              return (
+                <button
+                  key={slug}
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-800"
+                  onClick={() => insertPostRsvpSection(label)}
+                >
+                  <Plus size={11} aria-hidden />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <textarea
+          ref={postRsvpTextareaRef}
+          id="guest-page-post-rsvp"
+          className="input"
+          rows={8}
+          value={postRsvpContent}
+          onChange={(e) => setPostRsvpContent(e.target.value)}
+          placeholder={t("guest_page_editor.post_rsvp_placeholder")}
+          maxLength={8000}
+        />
+      </Dialog>
+
+      {/* Venue editor — clicking the location band opens it here. Kept as a
+          dialog (not inline prose) because the name field carries the Nominatim
+          autocomplete + saved-venue quick-fill chips. */}
+      <Dialog
+        open={editPanel === "venue"}
+        role="dialog"
+        closeOnBackdrop
+        title={t("wedding_site_editor.venue_label")}
+        onClose={() => setEditPanel(null)}
+        footer={
+          <button type="button" className="btn-primary" onClick={() => setEditPanel(null)}>
+            {t("common.done")}
+          </button>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <div>
+            <label htmlFor="guest-page-venue" className="field-label">
+              {t("wedding_site_editor.venue_label")}
+            </label>
+            <VenueNameField
+              value={venueName}
+              onChange={setVenueName}
+              onPickCity={setVenueCity}
+              savedVenues={savedVenues}
+              country={couple?.country ?? "HU"}
+            />
+          </div>
+          <div>
+            <label htmlFor="guest-page-venue-city" className="field-label">
+              {t("wedding_site_editor.venue_city_label")}
+            </label>
+            <input
+              id="guest-page-venue-city"
+              className="input"
+              type="text"
+              value={venueCity}
+              onChange={(e) => setVenueCity(e.target.value)}
+              placeholder={t("wedding_site_editor.venue_city_placeholder")}
+            />
+          </div>
+        </div>
       </Dialog>
     </>
   );

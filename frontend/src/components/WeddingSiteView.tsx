@@ -94,6 +94,10 @@ export interface WeddingSiteViewProps {
   edit?: WeddingSiteEditHandlers;
   /** Editor preview — inline (in-place) editing of the prose fields. */
   inlineEdit?: WeddingSiteInlineEdit;
+  /** Editor preview — starter welcome-note suggestions shown beneath the empty
+   *  intro placeholder. Clicking one commits it through `inlineEdit.intro`, so
+   *  the renderer stays dumb (just renders the strings + calls the setter). */
+  introSuggestions?: string[];
   /** Weddly wordmark footer. Defaults to on for the live page, off in the
    *  editor preview (the app shell already brands the surface). */
   showFooter?: boolean;
@@ -376,6 +380,7 @@ export function WeddingSiteView({
   isPreview = false,
   edit,
   inlineEdit,
+  introSuggestions,
   showFooter,
 }: WeddingSiteViewProps) {
   const { t } = useT();
@@ -566,15 +571,35 @@ export function WeddingSiteView({
       {(view.guest_page_intro || introInline) && !sectionHidden("intro") ? (
         <Band onEdit={isPreview && !introInline ? e.onEditIntro : undefined} hint={editHint}>
           {introInline && inlineEdit?.intro ? (
-            <InlineText
-              value={view.guest_page_intro ?? ""}
-              onCommit={inlineEdit.intro}
-              multiline
-              className="whitespace-pre-line text-center text-lg leading-relaxed"
-              style={{ opacity: 0.92 }}
-              placeholder={t("wedding_site.welcome_placeholder")}
-              ariaLabel={t("guest_page_editor.intro_label")}
-            />
+            <>
+              <InlineText
+                value={view.guest_page_intro ?? ""}
+                onCommit={inlineEdit.intro}
+                multiline
+                className="whitespace-pre-line text-center text-lg leading-relaxed"
+                style={{ opacity: 0.92 }}
+                placeholder={t("wedding_site.welcome_placeholder")}
+                ariaLabel={t("guest_page_editor.intro_label")}
+              />
+              {!view.guest_page_intro &&
+                introSuggestions !== undefined &&
+                introSuggestions.length > 0 && (
+                  <div className="mx-auto mt-4 flex max-w-xl flex-col gap-1.5 text-left">
+                    {introSuggestions.map((s, i) => (
+                      <button
+                        // biome-ignore lint/suspicious/noArrayIndexKey: static suggestion list
+                        key={i}
+                        type="button"
+                        onClick={() => inlineEdit.intro?.(s)}
+                        className="rounded-xl border px-3 py-2 text-sm leading-relaxed transition hover:opacity-90"
+                        style={{ borderColor: "var(--wt-accent)", opacity: 0.85 }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+            </>
           ) : (
             <p
               className="whitespace-pre-line text-center text-lg leading-relaxed"
