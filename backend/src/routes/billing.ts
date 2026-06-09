@@ -10,6 +10,7 @@ import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import {
   applySubscriptionState,
+  claimStripeEvent,
   foundingSlotsUsed,
   getCoupleByStripeCustomer,
   priceIdForCurrency,
@@ -142,6 +143,15 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
     event = await stripe().webhooks.constructEventAsync(raw, sig, CONFIG.stripeWebhookSecret);
   } catch {
     throw new HttpError(400, "Invalid webhook signature");
+  }
+
+  // Idempotency: Stripe delivers at-least-once (auto-retries + manual resend),
+  // so a stale subscription.updated/deleted could re-apply old state and, e.g.,
+  // flip a canceled couple back to active. Claim the event id AFTER the
+  // signature check (so only genuine events can write) and skip if we've already
+  // processed it. claimStripeEvent is INSERT OR IGNORE + changes(), atomic.
+  if (!claimStripeEvent(event.id, event.type)) {
+    return json({ received: true, duplicate: true });
   }
 
   switch (event.type) {

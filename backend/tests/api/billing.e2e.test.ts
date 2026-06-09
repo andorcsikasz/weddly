@@ -17,6 +17,7 @@ import type { Couple } from "@shared/types";
 import { db } from "../../src/db";
 import {
   activatePartnerFreeWindow,
+  claimStripeEvent,
   foundingSlotsUsed,
   setBillingEnforcement,
 } from "../../src/domain/billing";
@@ -312,6 +313,19 @@ describe("billing state machine", () => {
     const off = await setEnforce(false, adminToken);
     expect(off.status).toBe(200);
     expect(off.data.billing_enforcement_on).toBe(false);
+  });
+
+  test("stripe webhook events are claimed once (replay is a no-op)", () => {
+    wipeAll();
+    // First delivery of an event id is claimed (process it); every replay of the
+    // same id is rejected (skip it) so a redelivered subscription event can't
+    // re-apply stale state. The handler calls this right after verifying the
+    // Stripe signature.
+    expect(claimStripeEvent("evt_replay_1", "customer.subscription.updated")).toBe(true);
+    expect(claimStripeEvent("evt_replay_1", "customer.subscription.updated")).toBe(false);
+    expect(claimStripeEvent("evt_replay_1", "customer.subscription.deleted")).toBe(false);
+    // A different event id is independent.
+    expect(claimStripeEvent("evt_replay_2", "customer.subscription.updated")).toBe(true);
   });
 
   test("checkout + webhook degrade gracefully while Stripe is unconfigured", async () => {

@@ -145,6 +145,7 @@ export function wipeAll(): void {
     "vendor_onboarding",
     "vendor_subscriptions",
     "vendor_accounts",
+    "stripe_webhook_events",
     "couple_currency_history",
     "consent_log",
     "supplier_views",

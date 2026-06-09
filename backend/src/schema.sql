@@ -1321,3 +1321,18 @@ CREATE TABLE IF NOT EXISTS notification_seen (
   seen_at INTEGER NOT NULL,
   PRIMARY KEY (user_id, couple_id)
 );
+
+-- Stripe webhook idempotency ledger. Stripe delivers events at-least-once and
+-- its dashboard "resend" button + automatic retries WILL redeliver — so the
+-- webhook handler must dedup by event id, otherwise a replayed
+-- subscription.updated/deleted re-applies stale state (e.g. flips a canceled
+-- couple back to active, restoring entitlement they no longer pay for). One row
+-- per processed event id; the handler INSERT OR IGNOREs after verifying the
+-- Stripe signature (so unsigned callers can't poison the table) and skips
+-- processing when the row already existed. Rows are tiny and can be pruned by a
+-- later cron; unbounded growth is not an incident-time concern.
+CREATE TABLE IF NOT EXISTS stripe_webhook_events (
+  event_id TEXT PRIMARY KEY,
+  event_type TEXT,
+  received_at INTEGER NOT NULL
+);

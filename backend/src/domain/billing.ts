@@ -153,6 +153,27 @@ function weddingMsOf(weddingDate: string | null): number | null {
  *  this is a no-op and the couple stays on its trial → paid path. Also a no-op
  *  for demo couples, a couple already on a paid/founding plan, or a still-solo
  *  workspace. Returns whether founding was granted. */
+/** Claim a Stripe webhook event id for processing. Returns true the first time
+ *  an id is seen (caller should process the event) and false on every replay
+ *  (caller should skip). Stripe delivers at-least-once and its dashboard resend
+ *  + auto-retries WILL redeliver, so without this a stale subscription event
+ *  re-applies old state — e.g. reviving a canceled couple. INSERT OR IGNORE +
+ *  changes() makes the check-and-claim a single atomic step. The caller must
+ *  only invoke this AFTER verifying the Stripe signature, so unsigned callers
+ *  can't fill the ledger. */
+export function claimStripeEvent(
+  eventId: string,
+  eventType: string,
+  nowMs: number = now(),
+): boolean {
+  const r = db
+    .prepare(
+      "INSERT OR IGNORE INTO stripe_webhook_events (event_id, event_type, received_at) VALUES (?, ?, ?)",
+    )
+    .run(eventId, eventType, nowMs);
+  return r.changes > 0;
+}
+
 export function activatePartnerFreeWindow(coupleId: number, nowMs: number = now()): boolean {
   const couple = getCoupleById(coupleId);
   if (!couple || couple.is_demo) return false;
