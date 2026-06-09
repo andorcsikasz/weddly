@@ -7037,7 +7037,11 @@ describe("vendor waitlist outcomes", () => {
     expect(r.data.entry.outcome_at).toBeTruthy();
     expect(r.data.entry.notes).toBe("Strong portfolio.");
     expect(r.data.entry.sent_subject).toBe("Test subject");
-    expect(r.data.entry.sent_body).toBe("Hi Bloom, you're in.");
+    // Accepting appends the activation CTA + token URL to the admin's body, so
+    // the stored sent_body is the admin copy PLUS the activate link (the bridge
+    // to the vendor onboarding flow). The admin's text is preserved verbatim.
+    expect(r.data.entry.sent_body).toContain("Hi Bloom, you're in.");
+    expect(r.data.entry.sent_body).toContain("/vendor/activate/");
   });
 
   test("admin /decide accepts under_review and rejected outcomes", async () => {
