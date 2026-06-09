@@ -549,8 +549,20 @@ function DecisionCard({
             </div>
           )}
         </div>
+        {/* Dismiss ("not relevant") sits in the card's top-right corner. */}
+        {item.decision_status === "open" && !editing && (
+          <div className="shrink-0">
+            <IconAction
+              onClick={() => onDismiss(item)}
+              disabled={busy}
+              label={t("planning.decisions.action_not_relevant")}
+              icon={X}
+              muted
+            />
+          </div>
+        )}
       </div>
-      {/* All card actions live in one icon row at the bottom-right. */}
+      {/* The remaining card actions live in one icon row at the bottom-right. */}
       {!editing && (
         <div className="mt-2 flex items-center justify-end gap-1">
           {item.decision_status === "open" &&
@@ -577,21 +589,12 @@ function DecisionCard({
               />
             ))}
           {item.decision_status === "open" && (
-            <>
-              <IconAction
-                onClick={() => onPromote(item)}
-                disabled={busy}
-                label={t("planning.decisions.action_promote")}
-                icon={ListChecks}
-              />
-              <IconAction
-                onClick={() => onDismiss(item)}
-                disabled={busy}
-                label={t("planning.decisions.action_not_relevant")}
-                icon={X}
-                muted
-              />
-            </>
+            <IconAction
+              onClick={() => onPromote(item)}
+              disabled={busy}
+              label={t("planning.decisions.action_promote")}
+              icon={ListChecks}
+            />
           )}
           {decided && (
             <>
