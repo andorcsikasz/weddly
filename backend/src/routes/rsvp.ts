@@ -58,6 +58,12 @@ interface IdempotentEntry {
   expiresAt: number;
 }
 const RSVP_IDEMPOTENCY_TTL_MS = 5 * 60 * 1000;
+// Hard ceiling on the in-memory cache. The cache key embeds attacker-influenced
+// input (household code + idempotency key), so without a cap an attacker hitting
+// many household codes with unique keys could grow this Map until the single Bun
+// process OOMs — a full-service DoS. With the 5-minute TTL the legitimate
+// working set is tiny; this cap is the crash backstop.
+const RSVP_IDEMPOTENCY_MAX = 10_000;
 const rsvpIdempotencyCache = new Map<string, IdempotentEntry>();
 
 function gcIdempotency(): void {
@@ -66,6 +72,41 @@ function gcIdempotency(): void {
     if (entry.expiresAt < now) rsvpIdempotencyCache.delete(key);
   }
 }
+
+/** Insert/refresh an idempotency entry while keeping the Map bounded. We GC
+ *  expired entries first; if still at the cap, evict oldest-first (Map iterates
+ *  in insertion order) until under it. Evicting a still-valid key only means its
+ *  next replay runs as a normal submit, which the RSVP upsert handles
+ *  idempotently at the DB level — benign. */
+function setIdempotent(key: string, entry: IdempotentEntry): void {
+  // Re-inserting an existing key shouldn't grow the Map, so only enforce the cap
+  // when adding a genuinely new key. Evict oldest-first (Map iterates in
+  // insertion order) until back under the cap — O(overflow), normally one
+  // delete. We deliberately do NOT run the full-scan gcIdempotency() here: it's
+  // already called once per request (handleCheckinSubmit), and an O(n) scan on
+  // every insert would be O(n^2) under a flood — the exact DoS we're guarding
+  // against. Evicting a still-valid key only downgrades its next replay to a
+  // normal (DB-idempotent) submit.
+  if (!rsvpIdempotencyCache.has(key)) {
+    while (rsvpIdempotencyCache.size >= RSVP_IDEMPOTENCY_MAX) {
+      const oldest = rsvpIdempotencyCache.keys().next().value;
+      if (oldest === undefined) break;
+      rsvpIdempotencyCache.delete(oldest);
+    }
+  }
+  rsvpIdempotencyCache.set(key, entry);
+}
+
+/** Test-only hook so the e2e suite can assert the idempotency cache stays
+ *  bounded without firing RSVP_IDEMPOTENCY_MAX+ HTTP requests. Not referenced by
+ *  any production code path. */
+export const __rsvpIdempotencyTestHook = {
+  set: setIdempotent,
+  size: () => rsvpIdempotencyCache.size,
+  clear: () => rsvpIdempotencyCache.clear(),
+  has: (key: string) => rsvpIdempotencyCache.has(key),
+  MAX: RSVP_IDEMPOTENCY_MAX,
+};
 
 async function hashBodyKey(raw: string): Promise<string> {
   // Cheap-ish content hash; we only need to detect bit-exact retransmits.
@@ -518,7 +559,7 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
 
   const payload = { rsvp: buildView(couple, hh) };
   const serialized = JSON.stringify(payload);
-  rsvpIdempotencyCache.set(cacheKey, {
+  setIdempotent(cacheKey, {
     status: 200,
     body: serialized,
     expiresAt: Date.now() + RSVP_IDEMPOTENCY_TTL_MS,
