@@ -936,9 +936,7 @@ describe("POST /api/auth/reset", () => {
     });
     await req("POST", "/api/auth/forgot", { email: "reset-susp@example.com" });
     const tokenRow = db
-      .prepare(
-        "SELECT token FROM password_reset_tokens WHERE user_id = ? ORDER BY id DESC LIMIT 1",
-      )
+      .prepare("SELECT token FROM password_reset_tokens WHERE user_id = ? ORDER BY id DESC LIMIT 1")
       .get(reg.data.user.id) as { token: string };
     const before = db
       .prepare("SELECT password_hash FROM users WHERE id = ?")
@@ -1234,9 +1232,7 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
       { token: reg.data.token },
     );
     const tokenRow = db
-      .prepare(
-        "SELECT token FROM email_change_tokens WHERE user_id = ? ORDER BY id DESC LIMIT 1",
-      )
+      .prepare("SELECT token FROM email_change_tokens WHERE user_id = ? ORDER BY id DESC LIMIT 1")
       .get(reg.data.user.id) as { token: string };
 
     // Suspend AFTER the token was issued.
@@ -1246,9 +1242,9 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
     // Same opaque error as an invalid token — no suspension oracle.
     expect(r.status).toBe(400);
     // Email is unchanged and the token wasn't consumed.
-    const user = db
-      .prepare("SELECT email FROM users WHERE id = ?")
-      .get(reg.data.user.id) as { email: string };
+    const user = db.prepare("SELECT email FROM users WHERE id = ?").get(reg.data.user.id) as {
+      email: string;
+    };
     expect(user.email).toBe("ce-susp@example.com");
     const consumed = db
       .prepare("SELECT consumed_at FROM email_change_tokens WHERE token = ?")

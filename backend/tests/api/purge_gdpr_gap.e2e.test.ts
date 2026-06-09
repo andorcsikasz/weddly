@@ -148,12 +148,20 @@ describe("Audit 2026-06 GDPR purge — newly-covered PII tables", () => {
     db.prepare(
       "INSERT INTO couple_notifications (couple_id, kind, data_json, created_at) VALUES (?, ?, ?, ?)",
     ).run(coupleId, "rsvp.received", '{"guest":"Anna"}', ts);
-    db.prepare(
-      "INSERT INTO notification_seen (user_id, couple_id, seen_at) VALUES (?, ?, ?)",
-    ).run(userId, coupleId, ts);
+    db.prepare("INSERT INTO notification_seen (user_id, couple_id, seen_at) VALUES (?, ?, ?)").run(
+      userId,
+      coupleId,
+      ts,
+    );
     db.prepare(
       "INSERT INTO couple_pause_requests (couple_id, requested_by_user_id, scheduled_delete_at, status, reason, created_at) VALUES (?, ?, ?, 'pending', ?, ?)",
-    ).run(coupleId, userId, ts + 86_400_000, "We need a break, contact us at anna@private.test", ts);
+    ).run(
+      coupleId,
+      userId,
+      ts + 86_400_000,
+      "We need a break, contact us at anna@private.test",
+      ts,
+    );
 
     const tables = [
       "wishlist_interests",
@@ -189,7 +197,9 @@ describe("Audit 2026-06 GDPR purge — newly-covered PII tables", () => {
     // is scrubbed; the requested_by_user_id stays (the user row is anonymized
     // in-place by the same sweep).
     const pause = db
-      .prepare("SELECT reason, status, requested_by_user_id FROM couple_pause_requests WHERE couple_id = ?")
+      .prepare(
+        "SELECT reason, status, requested_by_user_id FROM couple_pause_requests WHERE couple_id = ?",
+      )
       .get(coupleId) as
       | { reason: string | null; status: string; requested_by_user_id: number }
       | undefined;

@@ -1218,7 +1218,9 @@ export default function SuppliersPage() {
         return (
           <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
             <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
-            <span>{t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}</span>
+            <span>
+              {t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}
+            </span>
           </p>
         );
       })()}
