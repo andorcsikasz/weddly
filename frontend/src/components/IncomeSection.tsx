@@ -1,18 +1,19 @@
-// "Befolyt pénz / Gifts received" — a standalone money-in ledger on the budget
+// "Befolyt pénz / Gifts received" - a standalone money-in ledger on the budget
 // page. Records cash gifts + contributions and reports how much of the spend
 // was recovered. Deliberately gentle (not an ROI calculator): one warm number,
-// no link to the guest list, from-whom is optional free text.
+// no link to the guest list, from-whom is primarily picked from the guest list
+// but free text is always allowed (some contributors aren't guests).
 //
 // Structure mirrors the private "received gifts" ledger on the wishlist editor:
-// an auto-growing inline grid (Kitől / mi · Összeg · Megjegyzés) that persists
-// each row on blur — create / update / delete — with no separate add form and
+// auto-growing columnar rows (Kitől / mi · Összeg · Megjegyzés) that persist
+// each row on blur - create / update / delete - with no separate add form and
 // no date field.
 
-import type { CoupleIncome, Currency } from "@shared/types";
+import type { Currency, Guest, Household } from "@shared/types";
 import { Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
-import { incomeApi } from "../lib/endpoints";
+import { guestApi, householdApi, incomeApi } from "../lib/endpoints";
 import { formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { InfoHint } from "./InfoHint";
@@ -20,6 +21,7 @@ import { useToast } from "./ui";
 
 const MAX_LABEL_LEN = 120;
 const MAX_NOTE_LEN = 500;
+const FROM_LIST_ID = "income-from-suggestions";
 
 interface IncRow {
   key: string;
@@ -92,6 +94,8 @@ export function IncomeSection({
   }
 
   const [rows, setRows] = useState<IncRow[]>(() => withTail([]));
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [households, setHouseholds] = useState<Household[]>([]);
 
   useEffect(() => {
     incomeApi
@@ -112,9 +116,29 @@ export function IncomeSection({
         ),
       )
       .catch(() => {
-        // best-effort — the budget page still works without the ledger
+        // best-effort - the budget page still works without the ledger
       });
+    // From-whom suggestions: the guest list is the primary source; free text
+    // stays allowed for contributors who aren't guests.
+    guestApi
+      .list()
+      .then((r) => setGuests(r.guests ?? []))
+      .catch(() => {});
+    householdApi
+      .list()
+      .then((r) => setHouseholds(r.households ?? []))
+      .catch(() => {});
   }, []);
+
+  // Households (the groups) and their non-supplier members, de-duplicated and
+  // sorted - what the couple picks "Kitől" from. Couple households (the hosts)
+  // and supplier guests are excluded; they don't give the couple gifts.
+  const fromSuggestions = useMemo(() => {
+    const names = new Set<string>();
+    for (const h of households) if (!h.is_couple_household) names.add(h.label);
+    for (const g of guests) if (!g.is_supplier) names.add(g.full_name);
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [guests, households]);
 
   const received = rows.reduce((a, r) => (r.id === null ? a : a + parseAmount(r.amount)), 0);
   const net = totalSpentHuf - received;
@@ -141,7 +165,7 @@ export function IncomeSection({
     };
     try {
       if (r.id === null) {
-        if (!incComplete(r)) return; // incomplete draft — wait for label + amount
+        if (!incComplete(r)) return; // incomplete draft - wait for label + amount
         const res = await incomeApi.create(body);
         patchRow(key, { id: res.income.id, updated_at: res.income.updated_at, savedSig: sig });
         setRows((prev) => withTail(prev));
@@ -154,7 +178,7 @@ export function IncomeSection({
         patchRow(key, { updated_at: res.income.updated_at, savedSig: sig });
         setRows((prev) => withTail(prev));
       }
-      // else: incomplete edit of an existing row — leave the server as-is.
+      // else: incomplete edit of an existing row - leave the server as-is.
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     }
@@ -173,7 +197,7 @@ export function IncomeSection({
   }
 
   const cellInput =
-    "w-full bg-transparent px-3 py-2 text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none focus:bg-paper-100 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:bg-umber-800";
+    "w-full bg-transparent py-2.5 text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400";
 
   return (
     <section className="mt-8">
@@ -182,7 +206,7 @@ export function IncomeSection({
         <InfoHint text={t("income.sub")} />
       </div>
 
-      {/* Summary — one warm number, no leaderboard. */}
+      {/* Summary - one warm number, no leaderboard. */}
       <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl border border-paper-300 bg-paper-50 px-4 py-3 dark:border-umber-700 dark:bg-ink-800 sm:grid-cols-3">
         <Stat label={t("income.received")} value={formatMoney(received, currency, loc)} />
         <Stat label={t("income.spent")} value={formatMoney(totalSpentHuf, currency, loc)} />
@@ -193,78 +217,68 @@ export function IncomeSection({
         />
       </div>
 
+      {/* Columnar rows (not a grid): even columns, row dividers only. */}
       <div className="card overflow-hidden p-0 dark:border-umber-700">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-paper-200 bg-paper-100/60 text-left text-xs font-medium text-ink-500 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-300">
-                <th className="w-[34%] min-w-[10rem] px-3 py-2 font-medium">
-                  {t("income.field_label")}
-                </th>
-                <th className="w-[22%] min-w-[7rem] px-3 py-2 font-medium">
-                  {t("income.field_amount")}
-                </th>
-                <th className="px-3 py-2 font-medium">{t("income.col_note")}</th>
-                <th className="w-10 px-1 py-2" aria-hidden />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={r.key}
-                  className="border-b border-paper-200 last:border-0 dark:border-umber-700"
-                >
-                  <td className="border-r border-paper-200 align-middle dark:border-umber-700">
-                    <input
-                      type="text"
-                      className={`${cellInput} font-grotesk`}
-                      value={r.label}
-                      maxLength={MAX_LABEL_LEN}
-                      placeholder={t("income.field_label_placeholder")}
-                      onChange={(e) => patchRow(r.key, { label: e.target.value })}
-                      onBlur={() => void commit(r.key)}
-                    />
-                  </td>
-                  <td className="border-r border-paper-200 align-middle dark:border-umber-700">
-                    <input
-                      type="number"
-                      min={1}
-                      step={1000}
-                      inputMode="numeric"
-                      className={`${cellInput} stat-num tabular-nums`}
-                      value={r.amount}
-                      onChange={(e) => patchRow(r.key, { amount: e.target.value })}
-                      onBlur={() => void commit(r.key)}
-                      aria-label={t("income.field_amount")}
-                    />
-                  </td>
-                  <td className="align-middle">
-                    <input
-                      type="text"
-                      className={`${cellInput} font-grotesk`}
-                      value={r.note}
-                      maxLength={MAX_NOTE_LEN}
-                      onChange={(e) => patchRow(r.key, { note: e.target.value })}
-                      onBlur={() => void commit(r.key)}
-                    />
-                  </td>
-                  <td className="px-1 text-center align-middle">
-                    {r.id !== null && (
-                      <button
-                        type="button"
-                        aria-label={t("common.remove")}
-                        title={t("common.remove")}
-                        onClick={() => void removeRow(r)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex items-center gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-2 text-xs font-medium text-ink-500 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-300">
+          <span className="min-w-0 flex-1">{t("income.field_label")}</span>
+          <span className="w-32 shrink-0">{t("income.field_amount")}</span>
+          <span className="min-w-0 flex-1">{t("income.col_note")}</span>
+          <span className="w-8 shrink-0" aria-hidden />
+        </div>
+
+        <datalist id={FROM_LIST_ID}>
+          {fromSuggestions.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
+
+        <div className="divide-y divide-paper-200 dark:divide-umber-700">
+          {rows.map((r) => (
+            <div key={r.key} className="flex items-center gap-3 px-4">
+              <input
+                type="text"
+                list={FROM_LIST_ID}
+                className={`${cellInput} min-w-0 flex-1 font-grotesk`}
+                value={r.label}
+                maxLength={MAX_LABEL_LEN}
+                placeholder={t("income.field_label_placeholder")}
+                onChange={(e) => patchRow(r.key, { label: e.target.value })}
+                onBlur={() => void commit(r.key)}
+              />
+              <input
+                type="number"
+                min={1}
+                step={1000}
+                inputMode="numeric"
+                className={`${cellInput} stat-num w-32 shrink-0 tabular-nums`}
+                value={r.amount}
+                onChange={(e) => patchRow(r.key, { amount: e.target.value })}
+                onBlur={() => void commit(r.key)}
+                aria-label={t("income.field_amount")}
+              />
+              <input
+                type="text"
+                className={`${cellInput} min-w-0 flex-1 font-grotesk`}
+                value={r.note}
+                maxLength={MAX_NOTE_LEN}
+                onChange={(e) => patchRow(r.key, { note: e.target.value })}
+                onBlur={() => void commit(r.key)}
+              />
+              <div className="flex w-8 shrink-0 justify-center">
+                {r.id !== null && (
+                  <button
+                    type="button"
+                    aria-label={t("common.remove")}
+                    title={t("common.remove")}
+                    onClick={() => void removeRow(r)}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
