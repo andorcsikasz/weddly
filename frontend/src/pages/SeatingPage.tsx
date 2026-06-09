@@ -2543,7 +2543,7 @@ function DraggableGuest({
         compact
           ? "text-sm font-medium text-ink-900 dark:text-paper-50"
           : partnerRole
-            ? "rounded-lg border border-blush-300 bg-blush-50 px-2 py-1.5 text-sm font-medium text-ink-900 hover:border-blush-500 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-paper-50 dark:hover:border-blush-400"
+            ? "rounded-lg border border-ink-700 bg-transparent px-2 py-1.5 text-sm font-medium text-ink-900 hover:border-ink-900 dark:border-paper-200 dark:bg-transparent dark:text-paper-50 dark:hover:border-paper-50"
             : "rounded-lg border border-paper-300 bg-paper-50 px-2 py-1.5 text-sm text-ink-800 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600",
         tapMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
         // In `compact` mode this row sits inside a seat <li> which already
@@ -2566,13 +2566,13 @@ function DraggableGuest({
           <Gem
             size={compact ? 14 : 16}
             aria-hidden
-            className="mr-1 inline-block align-text-bottom text-blush-600 dark:text-blush-300"
+            className="mr-1 inline-block align-text-bottom text-ink-900 dark:text-paper-50"
           />
         ) : (
           <Crown
             size={compact ? 14 : 16}
             aria-hidden
-            className="mr-1 inline-block align-text-bottom text-blush-600 dark:text-blush-300"
+            className="mr-1 inline-block align-text-bottom text-ink-900 dark:text-paper-50"
           />
         ))}
       {/* Baby icon for guests where kind === "baby" so couples can see at a
