@@ -373,6 +373,7 @@ export interface LocaleMessages {
       useful_info_cta: string;
       post_rsvp_title: string;
       post_rsvp_cta: string;
+      wishlist_cta: string;
       locked_eyebrow: string;
     };
   };

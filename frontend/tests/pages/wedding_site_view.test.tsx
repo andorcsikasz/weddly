@@ -116,6 +116,29 @@ describe("WeddingSiteView — live mode", () => {
     expect(cta.getAttribute("href")).toContain("/rsvp?couple=MIALUCAS");
   });
 
+  it("renders the wishlist inside the 'for confirmed guests' band at the confirmed tier", () => {
+    const view = filledView({
+      wishlist: [
+        {
+          id: 1,
+          title: "Espresso machine",
+          description: null,
+          kind: "gift",
+          target_amount_minor: null,
+          currency: null,
+          url: null,
+          image_url: null,
+          interest_count: 0,
+          pledged_amount_minor: 0,
+          viewer_has_interest: false,
+          viewer_pledged_amount_minor: null,
+        },
+      ],
+    });
+    renderView(<WeddingSiteView view={view} household={null} tier="confirmed" locale="hu" />);
+    expect(screen.getByText("Espresso machine")).toBeInTheDocument();
+  });
+
   it("renders the hero name with color:inherit so dark-bg styles stay legible", () => {
     // Without inline color:inherit the global `h1 { color: ink.900 }` wins and a
     // dark-background style (e.g. Black Tie) paints the names dark-on-dark.
@@ -178,6 +201,22 @@ describe("WeddingSiteView — preview mode", () => {
     expect(screen.getByText(/add meg a nap menetét/i)).toBeInTheDocument(); // schedule ghost
     expect(screen.getByText(/add meg a hasznos tudnivalókat/i)).toBeInTheDocument(); // useful-info ghost
     expect(screen.getByText(/visszajelzése után jelenik meg/i)).toBeInTheDocument(); // locked eyebrow
+  });
+
+  it("shows the gift-list ghost in the 'for confirmed guests' band when the wishlist is empty", () => {
+    renderView(
+      <WeddingSiteView
+        view={emptyView()}
+        household={null}
+        tier="public"
+        locale="hu"
+        isPreview
+        edit={{}}
+      />,
+    );
+    // The post-RSVP slot is now the wishlist: its empty ghost, not the old
+    // free-form "add post-RSVP details" prompt.
+    expect(screen.getByText(/állítsd össze az ajándéklistát/i)).toBeInTheDocument();
   });
 
   it("renders the RSVP CTA as an inert (non-navigating) element in preview", () => {

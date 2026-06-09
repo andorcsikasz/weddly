@@ -12,6 +12,7 @@ import type { DirectorySupplier } from "@shared/suppliers";
 import { toPublicDesign } from "@shared/design";
 import type { PublicWeddingScheduleEntry, PublicWeddingWebsiteView } from "@shared/wedding_website";
 import type { ScheduleEvent } from "@shared/schedule";
+import type { WishlistEntry } from "@shared/wishlist";
 import {
   ChevronRight,
   Clipboard,
@@ -38,7 +39,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useToast } from "../components/ui";
@@ -51,6 +52,7 @@ import {
   placesApi,
   scheduleApi,
   supplierApi,
+  wishlistApi,
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -432,6 +434,7 @@ export default function GuestPageEditorPage() {
   useDocumentMeta("seo.guest_page_title", "seo.guest_page_description");
   const toast = useToast();
   const confirm = useConfirm();
+  const navigate = useNavigate();
 
   const [couple, setCouple] = useState<Couple | null>(null);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
@@ -454,6 +457,10 @@ export default function GuestPageEditorPage() {
   const [usefulFields, setUsefulFields] = useState<UsefulInfoFields>(EMPTY_USEFUL_FIELDS);
   const [usefulOther, setUsefulOther] = useState("");
   const [postRsvpContent, setPostRsvpContent] = useState("");
+  // The couple's gift list, mapped to the guest-facing shape so the preview's
+  // "For confirmed guests" band renders the real wishlist. Managed on
+  // /app/wishlist; here it's read-only preview + a deep link to edit.
+  const [wishlistPreview, setWishlistPreview] = useState<WishlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -481,37 +488,37 @@ export default function GuestPageEditorPage() {
   // Which structured field is being edited in a modal sheet (click-to-edit on
   // the preview opens these instead of scrolling to a form). null = closed.
   const [editPanel, setEditPanel] = useState<
-    "cover" | "useful" | "date" | "schedule" | "postrsvp" | "venue" | null
+    "cover" | "useful" | "date" | "schedule" | "venue" | null
   >(null);
-
-  const postRsvpTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // "\n\n" separator between sections is intentional: the public site
-  // renders the field with `whitespace-pre-line`, so the blank line is what
-  // visually separates one topic block from the next.
-  function insertPostRsvpSection(label: string) {
-    setPostRsvpContent((current) => {
-      const trimmed = current.replace(/\s+$/, "");
-      const sep = trimmed.length === 0 ? "" : "\n\n";
-      const next = `${trimmed}${sep}${label}:\n`;
-      if (next.length > 8000) return current;
-      requestAnimationFrame(() => {
-        const el = postRsvpTextareaRef.current;
-        if (el) {
-          el.focus();
-          el.setSelectionRange(next.length, next.length);
-          el.scrollTop = el.scrollHeight;
-        }
-      });
-      return next;
-    });
-  }
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([coupleApi.current(), scheduleApi.list(), householdApi.list()])
-      .then(([cR, sR, hR]) => {
+    Promise.all([
+      coupleApi.current(),
+      scheduleApi.list(),
+      householdApi.list(),
+      wishlistApi.list().catch(() => ({ items: [] })),
+    ])
+      .then(([cR, sR, hR, wR]) => {
         if (cancelled) return;
+        // Map the editor's WishlistItem rows to the guest-facing WishlistEntry
+        // shape (interest/pledge fields are guest-runtime only → zeroed here).
+        setWishlistPreview(
+          wR.items.map((it) => ({
+            id: it.id,
+            title: it.title,
+            description: it.description,
+            kind: it.kind,
+            target_amount_minor: it.target_amount_minor,
+            currency: it.currency,
+            url: it.url,
+            image_url: it.image_url,
+            interest_count: 0,
+            pledged_amount_minor: 0,
+            viewer_has_interest: false,
+            viewer_pledged_amount_minor: null,
+          })),
+        );
         if (cR.couple) {
           setCouple(cR.couple);
           setIsPublic(cR.couple.is_public);
@@ -900,7 +907,7 @@ export default function GuestPageEditorPage() {
             is_key_moment: ev.is_key_moment,
           }),
         ),
-        wishlist: null,
+        wishlist: wishlistPreview,
         design: toPublicDesign(couple.design),
         fetched_at: Date.now(),
       }
@@ -1002,7 +1009,7 @@ export default function GuestPageEditorPage() {
                 onEditSchedule: () => setEditPanel("schedule"),
                 onEditVenue: () => setEditPanel("venue"),
                 onEditUsefulInfo: () => setEditPanel("useful"),
-                onEditPostRsvp: () => setEditPanel("postrsvp"),
+                onEditPostRsvp: () => navigate("/app/wishlist"),
               }}
               // Direct in-place editing of the prose fields. The setters feed
               // the same form state the dialogs use, so the existing debounced
@@ -1011,7 +1018,6 @@ export default function GuestPageEditorPage() {
               // it's not wired for inline here.
               inlineEdit={{
                 intro: setGuestPageIntro,
-                postRsvp: setPostRsvpContent,
               }}
               // Starter welcome-note suggestions render under the empty inline
               // intro (relocated from the deleted bottom form).
@@ -1498,56 +1504,6 @@ export default function GuestPageEditorPage() {
             ))}
           </ul>
         )}
-      </Dialog>
-
-      {/* Post-RSVP details — clicking the locked "unlocks after RSVP yes" block
-          in the preview opens it here: the markdown body + the quick section
-          inserter chips, lifted from the bottom form. */}
-      <Dialog
-        open={editPanel === "postrsvp"}
-        role="dialog"
-        closeOnBackdrop
-        title={t("guest_page_editor.section_unlocked_title")}
-        onClose={() => setEditPanel(null)}
-        footer={
-          <button type="button" className="btn-primary" onClick={() => setEditPanel(null)}>
-            {t("common.done")}
-          </button>
-        }
-      >
-        <div className="mb-2 flex flex-col gap-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500 dark:text-umber-200">
-            {t("guest_page_editor.post_rsvp_suggestions_heading")}
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            {(
-              ["parking", "dress_code", "gifts", "accommodation", "kids", "getting_there"] as const
-            ).map((slug) => {
-              const label = t(`guest_page_editor.post_rsvp_suggestion_${slug}`);
-              return (
-                <button
-                  key={slug}
-                  type="button"
-                  className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-800"
-                  onClick={() => insertPostRsvpSection(label)}
-                >
-                  <Plus size={11} aria-hidden />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <textarea
-          ref={postRsvpTextareaRef}
-          id="guest-page-post-rsvp"
-          className="input"
-          rows={8}
-          value={postRsvpContent}
-          onChange={(e) => setPostRsvpContent(e.target.value)}
-          placeholder={t("guest_page_editor.post_rsvp_placeholder")}
-          maxLength={8000}
-        />
       </Dialog>
 
       {/* Venue editor — clicking the location band opens it here. Kept as a

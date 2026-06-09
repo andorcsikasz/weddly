@@ -265,6 +265,7 @@ const hu: LocaleMessages = {
       useful_info_cta: "Add meg a hasznos tudnivalókat",
       post_rsvp_title: "Részletek a visszajelölt vendégeknek",
       post_rsvp_cta: "Add meg a visszajelzés utáni részleteket",
+      wishlist_cta: "Állítsd össze az ajándéklistát",
       locked_eyebrow: "A vendégek visszajelzése után jelenik meg",
     },
   },

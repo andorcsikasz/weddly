@@ -262,6 +262,7 @@ const en: LocaleMessages = {
       useful_info_cta: "Add the good-to-know info",
       post_rsvp_title: "Details for confirmed guests",
       post_rsvp_cta: "Add the post-RSVP details",
+      wishlist_cta: "Build your gift list",
       locked_eyebrow: "Unlocks after guests RSVP",
     },
   },

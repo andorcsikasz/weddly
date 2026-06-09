@@ -69,7 +69,6 @@ export interface WeddingSiteEditHandlers {
 export interface WeddingSiteInlineEdit {
   intro?: (value: string) => void;
   venue?: (name: string, city: string) => void;
-  postRsvp?: (value: string) => void;
 }
 
 export interface WeddingSiteViewProps {
@@ -394,7 +393,6 @@ export function WeddingSiteView({
   // nested edit control isn't swallowed by an outer role="button").
   const introInline = isPreview && Boolean(inlineEdit?.intro);
   const venueInline = isPreview && Boolean(inlineEdit?.venue);
-  const postRsvpInline = isPreview && Boolean(inlineEdit?.postRsvp);
 
   // Tier gates on the live page; in preview we author everything, so the
   // post-RSVP block is shown as a labelled locked preview regardless of tier.
@@ -809,10 +807,15 @@ export function WeddingSiteView({
         </Band>
       ) : null}
 
-      {/* ── Confirmed-tier unlocked block. Live: confirmed only. Preview:
-          always shown, labelled "unlocks after RSVP". ──────────────────── */}
-      {(isPreview || (showConfirmedExtras && view.post_rsvp_content)) && (
-        <Band ariaLive={isPreview ? undefined : "polite"}>
+      {/* ── Confirmed-tier unlocked block = the gift list. Live: confirmed +
+          published only (server gates `view.wishlist`). Preview: always shown,
+          labelled "unlocks after RSVP"; clicking opens the wishlist editor. ── */}
+      {(isPreview || (showConfirmedExtras && view.wishlist && view.wishlist.length > 0)) && (
+        <Band
+          ariaLive={isPreview ? undefined : "polite"}
+          onEdit={isPreview ? e.onEditPostRsvp : undefined}
+          hint={editHint}
+        >
           {isPreview && (
             <p
               className="mb-3 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]"
@@ -830,24 +833,59 @@ export function WeddingSiteView({
               {t("wedding_site.confirmed_title")}
             </span>
           </Heading>
-          {view.post_rsvp_content && postRsvpInline && inlineEdit?.postRsvp ? (
-            <p className="mt-4">
-              <InlineText
-                value={view.post_rsvp_content}
-                onCommit={inlineEdit.postRsvp}
-                multiline
-                className="whitespace-pre-line text-base leading-relaxed"
-                style={{ opacity: 0.92 }}
-                ariaLabel={t("guest_page_editor.post_rsvp_label")}
-              />
-            </p>
-          ) : view.post_rsvp_content ? (
-            <p
-              className="mt-4 whitespace-pre-line text-base leading-relaxed"
-              style={{ opacity: 0.92 }}
-            >
-              {view.post_rsvp_content}
-            </p>
+          {view.wishlist && view.wishlist.length > 0 ? (
+            (() => {
+              const gifts = view.wishlist.filter((x) => x.kind === "gift");
+              const requests = view.wishlist.filter((x) => x.kind === "request");
+              return (
+                <div className="mt-6">
+                  {gifts.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Gift size={16} aria-hidden style={{ color: "var(--wt-accent-text)" }} />
+                        <Eyebrow>{t("guest_portal.wishlist_section_title")}</Eyebrow>
+                      </div>
+                      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {gifts.map((entry) => (
+                          <GuestWishlistCard
+                            key={entry.id}
+                            entry={entry}
+                            currency={localeCurrency(locale)}
+                            locale={locale}
+                            onToggleInterest={isPreview ? undefined : onToggleWishlistInterest}
+                            t={t}
+                          />
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {requests.length > 0 && (
+                    <div className={gifts.length > 0 ? "mt-8" : ""}>
+                      <div className="flex items-center gap-2">
+                        <HeartHandshake
+                          size={16}
+                          aria-hidden
+                          style={{ color: "var(--wt-accent-text)" }}
+                        />
+                        <Eyebrow>{t("guest_portal.wishlist_requests_title")}</Eyebrow>
+                      </div>
+                      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {requests.map((entry) => (
+                          <GuestWishlistCard
+                            key={entry.id}
+                            entry={entry}
+                            currency={localeCurrency(locale)}
+                            locale={locale}
+                            onToggleInterest={isPreview ? undefined : onToggleWishlistInterest}
+                            t={t}
+                          />
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           ) : isPreview ? (
             <button
               type="button"
@@ -858,7 +896,7 @@ export function WeddingSiteView({
               style={{ borderColor: "var(--wt-accent)", opacity: 0.7 }}
             >
               <Plus size={14} aria-hidden />
-              {t("wedding_site.ghost.post_rsvp_cta")}
+              {t("wedding_site.ghost.wishlist_cta")}
             </button>
           ) : null}
         </Band>
@@ -919,67 +957,6 @@ export function WeddingSiteView({
           variant="band"
         />
       )}
-
-      {/* ── Wishlist — compact closing section, confirmed-tier live page only.
-       *  Sits at the very bottom (below the RSVP / manage links, above the
-       *  footer) so the gift list reads as a gentle footnote rather than a
-       *  headline band. Eyebrow-sized headers keep it small. ─────────────── */}
-      {!isPreview &&
-        !sectionHidden("wishlist") &&
-        view.wishlist &&
-        view.wishlist.length > 0 &&
-        (() => {
-          const gifts = view.wishlist.filter((x) => x.kind === "gift");
-          const requests = view.wishlist.filter((x) => x.kind === "request");
-          return (
-            <Band className="!py-10 sm:!py-12">
-              {gifts.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Gift size={16} aria-hidden style={{ color: "var(--wt-accent-text)" }} />
-                    <Eyebrow>{t("guest_portal.wishlist_section_title")}</Eyebrow>
-                  </div>
-                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {gifts.map((entry) => (
-                      <GuestWishlistCard
-                        key={entry.id}
-                        entry={entry}
-                        currency={localeCurrency(locale)}
-                        locale={locale}
-                        onToggleInterest={onToggleWishlistInterest}
-                        t={t}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {requests.length > 0 && (
-                <div className={gifts.length > 0 ? "mt-8" : ""}>
-                  <div className="flex items-center gap-2">
-                    <HeartHandshake
-                      size={16}
-                      aria-hidden
-                      style={{ color: "var(--wt-accent-text)" }}
-                    />
-                    <Eyebrow>{t("guest_portal.wishlist_requests_title")}</Eyebrow>
-                  </div>
-                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {requests.map((entry) => (
-                      <GuestWishlistCard
-                        key={entry.id}
-                        entry={entry}
-                        currency={localeCurrency(locale)}
-                        locale={locale}
-                        onToggleInterest={onToggleWishlistInterest}
-                        t={t}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </Band>
-          );
-        })()}
 
       {/* ── Weddly branding — centered wordmark over a hairline. Live only. ── */}
       {footer && (
