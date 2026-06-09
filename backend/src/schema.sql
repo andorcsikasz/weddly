@@ -809,6 +809,56 @@ CREATE TABLE IF NOT EXISTS vendor_accounts (
   updated_at INTEGER NOT NULL
 );
 
+-- Vendor subscription / billing — a DIFFERENT aggregate from couples, so it
+-- lives in its own table (1:1 with vendor_accounts) rather than overloading the
+-- couple billing columns. Reuses the couple side's PURE entitlement math
+-- (computeEntitlement) but has its own lifecycle: founding offer = the first
+-- VENDOR_FOUNDING_CAP vendors free for one year (no card), then 3490 Ft / 10 €
+-- per month. Entitlement (edit/publish access) is COMPUTED from status + the
+-- timestamps at read-time — never stored — so a lapsed vendor goes read-only
+-- without a background job. stripe_* are filled later by the vendor billing
+-- webhook (Stripe fast-follow). Kept distinct from the Phase-3 payout fields
+-- (stripe_account_id/KYC) reserved on vendor_accounts: billing is the vendor
+-- paying us; payouts are the opposite money flow.
+CREATE TABLE IF NOT EXISTS vendor_subscriptions (
+  vendor_account_id INTEGER PRIMARY KEY REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  subscription_status TEXT NOT NULL DEFAULT 'none',   -- trialing|founding|active|past_due|canceled|none
+  trial_ends_at INTEGER,                              -- epoch ms; null unless trialing
+  founding_until INTEGER,                             -- epoch ms; end of the 1-year founding window
+  is_founding_member INTEGER NOT NULL DEFAULT 0,      -- first-100 badge; permanent (slot spent on grant)
+  current_period_end INTEGER,                         -- epoch ms from Stripe
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  currency TEXT NOT NULL,                             -- HUF | EUR, pinned at activation from owner locale
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_subs_customer ON vendor_subscriptions(stripe_customer_id) WHERE stripe_customer_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_vendor_subs_founding ON vendor_subscriptions(is_founding_member);
+
+-- Vendor onboarding token — the bridge from an accepted waitlist entry to a
+-- real vendor account. When the admin accepts a waitlist row, a token is minted
+-- and the accept email carries /vendor/activate/:token. The vendor clicks, sets
+-- a password, and the token is consumed to create users(role='vendor') +
+-- vendor_accounts + a session (mirrors the listing_claims flow, but the
+-- waitlist vendor has no existing listing to claim). Single-use: status flips
+-- to 'completed' on success. Re-issuable so an admin can resend.
+CREATE TABLE IF NOT EXISTS vendor_onboarding (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  waitlist_id INTEGER REFERENCES vendor_waitlist(id) ON DELETE SET NULL,
+  business_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  category TEXT,
+  locale TEXT,                                        -- 'hu' | 'en' — fallback for currency + email language
+  token TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending',             -- 'pending' | 'completed' | 'expired' | 'cancelled'
+  expires_at INTEGER NOT NULL,
+  completed_at INTEGER,
+  vendor_account_id INTEGER REFERENCES vendor_accounts(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vendor_onboarding_email ON vendor_onboarding(email);
+
 -- Unified directory listing — the public-facing card for ANY source.
 -- id strategy preserves the existing public-string convention so couple_picks
 -- / couple_supplier_costs / supplier_votes / supplier_events can target

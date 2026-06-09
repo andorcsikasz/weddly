@@ -139,6 +139,11 @@ export function wipeAll(): void {
     // the community/claimed rows and trust the boot snapshot for curated.
     "growth_events",
     "listing_claims",
+    // vendor billing/onboarding — subs cascade off vendor_accounts, but delete
+    // explicitly (and before vendor_accounts) so a leaked founding badge can't
+    // bleed the cohort count into the next test.
+    "vendor_onboarding",
+    "vendor_subscriptions",
     "vendor_accounts",
     "couple_currency_history",
     "consent_log",

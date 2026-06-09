@@ -22,6 +22,7 @@ import {
   toVendorWaitlistEntry,
 } from "../domain/vendor_waitlist";
 import { sendDecisionEmail } from "../domain/vendor_waitlist_emails";
+import { createOnboardingToken } from "../domain/vendor_onboarding";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { log } from "../lib/logger";
@@ -335,6 +336,24 @@ async function handleAdminDecide(ctx: Ctx): Promise<Response> {
   const notes = typeof body.notes === "string" ? body.notes : "";
   if (notes.length > 2000) throw new HttpError(400, "notes too long (max 2000)");
 
+  // Accepting a vendor mints a single-use onboarding token and appends the
+  // activation CTA to the email — this is the bridge from "you're accepted" to
+  // a real account. Re-accepting supersedes any prior pending token (one live
+  // link per vendor). Locale is left null here; the activate page pins the
+  // vendor's own browser locale at completion, which is what drives currency.
+  let emailBodyToSend = emailBody;
+  if (outcome === "accepted") {
+    const token = createOnboardingToken({
+      waitlistId: existing.id,
+      businessName: existing.business_name,
+      email: existing.email,
+      category: existing.category,
+      locale: null,
+    });
+    const activateUrl = `${CONFIG.frontendBaseUrl}/vendor/activate/${encodeURIComponent(token.token)}`;
+    emailBodyToSend = `${emailBody}\n\n— — —\n\nAktiváld a fiókod (nincs szükség bankkártyára):\n${activateUrl}\n\nActivate your account (no card needed):\n${activateUrl}`;
+  }
+
   // Send first; if delivery fails we still record the attempt by stamping the
   // row, but propagate the error to the admin so they can re-try. Skipping
   // the send (no RESEND_API_KEY in dev/test) is a no-op and never throws.
@@ -343,7 +362,7 @@ async function handleAdminDecide(ctx: Ctx): Promise<Response> {
     await sendDecisionEmail({
       to: existing.email,
       subject,
-      body: emailBody,
+      body: emailBodyToSend,
       outcome: outcome as VendorWaitlistOutcome,
       full_name: existing.business_name,
     });
@@ -363,7 +382,7 @@ async function handleAdminDecide(ctx: Ctx): Promise<Response> {
       outcome: outcome as VendorWaitlistOutcome,
       notes,
       sent_subject: subject,
-      sent_body: emailBody,
+      sent_body: emailBodyToSend,
     },
     admin.id,
   );

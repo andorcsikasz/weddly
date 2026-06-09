@@ -145,6 +145,18 @@ interface UpsertLineBody {
   icon?: unknown;
 }
 
+/** Strict money guard. Money is integer Forint sent as a JSON *number* — never
+ *  a string. Coercing with `Number()` let `"1000"` (→ 1000) and `null` (→ 0)
+ *  slip through as valid amounts (the 50-user probe, case C). We reject any
+ *  non-number type outright, then round + range-check. `?? 0` upstream keeps an
+ *  omitted optional field defaulting to zero before it reaches here. */
+function parseMoneyField(raw: unknown, field: string): number {
+  if (typeof raw !== "number" || !Number.isFinite(raw) || raw < 0 || raw > 10_000_000_000) {
+    throw new HttpError(400, `${field} out of range`);
+  }
+  return Math.round(raw);
+}
+
 function parseLineBody(body: UpsertLineBody, requireCategory = true) {
   const cat = typeof body.category === "string" ? body.category : null;
   if (requireCategory && (!cat || !VALID_CATEGORIES.has(cat as BudgetCategory))) {
@@ -152,20 +164,11 @@ function parseLineBody(body: UpsertLineBody, requireCategory = true) {
   }
   const label = typeof body.label === "string" ? body.label.trim() : "";
   if (!label || label.length > 200) throw new HttpError(400, "label required (≤200 chars)");
-  const planned = Number(body.planned_huf);
-  const actual = Number(body.actual_huf ?? 0);
-  if (!Number.isFinite(planned) || planned < 0 || planned > 10_000_000_000) {
-    throw new HttpError(400, "planned_huf out of range");
-  }
-  if (!Number.isFinite(actual) || actual < 0 || actual > 10_000_000_000) {
-    throw new HttpError(400, "actual_huf out of range");
-  }
-  const paidRaw = Number(body.paid_huf ?? 0);
-  if (!Number.isFinite(paidRaw) || paidRaw < 0 || paidRaw > 10_000_000_000) {
-    throw new HttpError(400, "paid_huf out of range");
-  }
+  const planned = parseMoneyField(body.planned_huf, "planned_huf");
+  const actual = parseMoneyField(body.actual_huf ?? 0, "actual_huf");
+  const paidRaw = parseMoneyField(body.paid_huf ?? 0, "paid_huf");
   // You can't pay more than the line costs — clamp paid to [0, actual].
-  const paid = Math.min(Math.round(paidRaw), Math.round(actual));
+  const paid = Math.min(paidRaw, actual);
   const notes =
     typeof body.notes === "string" && body.notes.trim() ? body.notes.trim().slice(0, 1000) : null;
   const perGuest = body.per_guest === true || body.per_guest === 1;
@@ -173,8 +176,8 @@ function parseLineBody(body: UpsertLineBody, requireCategory = true) {
   return {
     category: (cat ?? "other") as BudgetCategory,
     label,
-    planned_huf: Math.round(planned),
-    actual_huf: Math.round(actual),
+    planned_huf: planned,
+    actual_huf: actual,
     paid_huf: paid,
     notes,
     per_guest: perGuest ? 1 : 0,
@@ -329,29 +332,11 @@ function parsePartialLine(body: UpsertLineBody, existing: LineRow) {
     label = trimmed;
   }
   let planned = existing.planned_huf;
-  if (body.planned_huf !== undefined) {
-    const n = Number(body.planned_huf);
-    if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000) {
-      throw new HttpError(400, "planned_huf out of range");
-    }
-    planned = Math.round(n);
-  }
+  if (body.planned_huf !== undefined) planned = parseMoneyField(body.planned_huf, "planned_huf");
   let actual = existing.actual_huf;
-  if (body.actual_huf !== undefined) {
-    const n = Number(body.actual_huf);
-    if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000) {
-      throw new HttpError(400, "actual_huf out of range");
-    }
-    actual = Math.round(n);
-  }
+  if (body.actual_huf !== undefined) actual = parseMoneyField(body.actual_huf, "actual_huf");
   let paid = existing.paid_huf;
-  if (body.paid_huf !== undefined) {
-    const n = Number(body.paid_huf);
-    if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000) {
-      throw new HttpError(400, "paid_huf out of range");
-    }
-    paid = Math.round(n);
-  }
+  if (body.paid_huf !== undefined) paid = parseMoneyField(body.paid_huf, "paid_huf");
   // Paid can never exceed the line's cost — re-clamp on every save so lowering
   // `actual` also pulls an over-large `paid` down with it.
   paid = Math.min(paid, actual);

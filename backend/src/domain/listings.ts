@@ -354,6 +354,52 @@ export function getListingByVendorAccountId(vendorAccountId: number): Listing | 
   return row ? toListing(row) : null;
 }
 
+/** Create a fresh 'claimed' listing for a newly-onboarded vendor — one that
+ *  came through the waitlist and so has NO existing directory row to claim.
+ *  id = 'v' + accountId per the listings id convention. Seeded with the
+ *  business name + category + city from the waitlist; the vendor fills the rest
+ *  (blurb, photo, pricing, capacity) in the editor. Goes live immediately
+ *  (status 'active') because the vendor was already vetted at the waitlist
+ *  accept step. Idempotent on the id via the upsert. */
+export function createVendorListing(input: {
+  vendorAccountId: number;
+  category: string;
+  name: string;
+  city: string;
+  contactEmail: string | null;
+}): Listing {
+  const ts = now();
+  const id = `v${input.vendorAccountId}`;
+  upsertListingStmt.run({
+    $id: id,
+    $source: "claimed",
+    $vendor_account_id: input.vendorAccountId,
+    $category: input.category,
+    $name: input.name,
+    $city: input.city,
+    $address: null,
+    $website: null,
+    $contact_email: input.contactEmail,
+    $contact_phone: null,
+    $blurb_hu: null,
+    $blurb_en: null,
+    $price_band: null,
+    $capacity_min: null,
+    $capacity_max: null,
+    $venue_style: null,
+    $lat: null,
+    $lng: null,
+    $submitter_type: "self",
+    $status: "active",
+    $content_hash: null,
+    $created_at: ts,
+    $updated_at: ts,
+  });
+  const row = getListingById(id);
+  if (!row) throw new Error("vendor listing create failed");
+  return row;
+}
+
 /** Patch the editable fields on a listing. Caller is responsible for the
  *  authorisation check (P2.D: vendor must own the listing via
  *  `vendor_account_id`); this helper just runs the UPDATE. Returns the

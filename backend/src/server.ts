@@ -23,6 +23,7 @@ import { maybeCompress, negotiateEncoding } from "./lib/compression";
 import { log, makeLogger } from "./lib/logger";
 import { GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } from "./lib/seo_ssr";
 import { entitlementBlock } from "./domain/billing";
+import { vendorEntitlementBlock } from "./domain/vendor_billing";
 import { ensureGeoDb } from "./lib/geoip";
 import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
 import { startEmailWorker } from "./domain/emails/worker";
@@ -58,6 +59,7 @@ import { registerFeedbackRoutes } from "./routes/feedback";
 import { registerGrowthRoutes } from "./routes/growth";
 import { registerGuestRoutes } from "./routes/guests";
 import { registerVendorClaimRoutes } from "./routes/vendor_claim";
+import { registerVendorOnboardingRoutes } from "./routes/vendor_onboarding";
 import { registerVendorListingRoutes } from "./routes/vendor_listing";
 import { registerVendorAvailabilityRoutes } from "./routes/vendor_availability";
 import { registerHealthRoutes } from "./routes/health";
@@ -158,6 +160,7 @@ registerFeedbackRoutes(router);
 registerCoupleCardsRoutes(router);
 registerGrowthRoutes(router);
 registerVendorClaimRoutes(router);
+registerVendorOnboardingRoutes(router);
 registerVendorListingRoutes(router);
 registerVendorAvailabilityRoutes(router);
 registerSeoRoutes(router);
@@ -507,7 +510,9 @@ async function handleRequest(req: Request): Promise<Response> {
   // (and who isn't subscribed) may view + export but not edit the workspace.
   // Mutating requests to the edit surfaces get 402 with the billing reason so
   // the frontend can show the "subscription needed" prompt.
-  const blockReason = entitlementBlock(req.method, url.pathname, userId);
+  const blockReason =
+    entitlementBlock(req.method, url.pathname, userId) ??
+    vendorEntitlementBlock(req.method, url.pathname, userId);
   if (blockReason) {
     const r = httpErr(402, "Subscription required", {
       code: "subscription_required",
