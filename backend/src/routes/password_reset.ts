@@ -112,8 +112,13 @@ async function handleReset(ctx: Ctx): Promise<Response> {
   // (legacy row, manual DB insert, race against a future "promote to
   // password" flow), refuse the reset and return the same opaque error.
   // See [[security_google_only_password_reset]].
+  // Suspended-account gate: a token issued BEFORE the account was suspended
+  // would otherwise still complete a reset, bypassing the suspension that login
+  // + session-verify enforce (handleForgot already refuses to issue NEW tokens
+  // to suspended users — this closes the pre-existing-token hole). Same opaque
+  // error so suspension state isn't leaked. Mirrors email_change handleConfirm.
   const target = getUserById(row.user_id);
-  if (!target || target.password_set === 0) {
+  if (!target || target.password_set === 0 || target.status === "suspended") {
     throw new HttpError(400, "Invalid or expired token");
   }
 

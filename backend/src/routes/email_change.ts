@@ -121,6 +121,16 @@ async function handleConfirm(ctx: Ctx): Promise<Response> {
   const ts = now();
   if (row.expires_at < ts) throw new HttpError(400, "Invalid or expired token");
 
+  // Suspended-account gate: this token-validated flow runs without a session, so
+  // it doesn't get the suspension check login + session-verify apply. A token
+  // issued before suspension would otherwise let a suspended user change the
+  // account's email (a recovery-path hijack). Same opaque error so suspension
+  // state isn't leaked. Mirrors password_reset handleReset.
+  const target = getUserById(row.user_id);
+  if (!target || target.status === "suspended") {
+    throw new HttpError(400, "Invalid or expired token");
+  }
+
   // Final clash check — another user could have registered the same email in
   // the window between request and confirm.
   const clash = getUserByEmail(row.new_email);

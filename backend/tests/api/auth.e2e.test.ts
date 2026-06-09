@@ -926,6 +926,43 @@ describe("POST /api/auth/reset", () => {
     );
     expect(sixth.status).toBe(429);
   });
+
+  test("a token issued before suspension can't reset a suspended account", async () => {
+    wipeAll();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "reset-susp@example.com",
+      password: "supersafe123",
+      full_name: "RS",
+    });
+    await req("POST", "/api/auth/forgot", { email: "reset-susp@example.com" });
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM password_reset_tokens WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(reg.data.user.id) as { token: string };
+    const before = db
+      .prepare("SELECT password_hash FROM users WHERE id = ?")
+      .get(reg.data.user.id) as { password_hash: string };
+
+    // Suspend AFTER the token was issued — the pre-existing-token hole.
+    db.prepare("UPDATE users SET status = 'suspended' WHERE id = ?").run(reg.data.user.id);
+
+    const r = await req("POST", "/api/auth/reset", {
+      token: tokenRow.token,
+      password: "attacker-chosen-pw",
+    });
+    // Same opaque error as an invalid token — no suspension oracle.
+    expect(r.status).toBe(400);
+    // Password unchanged and token not consumed.
+    const after = db
+      .prepare("SELECT password_hash FROM users WHERE id = ?")
+      .get(reg.data.user.id) as { password_hash: string };
+    expect(after.password_hash).toBe(before.password_hash);
+    const consumed = db
+      .prepare("SELECT consumed_at FROM password_reset_tokens WHERE token = ?")
+      .get(tokenRow.token) as { consumed_at: number | null };
+    expect(consumed.consumed_at).toBeNull();
+  });
 });
 
 // ─── /api/auth/change-email-request ────────────────────────────────────────
@@ -1181,6 +1218,42 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
     expect(first.status).toBe(200);
     const second = await req("POST", `/api/auth/change-email/${tokenRow.token}`, {});
     expect(second.status).toBe(400);
+  });
+
+  test("a token issued before suspension can't change a suspended account's email", async () => {
+    wipeAll();
+    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+      email: "ce-susp@example.com",
+      password: "supersafe123",
+      full_name: "CES",
+    });
+    await req(
+      "POST",
+      "/api/auth/change-email-request",
+      { new_email: "ce-susp-new@example.com", current_password: "supersafe123" },
+      { token: reg.data.token },
+    );
+    const tokenRow = db
+      .prepare(
+        "SELECT token FROM email_change_tokens WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(reg.data.user.id) as { token: string };
+
+    // Suspend AFTER the token was issued.
+    db.prepare("UPDATE users SET status = 'suspended' WHERE id = ?").run(reg.data.user.id);
+
+    const r = await req("POST", `/api/auth/change-email/${tokenRow.token}`, {});
+    // Same opaque error as an invalid token — no suspension oracle.
+    expect(r.status).toBe(400);
+    // Email is unchanged and the token wasn't consumed.
+    const user = db
+      .prepare("SELECT email FROM users WHERE id = ?")
+      .get(reg.data.user.id) as { email: string };
+    expect(user.email).toBe("ce-susp@example.com");
+    const consumed = db
+      .prepare("SELECT consumed_at FROM email_change_tokens WHERE token = ?")
+      .get(tokenRow.token) as { consumed_at: number | null };
+    expect(consumed.consumed_at).toBeNull();
   });
 
   test("clash during the request→confirm window returns 409", async () => {
