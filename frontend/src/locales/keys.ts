@@ -867,6 +867,22 @@ export interface LocaleMessages {
     task_under_cap: string;
     task_add_tables: string;
     task_seat_guests: string;
+    /** "Your upcoming tasks" — the couple's own dated planning items, surfaced
+     *  below the setup checklist. */
+    upcoming_title: string;
+    /** Trailing chip on the upcoming-tasks card: "{n} upcoming". */
+    upcoming_count: string;
+    /** Footer link to the full planning page. */
+    upcoming_view_all: string;
+    /** Relative-due chips. Compact ("{n}d") to avoid plural grammar + fit the row. */
+    upcoming_due_overdue: string;
+    upcoming_due_today: string;
+    upcoming_due_in: string;
+    /** Empty state when the couple has no planning tasks at all — a nudge. */
+    upcoming_empty_none: string;
+    upcoming_empty_none_cta: string;
+    /** Empty state when tasks exist but none are dated/pending — reassurance. */
+    upcoming_empty_clear: string;
     quick_links_title: string;
     /** Dashboard spending donuts: paid-vs-planned + category breakdown. */
     charts: {

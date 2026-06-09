@@ -45,6 +45,7 @@ import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanni
 import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { TimelineStatusCard } from "../components/TimelineStatusCard";
+import { UpcomingTasksCard } from "../components/UpcomingTasksCard";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -1389,6 +1390,10 @@ export default function DashboardPage() {
               </MobileCollapsibleCard>
             </div>
           </section>
+
+          {/* ── Couple's own upcoming tasks — hands off from the setup checklist
+              to the living plan. Self-fetching; renders its own empty states. ── */}
+          <UpcomingTasksCard />
 
           {/* ── Cost planning panel — full-width, inline-edit per category. ── */}
           <section className="mb-8">
