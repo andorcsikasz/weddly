@@ -1440,6 +1440,7 @@ export interface LocaleMessages {
       save_error: string;
       open_count: string;
       consider_count: string;
+      total_count: string;
       group_empty: string;
       kind_decision: string;
       kind_check: string;

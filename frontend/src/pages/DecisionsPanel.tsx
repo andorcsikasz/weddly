@@ -168,6 +168,19 @@ export function DecisionsPanel({ items, loading, locale, onItemsChange }: Decisi
     }
   }
 
+  // Grand total the couple currently faces across every group, mirroring each
+  // group's own count (open rows once generated, else the prefiltered preview).
+  const totalCount = PROMPT_GROUPS.reduce((sum, group) => {
+    const rows = (promptsByGroup.get(group.key) ?? []).filter(
+      (r) => r.decision_status !== "promoted",
+    );
+    const open = rows.filter((r) => r.decision_status === "open").length;
+    return (
+      sum +
+      (generated.has(group.key) ? open : visiblePromptsForGroup(group.key, previewContext).length)
+    );
+  }, 0);
+
   return (
     <div className="mt-4">
       {/* Intake strip — non-blocking, persists answers that tune which
@@ -182,6 +195,9 @@ export function DecisionsPanel({ items, loading, locale, onItemsChange }: Decisi
           <h2 className="flex-1 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("planning.decisions.intake_title")}
           </h2>
+          <span className="shrink-0 rounded-full bg-paper-200 px-2.5 py-1 text-[11px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-100">
+            {t("planning.decisions.total_count", { n: String(totalCount) })}
+          </span>
           <ChevronDown
             size={18}
             aria-hidden="true"

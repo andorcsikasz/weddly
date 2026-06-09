@@ -1243,6 +1243,7 @@ const en: LocaleMessages = {
       save_error: "Couldn't save. Please try again.",
       open_count: "{n} open",
       consider_count: "{n} to consider",
+      total_count: "{n} tasks",
       group_empty: "Nothing to consider in this theme right now.",
       kind_decision: "Decision",
       kind_check: "Ask the supplier",

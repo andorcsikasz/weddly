@@ -1256,6 +1256,7 @@ const hu: LocaleMessages = {
       save_error: "Nem sikerült menteni. Próbáld újra.",
       open_count: "{n} nyitott",
       consider_count: "{n} átgondolandó",
+      total_count: "{n} feladat",
       group_empty: "Ebben a témában nincs most átgondolandó kérdés.",
       kind_decision: "Döntés",
       kind_check: "Kérdés a szolgáltatóhoz",
