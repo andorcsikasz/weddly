@@ -80,7 +80,7 @@ describe("invite state cascades to materialized +1s", () => {
     expect(inviteState(plusId).invited_at).not.toBeNull(); // untouched
   });
 
-  test("deleting a host detaches its +1 (no 500, +1 survives, pointer cleared)", async () => {
+  test("deleting a host cascade-deletes its +1 (no 500, +1 removed too)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("delete-host@weddly.test");
 
@@ -103,19 +103,16 @@ describe("invite state cascades to materialized +1s", () => {
     const plusId = plus.data.guest.id;
 
     // Bare DELETE used to throw FOREIGN KEY constraint failed → 500 because
-    // guests.plus_one_of is a self-FK with no ON DELETE. Now it detaches first.
+    // guests.plus_one_of is a self-FK with no ON DELETE. Now it deletes the +1s
+    // first, then the host, in one transaction.
     const del = await req("DELETE", `/api/guests/${hostId}`, undefined, { token });
     expect(del.status).toBe(200);
 
-    // Host is gone, +1 survives and no longer points at the deleted host.
+    // Host is gone, and so is its +1.
     const hostRow = db.prepare("SELECT id FROM guests WHERE id = ?").get(hostId);
     expect(hostRow == null).toBe(true);
-    const plusRow = db
-      .prepare("SELECT plus_one_of, is_plus_one FROM guests WHERE id = ?")
-      .get(plusId) as { plus_one_of: number | null; is_plus_one: number } | undefined;
-    expect(plusRow).toBeDefined();
-    expect(plusRow?.plus_one_of).toBeNull();
-    expect(plusRow?.is_plus_one).toBe(0);
+    const plusRow = db.prepare("SELECT id FROM guests WHERE id = ?").get(plusId);
+    expect(plusRow == null).toBe(true);
 
     // And no dangling pointer remains anywhere.
     const dangling = db.prepare("SELECT id FROM guests WHERE plus_one_of = ?").all(hostId);

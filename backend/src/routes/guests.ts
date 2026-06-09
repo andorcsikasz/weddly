@@ -696,18 +696,18 @@ function handleDelete(ctx: Ctx): Response {
   const existing = getGuestByIdScoped(id, couple.id);
   if (!existing) throw new HttpError(404, "Guest not found");
 
-  // Detach any materialized +1s before deleting the host. `guests.plus_one_of`
-  // is a self-FK with no ON DELETE action (db.ts:126, added via
-  // addColumnIfMissing so its FK can't be ALTERed without a full table
-  // rebuild), so a bare DELETE of a host that still has +1s throws
-  // SQLITE_CONSTRAINT → 500. We DETACH rather than cascade-delete: a +1 is a
-  // real attendee with its own name, invite code, RSVP status and seat — losing
-  // their host shouldn't silently erase a confirmed guest. One transaction so
-  // the detach + delete are indivisible.
+  // Cascade-delete any materialized +1s along with their host. A +1 only exists
+  // because its host brought them, so removing the host removes them too. We
+  // must delete the +1s FIRST: `guests.plus_one_of` is a self-FK with no
+  // ON DELETE action (db.ts:126, added via addColumnIfMissing so its FK can't be
+  // ALTERed without a full table rebuild), so deleting the host while +1s still
+  // point at it throws SQLITE_CONSTRAINT → 500. One transaction so the cascade
+  // is indivisible.
+  const plusOnes = db
+    .prepare("SELECT id, full_name FROM guests WHERE plus_one_of = ? AND couple_id = ?")
+    .all(id, couple.id) as { id: number; full_name: string }[];
   const tx = db.transaction(() => {
-    db.prepare(
-      "UPDATE guests SET plus_one_of = NULL, is_plus_one = 0 WHERE plus_one_of = ? AND couple_id = ?",
-    ).run(id, couple.id);
+    db.prepare("DELETE FROM guests WHERE plus_one_of = ? AND couple_id = ?").run(id, couple.id);
     db.prepare("DELETE FROM guests WHERE id = ? AND couple_id = ?").run(id, couple.id);
   });
   tx();
@@ -720,6 +720,16 @@ function handleDelete(ctx: Ctx): Response {
     target_id: id,
     before: { full_name: existing.full_name },
   });
+  for (const p of plusOnes) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "guest.delete",
+      target_kind: "guest",
+      target_id: p.id,
+      before: { full_name: p.full_name, plus_one_of: id },
+    });
+  }
   return json({ ok: true });
 }
 
