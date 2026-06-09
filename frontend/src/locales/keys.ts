@@ -2804,12 +2804,7 @@ export interface LocaleMessages {
     field_label: string;
     field_label_placeholder: string;
     field_amount: string;
-    field_date: string;
-    add: string;
-    empty: string;
-    delete: string;
-    delete_confirm_title: string;
-    delete_confirm_body: string;
+    col_note: string;
   };
   /** Cost-planning panel surfaces that don't belong to the budget *table*:
    *  HU benchmark strip, tiered over-cap warnings, page-level cost-per-guest

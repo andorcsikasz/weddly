@@ -2512,12 +2512,7 @@ const hu: LocaleMessages = {
     field_label: "Kitől / mi",
     field_label_placeholder: "pl. Kovács család",
     field_amount: "Összeg",
-    field_date: "Mikor",
-    add: "Hozzáadás",
-    empty: "Még nincs befolyt tétel. Add hozzá a nászajándékokat.",
-    delete: "Tétel törlése",
-    delete_confirm_title: "Tétel törlése",
-    delete_confirm_body: "Biztosan törlöd ezt: {label}?",
+    col_note: "Megjegyzés",
   },
   cost_planning: {
     benchmark_strip:

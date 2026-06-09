@@ -2484,12 +2484,7 @@ const en: LocaleMessages = {
     field_label: "From / what",
     field_label_placeholder: "e.g. the Kovács family",
     field_amount: "Amount",
-    field_date: "When",
-    add: "Add",
-    empty: "Nothing recorded yet. Add the gifts that came in.",
-    delete: "Delete entry",
-    delete_confirm_title: "Delete entry",
-    delete_confirm_body: "Delete this entry: {label}?",
+    col_note: "Note",
   },
   cost_planning: {
     benchmark_strip:
