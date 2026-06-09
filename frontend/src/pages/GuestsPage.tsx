@@ -3330,25 +3330,25 @@ function MealsDialog({
             so couples set "do we ask for meals / accommodation?" once for
             the whole guest list. Disabled when there are no households
             yet (nothing to PATCH) so the toggles can't desync. */}
-        <section className="rounded-2xl border border-paper-200 bg-paper-50/70 p-4 dark:border-umber-700 dark:bg-umber-800/40">
-          <div className="flex items-start gap-3">
+        <section className="rounded-2xl border border-paper-200 bg-paper-50/70 px-4 py-2.5 dark:border-umber-700 dark:bg-umber-800/40">
+          <div className="flex items-start gap-2.5">
             <span
               aria-hidden
-              className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-200/70 text-ink-600 dark:bg-umber-700 dark:text-paper-100"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-paper-200/70 text-ink-600 dark:bg-umber-700 dark:text-paper-100"
             >
-              <Utensils size={18} />
+              <Utensils size={16} />
             </span>
             <div className="min-w-0 flex-1">
-              <h3 className="font-grotesk text-base font-semibold tracking-tight text-ink-800 dark:text-paper-100">
+              <h3 className="font-grotesk text-sm font-semibold tracking-tight text-ink-800 dark:text-paper-100">
                 {t("guests.rsvp_settings_title")}
               </h3>
-              <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+              <p className="text-xs text-ink-500 dark:text-umber-300">
                 {t("guests.rsvp_settings_help")}
               </p>
             </div>
           </div>
           <div
-            className={`mt-3 flex items-center justify-between gap-4 rounded-xl border border-paper-200 bg-paper-50 px-3 py-2.5 dark:border-umber-700 dark:bg-umber-800/60 ${
+            className={`mt-2 flex items-center justify-between gap-4 rounded-xl border border-paper-200 bg-paper-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800/60 ${
               households.length === 0 ? "opacity-60" : ""
             }`}
           >
