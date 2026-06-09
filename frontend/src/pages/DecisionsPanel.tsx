@@ -57,6 +57,7 @@ export function DecisionsPanel({ items, loading, locale, onItemsChange }: Decisi
   const [generated, setGenerated] = useState<Set<PromptGroup>>(new Set());
   const [showDismissed, setShowDismissed] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [intakeOpen, setIntakeOpen] = useState(true);
 
   // Load the saved intake answers once.
   useEffect(() => {
@@ -171,36 +172,52 @@ export function DecisionsPanel({ items, loading, locale, onItemsChange }: Decisi
     <div className="mt-4">
       {/* Intake strip — non-blocking, persists answers that tune which
        *  conditional prompts surface. */}
-      <section className="mb-5 rounded-2xl border border-ink-900 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-800/40">
-        <h2 className="mb-3 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-          {t("planning.decisions.intake_title")}
-        </h2>
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {INTAKE_DIMENSIONS.map((dim) => (
-            <li
-              key={dim.tag}
-              className="flex items-center justify-between gap-3 rounded-xl bg-paper-50 px-3 py-2 dark:bg-umber-900/50"
-            >
-              <span className="text-sm text-ink-700 dark:text-umber-100">
-                {loc(dim.question, locale)}
-              </span>
-              <div className="flex shrink-0 gap-1">
-                <IntakeToggle
-                  active={tags[dim.tag] === "yes"}
-                  label={t("common.yes")}
-                  icon={Check}
-                  onClick={() => setTag(dim.tag, "yes")}
-                />
-                <IntakeToggle
-                  active={tags[dim.tag] === "no"}
-                  label={t("common.no")}
-                  icon={X}
-                  onClick={() => setTag(dim.tag, "no")}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+      <section className="mb-5 overflow-hidden rounded-2xl border border-ink-900 bg-paper-100/40 dark:border-umber-700 dark:bg-umber-800/40">
+        <button
+          type="button"
+          onClick={() => setIntakeOpen((v) => !v)}
+          aria-expanded={intakeOpen}
+          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-200/40 dark:hover:bg-umber-700/40"
+        >
+          <h2 className="flex-1 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+            {t("planning.decisions.intake_title")}
+          </h2>
+          <ChevronDown
+            size={18}
+            aria-hidden="true"
+            className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${
+              intakeOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {intakeOpen && (
+          <ul className="grid gap-2 px-4 pb-4 sm:grid-cols-2">
+            {INTAKE_DIMENSIONS.map((dim) => (
+              <li
+                key={dim.tag}
+                className="flex items-center justify-between gap-3 rounded-xl bg-paper-50 px-3 py-2 dark:bg-umber-900/50"
+              >
+                <span className="text-sm text-ink-700 dark:text-umber-100">
+                  {loc(dim.question, locale)}
+                </span>
+                <div className="flex shrink-0 gap-1">
+                  <IntakeToggle
+                    active={tags[dim.tag] === "yes"}
+                    label={t("common.yes")}
+                    icon={Check}
+                    onClick={() => setTag(dim.tag, "yes")}
+                  />
+                  <IntakeToggle
+                    active={tags[dim.tag] === "no"}
+                    label={t("common.no")}
+                    icon={X}
+                    onClick={() => setTag(dim.tag, "no")}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {loading ? (
