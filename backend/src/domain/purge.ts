@@ -87,6 +87,23 @@ export function purgeOneCouple(
     db.prepare("DELETE FROM couple_supplier_costs WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM couple_picks WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM saved_suppliers WHERE couple_id = ?").run(coupleId);
+    // GDPR erasure gap (audit 2026-06): these couple-scoped PII tables were
+    // never swept. Because purge UPDATEs couples.status='deleting' instead of
+    // DELETEing the row, their couple_id ON DELETE CASCADE never fires — so we
+    // delete explicitly. All carry user-authored content (lodging/transfer
+    // logistics, wishlist + soft pledges, the private received-gifts ledger,
+    // notification feed + read watermarks). Children-first where there's a FK.
+    db.prepare("DELETE FROM wishlist_interests WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM wishlist_items WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM received_gifts WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM accommodations WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM transfers WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM notification_seen WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM couple_notifications WHERE couple_id = ?").run(coupleId);
+    // Membership graph (who belonged to this workspace, with what role). FKs
+    // CASCADE from couples/users, but both rows are KEPT (audit_log targets),
+    // so the cascade never fires — delete the relationship record explicitly.
+    db.prepare("DELETE FROM couple_members WHERE couple_id = ?").run(coupleId);
     // Q3 Outreach Inbox cascade — children-first so SQLite's FK enforcement
     // doesn't complain. Tables are empty until the Q3 build wires sends, but
     // the cascade is part of the GDPR contract and lands with the schema.
@@ -180,8 +197,14 @@ export function purgeOneCouple(
        WHERE id = ?`,
     ).run(ts, ts, coupleId);
 
+    // Mark the pause request completed AND scrub its free-text PII: `reason` is
+    // text the user wrote and can re-identify the couple. We do NOT null
+    // requested_by_user_id — it's NOT NULL and FK-bound, and the user row it
+    // points at is itself anonymized in-place later in this same sweep, so the
+    // pointer no longer leaks PII. Drop the status filter so a non-pending
+    // request is scrubbed too — erasure must not depend on lifecycle state.
     db.prepare(
-      "UPDATE couple_pause_requests SET status = 'completed', completed_at = ? WHERE couple_id = ? AND status = 'pending'",
+      "UPDATE couple_pause_requests SET status = 'completed', completed_at = ?, reason = NULL WHERE couple_id = ?",
     ).run(ts, coupleId);
 
     // Next-11 (GDPR purge gap): growth_events.couple_id has ON DELETE CASCADE,
