@@ -351,7 +351,7 @@ async function handleAdminDecide(ctx: Ctx): Promise<Response> {
       locale: null,
     });
     const activateUrl = `${CONFIG.frontendBaseUrl}/vendor/activate/${encodeURIComponent(token.token)}`;
-    emailBodyToSend = `${emailBody}\n\n— — —\n\nAktiváld a fiókod (nincs szükség bankkártyára):\n${activateUrl}\n\nActivate your account (no card needed):\n${activateUrl}`;
+    emailBodyToSend = `${emailBody}\n\nAktiváld a fiókod (nincs szükség bankkártyára):\n${activateUrl}\n\nActivate your account (no card needed):\n${activateUrl}`;
   }
 
   // Send first; if delivery fails we still record the attempt by stamping the

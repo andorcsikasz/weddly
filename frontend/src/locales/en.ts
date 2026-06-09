@@ -373,12 +373,12 @@ const en: LocaleMessages = {
   },
   vendor_activate: {
     page_title: "Activate your vendor account",
-    page_body: "You're in — set up your Weddly vendor account in seconds.",
+    page_body: "You're in. Set up your Weddly vendor account in seconds.",
     form_title: "You're in, {name}.",
     form_intro:
-      "We've accepted you onto Weddly. Set a password and your listing is live — no card needed.",
+      "We've accepted you onto Weddly. Set a password and your listing is live. No card needed.",
     founding_badge: "Founding member · {left}/{cap} spots left",
-    founding_note: "The first 100 vendors are free for a full year — no card required.",
+    founding_note: "The first 100 vendors are free for a full year, no card required.",
     cohort_full_note: "Founding spots are full. You start with a 14-day trial, then €10/month.",
     form_name_label: "Full name",
     form_password_label: "Password",
@@ -403,10 +403,10 @@ const en: LocaleMessages = {
     intro:
       "You've successfully claimed your listing. The fields below are what couples see — keep them sharp.",
     billing_founding:
-      "Founding member · free until {date}. No card needed — we'll remind you first.",
+      "Founding member · free until {date}. No card needed, we'll remind you first.",
     billing_trial: "Trial · your listing is visible through {date}.",
     billing_lapsed:
-      "Your free period ended — your listing is hidden from couples until you subscribe. Your data is safe.",
+      "Your free period ended. Your listing is hidden from couples until you subscribe. Your data is safe.",
     section_marketing: "Description",
     section_contact: "Contact",
     section_pricing: "Pricing & capacity",

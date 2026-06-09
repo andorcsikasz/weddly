@@ -378,12 +378,12 @@ const hu: LocaleMessages = {
   },
   vendor_activate: {
     page_title: "Aktiváld a vendor fiókod",
-    page_body: "Felvettünk a Weddly szolgáltatói közé — állítsd be a fiókod pár másodperc alatt.",
+    page_body: "Felvettünk a Weddly szolgáltatói közé. Állítsd be a fiókod pár másodperc alatt.",
     form_title: "Üdv a fedélzeten, {name}!",
     form_intro:
-      "Felvettünk a Weddly szolgáltatói közé. Állíts be egy jelszót, és máris a tiéd a hirdetés — bankkártya nem kell.",
+      "Felvettünk a Weddly szolgáltatói közé. Állíts be egy jelszót, és máris a tiéd a hirdetés. Bankkártya nem kell.",
     founding_badge: "Alapító tag · {left}/{cap} hely szabad",
-    founding_note: "Az első 100 szolgáltató egy teljes évig ingyenes — bankkártya nélkül.",
+    founding_note: "Az első 100 szolgáltató egy teljes évig ingyenes, bankkártya nélkül.",
     cohort_full_note:
       "Az alapító helyek beteltek. 14 napos próbaidővel indulsz, utána havidíjas (3 490 Ft / hó).",
     form_name_label: "Teljes név",
@@ -409,10 +409,10 @@ const hu: LocaleMessages = {
     page_body: "Szerkeszd, ahogy a párok látnak a Weddly katalógusban.",
     welcome: "Üdv, {name}!",
     intro: "Sikeresen átvetted a listingedet. Az alábbi mezőket a párok is látják — tartsd élesen.",
-    billing_founding: "Alapító tag · ingyenes eddig: {date}. Bankkártya nem kell — előtte szólunk.",
+    billing_founding: "Alapító tag · ingyenes eddig: {date}. Bankkártya nem kell, előtte szólunk.",
     billing_trial: "Próbaidő · a hirdetésed eddig látható: {date}.",
     billing_lapsed:
-      "Az ingyenes időszak lejárt — a hirdetésed rejtve a párok elől, amíg nem fizetsz elő. Az adataid megmaradnak.",
+      "Az ingyenes időszak lejárt. A hirdetésed rejtve a párok elől, amíg nem fizetsz elő. Az adataid megmaradnak.",
     section_marketing: "Leírás",
     section_contact: "Elérhetőség",
     section_pricing: "Ár és kapacitás",
