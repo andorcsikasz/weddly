@@ -43,7 +43,9 @@ export type ConditionTag =
   | "alcohol_served"
   | "wedding_cake"
   | "pro_photo"
-  | "own_decor";
+  | "own_decor"
+  | "printed_stationery"
+  | "guest_keepsakes";
 
 /** The eight top-level theme groups the deck is organised into. Theme is the
  *  display spine because it is the only axis with no lopsided "other" bucket and
@@ -547,6 +549,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "A büféasztalnál különösen hasznos kis táblákkal jelölni, mi mit tartalmaz.",
       en: "At a buffet it especially helps to mark each dish with small labels showing what it contains.",
     },
+    condition: "printed_stationery",
     default_priority: 1,
   },
   {
@@ -935,6 +938,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Klasszikus könyv, aláírható poszter, üzenetes kártyák egy dobozba, vagy Polaroid-album. Döntsd el, ki teszi ki látható helyre és melyik asztalhoz.",
       en: "A classic book, a poster to sign, message cards dropped in a box, or a Polaroid album. Decide who sets it out and at which table.",
     },
+    condition: "guest_keepsakes",
     default_priority: 0,
   },
   {
@@ -950,6 +954,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Ha igen, kell hozzá háttér, kellékek és világítás. Tisztázd, gép vagy bérelt automata, és ki tölti újra a papírt vagy a kellékeket este.",
       en: "If yes, you need a backdrop, props and lighting. Clarify whether it is a hired booth or a camera, and who restocks paper or props during the night.",
     },
+    condition: "guest_keepsakes",
     default_priority: 0,
   },
   {
@@ -965,6 +970,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Nem mind kell minden esküvőre. Jelöld be, mi van, hogy a nyomdai rendelés egyben mehessen, és ne maradjon ki egy darab sem.",
       en: "Not every wedding needs all of them. Tick what applies so the print order goes out in one batch and nothing is missing.",
     },
+    condition: "printed_stationery",
     default_priority: 0,
   },
   {
@@ -980,6 +986,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Kötött ültetésnél névkártya kell, szabad ülésnél elég az asztalszám. Ettől függ, hány darabot kell nyomtatni és kihelyezni.",
       en: "Fixed seating needs place cards, open seating just needs table numbers. This decides how many pieces to print and lay out.",
     },
+    condition: "printed_stationery",
     default_priority: 0,
   },
   {
@@ -995,6 +1002,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "A nevetek és a dátum a fogadásnál. Döntsd el, nyomtatott, írott vagy tükör, és ki állítja fel, ki viszi haza utána.",
       en: "Your names and the date at the reception. Decide if it is printed, hand-lettered or a mirror, and who sets it up and takes it home.",
     },
+    condition: "printed_stationery",
     default_priority: 0,
   },
   {
@@ -1089,6 +1097,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "The seating chart and place cards are built from the final headcount, so cancellations must be passed on. Have the names proofread before printing.",
     },
     supplier_category: "stationery",
+    condition: "printed_stationery",
     default_priority: 1,
   },
   {
@@ -1152,6 +1161,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Szám egyszerűbb a felszolgálásnak és az ülésrendnek, a téma-nevek hangulatosak. Bármit választasz, legyen összhangban az ülésrend-táblával.",
       en: "Numbers are simpler for service and the seating chart, themed names add character. Whichever you pick, keep it consistent with the seating chart.",
     },
+    condition: "printed_stationery",
     default_priority: 0,
   },
   {
@@ -1229,6 +1239,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "Without exact times for the entrance, first dance, cake cutting, bride's dance and speeches, the night drifts off track. Sync it with your coordinator too.",
     },
     supplier_category: "music_dj",
+    condition: "evening_party",
     default_priority: 1,
   },
   {
@@ -1447,6 +1458,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Egy QR-kód az asztalokon, amin a vendégek a saját képeiket egy közös albumba töltik. Döntsétek el, melyik megoldást használjátok, és tegyétek ki időben.",
       en: "A QR code on the tables lets guests drop their own shots into a shared album. Pick the service and put the codes out in time.",
     },
+    condition: "guest_keepsakes",
     default_priority: 0,
   },
   {
@@ -2268,6 +2280,20 @@ export const INTAKE_DIMENSIONS: readonly { tag: ConditionTag; question: LocaleTe
       en: "Are you bringing your own decor to set up and pack down?",
     },
   },
+  {
+    tag: "printed_stationery",
+    question: {
+      hu: "Lesznek nyomtatott papíráruk (táblák, névkártyák, menü)?",
+      en: "Will there be printed stationery (signs, place cards, menus)?",
+    },
+  },
+  {
+    tag: "guest_keepsakes",
+    question: {
+      hu: "Lesz vendégkönyv, fotófal vagy közös fotóalbum?",
+      en: "Will there be a guestbook, photo booth, or shared photo album?",
+    },
+  },
 ];
 
 export type ManualTagAnswers = Partial<Record<ConditionTag, "yes" | "no">>;
@@ -2313,7 +2339,8 @@ export function isPromptVisible(seed: PromptSeed, ctx: PromptContext): boolean {
       return ctx.guestCount == null || ctx.guestCount >= LARGE_GUEST_COUNT;
     default:
       // outdoor / has_pets / destination / multi_event / accommodation_needed /
-      // evening_party / alcohol_served / wedding_cake / pro_photo / own_decor:
+      // evening_party / alcohol_served / wedding_cake / pro_photo / own_decor /
+      // printed_stationery / guest_keepsakes:
       // inclusive until the couple actively answers "no".
       return true;
   }
