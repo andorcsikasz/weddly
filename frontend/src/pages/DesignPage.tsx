@@ -707,7 +707,7 @@ export default function DesignPage() {
                       <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
                         {t(`design.font.${which}_label`)}
                       </span>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap justify-center gap-2">
                         {FONT_FAMILIES.map((fam) => (
                           <FontChip
                             key={fam.slug}
@@ -741,7 +741,7 @@ export default function DesignPage() {
                     compact
                   >
                     <span
-                      className="flex min-h-[1.75rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-[11px] italic leading-tight tracking-tight text-ink-900 dark:text-paper-50"
+                      className="flex min-h-[2rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-sm italic leading-tight tracking-tight text-ink-900 dark:text-paper-50"
                       aria-hidden
                     >
                       {formatWeddingDate(sampleDateIso, df.slug, locale)}
