@@ -294,6 +294,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "Sound gear, lighting, and warming trays draw a lot together. Ask how many separate circuits exist and where the outdoor outlets are.",
     },
     supplier_category: "venue",
+    condition: "outdoor",
     default_priority: 1,
   },
   {
@@ -642,7 +643,6 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Mindenkinek legyen tele pohara a köszöntőre, a nem ivóknak is. Add le a felszolgálandó adatszámot.",
       en: "Everyone should have a full glass for the toast, including non-drinkers. Give the count of portions to serve.",
     },
-    condition: "alcohol_served",
     default_priority: 0,
   },
   {
