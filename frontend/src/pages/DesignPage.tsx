@@ -598,7 +598,7 @@ export default function DesignPage() {
                 </h2>
                 <InfoHint text={t("design.colors.hint")} />
               </div>
-              <div className="mx-auto w-fit max-w-full rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
+              <div className="mx-auto w-fit max-w-full">
                 {/* Swatch row: each role is a colour block with a pencil badge;
                     clicking it opens the native colour editor (the swatch IS the
                     input label). Reset clears the override back to the palette. */}
