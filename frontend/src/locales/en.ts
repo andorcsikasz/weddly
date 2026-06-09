@@ -2762,7 +2762,7 @@ const en: LocaleMessages = {
       expand: "Add a booked vendor",
       collapse: "Hide the form",
     },
-    nearby_banner: "Near {query} — showing the {anchor} area.",
+    nearby_banner: "Near {town}: suppliers within ~{radius} km, closest first.",
     accommodation_external_title: "Lodging partners for your guests",
     accommodation_external_subtitle:
       "Share these trusted sites when you send accommodation links to guests — each opens in a new tab.",

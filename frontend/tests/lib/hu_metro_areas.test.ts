@@ -1,19 +1,21 @@
 // Regression guards for the supplier-directory "nearby cities" + "~45 km" hint.
 // Two coupling traps motivate these tests. First, the prefix-match fallback in
-// `distanceContextForQuery` historically trusted `cities[0]` to be the anchor —
+// `resolveQueryCoords` historically trusted `cities[0]` to be the anchor —
 // re-sorting the metro arrays alphabetically (or any other reason) would silently
 // pull random coords and produce 5000-km hints from the (0,0) gulf-of-guinea
-// fallback. Second, the same-metro guard exists specifically so a Pécs supplier
-// surfacing under a Budapest query through some other path doesn't render a
-// "~300 km" badge that reads as a system error. Both are easy to break invisibly
-// during a refactor; pin them here.
+// fallback. Second, proximity is now RADIAL: the old same-metro guard is gone, so
+// a venue one group over but genuinely close must surface, while anything past
+// NEARBY_RADIUS_KM must still be refused (a "~300 km" badge reads as a system
+// error). Both are easy to break invisibly during a refactor; pin them here.
 
 import { describe, expect, it } from "bun:test";
 import {
   distanceContextForQuery,
+  distanceKmForQuery,
   metroKeysForCity,
   metroKeysForQuery,
-  nearbyExpansionLabel,
+  NEARBY_RADIUS_KM,
+  nearbyTownLabel,
 } from "@/lib/hu_metro_areas";
 
 describe("metroKeysForCity", () => {
@@ -53,10 +55,23 @@ describe("metroKeysForQuery", () => {
   });
 });
 
-describe("distanceContextForQuery — same-metro guard", () => {
-  it("returns null when the query and supplier sit in different metros (no 300 km surprise)", () => {
-    // "pecs" → Pécs group; "Vác" → Budapest group. The guard should refuse to
-    // compute a cross-metro distance even though both cities are in the dictionary.
+describe("distanceContextForQuery — radial proximity (no metro-group gate)", () => {
+  it("returns a distance for a NEAR pair that straddles two metro groups", () => {
+    // The bug we fixed: Mór sits in the Székesfehérvár group, Csákvár in the
+    // Budapest group, but they're only ~20 km apart. The old same-metro guard
+    // hid this; radial proximity must now surface it.
+    const ctx = distanceContextForQuery("mor", "Csákvár");
+    expect(ctx).not.toBeNull();
+    if (!ctx) return;
+    expect(ctx.fromLabel).toBe("Mór");
+    expect(ctx.km % 5).toBe(0);
+    expect(ctx.km).toBeLessThanOrEqual(NEARBY_RADIUS_KM);
+  });
+
+  it("returns null when the two towns are further than NEARBY_RADIUS_KM apart", () => {
+    // Pécs ↔ Vác is ~200 km — well past the radius. A hint that far isn't
+    // useful and reads as a system error, so it's still refused (now by the
+    // distance cap, not by group identity).
     expect(distanceContextForQuery("pecs", "Vác")).toBeNull();
   });
 });
@@ -79,6 +94,40 @@ describe("distanceContextForQuery — < 5 km floor", () => {
   });
 });
 
+describe("distanceContextForQuery — supplier-coord fallback", () => {
+  it("uses the supplier's own lat/lng when its city isn't in the dictionary", () => {
+    // Unknown city string, but real coordinates near Budapest (≈ Érd). The
+    // dictionary lookup misses on the city, so the fallback coords carry it.
+    const ctx = distanceContextForQuery("budapest", "Nowhere-on-the-map", {
+      lat: 47.39,
+      lng: 18.92,
+    });
+    expect(ctx).not.toBeNull();
+    if (!ctx) return;
+    expect(ctx.km).toBeGreaterThanOrEqual(5);
+    expect(ctx.km % 5).toBe(0);
+  });
+
+  it("returns null when neither the city nor coords resolve", () => {
+    expect(distanceContextForQuery("budapest", "Nowhere", { lat: null, lng: null })).toBeNull();
+  });
+});
+
+describe("distanceKmForQuery", () => {
+  it("returns raw (un-bucketed) km with no radius cap so callers can bound it", () => {
+    const far = distanceKmForQuery("pecs", "Vác");
+    expect(far).not.toBeNull();
+    if (far == null) return;
+    // Cross-country pair — well past the nearby radius; the raw helper still
+    // reports it (the cap lives in distanceContextForQuery / the filter).
+    expect(far).toBeGreaterThan(NEARBY_RADIUS_KM);
+  });
+
+  it("returns null when the query isn't a known town", () => {
+    expect(distanceKmForQuery("xyzzy", "Budapest")).toBeNull();
+  });
+});
+
 describe("distanceContextForQuery — prefix-match path (cities[0] regression guard)", () => {
   it("returns the anchor as fromLabel, not some arbitrary first-array city", () => {
     // "buda" doesn't match any city directly; it falls through to the anchor
@@ -98,20 +147,20 @@ describe("distanceContextForQuery — prefix-match path (cities[0] regression gu
   });
 });
 
-describe("nearbyExpansionLabel", () => {
-  it("returns null when the user typed an anchor exactly (no banner needed)", () => {
-    expect(nearbyExpansionLabel("budapest")).toBeNull();
+describe("nearbyTownLabel", () => {
+  it("returns the canonical town label when the user typed an anchor exactly", () => {
+    expect(nearbyTownLabel("budapest")).toBe("Budapest");
   });
 
-  it("returns null on an anchor prefix-match (still effectively the anchor)", () => {
-    expect(nearbyExpansionLabel("buda")).toBeNull();
+  it("resolves an anchor prefix-match to the anchor label", () => {
+    expect(nearbyTownLabel("buda")).toBe("Budapest");
   });
 
-  it("returns the anchor label for a non-anchor town in the metro", () => {
-    expect(nearbyExpansionLabel("zsambek")).toBe("Budapest");
+  it("returns the canonical name for a non-anchor town in the metro", () => {
+    expect(nearbyTownLabel("zsambek")).toBe("Zsámbék");
   });
 
   it("returns null for a completely unknown query", () => {
-    expect(nearbyExpansionLabel("xyzzy")).toBeNull();
+    expect(nearbyTownLabel("xyzzy")).toBeNull();
   });
 });

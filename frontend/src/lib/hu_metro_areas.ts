@@ -417,78 +417,112 @@ export function metroKeysForQuery(normalizedQuery: string): string[] {
   return g ? [g.key] : [];
 }
 
+/** "Nearby" radius for the town-proximity search, in km (crow-flies).
+ *  Suppliers within this distance of the typed town surface as nearby
+ *  results with a "~N km" badge, regardless of which metro group they
+ *  fall in. 50 km ≈ a 50–60 min drive — the realistic catchment for a
+ *  wedding supplier (couples travel for venues), one band wider than the
+ *  typical agglomeration without dragging in a whole neighbouring county.
+ *  Single tunable knob — move it here, the filter / badge / sort all
+ *  follow. */
+export const NEARBY_RADIUS_KM = 50;
+
+/** Resolve a free-text query to a real coordinate from the curated
+ *  dictionary. Two paths, both real data (no fabricated centroids):
+ *    1. exact town match (anchor or any member town),
+ *    2. anchor prefix-match for queries ≥ 4 chars ("buda" → Budapest).
+ *  Returns the canonical town label + coords, or null when the query
+ *  isn't a known town (a supplier name, a blurb word, an out-of-dictionary
+ *  village). The metro group is intentionally NOT returned — distance is
+ *  measured radially now, group membership no longer gates anything. */
+function resolveQueryCoords(
+  normalizedQuery: string,
+): { city: string; lat: number; lng: number } | null {
+  if (!normalizedQuery) return null;
+
+  const rec = CITY_TO_RECORD.get(normalizedQuery);
+  if (rec) return { city: rec.city, lat: rec.lat, lng: rec.lng };
+
+  if (normalizedQuery.length >= 4) {
+    const group = METRO_AREAS_HU.find((g) => normalize(g.anchor).startsWith(normalizedQuery));
+    if (group) {
+      const anchorCity = group.cities.find((c) => normalize(c.city) === normalize(group.anchor));
+      if (anchorCity) return { city: group.anchor, lat: anchorCity.lat, lng: anchorCity.lng };
+    }
+  }
+  return null;
+}
+
+/** Resolve a supplier to a coordinate for the distance measure. Prefer
+ *  the dictionary town centroid (keeps the town-to-town narrative the
+ *  badge implies), then fall back to the supplier's own lat/lng — which
+ *  rescues curated venues whose town isn't a dictionary entry but that
+ *  carry real coordinates of their own. Null when neither is available
+ *  (most community / non-venue suppliers): they simply get no badge and
+ *  no proximity rank, never a fabricated distance. */
+function resolveSupplierCoords(
+  supplierCity: string | null | undefined,
+  supplierCoords?: { lat: number | null; lng: number | null } | null,
+): { lat: number; lng: number } | null {
+  if (supplierCity) {
+    const rec = CITY_TO_RECORD.get(normalize(supplierCity));
+    if (rec) return { lat: rec.lat, lng: rec.lng };
+  }
+  if (supplierCoords && supplierCoords.lat != null && supplierCoords.lng != null) {
+    return { lat: supplierCoords.lat, lng: supplierCoords.lng };
+  }
+  return null;
+}
+
+/** Raw crow-flies km between the typed town and a supplier, or null when
+ *  either side can't be resolved to coordinates. NO metro-group guard —
+ *  a venue one group over but 18 km away is genuinely nearby and should
+ *  read as such. Callers bound the result with `NEARBY_RADIUS_KM`. */
+export function distanceKmForQuery(
+  normalizedQuery: string,
+  supplierCity: string | null | undefined,
+  supplierCoords?: { lat: number | null; lng: number | null } | null,
+): number | null {
+  const q = resolveQueryCoords(normalizedQuery);
+  if (!q) return null;
+  const s = resolveSupplierCoords(supplierCity, supplierCoords);
+  if (!s) return null;
+  return haversineKm(q.lat, q.lng, s.lat, s.lng);
+}
+
 /** When the typed query is a known town, compute approximate Haversine
- *  km between that town and the supplier's city. Returns the canonical
- *  query-town label and a 5-km-rounded distance, or null when:
- *  - the query isn't a known town (e.g. supplier name / blurb word),
- *  - the supplier's city is unknown to the dictionary,
- *  - both are in different metro groups (avoids "300 km" surprises if
- *    a Pécs supplier somehow slips into a Budapest result set),
- *  - distance rounds to 0 (the supplier is in the queried town itself
- *    — the address already says so, no badge needed). */
+ *  km to the supplier and return the canonical query-town label + a
+ *  5-km-rounded distance. Returns null when:
+ *  - the query isn't a known town (a supplier name / blurb word),
+ *  - the supplier can't be placed on the map,
+ *  - the supplier is further than `NEARBY_RADIUS_KM` (a distance that far
+ *    isn't a useful "nearby" hint — it reads as noise),
+ *  - distance rounds below 5 km (the supplier is in the queried town
+ *    itself — the address already says so, no badge needed).
+ *  Rounding is ceil-to-5 so we never under-promise the drive — a 22 km
+ *  crow-flies hop reads "~25 km", not "~20 km". */
 export function distanceContextForQuery(
   normalizedQuery: string,
   supplierCity: string | null | undefined,
+  supplierCoords?: { lat: number | null; lng: number | null } | null,
 ): { fromLabel: string; km: number } | null {
-  if (!normalizedQuery || !supplierCity) return null;
+  const q = resolveQueryCoords(normalizedQuery);
+  if (!q) return null;
+  const rawKm = distanceKmForQuery(normalizedQuery, supplierCity, supplierCoords);
+  if (rawKm == null || rawKm > NEARBY_RADIUS_KM) return null;
 
-  const queryRec = CITY_TO_RECORD.get(normalizedQuery);
-  // Allow anchor prefix-match too — "buda" → Budapest.
-  const fallbackAnchorGroup =
-    !queryRec && normalizedQuery.length >= 4
-      ? METRO_AREAS_HU.find((g) => normalize(g.anchor).startsWith(normalizedQuery))
-      : null;
-  const fallbackAnchorCity = fallbackAnchorGroup
-    ? fallbackAnchorGroup.cities.find(
-        (c) => normalize(c.city) === normalize(fallbackAnchorGroup.anchor),
-      )
-    : null;
-  const queryCoords = queryRec
-    ? { city: queryRec.city, lat: queryRec.lat, lng: queryRec.lng, groupKey: queryRec.groupKey }
-    : fallbackAnchorGroup && fallbackAnchorCity
-      ? {
-          city: fallbackAnchorGroup.anchor,
-          lat: fallbackAnchorCity.lat,
-          lng: fallbackAnchorCity.lng,
-          groupKey: fallbackAnchorGroup.key,
-        }
-      : null;
-  if (!queryCoords) return null;
-
-  const supplierRec = CITY_TO_RECORD.get(normalize(supplierCity));
-  if (!supplierRec) return null;
-
-  // Same-metro guard. Two cities in different groups (Pécs supplier
-  // surfacing for a Pázmánd query through some other match path)
-  // shouldn't show a 300 km hint — that reads as a system error,
-  // not a useful distance.
-  if (queryCoords.groupKey !== supplierRec.groupKey) return null;
-
-  const rawKm = haversineKm(queryCoords.lat, queryCoords.lng, supplierRec.lat, supplierRec.lng);
-  // Round to 5 km buckets so the badge reads as an estimate, not a
-  // routing-grade number. Min 5 km — anything below is "same town"
-  // from the couple's perspective (and the supplier's address already
-  // confirms it).
-  const km = Math.round(rawKm / 5) * 5;
+  const km = Math.ceil(rawKm / 5) * 5;
   if (km < 5) return null;
 
-  return { fromLabel: queryCoords.city, km };
+  return { fromLabel: q.city, km };
 }
 
-/** When the query resolved via metro expansion (user typed a town that
- *  isn't an anchor — "Zsámbék" → Bp metro), return the anchor label so
- *  the page can show a "showing $anchor area" banner above the results.
- *  Returns null when the query matches the anchor directly (no banner
- *  needed — the user typed exactly what they meant). */
-export function nearbyExpansionLabel(normalizedQuery: string): string | null {
-  if (!normalizedQuery) return null;
-  if (ANCHOR_TO_GROUP.has(normalizedQuery)) return null;
-  if (
-    normalizedQuery.length >= 4 &&
-    METRO_AREAS_HU.some((g) => normalize(g.anchor).startsWith(normalizedQuery))
-  ) {
-    return null;
-  }
-  const group = findMatchingGroup(normalizedQuery);
-  return group ? group.anchor : null;
+/** Canonical town label when the free-text query resolves to a known
+ *  town (anchor, member town, or anchor prefix) — drives the
+ *  "Near {town} — closest first" banner and gates the nearest-first
+ *  sort. Returns null when the query isn't a place we can map, so the
+ *  page falls back to plain name/blurb matching with no proximity
+ *  promise. */
+export function nearbyTownLabel(normalizedQuery: string): string | null {
+  return resolveQueryCoords(normalizedQuery)?.city ?? null;
 }

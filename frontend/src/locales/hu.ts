@@ -2795,7 +2795,7 @@ const hu: LocaleMessages = {
       expand: "Foglalt szolgáltató hozzáadása",
       collapse: "Űrlap elrejtése",
     },
-    nearby_banner: "{query} közelében — {anchor} környékét mutatjuk.",
+    nearby_banner: "{town} közelében: szolgáltatók kb. {radius} km-en belül, a legközelebbiek elöl.",
     accommodation_external_title: "Szállás partnerek vendégeknek",
     accommodation_external_subtitle:
       "A vendégeknek küldött szálláslinkekhez ezeket az oldalakat ajánljuk — mindegyik új lapon nyílik.",

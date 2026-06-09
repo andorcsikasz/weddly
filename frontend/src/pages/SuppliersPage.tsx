@@ -88,9 +88,11 @@ import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
 import { formatMoney } from "../lib/format";
 import {
   distanceContextForQuery,
+  distanceKmForQuery,
   metroKeysForCity,
   metroKeysForQuery,
-  nearbyExpansionLabel,
+  NEARBY_RADIUS_KM,
+  nearbyTownLabel,
 } from "../lib/hu_metro_areas";
 import {
   readSelection,
@@ -564,6 +566,12 @@ export default function SuppliersPage() {
         for (const k of expandedKeys) {
           if (hay.includes(k)) return true;
         }
+        // Radius proximity: when the query is a known town, include any
+        // supplier within NEARBY_RADIUS_KM by actual crow-flies distance —
+        // no longer gated by metro-group membership, so a venue one group
+        // over but genuinely close still surfaces.
+        const km = distanceKmForQuery(q, s.city, { lat: s.lat, lng: s.lng });
+        if (km != null && km <= NEARBY_RADIUS_KM) return true;
         return false;
       });
     }
@@ -607,8 +615,33 @@ export default function SuppliersPage() {
     const sorted = [...out];
     const collator = (a: { name: string }, b: { name: string }) =>
       a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en");
+    // When the free-text query is a known town, "top" (the default sort)
+    // becomes nearest-first — a distance badge without reordering buries
+    // the closest venue behind high-vote far ones. An explicit price/alpha
+    // pick still wins; this only redefines the default.
+    const proximityTown = nearbyTownLabel(queryNorm);
     if (sortMode === "alpha") {
       sorted.sort(collator);
+    } else if (sortMode === "top" && proximityTown) {
+      sorted.sort((a, b) => {
+        const aSelf = a.source === "self" ? 1 : 0;
+        const bSelf = b.source === "self" ? 1 : 0;
+        if (aSelf !== bSelf) return bSelf - aSelf;
+        if (a.source !== "self" && b.source !== "self") {
+          const ad = distanceKmForQuery(queryNorm, a.city, { lat: a.lat, lng: a.lng });
+          const bd = distanceKmForQuery(queryNorm, b.city, { lat: b.lat, lng: b.lng });
+          // Suppliers we can place on the map lead; among them, nearest
+          // first; ties (and the unplaceable tail of name/blurb matches)
+          // fall back to votes then name, so recall is preserved.
+          const aHas = ad != null ? 1 : 0;
+          const bHas = bd != null ? 1 : 0;
+          if (aHas !== bHas) return bHas - aHas;
+          if (ad != null && bd != null && ad !== bd) return ad - bd;
+          if (b.votes_score !== a.votes_score) return b.votes_score - a.votes_score;
+          if (a.source !== b.source) return a.source === "curated" ? -1 : 1;
+        }
+        return collator(a, b);
+      });
     } else if (sortMode === "price_asc" || sortMode === "price_desc") {
       const dir = sortMode === "price_asc" ? 1 : -1;
       const bandOf = (s: (typeof sorted)[number]): number | null =>
@@ -635,7 +668,7 @@ export default function SuppliersPage() {
       });
     }
     return sorted;
-  }, [filteredBeforeCategory, activeGroup, activeCat, sortMode, locale]);
+  }, [filteredBeforeCategory, activeGroup, activeCat, sortMode, locale, queryNorm]);
 
   // How many of `filtered` are laid out right now. Reset to the first page
   // whenever the filtered set changes (new search / category / sort) so we
@@ -1180,14 +1213,12 @@ export default function SuppliersPage() {
           (ToastProvider, FieldError, AlertCircle pills) and the banner
           was reading as a warning rather than a hint. */}
       {(() => {
-        const expansionLabel = nearbyExpansionLabel(queryNorm);
-        if (!expansionLabel) return null;
+        const townLabel = nearbyTownLabel(queryNorm);
+        if (!townLabel) return null;
         return (
           <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
             <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
-            <span>
-              {t("suppliers.nearby_banner", { query: query.trim(), anchor: expansionLabel })}
-            </span>
+            <span>{t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}</span>
           </p>
         );
       })()}
@@ -1438,7 +1469,7 @@ export default function SuppliersPage() {
                           ·
                         </span>
                         <span className="uppercase tracking-wide">{s.city}</span>
-                        <DistanceHint queryNorm={queryNorm} city={s.city} />
+                        <DistanceHint queryNorm={queryNorm} city={s.city} lat={s.lat} lng={s.lng} />
                         {s.price_band !== null && (
                           <>
                             <span aria-hidden className="text-paper-400 dark:text-umber-300">
@@ -1614,7 +1645,7 @@ export default function SuppliersPage() {
                           ·
                         </span>
                         <span className="uppercase tracking-wide">{s.city}</span>
-                        <DistanceHint queryNorm={queryNorm} city={s.city} />
+                        <DistanceHint queryNorm={queryNorm} city={s.city} lat={s.lat} lng={s.lng} />
                         {s.price_band !== null && (
                           <>
                             <span aria-hidden className="text-paper-400 dark:text-umber-300">
@@ -2053,11 +2084,15 @@ function PriceBandDots({ band }: { band: number }) {
 function DistanceHint({
   queryNorm,
   city,
+  lat,
+  lng,
 }: {
   queryNorm: string;
   city: string | null | undefined;
+  lat?: number | null;
+  lng?: number | null;
 }) {
-  const ctx = distanceContextForQuery(queryNorm, city);
+  const ctx = distanceContextForQuery(queryNorm, city, { lat: lat ?? null, lng: lng ?? null });
   if (!ctx) return null;
   return (
     <>
