@@ -18,6 +18,7 @@ import type {
   VendorListingEditInput,
   VendorListingView,
 } from "@shared/listings";
+import type { VendorBilling } from "@shared/vendor_billing";
 import { Shell } from "../components/Shell";
 import { TextField } from "../components/ui/TextField";
 import { useToast } from "../components/ui/ToastProvider";
@@ -53,6 +54,50 @@ function formatBlockedDate(iso: string, locale: string): string {
     day: "numeric",
     timeZone: "UTC",
   }).format(d);
+}
+
+/** Founding / trial / lapsed billing banner. Entitled-founding + entitled-trial
+ *  are reassuring (free until {date}); a lapsed vendor gets the warning tone
+ *  (listing hidden, data preserved). A paying subscriber sees nothing. */
+function BillingBanner({
+  billing,
+  locale,
+  t,
+}: {
+  billing: VendorBilling;
+  locale: string;
+  t: (path: string, vars?: Record<string, string | number>) => string;
+}) {
+  const fmtDate = (ms: number | null): string =>
+    ms == null
+      ? ""
+      : new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }).format(new Date(ms));
+
+  let warn = false;
+  let text: string;
+  if (!billing.entitled) {
+    warn = true;
+    text = t("vendor_home.billing_lapsed");
+  } else if (billing.reason === "founding") {
+    text = t("vendor_home.billing_founding", { date: fmtDate(billing.founding_until) });
+  } else if (billing.reason === "trialing") {
+    text = t("vendor_home.billing_trial", { date: fmtDate(billing.trial_ends_at) });
+  } else {
+    return null; // subscribed / active → no banner
+  }
+
+  const cls = warn
+    ? "border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
+    : "border-paper-300 bg-paper-100/70 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-100";
+  return (
+    <div className={`mb-4 rounded-xl border px-4 py-3 text-sm ${cls}`} role="status">
+      {text}
+    </div>
+  );
 }
 
 function viewToForm(view: VendorListingView): FormState {
@@ -265,6 +310,8 @@ export default function VendorHomePage() {
             <p className="text-sm text-blush-700 dark:text-blush-300">{loadError}</p>
           </div>
         )}
+
+        {view?.billing && <BillingBanner billing={view.billing} locale={locale} t={t} />}
 
         {form && view && (
           <form onSubmit={onSubmit} className="space-y-4">

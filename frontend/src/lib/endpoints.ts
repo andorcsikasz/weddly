@@ -127,6 +127,10 @@ import type {
 } from "@shared/supplier_taxonomy";
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import type {
+  CompleteVendorOnboardingInput,
+  VendorOnboardingVerifyView,
+} from "@shared/vendor_onboarding";
+import type {
   VendorAvailabilityView,
   VendorListingEditInput,
   VendorListingView,
@@ -1398,6 +1402,24 @@ export const vendorClaimApi = {
     ),
   complete: (body: CompleteClaimInput) =>
     apiFetch<AuthSession>("POST", "/api/vendor/claim/complete", body),
+};
+
+/** Vendor onboarding flow — the accepted-waitlist → live vendor path. Two steps:
+ *  1. `verify` — read the token view (business name + founding spots left) to
+ *     prefill the activate screen; doesn't consume the token.
+ *  2. `complete` — create user(role=vendor) + vendor_account + a live listing +
+ *     a founding/trial subscription, returns a fresh AuthSession to install via
+ *     useAuth().setSession. No card is asked — the first 100 vendors are free
+ *     for a year. */
+export const vendorOnboardingApi = {
+  verify: (token: string) =>
+    apiFetch<{ onboarding: VendorOnboardingVerifyView }>(
+      "POST",
+      `/api/vendor/onboard/verify/${encodeURIComponent(token)}`,
+      {},
+    ),
+  complete: (body: CompleteVendorOnboardingInput) =>
+    apiFetch<AuthSession>("POST", "/api/vendor/onboard/complete", body),
 };
 
 /** Vendor self-serve listing editor — P2.D. The vendor lands on /vendor after

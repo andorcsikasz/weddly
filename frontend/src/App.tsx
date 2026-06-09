@@ -71,6 +71,7 @@ const SupplierDetailPage = lazy(() => import("./pages/SupplierDetailPage"));
 const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazy(() => import("./pages/VendorClaimVerifyPage"));
+const VendorActivatePage = lazy(() => import("./pages/VendorActivatePage"));
 const VendorHomePage = lazy(() => import("./pages/VendorHomePage"));
 const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
 const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
@@ -420,6 +421,14 @@ export default function App() {
           element={
             <Page>
               <VendorClaimVerifyPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/vendor/activate/:token"
+          element={
+            <Page>
+              <VendorActivatePage />
             </Page>
           }
         />

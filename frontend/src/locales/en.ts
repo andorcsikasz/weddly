@@ -371,12 +371,42 @@ const en: LocaleMessages = {
     form_err_already_claimed: "Someone else just claimed this listing.",
     success_toast: "Welcome to Weddly! The listing is yours.",
   },
+  vendor_activate: {
+    page_title: "Activate your vendor account",
+    page_body: "You're in — set up your Weddly vendor account in seconds.",
+    form_title: "You're in, {name}.",
+    form_intro:
+      "We've accepted you onto Weddly. Set a password and your listing is live — no card needed.",
+    founding_badge: "Founding member · {left}/{cap} spots left",
+    founding_note: "The first 100 vendors are free for a full year — no card required.",
+    cohort_full_note: "Founding spots are full. You start with a 14-day trial, then €10/month.",
+    form_name_label: "Full name",
+    form_password_label: "Password",
+    form_password_hint: "At least 8 characters.",
+    form_submit: "Activate account",
+    form_submitting: "Creating…",
+    form_err_name: "Please enter your full name.",
+    form_err_password: "Password must be at least 8 characters.",
+    form_err_email_taken: "An account already exists with this email. Contact the Weddly team.",
+    form_err_already_completed: "This account was already activated. Sign in with your email.",
+    success_toast: "Welcome to Weddly! Your listing is live.",
+    page_invalid: "We don't recognise this link. It may be mistyped or from an old email.",
+    page_expired: "This activation link expired. Ask our team to resend it.",
+    page_completed:
+      "This account was already activated. Sign in with your vendor email to manage it.",
+    page_home: "Back to Weddly",
+  },
   vendor_home: {
     page_title: "Your listing",
     page_body: "Edit the listing couples see in the Weddly directory.",
     welcome: "Welcome, {name}!",
     intro:
       "You've successfully claimed your listing. The fields below are what couples see — keep them sharp.",
+    billing_founding:
+      "Founding member · free until {date}. No card needed — we'll remind you first.",
+    billing_trial: "Trial · your listing is visible through {date}.",
+    billing_lapsed:
+      "Your free period ended — your listing is hidden from couples until you subscribe. Your data is safe.",
     section_marketing: "Description",
     section_contact: "Contact",
     section_pricing: "Pricing & capacity",
@@ -1199,8 +1229,6 @@ const en: LocaleMessages = {
     tab_decisions: "Decisions",
     tab_schedule: "Schedule",
     decisions: {
-      intro:
-        "The small decisions that are easy to overlook next to the big bookings. Open a theme and only what applies to you shows up. What you decide is logged; what you don't need can be hidden.",
       intake_title: "A few questions so we only show what applies to you",
       generate_error: "Couldn't load the prompts. Please try again.",
       save_error: "Couldn't save. Please try again.",

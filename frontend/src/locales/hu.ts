@@ -376,11 +376,43 @@ const hu: LocaleMessages = {
     form_err_already_claimed: "Ezt a listinget időközben átvette valaki.",
     success_toast: "Üdvözlünk a Weddly-n! A listing már a tiéd.",
   },
+  vendor_activate: {
+    page_title: "Aktiváld a vendor fiókod",
+    page_body: "Felvettünk a Weddly szolgáltatói közé — állítsd be a fiókod pár másodperc alatt.",
+    form_title: "Üdv a fedélzeten, {name}!",
+    form_intro:
+      "Felvettünk a Weddly szolgáltatói közé. Állíts be egy jelszót, és máris a tiéd a hirdetés — bankkártya nem kell.",
+    founding_badge: "Alapító tag · {left}/{cap} hely szabad",
+    founding_note: "Az első 100 szolgáltató egy teljes évig ingyenes — bankkártya nélkül.",
+    cohort_full_note:
+      "Az alapító helyek beteltek. 14 napos próbaidővel indulsz, utána havidíjas (3 490 Ft / hó).",
+    form_name_label: "Teljes név",
+    form_password_label: "Jelszó",
+    form_password_hint: "Min. 8 karakter.",
+    form_submit: "Fiók aktiválása",
+    form_submitting: "Létrehozzuk…",
+    form_err_name: "Add meg a teljes neved.",
+    form_err_password: "A jelszó min. 8 karakter legyen.",
+    form_err_email_taken:
+      "Ezzel az email címmel már létezik fiók. Lépj kapcsolatba a Weddly csapatával.",
+    form_err_already_completed: "Ezt a fiókot már aktiválták. Jelentkezz be az email címeddel.",
+    success_toast: "Üdvözlünk a Weddly-n! A hirdetésed él.",
+    page_invalid:
+      "Nem ismerjük fel ezt a linket. Lehet, hogy elgépelődött vagy egy régi e-mailből származik.",
+    page_expired: "Ez az aktiváló link lejárt. Kérd az adminunkat, hogy küldje újra.",
+    page_completed:
+      "Ezt a fiókot már aktiválták. Jelentkezz be a vendor email címeddel a kezeléshez.",
+    page_home: "Vissza a Weddly-re",
+  },
   vendor_home: {
     page_title: "A te listingjed",
     page_body: "Szerkeszd, ahogy a párok látnak a Weddly katalógusban.",
     welcome: "Üdv, {name}!",
     intro: "Sikeresen átvetted a listingedet. Az alábbi mezőket a párok is látják — tartsd élesen.",
+    billing_founding: "Alapító tag · ingyenes eddig: {date}. Bankkártya nem kell — előtte szólunk.",
+    billing_trial: "Próbaidő · a hirdetésed eddig látható: {date}.",
+    billing_lapsed:
+      "Az ingyenes időszak lejárt — a hirdetésed rejtve a párok elől, amíg nem fizetsz elő. Az adataid megmaradnak.",
     section_marketing: "Leírás",
     section_contact: "Elérhetőség",
     section_pricing: "Ár és kapacitás",
@@ -1210,8 +1242,6 @@ const hu: LocaleMessages = {
     tab_decisions: "Döntések",
     tab_schedule: "Programterv",
     decisions: {
-      intro:
-        "Az apró döntések, amikre a nagy foglalások mellett könnyű nem gondolni. Nyiss ki egy témát, és csak az kerül elő, ami rátok vonatkozik. Amit eldöntötök, naplózódik; amit nem akartok, elrejthető.",
       intake_title: "Pár kérdés, hogy csak a rátok tartozó dolgokat mutassuk",
       generate_error: "Nem sikerült betölteni a kérdéseket. Próbáld újra.",
       save_error: "Nem sikerült menteni. Próbáld újra.",
@@ -2795,7 +2825,8 @@ const hu: LocaleMessages = {
       expand: "Foglalt szolgáltató hozzáadása",
       collapse: "Űrlap elrejtése",
     },
-    nearby_banner: "{town} közelében: szolgáltatók kb. {radius} km-en belül, a legközelebbiek elöl.",
+    nearby_banner:
+      "{town} közelében: szolgáltatók kb. {radius} km-en belül, a legközelebbiek elöl.",
     accommodation_external_title: "Szállás partnerek vendégeknek",
     accommodation_external_subtitle:
       "A vendégeknek küldött szálláslinkekhez ezeket az oldalakat ajánljuk — mindegyik új lapon nyílik.",

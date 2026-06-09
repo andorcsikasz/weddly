@@ -27,6 +27,7 @@ import {
   type ListingPatch,
 } from "../domain/listings";
 import { getVendorAccountByOwnerUserId } from "../domain/vendor_accounts";
+import { getVendorSub, toVendorBilling } from "../domain/vendor_billing";
 import { getUserById } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 
@@ -54,7 +55,9 @@ export function resolveVendorListing(ctx: Ctx): VendorListingView {
 }
 
 async function handleGetMe(ctx: Ctx): Promise<Response> {
-  return json(resolveVendorListing(ctx));
+  const view = resolveVendorListing(ctx);
+  const sub = getVendorSub(view.account.id);
+  return json({ ...view, billing: sub ? toVendorBilling(sub) : null });
 }
 
 // ── PATCH input parsing ────────────────────────────────────────────────────

@@ -63,9 +63,9 @@ async function acceptedWaitlistToken(
     )
     .get(waitlistId) as { token: string } | undefined;
   expect(row?.token).toBeTruthy();
-  const sent = db
-    .prepare("SELECT sent_body FROM vendor_waitlist WHERE id = ?")
-    .get(waitlistId) as { sent_body: string };
+  const sent = db.prepare("SELECT sent_body FROM vendor_waitlist WHERE id = ?").get(waitlistId) as {
+    sent_body: string;
+  };
   return { waitlistId, token: row!.token, sentBody: sent.sent_body };
 }
 
@@ -91,7 +91,12 @@ describe("vendor onboarding — accept → activate → live", () => {
       business: "Verify Co",
     });
     const v = await req<{
-      onboarding: { business_name: string; email: string; founding_spots_left: number; founding_cap: number };
+      onboarding: {
+        business_name: string;
+        email: string;
+        founding_spots_left: number;
+        founding_cap: number;
+      };
     }>("POST", `/api/vendor/onboard/verify/${token}`);
     expect(v.status).toBe(200);
     expect(v.data.onboarding.business_name).toBe("Verify Co");
@@ -121,12 +126,10 @@ describe("vendor onboarding — accept → activate → live", () => {
     const vendorToken = done.data.token;
 
     // Account + live listing exist; the vendor can read their listing.
-    const me = await req<{ listing: { name: string; city: string; status: string }; account: { id: number } }>(
-      "GET",
-      "/api/vendor/listing/me",
-      undefined,
-      { token: vendorToken },
-    );
+    const me = await req<{
+      listing: { name: string; city: string; status: string };
+      account: { id: number };
+    }>("GET", "/api/vendor/listing/me", undefined, { token: vendorToken });
     expect(me.status).toBe(200);
     expect(me.data.listing.name).toBe("Founder Films");
     expect(me.data.listing.city).toBe("Szeged"); // seeded from waitlist location

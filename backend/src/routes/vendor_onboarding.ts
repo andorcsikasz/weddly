@@ -167,7 +167,9 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg === ERR_EMAIL_TAKEN) {
-      throw new HttpError(409, "An account with this email already exists", { code: "email_taken" });
+      throw new HttpError(409, "An account with this email already exists", {
+        code: "email_taken",
+      });
     }
     if (msg === ERR_TOKEN_CONSUMED) {
       throw new HttpError(409, "This vendor account was already activated", {

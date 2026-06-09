@@ -6,6 +6,7 @@
 // multi-city venues, agencies).
 
 import type { SupplierCategory, VenueStyle } from "./suppliers";
+import type { VendorBilling } from "./vendor_billing";
 
 /**
  * Where the listing came from. Drives the moderation/trust UX and gates which
@@ -122,6 +123,9 @@ export interface VendorListingEditInput {
 export interface VendorListingView {
   listing: Listing;
   account: VendorAccount;
+  /** Subscription snapshot — drives the founding/trial/lapsed banner on the
+   *  vendor home. Null only when the vendor has no sub row yet. */
+  billing?: VendorBilling | null;
 }
 
 /** Vendor self-serve availability (the dates a claimed vendor marks as taken).

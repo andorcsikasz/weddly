@@ -172,10 +172,7 @@ export function applyVendorSubscriptionState(
 // they aren't subscribed — the listing editor + availability go read-only.
 // Deliberately EXCLUDED so a lapsed vendor can recover: /api/vendor/onboard/*,
 // /api/vendor/claim/*, and (future) /api/vendor/billing/*.
-const VENDOR_EDIT_PREFIXES: readonly string[] = [
-  "/api/vendor/listing",
-  "/api/vendor/availability",
-];
+const VENDOR_EDIT_PREFIXES: readonly string[] = ["/api/vendor/listing", "/api/vendor/availability"];
 const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 /** Central read-only gate for the vendor workspace, called from the request

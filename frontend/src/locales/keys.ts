@@ -487,6 +487,34 @@ export interface LocaleMessages {
     form_err_already_claimed: string;
     success_toast: string;
   };
+  /** Vendor onboarding "activate" screen — the accepted-waitlist → live vendor
+   *  flow. Reached via /vendor/activate/:token from the accept email. No card:
+   *  the first 100 vendors are free for a year. */
+  vendor_activate: {
+    page_title: string;
+    page_body: string;
+    /** Receives `{name}` — business name. */
+    form_title: string;
+    form_intro: string;
+    /** Receives `{left}` + `{cap}` — founding spots remaining / total. */
+    founding_badge: string;
+    founding_note: string;
+    cohort_full_note: string;
+    form_name_label: string;
+    form_password_label: string;
+    form_password_hint: string;
+    form_submit: string;
+    form_submitting: string;
+    form_err_name: string;
+    form_err_password: string;
+    form_err_email_taken: string;
+    form_err_already_completed: string;
+    success_toast: string;
+    page_invalid: string;
+    page_expired: string;
+    page_completed: string;
+    page_home: string;
+  };
   /** Vendor self-serve listing editor (P2.D). The single screen a vendor has
    *  after the claim flow — edits the public listing fields couples see. */
   vendor_home: {
@@ -495,6 +523,10 @@ export interface LocaleMessages {
     /** Receives `{name}` — vendor user's full name. */
     welcome: string;
     intro: string;
+    /** Billing banner. founding/trial receive `{date}` (free-until / trial-end). */
+    billing_founding: string;
+    billing_trial: string;
+    billing_lapsed: string;
     section_marketing: string;
     section_contact: string;
     section_pricing: string;
@@ -1387,7 +1419,6 @@ export interface LocaleMessages {
     tab_schedule: string;
     /** "Döntések" decision-prompt deck. */
     decisions: {
-      intro: string;
       intake_title: string;
       generate_error: string;
       save_error: string;
