@@ -194,7 +194,9 @@ export function DecisionsPanel({
       >
         <div className="overflow-hidden">
           <ul className="mb-5 grid gap-2 rounded-2xl border border-ink-900 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-800/40 sm:grid-cols-2">
-            {INTAKE_DIMENSIONS.map((dim) => (
+            {/* Answering "no" prunes the question out of the grid — a "no" means
+             *  it's settled and not relevant, so it stops taking up space. */}
+            {INTAKE_DIMENSIONS.filter((dim) => tags[dim.tag] !== "no").map((dim) => (
               <li
                 key={dim.tag}
                 className="flex items-center justify-between gap-3 rounded-xl bg-paper-50 px-3 py-2 dark:bg-umber-900/50"
