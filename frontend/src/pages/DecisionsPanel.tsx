@@ -20,7 +20,17 @@ import {
   visiblePromptsForGroup,
 } from "@shared/planning_prompts";
 import type { PlanningItem } from "@shared/types";
-import { Check, ChevronDown, HelpCircle, Lightbulb, ListChecks, Store, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  HelpCircle,
+  Lightbulb,
+  ListChecks,
+  RotateCcw,
+  SquarePen,
+  Store,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Skeleton, useToast } from "../components/ui";
 import { type PlanningPromptTags, planningApi } from "../lib/endpoints";
@@ -505,107 +515,86 @@ function DecisionCard({
               </div>
             </div>
           )}
-
-          {/* Action row. */}
-          {!editing && (
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              {item.decision_status === "open" &&
-                (kind === "todo" ? (
-                  <ActionButton
-                    onClick={() => onResolve(item, "")}
-                    disabled={busy}
-                    label={t("planning.decisions.action_done")}
-                  />
-                ) : (
-                  <ActionButton
-                    onClick={() => {
-                      setDraft(item.resolution ?? "");
-                      setEditing(true);
-                    }}
-                    disabled={busy}
-                    label={
-                      kind === "check"
-                        ? t("planning.decisions.action_record_answer")
-                        : t("planning.decisions.action_decide")
-                    }
-                  />
-                ))}
-              {decided && (
-                <>
-                  <ActionButton
-                    onClick={() => {
-                      setDraft(item.resolution ?? "");
-                      setEditing(true);
-                    }}
-                    disabled={busy}
-                    label={t("planning.decisions.action_edit")}
-                  />
-                  <ActionButton
-                    onClick={() => onReopen(item)}
-                    disabled={busy}
-                    label={t("planning.decisions.action_reopen")}
-                    muted
-                  />
-                </>
-              )}
-              {dismissedRow && (
-                <ActionButton
-                  onClick={() => onReopen(item)}
-                  disabled={busy}
-                  label={t("planning.decisions.action_restore")}
-                />
-              )}
-            </div>
+        </div>
+      </div>
+      {/* All card actions live in one icon row at the bottom-right. */}
+      {!editing && (
+        <div className="mt-2 flex items-center justify-end gap-1">
+          {item.decision_status === "open" &&
+            (kind === "todo" ? (
+              <IconAction
+                onClick={() => onResolve(item, "")}
+                disabled={busy}
+                label={t("planning.decisions.action_done")}
+                icon={Check}
+              />
+            ) : (
+              <IconAction
+                onClick={() => {
+                  setDraft(item.resolution ?? "");
+                  setEditing(true);
+                }}
+                disabled={busy}
+                label={
+                  kind === "check"
+                    ? t("planning.decisions.action_record_answer")
+                    : t("planning.decisions.action_decide")
+                }
+                icon={kind === "check" ? SquarePen : Check}
+              />
+            ))}
+          {item.decision_status === "open" && (
+            <>
+              <IconAction
+                onClick={() => onPromote(item)}
+                disabled={busy}
+                label={t("planning.decisions.action_promote")}
+                icon={ListChecks}
+              />
+              <IconAction
+                onClick={() => onDismiss(item)}
+                disabled={busy}
+                label={t("planning.decisions.action_not_relevant")}
+                icon={X}
+                muted
+              />
+            </>
+          )}
+          {decided && (
+            <>
+              <IconAction
+                onClick={() => {
+                  setDraft(item.resolution ?? "");
+                  setEditing(true);
+                }}
+                disabled={busy}
+                label={t("planning.decisions.action_edit")}
+                icon={SquarePen}
+              />
+              <IconAction
+                onClick={() => onReopen(item)}
+                disabled={busy}
+                label={t("planning.decisions.action_reopen")}
+                icon={RotateCcw}
+                muted
+              />
+            </>
+          )}
+          {dismissedRow && (
+            <IconAction
+              onClick={() => onReopen(item)}
+              disabled={busy}
+              label={t("planning.decisions.action_restore")}
+              icon={RotateCcw}
+            />
           )}
         </div>
-        {item.decision_status === "open" && !editing && (
-          <div className="flex shrink-0 items-center gap-1">
-            <IconAction
-              onClick={() => onPromote(item)}
-              disabled={busy}
-              label={t("planning.decisions.action_promote")}
-              icon={ListChecks}
-            />
-            <IconAction
-              onClick={() => onDismiss(item)}
-              disabled={busy}
-              label={t("planning.decisions.action_not_relevant")}
-              icon={X}
-              muted
-            />
-          </div>
-        )}
-      </div>
+      )}
     </li>
   );
 }
 
-function ActionButton({
-  onClick,
-  disabled,
-  label,
-  muted,
-}: {
-  onClick: () => void;
-  disabled?: boolean;
-  label: string;
-  muted?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline disabled:opacity-50 ${
-        muted ? "text-ink-400 dark:text-umber-300" : "text-ink-700 dark:text-paper-100"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-// Icon-only action sitting at the card's right edge (promote to task, dismiss).
+// Icon-only card action (decide, record, promote, dismiss, edit, reopen).
 // Label is exposed via aria-label/title so the meaning survives without text.
 function IconAction({
   onClick,
