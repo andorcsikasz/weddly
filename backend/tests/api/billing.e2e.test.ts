@@ -15,7 +15,12 @@ import type { AdminCoupleView } from "@shared/types";
 import { type BillingStatusResponse, PAID_LAUNCH_DATE } from "@shared/billing";
 import type { Couple } from "@shared/types";
 import { db } from "../../src/db";
-import { activatePartnerFreeWindow, setBillingEnforcement } from "../../src/domain/billing";
+import {
+  activatePartnerFreeWindow,
+  foundingSlotsUsed,
+  setBillingEnforcement,
+} from "../../src/domain/billing";
+import { FOUNDING_CAP } from "@shared/billing";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 
 /** Seed N placeholder founding-cohort couples (`is_founding_member = 1`) so N
@@ -140,6 +145,35 @@ describe("billing state machine", () => {
     expect(r.data.couple.billing.subscription_status).toBe("trialing");
     expect(r.data.couple.billing.is_founding_member).toBe(false);
   });
+
+  test("founding cohort never overshoots FOUNDING_CAP at the boundary (atomic grant)", async () => {
+    // Fill all but ONE slot, then make TWO couples eligible and grant both.
+    // Exactly one may take the last slot; the cohort must land on exactly
+    // FOUNDING_CAP, never CAP+1. The grant path wraps its slots-remaining check
+    // and the UPDATE in a single transaction so the count can't be read stale.
+    seedCouples(FOUNDING_CAP - 1);
+    expect(foundingSlotsUsed()).toBe(FOUNDING_CAP - 1);
+
+    const a = await bootstrapCouple("cap-a@weddly.test");
+    const b = await bootstrapCouple("cap-b@weddly.test");
+    for (const c of [a, b]) {
+      const partnerA = (
+        db.prepare("SELECT partner_a_id FROM couples WHERE id = ?").get(c.coupleId) as {
+          partner_a_id: number;
+        }
+      ).partner_a_id;
+      db.prepare(
+        "UPDATE couples SET wedding_date = '2027-06-15', partner_b_id = ? WHERE id = ?",
+      ).run(partnerA, c.coupleId);
+    }
+
+    const grantedA = activatePartnerFreeWindow(a.coupleId);
+    const grantedB = activatePartnerFreeWindow(b.coupleId);
+
+    // Exactly one grant succeeded; the cohort is exactly full, never over.
+    expect([grantedA, grantedB].filter(Boolean).length).toBe(1);
+    expect(foundingSlotsUsed()).toBe(FOUNDING_CAP);
+  }, 30_000);
 
   test("moving the wedding date re-pins the founding free window", async () => {
     const { token, coupleId } = await bootstrapCouple("repin@weddly.test");

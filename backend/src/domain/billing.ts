@@ -159,18 +159,30 @@ export function activatePartnerFreeWindow(coupleId: number, nowMs: number = now(
   // Don't downgrade a paying subscriber or re-stamp an existing founder.
   if (["founding", "active", "past_due"].includes(couple.subscription_status)) return false;
   if (couple.partner_b_id == null) return false; // both partners required
-  if (!isFoundingEligible()) return false; // founding cohort full → stays on trial
 
-  const until = partnerFreeWindowEnd(weddingMsOf(couple.wedding_date), nowMs);
-  db.prepare(
-    `UPDATE couples
-        SET subscription_status = 'founding',
-            is_founding_member = 1,
-            founding_until = ?,
-            updated_at = ?
-      WHERE id = ?`,
-  ).run(until, nowMs, coupleId);
-  return true;
+  // The eligibility check (slots remaining) and the grant UPDATE must be
+  // indivisible so the founding cohort can never overshoot FOUNDING_CAP. Bun's
+  // event loop is single-threaded and bun:sqlite is synchronous, so today this
+  // function already runs start-to-finish without interleaving — but wrapping
+  // the count-read + write in one db.transaction() makes the atomicity explicit
+  // and keeps it correct if a future refactor ever introduces an await between
+  // the check and the write, or moves DB access off the main thread. The
+  // eligibility re-check lives INSIDE the txn so it sees the latest committed
+  // badge count, not a stale read from before the transaction opened.
+  const grant = db.transaction(() => {
+    if (!isFoundingEligible()) return false; // founding cohort full → stays on trial
+    const until = partnerFreeWindowEnd(weddingMsOf(couple.wedding_date), nowMs);
+    db.prepare(
+      `UPDATE couples
+          SET subscription_status = 'founding',
+              is_founding_member = 1,
+              founding_until = ?,
+              updated_at = ?
+        WHERE id = ?`,
+    ).run(until, nowMs, coupleId);
+    return true;
+  });
+  return grant();
 }
 
 /** Keep the founding cohort's "free until your wedding day" window pinned to
