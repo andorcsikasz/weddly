@@ -788,16 +788,6 @@ export function WeddingSiteView({
         )
       )}
 
-      {/* ── Countdown — DARK band, big numerals. ────────────────────────── */}
-      {(view.wedding_date || isPreview) && (
-        <WeddingCountdown
-          date={view.wedding_date}
-          isPreview={isPreview}
-          onEdit={isPreview ? e.onEditDate : undefined}
-          variant="band"
-        />
-      )}
-
       {/* ── Good to know — parking, getting there, accommodation, … ─────── */}
       {view.useful_info && !sectionHidden("useful_info") ? (
         <Band onEdit={isPreview ? e.onEditUsefulInfo : undefined} hint={editHint}>
@@ -916,6 +906,18 @@ export function WeddingSiteView({
             {t("wedding_site.rsvp_manage_cta")}
           </Link>
         </section>
+      )}
+
+      {/* ── Countdown — DARK band, big numerals. Moved to the bottom: sits
+          after the RSVP ask, above the wishlist footnote + footer, so the page
+          closes on a "X days to go" beat. ──────────────────────────────── */}
+      {(view.wedding_date || isPreview) && (
+        <WeddingCountdown
+          date={view.wedding_date}
+          isPreview={isPreview}
+          onEdit={isPreview ? e.onEditDate : undefined}
+          variant="band"
+        />
       )}
 
       {/* ── Wishlist — compact closing section, confirmed-tier live page only.
