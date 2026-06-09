@@ -696,7 +696,21 @@ function handleDelete(ctx: Ctx): Response {
   const existing = getGuestByIdScoped(id, couple.id);
   if (!existing) throw new HttpError(404, "Guest not found");
 
-  db.prepare("DELETE FROM guests WHERE id = ? AND couple_id = ?").run(id, couple.id);
+  // Detach any materialized +1s before deleting the host. `guests.plus_one_of`
+  // is a self-FK with no ON DELETE action (db.ts:126, added via
+  // addColumnIfMissing so its FK can't be ALTERed without a full table
+  // rebuild), so a bare DELETE of a host that still has +1s throws
+  // SQLITE_CONSTRAINT → 500. We DETACH rather than cascade-delete: a +1 is a
+  // real attendee with its own name, invite code, RSVP status and seat — losing
+  // their host shouldn't silently erase a confirmed guest. One transaction so
+  // the detach + delete are indivisible.
+  const tx = db.transaction(() => {
+    db.prepare(
+      "UPDATE guests SET plus_one_of = NULL, is_plus_one = 0 WHERE plus_one_of = ? AND couple_id = ?",
+    ).run(id, couple.id);
+    db.prepare("DELETE FROM guests WHERE id = ? AND couple_id = ?").run(id, couple.id);
+  });
+  tx();
 
   addAuditLog({
     actor_user_id: userId,
