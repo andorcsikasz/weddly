@@ -35,12 +35,9 @@ describe("invite state cascades to materialized +1s", () => {
     expect(host.status).toBe(201);
     const hostId = host.data.guest.id;
 
-    const plus = await req<{ guest: { id: number; is_plus_one: boolean; plus_one_of: number | null } }>(
-      "POST",
-      "/api/guests",
-      { full_name: "Tamás", plus_one_of: hostId },
-      { token },
-    );
+    const plus = await req<{
+      guest: { id: number; is_plus_one: boolean; plus_one_of: number | null };
+    }>("POST", "/api/guests", { full_name: "Tamás", plus_one_of: hostId }, { token });
     expect(plus.status).toBe(201);
     const plusId = plus.data.guest.id;
     expect(plus.data.guest.plus_one_of).toBe(hostId);

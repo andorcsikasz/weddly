@@ -3322,7 +3322,10 @@ function MealsDialog({
         </div>
       }
     >
-      <div className="space-y-6">
+      {/* font-grotesk (General Sans) across the whole dialog so the meals
+          summary speaks in the same voice as the landing page, not the
+          default Inter body stack. */}
+      <div className="space-y-6 font-grotesk">
         {/* Bulk RSVP-form settings — lifted out of the per-household card
             so couples set "do we ask for meals / accommodation?" once for
             the whole guest list. Disabled when there are no households
@@ -3601,7 +3604,7 @@ function MealLegendRow({
             {label}
           </span>
           <span
-            className={`font-mono text-base font-semibold tabular-nums ${
+            className={`text-base font-semibold tabular-nums ${
               dim ? "text-ink-400 dark:text-umber-400" : "text-ink-900 dark:text-paper-50"
             }`}
           >
@@ -3618,7 +3621,7 @@ function MealLegendRow({
               />
             )}
           </div>
-          <span className="w-9 shrink-0 text-right font-mono text-[11px] tabular-nums text-ink-500 dark:text-umber-300">
+          <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-ink-500 dark:text-umber-300">
             {dim ? "—" : `${pct}%`}
           </span>
         </div>
@@ -3705,13 +3708,13 @@ function AllergenRow({
         />
       </div>
       <span
-        className={`w-10 shrink-0 text-right font-mono text-sm font-semibold tabular-nums ${
+        className={`w-10 shrink-0 text-right text-sm font-semibold tabular-nums ${
           dim ? "text-ink-400 dark:text-umber-400" : "text-ink-900 dark:text-paper-50"
         }`}
       >
         {count}
       </span>
-      <span className="mr-3 hidden w-12 shrink-0 text-right font-mono text-[11px] tabular-nums text-ink-500 sm:inline dark:text-umber-300">
+      <span className="mr-3 hidden w-12 shrink-0 text-right text-[11px] tabular-nums text-ink-500 sm:inline dark:text-umber-300">
         {dim ? "—" : `${sharePct}%`}
       </span>
     </li>
