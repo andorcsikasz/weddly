@@ -2565,6 +2565,9 @@ export interface LocaleMessages {
     label: string;
     planned: string;
     actual: string;
+    paid: string;
+    paid_mark_full: string;
+    remaining_label: string;
     delta: string;
     note: string;
     note_placeholder: string;

@@ -493,6 +493,11 @@ export interface BudgetLine {
   label: string;
   planned_huf: Huf;
   actual_huf: Huf;
+  /** How much of this line has been settled so far, integer Forint (0 = nothing
+   *  paid). Hand-editable on plain lines; derived from paid supplier
+   *  installments on DIY-supplier-mirrored lines. Always clamped to
+   *  `[0, actual_huf]` server-side. */
+  paid_huf: Huf;
   /** Future: links to a `suppliers` row when v2 lands. */
   supplier_id: number | null;
   /** When set, this line was auto-created from a DIY supplier entry on

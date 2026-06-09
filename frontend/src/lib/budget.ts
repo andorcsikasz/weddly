@@ -110,6 +110,47 @@ export async function applyCategoryActual(
   return lines.map((l) => updateMap.get(l.id) ?? l);
 }
 
+/** Apply a new total `paid_huf` to a category, distributing across its lines in
+ *  proportion to each line's `actual_huf` (so paid spreads like cost). The
+ *  server clamps each line's paid to its own actual. DIY-supplier lines are
+ *  owned by the supplier card (paid is derived there), so they're filtered out.
+ *  Marking a category "fully paid" is just `applyCategoryPaid(cat, bucketActual)`;
+ *  clearing is `applyCategoryPaid(cat, 0)`. */
+export async function applyCategoryPaid(
+  category: BudgetCategory,
+  newTotal: number,
+  lines: BudgetLine[],
+  filter?: (line: BudgetLine) => boolean,
+): Promise<BudgetLine[]> {
+  const inCat = lines.filter(
+    (l) => l.category === category && l.couple_supplier_id === null && (filter ? filter(l) : true),
+  );
+  if (inCat.length === 0) return lines;
+
+  if (inCat.length === 1) {
+    const line = inCat[0];
+    if (!line) return lines;
+    const paid = Math.max(0, Math.min(newTotal, line.actual_huf));
+    const updated = { ...line, paid_huf: paid };
+    await budgetApi.updateLine(line.id, updated);
+    return lines.map((l) => (l.id === line.id ? updated : l));
+  }
+
+  const totalActual = inCat.reduce((s, l) => s + l.actual_huf, 0);
+  const updates: BudgetLine[] = inCat.map((l, i) => {
+    const raw =
+      totalActual > 0
+        ? Math.round((l.actual_huf / totalActual) * newTotal)
+        : i === 0
+          ? newTotal
+          : 0;
+    return { ...l, paid_huf: Math.max(0, Math.min(raw, l.actual_huf)) };
+  });
+  await Promise.all(updates.map((l) => budgetApi.updateLine(l.id, l)));
+  const updateMap = new Map(updates.map((l) => [l.id, l]));
+  return lines.map((l) => updateMap.get(l.id) ?? l);
+}
+
 import type { Couple } from "@shared/types";
 
 /** Fallback baseline when the couple hasn't picked a target headcount yet —

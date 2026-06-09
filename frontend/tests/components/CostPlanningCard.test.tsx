@@ -21,6 +21,7 @@ function line(id: number, category: BudgetCategory, planned: number): BudgetLine
     label: category,
     planned_huf: planned,
     actual_huf: 0,
+    paid_huf: 0,
     supplier_id: null,
     couple_supplier_id: null,
     notes: null,

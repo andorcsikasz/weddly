@@ -60,6 +60,7 @@ interface LineRow {
   label: string;
   planned_huf: number;
   actual_huf: number;
+  paid_huf: number;
   supplier_id: number | null;
   couple_supplier_id: string | null;
   notes: string | null;
@@ -79,6 +80,7 @@ function toLine(r: LineRow): BudgetLine {
     label: r.label,
     planned_huf: r.planned_huf,
     actual_huf: r.actual_huf,
+    paid_huf: r.paid_huf,
     supplier_id: r.supplier_id,
     couple_supplier_id: r.couple_supplier_id,
     notes: r.notes,
@@ -137,6 +139,7 @@ interface UpsertLineBody {
   label?: unknown;
   planned_huf?: unknown;
   actual_huf?: unknown;
+  paid_huf?: unknown;
   notes?: unknown;
   per_guest?: unknown;
   icon?: unknown;
@@ -157,6 +160,12 @@ function parseLineBody(body: UpsertLineBody, requireCategory = true) {
   if (!Number.isFinite(actual) || actual < 0 || actual > 10_000_000_000) {
     throw new HttpError(400, "actual_huf out of range");
   }
+  const paidRaw = Number(body.paid_huf ?? 0);
+  if (!Number.isFinite(paidRaw) || paidRaw < 0 || paidRaw > 10_000_000_000) {
+    throw new HttpError(400, "paid_huf out of range");
+  }
+  // You can't pay more than the line costs — clamp paid to [0, actual].
+  const paid = Math.min(Math.round(paidRaw), Math.round(actual));
   const notes =
     typeof body.notes === "string" && body.notes.trim() ? body.notes.trim().slice(0, 1000) : null;
   const perGuest = body.per_guest === true || body.per_guest === 1;
@@ -166,6 +175,7 @@ function parseLineBody(body: UpsertLineBody, requireCategory = true) {
     label,
     planned_huf: Math.round(planned),
     actual_huf: Math.round(actual),
+    paid_huf: paid,
     notes,
     per_guest: perGuest ? 1 : 0,
     icon,
@@ -189,8 +199,8 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, supplier_id, notes, per_guest, icon, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
+      `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, paid_huf, supplier_id, notes, per_guest, icon, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -198,6 +208,7 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
       parsed.label,
       parsed.planned_huf,
       parsed.actual_huf,
+      parsed.paid_huf,
       parsed.notes,
       parsed.per_guest,
       parsed.icon,
@@ -271,9 +282,18 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
   const parsed = parsePartialLine(body, existing);
   const ts = now();
   db.prepare(
-    `UPDATE budget_lines SET label = ?, planned_huf = ?, actual_huf = ?, notes = ?, updated_at = ?
+    `UPDATE budget_lines SET label = ?, planned_huf = ?, actual_huf = ?, paid_huf = ?, notes = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
-  ).run(parsed.label, parsed.planned_huf, parsed.actual_huf, parsed.notes, ts, id, couple.id);
+  ).run(
+    parsed.label,
+    parsed.planned_huf,
+    parsed.actual_huf,
+    parsed.paid_huf,
+    parsed.notes,
+    ts,
+    id,
+    couple.id,
+  );
 
   addAuditLog({
     actor_user_id: userId,
@@ -324,12 +344,23 @@ function parsePartialLine(body: UpsertLineBody, existing: LineRow) {
     }
     actual = Math.round(n);
   }
+  let paid = existing.paid_huf;
+  if (body.paid_huf !== undefined) {
+    const n = Number(body.paid_huf);
+    if (!Number.isFinite(n) || n < 0 || n > 10_000_000_000) {
+      throw new HttpError(400, "paid_huf out of range");
+    }
+    paid = Math.round(n);
+  }
+  // Paid can never exceed the line's cost — re-clamp on every save so lowering
+  // `actual` also pulls an over-large `paid` down with it.
+  paid = Math.min(paid, actual);
   let notes = existing.notes;
   if (body.notes !== undefined) {
     notes =
       typeof body.notes === "string" && body.notes.trim() ? body.notes.trim().slice(0, 1000) : null;
   }
-  return { label, planned_huf: planned, actual_huf: actual, notes };
+  return { label, planned_huf: planned, actual_huf: actual, paid_huf: paid, notes };
 }
 
 function handleDeleteLine(ctx: Ctx): Response {

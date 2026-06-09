@@ -286,6 +286,12 @@ addColumnIfMissing("budget_lines", "couple_supplier_id", "couple_supplier_id TEX
 addColumnIfMissing("budget_lines", "per_guest", "per_guest INTEGER NOT NULL DEFAULT 0");
 addColumnIfMissing("budget_lines", "icon", "icon TEXT");
 
+// How much of this line has actually been settled, in integer Forint (the
+// "kifizetett összeg" column on /app/budget). Defaults to 0 (nothing paid).
+// For DIY-supplier-mirrored lines it is kept in lock-step with the supplier's
+// paid installments by `recomputePaidState`; plain lines are hand-editable.
+addColumnIfMissing("budget_lines", "paid_huf", "paid_huf INTEGER NOT NULL DEFAULT 0");
+
 // Per-couple supplier votes — see schema.sql. The legacy `(user_id, supplier_id)`
 // keying let both partners stack two votes on a self-submitted supplier, which
 // brigaded the directory's default sort. Backfill `couple_id` from the voter's

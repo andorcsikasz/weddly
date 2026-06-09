@@ -288,6 +288,7 @@ function makeBudgetLine(over: Partial<BudgetLine> = {}): BudgetLine {
     label: "Venue",
     planned_huf: 1_500_000,
     actual_huf: 0,
+    paid_huf: 0,
     supplier_id: null,
     couple_supplier_id: null,
     notes: null,

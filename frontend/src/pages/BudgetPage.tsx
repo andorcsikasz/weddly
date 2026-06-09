@@ -13,6 +13,7 @@ import {
 import {
   ArrowUpRight,
   BarChart3,
+  CircleCheck,
   Loader2,
   MoreHorizontal,
   Plus,
@@ -35,6 +36,7 @@ import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
   applyCategoryActual,
+  applyCategoryPaid,
   applyCategoryPlanned,
   guestCountBaseline,
   guestCountBounds,
@@ -244,7 +246,11 @@ export default function BudgetPage() {
     void retry;
   }
 
-  async function save(line: BudgetLine, key: "planned_huf" | "actual_huf", val: number) {
+  async function save(
+    line: BudgetLine,
+    key: "planned_huf" | "actual_huf" | "paid_huf",
+    val: number,
+  ) {
     // Functional updater so stale-closure callers (e.g. the useCallback'd
     // setCustomRowPlanned) still see the latest lines.
     setLines((prev) => prev.map((l) => (l.id === line.id ? { ...l, [key]: val } : l)));
@@ -381,6 +387,24 @@ export default function BudgetPage() {
       }
     },
     [lines, t],
+  );
+
+  const setAggregatedPaid = useCallback(
+    async function setAggregatedPaid(category: BudgetCategory, newTotal: number) {
+      try {
+        const next = await applyCategoryPaid(
+          category,
+          newTotal,
+          lines,
+          category === "other" ? isDefaultOtherLine : undefined,
+        );
+        setLines(next);
+        publish("budget:changed");
+      } catch (e) {
+        handleSaveError(e, () => setAggregatedPaid(category, newTotal));
+      }
+    },
+    [lines],
   );
 
   async function removeAllInCategory(category: BudgetCategory) {
@@ -658,11 +682,12 @@ export default function BudgetPage() {
       lines: BudgetLine[];
       planned: number;
       actual: number;
+      paid: number;
       editable: boolean;
     };
     const map = new Map<BudgetCategory, Bucket>();
     for (const cat of CATEGORIES) {
-      map.set(cat, { lines: [], planned: 0, actual: 0, editable: true });
+      map.set(cat, { lines: [], planned: 0, actual: 0, paid: 0, editable: true });
     }
     for (const l of lines) {
       if (l.category === "honeymoon") continue;
@@ -672,6 +697,7 @@ export default function BudgetPage() {
       b.lines.push(l);
       b.planned += l.planned_huf;
       b.actual += l.actual_huf;
+      b.paid += l.paid_huf;
       if (l.couple_supplier_id !== null) b.editable = false;
     }
     return map;
@@ -686,13 +712,16 @@ export default function BudgetPage() {
   const tableTotals = useMemo(() => {
     let planned = 0;
     let actual = 0;
+    let paid = 0;
     let delta = 0;
     for (const l of lines) {
       planned += l.planned_huf;
       actual += l.actual_huf;
+      paid += l.paid_huf;
       if (l.actual_huf > 0) delta += l.actual_huf - l.planned_huf;
     }
-    return { planned, actual, delta };
+    // Outstanding = what's been priced but not yet settled. Never negative.
+    return { planned, actual, paid, remaining: Math.max(0, actual - paid), delta };
   }, [lines]);
 
   // Pulled once near the top so every money render below — table, totals,
@@ -901,6 +930,7 @@ export default function BudgetPage() {
                 category={cat}
                 planned={planned}
                 actual={actual}
+                paid={bucket?.paid ?? 0}
                 currency={currency}
                 locale={locale}
                 // Planned is always read-only at the row level — the slider on
@@ -915,6 +945,8 @@ export default function BudgetPage() {
                 canDelete={canDelete}
                 onPlannedCommit={(v) => setAggregatedPlanned(cat, v)}
                 onActualCommit={(v) => setAggregatedActual(cat, v)}
+                onPaidCommit={(v) => setAggregatedPaid(cat, v)}
+                onMarkFull={(full) => setAggregatedPaid(cat, full ? actual : 0)}
                 onDelete={() => removeAllInCategory(cat)}
               />
             );
@@ -929,6 +961,8 @@ export default function BudgetPage() {
                 locale={locale}
                 onPlannedCommit={(v) => save(line, "planned_huf", v)}
                 onActualCommit={(v) => save(line, "actual_huf", v)}
+                onPaidCommit={(v) => save(line, "paid_huf", v)}
+                onMarkFull={(full) => save(line, "paid_huf", full ? line.actual_huf : 0)}
                 onDelete={() => removeLine(line.id)}
               />
             ))}
@@ -942,6 +976,7 @@ export default function BudgetPage() {
                 <th className="px-4 py-3 font-medium">{t("budget.category")}</th>
                 <th className="px-4 py-3 text-center font-medium">{t("budget.planned")}</th>
                 <th className="px-4 py-3 text-center font-medium">{t("budget.actual")}</th>
+                <th className="px-4 py-3 text-center font-medium">{t("budget.paid")}</th>
                 <th className="hidden px-4 py-3 text-center font-medium sm:table-cell">
                   {t("budget.delta")}
                 </th>
@@ -1011,6 +1046,15 @@ export default function BudgetPage() {
                         ariaLabel={t("budget.actual")}
                       />
                     </td>
+                    <td className="px-4 py-2 align-middle">
+                      <PaidCell
+                        paid={bucket?.paid ?? 0}
+                        actual={actual}
+                        readOnly={!editable}
+                        onCommitAmount={(v) => setAggregatedPaid(cat, v)}
+                        onMarkFull={(full) => setAggregatedPaid(cat, full ? actual : 0)}
+                      />
+                    </td>
                     <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
                       {actual > 0 && delta !== 0 && (
                         <span
@@ -1071,6 +1115,15 @@ export default function BudgetPage() {
                           ariaLabel={t("budget.actual")}
                         />
                       </td>
+                      <td className="px-4 py-2 align-middle">
+                        <PaidCell
+                          paid={line.paid_huf}
+                          actual={line.actual_huf}
+                          readOnly={false}
+                          onCommitAmount={(v) => save(line, "paid_huf", v)}
+                          onMarkFull={(full) => save(line, "paid_huf", full ? line.actual_huf : 0)}
+                        />
+                      </td>
                       <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
                         {line.actual_huf > 0 && delta !== 0 && (
                           <span
@@ -1109,6 +1162,16 @@ export default function BudgetPage() {
                 </td>
                 <td className="px-4 py-3 text-center align-middle tabular-nums text-ink-900 dark:text-paper-50">
                   {formatMoney(tableTotals.actual, currency, locale)}
+                </td>
+                <td className="px-4 py-3 text-center align-middle tabular-nums text-ink-900 dark:text-paper-50">
+                  {formatMoney(tableTotals.paid, currency, locale)}
+                  {tableTotals.remaining > 0 && (
+                    <span className="mt-0.5 block text-xs font-normal text-ink-500 dark:text-umber-300">
+                      {t("budget.remaining_label", {
+                        amount: formatMoney(tableTotals.remaining, currency, locale),
+                      })}
+                    </span>
+                  )}
                 </td>
                 <td className="hidden px-4 py-3 text-center align-middle tabular-nums sm:table-cell">
                   {tableTotals.delta !== 0 && (
@@ -1237,7 +1300,7 @@ function AddCustomRowTr({
   if (!expanded) {
     return (
       <tr className="border-t border-paper-200 dark:border-umber-700">
-        <td colSpan={5} className="px-4 py-2">
+        <td colSpan={6} className="px-4 py-2">
           <button
             type="button"
             onClick={() => setExpanded(true)}
@@ -1253,7 +1316,7 @@ function AddCustomRowTr({
 
   return (
     <tr className="border-t border-paper-200 dark:border-umber-700">
-      <td colSpan={5} className="px-4 py-2">
+      <td colSpan={6} className="px-4 py-2">
         <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
           <input
             type="text"
@@ -1430,6 +1493,54 @@ function CategoryCell({ category }: { category: BudgetCategory }) {
 /** Read-only row that rolls every honeymoon-category line into one entry.
  *  The actual edits happen on /app/honeymoon — the chevron link in the
  *  action cell sends the user there. */
+/** Paid-amount cell: an inline amount input + a colour-coded "fully paid"
+ *  toggle. Grey = nothing paid, amber = partial deposit, green = settled.
+ *  The toggle marks the line(s) fully paid (paid = actual) or clears to 0. */
+function PaidCell({
+  paid,
+  actual,
+  readOnly,
+  onCommitAmount,
+  onMarkFull,
+}: {
+  paid: number;
+  actual: number;
+  readOnly: boolean;
+  onCommitAmount: (v: number) => void;
+  onMarkFull: (full: boolean) => void;
+}) {
+  const { t } = useT();
+  const state = actual > 0 && paid >= actual ? "paid" : paid > 0 ? "partial" : "unpaid";
+  const tone =
+    state === "paid"
+      ? "text-emerald-600 dark:text-emerald-400"
+      : state === "partial"
+        ? "text-amber-600 dark:text-amber-400"
+        : "text-ink-300 dark:text-umber-500";
+  return (
+    <div className="flex items-center gap-1.5">
+      <HufInput
+        value={paid}
+        onCommit={onCommitAmount}
+        readOnly={readOnly}
+        dataKey="paid"
+        ariaLabel={t("budget.paid")}
+      />
+      <button
+        type="button"
+        disabled={readOnly || actual === 0}
+        onClick={() => onMarkFull(state !== "paid")}
+        aria-pressed={state === "paid"}
+        aria-label={t("budget.paid_mark_full")}
+        title={t("budget.paid_mark_full")}
+        className={`shrink-0 transition disabled:cursor-not-allowed disabled:opacity-30 ${tone}`}
+      >
+        <CircleCheck size={18} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
 function HoneymoonAggregateRow({
   planned,
   actual,
@@ -1460,6 +1571,9 @@ function HoneymoonAggregateRow({
       </td>
       <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900 dark:text-paper-50">
         {formatMoney(actual, currency, locale)}
+      </td>
+      <td className="px-4 py-2 text-center align-middle text-sm text-ink-400 dark:text-umber-300">
+        —
       </td>
       <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
         {actual > 0 && delta !== 0 && (
@@ -1500,17 +1614,21 @@ function BudgetMobileCard({
   actual,
   currency,
   locale,
+  paid,
   readOnlyPlanned,
   readOnlyActual,
   canDelete,
   onPlannedCommit,
   onActualCommit,
+  onPaidCommit,
+  onMarkFull,
   onDelete,
 }: {
   id: string;
   category: BudgetCategory;
   planned: number;
   actual: number;
+  paid: number;
   currency: Currency;
   locale: "hu" | "en";
   readOnlyPlanned: boolean;
@@ -1518,6 +1636,8 @@ function BudgetMobileCard({
   canDelete: boolean;
   onPlannedCommit: (v: number) => void | Promise<void>;
   onActualCommit: (v: number) => void | Promise<void>;
+  onPaidCommit: (v: number) => void | Promise<void>;
+  onMarkFull: (full: boolean) => void;
   onDelete: () => void;
 }) {
   const { t } = useT();
@@ -1578,6 +1698,20 @@ function BudgetMobileCard({
             />
           </dd>
         </div>
+        <div className="col-span-2 min-w-0">
+          <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.paid")}
+          </dt>
+          <dd>
+            <PaidCell
+              paid={paid}
+              actual={actual}
+              readOnly={readOnlyActual}
+              onCommitAmount={onPaidCommit}
+              onMarkFull={onMarkFull}
+            />
+          </dd>
+        </div>
       </dl>
     </article>
   );
@@ -1591,6 +1725,8 @@ function BudgetMobileCustomCard({
   locale,
   onPlannedCommit,
   onActualCommit,
+  onPaidCommit,
+  onMarkFull,
   onDelete,
 }: {
   line: BudgetLine;
@@ -1598,6 +1734,8 @@ function BudgetMobileCustomCard({
   locale: "hu" | "en";
   onPlannedCommit: (v: number) => void | Promise<void>;
   onActualCommit: (v: number) => void | Promise<void>;
+  onPaidCommit: (v: number) => void | Promise<void>;
+  onMarkFull: (full: boolean) => void;
   onDelete: () => void;
 }) {
   const { t } = useT();
@@ -1646,6 +1784,20 @@ function BudgetMobileCustomCard({
               onCommit={onActualCommit}
               dataKey="actual"
               ariaLabel={t("budget.actual")}
+            />
+          </dd>
+        </div>
+        <div className="col-span-2 min-w-0">
+          <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.paid")}
+          </dt>
+          <dd>
+            <PaidCell
+              paid={line.paid_huf}
+              actual={line.actual_huf}
+              readOnly={false}
+              onCommitAmount={onPaidCommit}
+              onMarkFull={onMarkFull}
             />
           </dd>
         </div>
@@ -2156,7 +2308,7 @@ function HufInput({
   value: number;
   onCommit: (v: number) => void;
   readOnly?: boolean;
-  dataKey?: "planned" | "actual";
+  dataKey?: "planned" | "actual" | "paid";
   ariaLabel?: string;
 }) {
   const [draft, setDraft] = useState<string>(formatNumber(value, "hu"));

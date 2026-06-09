@@ -94,9 +94,12 @@ export function recomputePaidState(coupleId: number, supplierId: string, ts: num
   }
 
   if (sup.budget_line_id !== null) {
+    // On a supplier-mirrored line `actual_huf` IS the paid-so-far figure, so the
+    // budget "Paid" column mirrors it (paid_huf = actual). These lines are
+    // read-only on /app/budget, so this is the only writer of their paid_huf.
     db.prepare(
-      "UPDATE budget_lines SET actual_huf = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
-    ).run(actual, ts, sup.budget_line_id, coupleId);
+      "UPDATE budget_lines SET actual_huf = ?, paid_huf = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+    ).run(actual, actual, ts, sup.budget_line_id, coupleId);
   }
   if (paidFlag !== sup.paid) {
     db.prepare(

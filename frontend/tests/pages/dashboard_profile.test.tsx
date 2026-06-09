@@ -154,6 +154,7 @@ function makeBudgetLine(overrides: Partial<BudgetLine> = {}): BudgetLine {
     label: "Helyszín",
     planned_huf: 1_000_000,
     actual_huf: 500_000,
+    paid_huf: 0,
     supplier_id: null,
     couple_supplier_id: null,
     notes: null,

@@ -58,6 +58,7 @@ interface LineDTO {
   label: string;
   planned_huf: number;
   actual_huf: number;
+  paid_huf: number;
   notes: string | null;
   per_guest: boolean;
   icon: string | null;
@@ -1955,5 +1956,65 @@ describe("supplier taxonomy: admin gates + edge cases", () => {
       { token: adminToken },
     );
     expect(r.status).toBe(404);
+  });
+});
+
+describe("budget lines: paid_huf (kifizetett összeg)", () => {
+  test("create + PATCH paid; clamps to actual; defaults 0", async () => {
+    const { token } = await bootstrapCouple("bp-paid@weddly.test");
+    const create = await req<LineResp>(
+      "POST",
+      "/api/budget/lines",
+      { category: "venue", label: "Venue", planned_huf: 1_000_000, actual_huf: 300_000 },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.line.paid_huf).toBe(0); // defaults to nothing paid
+
+    // Partial deposit.
+    const partial = await req<LineResp>(
+      "PATCH",
+      `/api/budget/lines/${create.data.line.id}`,
+      { paid_huf: 100_000 },
+      { token },
+    );
+    expect(partial.data.line.paid_huf).toBe(100_000);
+    expect(partial.data.line.actual_huf).toBe(300_000); // unchanged
+
+    // Paying more than the line costs clamps to actual.
+    const over = await req<LineResp>(
+      "PATCH",
+      `/api/budget/lines/${create.data.line.id}`,
+      { paid_huf: 999_999_999 },
+      { token },
+    );
+    expect(over.data.line.paid_huf).toBe(300_000);
+
+    // Lowering actual below paid re-clamps paid down with it.
+    const lowered = await req<LineResp>(
+      "PATCH",
+      `/api/budget/lines/${create.data.line.id}`,
+      { actual_huf: 120_000 },
+      { token },
+    );
+    expect(lowered.data.line.actual_huf).toBe(120_000);
+    expect(lowered.data.line.paid_huf).toBe(120_000);
+  });
+
+  test("negative paid_huf is rejected", async () => {
+    const { token } = await bootstrapCouple("bp-paid-neg@weddly.test");
+    const create = await req<LineResp>(
+      "POST",
+      "/api/budget/lines",
+      { category: "venue", label: "Venue", planned_huf: 1000, actual_huf: 1000 },
+      { token },
+    );
+    const r = await req(
+      "PATCH",
+      `/api/budget/lines/${create.data.line.id}`,
+      { paid_huf: -5 },
+      { token },
+    );
+    expect(r.status).toBe(400);
   });
 });
