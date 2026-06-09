@@ -81,22 +81,22 @@ describe("A. concurrent registration at cohort scale", () => {
   test(
     "50 registrations all succeed with distinct tokens",
     async () => {
-    wipeAll();
-    const results = await Promise.all(
-      Array.from({ length: COHORT }, (_, i) =>
-        req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
-          email: `conc-reg-${i}@weddly.test`,
-          password: "supersafe123",
-          full_name: `User ${i}`,
-        }),
-      ),
-    );
-    const ok = results.filter((r) => r.status === 201);
-    expect(ok.length).toBe(COHORT);
-    const tokens = new Set(ok.map((r) => r.data.token));
-    const ids = new Set(ok.map((r) => r.data.user.id));
-    expect(tokens.size).toBe(COHORT);
-    expect(ids.size).toBe(COHORT);
+      wipeAll();
+      const results = await Promise.all(
+        Array.from({ length: COHORT }, (_, i) =>
+          req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+            email: `conc-reg-${i}@weddly.test`,
+            password: "supersafe123",
+            full_name: `User ${i}`,
+          }),
+        ),
+      );
+      const ok = results.filter((r) => r.status === 201);
+      expect(ok.length).toBe(COHORT);
+      const tokens = new Set(ok.map((r) => r.data.token));
+      const ids = new Set(ok.map((r) => r.data.user.id));
+      expect(tokens.size).toBe(COHORT);
+      expect(ids.size).toBe(COHORT);
     },
     COHORT_TIMEOUT,
   );
@@ -115,7 +115,9 @@ describe("A. concurrent registration at cohort scale", () => {
       full_name: "Second",
     });
     expect(second.status).not.toBe(201);
-    const count = db.prepare("SELECT COUNT(*) AS c FROM users WHERE email = ?").get("dup@weddly.test") as {
+    const count = db
+      .prepare("SELECT COUNT(*) AS c FROM users WHERE email = ?")
+      .get("dup@weddly.test") as {
       c: number;
     };
     expect(count.c).toBe(1);
@@ -133,76 +135,84 @@ describe("B. cross-couple IDOR matrix (50 couples)", () => {
   test(
     "no couple can read/patch/delete another couple's guest or budget line",
     async () => {
-    wipeAll();
-    const couples = await buildCohort(COHORT, "idor");
+      wipeAll();
+      const couples = await buildCohort(COHORT, "idor");
 
-    // Each couple gets one guest + one budget line.
-    const owned = await Promise.all(
-      couples.map(async (c) => {
-        const g = await makeGuest(c.token, "Owned Guest");
-        const b = await makeBudgetLine(c.token, 5000);
-        expect(g.status).toBe(201);
-        expect(b.status).toBe(201);
-        return { guestId: g.data.guest.id, lineId: b.data.line.id };
-      }),
-    );
-
-    const violations: string[] = [];
-    for (let i = 0; i < couples.length; i++) {
-      const attacker = couples[i]!;
-      const victim = owned[(i + 1) % couples.length]!;
-
-      // GET another couple's guest list never includes the victim's guest —
-      // implicitly scoped, so just verify the mutate/delete by id.
-      const patchGuest = await req(
-        "PATCH",
-        `/api/guests/${victim.guestId}`,
-        { full_name: "HACKED" },
-        { token: attacker.token },
+      // Each couple gets one guest + one budget line.
+      const owned = await Promise.all(
+        couples.map(async (c) => {
+          const g = await makeGuest(c.token, "Owned Guest");
+          const b = await makeBudgetLine(c.token, 5000);
+          expect(g.status).toBe(201);
+          expect(b.status).toBe(201);
+          return { guestId: g.data.guest.id, lineId: b.data.line.id };
+        }),
       );
-      if (patchGuest.status >= 200 && patchGuest.status < 300) {
-        violations.push(`patch guest ${victim.guestId} by couple ${attacker.coupleId} → ${patchGuest.status}`);
+
+      const violations: string[] = [];
+      for (let i = 0; i < couples.length; i++) {
+        const attacker = couples[i]!;
+        const victim = owned[(i + 1) % couples.length]!;
+
+        // GET another couple's guest list never includes the victim's guest —
+        // implicitly scoped, so just verify the mutate/delete by id.
+        const patchGuest = await req(
+          "PATCH",
+          `/api/guests/${victim.guestId}`,
+          { full_name: "HACKED" },
+          { token: attacker.token },
+        );
+        if (patchGuest.status >= 200 && patchGuest.status < 300) {
+          violations.push(
+            `patch guest ${victim.guestId} by couple ${attacker.coupleId} → ${patchGuest.status}`,
+          );
+        }
+
+        const delGuest = await req("DELETE", `/api/guests/${victim.guestId}`, undefined, {
+          token: attacker.token,
+        });
+        if (delGuest.status >= 200 && delGuest.status < 300) {
+          violations.push(
+            `delete guest ${victim.guestId} by couple ${attacker.coupleId} → ${delGuest.status}`,
+          );
+        }
+
+        const patchLine = await req(
+          "PATCH",
+          `/api/budget/lines/${victim.lineId}`,
+          { actual_huf: 999999 },
+          { token: attacker.token },
+        );
+        if (patchLine.status >= 200 && patchLine.status < 300) {
+          violations.push(
+            `patch line ${victim.lineId} by couple ${attacker.coupleId} → ${patchLine.status}`,
+          );
+        }
+
+        const delLine = await req("DELETE", `/api/budget/lines/${victim.lineId}`, undefined, {
+          token: attacker.token,
+        });
+        if (delLine.status >= 200 && delLine.status < 300) {
+          violations.push(
+            `delete line ${victim.lineId} by couple ${attacker.coupleId} → ${delLine.status}`,
+          );
+        }
       }
 
-      const delGuest = await req("DELETE", `/api/guests/${victim.guestId}`, undefined, {
-        token: attacker.token,
-      });
-      if (delGuest.status >= 200 && delGuest.status < 300) {
-        violations.push(`delete guest ${victim.guestId} by couple ${attacker.coupleId} → ${delGuest.status}`);
+      // Every victim row must still exist and be unmodified.
+      for (let i = 0; i < couples.length; i++) {
+        const victim = owned[(i + 1) % couples.length]!;
+        const g = db.prepare("SELECT full_name FROM guests WHERE id = ?").get(victim.guestId) as
+          | { full_name: string }
+          | undefined;
+        expect(g?.full_name).toBe("Owned Guest");
+        const b = db
+          .prepare("SELECT actual_huf FROM budget_lines WHERE id = ?")
+          .get(victim.lineId) as { actual_huf: number } | undefined;
+        expect(b?.actual_huf).toBe(0);
       }
 
-      const patchLine = await req(
-        "PATCH",
-        `/api/budget/lines/${victim.lineId}`,
-        { actual_huf: 999999 },
-        { token: attacker.token },
-      );
-      if (patchLine.status >= 200 && patchLine.status < 300) {
-        violations.push(`patch line ${victim.lineId} by couple ${attacker.coupleId} → ${patchLine.status}`);
-      }
-
-      const delLine = await req("DELETE", `/api/budget/lines/${victim.lineId}`, undefined, {
-        token: attacker.token,
-      });
-      if (delLine.status >= 200 && delLine.status < 300) {
-        violations.push(`delete line ${victim.lineId} by couple ${attacker.coupleId} → ${delLine.status}`);
-      }
-    }
-
-    // Every victim row must still exist and be unmodified.
-    for (let i = 0; i < couples.length; i++) {
-      const victim = owned[(i + 1) % couples.length]!;
-      const g = db.prepare("SELECT full_name FROM guests WHERE id = ?").get(victim.guestId) as
-        | { full_name: string }
-        | undefined;
-      expect(g?.full_name).toBe("Owned Guest");
-      const b = db.prepare("SELECT actual_huf FROM budget_lines WHERE id = ?").get(victim.lineId) as
-        | { actual_huf: number }
-        | undefined;
-      expect(b?.actual_huf).toBe(0);
-    }
-
-    expect(violations).toEqual([]);
+      expect(violations).toEqual([]);
     },
     COHORT_TIMEOUT,
   );
@@ -217,7 +227,16 @@ describe("C. money input abuse", () => {
     wipeAll();
     const { token } = await bootstrapCouple("money@weddly.test");
 
-    const bad: unknown[] = [-1, -100000, Number.NaN, Number.POSITIVE_INFINITY, "1000", "abc", null, {}];
+    const bad: unknown[] = [
+      -1,
+      -100000,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      "1000",
+      "abc",
+      null,
+      {},
+    ];
     for (const v of bad) {
       const r = await req("POST", "/api/budget/lines", {
         category: "other",
@@ -322,23 +341,25 @@ describe("E. invite-code uniqueness at cohort scale", () => {
   test(
     "2000 guests across 50 couples → all invite codes unique",
     async () => {
-    wipeAll();
-    const couples = await buildCohort(COHORT, "codes");
-    await Promise.all(
-      couples.map((c) => {
-        const guests = Array.from({ length: 40 }, (_, i) => ({
-          full_name: `G ${i}`,
-          group_tag: "other",
-        }));
-        return req("POST", "/api/guests/bulk", { guests }, { token: c.token });
-      }),
-    );
-    const codes = db.prepare("SELECT invite_code FROM guests WHERE invite_code IS NOT NULL").all() as {
-      invite_code: string;
-    }[];
-    const seen = new Set(codes.map((c) => c.invite_code));
-    expect(codes.length).toBeGreaterThanOrEqual(COHORT * 40);
-    expect(seen.size).toBe(codes.length);
+      wipeAll();
+      const couples = await buildCohort(COHORT, "codes");
+      await Promise.all(
+        couples.map((c) => {
+          const guests = Array.from({ length: 40 }, (_, i) => ({
+            full_name: `G ${i}`,
+            group_tag: "other",
+          }));
+          return req("POST", "/api/guests/bulk", { guests }, { token: c.token });
+        }),
+      );
+      const codes = db
+        .prepare("SELECT invite_code FROM guests WHERE invite_code IS NOT NULL")
+        .all() as {
+        invite_code: string;
+      }[];
+      const seen = new Set(codes.map((c) => c.invite_code));
+      expect(codes.length).toBeGreaterThanOrEqual(COHORT * 40);
+      expect(seen.size).toBe(codes.length);
     },
     COHORT_TIMEOUT,
   );
@@ -401,9 +422,9 @@ describe("G. concurrent duplicate RSVP", () => {
     ]);
     expect([r1.status, r2.status].every((s) => s === 200)).toBe(true);
 
-    const added = db
-      .prepare("SELECT id FROM guests WHERE full_name = ?")
-      .all("RaceDupe") as { id: number }[];
+    const added = db.prepare("SELECT id FROM guests WHERE full_name = ?").all("RaceDupe") as {
+      id: number;
+    }[];
     // Exactly one inserted — the content-hash idempotency must collapse the race.
     expect(added.length).toBe(1);
   });
