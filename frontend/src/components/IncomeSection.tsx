@@ -198,6 +198,8 @@ export function IncomeSection({
 
   const cellInput =
     "w-full bg-transparent py-2.5 text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400";
+  const rowBubble =
+    "flex items-center gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 shadow-sm dark:border-umber-700 dark:bg-ink-800";
 
   return (
     <section className="mt-8">
@@ -217,69 +219,68 @@ export function IncomeSection({
         />
       </div>
 
-      {/* Columnar rows (not a grid): even columns, row dividers only. */}
-      <div className="card overflow-hidden p-0 dark:border-umber-700">
-        <div className="flex items-center gap-3 border-b border-paper-200 bg-paper-100/60 px-4 py-2 text-xs font-medium text-ink-500 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-300">
-          <span className="min-w-0 flex-1">{t("income.field_label")}</span>
-          <span className="w-32 shrink-0">{t("income.field_amount")}</span>
-          <span className="min-w-0 flex-1">{t("income.col_note")}</span>
-          <span className="w-8 shrink-0" aria-hidden />
-        </div>
+      {/* Standalone bubble rows: each band is its own rounded card, gaps
+          between them, no enclosing table. */}
+      <div className="mb-1 flex items-center gap-3 px-4 text-xs font-medium text-ink-500 dark:text-umber-300">
+        <span className="min-w-0 flex-1">{t("income.field_label")}</span>
+        <span className="w-32 shrink-0">{t("income.field_amount")}</span>
+        <span className="min-w-0 flex-1">{t("income.col_note")}</span>
+        <span className="w-8 shrink-0" aria-hidden />
+      </div>
 
-        <datalist id={FROM_LIST_ID}>
-          {fromSuggestions.map((name) => (
-            <option key={name} value={name} />
-          ))}
-        </datalist>
+      <datalist id={FROM_LIST_ID}>
+        {fromSuggestions.map((name) => (
+          <option key={name} value={name} />
+        ))}
+      </datalist>
 
-        <div className="divide-y divide-paper-200 dark:divide-umber-700">
-          {rows.map((r) => (
-            <div key={r.key} className="flex items-center gap-3 px-4">
-              <input
-                type="text"
-                list={FROM_LIST_ID}
-                className={`${cellInput} min-w-0 flex-1 font-grotesk`}
-                value={r.label}
-                maxLength={MAX_LABEL_LEN}
-                placeholder={t("income.field_label_placeholder")}
-                onChange={(e) => patchRow(r.key, { label: e.target.value })}
-                onBlur={() => void commit(r.key)}
-              />
-              <input
-                type="number"
-                min={1}
-                step={1000}
-                inputMode="numeric"
-                className={`${cellInput} stat-num w-32 shrink-0 tabular-nums`}
-                value={r.amount}
-                onChange={(e) => patchRow(r.key, { amount: e.target.value })}
-                onBlur={() => void commit(r.key)}
-                aria-label={t("income.field_amount")}
-              />
-              <input
-                type="text"
-                className={`${cellInput} min-w-0 flex-1 font-grotesk`}
-                value={r.note}
-                maxLength={MAX_NOTE_LEN}
-                onChange={(e) => patchRow(r.key, { note: e.target.value })}
-                onBlur={() => void commit(r.key)}
-              />
-              <div className="flex w-8 shrink-0 justify-center">
-                {r.id !== null && (
-                  <button
-                    type="button"
-                    aria-label={t("common.remove")}
-                    title={t("common.remove")}
-                    onClick={() => void removeRow(r)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
+      <div className="space-y-2">
+        {rows.map((r) => (
+          <div key={r.key} className={rowBubble}>
+            <input
+              type="text"
+              list={FROM_LIST_ID}
+              className={`${cellInput} min-w-0 flex-1 font-grotesk`}
+              value={r.label}
+              maxLength={MAX_LABEL_LEN}
+              placeholder={t("income.field_label_placeholder")}
+              onChange={(e) => patchRow(r.key, { label: e.target.value })}
+              onBlur={() => void commit(r.key)}
+            />
+            <input
+              type="number"
+              min={1}
+              step={1000}
+              inputMode="numeric"
+              className={`${cellInput} stat-num w-32 shrink-0 tabular-nums`}
+              value={r.amount}
+              onChange={(e) => patchRow(r.key, { amount: e.target.value })}
+              onBlur={() => void commit(r.key)}
+              aria-label={t("income.field_amount")}
+            />
+            <input
+              type="text"
+              className={`${cellInput} min-w-0 flex-1 font-grotesk`}
+              value={r.note}
+              maxLength={MAX_NOTE_LEN}
+              onChange={(e) => patchRow(r.key, { note: e.target.value })}
+              onBlur={() => void commit(r.key)}
+            />
+            <div className="flex w-8 shrink-0 justify-center">
+              {r.id !== null && (
+                <button
+                  type="button"
+                  aria-label={t("common.remove")}
+                  title={t("common.remove")}
+                  onClick={() => void removeRow(r)}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   );

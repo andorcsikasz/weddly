@@ -559,31 +559,29 @@ function ReceivedGiftsTable({
 
   const cellInput =
     "w-full bg-transparent py-2.5 text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400";
+  const rowBubble =
+    "flex items-center gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 shadow-sm dark:border-umber-700 dark:bg-ink-800";
 
-  // Columnar rows (not a grid): even columns, row dividers only, kept uniform
-  // with the budget page's "Befolyt pénz" ledger.
+  // Standalone bubble rows: each band is its own rounded card, gaps between
+  // them, no enclosing table - kept uniform with the budget page's ledger.
   return (
-    <div className="card overflow-hidden p-0 dark:border-umber-700">
-      <div className="flex items-center border-b border-paper-200 bg-paper-100/60 py-2 pr-2 text-xs font-medium text-ink-500 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-300">
-        <span className="min-w-0 flex-1 px-3">{t("wishlist_editor.received_col_guest")}</span>
-        <span className="min-w-0 flex-1 border-l border-paper-200 px-3 dark:border-umber-700">
-          {t("wishlist_editor.received_col_gift")}
-        </span>
-        <span className="min-w-0 flex-1 border-l border-paper-200 px-3 dark:border-umber-700">
-          {t("wishlist_editor.received_col_note")}
-        </span>
+    <div>
+      <div className="mb-1 flex items-center gap-3 px-4 text-xs font-medium text-ink-500 dark:text-umber-300">
+        <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_guest")}</span>
+        <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_gift")}</span>
+        <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_note")}</span>
         <span className="w-8 shrink-0" aria-hidden />
       </div>
 
-      <div className="space-y-1 py-1">
+      <div className="space-y-2">
         {rows.map((r) => (
-          <div key={r.key} className="flex items-center pr-2">
+          <div key={r.key} className={rowBubble}>
             {/* Household-or-guest picker. Native arrow kept (no appearance-none)
                 as the only affordance, since the unassigned state shows a blank
                 label rather than repeating "no one" down every row. Households
                 are top-level options; their members are indented beneath. */}
             <select
-              className={`${cellInput} min-w-0 flex-1 cursor-pointer px-3 font-grotesk ${
+              className={`${cellInput} min-w-0 flex-1 cursor-pointer font-grotesk ${
                 r.household_id === null && r.guest_id === null
                   ? "text-ink-400 dark:text-umber-400"
                   : ""
@@ -607,7 +605,7 @@ function ReceivedGiftsTable({
             </select>
             <input
               type="text"
-              className={`${cellInput} min-w-0 flex-1 border-l border-paper-200 px-3 font-grotesk dark:border-umber-700`}
+              className={`${cellInput} min-w-0 flex-1 font-grotesk`}
               value={r.title}
               maxLength={RECEIVED_GIFT_MAX_TITLE_LEN}
               onChange={(e) => patchRow(r.key, { title: e.target.value })}
@@ -615,7 +613,7 @@ function ReceivedGiftsTable({
             />
             <input
               type="text"
-              className={`${cellInput} min-w-0 flex-1 border-l border-paper-200 px-3 font-grotesk dark:border-umber-700`}
+              className={`${cellInput} min-w-0 flex-1 font-grotesk`}
               value={r.note}
               maxLength={RECEIVED_GIFT_MAX_NOTE_LEN}
               onChange={(e) => patchRow(r.key, { note: e.target.value })}
