@@ -13,6 +13,7 @@ import {
   timelineStatus,
   toIsoDate,
 } from "@shared/planning_timeline";
+import type { ConditionTag } from "@shared/planning_prompts";
 import type { PlanningItem, PlanningKind } from "@shared/types";
 import {
   ArrowRight,
@@ -44,9 +45,9 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
-import { DecisionsPanel } from "./DecisionsPanel";
+import { DecisionsPanel, computeIntakeTotal } from "./DecisionsPanel";
 import { ApiError } from "../lib/api";
-import { coupleApi, planningApi } from "../lib/endpoints";
+import { type PlanningPromptTags, coupleApi, planningApi } from "../lib/endpoints";
 import { maxIsoDate, todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import {
@@ -142,6 +143,37 @@ export default function PlanningPage() {
   useEffect(() => {
     if (activeKind !== "task") setPriorityFilter(0);
   }, [activeKind]);
+
+  // Decisions-tab intake answers + collapse state live here (not in
+  // DecisionsPanel) so the collapsed intake bar can ride up in the tab row next
+  // to the pills while the answer grid renders below. Answers tune which
+  // conditional decision prompts surface.
+  const [intakeTags, setIntakeTags] = useState<PlanningPromptTags>({});
+  const [intakeOpen, setIntakeOpen] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    void planningApi
+      .getPromptProfile()
+      .then((res) => {
+        if (alive) setIntakeTags(res.tags ?? {});
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const intakeTotal = useMemo(() => computeIntakeTotal(items, intakeTags), [items, intakeTags]);
+  async function handleSetTag(tag: ConditionTag, value: "yes" | "no") {
+    const next: PlanningPromptTags = { ...intakeTags };
+    if (next[tag] === value) delete next[tag];
+    else next[tag] = value;
+    setIntakeTags(next);
+    try {
+      await planningApi.savePromptProfile(next);
+    } catch {
+      toast.error(t("planning.decisions.save_error"));
+    }
+  }
 
   // The two partners, surfaced as ready-made options in the task "assignee"
   // datalist (the common case — a task is owned by one of them). Their actual
@@ -544,6 +576,29 @@ export default function PlanningPage() {
             })}
           </nav>
 
+          {activeKind === "decision" && (
+            <button
+              type="button"
+              onClick={() => setIntakeOpen((v) => !v)}
+              aria-expanded={intakeOpen}
+              className="flex w-full items-center gap-3 rounded-2xl border border-ink-900 bg-paper-100/40 px-4 py-2 text-left transition-colors hover:bg-paper-200/40 dark:border-umber-700 dark:bg-umber-800/40 dark:hover:bg-umber-700/40 sm:ml-auto sm:flex-1"
+            >
+              <span className="flex-1 truncate font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+                {t("planning.decisions.intake_title")}
+              </span>
+              <span className="shrink-0 rounded-full bg-paper-200 px-2.5 py-1 text-[11px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-100">
+                {t("planning.decisions.total_count", { n: String(intakeTotal) })}
+              </span>
+              <ChevronDown
+                size={18}
+                aria-hidden="true"
+                className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${
+                  intakeOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+          )}
+
           <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
             {activeKind === "task" && (
               <>
@@ -607,6 +662,9 @@ export default function PlanningPage() {
             loading={loading}
             locale={locale}
             onItemsChange={setItems}
+            tags={intakeTags}
+            onSetTag={handleSetTag}
+            intakeOpen={intakeOpen}
           />
         ) : (
           <>

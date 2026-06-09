@@ -40,38 +40,64 @@ function loc(text: LocaleText, locale: Locale): string {
   return locale === "hu" ? text.hu : text.en;
 }
 
+/** Grand total of decisions the couple currently faces, mirroring each group's
+ *  own count: open materialised rows once a group is generated, else the
+ *  intake-prefiltered preview. Pure so the collapsed intake bar (rendered up in
+ *  PlanningPage's tab row) and this panel agree without sharing component state. */
+export function computeIntakeTotal(items: PlanningItem[], tags: PlanningPromptTags): number {
+  const previewContext: PromptContext = {
+    ceremonyKind: null,
+    hasChildren: tags.has_children === "yes",
+    guestCount: null,
+    manual: tags,
+  };
+  const byGroup = new Map<PromptGroup, PlanningItem[]>();
+  for (const it of items) {
+    if (!it.seed_key) continue;
+    const seed = PROMPTS_BY_KEY.get(it.seed_key);
+    if (!seed) continue;
+    const list = byGroup.get(seed.group) ?? [];
+    list.push(it);
+    byGroup.set(seed.group, list);
+  }
+  return PROMPT_GROUPS.reduce((sum, group) => {
+    const rows = (byGroup.get(group.key) ?? []).filter((r) => r.decision_status !== "promoted");
+    const isGenerated = (byGroup.get(group.key)?.length ?? 0) > 0;
+    const open = rows.filter((r) => r.decision_status === "open").length;
+    return sum + (isGenerated ? open : visiblePromptsForGroup(group.key, previewContext).length);
+  }, 0);
+}
+
 interface DecisionsPanelProps {
   items: PlanningItem[];
   loading: boolean;
   locale: Locale;
   onItemsChange: (items: PlanningItem[]) => void;
+  /** Intake answers + collapse state are owned by PlanningPage so the collapsed
+   *  intake bar can live up in the tab row; this panel only renders the
+   *  expandable question grid and reports answer changes back up. */
+  tags: PlanningPromptTags;
+  onSetTag: (tag: ConditionTag, value: "yes" | "no") => void;
+  intakeOpen: boolean;
 }
 
-export function DecisionsPanel({ items, loading, locale, onItemsChange }: DecisionsPanelProps) {
+export function DecisionsPanel({
+  items,
+  loading,
+  locale,
+  onItemsChange,
+  tags,
+  onSetTag,
+  intakeOpen,
+}: DecisionsPanelProps) {
   const { t } = useT();
   const toast = useToast();
 
-  const [tags, setTags] = useState<PlanningPromptTags>({});
   const [expanded, setExpanded] = useState<Set<PromptGroup>>(new Set());
   const [generating, setGenerating] = useState<Set<PromptGroup>>(new Set());
   const [generated, setGenerated] = useState<Set<PromptGroup>>(new Set());
   const [showDismissed, setShowDismissed] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [intakeOpen, setIntakeOpen] = useState(true);
-
-  // Load the saved intake answers once.
-  useEffect(() => {
-    let alive = true;
-    void planningApi
-      .getPromptProfile()
-      .then((res) => {
-        if (alive) setTags(res.tags ?? {});
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   // Prompt rows (seed_key set), grouped by their seed's theme group.
   const promptsByGroup = useMemo(() => {
@@ -155,59 +181,19 @@ export function DecisionsPanel({ items, loading, locale, onItemsChange }: Decisi
     }
   }
 
-  async function setTag(tag: ConditionTag, value: "yes" | "no") {
-    const current = tags[tag];
-    const next: PlanningPromptTags = { ...tags };
-    if (current === value) delete next[tag];
-    else next[tag] = value;
-    setTags(next);
-    try {
-      await planningApi.savePromptProfile(next);
-    } catch {
-      toast.error(t("planning.decisions.save_error"));
-    }
-  }
-
-  // Grand total the couple currently faces across every group, mirroring each
-  // group's own count (open rows once generated, else the prefiltered preview).
-  const totalCount = PROMPT_GROUPS.reduce((sum, group) => {
-    const rows = (promptsByGroup.get(group.key) ?? []).filter(
-      (r) => r.decision_status !== "promoted",
-    );
-    const open = rows.filter((r) => r.decision_status === "open").length;
-    return (
-      sum +
-      (generated.has(group.key) ? open : visiblePromptsForGroup(group.key, previewContext).length)
-    );
-  }, 0);
-
   return (
     <div className="mt-4">
-      {/* Intake strip — non-blocking, persists answers that tune which
-       *  conditional prompts surface. */}
-      <section className="mb-5 overflow-hidden rounded-2xl border border-ink-900 bg-paper-100/40 dark:border-umber-700 dark:bg-umber-800/40">
-        <button
-          type="button"
-          onClick={() => setIntakeOpen((v) => !v)}
-          aria-expanded={intakeOpen}
-          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-200/40 dark:hover:bg-umber-700/40"
-        >
-          <h2 className="flex-1 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-            {t("planning.decisions.intake_title")}
-          </h2>
-          <span className="shrink-0 rounded-full bg-paper-200 px-2.5 py-1 text-[11px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-100">
-            {t("planning.decisions.total_count", { n: String(totalCount) })}
-          </span>
-          <ChevronDown
-            size={18}
-            aria-hidden="true"
-            className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${
-              intakeOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
-        {intakeOpen && (
-          <ul className="grid gap-2 px-4 pb-4 sm:grid-cols-2">
+      {/* Intake questions — non-blocking, persist answers that tune which
+       *  conditional prompts surface. The collapsed toggle bar (title + count +
+       *  chevron) lives up in the tab row (PlanningPage); this is just the
+       *  answer grid, sliding open/closed via an animated grid-rows height. */}
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+          intakeOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <ul className="mb-5 grid gap-2 rounded-2xl border border-ink-900 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-800/40 sm:grid-cols-2">
             {INTAKE_DIMENSIONS.map((dim) => (
               <li
                 key={dim.tag}
@@ -221,20 +207,20 @@ export function DecisionsPanel({ items, loading, locale, onItemsChange }: Decisi
                     active={tags[dim.tag] === "yes"}
                     label={t("common.yes")}
                     icon={Check}
-                    onClick={() => setTag(dim.tag, "yes")}
+                    onClick={() => onSetTag(dim.tag, "yes")}
                   />
                   <IntakeToggle
                     active={tags[dim.tag] === "no"}
                     label={t("common.no")}
                     icon={X}
-                    onClick={() => setTag(dim.tag, "no")}
+                    onClick={() => onSetTag(dim.tag, "no")}
                   />
                 </div>
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </div>
+      </div>
 
       {loading ? (
         <div className="space-y-3">
