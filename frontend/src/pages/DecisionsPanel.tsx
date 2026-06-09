@@ -20,15 +20,7 @@ import {
   visiblePromptsForGroup,
 } from "@shared/planning_prompts";
 import type { PlanningItem } from "@shared/types";
-import {
-  ArrowRight,
-  Check,
-  ChevronDown,
-  HelpCircle,
-  Lightbulb,
-  ListChecks,
-  Store,
-} from "lucide-react";
+import { Check, ChevronDown, HelpCircle, Lightbulb, ListChecks, Store, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Skeleton, useToast } from "../components/ui";
 import { type PlanningPromptTags, planningApi } from "../lib/endpoints";
@@ -167,13 +159,9 @@ export function DecisionsPanel({ items, loading, locale, onItemsChange }: Decisi
 
   return (
     <div className="mt-4">
-      <p className="mb-4 max-w-2xl text-sm text-ink-600 dark:text-umber-200">
-        {t("planning.decisions.intro")}
-      </p>
-
       {/* Intake strip — non-blocking, persists answers that tune which
        *  conditional prompts surface. */}
-      <section className="mb-5 rounded-2xl border border-paper-300 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-800/40">
+      <section className="mb-5 rounded-2xl border border-ink-900 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-800/40">
         <h2 className="mb-3 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
           {t("planning.decisions.intake_title")}
         </h2>
@@ -190,11 +178,13 @@ export function DecisionsPanel({ items, loading, locale, onItemsChange }: Decisi
                 <IntakeToggle
                   active={tags[dim.tag] === "yes"}
                   label={t("common.yes")}
+                  icon={Check}
                   onClick={() => setTag(dim.tag, "yes")}
                 />
                 <IntakeToggle
                   active={tags[dim.tag] === "no"}
                   label={t("common.no")}
+                  icon={X}
                   onClick={() => setTag(dim.tag, "no")}
                 />
               </div>
@@ -297,10 +287,12 @@ export function DecisionsPanel({ items, loading, locale, onItemsChange }: Decisi
 function IntakeToggle({
   active,
   label,
+  icon: Icon,
   onClick,
 }: {
   active: boolean;
   label: string;
+  icon: typeof Check;
   onClick: () => void;
 }) {
   return (
@@ -308,13 +300,15 @@ function IntakeToggle({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+      aria-label={label}
+      title={label}
+      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
         active
           ? "bg-ink-800 text-paper-100 dark:bg-paper-50 dark:text-umber-900"
           : "bg-paper-200 text-ink-500 hover:bg-paper-300 dark:bg-umber-700 dark:text-umber-200 dark:hover:bg-umber-600"
       }`}
     >
-      {label}
+      <Icon size={15} aria-hidden="true" />
     </button>
   );
 }
@@ -515,42 +509,27 @@ function DecisionCard({
           {/* Action row. */}
           {!editing && (
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              {item.decision_status === "open" && (
-                <>
-                  {kind === "todo" ? (
-                    <ActionButton
-                      onClick={() => onResolve(item, "")}
-                      disabled={busy}
-                      label={t("planning.decisions.action_done")}
-                    />
-                  ) : (
-                    <ActionButton
-                      onClick={() => {
-                        setDraft(item.resolution ?? "");
-                        setEditing(true);
-                      }}
-                      disabled={busy}
-                      label={
-                        kind === "check"
-                          ? t("planning.decisions.action_record_answer")
-                          : t("planning.decisions.action_decide")
-                      }
-                    />
-                  )}
+              {item.decision_status === "open" &&
+                (kind === "todo" ? (
                   <ActionButton
-                    onClick={() => onPromote(item)}
+                    onClick={() => onResolve(item, "")}
                     disabled={busy}
-                    label={t("planning.decisions.action_promote")}
-                    icon={ArrowRight}
+                    label={t("planning.decisions.action_done")}
                   />
+                ) : (
                   <ActionButton
-                    onClick={() => onDismiss(item)}
+                    onClick={() => {
+                      setDraft(item.resolution ?? "");
+                      setEditing(true);
+                    }}
                     disabled={busy}
-                    label={t("planning.decisions.action_not_relevant")}
-                    muted
+                    label={
+                      kind === "check"
+                        ? t("planning.decisions.action_record_answer")
+                        : t("planning.decisions.action_decide")
+                    }
                   />
-                </>
-              )}
+                ))}
               {decided && (
                 <>
                   <ActionButton
@@ -579,6 +558,23 @@ function DecisionCard({
             </div>
           )}
         </div>
+        {item.decision_status === "open" && !editing && (
+          <div className="flex shrink-0 items-center gap-1">
+            <IconAction
+              onClick={() => onPromote(item)}
+              disabled={busy}
+              label={t("planning.decisions.action_promote")}
+              icon={ListChecks}
+            />
+            <IconAction
+              onClick={() => onDismiss(item)}
+              disabled={busy}
+              label={t("planning.decisions.action_not_relevant")}
+              icon={X}
+              muted
+            />
+          </div>
+        )}
       </div>
     </li>
   );
@@ -588,13 +584,11 @@ function ActionButton({
   onClick,
   disabled,
   label,
-  icon: Icon,
   muted,
 }: {
   onClick: () => void;
   disabled?: boolean;
   label: string;
-  icon?: typeof ArrowRight;
   muted?: boolean;
 }) {
   return (
@@ -606,8 +600,40 @@ function ActionButton({
         muted ? "text-ink-400 dark:text-umber-300" : "text-ink-700 dark:text-paper-100"
       }`}
     >
-      {Icon && <Icon size={12} aria-hidden="true" />}
       {label}
+    </button>
+  );
+}
+
+// Icon-only action sitting at the card's right edge (promote to task, dismiss).
+// Label is exposed via aria-label/title so the meaning survives without text.
+function IconAction({
+  onClick,
+  disabled,
+  label,
+  icon: Icon,
+  muted,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  label: string;
+  icon: typeof X;
+  muted?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors disabled:opacity-50 ${
+        muted
+          ? "text-ink-400 hover:bg-paper-200 hover:text-ink-600 dark:text-umber-300 dark:hover:bg-umber-700"
+          : "text-ink-600 hover:bg-paper-200 hover:text-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
+      }`}
+    >
+      <Icon size={15} aria-hidden="true" />
     </button>
   );
 }

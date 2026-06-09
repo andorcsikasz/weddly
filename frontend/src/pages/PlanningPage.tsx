@@ -519,7 +519,7 @@ export default function PlanningPage() {
           <nav
             role="tablist"
             aria-label={t("planning.tabs_aria")}
-            className="inline-flex gap-1 rounded-2xl border border-paper-300 bg-paper-100/50 p-1 dark:border-umber-700 dark:bg-umber-700/60"
+            className="inline-flex gap-1 rounded-2xl border border-ink-900 bg-paper-100/50 p-1 dark:border-umber-700 dark:bg-umber-700/60"
           >
             {TABS.map((tab) => {
               const active = tab.kind === activeKind;

@@ -38,7 +38,12 @@ export type ConditionTag =
   | "has_pets"
   | "multi_event"
   | "large_guest_count"
-  | "accommodation_needed";
+  | "accommodation_needed"
+  | "evening_party"
+  | "alcohol_served"
+  | "wedding_cake"
+  | "pro_photo"
+  | "own_decor";
 
 /** The eight top-level theme groups the deck is organised into. Theme is the
  *  display spine because it is the only axis with no lopsided "other" bucket and
@@ -383,6 +388,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Egy pár pad, puff vagy szalmabála a tánc és a beszélgetés között ad menedéket. Idősebb vendégeknek és a gyerekes szülőknek aranyat ér.",
       en: "A few benches, poufs, or hay bales give people a break from the dance floor. Older guests and parents with kids will thank you.",
     },
+    condition: "outdoor",
     default_priority: 0,
   },
   {
@@ -508,6 +514,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Korhely leves, hot dog, lángos vagy zsíros kenyér jól jön a tánc után. Egyeztesd az időzítést a cateringgel.",
       en: "Goulash soup, hot dogs, or savoury bites land well after dancing. Agree the timing with catering.",
     },
+    condition: "evening_party",
     default_priority: 0,
   },
   {
@@ -570,6 +577,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "Bringing your own wine or spirits can save a lot, but many venues charge corkage per bottle. Check whether it is worth it.",
     },
     supplier_category: "venue",
+    condition: "alcohol_served",
     default_priority: 0,
   },
   {
@@ -585,6 +593,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "A fogyasztás szerinti elszámolásnál állíts be felső keretet, hogy ne szaladjon el a számla.",
       en: "If charged by consumption, set a cap so the bill does not run away from you.",
     },
+    condition: "alcohol_served",
     default_priority: 1,
   },
   {
@@ -601,6 +610,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "In summer buttercream and cream cakes can melt. Coordinate chilled storage and who receives it between the baker and the venue.",
     },
     supplier_category: "cake_dessert",
+    condition: "wedding_cake",
     default_priority: 1,
   },
   {
@@ -616,6 +626,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Tipikusan az első tánc környékén vagy a vacsora után. Egyeztesd a DJ-vel és a fotóssal az időpontot.",
       en: "Typically around the first dance or after dinner. Coordinate the moment with the DJ and the photographer.",
     },
+    condition: "wedding_cake",
     default_priority: 0,
   },
   {
@@ -631,6 +642,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Mindenkinek legyen tele pohara a köszöntőre, a nem ivóknak is. Add le a felszolgálandó adatszámot.",
       en: "Everyone should have a full glass for the toast, including non-drinkers. Give the count of portions to serve.",
     },
+    condition: "alcohol_served",
     default_priority: 0,
   },
   {
@@ -647,6 +659,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "Cookies, fruit, or mini desserts. Clarify whether the baker or the catering keeps it topped up.",
     },
     supplier_category: "cake_dessert",
+    condition: "wedding_cake",
     default_priority: 0,
   },
   {
@@ -1012,6 +1025,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "A saját kezű dekornál (gyertyák, keretek, vendégkönyv) nevesíts egy felelőst és egy időpontot, hogy ne aznap reggel derüljön ki, hogy a kocsiban maradt.",
       en: "For self-supplied decor (candles, frames, guestbook) name one person and a time, so it does not turn out on the morning that it was left in the car.",
     },
+    condition: "own_decor",
     default_priority: 1,
   },
   {
@@ -1027,6 +1041,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "A párnak aznap nem ér rá erre. Bízd egy barátra, a koordinátorra vagy a dekoros csapatra, és adj nekik egy fotót a kívánt elrendezésről.",
       en: "The couple has no time for this on the day. Hand it to a friend, the coordinator or the decor team, and give them a photo of the wanted layout.",
     },
+    condition: "own_decor",
     default_priority: 1,
   },
   {
@@ -1149,6 +1164,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Adjátok meg a DJ-nek vagy a zenekarnak pontosan, lemezverzió vagy élő feldolgozás kell-e, és kell-e rövidített vágás.",
       en: "Tell the DJ or band the exact track, whether you want the recorded version or a live cover, and if it needs a shortened edit.",
     },
+    condition: "evening_party",
     default_priority: 1,
   },
   {
@@ -1164,6 +1180,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Tisztázzátok, ki kivel táncol és milyen zenére, hogy senki ne maradjon kínosan állva. Elvált vagy elhunyt szülő esetén előre beszéljétek meg a forgatókönyvet.",
       en: "Decide who dances with whom and to what music so no one is left standing awkwardly. If a parent is divorced or has passed, plan the moment in advance.",
     },
+    condition: "evening_party",
     default_priority: 0,
   },
   {
@@ -1179,6 +1196,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Pár tiltott szám vagy stílus (pl. exhez kötődő dal, bizonyos műfaj) sokat ér a DJ-nek. Adjátok át időben.",
       en: "A few banned songs or genres (an ex-related track, a style you can't stand) really help the DJ. Hand it over in time.",
     },
+    condition: "evening_party",
     default_priority: 1,
   },
   {
@@ -1194,6 +1212,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "10-15 biztos befutó dal, amitől garantáltan megtelik a tánctér. Ne tervezzétek túl, a DJ-nek hagyjatok mozgásteret.",
       en: "10-15 sure-fire tracks that will fill the dance floor. Don't over-plan it; leave the DJ room to read the room.",
     },
+    condition: "evening_party",
     default_priority: 0,
   },
   {
@@ -1225,6 +1244,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "A nagy bevonulás zenéje adja meg az este hangulatát. Döntsétek el, energikus vagy meghitt belépőt szeretnétek.",
       en: "Your grand entrance song sets the tone for the evening. Decide whether you want a high-energy or an intimate entrance.",
     },
+    condition: "evening_party",
     default_priority: 0,
   },
   {
@@ -1237,6 +1257,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Ha igen, kell-e külön dobócsokor, hogy az igazi megmaradjon. Egyeztessétek a fotóssal és a DJ-vel az időpontot.",
       en: "If yes, you may want a separate toss bouquet so you can keep the real one. Coordinate the timing with the photographer and DJ.",
     },
+    condition: "evening_party",
     default_priority: 0,
   },
   {
@@ -1252,6 +1273,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Sok pár ma már kihagyja, vagy szelídebb verziót választ. Döntsétek el előre, hogy a műsorvezető tudja, számoljon-e vele.",
       en: "Many couples skip it now or pick a tamer version. Decide in advance so the MC knows whether to include it.",
     },
+    condition: "evening_party",
     default_priority: 0,
   },
   {
@@ -1267,6 +1289,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Tisztázzátok a pénzgyűjtés módját (tányér, perselyező), ki vezeti és meddig tartson. A menyasszonyszöktetés is ide tartozik, ha lesz.",
       en: "Decide how the money is collected, who leads it, and how long it runs. The bride-kidnapping bit belongs here too, if you're doing it.",
     },
+    condition: "evening_party",
     default_priority: 0,
   },
   {
@@ -1282,6 +1305,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Kvíz a párról, cipős játék, tanúk műsora. Döntsétek el, mit engedélyeztek, hogy ne legyen kínos vagy túl hosszú.",
       en: "A quiz about the couple, the shoe game, a bit by the witnesses. Decide what you allow so it doesn't get awkward or run long.",
     },
+    condition: "evening_party",
     default_priority: 0,
   },
   {
@@ -1341,6 +1365,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Ha igen, ez extra időt igényel a napirendben, de oldja a feszültséget és kényelmesebb a páros fotózás. Egyeztessétek a fotóssal.",
       en: "If yes, it needs extra time in the day's schedule but eases the nerves and makes the couple's portraits more relaxed. Coordinate with the photographer.",
     },
+    condition: "pro_photo",
     default_priority: 0,
   },
   {
@@ -1356,6 +1381,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Konkrét felsorolás (pl. menyasszony szülei, nagyszülők, tanúk) felgyorsítja a fotózást. Jelöljetek ki egy hangos rokont, aki név szerint összehívja az embereket.",
       en: "A concrete list (bride's parents, grandparents, witnesses) speeds up the session. Assign one loud relative to call people over by name.",
     },
+    condition: "pro_photo",
     default_priority: 0,
   },
   {
@@ -1371,6 +1397,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Gyűrűk, ruha, cipő, meghívó, parfüm, ékszer, csokor egy helyen legyen reggel, hogy a fotós gyorsan le tudja kapni a készülődésnél.",
       en: "Have the rings, dress, shoes, invitation, perfume, jewelry and bouquet in one spot in the morning so the photographer can shoot them quickly while you get ready.",
     },
+    condition: "pro_photo",
     default_priority: 0,
   },
   {
@@ -1387,6 +1414,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "A protected area, nearby airport, or house rules may forbid it. Clear it with the venue and the videographer before you count on aerial footage.",
     },
     supplier_category: "venue",
+    condition: "pro_photo",
     default_priority: 0,
   },
   {
@@ -1403,6 +1431,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "Ask about the delivery deadline, the gallery format (online link, download) and how long it stays live. Find out if there's a sneak peek date too.",
     },
     supplier_category: "photo_video",
+    condition: "pro_photo",
     default_priority: 0,
   },
   {
@@ -1434,6 +1463,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "A no-show on the day is the one loss you can't redo. Ask whether there is a substitution clause and a network they can call on.",
     },
     supplier_category: "photo_video",
+    condition: "pro_photo",
     default_priority: 1,
   },
   {
@@ -1892,6 +1922,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "Agree when the dress, details and bride should be ready so the photographer neither waits around nor misses the detail shots.",
     },
     supplier_category: "photo_video",
+    condition: "pro_photo",
     default_priority: 0,
   },
   {
@@ -1952,6 +1983,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Jelöljetek ki valakit, akinek van hűthető hely és hűtőtáska. A torta a buli végére könnyen ottfelejtődik, ha nincs gazdája.",
       en: "Pick someone with a cooler and fridge space. Leftover cake is the classic thing left behind when no one owns the job.",
     },
+    condition: "wedding_cake",
     default_priority: 0,
   },
   {
@@ -1982,6 +2014,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "A bérelt dekort a szolgáltató viszi, de a saját gyertyák, fotók, táblák, vázák a tieitek. Jelöljetek ki 2-3 embert, mert fáradtan senki sem önként vállalkozik rá.",
       en: "Rented decor goes back with the supplier, but your own candles, photos, signs and vases are yours. Assign two or three people, because no one volunteers for it tired.",
     },
+    condition: "own_decor",
     default_priority: 0,
   },
   {
@@ -2120,6 +2153,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       en: "Ask about the delivery time, how it is shared (online gallery, download link) and how long it stays live, since many galleries expire after a few months.",
     },
     supplier_category: "photo_video",
+    condition: "pro_photo",
     default_priority: 0,
   },
   {
@@ -2196,15 +2230,43 @@ export const INTAKE_DIMENSIONS: readonly { tag: ConditionTag; question: LocaleTe
     },
   },
   {
-    tag: "multi_event",
+    tag: "has_pets",
+    question: { hu: "Bevontok kisállatot az esküvőbe?", en: "Will a pet be part of the wedding?" },
+  },
+  {
+    tag: "evening_party",
     question: {
-      hu: "Lesz több helyszín vagy esemény körüli program (próbavacsora, brunch)?",
-      en: "Multiple venues or surrounding events (rehearsal dinner, brunch)?",
+      hu: "Lesz esti buli tánccal és zenével?",
+      en: "Will there be an evening party with dancing?",
     },
   },
   {
-    tag: "has_pets",
-    question: { hu: "Lesz kisállat a ceremónián?", en: "A pet in the ceremony?" },
+    tag: "alcohol_served",
+    question: {
+      hu: "Lesz alkohol felszolgálva (bár, bor, pezsgő)?",
+      en: "Will alcohol be served (bar, wine, bubbly)?",
+    },
+  },
+  {
+    tag: "wedding_cake",
+    question: {
+      hu: "Lesz esküvői torta vagy desszertasztal?",
+      en: "Will there be a wedding cake or dessert table?",
+    },
+  },
+  {
+    tag: "pro_photo",
+    question: {
+      hu: "Lesz hivatásos fotós vagy videós?",
+      en: "Will you have a professional photographer or videographer?",
+    },
+  },
+  {
+    tag: "own_decor",
+    question: {
+      hu: "Visztek saját dekort, amit nektek kell ki- és bepakolni?",
+      en: "Are you bringing your own decor to set up and pack down?",
+    },
   },
 ];
 
@@ -2250,7 +2312,8 @@ export function isPromptVisible(seed: PromptSeed, ctx: PromptContext): boolean {
     case "large_guest_count":
       return ctx.guestCount == null || ctx.guestCount >= LARGE_GUEST_COUNT;
     default:
-      // outdoor / has_pets / destination / multi_event / accommodation_needed:
+      // outdoor / has_pets / destination / multi_event / accommodation_needed /
+      // evening_party / alcohol_served / wedding_cake / pro_photo / own_decor:
       // inclusive until the couple actively answers "no".
       return true;
   }
