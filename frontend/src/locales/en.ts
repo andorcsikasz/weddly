@@ -3215,7 +3215,6 @@ const en: LocaleMessages = {
     fin_kpi_arr: "ARR (EUR)",
     fin_kpi_arr_hint: "ARR = Annual Recurring Revenue: the annualised run-rate, i.e. MRR × 12.",
     fin_kpi_paying: "Paying couples",
-    fin_kpi_founding_active: "First 200 (free)",
     fin_kpi_founding_left: "First-200 spots left",
     fin_kpi_trialing: "In trial",
     fin_kpi_checkout_started: "Checkout started",

@@ -3253,7 +3253,6 @@ const hu: LocaleMessages = {
     fin_kpi_arr_hint:
       "ARR = Annual Recurring Revenue, vagyis éves ismétlődő bevétel: a havi MRR éves szintre vetítve (MRR × 12).",
     fin_kpi_paying: "Fizető párok",
-    fin_kpi_founding_active: "Első 200 (ingyenes)",
     fin_kpi_founding_left: "Szabad hely a 200-ból",
     fin_kpi_trialing: "Próbaidőben",
     fin_kpi_checkout_started: "Fizetést indított",

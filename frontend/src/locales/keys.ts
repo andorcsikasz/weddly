@@ -3639,7 +3639,6 @@ export interface LocaleMessages {
     fin_kpi_arr: string;
     fin_kpi_arr_hint: string;
     fin_kpi_paying: string;
-    fin_kpi_founding_active: string;
     fin_kpi_founding_left: string;
     fin_kpi_trialing: string;
     fin_kpi_checkout_started: string;

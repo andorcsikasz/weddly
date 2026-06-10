@@ -265,7 +265,6 @@ export default function AdminFinancialPlannerPage() {
           hint={t("admin.fin_kpi_arr_hint")}
         />
         <Kpi label={t("admin.fin_kpi_paying")} value={String(data.paying_subscribers)} />
-        <Kpi label={t("admin.fin_kpi_founding_active")} value={String(data.founding_active)} />
         <Kpi label={t("admin.fin_kpi_founding_left")} value={String(data.founding_spots_left)} />
         <Kpi label={t("admin.fin_kpi_trialing")} value={String(data.trialing)} />
         <Kpi
