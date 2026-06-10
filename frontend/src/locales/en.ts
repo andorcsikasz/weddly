@@ -3810,6 +3810,9 @@ const en: LocaleMessages = {
     analytics_acq_load_error: "Couldn't load acquisition data.",
     analytics_acq_empty: "No acquisition data in this window yet.",
     analytics_acq_unknown: "unknown",
+    analytics_acq_coverage: "known for {known} of {total}",
+    analytics_acq_geoip_hint:
+      "Country never resolves until the GeoIP database is active. Set MAXMIND_LICENSE_KEY in Railway and redeploy; new signups map from then on.",
     analytics_acq_total_signups: "Signups",
     analytics_acq_onboarded_rate: "Onboarded",
     analytics_acq_active_rate: "Active",

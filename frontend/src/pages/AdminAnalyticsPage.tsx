@@ -1299,6 +1299,46 @@ function pct(part: number, whole: number): string {
   return `${Math.round((part / whole) * 100)}%`;
 }
 
+/** Signups in a dimension that actually resolved to a value (non-null key) —
+ *  the "known" count behind a coverage line, so a column that's all-unknown
+ *  reads as a capture gap rather than as zero demand. */
+function dimKnown(rows: AcquisitionDimensionRow[]): number {
+  return rows.reduce((sum, r) => (r.key === null ? sum : sum + r.signups), 0);
+}
+
+/** Tiny muted "known for X of Y" line shown above a dimension's table/bars so
+ *  the unknown share is explained as missing data, not absent demand. */
+function CoverageLine({
+  known,
+  total,
+  locale,
+}: {
+  known: number;
+  total: number;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  return (
+    <p className="mb-1.5 text-[11px] text-neutral-500 dark:text-umber-300">
+      {t("admin.analytics_acq_coverage", {
+        known: formatNumber(known, locale),
+        total: formatNumber(total, locale),
+      })}
+    </p>
+  );
+}
+
+/** Setup note shown when a dimension never resolves (country with no GeoIP DB)
+ *  — points the operator at the missing key instead of leaving a dead column. */
+function GeoIpNote() {
+  const { t } = useT();
+  return (
+    <p className="mb-2 rounded-lg bg-neutral-50 px-2.5 py-1.5 text-[11px] leading-snug text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-500/10 dark:text-paper-200 dark:ring-neutral-500/30">
+      {t("admin.analytics_acq_geoip_hint")}
+    </p>
+  );
+}
+
 /** Dimension table: key, signups bar, onboarded%, active%. Reused for the
  *  country breakdown and (re-sorted by activation) the campaign breakdown. */
 function AcqDimTable({
@@ -1516,6 +1556,8 @@ function AcquisitionSection({
 
   const totalOnboarded = d.by_country.reduce((s, r) => s + r.onboarded, 0);
   const totalActive = d.by_country.reduce((s, r) => s + r.active, 0);
+  const countryKnown = d.total_signups - d.unknown_country;
+  const deviceKnown = dimKnown(d.by_device);
   const topChannel = d.by_channel[0];
   // Campaigns ranked by activation quality (active/signups), not raw volume —
   // a 500-signup campaign at 2% activation is worse than 50 at 40%.
@@ -1558,6 +1600,7 @@ function AcquisitionSection({
           title={t("admin.analytics_acq_map_title")}
           subtitle={t("admin.analytics_acq_map_sub")}
         >
+          {countryKnown === 0 && <GeoIpNote />}
           <EuropeChoropleth rows={d.by_country} locale={locale} />
         </InnerCard>
       </div>
@@ -1567,6 +1610,11 @@ function AcquisitionSection({
           title={t("admin.analytics_acq_by_country_title")}
           subtitle={t("admin.analytics_acq_conversion_sub")}
         >
+          {countryKnown === 0 ? (
+            <GeoIpNote />
+          ) : (
+            <CoverageLine known={countryKnown} total={d.total_signups} locale={locale} />
+          )}
           <AcqDimTable
             rows={d.by_country}
             keyHeader={t("admin.analytics_acq_col_country")}
@@ -1579,6 +1627,7 @@ function AcquisitionSection({
             <AcqBarList rows={d.by_channel} locale={locale} />
           </InnerCard>
           <InnerCard title={t("admin.analytics_acq_by_device_title")}>
+            <CoverageLine known={deviceKnown} total={d.total_signups} locale={locale} />
             <AcqBarList rows={d.by_device} locale={locale} />
           </InnerCard>
         </div>

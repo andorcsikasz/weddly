@@ -4320,6 +4320,8 @@ export interface LocaleMessages {
     analytics_acq_load_error: string;
     analytics_acq_empty: string;
     analytics_acq_unknown: string;
+    analytics_acq_coverage: string;
+    analytics_acq_geoip_hint: string;
     analytics_acq_total_signups: string;
     analytics_acq_onboarded_rate: string;
     analytics_acq_active_rate: string;

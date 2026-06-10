@@ -3852,6 +3852,9 @@ const hu: LocaleMessages = {
     analytics_acq_load_error: "Nem sikerült betölteni a felhasználószerzési adatokat.",
     analytics_acq_empty: "Ebben az időszakban még nincs felhasználószerzési adat.",
     analytics_acq_unknown: "ismeretlen",
+    analytics_acq_coverage: "{total}-ből {known} kitöltve",
+    analytics_acq_geoip_hint:
+      "Az ország csak akkor töltődik ki, ha a GeoIP-adatbázis aktív. Állítsd be a MAXMIND_LICENSE_KEY-t a Railwayen és telepíts újra; az új regisztrációk ettől kezdve térképre kerülnek.",
     analytics_acq_total_signups: "Regisztrációk",
     analytics_acq_onboarded_rate: "Onboarding befejezve",
     analytics_acq_active_rate: "Aktív felhasználók",
