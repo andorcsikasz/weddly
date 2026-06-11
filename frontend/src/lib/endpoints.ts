@@ -80,7 +80,6 @@ import type { CoupleSupplierCost, UpsertCoupleSupplierCostInput } from "@shared/
 import type { FeedbackEntry, FeedbackPriority, FeedbackStatus } from "@shared/feedback";
 import type {
   DecideVendorWaitlistInput,
-  SubmitVendorWaitlistInput,
   VendorWaitlistAdminView,
   VendorWaitlistEntry,
 } from "@shared/vendor_waitlist";
@@ -1491,9 +1490,53 @@ export const outreachApi = {
     apiFetch<OutreachCampaignDetail>("POST", "/api/outreach/campaigns", body),
 };
 
+export interface SubmitVendorWaitlistForm {
+  business_name: string;
+  email: string;
+  category: string;
+  location: string | null;
+  website: string | null;
+  message: string | null;
+  portfolio_links: string[];
+  instagram_handle: string | null;
+  price_list: File | null;
+  privacy_version: string;
+  vendor_beta_notice_version: string;
+}
+
 export const vendorWaitlistApi = {
-  submit: (body: SubmitVendorWaitlistInput) =>
-    apiFetch<{ entry: VendorWaitlistEntry }>("POST", "/api/vendors/waitlist", body),
+  submit: async (input: SubmitVendorWaitlistForm): Promise<{ entry: VendorWaitlistEntry }> => {
+    const form = new FormData();
+    form.append("business_name", input.business_name);
+    form.append("email", input.email);
+    form.append("category", input.category);
+    if (input.location) form.append("location", input.location);
+    if (input.website) form.append("website", input.website);
+    if (input.message) form.append("message", input.message);
+    if (input.instagram_handle) form.append("instagram_handle", input.instagram_handle);
+    for (const link of input.portfolio_links) form.append("portfolio_links[]", link);
+    if (input.price_list) form.append("price_list", input.price_list);
+    form.append("privacy_version", input.privacy_version);
+    form.append("vendor_beta_notice_version", input.vendor_beta_notice_version);
+
+    const res = await fetch("/api/vendors/waitlist", { method: "POST", body: form });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Submit failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as { entry: VendorWaitlistEntry };
+  },
 };
 
 export interface FeedbackInput {

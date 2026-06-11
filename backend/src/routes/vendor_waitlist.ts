@@ -5,10 +5,13 @@
 // / rejected — each sending a template email via /decide. The admin can
 // re-open a decided entry back to the inbox via /reopen.
 
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import type { SupplierCategory } from "@shared/suppliers";
 import type { VendorWaitlistOutcome } from "@shared/vendor_waitlist";
 import { CONFIG } from "../config";
+import { db } from "../db";
 import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails/send";
 import { requireAdmin } from "../domain/users";
@@ -27,6 +30,14 @@ import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { log } from "../lib/logger";
 import { rateLimit } from "../lib/rate_limit";
+
+const MAX_PRICE_LIST_BYTES = 10 * 1024 * 1024; // 10 MB
+const PRICE_LIST_EXTS: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   venue: "Esküvői helyszín",
@@ -79,23 +90,6 @@ const VALID_OUTCOMES: ReadonlySet<VendorWaitlistOutcome> = new Set([
   "rejected",
 ]);
 
-interface SubmitBody {
-  business_name?: unknown;
-  email?: unknown;
-  category?: unknown;
-  location?: unknown;
-  website?: unknown;
-  message?: unknown;
-  portfolio_links?: unknown;
-  instagram_handle?: unknown;
-  /** GDPR-style consent: privacy policy + the free-beta / future-paid
-   *  disclosure. Both required — the public form blocks submit until the
-   *  checkbox is ticked, and the server records both as separate ledger
-   *  rows so we can demonstrate the vendor saw the monetisation notice. */
-  privacy_version?: unknown;
-  vendor_beta_notice_version?: unknown;
-}
-
 function trimStr(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
@@ -139,20 +133,22 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   // bots away without locking out a vendor who fat-fingers the form.
   rateLimit(ctx.clientIp, "vendor_waitlist", { capacity: 5, refillRate: 1 / 720 });
 
-  const body = await readJson<SubmitBody>(ctx.req);
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required");
+  });
 
-  if (body.privacy_version !== PRIVACY_VERSION) {
+  if (trimStr(form.get("privacy_version")) !== PRIVACY_VERSION) {
     throw new HttpError(400, "Privacy policy version is out of date — please refresh the page");
   }
-  if (body.vendor_beta_notice_version !== VENDOR_BETA_NOTICE_VERSION) {
+  if (trimStr(form.get("vendor_beta_notice_version")) !== VENDOR_BETA_NOTICE_VERSION) {
     throw new HttpError(400, "Beta notice version is out of date — please refresh the page");
   }
 
-  const business_name = trimStr(body.business_name);
+  const business_name = trimStr(form.get("business_name"));
   if (!business_name) throw new HttpError(400, "business_name required");
   if (business_name.length > 120) throw new HttpError(400, "business_name too long (max 120)");
 
-  const email = trimStr(body.email).toLowerCase();
+  const email = trimStr(form.get("email")).toLowerCase();
   if (!email) throw new HttpError(400, "email required");
   if (email.length > 200) throw new HttpError(400, "email too long (max 200)");
   const at = email.indexOf("@");
@@ -160,76 +156,74 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "email is not valid");
   }
 
-  const category = trimStr(body.category);
+  const category = trimStr(form.get("category"));
   if (!VALID_CATEGORIES.has(category as SupplierCategory)) {
     throw new HttpError(400, "Invalid category");
   }
 
   let location: string | null = null;
-  if (body.location != null && body.location !== "") {
-    const loc = trimStr(body.location);
-    if (loc) {
-      if (loc.length > 500) throw new HttpError(400, "location too long (max 500)");
-      location = loc;
-    }
+  const locRaw = trimStr(form.get("location"));
+  if (locRaw) {
+    if (locRaw.length > 500) throw new HttpError(400, "location too long (max 500)");
+    location = locRaw;
   }
 
-  // Optional. Accept a bare hostname ("example.com") by auto-prefixing
-  // "https://" so the field is forgiving — vendors paste from a browser bar.
-  // We still parse it through `new URL` to reject "asdf" and similar garbage.
   let website: string | null = null;
-  if (body.website != null && body.website !== "") {
-    const raw = trimStr(body.website);
-    if (raw) {
-      if (raw.length > 300) throw new HttpError(400, "website too long (max 300)");
-      const candidate =
-        raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
-      let parsed: URL;
-      try {
-        parsed = new URL(candidate);
-      } catch {
-        throw new HttpError(400, "website is not a valid URL");
-      }
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        throw new HttpError(400, "website protocol must be http or https");
-      }
-      if (!parsed.hostname) throw new HttpError(400, "website hostname required");
-      website = candidate;
+  const siteRaw = trimStr(form.get("website"));
+  if (siteRaw) {
+    if (siteRaw.length > 300) throw new HttpError(400, "website too long (max 300)");
+    const candidate =
+      siteRaw.startsWith("http://") || siteRaw.startsWith("https://")
+        ? siteRaw
+        : `https://${siteRaw}`;
+    let parsed: URL;
+    try {
+      parsed = new URL(candidate);
+    } catch {
+      throw new HttpError(400, "website is not a valid URL");
     }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new HttpError(400, "website protocol must be http or https");
+    }
+    if (!parsed.hostname) throw new HttpError(400, "website hostname required");
+    website = candidate;
   }
 
   let message: string | null = null;
-  if (body.message != null && body.message !== "") {
-    const m = trimStr(body.message);
-    if (m) {
-      if (m.length > 1000) throw new HttpError(400, "message too long (max 1000)");
-      message = m;
-    }
+  const msgRaw = trimStr(form.get("message"));
+  if (msgRaw) {
+    if (msgRaw.length > 1000) throw new HttpError(400, "message too long (max 1000)");
+    message = msgRaw;
   }
 
-  // Portfolio links — optional list of URLs. Cap at 6 so a misbehaving
-  // client can't dump a thousand entries onto us. Same auto-prefix +
-  // URL-parse forgiveness as the `website` field.
+  // portfolio_links is sent as repeated fields: portfolio_links[]=url1&…
   const portfolioLinks: string[] = [];
-  if (Array.isArray(body.portfolio_links)) {
-    if (body.portfolio_links.length > 6) {
-      throw new HttpError(400, "portfolio_links too many (max 6)");
-    }
-    for (const raw of body.portfolio_links) {
-      const link = trimStr(raw);
-      if (!link) continue;
-      portfolioLinks.push(normalisePortfolioUrl(link));
-    }
-  } else if (body.portfolio_links != null) {
-    throw new HttpError(400, "portfolio_links must be an array");
+  const rawLinks = form.getAll("portfolio_links[]");
+  if (rawLinks.length > 6) throw new HttpError(400, "portfolio_links too many (max 6)");
+  for (const raw of rawLinks) {
+    const link = trimStr(raw);
+    if (!link) continue;
+    portfolioLinks.push(normalisePortfolioUrl(link));
   }
 
-  // Instagram handle — optional. Strip leading '@' so the admin display
-  // logic doesn't have to handle both forms.
   let instagramHandle: string | null = null;
-  if (body.instagram_handle != null && body.instagram_handle !== "") {
-    const raw = trimStr(body.instagram_handle);
-    if (raw) instagramHandle = normaliseInstagramHandle(raw);
+  const igRaw = trimStr(form.get("instagram_handle"));
+  if (igRaw) instagramHandle = normaliseInstagramHandle(igRaw);
+
+  // Optional price list — PDF or common image types, max 10 MB.
+  // We insert the row first to get its ID, then save the file and UPDATE.
+  const priceListFile = form.get("price_list");
+  let priceListPath: string | null = null;
+  if (priceListFile instanceof File && priceListFile.size > 0) {
+    if (priceListFile.size > MAX_PRICE_LIST_BYTES) {
+      throw new HttpError(413, "price_list too large (max 10 MB)");
+    }
+    const ext = PRICE_LIST_EXTS[priceListFile.type];
+    if (!ext) {
+      throw new HttpError(415, "price_list must be a PDF or JPEG/PNG/WebP image");
+    }
+    // Placeholder path — will be finalized after insert (need the row id).
+    priceListPath = `__pending__:${ext}`;
   }
 
   const row = insertVendorWaitlist({
@@ -241,7 +235,22 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     message,
     portfolio_links: portfolioLinks,
     instagram_handle: instagramHandle,
+    price_list_path: null, // written after insert once we have the id
   });
+
+  // Save the price list now that we have the row id.
+  let finalRow = row;
+  if (priceListFile instanceof File && priceListFile.size > 0 && priceListPath?.startsWith("__pending__:")) {
+    const ext = priceListPath.split(":")[1] ?? "pdf";
+    const relDir = join("vendor_waitlist", String(row.id));
+    const absDir = join(CONFIG.uploadsDir, relDir);
+    await mkdir(absDir, { recursive: true });
+    const relPath = join(relDir, `price_list.${ext}`);
+    await Bun.write(join(CONFIG.uploadsDir, relPath), await priceListFile.arrayBuffer());
+    db.prepare("UPDATE vendor_waitlist SET price_list_path = ? WHERE id = ?").run(relPath, row.id);
+    const refreshed = getVendorWaitlistById(row.id);
+    if (refreshed) finalRow = refreshed;
+  }
 
   // One ledger row per accepted document. The IP / UA matches across both
   // because they came in the same submit click — keeps the audit trail
@@ -290,7 +299,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     { user: null, guest: { email, full_name: business_name } },
   );
 
-  return json({ entry: toVendorWaitlistEntry(row) }, { status: 201 });
+  return json({ entry: toVendorWaitlistEntry(finalRow) }, { status: 201 });
 }
 
 async function handleAdminList(ctx: Ctx): Promise<Response> {

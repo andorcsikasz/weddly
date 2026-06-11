@@ -24,6 +24,8 @@ export interface VendorWaitlistRow {
    *  on read — defensive against legacy / hand-edited rows. */
   portfolio_links: string | null;
   instagram_handle: string | null;
+  /** Relative disk path under uploadsDir, e.g. `vendor_waitlist/3/price_list.pdf`. */
+  price_list_path: string | null;
   status: string;
   reviewed_by_user_id: number | null;
   reviewed_at: number | null;
@@ -60,6 +62,11 @@ function toStatus(s: string): VendorWaitlistStatus {
   return "new";
 }
 
+export function priceListUrl(row: VendorWaitlistRow): string | null {
+  if (!row.price_list_path) return null;
+  return `/uploads/${row.price_list_path}`;
+}
+
 export function toVendorWaitlistEntry(row: VendorWaitlistRow): VendorWaitlistEntry {
   return {
     id: row.id,
@@ -71,6 +78,7 @@ export function toVendorWaitlistEntry(row: VendorWaitlistRow): VendorWaitlistEnt
     message: row.message,
     portfolio_links: parsePortfolioLinks(row.portfolio_links),
     instagram_handle: row.instagram_handle,
+    price_list_url: priceListUrl(row),
     status: toStatus(row.status),
     reviewed_at: row.reviewed_at,
     created_at: row.created_at,
@@ -88,6 +96,7 @@ export function toVendorWaitlistAdminView(row: VendorWaitlistRow): VendorWaitlis
     message: row.message,
     portfolio_links: parsePortfolioLinks(row.portfolio_links),
     instagram_handle: row.instagram_handle,
+    price_list_url: priceListUrl(row),
     status: toStatus(row.status),
     reviewed_at: row.reviewed_at,
     outcome_at: row.outcome_at,
@@ -121,17 +130,15 @@ export function insertVendorWaitlist(input: {
   message: string | null;
   portfolio_links: string[];
   instagram_handle: string | null;
+  price_list_path: string | null;
 }): VendorWaitlistRow {
   const ts = now();
-  // Empty array serialises to null on the row — keeps the column NULL for
-  // submissions without portfolio, so the admin can `WHERE portfolio_links
-  // IS NOT NULL` if we ever want to filter on it.
   const portfolioJson =
     input.portfolio_links.length > 0 ? JSON.stringify(input.portfolio_links) : null;
   const result = db
     .prepare(
-      `INSERT INTO vendor_waitlist (business_name, email, category, location, website, message, portfolio_links, instagram_handle, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
+      `INSERT INTO vendor_waitlist (business_name, email, category, location, website, message, portfolio_links, instagram_handle, price_list_path, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
     )
     .run(
       input.business_name,
@@ -142,6 +149,7 @@ export function insertVendorWaitlist(input: {
       input.message,
       portfolioJson,
       input.instagram_handle,
+      input.price_list_path,
       ts,
     );
   const row = getVendorWaitlistById(Number(result.lastInsertRowid));

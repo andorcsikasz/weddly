@@ -271,6 +271,7 @@ addColumnIfMissing("vendor_waitlist", "website", "website TEXT");
 // `instagram_handle` is the bare handle (no leading '@' — server strips it).
 addColumnIfMissing("vendor_waitlist", "portfolio_links", "portfolio_links TEXT");
 addColumnIfMissing("vendor_waitlist", "instagram_handle", "instagram_handle TEXT");
+addColumnIfMissing("vendor_waitlist", "price_list_path", "price_list_path TEXT");
 
 // `couple_supplier_id` back-reference on auto-synced budget lines. When a
 // DIY supplier entry on /app/suppliers has a price, the backend creates a

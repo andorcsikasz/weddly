@@ -20,6 +20,7 @@ import {
   Check,
   Clock,
   Facebook,
+  FileText,
   Globe,
   Instagram,
   Link2,
@@ -375,7 +376,11 @@ function EntryCard({
   const hasChannelRow =
     !!channels.website || !!channels.instagram || !!channels.youtube || !!channels.facebook;
   const hasDetail =
-    channels.others.length > 0 || !!entry.message || !!entry.sent_subject || !!entry.notes;
+    channels.others.length > 0 ||
+    !!entry.price_list_url ||
+    !!entry.message ||
+    !!entry.sent_subject ||
+    !!entry.notes;
   const statusMeta = STATUS_PILL[entry.status];
   const StatusIcon = statusMeta.Icon;
   return (
@@ -476,6 +481,20 @@ function EntryCard({
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+            {entry.price_list_url && (
+              <div className="admin-tile">
+                <p className="eyebrow">{t("admin.waitlist_card_price_list_label")}</p>
+                <a
+                  href={entry.price_list_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center gap-1.5 text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
+                >
+                  <FileText size={13} aria-hidden className="shrink-0" />
+                  <span>{entry.price_list_url.split("/").pop()}</span>
+                </a>
               </div>
             )}
             {entry.message && (

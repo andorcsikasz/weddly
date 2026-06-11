@@ -6,6 +6,7 @@ import {
   Briefcase,
   Building2,
   Check,
+  FileText,
   Globe,
   Image as ImageIcon,
   Info,
@@ -17,6 +18,7 @@ import {
   Plus,
   Tag,
   Trash2,
+  X,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -265,6 +267,7 @@ function WaitlistContact() {
   // Start with one empty row so the field is visually present rather than
   // hidden behind the "+ Add link" CTA — vendors should see we want it.
   const [portfolioLinks, setPortfolioLinks] = useState<string[]>([""]);
+  const [priceList, setPriceList] = useState<File | null>(null);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -326,6 +329,9 @@ function WaitlistContact() {
         return setErrorMsg(t("vendors.form_err_portfolio_link"));
       }
     }
+    if (priceList && priceList.size > 10 * 1024 * 1024) {
+      return setErrorMsg(t("vendors.form_err_price_list_size"));
+    }
     if (!privacyConsent) return setErrorMsg(t("vendors.form_err_privacy_consent"));
 
     setSubmitting(true);
@@ -339,6 +345,7 @@ function WaitlistContact() {
         message: msg ? msg : null,
         portfolio_links: trimmedLinks,
         instagram_handle: ig ? ig : null,
+        price_list: priceList,
         privacy_version: PRIVACY_VERSION,
         vendor_beta_notice_version: VENDOR_BETA_NOTICE_VERSION,
       });
@@ -632,6 +639,54 @@ function WaitlistContact() {
                   {t("vendors.portfolio_add_link")}
                 </button>
               </div>
+            </div>
+
+            {/* Price list upload */}
+            <div>
+              <label className="field-label mb-1.5 block">
+                {t("vendors.price_list_label")}
+                <span className="ml-1.5 text-[10px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
+                  · {t("vendors.section_optional_label")}
+                </span>
+              </label>
+              <p className="mb-2 text-xs italic leading-relaxed text-ink-500 dark:text-umber-300">
+                {t("vendors.price_list_hint")}
+              </p>
+              {priceList ? (
+                <div className="flex items-center gap-2 rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 dark:border-umber-700 dark:bg-umber-800">
+                  <FileText size={16} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate text-sm text-ink-700 dark:text-paper-100">
+                    {priceList.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPriceList(null)}
+                    aria-label={t("vendors.price_list_remove")}
+                    className="shrink-0 text-ink-400 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+                  >
+                    <X size={16} aria-hidden />
+                  </button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="vendor-price-list"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-paper-400 bg-paper-50 px-3 py-3 text-sm text-ink-600 transition-colors hover:border-ink-400 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-umber-400"
+                >
+                  <FileText size={16} className="shrink-0" aria-hidden />
+                  <span>{t("vendors.price_list_upload_cta")}</span>
+                  <input
+                    id="vendor-price-list"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      setPriceList(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
             </div>
 
             <div>
