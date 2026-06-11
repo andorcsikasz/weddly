@@ -119,9 +119,13 @@ export interface ForecastAssumptions {
   newCouplesPerMonth: number;
   /** % of new couples that become paying after their trial. */
   trialToPaidPct: number;
-  /** % of founding members who convert to paid when their window ends. */
-  foundingToPaidPct: number;
-  /** % of paying subscribers lost each month. */
+  /** Typical subscription length in months (2–12). Drives both natural
+   *  lifecycle churn (1/avgCycleMonths per month) and founding conversion
+   *  probability (avgCycleMonths/12 — longer planners are more likely to
+   *  continue paying when their founding window closes). */
+  avgCycleMonths: number;
+  /** % of paying subscribers lost each month from involuntary/voluntary churn
+   *  on top of natural lifecycle completion. */
   monthlyChurnPct: number;
 }
 
@@ -140,16 +144,22 @@ export function projectRevenue(
   assumptions: ForecastAssumptions,
   foundingExpiryByOffset: number[],
 ): ForecastPoint[] {
-  const churn = clampPct(assumptions.monthlyChurnPct) / 100;
+  const cycle = Math.max(2, assumptions.avgCycleMonths);
+  // Natural lifecycle churn: 1/cycle per month (wedding happened, planning done).
+  const naturalChurn = 1 / cycle;
+  const involuntaryChurn = clampPct(assumptions.monthlyChurnPct) / 100;
+  const effectiveChurn = Math.min(1, naturalChurn + involuntaryChurn);
   const trialConv = clampPct(assumptions.trialToPaidPct) / 100;
-  const foundingConv = clampPct(assumptions.foundingToPaidPct) / 100;
+  // Founding conv: couples with longer planning horizons are more likely to
+  // continue paying (avgCycleMonths/12, capped at 1).
+  const foundingConv = Math.min(1, cycle / 12);
   const arpu = base.arpuEur > 0 ? base.arpuEur : 0;
 
   const out: ForecastPoint[] = [];
   let subs = base.subscribers;
   for (let m = 1; m <= assumptions.months; m++) {
-    // Churn first on the existing base.
-    subs = subs * (1 - churn);
+    // Apply combined churn on the existing base.
+    subs = subs * (1 - effectiveChurn);
     // New couples that convert after their trial.
     subs += assumptions.newCouplesPerMonth * trialConv;
     // Founding members whose free window ends this month, converting to paid.

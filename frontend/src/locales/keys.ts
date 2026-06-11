@@ -1356,6 +1356,11 @@ export interface LocaleMessages {
     instagram_placeholder: string;
     form_err_portfolio_link: string;
     form_err_instagram_handle: string;
+    form_err_price_list_size: string;
+    price_list_label: string;
+    price_list_hint: string;
+    price_list_upload_cta: string;
+    price_list_remove: string;
   };
   public: {
     menu_open: string;
@@ -3649,7 +3654,7 @@ export interface LocaleMessages {
     fin_assumptions_hint: string;
     fin_new_couples: string;
     fin_trial_conv: string;
-    fin_founding_conv: string;
+    fin_avg_cycle: string;
     fin_churn: string;
     fin_horizon: string;
     fin_horizon_months: string;
@@ -3744,6 +3749,7 @@ export interface LocaleMessages {
     waitlist_status_rejected: string;
     waitlist_card_submitted: string;
     waitlist_card_decided: string;
+    waitlist_card_price_list_label: string;
     waitlist_card_message_label: string;
     waitlist_card_notes_label: string;
     /** "More" summary label on the collapsed-by-default detail section

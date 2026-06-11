@@ -1185,6 +1185,11 @@ const en: LocaleMessages = {
     form_err_portfolio_link: "One of the portfolio links isn't a valid URL.",
     form_err_instagram_handle:
       "Instagram handle can only contain letters, digits, dots and underscores (max 30 chars).",
+    form_err_price_list_size: "Price list file is too large (max 10 MB).",
+    price_list_label: "Price list",
+    price_list_hint: "PDF or image, max 10 MB. Helps us understand your offering.",
+    price_list_upload_cta: "Attach a price list (PDF or image)",
+    price_list_remove: "Remove file",
   },
   public: {
     menu_open: "Open menu",
@@ -3226,7 +3231,7 @@ const en: LocaleMessages = {
     fin_assumptions_hint: "Drag to model the next months. Nothing is saved.",
     fin_new_couples: "New couples / month",
     fin_trial_conv: "Trial → paid",
-    fin_founding_conv: "First 200 → paid",
+    fin_avg_cycle: "Avg. cycle",
     fin_churn: "Monthly churn",
     fin_horizon: "Horizon",
     fin_horizon_months: "{n} months",
@@ -3301,6 +3306,7 @@ const en: LocaleMessages = {
     waitlist_status_rejected: "Rejected",
     waitlist_card_submitted: "Submitted",
     waitlist_card_decided: "Decided",
+    waitlist_card_price_list_label: "Price list",
     waitlist_card_message_label: "Message",
     waitlist_card_notes_label: "Internal notes",
     waitlist_card_more_label: "Details",

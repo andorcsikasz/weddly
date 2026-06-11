@@ -53,7 +53,7 @@ const DEFAULT_ASSUMPTIONS: ForecastAssumptions = {
   months: 18,
   newCouplesPerMonth: 20,
   trialToPaidPct: 30,
-  foundingToPaidPct: 50,
+  avgCycleMonths: 7,
   monthlyChurnPct: 3,
 };
 
@@ -335,8 +335,8 @@ export default function AdminFinancialPlannerPage() {
             label={t("admin.fin_new_couples")}
             value={a.newCouplesPerMonth}
             min={0}
-            max={500}
-            step={5}
+            max={1000}
+            step={10}
             display={String(a.newCouplesPerMonth)}
             onChange={(v) => setA({ ...a, newCouplesPerMonth: v })}
           />
@@ -350,13 +350,13 @@ export default function AdminFinancialPlannerPage() {
             onChange={(v) => setA({ ...a, trialToPaidPct: v })}
           />
           <Slider
-            label={t("admin.fin_founding_conv")}
-            value={a.foundingToPaidPct}
-            min={0}
-            max={100}
+            label={t("admin.fin_avg_cycle")}
+            value={a.avgCycleMonths}
+            min={2}
+            max={12}
             step={1}
-            display={`${a.foundingToPaidPct}%`}
-            onChange={(v) => setA({ ...a, foundingToPaidPct: v })}
+            display={`${a.avgCycleMonths} hó`}
+            onChange={(v) => setA({ ...a, avgCycleMonths: v })}
           />
           <Slider
             label={t("admin.fin_churn")}

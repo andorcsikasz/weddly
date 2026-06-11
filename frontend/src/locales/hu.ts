@@ -1198,6 +1198,11 @@ const hu: LocaleMessages = {
     form_err_portfolio_link: "Az egyik portfólió link nem érvényes URL.",
     form_err_instagram_handle:
       "Az Instagram fióknév csak betűt, számot, pontot és aláhúzást tartalmazhat (max 30 karakter).",
+    form_err_price_list_size: "Az árajánlat fájl túl nagy (max 10 MB).",
+    price_list_label: "Árajánlat",
+    price_list_hint: "PDF vagy kép, max 10 MB. Segít megérteni az ajánlatod.",
+    price_list_upload_cta: "Árajánlat csatolása (PDF vagy kép)",
+    price_list_remove: "Fájl eltávolítása",
   },
   public: {
     menu_open: "Menü megnyitása",
@@ -3264,7 +3269,7 @@ const hu: LocaleMessages = {
     fin_assumptions_hint: "Húzd a következő hónapok modellezéséhez. Semmi nem mentődik.",
     fin_new_couples: "Új pár / hó",
     fin_trial_conv: "Próba → fizető",
-    fin_founding_conv: "Első 200 → fizető",
+    fin_avg_cycle: "Átlagos ciklus",
     fin_churn: "Havi lemorzsolódás",
     fin_horizon: "Időtáv",
     fin_horizon_months: "{n} hónap",
@@ -3339,6 +3344,7 @@ const hu: LocaleMessages = {
     waitlist_status_rejected: "Elutasítva",
     waitlist_card_submitted: "Beérkezett",
     waitlist_card_decided: "Eldöntve",
+    waitlist_card_price_list_label: "Árajánlat",
     waitlist_card_message_label: "Üzenet",
     waitlist_card_notes_label: "Belső jegyzet",
     waitlist_card_more_label: "Részletek",
