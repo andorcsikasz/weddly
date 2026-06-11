@@ -1,4 +1,5 @@
 import { TERMS_VERSION } from "@shared/legal";
+import { useState } from "react";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import en from "../locales/en";
@@ -6,12 +7,9 @@ import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
 import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } from "./PrivacyPage";
 
-/**
- * /terms — short Terms of Service for the open beta. Intentionally
- * brief; full legal review lands with v2 alongside paid tiers.
- */
 export default function TermsPage() {
   const { t } = useT();
+  const [showHu, setShowHu] = useState(false);
   useDocumentMeta("terms.seo_title", "terms.seo_description");
 
   return (
@@ -25,8 +23,21 @@ export default function TermsPage() {
           versionLabel={t("legal.version_label")}
         />
         <TermsBodyForLocale strings={en.terms} sectionLocale="en" />
-        <SecondaryLanguageDivider label="Magyar" />
-        <TermsBodyForLocale strings={hu.terms} sectionLocale="hu" secondary />
+        <div className="mt-10 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowHu((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-5 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
+          >
+            {showHu ? "Hide Hungarian" : "Magyar változat"}
+          </button>
+        </div>
+        {showHu && (
+          <>
+            <SecondaryLanguageDivider label="Magyar" />
+            <TermsBodyForLocale strings={hu.terms} sectionLocale="hu" secondary />
+          </>
+        )}
         <BackLink />
       </article>
     </PublicShell>
