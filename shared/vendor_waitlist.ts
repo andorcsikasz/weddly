@@ -46,6 +46,7 @@ export interface VendorWaitlistEntry {
   message: string | null;
   portfolio_links: string[];
   instagram_handle: string | null;
+  price_list_url: string | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
   created_at: number;
@@ -64,6 +65,7 @@ export interface VendorWaitlistAdminView {
   message: string | null;
   portfolio_links: string[];
   instagram_handle: string | null;
+  price_list_url: string | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
   outcome_at: number | null;

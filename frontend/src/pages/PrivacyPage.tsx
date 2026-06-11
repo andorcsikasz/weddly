@@ -1,5 +1,6 @@
 import { PRIVACY_VERSION } from "@shared/legal";
 import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
@@ -8,17 +9,9 @@ import en from "../locales/en";
 import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
 
-/**
- * /privacy — MVP-quality privacy policy. Renders both the EN and HU
- * versions on one page (EN first), regardless of the active locale, so
- * anyone landing here can read the policy in whichever language they prefer
- * without flipping a toggle.
- *
- * Real legal review is deferred to v2; the copy here is honest and
- * accurate based on what the codebase actually does today.
- */
 export default function PrivacyPage() {
   const { t } = useT();
+  const [showHu, setShowHu] = useState(false);
   useDocumentMeta("privacy.seo_title", "privacy.seo_description");
 
   return (
@@ -32,8 +25,21 @@ export default function PrivacyPage() {
           versionLabel={t("legal.version_label")}
         />
         <PrivacyBodyForLocale strings={en.privacy} sectionLocale="en" />
-        <SecondaryLanguageDivider label="Magyar" />
-        <PrivacyBodyForLocale strings={hu.privacy} sectionLocale="hu" secondary />
+        <div className="mt-10 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowHu((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-5 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
+          >
+            {showHu ? "Hide Hungarian" : "Magyar változat"}
+          </button>
+        </div>
+        {showHu && (
+          <>
+            <SecondaryLanguageDivider label="Magyar" />
+            <PrivacyBodyForLocale strings={hu.privacy} sectionLocale="hu" secondary />
+          </>
+        )}
         <BackLink />
       </article>
     </PublicShell>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import en from "../locales/en";
@@ -9,9 +10,11 @@ import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } fro
  * /terms/vendor-subscription: vendor ÁSZF v1.0 (effective 2026-06-15).
  * Click-acceptance binding terms covering free Beta tier and future paid
  * plans (P2B Regulation 2019/1150, DSA, Hungarian consumer law).
+ * English is shown by default; the Hungarian text is available via a toggle.
  */
 export default function SubscriptionTermsPage() {
   const { t } = useT();
+  const [showHu, setShowHu] = useState(false);
   useDocumentMeta("subscription_terms.seo_title", "subscription_terms.seo_description");
 
   return (
@@ -22,9 +25,22 @@ export default function SubscriptionTermsPage() {
           updatedLabel={t("subscription_terms.last_updated_label")}
           updatedDate={t("subscription_terms.last_updated_date")}
         />
-        <SubscriptionBodyForLocale strings={hu.subscription_terms} sectionLocale="hu" />
-        <SecondaryLanguageDivider label="English" />
-        <SubscriptionBodyForLocale strings={en.subscription_terms} sectionLocale="en" secondary />
+        <SubscriptionBodyForLocale strings={en.subscription_terms} sectionLocale="en" />
+        <div className="mt-10 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowHu((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-5 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
+          >
+            {showHu ? "Hide Hungarian" : "Magyar változat"}
+          </button>
+        </div>
+        {showHu && (
+          <>
+            <SecondaryLanguageDivider label="Magyar" />
+            <SubscriptionBodyForLocale strings={hu.subscription_terms} sectionLocale="hu" secondary />
+          </>
+        )}
         <BackLink />
       </article>
     </PublicShell>

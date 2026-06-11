@@ -15,13 +15,11 @@ import {
   MapPin,
   MessageSquare,
   Plus,
-  Sparkles,
   Tag,
   Trash2,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { PhaseAftermathArt, PhaseGuestsArt, PhaseSuppliersArt } from "../components/illustrations";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { ApiError } from "../lib/api";
@@ -96,17 +94,29 @@ export default function VendorsPage() {
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="grid gap-6 lg:grid-cols-3">
             <Benefit
-              art={<PhaseSuppliersArt className="h-12 w-12" />}
+              art={
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-umber-200 bg-umber-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800">
+                  <span className="block h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300" />
+                </span>
+              }
               title={t("vendors.benefit_1_title")}
               body={t("vendors.benefit_1_body")}
             />
             <Benefit
-              art={<PhaseGuestsArt className="h-12 w-12" />}
+              art={
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-umber-200 bg-umber-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800">
+                  <span className="block h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300" />
+                </span>
+              }
               title={t("vendors.benefit_2_title")}
               body={t("vendors.benefit_2_body")}
             />
             <Benefit
-              art={<PhaseAftermathArt className="h-12 w-12" />}
+              art={
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-umber-200 bg-umber-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800">
+                  <span className="block h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300" />
+                </span>
+              }
               title={t("vendors.benefit_3_title")}
               body={t("vendors.benefit_3_body")}
             />
@@ -386,8 +396,7 @@ function WaitlistContact() {
             duplicate next to the page hero. Now: tight serif title with
             mini Sparkles inline. Saves ~60px of vertical chrome. */}
         <div>
-          <h2 className="flex items-center gap-2 font-grotesk text-2xl text-ink-900 dark:text-paper-50">
-            <Sparkles size={18} className="text-blush-600 dark:text-blush-300" aria-hidden />
+          <h2 className="font-grotesk text-2xl text-ink-900 dark:text-paper-50">
             {t("vendors.contact_title")}
           </h2>
           <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">{t("vendors.form_sub")}</p>
