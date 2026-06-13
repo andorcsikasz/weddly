@@ -663,6 +663,12 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   html.dark .seating-toolbar .btn-outline {
     border-color: theme("colors.umber.600");
   }
+  .icon-group-item {
+    @apply flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-ink-800
+      transition-colors hover:bg-paper-100
+      disabled:cursor-not-allowed disabled:opacity-50
+      dark:text-paper-100 dark:hover:bg-umber-700;
+  }
   .btn-lg {
     @apply px-6 py-3 text-base;
   }

@@ -1118,31 +1118,45 @@ export default function SeatingPage() {
       {/* Action toolbar sits just above the floor plan so the title + sub
           read as a clean intro, and the print/add affordances stay close
           to the thing they act on. */}
-      <div className="seating-toolbar mb-4 flex flex-wrap items-center gap-2">
-        <PrintChartMenu
-          disabled={previewLoading !== null}
-          onPick={(format) =>
-            requestDownload(
-              `/api/print/seating/${format}?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
-              `weddly-seating-${format}.pdf`,
-              format === "a4" ? t("seating.print_a4") : t("seating.print_a3"),
-            )
-          }
-        />
-        <button
-          type="button"
-          className="btn-outline"
-          disabled={previewLoading !== null}
-          onClick={() =>
-            requestDownload(
-              "/api/print/place-cards",
-              "weddly-place-cards.pdf",
-              t("seating.print_place_cards"),
-            )
-          }
-        >
-          <Printer size={16} /> {t("seating.print_place_cards")}
-        </button>
+      <div className="seating-toolbar mb-4 flex flex-wrap items-center gap-3">
+        {/* Grouped icon strip: Print / Place cards / Arrange */}
+        <div className="flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
+          <PrintChartMenu
+            disabled={previewLoading !== null}
+            onPick={(format) =>
+              requestDownload(
+                `/api/print/seating/${format}?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
+                `weddly-seating-${format}.pdf`,
+                format === "a4" ? t("seating.print_a4") : t("seating.print_a3"),
+              )
+            }
+            grouped
+          />
+          <button
+            type="button"
+            className="icon-group-item"
+            disabled={previewLoading !== null}
+            onClick={() =>
+              requestDownload(
+                "/api/print/place-cards",
+                "weddly-place-cards.pdf",
+                t("seating.print_place_cards"),
+              )
+            }
+          >
+            <Printer size={16} /> {t("seating.print_place_cards")}
+          </button>
+          <button
+            type="button"
+            className="icon-group-item"
+            onClick={arrangeTablesSymmetrically}
+            disabled={tables.length === 0}
+            aria-label={t("seating.arrange_button_label")}
+            title={t("seating.arrange_button_label")}
+          >
+            <LayoutGrid size={16} aria-hidden />
+          </button>
+        </div>
         {previewLoading !== null && (
           <button
             type="button"
@@ -1153,16 +1167,6 @@ export default function SeatingPage() {
             {t("seating.pdf_cancel")}
           </button>
         )}
-        <button
-          type="button"
-          className="btn-outline"
-          onClick={arrangeTablesSymmetrically}
-          disabled={tables.length === 0}
-          aria-label={t("seating.arrange_button_label")}
-          title={t("seating.arrange_button_label")}
-        >
-          <LayoutGrid size={16} aria-hidden />
-        </button>
         <button type="button" className="btn-primary ml-auto" onClick={addTable}>
           <Plus size={16} /> {t("seating.add_table")}
         </button>
@@ -2773,9 +2777,11 @@ function readDragData(e: DragEvent): DragData | null {
 function PrintChartMenu({
   disabled,
   onPick,
+  grouped,
 }: {
   disabled: boolean;
   onPick: (format: "a4" | "a3") => void;
+  grouped?: boolean;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -2798,10 +2804,10 @@ function PrintChartMenu({
   }, [open]);
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div ref={wrapperRef} className="relative flex items-stretch">
       <button
         type="button"
-        className="btn-outline"
+        className={grouped ? "icon-group-item" : "btn-outline"}
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
