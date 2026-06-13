@@ -87,6 +87,8 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     rsvp_offers_accommodation: false,
     rsvp_collects_meal: true,
     timeline_email_escalation: "overdue",
+    notif_email_cadence: "1_weekly",
+    notif_focus: "timeline,rsvp,partner",
     is_demo: false,
     is_public: false,
     wishlist_published: false,
