@@ -16,6 +16,7 @@ import {
   Circle,
   Copy,
   Crown,
+  ExternalLink,
   Gem,
   LayoutGrid,
   Link2,
@@ -1133,8 +1134,8 @@ export default function SeatingPage() {
 
       {/* Single toolbar row: icon strip (left) → tabs (flex-1) → add table (right) */}
       <div className="seating-toolbar mb-4 flex items-center gap-4">
-        {/* Icon-only action strip — always visible regardless of mode */}
-        <div className="flex shrink-0 items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
+        {/* Icon-only action strip — no overflow-hidden so the print dropdown isn't clipped */}
+        <div className="flex shrink-0 items-stretch divide-x divide-ink-300 rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
           <PrintChartMenu
             disabled={previewLoading !== null}
             onPick={(format) =>
@@ -1253,9 +1254,12 @@ export default function SeatingPage() {
             )}
             <Link
               to="/app/guests"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-blush-700 underline-offset-4 transition-colors hover:underline dark:text-blush-300"
+              className="inline-flex items-center gap-0.5 text-blush-700 transition-colors hover:text-blush-900 dark:text-blush-300 dark:hover:text-blush-100"
+              aria-label={t("seating.go_to_guests")}
+              title={t("seating.go_to_guests")}
             >
-              <Users size={14} aria-hidden /> {t("seating.go_to_guests")}
+              <Users size={16} aria-hidden />
+              <ExternalLink size={12} aria-hidden />
             </Link>
           </div>
         )}
@@ -2874,7 +2878,7 @@ function PrintChartMenu({
       {open && (
         <div
           role="menu"
-          className="absolute left-0 z-20 mt-2 w-40 rounded-xl border border-paper-300 bg-white p-2 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          className="absolute left-0 top-full z-30 mt-1 w-44 rounded-xl border border-paper-300 bg-white p-2 shadow-pop dark:border-umber-700 dark:bg-umber-800"
         >
           {(["a4", "a3"] as const).map((format) => (
             <button
