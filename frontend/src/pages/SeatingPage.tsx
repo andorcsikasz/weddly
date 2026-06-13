@@ -1129,11 +1129,56 @@ export default function SeatingPage() {
       <span aria-live="polite" aria-atomic="true" className="sr-only">
         {a11yMessage}
       </span>
-      {/* Single-row header: mode tabs on the left, toolbar on the right */}
+      <h1 className="mb-3 font-grotesk">{t("seating.title")}</h1>
+
+      {/* Single toolbar row: icon strip (left) → tabs (flex-1) → add table (right) */}
       <div className="seating-toolbar mb-4 flex items-center gap-3">
+        {/* Icon-only action strip — always visible regardless of mode */}
+        <div className="flex shrink-0 items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
+          <PrintChartMenu
+            disabled={previewLoading !== null}
+            onPick={(format) =>
+              requestDownload(
+                `/api/print/seating/${format}?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
+                `weddly-seating-${format}.pdf`,
+                format === "a4" ? t("seating.print_a4") : t("seating.print_a3"),
+              )
+            }
+            grouped
+            iconOnly
+          />
+          <button
+            type="button"
+            className="icon-group-item"
+            disabled={previewLoading !== null}
+            onClick={() =>
+              requestDownload(
+                "/api/print/place-cards",
+                "weddly-place-cards.pdf",
+                t("seating.print_place_cards"),
+              )
+            }
+            aria-label={t("seating.print_place_cards")}
+            title={t("seating.print_place_cards")}
+          >
+            <Printer size={16} aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="icon-group-item"
+            onClick={arrangeTablesSymmetrically}
+            disabled={tables.length === 0}
+            aria-label={t("seating.arrange_button_label")}
+            title={t("seating.arrange_button_label")}
+          >
+            <LayoutGrid size={16} aria-hidden />
+          </button>
+        </div>
+
+        {/* Mode tabs — stretch to fill the remaining space */}
         <div
           role="tablist"
-          className="flex shrink-0 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:border-umber-600 dark:bg-umber-800"
+          className="flex min-w-0 flex-1 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:border-umber-600 dark:bg-umber-800"
         >
           {(["edit", "seat"] as const).map((m) => (
             <button
@@ -1142,7 +1187,7 @@ export default function SeatingPage() {
               role="tab"
               aria-selected={mode === m}
               onClick={() => setMode(m)}
-              className={`w-40 px-4 py-2 text-sm font-medium transition-colors ${
+              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
                 mode === m
                   ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
                   : "text-ink-600 hover:bg-paper-100 dark:text-umber-200 dark:hover:bg-umber-700"
@@ -1155,54 +1200,17 @@ export default function SeatingPage() {
 
         {mode === "edit" ? (
           <>
-            <div className="flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
-              <PrintChartMenu
-                disabled={previewLoading !== null}
-                onPick={(format) =>
-                  requestDownload(
-                    `/api/print/seating/${format}?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
-                    `weddly-seating-${format}.pdf`,
-                    format === "a4" ? t("seating.print_a4") : t("seating.print_a3"),
-                  )
-                }
-                grouped
-              />
-              <button
-                type="button"
-                className="icon-group-item"
-                disabled={previewLoading !== null}
-                onClick={() =>
-                  requestDownload(
-                    "/api/print/place-cards",
-                    "weddly-place-cards.pdf",
-                    t("seating.print_place_cards"),
-                  )
-                }
-              >
-                <Printer size={16} /> {t("seating.print_place_cards")}
-              </button>
-              <button
-                type="button"
-                className="icon-group-item"
-                onClick={arrangeTablesSymmetrically}
-                disabled={tables.length === 0}
-                aria-label={t("seating.arrange_button_label")}
-                title={t("seating.arrange_button_label")}
-              >
-                <LayoutGrid size={16} aria-hidden />
-              </button>
-            </div>
             {previewLoading !== null && (
               <button
                 type="button"
-                className="btn-outline"
+                className="btn-outline shrink-0"
                 onClick={cancelDownload}
                 aria-label={t("seating.pdf_cancel")}
               >
                 {t("seating.pdf_cancel")}
               </button>
             )}
-            <button type="button" className="btn-primary ml-auto" onClick={addTable}>
+            <button type="button" className="btn-primary shrink-0" onClick={addTable}>
               <Plus size={16} /> {t("seating.add_table")}
             </button>
           </>
@@ -2825,10 +2833,12 @@ function PrintChartMenu({
   disabled,
   onPick,
   grouped,
+  iconOnly,
 }: {
   disabled: boolean;
   onPick: (format: "a4" | "a3") => void;
   grouped?: boolean;
+  iconOnly?: boolean;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -2862,7 +2872,8 @@ function PrintChartMenu({
         aria-label={t("seating.print_chart")}
         title={t("seating.print_chart")}
       >
-        <Printer size={16} aria-hidden /> {t("seating.print_chart")}
+        <Printer size={16} aria-hidden />
+        {!iconOnly && <span>{t("seating.print_chart")}</span>}
         <ChevronDown size={14} aria-hidden />
       </button>
       {open && (
