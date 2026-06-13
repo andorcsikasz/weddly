@@ -41,7 +41,7 @@ function insertLegacyRow(coupleId: number, url: string | null): number {
 }
 
 describe("wishlist image_checked_at marker", () => {
-  test("create with a link stamps image_checked_at; without a link leaves it null", async () => {
+  test("create with failed image leaves image_checked_at null (backfill-eligible); no link leaves it null too", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("wishlist-stamp@weddly.test");
 
@@ -52,9 +52,12 @@ describe("wishlist image_checked_at marker", () => {
       { token },
     );
     expect(withLink.status).toBe(201);
-    // Blocked host -> soft null image, but the attempt is recorded.
+    // Blocked host -> soft null image; NOT stamped so the boot backfill can retry.
     expect(rowOf(withLink.data.item.id).image_url).toBeNull();
-    expect(rowOf(withLink.data.item.id).image_checked_at).not.toBeNull();
+    expect(rowOf(withLink.data.item.id).image_checked_at).toBeNull();
+    expect(listWishlistRowsNeedingImageBackfill(100).map((r) => r.id)).toContain(
+      withLink.data.item.id,
+    );
 
     const noLink = await req<{ item: WishlistItem }>(
       "POST",

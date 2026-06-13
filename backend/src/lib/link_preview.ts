@@ -140,6 +140,57 @@ function decodeEntities(s: string): string {
     .replace(/&#x27;/g, "'");
 }
 
+/** Scan all `<script type="application/ld+json">` blocks and return the first
+ *  image URL found in any node's `image` field. Handles strings, arrays of
+ *  strings, ImageObject `{ url }` shapes, and `@graph`-wrapped documents. */
+function extractJsonLdImage(html: string): string | null {
+  const re =
+    /<script\b[^>]*\btype\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const raw = m[1] ?? "";
+    let ld: unknown;
+    try {
+      ld = JSON.parse(raw);
+    } catch {
+      continue;
+    }
+    const nodes: unknown[] =
+      ld !== null &&
+      typeof ld === "object" &&
+      Array.isArray((ld as Record<string, unknown>)["@graph"])
+        ? ((ld as Record<string, unknown>)["@graph"] as unknown[])
+        : [ld];
+    for (const node of nodes) {
+      if (!node || typeof node !== "object") continue;
+      const img = (node as Record<string, unknown>).image;
+      if (typeof img === "string" && img) return img;
+      if (Array.isArray(img) && img.length > 0) {
+        const first: unknown = img[0];
+        if (typeof first === "string" && first) return first;
+        if (first && typeof first === "object") {
+          const u = (first as Record<string, unknown>).url;
+          if (typeof u === "string" && u) return u;
+        }
+      }
+      if (img && typeof img === "object" && !Array.isArray(img)) {
+        const u = (img as Record<string, unknown>).url;
+        if (typeof u === "string" && u) return u;
+      }
+    }
+  }
+  return null;
+}
+
+/** Old-school `<link rel="image_src" href="...">` fallback. Some older
+ *  storefronts and blogging platforms still use this instead of og:image. */
+function extractLinkRelImageSrc(html: string): string | null {
+  const m = html.match(/<link\b[^>]*\brel\s*=\s*["']image_src["'][^>]*>/i);
+  if (!m?.[0]) return null;
+  const href = m[0].match(/\bhref\s*=\s*["']([^"']*)["']/i);
+  return href?.[1]?.trim() ?? null;
+}
+
 /** Pull the value of a `<meta>` tag matching any of the given property/name
  *  tokens, regardless of attribute order. Pure + exported for tests. */
 function metaContent(html: string, keys: string[]): string | null {
@@ -161,7 +212,9 @@ function metaContent(html: string, keys: string[]): string | null {
 export function extractLinkPreview(html: string, baseUrl: string): WishlistLinkPreview {
   const rawImage =
     metaContent(html, ["og:image", "og:image:url", "og:image:secure_url"]) ??
-    metaContent(html, ["twitter:image", "twitter:image:src"]);
+    metaContent(html, ["twitter:image", "twitter:image:src"]) ??
+    extractJsonLdImage(html) ??
+    extractLinkRelImageSrc(html);
   let image_url: string | null = null;
   if (rawImage) {
     try {

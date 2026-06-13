@@ -308,10 +308,10 @@ export function getWishlistItemScoped(id: number, coupleId: number): WishlistIte
 
 export function insertWishlistItem(coupleId: number, parsed: ParsedWishlistItem): WishlistItemRow {
   const ts = now();
-  // Stamp image_checked_at whenever the row has a link: the caller resolves (or
-  // attempts) the og:image before inserting, so a link present here means
-  // "image already attempted" — keeps the legacy backfill from re-touching it.
-  const imageCheckedAt = parsed.url ? ts : null;
+  // Stamp image_checked_at only when we actually resolved an image. If the
+  // og:image fetch failed (image_url null), leave it null so the boot backfill
+  // gets a second attempt on the next deploy.
+  const imageCheckedAt = parsed.image_url ? ts : null;
   const result = db
     .prepare(
       `INSERT INTO wishlist_items
