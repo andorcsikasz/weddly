@@ -1119,6 +1119,8 @@ export interface LocaleMessages {
     guest_sheet_cancel: string;
     guest_sheet_invalid: string;
     footer_tagline: string;
+    footer_social_tiktok: string;
+    footer_social_facebook: string;
     footer_couples: string;
     footer_vendors: string;
     footer_guests: string;
@@ -1142,6 +1144,7 @@ export interface LocaleMessages {
     footer_band_prompt: string;
     footer_band_cta: string;
     footer_band_cta_vendor: string;
+    footer_band_cta_couples: string;
     skip_to_main: string;
     couple_cards_eyebrow: string;
     couple_cards_title: string;
@@ -1275,6 +1278,7 @@ export interface LocaleMessages {
     pill: string;
     hero_title: string;
     hero_sub: string;
+    trust_signal: string;
     benefit_1_title: string;
     benefit_1_body: string;
     benefit_2_title: string;

@@ -962,6 +962,8 @@ const hu: LocaleMessages = {
     guest_sheet_cancel: "Mégse",
     guest_sheet_invalid: "Adj meg egy érvényes kódot.",
     footer_tagline: "Alacsony kortizolszintű esküvőtervezés kettőtöknek.",
+    footer_social_tiktok: "Kövess minket TikTokon",
+    footer_social_facebook: "Kövess minket Facebookon",
     footer_couples: "Pároknak",
     footer_vendors: "Szolgáltatóknak",
     footer_guests: "vendégeknek",
@@ -982,6 +984,7 @@ const hu: LocaleMessages = {
     footer_band_prompt: "Nem esküvőt szervezel?",
     footer_band_cta: "Vendég vagyok, van meghívókódom",
     footer_band_cta_vendor: "Szolgáltató vagyok",
+    footer_band_cta_couples: "Fedezd fel a Wēddlyt párként",
     skip_to_main: "Ugrás a tartalomra",
     couple_cards_eyebrow: "Mielőtt igent mondtok",
     couple_cards_title: "100 kérdés az esküvő előtt",
@@ -1122,6 +1125,7 @@ const hu: LocaleMessages = {
     hero_title: "Érjétek el a most tervező párokat.",
     hero_sub:
       "A Wēddly válogatott címjegyzéke az első hely, ahol a párok esküvői szolgáltatókat keresnek. Csatlakozzatok a várólistára, és értesítünk, amint nyitunk a kategóriátokban.",
+    trust_signal: "Csatlakozz a 47 várólistás szolgáltató mellé",
     benefit_1_title: "Válogatott válogatás",
     benefit_1_body:
       "Kategóriánként korlátozott a hely, így a párok pont azt böngészik, ami passzol hozzájuk — és ti pont azokat éritek el, akik most döntenek.",
@@ -1137,7 +1141,7 @@ const hu: LocaleMessages = {
     form_email_label: "E-mail",
     form_category_label: "Kategória",
     form_category_placeholder: "pl. helyszín, fotó, catering",
-    form_location_label: "Cím / Google Maps link",
+    form_location_label: "Cím / Google Maps link · opcionális",
     form_location_placeholder: "pl. Budapest, vagy https://maps.app.goo.gl/…",
     form_website_label: "Weboldal",
     form_website_placeholder: "pl. example.com vagy https://example.com",

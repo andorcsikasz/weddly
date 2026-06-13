@@ -950,6 +950,8 @@ const en: LocaleMessages = {
     guest_sheet_cancel: "Cancel",
     guest_sheet_invalid: "Enter a valid code.",
     footer_tagline: "Low-cortisol wedding planning, for two.",
+    footer_social_tiktok: "Follow us on TikTok",
+    footer_social_facebook: "Follow us on Facebook",
     footer_couples: "For couples",
     footer_vendors: "For vendors",
     footer_guests: "for guests",
@@ -970,6 +972,7 @@ const en: LocaleMessages = {
     footer_band_prompt: "Not planning a wedding?",
     footer_band_cta: "I'm a guest with an invite code",
     footer_band_cta_vendor: "I'm a wedding vendor",
+    footer_band_cta_couples: "Discover Weddly for couples",
     skip_to_main: "Skip to main content",
     couple_cards_eyebrow: "Before you say yes",
     couple_cards_title: "100 questions before you marry",
@@ -1109,6 +1112,7 @@ const en: LocaleMessages = {
     hero_title: "Reach the couples planning right now.",
     hero_sub:
       "Weddly's curated directory is where couples discover wedding suppliers. Join the waitlist and we'll notify you the moment we open in your category.",
+    trust_signal: "Join 47 vendors already on the waitlist",
     benefit_1_title: "A handpicked shortlist",
     benefit_1_body:
       "We cap listings per category, so couples meet a focused shortlist of suppliers who genuinely fit their plans.",
@@ -1124,11 +1128,11 @@ const en: LocaleMessages = {
     form_email_label: "Email",
     form_category_label: "Category",
     form_category_placeholder: "e.g. venue, photo, catering",
-    form_location_label: "Address / Google Maps link",
+    form_location_label: "Address / Google Maps link · optional",
     form_location_placeholder: "e.g. Budapest, or https://maps.app.goo.gl/…",
     form_website_label: "Website",
     form_website_placeholder: "e.g. example.com or https://example.com",
-    form_submit: "Reserve your spot",
+    form_submit: "Join the waitlist",
     form_submitting: "Sending…",
     form_success_title: "You're on the waitlist.",
     form_success_body:
@@ -1142,9 +1146,9 @@ const en: LocaleMessages = {
     contact_title: "Join the waitlist",
     contact_body:
       "Fill in the form below and we'll send a confirmation to the email you provide. When we open in your category, you'll be the first to hear from us.",
-    contact_cta: "Reserve your spot",
+    contact_cta: "Join the waitlist",
     contact_subject: "Vendor waitlist",
-    back_to_landing: "Back to the landing page",
+    back_to_landing: "Back to homepage",
     beta_notice_title: "Free during beta — no hidden costs",
     beta_notice_body:
       "Free during beta. If we introduce pricing later, we'll give 30 days' notice — no surprises, no spam.",

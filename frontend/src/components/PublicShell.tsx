@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useT } from "../lib/i18n";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { Wordmark } from "./Wordmark";
@@ -357,25 +357,32 @@ function PublicHeader() {
 
 function PublicFooter() {
   const { t, locale } = useT();
+  const { pathname } = useLocation();
+  const onVendorPage = pathname === "/vendors";
   const askGuestCode = useGuestCodePrompt();
   const couplesCardsPath =
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
     <footer className="mt-16 bg-paper-100/60 font-grotesk sm:mt-24 dark:bg-umber-950/60">
-      {/* Band: who-are-you. The specialty-coffee voice carried into the
-       *  footer — a quiet grotesk prompt names the two non-couple audiences,
-       *  each option a hairline cream pill that fills to espresso on hover
-       *  (the single bright object inverts, candlelit). */}
+      {/* Band: who-are-you. On the vendor page the "I'm a vendor" button
+       *  loops to the same page, so we swap it for a couples CTA instead. */}
       <div className="bg-paper-50 dark:bg-umber-950">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-4 py-5 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
           <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-umber-600 dark:text-umber-300">
             {t("landing.footer_band_prompt")}
           </span>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link to="/vendors" className={footerBandBtnClass}>
-              <Store size={15} aria-hidden />
-              {t("landing.footer_band_cta_vendor")}
-            </Link>
+            {onVendorPage ? (
+              <Link to="/" className={footerBandBtnClass}>
+                <Store size={15} aria-hidden />
+                {t("landing.footer_band_cta_couples")}
+              </Link>
+            ) : (
+              <Link to="/vendors" className={footerBandBtnClass}>
+                <Store size={15} aria-hidden />
+                {t("landing.footer_band_cta_vendor")}
+              </Link>
+            )}
             <button
               type="button"
               className={footerBandBtnClass}
@@ -401,6 +408,30 @@ function PublicFooter() {
           <p className="mt-1.5 max-w-xs text-sm leading-snug text-umber-700 sm:mt-3 sm:leading-relaxed dark:text-umber-200">
             {t("landing.footer_tagline")}
           </p>
+          <div className="mt-3 flex items-center gap-2 sm:mt-4">
+            <a
+              href="https://www.tiktok.com/@weddlyxyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t("landing.footer_social_tiktok")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-umber-600 transition-colors hover:bg-paper-200 hover:text-umber-900 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.77a4.85 4.85 0 0 1-1.01-.08z" />
+              </svg>
+            </a>
+            <a
+              href="https://www.facebook.com/profile.php?id=61590496569299"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t("landing.footer_social_facebook")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-umber-600 transition-colors hover:bg-paper-200 hover:text-umber-900 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
+              </svg>
+            </a>
+          </div>
         </div>
         <FooterColumn title={t("landing.footer_couples")}>
           <FooterLink to="/signup">{t("landing.footer_couples_signup")}</FooterLink>
