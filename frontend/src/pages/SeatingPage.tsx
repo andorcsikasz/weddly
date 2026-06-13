@@ -1135,8 +1135,8 @@ export default function SeatingPage() {
 
       {/* Single toolbar row: icon strip (left) → tabs (flex-1) → add table (right) */}
       <div className="seating-toolbar mb-4 flex items-center gap-4">
-        {/* Icon-only action strip — no overflow-hidden so the print dropdown isn't clipped */}
-        <div className="flex shrink-0 items-stretch divide-x divide-ink-300 rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
+        {/* Icon-only action strip — overflow-hidden clips child hover bg to rounded corners */}
+        <div className="flex shrink-0 items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
           <PrintChartMenu
             disabled={previewLoading !== null}
             onPick={(format) =>
@@ -1226,7 +1226,7 @@ export default function SeatingPage() {
             {!coarsePointer && (
               <button
                 type="button"
-                className={`inline-flex items-center justify-center rounded-lg border p-1.5 transition-colors ${
+                className={`inline-flex items-center justify-center rounded-lg border border-dashed p-1.5 transition-colors ${
                   tapModeUser
                     ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
                     : "border-ink-900 bg-transparent text-ink-900 hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
@@ -1251,7 +1251,7 @@ export default function SeatingPage() {
             {selectedGuestId !== null && (
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-lg border border-ink-900 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
+                className="inline-flex items-center justify-center rounded-lg border border-dashed border-ink-900 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
                 onClick={async () => {
                   const id = selectedGuestId;
                   setSelectedGuestId(null);
@@ -1265,7 +1265,7 @@ export default function SeatingPage() {
             )}
             <Link
               to="/app/guests"
-              className="inline-flex items-center justify-center gap-0.5 rounded-lg border border-ink-900 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
+              className="inline-flex items-center justify-center gap-0.5 rounded-lg border border-dashed border-ink-900 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
               aria-label={t("seating.go_to_guests")}
               title={t("seating.go_to_guests")}
             >
@@ -1308,9 +1308,10 @@ export default function SeatingPage() {
         </div>
       ) : mode === "edit" ? (
         // ── EDIT MODE ────────────────────────────────────────────────────────
-        // Side-by-side: floor plan canvas on the left, table editor on the
-        // right. Same layout as the original page.
-        <div className="grid gap-4 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_320px]">
+        // Full-height flex (same proportions as seat mode). Map fills flex-1;
+        // table editor sits in a fixed-width right column.
+        <div className="flex min-h-[calc(100vh-260px)] gap-4">
+          <div className="min-w-0 flex-1">
           <SeatingMap
             tables={tables}
             assignments={assignments}
@@ -1329,16 +1330,20 @@ export default function SeatingPage() {
             roomHeightMm={roomHeightMm}
             onRoomChange={updateRoom}
             babySeatsByTable={babySeatsByTable}
+            fullHeight
           />
-          <TableEditor
-            table={selected}
-            onPatch={(patch) => selected && patchTable(selected, patch)}
-            onDelete={() => selected && deleteTable(selected)}
-            onDuplicate={() => selected && duplicateTable(selected)}
-            onRotate={() => selected && rotateTable(selected)}
-            onSeatsAtCap={() => toast.error(t("seating.seats_at_cap"))}
-            t={t}
-          />
+          </div>
+          <div className="w-[280px] shrink-0 lg:w-[320px]">
+            <TableEditor
+              table={selected}
+              onPatch={(patch) => selected && patchTable(selected, patch)}
+              onDelete={() => selected && deleteTable(selected)}
+              onDuplicate={() => selected && duplicateTable(selected)}
+              onRotate={() => selected && rotateTable(selected)}
+              onSeatsAtCap={() => toast.error(t("seating.seats_at_cap"))}
+              t={t}
+            />
+          </div>
         </div>
       ) : (
         // ── SEAT MODE ────────────────────────────────────────────────────────
@@ -2852,6 +2857,8 @@ function PrintChartMenu({
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
+  const [dropPos, setDropPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -2870,13 +2877,22 @@ function PrintChartMenu({
     };
   }, [open]);
 
+  function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 4, left: r.left });
+    }
+    setOpen((o) => !o);
+  }
+
   return (
     <div ref={wrapperRef} className="relative flex items-stretch">
       <button
+        ref={btnRef}
         type="button"
         className={grouped ? "icon-group-item" : "btn-outline"}
         disabled={disabled}
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t("seating.print_chart")}
@@ -2886,10 +2902,11 @@ function PrintChartMenu({
         {!iconOnly && <span>{t("seating.print_chart")}</span>}
         <ChevronDown size={14} aria-hidden />
       </button>
-      {open && (
+      {open && dropPos && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-30 mt-1 w-44 rounded-xl border border-paper-300 bg-white p-2 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          style={{ position: "fixed", top: dropPos.top, left: dropPos.left }}
+          className="z-50 w-44 rounded-xl border border-paper-300 bg-white p-2 shadow-pop dark:border-umber-700 dark:bg-umber-800"
         >
           {(["a4", "a3"] as const).map((format) => (
             <button

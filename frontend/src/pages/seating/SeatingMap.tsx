@@ -67,6 +67,10 @@ interface Props {
    *  baby-icon overlay on the chair, independent of the baby_seats "needs
    *  a high chair" flag on the table itself. */
   babySeatsByTable?: Map<number, Set<number>>;
+  /** Makes the map fill its parent height (like seatMode does) without
+   *  disabling table drag/resize. Use in edit mode when the outer container
+   *  is already flex with a known height. */
+  fullHeight?: boolean;
   /** When true, switches the canvas into "seat guests" mode: table drag/resize
    *  is disabled and each chair becomes a drag-drop target + tap target. */
   seatMode?: boolean;
@@ -122,6 +126,7 @@ export function SeatingMap({
   roomHeightMm = DEFAULT_ROOM_H_MM,
   onRoomChange,
   babySeatsByTable,
+  fullHeight = false,
   seatMode = false,
   seatGuestsByTable,
   onDropSeat,
@@ -222,7 +227,7 @@ export function SeatingMap({
   // Both modes use max-scale so the longer axis overflows and the canvas
   // is scrollable — edit mode stays fit-to-meet (whole room visible at once).
   const svgSize = useMemo<{ width: number | string; height: number | string }>(() => {
-    if ((!expanded && !seatMode) || !wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
+    if ((!expanded && !seatMode && !fullHeight) || !wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
       return { width: "100%", height: "100%" };
     }
     const scale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
@@ -555,14 +560,14 @@ export function SeatingMap({
         className={`relative bg-paper-50 dark:bg-umber-900 ${
           expanded
             ? "min-h-0 flex-1 overflow-auto p-4"
-            : seatMode
+            : seatMode || fullHeight
               ? "min-h-0 flex-1 overflow-auto"
               : "h-[60vh] max-h-[640px] w-full overflow-hidden"
         }`}
       >
         <div
           className={
-            expanded || seatMode
+            expanded || seatMode || fullHeight
               ? "flex min-h-full min-w-full items-center justify-center"
               : "h-full w-full"
           }
@@ -572,7 +577,7 @@ export function SeatingMap({
             viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
             preserveAspectRatio="xMidYMid meet"
             style={
-              expanded || seatMode
+              expanded || seatMode || fullHeight
                 ? { width: svgSize.width, height: svgSize.height, flexShrink: 0 }
                 : { width: "100%", height: "100%" }
             }
@@ -686,7 +691,7 @@ export function SeatingMap({
   }
 
   return (
-    <div className={`card overflow-hidden p-0 ${seatMode ? "flex h-full flex-col" : ""}`}>
+    <div className={`card overflow-hidden p-0 ${seatMode || fullHeight ? "flex h-full flex-col" : ""}`}>
       {cardContent}
     </div>
   );
