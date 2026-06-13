@@ -722,7 +722,7 @@ function RoomDimsInput({
   // Plain inline-text affordance: no box, just the number. A subtle dotted
   // underline appears on hover/focus so the user still knows it's editable.
   const cls =
-    "w-8 border-0 bg-transparent p-0 text-right text-sm font-medium text-ink-700 tabular-nums focus:outline-none focus:underline focus:decoration-dotted hover:underline hover:decoration-dotted dark:text-paper-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
+    "w-7 border-0 bg-transparent p-0 text-center text-sm font-medium text-ink-700 tabular-nums outline-none dark:text-paper-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
   return (
     <span className="flex items-center gap-1 text-xs text-ink-400 dark:text-umber-300">
       <input
@@ -803,17 +803,14 @@ function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
     <g>
       <rect x={0} y={0} width={widthMm} height={heightMm} className="fill-paper-50" />
       {lines}
-      {/* Room boundary — chunky ink frame around the planning canvas so the
-          area reads as the actual venue floorplan rather than a free-floating
-          grid. `pointer-events: none` so tables on the edge stay draggable
-          and clicks in negative space still bubble to the SVG root for the
-          deselect-on-empty handler. Stroke is ~5x the grid hairline so it
-          pops without competing with the table fills. */}
+      {/* Room boundary — inset by half the stroke width (30 mm) so the
+          stroke stays entirely inside the SVG viewBox and doesn't bleed
+          outside the card's rounded corners. */}
       <rect
-        x={0}
-        y={0}
-        width={widthMm}
-        height={heightMm}
+        x={30}
+        y={30}
+        width={widthMm - 60}
+        height={heightMm - 60}
         className="fill-none stroke-ink-700"
         strokeWidth={60}
         pointerEvents="none"
