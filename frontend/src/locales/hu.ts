@@ -3527,6 +3527,11 @@ const hu: LocaleMessages = {
     flag_tpl_reported_label: "Mások jelentették",
     flag_tpl_reported_body:
       "Más felhasználók jelentést tettek a fiókod tevékenységével kapcsolatban. A részletek tisztázása érdekében válaszolj erre az e-mailre — különben 7 napon belül töröljük a fiókodat.",
+    resend_flag_email_button: "Megjelölés emailjének ujraküldése",
+    resend_flag_email_success: "Email ujraküldve.",
+    email_log_button: "Email-elozmények",
+    email_log_panel_title: "Email-elozmények",
+    email_log_empty: "Nincs email-elozményük ennek a felhasználónak.",
     unflag_user_button: "Megjelölés feloldása",
     unflag_user_title: "Megjelölés feloldása",
     unflag_user_label: "Megjegyzés (opcionális)",
@@ -4515,7 +4520,7 @@ const hu: LocaleMessages = {
     last_updated_label: "Utolsó frissítés",
     last_updated_date: "2026-05-18",
     intro:
-      "Ez az oldal bemutatja, milyen adatokat gyűjt a Wēddly, miért gyűjtjük, meddig őrizzük meg, és mit kérhettek velük kapcsolatban. Egy kis, nyílt bétás termék vagyunk — ezért igyekszünk a szabályzatot rövidnek és pontosnak tartani.",
+      "Ez az adatkezelési tájékoztató célja, hogy a Wēddly weboldal és alkalmazás látogatói, regisztrált felhasználói, hírlevél-feliratkozói, valamint a megjelenő szolgáltatók részletes, átlátható tájékoztatást kapjanak személyes adataik kezeléséről. Az adatkezelés során az Adatkezelő az alábbi jogszabályokat alkalmazza: az Európai Parlament és a Tanács 2016/679/EU rendeletét (GDPR); az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvényt (Infotv.); az elektronikus kereskedelmi szolgáltatásokról szóló 2001. évi CVIII. törvényt (Ektv.); és a gazdasági reklámtevékenység alapvető feltételeiről szóló 2008. évi XLVIII. törvényt (Grtv.).",
     controller_title: "Az adataitok kezelője",
     controller_body:
       "Az adatkezelő Csíkász Andor (magánszemély, Magyarország) — a Wēddly üzemeltetője. A teljes operátori adatok az Impresszum oldalon olvashatóak. Adatkezeléssel kapcsolatos kérdésekkel közvetlenül az andor.csikasz@gmail.com címen vagy a hello@weddly.xyz címen tudtok jelentkezni, és hét napon belül választ kaptok. Az adatkezelés a GDPR (EU 2016/679) és a vonatkozó magyar jogszabályok (Infotv. — 2011. évi CXII. tv., Ektv. — 2001. évi CVIII. tv., Grtv. — 2008. évi XLVIII. tv.) szerint történik.",
@@ -4620,6 +4625,99 @@ const hu: LocaleMessages = {
       "Ha érdemben változtatunk azon, ahogyan az adataitokat kezeljük, e-mailben értesítünk, és frissítjük a fenti dátumot. A kisebb fogalmazási javításokat csendben végezzük.",
     contact_title: "Kérdés van?",
     contact_body: "Írjatok a hello@weddly.xyz címre, és egy ember válaszol hét napon belül.",
+    definitions_title: "Fogalommeghatározások",
+    def_intro: "A jelen tájékoztatóban használt fogalmak a GDPR-ban meghatározott jelentéssel bírnak:",
+    def_personal_data:
+      "Személyes adat: azonosított vagy azonosítható természetes személyre vonatkozó bármely információ (pl. név, e-mail-cím, IP-cím).",
+    def_data_subject:
+      "Érintett: az a természetes személy, akinek személyes adatait az Adatkezelő kezeli.",
+    def_processing:
+      "Adatkezelés: a személyes adatokon végzett bármely művelet — gyűjtés, rögzítés, rendszerezés, tárolás, felhasználás, továbbítás, törlés vagy megsemmisítés.",
+    def_processor:
+      "Adatfeldolgozó: az a természetes vagy jogi személy, aki az Adatkezelő nevében, annak utasításai alapján személyes adatokat kezel.",
+    def_consent:
+      "Hozzájárulás: az érintett önkéntes, konkrét, megfelelő tájékoztatáson alapuló és egyértelmű akaratnyilvánítása.",
+    principles_title: "Az adatkezelés alapelvei (GDPR 5. cikk)",
+    principles_intro:
+      "Az Adatkezelő az alábbi elveket érvényesíti minden adatkezelési tevékenységben:",
+    principles_lawfulness: "Jogszerűség, tisztességes eljárás és átláthatóság",
+    principles_purpose: "Célhoz kötöttség — az adatokat csak az itt meghatározott célokra használjuk",
+    principles_minimisation: "Adattakarékosság — csak a célhoz szükséges adatokat gyűjtjük",
+    principles_accuracy: "Pontosság — az adatokat szükség esetén naprakészen tartjuk",
+    principles_storage: "Korlátozott tárolhatóság — nem tartjuk tovább, mint szükséges",
+    principles_integrity: "Integritás és bizalmas jelleg — megfelelő technikai és szervezési védelem",
+    principles_accountability: "Elszámoltathatóság — az Adatkezelő felelős a megfelelőségért és bizonyítani is tudja azt",
+    proc_activities_title: "Egyes adatkezelési tevékenységek",
+    proc_tech_title: "Weboldal-látogatással kapcsolatos technikai adatkezelés",
+    proc_tech_data:
+      "Kezelt adatok: IP-cím, böngésző típusa és verziója, operációs rendszer, eszköztípus, látogatás időpontja, meglátogatott oldalak, hivatkozó oldal, szerver naplóadatok.",
+    proc_tech_purpose:
+      "Cél: a weboldal és alkalmazás biztonságos, rendeltetésszerű működtetése, hibakeresés, visszaélések megelőzése.",
+    proc_tech_basis:
+      "Jogalap: GDPR 6. cikk (1) bekezdés f) pont — az Adatkezelő jogos érdeke a weboldal biztonságos és visszaélésektől mentes üzemeltetése.",
+    proc_tech_retention:
+      "Megőrzési idő: a technikai naplóadatokat 30 napig tároljuk; biztonsági incidens vagy jogvita esetén az eljárás lezárásáig.",
+    proc_contact_title: "Kapcsolatfelvétel és általános megkeresések",
+    proc_contact_data:
+      "Kezelt adatok: név, e-mail-cím, az üzenet tartalma, megkeresés tárgya, beküldés időpontja.",
+    proc_contact_purpose:
+      "Cél: megkeresések megválaszolása, kapcsolattartás, panaszok és kérdések kezelése.",
+    proc_contact_basis:
+      "Jogalap: GDPR 6. cikk (1) b) (szerződés előkészítése), f) (jogos ügyviteli érdek) vagy a) (hozzájárulás) — az adott megkeresés jellegétől függően.",
+    proc_contact_retention:
+      "Megőrzési idő: a megkeresés lezárásától számított 12 hónap; szerződéses vagy jogi igény esetén az elévülési idő végéig.",
+    proc_account_title: "Felhasználói fiók létrehozása és kezelése",
+    proc_account_data:
+      "Kezelt adatok: e-mail-cím, jelszó (Argon2id hash — az eredeti jelszót sosem tároljuk), teljes név, (opcionálisan) a partner neve, nyelvi beállítás, regisztráció dátuma, fiókállapot.",
+    proc_account_purpose:
+      "Cél: felhasználói azonosítás biztosítása, bejelentkezés kezelése, a fiókhoz tartozó funkciók nyújtása.",
+    proc_account_basis:
+      "Jogalap: GDPR 6. cikk (1) b) — a felhasználói szolgáltatás nyújtására irányuló szerződés teljesítése.",
+    proc_account_retention:
+      "Megőrzési idő: a fiók aktív fennállásáig; törlés esetén 30 napos türelmi idő, utána végleges és visszafordíthatatlan törlés.",
+    proc_workspace_title: "Esküvői workspace — tervező és szervező adatok",
+    proc_workspace_data:
+      "Kezelt adatok: esküvő dátuma, helyszín, vendéglista (nevek, e-mail-cím, telefonszám, étrendi igény), ültetési rend, költségvetés, feladatlista, feltöltött dokumentumok, szolgáltatói jegyzetek — minden általatok rögzített tartalom.",
+    proc_workspace_purpose:
+      "Cél: az esküvőtervező alkalmazás funkcióinak biztosítása; az adatokat kizárólag az adott workspace keretein belül kezeljük.",
+    proc_workspace_basis:
+      "Jogalap: GDPR 6. cikk (1) b) — a felhasználói szerződés teljesítése.",
+    proc_workspace_retention:
+      "Megőrzési idő: a workspace aktív fennállásáig; szüneteltetés esetén 30 nap, utána végleges törlés.",
+    proc_newsletter_title: "Hírlevél és életciklus-megkeresések",
+    proc_newsletter_data:
+      "Kezelt adatok: e-mail-cím, feliratkozás időpontja, hozzájárulás ténye és időpontja.",
+    proc_newsletter_purpose:
+      "Cél: termékhírek, fejlesztési frissítések, esküvői inspirációk és promóciók küldése — kizárólag kifejezett hozzájárulás alapján.",
+    proc_newsletter_basis:
+      "Jogalap: GDPR 6. cikk (1) a) — az érintett önkéntes és visszavonható hozzájárulása.",
+    proc_newsletter_retention:
+      "Megőrzési idő: a leiratkozásig (a hozzájárulás visszavonásáig).",
+    proc_newsletter_unsubscribe:
+      "Leiratkozás: bármikor, indokolás nélkül, a hírlevélben található leiratkozási linkre kattintva vagy a hello@weddly.xyz e-mailre küldött kéréssel. A visszavonás nem érinti a korábbi hozzájáruláson alapuló adatkezelés jogszerűségét.",
+    proc_billing_title: "Számlázás és előfizetések",
+    proc_billing_data:
+      "Kezelt adatok: e-mail-cím, előfizetés típusa és állapota, fizetési időpontok, Stripe-ügyfél-azonosító. A kártyaadatokat kizárólag a Stripe, Inc. kezeli — a Wēddly semmilyen fizetési adathoz nem fér hozzá.",
+    proc_billing_purpose:
+      "Cél: előfizetés kezelése, számla kiállítása, fizetési és számviteli kötelezettségek teljesítése.",
+    proc_billing_basis:
+      "Jogalap: GDPR 6. cikk (1) b) (szerződés teljesítése) és c) (jogi kötelezettség — számviteli megőrzés a Számv. tv. 169. § alapján).",
+    proc_billing_retention:
+      "Megőrzési idő: az előfizetés megszűnésétől számított 8 év (számviteli megőrzési kötelezettség).",
+    proc_supplier_title: "Szolgáltatói (vendor) profilok",
+    proc_supplier_data:
+      "Kezelt adatok: kapcsolattartó neve, e-mail-cím, telefonszám, vállalkozás neve, szolgáltatási kategória, leírás, képek, földrajzi elérhetőség, számlázási adatok.",
+    proc_supplier_purpose:
+      "Cél: a szolgáltatói profil megjelenítése a könyvtárban, ajánlatkérési kapcsolat létesítésének lehetővé tétele, partneri együttműködés teljesítése.",
+    proc_supplier_basis:
+      "Jogalap: GDPR 6. cikk (1) b) (szerződés teljesítése), c) (jogi kötelezettség teljesítése, különösen számlázás), f) (jogos érdek — üzleti kapcsolattartás és nyilvántartás).",
+    proc_supplier_retention:
+      "Megőrzési idő: a partneri jogviszony fennállásáig, majd a vonatkozó számviteli megőrzési idő végéig.",
+    vendor_transfer_title: "Adattovábbítás esküvői szolgáltatóknak",
+    vendor_transfer_body:
+      "Ha a szolgáltatói könyvtárból egy konkrét partnerrel kívántok kapcsolatba lépni (pl. ajánlatkérést küldtök), az Adatkezelő az általatok megadott elérhetőségi adatokat (nevet, e-mail-címet, telefonszámot) átadja az érintett partnernek az ajánlatkérés teljesítése céljából. Az adattovábbítás jogalapja GDPR 6. cikk (1) b) — szerződés előkészítése az érintett kérésére. Az Adatkezelő kizárólag a teljesítéshez elengedhetetlenül szükséges adatokat továbbítja.",
+    cookies_necessary_label: "Szükséges tárolók (mindig aktívak)",
+    cookies_functional_label: "Funkcionális tárolók (beállítások memorizálása)",
     en_section_label: "English",
   },
   terms: {

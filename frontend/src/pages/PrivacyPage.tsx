@@ -139,6 +139,22 @@ export function H2({ children }: { children: ReactNode }) {
   );
 }
 
+export function H3({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="mt-6 font-grotesk text-lg font-semibold text-ink-800 dark:text-paper-100 sm:text-xl">
+      {children}
+    </h3>
+  );
+}
+
+function ProcBlock({ children }: { children: ReactNode }) {
+  return (
+    <div className="mt-2 space-y-1.5 rounded-lg border border-paper-200 bg-paper-50 px-4 py-3 text-sm leading-relaxed dark:border-umber-700 dark:bg-umber-900/30">
+      {children}
+    </div>
+  );
+}
+
 function PrivacyBodyForLocale({
   strings,
   sectionLocale,
@@ -155,6 +171,28 @@ function PrivacyBodyForLocale({
       <H2>{strings.controller_title}</H2>
       <p>{strings.controller_body}</p>
 
+      <H2>{strings.definitions_title}</H2>
+      <p>{strings.def_intro}</p>
+      <ul className="ml-5 list-disc space-y-2">
+        <li>{strings.def_personal_data}</li>
+        <li>{strings.def_data_subject}</li>
+        <li>{strings.def_processing}</li>
+        <li>{strings.def_processor}</li>
+        <li>{strings.def_consent}</li>
+      </ul>
+
+      <H2>{strings.principles_title}</H2>
+      <p>{strings.principles_intro}</p>
+      <ul className="ml-5 list-disc space-y-2">
+        <li>{strings.principles_lawfulness}</li>
+        <li>{strings.principles_purpose}</li>
+        <li>{strings.principles_minimisation}</li>
+        <li>{strings.principles_accuracy}</li>
+        <li>{strings.principles_storage}</li>
+        <li>{strings.principles_integrity}</li>
+        <li>{strings.principles_accountability}</li>
+      </ul>
+
       <H2>{strings.data_categories_title}</H2>
       <p>{strings.data_categories_intro}</p>
       <ul className="ml-5 list-disc space-y-2">
@@ -163,6 +201,65 @@ function PrivacyBodyForLocale({
         <li>{strings.data_categories_workspace}</li>
         <li>{strings.data_categories_analytics}</li>
       </ul>
+
+      <H2>{strings.proc_activities_title}</H2>
+
+      <H3>{strings.proc_tech_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_tech_data}</p>
+        <p>{strings.proc_tech_purpose}</p>
+        <p>{strings.proc_tech_basis}</p>
+        <p>{strings.proc_tech_retention}</p>
+      </ProcBlock>
+
+      <H3>{strings.proc_contact_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_contact_data}</p>
+        <p>{strings.proc_contact_purpose}</p>
+        <p>{strings.proc_contact_basis}</p>
+        <p>{strings.proc_contact_retention}</p>
+      </ProcBlock>
+
+      <H3>{strings.proc_account_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_account_data}</p>
+        <p>{strings.proc_account_purpose}</p>
+        <p>{strings.proc_account_basis}</p>
+        <p>{strings.proc_account_retention}</p>
+      </ProcBlock>
+
+      <H3>{strings.proc_workspace_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_workspace_data}</p>
+        <p>{strings.proc_workspace_purpose}</p>
+        <p>{strings.proc_workspace_basis}</p>
+        <p>{strings.proc_workspace_retention}</p>
+      </ProcBlock>
+
+      <H3>{strings.proc_newsletter_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_newsletter_data}</p>
+        <p>{strings.proc_newsletter_purpose}</p>
+        <p>{strings.proc_newsletter_basis}</p>
+        <p>{strings.proc_newsletter_retention}</p>
+        <p>{strings.proc_newsletter_unsubscribe}</p>
+      </ProcBlock>
+
+      <H3>{strings.proc_billing_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_billing_data}</p>
+        <p>{strings.proc_billing_purpose}</p>
+        <p>{strings.proc_billing_basis}</p>
+        <p>{strings.proc_billing_retention}</p>
+      </ProcBlock>
+
+      <H3>{strings.proc_supplier_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_supplier_data}</p>
+        <p>{strings.proc_supplier_purpose}</p>
+        <p>{strings.proc_supplier_basis}</p>
+        <p>{strings.proc_supplier_retention}</p>
+      </ProcBlock>
 
       <H2>{strings.legal_bases_title}</H2>
       <p>{strings.legal_bases_intro}</p>
@@ -212,12 +309,23 @@ function PrivacyBodyForLocale({
         <li>{strings.subprocessors_sentry}</li>
       </ul>
 
+      <H2>{strings.vendor_transfer_title}</H2>
+      <p>{strings.vendor_transfer_body}</p>
+
       <H2>{strings.cookies_title}</H2>
       <p>{strings.cookies_intro}</p>
+      <p className="mt-3 text-sm font-semibold text-ink-700 dark:text-paper-200">
+        {strings.cookies_necessary_label}
+      </p>
+      <ul className="ml-5 list-disc space-y-2 font-mono text-sm">
+        <li>{strings.cookies_session}</li>
+      </ul>
+      <p className="mt-3 text-sm font-semibold text-ink-700 dark:text-paper-200">
+        {strings.cookies_functional_label}
+      </p>
       <ul className="ml-5 list-disc space-y-2 font-mono text-sm">
         <li>{strings.cookies_locale}</li>
         <li>{strings.cookies_verify_dismiss}</li>
-        <li>{strings.cookies_session}</li>
         <li>{strings.cookies_saved_suppliers}</li>
         <li>{strings.cookies_onboarding_draft}</li>
       </ul>

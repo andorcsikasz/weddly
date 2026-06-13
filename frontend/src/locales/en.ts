@@ -3488,6 +3488,11 @@ const en: LocaleMessages = {
     flag_tpl_reported_label: "Reported by others",
     flag_tpl_reported_body:
       "Other users have reported activity on your account. Please reply to this email so we can sort it out — otherwise the account will be deleted in 7 days.",
+    resend_flag_email_button: "Resend flag email",
+    resend_flag_email_success: "Flag email resent.",
+    email_log_button: "Email history",
+    email_log_panel_title: "Email history",
+    email_log_empty: "No emails found for this user.",
     unflag_user_button: "Clear flag",
     unflag_user_title: "Clear flag",
     unflag_user_label: "Note (optional)",
@@ -4466,7 +4471,7 @@ const en: LocaleMessages = {
     last_updated_label: "Last updated",
     last_updated_date: "2026-05-18",
     intro:
-      "This page explains what data Weddly collects, why we collect it, how long we keep it, and what you can ask us to do with it. We're a small open-beta product — so we try to keep the policy short and accurate.",
+      "This Privacy Policy provides detailed, transparent information to visitors, registered users, newsletter subscribers, and listed service providers about how their personal data is processed by Weddly. The following laws apply: EU Regulation 2016/679 (GDPR); the Hungarian Information Self-Determination and Freedom of Information Act (Infotv., Act CXII of 2011); the Electronic Commerce Act (Ektv., Act CVIII of 2001); and the Commercial Advertising Act (Grtv., Act XLVIII of 2008).",
     controller_title: "Who controls your data",
     controller_body:
       "The data controller is Andor Csíkász (a natural person, Hungary) — the operator of Weddly. Full operator details are on the Imprint page. For any data-related question, write to andor.csikasz@gmail.com or hello@weddly.xyz; we respond within seven days. Processing is governed by the GDPR (EU 2016/679) and applicable Hungarian law (Infotv. — Act CXII of 2011, Ektv. — Act CVIII of 2001, Grtv. — Act XLVIII of 2008).",
@@ -4570,6 +4575,99 @@ const en: LocaleMessages = {
       "If we materially change how we handle your data, we'll email you and update the date at the top of this page. Minor wording fixes are made silently.",
     contact_title: "Questions?",
     contact_body: "Email hello@weddly.xyz and a human will reply within seven days.",
+    definitions_title: "Definitions",
+    def_intro: "The following terms have the meanings given to them in the GDPR:",
+    def_personal_data:
+      "Personal data: any information relating to an identified or identifiable natural person (e.g. name, email address, IP address).",
+    def_data_subject:
+      "Data subject: the natural person whose personal data the Controller processes.",
+    def_processing:
+      "Processing: any operation performed on personal data — collection, recording, organisation, storage, use, disclosure, erasure or destruction.",
+    def_processor:
+      "Processor: a natural or legal person that processes personal data on behalf of the Controller, acting only on the Controller's instructions.",
+    def_consent:
+      "Consent: a freely given, specific, informed and unambiguous indication of the data subject's agreement to the processing of their personal data.",
+    principles_title: "Principles of processing (GDPR Art. 5)",
+    principles_intro:
+      "The Controller applies the following principles to every processing activity:",
+    principles_lawfulness: "Lawfulness, fairness and transparency",
+    principles_purpose: "Purpose limitation — data is used only for the purposes stated here",
+    principles_minimisation: "Data minimisation — only data necessary for the purpose is collected",
+    principles_accuracy: "Accuracy — data is kept up to date where necessary",
+    principles_storage: "Storage limitation — data is not kept longer than necessary",
+    principles_integrity: "Integrity and confidentiality — appropriate technical and organisational safeguards",
+    principles_accountability: "Accountability — the Controller is responsible for, and able to demonstrate, compliance",
+    proc_activities_title: "Processing activities",
+    proc_tech_title: "Technical data from website visits",
+    proc_tech_data:
+      "Data collected: IP address, browser type and version, operating system, device type, time of visit, pages visited, referring URL, server log data.",
+    proc_tech_purpose:
+      "Purpose: secure and proper operation of the website and application; troubleshooting; prevention of abuse.",
+    proc_tech_basis:
+      "Legal basis: GDPR Art. 6(1)(f) — the Controller's legitimate interest in operating the service securely and free of abuse.",
+    proc_tech_retention:
+      "Retention: server logs are kept for 30 days; in the event of a security incident or legal dispute, until the matter is resolved.",
+    proc_contact_title: "Contact and enquiries",
+    proc_contact_data:
+      "Data collected: name, email address, message content, subject of enquiry, submission timestamp.",
+    proc_contact_purpose:
+      "Purpose: responding to enquiries; customer support; handling complaints and questions.",
+    proc_contact_basis:
+      "Legal basis: GDPR Art. 6(1)(b) (contract preparation), (f) (legitimate interest) or (a) (consent) — depending on the nature of the enquiry.",
+    proc_contact_retention:
+      "Retention: 12 months after the enquiry is closed; for legal claims, until the limitation period expires.",
+    proc_account_title: "User account registration and management",
+    proc_account_data:
+      "Data collected: email address, password (Argon2id hash — the original password is never stored), full name, (optionally) partner's name, locale preference, registration date, account status.",
+    proc_account_purpose:
+      "Purpose: user authentication, login management, and delivery of account-linked features.",
+    proc_account_basis:
+      "Legal basis: GDPR Art. 6(1)(b) — performance of the user service contract.",
+    proc_account_retention:
+      "Retention: while the account is active; upon deletion a 30-day grace period applies, after which data is permanently and irreversibly erased.",
+    proc_workspace_title: "Wedding workspace — planning and organising data",
+    proc_workspace_data:
+      "Data collected: wedding date, venue, guest list (names, email, phone, dietary requirements), seating layout, budget, task list, uploaded documents, supplier notes — all content you enter.",
+    proc_workspace_purpose:
+      "Purpose: delivery of the wedding-planner application; data is processed exclusively within the relevant workspace.",
+    proc_workspace_basis:
+      "Legal basis: GDPR Art. 6(1)(b) — performance of the user service contract.",
+    proc_workspace_retention:
+      "Retention: while the workspace is active; upon suspension a 30-day grace period applies, after which data is permanently erased.",
+    proc_newsletter_title: "Newsletter and lifecycle communications",
+    proc_newsletter_data:
+      "Data collected: email address, subscription timestamp, record of consent (when and how given).",
+    proc_newsletter_purpose:
+      "Purpose: sending product news, development updates, wedding inspiration and promotions — only on the basis of explicit consent.",
+    proc_newsletter_basis:
+      "Legal basis: GDPR Art. 6(1)(a) — the data subject's freely given and withdrawable consent.",
+    proc_newsletter_retention:
+      "Retention: until unsubscription (i.e. withdrawal of consent).",
+    proc_newsletter_unsubscribe:
+      "Unsubscribing: at any time, without giving a reason, via the unsubscribe link in the email or by writing to hello@weddly.xyz. Withdrawal does not affect the lawfulness of processing carried out before the withdrawal.",
+    proc_billing_title: "Billing and subscriptions",
+    proc_billing_data:
+      "Data collected: email address, subscription type and status, payment timestamps, Stripe customer ID. Card data is processed exclusively by Stripe, Inc. — Weddly never accesses card details.",
+    proc_billing_purpose:
+      "Purpose: subscription management, invoice issuance, fulfilment of payment and accounting obligations.",
+    proc_billing_basis:
+      "Legal basis: GDPR Art. 6(1)(b) (contract performance) and Art. 6(1)(c) (legal obligation — accounting retention under the Hungarian Accounting Act §169).",
+    proc_billing_retention:
+      "Retention: 8 years from the end of the subscription (statutory accounting obligation).",
+    proc_supplier_title: "Service provider (vendor) profiles",
+    proc_supplier_data:
+      "Data collected: contact person's name, email address, phone number, business name, service category, description, photos, geographic coverage, billing details.",
+    proc_supplier_purpose:
+      "Purpose: displaying the supplier profile in the directory, enabling enquiry connections, fulfilling the partner agreement.",
+    proc_supplier_basis:
+      "Legal basis: GDPR Art. 6(1)(b) (contract performance), Art. 6(1)(c) (legal obligation, particularly invoicing), Art. 6(1)(f) (legitimate interest — business contact management and records).",
+    proc_supplier_retention:
+      "Retention: while the partner relationship is active; thereafter until the applicable statutory accounting period expires.",
+    vendor_transfer_title: "Data transfer to wedding service providers",
+    vendor_transfer_body:
+      "If you initiate contact with a specific partner from the supplier directory (e.g. send a quote request), the Controller may share the contact details you provided (name, email address, phone number) with that partner for the purpose of fulfilling your request. The legal basis is GDPR Art. 6(1)(b) — preparation of a contract at the data subject's request. Only the minimum data necessary for fulfilment is transferred.",
+    cookies_necessary_label: "Necessary storage (always active)",
+    cookies_functional_label: "Functional storage (remembering preferences)",
     en_section_label: "English",
   },
   terms: {
