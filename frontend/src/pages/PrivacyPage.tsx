@@ -11,7 +11,7 @@ import { useDocumentMeta } from "../lib/seo";
 
 export default function PrivacyPage() {
   const { t } = useT();
-  const [showHu, setShowHu] = useState(false);
+  const [showEn, setShowEn] = useState(false);
   useDocumentMeta("privacy.seo_title", "privacy.seo_description");
 
   return (
@@ -23,21 +23,21 @@ export default function PrivacyPage() {
           updatedDate={t("privacy.last_updated_date")}
           version={PRIVACY_VERSION}
           versionLabel={t("legal.version_label")}
+          action={
+            <button
+              type="button"
+              onClick={() => setShowEn((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
+            >
+              {showEn ? "Hide English" : "English"}
+            </button>
+          }
         />
-        <PrivacyBodyForLocale strings={en.privacy} sectionLocale="en" />
-        <div className="mt-10 flex justify-center">
-          <button
-            type="button"
-            onClick={() => setShowHu((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-5 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
-          >
-            {showHu ? "Hide Hungarian" : "Magyar változat"}
-          </button>
-        </div>
-        {showHu && (
+        <PrivacyBodyForLocale strings={hu.privacy} sectionLocale="hu" />
+        {showEn && (
           <>
-            <SecondaryLanguageDivider label="Magyar" />
-            <PrivacyBodyForLocale strings={hu.privacy} sectionLocale="hu" secondary />
+            <SecondaryLanguageDivider label="English" />
+            <PrivacyBodyForLocale strings={en.privacy} sectionLocale="en" secondary />
           </>
         )}
         <BackLink />
@@ -56,21 +56,24 @@ export function LegalHeader({
   updatedDate,
   version,
   versionLabel,
+  action,
 }: {
   title: string;
   updatedLabel: string;
   updatedDate: string;
-  /** Document version stamp (e.g. "2026-05-18") — rendered so a user can
-   *  point at the exact policy text they accepted on signup. */
   version?: string;
   versionLabel?: string;
+  action?: ReactNode;
 }) {
   return (
     <header className="border-b border-paper-300 pb-8 dark:border-umber-700">
-      <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
-        {updatedLabel}: {updatedDate}
-        {version && versionLabel ? ` · ${versionLabel}: ${version}` : ""}
-      </p>
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
+          {updatedLabel}: {updatedDate}
+          {version && versionLabel ? ` · ${versionLabel}: ${version}` : ""}
+        </p>
+        {action}
+      </div>
       <h1 className="mt-3 font-grotesk text-4xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl">
         {title}
       </h1>

@@ -14,7 +14,7 @@ import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } fro
  */
 export default function SubscriptionTermsPage() {
   const { t } = useT();
-  const [showHu, setShowHu] = useState(false);
+  const [showEn, setShowEn] = useState(false);
   useDocumentMeta("subscription_terms.seo_title", "subscription_terms.seo_description");
 
   return (
@@ -24,21 +24,21 @@ export default function SubscriptionTermsPage() {
           title={t("subscription_terms.page_title")}
           updatedLabel={t("subscription_terms.last_updated_label")}
           updatedDate={t("subscription_terms.last_updated_date")}
+          action={
+            <button
+              type="button"
+              onClick={() => setShowEn((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
+            >
+              {showEn ? "Hide English" : "English"}
+            </button>
+          }
         />
-        <SubscriptionBodyForLocale strings={en.subscription_terms} sectionLocale="en" />
-        <div className="mt-10 flex justify-center">
-          <button
-            type="button"
-            onClick={() => setShowHu((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-5 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
-          >
-            {showHu ? "Hide Hungarian" : "Magyar változat"}
-          </button>
-        </div>
-        {showHu && (
+        <SubscriptionBodyForLocale strings={hu.subscription_terms} sectionLocale="hu" />
+        {showEn && (
           <>
-            <SecondaryLanguageDivider label="Magyar" />
-            <SubscriptionBodyForLocale strings={hu.subscription_terms} sectionLocale="hu" secondary />
+            <SecondaryLanguageDivider label="English" />
+            <SubscriptionBodyForLocale strings={en.subscription_terms} sectionLocale="en" secondary />
           </>
         )}
         <BackLink />
