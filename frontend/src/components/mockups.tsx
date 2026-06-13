@@ -986,7 +986,7 @@ export function VendorListingMockup({ className }: Common) {
         <rect x="4" y="10" width="360" height="222" rx="16" fill="currentColor" />
       </g>
 
-      {/* Card fill — dark-mode aware */}
+      {/* Card fill — no stroke; the drop shadow provides visual separation */}
       <rect
         x="0"
         y="0"
@@ -996,18 +996,6 @@ export function VendorListingMockup({ className }: Common) {
         className="text-white dark:text-umber-800"
         fill="currentColor"
       />
-      <g className="text-paper-200 dark:text-umber-700">
-        <rect
-          x="0"
-          y="0"
-          width="360"
-          height="232"
-          rx="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1"
-        />
-      </g>
 
       {/* Cover photo — real Unsplash floral/bouquet photo crops to fill the
        *  top strip. The clipPath handles the card's top rounded corners.
