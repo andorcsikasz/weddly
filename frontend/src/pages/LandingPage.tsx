@@ -205,67 +205,44 @@ export default function LandingPage() {
           Oversized italic serif title hanging into the left margin, sub
           + CTAs underneath. Mockup follows below as a full-bleed slab,
           tilted slightly so it reads as "the product, peeking up". */}
-      <section className="relative overflow-hidden sm:min-h-[900px]">
-        {/* Layer 0: raw photo, full opacity, full bleed */}
-        <div aria-hidden="true" className="hero-photo" />
-        {/* Layer 1: radial + linear cream overlay for headline readability */}
-        <div aria-hidden="true" className="hero-overlay" />
-        {/* Layer 2: page content */}
-        <div className="relative z-[2] mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
-          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
-            <div>
-              {/* Cap with `max-w-[18ch]` on mobile — HU translations are
-               * 30-40% longer than EN and the old 14ch limit was wrapping
-               * the title to 4+ lines on 360px phones. Desktop still gets
-               * the tighter 14ch column for visual rhythm.
-               *
-               * The title strings carry authored `\n` line breaks for the
-               * stacked mobile headline; `whitespace-pre-line` honours them
-               * on mobile, and `sm:whitespace-normal` collapses them back to
-               * spaces on desktop so the wrap is driven by max-w-[14ch] as
-               * before — desktop copy/layout is unchanged. */}
-              <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
-                {t("landing.hero_title")}
-              </h1>
-              {/* Subline removed from the visible hero per request; the
-                  hero_sub string still feeds the SEO prerender body. */}
-              <div className="mt-4 max-w-[18ch] sm:mt-8 sm:max-w-md">
-                {/* Single primary CTA only. Login moved to the public header
-                    (PublicShell) since "I already have an account" is a
-                    secondary intent that doesn't deserve hero real-estate. */}
-                <Link
-                  to="/signup"
-                  className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
-                >
-                  {t("landing.cta_signup")}
-                </Link>
+      <section className="hero-section">
+        {/* Media layer — full image anchored to the right 62% of the section.
+            Cover scales by HEIGHT giving 849px horizontal overflow; left center
+            shows bouquet at 38-59% viewport, dress 59-85%, groom 85-100%. */}
+        <div aria-hidden="true" className="hero-media">
+          <div className="hero-photo-img" />
+          <div className="hero-overlay" />
+        </div>
+
+        {/* Content layer */}
+        <div className="hero-content-wrap">
+          <div className="mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-16 lg:pt-20 lg:pb-8">
+            <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
+              <div>
+                <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+                  {t("landing.hero_title")}
+                </h1>
+                <div className="mt-4 max-w-[18ch] sm:mt-8 sm:max-w-md">
+                  <Link
+                    to="/signup"
+                    className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
+                  >
+                    {t("landing.cta_signup")}
+                  </Link>
+                </div>
               </div>
-            </div>
-            {/* Tilted "try the demo" sticker — small, prominent enough to
-                catch the eye, sits to the right of the headline on desktop
-                and stacks below the CTAs on mobile. Hits POST /api/demo/start
-                and drops the visitor into /app with a seeded workspace. */}
-            {/* Mobile: drop the demo sticker lower and shove it to the right
-                edge so it reads as a distinct secondary intent under the
-                primary CTA, not a centered twin of it. Desktop (lg) keeps the
-                vertically-centered right column untouched. */}
-            <div className="mt-6 flex justify-end lg:mt-0 lg:justify-end">
-              <DemoLaunchCard />
+              <div className="mt-6 flex justify-end lg:mt-0 lg:justify-end">
+                <DemoLaunchCard />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Full-bleed mockup band — paper-100 background, full screenshot
-            visible. The earlier "peeking up" treatment (negative margin
-            cropping the bottom of the mockup) read to first-time visitors
-            as a UI glitch instead of an intentional crop, so we landed the
-            mockup flush against the section's bottom padding. */}
-        <div className="relative z-[2] mt-4 overflow-hidden pt-4 sm:pt-8 lg:pt-10">
+        {/* Dashboard preview — overlaps the bottom of the hero photo */}
+        <div className="hero-dashboard">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
-            <div className="origin-bottom pb-6 sm:pb-10 lg:pb-14">
+            <div className="pb-6 sm:pb-10 lg:pb-14">
               <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
-                {/* Smaller, shadowless preview per request — the SVG carries
-                    its own card frame, so no extra drop shadow. */}
                 <WorkspaceMockup className="h-auto w-full" />
               </LazyMount>
             </div>
