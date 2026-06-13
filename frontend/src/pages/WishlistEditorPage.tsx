@@ -107,6 +107,11 @@ interface DrawerInit {
   presetTitle?: string;
 }
 
+/** Before / after the wedding day. "before" shows the gift wishlist + requests;
+ *  "after" shows the received-gifts ledger. Persisted per device. */
+type WishlistPhase = "before" | "after";
+const PHASE_STORAGE_KEY = "weddly.wishlist.phase";
+
 /** Editor layout: a dense "sávos" row list or a "kártya" card grid. Persisted
  *  per device so the couple's preferred view sticks across visits. */
 type WishlistView = "list" | "cards";
@@ -648,11 +653,27 @@ export default function WishlistEditorPage() {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
+  const [phase, setPhase] = useState<WishlistPhase>(() => {
+    try {
+      return localStorage.getItem(PHASE_STORAGE_KEY) === "after" ? "after" : "before";
+    } catch {
+      return "before";
+    }
+  });
   const [view, setView] = useState<WishlistView>(() =>
     typeof localStorage !== "undefined" && localStorage.getItem(VIEW_STORAGE_KEY) === "cards"
       ? "cards"
       : "list",
   );
+
+  function changePhase(next: WishlistPhase) {
+    setPhase(next);
+    try {
+      localStorage.setItem(PHASE_STORAGE_KEY, next);
+    } catch {
+      // Private-mode / disabled storage — the in-memory state still switches.
+    }
+  }
 
   function changeView(next: WishlistView) {
     setView(next);
@@ -809,10 +830,38 @@ export default function WishlistEditorPage() {
         )}
       </header>
 
+      {/* ── Before / after toggle ───────────────────────────────────── */}
+      <div className="mb-8 flex justify-center">
+        <div className="inline-flex rounded-xl border border-paper-200 bg-paper-100 p-1 dark:border-umber-700 dark:bg-umber-900/60">
+          {(["before", "after"] as WishlistPhase[]).map((p) => {
+            const Icon = p === "before" ? Gift : PackageCheck;
+            const active = phase === p;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => changePhase(p)}
+                aria-pressed={active}
+                className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all ${
+                  active
+                    ? "bg-white text-ink-900 shadow-sm dark:bg-umber-800 dark:text-paper-50"
+                    : "text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+                }`}
+              >
+                <Icon size={16} aria-hidden />
+                {t(`wishlist_editor.phase_${p}`)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {loading ? (
         <WishlistListSkeleton />
       ) : (
         <div className="space-y-10">
+          {phase === "before" && (
+            <>
           {/* ── Gifts ───────────────────────────────────────────────── */}
           <CollapsibleSection
             title={t("wishlist_editor.section_gifts_title")}
@@ -953,7 +1002,11 @@ export default function WishlistEditorPage() {
               </ul>
             )}
           </CollapsibleSection>
+            </>
+          )}
 
+          {phase === "after" && (
+          <>
           {/* ── Received gifts (private ledger, never published) ─────── */}
           <CollapsibleSection
             title={t("wishlist_editor.section_received_title")}
@@ -976,6 +1029,8 @@ export default function WishlistEditorPage() {
               t={t}
             />
           </CollapsibleSection>
+          </>
+          )}
         </div>
       )}
 
