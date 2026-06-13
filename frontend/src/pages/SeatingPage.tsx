@@ -1191,21 +1191,23 @@ export default function SeatingPage() {
         </div>
 
         {mode === "edit" ? (
-          <>
+          // Edit mode right section — same w-56 structure as seat mode so
+          // both modes share identical toolbar geometry.
+          <div className="flex w-56 shrink-0 items-center justify-end gap-2">
             {previewLoading !== null && (
               <button
                 type="button"
-                className="btn-outline shrink-0"
+                className="btn-outline btn-sm"
                 onClick={cancelDownload}
                 aria-label={t("seating.pdf_cancel")}
               >
                 {t("seating.pdf_cancel")}
               </button>
             )}
-            <button type="button" className="btn-primary shrink-0" onClick={addTable}>
+            <button type="button" className="btn-primary" onClick={addTable}>
               <Plus size={16} /> {t("seating.add_table")}
             </button>
-          </>
+          </div>
         ) : (
           // Seat mode right section is exactly w-56 to mirror the unassigned
           // panel below — this aligns the tab's right edge with the map box.
