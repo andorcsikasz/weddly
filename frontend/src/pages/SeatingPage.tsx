@@ -1144,25 +1144,16 @@ export default function SeatingPage() {
                 format === "a4" ? t("seating.print_a4") : t("seating.print_a3"),
               )
             }
-            grouped
-            iconOnly
-          />
-          <button
-            type="button"
-            className="icon-group-item"
-            disabled={previewLoading !== null}
-            onClick={() =>
+            onPlaceCards={() =>
               requestDownload(
                 "/api/print/place-cards",
                 "weddly-place-cards.pdf",
                 t("seating.print_place_cards"),
               )
             }
-            aria-label={t("seating.print_place_cards")}
-            title={t("seating.print_place_cards")}
-          >
-            <Printer size={16} aria-hidden />
-          </button>
+            grouped
+            iconOnly
+          />
           <button
             type="button"
             className="icon-group-item"
@@ -2832,11 +2823,13 @@ function readDragData(e: DragEvent): DragData | null {
 function PrintChartMenu({
   disabled,
   onPick,
+  onPlaceCards,
   grouped,
   iconOnly,
 }: {
   disabled: boolean;
   onPick: (format: "a4" | "a3") => void;
+  onPlaceCards?: () => void;
   grouped?: boolean;
   iconOnly?: boolean;
 }) {
@@ -2896,6 +2889,20 @@ function PrintChartMenu({
               {format === "a4" ? t("seating.print_format_a4") : t("seating.print_format_a3")}
             </button>
           ))}
+          {onPlaceCards && (
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink-800 transition hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+              onClick={() => {
+                setOpen(false);
+                onPlaceCards();
+              }}
+            >
+              <Printer size={14} className="text-ink-500 dark:text-umber-300" />
+              {t("seating.print_place_cards")}
+            </button>
+          )}
         </div>
       )}
     </div>
