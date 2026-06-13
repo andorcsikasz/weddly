@@ -45,7 +45,7 @@ export function DemoLaunchCard() {
        * column on a 360-390 px viewport. Left padding is trimmed harder than
        * the right so the copy hugs the left edge. The sm: bump restores a
        * roomier 238 px card on tablet+. */
-      className="relative w-full max-w-[188px] rounded-2xl border border-umber-900/15 py-2.5 pl-3 pr-4 text-left sm:max-w-[238px] sm:py-4 sm:pl-4 sm:pr-6 dark:border-paper-50/15"
+      className="relative w-full max-w-[188px] rounded-2xl border border-umber-900/15 bg-paper-50/85 py-2.5 pl-3 pr-4 text-left backdrop-blur-md sm:max-w-[238px] sm:py-4 sm:pl-4 sm:pr-6 dark:border-paper-50/15 dark:bg-umber-900/80"
     >
       <p className="font-grotesk text-[10px] font-medium uppercase tracking-[0.24em] text-umber-600 dark:text-umber-200">
         {t("landing.demo_card_eyebrow")}

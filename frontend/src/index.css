@@ -680,20 +680,25 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     @apply font-grotesk font-semibold tracking-wide;
   }
 
-  /* Landing hero photo background — full-section div with background-image so
-     there is no rectangular <img> edge. The ::before pseudo-element applies a
-     multi-stop gradient that dissolves the photo into the page cream on the
-     left and lets it show clearly on the right. Hex values below are the exact
-     paper-50 (#fbfaf5) and umber-900 (#3a3324) design tokens — used here
-     because CSS gradient rgba() stops cannot reference Tailwind theme() vars. */
+  /* Landing hero photo background. Anchored to the right 62% of the section
+     so the left 38% stays clean cream — no photo edge visible there.
+     ::before = horizontal cream-fade (holds solid for 18% then dissolves).
+     ::after  = subtle vertical brightener so the image reads light and airy.
+     Hex values are the exact paper-50 (#fbfaf5) and umber-900 (#3a3324) tokens;
+     used literally here because rgba() gradient stops can't use CSS vars. */
   .hero-bg {
     position: absolute;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 62%;
     background-image: url("/cover-hero.png");
     background-size: cover;
-    background-position: right center;
+    background-position: left center;
     background-repeat: no-repeat;
+    opacity: 0.82;
     pointer-events: none;
+    z-index: 0;
   }
   .hero-bg::before {
     content: "";
@@ -702,43 +707,73 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     background: linear-gradient(
       90deg,
       #fbfaf5 0%,
-      rgba(251, 250, 245, 0.98) 10%,
-      rgba(251, 250, 245, 0.86) 24%,
-      rgba(251, 250, 245, 0.58) 42%,
-      rgba(251, 250, 245, 0.24) 64%,
-      rgba(251, 250, 245, 0.06) 100%
+      #fbfaf5 18%,
+      rgba(251, 250, 245, 0.96) 34%,
+      rgba(251, 250, 245, 0.78) 50%,
+      rgba(251, 250, 245, 0.42) 68%,
+      rgba(251, 250, 245, 0.16) 100%
     );
+  }
+  .hero-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(251, 250, 245, 0.16) 0%,
+        rgba(251, 250, 245, 0.06) 48%,
+        rgba(251, 250, 245, 0.22) 100%
+      ),
+      rgba(251, 250, 245, 0.12);
+  }
+  .dark .hero-bg {
+    opacity: 0.55;
   }
   .dark .hero-bg::before {
     background: linear-gradient(
       90deg,
       #3a3324 0%,
-      rgba(58, 51, 36, 0.98) 10%,
-      rgba(58, 51, 36, 0.86) 24%,
-      rgba(58, 51, 36, 0.58) 42%,
-      rgba(58, 51, 36, 0.24) 64%,
-      rgba(58, 51, 36, 0.06) 100%
+      #3a3324 18%,
+      rgba(58, 51, 36, 0.96) 34%,
+      rgba(58, 51, 36, 0.78) 50%,
+      rgba(58, 51, 36, 0.42) 68%,
+      rgba(58, 51, 36, 0.16) 100%
     );
+  }
+  .dark .hero-bg::after {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(58, 51, 36, 0.16) 0%,
+        rgba(58, 51, 36, 0.06) 48%,
+        rgba(58, 51, 36, 0.22) 100%
+      ),
+      rgba(58, 51, 36, 0.12);
   }
   @media (max-width: 639px) {
     .hero-bg {
-      opacity: 0.32;
+      width: 100%;
+      opacity: 0.28;
       background-position: center top;
     }
     .hero-bg::before {
       background: linear-gradient(
         180deg,
         #fbfaf5 0%,
-        rgba(251, 250, 245, 0.94) 42%,
-        rgba(251, 250, 245, 0.76) 100%
+        rgba(251, 250, 245, 0.92) 42%,
+        rgba(251, 250, 245, 0.72) 100%
       );
+    }
+    .hero-bg::after {
+      background: none;
     }
     .dark .hero-bg::before {
       background: linear-gradient(
         180deg,
         #3a3324 0%,
-        rgba(58, 51, 36, 0.94) 42%,
-        rgba(58, 51, 36, 0.76) 100%
+        rgba(58, 51, 36, 0.92) 42%,
+        rgba(58, 51, 36, 0.72) 100%
       );
     }
   }
