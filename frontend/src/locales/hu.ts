@@ -4928,6 +4928,8 @@ const hu: LocaleMessages = {
       "Az adataitok a tiétek. Exportáljátok, szüneteltessétek vagy töröljétek, ahogy szeretnétek; ehhez nem kell ügyfélszolgálat.",
     en_section_label: "English",
     founder_placeholder: "Csíkász Andor",
+    founder_role: "Alapító, Wēddly",
+    photo_alt: "Csíkász Andor portréfotója",
   },
   blog: {
     eyebrow: "Blog",

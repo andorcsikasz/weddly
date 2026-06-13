@@ -5445,6 +5445,8 @@ export interface LocaleMessages {
     en_section_label: string;
     /** Placeholder founder name — replace before going public. */
     founder_placeholder: string;
+    founder_role: string;
+    photo_alt: string;
   };
   /** Public-facing blog index and post pages. Body content lives in the
    *  `blog_posts` DB table; these are the chrome strings around it. */

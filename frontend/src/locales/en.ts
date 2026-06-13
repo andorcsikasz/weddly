@@ -4877,6 +4877,8 @@ const en: LocaleMessages = {
       "Your data is yours. Export, pause, or delete on your own terms; no support ticket required.",
     en_section_label: "English",
     founder_placeholder: "Andor Csíkász",
+    founder_role: "Founder, Wēddly",
+    photo_alt: "Portrait photo of Andor Csíkász",
   },
   blog: {
     eyebrow: "Blog",
