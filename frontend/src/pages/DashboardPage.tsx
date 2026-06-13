@@ -27,6 +27,7 @@ import {
   Coins,
   Download,
   Heart,
+  Link2,
   Mail,
   MapPin,
   Plane,
@@ -588,6 +589,19 @@ export default function DashboardPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
+  async function onGetLink() {
+    setInviteEmailError(null);
+    setInviteSending(true);
+    try {
+      const r = await coupleApi.createInvite({});
+      setInvite(r.invite);
+    } catch (err) {
+      if (err instanceof ApiError) toast.error(err.message);
+      else toast.error(t("common.error_generic"));
+    } finally {
+      setInviteSending(false);
+    }
+  }
   // Cancel the pending invite so the inviter can send to a different address
   // (e.g. they typo'd). Voids the backend record (we don't DELETE — schema is
   // additive-only, the audit trail keeps the original row) and then the form
@@ -902,12 +916,18 @@ export default function DashboardPage() {
                     <Mail size={16} />
                     {inviteSending ? t("dashboard.invite_sending") : t("dashboard.invite_send")}
                   </button>
+                  <button
+                    type="button"
+                    className="btn-outline shrink-0 self-stretch px-3"
+                    onClick={onGetLink}
+                    disabled={inviteSending}
+                    aria-label={t("dashboard.copy_link")}
+                    title={t("dashboard.copy_link")}
+                  >
+                    <Link2 size={16} />
+                  </button>
                 </div>
-                {inviteEmailError ? (
-                  <p className="field-error">{inviteEmailError}</p>
-                ) : (
-                  <p className="field-help">{t("dashboard.invite_email_help")}</p>
-                )}
+                {inviteEmailError && <p className="field-error">{inviteEmailError}</p>}
               </form>
             ) : (
               // Link-only path: submitted without an email, so we show the
