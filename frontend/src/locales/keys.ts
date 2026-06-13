@@ -2287,6 +2287,8 @@ export interface LocaleMessages {
     /** Toasts after flipping the publish toggle. */
     publish_toast_on: string;
     publish_toast_off: string;
+    phase_before: string;
+    phase_after: string;
     /** Received-gifts ledger: private "what we got" tracking grid. */
     section_received_title: string;
     section_received_subtitle: string;

@@ -67,6 +67,24 @@ interface Props {
    *  baby-icon overlay on the chair, independent of the baby_seats "needs
    *  a high chair" flag on the table itself. */
   babySeatsByTable?: Map<number, Set<number>>;
+  /** When true, switches the canvas into "seat guests" mode: table drag/resize
+   *  is disabled and each chair becomes a drag-drop target + tap target. */
+  seatMode?: boolean;
+  /** Per-table, per-seat: the guest currently occupying that seat (for name
+   *  rendering on chairs in seat mode). Map<tableId, Map<seatIndex, {id, name}>>. */
+  seatGuestsByTable?: Map<number, Map<number, { id: number; name: string }>>;
+  /** Called when the user drops a guest onto a specific chair in seat mode. */
+  onDropSeat?: (tableId: number, seatIndex: number, e: React.DragEvent) => void;
+  /** Called when the user taps/clicks a chair in seat mode. */
+  onTapSeat?: (tableId: number, seatIndex: number) => void;
+  /** Whether tap-to-place mode is active (affects cursor + visual hint). */
+  tapMode?: boolean;
+  /** Guest id currently selected for placement — highlights their chair. */
+  selectedGuestId?: number | null;
+  /** Called when the user starts dragging a seated guest from the SVG. */
+  onChairDragStart?: (tableId: number, seatIndex: number, guestId: number) => void;
+  /** Called when a drag from an SVG chair ends. */
+  onChairDragEnd?: (e: React.DragEvent) => void;
 }
 
 type DragState =
@@ -104,6 +122,14 @@ export function SeatingMap({
   roomHeightMm = DEFAULT_ROOM_H_MM,
   onRoomChange,
   babySeatsByTable,
+  seatMode = false,
+  seatGuestsByTable,
+  onDropSeat,
+  onTapSeat,
+  tapMode,
+  selectedGuestId,
+  onChairDragStart,
+  onChairDragEnd,
 }: Props) {
   const { t } = useT();
   // Local aliases keep the rest of the component readable; the rendering
@@ -192,23 +218,16 @@ export function SeatingMap({
     el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
   }, [expanded, ROOM_W_MM, ROOM_H_MM, wrapperPx?.w, wrapperPx?.h]);
 
-  // Pick a scale + SVG pixel size for the EXPANDED overlay only.
-  // Always "max-scale": pick the larger of the two fit ratios so the
-  // shorter axis fills the wrapper and the longer axis overflows. This
-  // guarantees the canvas is scrollable in expanded mode regardless of
-  // room size or aspect — what the user wants when they click maximise to
-  // dig into details.
-  //
-  // The inline card stays on plain fit-to-meet — the user wants to *see
-  // the whole room at a glance* in the editor surface; the expand button
-  // is the affordance for "I want to scroll around at a useful zoom".
+  // Pick a scale + SVG pixel size for EXPANDED or SEAT mode.
+  // Both modes use max-scale so the longer axis overflows and the canvas
+  // is scrollable — edit mode stays fit-to-meet (whole room visible at once).
   const svgSize = useMemo<{ width: number | string; height: number | string }>(() => {
-    if (!expanded || !wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
+    if ((!expanded && !seatMode) || !wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
       return { width: "100%", height: "100%" };
     }
     const scale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
     return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
-  }, [expanded, wrapperPx, ROOM_W_MM, ROOM_H_MM]);
+  }, [expanded, seatMode, wrapperPx, ROOM_W_MM, ROOM_H_MM]);
 
   // ESC closes the expanded overlay. Lock body scroll while open so the
   // backdrop doesn't reveal the page underneath when the user scrolls.
@@ -525,30 +544,27 @@ export function SeatingMap({
           </button>
         </div>
       </header>
-      {/* Two layout regimes:
-          - INLINE: fixed 60 vh frame, no scroll. The SVG fills the wrapper
-            and preserveAspectRatio=meet drops the room into the centre at
-            fit scale. The inner div uses `h-full w-full` so percentage
-            heights actually resolve — `min-h-full` (used in expanded) would
-            leave the SVG's height: 100% computed against an auto-height
-            parent, and the SVG would balloon to its viewBox aspect ratio.
-          - EXPANDED (portal overlay): inner div uses `flex min-h-full
-            min-w-full items-center justify-center` so an overlarge SVG
-            grows the inner div, with the outer's `overflow-auto` scrolling
-            the result. Putting align-items: center directly on the scroll
-            container is the classic flex + overflow gotcha — the SVG's
-            top moves above the scroll edge and becomes unreachable. */}
+      {/* Three layout regimes:
+          - INLINE/EDIT: fixed 60 vh frame, no scroll. Fit-to-meet.
+          - INLINE/SEAT: flex-1 (grows to fill the outer card which is h-full)
+            with overflow-auto so the user can pan/scroll a large room.
+          - EXPANDED (portal overlay): same as before — min-h-0 flex-1
+            overflow-auto so an overlarge SVG is scrollable. */}
       <div
         ref={scrollWrapperRef}
         className={`relative bg-paper-50 dark:bg-umber-900 ${
           expanded
             ? "min-h-0 flex-1 overflow-auto p-4"
-            : "h-[60vh] max-h-[640px] w-full overflow-hidden"
+            : seatMode
+              ? "min-h-0 flex-1 overflow-auto"
+              : "h-[60vh] max-h-[640px] w-full overflow-hidden"
         }`}
       >
         <div
           className={
-            expanded ? "flex min-h-full min-w-full items-center justify-center" : "h-full w-full"
+            expanded || seatMode
+              ? "flex min-h-full min-w-full items-center justify-center"
+              : "h-full w-full"
           }
         >
           <svg
@@ -556,7 +572,7 @@ export function SeatingMap({
             viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
             preserveAspectRatio="xMidYMid meet"
             style={
-              expanded
+              expanded || seatMode
                 ? { width: svgSize.width, height: svgSize.height, flexShrink: 0 }
                 : { width: "100%", height: "100%" }
             }
@@ -623,6 +639,16 @@ export function SeatingMap({
                   onPointerDown={(e) => startMove(e, table)}
                   onHandlePointerDown={(e, h) => startResize(e, table, h)}
                   onSeatsDelta={(delta) => onSeatsChange(table.id, delta)}
+                  seatMode={seatMode}
+                  seatGuests={seatGuestsByTable?.get(table.id)}
+                  selectedGuestId={selectedGuestId}
+                  tapMode={tapMode}
+                  onDropSeat={(seatIndex, e) => onDropSeat?.(table.id, seatIndex, e)}
+                  onTapSeat={(seatIndex) => onTapSeat?.(table.id, seatIndex)}
+                  onChairDragStart={(seatIndex, guestId) =>
+                    onChairDragStart?.(table.id, seatIndex, guestId)
+                  }
+                  onChairDragEnd={onChairDragEnd}
                   t={t}
                 />
               );
@@ -659,7 +685,11 @@ export function SeatingMap({
     );
   }
 
-  return <div className="card overflow-hidden p-0">{cardContent}</div>;
+  return (
+    <div className={`card overflow-hidden p-0 ${seatMode ? "flex h-full flex-col" : ""}`}>
+      {cardContent}
+    </div>
+  );
 }
 
 function RoomDimsInput({
@@ -804,6 +834,22 @@ interface TableShapeProps {
   onPointerDown: (e: React.PointerEvent<SVGGElement>) => void;
   onHandlePointerDown: (e: React.PointerEvent<SVGElement>, handle: HandleDir) => void;
   onSeatsDelta: (delta: number) => void;
+  /** When true: table drag/resize disabled; chairs become drop targets. */
+  seatMode?: boolean;
+  /** Per-seat guest info for name rendering in seat mode. */
+  seatGuests?: Map<number, { id: number; name: string }>;
+  /** Guest id currently selected for placement — shown highlighted. */
+  selectedGuestId?: number | null;
+  /** Whether tap-to-place is active — chairs respond to clicks. */
+  tapMode?: boolean;
+  /** Drop handler for each chair in seat mode. */
+  onDropSeat?: (seatIndex: number, e: React.DragEvent) => void;
+  /** Tap handler for each chair in seat mode. */
+  onTapSeat?: (seatIndex: number) => void;
+  /** Drag-start from an occupied chair in seat mode. */
+  onChairDragStart?: (seatIndex: number, guestId: number) => void;
+  /** Drag-end from an occupied chair in seat mode. */
+  onChairDragEnd?: (e: React.DragEvent) => void;
   t: (
     key:
       | "seating.add_seat"
@@ -827,8 +873,17 @@ function TableShape({
   onPointerDown,
   onHandlePointerDown,
   onSeatsDelta,
+  seatMode = false,
+  seatGuests,
+  selectedGuestId,
+  tapMode,
+  onDropSeat,
+  onTapSeat,
+  onChairDragStart,
+  onChairDragEnd,
   t,
 }: TableShapeProps) {
+  const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
   // Half-dimensions used for shape rendering and chair placement.
   const { rx, ry } = halfDims(table);
   const chairs = chairOffsets(table.shape, table.seats, rx, ry);
@@ -896,39 +951,19 @@ function TableShape({
     <g
       transform={`translate(${cx} ${cy}) rotate(${rotation})`}
       data-seating-table={table.id}
-      onPointerDown={onPointerDown}
+      onPointerDown={seatMode ? undefined : onPointerDown}
       onKeyDown={(e) => {
-        // Enter/Space selects the table for the editor panel — mirrors a
-        // click. Arrow/[/]/Delete shortcuts are intercepted by the parent
-        // SeatingMap keydown handler, so we let those bubble through.
+        if (seatMode) return;
         if (e.key !== "Enter" && e.key !== " ") return;
         e.preventDefault();
-        // Reuse onPointerDown's selection side-effect by emitting a synthetic
-        // pointer-like event. SeatingMap calls onSelect inside startMove —
-        // for keyboard users we'd just want selection, no drag. The parent
-        // canvas listens to focus-within for this too, so the cheapest fix
-        // is to dispatch a click on the element.
         (e.currentTarget as Element & { click?: () => void }).click?.();
       }}
-      // touchAction: none ONLY on the draggable table group so finger drags
-      // here start a table move via Pointer Events. Empty canvas / between
-      // tables keeps the SVG's default touch-action: auto so touch users can
-      // pan-scroll the room in the expanded overlay.
-      //
-      // BUT on coarse-pointer devices the table covers most of the visible
-      // SVG, and `touchAction: none` then traps every finger swipe — vertical
-      // page scroll dies the moment the user lands on a table. We drop to
-      // `pan-y` there so vertical page scrolling survives; horizontal drag
-      // still starts a table move (the common drag axis).
       style={{
-        cursor: "grab",
-        touchAction: coarsePointer ? "pan-y" : "none",
+        cursor: seatMode ? "default" : "grab",
+        touchAction: seatMode ? "auto" : coarsePointer ? "pan-y" : "none",
       }}
-      // Keyboard a11y: focusable, Enter/Space mimics a click-to-select, and
-      // arrow/[/]/Delete shortcuts are handled by the parent SeatingMap so a
-      // single keydown listener can govern the whole canvas.
-      tabIndex={0}
-      role="button"
+      tabIndex={seatMode ? -1 : 0}
+      role={seatMode ? undefined : "button"}
       aria-label={ariaLabel}
     >
       {/* Table body — single clean stroke + warm fill. */}
@@ -946,41 +981,97 @@ function TableShape({
         />
       )}
 
-      {/* Chairs. Each chair is a rounded rect tangent to the perimeter, in
-          blush — empty seats read soft, filled seats read warmer. The
-          chair's long axis runs along the table edge (perpendicular to the
-          radial direction), so it visually "faces" the table like a real
-          chair from above. Disabled seats render as a muted ghost with a
-          small × so the couple sees the slot exists but is intentionally
-          unused. */}
+      {/* Chairs. Each chair is a rounded rect tangent to the perimeter.
+          In edit mode: blush for empty, navy for filled, × for disabled.
+          In seat mode: chairs become drop targets, show guest names, and
+          use a richer colour system (empty=blush-200, occupied=ink-700,
+          selected-guest=blush-600, drag-hover=blush-400). */}
       {chairs.map((c, i) => {
-        const isFilled = i < filledSeats;
         const isDisabled = disabledSet.has(i);
-        // Show the baby icon either when the chair is *flagged* (needs a
-        // high chair) or when an actual baby guest is currently sitting
-        // there. Both states read the same way: a Baby icon overlaying
-        // the chair so the venue knows to bring (or already brought) a
-        // high chair.
         const isBaby = !isDisabled && (babySet.has(i) || (babySeatedSet?.has(i) ?? false));
         const cosA = Math.cos(c.angle);
         const sinA = Math.sin(c.angle);
         const px = c.dx + cosA * chairPushMm;
         const py = c.dy + sinA * chairPushMm;
         const rotDeg = (c.angle * 180) / Math.PI + 90;
+
+        // Seat mode: derive state from actual assignment data.
+        const seatGuest = seatMode ? (seatGuests?.get(i) ?? null) : null;
+        const isOccupied = seatMode ? seatGuest !== null : i < filledSeats;
+        const isSelectedSeat = seatMode && seatGuest !== null && seatGuest.id === selectedGuestId;
+        const isDragHover = seatMode && dragOverSeat === i;
+
         const fillClassName = isDisabled
           ? "fill-paper-200"
-          : isFilled
-            ? "fill-ink-800"
-            : "fill-blush-300";
-        // Small × across a disabled chair, drawn in its rotated local frame
-        // so it sits centred on the chair regardless of where it is on
-        // the table.
+          : seatMode
+            ? isDragHover
+              ? isOccupied
+                ? "fill-blush-700"
+                : "fill-blush-400"
+              : isSelectedSeat
+                ? "fill-blush-600"
+                : isOccupied
+                  ? "fill-ink-700"
+                  : "fill-blush-200"
+            : isOccupied
+              ? "fill-ink-800"
+              : "fill-blush-300";
+
         const crossLen = chairHeightMm * 0.45;
-        // Baby icon — the lucide Baby glyph, sized to fit roughly two
-        // thirds of the chair so it reads at the canvas zoom.
         const babyIconSize = chairHeightMm * 0.72;
+
+        // In seat mode, guest first name fits inside the chair.
+        const guestLabel =
+          seatMode && seatGuest
+            ? (() => {
+                const first = seatGuest.name.trim().split(/\s+/)[0] ?? seatGuest.name;
+                return first.length <= 9 ? first : `${first.slice(0, 8)}.`;
+              })()
+            : null;
+
         return (
-          <g key={i}>
+          <g
+            key={i}
+            onDragOver={
+              seatMode && !isDisabled
+                ? (e: React.DragEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverSeat !== i) setDragOverSeat(i);
+                  }
+                : undefined
+            }
+            onDragLeave={
+              seatMode && !isDisabled
+                ? (e: React.DragEvent) => {
+                    e.stopPropagation();
+                    setDragOverSeat(null);
+                  }
+                : undefined
+            }
+            onDrop={
+              seatMode && !isDisabled
+                ? (e: React.DragEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragOverSeat(null);
+                    onDropSeat?.(i, e);
+                  }
+                : undefined
+            }
+            onClick={
+              seatMode && !isDisabled
+                ? (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    onTapSeat?.(i);
+                  }
+                : undefined
+            }
+            style={
+              seatMode && !isDisabled ? { cursor: tapMode ? "pointer" : "default" } : undefined
+            }
+          >
             <rect
               x={px - chairWidthMm / 2}
               y={py - chairHeightMm / 2}
@@ -1023,11 +1114,12 @@ function TableShape({
                 <Baby
                   width={babyIconSize}
                   height={babyIconSize}
-                  className={`fill-none ${isFilled ? "stroke-paper-50" : "stroke-ink-700"}`}
+                  className={`fill-none ${isOccupied ? "stroke-paper-50" : "stroke-ink-700"}`}
                   strokeWidth={2}
                 />
               </g>
             )}
+            {/* In edit mode: seat number. In seat mode: guest first name. */}
             {!isDisabled && !isBaby && (
               <text
                 x={px}
@@ -1035,12 +1127,12 @@ function TableShape({
                 transform={`rotate(${-rotation} ${px} ${py})`}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize={chairHeightMm * 0.6}
+                fontSize={seatMode ? chairWidthMm * 0.26 : chairHeightMm * 0.6}
                 fontWeight={600}
-                className={`font-grotesk ${isFilled ? "fill-paper-50" : "fill-ink-700"}`}
-                style={{ pointerEvents: "none" }}
+                className={`font-grotesk ${isOccupied ? "fill-paper-50" : seatMode ? "fill-ink-400" : "fill-ink-700"}`}
+                style={{ pointerEvents: "none", userSelect: "none" }}
               >
-                {i + 1}
+                {seatMode ? (guestLabel ?? String(i + 1)) : i + 1}
               </text>
             )}
           </g>
@@ -1094,8 +1186,9 @@ function TableShape({
         );
       })()}
 
-      {/* Selection-only affordances: resize handles + seat buttons. */}
-      {isSelected && (
+      {/* Selection-only affordances: resize handles + seat buttons.
+          Hidden in seat mode — tables are not editable there. */}
+      {isSelected && !seatMode && (
         <>
           {handles.map((h) => (
             <ResizeHandle
@@ -1119,9 +1212,6 @@ function TableShape({
             cx={seatBtnGap / 2}
             cy={seatBtnY}
             kind="plus"
-            // + stays clickable past the perimeter cap so the parent's
-            // onSeatsChange can fire a toast explaining why it didn't work.
-            // We still mark the visual as muted via canIncrement → muted=true.
             disabled={false}
             muted={!canIncrement}
             onActivate={() => onSeatsDelta(1)}
