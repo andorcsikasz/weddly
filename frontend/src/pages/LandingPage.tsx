@@ -205,12 +205,13 @@ export default function LandingPage() {
           Oversized italic serif title hanging into the left margin, sub
           + CTAs underneath. Mockup follows below as a full-bleed slab,
           tilted slightly so it reads as "the product, peeking up". */}
-      {/* Hero fills the full remaining viewport below the sticky header.
-          calc(100dvh - 3.5rem) ≈ viewport minus the ~56px header. */}
-      <section className="relative overflow-hidden">
-        {/* Hero background photo — gradient fade handled by .hero-bg in index.css. */}
-        <div aria-hidden="true" className="hero-bg" />
-        <div className="relative mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
+      <section className="relative overflow-hidden sm:min-h-[900px]">
+        {/* Layer 0: raw photo, full opacity, full bleed */}
+        <div aria-hidden="true" className="hero-photo" />
+        {/* Layer 1: radial + linear cream overlay for headline readability */}
+        <div aria-hidden="true" className="hero-overlay" />
+        {/* Layer 2: page content */}
+        <div className="relative z-[2] mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
               {/* Cap with `max-w-[18ch]` on mobile — HU translations are
@@ -259,7 +260,7 @@ export default function LandingPage() {
             cropping the bottom of the mockup) read to first-time visitors
             as a UI glitch instead of an intentional crop, so we landed the
             mockup flush against the section's bottom padding. */}
-        <div className="relative mt-4 overflow-hidden bg-paper-50 dark:bg-umber-900 pt-4 sm:pt-8 lg:pt-10">
+        <div className="relative z-[2] mt-4 overflow-hidden pt-4 sm:pt-8 lg:pt-10">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="origin-bottom pb-6 sm:pb-10 lg:pb-14">
               <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
