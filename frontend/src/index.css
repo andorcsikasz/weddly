@@ -567,23 +567,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ink-700;
   }
   .btn-primary {
-    @apply btn bg-ink-800 text-paper-100 hover:bg-ink-900
-      dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-50;
-    /* Light-mode rim is pushed to near-black (~3% lightness) so it
-       clearly separates from the ink-800 face (~13% lightness). The
-       earlier ink-900 rim sat only 6% off the face and visually merged
-       with it against the warm paper canvas. */
-    --btn-rim: #04060e;
-    --btn-rim-hover: #010207;
-    --btn-rim-active: theme("colors.ink.900");
-  }
-  /* Landing primary CTAs ride the warm "specialty coffee" umber rather
-     than the workspace's ink navy — keeps the public page on the coffee
-     palette (and matches the demo card's umber-900 button) without
-     touching the app's btn-primary. Compound selector so it only hits
-     buttons that are BOTH btn-primary and btn-landing. */
-  .btn-landing.btn-primary {
-    @apply bg-umber-900 hover:bg-umber-950
+    @apply btn bg-umber-900 text-paper-100 hover:bg-umber-950
       dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-50;
     --btn-rim: #060402;
     --btn-rim-hover: #030201;
@@ -698,7 +682,11 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   @media (min-width: 640px) {
     .hero-section {
-      min-height: 980px;
+      /* Pull up behind the sticky header so the photo fills the full viewport
+         including the nav bar (header has bg-paper-50/85 backdrop-blur so
+         the image shows through at ~15% with a soft blur). */
+      margin-top: -3.5rem;
+      min-height: 100dvh;
     }
   }
 
@@ -720,6 +708,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     background-position: center top;
     background-repeat: no-repeat;
     pointer-events: none;
+    filter: saturate(1.35) brightness(0.96);
   }
   @media (max-width: 639px) {
     .hero-photo-img {
@@ -728,6 +717,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   .dark .hero-photo-img {
     opacity: 0.55;
+    filter: saturate(1.2) brightness(0.75);
   }
 
   /* Atmospheric veil — keeps left side clean for the headline, lets the

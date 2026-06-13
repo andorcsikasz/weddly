@@ -216,7 +216,7 @@ export default function LandingPage() {
 
         {/* Content layer */}
         <div className="hero-content-wrap">
-          <div className="mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-16 lg:pt-20 lg:pb-8">
+          <div className="mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-16 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
             <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
               <div>
                 <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
