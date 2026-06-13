@@ -974,53 +974,59 @@ export function VendorListingMockup({ className }: Common) {
       aria-label={t("landing.mockup_aria_vendor")}
       className={className}
     >
+      <defs>
+        {/* Clip the cover photo to the card's top rounded corners (r=16)
+            with a straight bottom edge at y=92. */}
+        <clipPath id="vendor-cover-clip">
+          <path d="M 16 0 Q 0 0 0 16 L 0 92 L 360 92 L 360 16 Q 360 0 344 0 Z" />
+        </clipPath>
+      </defs>
+
       <g className="text-ink-900" opacity="0.06">
         <rect x="4" y="10" width="360" height="222" rx="16" fill="currentColor" />
       </g>
-      <g className="text-paper-200">
+
+      {/* Card fill — dark-mode aware */}
+      <rect
+        x="0"
+        y="0"
+        width="360"
+        height="232"
+        rx="16"
+        className="text-white dark:text-umber-800"
+        fill="currentColor"
+      />
+      <g className="text-paper-200 dark:text-umber-700">
         <rect
           x="0"
           y="0"
           width="360"
           height="232"
           rx="16"
-          fill="white"
+          fill="none"
           stroke="currentColor"
           strokeWidth="1"
         />
       </g>
 
-      {/* Cover image area — pastel placeholder strip + universal photo-icon
-       *  glyph centered in the strip. Earlier revs decorated this with two
-       *  blush ellipses, but they read as floating blobs on mobile (the SVG
-       *  scales down past where their shapes are recognisable). The image-
-       *  frame glyph mirrors the production layout 1:1 — a real hero photo
-       *  drops into exactly this rect — and is category-neutral, so it
-       *  doesn't whisper "this product is for florists only" to caterers
-       *  and photographers browsing /vendors. */}
-      <g className="text-umber-100">
-        <path d="M 0 0 L 360 0 L 360 92 L 0 92 Z" fill="currentColor" />
-      </g>
-      <g className="text-umber-500" opacity="0.55">
-        <rect
-          x="167"
-          y="30"
-          width="50"
-          height="36"
-          rx="3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
-        />
-        <circle cx="178" cy="40" r="2.5" fill="currentColor" />
-        <path d="M 170 60 L 184 46 L 196 56 L 213 42 L 213 64 L 170 64 Z" fill="currentColor" />
-      </g>
+      {/* Cover photo — real Unsplash floral/bouquet photo crops to fill the
+       *  top strip. The clipPath handles the card's top rounded corners.
+       *  Replace the href with the final photo URL before launch. */}
+      <image
+        href="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=720&h=184&fit=crop&q=80"
+        x="0"
+        y="0"
+        width="360"
+        height="92"
+        clipPath="url(#vendor-cover-clip)"
+        preserveAspectRatio="xMidYMid slice"
+      />
 
-      {/* Logo badge */}
-      <g className="text-white">
+      {/* Logo badge — dark-mode aware */}
+      <g className="text-white dark:text-umber-700">
         <circle cx="40" cy="92" r="22" fill="currentColor" />
       </g>
-      <g className="text-paper-300">
+      <g className="text-paper-300 dark:text-umber-600">
         <circle cx="40" cy="92" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
       </g>
       <g className="font-serif text-umber-700">
@@ -1030,7 +1036,7 @@ export function VendorListingMockup({ className }: Common) {
       </g>
 
       {/* Bookmark */}
-      <g className="text-white">
+      <g className="text-white dark:text-umber-700">
         <circle cx="328" cy="20" r="14" fill="currentColor" />
       </g>
       <g className="text-umber-600">

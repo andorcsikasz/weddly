@@ -16,6 +16,7 @@ import {
   MapPin,
   MessageSquare,
   Plus,
+  Star,
   Tag,
   Trash2,
   X,
@@ -68,7 +69,7 @@ export default function VendorsPage() {
   return (
     <PublicShell>
       {/* Hero */}
-      <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-16 sm:px-6 sm:pt-20 sm:pb-20 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
+      <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-10 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-blush-700 dark:border-blush-400/30 dark:bg-blush-400/15 dark:text-blush-200">
             <span className="h-1.5 w-1.5 rounded-full bg-blush-500 dark:bg-blush-300" />
@@ -80,7 +81,12 @@ export default function VendorsPage() {
           <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg lg:mx-0 dark:text-umber-200">
             {t("vendors.hero_sub")}
           </p>
-          <div className="mt-9 flex justify-center lg:justify-start">
+          {/* Social proof trust signal */}
+          <p className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-sm text-ink-500 lg:justify-start dark:text-umber-300">
+            <Check size={14} className="text-umber-600 dark:text-umber-400" aria-hidden />
+            {t("vendors.trust_signal")}
+          </p>
+          <div className="mt-6 flex justify-center lg:justify-start">
             <a href="#waitlist" className="btn-primary btn-lg shadow-sm">
               {t("vendors.contact_cta")}
             </a>
@@ -94,11 +100,11 @@ export default function VendorsPage() {
       {/* Benefits */}
       <section className="bg-paper-100/60 dark:bg-umber-900/40">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 lg:grid-cols-3 lg:items-stretch">
             <Benefit
               art={
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-umber-200 bg-umber-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800">
-                  <span className="block h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300" />
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-ink-200/60 text-ink-800 dark:border-umber-600 dark:text-paper-100">
+                  <Star size={17} strokeWidth={1.5} aria-hidden />
                 </span>
               }
               title={t("vendors.benefit_1_title")}
@@ -106,8 +112,8 @@ export default function VendorsPage() {
             />
             <Benefit
               art={
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-umber-200 bg-umber-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800">
-                  <span className="block h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300" />
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-ink-200/60 text-ink-800 dark:border-umber-600 dark:text-paper-100">
+                  <MapPin size={17} strokeWidth={1.5} aria-hidden />
                 </span>
               }
               title={t("vendors.benefit_2_title")}
@@ -115,8 +121,8 @@ export default function VendorsPage() {
             />
             <Benefit
               art={
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-umber-200 bg-umber-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800">
-                  <span className="block h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300" />
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-ink-200/60 text-ink-800 dark:border-umber-600 dark:text-paper-100">
+                  <MessageSquare size={17} strokeWidth={1.5} aria-hidden />
                 </span>
               }
               title={t("vendors.benefit_3_title")}
@@ -159,7 +165,7 @@ function Benefit({
   body: string;
 }) {
   return (
-    <article className="card">
+    <article className="card h-full">
       <div className="mb-4">{art}</div>
       <h3 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
@@ -211,16 +217,17 @@ function PortfolioLinkRow({
           autoComplete="off"
         />
       </div>
-      <button
-        type="button"
-        onClick={onRemove}
-        disabled={!removable}
-        aria-label={removeLabel}
-        title={removeLabel}
-        className="inline-flex h-tap w-tap shrink-0 items-center justify-center rounded-lg border border-paper-300 bg-paper-50 text-ink-500 transition-colors hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/10 dark:hover:text-blush-200"
-      >
-        <Trash2 size={16} aria-hidden />
-      </button>
+      {removable && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={removeLabel}
+          title={removeLabel}
+          className="inline-flex h-tap w-tap shrink-0 items-center justify-center rounded-lg border border-paper-300 bg-paper-50 text-ink-500 transition-colors hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/10 dark:hover:text-blush-200"
+        >
+          <Trash2 size={16} aria-hidden />
+        </button>
+      )}
     </div>
   );
 }
@@ -622,7 +629,7 @@ function WaitlistContact() {
                     value={value}
                     onChange={(next) => updatePortfolioLink(idx, next)}
                     onRemove={() => removePortfolioLink(idx)}
-                    removable={portfolioLinks.length > 1 || value.length > 0}
+                    removable={portfolioLinks.length > 1}
                     placeholder={t("vendors.portfolio_links_placeholder")}
                     removeLabel={t("vendors.portfolio_link_remove")}
                   />
@@ -751,10 +758,10 @@ function WaitlistContact() {
                 <span>{errorMsg}</span>
               </p>
             )}
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4">
               <button
                 type="submit"
-                className="btn-primary btn-lg inline-flex w-full justify-center shadow-soft sm:w-auto"
+                className="btn-primary btn-lg w-full justify-center shadow-soft"
                 disabled={submitting || !privacyConsent}
               >
                 {submitting ? t("vendors.form_submitting") : t("vendors.form_submit")}
