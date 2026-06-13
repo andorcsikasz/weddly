@@ -205,14 +205,15 @@ export default function LandingPage() {
           Oversized italic serif title hanging into the left margin, sub
           + CTAs underneath. Mockup follows below as a full-bleed slab,
           tilted slightly so it reads as "the product, peeking up". */}
-      <section className="relative overflow-hidden">
-        {/* Hero background photo — full-bleed div so there is no rectangular
-            image edge. Gradient fade is handled by .hero-bg::before in index.css. */}
+      {/* Negative margin pulls the section up behind the sticky header so the
+          photo covers the full above-the-fold area on desktop. The header is
+          z-40 / bg-paper-50/85 backdrop-blur, so the photo shows through it. */}
+      <section className="relative -mt-14 overflow-hidden sm:-mt-[3.5rem]">
+        {/* Hero background photo — gradient fade handled by .hero-bg in index.css. */}
         <div aria-hidden="true" className="hero-bg" />
-        {/* Tighter top padding on mobile so the CTA pair stays above the
-            fold on 360x640 Android. The hero is H1 + subline + single
-            primary CTA. */}
-        <div className="relative mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:min-h-[72svh] sm:justify-center sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
+        {/* min-h-dvh makes the hero exactly one viewport tall on desktop.
+            pt-24/pt-28 keeps the headline clear of the sticky header. */}
+        <div className="relative mx-auto flex min-h-[calc(62svh+3.5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-dvh sm:justify-center sm:px-6 sm:pt-28 lg:pt-32 lg:pb-12">
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
               {/* Cap with `max-w-[18ch]` on mobile — HU translations are
@@ -1076,7 +1077,7 @@ function BlogTeaser() {
           return (
             <li key={post.slug} className="w-[80vw] max-w-[20rem] shrink-0 snap-start">
               <Link
-                to={`/blog/${post.slug}`}
+                to={`/blog/${locale === "en" ? (post.en_slug ?? post.slug) : post.slug}`}
                 className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-800 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:border-ink-700 dark:bg-umber-800"
               >
                 <BlogCover
@@ -1121,7 +1122,7 @@ function BlogTeaser() {
             return (
               <li key={post.slug} className="h-full">
                 <Link
-                  to={`/blog/${post.slug}`}
+                  to={`/blog/${locale === "en" ? (post.en_slug ?? post.slug) : post.slug}`}
                   className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-800 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-ink-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
                 >
                   <BlogCover
