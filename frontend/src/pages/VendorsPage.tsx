@@ -21,7 +21,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
+import { Fragment, type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
@@ -258,8 +258,40 @@ function SectionHeader({
   );
 }
 
+/** Numbered step progress dots with connecting lines. */
+function StepDots({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="flex items-center" aria-hidden>
+      {Array.from({ length: total }, (_, i) => i + 1).map((n) => (
+        <Fragment key={n}>
+          <div
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold transition-colors ${
+              n < current
+                ? "bg-umber-600 text-white"
+                : n === current
+                  ? "bg-ink-900 text-white dark:bg-paper-50 dark:text-ink-900"
+                  : "bg-paper-200 text-ink-400 dark:bg-umber-700 dark:text-umber-400"
+            }`}
+          >
+            {n < current ? <Check size={12} /> : n}
+          </div>
+          {n < total && (
+            <div
+              className={`mx-1.5 h-px flex-1 transition-colors ${
+                n < current ? "bg-umber-600" : "bg-paper-300 dark:bg-umber-700"
+              }`}
+            />
+          )}
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
 function WaitlistContact() {
   const { t } = useT();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [stepError, setStepError] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
   const [category, setCategory] = useState<SupplierCategory | "">("");
@@ -267,8 +299,6 @@ function WaitlistContact() {
   const [website, setWebsite] = useState("");
   const [message, setMessage] = useState("");
   const [instagram, setInstagram] = useState("");
-  // Start with one empty row so the field is visually present rather than
-  // hidden behind the "+ Add link" CTA — vendors should see we want it.
   const [portfolioLinks, setPortfolioLinks] = useState<string[]>([""]);
   const [priceList, setPriceList] = useState<File | null>(null);
   const [privacyConsent, setPrivacyConsent] = useState(false);
@@ -277,8 +307,6 @@ function WaitlistContact() {
   const [submitted, setSubmitted] = useState(false);
   const consentId = useId();
 
-  // Category drives the portfolio-section hint copy. SUPPLIER_GROUPS is the
-  // source of truth for the mapping (see CATEGORY_TO_GROUP at top of file).
   const portfolioHintKey = useMemo<string>(() => {
     if (!category) return "vendors.portfolio_hint_default";
     return `vendors.portfolio_hint_${CATEGORY_TO_GROUP[category]}`;
@@ -299,6 +327,26 @@ function WaitlistContact() {
     setPortfolioLinks((cur) => (cur.length >= MAX_PORTFOLIO_LINKS ? cur : [...cur, ""]));
   }
 
+  function advanceStep() {
+    setStepError(null);
+    if (step === 1) {
+      if (!businessName.trim()) { setStepError(t("vendors.form_err_required")); return; }
+      if (!category) { setStepError(t("vendors.form_err_category")); return; }
+    }
+    if (step === 2) {
+      if (!email.trim() || !isLikelyEmail(email.trim())) {
+        setStepError(t("vendors.form_err_email")); return;
+      }
+    }
+    setStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
+  }
+
+  function goBack() {
+    setStepError(null);
+    setErrorMsg(null);
+    setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (submitting) return;
@@ -311,19 +359,12 @@ function WaitlistContact() {
     const msg = message.trim();
     const ig = instagram.trim().replace(/^@+/, "");
     if (!name) return setErrorMsg(t("vendors.form_err_required"));
-    if (!emailTrim || !isLikelyEmail(emailTrim)) {
-      return setErrorMsg(t("vendors.form_err_email"));
-    }
+    if (!emailTrim || !isLikelyEmail(emailTrim)) return setErrorMsg(t("vendors.form_err_email"));
     if (!category) return setErrorMsg(t("vendors.form_err_category"));
-    if (ig && !INSTAGRAM_HANDLE_RE.test(ig)) {
-      return setErrorMsg(t("vendors.form_err_instagram_handle"));
-    }
-    // Client-side, only check non-empty rows. Empty slots are tolerated —
-    // they're the placeholder we render. Backend re-validates regardless.
+    if (ig && !INSTAGRAM_HANDLE_RE.test(ig)) return setErrorMsg(t("vendors.form_err_instagram_handle"));
     const trimmedLinks = portfolioLinks.map((l) => l.trim()).filter((l) => l.length > 0);
     for (const link of trimmedLinks) {
-      const candidate =
-        link.startsWith("http://") || link.startsWith("https://") ? link : `https://${link}`;
+      const candidate = link.startsWith("http://") || link.startsWith("https://") ? link : `https://${link}`;
       try {
         const parsed = new URL(candidate);
         if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
@@ -332,9 +373,7 @@ function WaitlistContact() {
         return setErrorMsg(t("vendors.form_err_portfolio_link"));
       }
     }
-    if (priceList && priceList.size > 10 * 1024 * 1024) {
-      return setErrorMsg(t("vendors.form_err_price_list_size"));
-    }
+    if (priceList && priceList.size > 10 * 1024 * 1024) return setErrorMsg(t("vendors.form_err_price_list_size"));
     if (!privacyConsent) return setErrorMsg(t("vendors.form_err_privacy_consent"));
 
     setSubmitting(true);
@@ -390,50 +429,40 @@ function WaitlistContact() {
 
   const portfolioFilled = portfolioLinks.filter((l) => l.trim().length > 0).length;
   const portfolioAddDisabled = portfolioLinks.length >= MAX_PORTFOLIO_LINKS;
+  const stepTitles: Record<1 | 2 | 3, string> = {
+    1: t("vendors.step_1_title"),
+    2: t("vendors.step_2_title"),
+    3: t("vendors.step_3_title"),
+  };
+  const stepSubs: Record<1 | 2 | 3, string> = {
+    1: t("vendors.step_1_sub"),
+    2: t("vendors.step_2_sub"),
+    3: t("vendors.step_3_sub"),
+  };
 
   return (
     <div className="relative">
-      {/* Decorative blush blob behind the card — gives the form some hero
-          weight without leaning on an illustration. Smaller + tighter than
-          before to keep focus on the form itself. Hidden in dark mode where
-          the soft glow muddies the umber background. */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-10 -right-6 h-40 w-40 rounded-full bg-blush-200/35 blur-3xl dark:hidden"
       />
       <div className="relative rounded-3xl border border-paper-400 bg-white p-6 shadow-soft sm:p-8 dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
-        {/* Compact form header — the round Sparkles badge + serif h2 felt
-            duplicate next to the page hero. Now: tight serif title with
-            mini Sparkles inline. Saves ~60px of vertical chrome. */}
-        <div>
+
+        {/* Step progress */}
+        <StepDots current={step} total={3} />
+
+        {/* Per-step header */}
+        <div className="mt-5">
           <h2 className="font-grotesk text-2xl text-ink-900 dark:text-paper-50">
-            {t("vendors.contact_title")}
+            {stepTitles[step]}
           </h2>
-          <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">{t("vendors.form_sub")}</p>
+          <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">{stepSubs[step]}</p>
         </div>
 
-        {/* Beta disclosure — single quiet line. */}
-        <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
-          <Info size={14} className="mt-0.5 shrink-0" aria-hidden />
-          <span>
-            {t("vendors.beta_notice_body")}{" "}
-            <Link
-              to="/terms/vendor-subscription"
-              className="underline hover:text-ink-900 dark:hover:text-paper-50"
-            >
-              {t("vendors.beta_notice_terms_link")}
-            </Link>
-          </span>
-        </p>
-
-        <form onSubmit={onSubmit} className="mt-5 space-y-5">
-          {/* ── Section 1: business identity ─────────────────────────── */}
-          <section className="space-y-3">
-            <SectionHeader
-              icon={<Briefcase size={12} />}
-              title={t("vendors.section_business_title")}
-            />
-            <div className="grid gap-3 lg:grid-cols-2 lg:gap-x-4">
+        <form onSubmit={onSubmit}>
+          {/* ── Step 1: identity ─────────────────────────────────── */}
+          {step === 1 && (
+            <div className="mt-5 space-y-4">
               <div>
                 <label htmlFor="vendor-business" className="field-label">
                   {t("vendors.form_business_label")}
@@ -452,7 +481,7 @@ function WaitlistContact() {
                     onChange={(e) => setBusinessName(e.target.value)}
                     maxLength={120}
                     autoComplete="organization"
-                    required
+                    autoFocus
                   />
                 </div>
               </div>
@@ -472,7 +501,6 @@ function WaitlistContact() {
                     className="input pl-9"
                     value={category}
                     onChange={(e) => setCategory(e.target.value as SupplierCategory | "")}
-                    required
                   >
                     <option value="" disabled>
                       {t("vendors.form_category_placeholder")}
@@ -490,12 +518,11 @@ function WaitlistContact() {
                 </div>
               </div>
             </div>
-          </section>
+          )}
 
-          {/* ── Section 2: contact + region ──────────────────────────── */}
-          <section className="space-y-3">
-            <SectionHeader icon={<Mail size={12} />} title={t("vendors.section_contact_title")} />
-            <div className="grid gap-3 lg:grid-cols-2 lg:gap-x-4">
+          {/* ── Step 2: contact ──────────────────────────────────── */}
+          {step === 2 && (
+            <div className="mt-5 space-y-4">
               <div>
                 <label htmlFor="vendor-email" className="field-label">
                   {t("vendors.form_email_label")}
@@ -515,7 +542,7 @@ function WaitlistContact() {
                     onChange={(e) => setEmail(e.target.value)}
                     maxLength={200}
                     autoComplete="email"
-                    required
+                    autoFocus
                   />
                 </div>
               </div>
@@ -540,229 +567,242 @@ function WaitlistContact() {
                 </div>
               </div>
             </div>
-          </section>
+          )}
 
-          {/* ── Section 3: portfolio (category-aware) ────────────────── */}
-          <section className="space-y-3">
-            <SectionHeader
-              icon={<ImageIcon size={12} />}
-              title={t("vendors.section_portfolio_title")}
-              optional
-              optionalLabel={t("vendors.section_optional_label")}
-            />
+          {/* ── Step 3: portfolio + consent ──────────────────────── */}
+          {step === 3 && (
+            <div className="mt-5 space-y-4">
+              <p className="text-xs italic leading-relaxed text-ink-500 dark:text-umber-300">
+                {t(portfolioHintKey)}
+              </p>
 
-            {/* Category-aware hint — copy comes from
-                `vendors.portfolio_hint_<group>` and swaps as the category
-                dropdown changes. Quiet italic line, not a pill. */}
-            <p className="text-xs italic leading-relaxed text-ink-500 dark:text-umber-300">
-              {t(portfolioHintKey)}
-            </p>
-
-            <div className="grid gap-3 lg:grid-cols-2 lg:gap-x-4">
-              <div>
-                <label htmlFor="vendor-website" className="field-label">
-                  {t("vendors.form_website_label")}
-                </label>
-                <div className="relative">
-                  <Globe
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-                    aria-hidden
-                  />
-                  <input
-                    id="vendor-website"
-                    className="input pl-9"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    maxLength={300}
-                    placeholder={t("vendors.form_website_placeholder")}
-                    inputMode="url"
-                    autoComplete="url"
-                  />
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-x-4">
+                <div>
+                  <label htmlFor="vendor-website" className="field-label">
+                    {t("vendors.form_website_label")}
+                  </label>
+                  <div className="relative">
+                    <Globe
+                      size={16}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                      aria-hidden
+                    />
+                    <input
+                      id="vendor-website"
+                      className="input pl-9"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                      maxLength={300}
+                      placeholder={t("vendors.form_website_placeholder")}
+                      inputMode="url"
+                      autoComplete="url"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="vendor-instagram" className="field-label">
+                    {t("vendors.instagram_label")}
+                  </label>
+                  <div className="relative">
+                    <Instagram
+                      size={16}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                      aria-hidden
+                    />
+                    <input
+                      id="vendor-instagram"
+                      className="input pl-9"
+                      value={instagram}
+                      onChange={(e) => setInstagram(e.target.value)}
+                      maxLength={31}
+                      placeholder={t("vendors.instagram_placeholder")}
+                      autoCapitalize="none"
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="vendor-instagram" className="field-label">
-                  {t("vendors.instagram_label")}
-                </label>
-                <div className="relative">
-                  <Instagram
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-                    aria-hidden
-                  />
-                  <input
-                    id="vendor-instagram"
-                    className="input pl-9"
-                    value={instagram}
-                    onChange={(e) => setInstagram(e.target.value)}
-                    maxLength={31}
-                    placeholder={t("vendors.instagram_placeholder")}
-                    autoCapitalize="none"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-baseline justify-between gap-2">
-                <span className="field-label mb-0">{t("vendors.portfolio_links_label")}</span>
-                <span className="inline-flex items-baseline gap-2 text-xs text-ink-500 dark:text-umber-300">
-                  <span className="hidden sm:inline">{t("vendors.portfolio_count_hint")}</span>
-                  <span className="tabular-nums">
-                    {portfolioFilled}/{MAX_PORTFOLIO_LINKS}
+                <div className="mb-2 flex items-baseline justify-between gap-2">
+                  <span className="field-label mb-0">{t("vendors.portfolio_links_label")}</span>
+                  <span className="inline-flex items-baseline gap-2 text-xs text-ink-500 dark:text-umber-300">
+                    <span className="hidden sm:inline">{t("vendors.portfolio_count_hint")}</span>
+                    <span className="tabular-nums">{portfolioFilled}/{MAX_PORTFOLIO_LINKS}</span>
                   </span>
-                </span>
-              </div>
-              <div className="space-y-2">
-                {portfolioLinks.map((value, idx) => (
-                  <PortfolioLinkRow
-                    key={idx}
-                    index={idx}
-                    value={value}
-                    onChange={(next) => updatePortfolioLink(idx, next)}
-                    onRemove={() => removePortfolioLink(idx)}
-                    removable={portfolioLinks.length > 1}
-                    placeholder={t("vendors.portfolio_links_placeholder")}
-                    removeLabel={t("vendors.portfolio_link_remove")}
-                  />
-                ))}
-              </div>
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                </div>
+                <div className="space-y-2">
+                  {portfolioLinks.map((value, idx) => (
+                    <PortfolioLinkRow
+                      key={idx}
+                      index={idx}
+                      value={value}
+                      onChange={(next) => updatePortfolioLink(idx, next)}
+                      onRemove={() => removePortfolioLink(idx)}
+                      removable={portfolioLinks.length > 1}
+                      placeholder={t("vendors.portfolio_links_placeholder")}
+                      removeLabel={t("vendors.portfolio_link_remove")}
+                    />
+                  ))}
+                </div>
                 <button
                   type="button"
                   onClick={addPortfolioLink}
                   disabled={portfolioAddDisabled}
-                  className="btn-ghost btn-sm inline-flex items-center gap-1"
+                  className="btn-ghost btn-sm mt-2 inline-flex items-center gap-1"
                 >
                   <Plus size={14} aria-hidden />
                   {t("vendors.portfolio_add_link")}
                 </button>
               </div>
-            </div>
 
-            {/* Price list upload */}
-            <div>
-              <label className="field-label mb-1.5 block">
-                {t("vendors.price_list_label")}
-                <span className="ml-1.5 text-[10px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
-                  · {t("vendors.section_optional_label")}
-                </span>
-              </label>
-              <p className="mb-2 text-xs italic leading-relaxed text-ink-500 dark:text-umber-300">
-                {t("vendors.price_list_hint")}
-              </p>
-              {priceList ? (
-                <div className="flex items-center gap-2 rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 dark:border-umber-700 dark:bg-umber-800">
-                  <FileText size={16} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate text-sm text-ink-700 dark:text-paper-100">
-                    {priceList.name}
+              {/* Price list */}
+              <div>
+                <label className="field-label mb-1.5 block">
+                  {t("vendors.price_list_label")}
+                  <span className="ml-1.5 text-[10px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
+                    · {t("vendors.section_optional_label")}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setPriceList(null)}
-                    aria-label={t("vendors.price_list_remove")}
-                    className="shrink-0 text-ink-400 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
-                  >
-                    <X size={16} aria-hidden />
-                  </button>
-                </div>
-              ) : (
-                <label
-                  htmlFor="vendor-price-list"
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-paper-400 bg-paper-50 px-3 py-3 text-sm text-ink-600 transition-colors hover:border-ink-400 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-umber-400"
-                >
-                  <FileText size={16} className="shrink-0" aria-hidden />
-                  <span>{t("vendors.price_list_upload_cta")}</span>
-                  <input
-                    id="vendor-price-list"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    className="sr-only"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] ?? null;
-                      setPriceList(f);
-                      e.target.value = "";
-                    }}
-                  />
                 </label>
-              )}
-            </div>
+                {priceList ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 dark:border-umber-700 dark:bg-umber-800">
+                    <FileText size={16} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink-700 dark:text-paper-100">
+                      {priceList.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPriceList(null)}
+                      aria-label={t("vendors.price_list_remove")}
+                      className="shrink-0 text-ink-400 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+                    >
+                      <X size={16} aria-hidden />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="vendor-price-list"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-paper-400 bg-paper-50 px-3 py-3 text-sm text-ink-600 transition-colors hover:border-ink-400 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-umber-400"
+                  >
+                    <FileText size={16} className="shrink-0" aria-hidden />
+                    <span>{t("vendors.price_list_upload_cta")}</span>
+                    <input
+                      id="vendor-price-list"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null;
+                        setPriceList(f);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
 
-            <div>
-              <label htmlFor="vendor-message" className="field-label">
-                {t("vendors.form_message_label")}
-              </label>
-              <div className="relative">
-                <MessageSquare
-                  size={16}
-                  className="pointer-events-none absolute left-3 top-3 text-ink-400 dark:text-umber-300"
-                  aria-hidden
-                />
-                <textarea
-                  id="vendor-message"
-                  className="input pl-9"
-                  rows={2}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  maxLength={1000}
-                  placeholder={t("vendors.form_message_placeholder")}
-                />
+              {/* Message */}
+              <div>
+                <label htmlFor="vendor-message" className="field-label">
+                  {t("vendors.form_message_label")}
+                </label>
+                <div className="relative">
+                  <MessageSquare
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-3 text-ink-400 dark:text-umber-300"
+                    aria-hidden
+                  />
+                  <textarea
+                    id="vendor-message"
+                    className="input pl-9"
+                    rows={2}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    maxLength={1000}
+                    placeholder={t("vendors.form_message_placeholder")}
+                  />
+                </div>
+              </div>
+
+              {/* Beta notice + consent */}
+              <div className="space-y-3 border-t border-paper-300 pt-4 dark:border-umber-700">
+                <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
+                  <Info size={14} className="mt-0.5 shrink-0" aria-hidden />
+                  <span>
+                    {t("vendors.beta_notice_body")}{" "}
+                    <Link
+                      to="/terms/vendor-subscription"
+                      className="underline hover:text-ink-900 dark:hover:text-paper-50"
+                    >
+                      {t("vendors.beta_notice_terms_link")}
+                    </Link>
+                  </span>
+                </p>
+                <label
+                  htmlFor={consentId}
+                  className="flex cursor-pointer items-start gap-2.5 text-xs leading-snug text-ink-600 dark:text-umber-200"
+                >
+                  <input
+                    id={consentId}
+                    type="checkbox"
+                    checked={privacyConsent}
+                    onChange={(e) => setPrivacyConsent(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-paper-400 text-blush-600 focus:ring-2 focus:ring-blush-300 dark:border-umber-600"
+                    aria-required="true"
+                  />
+                  <span className="flex-1">
+                    {t("vendors.privacy_consent_prefix")}
+                    <Link
+                      to="/privacy"
+                      className="underline underline-offset-2 hover:text-ink-900 dark:hover:text-paper-50"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      {t("vendors.privacy_consent_link")}
+                    </Link>
+                    {t("vendors.privacy_consent_suffix")}
+                  </span>
+                </label>
               </div>
             </div>
-          </section>
+          )}
 
-          {/* ── Consent + submit footer ─────────────────────────────
-              Pill background dropped — consent reads as a statement, not
-              a "collectible UI element". Submit is right-aligned on sm+
-              so the footer scans as a tight action row, not a column. */}
-          <div className="border-t border-paper-300 pt-5 dark:border-umber-700">
-            <label
-              htmlFor={consentId}
-              className="flex cursor-pointer items-start gap-2.5 text-xs leading-snug text-ink-600 dark:text-umber-200"
+          {/* Step / submission error */}
+          {(stepError ?? errorMsg) && (
+            <p
+              className="mt-4 flex items-start gap-2 rounded-lg border border-blush-300 bg-blush-50 px-3 py-2 text-sm text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
+              role="alert"
             >
-              <input
-                id={consentId}
-                type="checkbox"
-                checked={privacyConsent}
-                onChange={(e) => setPrivacyConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-paper-400 text-blush-600 focus:ring-2 focus:ring-blush-300 dark:border-umber-600"
-                aria-required="true"
-              />
-              <span className="flex-1">
-                {t("vendors.privacy_consent_prefix")}
-                <Link
-                  to="/privacy"
-                  className="underline underline-offset-2 hover:text-ink-900 dark:hover:text-paper-50"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  {t("vendors.privacy_consent_link")}
-                </Link>
-                {t("vendors.privacy_consent_suffix")}
-              </span>
-            </label>
-            {errorMsg && (
-              <p
-                className="mt-3 flex items-start gap-2 rounded-lg border border-blush-300 bg-blush-50 px-3 py-2 text-sm text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
-                role="alert"
-              >
-                <AlertCircle size={16} aria-hidden className="mt-0.5 shrink-0" />
-                <span>{errorMsg}</span>
-              </p>
+              <AlertCircle size={16} aria-hidden className="mt-0.5 shrink-0" />
+              <span>{stepError ?? errorMsg}</span>
+            </p>
+          )}
+
+          {/* Navigation */}
+          <div className="mt-6 flex items-center gap-3">
+            {step > 1 && (
+              <button type="button" onClick={goBack} className="btn-ghost shrink-0">
+                ← {t("vendors.step_back")}
+              </button>
             )}
-            <div className="mt-4">
+            {step < 3 ? (
+              <button
+                type="button"
+                onClick={advanceStep}
+                className="btn-primary ml-auto"
+              >
+                {t("vendors.step_next")} →
+              </button>
+            ) : (
               <button
                 type="submit"
-                className="btn-primary btn-lg w-full justify-center shadow-soft"
+                className="btn-primary btn-lg ml-auto"
                 disabled={submitting || !privacyConsent}
               >
                 {submitting ? t("vendors.form_submitting") : t("vendors.form_submit")}
               </button>
-            </div>
+            )}
           </div>
         </form>
       </div>

@@ -1143,6 +1143,14 @@ const en: LocaleMessages = {
     form_err_email: "Please enter a valid email.",
     form_err_category: "Pick a category.",
     form_err_rate_limited: "Too many submissions — try again in a few minutes.",
+    step_1_title: "Tell us about yourself",
+    step_1_sub: "Which category are you in, and what's your business called?",
+    step_2_title: "Contact details",
+    step_2_sub: "We'll send the confirmation here — no spam, just one email.",
+    step_3_title: "Show your work",
+    step_3_sub: "Completely optional — but a portfolio link goes a long way.",
+    step_next: "Continue",
+    step_back: "Back",
     contact_title: "Join the waitlist",
     contact_body:
       "Fill in the form below and we'll send a confirmation to the email you provide. When we open in your category, you'll be the first to hear from us.",
@@ -2694,6 +2702,12 @@ const en: LocaleMessages = {
     kids_table_help:
       "Flags this table — handy on the printed chart and when briefing your venue / caterer.",
     kids_table_badge: "Kids",
+    mode_edit_tab: "Edit floor plan",
+    mode_seat_tab: "Seat guests",
+    seat_mode_panel_title: "Unassigned",
+    seat_mode_help: "Drag guests from the list onto seats, or tap a chair to select and place.",
+    seat_tap_place: "{guest} selected — tap a seat to place them.",
+    seat_unassign_selected: "Unassign",
   },
   suppliers: {
     title: "Suppliers",

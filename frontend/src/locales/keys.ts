@@ -1311,6 +1311,14 @@ export interface LocaleMessages {
     contact_title: string;
     contact_body: string;
     contact_cta: string;
+    step_1_title: string;
+    step_1_sub: string;
+    step_2_title: string;
+    step_2_sub: string;
+    step_3_title: string;
+    step_3_sub: string;
+    step_next: string;
+    step_back: string;
     contact_subject: string;
     back_to_landing: string;
     /** Beta + future-monetization notice shown above the waitlist form so
@@ -3060,6 +3068,17 @@ export interface LocaleMessages {
     kids_table_label: string;
     kids_table_help: string;
     kids_table_badge: string;
+    /** Integrated editor mode-switch tabs. */
+    mode_edit_tab: string;
+    mode_seat_tab: string;
+    /** Compact guest panel header in seat mode. */
+    seat_mode_panel_title: string;
+    /** Hint text under the mode tabs in seat mode. */
+    seat_mode_help: string;
+    /** Tap instruction shown in seat mode when a guest is selected. */
+    seat_tap_place: string;
+    /** Used by unassign button that appears when a guest is click-selected in seat mode. */
+    seat_unassign_selected: string;
   };
   suppliers: {
     title: string;

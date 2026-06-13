@@ -1156,6 +1156,14 @@ const hu: LocaleMessages = {
     form_err_email: "Érvényes e-mail cím szükséges.",
     form_err_category: "Válassz egy kategóriát.",
     form_err_rate_limited: "Sok jelentkezés érkezett — próbáld pár perc múlva.",
+    step_1_title: "Mutatkozzatok be",
+    step_1_sub: "Melyik kategóriában dolgoztok, és mi a vállalkozás neve?",
+    step_2_title: "Elérhetőségek",
+    step_2_sub: "Ide küldjük a visszaigazolást — csak egy e-mail, semmi spam.",
+    step_3_title: "Mutassátok meg a munkáitokat",
+    step_3_sub: "Teljesen opcionális — de egy portfólió link sokat segít.",
+    step_next: "Tovább",
+    step_back: "Vissza",
     contact_title: "Várólistára fogadunk",
     contact_body:
       "Egyelőre nem onboardolunk szolgáltatókat. Töltsétek ki a lenti űrlapot, és visszaigazoló e-mailt küldünk a megadott címre. Amikor megnyitunk a kategóriátokban, elsőként ti hallotok rólunk.",
@@ -2729,6 +2737,12 @@ const hu: LocaleMessages = {
     kids_table_help:
       "Megjelöli az asztalt — a nyomtatott ültetési rendben és a szolgáltatói egyeztetésnél hasznos.",
     kids_table_badge: "Gyerek",
+    mode_edit_tab: "Terem szerkesztése",
+    mode_seat_tab: "Vendégek elhelyezése",
+    seat_mode_panel_title: "Nincs helye",
+    seat_mode_help: "Húzd a vendégeket a listából a székekre, vagy koppints egy székre a kijelöléshez.",
+    seat_tap_place: "{guest} kijelölve — koppints egy székre az elhelyezéshez.",
+    seat_unassign_selected: "Eltávolítás",
   },
   suppliers: {
     title: "Szolgáltatók",
