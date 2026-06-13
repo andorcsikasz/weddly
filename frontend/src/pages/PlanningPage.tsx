@@ -13,7 +13,7 @@ import {
   timelineStatus,
   toIsoDate,
 } from "@shared/planning_timeline";
-import type { ConditionTag } from "@shared/planning_prompts";
+import { type ConditionTag, INTAKE_DIMENSIONS } from "@shared/planning_prompts";
 import type { PlanningItem, PlanningKind } from "@shared/types";
 import {
   ArrowRight,
@@ -163,6 +163,10 @@ export default function PlanningPage() {
     };
   }, []);
   const intakeTotal = useMemo(() => computeIntakeTotal(items, intakeTags), [items, intakeTags]);
+  const visibleIntakeCount = useMemo(
+    () => INTAKE_DIMENSIONS.filter((d) => intakeTags[d.tag] !== "no").length,
+    [intakeTags],
+  );
   async function handleSetTag(tag: ConditionTag, value: "yes" | "no") {
     const next: PlanningPromptTags = { ...intakeTags };
     if (next[tag] === value) delete next[tag];
@@ -589,13 +593,15 @@ export default function PlanningPage() {
               <span className="shrink-0 rounded-full bg-paper-200 px-2.5 py-1 text-[11px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-100">
                 {t("planning.decisions.total_count", { n: String(intakeTotal) })}
               </span>
-              <ChevronDown
-                size={18}
-                aria-hidden="true"
-                className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${
-                  intakeOpen ? "rotate-180" : ""
-                }`}
-              />
+              {visibleIntakeCount > 0 && (
+                <ChevronDown
+                  size={18}
+                  aria-hidden="true"
+                  className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${
+                    intakeOpen ? "rotate-180" : ""
+                  }`}
+                />
+              )}
             </button>
           )}
 

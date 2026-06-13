@@ -97,6 +97,7 @@ export function DecisionsPanel({
   const [generating, setGenerating] = useState<Set<PromptGroup>>(new Set());
   const [generated, setGenerated] = useState<Set<PromptGroup>>(new Set());
   const [showDismissed, setShowDismissed] = useState(false);
+  const [showDismissedIntake, setShowDismissedIntake] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
 
   // Prompt rows (seed_key set), grouped by their seed's theme group.
@@ -194,35 +195,74 @@ export function DecisionsPanel({
       >
         <div className="overflow-hidden">
           {(() => {
-            const visible = INTAKE_DIMENSIONS.filter((dim) => tags[dim.tag] !== "no");
-            if (visible.length === 0) return null;
+            const visibleIntake = INTAKE_DIMENSIONS.filter((dim) => tags[dim.tag] !== "no");
+            const dismissedIntake = INTAKE_DIMENSIONS.filter((dim) => tags[dim.tag] === "no");
+            if (visibleIntake.length === 0 && dismissedIntake.length === 0) return null;
             return (
-              <ul className="mb-5 grid gap-2 rounded-2xl border border-ink-900 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-800/40 sm:grid-cols-2">
-                {visible.map((dim) => (
-                  <li
-                    key={dim.tag}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-paper-50 px-3 py-2 dark:bg-umber-900/50"
-                  >
-                    <span className="text-sm text-ink-700 dark:text-umber-100">
-                      {loc(dim.question, locale)}
-                    </span>
-                    <div className="flex shrink-0 gap-1">
-                      <IntakeToggle
-                        active={tags[dim.tag] === "yes"}
-                        label={t("common.yes")}
-                        icon={Check}
-                        onClick={() => onSetTag(dim.tag, "yes")}
-                      />
-                      <IntakeToggle
-                        active={tags[dim.tag] === "no"}
-                        label={t("common.no")}
-                        icon={X}
-                        onClick={() => onSetTag(dim.tag, "no")}
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div className="mb-5">
+                {visibleIntake.length > 0 && (
+                  <ul className="grid gap-2 rounded-2xl border border-ink-900 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-800/40 sm:grid-cols-2">
+                    {visibleIntake.map((dim) => (
+                      <li
+                        key={dim.tag}
+                        className="flex items-center justify-between gap-3 rounded-xl bg-paper-50 px-3 py-2 dark:bg-umber-900/50"
+                      >
+                        <span className="text-sm text-ink-700 dark:text-umber-100">
+                          {loc(dim.question, locale)}
+                        </span>
+                        <div className="flex shrink-0 gap-1">
+                          <IntakeToggle
+                            active={tags[dim.tag] === "yes"}
+                            label={t("common.yes")}
+                            icon={Check}
+                            onClick={() => onSetTag(dim.tag, "yes")}
+                          />
+                          <IconAction
+                            onClick={() => onSetTag(dim.tag, "no")}
+                            label={t("planning.decisions.action_not_relevant")}
+                            icon={X}
+                            muted
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {dismissedIntake.length > 0 && (
+                  <div className={visibleIntake.length > 0 ? "mt-2" : ""}>
+                    <button
+                      type="button"
+                      onClick={() => setShowDismissedIntake((v) => !v)}
+                      className="text-xs text-ink-400 underline-offset-2 hover:underline dark:text-umber-300"
+                    >
+                      {showDismissedIntake
+                        ? t("planning.decisions.hide_dismissed")
+                        : t("planning.decisions.show_dismissed", {
+                            n: String(dismissedIntake.length),
+                          })}
+                    </button>
+                    {showDismissedIntake && (
+                      <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {dismissedIntake.map((dim) => (
+                          <li
+                            key={dim.tag}
+                            className="flex items-center justify-between gap-3 rounded-xl border border-paper-200 bg-paper-100/30 px-3 py-2 opacity-60 dark:border-umber-800 dark:bg-umber-900/30"
+                          >
+                            <span className="text-sm text-ink-700 dark:text-umber-100">
+                              {loc(dim.question, locale)}
+                            </span>
+                            <IconAction
+                              onClick={() => onSetTag(dim.tag, "no")}
+                              label={t("planning.decisions.action_restore")}
+                              icon={RotateCcw}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })()}
         </div>
