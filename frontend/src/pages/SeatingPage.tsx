@@ -1310,7 +1310,7 @@ export default function SeatingPage() {
         // ── EDIT MODE ────────────────────────────────────────────────────────
         // Full-height flex (same proportions as seat mode). Map fills flex-1;
         // table editor sits in a fixed-width right column.
-        <div className="flex min-h-[calc(100vh-260px)] gap-4">
+        <div className="flex h-[calc(100vh-260px)] gap-4">
           <div className="min-w-0 flex-1">
           <SeatingMap
             tables={tables}
@@ -1347,10 +1347,10 @@ export default function SeatingPage() {
         </div>
       ) : (
         // ── SEAT MODE ────────────────────────────────────────────────────────
-        // Full-height map + compact unassigned panel on the right. The map
-        // grows to fill the remaining viewport height so chairs are large
-        // enough for comfortable drag-and-drop.
-        <div className="flex min-h-[calc(100vh-260px)] gap-4">
+        // Full-height map + compact unassigned panel on the right. TableCard
+        // grid appears below (scroll down) for the classic per-table view.
+        <>
+        <div className="flex h-[calc(100vh-260px)] gap-4">
           {/* Map: flex-1 so it takes all remaining width, h-full so the
               SeatingMap card stretches vertically. */}
           <div className="min-w-0 flex-1">
@@ -1511,6 +1511,29 @@ export default function SeatingPage() {
             )}
           </aside>
         </div>
+
+        {/* TableCard grid — scroll down to see per-table seat assignments */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {tables.map((table) => (
+            <TableCard
+              key={table.id}
+              table={table}
+              assignments={assignments.filter((a) => a.table_id === table.id)}
+              guestById={guestById}
+              onDropSeat={dropToSeat}
+              onSelect={() => setSelectedId(table.id)}
+              isSelected={selectedId === table.id}
+              onSeatedDragStart={startSeatedDrag}
+              onSeatedDragEnd={endSeatedDrag}
+              tapMode={tapMode}
+              selectedGuestId={selectedGuestId}
+              onTapGuest={handleTapGuest}
+              onTapSeat={handleTapSeat}
+              t={t}
+            />
+          ))}
+        </div>
+        </>
       )}
 
       {preview && (
