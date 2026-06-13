@@ -202,6 +202,7 @@ function parseWritePayload(raw: unknown): BlogPostWritePayload {
   const r = raw as Record<string, unknown>;
   return {
     slug: parseSlug(r.slug),
+    en_slug: r.en_slug === null || r.en_slug === undefined ? null : parseSlug(r.en_slug),
     published_at: parseIsoDate(r.published_at),
     read_minutes: parseInt0(r.read_minutes, "read_minutes", 1, 60),
     cover_image_url: parseCoverImageUrl(r.cover_image_url),

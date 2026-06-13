@@ -64,18 +64,17 @@ const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/imprint", priority: "0.3", changefreq: "yearly" },
 ];
 
-/** Per-post URLs read from the `blog_posts` table at request time. Drafts
+/** Per-post rows read from the `blog_posts` table at request time. Drafts
  *  (`is_published = 0`) are excluded so a half-written post doesn't end up
- *  in Google's index before the admin flips it live. */
-function publishedBlogPostPaths(): SitemapPath[] {
-  const rows = db
-    .prepare("SELECT slug FROM blog_posts WHERE is_published = 1 ORDER BY published_at DESC")
-    .all() as { slug: string }[];
-  return rows.map((r) => ({
-    path: `/blog/${r.slug}`,
-    priority: "0.5",
-    changefreq: "monthly",
-  }));
+ *  in Google's index before the admin flips it live. Used by the sitemap to
+ *  emit both the HU canonical and the EN alternate as separate `<url>` entries
+ *  when `en_slug` is set on the row. */
+function publishedBlogPostRows(): { slug: string; en_slug: string | null }[] {
+  return db
+    .prepare(
+      "SELECT slug, en_slug FROM blog_posts WHERE is_published = 1 ORDER BY published_at DESC",
+    )
+    .all() as { slug: string; en_slug: string | null }[];
 }
 
 /** `/blog/:slug` SSR meta lookup. Returns null for non-blog paths and for
@@ -90,9 +89,9 @@ function lookupBlogPostSeo(pathname: string): RouteSeo | null {
   if (!slug) return null;
   const row = db
     .prepare(
-      "SELECT hu_title, hu_lead, hu_seo_title, hu_seo_description, en_title, en_lead, en_seo_title, en_seo_description FROM blog_posts WHERE slug = ? AND is_published = 1",
+      "SELECT hu_title, hu_lead, hu_seo_title, hu_seo_description, en_title, en_lead, en_seo_title, en_seo_description FROM blog_posts WHERE (slug = ? OR (en_slug IS NOT NULL AND en_slug = ?)) AND is_published = 1",
     )
-    .get(slug) as
+    .get(slug, slug) as
     | {
         hu_title: string;
         hu_lead: string;
@@ -150,9 +149,9 @@ function lookupBlogArticleMeta(pathname: string): BlogArticleMeta | null {
   if (!slug) return null;
   const row = db
     .prepare(
-      "SELECT hu_title, en_title, published_at, updated_at, cover_image_url FROM blog_posts WHERE slug = ? AND is_published = 1",
+      "SELECT hu_title, en_title, published_at, updated_at, cover_image_url FROM blog_posts WHERE (slug = ? OR (en_slug IS NOT NULL AND en_slug = ?)) AND is_published = 1",
     )
-    .get(slug) as
+    .get(slug, slug) as
     | {
         hu_title: string;
         en_title: string;
@@ -168,6 +167,34 @@ function lookupBlogArticleMeta(pathname: string): BlogArticleMeta | null {
     publishedAt: row.published_at,
     updatedAt: row.updated_at,
     coverImageUrl: row.cover_image_url,
+  };
+}
+
+interface BlogSlugPair {
+  huSlug: string;
+  enSlug: string | null;
+  /** True if the request arrived via the EN slug (not the HU slug). */
+  accessedViaEnSlug: boolean;
+}
+
+/** Given the slug from a `/blog/:slug` path, find the post's canonical slug
+ *  pair. Handles both HU-slug access and EN-slug access. Returns null for
+ *  non-blog paths, unknown slugs, or drafts. */
+function lookupBlogSlugPair(pathname: string): BlogSlugPair | null {
+  const match = /^\/blog\/([^/?#]+)\/?$/.exec(pathname);
+  if (!match) return null;
+  const inputSlug = match[1] ?? "";
+  if (!inputSlug) return null;
+  const row = db
+    .prepare(
+      "SELECT slug, en_slug FROM blog_posts WHERE (slug = ? OR (en_slug IS NOT NULL AND en_slug = ?)) AND is_published = 1",
+    )
+    .get(inputSlug, inputSlug) as { slug: string; en_slug: string | null } | undefined;
+  if (!row) return null;
+  return {
+    huSlug: row.slug,
+    enSlug: row.en_slug,
+    accessedViaEnSlug: inputSlug !== row.slug,
   };
 }
 
@@ -191,8 +218,10 @@ function lookupBlogPostBody(pathname: string, locale: SeoLocale): BlogBlock[] | 
   if (!slug) return null;
   const column = locale === "hu" ? "hu_body_json" : "en_body_json";
   const row = db
-    .prepare(`SELECT ${column} AS body FROM blog_posts WHERE slug = ? AND is_published = 1`)
-    .get(slug) as { body: string } | undefined;
+    .prepare(
+      `SELECT ${column} AS body FROM blog_posts WHERE (slug = ? OR (en_slug IS NOT NULL AND en_slug = ?)) AND is_published = 1`,
+    )
+    .get(slug, slug) as { body: string } | undefined;
   if (!row) return null;
   try {
     const parsed = JSON.parse(row.body) as BlogBlock[];
@@ -694,13 +723,25 @@ function buildHeadBlock(opts: {
   } else {
     enUrl = null;
   }
+  // Blog posts: override HU/EN URLs using the per-post en_slug from the DB.
+  // For tool pages the SLUG_PAIRS map already handled this above; blogs need
+  // a separate DB lookup because their pairings live in blog_posts.en_slug.
+  const blogPair = lookupBlogSlugPair(path);
+  let finalHuUrl = huUrl;
+  let finalEnUrl = enUrl;
+  if (blogPair) {
+    finalHuUrl = `https://${CANONICAL_HOST}/blog/${blogPair.huSlug}`;
+    finalEnUrl = blogPair.enSlug ? `https://${CANONICAL_HOST}/blog/${blogPair.enSlug}` : null;
+  }
   // Canonical follows the locale of the current render: HU render → HU URL
   // with HU slug; EN render (only meaningful when multi-host is active) →
   // EN URL with EN slug. Falls back to the path-on-canonical-host shape
   // for non-paired routes — `huPathFor`/`enPathFor` return `path` itself
   // for anything outside `SLUG_PAIRS`, so /about, /signup, /vendors etc.
   // keep their historical canonical exactly.
-  const canonicalUrl = locale === "en" && enUrl ? enUrl : huUrl;
+  const canonicalUrl = blogPair
+    ? (blogPair.accessedViaEnSlug && finalEnUrl ? finalEnUrl : finalHuUrl)
+    : (locale === "en" && enUrl ? enUrl : huUrl);
   // Per-post Open Graph image. Priority: couple cover (/w/:slug) → published
   // blog post cover → /og-rsvp.png on RSVP routes → brand /og.png. Giving each
   // blog post its own share card (instead of nine copies of og.png) is the
@@ -792,9 +833,9 @@ function buildHeadBlock(opts: {
     `<meta name="twitter:description" content="${escapeAttr(twDescription)}" />`,
     `<meta name="twitter:image" content="${escapeAttr(ogImage)}" />`,
     `<meta name="twitter:image:alt" content="${escapeAttr(ogImageAlt)}" />`,
-    `<link rel="alternate" hreflang="hu" href="${huUrl}" />`,
-    ...(enUrl ? [`<link rel="alternate" hreflang="en" href="${enUrl}" />`] : []),
-    `<link rel="alternate" hreflang="x-default" href="${huUrl}" />`,
+    `<link rel="alternate" hreflang="hu" href="${finalHuUrl}" />`,
+    ...(finalEnUrl ? [`<link rel="alternate" hreflang="en" href="${finalEnUrl}" />`] : []),
+    `<link rel="alternate" hreflang="x-default" href="${finalHuUrl}" />`,
     buildJsonLd({ locale, canonicalHost, pathname: path }),
     ...(plausibleScriptTag() ? [plausibleScriptTag()] : []),
     ...(gtmScriptTag() ? [gtmScriptTag()] : []),
@@ -969,14 +1010,15 @@ export function renderLlmsTxt(_host: string | null): string {
     lines.push("");
   }
 
-  // Published blog posts grouped by category. EN fields; HU-slug URLs (single
-  // host) that serve EN copy to en-US crawlers.
+  // Published blog posts grouped by category. EN fields; EN-slug URLs when
+  // available, else HU-slug URLs (both serve EN copy to en-US crawlers).
   const posts = db
     .prepare(
-      "SELECT slug, en_title, en_seo_description, en_category FROM blog_posts WHERE is_published = 1 ORDER BY published_at DESC",
+      "SELECT slug, en_slug, en_title, en_seo_description, en_category FROM blog_posts WHERE is_published = 1 ORDER BY published_at DESC",
     )
     .all() as {
     slug: string;
+    en_slug: string | null;
     en_title: string;
     en_seo_description: string;
     en_category: string;
@@ -993,7 +1035,8 @@ export function renderLlmsTxt(_host: string | null): string {
     for (const [category, bucket] of byCategory) {
       lines.push(`### ${category}`);
       for (const post of bucket) {
-        lines.push(`- [${post.en_title}](${origin}/blog/${post.slug}): ${post.en_seo_description}`);
+        const postUrl = `${origin}/blog/${post.en_slug ?? post.slug}`;
+        lines.push(`- [${post.en_title}](${postUrl}): ${post.en_seo_description}`);
       }
       lines.push("");
     }
@@ -1047,11 +1090,9 @@ export function renderSitemapXml(_host: string | null): string {
   }
 
   const blocks: string[] = [];
-  const allPaths: ReadonlyArray<SitemapPath> = [
-    ...STATIC_PUBLIC_PATHS,
-    ...publishedBlogPostPaths(),
-  ];
-  for (const { path, priority, changefreq } of allPaths) {
+
+  // Static public paths (tools, landing, auth pages, etc.)
+  for (const { path, priority, changefreq } of STATIC_PUBLIC_PATHS) {
     const huPath = huPathFor(path);
     const enPath = enPathFor(path);
     const huHere = `https://${CANONICAL_HOST}${huPath}`;
@@ -1069,6 +1110,18 @@ export function renderSitemapXml(_host: string | null): string {
     //    the bidirectional pair Google expects per their hreflang docs.
     if (enHere && enPath !== huPath) {
       blocks.push(buildUrlBlock(enHere, huHere, enHere, priority, changefreq));
+    }
+  }
+
+  // Blog posts: HU canonical + EN alternate via per-post en_slug.
+  // Each post with an en_slug gets two <url> blocks (bidirectional hreflang
+  // pair); posts without one get a single HU <url> with no EN alternate.
+  for (const row of publishedBlogPostRows()) {
+    const huHere = `https://${CANONICAL_HOST}/blog/${row.slug}`;
+    const enHere = row.en_slug ? `https://${CANONICAL_HOST}/blog/${row.en_slug}` : null;
+    blocks.push(buildUrlBlock(huHere, huHere, enHere, "0.7", "monthly"));
+    if (enHere) {
+      blocks.push(buildUrlBlock(enHere, huHere, enHere, "0.7", "monthly"));
     }
   }
   const urls = blocks.join("\n");

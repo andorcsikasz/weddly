@@ -104,6 +104,10 @@ addColumnIfMissing(
 // identifier ("ANDORSARI"); `guests.household_id` links each guest to its
 // party. Backfill happens on first boot via init_households.ts.
 addColumnIfMissing("couples", "slug", "slug TEXT");
+// EN slug for bilingual blog URLs (backfilled from SEED_EN_SLUG_BY_SLUG on
+// every boot via seedBlogPostsIfEmpty). UNIQUE so two posts can't share an
+// EN slug; NULL on EN-primary posts whose `slug` is already English-readable.
+addColumnIfMissing("blog_posts", "en_slug", "en_slug TEXT UNIQUE");
 addColumnIfMissing("guests", "household_id", "household_id INTEGER REFERENCES households(id)");
 
 // Guest kind — drives the "needs a high chair" / "kid meal" affordances.

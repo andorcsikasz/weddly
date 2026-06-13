@@ -41,6 +41,10 @@ export interface BlogPost {
   /** Numeric primary key (admin-only; absent on seed records). */
   id?: number;
   slug: string;
+  /** EN slug for bilingual URL support. Undefined when the post is EN-primary
+   *  (e.g. the "where-to-get-married-*" series), in which case `slug` already
+   *  carries the EN-readable URL. */
+  en_slug?: string;
   /** ISO date `YYYY-MM-DD`. Used for ordering + the visible byline. */
   published_at: string;
   /** Reading-time estimate in minutes. Hand-tuned per post, not auto. */
@@ -83,6 +87,24 @@ export const SEED_COVER_BY_SLUG: Record<string, string> = {
   "where-to-get-married-in-hungary": "/blog-covers/where-to-get-married-in-hungary.jpg",
   "where-to-get-married-in-austria": "/blog-covers/where-to-get-married-in-austria.jpg",
   "where-to-get-married-in-slovakia": "/blog-covers/where-to-get-married-in-slovakia.jpg",
+};
+
+/** EN slug for each HU-primary seed post. Posts that are already EN-primary
+ *  (the "where-to-get-married-*" series) are omitted — their `slug` already
+ *  carries a readable English URL and does not need a separate `en_slug`. */
+export const SEED_EN_SLUG_BY_SLUG: Record<string, string> = {
+  "miert-hazasodunk-a-biblia-szerint": "why-marry-according-to-the-bible",
+  "bibliai-idezetek-eskuvore": "bible-verses-for-weddings",
+  "eskuvoi-koltsegvetes-keszitese": "how-to-build-a-wedding-budget",
+  "eskuvoi-vendeglista-keszitese": "wedding-guest-list-guide",
+  "eskuvoi-ultetesi-rend-keszitese": "wedding-seating-chart-guide",
+  "eskuvoi-rsvp-kerdesek": "wedding-rsvp-questions",
+  "eskuvoszervezesi-checklist-12-honapra": "wedding-planning-checklist-12-months",
+  "digitalis-eskuvoi-meghivo-vagy-papir-meghivo": "digital-vs-paper-wedding-invitations",
+  "eskuvoi-hagyomanyok-praktikusan": "wedding-traditions-guide",
+  "eskuvoi-szertartas-menete": "wedding-ceremony-step-by-step",
+  "eskuvoszervezesi-checklist-6-honapra": "wedding-planning-checklist-6-months",
+  "eskuvoi-ugyintezes-lepesrol-lepesre": "wedding-paperwork-guide",
 };
 
 export const SEED_BLOG_POSTS: BlogPost[] = [

@@ -6,13 +6,14 @@
 // admin can then edit, publish or delete them.
 
 import type { BlogBlock, BlogPost } from "../../../shared/blog_posts";
-import { SEED_BLOG_POSTS, SEED_COVER_BY_SLUG } from "../../../shared/blog_posts";
+import { SEED_BLOG_POSTS, SEED_COVER_BY_SLUG, SEED_EN_SLUG_BY_SLUG } from "../../../shared/blog_posts";
 import { db, now } from "../db";
 import { log } from "../lib/logger";
 
 export interface BlogPostRow {
   id: number;
   slug: string;
+  en_slug: string | null;
   published_at: string;
   read_minutes: number;
   cover_image_url: string | null;
@@ -49,6 +50,7 @@ export function toBlogPost(row: BlogPostRow): BlogPost {
   return {
     id: row.id,
     slug: row.slug,
+    en_slug: row.en_slug ?? undefined,
     published_at: row.published_at,
     read_minutes: row.read_minutes,
     cover_image_url: row.cover_image_url,
@@ -72,9 +74,11 @@ export function toBlogPost(row: BlogPostRow): BlogPost {
 }
 
 export function getBlogPostBySlug(slug: string): BlogPostRow | null {
-  const row = db.prepare("SELECT * FROM blog_posts WHERE slug = ?").get(slug) as
-    | BlogPostRow
-    | undefined;
+  const row = db
+    .prepare(
+      "SELECT * FROM blog_posts WHERE slug = ? OR (en_slug IS NOT NULL AND en_slug = ?)",
+    )
+    .get(slug, slug) as BlogPostRow | undefined;
   return row ?? null;
 }
 
@@ -114,11 +118,11 @@ export function seedBlogPostsIfEmpty(): void {
   const ts = now();
   const insert = db.prepare(`
     INSERT INTO blog_posts (
-      slug, published_at, read_minutes, cover_image_url, is_published,
+      slug, en_slug, published_at, read_minutes, cover_image_url, is_published,
       hu_category, hu_title, hu_lead, hu_seo_title, hu_seo_description, hu_body_json,
       en_category, en_title, en_lead, en_seo_title, en_seo_description, en_body_json,
       created_at, updated_at
-    ) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   let inserted = 0;
@@ -126,6 +130,7 @@ export function seedBlogPostsIfEmpty(): void {
     if (have.has(post.slug)) continue;
     insert.run(
       post.slug,
+      SEED_EN_SLUG_BY_SLUG[post.slug] ?? null,
       post.published_at,
       post.read_minutes,
       SEED_COVER_BY_SLUG[post.slug] ?? post.cover_image_url ?? null,
@@ -162,10 +167,23 @@ export function seedBlogPostsIfEmpty(): void {
     covered += info.changes;
   }
   if (covered > 0) log.info("blog.covers_backfilled", { covered });
+
+  // Backfill en_slug onto rows that predate this column. Only touches rows
+  // where en_slug IS NULL so an admin-set en_slug is never overwritten.
+  const enSlugBackfill = db.prepare(
+    "UPDATE blog_posts SET en_slug = ?, updated_at = ? WHERE slug = ? AND en_slug IS NULL",
+  );
+  let enSlugged = 0;
+  for (const [huSlug, enSlug] of Object.entries(SEED_EN_SLUG_BY_SLUG)) {
+    const info = enSlugBackfill.run(enSlug, ts, huSlug);
+    enSlugged += info.changes;
+  }
+  if (enSlugged > 0) log.info("blog.en_slugs_backfilled", { enSlugged });
 }
 
 export interface BlogPostWritePayload {
   slug: string;
+  en_slug: string | null;
   published_at: string;
   read_minutes: number;
   cover_image_url: string | null;
@@ -192,14 +210,15 @@ export function insertBlogPost(payload: BlogPostWritePayload): number {
   const ts = now();
   const stmt = db.prepare(`
     INSERT INTO blog_posts (
-      slug, published_at, read_minutes, cover_image_url, is_published,
+      slug, en_slug, published_at, read_minutes, cover_image_url, is_published,
       hu_category, hu_title, hu_lead, hu_seo_title, hu_seo_description, hu_body_json,
       en_category, en_title, en_lead, en_seo_title, en_seo_description, en_body_json,
       created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const info = stmt.run(
     payload.slug,
+    payload.en_slug,
     payload.published_at,
     payload.read_minutes,
     payload.cover_image_url,
@@ -226,13 +245,14 @@ export function updateBlogPost(id: number, payload: BlogPostWritePayload): void 
   const ts = now();
   db.prepare(`
     UPDATE blog_posts SET
-      slug = ?, published_at = ?, read_minutes = ?, cover_image_url = ?, is_published = ?,
+      slug = ?, en_slug = ?, published_at = ?, read_minutes = ?, cover_image_url = ?, is_published = ?,
       hu_category = ?, hu_title = ?, hu_lead = ?, hu_seo_title = ?, hu_seo_description = ?, hu_body_json = ?,
       en_category = ?, en_title = ?, en_lead = ?, en_seo_title = ?, en_seo_description = ?, en_body_json = ?,
       updated_at = ?
     WHERE id = ?
   `).run(
     payload.slug,
+    payload.en_slug,
     payload.published_at,
     payload.read_minutes,
     payload.cover_image_url,

@@ -96,7 +96,7 @@ function BlogTile({
   const copy = post[locale];
   return (
     <Link
-      to={`/blog/${post.slug}`}
+      to={locale === "en" ? `/blog/${post.en_slug ?? post.slug}` : `/blog/${post.slug}`}
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-800 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-ink-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
     >
       <BlogCover
