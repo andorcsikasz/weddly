@@ -428,6 +428,10 @@ export const coupleApi = {
     rsvp_collects_meal?: boolean;
     /** Proactive-timeline email escalation trigger. */
     timeline_email_escalation?: import("@shared/notifications").TimelineEmailEscalation;
+    /** Email digest frequency. */
+    notif_email_cadence?: import("@shared/notifications").NotifEmailCadence;
+    /** Comma-separated focus areas: 'timeline', 'rsvp', 'partner'. */
+    notif_focus?: string;
     /** Publish toggle for the public wedding website at `/w/:slug`. */
     is_public?: boolean;
     /** Gift-list publish toggle. When true the confirmed-tier guest page

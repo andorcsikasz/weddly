@@ -120,6 +120,20 @@ export interface LocaleMessages {
     dash_overdue: string;
     dash_due_soon: string;
     dash_cta: string;
+    settings_title: string;
+    settings_method_label: string;
+    settings_method_inapp: string;
+    settings_method_email: string;
+    settings_cadence_label: string;
+    settings_cadence_never: string;
+    settings_cadence_1_weekly: string;
+    settings_cadence_2_weekly: string;
+    settings_cadence_4_weekly: string;
+    settings_focus_label: string;
+    settings_focus_timeline: string;
+    settings_focus_rsvp: string;
+    settings_focus_partner: string;
+    settings_back: string;
   };
   timeline: {
     title: string;
@@ -883,6 +897,7 @@ export interface LocaleMessages {
     upcoming_empty_none_cta: string;
     /** Empty state when tasks exist but none are dated/pending — reassurance. */
     upcoming_empty_clear: string;
+    upcoming_next_step_lock_date: string;
     quick_links_title: string;
     /** Dashboard spending donuts: paid-vs-planned + category breakdown. */
     charts: {

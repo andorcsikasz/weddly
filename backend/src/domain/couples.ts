@@ -7,7 +7,14 @@ import {
   SUBSCRIPTION_STATUSES,
 } from "@shared/billing";
 import { type CoupleDesign, type CoupleDesignInput, resolveDesign } from "@shared/design";
-import { type TimelineEmailEscalation, isTimelineEmailEscalation } from "@shared/notifications";
+import {
+  type NotifEmailCadence,
+  type TimelineEmailEscalation,
+  isNotifEmailCadence,
+  isTimelineEmailEscalation,
+  parseNotifFocus,
+  serializeNotifFocus,
+} from "@shared/notifications";
 import type {
   BudgetCategory,
   BudgetGoal,
@@ -137,6 +144,8 @@ export interface CoupleRow {
   rsvp_offers_accommodation: number;
   rsvp_collects_meal: number;
   timeline_email_escalation: string | null;
+  notif_email_cadence: string | null;
+  notif_focus: string | null;
   is_demo: number;
   welcome_desk_active: number;
   /** Public wedding-website (/w/:slug) opt-in toggle. 0 = private (default),
@@ -383,6 +392,10 @@ export function toCouple(row: CoupleRow): Couple {
     timeline_email_escalation: isTimelineEmailEscalation(row.timeline_email_escalation ?? "")
       ? (row.timeline_email_escalation as TimelineEmailEscalation)
       : "overdue",
+    notif_email_cadence: isNotifEmailCadence(row.notif_email_cadence ?? "")
+      ? (row.notif_email_cadence as NotifEmailCadence)
+      : "1_weekly",
+    notif_focus: serializeNotifFocus(parseNotifFocus(row.notif_focus)),
     is_demo: Boolean(row.is_demo),
     is_public: Boolean(row.is_public),
     wishlist_published: Boolean(row.wishlist_published),

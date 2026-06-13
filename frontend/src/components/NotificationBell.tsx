@@ -6,11 +6,27 @@
 // section badges. Labels are composed here via t() from kind + data, so the
 // stored payload never freezes locale.
 
+import type { NotifEmailCadence, NotifFocus } from "@shared/notifications";
+import {
+  NOTIF_EMAIL_CADENCE_VALUES,
+  NOTIF_FOCUS_ALL,
+  parseNotifFocus,
+  serializeNotifFocus,
+} from "@shared/notifications";
 import type { NotificationItem } from "@shared/notifications";
-import { AlertTriangle, Bell, CalendarClock, ClipboardList, Mail, Send } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Bell,
+  CalendarClock,
+  ClipboardList,
+  Mail,
+  Send,
+  Settings,
+} from "lucide-react";
 import { type ComponentType, type SVGProps, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { notificationApi } from "../lib/endpoints";
+import { coupleApi, notificationApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
@@ -24,9 +40,7 @@ const KIND_ICON: Record<NotificationItem["kind"], IconCmp> = {
   timeline_email_sent: Send,
 };
 
-/** Compose the human label for a feed row from its kind + params. All copy goes
- *  through t() so HU/EN both render correctly regardless of when the row was
- *  written. */
+/** Compose the human label for a feed row from its kind + params. */
 function useLabel() {
   const { t } = useT();
   return (item: NotificationItem): string => {
@@ -58,6 +72,176 @@ function useLabel() {
   };
 }
 
+const CADENCE_KEY_MAP: Record<NotifEmailCadence, string> = {
+  never: "notifications.settings_cadence_never",
+  "1_weekly": "notifications.settings_cadence_1_weekly",
+  "2_weekly": "notifications.settings_cadence_2_weekly",
+  "4_weekly": "notifications.settings_cadence_4_weekly",
+};
+
+const FOCUS_ITEMS: { key: NotifFocus; labelKey: string }[] = [
+  { key: "timeline", labelKey: "notifications.settings_focus_timeline" },
+  { key: "rsvp", labelKey: "notifications.settings_focus_rsvp" },
+  { key: "partner", labelKey: "notifications.settings_focus_partner" },
+];
+
+function SettingsPanel({ onBack }: { onBack: () => void }) {
+  const { t } = useT();
+  const [cadence, setCadence] = useState<NotifEmailCadence>("1_weekly");
+  const [focus, setFocus] = useState<NotifFocus[]>([...NOTIF_FOCUS_ALL]);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Load current couple prefs on mount.
+  useEffect(() => {
+    coupleApi
+      .current()
+      .then(({ couple }) => {
+        if (!couple) return;
+        setCadence(
+          (NOTIF_EMAIL_CADENCE_VALUES as readonly string[]).includes(
+            couple.notif_email_cadence,
+          )
+            ? (couple.notif_email_cadence as NotifEmailCadence)
+            : "1_weekly",
+        );
+        const parsed = parseNotifFocus(couple.notif_focus);
+        setFocus(parsed.length ? parsed : [...NOTIF_FOCUS_ALL]);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
+
+  async function persist(nextCadence: NotifEmailCadence, nextFocus: NotifFocus[]) {
+    setSaving(true);
+    try {
+      await coupleApi.update({
+        notif_email_cadence: nextCadence,
+        notif_focus: serializeNotifFocus(nextFocus),
+      });
+    } catch {
+      /* non-critical */
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleCadenceChange(next: NotifEmailCadence) {
+    setCadence(next);
+    void persist(next, focus);
+  }
+
+  function handleFocusToggle(key: NotifFocus) {
+    const next = focus.includes(key) ? focus.filter((f) => f !== key) : [...focus, key];
+    setFocus(next);
+    void persist(cadence, next);
+  }
+
+  return (
+    <div className="flex flex-col">
+      {/* Header */}
+      <div className="flex items-center gap-2 border-b border-paper-200 px-4 py-3 dark:border-umber-700">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label={t("notifications.settings_back")}
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700"
+        >
+          <ArrowLeft size={14} aria-hidden="true" />
+        </button>
+        <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
+          {t("notifications.settings_title")}
+        </p>
+        {saving && (
+          <span className="ml-auto text-xs text-ink-400 dark:text-umber-400">…</span>
+        )}
+      </div>
+
+      {!loaded ? (
+        <div className="px-4 py-8 text-center text-sm text-ink-400 dark:text-umber-400">…</div>
+      ) : (
+        <div className="divide-y divide-paper-200 dark:divide-umber-700">
+          {/* Method */}
+          <div className="px-4 py-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+              {t("notifications.settings_method_label")}
+            </p>
+            <div className="flex flex-col gap-1.5">
+              <label className="flex cursor-not-allowed items-center gap-2 text-sm text-ink-500 dark:text-umber-400">
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded border border-paper-300 bg-paper-100 dark:border-umber-600 dark:bg-umber-700">
+                  <span className="h-2 w-2 rounded-sm bg-ink-400 dark:bg-umber-400" />
+                </span>
+                {t("notifications.settings_method_inapp")}
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
+                <input
+                  type="checkbox"
+                  checked={cadence !== "never"}
+                  onChange={() =>
+                    handleCadenceChange(cadence === "never" ? "1_weekly" : "never")
+                  }
+                  className="accent-blush-500"
+                />
+                {t("notifications.settings_method_email")}
+              </label>
+            </div>
+          </div>
+
+          {/* Cadence — only shown when email is on */}
+          {cadence !== "never" && (
+            <div className="px-4 py-3">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+                {t("notifications.settings_cadence_label")}
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {NOTIF_EMAIL_CADENCE_VALUES.filter((c) => c !== "never").map((c) => (
+                  <label
+                    key={c}
+                    className="flex cursor-pointer items-center gap-2 text-sm text-ink-800 dark:text-paper-100"
+                  >
+                    <input
+                      type="radio"
+                      name="notif_cadence"
+                      value={c}
+                      checked={cadence === c}
+                      onChange={() => handleCadenceChange(c)}
+                      className="accent-blush-500"
+                    />
+                    {t(CADENCE_KEY_MAP[c] as Parameters<typeof t>[0])}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Focus areas */}
+          <div className="px-4 py-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+              {t("notifications.settings_focus_label")}
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {FOCUS_ITEMS.map(({ key, labelKey }) => (
+                <label
+                  key={key}
+                  className="flex cursor-pointer items-center gap-2 text-sm text-ink-800 dark:text-paper-100"
+                >
+                  <input
+                    type="checkbox"
+                    checked={focus.includes(key)}
+                    onChange={() => handleFocusToggle(key)}
+                    className="accent-blush-500"
+                  />
+                  {t(labelKey as Parameters<typeof t>[0])}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function NotificationBell() {
   const { t } = useT();
   const navigate = useNavigate();
@@ -65,6 +249,7 @@ export function NotificationBell() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const cancelled = useRef(false);
 
   useEffect(() => {
@@ -92,19 +277,19 @@ export function NotificationBell() {
   function toggleOpen() {
     const next = !open;
     setOpen(next);
+    if (!next) setShowSettings(false);
     if (next && unread > 0) {
-      // Optimistic zero — the server roundtrip catches up in <100ms; the items
-      // stay visible (still actionable), the badge just clears for this user.
       setUnread(0);
       setItems((cur) => cur.map((i) => ({ ...i, read: true })));
       void notificationApi.markSeen().catch(() => {
-        /* non-critical — the next 30s poll re-syncs */
+        /* non-critical */
       });
     }
   }
 
   function openItem(item: NotificationItem) {
     setOpen(false);
+    setShowSettings(false);
     if (item.link) navigate(item.link);
   }
 
@@ -131,60 +316,77 @@ export function NotificationBell() {
 
       {open && (
         <>
-          {/* Outside-click catcher. */}
           <button
             type="button"
             aria-hidden="true"
             tabIndex={-1}
             className="fixed inset-0 z-30 cursor-default"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              setOpen(false);
+              setShowSettings(false);
+            }}
           />
           <div
             role="menu"
             className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
           >
-            <div className="border-b border-paper-200 px-4 py-3 dark:border-umber-700">
-              <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
-                {t("notifications.title")}
-              </p>
-            </div>
-            {items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
-                {t("notifications.empty")}
-              </p>
+            {showSettings ? (
+              <SettingsPanel onBack={() => setShowSettings(false)} />
             ) : (
-              <ul className="max-h-96 divide-y divide-paper-200 overflow-y-auto dark:divide-umber-700">
-                {items.map((item) => {
-                  const Icon = KIND_ICON[item.kind] ?? Bell;
-                  const overdue = item.kind === "timeline_overdue";
-                  return (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => openItem(item)}
-                        className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
-                      >
-                        <span
-                          className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
-                        >
-                          <Icon size={16} aria-hidden="true" />
-                        </span>
-                        <span
-                          className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
-                        >
-                          {label(item)}
-                        </span>
-                        {!item.read && (
-                          <span
-                            className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+              <>
+                <div className="flex items-center justify-between border-b border-paper-200 px-4 py-3 dark:border-umber-700">
+                  <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
+                    {t("notifications.title")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowSettings(true)}
+                    aria-label={t("notifications.settings_title")}
+                    title={t("notifications.settings_title")}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                  >
+                    <Settings size={14} aria-hidden="true" />
+                  </button>
+                </div>
+                {items.length === 0 ? (
+                  <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
+                    {t("notifications.empty")}
+                  </p>
+                ) : (
+                  <ul className="max-h-96 divide-y divide-paper-200 overflow-y-auto dark:divide-umber-700">
+                    {items.map((item) => {
+                      const Icon = KIND_ICON[item.kind] ?? Bell;
+                      const overdue = item.kind === "timeline_overdue";
+                      return (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => openItem(item)}
+                            className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
+                          >
+                            <span
+                              className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
+                            >
+                              <Icon size={16} aria-hidden="true" />
+                            </span>
+                            <span
+                              className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
+                            >
+                              {label(item)}
+                            </span>
+                            {!item.read && (
+                              <span
+                                className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
             )}
           </div>
         </>

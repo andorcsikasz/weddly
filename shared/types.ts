@@ -333,6 +333,10 @@ export interface Couple {
    *  bell is always on; this only governs the email push. Defaults to 'overdue'
    *  (push only when a task is genuinely late). See `TimelineEmailEscalation`. */
   timeline_email_escalation: TimelineEmailEscalation;
+  /** How often to send email digests. "never" = email opt-out. */
+  notif_email_cadence: import("@shared/notifications").NotifEmailCadence;
+  /** Comma-separated focus areas for email notifications. Empty = all. */
+  notif_focus: string;
   /** True for ephemeral demo couples created via `POST /api/demo/start`.
    *  The /app UI uses this to render the persistent "Demo wedding" banner
    *  and fire the conversion popup after a few minutes. Demo couples are

@@ -26,7 +26,12 @@ import {
   type WeddingStyleTag,
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
-import { isTimelineEmailEscalation } from "@shared/notifications";
+import {
+  isNotifEmailCadence,
+  isTimelineEmailEscalation,
+  parseNotifFocus,
+  serializeNotifFocus,
+} from "@shared/notifications";
 import {
   type BorderStyleSlug,
   type ButtonStyleSlug,
@@ -165,6 +170,10 @@ interface OnboardBody {
   currency?: unknown;
   /** Proactive-timeline email escalation trigger: 'off' | 'overdue' | 'overdue_due_soon'. */
   timeline_email_escalation?: unknown;
+  /** Email digest frequency: 'never' | '1_weekly' | '2_weekly' | '4_weekly'. */
+  notif_email_cadence?: unknown;
+  /** Comma-separated focus areas: 'timeline', 'rsvp', 'partner'. */
+  notif_focus?: unknown;
   /** Boolean — when true, the RSVP flow surfaces a "needs accommodation?"
    *  checkbox on each member; when false (the default) the question is
    *  hidden on both the public form and the in-app guest drawer. */
@@ -1708,6 +1717,29 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         before: { timeline_email_escalation: prev },
         after: { timeline_email_escalation: next },
       });
+    }
+  }
+
+  if (body.notif_email_cadence !== undefined) {
+    if (
+      typeof body.notif_email_cadence !== "string" ||
+      !isNotifEmailCadence(body.notif_email_cadence)
+    ) {
+      throw new HttpError(400, "notif_email_cadence must be never, 1_weekly, 2_weekly, or 4_weekly");
+    }
+    const next = body.notif_email_cadence;
+    if (next !== couple.notif_email_cadence) {
+      updates.push({ col: "notif_email_cadence", val: next });
+    }
+  }
+
+  if (body.notif_focus !== undefined) {
+    if (typeof body.notif_focus !== "string") {
+      throw new HttpError(400, "notif_focus must be a comma-separated string");
+    }
+    const next = serializeNotifFocus(parseNotifFocus(body.notif_focus));
+    if (next !== couple.notif_focus) {
+      updates.push({ col: "notif_focus", val: next });
     }
   }
 

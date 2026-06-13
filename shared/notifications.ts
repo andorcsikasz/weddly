@@ -60,3 +60,36 @@ export const TIMELINE_EMAIL_ESCALATION_VALUES: readonly TimelineEmailEscalation[
 export function isTimelineEmailEscalation(s: string): s is TimelineEmailEscalation {
   return (TIMELINE_EMAIL_ESCALATION_VALUES as readonly string[]).includes(s);
 }
+
+/** How often the couple wants email digests (all channels combined).
+ *  "never" = email opt-out; the in-app bell is always on regardless. */
+export type NotifEmailCadence = "never" | "1_weekly" | "2_weekly" | "4_weekly";
+
+export const NOTIF_EMAIL_CADENCE_VALUES: readonly NotifEmailCadence[] = [
+  "never",
+  "1_weekly",
+  "2_weekly",
+  "4_weekly",
+];
+
+export function isNotifEmailCadence(s: string): s is NotifEmailCadence {
+  return (NOTIF_EMAIL_CADENCE_VALUES as readonly string[]).includes(s);
+}
+
+/** Which categories of email notifications the couple wants.
+ *  Stored as a comma-separated string; defaults to all three. */
+export type NotifFocus = "timeline" | "rsvp" | "partner";
+
+export const NOTIF_FOCUS_ALL: readonly NotifFocus[] = ["timeline", "rsvp", "partner"];
+
+export function parseNotifFocus(raw: string | null | undefined): NotifFocus[] {
+  if (!raw) return [...NOTIF_FOCUS_ALL];
+  const parts = raw.split(",").map((s) => s.trim());
+  return parts.filter((p): p is NotifFocus =>
+    (NOTIF_FOCUS_ALL as readonly string[]).includes(p),
+  );
+}
+
+export function serializeNotifFocus(focus: NotifFocus[]): string {
+  return focus.join(",");
+}

@@ -1085,6 +1085,18 @@ addColumnIfMissing(
   "household_id INTEGER REFERENCES households(id) ON DELETE SET NULL",
 );
 
+// Notification preference columns (cadence + focus areas).
+addColumnIfMissing(
+  "couples",
+  "notif_email_cadence",
+  "notif_email_cadence TEXT NOT NULL DEFAULT '1_weekly'",
+);
+addColumnIfMissing(
+  "couples",
+  "notif_focus",
+  "notif_focus TEXT NOT NULL DEFAULT 'timeline,rsvp,partner'",
+);
+
 export function now(): number {
   return Date.now();
 }
