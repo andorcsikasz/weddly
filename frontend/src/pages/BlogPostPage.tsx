@@ -174,7 +174,7 @@ export default function BlogPostPage() {
                     return (
                       <li key={r.slug}>
                         <Link
-                          to={`/blog/${r.slug}`}
+                          to={`/blog/${locale === "en" ? (r.en_slug ?? r.slug) : r.slug}`}
                           className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:focus-visible:ring-offset-umber-900"
                         >
                           <p className="text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
