@@ -34,7 +34,6 @@ import {
 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { InfoHint } from "../components/InfoHint";
 import { Button, Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
@@ -1130,40 +1129,30 @@ export default function SeatingPage() {
       <span aria-live="polite" aria-atomic="true" className="sr-only">
         {a11yMessage}
       </span>
-      <header className="mb-4 flex items-center gap-2">
-        <h1 className="font-grotesk">{t("seating.title")}</h1>
-        <InfoHint
-          text={t("seating.sub")}
-          label={t("seating.shortcuts_button_label")}
-          onClick={() => setShortcutsOpen(true)}
-        />
-      </header>
+      {/* Single-row header: mode tabs on the left, toolbar on the right */}
+      <div className="seating-toolbar mb-4 flex items-center gap-3">
+        <div
+          role="tablist"
+          className="flex shrink-0 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:border-umber-600 dark:bg-umber-800"
+        >
+          {(["edit", "seat"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="tab"
+              aria-selected={mode === m}
+              onClick={() => setMode(m)}
+              className={`w-40 px-4 py-2 text-sm font-medium transition-colors ${
+                mode === m
+                  ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                  : "text-ink-600 hover:bg-paper-100 dark:text-umber-200 dark:hover:bg-umber-700"
+              }`}
+            >
+              {m === "edit" ? t("seating.mode_edit_tab") : t("seating.mode_seat_tab")}
+            </button>
+          ))}
+        </div>
 
-      {/* Mode tabs — Edit floor plan / Seat guests */}
-      <div
-        role="tablist"
-        className="mb-4 flex overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:border-umber-600 dark:bg-umber-800"
-      >
-        {(["edit", "seat"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            role="tab"
-            aria-selected={mode === m}
-            onClick={() => setMode(m)}
-            className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-              mode === m
-                ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                : "text-ink-600 hover:bg-paper-100 dark:text-umber-200 dark:hover:bg-umber-700"
-            }`}
-          >
-            {m === "edit" ? t("seating.mode_edit_tab") : t("seating.mode_seat_tab")}
-          </button>
-        ))}
-      </div>
-
-      {/* Mode-aware toolbar */}
-      <div className="seating-toolbar mb-4 flex flex-wrap items-center gap-3">
         {mode === "edit" ? (
           <>
             <div className="flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
@@ -1219,7 +1208,6 @@ export default function SeatingPage() {
           </>
         ) : (
           <>
-            {/* Seat mode toolbar: undo + tap mode toggle + guest link */}
             {undoStack.length > 0 && (
               <button
                 type="button"
