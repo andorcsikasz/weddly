@@ -205,15 +205,12 @@ export default function LandingPage() {
           Oversized italic serif title hanging into the left margin, sub
           + CTAs underneath. Mockup follows below as a full-bleed slab,
           tilted slightly so it reads as "the product, peeking up". */}
-      {/* Negative margin pulls the section up behind the sticky header so the
-          photo covers the full above-the-fold area on desktop. The header is
-          z-40 / bg-paper-50/85 backdrop-blur, so the photo shows through it. */}
-      <section className="relative -mt-14 overflow-hidden sm:-mt-[3.5rem]">
+      {/* Hero fills the full remaining viewport below the sticky header.
+          calc(100dvh - 3.5rem) ≈ viewport minus the ~56px header. */}
+      <section className="relative overflow-hidden">
         {/* Hero background photo — gradient fade handled by .hero-bg in index.css. */}
         <div aria-hidden="true" className="hero-bg" />
-        {/* min-h-dvh makes the hero exactly one viewport tall on desktop.
-            pt-24/pt-28 keeps the headline clear of the sticky header. */}
-        <div className="relative mx-auto flex min-h-[calc(62svh+3.5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-dvh sm:justify-center sm:px-6 sm:pt-28 lg:pt-32 lg:pb-12">
+        <div className="relative mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
               {/* Cap with `max-w-[18ch]` on mobile — HU translations are
