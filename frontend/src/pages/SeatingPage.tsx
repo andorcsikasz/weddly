@@ -1132,7 +1132,7 @@ export default function SeatingPage() {
       <h1 className="mb-3 font-grotesk">{t("seating.title")}</h1>
 
       {/* Single toolbar row: icon strip (left) → tabs (flex-1) → add table (right) */}
-      <div className="seating-toolbar mb-4 flex items-center gap-3">
+      <div className="seating-toolbar mb-4 flex items-center gap-4">
         {/* Icon-only action strip — always visible regardless of mode */}
         <div className="flex shrink-0 items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
           <PrintChartMenu
@@ -1206,7 +1206,9 @@ export default function SeatingPage() {
             </button>
           </>
         ) : (
-          <>
+          // Seat mode right section is exactly w-56 to mirror the unassigned
+          // panel below — this aligns the tab's right edge with the map box.
+          <div className="flex w-56 shrink-0 items-center justify-end gap-2">
             {undoStack.length > 0 && (
               <button
                 type="button"
@@ -1251,11 +1253,11 @@ export default function SeatingPage() {
             )}
             <Link
               to="/app/guests"
-              className="ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-blush-700 underline-offset-4 transition-colors hover:underline dark:text-blush-300"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-blush-700 underline-offset-4 transition-colors hover:underline dark:text-blush-300"
             >
               <Users size={14} aria-hidden /> {t("seating.go_to_guests")}
             </Link>
-          </>
+          </div>
         )}
       </div>
 
