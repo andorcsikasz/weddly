@@ -115,6 +115,12 @@ export default function LandingPage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.home_title", "seo.home_description");
   const askGuestCode = useGuestCodePrompt();
+
+  // Make the sticky header transparent while the hero photo is in view.
+  useEffect(() => {
+    document.documentElement.classList.add("landing-hero-active");
+    return () => document.documentElement.classList.remove("landing-hero-active");
+  }, []);
   // Single source of truth (shared/seo_faq.ts) — same array also feeds the
   // FAQPage JSON-LD in seo_ssr.ts, so they can't drift.
   const faqEntries = SEO_FAQ[locale];

@@ -674,6 +674,16 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
      Hex values = paper-50 (#fbfaf5) / umber-900 (#3a3324) tokens. */
 
   /* Section: fills viewport below header, clips overflow */
+  /* When landing page is active, strip the header background entirely so the
+     hero photo shows through with full color. Class is toggled by LandingPage. */
+  html.landing-hero-active header {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+  }
+
   .hero-section {
     position: relative;
     overflow: hidden;
@@ -682,9 +692,6 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   @media (min-width: 640px) {
     .hero-section {
-      /* Pull up behind the sticky header so the photo fills the full viewport
-         including the nav bar (header has bg-paper-50/85 backdrop-blur so
-         the image shows through at ~15% with a soft blur). */
       margin-top: -3.5rem;
       min-height: 100dvh;
     }
@@ -697,50 +704,58 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     z-index: 0;
   }
 
-  /* background-size: 100% auto = full image at natural proportions across the
-     viewport width. No zoom, no cropping — bouquet, dress, and groom are all
-     visible. The section's cream background fills any space below the image. */
+  /* Right-anchored: photo starts at 28% of viewport so the bouquet (left
+     edge of the focused crop) lands at ~40% — inside the overlay fade zone.
+     Focused crop (3840x1420) = couple from waist up, showing bouquet clearly.
+     Cover scales by HEIGHT → 2400px wide, 1570px horizontal overflow.
+     Extends full section height so the image hangs down into the dashboard. */
   .hero-photo-img {
     position: absolute;
-    inset: 0;
-    background-image: url("/cover-hero.png");
-    background-size: 100% auto;
-    background-position: center top;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 28%;
+    background-image: url("/hero-cover-focus.png");
+    background-size: cover;
+    background-position: left top;
     background-repeat: no-repeat;
     pointer-events: none;
-    filter: saturate(1.35) brightness(0.96);
+    filter: saturate(1.4) brightness(0.93);
   }
   @media (max-width: 639px) {
     .hero-photo-img {
-      opacity: 0.22;
+      left: 0;
+      opacity: 0.25;
     }
   }
   .dark .hero-photo-img {
-    opacity: 0.55;
+    opacity: 0.60;
     filter: saturate(1.2) brightness(0.75);
   }
 
-  /* Atmospheric veil — keeps left side clean for the headline, lets the
-     wedding scene breathe on the right. Matches the user's exact spec. */
+  /* Photo starts at left: 28%. Overlay is solid cream to 26%, fast-fades
+     so bouquet at 38-48% shows through the veil. Radial keeps headline
+     column fully readable regardless of photo brightness variation. */
   .hero-overlay {
     position: absolute;
     inset: 0;
     pointer-events: none;
     background:
       radial-gradient(
-        ellipse 64% 76% at 18% 46%,
+        ellipse 60% 78% at 16% 46%,
         rgba(251, 250, 246, 0.99) 0%,
-        rgba(251, 250, 246, 0.96) 30%,
-        rgba(251, 250, 246, 0.78) 48%,
-        rgba(251, 250, 246, 0.42) 66%,
-        rgba(251, 250, 246, 0.10) 100%
+        rgba(251, 250, 246, 0.96) 26%,
+        rgba(251, 250, 246, 0.72) 44%,
+        rgba(251, 250, 246, 0.28) 62%,
+        rgba(251, 250, 246, 0.06) 100%
       ),
       linear-gradient(
         90deg,
-        rgba(251, 250, 246, 0.92) 0%,
-        rgba(251, 250, 246, 0.78) 30%,
-        rgba(251, 250, 246, 0.32) 58%,
-        rgba(251, 250, 246, 0.06) 100%
+        rgba(251, 250, 246, 0.98) 0%,
+        rgba(251, 250, 246, 0.95) 25%,
+        rgba(251, 250, 246, 0.44) 40%,
+        rgba(251, 250, 246, 0.08) 56%,
+        rgba(251, 250, 246, 0.00) 100%
       );
   }
   @media (max-width: 639px) {
@@ -757,19 +772,20 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .dark .hero-overlay {
     background:
       radial-gradient(
-        ellipse 64% 76% at 18% 46%,
+        ellipse 60% 78% at 16% 46%,
         rgba(58, 51, 36, 0.99) 0%,
-        rgba(58, 51, 36, 0.96) 30%,
-        rgba(58, 51, 36, 0.78) 48%,
-        rgba(58, 51, 36, 0.42) 66%,
-        rgba(58, 51, 36, 0.10) 100%
+        rgba(58, 51, 36, 0.96) 26%,
+        rgba(58, 51, 36, 0.72) 44%,
+        rgba(58, 51, 36, 0.28) 62%,
+        rgba(58, 51, 36, 0.06) 100%
       ),
       linear-gradient(
         90deg,
-        rgba(58, 51, 36, 0.92) 0%,
-        rgba(58, 51, 36, 0.78) 30%,
-        rgba(58, 51, 36, 0.32) 58%,
-        rgba(58, 51, 36, 0.06) 100%
+        rgba(58, 51, 36, 0.98) 0%,
+        rgba(58, 51, 36, 0.95) 25%,
+        rgba(58, 51, 36, 0.44) 40%,
+        rgba(58, 51, 36, 0.08) 56%,
+        rgba(58, 51, 36, 0.00) 100%
       );
   }
 
