@@ -656,7 +656,7 @@ const en: LocaleMessages = {
     partner_linked: "Your partner is connected",
     copy_link: "Copy link",
     link_copied: "Link copied!",
-    invite_email_label: "Partner's email (optional)",
+    invite_email_label: "Partner's email",
     invite_email_placeholder: "e.g. partner@example.com",
     invite_email_help: "Leave empty to just generate a shareable link.",
     invite_email_invalid: "Enter a valid email address.",
@@ -2054,6 +2054,8 @@ const en: LocaleMessages = {
     publish_off: "Only you can see it",
     publish_toast_on: "Done! Your gift list is now on the guest page.",
     publish_toast_off: "Hidden. Your gift list is yours again.",
+    phase_before: "Before the wedding",
+    phase_after: "After the wedding",
     section_received_title: "Received gifts",
     section_received_subtitle:
       "A private list only you can see: who gave what, plus a note (e.g. thank-you sent). It never shows on your guest page.",

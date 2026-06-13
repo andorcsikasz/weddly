@@ -863,9 +863,6 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="!text-base">{t("dashboard.invite_partner")}</h2>
-                <p className="mt-0.5 text-xs text-ink-700 dark:text-paper-100">
-                  {t("dashboard.invite_partner_help")}
-                </p>
               </div>
               {inviteUrl && (
                 <button

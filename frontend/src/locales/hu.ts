@@ -664,7 +664,7 @@ const hu: LocaleMessages = {
     partner_linked: "A párod kapcsolódva",
     copy_link: "Link másolása",
     link_copied: "Link kimásolva!",
-    invite_email_label: "Pár e-mail címe (opcionális)",
+    invite_email_label: "Pár e-mail címe",
     invite_email_placeholder: "pl. anna@example.com",
     invite_email_help: "Hagyd üresen, ha csak egy megosztható linket szeretnél.",
     invite_email_invalid: "Adj meg egy érvényes e-mail címet.",
@@ -2077,6 +2077,8 @@ const hu: LocaleMessages = {
     publish_off: "Csak ti látjátok",
     publish_toast_on: "Kész! Az ajándéklista mostantól ott van a vendégoldalon.",
     publish_toast_off: "Rejtve. Az ajándéklista újra csak a tiétek.",
+    phase_before: "Esküvő előtt",
+    phase_after: "Esküvő után",
     section_received_title: "Beérkezett ajándékok",
     section_received_subtitle:
       "Privát lista, csak ti látjátok: ki mit hozott, plusz egy jegyzet (pl. köszönőlevél elküldve). A vendégoldalon soha nem jelenik meg.",
