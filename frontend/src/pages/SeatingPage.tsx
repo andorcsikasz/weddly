@@ -1192,9 +1192,8 @@ export default function SeatingPage() {
         </div>
 
         {mode === "edit" ? (
-          // Edit mode right section — same w-56 structure as seat mode so
-          // both modes share identical toolbar geometry.
-          <div className="flex w-56 shrink-0 items-center justify-end gap-2">
+          // Edit mode right section — matches the w-[280px] right panel below.
+          <div className="flex w-[280px] shrink-0 items-center justify-end gap-2">
             {previewLoading !== null && (
               <button
                 type="button"
@@ -1210,9 +1209,8 @@ export default function SeatingPage() {
             </button>
           </div>
         ) : (
-          // Seat mode right section is exactly w-56 to mirror the unassigned
-          // panel below — this aligns the tab's right edge with the map box.
-          <div className="flex w-56 shrink-0 items-center justify-end gap-2">
+          // Seat mode right section mirrors the w-[280px] unassigned panel below.
+          <div className="flex w-[280px] shrink-0 items-center justify-end gap-2">
             {undoStack.length > 0 && (
               <button
                 type="button"
@@ -1333,7 +1331,7 @@ export default function SeatingPage() {
             fullHeight
           />
           </div>
-          <div className="w-[280px] shrink-0 lg:w-[320px]">
+          <div className="w-[280px] shrink-0">
             <TableEditor
               table={selected}
               onPatch={(patch) => selected && patchTable(selected, patch)}
@@ -1386,7 +1384,7 @@ export default function SeatingPage() {
           {/* Compact unassigned guests panel — 220px, sticky so it stays
               alongside the map as the user scrolls. */}
           <aside
-            className={`w-56 shrink-0 overflow-hidden rounded-xl border bg-paper-50 p-3 transition-colors dark:bg-umber-900 ${
+            className={`w-[280px] shrink-0 overflow-hidden rounded-xl border bg-paper-50 p-3 transition-colors dark:bg-umber-900 ${
               draggingSeatedId !== null
                 ? unassignedHover
                   ? "border-blush-500 bg-blush-50 ring-2 ring-blush-400 dark:bg-blush-400/15"
@@ -1807,35 +1805,35 @@ function TableEditor({
       <div className="flex flex-wrap items-center gap-1.5 border-t border-paper-200 pt-3 dark:border-umber-700">
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-[10px] lowercase text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
           onClick={onRotate}
           aria-label={t("seating.rotate_table")}
           title={t("seating.rotate_table")}
         >
-          <RotateCw size={14} aria-hidden />
+          <RotateCw size={12} aria-hidden />
           <span>{table.rotation_deg}°</span>
         </button>
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-[10px] lowercase text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
           onClick={onDuplicate}
           aria-label={t("seating.duplicate_table")}
           title={t("seating.duplicate_table")}
         >
-          <Copy size={14} aria-hidden />
+          <Copy size={12} aria-hidden />
           <span>{t("seating.duplicate_table")}</span>
         </button>
         <button
           type="button"
-          className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-blush-700 transition-colors hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+          className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] lowercase text-blush-700 transition-colors hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
           onClick={onDelete}
           aria-label={t("seating.delete_table")}
         >
-          <Trash2 size={14} aria-hidden />
+          <Trash2 size={12} aria-hidden />
           <span>{t("seating.delete_table")}</span>
         </button>
       </div>
-      <p className="text-xs text-ink-400 dark:text-umber-300">
+      <p className="text-[10px] lowercase text-ink-400 dark:text-umber-300">
         {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
       </p>
 
@@ -2412,14 +2410,14 @@ function ShapePicker({
             className={[
               "flex items-center justify-center rounded-xl border py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ink-700",
               active
-                ? "border-blush-300 bg-blush-50 dark:border-blush-400/40 dark:bg-blush-400/15"
+                ? "border-umber-400 bg-umber-50 dark:border-umber-400 dark:bg-umber-700/40"
                 : "border-paper-200 bg-paper-50 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:hover:bg-umber-700",
             ].join(" ")}
           >
             <Icon
               size={22}
               className={
-                active ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"
+                active ? "text-umber-600 dark:text-umber-300" : "text-ink-500 dark:text-umber-300"
               }
             />
           </button>
@@ -2771,13 +2769,13 @@ function HouseholdGroup({
           feel warm, hugs the left padding edge. */}
       <span
         aria-hidden
-        className="absolute bottom-1 left-1.5 top-1 w-0.5 rounded-full bg-blush-400 dark:bg-blush-400/70"
+        className="absolute bottom-1 left-1.5 top-1 w-0.5 rounded-full bg-blush-400 dark:bg-umber-400"
       />
       {/* Floating count chip on the top-left edge — identifies the
           household at a glance without occupying a row of the card. */}
       <span
         title={ariaLabel}
-        className="absolute -left-1 -top-1.5 inline-flex h-4 items-center gap-0.5 rounded-full bg-blush-400 px-1.5 text-[9px] font-bold leading-none text-white shadow-sm dark:bg-blush-500"
+        className="absolute -left-1 -top-1.5 inline-flex h-4 items-center gap-0.5 rounded-full bg-blush-400 px-1.5 text-[9px] font-bold leading-none text-white shadow-sm dark:bg-umber-400 dark:text-ink-900"
       >
         <Link2 size={8} strokeWidth={3} aria-hidden />
         {guests.length}
@@ -2792,7 +2790,7 @@ function HouseholdGroup({
         }}
         aria-label={unlinkLabel}
         title={unlinkLabel}
-        className="absolute right-0.5 top-0.5 inline-flex h-5 w-5 items-center justify-center rounded text-ink-400 opacity-60 transition-opacity hover:bg-paper-200 hover:text-ink-700 hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100 dark:focus-visible:ring-umber-300"
+        className="absolute right-0.5 top-0.5 inline-flex h-5 w-5 items-center justify-center rounded text-ink-400 opacity-80 transition-opacity hover:bg-paper-200 hover:text-ink-700 hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-100 dark:focus-visible:ring-umber-300"
       >
         <Unlink2 size={11} aria-hidden />
       </button>
