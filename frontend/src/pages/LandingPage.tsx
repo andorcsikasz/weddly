@@ -206,10 +206,20 @@ export default function LandingPage() {
           + CTAs underneath. Mockup follows below as a full-bleed slab,
           tilted slightly so it reads as "the product, peeking up". */}
       <section className="relative overflow-hidden">
+        {/* Hero cover photo — right half, fades left */}
+        <div className="pointer-events-none absolute inset-0 hidden sm:block">
+          <img
+            src="/cover-hero.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute right-0 top-0 h-full w-[62%] object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-paper-50 via-paper-50/80 to-paper-50/10 dark:from-umber-900 dark:via-umber-900/80 dark:to-umber-900/10" />
+        </div>
         {/* Tighter top padding on mobile so the CTA pair stays above the
             fold on 360x640 Android. The hero is H1 + subline + single
             primary CTA. */}
-        <div className="relative mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:block sm:min-h-0 sm:px-6 sm:pt-24 lg:pt-28 lg:pb-12">
+        <div className="relative mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-12 pb-8 sm:min-h-[72svh] sm:justify-center sm:px-6 sm:pt-16 lg:pt-20 lg:pb-12">
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
             <div>
               {/* Cap with `max-w-[18ch]` on mobile — HU translations are
