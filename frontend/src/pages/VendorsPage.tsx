@@ -71,11 +71,7 @@ export default function VendorsPage() {
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-10 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-blush-700 dark:border-blush-400/30 dark:bg-blush-400/15 dark:text-blush-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-blush-500 dark:bg-blush-300" />
-            {t("vendors.pill")}
-          </span>
-          <h1 className="mt-5 font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
+          <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg lg:mx-0 dark:text-umber-200">
@@ -165,8 +161,8 @@ function Benefit({
   body: string;
 }) {
   return (
-    <article className="card h-full">
-      <div className="mb-4">{art}</div>
+    <article className="card h-full !p-5">
+      <div className="mb-3">{art}</div>
       <h3 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
     </article>
