@@ -709,52 +709,48 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     z-index: 0;
   }
 
-  /* Full scene — full section width so the photo shows at natural scale
-     (not zoomed into just fabric). At 1440×980 viewport the image renders
-     at ~1742×980, giving 302px of horizontal overflow.
-     background-position: 10% center keeps the bouquet just inside the left
-     edge and lets the dress + clasped hands fill the center-right. */
+  /* background-size: 100% auto = full image at natural proportions across the
+     viewport width. No zoom, no cropping — bouquet, dress, and groom are all
+     visible. The section's cream background fills any space below the image. */
   .hero-photo-img {
     position: absolute;
     inset: 0;
     background-image: url("/cover-hero.png");
-    background-size: cover;
-    background-position: 10% center;
+    background-size: 100% auto;
+    background-position: center top;
     background-repeat: no-repeat;
     pointer-events: none;
   }
   @media (max-width: 639px) {
     .hero-photo-img {
-      opacity: 0.28;
+      opacity: 0.22;
     }
   }
   .dark .hero-photo-img {
-    opacity: 0.62;
+    opacity: 0.55;
   }
 
-  /* Full-bleed overlay: solid cream left (headline readable), fades by 55%
-     so the dress and couple are clear in the center-right.
-     Radial ellipse anchors the strongest opacity around the headline column. */
+  /* Atmospheric veil — keeps left side clean for the headline, lets the
+     wedding scene breathe on the right. Matches the user's exact spec. */
   .hero-overlay {
     position: absolute;
     inset: 0;
     pointer-events: none;
     background:
       radial-gradient(
-        ellipse 52% 82% at 16% 46%,
-        rgba(251, 250, 245, 0.99) 0%,
-        rgba(251, 250, 245, 0.95) 28%,
-        rgba(251, 250, 245, 0.62) 48%,
-        rgba(251, 250, 245, 0.16) 68%,
-        rgba(251, 250, 245, 0.00) 100%
+        ellipse 64% 76% at 18% 46%,
+        rgba(251, 250, 246, 0.99) 0%,
+        rgba(251, 250, 246, 0.96) 30%,
+        rgba(251, 250, 246, 0.78) 48%,
+        rgba(251, 250, 246, 0.42) 66%,
+        rgba(251, 250, 246, 0.10) 100%
       ),
       linear-gradient(
         90deg,
-        rgba(251, 250, 245, 1.00) 0%,
-        rgba(251, 250, 245, 0.97) 28%,
-        rgba(251, 250, 245, 0.50) 40%,
-        rgba(251, 250, 245, 0.08) 55%,
-        rgba(251, 250, 245, 0.00) 100%
+        rgba(251, 250, 246, 0.92) 0%,
+        rgba(251, 250, 246, 0.78) 30%,
+        rgba(251, 250, 246, 0.32) 58%,
+        rgba(251, 250, 246, 0.06) 100%
       );
   }
   @media (max-width: 639px) {
@@ -762,29 +758,28 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       background:
         linear-gradient(
           180deg,
-          rgba(251, 250, 245, 0.97) 0%,
-          rgba(251, 250, 245, 0.90) 50%,
-          rgba(251, 250, 245, 0.82) 100%
+          rgba(251, 250, 246, 0.97) 0%,
+          rgba(251, 250, 246, 0.88) 60%,
+          rgba(251, 250, 246, 0.80) 100%
         );
     }
   }
   .dark .hero-overlay {
     background:
       radial-gradient(
-        ellipse 52% 82% at 16% 46%,
+        ellipse 64% 76% at 18% 46%,
         rgba(58, 51, 36, 0.99) 0%,
-        rgba(58, 51, 36, 0.95) 28%,
-        rgba(58, 51, 36, 0.62) 48%,
-        rgba(58, 51, 36, 0.16) 68%,
-        rgba(58, 51, 36, 0.00) 100%
+        rgba(58, 51, 36, 0.96) 30%,
+        rgba(58, 51, 36, 0.78) 48%,
+        rgba(58, 51, 36, 0.42) 66%,
+        rgba(58, 51, 36, 0.10) 100%
       ),
       linear-gradient(
         90deg,
-        rgba(58, 51, 36, 1.00) 0%,
-        rgba(58, 51, 36, 0.97) 28%,
-        rgba(58, 51, 36, 0.50) 40%,
-        rgba(58, 51, 36, 0.08) 55%,
-        rgba(58, 51, 36, 0.00) 100%
+        rgba(58, 51, 36, 0.92) 0%,
+        rgba(58, 51, 36, 0.78) 30%,
+        rgba(58, 51, 36, 0.32) 58%,
+        rgba(58, 51, 36, 0.06) 100%
       );
   }
 
