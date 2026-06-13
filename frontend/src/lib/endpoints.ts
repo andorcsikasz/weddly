@@ -3,6 +3,7 @@
 import type {
   Accommodation,
   AdminCoupleView,
+  AdminEmailLogEntry,
   AdminSidebarBadges,
   AdminUserView,
   AuthSession,
@@ -1345,6 +1346,15 @@ export const adminUserApi = {
       `/api/admin/users/${id}/unflag`,
       { note: note ?? "" },
     ),
+  /** Resend the account_flagged email for the user's current active flag
+   *  without touching the deadline. Use when the original email bounced
+   *  or went to spam. 404 when no active flag exists. */
+  resendFlagEmail: (id: number) =>
+    apiFetch<{ ok: true }>("POST", `/api/admin/users/${id}/resend-flag-email`, {}),
+  /** Last 30 email_log rows for this user — kind, status (sent/failed),
+   *  to_email, error. Lets admin verify delivery of account_flagged etc. */
+  listEmails: (id: number) =>
+    apiFetch<{ emails: AdminEmailLogEntry[] }>("GET", `/api/admin/users/${id}/emails`),
   /** Mark / unmark a user as a beta tester. Non-destructive grouping label
    *  (no email, no countdown) that buckets the account + its workspace into
    *  the admin "Beta testers" section. Returns the updated admin view so the

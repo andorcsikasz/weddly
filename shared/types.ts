@@ -82,6 +82,20 @@ export interface AdminUserView {
   activity: AdminUserActivity;
 }
 
+/** One row from email_log as surfaced in the admin UI. Enough to diagnose
+ *  delivery failures (bounced account_flagged, resend needed) without
+ *  exposing full HTML body. */
+export interface AdminEmailLogEntry {
+  id: number;
+  kind: string;
+  category: string;
+  to_email: string;
+  subject: string;
+  status: "sent" | "failed" | "skipped_opt_out" | "skipped_no_provider";
+  error: string | null;
+  created_at: number;
+}
+
 export interface AdminUserActivity {
   /** Community supplier tips this user has submitted. Includes hidden +
    *  deleted rows so the count stays a stable engagement signal even

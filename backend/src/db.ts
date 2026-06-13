@@ -107,7 +107,11 @@ addColumnIfMissing("couples", "slug", "slug TEXT");
 // EN slug for bilingual blog URLs (backfilled from SEED_EN_SLUG_BY_SLUG on
 // every boot via seedBlogPostsIfEmpty). UNIQUE so two posts can't share an
 // EN slug; NULL on EN-primary posts whose `slug` is already English-readable.
-addColumnIfMissing("blog_posts", "en_slug", "en_slug TEXT UNIQUE");
+// SQLite does not allow ADD COLUMN with UNIQUE — index is created below.
+addColumnIfMissing("blog_posts", "en_slug", "en_slug TEXT");
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_blog_posts_en_slug_unique ON blog_posts(en_slug) WHERE en_slug IS NOT NULL",
+);
 addColumnIfMissing("guests", "household_id", "household_id INTEGER REFERENCES households(id)");
 
 // Guest kind — drives the "needs a high chair" / "kid meal" affordances.

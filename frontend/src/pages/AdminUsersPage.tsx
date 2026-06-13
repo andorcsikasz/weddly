@@ -1,4 +1,4 @@
-import type { AdminCoupleView, AdminUserView } from "@shared/types";
+import type { AdminCoupleView, AdminEmailLogEntry, AdminUserView } from "@shared/types";
 import {
   Bird,
   Check,
@@ -9,7 +9,9 @@ import {
   FlagOff,
   FlaskConical,
   Gift,
+  History,
   Mail,
+  RefreshCw,
   Search,
   Trash2,
   X,
@@ -79,6 +81,42 @@ export default function AdminUsersPage() {
   // button spinner. The "already sent" check reads couples.invite_partner_reminded_at
   // off the AdminCoupleView so a refresh keeps the sage Mail+Check state.
   const [remindPendingCoupleId, setRemindPendingCoupleId] = useState<number | null>(null);
+
+  // Email log panel — shows the last N email_log rows for a user so admin
+  // can verify delivery of account_flagged / welcome_verify etc.
+  const [emailLogUserId, setEmailLogUserId] = useState<number | null>(null);
+  const [emailLog, setEmailLog] = useState<AdminEmailLogEntry[]>([]);
+  const [emailLogLoading, setEmailLogLoading] = useState(false);
+  const [resendFlagPending, setResendFlagPending] = useState<number | null>(null);
+
+  async function onOpenEmailLog(u: AdminUserView) {
+    if (emailLogUserId === u.id) {
+      setEmailLogUserId(null);
+      return;
+    }
+    setEmailLogUserId(u.id);
+    setEmailLogLoading(true);
+    try {
+      const r = await adminUserApi.listEmails(u.id);
+      setEmailLog(r.emails);
+    } catch {
+      setEmailLog([]);
+    } finally {
+      setEmailLogLoading(false);
+    }
+  }
+
+  async function onResendFlagEmail(u: AdminUserView) {
+    setResendFlagPending(u.id);
+    try {
+      await adminUserApi.resendFlagEmail(u.id);
+      toast.success(t("admin.resend_flag_email_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setResendFlagPending(null);
+    }
+  }
 
   // Sticky client-side search across name / email / workspace id / slug.
   // We keep the raw input separate from the debounced query so typing stays
@@ -645,17 +683,38 @@ export default function AdminUsersPage() {
           </button>
         )}
         {!isSelf && flag && (
-          <button
-            type="button"
-            className="btn-ghost btn-sm inline-flex items-center text-blush-800 dark:text-blush-300"
-            onClick={() => onUnflag(u)}
-            disabled={isPending}
-            title={t("admin.unflag_user_button")}
-            aria-label={t("admin.unflag_user_button")}
-          >
-            <FlagOff size={14} aria-hidden />
-          </button>
+          <>
+            <button
+              type="button"
+              className="btn-ghost btn-sm inline-flex items-center"
+              onClick={() => onResendFlagEmail(u)}
+              disabled={resendFlagPending === u.id}
+              title={t("admin.resend_flag_email_button")}
+              aria-label={t("admin.resend_flag_email_button")}
+            >
+              <RefreshCw size={14} aria-hidden className={resendFlagPending === u.id ? "animate-spin" : ""} />
+            </button>
+            <button
+              type="button"
+              className="btn-ghost btn-sm inline-flex items-center text-blush-800 dark:text-blush-300"
+              onClick={() => onUnflag(u)}
+              disabled={isPending}
+              title={t("admin.unflag_user_button")}
+              aria-label={t("admin.unflag_user_button")}
+            >
+              <FlagOff size={14} aria-hidden />
+            </button>
+          </>
         )}
+        <button
+          type="button"
+          className={`btn-ghost btn-sm inline-flex items-center${emailLogUserId === u.id ? " text-blush-700 dark:text-blush-300" : ""}`}
+          onClick={() => onOpenEmailLog(u)}
+          title={t("admin.email_log_button")}
+          aria-label={t("admin.email_log_button")}
+        >
+          <History size={14} aria-hidden />
+        </button>
         {!isSelf && (
           <button
             type="button"
@@ -770,7 +829,63 @@ export default function AdminUsersPage() {
             )}
           </div>
         </div>
+        <div className="px-0.5">
+          {members.map((u) => renderEmailLogPanel(u.id))}
+        </div>
       </li>
+    );
+  }
+
+  /** Inline email delivery log for a single user. Shown when the admin
+   *  clicks the History icon on a user row. Lets them verify whether
+   *  account_flagged / welcome_verify / etc. actually reached the inbox. */
+  function renderEmailLogPanel(userId: number) {
+    if (emailLogUserId !== userId) return null;
+    const statusDot = (s: AdminEmailLogEntry["status"]) => {
+      if (s === "sent") return "bg-sage-500";
+      if (s === "failed") return "bg-blush-500";
+      return "bg-neutral-400";
+    };
+    return (
+      <div className="mt-2 rounded-md border border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-900/50 text-xs">
+        <div className="flex items-center justify-between border-b border-paper-200 dark:border-umber-700 px-3 py-1.5 eyebrow text-neutral-500 dark:text-umber-300">
+          <span>{t("admin.email_log_panel_title")}</span>
+          {emailLogLoading && (
+            <RefreshCw size={11} aria-hidden className="animate-spin text-neutral-400" />
+          )}
+        </div>
+        {!emailLogLoading && emailLog.length === 0 && (
+          <p className="px-3 py-2 text-neutral-500 dark:text-umber-400">
+            {t("admin.email_log_empty")}
+          </p>
+        )}
+        {!emailLogLoading && emailLog.length > 0 && (
+          <ul className="divide-y divide-paper-200 dark:divide-umber-700/60">
+            {emailLog.map((e) => (
+              <li key={e.id} className="flex items-start gap-2 px-3 py-1.5">
+                <span
+                  className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${statusDot(e.status)}`}
+                  title={e.status}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0">
+                    <span className="font-mono text-neutral-700 dark:text-paper-200">{e.kind}</span>
+                    <span className="text-neutral-400 dark:text-umber-400">{e.to_email}</span>
+                  </div>
+                  {e.error && (
+                    <p className="mt-0.5 font-mono text-blush-600 dark:text-blush-400 break-all">
+                      {e.error}
+                    </p>
+                  )}
+                </div>
+                <span className="shrink-0 text-neutral-400 dark:text-umber-500 whitespace-nowrap">
+                  {formatDate(e.created_at, locale)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     );
   }
 
@@ -1188,17 +1303,26 @@ export default function AdminUsersPage() {
                         </thead>
                         <tbody>
                           {filteredOrphans.map((u) => (
-                            <tr
-                              key={u.id}
-                              className="border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
-                            >
-                              <td className="px-3 py-2">
-                                {renderUserInfo(u, { showLastActive: true })}
-                              </td>
-                              <td className="px-3 py-2 text-right align-middle">
-                                {renderUserActions(u)}
-                              </td>
-                            </tr>
+                            <>
+                              <tr
+                                key={u.id}
+                                className="border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
+                              >
+                                <td className="px-3 py-2">
+                                  {renderUserInfo(u, { showLastActive: true })}
+                                </td>
+                                <td className="px-3 py-2 text-right align-middle">
+                                  {renderUserActions(u)}
+                                </td>
+                              </tr>
+                              {emailLogUserId === u.id && (
+                                <tr key={`${u.id}-emails`} className="border-t border-paper-200 dark:border-umber-700">
+                                  <td colSpan={2} className="px-3 pb-2">
+                                    {renderEmailLogPanel(u.id)}
+                                  </td>
+                                </tr>
+                              )}
+                            </>
                           ))}
                         </tbody>
                       </table>

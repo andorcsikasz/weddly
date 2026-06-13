@@ -2,7 +2,13 @@
 // Gate with requireAdmin() — same ADMIN_EMAILS allowlist as the supplier
 // moderation routes.
 
-import type { AdminCoupleView, AdminUserActivity, AdminUserView, UserFlag } from "@shared/types";
+import type {
+  AdminCoupleView,
+  AdminEmailLogEntry,
+  AdminUserActivity,
+  AdminUserView,
+  UserFlag,
+} from "@shared/types";
 import { CONFIG } from "../config";
 import { db } from "../db";
 import { grantFreeAccess, revokeFreeAccess } from "../domain/billing";
@@ -600,6 +606,95 @@ async function handleSetBetaTester(ctx: Ctx): Promise<Response> {
   return json({ user: view });
 }
 
+/** Return the 30 most recent email_log rows for a user so admin can
+ *  diagnose delivery failures (e.g. bounced account_flagged email). */
+function handleListUserEmails(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  const userId = parseId(ctx);
+  const rows = db
+    .prepare(
+      `SELECT id, kind, category, to_email, subject, status, error, created_at
+         FROM email_log
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 30`,
+    )
+    .all(userId) as Array<{
+    id: number;
+    kind: string;
+    category: string;
+    to_email: string;
+    subject: string;
+    status: string;
+    error: string | null;
+    created_at: number;
+  }>;
+  const entries: AdminEmailLogEntry[] = rows.map((r) => ({
+    id: r.id,
+    kind: r.kind,
+    category: r.category,
+    to_email: r.to_email,
+    subject: r.subject,
+    status: r.status as AdminEmailLogEntry["status"],
+    error: r.error,
+    created_at: r.created_at,
+  }));
+  return json({ emails: entries });
+}
+
+/** Resend the account_flagged email for a user's current active flag without
+ *  touching the deadline. Lets an admin recover from a bounced/spam delivery
+ *  without re-flagging (which would 409 because a flag is already open). */
+async function handleResendFlagEmail(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const userId = parseId(ctx);
+
+  const target = db
+    .prepare("SELECT id, email, full_name, couple_id FROM users WHERE id = ?")
+    .get(userId) as
+    | { id: number; email: string; full_name: string; couple_id: number | null }
+    | undefined;
+  if (!target) throw new HttpError(404, "User not found");
+  if (target.email.endsWith("@purged.local")) {
+    throw new HttpError(400, "Cannot email a purged user");
+  }
+
+  const flag = getActiveFlagForUser(userId);
+  if (!flag) throw new HttpError(404, "No active flag to resend", { code: "no_active_flag" });
+
+  const deadlineDate = new Date(flag.scheduled_delete_at);
+  const deadlineDateHu = new Intl.DateTimeFormat("hu-HU", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(deadlineDate);
+  const deadlineDateEn = new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(deadlineDate);
+
+  void sendKind(
+    "account_flagged",
+    { reason: flag.reason, deadlineDateHu, deadlineDateEn },
+    {
+      user: { id: target.id, email: target.email, full_name: target.full_name },
+      couple_id: target.couple_id,
+    },
+  );
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: target.couple_id,
+    action: "admin.user_flag_resend",
+    target_kind: "user",
+    target_id: userId,
+    after: { flag_id: flag.id },
+  });
+
+  return json({ ok: true });
+}
+
 type AdminSection = "suppliers" | "users" | "vendor_waitlist" | "feedback";
 const VALID_SECTIONS: ReadonlySet<AdminSection> = new Set([
   "suppliers",
@@ -718,6 +813,8 @@ export function registerAdminUserRoutes(router: Router) {
   router.delete("/api/admin/users/:id", handleDeleteUser, true);
   router.post("/api/admin/users/:id/flag", handleFlagUser, true);
   router.post("/api/admin/users/:id/unflag", handleUnflagUser, true);
+  router.post("/api/admin/users/:id/resend-flag-email", handleResendFlagEmail, true);
+  router.get("/api/admin/users/:id/emails", handleListUserEmails, true);
   router.post("/api/admin/users/:id/beta", handleSetBetaTester, true);
   router.post("/api/admin/couples/:id/remind-invite-partner", handleRemindInvitePartner, true);
   router.post("/api/admin/couples/:id/grant-free", handleGrantFree, true);
