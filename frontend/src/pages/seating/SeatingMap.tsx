@@ -895,9 +895,11 @@ function TableShape({
   // just outside the perimeter. Selection swaps the body to a calm espresso
   // (deep umber) fill with a darker rim AND thickens the stroke so the
   // active table is unmissable on a crowded floor plan.
-  const strokeClass = isSelected ? "stroke-umber-950" : "stroke-ink-800";
+  const strokeClass = isSelected
+    ? "stroke-umber-950 dark:stroke-paper-200"
+    : "stroke-ink-800 dark:stroke-umber-400";
   const strokeWidth = isSelected ? 22 : 14;
-  const fillClass = isSelected ? "fill-umber-900" : "fill-paper-50";
+  const fillClass = isSelected ? "fill-umber-900 dark:fill-paper-100" : "fill-paper-50 dark:fill-umber-800";
 
   // Long and head get a softer banquet-bench corner; square stays tighter.
   const rectCorner =
@@ -1166,7 +1168,7 @@ function TableShape({
               textAnchor="middle"
               fontSize={labelSize}
               fontWeight={600}
-              className={`font-grotesk ${isSelected ? "fill-paper-50" : "fill-blush-700"}`}
+              className={`font-grotesk ${isSelected ? "fill-paper-50 dark:fill-ink-900" : "fill-blush-700 dark:fill-umber-200"}`}
             >
               {lines.length === 1
                 ? lines[0]
