@@ -687,33 +687,44 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
 
   /* Landing hero — two-layer approach: photo at full opacity, overlay controls
-     readability. Hex values = paper-50 (#fbfaf5) / umber-900 (#3a3324) tokens. */
+     readability. Hex values = paper-50 (#fbfaf5) / umber-900 (#3a3324) tokens.
+     background-position 38% center keeps the bouquet visible on the left and
+     the dress in center; the groom's dark suit stays on the far right. */
 
-  /* Layer 1: raw photo, full opacity, full bleed. background-position 58% shows
-     the bride/bouquet in center and keeps the groom on the far right. */
   .hero-photo {
     position: absolute;
     inset: 0;
     background-image: url("/cover-hero.png");
     background-size: cover;
-    background-position: 58% center;
+    background-position: 38% center;
     background-repeat: no-repeat;
     z-index: 0;
     pointer-events: none;
   }
+  /* Subtle warm-cream wash so the dark right side (groom suit / background)
+     is not overwhelming. 10% is enough to lift the blacks without washing
+     out the photo. */
+  .hero-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(251, 250, 245, 0.10);
+  }
   @media (max-width: 639px) {
     .hero-photo {
-      background-position: 62% center;
       opacity: 0.35;
     }
   }
   .dark .hero-photo {
-    opacity: 0.6;
+    opacity: 0.65;
+  }
+  .dark .hero-photo::after {
+    background: rgba(58, 51, 36, 0.10);
   }
 
-  /* Layer 2: readability overlay — radial ellipse covers the left/headline area
-     with cream, linear gradient fades it out toward the right so the photo
-     remains clearly visible in the center-right. */
+  /* Layer 2: radial ellipse anchored at 18% / 46% covers the left headline
+     area with cream; linear gradient fades toward the right so the dress
+     and bouquet remain clearly visible in the center-right portion. */
   .hero-overlay {
     position: absolute;
     inset: 0;
@@ -721,19 +732,19 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     pointer-events: none;
     background:
       radial-gradient(
-        ellipse 65% 70% at 18% 48%,
+        ellipse 58% 72% at 18% 46%,
         rgba(251, 250, 245, 0.98) 0%,
-        rgba(251, 250, 245, 0.94) 34%,
-        rgba(251, 250, 245, 0.72) 52%,
-        rgba(251, 250, 245, 0.38) 68%,
-        rgba(251, 250, 245, 0.08) 100%
+        rgba(251, 250, 245, 0.94) 32%,
+        rgba(251, 250, 245, 0.72) 50%,
+        rgba(251, 250, 245, 0.35) 67%,
+        rgba(251, 250, 245, 0.06) 100%
       ),
       linear-gradient(
         90deg,
-        rgba(251, 250, 245, 0.88) 0%,
-        rgba(251, 250, 245, 0.72) 28%,
-        rgba(251, 250, 245, 0.22) 55%,
-        rgba(251, 250, 245, 0.02) 100%
+        rgba(251, 250, 245, 0.90) 0%,
+        rgba(251, 250, 245, 0.76) 30%,
+        rgba(251, 250, 245, 0.28) 56%,
+        rgba(251, 250, 245, 0.04) 100%
       );
   }
   @media (max-width: 639px) {
@@ -750,19 +761,19 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .dark .hero-overlay {
     background:
       radial-gradient(
-        ellipse 65% 70% at 18% 48%,
+        ellipse 58% 72% at 18% 46%,
         rgba(58, 51, 36, 0.98) 0%,
-        rgba(58, 51, 36, 0.94) 34%,
-        rgba(58, 51, 36, 0.72) 52%,
-        rgba(58, 51, 36, 0.38) 68%,
-        rgba(58, 51, 36, 0.08) 100%
+        rgba(58, 51, 36, 0.94) 32%,
+        rgba(58, 51, 36, 0.72) 50%,
+        rgba(58, 51, 36, 0.35) 67%,
+        rgba(58, 51, 36, 0.06) 100%
       ),
       linear-gradient(
         90deg,
-        rgba(58, 51, 36, 0.88) 0%,
-        rgba(58, 51, 36, 0.72) 28%,
-        rgba(58, 51, 36, 0.22) 55%,
-        rgba(58, 51, 36, 0.02) 100%
+        rgba(58, 51, 36, 0.90) 0%,
+        rgba(58, 51, 36, 0.76) 30%,
+        rgba(58, 51, 36, 0.28) 56%,
+        rgba(58, 51, 36, 0.04) 100%
       );
   }
 
