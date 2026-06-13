@@ -18,6 +18,7 @@ import {
   Crown,
   ExternalLink,
   Gem,
+  Hand,
   LayoutGrid,
   Link2,
   Minus,
@@ -1225,7 +1226,11 @@ export default function SeatingPage() {
             {!coarsePointer && (
               <button
                 type="button"
-                className="btn-outline btn-sm"
+                className={`inline-flex items-center justify-center rounded-lg border p-1.5 transition-colors ${
+                  tapModeUser
+                    ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : "border-ink-900 bg-transparent text-ink-900 hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
+                }`}
                 onClick={() => {
                   setTapModeUser((v) => {
                     const next = !v;
@@ -1237,31 +1242,35 @@ export default function SeatingPage() {
                   setSelectedGuestId(null);
                 }}
                 aria-pressed={tapModeUser}
+                aria-label={tapModeUser ? t("seating.tap_mode_off") : t("seating.tap_mode_on")}
+                title={tapModeUser ? t("seating.tap_mode_off") : t("seating.tap_mode_on")}
               >
-                {tapModeUser ? t("seating.tap_mode_off") : t("seating.tap_mode_on")}
+                <Hand size={15} aria-hidden />
               </button>
             )}
             {selectedGuestId !== null && (
               <button
                 type="button"
-                className="btn-sm rounded-lg border border-blush-300 bg-blush-50 px-3 py-1 text-xs font-medium text-blush-800 hover:bg-blush-100 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-200"
+                className="inline-flex items-center justify-center rounded-lg border border-ink-900 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
                 onClick={async () => {
                   const id = selectedGuestId;
                   setSelectedGuestId(null);
                   await unassignGuest(id);
                 }}
+                aria-label={t("seating.seat_unassign_selected")}
+                title={t("seating.seat_unassign_selected")}
               >
-                {t("seating.seat_unassign_selected")}
+                <Undo2 size={15} aria-hidden />
               </button>
             )}
             <Link
               to="/app/guests"
-              className="inline-flex items-center gap-0.5 text-blush-700 transition-colors hover:text-blush-900 dark:text-blush-300 dark:hover:text-blush-100"
+              className="inline-flex items-center justify-center gap-0.5 rounded-lg border border-ink-900 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
               aria-label={t("seating.go_to_guests")}
               title={t("seating.go_to_guests")}
             >
-              <Users size={16} aria-hidden />
-              <ExternalLink size={12} aria-hidden />
+              <Users size={15} aria-hidden />
+              <ExternalLink size={11} aria-hidden />
             </Link>
           </div>
         )}
@@ -1397,7 +1406,7 @@ export default function SeatingPage() {
                 {t("seating.seat_mode_panel_title")}
               </h2>
               {unassigned.length + partnerSlots.length > 0 && (
-                <span className="rounded-full bg-blush-400/20 px-1.5 py-0.5 text-[10px] font-bold text-blush-800 dark:bg-blush-400/25 dark:text-blush-200">
+                <span className="rounded-full bg-ink-900 px-1.5 py-0.5 text-[10px] font-bold text-paper-50 dark:bg-paper-50 dark:text-ink-900">
                   {unassigned.length + partnerSlots.length}
                 </span>
               )}
