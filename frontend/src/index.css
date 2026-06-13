@@ -680,6 +680,69 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     @apply font-grotesk font-semibold tracking-wide;
   }
 
+  /* Landing hero photo background — full-section div with background-image so
+     there is no rectangular <img> edge. The ::before pseudo-element applies a
+     multi-stop gradient that dissolves the photo into the page cream on the
+     left and lets it show clearly on the right. Hex values below are the exact
+     paper-50 (#fbfaf5) and umber-900 (#3a3324) design tokens — used here
+     because CSS gradient rgba() stops cannot reference Tailwind theme() vars. */
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url("/cover-hero.png");
+    background-size: cover;
+    background-position: right center;
+    background-repeat: no-repeat;
+    pointer-events: none;
+  }
+  .hero-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      #fbfaf5 0%,
+      rgba(251, 250, 245, 0.98) 10%,
+      rgba(251, 250, 245, 0.86) 24%,
+      rgba(251, 250, 245, 0.58) 42%,
+      rgba(251, 250, 245, 0.24) 64%,
+      rgba(251, 250, 245, 0.06) 100%
+    );
+  }
+  .dark .hero-bg::before {
+    background: linear-gradient(
+      90deg,
+      #3a3324 0%,
+      rgba(58, 51, 36, 0.98) 10%,
+      rgba(58, 51, 36, 0.86) 24%,
+      rgba(58, 51, 36, 0.58) 42%,
+      rgba(58, 51, 36, 0.24) 64%,
+      rgba(58, 51, 36, 0.06) 100%
+    );
+  }
+  @media (max-width: 639px) {
+    .hero-bg {
+      opacity: 0.32;
+      background-position: center top;
+    }
+    .hero-bg::before {
+      background: linear-gradient(
+        180deg,
+        #fbfaf5 0%,
+        rgba(251, 250, 245, 0.94) 42%,
+        rgba(251, 250, 245, 0.76) 100%
+      );
+    }
+    .dark .hero-bg::before {
+      background: linear-gradient(
+        180deg,
+        #3a3324 0%,
+        rgba(58, 51, 36, 0.94) 42%,
+        rgba(58, 51, 36, 0.76) 100%
+      );
+    }
+  }
+
   .input {
     /* min-h-tap (44px) + text-base (16px) keeps mobile tap targets WCAG-compliant
        and prevents iOS auto-zoom on focus. */

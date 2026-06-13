@@ -206,16 +206,9 @@ export default function LandingPage() {
           + CTAs underneath. Mockup follows below as a full-bleed slab,
           tilted slightly so it reads as "the product, peeking up". */}
       <section className="relative overflow-hidden">
-        {/* Hero cover photo — right half, fades left */}
-        <div className="pointer-events-none absolute inset-0 hidden sm:block">
-          <img
-            src="/cover-hero.png"
-            alt=""
-            aria-hidden="true"
-            className="absolute right-0 top-0 h-full w-[62%] object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-paper-50 via-paper-50/80 to-paper-50/10 dark:from-umber-900 dark:via-umber-900/80 dark:to-umber-900/10" />
-        </div>
+        {/* Hero background photo — full-bleed div so there is no rectangular
+            image edge. Gradient fade is handled by .hero-bg::before in index.css. */}
+        <div aria-hidden="true" className="hero-bg" />
         {/* Tighter top padding on mobile so the CTA pair stays above the
             fold on 360x640 Android. The hero is H1 + subline + single
             primary CTA. */}
