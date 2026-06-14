@@ -1431,7 +1431,7 @@ export default function SeatingPage() {
                 </p>
               ) : (
                 <ul
-                  className="space-y-1.5 overflow-y-auto overscroll-contain"
+                  className="space-y-2 overflow-y-auto overscroll-contain pl-1 pt-1.5"
                   style={{ maxHeight: "calc(100vh - 320px)" }}
                 >
                   {partnerSlots.map((slot) =>

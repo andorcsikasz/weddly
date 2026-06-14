@@ -17,6 +17,7 @@ import type { ScheduleEvent } from "@shared/schedule";
 import {
   Armchair,
   ArrowRight,
+  BarChart2,
   CalendarClock,
   CalendarHeart,
   Camera,
@@ -1543,7 +1544,14 @@ function KpiTile({
   const accentRing =
     accent === "blush" ? "text-blush-700 dark:text-blush-300" : "text-ink-700 dark:text-paper-100";
   return (
-    <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
+    <div
+      className={`card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100 ${onToggle ? "cursor-pointer select-none" : ""}`}
+      onClick={onToggle}
+      role={onToggle ? "button" : undefined}
+      aria-label={onToggle ? (expanded ? "Hide RSVP breakdown" : "Show RSVP breakdown") : undefined}
+      tabIndex={onToggle ? 0 : undefined}
+      onKeyDown={onToggle ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } } : undefined}
+    >
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span
           className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${accentBg} ${accentRing}`}
@@ -1552,14 +1560,9 @@ function KpiTile({
         </span>
         {label}
         {onToggle && (
-          <button
-            type="button"
-            onClick={onToggle}
-            className="ml-auto flex items-center justify-center rounded p-0.5 text-ink-400 transition hover:bg-paper-100 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-            aria-label={expanded ? "Hide RSVP breakdown" : "Show RSVP breakdown"}
-          >
-            {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          </button>
+          <span className="ml-auto flex items-center justify-center rounded p-0.5 text-ink-400 dark:text-umber-400">
+            <BarChart2 size={13} />
+          </span>
         )}
       </div>
       <div className="stat-num mt-2 text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
