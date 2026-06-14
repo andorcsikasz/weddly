@@ -439,6 +439,7 @@ function WaitlistContact() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (step !== 3) return;
     if (submitting) return;
     setErrorMsg(null);
 
@@ -544,7 +545,14 @@ function WaitlistContact() {
           </h2>
         </div>
 
-        <form onSubmit={onSubmit}>
+        <form
+          onSubmit={onSubmit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "BUTTON") {
+              e.preventDefault();
+            }
+          }}
+        >
           {/* ── Step 1: identity ─────────────────────────────────── */}
           {step === 1 && (
             <div className="mt-5 space-y-4">
