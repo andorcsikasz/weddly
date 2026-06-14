@@ -17,12 +17,7 @@ import {
 import type { Couple, Guest, Household } from "@shared/types";
 import { CURRENCIES, type Currency } from "@shared/types";
 import type { UpsertWishlistItemInput, WishlistItem, WishlistKind } from "@shared/wishlist";
-import {
-  WISHLIST_KINDS,
-  WISHLIST_MAX_DESC_LEN,
-  WISHLIST_MAX_TITLE_LEN,
-  WISHLIST_MAX_URL_LEN,
-} from "@shared/wishlist";
+import { WISHLIST_KINDS, WISHLIST_MAX_DESC_LEN, WISHLIST_MAX_TITLE_LEN } from "@shared/wishlist";
 import {
   ChevronDown,
   ExternalLink,
@@ -791,8 +786,10 @@ export default function WishlistEditorPage() {
   return (
     <>
       <header className="mb-8 flex flex-wrap items-center gap-x-3 gap-y-3">
-        <h1 className="font-grotesk">{t("wishlist_editor.title")}</h1>
-        <InfoHint text={t("wishlist_editor.subtitle")} />
+        <span className="flex items-start gap-1">
+          <h1 className="font-grotesk">{t("wishlist_editor.title")}</h1>
+          <InfoHint text={t("wishlist_editor.subtitle")} className="mt-1" />
+        </span>
         <div className="mx-4 flex flex-1 rounded-xl border border-paper-200 bg-paper-100 p-1 dark:border-umber-700 dark:bg-umber-900/60">
           {(["before", "after"] as WishlistPhase[]).map((p) => {
             const Icon = p === "before" ? Gift : PackageCheck;
@@ -858,174 +855,178 @@ export default function WishlistEditorPage() {
         <div className="space-y-10">
           {phase === "before" && (
             <>
-          {/* ── Gifts ───────────────────────────────────────────────── */}
-          <CollapsibleSection
-            title={t("wishlist_editor.section_gifts_title")}
-            open={!collapsed.gifts}
-            onToggle={() => toggleSection("gifts")}
-            actions={
-              <>
-                {gifts.length > 0 && (
-                  // Single toggle: shows the icon of the *other* layout and
-                  // flips to it on click.
+              {/* ── Gifts ───────────────────────────────────────────────── */}
+              <CollapsibleSection
+                title={t("wishlist_editor.section_gifts_title")}
+                open={!collapsed.gifts}
+                onToggle={() => toggleSection("gifts")}
+                actions={
+                  <>
+                    {gifts.length > 0 && (
+                      // Single toggle: shows the icon of the *other* layout and
+                      // flips to it on click.
+                      <button
+                        type="button"
+                        aria-label={
+                          view === "list"
+                            ? t("wishlist_editor.view_cards")
+                            : t("wishlist_editor.view_list")
+                        }
+                        onClick={() => changeView(view === "list" ? "cards" : "list")}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-900 transition-colors hover:bg-paper-100 dark:text-paper-50 dark:hover:bg-umber-700"
+                      >
+                        {view === "list" ? <LayoutGrid size={16} /> : <Rows3 size={16} />}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={() => setEditing({ item: null, presetKind: "gift" })}
+                    >
+                      <Plus size={16} />
+                      {t("wishlist_editor.add_gift")}
+                    </button>
+                  </>
+                }
+              >
+                {gifts.length === 0 ? (
+                  <div className="card stationery text-center">
+                    <Gift
+                      size={28}
+                      className="mx-auto text-ink-400 dark:text-umber-300"
+                      aria-hidden
+                    />
+                    <p className="mx-auto mt-3 max-w-md text-sm text-ink-600 dark:text-umber-200">
+                      {t("wishlist_editor.gifts_empty")}
+                    </p>
+                  </div>
+                ) : view === "list" ? (
+                  <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
+                    {gifts.map((item) => (
+                      <WishlistRow
+                        key={item.id}
+                        item={item}
+                        currency={currency}
+                        locale={locale}
+                        t={t}
+                        onEdit={() => setEditing({ item })}
+                        onDelete={() => void onDelete(item)}
+                      />
+                    ))}
+                  </ul>
+                ) : (
+                  <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {gifts.map((item) => (
+                      <WishlistCardItem
+                        key={item.id}
+                        item={item}
+                        currency={currency}
+                        locale={locale}
+                        t={t}
+                        onEdit={() => setEditing({ item })}
+                        onDelete={() => void onDelete(item)}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </CollapsibleSection>
+
+              {/* ── Requests (personal, no money) ───────────────────────── */}
+              <CollapsibleSection
+                title={t("wishlist_editor.section_requests_title")}
+                open={!collapsed.requests}
+                onToggle={() => toggleSection("requests")}
+                actions={
                   <button
                     type="button"
-                    aria-label={
-                      view === "list"
-                        ? t("wishlist_editor.view_cards")
-                        : t("wishlist_editor.view_list")
-                    }
-                    onClick={() => changeView(view === "list" ? "cards" : "list")}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-900 transition-colors hover:bg-paper-100 dark:text-paper-50 dark:hover:bg-umber-700"
+                    className="btn-outline"
+                    onClick={() => setEditing({ item: null, presetKind: "request" })}
                   >
-                    {view === "list" ? <LayoutGrid size={16} /> : <Rows3 size={16} />}
+                    <Plus size={16} />
+                    {t("wishlist_editor.add_request")}
                   </button>
-                )}
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => setEditing({ item: null, presetKind: "gift" })}
-                >
-                  <Plus size={16} />
-                  {t("wishlist_editor.add_gift")}
-                </button>
-              </>
-            }
-          >
-            {gifts.length === 0 ? (
-              <div className="card stationery text-center">
-                <Gift size={28} className="mx-auto text-ink-400 dark:text-umber-300" aria-hidden />
-                <p className="mx-auto mt-3 max-w-md text-sm text-ink-600 dark:text-umber-200">
-                  {t("wishlist_editor.gifts_empty")}
-                </p>
-              </div>
-            ) : view === "list" ? (
-              <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
-                {gifts.map((item) => (
-                  <WishlistRow
-                    key={item.id}
-                    item={item}
-                    currency={currency}
-                    locale={locale}
-                    t={t}
-                    onEdit={() => setEditing({ item })}
-                    onDelete={() => void onDelete(item)}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {gifts.map((item) => (
-                  <WishlistCardItem
-                    key={item.id}
-                    item={item}
-                    currency={currency}
-                    locale={locale}
-                    t={t}
-                    onEdit={() => setEditing({ item })}
-                    onDelete={() => void onDelete(item)}
-                  />
-                ))}
-              </ul>
-            )}
-          </CollapsibleSection>
-
-          {/* ── Requests (personal, no money) ───────────────────────── */}
-          <CollapsibleSection
-            title={t("wishlist_editor.section_requests_title")}
-            open={!collapsed.requests}
-            onToggle={() => toggleSection("requests")}
-            actions={
-              <button
-                type="button"
-                className="btn-outline"
-                onClick={() => setEditing({ item: null, presetKind: "request" })}
+                }
               >
-                <Plus size={16} />
-                {t("wishlist_editor.add_request")}
-              </button>
-            }
-          >
-            {/* No max-width cap so the line uses the full content width and
+                {/* No max-width cap so the line uses the full content width and
                 stays on one row on desktop; it still wraps naturally on
                 narrow / mobile viewports. */}
-            <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">
-              {t("wishlist_editor.section_requests_subtitle")}
-            </p>
-            {requests.length === 0 ? (
-              // Compact empty state: roughly half the height of a full card so
-              // the request examples don't dominate the page. Smaller padding +
-              // tighter type than the gifts empty card above.
-              <div className="card stationery p-3">
-                <p className="text-xs text-ink-600 dark:text-umber-200">
-                  {t("wishlist_editor.requests_empty")}
+                <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">
+                  {t("wishlist_editor.section_requests_subtitle")}
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[11px] font-medium text-ink-500 dark:text-umber-300">
-                    {t("wishlist_editor.request_examples_label")}
-                  </span>
-                  {REQUEST_EXAMPLE_KEYS.map((key) => {
-                    const label = t(`wishlist_editor.${key}`);
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() =>
-                          setEditing({ item: null, presetKind: "request", presetTitle: label })
-                        }
-                        className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white px-3 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
-                      >
-                        <Plus size={12} aria-hidden />
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
-                {requests.map((item) => (
-                  <WishlistRow
-                    key={item.id}
-                    item={item}
-                    currency={currency}
-                    locale={locale}
-                    t={t}
-                    onEdit={() => setEditing({ item })}
-                    onDelete={() => void onDelete(item)}
-                  />
-                ))}
-              </ul>
-            )}
-          </CollapsibleSection>
+                {requests.length === 0 ? (
+                  // Compact empty state: roughly half the height of a full card so
+                  // the request examples don't dominate the page. Smaller padding +
+                  // tighter type than the gifts empty card above.
+                  <div className="card stationery p-3">
+                    <p className="text-xs text-ink-600 dark:text-umber-200">
+                      {t("wishlist_editor.requests_empty")}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-medium text-ink-500 dark:text-umber-300">
+                        {t("wishlist_editor.request_examples_label")}
+                      </span>
+                      {REQUEST_EXAMPLE_KEYS.map((key) => {
+                        const label = t(`wishlist_editor.${key}`);
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() =>
+                              setEditing({ item: null, presetKind: "request", presetTitle: label })
+                            }
+                            className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white px-3 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+                          >
+                            <Plus size={12} aria-hidden />
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
+                    {requests.map((item) => (
+                      <WishlistRow
+                        key={item.id}
+                        item={item}
+                        currency={currency}
+                        locale={locale}
+                        t={t}
+                        onEdit={() => setEditing({ item })}
+                        onDelete={() => void onDelete(item)}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </CollapsibleSection>
             </>
           )}
 
           {phase === "after" && (
-          <>
-          {/* ── Received gifts (private ledger, never published) ─────── */}
-          <CollapsibleSection
-            title={t("wishlist_editor.section_received_title")}
-            open={!collapsed.received}
-            onToggle={() => toggleSection("received")}
-            actions={
-              <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
-                <PackageCheck size={14} aria-hidden />
-                {t("wishlist_editor.received_private_badge")}
-              </span>
-            }
-          >
-            <p className="mb-3 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
-              {t("wishlist_editor.section_received_subtitle")}
-            </p>
-            <ReceivedGiftsTable
-              initialItems={received}
-              guests={guests}
-              households={households}
-              t={t}
-            />
-          </CollapsibleSection>
-          </>
+            <>
+              {/* ── Received gifts (private ledger, never published) ─────── */}
+              <CollapsibleSection
+                title={t("wishlist_editor.section_received_title")}
+                open={!collapsed.received}
+                onToggle={() => toggleSection("received")}
+                actions={
+                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+                    <PackageCheck size={14} aria-hidden />
+                    {t("wishlist_editor.received_private_badge")}
+                  </span>
+                }
+              >
+                <p className="mb-3 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
+                  {t("wishlist_editor.section_received_subtitle")}
+                </p>
+                <ReceivedGiftsTable
+                  initialItems={received}
+                  guests={guests}
+                  households={households}
+                  t={t}
+                />
+              </CollapsibleSection>
+            </>
           )}
         </div>
       )}
@@ -1107,36 +1108,8 @@ function WishlistItemDialog({
         )
       : "",
   );
-  const [url, setUrl] = useState(existing?.url ?? "");
-  // Resolved preview image (og:image). Seeded from the existing row; re-fetched
-  // when the couple enters/changes the URL (on blur, to avoid a request per
-  // keystroke). Sent with the save so the row/guest card show a thumbnail.
-  const [imageUrl, setImageUrl] = useState<string | null>(existing?.image_url ?? null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  // The URL the current `imageUrl` was resolved from, so we don't re-fetch an
-  // unchanged link on every blur.
-  const [previewedUrl, setPreviewedUrl] = useState(existing?.url ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [titleError, setTitleError] = useState<string | null>(null);
-
-  async function resolvePreview() {
-    const trimmed = url.trim();
-    if (trimmed === previewedUrl) return; // unchanged since last resolve
-    setPreviewedUrl(trimmed);
-    if (!trimmed) {
-      setImageUrl(null);
-      return;
-    }
-    setPreviewLoading(true);
-    try {
-      const r = await wishlistApi.linkPreview(trimmed);
-      setImageUrl(r.image_url);
-    } catch {
-      // Soft failure — keep whatever thumbnail we had; saving still works.
-    } finally {
-      setPreviewLoading(false);
-    }
-  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -1160,21 +1133,13 @@ function WishlistItemDialog({
       }
     }
 
-    const trimmedUrl = url.trim();
     const body: UpsertWishlistItemInput = {
       title: trimmedTitle.slice(0, WISHLIST_MAX_TITLE_LEN),
       kind,
       description: description.trim() ? description.trim().slice(0, WISHLIST_MAX_DESC_LEN) : null,
       target_amount_minor: targetMinor,
-      // Persist an override only when it differs from the couple's currency, so
-      // an unchanged item keeps tracking the couple-level setting. Requests
-      // never carry a currency.
       currency: !isGift || itemCurrency === currency ? null : itemCurrency,
-      url: trimmedUrl ? trimmedUrl.slice(0, WISHLIST_MAX_URL_LEN) : null,
-      // Send the resolved preview image when we have one. When empty, omit the
-      // field so the server resolves the og:image itself (fallback for links
-      // pasted + saved before the on-blur fetch finished).
-      ...(imageUrl ? { image_url: imageUrl } : {}),
+      url: null,
     };
 
     setSubmitting(true);
@@ -1314,31 +1279,6 @@ function WishlistItemDialog({
               </div>
             </FormRow>
           )}
-
-          <FormRow label={t("wishlist_editor.url_label")} hint={t("wishlist_editor.url_hint")}>
-            <div className="flex items-center gap-3">
-              {(imageUrl || previewLoading) && (
-                <span className="shrink-0">
-                  {previewLoading ? (
-                    <Skeleton variant="block" width={44} height={44} rounded="lg" />
-                  ) : (
-                    <WishlistThumb imageUrl={imageUrl} size={44} />
-                  )}
-                </span>
-              )}
-              <input
-                className="input flex-1 font-grotesk"
-                type="url"
-                value={url}
-                maxLength={WISHLIST_MAX_URL_LEN}
-                inputMode="url"
-                autoComplete="off"
-                onChange={(e) => setUrl(e.target.value)}
-                onBlur={() => void resolvePreview()}
-                placeholder={t("wishlist_editor.url_placeholder")}
-              />
-            </div>
-          </FormRow>
         </div>
         <div className="flex gap-2 border-t border-paper-200 px-6 py-4 dark:border-umber-700">
           <button type="button" className="btn-ghost flex-1" onClick={onClose}>

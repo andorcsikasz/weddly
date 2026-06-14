@@ -32,7 +32,7 @@ export function InfoHint({
         aria-expanded={onClick ? undefined : open}
         onClick={onClick ?? (() => setOpen((v) => !v))}
         onBlur={() => setOpen(false)}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-400 transition-colors hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-umber-300 dark:hover:text-paper-50"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-700 transition-colors hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-ink-300 dark:hover:text-paper-50"
       >
         <Info size={16} aria-hidden />
       </button>

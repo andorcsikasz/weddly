@@ -227,7 +227,12 @@ export function SeatingMap({
   // Both modes use max-scale so the longer axis overflows and the canvas
   // is scrollable — edit mode stays fit-to-meet (whole room visible at once).
   const svgSize = useMemo<{ width: number | string; height: number | string }>(() => {
-    if ((!expanded && !seatMode && !fullHeight) || !wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
+    if (
+      (!expanded && !seatMode && !fullHeight) ||
+      !wrapperPx ||
+      wrapperPx.w <= 0 ||
+      wrapperPx.h <= 0
+    ) {
       return { width: "100%", height: "100%" };
     }
     const scale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
@@ -691,7 +696,9 @@ export function SeatingMap({
   }
 
   return (
-    <div className={`card overflow-hidden p-0 ${seatMode || fullHeight ? "flex h-full flex-col" : ""}`}>
+    <div
+      className={`card overflow-hidden p-0 ${seatMode || fullHeight ? "flex h-full flex-col" : ""}`}
+    >
       {cardContent}
     </div>
   );
@@ -801,7 +808,13 @@ function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
   }
   return (
     <g>
-      <rect x={0} y={0} width={widthMm} height={heightMm} className="fill-paper-50 dark:fill-umber-900" />
+      <rect
+        x={0}
+        y={0}
+        width={widthMm}
+        height={heightMm}
+        className="fill-paper-50 dark:fill-umber-900"
+      />
       {lines}
       {/* Room boundary — inset by half the stroke width (30 mm) so the
           stroke stays entirely inside the SVG viewBox and doesn't bleed
@@ -899,7 +912,9 @@ function TableShape({
     ? "stroke-umber-950 dark:stroke-paper-200"
     : "stroke-ink-800 dark:stroke-umber-400";
   const strokeWidth = isSelected ? 22 : 14;
-  const fillClass = isSelected ? "fill-umber-900 dark:fill-paper-100" : "fill-paper-50 dark:fill-umber-800";
+  const fillClass = isSelected
+    ? "fill-umber-900 dark:fill-paper-100"
+    : "fill-paper-50 dark:fill-umber-800";
 
   // Long and head get a softer banquet-bench corner; square stays tighter.
   const rectCorner =
@@ -1033,9 +1048,31 @@ function TableShape({
               })()
             : null;
 
+        const canDragOut = seatMode && !isDisabled && !tapMode && isOccupied && seatGuest !== null;
         return (
           <g
             key={i}
+            draggable={canDragOut ? true : undefined}
+            onDragStart={
+              canDragOut
+                ? (e: React.DragEvent) => {
+                    e.stopPropagation();
+                    e.dataTransfer.setData(
+                      "application/x-weddly-guest",
+                      JSON.stringify({ guestId: seatGuest!.id }),
+                    );
+                    e.dataTransfer.effectAllowed = "move";
+                    onChairDragStart?.(i, seatGuest!.id);
+                  }
+                : undefined
+            }
+            onDragEnd={
+              canDragOut
+                ? (e: React.DragEvent) => {
+                    onChairDragEnd?.(e);
+                  }
+                : undefined
+            }
             onDragOver={
               seatMode && !isDisabled
                 ? (e: React.DragEvent) => {
@@ -1073,7 +1110,9 @@ function TableShape({
                 : undefined
             }
             style={
-              seatMode && !isDisabled ? { cursor: tapMode ? "pointer" : "default" } : undefined
+              seatMode && !isDisabled
+                ? { cursor: tapMode ? "pointer" : canDragOut ? "grab" : "default" }
+                : undefined
             }
           >
             <rect

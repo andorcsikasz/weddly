@@ -1131,42 +1131,9 @@ export default function SeatingPage() {
       <span aria-live="polite" aria-atomic="true" className="sr-only">
         {a11yMessage}
       </span>
-      <h1 className="mb-3 font-grotesk">{t("seating.title")}</h1>
-
-      {/* Single toolbar row: icon strip (left) → tabs (flex-1) → add table (right) */}
+      {/* Single toolbar row: title (left) → tabs (flex-1) → icon strip + add table (right) */}
       <div className="seating-toolbar mb-4 flex items-center gap-4">
-        {/* Icon-only action strip — overflow-hidden clips child hover bg to rounded corners */}
-        <div className="flex shrink-0 items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
-          <PrintChartMenu
-            disabled={previewLoading !== null}
-            onPick={(format) =>
-              requestDownload(
-                `/api/print/seating/${format}?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
-                `weddly-seating-${format}.pdf`,
-                format === "a4" ? t("seating.print_a4") : t("seating.print_a3"),
-              )
-            }
-            onPlaceCards={() =>
-              requestDownload(
-                "/api/print/place-cards",
-                "weddly-place-cards.pdf",
-                t("seating.print_place_cards"),
-              )
-            }
-            grouped
-            iconOnly
-          />
-          <button
-            type="button"
-            className="icon-group-item"
-            onClick={arrangeTablesSymmetrically}
-            disabled={tables.length === 0}
-            aria-label={t("seating.arrange_button_label")}
-            title={t("seating.arrange_button_label")}
-          >
-            <LayoutGrid size={16} aria-hidden />
-          </button>
-        </div>
+        <h1 className="shrink-0 font-grotesk">{t("seating.title")}</h1>
 
         {/* Mode tabs — stretch to fill the remaining space */}
         <div
@@ -1194,6 +1161,38 @@ export default function SeatingPage() {
         {mode === "edit" ? (
           // Edit mode right section — matches the w-[280px] right panel below.
           <div className="flex w-[280px] shrink-0 items-center justify-end gap-2">
+            {/* Icon-only action strip */}
+            <div className="flex shrink-0 items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
+              <PrintChartMenu
+                disabled={previewLoading !== null}
+                onPick={(format) =>
+                  requestDownload(
+                    `/api/print/seating/${format}?room_w=${roomWidthMm}&room_h=${roomHeightMm}`,
+                    `weddly-seating-${format}.pdf`,
+                    format === "a4" ? t("seating.print_a4") : t("seating.print_a3"),
+                  )
+                }
+                onPlaceCards={() =>
+                  requestDownload(
+                    "/api/print/place-cards",
+                    "weddly-place-cards.pdf",
+                    t("seating.print_place_cards"),
+                  )
+                }
+                grouped
+                iconOnly
+              />
+              <button
+                type="button"
+                className="icon-group-item"
+                onClick={arrangeTablesSymmetrically}
+                disabled={tables.length === 0}
+                aria-label={t("seating.arrange_button_label")}
+                title={t("seating.arrange_button_label")}
+              >
+                <LayoutGrid size={16} aria-hidden />
+              </button>
+            </div>
             {previewLoading !== null && (
               <button
                 type="button"
@@ -1310,26 +1309,26 @@ export default function SeatingPage() {
         // table editor sits in a fixed-width right column.
         <div className="flex h-[calc(100vh-260px)] gap-4">
           <div className="min-w-0 flex-1">
-          <SeatingMap
-            tables={tables}
-            assignments={assignments}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onMove={moveTable}
-            onResize={resizeTable}
-            onSeatsChange={changeSeats}
-            onDeleteTable={(id) => {
-              const tbl = tables.find((tb) => tb.id === id);
-              if (tbl) deleteTable(tbl);
-            }}
-            onAddTable={addTable}
-            unassignedHighlight={false}
-            roomWidthMm={roomWidthMm}
-            roomHeightMm={roomHeightMm}
-            onRoomChange={updateRoom}
-            babySeatsByTable={babySeatsByTable}
-            fullHeight
-          />
+            <SeatingMap
+              tables={tables}
+              assignments={assignments}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onMove={moveTable}
+              onResize={resizeTable}
+              onSeatsChange={changeSeats}
+              onDeleteTable={(id) => {
+                const tbl = tables.find((tb) => tb.id === id);
+                if (tbl) deleteTable(tbl);
+              }}
+              onAddTable={addTable}
+              unassignedHighlight={false}
+              roomWidthMm={roomWidthMm}
+              roomHeightMm={roomHeightMm}
+              onRoomChange={updateRoom}
+              babySeatsByTable={babySeatsByTable}
+              fullHeight
+            />
           </div>
           <div className="w-[280px] shrink-0">
             <TableEditor
@@ -1348,189 +1347,192 @@ export default function SeatingPage() {
         // Full-height map + compact unassigned panel on the right. TableCard
         // grid appears below (scroll down) for the classic per-table view.
         <>
-        <div className="flex h-[calc(100vh-260px)] gap-4">
-          {/* Map: flex-1 so it takes all remaining width, h-full so the
+          <div className="flex h-[calc(100vh-260px)] gap-4">
+            {/* Map: flex-1 so it takes all remaining width, h-full so the
               SeatingMap card stretches vertically. */}
-          <div className="min-w-0 flex-1">
-            <SeatingMap
-              tables={tables}
-              assignments={assignments}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onMove={moveTable}
-              onResize={resizeTable}
-              onSeatsChange={changeSeats}
-              onDeleteTable={(id) => {
-                const tbl = tables.find((tb) => tb.id === id);
-                if (tbl) deleteTable(tbl);
+            <div className="min-w-0 flex-1">
+              <SeatingMap
+                tables={tables}
+                assignments={assignments}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                onMove={moveTable}
+                onResize={resizeTable}
+                onSeatsChange={changeSeats}
+                onDeleteTable={(id) => {
+                  const tbl = tables.find((tb) => tb.id === id);
+                  if (tbl) deleteTable(tbl);
+                }}
+                onAddTable={addTable}
+                unassignedHighlight={draggingSeatedId !== null && unassignedHover}
+                roomWidthMm={roomWidthMm}
+                roomHeightMm={roomHeightMm}
+                onRoomChange={updateRoom}
+                babySeatsByTable={babySeatsByTable}
+                seatMode
+                seatGuestsByTable={seatGuestsByTable}
+                onDropSeat={dropToSeat}
+                onTapSeat={handleTapSeat}
+                tapMode={tapMode}
+                selectedGuestId={selectedGuestId}
+                onChairDragStart={(_, __, guestId) => startSeatedDrag(guestId)}
+                onChairDragEnd={endSeatedDrag}
+              />
+            </div>
+
+            {/* Compact unassigned guests panel — 220px, sticky so it stays
+              alongside the map as the user scrolls. */}
+            <aside
+              className={`w-[280px] shrink-0 rounded-xl border bg-paper-50 p-3 transition-colors dark:bg-umber-900 ${
+                draggingSeatedId !== null
+                  ? unassignedHover
+                    ? "border-blush-500 bg-blush-50 ring-2 ring-blush-400 dark:bg-blush-400/15"
+                    : "border-blush-300 ring-2 ring-blush-200 ring-dashed dark:border-blush-400/40 dark:ring-blush-400/30"
+                  : "border-paper-200 dark:border-umber-700"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (draggingSeatedId !== null && !unassignedHover) setUnassignedHover(true);
               }}
-              onAddTable={addTable}
-              unassignedHighlight={draggingSeatedId !== null && unassignedHover}
-              roomWidthMm={roomWidthMm}
-              roomHeightMm={roomHeightMm}
-              onRoomChange={updateRoom}
-              babySeatsByTable={babySeatsByTable}
-              seatMode
-              seatGuestsByTable={seatGuestsByTable}
-              onDropSeat={dropToSeat}
-              onTapSeat={handleTapSeat}
-              tapMode={tapMode}
-              selectedGuestId={selectedGuestId}
-              onChairDragStart={(_, __, guestId) => startSeatedDrag(guestId)}
-              onChairDragEnd={endSeatedDrag}
-            />
+              onDragLeave={(e) => {
+                if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+                setUnassignedHover(false);
+              }}
+              onDrop={(e) => {
+                setUnassignedHover(false);
+                dropToUnassigned(e);
+              }}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+                  {t("seating.seat_mode_panel_title")}
+                </h2>
+                {unassigned.length + partnerSlots.length > 0 && (
+                  <span className="rounded-full bg-ink-900 px-1.5 py-0.5 text-[10px] font-bold text-paper-50 dark:bg-paper-50 dark:text-ink-900">
+                    {unassigned.length + partnerSlots.length}
+                  </span>
+                )}
+              </div>
+              <p className="mb-2 text-[11px] text-ink-500 dark:text-umber-300">
+                {draggingSeatedId !== null
+                  ? unassignedHover
+                    ? t("seating.drop_to_unassign_active")
+                    : t("seating.drop_to_unassign")
+                  : selectedGuestId !== null
+                    ? t("seating.seat_tap_place").replace(
+                        "{guest}",
+                        guestById.get(selectedGuestId)?.full_name ?? "",
+                      )
+                    : t("seating.drag_help")}
+              </p>
+              {unassigned.length === 0 && partnerSlots.length === 0 ? (
+                <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+                  {t("seating.no_unassigned")}
+                </p>
+              ) : (
+                <ul
+                  className="space-y-1.5 overflow-y-auto overscroll-contain"
+                  style={{ maxHeight: "calc(100vh - 320px)" }}
+                >
+                  {partnerSlots.map((slot) =>
+                    slot.guest ? (
+                      <li key={slot.role}>
+                        <DraggableGuest
+                          guest={slot.guest}
+                          tapMode={tapMode || true}
+                          selected={selectedGuestId === slot.guest.id}
+                          onTap={handleTapGuest}
+                          partnerRole={slot.role}
+                        />
+                      </li>
+                    ) : (
+                      <li key={slot.role}>
+                        <PartnerSlotPlaceholder
+                          role={slot.role}
+                          name={slot.name}
+                          hint={t("seating.partner_placeholder_hint")}
+                        />
+                      </li>
+                    ),
+                  )}
+                  {unassignedEntries.map((entry) =>
+                    entry.kind === "household" ? (
+                      <li key={`h${entry.householdId}`}>
+                        <HouseholdGroup
+                          householdId={entry.householdId}
+                          guests={entry.guests}
+                          tapMode={tapMode || true}
+                          selected={selectedHouseholdId === entry.householdId}
+                          onTap={handleTapHousehold}
+                          onUnlink={(id) => {
+                            setUnlinkedHouseholds((prev) => {
+                              const next = new Set(prev);
+                              next.add(id);
+                              return next;
+                            });
+                            setSelectedHouseholdId((cur) => (cur === id ? null : cur));
+                          }}
+                          unlinkLabel={t("seating.household_unlink")}
+                          ariaLabel={t("seating.household_linked_aria").replace(
+                            "{n}",
+                            String(entry.guests.length),
+                          )}
+                        />
+                      </li>
+                    ) : (
+                      <li key={entry.guest.id}>
+                        <DraggableGuest
+                          guest={entry.guest}
+                          tapMode={tapMode || true}
+                          selected={selectedGuestId === entry.guest.id}
+                          onTap={handleTapGuest}
+                          partnerRole={partnerRole(entry.guest)}
+                          relinkable={
+                            entry.guest.household_id != null &&
+                            unlinkedHouseholds.has(entry.guest.household_id) &&
+                            unassigned.filter((g) => g.household_id === entry.guest.household_id)
+                              .length >= 2
+                          }
+                          onRelink={() =>
+                            entry.guest.household_id != null &&
+                            setUnlinkedHouseholds((prev) => {
+                              if (!prev.has(entry.guest.household_id!)) return prev;
+                              const next = new Set(prev);
+                              next.delete(entry.guest.household_id!);
+                              return next;
+                            })
+                          }
+                          relinkLabel={t("seating.household_relink")}
+                        />
+                      </li>
+                    ),
+                  )}
+                </ul>
+              )}
+            </aside>
           </div>
 
-          {/* Compact unassigned guests panel — 220px, sticky so it stays
-              alongside the map as the user scrolls. */}
-          <aside
-            className={`w-[280px] shrink-0 overflow-hidden rounded-xl border bg-paper-50 p-3 transition-colors dark:bg-umber-900 ${
-              draggingSeatedId !== null
-                ? unassignedHover
-                  ? "border-blush-500 bg-blush-50 ring-2 ring-blush-400 dark:bg-blush-400/15"
-                  : "border-blush-300 ring-2 ring-blush-200 ring-dashed dark:border-blush-400/40 dark:ring-blush-400/30"
-                : "border-paper-200 dark:border-umber-700"
-            }`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              if (draggingSeatedId !== null && !unassignedHover) setUnassignedHover(true);
-            }}
-            onDragLeave={(e) => {
-              if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-              setUnassignedHover(false);
-            }}
-            onDrop={(e) => {
-              setUnassignedHover(false);
-              dropToUnassigned(e);
-            }}
-          >
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-                {t("seating.seat_mode_panel_title")}
-              </h2>
-              {unassigned.length + partnerSlots.length > 0 && (
-                <span className="rounded-full bg-ink-900 px-1.5 py-0.5 text-[10px] font-bold text-paper-50 dark:bg-paper-50 dark:text-ink-900">
-                  {unassigned.length + partnerSlots.length}
-                </span>
-              )}
-            </div>
-            <p className="mb-2 text-[11px] text-ink-500 dark:text-umber-300">
-              {draggingSeatedId !== null
-                ? unassignedHover
-                  ? t("seating.drop_to_unassign_active")
-                  : t("seating.drop_to_unassign")
-                : selectedGuestId !== null
-                  ? t("seating.seat_tap_place").replace(
-                      "{guest}",
-                      guestById.get(selectedGuestId)?.full_name ?? "",
-                    )
-                  : t("seating.drag_help")}
-            </p>
-            {unassigned.length === 0 && partnerSlots.length === 0 ? (
-              <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
-                {t("seating.no_unassigned")}
-              </p>
-            ) : (
-              <ul className="space-y-1.5 overflow-y-auto overscroll-contain" style={{ maxHeight: "calc(100vh - 320px)" }}>
-                {partnerSlots.map((slot) =>
-                  slot.guest ? (
-                    <li key={slot.role}>
-                      <DraggableGuest
-                        guest={slot.guest}
-                        tapMode={tapMode || true}
-                        selected={selectedGuestId === slot.guest.id}
-                        onTap={handleTapGuest}
-                        partnerRole={slot.role}
-                      />
-                    </li>
-                  ) : (
-                    <li key={slot.role}>
-                      <PartnerSlotPlaceholder
-                        role={slot.role}
-                        name={slot.name}
-                        hint={t("seating.partner_placeholder_hint")}
-                      />
-                    </li>
-                  ),
-                )}
-                {unassignedEntries.map((entry) =>
-                  entry.kind === "household" ? (
-                    <li key={`h${entry.householdId}`}>
-                      <HouseholdGroup
-                        householdId={entry.householdId}
-                        guests={entry.guests}
-                        tapMode={tapMode || true}
-                        selected={selectedHouseholdId === entry.householdId}
-                        onTap={handleTapHousehold}
-                        onUnlink={(id) => {
-                          setUnlinkedHouseholds((prev) => {
-                            const next = new Set(prev);
-                            next.add(id);
-                            return next;
-                          });
-                          setSelectedHouseholdId((cur) => (cur === id ? null : cur));
-                        }}
-                        unlinkLabel={t("seating.household_unlink")}
-                        ariaLabel={t("seating.household_linked_aria").replace(
-                          "{n}",
-                          String(entry.guests.length),
-                        )}
-                      />
-                    </li>
-                  ) : (
-                    <li key={entry.guest.id}>
-                      <DraggableGuest
-                        guest={entry.guest}
-                        tapMode={tapMode || true}
-                        selected={selectedGuestId === entry.guest.id}
-                        onTap={handleTapGuest}
-                        partnerRole={partnerRole(entry.guest)}
-                        relinkable={
-                          entry.guest.household_id != null &&
-                          unlinkedHouseholds.has(entry.guest.household_id) &&
-                          unassigned.filter((g) => g.household_id === entry.guest.household_id)
-                            .length >= 2
-                        }
-                        onRelink={() =>
-                          entry.guest.household_id != null &&
-                          setUnlinkedHouseholds((prev) => {
-                            if (!prev.has(entry.guest.household_id!)) return prev;
-                            const next = new Set(prev);
-                            next.delete(entry.guest.household_id!);
-                            return next;
-                          })
-                        }
-                        relinkLabel={t("seating.household_relink")}
-                      />
-                    </li>
-                  ),
-                )}
-              </ul>
-            )}
-          </aside>
-        </div>
-
-        {/* TableCard grid — scroll down to see per-table seat assignments */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {tables.map((table) => (
-            <TableCard
-              key={table.id}
-              table={table}
-              assignments={assignments.filter((a) => a.table_id === table.id)}
-              guestById={guestById}
-              onDropSeat={dropToSeat}
-              onSelect={() => setSelectedId(table.id)}
-              isSelected={selectedId === table.id}
-              onSeatedDragStart={startSeatedDrag}
-              onSeatedDragEnd={endSeatedDrag}
-              tapMode={tapMode}
-              selectedGuestId={selectedGuestId}
-              onTapGuest={handleTapGuest}
-              onTapSeat={handleTapSeat}
-              t={t}
-            />
-          ))}
-        </div>
+          {/* TableCard grid — scroll down to see per-table seat assignments */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {tables.map((table) => (
+              <TableCard
+                key={table.id}
+                table={table}
+                assignments={assignments.filter((a) => a.table_id === table.id)}
+                guestById={guestById}
+                onDropSeat={dropToSeat}
+                onSelect={() => setSelectedId(table.id)}
+                isSelected={selectedId === table.id}
+                onSeatedDragStart={startSeatedDrag}
+                onSeatedDragEnd={endSeatedDrag}
+                tapMode={tapMode}
+                selectedGuestId={selectedGuestId}
+                onTapGuest={handleTapGuest}
+                onTapSeat={handleTapSeat}
+                t={t}
+              />
+            ))}
+          </div>
         </>
       )}
 
