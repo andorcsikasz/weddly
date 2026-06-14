@@ -1097,20 +1097,21 @@ export default function WishlistEditorPage() {
           {phase === "after" && (
             <>
               {/* ── Received gifts (private ledger, never published) ─────── */}
-              <CollapsibleSection
-                title={t("wishlist_editor.section_received_title")}
-                open={!collapsed.received}
-                onToggle={() => toggleSection("received")}
-                actions={
+              <section>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">
+                    {t("wishlist_editor.section_received_title")}
+                  </h2>
                   <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
                     <PackageCheck size={14} aria-hidden />
                     {t("wishlist_editor.received_private_badge")}
                   </span>
-                }
-              >
-                <p className="mb-3 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
-                  {t("wishlist_editor.section_received_subtitle")}
-                </p>
+                </div>
+                {received.length === 0 && (
+                  <p className="mb-3 text-sm text-ink-500 sm:whitespace-nowrap dark:text-umber-300">
+                    {t("wishlist_editor.section_received_subtitle")}
+                  </p>
+                )}
                 {couple && (
                   <ReceivedGiftsTable
                     initialItems={received}
@@ -1121,7 +1122,7 @@ export default function WishlistEditorPage() {
                     t={t}
                   />
                 )}
-              </CollapsibleSection>
+              </section>
             </>
           )}
         </div>
