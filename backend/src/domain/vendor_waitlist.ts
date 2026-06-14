@@ -26,6 +26,7 @@ export interface VendorWaitlistRow {
   instagram_handle: string | null;
   /** Relative disk path under uploadsDir, e.g. `vendor_waitlist/3/price_list.pdf`. */
   price_list_path: string | null;
+  travel_radius_km: number | null;
   status: string;
   reviewed_by_user_id: number | null;
   reviewed_at: number | null;
@@ -79,6 +80,7 @@ export function toVendorWaitlistEntry(row: VendorWaitlistRow): VendorWaitlistEnt
     portfolio_links: parsePortfolioLinks(row.portfolio_links),
     instagram_handle: row.instagram_handle,
     price_list_url: priceListUrl(row),
+    travel_radius_km: row.travel_radius_km,
     status: toStatus(row.status),
     reviewed_at: row.reviewed_at,
     created_at: row.created_at,
@@ -97,6 +99,7 @@ export function toVendorWaitlistAdminView(row: VendorWaitlistRow): VendorWaitlis
     portfolio_links: parsePortfolioLinks(row.portfolio_links),
     instagram_handle: row.instagram_handle,
     price_list_url: priceListUrl(row),
+    travel_radius_km: row.travel_radius_km,
     status: toStatus(row.status),
     reviewed_at: row.reviewed_at,
     outcome_at: row.outcome_at,
@@ -131,14 +134,15 @@ export function insertVendorWaitlist(input: {
   portfolio_links: string[];
   instagram_handle: string | null;
   price_list_path: string | null;
+  travel_radius_km: number | null;
 }): VendorWaitlistRow {
   const ts = now();
   const portfolioJson =
     input.portfolio_links.length > 0 ? JSON.stringify(input.portfolio_links) : null;
   const result = db
     .prepare(
-      `INSERT INTO vendor_waitlist (business_name, email, category, location, website, message, portfolio_links, instagram_handle, price_list_path, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
+      `INSERT INTO vendor_waitlist (business_name, email, category, location, website, message, portfolio_links, instagram_handle, price_list_path, travel_radius_km, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
     )
     .run(
       input.business_name,
@@ -150,6 +154,7 @@ export function insertVendorWaitlist(input: {
       portfolioJson,
       input.instagram_handle,
       input.price_list_path,
+      input.travel_radius_km,
       ts,
     );
   const row = getVendorWaitlistById(Number(result.lastInsertRowid));

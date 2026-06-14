@@ -1130,6 +1130,7 @@ const en: LocaleMessages = {
     form_category_placeholder: "e.g. venue, photo, catering",
     form_location_label: "Address / Google Maps link · optional",
     form_location_placeholder: "e.g. Budapest, or https://maps.app.goo.gl/…",
+    form_travel_radius_label: "Max travel",
     form_website_label: "Website",
     form_website_placeholder: "e.g. example.com or https://example.com",
     form_submit: "Join the waitlist",

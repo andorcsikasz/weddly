@@ -1307,6 +1307,7 @@ export interface LocaleMessages {
     form_category_placeholder: string;
     form_location_label: string;
     form_location_placeholder: string;
+    form_travel_radius_label: string;
     form_website_label: string;
     form_website_placeholder: string;
     form_submit: string;

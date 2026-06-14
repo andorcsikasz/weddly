@@ -269,6 +269,14 @@ const CONFETTI_COLORS = [
 
 const DRAFT_KEY = "weddly.vendor_waitlist_draft";
 
+const TRAVEL_RELEVANT_CATEGORIES = new Set<SupplierCategory>([
+  "catering", "bar_drinks", "pizza", "cake_dessert",
+  "decor_floral", "lighting", "tent_pavilion",
+  "music_dj", "sound_tech", "photo_video", "entertainment",
+  "hair_makeup", "nails",
+  "transport",
+]);
+
 function loadDraft() {
   try {
     const raw = sessionStorage.getItem(DRAFT_KEY);
@@ -378,6 +386,10 @@ function WaitlistContact() {
     const d = loadDraft();
     return Array.isArray(d?.portfolioLinks) ? (d.portfolioLinks as string[]) : [""];
   });
+  const [travelRadiusKm, setTravelRadiusKm] = useState(() => {
+    const d = loadDraft();
+    return typeof d?.travelRadiusKm === "string" ? d.travelRadiusKm : "";
+  });
   const [priceList, setPriceList] = useState<File | null>(null);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -390,12 +402,12 @@ function WaitlistContact() {
     try {
       sessionStorage.setItem(
         DRAFT_KEY,
-        JSON.stringify({ businessName, email, category, location, website, message, instagram, portfolioLinks }),
+        JSON.stringify({ businessName, email, category, location, website, message, instagram, portfolioLinks, travelRadiusKm }),
       );
     } catch {
       // storage unavailable — ignore
     }
-  }, [businessName, email, category, location, website, message, instagram, portfolioLinks]);
+  }, [businessName, email, category, location, website, message, instagram, portfolioLinks, travelRadiusKm]);
 
   const portfolioHintKey = useMemo<string>(() => {
     if (!category) return "vendors.portfolio_hint_default";
@@ -469,6 +481,7 @@ function WaitlistContact() {
 
     setSubmitting(true);
     try {
+      const radiusNum = travelRadiusKm ? Number.parseInt(travelRadiusKm, 10) : null;
       await vendorWaitlistApi.submit({
         business_name: name,
         email: emailTrim,
@@ -479,6 +492,7 @@ function WaitlistContact() {
         portfolio_links: trimmedLinks,
         instagram_handle: ig ? ig : null,
         price_list: priceList,
+        travel_radius_km: TRAVEL_RELEVANT_CATEGORIES.has(category as SupplierCategory) && radiusNum && !Number.isNaN(radiusNum) ? radiusNum : null,
         privacy_version: PRIVACY_VERSION,
         vendor_beta_notice_version: VENDOR_BETA_NOTICE_VERSION,
       });
@@ -521,6 +535,7 @@ function WaitlistContact() {
   }
 
   const portfolioAddDisabled = portfolioLinks.length >= MAX_PORTFOLIO_LINKS;
+  const travelRelevant = TRAVEL_RELEVANT_CATEGORIES.has(category as SupplierCategory);
   const stepTitles: Record<1 | 2 | 3, string> = {
     1: t("vendors.step_1_title"),
     2: t("vendors.step_2_title"),
@@ -643,20 +658,44 @@ function WaitlistContact() {
                 <label htmlFor="vendor-location" className="field-label">
                   {t("vendors.form_location_label")}
                 </label>
-                <div className="relative">
-                  <MapPin
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-                    aria-hidden
-                  />
-                  <input
-                    id="vendor-location"
-                    className="input pl-9"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    maxLength={500}
-                    placeholder={t("vendors.form_location_placeholder")}
-                  />
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <MapPin
+                      size={16}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                      aria-hidden
+                    />
+                    <input
+                      id="vendor-location"
+                      className="input pl-9"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      maxLength={500}
+                      placeholder={t("vendors.form_location_placeholder")}
+                    />
+                  </div>
+                  {travelRelevant && (
+                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                      <label htmlFor="vendor-travel-km" className="field-label mb-0 text-[11px]">
+                        {t("vendors.form_travel_radius_label")}
+                      </label>
+                      <div className="relative w-20">
+                        <input
+                          id="vendor-travel-km"
+                          type="number"
+                          className="input w-full pr-8 text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          value={travelRadiusKm}
+                          onChange={(e) => setTravelRadiusKm(e.target.value)}
+                          min={0}
+                          max={2000}
+                          placeholder="—"
+                        />
+                        <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-medium text-ink-400 dark:text-umber-300">
+                          km
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

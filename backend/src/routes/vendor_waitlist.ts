@@ -226,6 +226,13 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     priceListPath = `__pending__:${ext}`;
   }
 
+  let travelRadiusKm: number | null = null;
+  const travelRaw = trimStr(form.get("travel_radius_km"));
+  if (travelRaw) {
+    const parsed = Number.parseInt(travelRaw, 10);
+    if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 2000) travelRadiusKm = parsed;
+  }
+
   const row = insertVendorWaitlist({
     business_name,
     email,
@@ -236,6 +243,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     portfolio_links: portfolioLinks,
     instagram_handle: instagramHandle,
     price_list_path: null, // written after insert once we have the id
+    travel_radius_km: travelRadiusKm,
   });
 
   // Save the price list now that we have the row id.

@@ -1515,6 +1515,7 @@ export interface SubmitVendorWaitlistForm {
   portfolio_links: string[];
   instagram_handle: string | null;
   price_list: File | null;
+  travel_radius_km: number | null;
   privacy_version: string;
   vendor_beta_notice_version: string;
 }
@@ -1531,6 +1532,7 @@ export const vendorWaitlistApi = {
     if (input.instagram_handle) form.append("instagram_handle", input.instagram_handle);
     for (const link of input.portfolio_links) form.append("portfolio_links[]", link);
     if (input.price_list) form.append("price_list", input.price_list);
+    if (input.travel_radius_km !== null) form.append("travel_radius_km", String(input.travel_radius_km));
     form.append("privacy_version", input.privacy_version);
     form.append("vendor_beta_notice_version", input.vendor_beta_notice_version);
 

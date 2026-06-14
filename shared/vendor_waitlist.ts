@@ -27,6 +27,10 @@ export interface SubmitVendorWaitlistInput {
   portfolio_links: string[];
   /** Bare Instagram handle (no leading '@'). Optional. */
   instagram_handle: string | null;
+  /** How far (in km) the vendor is willing to travel to the wedding location.
+   *  Only meaningful for mobile categories (photo/video, catering, DJs, etc.)
+   *  — the frontend hides this field for fixed-location categories. */
+  travel_radius_km: number | null;
   /** Versions of the policy / disclosure docs the vendor clicked through.
    *  Must match the server's current constants — see `shared/legal.ts`. */
   privacy_version: string;
@@ -47,6 +51,7 @@ export interface VendorWaitlistEntry {
   portfolio_links: string[];
   instagram_handle: string | null;
   price_list_url: string | null;
+  travel_radius_km: number | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
   created_at: number;
@@ -66,6 +71,7 @@ export interface VendorWaitlistAdminView {
   portfolio_links: string[];
   instagram_handle: string | null;
   price_list_url: string | null;
+  travel_radius_km: number | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
   outcome_at: number | null;

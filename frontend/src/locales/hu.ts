@@ -1143,6 +1143,7 @@ const hu: LocaleMessages = {
     form_category_placeholder: "pl. helyszín, fotó, catering",
     form_location_label: "Cím / Google Maps link · opcionális",
     form_location_placeholder: "pl. Budapest, vagy https://maps.app.goo.gl/…",
+    form_travel_radius_label: "Max. utazás",
     form_website_label: "Weboldal",
     form_website_placeholder: "pl. example.com vagy https://example.com",
     form_submit: "Csatlakozz a várólistára",
