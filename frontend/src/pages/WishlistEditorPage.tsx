@@ -831,8 +831,8 @@ export default function WishlistEditorPage() {
       </header>
 
       {/* ── Before / after toggle ───────────────────────────────────── */}
-      <div className="mb-8 flex justify-center">
-        <div className="inline-flex rounded-xl border border-paper-200 bg-paper-100 p-1 dark:border-umber-700 dark:bg-umber-900/60">
+      <div className="mb-8">
+        <div className="flex w-full rounded-xl border border-paper-200 bg-paper-100 p-1 dark:border-umber-700 dark:bg-umber-900/60">
           {(["before", "after"] as WishlistPhase[]).map((p) => {
             const Icon = p === "before" ? Gift : PackageCheck;
             const active = phase === p;
@@ -842,7 +842,7 @@ export default function WishlistEditorPage() {
                 type="button"
                 onClick={() => changePhase(p)}
                 aria-pressed={active}
-                className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all ${
+                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all ${
                   active
                     ? "bg-white text-ink-900 shadow-sm dark:bg-umber-800 dark:text-paper-50"
                     : "text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
