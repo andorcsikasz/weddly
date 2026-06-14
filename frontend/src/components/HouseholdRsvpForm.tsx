@@ -681,18 +681,11 @@ export function HouseholdRsvpForm({
           Single line (flex-nowrap): the slug truncates if space is tight so
           the RSVP code never drops to its own row on narrow phones — the code
           is the credential that matters, the slug is identical for everyone. */}
-      <div className="mt-2.5 flex flex-nowrap items-center gap-x-1.5 self-start rounded-lg border border-paper-300 bg-paper-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-700 max-w-full overflow-hidden sm:mt-3 sm:gap-x-2 sm:text-xs sm:tracking-[0.25em] dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
-        <span className="shrink-0 text-ink-500 dark:text-umber-300">
-          {t("rsvp.checkin_ref_label")}
+      <div className="mt-2.5 flex flex-nowrap items-center gap-2 self-start sm:mt-3">
+        <span className="rounded-lg border border-paper-300 bg-paper-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-700 min-w-0 truncate dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 sm:text-xs sm:tracking-[0.25em]">
+          {view.couple_slug}
         </span>
-        <span aria-hidden className="shrink-0">
-          ·
-        </span>
-        <span className="min-w-0 truncate">{view.couple_slug}</span>
-        <span aria-hidden className="shrink-0">
-          ·
-        </span>
-        <span className="shrink-0 tracking-[0.3em] text-ink-900 sm:tracking-[0.4em] dark:text-paper-50">
+        <span className="rounded-lg border border-paper-300 bg-paper-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.3em] text-ink-900 shrink-0 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 sm:text-xs sm:tracking-[0.4em]">
           {view.household_code}
         </span>
       </div>
@@ -729,7 +722,7 @@ export function HouseholdRsvpForm({
           {drafts.map((d) => (
             <fieldset
               key={d.id}
-              className="rounded-2xl border border-paper-200 bg-paper-50/60 p-4 space-y-3 dark:border-umber-700 dark:bg-umber-800/60"
+              className="rounded-2xl border-2 border-ink-700 bg-paper-50/60 p-4 space-y-3 dark:border-umber-300 dark:bg-umber-800/60"
             >
               <legend className="px-1 font-grotesk text-lg text-ink-900 break-words dark:text-paper-50">
                 {d.full_name}
@@ -926,7 +919,6 @@ export function HouseholdRsvpForm({
                             <Chip
                               on={d.plus_one !== null}
                               onClick={() => togglePlusOne(d)}
-                              icon={<Plus size={14} aria-hidden />}
                               label={t("rsvp.tag_plus_one")}
                               controlsId={`plus-one-${d.id}`}
                               expanded={d.plus_one !== null}
@@ -1117,7 +1109,7 @@ function Chip({
 }: {
   on: boolean;
   onClick: () => void;
-  icon: ReactNode;
+  icon?: ReactNode;
   label: string;
   /** Optional — when the chip toggles a disclosure (e.g. "+1" reveals a name
    *  input below), pass the disclosure's id + current expanded state so screen
