@@ -235,12 +235,12 @@ export function SeatingMap({
     if (!expanded && !seatMode && !fullHeight) {
       return { width: "100%", height: "100%" };
     }
-    if (fullHeight && !expanded) {
+    if ((fullHeight || seatMode) && !expanded) {
       // Fit the entire floor plan inside the wrapper — no scrolling needed.
       const scale = Math.min(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
       return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
     }
-    // seatMode / expanded: zoom-to-fill so the user can pan.
+    // expanded: zoom-to-fill so the user can pan.
     const scale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
     return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
   }, [expanded, seatMode, fullHeight, wrapperPx, ROOM_W_MM, ROOM_H_MM]);
@@ -571,11 +571,9 @@ export function SeatingMap({
         className={`relative bg-paper-50 dark:bg-umber-900 ${
           expanded
             ? "min-h-0 flex-1 overflow-auto p-4"
-            : seatMode
-              ? "min-h-0 flex-1 overflow-auto"
-              : fullHeight
-                ? "min-h-0 flex-1 overflow-hidden"
-                : "h-[60vh] max-h-[640px] w-full overflow-hidden"
+            : seatMode || fullHeight
+              ? "min-h-0 flex-1 overflow-hidden"
+              : "h-[60vh] max-h-[640px] w-full overflow-hidden"
         }`}
       >
         <div
