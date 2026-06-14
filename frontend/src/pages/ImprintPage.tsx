@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import en from "../locales/en";
@@ -15,6 +16,7 @@ import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } fro
  */
 export default function ImprintPage() {
   const { t } = useT();
+  const [showHu, setShowHu] = useState(false);
   useDocumentMeta("imprint.seo_title", "imprint.seo_description");
 
   return (
@@ -24,10 +26,23 @@ export default function ImprintPage() {
           title={t("imprint.page_title")}
           updatedLabel={t("imprint.last_updated_label")}
           updatedDate={t("imprint.last_updated_date")}
+          action={
+            <button
+              type="button"
+              onClick={() => setShowHu((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
+            >
+              {showHu ? "Hide HU" : "HU"}
+            </button>
+          }
         />
-        <ImprintBodyForLocale strings={hu.imprint} sectionLocale="hu" />
-        <SecondaryLanguageDivider label="English" />
-        <ImprintBodyForLocale strings={en.imprint} sectionLocale="en" secondary />
+        <ImprintBodyForLocale strings={en.imprint} sectionLocale="en" />
+        {showHu && (
+          <>
+            <SecondaryLanguageDivider label="Magyar" />
+            <ImprintBodyForLocale strings={hu.imprint} sectionLocale="hu" secondary />
+          </>
+        )}
         <BackLink />
       </article>
     </PublicShell>

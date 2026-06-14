@@ -27,15 +27,15 @@ export default function TermsPage() {
               onClick={() => setShowEn((v) => !v)}
               className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
             >
-              {showEn ? "Hide English" : "English"}
+              {showEn ? "Hide HU" : "HU"}
             </button>
           }
         />
-        <TermsBodyForLocale strings={hu.terms} sectionLocale="hu" />
+        <TermsBodyForLocale strings={en.terms} sectionLocale="en" />
         {showEn && (
           <>
-            <SecondaryLanguageDivider label="English" />
-            <TermsBodyForLocale strings={en.terms} sectionLocale="en" secondary />
+            <SecondaryLanguageDivider label="Magyar" />
+            <TermsBodyForLocale strings={hu.terms} sectionLocale="hu" secondary />
           </>
         )}
         <BackLink />
