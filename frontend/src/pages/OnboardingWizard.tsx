@@ -396,6 +396,16 @@ export default function OnboardingWizard() {
     setSubmitting(true);
     setError(null);
     try {
+      let pendingRefCode: string | undefined;
+      try {
+        const stored = localStorage.getItem("weddly.pending_ref_code");
+        if (stored) {
+          pendingRefCode = stored;
+          localStorage.removeItem("weddly.pending_ref_code");
+        }
+      } catch {
+        // localStorage blocked — proceed without referral
+      }
       await coupleApi.onboard({
         bride_name: form.bride_name.trim(),
         groom_name: form.groom_name.trim(),
@@ -408,6 +418,7 @@ export default function OnboardingWizard() {
         // on the model so users can set it later from Profile, but ships
         // empty from this flow.
         style_tags: [],
+        ref_code: pendingRefCode,
       });
       completedRef.current = true;
       clearDraft();

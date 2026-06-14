@@ -2,7 +2,7 @@ import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import { Mail } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AppleSignInButton } from "../components/AppleSignInButton";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { Shell } from "../components/Shell";
@@ -34,6 +34,20 @@ export default function RegisterPage() {
   const [resending, setResending] = useState(false);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const errorId = useId();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    // Persist the referral code for the onboarding wizard, which runs after
+    // registration in a separate step (and may be on a different URL).
+    const refCode = searchParams.get("ref_code");
+    if (refCode) {
+      try {
+        localStorage.setItem("weddly.pending_ref_code", refCode.toUpperCase());
+      } catch {
+        // localStorage blocked (private mode etc.) — referral just won't fire
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

@@ -28,6 +28,7 @@ import {
 } from "../domain/vendor_onboarding";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
+import { maybeGrantVendorReferral } from "../domain/referrals";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -187,6 +188,10 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
     target_id: newVendorAccountId,
     after: { waitlist_id: row.waitlist_id, currency },
   });
+
+  // Referral reward: if this vendor's waitlist entry was referred by a couple,
+  // grant them 2 months free now that the vendor has activated.
+  maybeGrantVendorReferral(row.waitlist_id);
 
   const sessionToken = issueSession(newUserId);
   const userRow = getUserById(newUserId);

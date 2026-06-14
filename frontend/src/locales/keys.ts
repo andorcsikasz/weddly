@@ -325,6 +325,17 @@ export interface LocaleMessages {
     solo_banner_title: string;
     solo_banner_body: string;
     solo_banner_cta: string;
+    referral_title: string;
+    referral_couple_title: string;
+    referral_couple_body: string;
+    referral_couple_cta: string;
+    referral_vendor_title: string;
+    referral_vendor_body: string;
+    referral_vendor_cta: string;
+    referral_copied: string;
+    /** Placeholders: {months}, {couples}, {vendors} */
+    referral_stats: string;
+    referral_stats_none: string;
   };
   /** Public couple-branded landing at `/w/:slug` — first version: names,
    *  date, optional schedule, RSVP CTA. Followed by registry / story /

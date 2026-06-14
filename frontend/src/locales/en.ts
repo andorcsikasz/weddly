@@ -214,6 +214,16 @@ const en: LocaleMessages = {
     solo_banner_body:
       "The first 200 couples use Weddly free until their wedding day. Invite your partner so you can keep planning together, free.",
     solo_banner_cta: "Invite partner",
+    referral_title: "Refer a friend",
+    referral_couple_title: "Refer a couple",
+    referral_couple_body: "When both partners join, you get 1 month free.",
+    referral_couple_cta: "Copy couple link",
+    referral_vendor_title: "Refer a vendor",
+    referral_vendor_body: "When the vendor activates their account, you get 2 months free.",
+    referral_vendor_cta: "Copy vendor link",
+    referral_copied: "Link copied!",
+    referral_stats: "Earned so far: {months} month(s) · {couples} couple(s) · {vendors} vendor(s)",
+    referral_stats_none: "No referrals converted yet.",
   },
   wedding_site: {
     page_title: "Wedding website",

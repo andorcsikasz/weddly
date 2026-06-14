@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { Fragment, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { ApiError } from "../lib/api";
@@ -319,6 +319,7 @@ function StepDots({ current, total }: { current: number; total: number }) {
 
 function WaitlistContact() {
   const { t } = useT();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [stepError, setStepError] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState(() => {
@@ -517,6 +518,7 @@ function WaitlistContact() {
     setSubmitting(true);
     try {
       const radiusNum = travelRadiusKm ? Number.parseInt(travelRadiusKm, 10) : null;
+      const refCode = searchParams.get("ref_code") ?? undefined;
       await vendorWaitlistApi.submit({
         business_name: name,
         email: emailTrim,
@@ -530,6 +532,7 @@ function WaitlistContact() {
         travel_radius_km: TRAVEL_RELEVANT_CATEGORIES.has(category as SupplierCategory) && radiusNum && !Number.isNaN(radiusNum) ? radiusNum : null,
         privacy_version: PRIVACY_VERSION,
         vendor_beta_notice_version: VENDOR_BETA_NOTICE_VERSION,
+        ref_code: refCode,
       });
       sessionStorage.removeItem(DRAFT_KEY);
       setSubmitted(true);

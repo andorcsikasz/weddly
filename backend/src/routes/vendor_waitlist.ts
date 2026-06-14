@@ -12,6 +12,7 @@ import type { SupplierCategory } from "@shared/suppliers";
 import type { VendorWaitlistOutcome } from "@shared/vendor_waitlist";
 import { CONFIG } from "../config";
 import { db } from "../db";
+import { lookupCoupleByRefCode } from "../domain/referrals";
 import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails/send";
 import { requireAdmin } from "../domain/users";
@@ -233,6 +234,11 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 2000) travelRadiusKm = parsed;
   }
 
+  // Optional referral code — resolve to a couple id now so the reward can be
+  // granted at activation time even if the code is later regenerated.
+  const rawRefCode = trimStr(form.get("ref_code")).toUpperCase();
+  const referrerCoupleId = rawRefCode ? (lookupCoupleByRefCode(rawRefCode)?.id ?? null) : null;
+
   const row = insertVendorWaitlist({
     business_name,
     email,
@@ -245,6 +251,14 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     price_list_path: null, // written after insert once we have the id
     travel_radius_km: travelRadiusKm,
   });
+
+  // Stamp the referrer after the row is created so the id is available.
+  if (referrerCoupleId) {
+    db.prepare("UPDATE vendor_waitlist SET referred_by_couple_id = ? WHERE id = ?").run(
+      referrerCoupleId,
+      row.id,
+    );
+  }
 
   // Save the price list now that we have the row id.
   let finalRow = row;

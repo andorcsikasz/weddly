@@ -2,12 +2,12 @@
 // state and routes to Stripe-hosted Checkout (subscribe) or the Billing Portal
 // (manage). All payment UI lives on Stripe; we only mint redirect URLs.
 
-import { CreditCard, ExternalLink, Sparkles } from "lucide-react";
+import { Check, Copy, CreditCard, ExternalLink, Gift, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { BillingStatusResponse, SubscriptionStatus } from "@shared/billing";
 import { useToast } from "../components/ui";
-import { billingApi } from "../lib/endpoints";
+import { billingApi, referralApi, type ReferralStatus } from "../lib/endpoints";
 import { formatDateMs, formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 
@@ -27,6 +27,8 @@ export default function BillingSettings() {
   const [data, setData] = useState<BillingStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<"idle" | "checkout" | "portal">("idle");
+  const [referral, setReferral] = useState<ReferralStatus | null>(null);
+  const [copiedKey, setCopiedKey] = useState<"couple" | "vendor" | null>(null);
 
   useEffect(() => {
     billingApi
@@ -34,6 +36,10 @@ export default function BillingSettings() {
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false));
+    referralApi
+      .get()
+      .then(setReferral)
+      .catch(() => setReferral(null));
   }, []);
 
   // Surface the Checkout return state once, then strip the query param so a
@@ -50,6 +56,15 @@ export default function BillingSettings() {
   function fmtDate(ms: number | null): string {
     if (!ms) return "";
     return formatDateMs(ms, locale);
+  }
+
+  async function copyLink(kind: "couple" | "vendor") {
+    const url = kind === "couple" ? referral?.couple_url : referral?.vendor_url;
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+    setCopiedKey(kind);
+    toast.success(t("billing.referral_copied"));
+    setTimeout(() => setCopiedKey(null), 2000);
   }
 
   async function go(kind: "checkout" | "portal") {
@@ -147,6 +162,71 @@ export default function BillingSettings() {
         <p className="mt-5 text-sm text-ink-500 dark:text-umber-300">
           {t("billing.disabled_note")}
         </p>
+      )}
+
+      {referral && (
+        <div className="mt-8 border-t border-paper-200 pt-6 dark:border-umber-700">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-ink-900 dark:text-paper-50">
+            <Gift size={16} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            {t("billing.referral_title")}
+          </h3>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {/* Couple invite */}
+            <div className="rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900/40">
+              <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                {t("billing.referral_couple_title")}
+              </p>
+              <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                {t("billing.referral_couple_body")}
+              </p>
+              <button
+                type="button"
+                onClick={() => copyLink("couple")}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+              >
+                {copiedKey === "couple" ? (
+                  <Check size={12} aria-hidden />
+                ) : (
+                  <Copy size={12} aria-hidden />
+                )}
+                {t("billing.referral_couple_cta")}
+              </button>
+            </div>
+
+            {/* Vendor invite */}
+            <div className="rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900/40">
+              <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                {t("billing.referral_vendor_title")}
+              </p>
+              <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                {t("billing.referral_vendor_body")}
+              </p>
+              <button
+                type="button"
+                onClick={() => copyLink("vendor")}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+              >
+                {copiedKey === "vendor" ? (
+                  <Check size={12} aria-hidden />
+                ) : (
+                  <Copy size={12} aria-hidden />
+                )}
+                {t("billing.referral_vendor_cta")}
+              </button>
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs text-ink-400 dark:text-umber-400">
+            {referral.stats.bonus_months > 0
+              ? t("billing.referral_stats", {
+                  months: referral.stats.bonus_months,
+                  couples: referral.stats.couple_refs,
+                  vendors: referral.stats.vendor_refs,
+                })
+              : t("billing.referral_stats_none")}
+          </p>
+        </div>
       )}
     </section>
   );

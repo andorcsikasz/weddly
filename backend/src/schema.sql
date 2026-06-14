@@ -1336,3 +1336,19 @@ CREATE TABLE IF NOT EXISTS stripe_webhook_events (
   event_type TEXT,
   received_at INTEGER NOT NULL
 );
+
+-- Referral reward ledger. One row per unique referred entity (a couple or a
+-- vendor waitlist entry that eventually activated). The UNIQUE constraint on
+-- (referral_type, referred_id) prevents double-granting if the trigger fires
+-- more than once (e.g. a webhook retry or a bug). `bonus_ms` records how much
+-- time was added so the admin can audit the cohort impact. ON DELETE CASCADE
+-- keeps the table clean if a referrer deletes their account.
+CREATE TABLE IF NOT EXISTS referral_grants (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  referrer_couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  referral_type TEXT NOT NULL,   -- 'couple' | 'vendor'
+  referred_id INTEGER NOT NULL,  -- couples.id  OR  vendor_waitlist.id (resolved at grant time)
+  bonus_ms INTEGER NOT NULL,
+  granted_at INTEGER NOT NULL,
+  UNIQUE(referral_type, referred_id)
+);

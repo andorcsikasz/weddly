@@ -1131,6 +1131,34 @@ addColumnIfMissing(
   }
 }
 
+// Referral system. Each couple gets a unique 8-char invite code (generated
+// lazily on first GET /api/referral). When a new couple onboards with a valid
+// code, `referred_by_couple_id` records the referrer. The actual reward
+// (extending trial_ends_at / founding_until) is applied in domain/referrals.ts
+// and logged to referral_grants to prevent double-granting.
+addColumnIfMissing("couples", "referral_code", "referral_code TEXT");
+addColumnIfMissing(
+  "couples",
+  "referred_by_couple_id",
+  "referred_by_couple_id INTEGER REFERENCES couples(id) ON DELETE SET NULL",
+);
+// Unique index lives here (not schema.sql) — the column is added above via
+// addColumnIfMissing, and indexes on addColumnIfMissing columns must come after
+// the column call (May 2026 prod-crash rule).
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_couples_referral_code_unique " +
+    "ON couples(referral_code) WHERE referral_code IS NOT NULL",
+);
+
+// Vendor waitlist entries can carry a referral code so the referring couple
+// is credited when the vendor activates. Stored as couple_id (resolved at
+// submit time) so it survives even if the code is later regenerated.
+addColumnIfMissing(
+  "vendor_waitlist",
+  "referred_by_couple_id",
+  "referred_by_couple_id INTEGER REFERENCES couples(id) ON DELETE SET NULL",
+);
+
 export function now(): number {
   return Date.now();
 }

@@ -85,6 +85,7 @@ import {
   initBillingAtOnboarding,
   refreshPartnerFreeWindow,
 } from "../domain/billing";
+import { lookupCoupleByRefCode, maybeGrantCoupleReferral } from "../domain/referrals";
 import { recordExport } from "../domain/exports";
 import { recordGrowthEvent } from "../domain/growth_events";
 import { generateInviteToken } from "../domain/invite_codes";
@@ -224,6 +225,9 @@ interface OnboardBody {
    *  Drives country-aware supplier filtering (a Belgian couple shouldn't
    *  see HU-only venues recommended). Validated against COUNTRY_CODES. */
   country?: unknown;
+  /** Referral invite code from `?ref_code=` on the registration URL.
+   *  8 uppercase alphanumeric chars. Silently ignored when invalid. */
+  ref_code?: unknown;
 }
 
 const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
@@ -589,6 +593,11 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   const existing = getCoupleForUser(userId);
   if (existing) throw new HttpError(409, "Couple already onboarded for this user");
 
+  // Resolve referral code to a couple id before we open the transaction.
+  const rawRefCode = typeof body.ref_code === "string" ? body.ref_code.trim().toUpperCase() : null;
+  const referrerCouple = rawRefCode ? lookupCoupleByRefCode(rawRefCode) : null;
+  const referrerCoupleId = referrerCouple?.id ?? null;
+
   const ts = now();
   // Wrap the whole onboarding write set in one transaction so we get a single
   // fsync instead of ~7 — couple INSERT + slug UPDATE + partner-guest seeding
@@ -650,6 +659,16 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
       ts,
       newCoupleId,
     );
+
+    // Record who referred this couple (drives the reward on partner B join).
+    // Self-referral guard: a couple can't refer themselves.
+    if (referrerCoupleId && referrerCoupleId !== newCoupleId) {
+      db.prepare("UPDATE couples SET referred_by_couple_id = ?, updated_at = ? WHERE id = ?").run(
+        referrerCoupleId,
+        ts,
+        newCoupleId,
+      );
+    }
 
     // Among the first 200 couples → 18-month founding plan right away;
     // otherwise the 14-day trial. (Partner-join also tops this up below.)
@@ -943,6 +962,9 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   // Both partners are now in: inviting your partner unlocks the free
   // platform, so grant the "free until your wedding day" window.
   activatePartnerFreeWindow(couple.id, ts);
+  // Referral reward: if this couple was referred by another, the referrer
+  // gets 1 month free now that both partners have joined.
+  maybeGrantCoupleReferral(couple.id, ts);
 
   addAuditLog({
     actor_user_id: userId,
@@ -1173,6 +1195,7 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
 
     // Both partners are now in: grant the "free until your wedding day" window.
     activatePartnerFreeWindow(target.id, ts);
+    maybeGrantCoupleReferral(target.id, ts);
 
     addAuditLog({
       actor_user_id: userId,

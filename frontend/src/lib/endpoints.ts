@@ -328,6 +328,8 @@ export interface OnboardInput {
   location_lng?: number | null;
   location_radius_km?: number | null;
   style_tags: WeddingStyleTag[];
+  /** Referral invite code from ?ref_code= on the registration URL. */
+  ref_code?: string;
 }
 
 /** One workspace summary as returned by `/api/users/me/couples`. Shared
@@ -343,6 +345,23 @@ export interface CoupleMembershipView {
   joined_at: number;
   has_partner: boolean;
 }
+
+export interface ReferralStats {
+  couple_refs: number;
+  vendor_refs: number;
+  bonus_months: number;
+}
+
+export interface ReferralStatus {
+  code: string;
+  couple_url: string;
+  vendor_url: string;
+  stats: ReferralStats;
+}
+
+export const referralApi = {
+  get: () => apiFetch<ReferralStatus>("GET", "/api/referral"),
+};
 
 export const billingApi = {
   /** Current subscription snapshot + price + founding spots for the couple. */
@@ -1518,6 +1537,8 @@ export interface SubmitVendorWaitlistForm {
   travel_radius_km: number | null;
   privacy_version: string;
   vendor_beta_notice_version: string;
+  /** Referral invite code from ?ref_code= on the vendor URL. */
+  ref_code?: string;
 }
 
 export const vendorWaitlistApi = {
@@ -1535,6 +1556,7 @@ export const vendorWaitlistApi = {
     if (input.travel_radius_km !== null) form.append("travel_radius_km", String(input.travel_radius_km));
     form.append("privacy_version", input.privacy_version);
     form.append("vendor_beta_notice_version", input.vendor_beta_notice_version);
+    if (input.ref_code) form.append("ref_code", input.ref_code);
 
     const res = await fetch("/api/vendors/waitlist", { method: "POST", body: form });
     const text = await res.text();

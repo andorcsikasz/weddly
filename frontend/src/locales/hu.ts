@@ -216,6 +216,16 @@ const hu: LocaleMessages = {
     solo_banner_body:
       "Az első 200 pár az esküvője napjáig ingyen használhatja a Weddly-t. Hívd meg a párod, hogy együtt, ingyen tervezzetek tovább.",
     solo_banner_cta: "Pár meghívása",
+    referral_title: "Ajánlj ismerősöket",
+    referral_couple_title: "Ajánlj egy párt",
+    referral_couple_body: "Ha mindkét partner regisztrál, 1 hónapot kapsz ingyen.",
+    referral_couple_cta: "Pár hivatkozás másolása",
+    referral_vendor_title: "Ajánlj egy szolgáltatót",
+    referral_vendor_body: "Ha a szolgáltató aktiválja a fiókját, 2 hónapot kapsz ingyen.",
+    referral_vendor_cta: "Szolgáltató hivatkozás másolása",
+    referral_copied: "Hivatkozás másolva!",
+    referral_stats: "Eddig megszerzett: {months} hónap · {couples} pár · {vendors} szolgáltató",
+    referral_stats_none: "Még nincs beváltott meghívód.",
   },
   wedding_site: {
     page_title: "Esküvői oldal",
