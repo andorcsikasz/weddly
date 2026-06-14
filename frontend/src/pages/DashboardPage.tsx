@@ -1236,11 +1236,11 @@ export default function DashboardPage() {
         <>
           {/* ── Two-column body: tasks + breakdowns ────────────────────── */}
           <section className="mb-8 grid gap-4 lg:grid-cols-3">
-            {/* Tasks (spans 2/3 on lg). On phones this collapses behind a
-             *  disclosure so the dashboard's first scroll isn't dominated
-             *  by an 8-item checklist — the progress chip in the summary
-             *  carries the "are we done?" signal at a glance. */}
-            <MobileCollapsibleCard
+            {/* Tasks (spans 2/3 on lg). Hidden once all tasks are complete;
+             *  reappears if any task is later undone. On phones this collapses
+             *  behind a disclosure so the dashboard's first scroll isn't
+             *  dominated by an 8-item checklist. */}
+            {tasksDone < tasksTotal && <MobileCollapsibleCard
               className="card lg:col-span-2 p-0 font-grotesk"
               bodyClassName="px-4 pb-4 md:px-6 md:pb-6"
               open={overviewOpen}
@@ -1327,7 +1327,7 @@ export default function DashboardPage() {
                   );
                 })}
               </ul>
-            </MobileCollapsibleCard>
+            </MobileCollapsibleCard>}
 
             {/* RSVP breakdown — stretches to match the tasks column. */}
             <div className="grid gap-4">
