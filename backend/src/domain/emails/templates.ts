@@ -1058,7 +1058,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "A válaszaidat később is bármikor módosíthatod, ha bármi változna.",
         ],
         cta: "Visszajelzés küldése",
-        footnote: "Ha ez a meghívó véletlenül jutott el hozzád, nyugodtan hagyd figyelmen kívül. Semmilyen teendőd nincs vele.",
+        footnote:
+          "Ha ez a meghívó véletlenül jutott el hozzád, nyugodtan hagyd figyelmen kívül. Semmilyen teendőd nincs vele.",
       },
       en: {
         greeting: `Hi${greetingEnName},`,

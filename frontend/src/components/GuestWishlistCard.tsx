@@ -9,7 +9,15 @@
 
 import type { Currency } from "@shared/types";
 import type { WishlistEntry } from "@shared/wishlist";
-import { Camera, ExternalLink, HandHeart, HeartHandshake, Music2, PenLine, Users } from "lucide-react";
+import {
+  Camera,
+  ExternalLink,
+  HandHeart,
+  HeartHandshake,
+  Music2,
+  PenLine,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
 
@@ -78,7 +86,10 @@ export function GuestWishlistCard({
         (() => {
           const Icon = requestIconFor(entry.title);
           return (
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center text-ink-700 dark:text-paper-200" aria-hidden>
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center text-ink-700 dark:text-paper-200"
+              aria-hidden
+            >
               <Icon size={22} />
             </span>
           );

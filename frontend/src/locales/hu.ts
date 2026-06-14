@@ -1220,7 +1220,8 @@ const hu: LocaleMessages = {
       "Web, online katalógus, korábbi munkák galériája — amit szívesen megmutatnátok.",
     instagram_label: "Instagram",
     instagram_placeholder: "viragstudio_bp",
-    form_err_portfolio_link: "Az egyik portfólió link nem érvényes URL — próbáld https://-vel kezdeni.",
+    form_err_portfolio_link:
+      "Az egyik portfólió link nem érvényes URL — próbáld https://-vel kezdeni.",
     form_err_travel_radius: "Az utazási távolság nem lehet negatív.",
     form_err_instagram_handle:
       "Az Instagram fióknév csak betűt, számot, pontot és aláhúzást tartalmazhat (max 30 karakter).",
@@ -2003,6 +2004,7 @@ const hu: LocaleMessages = {
       "Hálásak vagyunk, hogy jelenlétetekkel még szebbé teszitek az esküvőnk napját.",
     intro_suggestion_5:
       "Köszönjük, hogy szeretetetekkel és jelenlétetekkel részesei vagytok a mi napunknak.",
+    intro_suggestion_applied: "Szöveg hozzáadva — szerkeszd az alábbi mezőben.",
     useful_info_label: "Hasznos infók",
     useful_info_placeholder: "Parkolás: ...\nMegközelítés: ...\nSzállás: ...",
     useful_info_hint:

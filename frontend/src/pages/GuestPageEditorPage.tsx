@@ -1017,7 +1017,10 @@ export default function GuestPageEditorPage() {
               // edited in its own dialog (it needs the address autocomplete), so
               // it's not wired for inline here.
               inlineEdit={{
-                intro: setGuestPageIntro,
+                intro: (s) => {
+                  setGuestPageIntro(s);
+                  toast.info(t("guest_page_editor.intro_suggestion_applied"));
+                },
               }}
               // Starter welcome-note suggestions render under the empty inline
               // intro (relocated from the deleted bottom form).

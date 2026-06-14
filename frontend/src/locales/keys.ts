@@ -2184,6 +2184,7 @@ export interface LocaleMessages {
     intro_suggestion_3: string;
     intro_suggestion_4: string;
     intro_suggestion_5: string;
+    intro_suggestion_applied: string;
     /** "Good to know" editor field — parking, getting there, accommodation. */
     useful_info_label: string;
     useful_info_placeholder: string;

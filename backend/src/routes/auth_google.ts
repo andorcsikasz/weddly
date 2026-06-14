@@ -76,13 +76,29 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Google account email is not verified");
   }
 
+  // Normalise locale once — used both to backfill null-locale existing users
+  // and to persist locale on brand-new registrations.
+  const clientLocale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
+
   // 1) Already linked? Just sign them in.
   const existingByGoogle = db
     .prepare("SELECT * FROM users WHERE google_sub = ?")
     .get(identity.sub) as UserRow | undefined;
   if (existingByGoogle) {
     if (existingByGoogle.status === "suspended") throw new HttpError(403, "Account suspended");
-    return signInExisting(ctx, existingByGoogle, "auth.login_google");
+    // Backfill locale for pre-feature users whose column is NULL so that
+    // the frontend's auth effect can apply the server preference on the
+    // next /api/auth/me call instead of falling back to English.
+    let rowToSign: UserRow = existingByGoogle;
+    if (!existingByGoogle.locale && clientLocale) {
+      db.prepare("UPDATE users SET locale = ?, updated_at = ? WHERE id = ?").run(
+        clientLocale,
+        now(),
+        existingByGoogle.id,
+      );
+      rowToSign = { ...existingByGoogle, locale: clientLocale };
+    }
+    return signInExisting(ctx, rowToSign, "auth.login_google");
   }
 
   // 2) Existing email-only account? Auto-link only when the email is verified
@@ -112,7 +128,16 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
     });
     const fresh = getUserById(existingByEmail.id);
     if (!fresh) throw new HttpError(500, "User vanished after Google link");
-    return signInExisting(ctx, fresh, "auth.login_google");
+    let freshToSign: UserRow = fresh;
+    if (!fresh.locale && clientLocale) {
+      db.prepare("UPDATE users SET locale = ?, updated_at = ? WHERE id = ?").run(
+        clientLocale,
+        now(),
+        fresh.id,
+      );
+      freshToSign = { ...fresh, locale: clientLocale };
+    }
+    return signInExisting(ctx, freshToSign, "auth.login_google");
   }
 
   // 3) Brand-new user. GDPR Art. 7(1) — the same version checks the
@@ -135,7 +160,7 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
   // password_set = 0 — Google-only account. Stops the password-reset side
   // door from working on accounts the legitimate user never put a password
   // on, see [[security_google_only_password_reset]].
-  const persistedLocale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
+  const persistedLocale = clientLocale;
   const acq = buildSignupAcquisition(ctx, body);
   const result = db
     .prepare(

@@ -665,6 +665,9 @@ export default function HoneymoonPage() {
           value={couple?.honeymoon_destination ?? null}
           loaded={loaded}
           onSave={(v) => saveTrip({ honeymoon_destination: v })}
+          tripReady={tripReady}
+          flightLoading={flightLoading}
+          onFlightClick={loadFlightEstimate}
         />
         <BudgetSummaryTile
           planned={totals.planned}
@@ -675,6 +678,8 @@ export default function HoneymoonPage() {
           currency={currency}
         />
       </section>
+
+      <DestinationCoverPhoto destination={couple?.honeymoon_destination ?? null} />
 
       {/* Flight prices are never fetched automatically. The upstream search
        *  costs money, so we wait for an explicit button press. Once offers
@@ -976,14 +981,57 @@ function DaysTile({
   );
 }
 
+function DestinationCoverPhoto({ destination }: { destination: string | null }) {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!destination) {
+      setPhotoUrl(null);
+      return;
+    }
+    const city = (destination.split(",")[0] ?? destination).trim();
+    let cancelled = false;
+    honeymoonApi
+      .destinationPhoto(city)
+      .then((r) => {
+        if (!cancelled) setPhotoUrl(r.photo_url);
+      })
+      .catch(() => {
+        if (!cancelled) setPhotoUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [destination]);
+
+  if (!destination || !photoUrl) return null;
+
+  const city = (destination.split(",")[0] ?? destination).trim();
+  return (
+    <div className="relative mt-3 h-40 overflow-hidden rounded-2xl">
+      <img src={photoUrl} alt={city} className="h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-t from-ink-900/50 to-transparent" />
+      <p className="absolute bottom-3 left-4 font-grotesk text-sm font-semibold text-paper-50">
+        {city}
+      </p>
+    </div>
+  );
+}
+
 function DestinationTile({
   value,
   loaded,
   onSave,
+  tripReady,
+  flightLoading,
+  onFlightClick,
 }: {
   value: string | null;
   loaded: boolean;
   onSave: (v: string | null) => Promise<void>;
+  tripReady: boolean;
+  flightLoading: boolean;
+  onFlightClick: () => Promise<void>;
 }) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
@@ -1035,13 +1083,30 @@ function DestinationTile({
         </button>
       )}
 
-      {/* Corner trigger — only when a destination is set and we're not in
-       *  edit mode (the autocomplete dropdown would overlap otherwise). */}
+      {/* Corner triggers — only when a destination is set and not in edit mode. */}
+      {value && !editing && tripReady && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            void onFlightClick();
+          }}
+          disabled={flightLoading}
+          className="absolute bottom-3 left-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-paper-50/20 bg-paper-50/10 text-paper-100 shadow-soft transition hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700 disabled:opacity-60"
+          aria-label={t("honeymoon.flight_estimate_search")}
+          title={t("honeymoon.flight_estimate_search")}
+        >
+          {flightLoading ? (
+            <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Plane size={14} aria-hidden="true" />
+          )}
+        </button>
+      )}
       {value && !editing && (
         <button
           type="button"
           onClick={(e) => {
-            // Don't bubble — the tile body acts as the edit-trigger button.
             e.stopPropagation();
             setMapOpen(true);
           }}

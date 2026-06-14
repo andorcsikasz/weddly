@@ -976,7 +976,11 @@ export default function AdminUsersPage() {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => document.getElementById(key)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  onClick={() =>
+                    document
+                      .getElementById(key)
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
                   className="flex flex-col items-center gap-0.5 px-4 text-ink-700 transition-opacity hover:opacity-70 dark:text-paper-100"
                 >
                   <span className="text-2xl font-bold tabular-nums leading-none tracking-tight">

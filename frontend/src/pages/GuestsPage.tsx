@@ -285,7 +285,10 @@ export default function GuestsPage() {
         .sort((a, b) => a.id - b.id)[0];
       if (!contact) noEmail.push(hh);
       else if (hh.invited_at != null) alreadyInvited.push(hh);
-      else { eligible.push(hh); eligibleContacts.push(contact); }
+      else {
+        eligible.push(hh);
+        eligibleContacts.push(contact);
+      }
     }
     return { eligible, eligibleContacts, alreadyInvited, noEmail };
   }, [households, guests]);
@@ -953,9 +956,13 @@ export default function GuestsPage() {
                       household={hh}
                       members={guestsByHousehold.get(hh.id) ?? []}
                       coupleSlug={couple?.slug ?? null}
-                      onCopyShare={() => { void copyShare(couple?.slug ?? null, hh.code); }}
+                      onCopyShare={() => {
+                        void copyShare(couple?.slug ?? null, hh.code);
+                      }}
                       onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
-                      onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+                      onEditGuest={(g) =>
+                        setEditing({ guest: g, defaultHouseholdId: g.household_id })
+                      }
                       onDeleteGuest={onDeleteGuest}
                       onDeleteHousehold={() => onDeleteHousehold(hh)}
                       onRenameHousehold={onRenameHousehold}
@@ -970,7 +977,9 @@ export default function GuestsPage() {
             );
           })}
           {filteredClosedHouseholds.length === 0 && (
-            <p className="text-sm text-neutral-500 dark:text-umber-400">{t("guests.household_filter_empty")}</p>
+            <p className="text-sm text-neutral-500 dark:text-umber-400">
+              {t("guests.household_filter_empty")}
+            </p>
           )}
         </div>
       ) : (

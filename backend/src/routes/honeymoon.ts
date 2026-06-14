@@ -30,7 +30,35 @@ async function handleKonzinfo(ctx: Ctx): Promise<Response> {
   return json(await buildKonzinfoInfo(destination));
 }
 
+/** Wikipedia thumbnail for the honeymoon destination city. Accepts a
+ *  `?destination=` query param (the raw destination string; this handler
+ *  extracts the first comma-segment as the article title). Always returns
+ *  `{ photo_url: string | null }` — never errors. */
+async function handleDestinationPhoto(ctx: Ctx): Promise<Response> {
+  requireAuth(ctx);
+  const destination = ctx.url.searchParams.get("destination");
+  if (!destination) return json({ photo_url: null });
+  const city = (destination.split(",")[0] ?? destination).trim();
+  try {
+    const r = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(city)}`,
+      { headers: { "User-Agent": "Weddly/1.0 (https://weddly.co)" } },
+    );
+    if (!r.ok) return json({ photo_url: null });
+    const data = (await r.json()) as { thumbnail?: { source: string } };
+    const src = data?.thumbnail?.source ?? null;
+    if (!src) return json({ photo_url: null });
+    // Upscale: Wikimedia Commons thumbnails embed the width in the URL path;
+    // replacing it with 800px gives a sharper cover photo without fetching the
+    // full-resolution original (which can be tens of MB).
+    return json({ photo_url: src.replace(/\/\d+px-/, "/800px-") });
+  } catch {
+    return json({ photo_url: null });
+  }
+}
+
 export function registerHoneymoonRoutes(router: Router) {
   router.get("/api/honeymoon/flight-estimate", handleFlightEstimate, true);
   router.get("/api/honeymoon/konzinfo", handleKonzinfo, true);
+  router.get("/api/honeymoon/destination-photo", handleDestinationPhoto, true);
 }

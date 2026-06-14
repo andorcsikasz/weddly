@@ -356,7 +356,14 @@ function parsePartialLine(body: UpsertLineBody, existing: LineRow) {
     notes =
       typeof body.notes === "string" && body.notes.trim() ? body.notes.trim().slice(0, 1000) : null;
   }
-  return { label, preset_key: presetKey, planned_huf: planned, actual_huf: actual, paid_huf: paid, notes };
+  return {
+    label,
+    preset_key: presetKey,
+    planned_huf: planned,
+    actual_huf: actual,
+    paid_huf: paid,
+    notes,
+  };
 }
 
 function handleDeleteLine(ctx: Ctx): Response {

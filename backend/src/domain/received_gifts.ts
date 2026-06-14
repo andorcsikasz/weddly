@@ -200,9 +200,12 @@ export function parsePatch(
     title: body.title === undefined ? existing.title : parseTitle(body.title),
     note: body.note === undefined ? existing.note : parseNote(body.note),
     category,
-    amount_minor: body.amount_minor === undefined
-      ? (category === "money" ? existing.amount_minor : null)
-      : parseAmountMinor(body.amount_minor, category),
+    amount_minor:
+      body.amount_minor === undefined
+        ? category === "money"
+          ? existing.amount_minor
+          : null
+        : parseAmountMinor(body.amount_minor, category),
     sort_order: parseSortOrder(body.sort_order, existing.sort_order),
   };
 }

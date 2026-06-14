@@ -28,8 +28,19 @@ async function setLinks(
   token: string,
   patch: Record<string, string | null>,
 ): Promise<{ status: number; links: MediaLinks }> {
-  const r = await req<CoupleResp>("PATCH", "/api/couples/current", { media_links: patch }, { token });
-  return { status: r.status, links: r.status === 200 ? r.data.couple.media_links : { guests: null, photographer: null, other: null } };
+  const r = await req<CoupleResp>(
+    "PATCH",
+    "/api/couples/current",
+    { media_links: patch },
+    { token },
+  );
+  return {
+    status: r.status,
+    links:
+      r.status === 200
+        ? r.data.couple.media_links
+        : { guests: null, photographer: null, other: null },
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,39 +48,35 @@ async function setLinks(
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("A. 15 concurrent photographer link saves", () => {
-  test(
-    "each couple saves a unique link and reads it back correctly",
-    async () => {
-      wipeAll();
-      const COHORT = 15;
-      const couples = await Promise.all(
-        Array.from({ length: COHORT }, async (_, i) => {
-          const { token } = await bootstrapCouple(`photos-a-${i}@weddly.test`);
-          return { token, url: `https://gallery.example.com/wedding-${i}` };
-        }),
-      );
+  test("each couple saves a unique link and reads it back correctly", async () => {
+    wipeAll();
+    const COHORT = 15;
+    const couples = await Promise.all(
+      Array.from({ length: COHORT }, async (_, i) => {
+        const { token } = await bootstrapCouple(`photos-a-${i}@weddly.test`);
+        return { token, url: `https://gallery.example.com/wedding-${i}` };
+      }),
+    );
 
-      // All save their own link in parallel.
-      const saves = await Promise.all(
-        couples.map(({ token, url }) => setLinks(token, { photographer: url })),
-      );
-      expect(saves.every((s) => s.status === 200)).toBe(true);
+    // All save their own link in parallel.
+    const saves = await Promise.all(
+      couples.map(({ token, url }) => setLinks(token, { photographer: url })),
+    );
+    expect(saves.every((s) => s.status === 200)).toBe(true);
 
-      // Each couple reads back only their own link.
-      const reads = await Promise.all(couples.map(({ token }) => getLinks(token)));
-      for (let i = 0; i < COHORT; i++) {
-        expect(reads[i]!.photographer).toBe(couples[i]!.url);
-        // guests and other must remain null — no spillover from other couples.
-        expect(reads[i]!.guests).toBeNull();
-        expect(reads[i]!.other).toBeNull();
-      }
+    // Each couple reads back only their own link.
+    const reads = await Promise.all(couples.map(({ token }) => getLinks(token)));
+    for (let i = 0; i < COHORT; i++) {
+      expect(reads[i]!.photographer).toBe(couples[i]!.url);
+      // guests and other must remain null — no spillover from other couples.
+      expect(reads[i]!.guests).toBeNull();
+      expect(reads[i]!.other).toBeNull();
+    }
 
-      // Every link is distinct — no couple received a neighbor's value.
-      const stored = reads.map((r) => r.photographer);
-      expect(new Set(stored).size).toBe(COHORT);
-    },
-    60_000,
-  );
+    // Every link is distinct — no couple received a neighbor's value.
+    const stored = reads.map((r) => r.photographer);
+    expect(new Set(stored).size).toBe(COHORT);
+  }, 60_000);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -109,7 +116,9 @@ describe("C. partial update", () => {
     });
 
     // Update only photographer.
-    const { status, links } = await setLinks(token, { photographer: "https://new-gallery.example.com" });
+    const { status, links } = await setLinks(token, {
+      photographer: "https://new-gallery.example.com",
+    });
     expect(status).toBe(200);
     expect(links.photographer).toBe("https://new-gallery.example.com/");
     expect(links.guests).toBe("https://guests.example.com/");
@@ -207,22 +216,22 @@ describe("E. couple-shared visibility", () => {
 describe("F. input validation", () => {
   const CASES: Array<{ label: string; payload: unknown }> = [
     // Non-http schemes
-    { label: "ftp:// rejected",         payload: { photographer: "ftp://gallery.example.com" } },
-    { label: "javascript: rejected",    payload: { photographer: "javascript:alert(1)" } },
-    { label: "data: rejected",          payload: { photographer: "data:text/html,<h1>x</h1>" } },
-    { label: "file:// rejected",        payload: { photographer: "file:///etc/passwd" } },
-    { label: "ssh:// rejected",         payload: { photographer: "ssh://user@host" } },
+    { label: "ftp:// rejected", payload: { photographer: "ftp://gallery.example.com" } },
+    { label: "javascript: rejected", payload: { photographer: "javascript:alert(1)" } },
+    { label: "data: rejected", payload: { photographer: "data:text/html,<h1>x</h1>" } },
+    { label: "file:// rejected", payload: { photographer: "file:///etc/passwd" } },
+    { label: "ssh:// rejected", payload: { photographer: "ssh://user@host" } },
     // Not a URL at all
-    { label: "bare word rejected",      payload: { photographer: "not-a-url" } },
-    { label: "relative path rejected",  payload: { photographer: "/some/path" } },
+    { label: "bare word rejected", payload: { photographer: "not-a-url" } },
+    { label: "relative path rejected", payload: { photographer: "/some/path" } },
     // Non-string value for a slot
-    { label: "number slot rejected",    payload: { photographer: 42 } },
-    { label: "array slot rejected",     payload: { photographer: ["https://x.com"] } },
-    { label: "object slot rejected",    payload: { photographer: { url: "https://x.com" } } },
-    { label: "true slot rejected",      payload: { photographer: true } },
+    { label: "number slot rejected", payload: { photographer: 42 } },
+    { label: "array slot rejected", payload: { photographer: ["https://x.com"] } },
+    { label: "object slot rejected", payload: { photographer: { url: "https://x.com" } } },
+    { label: "true slot rejected", payload: { photographer: true } },
     // Badly typed media_links container
     { label: "string container rejected", payload: "https://example.com" },
-    { label: "array container rejected",  payload: ["https://example.com"] },
+    { label: "array container rejected", payload: ["https://example.com"] },
     { label: "number container rejected", payload: 42 },
     // URL too long
     {
@@ -235,24 +244,15 @@ describe("F. input validation", () => {
   // cases — the couple state doesn't matter, we're only checking 400s).
   let token = "";
 
-  test(
-    "setup: bootstrap validation couple",
-    async () => {
-      wipeAll();
-      const c = await bootstrapCouple("photos-f@weddly.test");
-      token = c.token;
-    },
-    15_000,
-  );
+  test("setup: bootstrap validation couple", async () => {
+    wipeAll();
+    const c = await bootstrapCouple("photos-f@weddly.test");
+    token = c.token;
+  }, 15_000);
 
   for (const { label, payload } of CASES) {
     test(label, async () => {
-      const r = await req(
-        "PATCH",
-        "/api/couples/current",
-        { media_links: payload },
-        { token },
-      );
+      const r = await req("PATCH", "/api/couples/current", { media_links: payload }, { token });
       expect(r.status).toBe(400);
     });
   }

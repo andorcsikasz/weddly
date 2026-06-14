@@ -1207,7 +1207,8 @@ const en: LocaleMessages = {
       "Website, online catalogue, past-work gallery — whatever you'd like to share.",
     instagram_label: "Instagram",
     instagram_placeholder: "florastudio_bp",
-    form_err_portfolio_link: "One of the portfolio links isn't a valid URL — try starting with https://",
+    form_err_portfolio_link:
+      "One of the portfolio links isn't a valid URL — try starting with https://",
     form_err_travel_radius: "Travel distance must be 0 or more.",
     form_err_instagram_handle:
       "Instagram handle can only contain letters, digits, dots and underscores (max 30 chars).",
@@ -1984,6 +1985,7 @@ const en: LocaleMessages = {
     intro_suggestion_4:
       "We're grateful that your presence makes our wedding day even more beautiful.",
     intro_suggestion_5: "Thank you for being part of our day with your love and your presence.",
+    intro_suggestion_applied: "Suggestion applied — you can edit it in the text area below.",
     useful_info_label: "Good to know",
     useful_info_placeholder: "Parking: ...\nGetting there: ...\nAccommodation: ...",
     useful_info_hint:

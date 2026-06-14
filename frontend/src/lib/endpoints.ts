@@ -717,6 +717,11 @@ export const honeymoonApi = {
         ? `/api/honeymoon/konzinfo?destination=${encodeURIComponent(destination)}`
         : "/api/honeymoon/konzinfo",
     ),
+  destinationPhoto: (destination: string) =>
+    apiFetch<{ photo_url: string | null }>(
+      "GET",
+      `/api/honeymoon/destination-photo?destination=${encodeURIComponent(destination)}`,
+    ),
 };
 
 /** Day-of run-of-show timeline. Times are minutes from midnight in wedding-

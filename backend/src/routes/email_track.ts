@@ -22,10 +22,7 @@ import { db, now } from "../db";
 import type { Router } from "../lib/http";
 
 // 1×1 transparent GIF (43 bytes, canonical minimum).
-const PIXEL = Buffer.from(
-  "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-  "base64",
-);
+const PIXEL = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
 
 function sign(guestId: number, coupleId: number): string {
   return createHmac("sha256", CONFIG.jwtSecret)

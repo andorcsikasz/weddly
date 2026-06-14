@@ -475,7 +475,10 @@ function FromCombobox({
   cellInput,
 }: {
   value: string;
-  allocationGroups: { h: { id: number; label: string }; members: { id: number; full_name: string }[] }[];
+  allocationGroups: {
+    h: { id: number; label: string };
+    members: { id: number; full_name: string }[];
+  }[];
   onChange: (val: string) => void;
   onBlur: () => void;
   ariaLabel: string;
@@ -567,7 +570,10 @@ function FromCombobox({
             type="button"
             role="option"
             aria-selected={value === ""}
-            onMouseDown={(e) => { e.preventDefault(); select(""); }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              select("");
+            }}
             className="block w-full px-3 py-1.5 text-left text-sm text-ink-400 hover:bg-paper-100 dark:text-umber-500 dark:hover:bg-umber-700"
           >
             —
@@ -579,7 +585,10 @@ function FromCombobox({
                 type="button"
                 role="option"
                 aria-selected={value === `h:${h.id}`}
-                onMouseDown={(e) => { e.preventDefault(); select(`h:${h.id}`); }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  select(`h:${h.id}`);
+                }}
                 className={`block w-full px-3 py-1 text-left text-[11px] font-semibold uppercase tracking-wide hover:bg-paper-100 dark:hover:bg-umber-700 ${
                   value === `h:${h.id}`
                     ? "text-ink-800 dark:text-paper-50"
@@ -595,7 +604,10 @@ function FromCombobox({
                   type="button"
                   role="option"
                   aria-selected={value === `g:${m.id}`}
-                  onMouseDown={(e) => { e.preventDefault(); select(`g:${m.id}`); }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    select(`g:${m.id}`);
+                  }}
                   className={`block w-full py-1.5 pl-7 pr-3 text-left text-sm hover:bg-paper-100 dark:hover:bg-umber-700 ${
                     value === `g:${m.id}`
                       ? "font-medium text-ink-900 dark:text-paper-50"
@@ -701,7 +713,14 @@ function ReceivedGiftsTable({
         category: it.category,
         amount_minor: it.amount_minor,
         updated_at: it.updated_at,
-        savedSig: rgSig(it.household_id, it.guest_id, it.title, it.note ?? "", it.category, it.amount_minor),
+        savedSig: rgSig(
+          it.household_id,
+          it.guest_id,
+          it.title,
+          it.note ?? "",
+          it.category,
+          it.amount_minor,
+        ),
       })),
     ),
   );
@@ -740,7 +759,11 @@ function ReceivedGiftsTable({
         setRows((prev) => withTail(prev));
       } else if (!rgNonEmpty(r)) {
         await receivedGiftApi.remove(r.id);
-        patchRow(key, { id: null, updated_at: null, savedSig: rgSig(null, null, "", "", "gift", null) });
+        patchRow(key, {
+          id: null,
+          updated_at: null,
+          savedSig: rgSig(null, null, "", "", "gift", null),
+        });
         setRows((prev) => withTail(prev));
       } else {
         // Last-write-wins by design: this is an auto-saving grid where tabbing
@@ -794,100 +817,113 @@ function ReceivedGiftsTable({
         {rows.map((r) => {
           const CatIcon = CATEGORY_ICONS[r.category];
           return (
-          <div key={r.key} className={rowBubble}>
-            <FromCombobox
-              value={rgSelectValue(r)}
-              allocationGroups={allocationGroups}
-              onChange={(val) => patchRow(r.key, rgParseSelectValue(val))}
-              onBlur={() => void commit(r.key)}
-              ariaLabel={t("wishlist_editor.received_col_guest")}
-              cellInput={cellInput}
-            />
-            <input
-              type="text"
-              className={`${cellInput} min-w-0 flex-1 font-grotesk`}
-              placeholder={t("wishlist_editor.received_gift_placeholder")}
-              value={r.title}
-              maxLength={RECEIVED_GIFT_MAX_TITLE_LEN}
-              onChange={(e) => patchRow(r.key, { title: e.target.value })}
-              onBlur={() => void commit(r.key)}
-            />
-            {/* Category picker with icon */}
-            <div className="flex w-32 shrink-0 items-center gap-1.5">
-              <CatIcon size={14} className="shrink-0 text-ink-400 dark:text-umber-400" aria-hidden />
-              <select
-                className={`${cellInput} cursor-pointer`}
-                value={r.category}
-                onChange={(e) => {
-                  const cat = e.target.value as ReceivedGiftCategory;
-                  patchRow(r.key, { category: cat, amount_minor: cat !== "money" ? null : r.amount_minor });
-                }}
+            <div key={r.key} className={rowBubble}>
+              <FromCombobox
+                value={rgSelectValue(r)}
+                allocationGroups={allocationGroups}
+                onChange={(val) => patchRow(r.key, rgParseSelectValue(val))}
                 onBlur={() => void commit(r.key)}
-                aria-label={t("wishlist_editor.received_col_category")}
-              >
-                {RECEIVED_GIFT_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {t(`wishlist_editor.received_cat_${c}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* Amount — only relevant for money category */}
-            <div className="w-36 shrink-0">
-              {r.category === "money" ? (
-                <div className="flex items-center gap-1">
-                  <Banknote size={13} className="shrink-0 text-ink-400 dark:text-umber-400" aria-hidden />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className={`${cellInput} w-full tabular-nums`}
-                    value={r.amount_minor !== null
-                      ? formatNumber(minorToWhole(r.amount_minor, cur), locale)
-                      : ""}
-                    placeholder={currencySymbol(cur)}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "");
-                      if (digits === "") {
-                        patchRow(r.key, { amount_minor: null });
-                      } else {
-                        const whole = Number(digits);
-                        if (!Number.isNaN(whole) && whole >= 0) {
-                          patchRow(r.key, { amount_minor: Math.round(whole * minorFactor(cur)) });
-                        }
-                      }
-                    }}
-                    onBlur={() => void commit(r.key)}
-                    aria-label={t("wishlist_editor.received_col_amount")}
-                  />
-                  <span className="shrink-0 text-xs text-ink-400 dark:text-umber-400">{cur}</span>
-                </div>
-              ) : (
-                <span />
-              )}
-            </div>
-            <input
-              type="text"
-              className={`${cellInput} min-w-0 flex-1 font-grotesk`}
-              placeholder={t("wishlist_editor.received_note_placeholder")}
-              value={r.note}
-              maxLength={RECEIVED_GIFT_MAX_NOTE_LEN}
-              onChange={(e) => patchRow(r.key, { note: e.target.value })}
-              onBlur={() => void commit(r.key)}
-            />
-            <div className="flex w-8 shrink-0 justify-center">
-              {r.id !== null && (
-                <button
-                  type="button"
-                  aria-label={t("common.remove")}
-                  title={t("common.remove")}
-                  onClick={() => void removeRow(r)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                ariaLabel={t("wishlist_editor.received_col_guest")}
+                cellInput={cellInput}
+              />
+              <input
+                type="text"
+                className={`${cellInput} min-w-0 flex-1 font-grotesk`}
+                placeholder={t("wishlist_editor.received_gift_placeholder")}
+                value={r.title}
+                maxLength={RECEIVED_GIFT_MAX_TITLE_LEN}
+                onChange={(e) => patchRow(r.key, { title: e.target.value })}
+                onBlur={() => void commit(r.key)}
+              />
+              {/* Category picker with icon */}
+              <div className="flex w-32 shrink-0 items-center gap-1.5">
+                <CatIcon
+                  size={14}
+                  className="shrink-0 text-ink-400 dark:text-umber-400"
+                  aria-hidden
+                />
+                <select
+                  className={`${cellInput} cursor-pointer`}
+                  value={r.category}
+                  onChange={(e) => {
+                    const cat = e.target.value as ReceivedGiftCategory;
+                    patchRow(r.key, {
+                      category: cat,
+                      amount_minor: cat !== "money" ? null : r.amount_minor,
+                    });
+                  }}
+                  onBlur={() => void commit(r.key)}
+                  aria-label={t("wishlist_editor.received_col_category")}
                 >
-                  <Trash2 size={14} />
-                </button>
-              )}
+                  {RECEIVED_GIFT_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {t(`wishlist_editor.received_cat_${c}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Amount — only relevant for money category */}
+              <div className="w-36 shrink-0">
+                {r.category === "money" ? (
+                  <div className="flex items-center gap-1">
+                    <Banknote
+                      size={13}
+                      className="shrink-0 text-ink-400 dark:text-umber-400"
+                      aria-hidden
+                    />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className={`${cellInput} w-full tabular-nums`}
+                      value={
+                        r.amount_minor !== null
+                          ? formatNumber(minorToWhole(r.amount_minor, cur), locale)
+                          : ""
+                      }
+                      placeholder={currencySymbol(cur)}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "");
+                        if (digits === "") {
+                          patchRow(r.key, { amount_minor: null });
+                        } else {
+                          const whole = Number(digits);
+                          if (!Number.isNaN(whole) && whole >= 0) {
+                            patchRow(r.key, { amount_minor: Math.round(whole * minorFactor(cur)) });
+                          }
+                        }
+                      }}
+                      onBlur={() => void commit(r.key)}
+                      aria-label={t("wishlist_editor.received_col_amount")}
+                    />
+                    <span className="shrink-0 text-xs text-ink-400 dark:text-umber-400">{cur}</span>
+                  </div>
+                ) : (
+                  <span />
+                )}
+              </div>
+              <input
+                type="text"
+                className={`${cellInput} min-w-0 flex-1 font-grotesk`}
+                placeholder={t("wishlist_editor.received_note_placeholder")}
+                value={r.note}
+                maxLength={RECEIVED_GIFT_MAX_NOTE_LEN}
+                onChange={(e) => patchRow(r.key, { note: e.target.value })}
+                onBlur={() => void commit(r.key)}
+              />
+              <div className="flex w-8 shrink-0 justify-center">
+                {r.id !== null && (
+                  <button
+                    type="button"
+                    aria-label={t("common.remove")}
+                    title={t("common.remove")}
+                    onClick={() => void removeRow(r)}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
           );
         })}
       </div>
@@ -1541,10 +1577,7 @@ function WishlistItemDialog({
                   </select>
                 </div>
               </FormRow>
-              <FormRow
-                label={t("wishlist_editor.url_label")}
-                hint={t("wishlist_editor.url_hint")}
-              >
+              <FormRow label={t("wishlist_editor.url_label")} hint={t("wishlist_editor.url_hint")}>
                 <input
                   className="input font-grotesk"
                   type="url"

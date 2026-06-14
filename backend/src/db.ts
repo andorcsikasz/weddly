@@ -1096,16 +1096,8 @@ addColumnIfMissing(
 );
 // category + amount_minor: gift classification ("gift","money","experience","voucher")
 // and optional money value (integer minor units, same convention as wishlist).
-addColumnIfMissing(
-  "received_gifts",
-  "category",
-  "category TEXT NOT NULL DEFAULT 'gift'",
-);
-addColumnIfMissing(
-  "received_gifts",
-  "amount_minor",
-  "amount_minor INTEGER",
-);
+addColumnIfMissing("received_gifts", "category", "category TEXT NOT NULL DEFAULT 'gift'");
+addColumnIfMissing("received_gifts", "amount_minor", "amount_minor INTEGER");
 
 // Notification preference columns (cadence + focus areas).
 addColumnIfMissing(

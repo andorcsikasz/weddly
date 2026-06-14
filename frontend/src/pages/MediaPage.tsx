@@ -11,27 +11,11 @@
 // and replace `albumCreated` local state with the returned album record.
 
 import type { Couple, MediaLinks } from "@shared/types";
-import {
-  Camera,
-  CheckCircle2,
-  Copy,
-  ExternalLink,
-  Eye,
-  Link2,
-  Pencil,
-  Share2,
-  Users,
-} from "lucide-react";
-import {
-  type FormEvent,
-  type SVGProps,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { Camera, Copy, ExternalLink, Eye, Link2, Pencil, Share2, Users } from "lucide-react";
+import { type FormEvent, type SVGProps, useEffect, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, useToast } from "../components/ui";
-import { coupleApi, feedbackApi } from "../lib/endpoints";
+import { coupleApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 // --- helpers ----------------------------------------------------------------
@@ -48,20 +32,42 @@ function isHttpUrl(value: string): boolean {
 // Simplified QR code silhouette used as a placeholder before real generation.
 function QrPlaceholder({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 80 80"
-      aria-hidden="true"
-      className={className}
-      fill="currentColor"
-    >
+    <svg viewBox="0 0 80 80" aria-hidden="true" className={className} fill="currentColor">
       {/* top-left finder */}
-      <rect x="4" y="4" width="24" height="24" rx="3" fillOpacity="0" stroke="currentColor" strokeWidth="3.5" />
+      <rect
+        x="4"
+        y="4"
+        width="24"
+        height="24"
+        rx="3"
+        fillOpacity="0"
+        stroke="currentColor"
+        strokeWidth="3.5"
+      />
       <rect x="11" y="11" width="10" height="10" rx="1.5" />
       {/* top-right finder */}
-      <rect x="52" y="4" width="24" height="24" rx="3" fillOpacity="0" stroke="currentColor" strokeWidth="3.5" />
+      <rect
+        x="52"
+        y="4"
+        width="24"
+        height="24"
+        rx="3"
+        fillOpacity="0"
+        stroke="currentColor"
+        strokeWidth="3.5"
+      />
       <rect x="59" y="11" width="10" height="10" rx="1.5" />
       {/* bottom-left finder */}
-      <rect x="4" y="52" width="24" height="24" rx="3" fillOpacity="0" stroke="currentColor" strokeWidth="3.5" />
+      <rect
+        x="4"
+        y="52"
+        width="24"
+        height="24"
+        rx="3"
+        fillOpacity="0"
+        stroke="currentColor"
+        strokeWidth="3.5"
+      />
       <rect x="11" y="59" width="10" height="10" rx="1.5" />
       {/* data modules */}
       <rect x="34" y="4" width="6" height="6" rx="1" />
@@ -115,16 +121,10 @@ function HeroCard({ onCreateClick }: { onCreateClick: () => void }) {
           <h2 className="font-serif text-xl italic leading-snug text-ink-900 sm:text-2xl dark:text-paper-50">
             {t("media.hero_title")}
           </h2>
-          <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">
-            {t("media.hero_sub")}
-          </p>
+          <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">{t("media.hero_sub")}</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className="btn-primary btn-sm"
-            onClick={onCreateClick}
-          >
+          <button type="button" className="btn-primary btn-sm" onClick={onCreateClick}>
             {t("media.hero_cta_create")}
           </button>
           <button type="button" className="btn-ghost btn-sm" disabled>
@@ -217,11 +217,7 @@ function FromGuestsCard({
         </div>
       ) : (
         <div className="mt-auto">
-          <button
-            type="button"
-            className="btn-primary btn-sm"
-            onClick={onCreateClick}
-          >
+          <button type="button" className="btn-primary btn-sm" onClick={onCreateClick}>
             <Link2 size={14} aria-hidden="true" />
             {t("media.from_guests_cta")}
           </button>
@@ -247,9 +243,7 @@ function ToGuestsCard() {
         <h3 className="font-grotesk text-base font-semibold text-ink-700 dark:text-paper-200">
           {t("media.to_guests_title")}
         </h3>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
-          {t("media.to_guests_desc")}
-        </p>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("media.to_guests_desc")}</p>
       </div>
 
       <div className="mt-auto">
@@ -428,27 +422,13 @@ function CreateAlbumModal({
       }
     >
       <form id="create-album-form" onSubmit={handleSubmit} className="space-y-5">
-        <p className="text-sm text-ink-600 dark:text-umber-200">
-          {t("media.create_modal_desc")}
-        </p>
+        <p className="text-sm text-ink-600 dark:text-umber-200">{t("media.create_modal_desc")}</p>
 
         {/* Settings preview — disabled until backend ships */}
         <div className="space-y-3 rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800">
-          <SettingRow
-            label="Shots per guest"
-            value="Unlimited"
-            coming
-          />
-          <SettingRow
-            label="Guest name required"
-            value="Optional"
-            coming
-          />
-          <SettingRow
-            label="Reveal timing"
-            value="Instant"
-            coming
-          />
+          <SettingRow label="Shots per guest" value="Unlimited" coming />
+          <SettingRow label="Guest name required" value="Optional" coming />
+          <SettingRow label="Reveal timing" value="Instant" coming />
         </div>
 
         <p className="text-xs text-ink-400 dark:text-umber-400">
@@ -505,18 +485,17 @@ export default function MediaPage() {
   const [albumCreated, setAlbumCreated] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Feedback form.
-  const [message, setMessage] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [feedbackError, setFeedbackError] = useState<string | null>(null);
-  const [feedbackDone, setFeedbackDone] = useState(false);
-
   useEffect(() => {
     let cancelled = false;
-    coupleApi.current().then((res) => {
-      if (!cancelled) setCouple(res.couple);
-    }).catch(() => {});
-    return () => { cancelled = true; };
+    coupleApi
+      .current()
+      .then((res) => {
+        if (!cancelled) setCouple(res.couple);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const photographerUrl = couple?.media_links?.photographer ?? null;
@@ -570,26 +549,6 @@ export default function MediaPage() {
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [editing]);
 
-  async function onFeedbackSubmit(e: FormEvent) {
-    e.preventDefault();
-    setFeedbackError(null);
-    const msg = message.trim();
-    if (!msg) {
-      setFeedbackError(t("media.feedback_empty_error"));
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await feedbackApi.submit({ source: "app", message: msg, locale });
-      setFeedbackDone(true);
-      setMessage("");
-    } catch (err) {
-      setFeedbackError(err instanceof Error ? err.message : t("common.error_generic"));
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
     <>
       <header className="mb-5 flex items-center gap-2">
@@ -618,52 +577,6 @@ export default function MediaPage() {
           onSave={savePhotographerLink}
           onCancel={cancelEdit}
         />
-      </div>
-
-      {/* Feedback — compact, below the feature panels */}
-      <div className="card mt-5 p-4">
-        {feedbackDone ? (
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-              <CheckCircle2 size={18} aria-hidden="true" />
-            </span>
-            <p className="text-sm text-ink-700 dark:text-paper-100">
-              {t("media.feedback_success")}
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={onFeedbackSubmit} className="space-y-2" noValidate>
-            <div>
-              <h2 className="font-grotesk text-base">{t("media.feedback_title")}</h2>
-              <p className="text-xs text-ink-600 dark:text-umber-200">
-                {t("media.feedback_intro")}
-              </p>
-            </div>
-            <div className="flex items-start gap-2">
-              <textarea
-                className="input min-h-tap flex-1 resize-y py-1.5 text-sm leading-snug"
-                rows={1}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={t("media.feedback_placeholder")}
-                maxLength={2000}
-                aria-label={t("media.feedback_title")}
-              />
-              <button
-                type="submit"
-                className="btn-primary btn-sm shrink-0"
-                disabled={submitting}
-              >
-                {submitting ? t("media.feedback_submitting") : t("media.feedback_submit")}
-              </button>
-            </div>
-            {feedbackError && (
-              <p className="field-error" role="alert">
-                {feedbackError}
-              </p>
-            )}
-          </form>
-        )}
       </div>
 
       <CreateAlbumModal

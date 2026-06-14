@@ -1193,28 +1193,71 @@ export default function DashboardPage() {
             breakdown={
               <div>
                 <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-                  <Segment count={rsvp.yes} total={Math.max(totalGuests, 1)} className="bg-emerald-500" />
-                  <Segment count={rsvp.maybe} total={Math.max(totalGuests, 1)} className="bg-amber-400" />
-                  <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-red-500" />
-                  <Segment count={rsvp.pending} total={Math.max(totalGuests, 1)} className="bg-slate-300" />
+                  <Segment
+                    count={rsvp.yes}
+                    total={Math.max(totalGuests, 1)}
+                    className="bg-emerald-500"
+                  />
+                  <Segment
+                    count={rsvp.maybe}
+                    total={Math.max(totalGuests, 1)}
+                    className="bg-amber-400"
+                  />
+                  <Segment
+                    count={rsvp.no}
+                    total={Math.max(totalGuests, 1)}
+                    className="bg-red-500"
+                  />
+                  <Segment
+                    count={rsvp.pending}
+                    total={Math.max(totalGuests, 1)}
+                    className="bg-slate-300"
+                  />
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-0.5">
-                  {([
-                    { status: "yes", swatch: "bg-emerald-500", label: t("dashboard.rsvp_yes"), value: rsvp.yes },
-                    { status: "maybe", swatch: "bg-amber-400", label: t("dashboard.rsvp_maybe"), value: rsvp.maybe },
-                    { status: "no", swatch: "bg-red-500", label: t("dashboard.rsvp_no"), value: rsvp.no },
-                    { status: "pending", swatch: "bg-slate-300", label: t("dashboard.rsvp_pending"), value: rsvp.pending },
-                  ] as const).map(({ status, swatch, label, value: v }) => (
+                  {(
+                    [
+                      {
+                        status: "yes",
+                        swatch: "bg-emerald-500",
+                        label: t("dashboard.rsvp_yes"),
+                        value: rsvp.yes,
+                      },
+                      {
+                        status: "maybe",
+                        swatch: "bg-amber-400",
+                        label: t("dashboard.rsvp_maybe"),
+                        value: rsvp.maybe,
+                      },
+                      {
+                        status: "no",
+                        swatch: "bg-red-500",
+                        label: t("dashboard.rsvp_no"),
+                        value: rsvp.no,
+                      },
+                      {
+                        status: "pending",
+                        swatch: "bg-slate-300",
+                        label: t("dashboard.rsvp_pending"),
+                        value: rsvp.pending,
+                      },
+                    ] as const
+                  ).map(({ status, swatch, label, value: v }) => (
                     <Link
                       key={status}
                       to={`/app/guests?rsvp=${status}`}
-                      className="flex items-center justify-between rounded px-1 py-1 text-xs transition hover:bg-paper-100 dark:hover:bg-umber-700/60"
+                      className="flex min-w-0 items-center justify-between rounded px-1 py-1 text-xs transition hover:bg-paper-100 dark:hover:bg-umber-700/60"
                     >
-                      <span className="flex items-center gap-1.5 text-umber-800 dark:text-paper-100">
-                        <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${swatch}`} aria-hidden="true" />
-                        {label}
+                      <span className="flex min-w-0 flex-1 items-center gap-1.5 text-umber-800 dark:text-paper-100">
+                        <span
+                          className={`inline-block h-2 w-2 shrink-0 rounded-full ${swatch}`}
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">{label}</span>
                       </span>
-                      <span className="font-semibold tabular-nums text-umber-900 dark:text-paper-50">{formatNumber(v, locale)}</span>
+                      <span className="shrink-0 pl-1 font-semibold tabular-nums text-umber-900 dark:text-paper-50">
+                        {formatNumber(v, locale)}
+                      </span>
                     </Link>
                   ))}
                 </div>
@@ -1262,7 +1305,6 @@ export default function DashboardPage() {
           )}
         </section>
       )}
-
 
       {/* ── Planning-mode body — hidden in day-of mode so the screen
           stays focused on the jumbo check-in panel. ───────────────── */}
@@ -1730,7 +1772,10 @@ function DaysToGoTile({
   }
 
   return (
-    <div ref={wrapperRef} className="card relative p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
+    <div
+      ref={wrapperRef}
+      className="card relative p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
+    >
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
           <CalendarHeart size={14} aria-hidden="true" />
