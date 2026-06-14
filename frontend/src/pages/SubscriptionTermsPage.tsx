@@ -38,7 +38,11 @@ export default function SubscriptionTermsPage() {
         {showEn && (
           <>
             <SecondaryLanguageDivider label="Magyar" />
-            <SubscriptionBodyForLocale strings={hu.subscription_terms} sectionLocale="hu" secondary />
+            <SubscriptionBodyForLocale
+              strings={hu.subscription_terms}
+              sectionLocale="hu"
+              secondary
+            />
           </>
         )}
         <BackLink />

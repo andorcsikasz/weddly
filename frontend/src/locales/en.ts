@@ -1103,7 +1103,7 @@ const en: LocaleMessages = {
     mockup_table_uni: "Uni",
     mockup_table_head: "Head table",
     mockup_drag_subtitle: "Veg · Plus 1",
-    mockup_vendor_category: "Floral design · Budapest, HU",
+    mockup_vendor_category: "Floral design · Vienna, AT",
     mockup_vendor_reviews: "4.9 · 23 reviews",
     mockup_vendor_cta: "View profile",
     // ── Landing "try the demo" card — small tilted sticker on the right
@@ -4651,8 +4651,10 @@ const en: LocaleMessages = {
     principles_minimisation: "Data minimisation — only data necessary for the purpose is collected",
     principles_accuracy: "Accuracy — data is kept up to date where necessary",
     principles_storage: "Storage limitation — data is not kept longer than necessary",
-    principles_integrity: "Integrity and confidentiality — appropriate technical and organisational safeguards",
-    principles_accountability: "Accountability — the Controller is responsible for, and able to demonstrate, compliance",
+    principles_integrity:
+      "Integrity and confidentiality — appropriate technical and organisational safeguards",
+    principles_accountability:
+      "Accountability — the Controller is responsible for, and able to demonstrate, compliance",
     proc_activities_title: "Processing activities",
     proc_tech_title: "Technical data from website visits",
     proc_tech_data:
@@ -4697,8 +4699,7 @@ const en: LocaleMessages = {
       "Purpose: sending product news, development updates, wedding inspiration and promotions — only on the basis of explicit consent.",
     proc_newsletter_basis:
       "Legal basis: GDPR Art. 6(1)(a) — the data subject's freely given and withdrawable consent.",
-    proc_newsletter_retention:
-      "Retention: until unsubscription (i.e. withdrawal of consent).",
+    proc_newsletter_retention: "Retention: until unsubscription (i.e. withdrawal of consent).",
     proc_newsletter_unsubscribe:
       "Unsubscribing: at any time, without giving a reason, via the unsubscribe link in the email or by writing to hello@weddly.xyz. Withdrawal does not affect the lawfulness of processing carried out before the withdrawal.",
     proc_billing_title: "Billing and subscriptions",

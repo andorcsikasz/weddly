@@ -1748,7 +1748,10 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       typeof body.notif_email_cadence !== "string" ||
       !isNotifEmailCadence(body.notif_email_cadence)
     ) {
-      throw new HttpError(400, "notif_email_cadence must be never, 1_weekly, 2_weekly, or 4_weekly");
+      throw new HttpError(
+        400,
+        "notif_email_cadence must be never, 1_weekly, 2_weekly, or 4_weekly",
+      );
     }
     const next = body.notif_email_cadence;
     if (next !== couple.notif_email_cadence) {

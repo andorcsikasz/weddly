@@ -740,8 +740,12 @@ function buildHeadBlock(opts: {
   // for anything outside `SLUG_PAIRS`, so /about, /signup, /vendors etc.
   // keep their historical canonical exactly.
   const canonicalUrl = blogPair
-    ? (blogPair.accessedViaEnSlug && finalEnUrl ? finalEnUrl : finalHuUrl)
-    : (locale === "en" && enUrl ? enUrl : huUrl);
+    ? blogPair.accessedViaEnSlug && finalEnUrl
+      ? finalEnUrl
+      : finalHuUrl
+    : locale === "en" && enUrl
+      ? enUrl
+      : huUrl;
   // Per-post Open Graph image. Priority: couple cover (/w/:slug) → published
   // blog post cover → /og-rsvp.png on RSVP routes → brand /og.png. Giving each
   // blog post its own share card (instead of nine copies of og.png) is the

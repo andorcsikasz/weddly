@@ -163,6 +163,10 @@ export default function MoodboardPage() {
   const [readOnly, setReadOnly] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // True once all pin images have been preloaded (or timeout). Prevents the
+  // one-by-one pop-in: the skeleton stays visible until the whole grid is ready.
+  const [gridReady, setGridReady] = useState(false);
+
   // Initial state load + one-time migration of the legacy localStorage url.
   useEffect(() => {
     let cancelled = false;
@@ -233,6 +237,42 @@ export default function MoodboardPage() {
       cancelled = true;
     };
   }, [boardUrl]);
+
+  // When a new board starts loading, immediately invalidate the ready flag so
+  // old-board images don't flash through before new ones are preloaded.
+  useEffect(() => {
+    if (pinsLoading) setGridReady(false);
+  }, [pinsLoading]);
+
+  // Preload all pin images before showing the grid — skeleton stays up until
+  // every image is decoded (or 5 s safety timeout).
+  useEffect(() => {
+    setGridReady(false);
+    if (pins.length === 0) {
+      setGridReady(true);
+      return;
+    }
+    let loaded = 0;
+    const imgs: HTMLImageElement[] = [];
+    function tick() {
+      if (++loaded >= imgs.length) setGridReady(true);
+    }
+    for (const pin of pins) {
+      const img = new Image();
+      img.onload = tick;
+      img.onerror = tick;
+      img.src = pin.image_url;
+      imgs.push(img);
+    }
+    const t = setTimeout(() => setGridReady(true), 5000);
+    return () => {
+      for (const img of imgs) {
+        img.onload = null;
+        img.onerror = null;
+      }
+      clearTimeout(t);
+    };
+  }, [pins]);
 
   const openFilePicker = useCallback(() => {
     setUploadError(null);
@@ -487,7 +527,7 @@ export default function MoodboardPage() {
             </div>
           </div>
         </div>
-      ) : stateLoading || (boardUrl && pinsLoading) ? (
+      ) : stateLoading || (boardUrl && pinsLoading) || (pins.length > 0 && !gridReady) ? (
         <GridSkeleton label={t("moodboard.loading")} />
       ) : source === "upload" ? (
         // ── Uploaded images ──────────────────────────────────────────────

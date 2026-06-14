@@ -2434,10 +2434,7 @@ function HoneymoonTodoSection({
             <Wand2 size={14} aria-hidden="true" />
             {t("honeymoon.todo_wand_button")}
           </button>
-          <Link
-            to="/app/planning"
-            className="btn-ghost btn-sm inline-flex items-center gap-1.5"
-          >
+          <Link to="/app/planning" className="btn-ghost btn-sm inline-flex items-center gap-1.5">
             {t("honeymoon.todo_manage_link")}
           </Link>
         </div>

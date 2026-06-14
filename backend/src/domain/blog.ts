@@ -6,7 +6,11 @@
 // admin can then edit, publish or delete them.
 
 import type { BlogBlock, BlogPost } from "../../../shared/blog_posts";
-import { SEED_BLOG_POSTS, SEED_COVER_BY_SLUG, SEED_EN_SLUG_BY_SLUG } from "../../../shared/blog_posts";
+import {
+  SEED_BLOG_POSTS,
+  SEED_COVER_BY_SLUG,
+  SEED_EN_SLUG_BY_SLUG,
+} from "../../../shared/blog_posts";
 import { db, now } from "../db";
 import { log } from "../lib/logger";
 
@@ -75,9 +79,7 @@ export function toBlogPost(row: BlogPostRow): BlogPost {
 
 export function getBlogPostBySlug(slug: string): BlogPostRow | null {
   const row = db
-    .prepare(
-      "SELECT * FROM blog_posts WHERE slug = ? OR (en_slug IS NOT NULL AND en_slug = ?)",
-    )
+    .prepare("SELECT * FROM blog_posts WHERE slug = ? OR (en_slug IS NOT NULL AND en_slug = ?)")
     .get(slug, slug) as BlogPostRow | undefined;
   return row ?? null;
 }

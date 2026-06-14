@@ -99,9 +99,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
       .then(({ couple }) => {
         if (!couple) return;
         setCadence(
-          (NOTIF_EMAIL_CADENCE_VALUES as readonly string[]).includes(
-            couple.notif_email_cadence,
-          )
+          (NOTIF_EMAIL_CADENCE_VALUES as readonly string[]).includes(couple.notif_email_cadence)
             ? (couple.notif_email_cadence as NotifEmailCadence)
             : "1_weekly",
         );
@@ -152,9 +150,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
         <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
           {t("notifications.settings_title")}
         </p>
-        {saving && (
-          <span className="ml-auto text-xs text-ink-400 dark:text-umber-400">…</span>
-        )}
+        {saving && <span className="ml-auto text-xs text-ink-400 dark:text-umber-400">…</span>}
       </div>
 
       {!loaded ? (
@@ -177,9 +173,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
                 <input
                   type="checkbox"
                   checked={cadence !== "never"}
-                  onChange={() =>
-                    handleCadenceChange(cadence === "never" ? "1_weekly" : "never")
-                  }
+                  onChange={() => handleCadenceChange(cadence === "never" ? "1_weekly" : "never")}
                   className="accent-blush-500"
                 />
                 {t("notifications.settings_method_email")}

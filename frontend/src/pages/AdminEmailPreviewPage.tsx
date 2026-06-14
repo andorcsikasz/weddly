@@ -82,10 +82,7 @@ export function AdminEmailPreviewPage() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <AdminPageHeader
-        title="Email templates"
-        subtitle={`${kinds?.length ?? 0} templates`}
-      />
+      <AdminPageHeader title="Email templates" subtitle={`${kinds?.length ?? 0} templates`} />
 
       <div className="flex flex-1 min-h-0 gap-0 border-t border-neutral-200 dark:border-neutral-800">
         {/* ── Left: template list ─────────────────────────────────────── */}
@@ -99,9 +96,7 @@ export function AdminEmailPreviewPage() {
             : grouped.map(({ cat, items }) => (
                 <div key={cat}>
                   <div className="px-3 pt-4 pb-1">
-                    <Pill tone={CATEGORY_TONE[cat]}>
-                      {CATEGORY_LABEL_EN[cat]}
-                    </Pill>
+                    <Pill tone={CATEGORY_TONE[cat]}>{CATEGORY_LABEL_EN[cat]}</Pill>
                   </div>
                   {items.map((k) => (
                     <button

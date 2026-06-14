@@ -298,7 +298,8 @@ export default function AdminUsersPage() {
     [filteredRealCouples, userById],
   );
   const totalCouplePairs = useMemo(
-    () => realCouples.filter((c) => c.partners.filter((p) => userById.has(p.id)).length >= 2).length,
+    () =>
+      realCouples.filter((c) => c.partners.filter((p) => userById.has(p.id)).length >= 2).length,
     [realCouples, userById],
   );
   const totalSoloWorkspaces = useMemo(
@@ -723,7 +724,11 @@ export default function AdminUsersPage() {
               title={t("admin.resend_flag_email_button")}
               aria-label={t("admin.resend_flag_email_button")}
             >
-              <RefreshCw size={14} aria-hidden className={resendFlagPending === u.id ? "animate-spin" : ""} />
+              <RefreshCw
+                size={14}
+                aria-hidden
+                className={resendFlagPending === u.id ? "animate-spin" : ""}
+              />
             </button>
             <button
               type="button"
@@ -860,9 +865,7 @@ export default function AdminUsersPage() {
             )}
           </div>
         </div>
-        <div className="px-0.5">
-          {members.map((u) => renderEmailLogPanel(u.id))}
-        </div>
+        <div className="px-0.5">{members.map((u) => renderEmailLogPanel(u.id))}</div>
       </li>
     );
   }
@@ -964,10 +967,30 @@ export default function AdminUsersPage() {
             <div className="flex divide-x divide-paper-200 overflow-hidden rounded-2xl shadow-sm ring-1 ring-paper-300 dark:divide-umber-700 dark:ring-umber-700">
               {(
                 [
-                  { key: "couples", label: t("admin.stat_couples"), value: totalCouplePairs, icon: Heart },
-                  { key: "solo", label: t("admin.stat_solo"), value: totalSoloWorkspaces, icon: User },
-                  { key: "beta", label: t("admin.stat_beta"), value: betaCouples.length, icon: FlaskConical },
-                  { key: "demo", label: t("admin.stat_demo"), value: demoCouples.length, icon: Bird },
+                  {
+                    key: "couples",
+                    label: t("admin.stat_couples"),
+                    value: totalCouplePairs,
+                    icon: Heart,
+                  },
+                  {
+                    key: "solo",
+                    label: t("admin.stat_solo"),
+                    value: totalSoloWorkspaces,
+                    icon: User,
+                  },
+                  {
+                    key: "beta",
+                    label: t("admin.stat_beta"),
+                    value: betaCouples.length,
+                    icon: FlaskConical,
+                  },
+                  {
+                    key: "demo",
+                    label: t("admin.stat_demo"),
+                    value: demoCouples.length,
+                    icon: Bird,
+                  },
                 ] as const
               ).map(({ key, label, value, icon: Icon }) => (
                 <div
@@ -1212,7 +1235,9 @@ export default function AdminUsersPage() {
                     (filteredFlaggedCouples.length === 0 ? (
                       <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
                     ) : (
-                      <ul className="space-y-1.5">{filteredFlaggedCouples.map(renderCoupleCard)}</ul>
+                      <ul className="space-y-1.5">
+                        {filteredFlaggedCouples.map(renderCoupleCard)}
+                      </ul>
                     ))}
                 </section>
               )}
@@ -1406,7 +1431,10 @@ export default function AdminUsersPage() {
                                 </td>
                               </tr>
                               {emailLogUserId === u.id && (
-                                <tr key={`${u.id}-emails`} className="border-t border-paper-200 dark:border-umber-700">
+                                <tr
+                                  key={`${u.id}-emails`}
+                                  className="border-t border-paper-200 dark:border-umber-700"
+                                >
                                   <td colSpan={2} className="px-3 pb-2">
                                     {renderEmailLogPanel(u.id)}
                                   </td>

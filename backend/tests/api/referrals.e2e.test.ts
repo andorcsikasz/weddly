@@ -4,7 +4,10 @@
 import "../setup";
 
 import { beforeEach, describe, expect, test } from "bun:test";
-import { PRIVACY_VERSION as _PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION as _VBN_VERSION } from "@shared/legal";
+import {
+  PRIVACY_VERSION as _PRIVACY_VERSION,
+  VENDOR_BETA_NOTICE_VERSION as _VBN_VERSION,
+} from "@shared/legal";
 import type { ReferralStatusResponse } from "../../src/routes/referrals";
 import { db } from "../../src/db";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
@@ -27,9 +30,7 @@ async function submitVendorWaitlist(
 beforeEach(() => {
   wipeAll();
   // Force billing enforcement on so we can see entitlement changes.
-  db.exec(
-    "UPDATE billing_control SET enforcement_on = 1 WHERE id = 1",
-  );
+  db.exec("UPDATE billing_control SET enforcement_on = 1 WHERE id = 1");
 });
 
 describe("referral code", () => {
@@ -56,9 +57,8 @@ describe("referral code", () => {
 describe("couple referral reward", () => {
   test("referrer gets 1 month when referred couple has partner B join", async () => {
     // Set up the referrer couple.
-    const { token: refToken, coupleId: refCoupleId } = await bootstrapCouple(
-      "referrer@weddly.test",
-    );
+    const { token: refToken, coupleId: refCoupleId } =
+      await bootstrapCouple("referrer@weddly.test");
     const refInfo = await req<ReferralStatusResponse>("GET", "/api/referral", undefined, {
       token: refToken,
     });
@@ -123,7 +123,9 @@ describe("couple referral reward", () => {
 
     // Now the reward should have been granted.
     const grantRow = db
-      .prepare("SELECT bonus_ms FROM referral_grants WHERE referrer_couple_id = ? AND referral_type = 'couple'")
+      .prepare(
+        "SELECT bonus_ms FROM referral_grants WHERE referrer_couple_id = ? AND referral_type = 'couple'",
+      )
       .get(refCoupleId) as { bonus_ms: number } | undefined;
     expect(grantRow).toBeDefined();
     expect(grantRow!.bonus_ms).toBe(1000 * 60 * 60 * 24 * 30);
@@ -170,9 +172,8 @@ describe("couple referral reward", () => {
 
 describe("vendor referral reward", () => {
   test("referrer gets 2 months when vendor activates via waitlist referral", async () => {
-    const { token: refToken, coupleId: refCoupleId } = await bootstrapCouple(
-      "vendor_ref@weddly.test",
-    );
+    const { token: refToken, coupleId: refCoupleId } =
+      await bootstrapCouple("vendor_ref@weddly.test");
     const refInfo = await req<ReferralStatusResponse>("GET", "/api/referral", undefined, {
       token: refToken,
     });

@@ -40,7 +40,6 @@ import {
   Pencil,
   Plus,
   Printer,
-  RefreshCw,
   Search,
   Send,
   Shell,
@@ -249,18 +248,6 @@ export default function GuestsPage() {
     });
     if (!ok) return;
     await householdApi.remove(hh.id);
-    refresh();
-  }
-
-  async function onRegenCode(hh: Household) {
-    const ok = await confirm({
-      title: t("guests.household_regenerate_confirm_title"),
-      body: t("guests.household_regenerate_confirm_body"),
-      confirmLabel: t("guests.household_regenerate_code"),
-      cancelLabel: t("common.cancel"),
-    });
-    if (!ok) return;
-    await householdApi.regenerateCode(hh.id);
     refresh();
   }
 
@@ -864,7 +851,6 @@ export default function GuestsPage() {
                 onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
                 onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
                 onDeleteGuest={onDeleteGuest}
-                onRegenCode={() => onRegenCode(hh)}
                 onDeleteHousehold={() => onDeleteHousehold(hh)}
                 onRenameHousehold={onRenameHousehold}
                 onChangeGroup={onChangeHouseholdGroup}
@@ -1125,7 +1111,6 @@ function HouseholdCard({
   onAddMember,
   onEditGuest,
   onDeleteGuest,
-  onRegenCode,
   onDeleteHousehold,
   onRenameHousehold,
   onChangeGroup,
@@ -1140,7 +1125,6 @@ function HouseholdCard({
   onAddMember: () => void;
   onEditGuest: (g: Guest) => void;
   onDeleteGuest: (id: number) => void;
-  onRegenCode: () => void;
   onDeleteHousehold: () => void;
   onRenameHousehold: (id: number, label: string) => Promise<void>;
   onChangeGroup: (id: number, groupTag: GuestGroupTag) => Promise<void>;
@@ -1269,14 +1253,6 @@ function HouseholdCard({
                     the affordance at thumb-width without wasting the row. */}
                 <Link2 size={14} className="md:hidden" aria-hidden />
                 <span className="hidden md:inline">{t("guests.household_share_link")}</span>
-              </button>
-              <button
-                type="button"
-                className="btn-ghost btn-sm"
-                onClick={onRegenCode}
-                title={t("guests.household_regenerate_code")}
-              >
-                <RefreshCw size={14} />
               </button>
             </>
           )}

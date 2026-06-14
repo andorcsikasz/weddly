@@ -144,8 +144,7 @@ function decodeEntities(s: string): string {
  *  image URL found in any node's `image` field. Handles strings, arrays of
  *  strings, ImageObject `{ url }` shapes, and `@graph`-wrapped documents. */
 function extractJsonLdImage(html: string): string | null {
-  const re =
-    /<script\b[^>]*\btype\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  const re = /<script\b[^>]*\btype\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
     const raw = m[1] ?? "";

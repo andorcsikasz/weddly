@@ -1116,7 +1116,7 @@ const hu: LocaleMessages = {
     mockup_table_uni: "Egyetem",
     mockup_table_head: "Főasztal",
     mockup_drag_subtitle: "Vega · +1",
-    mockup_vendor_category: "Virágdekoráció · Budapest",
+    mockup_vendor_category: "Virágdekoráció · Bécs",
     mockup_vendor_reviews: "4,9 · 23 értékelés",
     mockup_vendor_cta: "Profil megtekintése",
     // ── Landing "try the demo" card — small tilted sticker on the right
@@ -2768,7 +2768,8 @@ const hu: LocaleMessages = {
     mode_edit_tab: "Terem szerkesztése",
     mode_seat_tab: "Vendégek elhelyezése",
     seat_mode_panel_title: "Nincs helye",
-    seat_mode_help: "Húzd a vendégeket a listából a székekre, vagy koppints egy székre a kijelöléshez.",
+    seat_mode_help:
+      "Húzd a vendégeket a listából a székekre, vagy koppints egy székre a kijelöléshez.",
     seat_tap_place: "{guest} kijelölve — koppints egy székre az elhelyezéshez.",
     seat_unassign_selected: "Eltávolítás",
   },
@@ -4682,7 +4683,8 @@ const hu: LocaleMessages = {
     contact_title: "Kérdés van?",
     contact_body: "Írjatok a hello@weddly.xyz címre, és egy ember válaszol hét napon belül.",
     definitions_title: "Fogalommeghatározások",
-    def_intro: "A jelen tájékoztatóban használt fogalmak a GDPR-ban meghatározott jelentéssel bírnak:",
+    def_intro:
+      "A jelen tájékoztatóban használt fogalmak a GDPR-ban meghatározott jelentéssel bírnak:",
     def_personal_data:
       "Személyes adat: azonosított vagy azonosítható természetes személyre vonatkozó bármely információ (pl. név, e-mail-cím, IP-cím).",
     def_data_subject:
@@ -4697,12 +4699,15 @@ const hu: LocaleMessages = {
     principles_intro:
       "Az Adatkezelő az alábbi elveket érvényesíti minden adatkezelési tevékenységben:",
     principles_lawfulness: "Jogszerűség, tisztességes eljárás és átláthatóság",
-    principles_purpose: "Célhoz kötöttség — az adatokat csak az itt meghatározott célokra használjuk",
+    principles_purpose:
+      "Célhoz kötöttség — az adatokat csak az itt meghatározott célokra használjuk",
     principles_minimisation: "Adattakarékosság — csak a célhoz szükséges adatokat gyűjtjük",
     principles_accuracy: "Pontosság — az adatokat szükség esetén naprakészen tartjuk",
     principles_storage: "Korlátozott tárolhatóság — nem tartjuk tovább, mint szükséges",
-    principles_integrity: "Integritás és bizalmas jelleg — megfelelő technikai és szervezési védelem",
-    principles_accountability: "Elszámoltathatóság — az Adatkezelő felelős a megfelelőségért és bizonyítani is tudja azt",
+    principles_integrity:
+      "Integritás és bizalmas jelleg — megfelelő technikai és szervezési védelem",
+    principles_accountability:
+      "Elszámoltathatóság — az Adatkezelő felelős a megfelelőségért és bizonyítani is tudja azt",
     proc_activities_title: "Egyes adatkezelési tevékenységek",
     proc_tech_title: "Weboldal-látogatással kapcsolatos technikai adatkezelés",
     proc_tech_data:
@@ -4736,8 +4741,7 @@ const hu: LocaleMessages = {
       "Kezelt adatok: esküvő dátuma, helyszín, vendéglista (nevek, e-mail-cím, telefonszám, étrendi igény), ültetési rend, költségvetés, feladatlista, feltöltött dokumentumok, szolgáltatói jegyzetek — minden általatok rögzített tartalom.",
     proc_workspace_purpose:
       "Cél: az esküvőtervező alkalmazás funkcióinak biztosítása; az adatokat kizárólag az adott workspace keretein belül kezeljük.",
-    proc_workspace_basis:
-      "Jogalap: GDPR 6. cikk (1) b) — a felhasználói szerződés teljesítése.",
+    proc_workspace_basis: "Jogalap: GDPR 6. cikk (1) b) — a felhasználói szerződés teljesítése.",
     proc_workspace_retention:
       "Megőrzési idő: a workspace aktív fennállásáig; szüneteltetés esetén 30 nap, utána végleges törlés.",
     proc_newsletter_title: "Hírlevél és életciklus-megkeresések",
@@ -4747,8 +4751,7 @@ const hu: LocaleMessages = {
       "Cél: termékhírek, fejlesztési frissítések, esküvői inspirációk és promóciók küldése — kizárólag kifejezett hozzájárulás alapján.",
     proc_newsletter_basis:
       "Jogalap: GDPR 6. cikk (1) a) — az érintett önkéntes és visszavonható hozzájárulása.",
-    proc_newsletter_retention:
-      "Megőrzési idő: a leiratkozásig (a hozzájárulás visszavonásáig).",
+    proc_newsletter_retention: "Megőrzési idő: a leiratkozásig (a hozzájárulás visszavonásáig).",
     proc_newsletter_unsubscribe:
       "Leiratkozás: bármikor, indokolás nélkül, a hírlevélben található leiratkozási linkre kattintva vagy a hello@weddly.xyz e-mailre küldött kéréssel. A visszavonás nem érinti a korábbi hozzájáruláson alapuló adatkezelés jogszerűségét.",
     proc_billing_title: "Számlázás és előfizetések",

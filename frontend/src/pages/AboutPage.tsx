@@ -14,7 +14,6 @@ export default function AboutPage() {
   return (
     <PublicShell>
       <article className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-20">
-
         {/* Eyebrow */}
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
           {t("about.page_title")}

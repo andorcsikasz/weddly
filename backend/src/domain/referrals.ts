@@ -26,9 +26,9 @@ function randomCode(): string {
 }
 
 export function getOrCreateReferralCode(coupleId: number): string {
-  const row = db
-    .prepare("SELECT referral_code FROM couples WHERE id = ?")
-    .get(coupleId) as { referral_code: string | null } | undefined;
+  const row = db.prepare("SELECT referral_code FROM couples WHERE id = ?").get(coupleId) as
+    | { referral_code: string | null }
+    | undefined;
   if (row?.referral_code) return row.referral_code;
 
   // Generate until unique (collision probability ~2^-38 per attempt — loop
@@ -36,9 +36,7 @@ export function getOrCreateReferralCode(coupleId: number): string {
   let code: string;
   for (;;) {
     code = randomCode();
-    const conflict = db
-      .prepare("SELECT 1 FROM couples WHERE referral_code = ?")
-      .get(code);
+    const conflict = db.prepare("SELECT 1 FROM couples WHERE referral_code = ?").get(code);
     if (!conflict) break;
   }
   db.prepare("UPDATE couples SET referral_code = ?, updated_at = ? WHERE id = ?").run(
@@ -179,5 +177,8 @@ export function getReferralInfo(coupleId: number): ReferralInfo {
 
   const bonusMonths = Math.round(totalBonusMs / (1000 * 60 * 60 * 24 * 30));
 
-  return { code, stats: { couple_refs: coupleRefs, vendor_refs: vendorRefs, bonus_months: bonusMonths } };
+  return {
+    code,
+    stats: { couple_refs: coupleRefs, vendor_refs: vendorRefs, bonus_months: bonusMonths },
+  };
 }

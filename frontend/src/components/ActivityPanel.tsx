@@ -324,15 +324,12 @@ export function ActivityPanel({
 
   // Contribution split: count attributed entries (skip system/null actor).
   const selfCount = entries.filter((e) => e.actor_id === currentUserId).length;
-  const otherEntries = entries.filter(
-    (e) => e.actor_id !== null && e.actor_id !== currentUserId,
-  );
+  const otherEntries = entries.filter((e) => e.actor_id !== null && e.actor_id !== currentUserId);
   const partnerCount = otherEntries.length;
   const attributed = selfCount + partnerCount;
   const selfPct = attributed > 0 ? Math.round((selfCount / attributed) * 100) : 100;
   const partnerPct = attributed > 0 ? 100 - selfPct : 0;
-  const partnerName =
-    otherEntries[0]?.actor_full_name ?? t("profile.activity_actor_unknown");
+  const partnerName = otherEntries[0]?.actor_full_name ?? t("profile.activity_actor_unknown");
 
   return (
     <section className="mt-6 overflow-hidden rounded-2xl bg-paper-100 text-ink-900 shadow-pop dark:bg-ink-900 dark:text-paper-100">
@@ -348,14 +345,13 @@ export function ActivityPanel({
             <History size={18} className="text-ink-400 dark:text-ink-300" aria-hidden />
             {t("profile.activity_title")}
           </span>
-          <span className="mt-1 block text-xs text-ink-500 dark:text-ink-200">{t("profile.activity_body")}</span>
+          <span className="mt-1 block text-xs text-ink-500 dark:text-ink-200">
+            {t("profile.activity_body")}
+          </span>
           {attributed > 0 && (
             <span className="mt-2.5 block">
               <span className="flex h-1 overflow-hidden rounded-full">
-                <span
-                  className="bg-blush-500 dark:bg-blush-400"
-                  style={{ width: `${selfPct}%` }}
-                />
+                <span className="bg-blush-500 dark:bg-blush-400" style={{ width: `${selfPct}%` }} />
                 {partnerCount > 0 && (
                   <span
                     className="bg-umber-300 dark:bg-umber-500"

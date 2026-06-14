@@ -20,7 +20,18 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { Fragment, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  type CSSProperties,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
@@ -74,9 +85,6 @@ export default function VendorsPage() {
           <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base text-ink-600 sm:text-lg lg:mx-0 dark:text-umber-200">
-            {t("vendors.hero_sub")}
-          </p>
           {/* Social proof trust signal */}
           <p className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-sm text-ink-500 lg:justify-start dark:text-umber-300">
             <Check size={14} className="text-umber-600 dark:text-umber-400" aria-hidden />
@@ -93,6 +101,15 @@ export default function VendorsPage() {
         </div>
       </section>
 
+      {/* Waitlist contact — real backend submission with category-aware
+       *  portfolio block. The wider container vs. before is intentional:
+       *  the redesigned form uses a 2-col layout on lg+ for short fields. */}
+      <section id="waitlist" className="scroll-mt-24 bg-paper-50 dark:bg-umber-900">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+          <WaitlistContact />
+        </div>
+      </section>
+
       {/* Benefits */}
       <section className="bg-paper-100/60 dark:bg-umber-900/40">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
@@ -101,15 +118,6 @@ export default function VendorsPage() {
             <Benefit title={t("vendors.benefit_2_title")} body={t("vendors.benefit_2_body")} />
             <Benefit title={t("vendors.benefit_3_title")} body={t("vendors.benefit_3_body")} />
           </div>
-        </div>
-      </section>
-
-      {/* Waitlist contact — real backend submission with category-aware
-       *  portfolio block. The wider container vs. before is intentional:
-       *  the redesigned form uses a 2-col layout on lg+ for short fields. */}
-      <section id="waitlist" className="scroll-mt-24 bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 sm:py-24">
-          <WaitlistContact />
         </div>
       </section>
 
@@ -237,10 +245,19 @@ const CONFETTI_COLORS = [
 const DRAFT_KEY = "weddly.vendor_waitlist_draft";
 
 const TRAVEL_RELEVANT_CATEGORIES = new Set<SupplierCategory>([
-  "catering", "bar_drinks", "pizza", "cake_dessert",
-  "decor_floral", "lighting", "tent_pavilion",
-  "music_dj", "sound_tech", "photo_video", "entertainment",
-  "hair_makeup", "nails",
+  "catering",
+  "bar_drinks",
+  "pizza",
+  "cake_dessert",
+  "decor_floral",
+  "lighting",
+  "tent_pavilion",
+  "music_dj",
+  "sound_tech",
+  "photo_video",
+  "entertainment",
+  "hair_makeup",
+  "nails",
   "transport",
 ]);
 
@@ -377,12 +394,32 @@ function WaitlistContact() {
     try {
       sessionStorage.setItem(
         DRAFT_KEY,
-        JSON.stringify({ businessName, email, category, location, website, message, instagram, portfolioLinks, travelRadiusKm }),
+        JSON.stringify({
+          businessName,
+          email,
+          category,
+          location,
+          website,
+          message,
+          instagram,
+          portfolioLinks,
+          travelRadiusKm,
+        }),
       );
     } catch {
       // storage unavailable — ignore
     }
-  }, [businessName, email, category, location, website, message, instagram, portfolioLinks, travelRadiusKm]);
+  }, [
+    businessName,
+    email,
+    category,
+    location,
+    website,
+    message,
+    instagram,
+    portfolioLinks,
+    travelRadiusKm,
+  ]);
 
   // Debounced Nominatim fetch for location suggestions
   useEffect(() => {
@@ -468,12 +505,19 @@ function WaitlistContact() {
   function advanceStep() {
     setStepError(null);
     if (step === 1) {
-      if (!businessName.trim()) { setStepError(t("vendors.form_err_required")); return; }
-      if (!category) { setStepError(t("vendors.form_err_category")); return; }
+      if (!businessName.trim()) {
+        setStepError(t("vendors.form_err_required"));
+        return;
+      }
+      if (!category) {
+        setStepError(t("vendors.form_err_category"));
+        return;
+      }
     }
     if (step === 2) {
       if (!email.trim() || !isLikelyEmail(email.trim())) {
-        setStepError(t("vendors.form_err_email")); return;
+        setStepError(t("vendors.form_err_email"));
+        return;
       }
     }
     setStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
@@ -500,10 +544,12 @@ function WaitlistContact() {
     if (!name) return setErrorMsg(t("vendors.form_err_required"));
     if (!emailTrim || !isLikelyEmail(emailTrim)) return setErrorMsg(t("vendors.form_err_email"));
     if (!category) return setErrorMsg(t("vendors.form_err_category"));
-    if (ig && !INSTAGRAM_HANDLE_RE.test(ig)) return setErrorMsg(t("vendors.form_err_instagram_handle"));
+    if (ig && !INSTAGRAM_HANDLE_RE.test(ig))
+      return setErrorMsg(t("vendors.form_err_instagram_handle"));
     const trimmedLinks = portfolioLinks.map((l) => l.trim()).filter((l) => l.length > 0);
     for (const link of trimmedLinks) {
-      const candidate = link.startsWith("http://") || link.startsWith("https://") ? link : `https://${link}`;
+      const candidate =
+        link.startsWith("http://") || link.startsWith("https://") ? link : `https://${link}`;
       try {
         const parsed = new URL(candidate);
         if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
@@ -512,7 +558,8 @@ function WaitlistContact() {
         return setErrorMsg(t("vendors.form_err_portfolio_link"));
       }
     }
-    if (priceList && priceList.size > 10 * 1024 * 1024) return setErrorMsg(t("vendors.form_err_price_list_size"));
+    if (priceList && priceList.size > 10 * 1024 * 1024)
+      return setErrorMsg(t("vendors.form_err_price_list_size"));
     if (!privacyConsent) return setErrorMsg(t("vendors.form_err_privacy_consent"));
 
     setSubmitting(true);
@@ -529,7 +576,12 @@ function WaitlistContact() {
         portfolio_links: trimmedLinks,
         instagram_handle: ig ? ig : null,
         price_list: priceList,
-        travel_radius_km: TRAVEL_RELEVANT_CATEGORIES.has(category as SupplierCategory) && radiusNum && !Number.isNaN(radiusNum) ? radiusNum : null,
+        travel_radius_km:
+          TRAVEL_RELEVANT_CATEGORIES.has(category as SupplierCategory) &&
+          radiusNum &&
+          !Number.isNaN(radiusNum)
+            ? radiusNum
+            : null,
         privacy_version: PRIVACY_VERSION,
         vendor_beta_notice_version: VENDOR_BETA_NOTICE_VERSION,
         ref_code: refCode,
@@ -587,7 +639,6 @@ function WaitlistContact() {
         className="pointer-events-none absolute -top-10 -right-6 h-40 w-40 rounded-full bg-blush-200/35 blur-3xl dark:hidden"
       />
       <div className="relative rounded-3xl border border-paper-400 bg-white p-6 shadow-soft sm:p-8 dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
-
         {/* Step progress */}
         <StepDots current={step} total={3} />
 
@@ -849,7 +900,9 @@ function WaitlistContact() {
                   <span className="field-label mb-0">{t("vendors.portfolio_links_label")}</span>
                   <span className="inline-flex items-baseline gap-2 text-xs text-ink-500 dark:text-umber-300">
                     <span className="hidden sm:inline">{t("vendors.portfolio_count_hint")}</span>
-                    <span className="tabular-nums">{portfolioLinks.length}/{MAX_PORTFOLIO_LINKS}</span>
+                    <span className="tabular-nums">
+                      {portfolioLinks.length}/{MAX_PORTFOLIO_LINKS}
+                    </span>
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -887,7 +940,11 @@ function WaitlistContact() {
                 </label>
                 {priceList ? (
                   <div className="flex items-center gap-2 rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 dark:border-umber-700 dark:bg-umber-800">
-                    <FileText size={16} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
+                    <FileText
+                      size={16}
+                      className="shrink-0 text-ink-500 dark:text-umber-300"
+                      aria-hidden
+                    />
                     <span className="min-w-0 flex-1 truncate text-sm text-ink-700 dark:text-paper-100">
                       {priceList.name}
                     </span>

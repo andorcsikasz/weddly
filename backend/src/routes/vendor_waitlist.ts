@@ -262,7 +262,11 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
 
   // Save the price list now that we have the row id.
   let finalRow = row;
-  if (priceListFile instanceof File && priceListFile.size > 0 && priceListPath?.startsWith("__pending__:")) {
+  if (
+    priceListFile instanceof File &&
+    priceListFile.size > 0 &&
+    priceListPath?.startsWith("__pending__:")
+  ) {
     const ext = priceListPath.split(":")[1] ?? "pdf";
     const relDir = join("vendor_waitlist", String(row.id));
     const absDir = join(CONFIG.uploadsDir, relDir);

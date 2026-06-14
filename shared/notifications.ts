@@ -85,9 +85,7 @@ export const NOTIF_FOCUS_ALL: readonly NotifFocus[] = ["timeline", "rsvp", "part
 export function parseNotifFocus(raw: string | null | undefined): NotifFocus[] {
   if (!raw) return [...NOTIF_FOCUS_ALL];
   const parts = raw.split(",").map((s) => s.trim());
-  return parts.filter((p): p is NotifFocus =>
-    (NOTIF_FOCUS_ALL as readonly string[]).includes(p),
-  );
+  return parts.filter((p): p is NotifFocus => (NOTIF_FOCUS_ALL as readonly string[]).includes(p));
 }
 
 export function serializeNotifFocus(focus: NotifFocus[]): string {
