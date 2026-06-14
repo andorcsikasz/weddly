@@ -1344,6 +1344,7 @@ function WishlistItemDialog({
         )
       : "",
   );
+  const [url, setUrl] = useState(existing?.url ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [titleError, setTitleError] = useState<string | null>(null);
 
@@ -1375,7 +1376,7 @@ function WishlistItemDialog({
       description: description.trim() ? description.trim().slice(0, WISHLIST_MAX_DESC_LEN) : null,
       target_amount_minor: targetMinor,
       currency: !isGift || itemCurrency === currency ? null : itemCurrency,
-      url: null,
+      url: isGift && url.trim() ? url.trim() : null,
     };
 
     setSubmitting(true);
@@ -1484,36 +1485,51 @@ function WishlistItemDialog({
           {/* Rough amount + currency apply to gifts only — a request (a letter,
               a photo) carries no money. */}
           {kind === "gift" && (
-            <FormRow
-              label={t("wishlist_editor.target_amount_label")}
-              hint={t("wishlist_editor.target_amount_hint")}
-            >
-              <div className="relative">
+            <>
+              <FormRow
+                label={t("wishlist_editor.target_amount_label")}
+                hint={t("wishlist_editor.target_amount_hint")}
+              >
+                <div className="relative">
+                  <input
+                    className="input pr-24 font-grotesk tabular-nums"
+                    type="text"
+                    inputMode="numeric"
+                    // Display the raw digits with locale thousands grouping (HU
+                    // "200 000", EN "200,000"); store only digits so the math stays
+                    // exact regardless of the visible separator.
+                    value={amount === "" ? "" : formatNumber(Number(amount), locale)}
+                    onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
+                    placeholder="0"
+                  />
+                  <select
+                    className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md border border-paper-300 bg-white py-1 pl-2 pr-1 font-grotesk text-sm text-ink-700 focus:border-ink-600 focus:outline-none dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100"
+                    value={itemCurrency}
+                    onChange={(e) => setItemCurrency(e.target.value as Currency)}
+                    aria-label={t("wishlist_editor.currency_aria")}
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c} value={c}>
+                        {currencySymbol(c, locale)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </FormRow>
+              <FormRow
+                label={t("wishlist_editor.url_label")}
+                hint={t("wishlist_editor.url_hint")}
+              >
                 <input
-                  className="input pr-24 font-grotesk tabular-nums"
-                  type="text"
-                  inputMode="numeric"
-                  // Display the raw digits with locale thousands grouping (HU
-                  // "200 000", EN "200,000"); store only digits so the math stays
-                  // exact regardless of the visible separator.
-                  value={amount === "" ? "" : formatNumber(Number(amount), locale)}
-                  onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
-                  placeholder="0"
+                  className="input font-grotesk"
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder={t("wishlist_editor.url_placeholder")}
+                  autoComplete="off"
                 />
-                <select
-                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md border border-paper-300 bg-white py-1 pl-2 pr-1 font-grotesk text-sm text-ink-700 focus:border-ink-600 focus:outline-none dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100"
-                  value={itemCurrency}
-                  onChange={(e) => setItemCurrency(e.target.value as Currency)}
-                  aria-label={t("wishlist_editor.currency_aria")}
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c} value={c}>
-                      {currencySymbol(c, locale)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </FormRow>
+              </FormRow>
+            </>
           )}
         </div>
         <div className="flex gap-2 border-t border-paper-200 px-6 py-4 dark:border-umber-700">
