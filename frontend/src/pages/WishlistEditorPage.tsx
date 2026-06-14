@@ -19,16 +19,20 @@ import { CURRENCIES, type Currency } from "@shared/types";
 import type { UpsertWishlistItemInput, WishlistItem, WishlistKind } from "@shared/wishlist";
 import { WISHLIST_KINDS, WISHLIST_MAX_DESC_LEN, WISHLIST_MAX_TITLE_LEN } from "@shared/wishlist";
 import {
+  Camera,
   ChevronDown,
   ExternalLink,
   Gift,
   HandHeart,
   LayoutGrid,
+  Music2,
   PackageCheck,
   Pencil,
+  PenLine,
   Plus,
   Rows3,
   Trash2,
+  Users,
   X,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
@@ -119,11 +123,11 @@ const COLLAPSE_STORAGE_KEY = "weddly.wishlist.collapsed";
 /** Example request prompts shown as quick-add chips on the empty requests
  *  section — they prefill the dialog title, nothing is persisted until saved
  *  (no fake seed data). */
-const REQUEST_EXAMPLE_KEYS = [
-  "request_example_letter",
-  "request_example_photo",
-  "request_example_song",
-  "request_example_time",
+const REQUEST_EXAMPLES = [
+  { key: "request_example_letter", Icon: PenLine },
+  { key: "request_example_photo", Icon: Camera },
+  { key: "request_example_song", Icon: Music2 },
+  { key: "request_example_time", Icon: Users },
 ] as const;
 
 /** GoFundMe-style soft-pledge progress for a group gift: how much guests have
@@ -965,7 +969,7 @@ export default function WishlistEditorPage() {
                       <span className="text-[11px] font-medium text-ink-500 dark:text-umber-300">
                         {t("wishlist_editor.request_examples_label")}
                       </span>
-                      {REQUEST_EXAMPLE_KEYS.map((key) => {
+                      {REQUEST_EXAMPLES.map(({ key, Icon }) => {
                         const label = t(`wishlist_editor.${key}`);
                         return (
                           <button
@@ -974,9 +978,9 @@ export default function WishlistEditorPage() {
                             onClick={() =>
                               setEditing({ item: null, presetKind: "request", presetTitle: label })
                             }
-                            className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white px-3 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-3 py-1 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
                           >
-                            <Plus size={12} aria-hidden />
+                            <Icon size={12} aria-hidden />
                             {label}
                           </button>
                         );
