@@ -139,6 +139,7 @@ export default function AdminUsersPage() {
   // Same collapsed-by-default treatment for the beta-tester bucket — the
   // team's own test workspaces live below the real-couple list.
   const [betaOpen, setBetaOpen] = useState(false);
+  const [flaggedOpen, setFlaggedOpen] = useState(true);
   // The three real-signup lists (paired couples, solo workspaces, orphan
   // users) are each collapsible. They open by default — they're the page's
   // primary content — but an admin triaging a long list can fold the ones
@@ -190,6 +191,13 @@ export default function AdminUsersPage() {
   const betaCouples = useMemo(
     () => visibleCouples.filter((c) => !c.is_demo && c.is_beta_tester),
     [visibleCouples],
+  );
+  const flaggedCouples = useMemo(
+    () =>
+      visibleCouples.filter(
+        (c) => !c.is_demo && c.partners.some((p) => userById.get(p.id)?.active_flag != null),
+      ),
+    [visibleCouples, userById],
   );
   const demoCouples = useMemo(() => visibleCouples.filter((c) => c.is_demo), [visibleCouples]);
   // Demo activity in the last 24h — drives the collapsed summary headline so
@@ -268,6 +276,11 @@ export default function AdminUsersPage() {
     // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [betaCouples, searchQuery, userById],
   );
+  const filteredFlaggedCouples = useMemo(
+    () => (searchQuery === "" ? flaggedCouples : flaggedCouples.filter(coupleMatches)),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
+    [flaggedCouples, searchQuery, userById],
+  );
   // Split the real-signup couples into actual pairs (both partners present)
   // vs solo workspaces (one member — the partner was never invited/joined).
   // Member count uses the locally-resolved partner list, mirroring the
@@ -291,6 +304,7 @@ export default function AdminUsersPage() {
   // Auto-expand the beta bucket while searching so matching beta workspaces
   // surface inline instead of hiding behind the collapsed summary.
   const betaListOpen = betaOpen || isSearching;
+  const flaggedListOpen = flaggedOpen || isSearching;
   // The collapsible real-signup lists force open during an active search so
   // hits are never hidden behind a fold; the fold toggle is suppressed then.
   const couplesListOpen = couplesOpen || isSearching;
@@ -564,9 +578,14 @@ export default function AdminUsersPage() {
             <span
               title={flag.reason}
               aria-label={t("admin.flag_badge_days_left", { n: flagDaysLeft })}
-              className="inline-flex items-center text-blush-600 dark:text-blush-300"
+              className="inline-flex items-center gap-0.5 text-blush-600 dark:text-blush-300"
             >
               <Flag size={12} aria-hidden />
+              {u.activity.prior_flag_count > 0 && (
+                <span className="text-[10px] font-semibold leading-none">
+                  {u.activity.prior_flag_count + 1}
+                </span>
+              )}
             </span>
           )}
           {u.activity.prior_flag_count > 0 && (
@@ -1129,6 +1148,35 @@ export default function AdminUsersPage() {
                *  by default like the demo bucket, but unlike demos it stays
                *  searchable: an active search auto-expands the list to reveal
                *  matching beta workspaces. ──────────────────────────────────── */}
+              {flaggedCouples.length > 0 && (filteredFlaggedCouples.length > 0 || !isSearching) && (
+                <section className="mb-6">
+                  <AdminSectionHeader
+                    title={t("admin.flagged_section")}
+                    count={t(
+                      flaggedCouples.length === 1
+                        ? "admin.flagged_count_one"
+                        : "admin.flagged_count_other",
+                      { n: flaggedCouples.length },
+                    )}
+                    collapse={
+                      !isSearching
+                        ? {
+                            open: flaggedOpen,
+                            onToggle: () => setFlaggedOpen((v) => !v),
+                            label: t(flaggedOpen ? "admin.section_hide" : "admin.section_show"),
+                          }
+                        : undefined
+                    }
+                  />
+                  {flaggedListOpen &&
+                    (filteredFlaggedCouples.length === 0 ? (
+                      <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
+                    ) : (
+                      <ul className="space-y-1.5">{filteredFlaggedCouples.map(renderCoupleCard)}</ul>
+                    ))}
+                </section>
+              )}
+
               {betaCouples.length > 0 && (filteredBetaCouples.length > 0 || !isSearching) && (
                 <section className="mb-6">
                   <AdminSectionHeader

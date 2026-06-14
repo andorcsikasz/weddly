@@ -3264,6 +3264,7 @@ const hu: LocaleMessages = {
     nav_blog: "Blog",
     nav_analytics: "Analitika",
     nav_financial_planner: "Pénzügyi tervező",
+    nav_email_preview: "Email sablonok",
     fin_title: "Pénzügyi tervező",
     fin_subtitle: "Élő előfizetési bevétel és egy modellezhető előrejelzés.",
     fin_enforce_title: "Fizetés élesítése",
@@ -3437,6 +3438,9 @@ const hu: LocaleMessages = {
     beta_unset_button: "Beta tesztelő jelölés feloldása",
     beta_set_success: "Megjelölve beta tesztelőként.",
     beta_unset_success: "Beta tesztelő jelölés feloldva.",
+    flagged_section: "Megjelöltek",
+    flagged_count_one: "{n} megjelölt",
+    flagged_count_other: "{n} megjelölt",
     beta_workspaces_section: "Beta tesztelők",
     beta_workspaces_help:
       "Saját teszt fiókok, kivéve a valós regisztrációk közül. Csak címke, nem jár törléssel.",

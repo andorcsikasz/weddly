@@ -3227,6 +3227,7 @@ const en: LocaleMessages = {
     nav_blog: "Blog",
     nav_analytics: "Analytics",
     nav_financial_planner: "Financial planner",
+    nav_email_preview: "Email templates",
     fin_title: "Financial planner",
     fin_subtitle: "Live subscription revenue and a forecast you can model.",
     fin_enforce_title: "Payment go-live",
@@ -3399,6 +3400,9 @@ const en: LocaleMessages = {
     beta_unset_button: "Remove beta tester mark",
     beta_set_success: "Marked as beta tester.",
     beta_unset_success: "Beta tester mark removed.",
+    flagged_section: "Flagged",
+    flagged_count_one: "{n} flagged",
+    flagged_count_other: "{n} flagged",
     beta_workspaces_section: "Beta testers",
     beta_workspaces_help:
       "Your own test accounts, kept out of the real-signup list. Just a label, no deletion.",
