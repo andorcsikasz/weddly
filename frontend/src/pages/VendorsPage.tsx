@@ -16,7 +16,6 @@ import {
   MapPin,
   MessageSquare,
   Plus,
-  Star,
   Tag,
   Trash2,
   X,
@@ -95,35 +94,11 @@ export default function VendorsPage() {
 
       {/* Benefits */}
       <section className="bg-paper-100/60 dark:bg-umber-900/40">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <div className="grid gap-6 lg:grid-cols-3 lg:items-stretch">
-            <Benefit
-              art={
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-ink-200/60 text-ink-800 dark:border-umber-600 dark:text-paper-100">
-                  <Star size={17} strokeWidth={1.5} aria-hidden />
-                </span>
-              }
-              title={t("vendors.benefit_1_title")}
-              body={t("vendors.benefit_1_body")}
-            />
-            <Benefit
-              art={
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-ink-200/60 text-ink-800 dark:border-umber-600 dark:text-paper-100">
-                  <MapPin size={17} strokeWidth={1.5} aria-hidden />
-                </span>
-              }
-              title={t("vendors.benefit_2_title")}
-              body={t("vendors.benefit_2_body")}
-            />
-            <Benefit
-              art={
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-ink-200/60 text-ink-800 dark:border-umber-600 dark:text-paper-100">
-                  <MessageSquare size={17} strokeWidth={1.5} aria-hidden />
-                </span>
-              }
-              title={t("vendors.benefit_3_title")}
-              body={t("vendors.benefit_3_body")}
-            />
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+          <div className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
+            <Benefit title={t("vendors.benefit_1_title")} body={t("vendors.benefit_1_body")} />
+            <Benefit title={t("vendors.benefit_2_title")} body={t("vendors.benefit_2_body")} />
+            <Benefit title={t("vendors.benefit_3_title")} body={t("vendors.benefit_3_body")} />
           </div>
         </div>
       </section>
@@ -151,20 +126,11 @@ export default function VendorsPage() {
   );
 }
 
-function Benefit({
-  art,
-  title,
-  body,
-}: {
-  art: ReactNode;
-  title: string;
-  body: string;
-}) {
+function Benefit({ title, body }: { title: string; body: string }) {
   return (
-    <article className="card h-full !p-5">
-      <div className="mb-3">{art}</div>
-      <h3 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
+    <article className="card h-full !p-4">
+      <h3 className="font-grotesk text-lg text-ink-900 dark:text-paper-50">{title}</h3>
+      <p className="mt-1.5 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
     </article>
   );
 }
