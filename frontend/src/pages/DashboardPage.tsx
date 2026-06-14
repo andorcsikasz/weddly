@@ -1192,6 +1192,22 @@ export default function DashboardPage() {
             }
             onToggle={tasksDone >= tasksTotal ? () => setRsvpOpen((v) => !v) : undefined}
             expanded={tasksDone >= tasksTotal ? rsvpOpen : undefined}
+            expandedContent={
+              <div>
+                <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                  <Segment count={rsvp.yes} total={Math.max(totalGuests, 1)} className="bg-emerald-500" />
+                  <Segment count={rsvp.maybe} total={Math.max(totalGuests, 1)} className="bg-amber-400" />
+                  <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-red-500" />
+                  <Segment count={rsvp.pending} total={Math.max(totalGuests, 1)} className="bg-slate-300" />
+                </div>
+                <ul className="mt-2 divide-y divide-paper-100 dark:divide-umber-700">
+                  <RsvpRow status="yes" swatch="bg-emerald-500" label={t("dashboard.rsvp_yes")} value={rsvp.yes} total={totalGuests} locale={locale} />
+                  <RsvpRow status="maybe" swatch="bg-amber-400" label={t("dashboard.rsvp_maybe")} value={rsvp.maybe} total={totalGuests} locale={locale} />
+                  <RsvpRow status="no" swatch="bg-red-500" label={t("dashboard.rsvp_no")} value={rsvp.no} total={totalGuests} locale={locale} />
+                  <RsvpRow status="pending" swatch="bg-slate-300" label={t("dashboard.rsvp_pending")} value={rsvp.pending} total={totalGuests} locale={locale} />
+                </ul>
+              </div>
+            }
           />
           <BudgetKpiTile
             label={t("dashboard.kpi_budget_label")}
@@ -1235,82 +1251,6 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* RSVP breakdown — shown below the KPI strip when the setup checklist
-          is complete and the user has expanded the RSVPS IN tile. */}
-      {!dayOfMode && tasksDone >= tasksTotal && rsvpOpen && (
-        <section className="mb-8">
-          <MobileCollapsibleCard
-            className="card flex flex-col p-0 font-grotesk"
-            bodyClassName="flex flex-col px-4 pb-4 md:px-6 md:pb-6"
-            open={true}
-            onToggle={() => setRsvpOpen(false)}
-            title={t("dashboard.rsvp_breakdown_title")}
-            trailing={
-              totalGuests > 0 ? (
-                <span>
-                  {t("dashboard.rsvp_responded_of_total", {
-                    responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
-                    total: formatNumber(totalGuests, locale),
-                  })}
-                </span>
-              ) : null
-            }
-          >
-            <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-              <Segment
-                count={rsvp.yes}
-                total={Math.max(totalGuests, 1)}
-                className="bg-emerald-500"
-              />
-              <Segment
-                count={rsvp.maybe}
-                total={Math.max(totalGuests, 1)}
-                className="bg-amber-400"
-              />
-              <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-red-500" />
-              <Segment
-                count={rsvp.pending}
-                total={Math.max(totalGuests, 1)}
-                className="bg-slate-300"
-              />
-            </div>
-            <ul className="mt-3 divide-y divide-paper-100 dark:divide-umber-700">
-              <RsvpRow
-                status="yes"
-                swatch="bg-emerald-500"
-                label={t("dashboard.rsvp_yes")}
-                value={rsvp.yes}
-                total={totalGuests}
-                locale={locale}
-              />
-              <RsvpRow
-                status="maybe"
-                swatch="bg-amber-400"
-                label={t("dashboard.rsvp_maybe")}
-                value={rsvp.maybe}
-                total={totalGuests}
-                locale={locale}
-              />
-              <RsvpRow
-                status="no"
-                swatch="bg-red-500"
-                label={t("dashboard.rsvp_no")}
-                value={rsvp.no}
-                total={totalGuests}
-                locale={locale}
-              />
-              <RsvpRow
-                status="pending"
-                swatch="bg-slate-300"
-                label={t("dashboard.rsvp_pending")}
-                value={rsvp.pending}
-                total={totalGuests}
-                locale={locale}
-              />
-            </ul>
-          </MobileCollapsibleCard>
-        </section>
-      )}
 
       {/* ── Planning-mode body — hidden in day-of mode so the screen
           stays focused on the jumbo check-in panel. ───────────────── */}
@@ -1528,6 +1468,7 @@ function KpiTile({
   accent,
   onToggle,
   expanded,
+  expandedContent,
 }: {
   label: string;
   icon: ReactNode;
@@ -1538,6 +1479,7 @@ function KpiTile({
   accent?: "blush";
   onToggle?: () => void;
   expanded?: boolean;
+  expandedContent?: ReactNode;
 }) {
   const accentBg =
     accent === "blush" ? "bg-blush-50 dark:bg-blush-400/15" : "bg-paper-50 dark:bg-umber-700/60";
@@ -1579,6 +1521,14 @@ function KpiTile({
             }`}
             style={{ width: `${Math.max(2, progress)}%` }}
           />
+        </div>
+      )}
+      {expanded && expandedContent && (
+        <div
+          className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-700"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {expandedContent}
         </div>
       )}
     </div>
