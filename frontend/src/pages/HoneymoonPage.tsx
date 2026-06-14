@@ -579,6 +579,7 @@ export default function HoneymoonPage() {
           label: t("honeymoon.preset.travel"),
           planned_huf: price,
           actual_huf: 0,
+          preset_key: "travel",
         });
       }
       publish("budget:changed");
@@ -1369,17 +1370,33 @@ function CostRow({
     ? (PRESETS.find((p) => p.id === line.preset_key) ?? presetFor(line.label))
     : presetFor(line.label);
   const Icon = preset.icon;
-  // Resolve display label: if a preset_key is set, translate it so the label
-  // respects the current locale rather than the one active at creation time.
-  // For "other" lines, preserve the trailing ordinal (e.g. "Egyéb 5" → "Other 5").
+  // Resolve display label respecting current locale.
+  // For preset_key rows: translate directly (handles locale switches).
+  // For legacy rows without preset_key: try label-based detection via presetFor;
+  //   if it matches a specific preset, translate it; if it's a default "other"
+  //   label (Hungarian or English), translate the base word and preserve any
+  //   ordinal suffix; otherwise leave the custom label untouched.
   function resolveDisplayLabel(): string {
-    if (!line.preset_key) return line.label;
-    if (line.preset_key === "other") {
-      const base = t("honeymoon.preset.other");
-      const numMatch = line.label.match(/\s(\d+)$/);
-      return numMatch ? `${base} ${numMatch[1]}` : base;
+    if (line.preset_key) {
+      if (line.preset_key === "other") {
+        const base = t("honeymoon.preset.other");
+        const numMatch = line.label.match(/\s(\d+)$/);
+        return numMatch ? `${base} ${numMatch[1]}` : base;
+      }
+      return t(`honeymoon.preset.${line.preset_key}`);
     }
-    return t(`honeymoon.preset.${line.preset_key}`);
+    // Legacy line without preset_key -- `preset` already resolved via presetFor()
+    if (preset.id !== "other") {
+      return t(`honeymoon.preset.${preset.id}`);
+    }
+    // "other" catch-all: only translate if the label looks like a default
+    // "Egyéb [N]" or "Other [N]" string; preserve genuinely custom names.
+    const defaultOther = /^(?:egyéb|other)\s*(\d+)?$/i.exec(line.label);
+    if (defaultOther) {
+      const base = t("honeymoon.preset.other");
+      return defaultOther[1] ? `${base} ${defaultOther[1]}` : base;
+    }
+    return line.label;
   }
   const displayLabel = resolveDisplayLabel();
   const [localValue, setLocalValue] = useState<number | null>(null);
