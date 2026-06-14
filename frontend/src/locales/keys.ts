@@ -3865,6 +3865,15 @@ export interface LocaleMessages {
     beta_unset_button: string;
     beta_set_success: string;
     beta_unset_success: string;
+    stat_couples: string;
+    stat_solo: string;
+    stat_flagged: string;
+    stat_beta: string;
+    stat_demo: string;
+    stat_orphans: string;
+    flagged_section: string;
+    flagged_count_one: string;
+    flagged_count_other: string;
     beta_workspaces_section: string;
     beta_workspaces_help: string;
     beta_workspaces_summary_one: string;
