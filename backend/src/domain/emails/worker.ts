@@ -17,6 +17,12 @@ import { insertCoupleNotification, listActionableTimelineTasks } from "../notifi
 import type { EmailKind } from "./kinds";
 import { markDispatched, sendKind } from "./send";
 
+// Max emails fired per sweep function per hourly run. Caps burst size so
+// Resend never sees more than N concurrent requests from a single sweep,
+// preventing 429 rate-limit failures when a cohort of accounts all become
+// due at the same time. Remaining accounts are picked up in the next sweep.
+const SENDS_PER_SWEEP_CAP = 8;
+
 const ONBOARDING_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24; // 24h
 const ONBOARDING_NUDGE_WEEK_AFTER_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const INVITE_PARTNER_AUTO_AFTER_MS = 1000 * 60 * 60 * 48; // 48h
@@ -111,6 +117,7 @@ function sweepOnboardingNudges(ts: number): number {
       { user: { id: u.id, email: u.email, full_name: u.full_name } },
     );
     count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -145,6 +152,7 @@ function sweepOnboardingNudgesWeek(ts: number): number {
       { user: { id: u.id, email: u.email, full_name: u.full_name } },
     );
     count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -218,6 +226,7 @@ function sweepInvitePartnerAuto(ts: number): number {
       },
     );
     count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -252,7 +261,9 @@ function sweepMilestones(ts: number): number {
         },
       );
       count++;
+      if (count >= SENDS_PER_SWEEP_CAP) break;
     }
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -292,6 +303,7 @@ function sweepRsvpDeadline(ts: number): number {
       },
     );
     count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -324,6 +336,7 @@ function sweepWeddingDay(ts: number): number {
       },
     );
     count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -359,6 +372,7 @@ function sweepWeddingFollowup(ts: number): number {
       },
     );
     count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -445,6 +459,7 @@ function sweepRsvpWeeklyDigest(ts: number): number {
       },
     );
     count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -525,6 +540,7 @@ function sweepAdminModerationDigest(ts: number): number {
       },
     );
     count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -606,6 +622,7 @@ function sweepTimelineEscalation(ts: number): number {
       link: "/app/timeline",
       dedupe_key: `timeline_email:${Math.floor(ts / (7 * 24 * 60 * 60 * 1000))}`,
     });
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }
@@ -666,6 +683,7 @@ function sweepRsvpMealFollowup(ts: number): number {
       },
     );
     count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
 }

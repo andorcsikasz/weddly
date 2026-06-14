@@ -1098,6 +1098,39 @@ addColumnIfMissing(
   "notif_focus TEXT NOT NULL DEFAULT 'timeline,rsvp,partner'",
 );
 
+// One-shot: reset invite_partner_reminded_at for solo couples whose
+// partner_invite_reminder email was 429-rate-limited by Resend and never
+// actually delivered. The stamp was written before the fire-and-forget send,
+// so without this reset those accounts would never receive the nudge.
+// Safe to re-run: once the sweep successfully sends the email the log has a
+// 'sent' entry, so the WHERE clause no longer matches.
+{
+  const result = db
+    .prepare(
+      `UPDATE couples
+          SET invite_partner_reminded_at = NULL
+        WHERE invite_partner_reminded_at IS NOT NULL
+          AND partner_b_id IS NULL
+          AND status = 'active'
+          AND id IN (
+            SELECT DISTINCT couple_id FROM email_log
+             WHERE kind = 'partner_invite_reminder'
+               AND status = 'failed'
+               AND error LIKE '%429%'
+               AND couple_id NOT IN (
+                 SELECT DISTINCT couple_id FROM email_log
+                  WHERE kind = 'partner_invite_reminder' AND status = 'sent'
+               )
+          )`,
+    )
+    .run();
+  if (result.changes > 0) {
+    console.log(
+      `[db.fix] reset invite_partner_reminded_at on ${result.changes} couple(s) blocked by Resend 429`,
+    );
+  }
+}
+
 export function now(): number {
   return Date.now();
 }
