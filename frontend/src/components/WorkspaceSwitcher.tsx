@@ -10,7 +10,7 @@
 // page reads couple-scoped data on mount and stitching the in-memory
 // state piecemeal across 27 callers of getCoupleForUser would be fragile.
 
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { type CoupleMembershipView, coupleApi } from "../lib/endpoints";
@@ -134,7 +134,7 @@ export function WorkspaceSwitcher() {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-30 mt-1 w-64 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          className="absolute left-0 top-full z-30 mt-1 w-64 max-w-[calc(100vw-1rem)] rounded-xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
         >
           <ul className="max-h-72 overflow-y-auto py-1">
             {memberships.map((m) => {
@@ -148,7 +148,7 @@ export function WorkspaceSwitcher() {
                     disabled={switchingId !== null && !isSwitching}
                     role="menuitemradio"
                     aria-checked={isActive}
-                    className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors ${
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
                       isActive
                         ? "bg-paper-200/60 text-ink-900 dark:bg-umber-700 dark:text-paper-50"
                         : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700/60"
@@ -163,14 +163,21 @@ export function WorkspaceSwitcher() {
                       ) : null}
                     </span>
                     {isSwitching ? (
-                      <span className="text-xs text-ink-500 dark:text-umber-300">
+                      <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
                         {t("common.loading")}
                       </span>
                     ) : isActive ? (
-                      <span className="text-[10px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      <span className="shrink-0 text-[10px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
                         {t("workspace.active_marker")}
                       </span>
                     ) : null}
+                    {m.has_partner && (
+                      <Users
+                        size={14}
+                        aria-hidden="true"
+                        className="shrink-0 text-ink-400 dark:text-umber-400"
+                      />
+                    )}
                   </button>
                 </li>
               );

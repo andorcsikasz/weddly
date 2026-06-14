@@ -341,6 +341,7 @@ export interface CoupleMembershipView {
   status: CoupleStatus;
   role: "owner" | "partner";
   joined_at: number;
+  has_partner: boolean;
 }
 
 export const billingApi = {

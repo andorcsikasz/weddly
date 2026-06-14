@@ -486,6 +486,7 @@ export interface CoupleMembershipView {
   status: CoupleStatus;
   role: CoupleMemberRole;
   joined_at: number;
+  has_partner: boolean;
 }
 
 /** Every workspace this user belongs to. Used by the header switcher and
@@ -498,7 +499,8 @@ export function listCouplesForUser(userId: number): CoupleMembershipView[] {
   const rows = db
     .prepare(
       `SELECT cm.couple_id, c.display_name, c.bride_name, c.groom_name, c.wedding_date,
-              c.status, cm.role, cm.created_at AS joined_at
+              c.status, cm.role, cm.created_at AS joined_at,
+              (c.partner_b_id IS NOT NULL) AS has_partner
          FROM couple_members cm
          JOIN couples c ON c.id = cm.couple_id
         WHERE cm.user_id = ?
@@ -514,6 +516,7 @@ export function listCouplesForUser(userId: number): CoupleMembershipView[] {
     status: string;
     role: string;
     joined_at: number;
+    has_partner: number;
   }[];
   return rows.map((r) => ({
     couple_id: r.couple_id,
@@ -526,6 +529,7 @@ export function listCouplesForUser(userId: number): CoupleMembershipView[] {
       : "active",
     role: r.role === "owner" ? "owner" : "partner",
     joined_at: r.joined_at,
+    has_partner: r.has_partner === 1,
   }));
 }
 
