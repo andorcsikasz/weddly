@@ -1,24 +1,41 @@
-// Placeholder for the post-wedding photo share. Surfaces the sidebar entry
-// today; full content (upload + "send link to every yes RSVP" batch email)
-// lands in a follow-up.
+// Weddly Photos — guest photo collection hub.
+//
+// Three panels:
+//   "From guests"    — QR/link-based guest uploads. Empty → create modal → active mock.
+//   "To guests"      — shared reveal gallery. Coming soon.
+//   "By photographer"— couple saves photographer gallery link. Live (existing backend).
+//
+// The hero card above funnels directly into the From-guests create flow.
+// When the guest-upload backend lands, wire CreateAlbumModal to
+//   POST /api/weddings/:weddingId/photo-albums
+// and replace `albumCreated` local state with the returned album record.
 
-import type { Couple, MediaLinks, MediaSource } from "@shared/types";
-import { CheckCircle2, ExternalLink, Pencil } from "lucide-react";
-import { type FormEvent, type SVGProps, useEffect, useRef, useState } from "react";
+import type { Couple, MediaLinks } from "@shared/types";
+import {
+  Camera,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  Eye,
+  Link2,
+  Pencil,
+  Share2,
+  Users,
+} from "lucide-react";
+import {
+  type FormEvent,
+  type SVGProps,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { InfoHint } from "../components/InfoHint";
-import { useToast } from "../components/ui";
+import { Dialog, useToast } from "../components/ui";
 import { coupleApi, feedbackApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
-/** Fixed photo-share slots, in display order: From guests → To guests → By
- *  photographer. The persisted `other` key backs the "To guests" slot (kept as
- *  `other` so no stored value needs migrating). */
-const MEDIA_SOURCES: readonly MediaSource[] = ["guests", "other", "photographer"];
+// --- helpers ----------------------------------------------------------------
 
-const EMPTY_LINKS: MediaLinks = { guests: null, photographer: null, other: null };
-
-/** http(s)-only check, mirroring the backend's parseMediaLink boundary so we
- *  catch typos before the round-trip and show a friendly inline message. */
 function isHttpUrl(value: string): boolean {
   try {
     const u = new URL(value);
@@ -28,138 +45,546 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
-// Monochrome Google Drive glyph — lucide ships no brand mark, and the
-// placeholder copy already frames the flow around a "Drive link", so the
-// dashed source boxes carry the recognisable triangle in a single gray.
-function DriveIcon(props: SVGProps<SVGSVGElement>) {
+// Simplified QR code silhouette used as a placeholder before real generation.
+function QrPlaceholder({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 87.3 78" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" />
-      <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" />
-      <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" />
-      <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" />
-      <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" />
-      <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" />
+    <svg
+      viewBox="0 0 80 80"
+      aria-hidden="true"
+      className={className}
+      fill="currentColor"
+    >
+      {/* top-left finder */}
+      <rect x="4" y="4" width="24" height="24" rx="3" fillOpacity="0" stroke="currentColor" strokeWidth="3.5" />
+      <rect x="11" y="11" width="10" height="10" rx="1.5" />
+      {/* top-right finder */}
+      <rect x="52" y="4" width="24" height="24" rx="3" fillOpacity="0" stroke="currentColor" strokeWidth="3.5" />
+      <rect x="59" y="11" width="10" height="10" rx="1.5" />
+      {/* bottom-left finder */}
+      <rect x="4" y="52" width="24" height="24" rx="3" fillOpacity="0" stroke="currentColor" strokeWidth="3.5" />
+      <rect x="11" y="59" width="10" height="10" rx="1.5" />
+      {/* data modules */}
+      <rect x="34" y="4" width="6" height="6" rx="1" />
+      <rect x="42" y="4" width="6" height="6" rx="1" />
+      <rect x="34" y="12" width="6" height="6" rx="1" />
+      <rect x="42" y="20" width="6" height="6" rx="1" />
+      <rect x="34" y="34" width="6" height="6" rx="1" />
+      <rect x="42" y="34" width="6" height="6" rx="1" />
+      <rect x="50" y="34" width="6" height="6" rx="1" />
+      <rect x="58" y="34" width="6" height="6" rx="1" />
+      <rect x="66" y="34" width="6" height="6" rx="1" />
+      <rect x="34" y="42" width="6" height="6" rx="1" />
+      <rect x="50" y="42" width="6" height="6" rx="1" />
+      <rect x="66" y="42" width="6" height="6" rx="1" />
+      <rect x="42" y="50" width="6" height="6" rx="1" />
+      <rect x="58" y="50" width="6" height="6" rx="1" />
+      <rect x="34" y="58" width="6" height="6" rx="1" />
+      <rect x="50" y="58" width="6" height="6" rx="1" />
+      <rect x="66" y="58" width="6" height="6" rx="1" />
+      <rect x="34" y="66" width="6" height="6" rx="1" />
+      <rect x="42" y="66" width="6" height="6" rx="1" />
+      <rect x="58" y="66" width="6" height="6" rx="1" />
+      <rect x="4" y="34" width="6" height="6" rx="1" />
+      <rect x="12" y="34" width="6" height="6" rx="1" />
+      <rect x="20" y="34" width="6" height="6" rx="1" />
+      <rect x="4" y="42" width="6" height="6" rx="1" />
+      <rect x="20" y="42" width="6" height="6" rx="1" />
+      <rect x="4" y="50" width="6" height="6" rx="1" />
+      <rect x="12" y="50" width="6" height="6" rx="1" />
     </svg>
   );
 }
 
+// --- sub-components ---------------------------------------------------------
+
+function ComingSoonBadge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-paper-200 px-2.5 py-0.5 text-xs font-medium text-ink-500 dark:bg-umber-700 dark:text-umber-200">
+      {label}
+    </span>
+  );
+}
+
+// Hero card at the top of the page.
+function HeroCard({ onCreateClick }: { onCreateClick: () => void }) {
+  const { t } = useT();
+  return (
+    <div className="card mb-5 overflow-hidden border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="max-w-lg">
+          <h2 className="font-serif text-xl italic leading-snug text-ink-900 sm:text-2xl dark:text-paper-50">
+            {t("media.hero_title")}
+          </h2>
+          <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">
+            {t("media.hero_sub")}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="btn-primary btn-sm"
+            onClick={onCreateClick}
+          >
+            {t("media.hero_cta_create")}
+          </button>
+          <button type="button" className="btn-ghost btn-sm" disabled>
+            {t("media.hero_cta_preview")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// "From guests" panel — primary feature card.
+function FromGuestsCard({
+  albumCreated,
+  onCreateClick,
+}: {
+  albumCreated: boolean;
+  onCreateClick: () => void;
+}) {
+  const { t } = useT();
+  const [copied, setCopied] = useState(false);
+  const mockLink = "photos.weddly.xyz/g/your-wedding";
+
+  function handleCopy() {
+    navigator.clipboard.writeText(`https://${mockLink}`).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="card flex flex-col gap-5 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+          <Users size={20} aria-hidden="true" />
+        </div>
+        {albumCreated && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-sage-800 dark:bg-sage-900/40 dark:text-sage-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden="true" />
+            {t("media.from_guests_active_label")}
+          </span>
+        )}
+      </div>
+
+      <div>
+        <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+          {t("media.from_guests_title")}
+        </h3>
+        <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+          {t("media.from_guests_desc")}
+        </p>
+      </div>
+
+      {albumCreated ? (
+        <div className="space-y-4">
+          {/* QR + link row */}
+          <div className="flex items-start gap-4">
+            <div className="shrink-0 rounded-xl border border-paper-200 bg-paper-50 p-2 dark:border-umber-700 dark:bg-umber-800">
+              <QrPlaceholder className="h-16 w-16 text-ink-800 dark:text-paper-100" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <p className="text-xs font-medium text-ink-500 dark:text-umber-300">
+                {t("media.from_guests_link_label")}
+              </p>
+              <p className="truncate rounded-lg border border-paper-200 bg-paper-50 px-3 py-2 font-mono text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200">
+                {mockLink}
+              </p>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                onClick={handleCopy}
+              >
+                <Copy size={12} aria-hidden="true" />
+                {copied ? t("media.from_guests_copied") : t("media.from_guests_copy")}
+              </button>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div className="flex items-center gap-2 rounded-lg bg-paper-50 px-3 py-2 dark:bg-umber-800">
+            <Camera size={14} className="text-ink-400 dark:text-umber-400" aria-hidden="true" />
+            <span className="text-xs text-ink-500 dark:text-umber-300">
+              {t("media.from_guests_photos_zero")}
+            </span>
+          </div>
+
+          {/* Coming-soon note */}
+          <p className="text-xs text-ink-400 dark:text-umber-400">
+            {t("media.from_guests_coming_note")}
+          </p>
+        </div>
+      ) : (
+        <div className="mt-auto">
+          <button
+            type="button"
+            className="btn-primary btn-sm"
+            onClick={onCreateClick}
+          >
+            <Link2 size={14} aria-hidden="true" />
+            {t("media.from_guests_cta")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// "To guests" panel — shared gallery reveal. Coming soon.
+function ToGuestsCard() {
+  const { t } = useT();
+  return (
+    <div className="card flex flex-col gap-5 border-paper-300 bg-white opacity-80 dark:border-umber-700 dark:bg-umber-850">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-400 dark:bg-umber-700 dark:text-umber-400">
+          <Share2 size={20} aria-hidden="true" />
+        </div>
+        <ComingSoonBadge label={t("media.coming_soon_title")} />
+      </div>
+
+      <div>
+        <h3 className="font-grotesk text-base font-semibold text-ink-700 dark:text-paper-200">
+          {t("media.to_guests_title")}
+        </h3>
+        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+          {t("media.to_guests_desc")}
+        </p>
+      </div>
+
+      <div className="mt-auto">
+        <button type="button" className="btn-outline btn-sm" disabled>
+          <Eye size={14} aria-hidden="true" />
+          {t("media.to_guests_cta")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// "By photographer" panel — link save/edit. Uses existing backend (media_links.photographer).
+function PhotographerCard({
+  url,
+  isEditing,
+  isSaving,
+  draft,
+  linkError,
+  cardRef,
+  onStartEdit,
+  onDraftChange,
+  onSave,
+  onCancel,
+}: {
+  url: string | null;
+  isEditing: boolean;
+  isSaving: boolean;
+  draft: string;
+  linkError: string | null;
+  cardRef: React.RefObject<HTMLDivElement | null>;
+  onStartEdit: () => void;
+  onDraftChange: (v: string) => void;
+  onSave: (v: string) => void;
+  onCancel: () => void;
+}) {
+  const { t } = useT();
+  return (
+    <div
+      ref={isEditing ? cardRef : undefined}
+      className="card flex flex-col gap-5 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+        <Camera size={20} aria-hidden="true" />
+      </div>
+
+      <div>
+        <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+          {t("media.photographer_title")}
+        </h3>
+        <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+          {t("media.photographer_desc")}
+        </p>
+      </div>
+
+      <div className="mt-auto">
+        {isEditing ? (
+          <form
+            className="space-y-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSave(draft);
+            }}
+            noValidate
+          >
+            <input
+              type="url"
+              className="input text-sm"
+              value={draft}
+              onChange={(e) => onDraftChange(e.target.value)}
+              placeholder={t("media.collect_placeholder")}
+              aria-label={t("media.photographer_title")}
+              // biome-ignore lint/a11y/noAutofocus: open-to-paste UX.
+              autoFocus
+            />
+            {linkError && (
+              <p className="field-error" role="alert">
+                {linkError}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button type="submit" className="btn-primary btn-sm" disabled={isSaving}>
+                {isSaving ? t("common.saving") : t("common.save")}
+              </button>
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                onClick={onCancel}
+                disabled={isSaving}
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </form>
+        ) : url ? (
+          <div className="flex items-center gap-3">
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-outline btn-sm inline-flex items-center gap-1.5"
+            >
+              <ExternalLink size={14} aria-hidden="true" />
+              {t("media.photographer_open")}
+            </a>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+              onClick={onStartEdit}
+            >
+              <Pencil size={12} aria-hidden="true" />
+              {t("common.edit")}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="btn-outline btn-sm inline-flex items-center gap-1.5"
+            onClick={onStartEdit}
+          >
+            <Link2 size={14} aria-hidden="true" />
+            {t("media.photographer_cta")}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Create-album modal — shows settings preview; locally transitions to active state.
+// When the backend is ready, replace the submit handler with an API call.
+function CreateAlbumModal({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const { t } = useT();
+  const [creating, setCreating] = useState(false);
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    // Simulate async create (replace with real API call when backend is ready).
+    setTimeout(() => {
+      setCreating(false);
+      onCreated();
+      onClose();
+    }, 700);
+  }
+
+  return (
+    <Dialog
+      open={open}
+      title={t("media.create_modal_title")}
+      role="dialog"
+      closeOnBackdrop
+      onClose={onClose}
+      footer={
+        <div className="flex justify-end gap-2">
+          <button type="button" className="btn-ghost btn-sm" onClick={onClose} disabled={creating}>
+            {t("common.cancel")}
+          </button>
+          <button
+            type="submit"
+            form="create-album-form"
+            className="btn-primary btn-sm"
+            disabled={creating}
+          >
+            {creating ? t("media.create_modal_creating") : t("media.create_modal_submit")}
+          </button>
+        </div>
+      }
+    >
+      <form id="create-album-form" onSubmit={handleSubmit} className="space-y-5">
+        <p className="text-sm text-ink-600 dark:text-umber-200">
+          {t("media.create_modal_desc")}
+        </p>
+
+        {/* Settings preview — disabled until backend ships */}
+        <div className="space-y-3 rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800">
+          <SettingRow
+            label="Shots per guest"
+            value="Unlimited"
+            coming
+          />
+          <SettingRow
+            label="Guest name required"
+            value="Optional"
+            coming
+          />
+          <SettingRow
+            label="Reveal timing"
+            value="Instant"
+            coming
+          />
+        </div>
+
+        <p className="text-xs text-ink-400 dark:text-umber-400">
+          {t("media.from_guests_coming_note")}
+        </p>
+      </form>
+    </Dialog>
+  );
+}
+
+function SettingRow({
+  label,
+  value,
+  coming,
+}: {
+  label: string;
+  value: string;
+  coming?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-sm text-ink-600 dark:text-umber-200">{label}</span>
+      <span className="flex items-center gap-1.5 text-sm font-medium text-ink-400 dark:text-umber-400">
+        {value}
+        {coming && (
+          <span className="rounded-full bg-paper-200 px-1.5 py-0.5 text-[10px] text-ink-400 dark:bg-umber-700">
+            soon
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+// --- page -------------------------------------------------------------------
+
 export default function MediaPage() {
   const { t, locale } = useT();
   const toast = useToast();
-  const [message, setMessage] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
 
-  // Photo-share links live on the couple, so both partners see the same Drive
-  // albums. We hold the couple locally and refresh it from the PATCH response
-  // after every save instead of re-fetching.
+  // Photographer gallery link (live — existing backend).
   const [couple, setCouple] = useState<Couple | null>(null);
-  const [editing, setEditing] = useState<MediaSource | null>(null);
+  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
-  const [savingSource, setSavingSource] = useState<MediaSource | null>(null);
+  const [saving, setSaving] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
-
-  // Click-outside auto-save: the open card commits its draft the moment you
-  // click anywhere off it, the same as hitting Mentés. We keep the live draft
-  // in a ref so the document listener (bound once per open) always reads the
-  // latest value without re-binding on every keystroke.
-  const editingCardRef = useRef<HTMLDivElement>(null);
+  const editingCardRef = useRef<HTMLDivElement | null>(null);
   const draftRef = useRef("");
   useEffect(() => {
     draftRef.current = draft;
   }, [draft]);
 
+  // "From guests" album state — local mock until backend ships.
+  const [albumCreated, setAlbumCreated] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Feedback form.
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackDone, setFeedbackDone] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
-    coupleApi
-      .current()
-      .then((res) => {
-        if (!cancelled) setCouple(res.couple);
-      })
-      .catch(() => {
-        // A failed load just leaves the boxes empty/addable; the save call
-        // surfaces any real error.
-      });
-    return () => {
-      cancelled = true;
-    };
+    coupleApi.current().then((res) => {
+      if (!cancelled) setCouple(res.couple);
+    }).catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
-  const links: MediaLinks = couple?.media_links ?? EMPTY_LINKS;
+  const photographerUrl = couple?.media_links?.photographer ?? null;
 
-  function startEdit(source: MediaSource) {
-    setEditing(source);
-    setDraft(links[source] ?? "");
+  function startEdit() {
+    setEditing(true);
+    setDraft(photographerUrl ?? "");
     setLinkError(null);
   }
 
   function cancelEdit() {
-    setEditing(null);
+    setEditing(false);
     setLinkError(null);
   }
 
-  async function saveLink(source: MediaSource, rawValue: string) {
+  async function savePhotographerLink(rawValue: string) {
     const trimmed = rawValue.trim();
     if (trimmed && !isHttpUrl(trimmed)) {
       setLinkError(t("media.collect_invalid"));
       return;
     }
-    // Saving the same value is a no-op — just close the editor instead of
-    // round-tripping (the backend rejects an empty diff with "No fields to
-    // update"). This lets Mentés / click-outside always close cleanly.
-    if (trimmed === (links[source] ?? "")) {
-      setEditing(null);
+    if (trimmed === (photographerUrl ?? "")) {
+      setEditing(false);
       setLinkError(null);
       return;
     }
-    setSavingSource(source);
+    setSaving(true);
     setLinkError(null);
     try {
-      const res = await coupleApi.update({ media_links: { [source]: trimmed || null } });
+      const res = await coupleApi.update({ media_links: { photographer: trimmed || null } });
       setCouple(res.couple);
-      setEditing(null);
+      setEditing(false);
       toast.success(trimmed ? t("media.collect_saved") : t("media.collect_removed"));
     } catch (err) {
       setLinkError(err instanceof Error ? err.message : t("common.error_generic"));
     } finally {
-      setSavingSource(null);
+      setSaving(false);
     }
   }
 
-  // Commit the open card when the click lands anywhere outside it. The Mentés /
-  // Mégse buttons live inside the card, so they're handled by their own
-  // handlers; only off-card clicks trigger this. We re-bind only when the open
-  // slot changes; the live draft is read fresh via draftRef.
+  // Click-outside auto-save for photographer card.
   useEffect(() => {
     if (!editing) return;
-    const source = editing;
     function onPointerDown(e: MouseEvent) {
       const card = editingCardRef.current;
       if (card && !card.contains(e.target as Node)) {
-        saveLink(source, draftRef.current);
+        savePhotographerLink(draftRef.current);
       }
     }
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [editing]);
 
-  async function onSubmit(e: FormEvent) {
+  async function onFeedbackSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
+    setFeedbackError(null);
     const msg = message.trim();
     if (!msg) {
-      setError(t("media.feedback_empty_error"));
+      setFeedbackError(t("media.feedback_empty_error"));
       return;
     }
     setSubmitting(true);
     try {
       await feedbackApi.submit({ source: "app", message: msg, locale });
-      setDone(true);
+      setFeedbackDone(true);
       setMessage("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error_generic"));
+      setFeedbackError(err instanceof Error ? err.message : t("common.error_generic"));
     } finally {
       setSubmitting(false);
     }
@@ -167,168 +592,85 @@ export default function MediaPage() {
 
   return (
     <>
-      <header className="mb-4 flex items-center gap-2">
+      <header className="mb-5 flex items-center gap-2">
         <h1 className="font-grotesk">{t("media.title")}</h1>
         <InfoHint text={t("media.sub")} />
       </header>
 
-      {/* The boxes sit ~30% down the visual area instead of pinning to the
-          top — without this nudge the copy floats above a vast empty viewport
-          on mobile, reading as "this page is broken" rather than
-          "intentionally empty until photos land". The min-h fills the column
-          on phone heights and shrinks out of the way on desktop where the
-          rest of the shell carries the layout. */}
-      <div className="flex min-h-[40vh] flex-col items-center justify-center sm:block sm:min-h-0">
-        {/* Where the photos come from — three source boxes the couple fills
-            with a Google Drive (or any http(s)) album link. An empty slot is a
-            dashed "Add a link" target with a gray Drive glyph; a filled slot
-            goes solid, opens the album in a new tab, and offers an inline
-            edit. Saved per couple, so both partners share the same albums. */}
-        <div className="mt-4 grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
-          {MEDIA_SOURCES.map((source) => {
-            const url = links[source];
-            const isEditing = editing === source;
-            const isSaving = savingSource === source;
-            const label = t(`media.collect_${source}`);
-            return (
-              <div
-                key={source}
-                ref={isEditing ? editingCardRef : undefined}
-                className={`flex flex-col items-center gap-2 rounded-2xl px-4 py-6 text-center ${
-                  url && !isEditing
-                    ? "border-2 border-umber-600 dark:border-umber-400"
-                    : "border-2 border-dashed border-ink-200 dark:border-umber-600"
-                }`}
-              >
-                <DriveIcon
-                  className={`h-7 w-7 ${
-                    url ? "text-umber-600 dark:text-umber-300" : "text-ink-300 dark:text-umber-400"
-                  }`}
-                />
-                <span className="text-sm font-medium text-ink-600 dark:text-paper-100">
-                  {label}
-                </span>
+      <HeroCard onCreateClick={() => setShowCreateModal(true)} />
 
-                {isEditing ? (
-                  <form
-                    className="mt-1 w-full space-y-2"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      saveLink(source, draft);
-                    }}
-                    noValidate
-                  >
-                    <input
-                      type="url"
-                      className="input text-sm"
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      placeholder={t("media.collect_placeholder")}
-                      aria-label={label}
-                      // biome-ignore lint/a11y/noAutofocus: focus the field the
-                      // couple just opened so they can paste straight away.
-                      autoFocus
-                    />
-                    {linkError && (
-                      <p className="field-error" role="alert">
-                        {linkError}
-                      </p>
-                    )}
-                    <div className="flex justify-center gap-2">
-                      <button type="submit" className="btn-primary btn-sm" disabled={isSaving}>
-                        {isSaving ? t("common.saving") : t("common.save")}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm"
-                        onClick={cancelEdit}
-                        disabled={isSaving}
-                      >
-                        {t("common.cancel")}
-                      </button>
-                    </div>
-                  </form>
-                ) : url ? (
-                  <div className="mt-1 flex flex-col items-center gap-1">
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm font-medium text-umber-700 underline-offset-2 hover:underline dark:text-umber-200"
-                    >
-                      <ExternalLink size={14} aria-hidden="true" />
-                      {t("media.collect_open")}
-                    </a>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
-                      onClick={() => startEdit(source)}
-                    >
-                      <Pencil size={12} aria-hidden="true" />
-                      {t("common.edit")}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn-ghost btn-sm mt-1"
-                    onClick={() => startEdit(source)}
-                  >
-                    {t("media.collect_add")}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+      {/* Feature cards — three panels in a responsive grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <FromGuestsCard
+          albumCreated={albumCreated}
+          onCreateClick={() => setShowCreateModal(true)}
+        />
+        <ToGuestsCard />
+        <PhotographerCard
+          url={photographerUrl}
+          isEditing={editing}
+          isSaving={saving}
+          draft={draft}
+          linkError={linkError}
+          cardRef={editingCardRef}
+          onStartEdit={startEdit}
+          onDraftChange={setDraft}
+          onSave={savePhotographerLink}
+          onCancel={cancelEdit}
+        />
+      </div>
 
-        {/* Inline feedback — we ask couples what they actually want before
-            we build it. POST lands in the same admin inbox the landing-page
-            dialog uses (source: "app"), so triage stays in one place. Kept
-            deliberately compact (p-4, tight spacing, single-line textarea)
-            so it reads as a small footnote under the source boxes, not a
-            second hero. */}
-        <div className="card mt-4 w-full p-4">
-          {done ? (
-            <div className="flex items-center gap-2 text-center sm:text-left">
-              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-                <CheckCircle2 size={18} aria-hidden="true" />
-              </span>
-              <p className="text-sm text-ink-700 dark:text-paper-100">
-                {t("media.feedback_success")}
+      {/* Feedback — compact, below the feature panels */}
+      <div className="card mt-5 p-4">
+        {feedbackDone ? (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+              <CheckCircle2 size={18} aria-hidden="true" />
+            </span>
+            <p className="text-sm text-ink-700 dark:text-paper-100">
+              {t("media.feedback_success")}
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={onFeedbackSubmit} className="space-y-2" noValidate>
+            <div>
+              <h2 className="font-grotesk text-base">{t("media.feedback_title")}</h2>
+              <p className="text-xs text-ink-600 dark:text-umber-200">
+                {t("media.feedback_intro")}
               </p>
             </div>
-          ) : (
-            <form onSubmit={onSubmit} className="space-y-2" noValidate>
-              <div>
-                <h2 className="font-grotesk text-base">{t("media.feedback_title")}</h2>
-                <p className="text-xs text-ink-600 dark:text-umber-200">
-                  {t("media.feedback_intro")}
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <textarea
-                  className="input min-h-tap flex-1 resize-y py-1.5 text-sm leading-snug"
-                  rows={1}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={t("media.feedback_placeholder")}
-                  maxLength={2000}
-                  aria-label={t("media.feedback_title")}
-                />
-                <button type="submit" className="btn-primary btn-sm shrink-0" disabled={submitting}>
-                  {submitting ? t("media.feedback_submitting") : t("media.feedback_submit")}
-                </button>
-              </div>
-              {error && (
-                <p className="field-error" role="alert">
-                  {error}
-                </p>
-              )}
-            </form>
-          )}
-        </div>
+            <div className="flex items-start gap-2">
+              <textarea
+                className="input min-h-tap flex-1 resize-y py-1.5 text-sm leading-snug"
+                rows={1}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={t("media.feedback_placeholder")}
+                maxLength={2000}
+                aria-label={t("media.feedback_title")}
+              />
+              <button
+                type="submit"
+                className="btn-primary btn-sm shrink-0"
+                disabled={submitting}
+              >
+                {submitting ? t("media.feedback_submitting") : t("media.feedback_submit")}
+              </button>
+            </div>
+            {feedbackError && (
+              <p className="field-error" role="alert">
+                {feedbackError}
+              </p>
+            )}
+          </form>
+        )}
       </div>
+
+      <CreateAlbumModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={() => setAlbumCreated(true)}
+      />
     </>
   );
 }

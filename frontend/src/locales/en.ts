@@ -1640,7 +1640,7 @@ const en: LocaleMessages = {
   media: {
     title: "Photos",
     dev_badge: "Under development",
-    sub: "Drop the wedding photos here once they're back from the photographer.",
+    sub: "Collect guest photos, store your photographer's gallery, and share memories — all in one place.",
     coming_soon_title: "Coming soon",
     coming_soon_body:
       "Upload the photos after the wedding and send a download link to every guest who said yes, straight from this page, no separate gallery account needed.",
@@ -1648,16 +1648,47 @@ const en: LocaleMessages = {
     collect_photographer: "By photographer",
     collect_other: "To guests",
     collect_add: "Add a link",
-    collect_open: "Open album",
+    collect_open: "Open gallery",
     collect_placeholder: "https://drive.google.com/…",
     collect_invalid: "Enter a link that starts with http:// or https://",
     collect_saved: "Link saved.",
     collect_removed: "Link removed.",
+    hero_title: "Collect every wedding memory in one place",
+    hero_sub:
+      "Create a private QR code so guests can share photos from your wedding. No app, no account, no chaos.",
+    hero_cta_create: "Create guest photo link",
+    hero_cta_preview: "Preview guest page",
+    from_guests_title: "From guests",
+    from_guests_desc:
+      "Let guests upload photos during and after the wedding using a private QR code or link.",
+    from_guests_cta: "Create upload link",
+    from_guests_active_label: "Guest upload active",
+    from_guests_link_label: "Upload link",
+    from_guests_photos_zero: "No photos yet",
+    from_guests_photos_count: "{count} photos uploaded",
+    from_guests_copy: "Copy link",
+    from_guests_copied: "Copied!",
+    from_guests_coming_note:
+      "Guest uploads are launching soon. Set up your album now and share the link before your wedding.",
+    to_guests_title: "To guests",
+    to_guests_desc:
+      "Share selected memories with guests after the wedding — with optional reveal timing.",
+    to_guests_cta: "Set up shared gallery",
+    photographer_title: "By photographer",
+    photographer_desc:
+      "Save your photographer's gallery link, delivery notes, or download instructions.",
+    photographer_cta: "Add photographer gallery",
+    photographer_open: "Open gallery",
+    create_modal_title: "Set up your guest photo album",
+    create_modal_desc:
+      "Guests can open the link on their phone, take or upload photos, and everything lands in your album. No app, no sign-up.",
+    create_modal_submit: "Create album",
+    create_modal_creating: "Creating…",
     feedback_title: "What would you need?",
     feedback_intro:
       "We're still shaping the photo-share flow. Tell us what you'd want from it and we'll factor it in when we build it.",
     feedback_placeholder:
-      "e.g. share a Drive link with guests, or send a direct download by email…",
+      "e.g. disposable-camera mode, guest names on uploads, email notification when photos arrive…",
     feedback_submit: "Send feedback",
     feedback_submitting: "Sending…",
     feedback_success: "Thanks, got it. We read every message.",

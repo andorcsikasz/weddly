@@ -1657,7 +1657,7 @@ const hu: LocaleMessages = {
   media: {
     title: "Képek",
     dev_badge: "Fejlesztés alatt",
-    sub: "Töltsétek fel ide a fotókat, miután visszaértek a fotóstól.",
+    sub: "Gyűjtsd össze a vendégfotókat, tárold a fotósgaléria linkjét, és oszd meg az emlékeket — egy helyen.",
     coming_soon_title: "Hamarosan",
     coming_soon_body:
       "Az esküvő után feltölthetitek a képeket, és egy kattintással elküldhetitek a letöltési linket minden vendégnek, aki igent mondott, közvetlenül innen, külön galéria-fiók nélkül.",
@@ -1665,16 +1665,47 @@ const hu: LocaleMessages = {
     collect_photographer: "A fotóstól",
     collect_other: "A vendégeknek",
     collect_add: "Link hozzáadása",
-    collect_open: "Album megnyitása",
+    collect_open: "Galéria megnyitása",
     collect_placeholder: "https://drive.google.com/…",
     collect_invalid: "Adj meg egy http:// vagy https:// kezdetű linket",
     collect_saved: "Link elmentve.",
     collect_removed: "Link törölve.",
+    hero_title: "Gyűítsd össze az esküvő minden emlékét egy helyen",
+    hero_sub:
+      "Hozz létre egy privát QR-kódot, hogy a vendégek megoszthassák fotóikat. App nélkül, regisztráció nélkül, káosz nélkül.",
+    hero_cta_create: "Vendég fotólink létrehozása",
+    hero_cta_preview: "Vendégoldal előnézete",
+    from_guests_title: "A vendégektől",
+    from_guests_desc:
+      "Hagyd, hogy a vendégek fotókat töltsenek fel az esküvő alatt és után, privát QR-kóddal vagy linkkel.",
+    from_guests_cta: "Feltöltési link létrehozása",
+    from_guests_active_label: "Vendégfeltöltés aktív",
+    from_guests_link_label: "Feltöltési link",
+    from_guests_photos_zero: "Még nincs fotó",
+    from_guests_photos_count: "{count} feltöltött fotó",
+    from_guests_copy: "Link másolása",
+    from_guests_copied: "Másolva!",
+    from_guests_coming_note:
+      "A vendégfeltöltés hamarosan elindul. Állítsd be az albumodat, és oszd meg a linket az esküvő előtt.",
+    to_guests_title: "A vendégeknek",
+    to_guests_desc:
+      "Ossz meg kiválasztott emlékeket a vendégekkel az esküvő után — opcionális késleltetett megjelenítéssel.",
+    to_guests_cta: "Közös galéria beállítása",
+    photographer_title: "A fotóstól",
+    photographer_desc:
+      "Mentsd el a fotóstól érkező galéria linket, leadási határidőt vagy letöltési utasítást.",
+    photographer_cta: "Fotósgaléria hozzáadása",
+    photographer_open: "Galéria megnyitása",
+    create_modal_title: "Vendég fotóalbum beállítása",
+    create_modal_desc:
+      "A vendégek megnyitják a linket telefonon, fotóznak vagy feltöltenek — és minden az albumodba kerül. App nélkül, regisztráció nélkül.",
+    create_modal_submit: "Album létrehozása",
+    create_modal_creating: "Létrehozás…",
     feedback_title: "Mire lenne szükségetek?",
     feedback_intro:
       "Még alakítjuk a fotó-megosztás folyamatot. Írjátok meg, mit várnátok tőle, és figyelembe vesszük, amikor megépítjük.",
     feedback_placeholder:
-      "Pl. Drive linkkel osztanánk meg a vendégekkel, vagy közvetlen letöltés e-mailben…",
+      "Pl. egyszer használatos fényképezős mód, vendégnevek a feltöltéseknél, értesítés amikor megérkeznek a képek…",
     feedback_submit: "Visszajelzés küldése",
     feedback_submitting: "Küldés…",
     feedback_success: "Köszönjük, megérkezett. Minden visszajelzést elolvasunk.",
