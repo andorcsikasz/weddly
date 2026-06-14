@@ -964,7 +964,7 @@ export default function AdminUsersPage() {
         subtitle={t("admin.users_sub")}
         actions={
           !loading ? (
-            <div className="flex gap-4">
+            <div className="flex divide-x divide-paper-300 dark:divide-umber-700">
               {(
                 [
                   { key: "admin-section-couples", value: totalCouplePairs, icon: Heart },
@@ -977,7 +977,7 @@ export default function AdminUsersPage() {
                   key={key}
                   type="button"
                   onClick={() => document.getElementById(key)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                  className="flex flex-col items-center gap-0.5 text-ink-700 transition-opacity hover:opacity-70 dark:text-paper-100"
+                  className="flex flex-col items-center gap-0.5 px-4 text-ink-700 transition-opacity hover:opacity-70 dark:text-paper-100"
                 >
                   <span className="text-2xl font-bold tabular-nums leading-none tracking-tight">
                     {value}
