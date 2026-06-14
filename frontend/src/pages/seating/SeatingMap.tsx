@@ -1061,6 +1061,7 @@ function TableShape({
         return (
           <g
             key={i}
+            // @ts-expect-error draggable is valid DOM on SVG but absent from React's SVGProps
             draggable={canDragOut ? true : undefined}
             onDragStart={
               canDragOut
