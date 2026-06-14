@@ -790,11 +790,33 @@ export default function WishlistEditorPage() {
 
   return (
     <>
-      <header className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-3">
+      <header className="mb-8 flex flex-wrap items-center gap-x-3 gap-y-3">
         <h1 className="font-grotesk">{t("wishlist_editor.title")}</h1>
         <InfoHint text={t("wishlist_editor.subtitle")} />
+        <div className="mx-4 flex flex-1 rounded-xl border border-paper-200 bg-paper-100 p-1 dark:border-umber-700 dark:bg-umber-900/60">
+          {(["before", "after"] as WishlistPhase[]).map((p) => {
+            const Icon = p === "before" ? Gift : PackageCheck;
+            const active = phase === p;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => changePhase(p)}
+                aria-pressed={active}
+                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all ${
+                  active
+                    ? "bg-white text-ink-900 shadow-sm dark:bg-umber-800 dark:text-paper-50"
+                    : "text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+                }`}
+              >
+                <Icon size={16} aria-hidden />
+                {t(`wishlist_editor.phase_${p}`)}
+              </button>
+            );
+          })}
+        </div>
         {couple && (
-          <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
                 {t("wishlist_editor.publish_title")}
@@ -829,32 +851,6 @@ export default function WishlistEditorPage() {
           </div>
         )}
       </header>
-
-      {/* ── Before / after toggle ───────────────────────────────────── */}
-      <div className="mb-8">
-        <div className="flex w-full rounded-xl border border-paper-200 bg-paper-100 p-1 dark:border-umber-700 dark:bg-umber-900/60">
-          {(["before", "after"] as WishlistPhase[]).map((p) => {
-            const Icon = p === "before" ? Gift : PackageCheck;
-            const active = phase === p;
-            return (
-              <button
-                key={p}
-                type="button"
-                onClick={() => changePhase(p)}
-                aria-pressed={active}
-                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all ${
-                  active
-                    ? "bg-white text-ink-900 shadow-sm dark:bg-umber-800 dark:text-paper-50"
-                    : "text-ink-500 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
-                }`}
-              >
-                <Icon size={16} aria-hidden />
-                {t(`wishlist_editor.phase_${p}`)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {loading ? (
         <WishlistListSkeleton />
