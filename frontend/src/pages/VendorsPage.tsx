@@ -553,7 +553,7 @@ function WaitlistContact() {
       try {
         const parsed = new URL(candidate);
         if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
-        if (!parsed.hostname) throw new Error();
+        if (!parsed.hostname || !parsed.hostname.includes(".")) throw new Error();
       } catch {
         return setErrorMsg(t("vendors.form_err_portfolio_link"));
       }
@@ -562,9 +562,17 @@ function WaitlistContact() {
       return setErrorMsg(t("vendors.form_err_price_list_size"));
     if (!privacyConsent) return setErrorMsg(t("vendors.form_err_privacy_consent"));
 
+    const radiusNum = travelRadiusKm ? Number.parseInt(travelRadiusKm, 10) : null;
+    if (
+      TRAVEL_RELEVANT_CATEGORIES.has(category as SupplierCategory) &&
+      radiusNum !== null &&
+      !Number.isNaN(radiusNum) &&
+      radiusNum < 0
+    )
+      return setErrorMsg(t("vendors.form_err_travel_radius"));
+
     setSubmitting(true);
     try {
-      const radiusNum = travelRadiusKm ? Number.parseInt(travelRadiusKm, 10) : null;
       const refCode = searchParams.get("ref_code") ?? undefined;
       await vendorWaitlistApi.submit({
         business_name: name,
@@ -833,6 +841,9 @@ function WaitlistContact() {
                           km
                         </span>
                       </div>
+                      <p className="mt-0.5 text-[10px] text-ink-400 dark:text-umber-400">
+                        {t("vendors.form_travel_radius_hint")}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -901,7 +912,8 @@ function WaitlistContact() {
                   <span className="inline-flex items-baseline gap-2 text-xs text-ink-500 dark:text-umber-300">
                     <span className="hidden sm:inline">{t("vendors.portfolio_count_hint")}</span>
                     <span className="tabular-nums">
-                      {portfolioLinks.length}/{MAX_PORTFOLIO_LINKS}
+                      {portfolioLinks.filter((l) => l.trim().length > 0).length}/
+                      {MAX_PORTFOLIO_LINKS}
                     </span>
                   </span>
                 </div>

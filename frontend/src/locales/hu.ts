@@ -1154,6 +1154,7 @@ const hu: LocaleMessages = {
     form_location_label: "Cím / Google Maps link · opcionális",
     form_location_placeholder: "pl. Budapest, vagy https://maps.app.goo.gl/…",
     form_travel_radius_label: "Max. utazás",
+    form_travel_radius_hint: "A bázishelytől számítva",
     form_website_label: "Weboldal",
     form_website_placeholder: "pl. example.com vagy https://example.com",
     form_submit: "Csatlakozz a várólistára",
@@ -1219,7 +1220,8 @@ const hu: LocaleMessages = {
       "Web, online katalógus, korábbi munkák galériája — amit szívesen megmutatnátok.",
     instagram_label: "Instagram",
     instagram_placeholder: "viragstudio_bp",
-    form_err_portfolio_link: "Az egyik portfólió link nem érvényes URL.",
+    form_err_portfolio_link: "Az egyik portfólió link nem érvényes URL — próbáld https://-vel kezdeni.",
+    form_err_travel_radius: "Az utazási távolság nem lehet negatív.",
     form_err_instagram_handle:
       "Az Instagram fióknév csak betűt, számot, pontot és aláhúzást tartalmazhat (max 30 karakter).",
     form_err_price_list_size: "Az árajánlat fájl túl nagy (max 10 MB).",

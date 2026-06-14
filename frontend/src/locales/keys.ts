@@ -1319,6 +1319,7 @@ export interface LocaleMessages {
     form_location_label: string;
     form_location_placeholder: string;
     form_travel_radius_label: string;
+    form_travel_radius_hint: string;
     form_website_label: string;
     form_website_placeholder: string;
     form_submit: string;
@@ -1394,6 +1395,7 @@ export interface LocaleMessages {
     instagram_label: string;
     instagram_placeholder: string;
     form_err_portfolio_link: string;
+    form_err_travel_radius: string;
     form_err_instagram_handle: string;
     form_err_price_list_size: string;
     price_list_label: string;

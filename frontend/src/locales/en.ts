@@ -1141,6 +1141,7 @@ const en: LocaleMessages = {
     form_location_label: "Address / Google Maps link · optional",
     form_location_placeholder: "e.g. Budapest, or https://maps.app.goo.gl/…",
     form_travel_radius_label: "Max travel",
+    form_travel_radius_hint: "From your base location",
     form_website_label: "Website",
     form_website_placeholder: "e.g. example.com or https://example.com",
     form_submit: "Join the waitlist",
@@ -1206,7 +1207,8 @@ const en: LocaleMessages = {
       "Website, online catalogue, past-work gallery — whatever you'd like to share.",
     instagram_label: "Instagram",
     instagram_placeholder: "florastudio_bp",
-    form_err_portfolio_link: "One of the portfolio links isn't a valid URL.",
+    form_err_portfolio_link: "One of the portfolio links isn't a valid URL — try starting with https://",
+    form_err_travel_radius: "Travel distance must be 0 or more.",
     form_err_instagram_handle:
       "Instagram handle can only contain letters, digits, dots and underscores (max 30 chars).",
     form_err_price_list_size: "Price list file is too large (max 10 MB).",
