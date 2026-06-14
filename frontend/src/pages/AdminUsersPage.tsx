@@ -964,47 +964,26 @@ export default function AdminUsersPage() {
         subtitle={t("admin.users_sub")}
         actions={
           !loading ? (
-            <div className="flex divide-x divide-paper-200 overflow-hidden rounded-2xl shadow-sm ring-1 ring-paper-300 dark:divide-umber-700 dark:ring-umber-700">
+            <div className="flex gap-4">
               {(
                 [
-                  {
-                    key: "couples",
-                    label: t("admin.stat_couples"),
-                    value: totalCouplePairs,
-                    icon: Heart,
-                  },
-                  {
-                    key: "solo",
-                    label: t("admin.stat_solo"),
-                    value: totalSoloWorkspaces,
-                    icon: User,
-                  },
-                  {
-                    key: "beta",
-                    label: t("admin.stat_beta"),
-                    value: betaCouples.length,
-                    icon: FlaskConical,
-                  },
-                  {
-                    key: "demo",
-                    label: t("admin.stat_demo"),
-                    value: demoCouples.length,
-                    icon: Bird,
-                  },
+                  { key: "admin-section-couples", value: totalCouplePairs, icon: Heart },
+                  { key: "admin-section-solo", value: totalSoloWorkspaces, icon: User },
+                  { key: "admin-section-beta", value: betaCouples.length, icon: FlaskConical },
+                  { key: "admin-section-demo", value: demoCouples.length, icon: Bird },
                 ] as const
-              ).map(({ key, label, value, icon: Icon }) => (
-                <div
+              ).map(({ key, value, icon: Icon }) => (
+                <button
                   key={key}
-                  className="flex flex-col items-center gap-1 bg-white px-5 py-3 dark:bg-umber-800/60"
+                  type="button"
+                  onClick={() => document.getElementById(key)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  className="flex flex-col items-center gap-0.5 text-ink-700 transition-opacity hover:opacity-70 dark:text-paper-100"
                 >
-                  <Icon size={12} className="text-neutral-400 dark:text-umber-500" aria-hidden />
-                  <span className="text-2xl font-bold tabular-nums leading-none tracking-tight text-umber-900 dark:text-paper-100">
+                  <span className="text-2xl font-bold tabular-nums leading-none tracking-tight">
                     {value}
                   </span>
-                  <span className="text-[9px] uppercase tracking-widest text-neutral-400 dark:text-umber-500">
-                    {label}
-                  </span>
-                </div>
+                  <Icon size={13} className="text-ink-600 dark:text-umber-300" aria-hidden />
+                </button>
               ))}
             </div>
           ) : undefined
@@ -1147,7 +1126,7 @@ export default function AdminUsersPage() {
           ) : (
             <>
               {/* ── Paired couples — both partners present, one card each ── */}
-              <section className="mb-6">
+              <section id="admin-section-couples" className="mb-6 scroll-mt-20">
                 <AdminSectionHeader
                   title={t("admin.workspaces_section")}
                   count={t(
@@ -1178,7 +1157,7 @@ export default function AdminUsersPage() {
               </section>
 
               {/* ── Solo workspaces — one member, partner never joined ───── */}
-              <section className="mb-6">
+              <section id="admin-section-solo" className="mb-6 scroll-mt-20">
                 <AdminSectionHeader
                   title={t("admin.solo_section")}
                   count={t(
@@ -1243,7 +1222,7 @@ export default function AdminUsersPage() {
               )}
 
               {betaCouples.length > 0 && (filteredBetaCouples.length > 0 || !isSearching) && (
-                <section className="mb-6">
+                <section id="admin-section-beta" className="mb-6 scroll-mt-20">
                   <AdminSectionHeader
                     title={t("admin.beta_workspaces_section")}
                     count={t(
@@ -1279,7 +1258,7 @@ export default function AdminUsersPage() {
                *  actively searching — the search results live in the workspaces
                *  + orphans lists above. ────────────────────────────────────── */}
               {!isSearching && demoCouples.length > 0 && (
-                <section className="mb-6">
+                <section id="admin-section-demo" className="mb-6 scroll-mt-20">
                   <AdminSectionHeader
                     title={t("admin.demo_workspaces_section")}
                     count={
