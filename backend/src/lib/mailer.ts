@@ -37,21 +37,47 @@ function defaultHeaders(): Record<string, string> {
   };
 }
 
-export async function sendEmail(input: SendEmailInput): Promise<void> {
+// ── Sequential send queue ──────────────────────────────────────────────────
+// Resend enforces a 5 req/s team rate limit. Lifecycle email sweeps can fire
+// many sends in a tight loop — previously all went out simultaneously, causing
+// 429s. This queue drains one request per RESEND_MIN_GAP_MS so we never
+// exceed the limit regardless of how many sends are enqueued at once.
+// Transactional and lifecycle sends share the same queue, so a signup burst
+// can't crowd out a concurrent lifecycle sweep.
+const RESEND_MIN_GAP_MS = 210; // ~4.7 req/s — stays under 5 with jitter headroom
+
+interface QueueEntry {
+  input: SendEmailInput;
+  resolve: () => void;
+  reject: (e: unknown) => void;
+}
+
+const sendQueue: QueueEntry[] = [];
+let draining = false;
+
+async function drainSendQueue(): Promise<void> {
+  if (draining) return;
+  draining = true;
+  while (sendQueue.length > 0) {
+    const entry = sendQueue.shift()!;
+    try {
+      await dispatchToResend(entry.input);
+      entry.resolve();
+    } catch (e) {
+      entry.reject(e);
+    }
+    if (sendQueue.length > 0) {
+      await new Promise<void>((r) => setTimeout(r, RESEND_MIN_GAP_MS));
+    }
+  }
+  draining = false;
+}
+
+async function dispatchToResend(input: SendEmailInput): Promise<void> {
   const mergedHeaders: Record<string, string> = {
     ...defaultHeaders(),
     ...(input.headers ?? {}),
   };
-
-  if (!CONFIG.resendApiKey) {
-    log.info("mailer.dev_print", {
-      to: input.to,
-      subject: input.subject,
-      text: input.text,
-      headers: mergedHeaders,
-    });
-    return;
-  }
 
   const payload: Record<string, unknown> = {
     from: CONFIG.emailFrom,
@@ -79,6 +105,29 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     });
     throw new Error(`Email send failed: ${res.status}`);
   }
+}
+
+export function sendEmail(input: SendEmailInput): Promise<void> {
+  // Dev / test: no API key set — log immediately, skip the queue.
+  if (!CONFIG.resendApiKey) {
+    const mergedHeaders: Record<string, string> = {
+      ...defaultHeaders(),
+      ...(input.headers ?? {}),
+    };
+    log.info("mailer.dev_print", {
+      to: input.to,
+      subject: input.subject,
+      text: input.text,
+      headers: mergedHeaders,
+    });
+    return Promise.resolve();
+  }
+
+  // Prod: enqueue so all sends go out sequentially at ≤5 req/s.
+  return new Promise<void>((resolve, reject) => {
+    sendQueue.push({ input, resolve, reject });
+    void drainSendQueue();
+  });
 }
 
 // Resend liveness probe for /api/health/deep. Hits the cheap api-keys list
