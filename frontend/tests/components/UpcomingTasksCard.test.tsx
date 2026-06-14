@@ -126,7 +126,7 @@ describe("<UpcomingTasksCard>", () => {
     listResponse = { items: [] };
     render(
       <Providers>
-        <UpcomingTasksCard />
+        <UpcomingTasksCard weddingDate={null} />
       </Providers>,
     );
     await flush();
@@ -142,7 +142,7 @@ describe("<UpcomingTasksCard>", () => {
     };
     render(
       <Providers>
-        <UpcomingTasksCard />
+        <UpcomingTasksCard weddingDate={null} />
       </Providers>,
     );
     await flush();
@@ -162,7 +162,7 @@ describe("<UpcomingTasksCard>", () => {
     };
     render(
       <Providers>
-        <UpcomingTasksCard />
+        <UpcomingTasksCard weddingDate={null} />
       </Providers>,
     );
     await flush();
@@ -187,7 +187,7 @@ describe("<UpcomingTasksCard>", () => {
     };
     render(
       <Providers>
-        <UpcomingTasksCard />
+        <UpcomingTasksCard weddingDate={null} />
       </Providers>,
     );
     await flush();
@@ -203,7 +203,7 @@ describe("<UpcomingTasksCard>", () => {
     };
     render(
       <Providers>
-        <UpcomingTasksCard />
+        <UpcomingTasksCard weddingDate={null} />
       </Providers>,
     );
     await flush();

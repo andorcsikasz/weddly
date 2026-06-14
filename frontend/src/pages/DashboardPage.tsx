@@ -1410,7 +1410,7 @@ export default function DashboardPage() {
 
           {/* ── Couple's own upcoming tasks — hands off from the setup checklist
               to the living plan. Self-fetching; renders its own empty states. ── */}
-          <UpcomingTasksCard />
+          <UpcomingTasksCard weddingDate={couple.wedding_date} />
 
           {/* ── Cost planning panel — full-width, inline-edit per category. ── */}
           <section className="mb-8">

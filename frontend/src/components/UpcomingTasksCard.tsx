@@ -46,7 +46,7 @@ function selectUpcoming(items: PlanningItem[]): PlanningItem[] {
     .slice(0, MAX_ROWS);
 }
 
-export function UpcomingTasksCard() {
+export function UpcomingTasksCard({ weddingDate }: { weddingDate: string | null }) {
   const { t } = useT();
   const toast = useToast();
   const [items, setItems] = useState<PlanningItem[] | null>(null);
@@ -132,9 +132,16 @@ export function UpcomingTasksCard() {
           // Two distinct empties: a couple with no tasks at all gets a nudge to
           // start; one whose tasks are all done/undated gets reassurance.
           hasAnyTask ? (
-            <p className="py-2 text-sm text-umber-500 dark:text-umber-300">
-              {t("dashboard.upcoming_empty_clear")}
-            </p>
+            <div className="py-2">
+              <p className="text-sm text-umber-500 dark:text-umber-300">
+                {t("dashboard.upcoming_empty_clear")}
+              </p>
+              {!weddingDate && (
+                <p className="mt-1 text-sm font-medium text-umber-700 dark:text-umber-200">
+                  {t("dashboard.upcoming_next_step_lock_date")}
+                </p>
+              )}
+            </div>
           ) : (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-1">
               <p className="text-sm text-umber-600 dark:text-umber-200">

@@ -322,22 +322,22 @@ export function ActivityPanel({
     ? t("profile.activity_toggle_collapse")
     : t("profile.activity_toggle_expand");
   return (
-    <section className="mt-6 overflow-hidden rounded-2xl bg-ink-900 text-paper-100 shadow-pop">
+    <section className="mt-6 overflow-hidden rounded-2xl bg-paper-100 text-ink-900 shadow-pop dark:bg-ink-900 dark:text-paper-100">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="activity-panel-body"
-        className="flex w-full items-start gap-4 border-b border-ink-800 px-6 py-4 text-left transition-colors hover:bg-ink-800/40"
+        className="flex w-full items-start gap-4 border-b border-paper-300 px-6 py-4 text-left transition-colors hover:bg-paper-200/60 dark:border-ink-800 dark:hover:bg-ink-800/40"
       >
         <span className="flex-1">
-          <span className="flex items-center gap-2 text-lg text-paper-50">
-            <History size={18} className="text-ink-300" aria-hidden />
+          <span className="flex items-center gap-2 text-lg text-ink-900 dark:text-paper-50">
+            <History size={18} className="text-ink-400 dark:text-ink-300" aria-hidden />
             {t("profile.activity_title")}
           </span>
-          <span className="mt-1 block text-xs text-ink-200">{t("profile.activity_body")}</span>
+          <span className="mt-1 block text-xs text-ink-500 dark:text-ink-200">{t("profile.activity_body")}</span>
         </span>
-        <span className="flex shrink-0 items-center gap-2 pt-1 text-xs text-ink-200">
+        <span className="flex shrink-0 items-center gap-2 pt-1 text-xs text-ink-500 dark:text-ink-200">
           <span className="sr-only">{toggleLabel}</span>
           <ChevronDown
             size={16}
@@ -348,11 +348,11 @@ export function ActivityPanel({
       </button>
       {open ? (
         entries.length === 0 ? (
-          <p id="activity-panel-body" className="px-6 py-5 text-sm text-ink-300">
+          <p id="activity-panel-body" className="px-6 py-5 text-sm text-ink-500 dark:text-ink-300">
             {t("profile.activity_empty")}
           </p>
         ) : (
-          <ul id="activity-panel-body" className="divide-y divide-ink-800">
+          <ul id="activity-panel-body" className="divide-y divide-paper-300 dark:divide-ink-800">
             {entries.map((e) => {
               const actorIsSelf = e.actor_id !== null && e.actor_id === currentUserId;
               const actorName = actorIsSelf
@@ -364,9 +364,9 @@ export function ActivityPanel({
                   key={e.id}
                   className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-6 py-3 text-sm"
                 >
-                  <span className="font-medium text-paper-50">{actorName}</span>
-                  <span className="text-paper-200">{phrase}</span>
-                  <span className="ml-auto font-mono text-xs text-ink-300">
+                  <span className="font-medium text-ink-900 dark:text-paper-50">{actorName}</span>
+                  <span className="text-ink-600 dark:text-paper-200">{phrase}</span>
+                  <span className="ml-auto font-mono text-xs text-ink-400 dark:text-ink-300">
                     {relativeTime(e.created_at, locale, t)}
                   </span>
                 </li>

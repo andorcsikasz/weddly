@@ -734,9 +734,11 @@ export default function HoneymoonPage() {
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-grotesk">{t("honeymoon.costs_title")}</h2>
-            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
-              {t("honeymoon.costs_sub")}
-            </p>
+            {honeymoonLines.length === 0 && (
+              <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+                {t("honeymoon.costs_sub")}
+              </p>
+            )}
           </div>
           {honeymoonLines.length > 0 && (
             <PresetChips
@@ -2417,11 +2419,11 @@ function HoneymoonTodoSection({
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="font-grotesk">{t("honeymoon.todo_title")}</h2>
-          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
-            {items.length > 0
-              ? t("honeymoon.todo_sub_count", { done, total: items.length })
-              : t("honeymoon.todo_sub_empty")}
-          </p>
+          {items.length > 0 && (
+            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+              {t("honeymoon.todo_sub_count", { done, total: items.length })}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -2434,7 +2436,7 @@ function HoneymoonTodoSection({
           </button>
           <Link
             to="/app/planning"
-            className="text-sm text-ink-700 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+            className="btn-ghost btn-sm inline-flex items-center gap-1.5"
           >
             {t("honeymoon.todo_manage_link")}
           </Link>

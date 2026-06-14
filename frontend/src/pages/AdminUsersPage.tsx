@@ -561,10 +561,12 @@ export default function AdminUsersPage() {
           )}
           {!u.verified_email && <Pill tone="muted">{t("admin.badge_unverified")}</Pill>}
           {flag && (
-            <span title={flag.reason}>
-              <Pill tone="blush" icon={<Flag size={11} aria-hidden />}>
-                {t("admin.flag_badge_days_left", { n: flagDaysLeft })}
-              </Pill>
+            <span
+              title={flag.reason}
+              aria-label={t("admin.flag_badge_days_left", { n: flagDaysLeft })}
+              className="inline-flex items-center text-blush-600 dark:text-blush-300"
+            >
+              <Flag size={12} aria-hidden />
             </span>
           )}
           {u.activity.prior_flag_count > 0 && (
