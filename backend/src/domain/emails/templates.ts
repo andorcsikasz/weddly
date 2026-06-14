@@ -525,7 +525,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: "Új jelszót kértél a Weddly fiókodhoz. A link 1 órán át érvényes.",
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        "Új jelszót kértél a Weddly fiókodhoz. A link biztonsági okokból 1 órán át érvényes.",
+        "Új jelszót kértél a Weddly fiókodhoz. A link biztonsági okokból **1 órán át érvényes**.",
         "Ha nem te kérted, ne kattints rá és ne add meg senkinek — a fiókod a régi jelszóval továbbra is biztonságban van.",
       ],
       cta: "Új jelszó beállítása",
@@ -534,7 +534,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        "You asked to reset your Weddly password. For your security this link is valid for 1 hour.",
+        "You asked to reset your Weddly password. For your security this link is **valid for 1 hour**.",
         "If you didn't request this, you can ignore the email — your account is still safe.",
       ],
       cta: "Set a new password",
@@ -549,9 +549,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: "Megerősítjük, hogy sikeresen módosítottad a jelszavad.",
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        `A Weddly fiókod jelszavát az imént (${p.changedAt}) megváltoztattuk.`,
+        `A Weddly fiókod jelszavát az imént **(${p.changedAt})** megváltoztattuk.`,
         "Minden eddigi bejelentkezésedet kiléptettük, így új jelszóval kell újra belépned mindenhol.",
-        "Ha NEM te voltál, azonnal állíts vissza új jelszót a lenti linkkel — ezzel azonnal kizárod azt, aki most lépett be.",
+        "**Ha NEM te voltál**, azonnal állíts vissza új jelszót a lenti linkkel — ezzel azonnal kizárod azt, aki most lépett be.",
       ],
       cta: "Új jelszó kérése",
       footnote: "Ha te voltál, ezt a levelet figyelmen kívül hagyhatod.",
@@ -559,9 +559,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        `Your Weddly password was just changed (${p.changedAt}).`,
+        `Your Weddly password was just changed **(${p.changedAt})**.`,
         "We've signed out all of your existing sessions, so you'll need to log back in everywhere with the new password.",
-        "If this wasn't you, request a fresh password immediately using the link below — that will lock out whoever just got in.",
+        "**If this wasn't you**, request a fresh password immediately using the link below — that will lock out whoever just got in.",
       ],
       cta: "Reset password now",
       footnote: "If this was you, you can safely ignore this email.",
@@ -575,9 +575,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `Új eszközről nyitottak meg sessiont (${p.signedInAt}).`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        `Bejelentkezést észleltünk a Weddly fiókodba egy olyan eszközről, amit eddig nem láttunk (${p.signedInAt}).`,
+        `Bejelentkezést észleltünk a Weddly fiókodba egy olyan eszközről, amit eddig nem láttunk **(${p.signedInAt})**.`,
         "Ha te voltál (új gép, új telefon, böngészőcsere, vagy más hálózat) — minden rendben, nincs teendő.",
-        "Ha NEM te voltál, ez azt jelenti, hogy valaki más belépett a fiókodba a jelszavaddal. Kérj azonnal új jelszót a lenti linkkel — ezzel azonnal kilépteted őt mindenhonnan.",
+        "**Ha NEM te voltál**, ez azt jelenti, hogy valaki más belépett a fiókodba a jelszavaddal. Kérj azonnal új jelszót a lenti linkkel — ezzel azonnal kilépteted őt mindenhonnan.",
       ],
       cta: "Új jelszó kérése",
       footnote: "Ha te voltál, nyugodtan figyelmen kívül hagyhatod ezt a levelet.",
@@ -585,9 +585,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        `We noticed a sign-in to your Weddly account from a device we haven't seen before (${p.signedInAt}).`,
+        `We noticed a sign-in to your Weddly account from a device we haven't seen before **(${p.signedInAt})**.`,
         "If it was you (new computer, new phone, different browser, different network) — all good, nothing to do.",
-        "If it wasn't, someone else just got into your account with your password. Reset your password now using the link below — that will sign them out everywhere.",
+        "**If it wasn't**, someone else just got into your account with your password. Reset your password now using the link below — that will sign them out everywhere.",
       ],
       cta: "Reset password now",
       footnote: "If this was you, you can safely ignore this email.",
@@ -796,7 +796,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         `${p.requestedByName} szüneteltette a közös esküvőtervezőtöket.`,
-        `30 nap múlva (${p.scheduledDeleteDate}) az adatok véglegesen törlődnek — vendéglista, ülésrend, költségvetés, minden. Ezt utólag nem tudjuk visszaállítani.`,
+        `**30 nap múlva (${p.scheduledDeleteDate})** az adatok véglegesen törlődnek — vendéglista, ülésrend, költségvetés, minden. Ezt utólag nem tudjuk visszaállítani.`,
         "Ha mégsem akartátok, vagy meggondoltátok magatokat, bármelyikőtök visszavonhatja a Profil oldalon.",
       ],
       cta: "Szüneteltetés visszavonása",
@@ -806,7 +806,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
         `${p.requestedByName} paused your shared wedding workspace.`,
-        `In 30 days (${p.scheduledDeleteDate}) all of your data — guests, seating, budget — will be permanently deleted. We can't restore it after that.`,
+        `**In 30 days (${p.scheduledDeleteDate})** all of your data — guests, seating, budget — will be permanently deleted. We can't restore it after that.`,
         "If this wasn't intentional, either of you can cancel the pause from your Profile page.",
       ],
       cta: "Cancel the pause",
@@ -915,7 +915,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         "A Weddly adminisztrátora megjelölte a fiókodat ellenőrzésre. Az alábbi aggály miatt kértük a visszajelzésedet:",
         `„${p.reason}"`,
-        `Ha úgy érzed, hogy ez tévedés vagy szeretnéd elmagyarázni a helyzetet, válaszolj erre az e-mailre ${p.deadlineDateHu}-ig.`,
+        `Ha úgy érzed, hogy ez tévedés vagy szeretnéd elmagyarázni a helyzetet, válaszolj erre az e-mailre **${p.deadlineDateHu}-ig**.`,
         "Ha eddig az időpontig nem kapunk választ, a fiókodat és a hozzátartozó adatokat (vendéglista, ülésrend, költségvetés, RSVP-k) automatikusan és véglegesen töröljük.",
       ],
       cta: "Weddly",
@@ -925,7 +925,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         "A Weddly administrator has flagged your account for review. We'd like to hear from you about the following concern:",
         `"${p.reason}"`,
-        `If you think this is a mistake or want to explain the situation, just reply to this email by ${p.deadlineDateEn}.`,
+        `If you think this is a mistake or want to explain the situation, just reply to this email **by ${p.deadlineDateEn}**.`,
         "If we don't hear back by then, your account and all associated data (guest list, seating, budget, RSVPs) will be automatically and permanently deleted.",
       ],
       cta: "Weddly",
@@ -967,7 +967,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `${p.guestName} válaszolt: ${rsvpStatusHu(p.rsvpStatus)}.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        `${p.guestName} most válaszolt a meghívóra: ${rsvpStatusHu(p.rsvpStatus)}.`,
+        `**${p.guestName}** most válaszolt a meghívóra: **${rsvpStatusHu(p.rsvpStatus)}**.`,
         rsvpProgressLineHu(p.progress),
         "A vendéglistán látod az ételválasztást, a +1-eket, a szállásigényt és a zenekívánságokat.",
       ].filter((line): line is string => line !== null),
@@ -976,7 +976,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        `${p.guestName} just responded: ${rsvpStatusEn(p.rsvpStatus)}.`,
+        `**${p.guestName}** just responded: **${rsvpStatusEn(p.rsvpStatus)}**.`,
         rsvpProgressLineEn(p.progress),
         "The guest list has their meal choice, +1, accommodation, and song requests.",
       ].filter((line): line is string => line !== null),
@@ -1038,8 +1038,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   guest_invite: (p) => {
-    const dateHu = p.weddingDate ? ` (${p.weddingDate})` : "";
-    const dateEn = p.weddingDate ? ` (${p.weddingDate})` : "";
+    const dateHu = p.weddingDate ? ` **(${p.weddingDate})**` : "";
+    const dateEn = p.weddingDate ? ` **(${p.weddingDate})**` : "";
     const greetingHuName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
     const greetingEnName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
     return {
@@ -1122,7 +1122,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `${p.coupleDisplayName} — 3 hónap maradt. Mi van még hátra?`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        "Pontosan 3 hónap múlva van a nagy nap.",
+        "**Pontosan 3 hónap múlva van a nagy nap.**",
         "Most jó alkalom: véglegesítsétek a vendéglistát, küldjétek ki az RSVP linkeket, és nézzétek át a költségvetést, hogy nincs-e elszállás. A Weddly mindenhez egy gombnyira van.",
       ],
       cta: "Folytatás a vezérlőpulton",
@@ -1131,7 +1131,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        "You're exactly 3 months out from the big day.",
+        "**You're exactly 3 months out from the big day.**",
         "Good moment to: lock the guest list, send RSVP links, and double-check the budget. Everything's a click away in your Weddly dashboard.",
       ],
       cta: "Open dashboard",
@@ -1146,7 +1146,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `${p.coupleDisplayName} — 30 nap. Itt egy pár fontos teendő.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        "Egy hónap maradt — innen kezdődik a célegyenes.",
+        "**Egy hónap maradt** — innen kezdődik a célegyenes.",
         "Ezen a héten a legfontosabbak: véglegesítsétek az ülésrendet, döntsetek a menüsorokról és az ételválasztásokról, küldjetek emlékeztetőt a még nem válaszoló vendégeknek. Minden eszköz a kezetekben van.",
       ],
       cta: "Vezérlőpult megnyitása",
@@ -1154,7 +1154,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        "One month left — the home stretch.",
+        "**One month left** — the home stretch.",
         "This week's priorities: finalize seating, lock the menu and meal counts, and chase any guests who still haven't RSVP'd.",
       ],
       cta: "Open dashboard",
@@ -1168,7 +1168,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `${p.coupleDisplayName} — utolsó hét. Nyomtatás, ülésrend, részletek.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        "Egy hét — most már tényleg közel van.",
+        "**Egy hét** — most már tényleg közel van.",
         "Két dolog, amit érdemes most lezárni: nyomtassátok ki a végleges ülésrendet (A4/A3) és a névkártyákat (A6) a Nyomtatás fülön; küldjétek el a végleges fejszámot a helyszínnek és a catering-nek.",
         "Pihenjetek is. A nehezén túl vagytok.",
       ],
@@ -1177,7 +1177,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        "One week left.",
+        "**One week left.**",
         "Two things worth closing this week: print the final seating chart (A4/A3) and place cards (A6) from the Print tab; share the final headcount with your venue and caterer.",
         "And rest. You've earned it.",
       ],
@@ -1228,9 +1228,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
 
   wedding_date_changed: (p, ctx) => {
     const fromHu = p.previousWeddingDate ? `${p.previousWeddingDate} → ` : "";
-    const toHu = p.newWeddingDate ?? "új időpont egyeztetés alatt";
+    const toHu = p.newWeddingDate ? `**${p.newWeddingDate}**` : "új időpont egyeztetés alatt";
     const fromEn = p.previousWeddingDate ? `${p.previousWeddingDate} → ` : "";
-    const toEn = p.newWeddingDate ?? "TBD (a new date will follow)";
+    const toEn = p.newWeddingDate ? `**${p.newWeddingDate}**` : "TBD (a new date will follow)";
     return {
       subject: `Új esküvői időpont / Wedding date update — ${p.coupleDisplayName}`,
       ctaUrl: p.rsvpPageUrl,
@@ -1365,7 +1365,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `${p.coupleDisplayName} — 2 hét az esküvőig.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        `Két hét múlva van az esküvőtök (${p.weddingDate}), és ${p.pendingCount} vendég még nem küldte el az RSVP-jét.`,
+        `Két hét múlva van az esküvőtök **(${p.weddingDate})**, és **${p.pendingCount} vendég** még nem küldte el az RSVP-jét.`,
         "A vendéglistán egy kattintás emlékeztetőt küldeni mindenkinek, aki még nem válaszolt. Most a jó pillanat — innentől kezdve egyre nehezebb lesz pontos fejszámot adni a helyszínnek és a catering-nek.",
       ],
       cta: "Vendéglista megnyitása",
@@ -1374,7 +1374,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        `Your wedding is two weeks away (${p.weddingDate}), and ${p.pendingCount} guests still haven't sent their RSVP.`,
+        `Your wedding is two weeks away **(${p.weddingDate})**, and **${p.pendingCount} guests** still haven't sent their RSVP.`,
         "On the guest list, one click sends a reminder to everyone who hasn't replied yet. Now's the right moment — it gets harder from here to give the venue and caterer a clean headcount.",
       ],
       cta: "Open guest list",

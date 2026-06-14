@@ -146,7 +146,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       }
       lines.push(block.greeting);
       lines.push("");
-      for (const p of block.paragraphs) lines.push(p);
+      for (const p of block.paragraphs) lines.push(stripBold(p));
       lines.push("");
       lines.push(`${block.cta}: ${ctaUrl}`);
       if (block.footnote) {
@@ -297,7 +297,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       const paras = block.paragraphs
         .map(
           (p) =>
-            `<p style="margin:0 0 14px 0;color:${COLOR.ink};font-size:16px;line-height:1.55;word-break:break-word;hyphens:auto;">${escapeHtml(p)}</p>`,
+            `<p style="margin:0 0 14px 0;color:${COLOR.ink};font-size:16px;line-height:1.55;word-break:break-word;hyphens:auto;">${renderBold(p)}</p>`,
         )
         .join("");
       const footnote = block.footnote
@@ -337,7 +337,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     const paras = block.paragraphs
       .map(
         (p) =>
-          `<p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;word-break:break-word;hyphens:auto;">${escapeHtml(p)}</p>`,
+          `<p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;word-break:break-word;hyphens:auto;">${renderBold(p)}</p>`,
       )
       .join("");
     const footnote = block.footnote
@@ -422,6 +422,25 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+/** Render a paragraph string with **bold** markers → <strong> in HTML.
+ *  Segments outside markers are plain-escaped; segments inside get wrapped
+ *  in a weight-600 <strong> so General Sans semibold renders correctly. */
+function renderBold(s: string): string {
+  return s
+    .split(/\*\*(.+?)\*\*/)
+    .map((chunk, i) =>
+      i % 2 === 1
+        ? `<strong style="font-weight:600;">${escapeHtml(chunk)}</strong>`
+        : escapeHtml(chunk),
+    )
+    .join("");
+}
+
+/** Strip **bold** markers for the plain-text variant. */
+function stripBold(s: string): string {
+  return s.replace(/\*\*(.+?)\*\*/g, "$1");
 }
 function escapeAttr(s: string): string {
   return escapeHtml(s);
