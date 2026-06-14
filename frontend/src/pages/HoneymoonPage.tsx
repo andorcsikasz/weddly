@@ -1983,7 +1983,7 @@ function FlightOfferRow({
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex shrink-0 items-center gap-1.5 border-l border-paper-200 px-3 text-xs font-medium text-blush-700 transition hover:bg-blush-50 disabled:opacity-60 dark:border-umber-700 dark:text-blush-300 dark:hover:bg-blush-400/10"
+          className="flex shrink-0 items-center gap-1.5 border-l border-paper-200 px-3 text-xs font-medium text-green-700 transition hover:bg-green-50 disabled:opacity-60 dark:border-umber-700 dark:text-green-400 dark:hover:bg-green-400/10"
           aria-label={t("honeymoon.flight_save_cta_aria")}
           title={t("honeymoon.flight_save_cta_aria")}
         >
