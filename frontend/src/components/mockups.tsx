@@ -1023,20 +1023,6 @@ export function VendorListingMockup({ className }: Common) {
         </text>
       </g>
 
-      {/* Bookmark */}
-      <g className="text-white dark:text-umber-700">
-        <circle cx="328" cy="20" r="14" fill="currentColor" />
-      </g>
-      <g className="text-umber-600">
-        <path
-          d="M 322 14 L 334 14 L 334 28 L 328 24 L 322 28 Z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-      </g>
-
       {/* Name + category */}
       <g className="font-serif text-ink-900 dark:text-paper-100">
         <text x="20" y="142" fontSize="18" fill="currentColor">

@@ -1349,6 +1349,7 @@ export interface LocaleMessages {
     privacy_consent_prefix: string;
     privacy_consent_link: string;
     privacy_consent_suffix: string;
+    privacy_required_hint: string;
     form_err_privacy_consent: string;
     /** Numbered section titles in the redesigned waitlist form. The form is
      *  split into three vertical sections so vendors can scan it before

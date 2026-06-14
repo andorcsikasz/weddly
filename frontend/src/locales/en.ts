@@ -1164,6 +1164,7 @@ const en: LocaleMessages = {
     privacy_consent_prefix: "I have read and accept the ",
     privacy_consent_link: "privacy policy",
     privacy_consent_suffix: ", and I consent to the processing of the data I provide.",
+    privacy_required_hint: "Required to submit",
     form_err_privacy_consent: "Please accept the privacy policy to submit your application.",
     section_business_title: "Your business",
     section_business_sub: "A few basics so we know who's applying.",

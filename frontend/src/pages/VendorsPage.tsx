@@ -21,7 +21,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { Fragment, type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
+import { Fragment, type CSSProperties, type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
@@ -258,6 +258,60 @@ function SectionHeader({
   );
 }
 
+const CONFETTI_COLORS = [
+  "bg-blush-400",
+  "bg-blush-500",
+  "bg-sage-400",
+  "bg-sage-300",
+  "bg-umber-300",
+  "bg-lemonade-yellow",
+];
+
+const DRAFT_KEY = "weddly.vendor_waitlist_draft";
+
+function loadDraft() {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** One-shot confetti burst — same as the onboarding AllSet screen. */
+function Confetti() {
+  const pieces = useMemo(() => {
+    return Array.from({ length: 48 }, (_, i) => {
+      const round = i % 2 === 0;
+      const w = 5 + (i % 5);
+      return {
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        round,
+        style: {
+          left: `${(i / 48) * 100 + ((i % 7) - 3) * 2}%`,
+          width: `${w}px`,
+          height: round ? `${w}px` : `${w * 1.7}px`,
+          "--cf-drift": `${((i % 7) - 3) * 20}px`,
+          "--cf-fall": `${360 + (i % 5) * 40}px`,
+          "--cf-duration": `${3.8 + (i % 5) * 0.48}s`,
+          "--cf-delay": `${(i % 11) * 0.1}s`,
+          "--cf-sway": `${10 + (i % 5) * 4}px`,
+          "--cf-sway-duration": `${1.3 + (i % 3) * 0.43}s`,
+        } as CSSProperties,
+      };
+    });
+  }, []);
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {pieces.map((p, i) => (
+        <span key={i} className="confetti-piece absolute top-0" style={p.style}>
+          <i className={`${p.round ? "rounded-full" : "rounded-[1px]"} ${p.color}`} />
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /** Numbered step progress dots with connecting lines. */
 function StepDots({ current, total }: { current: number; total: number }) {
   return (
@@ -292,20 +346,56 @@ function WaitlistContact() {
   const { t } = useT();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [stepError, setStepError] = useState<string | null>(null);
-  const [businessName, setBusinessName] = useState("");
-  const [email, setEmail] = useState("");
-  const [category, setCategory] = useState<SupplierCategory | "">("");
-  const [location, setLocation] = useState("");
-  const [website, setWebsite] = useState("");
-  const [message, setMessage] = useState("");
-  const [instagram, setInstagram] = useState("");
-  const [portfolioLinks, setPortfolioLinks] = useState<string[]>([""]);
+  const [businessName, setBusinessName] = useState(() => {
+    const d = loadDraft();
+    return typeof d?.businessName === "string" ? d.businessName : "";
+  });
+  const [email, setEmail] = useState(() => {
+    const d = loadDraft();
+    return typeof d?.email === "string" ? d.email : "";
+  });
+  const [category, setCategory] = useState<SupplierCategory | "">(() => {
+    const d = loadDraft();
+    return typeof d?.category === "string" ? (d.category as SupplierCategory) : "";
+  });
+  const [location, setLocation] = useState(() => {
+    const d = loadDraft();
+    return typeof d?.location === "string" ? d.location : "";
+  });
+  const [website, setWebsite] = useState(() => {
+    const d = loadDraft();
+    return typeof d?.website === "string" ? d.website : "";
+  });
+  const [message, setMessage] = useState(() => {
+    const d = loadDraft();
+    return typeof d?.message === "string" ? d.message : "";
+  });
+  const [instagram, setInstagram] = useState(() => {
+    const d = loadDraft();
+    return typeof d?.instagram === "string" ? d.instagram : "";
+  });
+  const [portfolioLinks, setPortfolioLinks] = useState<string[]>(() => {
+    const d = loadDraft();
+    return Array.isArray(d?.portfolioLinks) ? (d.portfolioLinks as string[]) : [""];
+  });
   const [priceList, setPriceList] = useState<File | null>(null);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const consentId = useId();
+
+  // Persist draft to sessionStorage whenever fields change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({ businessName, email, category, location, website, message, instagram, portfolioLinks }),
+      );
+    } catch {
+      // storage unavailable — ignore
+    }
+  }, [businessName, email, category, location, website, message, instagram, portfolioLinks]);
 
   const portfolioHintKey = useMemo<string>(() => {
     if (!category) return "vendors.portfolio_hint_default";
@@ -391,6 +481,7 @@ function WaitlistContact() {
         privacy_version: PRIVACY_VERSION,
         vendor_beta_notice_version: VENDOR_BETA_NOTICE_VERSION,
       });
+      sessionStorage.removeItem(DRAFT_KEY);
       setSubmitted(true);
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
@@ -408,6 +499,7 @@ function WaitlistContact() {
   if (submitted) {
     return (
       <div className="card relative overflow-hidden text-center">
+        <Confetti />
         <div
           aria-hidden
           className="pointer-events-none absolute -top-12 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-blush-200/40 blur-3xl dark:bg-blush-400/15"
@@ -427,7 +519,6 @@ function WaitlistContact() {
     );
   }
 
-  const portfolioFilled = portfolioLinks.filter((l) => l.trim().length > 0).length;
   const portfolioAddDisabled = portfolioLinks.length >= MAX_PORTFOLIO_LINKS;
   const stepTitles: Record<1 | 2 | 3, string> = {
     1: t("vendors.step_1_title"),
@@ -623,7 +714,7 @@ function WaitlistContact() {
                   <span className="field-label mb-0">{t("vendors.portfolio_links_label")}</span>
                   <span className="inline-flex items-baseline gap-2 text-xs text-ink-500 dark:text-umber-300">
                     <span className="hidden sm:inline">{t("vendors.portfolio_count_hint")}</span>
-                    <span className="tabular-nums">{portfolioFilled}/{MAX_PORTFOLIO_LINKS}</span>
+                    <span className="tabular-nums">{portfolioLinks.length}/{MAX_PORTFOLIO_LINKS}</span>
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -758,6 +849,11 @@ function WaitlistContact() {
                     {t("vendors.privacy_consent_suffix")}
                   </span>
                 </label>
+                {!privacyConsent && (
+                  <p className="pl-6 text-[11px] text-ink-400 dark:text-umber-400">
+                    {t("vendors.privacy_required_hint")}
+                  </p>
+                )}
               </div>
             </div>
           )}

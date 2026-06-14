@@ -1177,6 +1177,7 @@ const hu: LocaleMessages = {
     privacy_consent_prefix: "Elolvastam és elfogadom az ",
     privacy_consent_link: "adatkezelési tájékoztatót",
     privacy_consent_suffix: ", és hozzájárulok a megadott adatok kezeléséhez.",
+    privacy_required_hint: "A küldéshez szükséges",
     form_err_privacy_consent: "A jelentkezéshez el kell fogadnod az adatkezelési tájékoztatót.",
     section_business_title: "Bemutatkozás",
     section_business_sub: "Pár alap adat, hogy be tudjunk titeket azonosítani.",
