@@ -1124,7 +1124,6 @@ const en: LocaleMessages = {
     benefit_3_body:
       "Couples reach you directly — phone, email, Instagram. Bookings, messaging and reviews join later, and we'll tell you when.",
     form_title: "Join the waitlist",
-    form_sub: "Share a few details and we'll only ping you when we open to suppliers.",
     form_business_label: "Business name",
     form_email_label: "Email",
     form_category_label: "Category",
@@ -1177,7 +1176,7 @@ const en: LocaleMessages = {
     portfolio_links_label: "Portfolio links",
     portfolio_links_placeholder: "https://…",
     portfolio_link_remove: "Remove link",
-    portfolio_add_link: "+ Add link",
+    portfolio_add_link: "Add link",
     portfolio_count_hint: "1–3 links is plenty.",
     portfolio_hint_default:
       "Gallery, website, Instagram post, Drive folder — anything you'd share.",

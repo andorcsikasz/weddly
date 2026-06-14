@@ -434,11 +434,6 @@ function WaitlistContact() {
     2: t("vendors.step_2_title"),
     3: t("vendors.step_3_title"),
   };
-  const stepSubs: Record<1 | 2 | 3, string> = {
-    1: t("vendors.step_1_sub"),
-    2: t("vendors.step_2_sub"),
-    3: t("vendors.step_3_sub"),
-  };
 
   return (
     <div className="relative">
@@ -456,7 +451,6 @@ function WaitlistContact() {
           <h2 className="font-grotesk text-2xl text-ink-900 dark:text-paper-50">
             {stepTitles[step]}
           </h2>
-          <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">{stepSubs[step]}</p>
         </div>
 
         <form onSubmit={onSubmit}>
@@ -790,14 +784,14 @@ function WaitlistContact() {
               <button
                 type="button"
                 onClick={advanceStep}
-                className="btn-primary ml-auto"
+                className="btn ml-auto bg-ink-900 text-white hover:bg-ink-800 dark:bg-ink-900 dark:text-white dark:hover:bg-ink-800"
               >
                 {t("vendors.step_next")} →
               </button>
             ) : (
               <button
                 type="submit"
-                className="btn-primary btn-lg ml-auto"
+                className="btn btn-lg ml-auto bg-ink-900 text-white hover:bg-ink-800 dark:bg-ink-900 dark:text-white dark:hover:bg-ink-800"
                 disabled={submitting || !privacyConsent}
               >
                 {submitting ? t("vendors.form_submitting") : t("vendors.form_submit")}

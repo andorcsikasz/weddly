@@ -1301,7 +1301,6 @@ export interface LocaleMessages {
     benefit_3_title: string;
     benefit_3_body: string;
     form_title: string;
-    form_sub: string;
     form_business_label: string;
     form_email_label: string;
     form_category_label: string;

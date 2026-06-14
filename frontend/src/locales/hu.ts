@@ -1137,7 +1137,6 @@ const hu: LocaleMessages = {
     benefit_3_body:
       "A párok telefonon, e-mailen, Instagramon érnek el titeket — semmi platformközi kommunikáció. A foglalás, üzenetek és értékelések később jönnek, és időben szólunk.",
     form_title: "Iratkozzatok fel",
-    form_sub: "Pár adat, és csak a nyitásról értesítünk.",
     form_business_label: "Vállalkozás neve",
     form_email_label: "E-mail",
     form_category_label: "Kategória",
@@ -1190,7 +1189,7 @@ const hu: LocaleMessages = {
     portfolio_links_label: "Portfólió linkek",
     portfolio_links_placeholder: "https://…",
     portfolio_link_remove: "Link eltávolítása",
-    portfolio_add_link: "+ Új link",
+    portfolio_add_link: "Új link",
     portfolio_count_hint: "1–3 link bőven elég.",
     portfolio_hint_default:
       "Galéria, weboldal, Instagram poszt, Drive mappa — bármi, amit megosztanátok.",

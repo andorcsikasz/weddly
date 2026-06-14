@@ -1017,7 +1017,7 @@ export function VendorListingMockup({ className }: Common) {
       <g className="text-paper-300 dark:text-umber-600">
         <circle cx="40" cy="92" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
       </g>
-      <g className="font-serif text-umber-700">
+      <g className="font-serif text-umber-700 dark:text-paper-200">
         <text x="40" y="98" fontSize="18" fill="currentColor" textAnchor="middle">
           F
         </text>
@@ -1038,19 +1038,19 @@ export function VendorListingMockup({ className }: Common) {
       </g>
 
       {/* Name + category */}
-      <g className="font-serif text-ink-900">
+      <g className="font-serif text-ink-900 dark:text-paper-100">
         <text x="20" y="142" fontSize="18" fill="currentColor">
           Florea Studio
         </text>
       </g>
-      <g className="text-ink-500 font-sans">
+      <g className="text-ink-500 font-sans dark:text-umber-300">
         <text x="20" y="160" fontSize="10" fill="currentColor">
           {t("landing.mockup_vendor_category")}
         </text>
       </g>
 
       {/* Stars */}
-      <g className="text-umber-600">
+      <g className="text-umber-600 dark:text-umber-400">
         {[0, 1, 2, 3, 4].map((i) => (
           <path
             key={i}
@@ -1060,17 +1060,17 @@ export function VendorListingMockup({ className }: Common) {
           />
         ))}
       </g>
-      <g className="text-ink-500 font-sans">
+      <g className="text-ink-500 font-sans dark:text-umber-300">
         <text x="98" y="187" fontSize="10" fill="currentColor">
           {t("landing.mockup_vendor_reviews")}
         </text>
       </g>
 
       {/* CTA */}
-      <g className="text-umber-600">
+      <g className="text-umber-600 dark:text-paper-200">
         <rect x="220" y="170" width="120" height="28" rx="14" fill="currentColor" />
       </g>
-      <g className="text-white font-sans">
+      <g className="text-white font-sans dark:text-ink-900">
         <text
           x="280"
           y="188"
