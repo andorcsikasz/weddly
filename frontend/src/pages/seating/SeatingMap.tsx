@@ -223,21 +223,27 @@ export function SeatingMap({
     el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
   }, [expanded, ROOM_W_MM, ROOM_H_MM, wrapperPx?.w, wrapperPx?.h]);
 
-  // Pick a scale + SVG pixel size for EXPANDED or SEAT mode.
-  // Both modes use max-scale so the longer axis overflows and the canvas
-  // is scrollable — edit mode stays fit-to-meet (whole room visible at once).
+  // Pick a scale + SVG pixel size.
+  // - Inline (no fullHeight, seatMode, expanded): SVG fills its container with CSS %.
+  // - fullHeight/edit mode: fit-to-contain (min scale) so the whole floor plan is
+  //   always visible without scrolling, regardless of room dimensions.
+  // - seatMode / expanded: fill (max scale) so the canvas overflows and is pannable.
   const svgSize = useMemo<{ width: number | string; height: number | string }>(() => {
-    if (
-      (!expanded && !seatMode && !fullHeight) ||
-      !wrapperPx ||
-      wrapperPx.w <= 0 ||
-      wrapperPx.h <= 0
-    ) {
+    if (!wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
       return { width: "100%", height: "100%" };
     }
+    if (!expanded && !seatMode && !fullHeight) {
+      return { width: "100%", height: "100%" };
+    }
+    if (fullHeight && !expanded) {
+      // Fit the entire floor plan inside the wrapper — no scrolling needed.
+      const scale = Math.min(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
+      return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
+    }
+    // seatMode / expanded: zoom-to-fill so the user can pan.
     const scale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
     return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
-  }, [expanded, seatMode, wrapperPx, ROOM_W_MM, ROOM_H_MM]);
+  }, [expanded, seatMode, fullHeight, wrapperPx, ROOM_W_MM, ROOM_H_MM]);
 
   // ESC closes the expanded overlay. Lock body scroll while open so the
   // backdrop doesn't reveal the page underneath when the user scrolls.
@@ -565,9 +571,11 @@ export function SeatingMap({
         className={`relative bg-paper-50 dark:bg-umber-900 ${
           expanded
             ? "min-h-0 flex-1 overflow-auto p-4"
-            : seatMode || fullHeight
+            : seatMode
               ? "min-h-0 flex-1 overflow-auto"
-              : "h-[60vh] max-h-[640px] w-full overflow-hidden"
+              : fullHeight
+                ? "min-h-0 flex-1 overflow-hidden"
+                : "h-[60vh] max-h-[640px] w-full overflow-hidden"
         }`}
       >
         <div
@@ -816,16 +824,17 @@ function Grid({ widthMm, heightMm }: { widthMm: number; heightMm: number }) {
         className="fill-paper-50 dark:fill-umber-900"
       />
       {lines}
-      {/* Room boundary — inset by half the stroke width (30 mm) so the
-          stroke stays entirely inside the SVG viewBox and doesn't bleed
-          outside the card's rounded corners. */}
+      {/* Room boundary — non-scaling-stroke keeps the visual border thickness
+          constant in screen pixels regardless of room size or zoom level.
+          strokeWidth={6} → ~3 px visible (outer half clips at the viewport). */}
       <rect
-        x={30}
-        y={30}
-        width={widthMm - 60}
-        height={heightMm - 60}
+        x={0}
+        y={0}
+        width={widthMm}
+        height={heightMm}
         className="fill-none stroke-ink-700 dark:stroke-umber-500"
-        strokeWidth={60}
+        strokeWidth={6}
+        vectorEffect="non-scaling-stroke"
         pointerEvents="none"
       />
     </g>
