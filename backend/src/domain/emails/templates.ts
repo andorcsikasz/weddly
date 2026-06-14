@@ -1042,8 +1042,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   guest_invite: (p) => {
-    const dateHu = p.weddingDate ? ` **(${p.weddingDate})**` : "";
-    const dateEn = p.weddingDate ? ` **(${p.weddingDate})**` : "";
+    const dateHu = p.weddingDate ? ` **${p.weddingDate}**` : "";
+    const dateEn = p.weddingDate ? ` **${p.weddingDate}**` : "";
     const greetingHuName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
     const greetingEnName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
     return {
@@ -1053,11 +1053,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         preheader: "Egy kattintás — visszajelzés, ételválasztás, szállásigény.",
         greeting: `Szia${greetingHuName}!`,
         paragraphs: [
-          `${p.coupleDisplayName} szeretettel meghívnak az esküvőjükre${dateHu}.`,
-          "A lenti gombra kattintva egyetlen oldalon visszajelezhetsz: jössz-e, mit ennél, kell-e szállás, és van-e zenekívánságod. Bármikor frissítheted, ha valami változna.",
+          `Nagy örömmel osztjuk meg veled, hogy ${p.coupleDisplayName}${dateHu} összekötik az életüket, és szeretnék, ha ezen a különleges napon te is velük ünnepelnél.`,
+          "Az alábbi gombra kattintva jelezheted, hogy számíthatnak-e rád, milyen ételt választanál, szükséged lesz-e szállásra, illetve van-e olyan dal, ami számodra is emlékezetessé tenné az estét.",
+          "A válaszaidat később is bármikor módosíthatod, ha bármi változna.",
         ],
         cta: "Visszajelzés küldése",
-        footnote: "Ha véletlenül kaptad, hagyd figyelmen kívül — semmi sem fog történni.",
+        footnote: "Ha ez a meghívó véletlenül jutott el hozzád, nyugodtan hagyd figyelmen kívül. Semmilyen teendőd nincs vele.",
       },
       en: {
         greeting: `Hi${greetingEnName},`,
