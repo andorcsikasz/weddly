@@ -4895,7 +4895,7 @@ const en: LocaleMessages = {
     last_updated_label: "Last updated",
     last_updated_date: "2026-05-18",
     paragraph_made_in:
-      "I'm {founder}. I've reached the age where more and more of my friends are planning weddings — and slowly so am I. It struck me that this could be done better than getting stuck in an endless triangle of Excel, Google Forms, and back-of-the-napkin sketches.",
+      "I've reached the age where more and more of my friends are planning weddings — and slowly so am I. It struck me that this could be done better than getting stuck in an endless triangle of Excel, Google Forms, and back-of-the-napkin sketches.",
     paragraph_why:
       "I believe a wedding — two people joining their lives together — is one of the biggest and most important things that happens in a person's life. I want that to stay in focus.",
     paragraph_contact_label: "Get in touch",
@@ -4907,6 +4907,7 @@ const en: LocaleMessages = {
       "Your data is yours. Export, pause, or delete on your own terms; no support ticket required.",
     en_section_label: "English",
     founder_placeholder: "Andor Csíkász",
+    founder_first_name: "Andor",
     founder_role: "Founder, Wēddly",
     photo_alt: "Portrait photo of Andor Csíkász",
   },

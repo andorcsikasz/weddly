@@ -4945,7 +4945,7 @@ const hu: LocaleMessages = {
     last_updated_label: "Utolsó frissítés",
     last_updated_date: "2026-05-18",
     paragraph_made_in:
-      "{founder} vagyok. Abba a korba léptem, hogy egyre több barátomnak aktuális az esküvőszervezés — és kicsit nekem is kezd az lenni. Úgy voltam vele, hogy ezt lehet jobban is csinálni, mintsem hogy egy végtelen Excel, Google Form és rajzolgatás háromszögében ragadjon az ember.",
+      "Abba a korba léptem, hogy egyre több barátomnak aktuális az esküvőszervezés — és kicsit nekem is kezd az lenni. Úgy voltam vele, hogy ezt lehet jobban is csinálni, mintsem hogy egy végtelen Excel, Google Form és rajzolgatás háromszögében ragadjon az ember.",
     paragraph_why:
       "Hiszek abban, hogy az esküvő — az, hogy két ember összeköti egymással az életét — az egyik legnagyobb és legfontosabb dolog, ami egy ember életében történik. Szeretném, hogy ez tudjon szem előtt maradni.",
     paragraph_contact_label: "Írjatok nekünk",
@@ -4958,6 +4958,7 @@ const hu: LocaleMessages = {
       "Az adataitok a tiétek. Exportáljátok, szüneteltessétek vagy töröljétek, ahogy szeretnétek; ehhez nem kell ügyfélszolgálat.",
     en_section_label: "English",
     founder_placeholder: "Csíkász Andor",
+    founder_first_name: "Andor",
     founder_role: "Alapító, Wēddly",
     photo_alt: "Csíkász Andor portréfotója",
   },

@@ -5480,6 +5480,7 @@ export interface LocaleMessages {
     en_section_label: string;
     /** Placeholder founder name — replace before going public. */
     founder_placeholder: string;
+    founder_first_name: string;
     founder_role: string;
     photo_alt: string;
   };
