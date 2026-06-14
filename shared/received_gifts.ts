@@ -14,6 +14,9 @@ import type { UnixMs } from "./types";
 export const RECEIVED_GIFT_MAX_TITLE_LEN = 200;
 export const RECEIVED_GIFT_MAX_NOTE_LEN = 1000;
 
+export const RECEIVED_GIFT_CATEGORIES = ["gift", "money", "experience", "voucher"] as const;
+export type ReceivedGiftCategory = (typeof RECEIVED_GIFT_CATEGORIES)[number];
+
 /** Couple-facing received-gift row, returned by `/api/received-gifts`.
  *  `updated_at` is echoed back in `If-Match` for optimistic concurrency,
  *  mirroring WishlistItem / ScheduleEvent. */
@@ -34,6 +37,11 @@ export interface ReceivedGift {
   title: string;
   /** Free-text note (thank-you sent?, where it's stored, …). Null when unset. */
   note: string | null;
+  /** Gift category — defaults to "gift". "money" unlocks the amount_minor field. */
+  category: ReceivedGiftCategory;
+  /** Integer minor-unit amount (e.g. HUF whole forints, EUR cents). Only
+   *  meaningful when category === "money"; null otherwise. */
+  amount_minor: number | null;
   sort_order: number;
   created_at: UnixMs;
   updated_at: UnixMs;
@@ -50,5 +58,7 @@ export interface UpsertReceivedGiftInput {
   guest_id?: number | null;
   title?: string;
   note?: string | null;
+  category?: ReceivedGiftCategory;
+  amount_minor?: number | null;
   sort_order?: number;
 }

@@ -4,9 +4,11 @@
 // couple-only data: never surfaced on the guest page. No money moves.
 
 import {
+  RECEIVED_GIFT_CATEGORIES,
   RECEIVED_GIFT_MAX_NOTE_LEN,
   RECEIVED_GIFT_MAX_TITLE_LEN,
   type ReceivedGift,
+  type ReceivedGiftCategory,
   type UpsertReceivedGiftInput,
 } from "@shared/received_gifts";
 import { db, now } from "../db";
@@ -19,6 +21,8 @@ export interface ReceivedGiftRow {
   guest_id: number | null;
   title: string;
   note: string | null;
+  category: ReceivedGiftCategory;
+  amount_minor: number | null;
   sort_order: number;
   created_at: number;
   updated_at: number;
@@ -32,6 +36,8 @@ export function toReceivedGift(row: ReceivedGiftRow): ReceivedGift {
     guest_id: row.guest_id,
     title: row.title,
     note: row.note,
+    category: row.category ?? "gift",
+    amount_minor: row.amount_minor,
     sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -45,6 +51,8 @@ export interface ParsedReceivedGift {
   guest_id: number | null;
   title: string;
   note: string | null;
+  category: ReceivedGiftCategory;
+  amount_minor: number | null;
   sort_order: number;
 }
 
@@ -133,6 +141,24 @@ function parseSortOrder(raw: unknown, fallback: number): number {
   return n;
 }
 
+function parseCategory(raw: unknown, fallback: ReceivedGiftCategory): ReceivedGiftCategory {
+  if (raw === undefined || raw === null) return fallback;
+  if (!RECEIVED_GIFT_CATEGORIES.includes(raw as ReceivedGiftCategory)) {
+    throw new HttpError(400, `category must be one of: ${RECEIVED_GIFT_CATEGORIES.join(", ")}`);
+  }
+  return raw as ReceivedGiftCategory;
+}
+
+function parseAmountMinor(raw: unknown, category: ReceivedGiftCategory): number | null {
+  if (category !== "money") return null;
+  if (raw === undefined || raw === null || raw === "") return null;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > 1_000_000_000) {
+    throw new HttpError(400, "amount_minor must be a non-negative integer");
+  }
+  return n;
+}
+
 /** A row must carry at least one meaningful field, the grid only persists a
  *  row once it gains content, so an all-empty create is a client bug. */
 function ensureNonEmpty(p: ParsedReceivedGift): void {
@@ -146,11 +172,14 @@ export function parseCreate(
   coupleId: number,
 ): ParsedReceivedGift {
   const alloc = resolveAllocation(body, null, coupleId);
+  const category = parseCategory(body.category, "gift");
   const parsed: ParsedReceivedGift = {
     household_id: alloc.household_id,
     guest_id: alloc.guest_id,
     title: parseTitle(body.title),
     note: parseNote(body.note),
+    category,
+    amount_minor: parseAmountMinor(body.amount_minor, category),
     sort_order: parseSortOrder(body.sort_order, 0),
   };
   ensureNonEmpty(parsed);
@@ -164,11 +193,16 @@ export function parsePatch(
   coupleId: number,
 ): ParsedReceivedGift {
   const alloc = resolveAllocation(body, existing, coupleId);
+  const category = parseCategory(body.category, existing.category ?? "gift");
   return {
     household_id: alloc.household_id,
     guest_id: alloc.guest_id,
     title: body.title === undefined ? existing.title : parseTitle(body.title),
     note: body.note === undefined ? existing.note : parseNote(body.note),
+    category,
+    amount_minor: body.amount_minor === undefined
+      ? (category === "money" ? existing.amount_minor : null)
+      : parseAmountMinor(body.amount_minor, category),
     sort_order: parseSortOrder(body.sort_order, existing.sort_order),
   };
 }
@@ -198,8 +232,8 @@ export function insertReceivedGift(coupleId: number, parsed: ParsedReceivedGift)
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO received_gifts (couple_id, household_id, guest_id, title, note, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO received_gifts (couple_id, household_id, guest_id, title, note, category, amount_minor, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -207,6 +241,8 @@ export function insertReceivedGift(coupleId: number, parsed: ParsedReceivedGift)
       parsed.guest_id,
       parsed.title,
       parsed.note,
+      parsed.category,
+      parsed.amount_minor,
       parsed.sort_order,
       ts,
       ts,
@@ -222,13 +258,15 @@ export function updateReceivedGift(
 ): ReceivedGiftRow {
   const ts = now();
   db.prepare(
-    `UPDATE received_gifts SET household_id = ?, guest_id = ?, title = ?, note = ?, sort_order = ?, updated_at = ?
+    `UPDATE received_gifts SET household_id = ?, guest_id = ?, title = ?, note = ?, category = ?, amount_minor = ?, sort_order = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.household_id,
     parsed.guest_id,
     parsed.title,
     parsed.note,
+    parsed.category,
+    parsed.amount_minor,
     parsed.sort_order,
     ts,
     id,

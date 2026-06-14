@@ -10,15 +10,18 @@
 // couple types into the form.
 
 import {
+  RECEIVED_GIFT_CATEGORIES,
   RECEIVED_GIFT_MAX_NOTE_LEN,
   RECEIVED_GIFT_MAX_TITLE_LEN,
   type ReceivedGift,
+  type ReceivedGiftCategory,
 } from "@shared/received_gifts";
 import type { Couple, Guest, Household } from "@shared/types";
 import { CURRENCIES, type Currency } from "@shared/types";
 import type { UpsertWishlistItemInput, WishlistItem, WishlistKind } from "@shared/wishlist";
 import { WISHLIST_KINDS, WISHLIST_MAX_DESC_LEN, WISHLIST_MAX_TITLE_LEN } from "@shared/wishlist";
 import {
+  Banknote,
   Camera,
   ChevronDown,
   ExternalLink,
@@ -31,6 +34,8 @@ import {
   PenLine,
   Plus,
   Rows3,
+  Sparkles,
+  Tag,
   Trash2,
   Users,
   X,
@@ -393,6 +398,8 @@ interface RGRow {
   guest_id: number | null;
   title: string;
   note: string;
+  category: ReceivedGiftCategory;
+  amount_minor: number | null;
   updated_at: number | null;
   savedSig: string;
 }
@@ -404,8 +411,10 @@ function rgSig(
   guestId: number | null,
   title: string,
   note: string,
+  category: ReceivedGiftCategory,
+  amountMinor: number | null,
 ): string {
-  return JSON.stringify([householdId, guestId, title.trim(), note.trim()]);
+  return JSON.stringify([householdId, guestId, title.trim(), note.trim(), category, amountMinor]);
 }
 function rgNonEmpty(r: RGRow): boolean {
   return (
@@ -430,15 +439,26 @@ function rgParseSelectValue(v: string): { household_id: number | null; guest_id:
  *  always at least 5 rows and always 2 trailing empties, so there's room to
  *  keep typing. Each row persists on blur (create / update / delete) with the
  *  same optimistic-concurrency contract as the wishlist. */
+const CATEGORY_ICONS: Record<ReceivedGiftCategory, typeof Gift> = {
+  gift: Gift,
+  money: Banknote,
+  experience: Sparkles,
+  voucher: Tag,
+};
+
 function ReceivedGiftsTable({
   initialItems,
   guests,
   households,
+  couple,
+  locale,
   t,
 }: {
   initialItems: ReceivedGift[];
   guests: Guest[];
   households: Household[];
+  couple: Couple;
+  locale: string;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const toast = useToast();
@@ -462,8 +482,10 @@ function ReceivedGiftsTable({
     guest_id: null,
     title: "",
     note: "",
+    category: "gift",
+    amount_minor: null,
     updated_at: null,
-    savedSig: rgSig(null, null, "", ""),
+    savedSig: rgSig(null, null, "", "", "gift", null),
   });
 
   /** Normalise the trailing empties: keep every row up to the last filled one
@@ -493,8 +515,10 @@ function ReceivedGiftsTable({
         guest_id: it.guest_id,
         title: it.title,
         note: it.note ?? "",
+        category: it.category,
+        amount_minor: it.amount_minor,
         updated_at: it.updated_at,
-        savedSig: rgSig(it.household_id, it.guest_id, it.title, it.note ?? ""),
+        savedSig: rgSig(it.household_id, it.guest_id, it.title, it.note ?? "", it.category, it.amount_minor),
       })),
     ),
   );
@@ -510,7 +534,7 @@ function ReceivedGiftsTable({
     // we snapshot it synchronously here for the async work.
     const r = rows.find((x) => x.key === key);
     if (!r) return;
-    const sig = rgSig(r.household_id, r.guest_id, r.title, r.note);
+    const sig = rgSig(r.household_id, r.guest_id, r.title, r.note, r.category, r.amount_minor);
     if (sig === r.savedSig) {
       setRows((prev) => withTail(prev));
       return;
@@ -522,6 +546,8 @@ function ReceivedGiftsTable({
       guest_id: r.guest_id,
       title: r.title.trim(),
       note: r.note.trim() || null,
+      category: r.category,
+      amount_minor: r.category === "money" ? r.amount_minor : null,
     };
     try {
       if (r.id === null) {
@@ -531,7 +557,7 @@ function ReceivedGiftsTable({
         setRows((prev) => withTail(prev));
       } else if (!rgNonEmpty(r)) {
         await receivedGiftApi.remove(r.id);
-        patchRow(key, { id: null, updated_at: null, savedSig: rgSig(null, null, "", "") });
+        patchRow(key, { id: null, updated_at: null, savedSig: rgSig(null, null, "", "", "gift", null) });
         setRows((prev) => withTail(prev));
       } else {
         // Last-write-wins by design: this is an auto-saving grid where tabbing
@@ -566,6 +592,8 @@ function ReceivedGiftsTable({
   const rowBubble =
     "flex items-center gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 shadow-sm dark:border-umber-700 dark:bg-ink-800";
 
+  const cur = couple.currency;
+
   // Standalone bubble rows: each band is its own rounded card, gaps between
   // them, no enclosing table - kept uniform with the budget page's ledger.
   return (
@@ -573,12 +601,16 @@ function ReceivedGiftsTable({
       <div className="mb-1 flex items-center gap-3 px-4 text-xs font-medium text-ink-500 dark:text-umber-300">
         <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_guest")}</span>
         <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_gift")}</span>
+        <span className="w-32 shrink-0">{t("wishlist_editor.received_col_category")}</span>
+        <span className="w-28 shrink-0">{t("wishlist_editor.received_col_amount")}</span>
         <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_note")}</span>
         <span className="w-8 shrink-0" aria-hidden />
       </div>
 
       <div className="space-y-2">
-        {rows.map((r) => (
+        {rows.map((r) => {
+          const CatIcon = CATEGORY_ICONS[r.category];
+          return (
           <div key={r.key} className={rowBubble}>
             {/* Household-or-guest picker. Native arrow kept (no appearance-none)
                 as the only affordance, since the unassigned state shows a blank
@@ -610,14 +642,68 @@ function ReceivedGiftsTable({
             <input
               type="text"
               className={`${cellInput} min-w-0 flex-1 font-grotesk`}
+              placeholder={t("wishlist_editor.received_gift_placeholder")}
               value={r.title}
               maxLength={RECEIVED_GIFT_MAX_TITLE_LEN}
               onChange={(e) => patchRow(r.key, { title: e.target.value })}
               onBlur={() => void commit(r.key)}
             />
+            {/* Category picker with icon */}
+            <div className="flex w-32 shrink-0 items-center gap-1.5">
+              <CatIcon size={14} className="shrink-0 text-ink-400 dark:text-umber-400" aria-hidden />
+              <select
+                className={`${cellInput} cursor-pointer`}
+                value={r.category}
+                onChange={(e) => {
+                  const cat = e.target.value as ReceivedGiftCategory;
+                  patchRow(r.key, { category: cat, amount_minor: cat !== "money" ? null : r.amount_minor });
+                }}
+                onBlur={() => void commit(r.key)}
+                aria-label={t("wishlist_editor.received_col_category")}
+              >
+                {RECEIVED_GIFT_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {t(`wishlist_editor.received_cat_${c}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Amount — only relevant for money category */}
+            <div className="w-28 shrink-0">
+              {r.category === "money" ? (
+                <div className="flex items-center gap-1">
+                  <Banknote size={13} className="shrink-0 text-ink-400 dark:text-umber-400" aria-hidden />
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    className={`${cellInput} w-full`}
+                    value={r.amount_minor !== null ? (cur === "HUF" ? r.amount_minor : r.amount_minor / 100) : ""}
+                    placeholder={currencySymbol(cur)}
+                    onChange={(e) => {
+                      const raw = e.target.value.trim();
+                      if (raw === "") {
+                        patchRow(r.key, { amount_minor: null });
+                      } else {
+                        const whole = Number(raw);
+                        if (!Number.isNaN(whole) && whole >= 0) {
+                          patchRow(r.key, { amount_minor: Math.round(whole * minorFactor(cur)) });
+                        }
+                      }
+                    }}
+                    onBlur={() => void commit(r.key)}
+                    aria-label={t("wishlist_editor.received_col_amount")}
+                  />
+                  <span className="shrink-0 text-xs text-ink-400 dark:text-umber-400">{cur}</span>
+                </div>
+              ) : (
+                <span />
+              )}
+            </div>
             <input
               type="text"
               className={`${cellInput} min-w-0 flex-1 font-grotesk`}
+              placeholder={t("wishlist_editor.received_note_placeholder")}
               value={r.note}
               maxLength={RECEIVED_GIFT_MAX_NOTE_LEN}
               onChange={(e) => patchRow(r.key, { note: e.target.value })}
@@ -637,7 +723,8 @@ function ReceivedGiftsTable({
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -1023,12 +1110,16 @@ export default function WishlistEditorPage() {
                 <p className="mb-3 max-w-2xl text-sm text-ink-500 dark:text-umber-300">
                   {t("wishlist_editor.section_received_subtitle")}
                 </p>
-                <ReceivedGiftsTable
-                  initialItems={received}
-                  guests={guests}
-                  households={households}
-                  t={t}
-                />
+                {couple && (
+                  <ReceivedGiftsTable
+                    initialItems={received}
+                    guests={guests}
+                    households={households}
+                    couple={couple}
+                    locale={locale}
+                    t={t}
+                  />
+                )}
               </CollapsibleSection>
             </>
           )}

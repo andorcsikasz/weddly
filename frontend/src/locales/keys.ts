@@ -2322,10 +2322,16 @@ export interface LocaleMessages {
     received_private_badge: string;
     received_col_guest: string;
     received_col_gift: string;
+    received_col_category: string;
+    received_col_amount: string;
     received_col_note: string;
     received_guest_none: string;
     received_gift_placeholder: string;
     received_note_placeholder: string;
+    received_cat_gift: string;
+    received_cat_money: string;
+    received_cat_experience: string;
+    received_cat_voucher: string;
   };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {
