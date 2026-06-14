@@ -1190,22 +1190,6 @@ export default function DashboardPage() {
             }
             onToggle={tasksDone >= tasksTotal ? () => setRsvpOpen((v) => !v) : undefined}
             expanded={tasksDone >= tasksTotal ? rsvpOpen : undefined}
-            expandedContent={
-              <div>
-                <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-                  <Segment count={rsvp.yes} total={Math.max(totalGuests, 1)} className="bg-emerald-500" />
-                  <Segment count={rsvp.maybe} total={Math.max(totalGuests, 1)} className="bg-amber-400" />
-                  <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-red-500" />
-                  <Segment count={rsvp.pending} total={Math.max(totalGuests, 1)} className="bg-slate-300" />
-                </div>
-                <ul className="mt-2 divide-y divide-paper-100 dark:divide-umber-700">
-                  <RsvpRow status="yes" swatch="bg-emerald-500" label={t("dashboard.rsvp_yes")} value={rsvp.yes} total={totalGuests} locale={locale} />
-                  <RsvpRow status="maybe" swatch="bg-amber-400" label={t("dashboard.rsvp_maybe")} value={rsvp.maybe} total={totalGuests} locale={locale} />
-                  <RsvpRow status="no" swatch="bg-red-500" label={t("dashboard.rsvp_no")} value={rsvp.no} total={totalGuests} locale={locale} />
-                  <RsvpRow status="pending" swatch="bg-slate-300" label={t("dashboard.rsvp_pending")} value={rsvp.pending} total={totalGuests} locale={locale} />
-                </ul>
-              </div>
-            }
           />
           <BudgetKpiTile
             label={t("dashboard.kpi_budget_label")}
@@ -1249,6 +1233,27 @@ export default function DashboardPage() {
         </section>
       )}
 
+      {/* RSVP detail card — appears directly below the KPI strip when the
+          chart icon on the RSVPS IN tile is toggled. Sits in column 2 of the
+          same 2/4-col grid so it aligns under the RSVPS IN tile. */}
+      {!dayOfMode && tasksDone >= tasksTotal && rsvpOpen && (
+        <div className="-mt-5 mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="col-start-2 card p-4 !border-ink-700 dark:!border-paper-100">
+            <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+              <Segment count={rsvp.yes} total={Math.max(totalGuests, 1)} className="bg-emerald-500" />
+              <Segment count={rsvp.maybe} total={Math.max(totalGuests, 1)} className="bg-amber-400" />
+              <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-red-500" />
+              <Segment count={rsvp.pending} total={Math.max(totalGuests, 1)} className="bg-slate-300" />
+            </div>
+            <ul className="mt-2 divide-y divide-paper-100 dark:divide-umber-700">
+              <RsvpRow status="yes" swatch="bg-emerald-500" label={t("dashboard.rsvp_yes")} value={rsvp.yes} total={totalGuests} locale={locale} />
+              <RsvpRow status="maybe" swatch="bg-amber-400" label={t("dashboard.rsvp_maybe")} value={rsvp.maybe} total={totalGuests} locale={locale} />
+              <RsvpRow status="no" swatch="bg-red-500" label={t("dashboard.rsvp_no")} value={rsvp.no} total={totalGuests} locale={locale} />
+              <RsvpRow status="pending" swatch="bg-slate-300" label={t("dashboard.rsvp_pending")} value={rsvp.pending} total={totalGuests} locale={locale} />
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* ── Planning-mode body — hidden in day-of mode so the screen
           stays focused on the jumbo check-in panel. ───────────────── */}
@@ -1466,7 +1471,6 @@ function KpiTile({
   accent,
   onToggle,
   expanded,
-  expandedContent,
 }: {
   label: string;
   icon: ReactNode;
@@ -1477,21 +1481,13 @@ function KpiTile({
   accent?: "blush";
   onToggle?: () => void;
   expanded?: boolean;
-  expandedContent?: ReactNode;
 }) {
   const accentBg =
     accent === "blush" ? "bg-blush-50 dark:bg-blush-400/15" : "bg-paper-50 dark:bg-umber-700/60";
   const accentRing =
     accent === "blush" ? "text-blush-700 dark:text-blush-300" : "text-ink-700 dark:text-paper-100";
   return (
-    <div
-      className={`card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100 ${onToggle ? "cursor-pointer select-none" : ""}`}
-      onClick={onToggle}
-      role={onToggle ? "button" : undefined}
-      aria-label={onToggle ? (expanded ? "Hide RSVP breakdown" : "Show RSVP breakdown") : undefined}
-      tabIndex={onToggle ? 0 : undefined}
-      onKeyDown={onToggle ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } } : undefined}
-    >
+    <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span
           className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${accentBg} ${accentRing}`}
@@ -1500,9 +1496,19 @@ function KpiTile({
         </span>
         {label}
         {onToggle && (
-          <span className="ml-auto flex items-center justify-center rounded p-0.5 text-ink-400 dark:text-umber-400">
+          <button
+            type="button"
+            onClick={onToggle}
+            className={`ml-auto flex items-center justify-center rounded p-0.5 transition-colors ${
+              expanded
+                ? "text-umber-600 dark:text-umber-300"
+                : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
+            }`}
+            aria-label={expanded ? "Hide RSVP breakdown" : "Show RSVP breakdown"}
+            aria-pressed={expanded}
+          >
             <BarChart2 size={13} />
-          </span>
+          </button>
         )}
       </div>
       <div className="stat-num mt-2 text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
@@ -1519,14 +1525,6 @@ function KpiTile({
             }`}
             style={{ width: `${Math.max(2, progress)}%` }}
           />
-        </div>
-      )}
-      {expanded && expandedContent && (
-        <div
-          className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-700"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {expandedContent}
         </div>
       )}
     </div>
