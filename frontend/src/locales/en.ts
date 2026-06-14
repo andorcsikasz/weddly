@@ -4130,6 +4130,7 @@ const en: LocaleMessages = {
     thanks_open_site: "Open the wedding page →",
     thanks_plan_your_own: "Planning your own wedding? Try Weddly free →",
     redirect_hint: "Opening the wedding page in {n}s…",
+    add_to_calendar_section: "Save the date",
     add_to_google_calendar: "Google Calendar",
     add_to_ical: "Apple / iCal",
     edit_responses: "Edit my responses",

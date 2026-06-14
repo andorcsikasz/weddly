@@ -4674,6 +4674,7 @@ export interface LocaleMessages {
     thanks_plan_your_own: string;
     /** Countdown caption on the post-RSVP auto-redirect runner. {n} = seconds. */
     redirect_hint: string;
+    add_to_calendar_section: string;
     add_to_google_calendar: string;
     add_to_ical: string;
     /** Re-opens the collapsed RSVP inputs after a self-serve guest submitted. */
