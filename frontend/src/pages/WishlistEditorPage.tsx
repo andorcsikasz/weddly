@@ -435,6 +435,164 @@ function rgParseSelectValue(v: string): { household_id: number | null; guest_id:
   return { household_id: null, guest_id: null };
 }
 
+/** Type-ahead combobox for the "From" column. Shows a text input that
+ *  filters the household → guest tree on keystroke; the dropdown renders
+ *  households as non-indented category headers and their members indented
+ *  below. Selecting commits via the natural input blur; `onMouseDown` +
+ *  `preventDefault()` on list buttons ensures the input never loses focus
+ *  mid-selection, so blur only fires when the user truly leaves the field. */
+function FromCombobox({
+  value,
+  allocationGroups,
+  onChange,
+  onBlur,
+  ariaLabel,
+  cellInput,
+}: {
+  value: string;
+  allocationGroups: { h: { id: number; label: string }; members: { id: number; full_name: string }[] }[];
+  onChange: (val: string) => void;
+  onBlur: () => void;
+  ariaLabel: string;
+  cellInput: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  function getLabel(val: string): string {
+    if (!val) return "";
+    if (val.startsWith("h:")) {
+      const id = Number(val.slice(2));
+      return allocationGroups.find(({ h }) => h.id === id)?.h.label ?? "";
+    }
+    if (val.startsWith("g:")) {
+      const id = Number(val.slice(2));
+      for (const { members } of allocationGroups) {
+        const m = members.find((mem) => mem.id === id);
+        if (m) return m.full_name;
+      }
+    }
+    return "";
+  }
+
+  const q = query.toLowerCase();
+  const filtered = allocationGroups
+    .map(({ h, members }) => {
+      if (q === "") return { h, members };
+      const hMatch = h.label.toLowerCase().includes(q);
+      const matched = hMatch
+        ? members
+        : members.filter((m) => m.full_name.toLowerCase().includes(q));
+      return { h, members: matched };
+    })
+    .filter(({ members }) => members.length > 0);
+
+  function select(val: string) {
+    onChange(val);
+    setOpen(false);
+    setQuery("");
+    // Commit fires on the natural input blur when focus moves away.
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative min-w-0 flex-1">
+      <input
+        type="text"
+        autoComplete="off"
+        className={`${cellInput} w-full cursor-pointer font-grotesk ${
+          !value ? "text-ink-400 dark:text-umber-400" : ""
+        }`}
+        value={open ? query : getLabel(value)}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          if (!open) setOpen(true);
+        }}
+        onFocus={() => {
+          setQuery("");
+          setOpen(true);
+        }}
+        onBlur={() => {
+          setOpen(false);
+          setQuery("");
+          onBlur();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setOpen(false);
+            setQuery("");
+          }
+          if (e.key === "Enter" && filtered.length > 0) {
+            const first = filtered[0];
+            const firstMember = first?.members[0];
+            if (firstMember) select(`g:${firstMember.id}`);
+          }
+        }}
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      />
+      {open && (
+        <div
+          role="listbox"
+          className="absolute left-0 top-full z-50 mt-0.5 max-h-56 w-max min-w-full overflow-y-auto rounded-xl border border-paper-200 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          {/* Unassign option */}
+          <button
+            type="button"
+            role="option"
+            aria-selected={value === ""}
+            onMouseDown={(e) => { e.preventDefault(); select(""); }}
+            className="block w-full px-3 py-1.5 text-left text-sm text-ink-400 hover:bg-paper-100 dark:text-umber-500 dark:hover:bg-umber-700"
+          >
+            —
+          </button>
+          {filtered.map(({ h, members }) => (
+            <div key={h.id}>
+              {/* Household — selectable; styled as a compact category label */}
+              <button
+                type="button"
+                role="option"
+                aria-selected={value === `h:${h.id}`}
+                onMouseDown={(e) => { e.preventDefault(); select(`h:${h.id}`); }}
+                className={`block w-full px-3 py-1 text-left text-[11px] font-semibold uppercase tracking-wide hover:bg-paper-100 dark:hover:bg-umber-700 ${
+                  value === `h:${h.id}`
+                    ? "text-ink-800 dark:text-paper-50"
+                    : "text-ink-500 dark:text-umber-400"
+                }`}
+              >
+                {h.label}
+              </button>
+              {/* Members — indented under their household */}
+              {members.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="option"
+                  aria-selected={value === `g:${m.id}`}
+                  onMouseDown={(e) => { e.preventDefault(); select(`g:${m.id}`); }}
+                  className={`block w-full py-1.5 pl-7 pr-3 text-left text-sm hover:bg-paper-100 dark:hover:bg-umber-700 ${
+                    value === `g:${m.id}`
+                      ? "font-medium text-ink-900 dark:text-paper-50"
+                      : "text-ink-700 dark:text-paper-100"
+                  }`}
+                >
+                  {m.full_name}
+                </button>
+              ))}
+            </div>
+          ))}
+          {q !== "" && filtered.length === 0 && (
+            <div className="px-3 py-2 text-sm text-ink-400 dark:text-umber-500">
+              {ariaLabel} not found
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** The couple's private "what we received" ledger as an auto-growing grid:
  *  always at least 5 rows and always 2 trailing empties, so there's room to
  *  keep typing. Each row persists on blur (create / update / delete) with the
@@ -612,33 +770,14 @@ function ReceivedGiftsTable({
           const CatIcon = CATEGORY_ICONS[r.category];
           return (
           <div key={r.key} className={rowBubble}>
-            {/* Household-or-guest picker. Native arrow kept (no appearance-none)
-                as the only affordance, since the unassigned state shows a blank
-                label rather than repeating "no one" down every row. Households
-                are top-level options; their members are indented beneath. */}
-            <select
-              className={`${cellInput} min-w-0 flex-1 cursor-pointer font-grotesk ${
-                r.household_id === null && r.guest_id === null
-                  ? "text-ink-400 dark:text-umber-400"
-                  : ""
-              }`}
+            <FromCombobox
               value={rgSelectValue(r)}
-              onChange={(e) => patchRow(r.key, rgParseSelectValue(e.target.value))}
+              allocationGroups={allocationGroups}
+              onChange={(val) => patchRow(r.key, rgParseSelectValue(val))}
               onBlur={() => void commit(r.key)}
-              aria-label={t("wishlist_editor.received_col_guest")}
-            >
-              <option value="" aria-label={t("wishlist_editor.received_guest_none")} />
-              {allocationGroups.flatMap(({ h, members }) => [
-                <option key={`h-${h.id}`} value={`h:${h.id}`}>
-                  {h.label}
-                </option>,
-                ...members.map((m) => (
-                  <option key={`g-${m.id}`} value={`g:${m.id}`}>
-                    {`  ${m.full_name}`}
-                  </option>
-                )),
-              ])}
-            </select>
+              ariaLabel={t("wishlist_editor.received_col_guest")}
+              cellInput={cellInput}
+            />
             <input
               type="text"
               className={`${cellInput} min-w-0 flex-1 font-grotesk`}
