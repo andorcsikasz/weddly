@@ -458,7 +458,7 @@ function ReceivedGiftsTable({
   guests: Guest[];
   households: Household[];
   couple: Couple;
-  locale: string;
+  locale: "hu" | "en";
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const toast = useToast();
@@ -602,7 +602,7 @@ function ReceivedGiftsTable({
         <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_guest")}</span>
         <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_gift")}</span>
         <span className="w-32 shrink-0">{t("wishlist_editor.received_col_category")}</span>
-        <span className="w-28 shrink-0">{t("wishlist_editor.received_col_amount")}</span>
+        <span className="w-36 shrink-0">{t("wishlist_editor.received_col_amount")}</span>
         <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_note")}</span>
         <span className="w-8 shrink-0" aria-hidden />
       </div>
@@ -669,23 +669,24 @@ function ReceivedGiftsTable({
               </select>
             </div>
             {/* Amount — only relevant for money category */}
-            <div className="w-28 shrink-0">
+            <div className="w-36 shrink-0">
               {r.category === "money" ? (
                 <div className="flex items-center gap-1">
                   <Banknote size={13} className="shrink-0 text-ink-400 dark:text-umber-400" aria-hidden />
                   <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    className={`${cellInput} w-full`}
-                    value={r.amount_minor !== null ? (cur === "HUF" ? r.amount_minor : r.amount_minor / 100) : ""}
+                    type="text"
+                    inputMode="numeric"
+                    className={`${cellInput} w-full tabular-nums`}
+                    value={r.amount_minor !== null
+                      ? formatNumber(minorToWhole(r.amount_minor, cur), locale)
+                      : ""}
                     placeholder={currencySymbol(cur)}
                     onChange={(e) => {
-                      const raw = e.target.value.trim();
-                      if (raw === "") {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      if (digits === "") {
                         patchRow(r.key, { amount_minor: null });
                       } else {
-                        const whole = Number(raw);
+                        const whole = Number(digits);
                         if (!Number.isNaN(whole) && whole >= 0) {
                           patchRow(r.key, { amount_minor: Math.round(whole * minorFactor(cur)) });
                         }
