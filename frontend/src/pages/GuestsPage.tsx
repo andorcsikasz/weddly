@@ -531,20 +531,32 @@ export default function GuestsPage() {
     return m;
   }, [guests]);
 
-  const orphanGuests = useMemo(() => guests.filter((g) => g.household_id == null), [guests]);
+  // Guests and households excluding the couple themselves — the bride/groom
+  // are tracked in the DB for headcount and seating, but don't belong in the
+  // guest management list (they're hosts, not invitees).
+  const listableGuests = useMemo(() => guests.filter((g) => !g.partner_role), [guests]);
+  const listableHouseholds = useMemo(
+    () => households.filter((hh) => !hh.is_couple_household),
+    [households],
+  );
+
+  const orphanGuests = useMemo(
+    () => listableGuests.filter((g) => g.household_id == null),
+    [listableGuests],
+  );
 
   const rsvpFilteredGuests = useMemo(
-    () => (rsvpFilter ? guests.filter((g) => g.rsvp_status === rsvpFilter) : []),
-    [guests, rsvpFilter],
+    () => (rsvpFilter ? listableGuests.filter((g) => g.rsvp_status === rsvpFilter) : []),
+    [listableGuests, rsvpFilter],
   );
   const invitedFilteredGuests = useMemo(
-    () => (invitedFilter ? guests.filter((g) => g.invited_at != null) : []),
-    [guests, invitedFilter],
+    () => (invitedFilter ? listableGuests.filter((g) => g.invited_at != null) : []),
+    [listableGuests, invitedFilter],
   );
   // Closed households = multi-member households (explicitly grouped units).
   const closedHouseholds = useMemo(
-    () => households.filter((hh) => hh.member_ids.length > 1),
-    [households],
+    () => listableHouseholds.filter((hh) => hh.member_ids.length > 1),
+    [listableHouseholds],
   );
   const closedHouseholdIds = useMemo(
     () => new Set(closedHouseholds.map((hh) => hh.id)),
@@ -906,7 +918,7 @@ export default function GuestsPage() {
       ) : debouncedQuery ? (
         <SearchResults
           loading={searching}
-          guests={searchResults ?? []}
+          guests={(searchResults ?? []).filter((g) => !g.partner_role)}
           onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
           onPrintPlaceCard={onPrintPlaceCard}
         />
@@ -963,7 +975,7 @@ export default function GuestsPage() {
         </div>
       ) : (
         <div ref={listRef} className="space-y-4">
-          {(virtualReveal ? households : households.slice(0, 100)).map((hh) => (
+          {(virtualReveal ? listableHouseholds : listableHouseholds.slice(0, 100)).map((hh) => (
             // `content-visibility: auto` lets the browser skip layout +
             // paint for offscreen household cards. `contain-intrinsic-size`
             // gives it a placeholder height so the scrollbar still tracks
