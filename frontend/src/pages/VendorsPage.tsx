@@ -20,12 +20,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { Fragment, type CSSProperties, type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from "react";
+import { Fragment, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { ApiError } from "../lib/api";
-import { vendorWaitlistApi } from "../lib/endpoints";
+import { placesApi, vendorWaitlistApi } from "../lib/endpoints";
+import type { PlaceSuggestion } from "@shared/types";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -356,6 +357,13 @@ function WaitlistContact() {
     const d = loadDraft();
     return typeof d?.travelRadiusKm === "string" ? d.travelRadiusKm : "";
   });
+  // Location autocomplete state
+  const [locationSuggestions, setLocationSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [locationSuggestOpen, setLocationSuggestOpen] = useState(false);
+  const [locationHighlight, setLocationHighlight] = useState(-1);
+  const locationWrapperRef = useRef<HTMLDivElement>(null);
+  const locationRequestId = useRef(0);
+
   const [priceList, setPriceList] = useState<File | null>(null);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -374,6 +382,67 @@ function WaitlistContact() {
       // storage unavailable — ignore
     }
   }, [businessName, email, category, location, website, message, instagram, portfolioLinks, travelRadiusKm]);
+
+  // Debounced Nominatim fetch for location suggestions
+  useEffect(() => {
+    const q = location.trim();
+    if (q.length < 2) {
+      setLocationSuggestions([]);
+      return;
+    }
+    const myId = ++locationRequestId.current;
+    const handle = setTimeout(async () => {
+      try {
+        const r = await placesApi.search(q);
+        if (myId !== locationRequestId.current) return;
+        setLocationSuggestions(r.places);
+        setLocationHighlight(-1);
+        setLocationSuggestOpen(true);
+      } catch {
+        if (myId !== locationRequestId.current) return;
+        setLocationSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [location]);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (!locationWrapperRef.current?.contains(e.target as Node)) {
+        setLocationSuggestOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  function pickLocationSuggestion(s: PlaceSuggestion) {
+    setLocation(s.secondary || s.primary);
+    setLocationSuggestions([]);
+    setLocationSuggestOpen(false);
+  }
+
+  function onLocationKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (locationSuggestions.length === 0) return;
+      setLocationSuggestOpen(true);
+      setLocationHighlight((h) => (h + 1) % locationSuggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (locationSuggestions.length === 0) return;
+      setLocationSuggestOpen(true);
+      setLocationHighlight((h) => (h <= 0 ? locationSuggestions.length - 1 : h - 1));
+    } else if (e.key === "Enter") {
+      if (locationSuggestOpen && locationHighlight >= 0 && locationSuggestions[locationHighlight]) {
+        e.preventDefault();
+        pickLocationSuggestion(locationSuggestions[locationHighlight]);
+      }
+      // else: let normal Enter handling flow (form's onKeyDown guard)
+    } else if (e.key === "Escape") {
+      setLocationSuggestOpen(false);
+    }
+  }
 
   const portfolioHintKey = useMemo<string>(() => {
     if (!category) return "vendors.portfolio_hint_default";
@@ -625,7 +694,7 @@ function WaitlistContact() {
                   {t("vendors.form_location_label")}
                 </label>
                 <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
+                  <div ref={locationWrapperRef} className="relative flex-1">
                     <MapPin
                       size={16}
                       className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
@@ -635,10 +704,60 @@ function WaitlistContact() {
                       id="vendor-location"
                       className="input pl-9"
                       value={location}
-                      onChange={(e) => setLocation(e.target.value)}
+                      onChange={(e) => {
+                        setLocation(e.target.value);
+                        setLocationSuggestOpen(true);
+                      }}
+                      onFocus={() => locationSuggestions.length > 0 && setLocationSuggestOpen(true)}
+                      onKeyDown={onLocationKeyDown}
                       maxLength={500}
                       placeholder={t("vendors.form_location_placeholder")}
+                      aria-autocomplete="list"
+                      aria-expanded={locationSuggestOpen}
+                      autoComplete="off"
                     />
+                    {locationSuggestOpen && locationSuggestions.length > 0 && (
+                      <ul
+                        role="listbox"
+                        className="absolute left-0 right-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-paper-300 bg-white py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+                      >
+                        {locationSuggestions.map((s, i) => (
+                          <li key={`${s.primary}-${i}`}>
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={i === locationHighlight}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                pickLocationSuggestion(s);
+                              }}
+                              onMouseEnter={() => setLocationHighlight(i)}
+                              className={`flex w-full items-start gap-2 px-3 py-2 text-left ${
+                                i === locationHighlight
+                                  ? "bg-blush-50 dark:bg-blush-400/15"
+                                  : "hover:bg-paper-50 dark:hover:bg-umber-700"
+                              }`}
+                            >
+                              <MapPin
+                                size={14}
+                                className="mt-0.5 shrink-0 text-blush-700 dark:text-blush-300"
+                                aria-hidden
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+                                  {s.primary}
+                                </span>
+                                {s.secondary && s.secondary !== s.primary && (
+                                  <span className="block truncate text-[11px] text-ink-500 dark:text-umber-300">
+                                    {s.secondary}
+                                  </span>
+                                )}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                   {travelRelevant && (
                     <div className="flex shrink-0 flex-col items-end gap-0.5">
