@@ -9,11 +9,13 @@ import {
   FlagOff,
   FlaskConical,
   Gift,
+  Heart,
   History,
   Mail,
   RefreshCw,
   Search,
   Trash2,
+  User,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -959,23 +961,26 @@ export default function AdminUsersPage() {
         subtitle={t("admin.users_sub")}
         actions={
           !loading ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex divide-x divide-paper-200 overflow-hidden rounded-2xl shadow-sm ring-1 ring-paper-300 dark:divide-umber-700 dark:ring-umber-700">
               {(
                 [
-                  { key: "couples", label: t("admin.stat_couples"), value: totalCouplePairs },
-                  { key: "solo", label: t("admin.stat_solo"), value: totalSoloWorkspaces },
-                  { key: "beta", label: t("admin.stat_beta"), value: betaCouples.length },
-                  { key: "demo", label: t("admin.stat_demo"), value: demoCouples.length },
+                  { key: "couples", label: t("admin.stat_couples"), value: totalCouplePairs, icon: Heart },
+                  { key: "solo", label: t("admin.stat_solo"), value: totalSoloWorkspaces, icon: User },
+                  { key: "beta", label: t("admin.stat_beta"), value: betaCouples.length, icon: FlaskConical },
+                  { key: "demo", label: t("admin.stat_demo"), value: demoCouples.length, icon: Bird },
                 ] as const
-              ).map(({ key, label, value }) => (
+              ).map(({ key, label, value, icon: Icon }) => (
                 <div
                   key={key}
-                  className="flex min-w-[4.5rem] flex-col items-center rounded-lg border border-paper-300 bg-white px-3 py-2 dark:border-umber-700 dark:bg-umber-800/40"
+                  className="flex flex-col items-center gap-1 bg-white px-5 py-3 dark:bg-umber-800/60"
                 >
-                  <span className="text-lg font-semibold tabular-nums leading-none text-umber-900 dark:text-paper-100">
+                  <Icon size={12} className="text-neutral-400 dark:text-umber-500" aria-hidden />
+                  <span className="text-2xl font-bold tabular-nums leading-none tracking-tight text-umber-900 dark:text-paper-100">
                     {value}
                   </span>
-                  <span className="mt-1 text-[11px] text-neutral-500 dark:text-umber-400">{label}</span>
+                  <span className="text-[9px] uppercase tracking-widest text-neutral-400 dark:text-umber-500">
+                    {label}
+                  </span>
                 </div>
               ))}
             </div>
