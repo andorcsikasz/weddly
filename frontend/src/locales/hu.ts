@@ -2374,6 +2374,8 @@ const hu: LocaleMessages = {
     invite_state_cycle_to_invited: "Kattints a meghívottá jelöléshez",
     invite_state_cycle_to_delivered: "Kattints, ha átadtátok a meghívót",
     invite_state_cycle_to_clear: "Kattints a visszavonáshoz",
+    invite_email_opened: "Email megnyitva",
+    invite_email_opened_at: "Email megnyitva: {date}",
     total_summary_unit: "vendég",
     total_summary_households: "{n} háztartás",
     total_summary_invited: "{n} meghívva",

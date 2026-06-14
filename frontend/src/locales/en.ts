@@ -2348,6 +2348,8 @@ const en: LocaleMessages = {
     invite_state_cycle_to_invited: "Click to mark as invited",
     invite_state_cycle_to_delivered: "Click once the invitation is handed over",
     invite_state_cycle_to_clear: "Click to clear",
+    invite_email_opened: "Email opened",
+    invite_email_opened_at: "Email opened {date}",
     total_summary_unit: "guests",
     total_summary_households: "{n} households",
     total_summary_invited: "{n} invited",

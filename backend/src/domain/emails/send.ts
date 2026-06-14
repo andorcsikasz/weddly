@@ -17,6 +17,7 @@ import { CONFIG } from "../../config";
 import { db, now } from "../../db";
 import { sendEmail } from "../../lib/mailer";
 import { reportError } from "../../lib/observability";
+import { makeOpenTrackingToken } from "../../routes/email_track";
 import { type EmailKind, KIND_CATEGORY } from "./kinds";
 import { recordEmailAttempt } from "./log";
 import { ensurePreferences } from "./preferences";
@@ -63,6 +64,12 @@ export interface SendTarget {
    * a HU-first mail on the vendor's inbox.
    */
   submitterUserId?: number;
+  /**
+   * When set alongside `couple_id`, a tracking pixel is embedded in the
+   * rendered HTML (guest_invite only). The pixel endpoint stamps
+   * `guests.invitation_opened_at` when the image loads.
+   */
+  guestId?: number;
 }
 
 interface SendResult {
@@ -165,11 +172,17 @@ async function sendKindInner<K extends EmailKind>(
     unsubscribeToken = prefs.unsubscribe_token;
   }
 
+  const trackingPixelUrl =
+    target.guestId != null && target.couple_id != null
+      ? `${CONFIG.frontendBaseUrl}/api/emails/track/open?t=${makeOpenTrackingToken(target.guestId, target.couple_id)}`
+      : undefined;
+
   const built = buildEmail(kind, payload, {
     recipientName: recipient.name,
     unsubscribeToken,
     recipientLocale,
     primaryLocaleHint,
+    trackingPixelUrl,
   });
 
   // RFC 8058 one-click unsubscribe headers. Gmail's bulk-sender requirements

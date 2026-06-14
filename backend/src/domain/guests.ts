@@ -35,6 +35,7 @@ export interface GuestRow {
   rsvp_responded_at: number | null;
   invited_at: number | null;
   invitation_delivered_at: number | null;
+  invitation_opened_at: number | null;
   /** "bride" | "groom" | null — server-derived; mirrors `couples.bride_name` /
    *  `couples.groom_name` onto the matching guest rows. */
   partner_role: string | null;
@@ -113,6 +114,7 @@ export function toGuest(row: GuestRow): Guest {
     rsvp_responded_at: row.rsvp_responded_at,
     invited_at: row.invited_at,
     invitation_delivered_at: row.invitation_delivered_at,
+    invitation_opened_at: row.invitation_opened_at,
     partner_role: normPartnerRole(row.partner_role),
     accommodation_id: row.accommodation_id,
     transfer_id: row.transfer_id,

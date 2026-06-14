@@ -27,6 +27,7 @@ import {
   Crown,
   Download,
   Egg,
+  Eye,
   Fish,
   Gem,
   Heart,
@@ -1711,30 +1712,50 @@ function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
       : state === "invited"
         ? "border-ink-800 bg-ink-800 text-paper-50 hover:bg-ink-900 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-100"
         : "border-paper-300 bg-paper-50 text-ink-400 hover:border-ink-300 hover:text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-umber-200";
+  const openedAt = guest.invitation_opened_at;
+  const openedLabel = openedAt
+    ? t("guests.invite_email_opened_at").replace(
+        "{date}",
+        new Date(openedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      )
+    : null;
+
   return (
-    <button
-      type="button"
-      onClick={onCycle}
-      title={`${label} — ${nextHint}`}
-      aria-label={`${label}. ${nextHint}`}
-      aria-pressed={state !== "not_invited"}
-      /* Single small dot at every viewport — the prior `h-8 min-w-[3.5rem]`
-       *  chip with the "Meghívva" / "Átadva" / "—" text was a full-width
-       *  pill on mobile that ate the row before the name even rendered.
-       *  The header already carries the "0/2 meghívva" tally so the per-
-       *  member text was redundant; cycling tap target stays at the
-       *  WCAG-min 24px chip + the surrounding row hit area. */
-      className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${cls}`}
-    >
-      <span className="sr-only">{shortLabel}</span>
-      {state === "delivered" ? (
-        <CheckCheck size={14} strokeWidth={2.5} aria-hidden="true" />
-      ) : state === "invited" ? (
-        <Check size={14} strokeWidth={2.5} aria-hidden="true" />
-      ) : (
-        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-50" />
+    <span className="inline-flex shrink-0 items-center gap-0.5">
+      <button
+        type="button"
+        onClick={onCycle}
+        title={`${label} — ${nextHint}`}
+        aria-label={`${label}. ${nextHint}`}
+        aria-pressed={state !== "not_invited"}
+        /* Single small dot at every viewport — the prior `h-8 min-w-[3.5rem]`
+         *  chip with the "Meghívva" / "Átadva" / "—" text was a full-width
+         *  pill on mobile that ate the row before the name even rendered.
+         *  The header already carries the "0/2 meghívva" tally so the per-
+         *  member text was redundant; cycling tap target stays at the
+         *  WCAG-min 24px chip + the surrounding row hit area. */
+        className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${cls}`}
+      >
+        <span className="sr-only">{shortLabel}</span>
+        {state === "delivered" ? (
+          <CheckCheck size={14} strokeWidth={2.5} aria-hidden="true" />
+        ) : state === "invited" ? (
+          <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+        ) : (
+          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-50" />
+        )}
+      </button>
+      {openedLabel && (
+        <span title={openedLabel}>
+          <Eye
+            size={11}
+            strokeWidth={2}
+            aria-label={openedLabel}
+            className="text-ink-400 dark:text-umber-400"
+          />
+        </span>
       )}
-    </button>
+    </span>
   );
 }
 

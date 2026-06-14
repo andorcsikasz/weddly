@@ -2509,6 +2509,8 @@ export interface LocaleMessages {
     invite_state_cycle_to_invited: string;
     invite_state_cycle_to_delivered: string;
     invite_state_cycle_to_clear: string;
+    invite_email_opened: string;
+    invite_email_opened_at: string;
     /** Page-level summary chips above the household list. */
     total_summary_unit: string;
     total_summary_households: string;

@@ -60,6 +60,9 @@ export interface RenderInput {
    *  language but DO know the submitter's, lead with the submitter's
    *  language and keep the other as a safety net below. */
   primaryLocaleHint?: "hu" | "en";
+  /** When set, a 1×1 transparent tracking pixel is appended to the HTML body.
+   *  Only used for guest_invite emails — see routes/email_track.ts. */
+  trackingPixelUrl?: string;
 }
 
 export interface RenderedEmail {
@@ -181,7 +184,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   }
 
   function renderHtml(
-    { ctaUrl, category, unsubscribeToken }: RenderInput,
+    { ctaUrl, category, unsubscribeToken, trackingPixelUrl }: RenderInput,
     blocks: PickedBlock[],
   ): string {
     const preheader = capPreheader(
@@ -282,6 +285,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         </td>
       </tr>
     </table>
+    ${trackingPixelUrl ? `<img src="${escapeAttr(trackingPixelUrl)}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px;overflow:hidden;" />` : ""}
   </body>
 </html>`;
   }

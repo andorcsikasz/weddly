@@ -26,6 +26,9 @@ export interface BuildContext {
    *  but DO know the submitter's (the couple who triggered the mail). HU/EN
    *  bilingual still renders both blocks; the hint just reorders them. */
   primaryLocaleHint?: "hu" | "en";
+  /** When set, a 1×1 tracking pixel is appended to the HTML. Passed through
+   *  from sendKind when sending guest_invite. */
+  trackingPixelUrl?: string;
 }
 
 export interface BuiltEmail {
@@ -449,6 +452,7 @@ export function buildEmail<K extends EmailKind>(
     unsubscribeToken: context.unsubscribeToken,
     recipientLocale: context.recipientLocale,
     primaryLocaleHint: context.primaryLocaleHint,
+    trackingPixelUrl: context.trackingPixelUrl,
   });
   return { subject: built.subject, rendered, replyTo: built.replyTo };
 }

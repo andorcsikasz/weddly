@@ -480,6 +480,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
         guest: { email: parsed.email, full_name: parsed.full_name },
         couple_id: couple.id,
         submitterUserId: userId,
+        guestId: row.id,
       },
     );
   }
@@ -609,8 +610,13 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     nextDeliveredAt = null;
   }
   // Clearing `invited` always clears `delivered` (you can't deliver to
-  // someone you haven't invited).
-  if (nextInvitedAt === null) nextDeliveredAt = null;
+  // someone you haven't invited) and also resets the open-tracking stamp
+  // so the eye indicator doesn't persist on a guest whose invite was revoked.
+  let nextOpenedAt = existing.invitation_opened_at;
+  if (nextInvitedAt === null) {
+    nextDeliveredAt = null;
+    nextOpenedAt = null;
+  }
 
   db.prepare(
     `UPDATE guests SET
@@ -618,7 +624,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
         is_plus_one = ?, plus_one_of = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
         accommodation_needed = ?, song_request = ?, notes = ?, rsvp_responded_at = ?, household_id = ?,
-        invited_at = ?, invitation_delivered_at = ?, updated_at = ?
+        invited_at = ?, invitation_delivered_at = ?, invitation_opened_at = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.full_name,
@@ -641,6 +647,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     nextHouseholdId,
     nextInvitedAt,
     nextDeliveredAt,
+    nextOpenedAt,
     ts,
     id,
     couple.id,
@@ -678,9 +685,9 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   const inviteFlagsTouched = body.invited !== undefined || body.delivered !== undefined;
   if (inviteFlagsTouched && !nextIsPlusOne) {
     db.prepare(
-      `UPDATE guests SET invited_at = ?, invitation_delivered_at = ?, updated_at = ?
+      `UPDATE guests SET invited_at = ?, invitation_delivered_at = ?, invitation_opened_at = ?, updated_at = ?
          WHERE plus_one_of = ? AND couple_id = ?`,
-    ).run(nextInvitedAt, nextDeliveredAt, ts, id, couple.id);
+    ).run(nextInvitedAt, nextDeliveredAt, nextOpenedAt, ts, id, couple.id);
   }
 
   const row = getGuestByIdScoped(id, couple.id) as GuestRow;

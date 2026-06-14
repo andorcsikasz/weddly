@@ -649,6 +649,10 @@ export interface Guest {
    *  guest. Strictly stronger than `invited_at` — the 3-state chip cycles
    *  not-invited → invited → delivered. `null` = not delivered yet. */
   invitation_delivered_at: UnixMs | null;
+  /** Set the first time the guest_invite email tracking pixel loads (email client
+   *  fetched the pixel image). Best-effort: Apple MPP and image-blocking clients
+   *  may never fire it. `null` = not yet opened or pixel blocked. */
+  invitation_opened_at: UnixMs | null;
   /** Logistics: lodging this guest is assigned to. Null = not yet assigned.
    *  Edited via the /app/logistics drag-and-drop board. */
   accommodation_id: number | null;

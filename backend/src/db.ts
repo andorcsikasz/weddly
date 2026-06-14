@@ -143,6 +143,10 @@ addColumnIfMissing("guests", "invited_at", "invited_at INTEGER");
 // Nullable timestamp; non-null implies invited_at is also non-null.
 addColumnIfMissing("guests", "invitation_delivered_at", "invitation_delivered_at INTEGER");
 
+// Email open tracking pixel — stamped the first time the guest_invite pixel
+// loads. Requires invited_at to be set (can't open an invite you haven't received).
+addColumnIfMissing("guests", "invitation_opened_at", "invitation_opened_at INTEGER");
+
 // Planning items: tasks carry an optional free-text `assignee` (e.g. "Anna",
 // "Apa", "Tanú1"). Ideas carry `suggested_by_user_id` — stamped at create time
 // from the current session — so the UI can render "— Anna javasolta". Both
