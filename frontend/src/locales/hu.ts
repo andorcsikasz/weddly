@@ -2385,6 +2385,8 @@ const hu: LocaleMessages = {
     stat_households_action: "Ugrás a háztartásokhoz",
     stat_invited_action: "Csak a meghívott vendégek",
     invited_filter_label: "Meghívva",
+    household_filter_label: "Csoportos háztartások",
+    household_filter_empty: "Nincs csoportos háztartás.",
     kind_label: "Típus",
     kind_help: "Babához kisszék kell; gyerek kapja a gyerekmenüt.",
     supplier_label: "Szolgáltató",

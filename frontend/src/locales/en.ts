@@ -2359,6 +2359,8 @@ const en: LocaleMessages = {
     stat_households_action: "Jump to household list",
     stat_invited_action: "Show invited guests only",
     invited_filter_label: "Invited",
+    household_filter_label: "Grouped households",
+    household_filter_empty: "No grouped households found.",
     kind_label: "Type",
     kind_help: "A baby needs a high chair; a child gets the kids' meal.",
     supplier_label: "Supplier",

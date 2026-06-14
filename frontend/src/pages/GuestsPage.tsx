@@ -121,6 +121,11 @@ export default function GuestsPage() {
   // The "invited" header stat filters the flat list to guests with an
   // invitation logged (`?invited=1`), mirroring the rsvp-status filter above.
   const invitedFilter = params.get("invited") === "1";
+  // The "household" header stat filters to closed (multi-member) households
+  // (`?household=closed`). A second URL param `?group=<tag>` narrows further
+  // to a single group category within the household view.
+  const householdFilter = params.get("household") === "closed";
+  const groupFilter = params.get("group") as GuestGroupTag | null;
   const navigate = useNavigate();
   // Anchor for the "households" header stat — clicking it clears any filter and
   // smooth-scrolls down to the household list.
@@ -535,6 +540,27 @@ export default function GuestsPage() {
     () => (invitedFilter ? guests.filter((g) => g.invited_at != null) : []),
     [guests, invitedFilter],
   );
+  // Closed households = multi-member households (explicitly grouped units).
+  const closedHouseholds = useMemo(
+    () => households.filter((hh) => hh.member_ids.length > 1),
+    [households],
+  );
+  const closedHouseholdIds = useMemo(
+    () => new Set(closedHouseholds.map((hh) => hh.id)),
+    [closedHouseholds],
+  );
+  const activeGroupTags = useMemo(() => {
+    const present = new Set(closedHouseholds.map((hh) => hh.group_tag));
+    return GROUPS.filter((g) => present.has(g));
+  }, [closedHouseholds]);
+  // Households shown in the household filter view, optionally narrowed by group.
+  const filteredClosedHouseholds = useMemo(
+    () =>
+      groupFilter
+        ? closedHouseholds.filter((hh) => hh.group_tag === groupFilter)
+        : closedHouseholds,
+    [closedHouseholds, groupFilter],
+  );
 
   // ── Header-stat clicks ───────────────────────────────────────────────
   // Drop the search query immediately (not just the debounced copy) so the
@@ -566,6 +592,28 @@ export default function GuestsPage() {
       listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
     );
   }
+  function showHouseholdFilter() {
+    const next = new URLSearchParams(params);
+    next.set("household", "closed");
+    next.delete("rsvp");
+    next.delete("invited");
+    next.delete("group");
+    setParams(next, { replace: true });
+    setQuery("");
+    setDebouncedQuery("");
+  }
+  function clearHouseholdFilter() {
+    const next = new URLSearchParams(params);
+    next.delete("household");
+    next.delete("group");
+    setParams(next, { replace: true });
+  }
+  function setGroupFilter(tag: GuestGroupTag | null) {
+    const next = new URLSearchParams(params);
+    if (tag) next.set("group", tag);
+    else next.delete("group");
+    setParams(next, { replace: true });
+  }
 
   // Planned headcount shown alongside the live counts so couples see actual vs
   // target at a glance. Mirrors the single number the couple set on the budget
@@ -581,11 +629,13 @@ export default function GuestsPage() {
   // Which header stat is the live view, so the others can fade. Only the two
   // filter states (all vs invited) own a persistent view; while an rsvp filter
   // or a search is active none of these four applies, so nothing dims.
-  const activeStat: "total" | "invited" | null = invitedFilter
-    ? "invited"
-    : rsvpFilter || debouncedQuery
-      ? null
-      : "total";
+  const activeStat: "total" | "invited" | "household" | null = householdFilter
+    ? "household"
+    : invitedFilter
+      ? "invited"
+      : rsvpFilter || debouncedQuery
+        ? null
+        : "total";
 
   return (
     <>
@@ -614,12 +664,12 @@ export default function GuestsPage() {
                 dimmed={activeStat !== null && activeStat !== "total"}
               />
               <GuestStat
-                value={households.length}
+                value={closedHouseholds.length}
                 label={t("guests.total_summary_households_unit")}
                 icon={<Home size={18} aria-hidden />}
-                onClick={scrollToHouseholds}
+                onClick={householdFilter ? clearHouseholdFilter : showHouseholdFilter}
                 actionTitle={t("guests.stat_households_action")}
-                dimmed={activeStat !== null}
+                dimmed={activeStat !== null && activeStat !== "household"}
               />
               <GuestStat
                 value={guests.filter((g) => g.invited_at != null).length}
@@ -778,6 +828,38 @@ export default function GuestsPage() {
         </div>
       )}
 
+      {householdFilter && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full bg-paper-100 px-3 py-1 text-sm text-ink-700 ring-1 ring-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700">
+            <Home size={13} aria-hidden className="text-ink-500 dark:text-umber-300" />
+            <span className="font-medium">{t("guests.household_filter_label")}</span>
+            <button
+              type="button"
+              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+              onClick={clearHouseholdFilter}
+              aria-label={t("guests.search_clear")}
+            >
+              <X size={12} />
+            </button>
+          </span>
+          {activeGroupTags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => setGroupFilter(groupFilter === tag ? null : tag)}
+              className={[
+                "inline-flex items-center rounded-full px-3 py-1 text-sm transition-colors",
+                groupFilter === tag
+                  ? "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                  : "bg-paper-100 text-ink-700 ring-1 ring-paper-200 hover:bg-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-700",
+              ].join(" ")}
+            >
+              {t(`guests.group_${tag}`)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <HouseholdListSkeleton />
       ) : households.length === 0 && guests.length === 0 ? (
@@ -841,6 +923,43 @@ export default function GuestsPage() {
           onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
           onPrintPlaceCard={onPrintPlaceCard}
         />
+      ) : householdFilter ? (
+        <div className="space-y-6">
+          {(groupFilter ? [groupFilter] : activeGroupTags).map((tag) => {
+            const tagHouseholds = filteredClosedHouseholds.filter((hh) => hh.group_tag === tag);
+            if (tagHouseholds.length === 0) return null;
+            return (
+              <div key={tag}>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-umber-500">
+                  {t(`guests.group_${tag}`)}
+                </h3>
+                <div className="space-y-3">
+                  {tagHouseholds.map((hh) => (
+                    <HouseholdCard
+                      key={hh.id}
+                      household={hh}
+                      members={guestsByHousehold.get(hh.id) ?? []}
+                      coupleSlug={couple?.slug ?? null}
+                      onCopyShare={() => { void copyShare(couple?.slug ?? null, hh.code); }}
+                      onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
+                      onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+                      onDeleteGuest={onDeleteGuest}
+                      onDeleteHousehold={() => onDeleteHousehold(hh)}
+                      onRenameHousehold={onRenameHousehold}
+                      onChangeGroup={onChangeHouseholdGroup}
+                      onToggleAccommodation={onToggleHouseholdAccommodation}
+                      onCycleInviteState={onCycleInviteState}
+                      onPrintPlaceCard={onPrintPlaceCard}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {filteredClosedHouseholds.length === 0 && (
+            <p className="text-sm text-neutral-500 dark:text-umber-400">{t("guests.household_filter_empty")}</p>
+          )}
+        </div>
       ) : (
         <div ref={listRef} className="space-y-4">
           {(virtualReveal ? households : households.slice(0, 100)).map((hh) => (

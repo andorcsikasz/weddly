@@ -2521,6 +2521,8 @@ export interface LocaleMessages {
     stat_households_action: string;
     stat_invited_action: string;
     invited_filter_label: string;
+    household_filter_label: string;
+    household_filter_empty: string;
     /** Adult / child / baby kind selector. */
     kind_label: string;
     kind_help: string;
