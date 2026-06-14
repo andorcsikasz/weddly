@@ -521,6 +521,9 @@ export interface BudgetLine {
   /** When set, this line was auto-created from a DIY supplier entry on
    *  /app/suppliers and is locked — editing happens on the supplier card. */
   couple_supplier_id: string | null;
+  /** Honeymoon preset chip that created this line (e.g. "stay", "travel").
+   *  Null for custom rows. Cleared server-side whenever the label is renamed. */
+  preset_key?: string | null;
   notes: string | null;
   /** Custom rows opt in. When `true`, the planned amount rescales with the
    *  headcount slider just like built-in per-guest categories. Built-in

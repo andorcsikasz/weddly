@@ -66,6 +66,7 @@ interface LineRow {
   notes: string | null;
   per_guest: number;
   icon: string | null;
+  preset_key: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -86,6 +87,7 @@ function toLine(r: LineRow): BudgetLine {
     notes: r.notes,
     per_guest: r.per_guest === 1,
     icon: r.icon,
+    preset_key: r.preset_key,
     created_at: r.created_at,
     updated_at: r.updated_at,
   };
@@ -143,6 +145,7 @@ interface UpsertLineBody {
   notes?: unknown;
   per_guest?: unknown;
   icon?: unknown;
+  preset_key?: unknown;
 }
 
 /** Strict money guard. Money is integer Forint sent as a JSON *number* — never
@@ -192,6 +195,8 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
 
   const body = await readJson<UpsertLineBody>(ctx.req);
   const parsed = parseLineBody(body);
+  const presetKey =
+    typeof body.preset_key === "string" && body.preset_key.trim() ? body.preset_key.trim() : null;
   // Refuse to add a new line in a frozen category — it'd inflate the locked
   // category total. The frontend hides the "+ line" affordance for frozen
   // rows, so this is the belt-and-braces guard against a stale tab.
@@ -202,8 +207,8 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
   const ts = now();
   const result = db
     .prepare(
-      `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, paid_huf, supplier_id, notes, per_guest, icon, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
+      `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, paid_huf, supplier_id, notes, per_guest, icon, preset_key, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -215,6 +220,7 @@ async function handleCreateLine(ctx: Ctx): Promise<Response> {
       parsed.notes,
       parsed.per_guest,
       parsed.icon,
+      presetKey,
       ts,
       ts,
     );
@@ -285,7 +291,7 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
   const parsed = parsePartialLine(body, existing);
   const ts = now();
   db.prepare(
-    `UPDATE budget_lines SET label = ?, planned_huf = ?, actual_huf = ?, paid_huf = ?, notes = ?, updated_at = ?
+    `UPDATE budget_lines SET label = ?, planned_huf = ?, actual_huf = ?, paid_huf = ?, notes = ?, preset_key = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.label,
@@ -293,6 +299,7 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
     parsed.actual_huf,
     parsed.paid_huf,
     parsed.notes,
+    parsed.preset_key,
     ts,
     id,
     couple.id,
@@ -325,11 +332,15 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
  *  forcing the client to also re-send `label`). */
 function parsePartialLine(body: UpsertLineBody, existing: LineRow) {
   let label = existing.label;
+  let presetKey = existing.preset_key;
   if (body.label !== undefined) {
     if (typeof body.label !== "string") throw new HttpError(400, "label must be a string");
     const trimmed = body.label.trim();
     if (!trimmed || trimmed.length > 200) throw new HttpError(400, "label required (≤200 chars)");
     label = trimmed;
+    // User renamed the line — clear the preset key so the display falls back
+    // to the custom label instead of the translated preset name.
+    presetKey = null;
   }
   let planned = existing.planned_huf;
   if (body.planned_huf !== undefined) planned = parseMoneyField(body.planned_huf, "planned_huf");
@@ -345,7 +356,7 @@ function parsePartialLine(body: UpsertLineBody, existing: LineRow) {
     notes =
       typeof body.notes === "string" && body.notes.trim() ? body.notes.trim().slice(0, 1000) : null;
   }
-  return { label, planned_huf: planned, actual_huf: actual, paid_huf: paid, notes };
+  return { label, preset_key: presetKey, planned_huf: planned, actual_huf: actual, paid_huf: paid, notes };
 }
 
 function handleDeleteLine(ctx: Ctx): Response {

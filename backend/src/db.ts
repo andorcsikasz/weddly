@@ -302,6 +302,11 @@ addColumnIfMissing("budget_lines", "icon", "icon TEXT");
 // paid installments by `recomputePaidState`; plain lines are hand-editable.
 addColumnIfMissing("budget_lines", "paid_huf", "paid_huf INTEGER NOT NULL DEFAULT 0");
 
+// Tracks which honeymoon preset chip created this line so the label can be
+// rendered via i18n regardless of the locale active at creation time.
+// NULL for custom rows and any line created before this column existed.
+addColumnIfMissing("budget_lines", "preset_key", "preset_key TEXT");
+
 // Per-couple supplier votes — see schema.sql. The legacy `(user_id, supplier_id)`
 // keying let both partners stack two votes on a self-submitted supplier, which
 // brigaded the directory's default sort. Backfill `couple_id` from the voter's

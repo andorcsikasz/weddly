@@ -461,6 +461,7 @@ export default function HoneymoonPage() {
         label,
         planned_huf: 0,
         actual_huf: 0,
+        preset_key: preset.id,
       });
       setLines((prev) => [...prev, r.line]);
       publish("budget:changed");
@@ -1364,8 +1365,23 @@ function CostRow({
   onRemove: () => void;
 }) {
   const { t } = useT();
-  const preset = presetFor(line.label);
+  const preset = line.preset_key
+    ? (PRESETS.find((p) => p.id === line.preset_key) ?? presetFor(line.label))
+    : presetFor(line.label);
   const Icon = preset.icon;
+  // Resolve display label: if a preset_key is set, translate it so the label
+  // respects the current locale rather than the one active at creation time.
+  // For "other" lines, preserve the trailing ordinal (e.g. "Egyéb 5" → "Other 5").
+  function resolveDisplayLabel(): string {
+    if (!line.preset_key) return line.label;
+    if (line.preset_key === "other") {
+      const base = t("honeymoon.preset.other");
+      const numMatch = line.label.match(/\s(\d+)$/);
+      return numMatch ? `${base} ${numMatch[1]}` : base;
+    }
+    return t(`honeymoon.preset.${line.preset_key}`);
+  }
+  const displayLabel = resolveDisplayLabel();
   const [localValue, setLocalValue] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   // Inline rename: click the label to edit it. Draft re-syncs whenever the
@@ -1457,7 +1473,7 @@ function CostRow({
             className="truncate text-left text-sm font-medium text-ink-900 decoration-dotted hover:underline dark:text-paper-50"
             title={t("honeymoon.rename")}
           >
-            {line.label}
+            {displayLabel}
           </button>
         )}
       </div>

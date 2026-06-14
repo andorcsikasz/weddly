@@ -103,6 +103,51 @@ type TaskGroupOrOther = TaskTemplateGroupId | "other";
  *  (newer rows tagged by the wand / editor); title-lookup against the wand
  *  templates is the fallback for rows that pre-date the topic column. Free-
  *  form titles with no template match fall through to "other". */
+
+const URL_SPLIT_RE = /(https?:\/\/[^\s]+)/g;
+const URL_TEST_RE = /^https?:\/\//;
+
+/** Render a body string with bare URLs turned into "Open link" chips. */
+function BodyWithLinks({ text }: { text: string }) {
+  const parts = text.split(URL_SPLIT_RE);
+  return (
+    <>
+      {parts.map((part, i) =>
+        URL_TEST_RE.test(part) ? (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 rounded bg-paper-100 px-1.5 py-0.5 text-xs font-medium text-blush-700 hover:bg-paper-200 dark:bg-umber-700 dark:text-blush-300 dark:hover:bg-umber-600"
+          >
+            Open link
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </a>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
+
 function taskGroupOf(item: PlanningItem): TaskGroupOrOther {
   if (item.topic === "wedding" || item.topic === "honeymoon") return item.topic;
   return TASK_TITLE_TO_GROUP.get(item.title) ?? "other";
@@ -1850,7 +1895,7 @@ function PlanningRow({
                 className="mt-1 block w-full text-left"
               >
                 <p className="whitespace-pre-wrap text-xs text-ink-600 dark:text-umber-200">
-                  {item.body}
+                  <BodyWithLinks text={item.body} />
                 </p>
               </button>
             )}
