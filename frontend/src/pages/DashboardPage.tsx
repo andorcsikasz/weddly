@@ -1192,18 +1192,32 @@ export default function DashboardPage() {
             expanded={rsvpOpen}
             breakdown={
               <div>
-                <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                   <Segment count={rsvp.yes} total={Math.max(totalGuests, 1)} className="bg-emerald-500" />
                   <Segment count={rsvp.maybe} total={Math.max(totalGuests, 1)} className="bg-amber-400" />
                   <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-red-500" />
                   <Segment count={rsvp.pending} total={Math.max(totalGuests, 1)} className="bg-slate-300" />
                 </div>
-                <ul className="mt-2 divide-y divide-paper-100 dark:divide-umber-700">
-                  <RsvpRow status="yes" swatch="bg-emerald-500" label={t("dashboard.rsvp_yes")} value={rsvp.yes} total={totalGuests} locale={locale} />
-                  <RsvpRow status="maybe" swatch="bg-amber-400" label={t("dashboard.rsvp_maybe")} value={rsvp.maybe} total={totalGuests} locale={locale} />
-                  <RsvpRow status="no" swatch="bg-red-500" label={t("dashboard.rsvp_no")} value={rsvp.no} total={totalGuests} locale={locale} />
-                  <RsvpRow status="pending" swatch="bg-slate-300" label={t("dashboard.rsvp_pending")} value={rsvp.pending} total={totalGuests} locale={locale} />
-                </ul>
+                <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-0.5">
+                  {([
+                    { status: "yes", swatch: "bg-emerald-500", label: t("dashboard.rsvp_yes"), value: rsvp.yes },
+                    { status: "maybe", swatch: "bg-amber-400", label: t("dashboard.rsvp_maybe"), value: rsvp.maybe },
+                    { status: "no", swatch: "bg-red-500", label: t("dashboard.rsvp_no"), value: rsvp.no },
+                    { status: "pending", swatch: "bg-slate-300", label: t("dashboard.rsvp_pending"), value: rsvp.pending },
+                  ] as const).map(({ status, swatch, label, value: v }) => (
+                    <Link
+                      key={status}
+                      to={`/app/guests?rsvp=${status}`}
+                      className="flex items-center justify-between rounded px-1 py-1 text-xs transition hover:bg-paper-100 dark:hover:bg-umber-700/60"
+                    >
+                      <span className="flex items-center gap-1.5 text-umber-800 dark:text-paper-100">
+                        <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${swatch}`} aria-hidden="true" />
+                        {label}
+                      </span>
+                      <span className="font-semibold tabular-nums text-umber-900 dark:text-paper-50">{formatNumber(v, locale)}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             }
           />
@@ -1508,28 +1522,30 @@ function KpiTile({
           </button>
         )}
       </div>
-      {expanded && breakdown ? (
-        <div className="mt-3">{breakdown}</div>
-      ) : (
-        <>
-          <div className="stat-num mt-2 text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
-            {value}
-          </div>
-          <div className="mt-1 text-center text-xs font-semibold text-ink-500 dark:text-umber-300">
-            {unit}
-          </div>
-          {progress !== undefined && progress !== null && (
-            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-              <div
-                className={`h-full rounded-full transition-all ${
-                  progressOver ? "bg-blush-700 dark:bg-blush-400" : "bg-ink-700 dark:bg-paper-100"
-                }`}
-                style={{ width: `${Math.max(2, progress)}%` }}
-              />
+      <div className="mt-2 h-[4.5rem] overflow-hidden">
+        {expanded && breakdown ? (
+          breakdown
+        ) : (
+          <>
+            <div className="stat-num text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
+              {value}
             </div>
-          )}
-        </>
-      )}
+            <div className="mt-1 text-center text-xs font-semibold text-ink-500 dark:text-umber-300">
+              {unit}
+            </div>
+            {progress !== undefined && progress !== null && (
+              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    progressOver ? "bg-blush-700 dark:bg-blush-400" : "bg-ink-700 dark:bg-paper-100"
+                  }`}
+                  style={{ width: `${Math.max(2, progress)}%` }}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
