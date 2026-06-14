@@ -21,6 +21,7 @@ import {
   CalendarHeart,
   Camera,
   ChevronDown,
+  ChevronUp,
   Clipboard,
   ClipboardList,
   Clock,
@@ -178,6 +179,7 @@ export default function DashboardPage() {
   // Shared open/closed state for the two side-by-side overview cards (Setup
   // checklist + RSVP breakdown) so collapsing one collapses both.
   const [overviewOpen, setOverviewOpen] = useState(true);
+  const [rsvpOpen, setRsvpOpen] = useState(false);
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
   const [copied, setCopied] = useState(false);
   // Partner-invite form state (email-or-link flow).
@@ -1187,6 +1189,8 @@ export default function DashboardPage() {
                 ? Math.min(100, Math.round((rsvp.yes / guestDenominator) * 100))
                 : null
             }
+            onToggle={tasksDone >= tasksTotal ? () => setRsvpOpen((v) => !v) : undefined}
+            expanded={tasksDone >= tasksTotal ? rsvpOpen : undefined}
           />
           <BudgetKpiTile
             label={t("dashboard.kpi_budget_label")}
@@ -1230,183 +1234,186 @@ export default function DashboardPage() {
         </section>
       )}
 
+      {/* RSVP breakdown — shown below the KPI strip when the setup checklist
+          is complete and the user has expanded the RSVPS IN tile. */}
+      {!dayOfMode && tasksDone >= tasksTotal && rsvpOpen && (
+        <section className="mb-8">
+          <MobileCollapsibleCard
+            className="card flex flex-col p-0 font-grotesk"
+            bodyClassName="flex flex-col px-4 pb-4 md:px-6 md:pb-6"
+            open={true}
+            onToggle={() => setRsvpOpen(false)}
+            title={t("dashboard.rsvp_breakdown_title")}
+            trailing={
+              totalGuests > 0 ? (
+                <span>
+                  {t("dashboard.rsvp_responded_of_total", {
+                    responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
+                    total: formatNumber(totalGuests, locale),
+                  })}
+                </span>
+              ) : null
+            }
+          >
+            <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+              <Segment
+                count={rsvp.yes}
+                total={Math.max(totalGuests, 1)}
+                className="bg-emerald-500"
+              />
+              <Segment
+                count={rsvp.maybe}
+                total={Math.max(totalGuests, 1)}
+                className="bg-amber-400"
+              />
+              <Segment count={rsvp.no} total={Math.max(totalGuests, 1)} className="bg-red-500" />
+              <Segment
+                count={rsvp.pending}
+                total={Math.max(totalGuests, 1)}
+                className="bg-slate-300"
+              />
+            </div>
+            <ul className="mt-3 divide-y divide-paper-100 dark:divide-umber-700">
+              <RsvpRow
+                status="yes"
+                swatch="bg-emerald-500"
+                label={t("dashboard.rsvp_yes")}
+                value={rsvp.yes}
+                total={totalGuests}
+                locale={locale}
+              />
+              <RsvpRow
+                status="maybe"
+                swatch="bg-amber-400"
+                label={t("dashboard.rsvp_maybe")}
+                value={rsvp.maybe}
+                total={totalGuests}
+                locale={locale}
+              />
+              <RsvpRow
+                status="no"
+                swatch="bg-red-500"
+                label={t("dashboard.rsvp_no")}
+                value={rsvp.no}
+                total={totalGuests}
+                locale={locale}
+              />
+              <RsvpRow
+                status="pending"
+                swatch="bg-slate-300"
+                label={t("dashboard.rsvp_pending")}
+                value={rsvp.pending}
+                total={totalGuests}
+                locale={locale}
+              />
+            </ul>
+          </MobileCollapsibleCard>
+        </section>
+      )}
+
       {/* ── Planning-mode body — hidden in day-of mode so the screen
           stays focused on the jumbo check-in panel. ───────────────── */}
       {!dayOfMode && (
         <>
           {/* ── Two-column body: tasks + breakdowns ────────────────────── */}
-          <section className="mb-8 grid gap-4 lg:grid-cols-3">
-            {/* Tasks (spans 2/3 on lg). Hidden once all tasks are complete;
-             *  reappears if any task is later undone. On phones this collapses
-             *  behind a disclosure so the dashboard's first scroll isn't
-             *  dominated by an 8-item checklist. */}
-            {tasksDone < tasksTotal && <MobileCollapsibleCard
-              className="card lg:col-span-2 p-0 font-grotesk"
-              bodyClassName="px-4 pb-4 md:px-6 md:pb-6"
-              open={overviewOpen}
-              onToggle={setOverviewOpen}
-              title={t("dashboard.tasks_title")}
-              trailing={
-                <span>{t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}</span>
-              }
-            >
-              <div
-                className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={tasksTotal}
-                aria-valuenow={tasksDone}
-                aria-label={t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
-              >
-                <div
-                  className="h-full rounded-full bg-blush-500 transition-all"
-                  style={{ width: `${(tasksDone / tasksTotal) * 100}%` }}
-                />
-              </div>
-              <ul className="grid gap-1 sm:grid-cols-2">
-                {tasks.map((task) => {
-                  const tone = task.done
-                    ? "text-umber-500 dark:text-umber-300"
-                    : "text-umber-900 dark:text-paper-50";
-                  const body = (
-                    <>
-                      <span
-                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                          task.done
-                            ? "border-blush-500 bg-blush-500 text-white"
-                            : "border-paper-400 bg-white dark:border-umber-600 dark:bg-umber-800"
-                        }`}
-                      >
-                        {task.done && (
-                          <svg
-                            viewBox="0 0 12 12"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-3 w-3"
-                            aria-hidden="true"
-                          >
-                            <path d="M2.5 6.5L5 9l4.5-5" />
-                          </svg>
-                        )}
-                      </span>
-                      <span
-                        className={
-                          task.done
-                            ? "line-through decoration-ink-300 dark:decoration-umber-600"
-                            : ""
-                        }
-                      >
-                        {t(`dashboard.${task.key}`)}
-                      </span>
-                    </>
-                  );
-                  const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700 ${tone}`;
-                  return (
-                    <li key={task.key}>
-                      {task.to ? (
-                        task.to.startsWith("#") ? (
-                          <a href={task.to} className={rowCls}>
-                            {body}
-                          </a>
-                        ) : (
-                          <Link to={task.to} className={rowCls}>
-                            {body}
-                          </Link>
-                        )
-                      ) : (
-                        <div
-                          className={`flex items-center gap-2 rounded-lg px-2 py-1 text-sm ${tone}`}
-                        >
-                          {body}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </MobileCollapsibleCard>}
-
-            {/* RSVP breakdown — stretches to match the tasks column. */}
-            <div className="grid gap-4">
+          {tasksDone < tasksTotal && (
+            <section className="mb-8 grid gap-4 lg:grid-cols-3">
+              {/* Tasks (spans 2/3 on lg). Hidden once all tasks are complete;
+               *  reappears if any task is later undone. On phones this collapses
+               *  behind a disclosure so the dashboard's first scroll isn't
+               *  dominated by an 8-item checklist. */}
               <MobileCollapsibleCard
-                className="card flex h-full flex-col p-0 font-grotesk"
-                bodyClassName="flex flex-1 flex-col px-4 pb-4 md:px-6 md:pb-6"
+                className="card lg:col-span-2 p-0 font-grotesk"
+                bodyClassName="px-4 pb-4 md:px-6 md:pb-6"
                 open={overviewOpen}
                 onToggle={setOverviewOpen}
-                title={t("dashboard.rsvp_breakdown_title")}
+                title={t("dashboard.tasks_title")}
                 trailing={
-                  totalGuests > 0 ? (
-                    <span>
-                      {t("dashboard.rsvp_responded_of_total", {
-                        responded: formatNumber(rsvp.yes + rsvp.no + rsvp.maybe, locale),
-                        total: formatNumber(totalGuests, locale),
-                      })}
-                    </span>
-                  ) : null
+                  <span>
+                    {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
+                  </span>
                 }
               >
-                <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-                  <Segment
-                    count={rsvp.yes}
-                    total={Math.max(totalGuests, 1)}
-                    className="bg-emerald-500"
-                  />
-                  <Segment
-                    count={rsvp.maybe}
-                    total={Math.max(totalGuests, 1)}
-                    className="bg-amber-400"
-                  />
-                  <Segment
-                    count={rsvp.no}
-                    total={Math.max(totalGuests, 1)}
-                    className="bg-red-500"
-                  />
-                  <Segment
-                    count={rsvp.pending}
-                    total={Math.max(totalGuests, 1)}
-                    className="bg-slate-300"
+                <div
+                  className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={tasksTotal}
+                  aria-valuenow={tasksDone}
+                  aria-label={t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
+                >
+                  <div
+                    className="h-full rounded-full bg-blush-500 transition-all"
+                    style={{ width: `${(tasksDone / tasksTotal) * 100}%` }}
                   />
                 </div>
-                <ul className="mt-3 flex-1 divide-y divide-paper-100 dark:divide-umber-700">
-                  <RsvpRow
-                    status="yes"
-                    swatch="bg-emerald-500"
-                    label={t("dashboard.rsvp_yes")}
-                    value={rsvp.yes}
-                    total={totalGuests}
-                    locale={locale}
-                  />
-                  <RsvpRow
-                    status="maybe"
-                    swatch="bg-amber-400"
-                    label={t("dashboard.rsvp_maybe")}
-                    value={rsvp.maybe}
-                    total={totalGuests}
-                    locale={locale}
-                  />
-                  <RsvpRow
-                    status="no"
-                    swatch="bg-red-500"
-                    label={t("dashboard.rsvp_no")}
-                    value={rsvp.no}
-                    total={totalGuests}
-                    locale={locale}
-                  />
-                  <RsvpRow
-                    status="pending"
-                    swatch="bg-slate-300"
-                    label={t("dashboard.rsvp_pending")}
-                    value={rsvp.pending}
-                    total={totalGuests}
-                    locale={locale}
-                  />
+                <ul className="grid gap-1 sm:grid-cols-2">
+                  {tasks.map((task) => {
+                    const tone = task.done
+                      ? "text-umber-500 dark:text-umber-300"
+                      : "text-umber-900 dark:text-paper-50";
+                    const body = (
+                      <>
+                        <span
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                            task.done
+                              ? "border-blush-500 bg-blush-500 text-white"
+                              : "border-paper-400 bg-white dark:border-umber-600 dark:bg-umber-800"
+                          }`}
+                        >
+                          {task.done && (
+                            <svg
+                              viewBox="0 0 12 12"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-3 w-3"
+                              aria-hidden="true"
+                            >
+                              <path d="M2.5 6.5L5 9l4.5-5" />
+                            </svg>
+                          )}
+                        </span>
+                        <span
+                          className={
+                            task.done
+                              ? "line-through decoration-ink-300 dark:decoration-umber-600"
+                              : ""
+                          }
+                        >
+                          {t(`dashboard.${task.key}`)}
+                        </span>
+                      </>
+                    );
+                    const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700 ${tone}`;
+                    return (
+                      <li key={task.key}>
+                        {task.to ? (
+                          task.to.startsWith("#") ? (
+                            <a href={task.to} className={rowCls}>
+                              {body}
+                            </a>
+                          ) : (
+                            <Link to={task.to} className={rowCls}>
+                              {body}
+                            </Link>
+                          )
+                        ) : (
+                          <div
+                            className={`flex items-center gap-2 rounded-lg px-2 py-1 text-sm ${tone}`}
+                          >
+                            {body}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </MobileCollapsibleCard>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* ── Couple's own upcoming tasks — hands off from the setup checklist
               to the living plan. Self-fetching; renders its own empty states. ── */}
@@ -1518,6 +1525,8 @@ function KpiTile({
   progress,
   progressOver,
   accent,
+  onToggle,
+  expanded,
 }: {
   label: string;
   icon: ReactNode;
@@ -1526,6 +1535,8 @@ function KpiTile({
   progress?: number | null;
   progressOver?: boolean;
   accent?: "blush";
+  onToggle?: () => void;
+  expanded?: boolean;
 }) {
   const accentBg =
     accent === "blush" ? "bg-blush-50 dark:bg-blush-400/15" : "bg-paper-50 dark:bg-umber-700/60";
@@ -1540,6 +1551,16 @@ function KpiTile({
           {icon}
         </span>
         {label}
+        {onToggle && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="ml-auto flex items-center justify-center rounded p-0.5 text-ink-400 transition hover:bg-paper-100 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            aria-label={expanded ? "Hide RSVP breakdown" : "Show RSVP breakdown"}
+          >
+            {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </button>
+        )}
       </div>
       <div className="stat-num mt-2 text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
         {value}
