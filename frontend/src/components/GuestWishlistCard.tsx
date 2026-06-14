@@ -9,9 +9,18 @@
 
 import type { Currency } from "@shared/types";
 import type { WishlistEntry } from "@shared/wishlist";
-import { ExternalLink, HeartHandshake } from "lucide-react";
+import { Camera, ExternalLink, HandHeart, HeartHandshake, Music2, PenLine, Users } from "lucide-react";
 import { useState } from "react";
 import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
+
+function requestIconFor(title: string): typeof HandHeart {
+  const s = title.toLowerCase();
+  if (/photo|fot[oó]|k[eé]p|childhood|gyerek/.test(s)) return Camera;
+  if (/letter|lev[eé]l|handwritten|k[eé]zzel|pen|ír/.test(s)) return PenLine;
+  if (/song|dal|ének|music|zen[eé]|playlist/.test(s)) return Music2;
+  if (/time|id[oő]|together|egy[uü]tt|spend|quality/.test(s)) return Users;
+  return HandHeart;
+}
 
 type Locale = "hu" | "en";
 
@@ -58,14 +67,23 @@ export function GuestWishlistCard({
 
   return (
     <li className="flex gap-3 rounded-xl border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-900/40">
-      {entry.image_url && (
+      {entry.image_url ? (
         <img
           src={entry.image_url}
           alt=""
           loading="lazy"
           className="h-16 w-16 shrink-0 rounded-lg border border-paper-200 object-cover dark:border-umber-700"
         />
-      )}
+      ) : entry.kind === "request" ? (
+        (() => {
+          const Icon = requestIconFor(entry.title);
+          return (
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center text-ink-700 dark:text-paper-200" aria-hidden>
+              <Icon size={22} />
+            </span>
+          );
+        })()
+      ) : null}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="text-sm font-medium text-ink-900 dark:text-paper-50">{entry.title}</div>
         {entry.description && (

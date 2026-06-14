@@ -67,14 +67,27 @@ function minorToWhole(minor: number, currency: Couple["currency"]): number {
  *  height. The placeholder glyph depends on the kind: a gift box for gifts, an
  *  offered-heart for personal requests (a letter / photo / song is a gesture,
  *  not a boxed gift). */
+/** Pick a contextual icon for a request item based on its title. Falls back to
+ *  HandHeart when no keyword matches. */
+function requestIconFor(title: string): typeof Gift {
+  const s = title.toLowerCase();
+  if (/photo|fot[oó]|k[eé]p|childhood|gyerek/.test(s)) return Camera;
+  if (/letter|lev[eé]l|handwritten|k[eé]zzel|pen|ír/.test(s)) return PenLine;
+  if (/song|dal|ének|music|zen[eé]|playlist/.test(s)) return Music2;
+  if (/time|id[oő]|together|egy[uü]tt|spend|quality/.test(s)) return Users;
+  return HandHeart;
+}
+
 function WishlistThumb({
   imageUrl,
   size = 40,
   Icon = Gift,
+  noBg = false,
 }: {
   imageUrl: string | null;
   size?: number;
   Icon?: typeof Gift;
+  noBg?: boolean;
 }) {
   const cls = "shrink-0 rounded-lg border border-paper-200 object-cover dark:border-umber-700";
   if (imageUrl) {
@@ -88,6 +101,17 @@ function WishlistThumb({
         className={cls}
         style={{ width: size, height: size }}
       />
+    );
+  }
+  if (noBg) {
+    return (
+      <span
+        className="flex shrink-0 items-center justify-center text-ink-700 dark:text-paper-200"
+        style={{ width: size, height: size }}
+        aria-hidden
+      >
+        <Icon size={Math.round(size * 0.5)} />
+      </span>
     );
   }
   return (
@@ -240,7 +264,8 @@ function WishlistRow({ item, currency, locale, t, onEdit, onDelete }: ItemViewPr
       >
         <WishlistThumb
           imageUrl={item.image_url}
-          Icon={item.kind === "request" ? HandHeart : Gift}
+          Icon={item.kind === "request" ? requestIconFor(item.title) : Gift}
+          noBg={item.kind === "request"}
         />
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
