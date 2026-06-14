@@ -954,48 +954,34 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <AdminPageHeader title={t("admin.users_title")} subtitle={t("admin.users_sub")} />
-
-      {!loading && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          {(
-            [
-              { key: "couples", label: t("admin.stat_couples"), value: totalCouplePairs },
-              { key: "solo", label: t("admin.stat_solo"), value: totalSoloWorkspaces },
-              { key: "flagged", label: t("admin.stat_flagged"), value: flaggedCouples.length },
-              { key: "beta", label: t("admin.stat_beta"), value: betaCouples.length },
-              { key: "demo", label: t("admin.stat_demo"), value: demoCouples.length },
-              { key: "orphans", label: t("admin.stat_orphans"), value: orphans.length },
-            ] as const
-          ).map(({ key, label, value }) => (
-            <div
-              key={key}
-              className={[
-                "flex min-w-[5rem] flex-col items-center rounded-lg border px-4 py-2.5",
-                key === "flagged" && value > 0
-                  ? "border-blush-300 bg-blush-50 dark:border-blush-700 dark:bg-blush-950/30"
-                  : "border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-800/40",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <span
-                className={[
-                  "text-xl font-semibold tabular-nums leading-none",
-                  key === "flagged" && value > 0
-                    ? "text-blush-600 dark:text-blush-400"
-                    : "text-umber-900 dark:text-paper-100",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                {value}
-              </span>
-              <span className="mt-1 text-[11px] text-neutral-500 dark:text-umber-400">{label}</span>
+      <AdminPageHeader
+        title={t("admin.users_title")}
+        subtitle={t("admin.users_sub")}
+        actions={
+          !loading ? (
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  { key: "couples", label: t("admin.stat_couples"), value: totalCouplePairs },
+                  { key: "solo", label: t("admin.stat_solo"), value: totalSoloWorkspaces },
+                  { key: "beta", label: t("admin.stat_beta"), value: betaCouples.length },
+                  { key: "demo", label: t("admin.stat_demo"), value: demoCouples.length },
+                ] as const
+              ).map(({ key, label, value }) => (
+                <div
+                  key={key}
+                  className="flex min-w-[4.5rem] flex-col items-center rounded-lg border border-paper-300 bg-white px-3 py-2 dark:border-umber-700 dark:bg-umber-800/40"
+                >
+                  <span className="text-lg font-semibold tabular-nums leading-none text-umber-900 dark:text-paper-100">
+                    {value}
+                  </span>
+                  <span className="mt-1 text-[11px] text-neutral-500 dark:text-umber-400">{label}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          ) : undefined
+        }
+      />
 
       {loading ? (
         <>
