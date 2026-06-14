@@ -1036,13 +1036,11 @@ export default function DashboardPage() {
         }
       >
         <p className="mb-3">{t("dashboard.set_date_dialog_body")}</p>
-        <input
-          type="date"
+        <CalendarPicker
+          value={datePickerDraft || null}
           min={todayIso()}
-          value={datePickerDraft}
-          disabled={datePickerSaving}
-          onChange={(e) => setDatePickerDraft(e.target.value)}
-          className="input"
+          onSelect={(ymd) => setDatePickerDraft(ymd)}
+          locale={locale}
         />
       </Dialog>
 

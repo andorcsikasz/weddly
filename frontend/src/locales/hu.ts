@@ -2176,6 +2176,7 @@ const hu: LocaleMessages = {
     wand_apply: "{count} programpont hozzáadása",
     wand_apply_done: "{count} programpont hozzáadva.",
     duration_unit: "{n} perc",
+    open_ended: "Nyitott időtartam",
     time_conflict: "Erre az időre már „{label}” van — válassz másik időpontot.",
     wand_item_conflict: "Ütközik egy már létező programmal",
   },

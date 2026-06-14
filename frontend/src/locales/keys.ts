@@ -2404,6 +2404,8 @@ export interface LocaleMessages {
     time_conflict: string;
     /** Wand row badge for items whose proposed start falls in a booked slot. */
     wand_item_conflict: string;
+    /** Label for events with no duration set (duration_minutes is null). */
+    open_ended: string;
   };
   guests: {
     title: string;

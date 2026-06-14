@@ -2152,6 +2152,7 @@ const en: LocaleMessages = {
     wand_apply: "Add {count} events",
     wand_apply_done: "Added {count} events.",
     duration_unit: "{n} min",
+    open_ended: "Open-ended",
     time_conflict: "Already booked by “{label}” — pick a different time.",
     wand_item_conflict: "Conflicts with existing event",
   },

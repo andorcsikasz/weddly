@@ -909,17 +909,12 @@ function SideLink({
     <NavLink
       to={to}
       end={to === "/app"}
-      // Always set title/aria-label — at md the label is always hidden, so
-      // screen readers + hover tooltips need it regardless of `collapsed`.
-      title={label}
       aria-label={label}
       className={({ isActive }) => {
-        // Active fill: warm-coffee landing pill for every row, except the
-        // Guest page which keeps the cold ink pill so it reads as set apart.
         const active = darkActive
           ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
           : "stationery-coffee text-paper-50 dark:text-paper-50";
-        return `flex items-center rounded-xl text-sm transition-colors ${shape} ${
+        return `group/sl relative flex items-center rounded-xl text-sm transition-colors ${shape} ${
           isActive
             ? active
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
@@ -927,8 +922,15 @@ function SideLink({
       }}
     >
       {icon}
-      {/* Label is hidden at md (icon-only) and at lg+ collapsed. */}
+      {/* Label is hidden at md (always icon-only) and at lg+ when collapsed. */}
       {!collapsed && <span className="hidden lg:inline">{label}</span>}
+      {/* Custom tooltip — visible on hover when the label is not shown.
+          At lg+ expanded (!collapsed) the label itself is visible, so hide it. */}
+      <span
+        className={`pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 whitespace-nowrap rounded-md bg-ink-900 px-2 py-1 text-xs font-medium text-white opacity-0 shadow-md transition-opacity group-hover/sl:opacity-100 dark:bg-umber-950${!collapsed ? " lg:hidden" : ""}`}
+      >
+        {label}
+      </span>
     </NavLink>
   );
 }

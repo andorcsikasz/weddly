@@ -19,6 +19,7 @@ import {
   Briefcase,
   Clock,
   Download,
+  Infinity,
   MapPin,
   Pencil,
   Plus,
@@ -351,10 +352,15 @@ export default function SchedulePage() {
                     {localizeKnownLabel(event.label, locale)}
                   </span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
-                    {event.duration_minutes !== null && (
+                    {event.duration_minutes !== null ? (
                       <span className="inline-flex items-center gap-1">
                         <Clock size={12} aria-hidden="true" />
                         {t("schedule.duration_unit", { n: event.duration_minutes })}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-ink-400 dark:text-umber-400">
+                        <Infinity size={12} aria-hidden="true" />
+                        {t("schedule.open_ended")}
                       </span>
                     )}
                     {event.location && (
