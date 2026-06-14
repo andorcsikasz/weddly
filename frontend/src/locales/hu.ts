@@ -4173,6 +4173,8 @@ const hu: LocaleMessages = {
     thanks_open_site: "Esküvői oldal megnyitása →",
     thanks_plan_your_own: "Ti is most terveztek? Próbáljátok ki a Weddlyt ingyen →",
     redirect_hint: "Az esküvői oldal megnyílik {n} mp múlva…",
+    add_to_google_calendar: "Google Naptár",
+    add_to_ical: "Apple / iCal",
     edit_responses: "Válaszok szerkesztése",
     update_response: "Frissítés",
     checkin_title: "RSVP check-in",
