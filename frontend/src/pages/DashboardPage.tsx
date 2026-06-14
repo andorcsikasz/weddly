@@ -1188,8 +1188,8 @@ export default function DashboardPage() {
                 ? Math.min(100, Math.round((rsvp.yes / guestDenominator) * 100))
                 : null
             }
-            onToggle={tasksDone >= tasksTotal ? () => setRsvpOpen((v) => !v) : undefined}
-            expanded={tasksDone >= tasksTotal ? rsvpOpen : undefined}
+            onToggle={() => setRsvpOpen((v) => !v)}
+            expanded={rsvpOpen}
           />
           <BudgetKpiTile
             label={t("dashboard.kpi_budget_label")}
@@ -1236,7 +1236,7 @@ export default function DashboardPage() {
       {/* RSVP detail card — appears directly below the KPI strip when the
           chart icon on the RSVPS IN tile is toggled. Sits in column 2 of the
           same 2/4-col grid so it aligns under the RSVPS IN tile. */}
-      {!dayOfMode && tasksDone >= tasksTotal && rsvpOpen && (
+      {!dayOfMode && rsvpOpen && (
         <div className="-mt-5 mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <div className="col-start-2 card p-4 !border-ink-700 dark:!border-paper-100">
             <div className="flex h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
