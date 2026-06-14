@@ -1307,7 +1307,7 @@ export default function SeatingPage() {
         // ── EDIT MODE ────────────────────────────────────────────────────────
         // Full-height flex (same proportions as seat mode). Map fills flex-1;
         // table editor sits in a fixed-width right column.
-        <div className="flex h-[calc(100vh-260px)] gap-4">
+        <div className="flex h-[calc(100vh-196px)] gap-4">
           <div className="min-w-0 flex-1">
             <SeatingMap
               tables={tables}
@@ -1347,7 +1347,7 @@ export default function SeatingPage() {
         // Full-height map + compact unassigned panel on the right. TableCard
         // grid appears below (scroll down) for the classic per-table view.
         <>
-          <div className="flex h-[calc(100vh-260px)] gap-4">
+          <div className="flex h-[calc(100vh-196px)] gap-4">
             {/* Map: flex-1 so it takes all remaining width, h-full so the
               SeatingMap card stretches vertically. */}
             <div className="min-w-0 flex-1">
