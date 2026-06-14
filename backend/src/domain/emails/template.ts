@@ -216,6 +216,29 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     <meta name="supported-color-schemes" content="light" />
     <title>Weddly</title>
     <style>
+      /* General Sans — self-hosted at the Weddly CDN. Supported by Apple Mail,
+         Outlook.com, Samsung Mail, and Thunderbird; Gmail web strips <style>
+         entirely so the system-font stack in the inline font-family is the
+         Gmail fallback. woff2 only: every client that honours @font-face also
+         supports woff2. */
+      @font-face {
+        font-family: 'General Sans';
+        font-style: normal;
+        font-weight: 400;
+        src: url('${CONFIG.frontendBaseUrl}/fonts/general-sans-400.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'General Sans';
+        font-style: normal;
+        font-weight: 500;
+        src: url('${CONFIG.frontendBaseUrl}/fonts/general-sans-500.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'General Sans';
+        font-style: normal;
+        font-weight: 600;
+        src: url('${CONFIG.frontendBaseUrl}/fonts/general-sans-600.woff2') format('woff2');
+      }
       /* Mobile overrides — Apple Mail + Gmail iOS app respect <style>; Gmail
          web strips it, but the inline styles still apply as the fallback.
          Tighter inner padding gains ~24px of horizontal room on a 360–375px
@@ -229,7 +252,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       }
     </style>
   </head>
-  <body style="margin:0;padding:0;background-color:${COLOR.bg};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:${COLOR.ink};">
+  <body style="margin:0;padding:0;background-color:${COLOR.bg};font-family:'General Sans',-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;color:${COLOR.ink};">
     <!-- Preheader: shown in inbox preview, hidden in body -->
     <div style="display:none;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden;mso-hide:all;">
       ${escapeHtml(preheader)}
