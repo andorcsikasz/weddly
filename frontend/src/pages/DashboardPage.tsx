@@ -41,7 +41,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { type FormEvent, type JSX, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type JSX, type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ActivityPanel } from "../components/ActivityPanel";
 import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
@@ -49,7 +49,7 @@ import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { TimelineStatusCard } from "../components/TimelineStatusCard";
 import { UpcomingTasksCard } from "../components/UpcomingTasksCard";
-import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
+import { CalendarPicker, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
@@ -1724,21 +1724,28 @@ function DaysToGoTile({
   const { t, locale } = useT();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!editing) return;
+    const onMouse = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setEditing(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setEditing(false);
+    };
+    document.addEventListener("mousedown", onMouse);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onMouse);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [editing]);
 
   async function commit(ymd: string) {
-    // Only accept a real, fully-typed date — `isPlausibleDateIso` rejects a
-    // half-typed year ("2" → "0002-01-01") the picker can emit mid-edit.
-    if (!isPlausibleDateIso(ymd)) {
-      setEditing(false);
-      return;
-    }
-    // A past wedding day is never valid either — the `min` attribute blocks
-    // the calendar UI, but reject a typed/pasted earlier date too.
-    if (ymd < todayIso()) {
-      setEditing(false);
-      return;
-    }
-    if (ymd === goal.exact_date) {
+    if (!isPlausibleDateIso(ymd) || ymd < todayIso() || ymd === goal.exact_date) {
       setEditing(false);
       return;
     }
@@ -1758,44 +1765,35 @@ function DaysToGoTile({
   }
 
   return (
-    <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
+    <div ref={wrapperRef} className="card relative p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
           <CalendarHeart size={14} aria-hidden="true" />
         </span>
         {label}
       </div>
-      {editing ? (
-        <input
-          type="date"
+      <button
+        type="button"
+        onClick={() => setEditing((v) => !v)}
+        disabled={saving}
+        title={t("dashboard.kpi_days_edit_hint")}
+        aria-label={t("dashboard.kpi_days_edit_hint")}
+        className="-mx-2 mt-1 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
+      >
+        <div className="stat-num text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
+          {days !== null ? formatNumber(days, locale) : "—"}
+        </div>
+        <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
+          {days !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
+        </div>
+      </button>
+      {editing && (
+        <CalendarPicker
+          value={goal.exact_date ?? null}
           min={todayIso()}
-          autoFocus
-          defaultValue={goal.exact_date ?? ""}
-          disabled={saving}
-          onChange={(e) => commit(e.target.value)}
-          onBlur={() => {
-            if (!saving) setEditing(false);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") setEditing(false);
-          }}
-          className="mt-2 w-full rounded border border-blush-500 bg-white px-2 py-2 text-center text-base font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 sm:py-1 sm:text-sm dark:bg-umber-800 dark:text-paper-50"
+          onSelect={(ymd) => void commit(ymd)}
+          locale={locale}
         />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          title={t("dashboard.kpi_days_edit_hint")}
-          aria-label={t("dashboard.kpi_days_edit_hint")}
-          className="-mx-2 mt-1 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:hover:bg-umber-700"
-        >
-          <div className="stat-num text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
-            {days !== null ? formatNumber(days, locale) : "—"}
-          </div>
-          <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
-            {days !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
-          </div>
-        </button>
       )}
     </div>
   );
@@ -2006,22 +2004,30 @@ function EditableWeddingDate({
   const { t, locale } = useT();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const dateText = formatWeddingDateGoal(goal, { t, locale });
 
+  // Close on click-outside and Escape while open.
+  useEffect(() => {
+    if (!editing) return;
+    const onMouse = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setEditing(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setEditing(false);
+    };
+    document.addEventListener("mousedown", onMouse);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onMouse);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [editing]);
+
   async function commit(ymd: string) {
-    // Only accept a real, fully-typed date — `isPlausibleDateIso` rejects a
-    // half-typed year ("2" → "0002-01-01") the picker can emit mid-edit.
-    if (!isPlausibleDateIso(ymd)) {
-      setEditing(false);
-      return;
-    }
-    // A past wedding day is never valid either — the `min` attribute blocks
-    // the calendar UI, but reject a typed/pasted earlier date too.
-    if (ymd < todayIso()) {
-      setEditing(false);
-      return;
-    }
-    if (ymd === goal.exact_date) {
+    if (!isPlausibleDateIso(ymd) || ymd < todayIso() || ymd === goal.exact_date) {
       setEditing(false);
       return;
     }
@@ -2040,34 +2046,25 @@ function EditableWeddingDate({
     }
   }
 
-  if (editing) {
-    return (
-      <input
-        type="date"
-        min={todayIso()}
-        autoFocus
-        defaultValue={goal.exact_date ?? ""}
-        disabled={saving}
-        onChange={(e) => commit(e.target.value)}
-        onBlur={() => {
-          if (!saving) setEditing(false);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") setEditing(false);
-        }}
-        className="mt-1 rounded border border-blush-500 bg-white px-2 py-0.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 dark:bg-umber-800 dark:text-paper-50"
-      />
-    );
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() => setEditing(true)}
-      className="mt-1 rounded text-left text-sm text-ink-600 underline-offset-4 transition hover:text-ink-900 hover:underline hover:decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-200 dark:hover:text-paper-50"
-    >
-      {dateText}
-    </button>
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setEditing((v) => !v)}
+        disabled={saving}
+        className="mt-1 rounded text-left text-sm text-ink-600 underline-offset-4 transition hover:text-ink-900 hover:underline hover:decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:text-umber-200 dark:hover:text-paper-50"
+      >
+        {dateText}
+      </button>
+      {editing && (
+        <CalendarPicker
+          value={goal.exact_date ?? null}
+          min={todayIso()}
+          onSelect={(ymd) => void commit(ymd)}
+          locale={locale}
+        />
+      )}
+    </div>
   );
 }
 
