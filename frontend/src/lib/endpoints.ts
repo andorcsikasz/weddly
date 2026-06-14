@@ -1727,6 +1727,21 @@ export const adminVendorWaitlistApi = {
     ),
 };
 
+export const adminEmailPreviewApi = {
+  list: () =>
+    apiFetch<{ kinds: { kind: string; category: string; subject: string }[] }>(
+      "GET",
+      "/api/admin/email-preview",
+    ),
+  render: (kind: string, locale?: "hu" | "en") => {
+    const qs = locale ? `?locale=${locale}` : "";
+    return apiFetch<{ html: string; subject: string }>(
+      "GET",
+      `/api/admin/email-preview/${kind}${qs}`,
+    );
+  },
+};
+
 export const supplierTaxonomyApi = {
   list: () => apiFetch<SupplierTaxonomy>("GET", "/api/supplier-categories"),
 };

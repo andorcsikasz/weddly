@@ -1,0 +1,256 @@
+// Admin-only email template preview. Renders every template kind with
+// realistic stub data so the admin can inspect HTML output without sending
+// a real email or creating fixture data.
+//
+// GET /api/admin/email-preview           → { kinds: { kind, category, subject }[] }
+// GET /api/admin/email-preview/:kind     → { html, subject }
+// GET /api/admin/email-preview/:kind?locale=en|hu  → single-locale render
+
+import { requireAdmin } from "../domain/users";
+import { buildEmail, type KindPayload } from "../domain/emails/templates";
+import { type EmailKind, KIND_CATEGORY } from "../domain/emails/kinds";
+import { type Ctx, HttpError, json, type Router } from "../lib/http";
+
+// ─── Stub payloads ────────────────────────────────────────────────────────────
+// One per kind. Data is intentionally illustrative ("Mia & Lucas", etc.) so
+// the rendered output reads like a real email rather than "[name]" slots.
+
+const BASE_URL = "https://weddly.app";
+
+const STUBS: KindPayload = {
+  welcome_verify: { verifyUrl: `${BASE_URL}/verify?token=preview-token` },
+  verify_resend: { verifyUrl: `${BASE_URL}/verify?token=preview-token` },
+  password_reset: { resetUrl: `${BASE_URL}/reset-password?token=preview-token` },
+  password_changed: {
+    forgotUrl: `${BASE_URL}/forgot-password`,
+    changedAt: "2026-06-14 10:30",
+  },
+  new_device_signin: {
+    signedInAt: "2026-06-14 10:30",
+    forgotUrl: `${BASE_URL}/forgot-password`,
+  },
+  email_change_verify: {
+    confirmUrl: `${BASE_URL}/email-confirm?token=preview-token`,
+    oldEmail: "mia.old@example.com",
+  },
+  email_change_warning: {
+    newEmail: "mia.new@example.com",
+    forgotUrl: `${BASE_URL}/forgot-password`,
+  },
+  partner_invite: {
+    inviterName: "Mia",
+    inviteUrl: `${BASE_URL}/invite?code=preview`,
+    coupleDisplayName: "Mia & Lucas",
+  },
+  partner_invite_accepted: {
+    partnerName: "Lucas",
+    coupleDisplayName: "Mia & Lucas",
+    dashboardUrl: `${BASE_URL}/app`,
+  },
+  partner_invite_declined: {
+    invitedEmail: "lucas@example.com",
+    reinviteUrl: `${BASE_URL}/app/profile`,
+  },
+  partner_invite_reminder: {
+    invitePartnerUrl: `${BASE_URL}/app#invite-partner`,
+    coupleDisplayName: "Mia & Lucas",
+  },
+  partner_left_workspace: {
+    partnerName: "Lucas",
+    coupleDisplayName: "Mia & Lucas",
+    reinviteUrl: `${BASE_URL}/app/profile`,
+  },
+  couple_paused: {
+    requestedByName: "Mia",
+    scheduledDeleteDate: "2026-07-14",
+    cancelUrl: `${BASE_URL}/app/profile`,
+  },
+  couple_pause_cancelled: {
+    cancelledByName: "Lucas",
+    dashboardUrl: `${BASE_URL}/app`,
+  },
+  account_purged: { coupleDisplayName: "Mia & Lucas" },
+  account_admin_purged: { coupleDisplayName: "Mia & Lucas" },
+  account_flagged: {
+    reason: "Suspicious activity — multiple accounts from same IP.",
+    deadlineDateHu: "2026-06-21",
+    deadlineDateEn: "June 21, 2026",
+  },
+  account_flag_cleared: { note: "User responded — concern addressed." },
+  rsvp_received_for_couple: {
+    guestName: "Anna Kovács",
+    rsvpStatus: "yes",
+    guestPageUrl: `${BASE_URL}/app/guests`,
+    progress: { total: 80, responded: 52, pct: 65 },
+  },
+  rsvp_received_household_for_couple: {
+    householdLabel: "Kovács Anna & Kovács Béla",
+    guests: [
+      { name: "Kovács Anna", rsvpStatus: "yes" },
+      { name: "Kovács Béla", rsvpStatus: "yes" },
+    ],
+    guestPageUrl: `${BASE_URL}/app/guests`,
+    progress: { total: 80, responded: 54, pct: 68 },
+  },
+  rsvp_thanks_for_guest: {
+    coupleDisplayName: "Mia & Lucas",
+    weddingDate: "2026-09-12",
+    rsvpStatus: "yes",
+    rsvpPageUrl: `${BASE_URL}/rsvp/preview-code`,
+  },
+  guest_invite: {
+    coupleDisplayName: "Mia & Lucas",
+    guestName: "Anna Kovács",
+    weddingDate: "2026-09-12",
+    rsvpUrl: `${BASE_URL}/rsvp/preview-code`,
+  },
+  onboarding_nudge: { onboardingUrl: `${BASE_URL}/onboarding` },
+  onboarding_nudge_week: { onboardingUrl: `${BASE_URL}/onboarding` },
+  milestone_t90: {
+    coupleDisplayName: "Mia & Lucas",
+    weddingDate: "2026-09-12",
+    dashboardUrl: `${BASE_URL}/app`,
+  },
+  milestone_t30: {
+    coupleDisplayName: "Mia & Lucas",
+    weddingDate: "2026-09-12",
+    dashboardUrl: `${BASE_URL}/app`,
+  },
+  milestone_t7: {
+    coupleDisplayName: "Mia & Lucas",
+    weddingDate: "2026-09-12",
+    dashboardUrl: `${BASE_URL}/app`,
+  },
+  timeline_escalation: {
+    coupleDisplayName: "Mia & Lucas",
+    overdueCount: 3,
+    dueSoonCount: 2,
+    sampleTitles: ["Book photographer", "Send invites", "Confirm venue"],
+    timelineUrl: `${BASE_URL}/app/timeline`,
+  },
+  wedding_today: { coupleDisplayName: "Mia & Lucas" },
+  wedding_today_followup: {
+    coupleDisplayName: "Mia & Lucas",
+    feedbackUrl: `${BASE_URL}/feedback`,
+  },
+  wedding_date_changed: {
+    coupleDisplayName: "Mia & Lucas",
+    previousWeddingDate: "2026-09-12",
+    newWeddingDate: "2026-10-03",
+    rsvpPageUrl: `${BASE_URL}/rsvp/preview-code`,
+  },
+  rsvp_deadline_approaching: {
+    coupleDisplayName: "Mia & Lucas",
+    weddingDate: "2026-09-12",
+    pendingCount: 12,
+    guestsUrl: `${BASE_URL}/app/guests`,
+  },
+  rsvp_followup_missing_meal: {
+    coupleDisplayName: "Mia & Lucas",
+    rsvpPageUrl: `${BASE_URL}/rsvp/preview-code`,
+  },
+  admin_moderation_digest: {
+    awaitingReviewSuppliers: 4,
+    newVendorWaitlistEntries: 7,
+    pendingListingClaims: 2,
+    unresolvedUserFlags: 1,
+    adminUrl: `${BASE_URL}/app/admin/suppliers`,
+  },
+  rsvp_weekly_digest_for_couple: {
+    coupleDisplayName: "Mia & Lucas",
+    yesCount: 8,
+    noCount: 2,
+    maybeCount: 1,
+    guestsUrl: `${BASE_URL}/app/guests`,
+  },
+  vendor_waitlist_received: {
+    businessName: "Bloom Studio",
+    categoryLabel: "Decor & floral",
+    location: "Budapest, Hungary",
+    landingUrl: BASE_URL,
+  },
+  vendor_waitlist_decision: {
+    subject: "Your Weddly vendor application",
+    body: "Thank you for your patience. We've reviewed your submission and would love to have you on board.\n\nWe'll be in touch within the next few weeks with next steps.",
+    outcome: "accepted",
+  },
+  community_supplier_verify: {
+    supplierName: "Bloom Studio",
+    verifyUrl: `${BASE_URL}/supplier/verify?token=preview`,
+  },
+  community_supplier_published: {
+    supplierName: "Bloom Studio",
+    listingUrl: `${BASE_URL}/vendors/bloom-studio`,
+  },
+  community_supplier_rejected: {
+    supplierName: "Bloom Studio",
+    reason: "Duplicate listing already exists in our directory.",
+  },
+  community_supplier_reported: {
+    supplierName: "Bloom Studio",
+    reason: "wrong_info",
+  },
+  vendor_claim_verify: {
+    listingName: "Bloom Studio",
+    verifyUrl: `${BASE_URL}/vendor/claim?token=preview`,
+  },
+  vendor_claim_admin_alert: {
+    listingName: "Bloom Studio",
+    listingId: "bloom-studio",
+    claimantEmail: "owner@bloomstudio.com",
+    contactEmailMasked: "c***@bloomstudio.com",
+    adminUrl: `${BASE_URL}/app/admin/suppliers`,
+  },
+  vendor_claim_approved: {
+    listingName: "Bloom Studio",
+    managerUrl: `${BASE_URL}/vendor`,
+  },
+  supplier_outreach: {
+    coupleDisplayName: "Mia & Lucas",
+    coupleReplyEmail: "mia@example.com",
+    coupleReplyName: "Mia Johnson",
+    supplierName: "Bloom Studio",
+    subject: "Florals for our September wedding",
+    body: "Hi, we came across your portfolio and love your work.\n\nWe're planning a 80-person garden wedding on September 12, 2026 and are looking for a florist for ceremony + reception. Would you be available, and could you share your packages?",
+    outreachUrl: `${BASE_URL}/app/outreach`,
+  },
+};
+
+const ALL_KINDS = Object.keys(KIND_CATEGORY) as EmailKind[];
+
+function previewAll() {
+  return ALL_KINDS.map((kind) => {
+    const category = KIND_CATEGORY[kind];
+    const stub = STUBS[kind] as never;
+    let subject: string = kind;
+    try {
+      const built = buildEmail(kind, stub, { recipientName: "Mia" });
+      subject = built.subject;
+    } catch {
+      // subject stays as the kind slug if build fails
+    }
+    return { kind, category, subject };
+  });
+}
+
+export function registerAdminEmailPreviewRoutes(router: Router) {
+  router.get("/api/admin/email-preview", (ctx: Ctx) => {
+    requireAdmin(ctx);
+    return json({ kinds: previewAll() });
+  });
+
+  router.get("/api/admin/email-preview/:kind", (ctx: Ctx) => {
+    requireAdmin(ctx);
+    const kind = ctx.params.kind as EmailKind;
+    if (!(kind in KIND_CATEGORY)) throw new HttpError(404, "Unknown email kind");
+
+    const locale = ctx.url.searchParams.get("locale") as "hu" | "en" | null;
+    const stub = STUBS[kind] as never;
+    const built = buildEmail(kind, stub, {
+      recipientName: "Mia",
+      recipientLocale: locale ?? undefined,
+    });
+
+    return json({ html: built.rendered.html, subject: built.subject });
+  });
+}

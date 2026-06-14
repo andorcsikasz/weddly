@@ -37,6 +37,9 @@ const AppShellLayout = lazy(() =>
   import("./components/AppShell").then((m) => ({ default: m.AppShellLayout })),
 );
 const AdminAnalyticsPage = lazy(() => import("./pages/AdminAnalyticsPage"));
+const AdminEmailPreviewPage = lazy(() =>
+  import("./pages/AdminEmailPreviewPage").then((m) => ({ default: m.AdminEmailPreviewPage })),
+);
 const AdminFinancialPlannerPage = lazy(() => import("./pages/AdminFinancialPlannerPage"));
 const AdminBlogPage = lazy(() => import("./pages/AdminBlogPage"));
 const AdminCoupleCardsPage = lazy(() => import("./pages/AdminCoupleCardsPage"));
@@ -772,6 +775,16 @@ export default function App() {
               <Page>
                 <RequireAdmin>
                   <AdminAnalyticsPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/email-preview"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminEmailPreviewPage />
                 </RequireAdmin>
               </Page>
             }

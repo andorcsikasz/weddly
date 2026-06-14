@@ -15,6 +15,7 @@ import {
   Image as ImageIcon,
   Inbox,
   Languages,
+  Mail,
   LayoutDashboard,
   LayoutList,
   LineChart,
@@ -290,6 +291,12 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     to: "/app/admin/blog",
     labelKey: "admin.nav_blog",
     icon: <BookOpen size={18} />,
+    group: "manage",
+  },
+  {
+    to: "/app/admin/email-preview",
+    labelKey: "admin.nav_email_preview",
+    icon: <Mail size={18} />,
     group: "manage",
   },
   // ── Insights ──────────────────────────────────────────────────────

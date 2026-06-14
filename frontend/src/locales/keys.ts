@@ -3660,6 +3660,7 @@ export interface LocaleMessages {
     nav_waitlist: string;
     nav_taxonomy: string;
     nav_financial_planner: string;
+    nav_email_preview: string;
     /** Financial planner (/app/admin/financial-planner). */
     fin_title: string;
     fin_subtitle: string;
