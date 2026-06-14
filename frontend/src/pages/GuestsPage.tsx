@@ -269,6 +269,7 @@ export default function GuestsPage() {
       else membersByHh.set(g.household_id, [g]);
     }
     const eligible: Household[] = [];
+    const eligibleContacts: Guest[] = [];
     const alreadyInvited: Household[] = [];
     const noEmail: Household[] = [];
     for (const hh of households) {
@@ -278,13 +279,13 @@ export default function GuestsPage() {
         .sort((a, b) => a.id - b.id)[0];
       if (!contact) noEmail.push(hh);
       else if (hh.invited_at != null) alreadyInvited.push(hh);
-      else eligible.push(hh);
+      else { eligible.push(hh); eligibleContacts.push(contact); }
     }
-    return { eligible, alreadyInvited, noEmail };
+    return { eligible, eligibleContacts, alreadyInvited, noEmail };
   }, [households, guests]);
 
   async function onMassInvite() {
-    const { eligible, alreadyInvited, noEmail } = inviteBreakdown;
+    const { eligible, eligibleContacts, alreadyInvited, noEmail } = inviteBreakdown;
     if (eligible.length === 0) {
       toast.info(t("guests.invite_none_eligible"));
       return;
@@ -292,10 +293,20 @@ export default function GuestsPage() {
     const ok = await confirm({
       title: t("guests.invite_confirm_title"),
       body: (
-        <div className="space-y-2 text-sm">
-          <p>{t("guests.invite_confirm_intro", { count: eligible.length })}</p>
+        <div className="space-y-3 text-sm">
+          <ul className="max-h-48 divide-y divide-paper-100 overflow-y-auto rounded-lg border border-paper-200 dark:divide-umber-700 dark:border-umber-700">
+            {eligibleContacts.map((contact) => (
+              <li key={contact.id} className="flex min-w-0 items-center gap-2 px-3 py-2">
+                <span className="min-w-0 flex-1 truncate font-medium text-ink-900 dark:text-paper-50">
+                  {contact.full_name}
+                </span>
+                <span className="shrink-0 truncate text-xs text-ink-400 dark:text-umber-400">
+                  {contact.email}
+                </span>
+              </li>
+            ))}
+          </ul>
           <ul className="space-y-1 text-ink-600 dark:text-umber-200">
-            <li>{t("guests.invite_confirm_eligible", { count: eligible.length })}</li>
             {alreadyInvited.length > 0 && (
               <li>{t("guests.invite_confirm_already", { count: alreadyInvited.length })}</li>
             )}
