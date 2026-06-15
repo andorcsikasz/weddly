@@ -9,19 +9,23 @@ import type { Couple, FilmAccessCheck, FilmAesthetic, FilmDevice, PhotoAlbum } f
 import { FILM_AESTHETICS } from "@shared/types";
 import {
   AlertTriangle,
+  CalendarDays,
   Camera,
   Check,
+  ChevronRight,
+  Clock3,
   Copy,
   ExternalLink,
   Eye,
   Film,
+  GalleryHorizontalEnd,
   Link2,
   Pencil,
   QrCode,
   Share2,
   Users,
 } from "lucide-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import React, { type FormEvent, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Dialog, useToast } from "../components/ui";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
@@ -69,6 +73,19 @@ function formatRevealDate(ms: number): string {
     minute: "2-digit",
   });
 }
+
+function toDatetimeLocal(ms: number): string {
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function daysUntil(ms: number): number {
+  return Math.max(0, Math.ceil((ms - Date.now()) / 86400000));
+}
+
+// Demo wedding photos served from /public/demo/ — shown as gallery strip placeholders.
+const DEMO_STRIP = ["/demo/film-01.jpg", "/demo/film-02.jpg", "/demo/film-03.jpg"];
 
 // --- QR placeholder (used before real SVG loads) ---------------------------
 
@@ -211,29 +228,6 @@ function StatusChip({
 }
 
 // Decorative film-strip column on the right side of FilmBanner.
-function FilmStripDecor() {
-  return (
-    <div
-      className="pointer-events-none hidden shrink-0 -rotate-2 select-none flex-col gap-1.5 opacity-40 lg:flex"
-      aria-hidden="true"
-    >
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="flex items-stretch gap-1">
-          <div className="flex w-2 flex-col justify-around">
-            <div className="h-1.5 rounded-[1px] bg-paper-100/40" />
-            <div className="h-1.5 rounded-[1px] bg-paper-100/40" />
-          </div>
-          <div className="h-16 w-24 rounded border border-paper-100/20 bg-umber-700" />
-          <div className="flex w-2 flex-col justify-around">
-            <div className="h-1.5 rounded-[1px] bg-paper-100/40" />
-            <div className="h-1.5 rounded-[1px] bg-paper-100/40" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // Countdown: live timer that ticks every second.
 function Countdown({ targetMs, label }: { targetMs: number; label: string }) {
   const [remaining, setRemaining] = useState(() => targetMs - Date.now());
@@ -319,22 +313,63 @@ function QrModal({
   );
 }
 
-// Dark cinematic banner — always visible, adapts to whether a film exists.
+// Horizontal photo-strip gallery — shows demo photos with real "+N" overflow count.
+function GalleryStrip({ album }: { album: PhotoAlbum }) {
+  const extra = Math.max(0, album.photoCount - DEMO_STRIP.length);
+  return (
+    <div className="mb-3 overflow-hidden rounded-2xl bg-umber-950 px-4 pb-4 pt-3">
+      <div className="mb-2.5 flex items-center justify-between">
+        <span className="font-grotesk text-sm font-semibold text-paper-200">
+          {album.title || "Wedding Film"}
+        </span>
+        {album.eventEndsAt && (
+          <span className="text-xs text-paper-500">
+            {new Date(album.eventEndsAt).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </span>
+        )}
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-0.5">
+        {DEMO_STRIP.map((src, i) => {
+          const isLast = i === DEMO_STRIP.length - 1 && extra > 0;
+          return (
+            <div
+              key={src}
+              className="relative h-28 w-[4.5rem] flex-shrink-0 overflow-hidden rounded-2xl"
+            >
+              <img src={src} alt="" className="h-full w-full object-cover" aria-hidden="true" />
+              {isLast && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/55">
+                  <span className="font-grotesk text-sm font-semibold text-white">+{extra}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Film banner — large heading, cover thumbnail, stats, action buttons.
 function FilmBanner({
   album,
-  albumStatus,
-  photographerSaved,
   onCreateClick,
-  onPhotographerChipClick,
+  onEditClick,
 }: {
   album: PhotoAlbum | null;
-  albumStatus: FilmStatus | null;
-  photographerSaved: boolean;
   onCreateClick: () => void;
-  onPhotographerChipClick: () => void;
+  onEditClick: () => void;
 }) {
   const { t } = useT();
+  const [copied, setCopied] = useState(false);
   const uploadUrl = album ? `${window.location.origin}/photos/${album.uploadToken}` : null;
+  const cameraUrl = uploadUrl;
+
+  const daysLeft = album?.eventEndsAt ? daysUntil(album.eventEndsAt) : null;
 
   function handleShare() {
     if (!uploadUrl) return;
@@ -344,217 +379,106 @@ function FilmBanner({
       });
     } else {
       navigator.clipboard.writeText(uploadUrl).catch(() => {});
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   }
 
-  return (
-    <div className="relative mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-umber-950 via-umber-900 to-umber-800 p-5 shadow-pop">
-      {/* Radial vignette — dark edges, lighter centre */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden="true"
-        style={{
-          background:
-            "radial-gradient(ellipse at 30% 50%, transparent 30%, rgba(0,0,0,0.45) 100%)",
-        }}
-      />
-      <div className="relative z-10 flex items-start gap-6">
-        {/* Left column */}
-        <div className="min-w-0 flex-1">
-          {/* Icon row + plain stat indicators */}
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-paper-200">
-              <Film size={20} aria-hidden="true" />
-            </div>
-            {album && (
-              <div className="ml-auto flex items-center gap-2.5 text-xs text-paper-400">
-                <span className="flex items-center gap-1">
-                  <Camera size={10} aria-hidden="true" />
-                  {album.photoCount}
-                </span>
-                <span aria-hidden="true">·</span>
-                <span className="flex items-center gap-1">
-                  <Users size={10} aria-hidden="true" />
-                  {album.participantCount}
-                </span>
-              </div>
-            )}
-          </div>
+  // Cover thumbnail: album's own cover → fallback to demo photo
+  const coverThumb = album?.coverImageUrl ?? DEMO_STRIP[0];
 
-          {/* Headline — max-w prevents orphan words on narrow lines */}
-          <h2 className="max-w-sm font-grotesk text-2xl font-semibold leading-snug !text-paper-50 sm:text-3xl">
-            {t("media.film_empty_title")}
+  return (
+    <div className="mb-3 overflow-hidden rounded-2xl bg-umber-950 p-5">
+      <div className="flex items-start gap-4">
+        {/* Left: title + stats + buttons */}
+        <div className="min-w-0 flex-1">
+          <h2 className="font-grotesk text-2xl font-semibold leading-tight text-paper-50 sm:text-3xl">
+            {album?.title || t("media.film_empty_title")}
           </h2>
 
-          {/* Status chips */}
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-            <StatusChip
-              done={!!album}
-              label={album ? t("media.film_title") : t("media.film_status_no_film")}
-            />
-            <StatusChip
-              done={photographerSaved}
-              label={
-                photographerSaved
-                  ? t("media.photographer_title")
-                  : t("media.film_status_no_photographer")
-              }
-              onClick={onPhotographerChipClick}
-            />
-          </div>
+          {album ? (
+            <>
+              {/* Stats — 3 lines with icons */}
+              <div className="mt-3 flex flex-col gap-1.5">
+                {daysLeft !== null && (
+                  <span className="flex items-center gap-2 text-sm text-paper-300">
+                    <Clock3 size={13} className="shrink-0" aria-hidden="true" />
+                    {daysLeft === 0 ? t("media.film_status_live") : `${daysLeft} days left`}
+                  </span>
+                )}
+                <span className="flex items-center gap-2 text-sm text-paper-300">
+                  <Users size={13} className="shrink-0" aria-hidden="true" />
+                  {album.participantCount} {t("media.film_stats_guests").toLowerCase()}
+                </span>
+                <span className="flex items-center gap-2 text-sm text-paper-300">
+                  <GalleryHorizontalEnd size={13} className="shrink-0" aria-hidden="true" />
+                  {album.photoCount} {t("media.film_stats_photos").toLowerCase()}
+                </span>
+              </div>
 
-          {/* CTA + no-app hint */}
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            {album && uploadUrl ? (
-              <button
-                type="button"
-                onClick={handleShare}
-                className="inline-flex items-center gap-2 rounded-lg bg-paper-50 px-4 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
-              >
-                <Share2 size={14} aria-hidden="true" />
-                {t("media.film_cta_share")}
-              </button>
-            ) : (
+              {/* Action buttons */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-umber-700 bg-umber-800 px-4 py-2 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-700"
+                >
+                  <QrCode size={13} aria-hidden="true" />
+                  {copied ? t("media.from_guests_copied") : t("media.film_cta_share")}
+                </button>
+                {cameraUrl && (
+                  <a
+                    href={cameraUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-paper-50 px-5 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+                  >
+                    <Camera size={13} aria-hidden="true" />
+                    {t("media.film_stats_camera")}
+                  </a>
+                )}
+              </div>
+            </>
+          ) : (
+            /* No film yet */
+            <div className="mt-4">
+              <p className="mb-3 text-sm text-paper-400">{t("media.film_no_app_hint")}</p>
               <button
                 type="button"
                 onClick={onCreateClick}
-                className="inline-flex items-center gap-2 rounded-lg bg-paper-50 px-4 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+                className="inline-flex items-center gap-2 rounded-full bg-paper-50 px-5 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
               >
                 {t("media.film_cta_create")}
               </button>
-            )}
-            <span className="text-xs text-paper-400/70">{t("media.film_no_app_hint")}</span>
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Right: decorative film strip (large screens only) */}
-        <FilmStripDecor />
+        {/* Right: cover photo thumbnail */}
+        <div className="relative shrink-0">
+          <img
+            src={coverThumb}
+            alt=""
+            className="h-20 w-20 rounded-2xl object-cover sm:h-24 sm:w-24"
+            aria-hidden="true"
+          />
+          {album && (
+            <button
+              type="button"
+              onClick={onEditClick}
+              aria-label="Edit film settings"
+              className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-umber-800 text-paper-300 ring-2 ring-umber-950 transition-colors hover:bg-umber-700"
+            >
+              <Pencil size={12} aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 // Single stat tile, optionally with a utilization progress bar.
-function StatTile({
-  label,
-  value,
-  accent,
-  progress,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-  progress?: { value: number; max: number };
-}) {
-  const pct = progress && progress.max > 0 ? Math.min(1, progress.value / progress.max) : null;
-  const barColor =
-    pct == null ? "" : pct > 0.9 ? "bg-red-500" : pct > 0.7 ? "bg-amber-400" : "bg-sage-500";
-
-  return (
-    <div className="flex flex-col gap-0.5 rounded-xl border border-paper-200 bg-paper-50 px-3 py-2.5 dark:border-umber-700 dark:bg-umber-800">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">{label}</span>
-      <span
-        className={`text-base font-semibold tabular-nums ${
-          accent ? "text-sage-700 dark:text-sage-400" : "text-ink-800 dark:text-paper-100"
-        }`}
-      >
-        {value}
-      </span>
-      {pct !== null && (
-        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-          <div
-            className={`h-full rounded-full transition-all ${barColor}`}
-            style={{ width: `${Math.round(pct * 100)}%` }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Film status panel — stat tiles shown when an album exists.
-function FilmStatusPanel({ album }: { album: PhotoAlbum }) {
-  const { t } = useT();
-  const status = getFilmStatus(album);
-  const now = Date.now();
-
-  const totalCapacity = album.shotsPerGuest != null ? album.shotsPerGuest * album.guestCap : null;
-
-  const stats: Array<{
-    label: string;
-    value: string;
-    accent?: boolean;
-    progress?: { value: number; max: number };
-  }> = [
-    {
-      label: t("media.film_stats_photos"),
-      value: String(album.photoCount),
-    },
-    {
-      label: t("media.film_stats_guests"),
-      value: `${album.participantCount} / ${album.guestCap}`,
-    },
-    {
-      label: t("media.film_stats_shots"),
-      value:
-        totalCapacity != null
-          ? `${album.photoCount} / ${totalCapacity}`
-          : t("media.film_unlimited"),
-      progress: totalCapacity != null ? { value: album.photoCount, max: totalCapacity } : undefined,
-    },
-    {
-      label: t("media.film_stats_upload"),
-      value: album.isUploadEnabled ? t("media.film_status_open") : t("media.film_status_closed"),
-      accent: album.isUploadEnabled,
-    },
-  ];
-
-  const statusLabel =
-    status === "live"
-      ? t("media.film_status_shooting")
-      : status === "developing"
-        ? t("media.film_status_developing")
-        : t("media.film_status_revealed");
-
-  const statusDot =
-    status === "live" ? "bg-sage-500" : status === "developing" ? "bg-amber-400" : "bg-paper-400";
-
-  return (
-    <div className="card mb-3 border-paper-200 bg-white/80 backdrop-blur-sm dark:border-umber-700 dark:bg-umber-800/80">
-      {/* Status heading with pulsing dot when live */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 font-grotesk text-sm font-semibold text-ink-800 dark:text-paper-100">
-          <span
-            className={`h-2.5 w-2.5 rounded-full ${statusDot} ${status === "live" ? "animate-pulse" : ""}`}
-            aria-hidden="true"
-          />
-          {statusLabel}
-        </h3>
-        <span className="text-xs text-ink-400 dark:text-umber-400">
-          {status === "live" && album.eventEndsAt && album.eventEndsAt > now && (
-            <Countdown targetMs={album.eventEndsAt} label={t("media.film_ends_in")} />
-          )}
-          {status === "developing" && album.revealAt && album.revealAt > now && (
-            <Countdown targetMs={album.revealAt} label={t("media.film_reveals_in")} />
-          )}
-          {status === "revealed" && (
-            <span className="text-xs text-ink-400 dark:text-umber-400">
-              {t("media.film_revealed")}
-              {album.revealAt ? ` · ${formatRevealDate(album.revealAt)}` : ""}
-            </span>
-          )}
-        </span>
-      </div>
-
-      {/* Stat tiles */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map((s) => (
-          <StatTile key={s.label} {...s} />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Live-polling participant list (collapsed by default).
 function ParticipantDashboard({ albumToken }: { albumToken: string }) {
@@ -886,74 +810,64 @@ function FilmSettingsPanel({
     warm: "Warm",
   };
 
-  const isUnnamed = !album.title?.trim();
-  const nameValue = isUnnamed ? t("media.film_settings_unnamed") : album.title!;
+  type SettingsRow = {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+    dividerAfter?: boolean;
+  };
 
-  const identityRows: Array<{ label: string; value: string; warn?: boolean }> = [
-    { label: t("media.film_settings_name"), value: nameValue, warn: isUnnamed },
+  const rows: SettingsRow[] = [
     {
-      label: t("media.film_settings_aesthetic"),
-      value: aestheticLabel[album.filmAesthetic] ?? album.filmAesthetic,
+      icon: <CalendarDays size={15} aria-hidden="true" />,
+      label: t("media.film_settings_ends"),
+      value: album.eventEndsAt ? formatRevealDate(album.eventEndsAt) : "Not set",
     },
     {
+      icon: <Clock3 size={15} aria-hidden="true" />,
+      label: t("media.film_settings_reveal"),
+      value: album.revealAt ? formatRevealDate(album.revealAt) : t("media.film_settings_reveal_default"),
+      dividerAfter: true,
+    },
+    {
+      icon: <Users size={15} aria-hidden="true" />,
+      label: t("media.film_settings_cap"),
+      value: `${album.guestCap} people`,
+    },
+    {
+      icon: <GalleryHorizontalEnd size={15} aria-hidden="true" />,
       label: t("media.film_settings_shots"),
       value: album.shotsPerGuest != null ? String(album.shotsPerGuest) : t("media.film_unlimited"),
     },
-  ];
-
-  const statusRows: Array<{ label: string; value: string }> = [
     {
-      label: t("media.film_settings_reveal"),
-      value: album.revealAt ? formatRevealDate(album.revealAt) : "Not set",
-    },
-    {
-      label: t("media.film_settings_cap"),
-      value: String(album.guestCap),
-    },
-    {
-      label: t("media.film_settings_upload"),
-      value: album.isUploadEnabled ? t("media.film_status_open") : t("media.film_status_closed"),
+      icon: <Film size={15} aria-hidden="true" />,
+      label: t("media.film_settings_aesthetic"),
+      value: aestheticLabel[album.filmAesthetic] ?? album.filmAesthetic,
     },
   ];
 
   return (
-    <div className="card mt-3">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-grotesk text-sm font-semibold text-ink-800 dark:text-paper-100">
-          {t("media.film_settings_title")}
-        </h3>
-        <button type="button" className="btn-outline btn-sm" onClick={onEditClick}>
-          <Pencil size={13} aria-hidden="true" />
-          {t("common.edit")}
-        </button>
-      </div>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-        {identityRows.map((r) => (
-          <div key={r.label}>
-            <dt className="text-xs text-ink-400 dark:text-umber-400">{r.label}</dt>
-            <dd
-              className={`mt-0.5 text-sm font-medium ${
-                r.warn
-                  ? "text-amber-600 underline decoration-dotted underline-offset-2 dark:text-amber-400"
-                  : "text-ink-700 dark:text-paper-200"
-              }`}
-            >
-              {r.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <div className="my-3 border-t border-paper-200 dark:border-umber-700" />
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-        {statusRows.map((r) => (
-          <div key={r.label}>
-            <dt className="text-xs text-ink-400 dark:text-umber-400">{r.label}</dt>
-            <dd className="mt-0.5 text-sm font-medium text-ink-700 dark:text-paper-200">
-              {r.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
+    <div className="mt-3 overflow-hidden rounded-2xl bg-umber-900">
+      {rows.map((row, i) => (
+        <React.Fragment key={row.label}>
+          <button
+            type="button"
+            onClick={onEditClick}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-umber-800"
+          >
+            <span className="shrink-0 text-umber-400">{row.icon}</span>
+            <span className="flex-1 text-sm text-paper-200">{row.label}</span>
+            <span className="mr-1 text-sm text-umber-400">{row.value}</span>
+            <ChevronRight size={14} className="shrink-0 text-umber-600" aria-hidden="true" />
+          </button>
+          {row.dividerAfter && i < rows.length - 1 && (
+            <div className="mx-4 border-t border-dashed border-umber-700" />
+          )}
+          {!row.dividerAfter && i < rows.length - 1 && (
+            <div className="mx-4 border-t border-umber-800" />
+          )}
+        </React.Fragment>
+      ))}
     </div>
   );
 }
@@ -1098,12 +1012,20 @@ function FilmModal({
   const [shots, setShots] = useState<string>(
     album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "16",
   );
+  const [eventEndsAt, setEventEndsAt] = useState<string>(
+    album?.eventEndsAt ? toDatetimeLocal(album.eventEndsAt) : "",
+  );
+  const [revealAt, setRevealAt] = useState<string>(
+    album?.revealAt ? toDatetimeLocal(album.revealAt) : "",
+  );
 
   useEffect(() => {
     if (!open) return;
     setTitle(album?.title ?? "");
     setAesthetic(album?.filmAesthetic ?? "natural");
     setShots(album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "16");
+    setEventEndsAt(album?.eventEndsAt ? toDatetimeLocal(album.eventEndsAt) : "");
+    setRevealAt(album?.revealAt ? toDatetimeLocal(album.revealAt) : "");
     if (!isEdit) {
       photoAlbumApi
         .filmAccess()
@@ -1118,12 +1040,16 @@ function FilmModal({
     try {
       const shotsNum = parseInt(shots, 10);
       const spg = Number.isFinite(shotsNum) && shotsNum > 0 ? shotsNum : null;
+      const endsMs = eventEndsAt ? new Date(eventEndsAt).getTime() : null;
+      const revealMs = revealAt ? new Date(revealAt).getTime() : null;
 
       if (isEdit) {
         const { album: updated } = await photoAlbumApi.update({
           title: title.trim() || null,
           filmAesthetic: aesthetic,
           shotsPerGuest: spg,
+          ...(endsMs !== null ? { eventEndsAt: endsMs } : {}),
+          ...(revealMs !== null ? { revealAt: revealMs } : {}),
         });
         onSaved(updated);
       } else {
@@ -1247,6 +1173,37 @@ function FilmModal({
             <span className="text-sm text-ink-500">photos per person</span>
           </div>
         </div>
+
+        {isEdit && (
+          <>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink-700 dark:text-paper-200">
+                {t("media.film_settings_ends")}
+                <span className="ml-1 font-normal text-ink-400">(optional)</span>
+              </label>
+              <input
+                type="datetime-local"
+                value={eventEndsAt}
+                onChange={(e) => setEventEndsAt(e.target.value)}
+                className="input w-full text-sm"
+              />
+              <p className="mt-1 text-xs text-ink-400">{t("media.film_settings_ends_hint")}</p>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink-700 dark:text-paper-200">
+                {t("media.film_settings_reveal")}
+                <span className="ml-1 font-normal text-ink-400">(optional)</span>
+              </label>
+              <input
+                type="datetime-local"
+                value={revealAt}
+                onChange={(e) => setRevealAt(e.target.value)}
+                className="input w-full text-sm"
+              />
+              <p className="mt-1 text-xs text-ink-400">{t("media.film_settings_reveal_hint")}</p>
+            </div>
+          </>
+        )}
       </form>
     </Dialog>
   );
@@ -1425,17 +1382,13 @@ export default function MediaPage() {
         )}
       </header>
 
-      {/* Dark cinematic banner */}
+      {/* Film banner + gallery strip */}
       <FilmBanner
         album={album}
-        albumStatus={albumStatus}
-        photographerSaved={!!photographerUrl}
         onCreateClick={() => setShowFilmModal(true)}
-        onPhotographerChipClick={scrollToAndEditPhotographer}
+        onEditClick={() => setShowFilmModal(true)}
       />
-
-      {/* Live stats panel — only when a film exists */}
-      {album && <FilmStatusPanel album={album} />}
+      {album && <GalleryStrip album={album} />}
 
       {/* Feature cards grid */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

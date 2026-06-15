@@ -1878,6 +1878,7 @@ export interface LocaleMessages {
     film_stats_guests: string;
     film_stats_shots: string;
     film_stats_upload: string;
+    film_stats_camera: string;
     film_status_open: string;
     film_status_closed: string;
     film_status_shooting: string;
@@ -1898,7 +1899,11 @@ export interface LocaleMessages {
     film_settings_name: string;
     film_settings_aesthetic: string;
     film_settings_shots: string;
+    film_settings_ends: string;
+    film_settings_ends_hint: string;
     film_settings_reveal: string;
+    film_settings_reveal_default: string;
+    film_settings_reveal_hint: string;
     film_settings_cap: string;
     film_settings_upload: string;
     film_settings_unnamed: string;
