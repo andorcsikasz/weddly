@@ -1104,7 +1104,7 @@ export default function WishlistEditorPage() {
             );
           })}
         </div>
-        {couple && (
+        {couple && phase === "before" && (
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
