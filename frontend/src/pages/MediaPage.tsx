@@ -755,14 +755,14 @@ export default function MediaPage() {
 
                 {/* Title overlay — bottom left */}
                 <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-paper-400">
                     Wedding Film
                   </p>
                   <h1 className="font-grotesk text-2xl font-semibold leading-tight text-paper-50 sm:text-3xl">
                     {album.title || t("media.film_empty_title")}
                   </h1>
                   {album.eventEndsAt && (
-                    <p className="mt-1 text-xs text-umber-400">
+                    <p className="mt-1 text-xs text-paper-400">
                       {albumStatus === "live" && daysLeft !== null ? (
                         daysLeft === 0 ? (
                           <Countdown targetMs={album.eventEndsAt} label="Closes in" />
@@ -784,7 +784,7 @@ export default function MediaPage() {
                 <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
                   {album.participantCount}
                 </span>
-                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500">
+                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                   {t("media.film_stats_guests")}
                 </span>
               </div>
@@ -792,7 +792,7 @@ export default function MediaPage() {
                 <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
                   {daysLeft ?? "--"}
                 </span>
-                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500">
+                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                   Days left
                 </span>
               </div>
@@ -800,7 +800,7 @@ export default function MediaPage() {
                 <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
                   {album.photoCount}
                 </span>
-                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500">
+                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                   {t("media.film_stats_photos")}
                 </span>
               </div>
@@ -882,7 +882,7 @@ export default function MediaPage() {
 
             {/* ── Gallery strip ─────────────────────────────────────── */}
             <div className="border-t border-umber-800 px-4 pb-4 pt-4">
-              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500">
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                 Recent photos
               </p>
               <div className="flex gap-2.5 overflow-x-auto pb-0.5">
@@ -920,7 +920,7 @@ export default function MediaPage() {
 
             {/* ── Settings (iOS rows) ───────────────────────────────── */}
             <div className="border-t border-umber-800">
-              <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500">
+              <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                 {t("media.film_settings_title")}
               </p>
               {settingsRows.map((row, i) => (
@@ -930,12 +930,12 @@ export default function MediaPage() {
                     onClick={() => setShowFilmModal(true)}
                     className="flex w-full items-center gap-3.5 px-5 py-3.5 text-left transition-colors hover:bg-umber-900"
                   >
-                    <span className="shrink-0 text-umber-500">{row.icon}</span>
+                    <span className="shrink-0 text-umber-400">{row.icon}</span>
                     <span className="flex-1 text-sm text-paper-300">{row.label}</span>
-                    <span className="mr-1 max-w-[8rem] truncate text-right text-sm text-umber-400">
+                    <span className="mr-1 max-w-[8rem] truncate text-right text-sm text-paper-400">
                       {row.value}
                     </span>
-                    <ChevronRight size={14} className="shrink-0 text-umber-700" aria-hidden="true" />
+                    <ChevronRight size={14} className="shrink-0 text-umber-500" aria-hidden="true" />
                   </button>
                   {row.dividerAfter && i < settingsRows.length - 1 && (
                     <div className="mx-5 border-t border-dashed border-umber-800" />
@@ -950,11 +950,11 @@ export default function MediaPage() {
             {/* ── Guest link ────────────────────────────────────────── */}
             {uploadUrl && (
               <div className="border-t border-umber-800 px-5 py-4">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                   Guest link
                 </p>
                 <div className="flex items-center gap-2 rounded-xl border border-umber-800 bg-umber-900 px-3 py-2.5">
-                  <span className="flex-1 truncate font-mono text-xs text-umber-400">
+                  <span className="flex-1 truncate font-mono text-xs text-paper-400">
                     {uploadUrl.replace(/^https?:\/\//, "")}
                   </span>
                   <button
@@ -996,7 +996,7 @@ export default function MediaPage() {
                     <h1 className="font-grotesk text-2xl font-semibold text-paper-50 sm:text-3xl">
                       {t("media.film_empty_title")}
                     </h1>
-                    <p className="mx-auto mt-2 max-w-xs text-sm text-umber-400">
+                    <p className="mx-auto mt-2 max-w-xs text-sm text-paper-400">
                       {t("media.film_no_app_hint")}
                     </p>
                   </div>
@@ -1019,9 +1019,9 @@ export default function MediaPage() {
                 { n: "3", title: t("media.film_how_3_title"), body: t("media.film_how_3_body") },
               ].map((s) => (
                 <div key={s.n} className="px-4 py-5">
-                  <span className="font-grotesk text-xs font-bold text-umber-600">{s.n}</span>
+                  <span className="font-grotesk text-xs font-bold text-umber-400">{s.n}</span>
                   <p className="mt-1.5 text-xs font-semibold text-paper-300">{s.title}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-umber-500">{s.body}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-paper-400">{s.body}</p>
                 </div>
               ))}
             </div>
@@ -1033,7 +1033,7 @@ export default function MediaPage() {
           ref={photographerRowRef}
           className="border-t border-umber-800"
         >
-          <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500">
+          <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
             {t("media.photographer_title")}
           </p>
           {editing ? (
@@ -1067,7 +1067,7 @@ export default function MediaPage() {
                   type="button"
                   onClick={cancelEdit}
                   disabled={saving}
-                  className="px-2 text-sm text-umber-500 hover:text-paper-400"
+                  className="px-2 text-sm text-umber-400 hover:text-paper-200"
                 >
                   {t("common.cancel")}
                 </button>
@@ -1080,7 +1080,7 @@ export default function MediaPage() {
             </form>
           ) : (
             <div className="flex items-center gap-3.5 px-5 pb-5 pt-3">
-              <Camera size={15} className="shrink-0 text-umber-500" aria-hidden="true" />
+              <Camera size={15} className="shrink-0 text-umber-400" aria-hidden="true" />
               {photographerUrl ? (
                 <>
                   <span className="flex-1 truncate text-sm text-paper-300">
@@ -1090,7 +1090,7 @@ export default function MediaPage() {
                     href={photographerUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs font-medium text-umber-400 transition-colors hover:text-paper-300"
+                    className="flex items-center gap-1 text-xs font-medium text-paper-400 transition-colors hover:text-paper-100"
                   >
                     <ExternalLink size={12} aria-hidden="true" />
                     {t("media.photographer_open")}
@@ -1098,18 +1098,18 @@ export default function MediaPage() {
                   <button
                     type="button"
                     onClick={startEdit}
-                    className="text-xs text-umber-600 transition-colors hover:text-umber-400"
+                    className="text-xs text-umber-400 transition-colors hover:text-paper-200"
                   >
                     <Pencil size={12} aria-hidden="true" />
                   </button>
                 </>
               ) : (
                 <>
-                  <span className="flex-1 text-sm text-umber-600">{t("media.photographer_cta")}</span>
+                  <span className="flex-1 text-sm text-umber-400">{t("media.photographer_cta")}</span>
                   <button
                     type="button"
                     onClick={startEdit}
-                    className="flex items-center gap-1 text-xs font-medium text-umber-400 transition-colors hover:text-paper-300"
+                    className="flex items-center gap-1 text-xs font-medium text-paper-400 transition-colors hover:text-paper-100"
                   >
                     <Link2 size={12} aria-hidden="true" />
                     Add link
@@ -1121,10 +1121,10 @@ export default function MediaPage() {
         </div>
 
         {/* ── Reveal gallery teaser (coming soon) ───────────────────── */}
-        <div className="flex items-center gap-3.5 border-t border-umber-800 px-5 py-4 opacity-40">
-          <Share2 size={15} className="shrink-0 text-umber-500" aria-hidden="true" />
-          <span className="flex-1 text-sm text-umber-500">{t("media.to_guests_title")}</span>
-          <span className="rounded-full border border-umber-700 px-2.5 py-0.5 text-[10px] font-medium text-umber-500">
+        <div className="flex items-center gap-3.5 border-t border-umber-800 px-5 py-4 opacity-50">
+          <Share2 size={15} className="shrink-0 text-paper-500" aria-hidden="true" />
+          <span className="flex-1 text-sm text-paper-500">{t("media.to_guests_title")}</span>
+          <span className="rounded-full border border-umber-600 px-2.5 py-0.5 text-[10px] font-medium text-paper-500">
             {t("media.coming_soon_title")}
           </span>
         </div>
