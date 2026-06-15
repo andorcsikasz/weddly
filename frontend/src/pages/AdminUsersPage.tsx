@@ -202,6 +202,10 @@ export default function AdminUsersPage() {
     [visibleCouples, userById],
   );
   const demoCouples = useMemo(() => visibleCouples.filter((c) => c.is_demo), [visibleCouples]);
+  const foundingCouples = useMemo(
+    () => visibleCouples.filter((c) => !c.is_demo && c.billing.is_founding_member),
+    [visibleCouples],
+  );
   // Demo activity in the last 24h — drives the collapsed summary headline so
   // a glance tells the admin whether the bucket is hot.
   const demoRecent24h = useMemo(() => {
@@ -970,7 +974,7 @@ export default function AdminUsersPage() {
                   { key: "admin-section-couples", value: totalCouplePairs, icon: Heart },
                   { key: "admin-section-solo", value: totalSoloWorkspaces, icon: User },
                   { key: "admin-section-beta", value: betaCouples.length, icon: FlaskConical },
-                  { key: "admin-section-demo", value: demoCouples.length, icon: Bird },
+                  { key: "admin-section-founding", value: foundingCouples.length, icon: Gift },
                 ] as const
               ).map(({ key, value, icon: Icon }) => (
                 <button
