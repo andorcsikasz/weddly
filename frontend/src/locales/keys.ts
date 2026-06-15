@@ -1344,6 +1344,14 @@ export interface LocaleMessages {
     step_2_sub: string;
     step_3_title: string;
     step_3_sub: string;
+    step_4_title: string;
+    step_4_sub: string;
+    form_tax_number_label: string;
+    form_tax_number_placeholder: string;
+    form_tax_number_hint: string;
+    form_reg_number_label: string;
+    form_reg_number_placeholder: string;
+    form_reg_number_hint: string;
     step_next: string;
     step_back: string;
     contact_subject: string;

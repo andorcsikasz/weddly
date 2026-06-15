@@ -234,6 +234,9 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 2000) travelRadiusKm = parsed;
   }
 
+  const taxNumber = trimStr(form.get("tax_number")) || null;
+  const registrationNumber = trimStr(form.get("registration_number")) || null;
+
   // Optional referral code — resolve to a couple id now so the reward can be
   // granted at activation time even if the code is later regenerated.
   const rawRefCode = trimStr(form.get("ref_code")).toUpperCase();
@@ -250,6 +253,8 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     instagram_handle: instagramHandle,
     price_list_path: null, // written after insert once we have the id
     travel_radius_km: travelRadiusKm,
+    tax_number: taxNumber,
+    registration_number: registrationNumber,
   });
 
   // Stamp the referrer after the row is created so the id is available.

@@ -8,6 +8,7 @@ import {
   Check,
   FileText,
   Globe,
+  Hash,
   Image as ImageIcon,
   Info,
   Instagram,
@@ -337,7 +338,7 @@ function StepDots({ current, total }: { current: number; total: number }) {
 function WaitlistContact() {
   const { t } = useT();
   const [searchParams] = useSearchParams();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [stepError, setStepError] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState(() => {
     const d = loadDraft();
@@ -375,6 +376,14 @@ function WaitlistContact() {
     const d = loadDraft();
     return typeof d?.travelRadiusKm === "string" ? d.travelRadiusKm : "";
   });
+  const [taxNumber, setTaxNumber] = useState(() => {
+    const d = loadDraft();
+    return typeof d?.taxNumber === "string" ? d.taxNumber : "";
+  });
+  const [registrationNumber, setRegistrationNumber] = useState(() => {
+    const d = loadDraft();
+    return typeof d?.registrationNumber === "string" ? d.registrationNumber : "";
+  });
   // Location autocomplete state
   const [locationSuggestions, setLocationSuggestions] = useState<PlaceSuggestion[]>([]);
   const [locationSuggestOpen, setLocationSuggestOpen] = useState(false);
@@ -404,6 +413,8 @@ function WaitlistContact() {
           instagram,
           portfolioLinks,
           travelRadiusKm,
+          taxNumber,
+          registrationNumber,
         }),
       );
     } catch {
@@ -419,6 +430,8 @@ function WaitlistContact() {
     instagram,
     portfolioLinks,
     travelRadiusKm,
+    taxNumber,
+    registrationNumber,
   ]);
 
   // Debounced Nominatim fetch for location suggestions
@@ -530,18 +543,18 @@ function WaitlistContact() {
         return;
       }
     }
-    setStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
+    setStep((s) => (s < 4 ? ((s + 1) as 1 | 2 | 3 | 4) : s));
   }
 
   function goBack() {
     setStepError(null);
     setErrorMsg(null);
-    setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
+    setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3 | 4) : s));
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (step !== 3) return;
+    if (step !== 4) return;
     if (submitting) return;
     setErrorMsg(null);
 
@@ -600,6 +613,8 @@ function WaitlistContact() {
           !Number.isNaN(radiusNum)
             ? radiusNum
             : null,
+        tax_number: taxNumber.trim() || null,
+        registration_number: registrationNumber.trim() || null,
         privacy_version: PRIVACY_VERSION,
         vendor_beta_notice_version: VENDOR_BETA_NOTICE_VERSION,
         ref_code: refCode,
@@ -644,10 +659,11 @@ function WaitlistContact() {
 
   const portfolioAddDisabled = portfolioLinks.length >= MAX_PORTFOLIO_LINKS;
   const travelRelevant = TRAVEL_RELEVANT_CATEGORIES.has(category as SupplierCategory);
-  const stepTitles: Record<1 | 2 | 3, string> = {
+  const stepTitles: Record<1 | 2 | 3 | 4, string> = {
     1: t("vendors.step_1_title"),
     2: t("vendors.step_2_title"),
     3: t("vendors.step_3_title"),
+    4: t("vendors.step_4_title"),
   };
 
   return (
@@ -658,7 +674,7 @@ function WaitlistContact() {
       />
       <div className="relative rounded-3xl border border-paper-400 bg-white p-6 shadow-soft sm:p-8 dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
         {/* Step progress */}
-        <StepDots current={step} total={3} />
+        <StepDots current={step} total={4} />
 
         {/* Per-step header */}
         <div className="mt-5">
@@ -1024,6 +1040,69 @@ function WaitlistContact() {
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* ── Step 4: business verification + consent ──────────── */}
+          {step === 4 && (
+            <div className="mt-5 space-y-4">
+              <p className="text-sm leading-relaxed text-ink-500 dark:text-umber-300">
+                {t("vendors.step_4_sub")}
+              </p>
+
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-x-4">
+                <div>
+                  <label htmlFor="vendor-tax-number" className="field-label">
+                    {t("vendors.form_tax_number_label")}
+                  </label>
+                  <div className="relative">
+                    <Hash
+                      size={16}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                      aria-hidden
+                    />
+                    <input
+                      id="vendor-tax-number"
+                      className="input pl-9"
+                      value={taxNumber}
+                      onChange={(e) => setTaxNumber(e.target.value)}
+                      maxLength={20}
+                      placeholder={t("vendors.form_tax_number_placeholder")}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </div>
+                  <p className="mt-0.5 text-[10px] text-ink-400 dark:text-umber-400">
+                    {t("vendors.form_tax_number_hint")}
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="vendor-reg-number" className="field-label">
+                    {t("vendors.form_reg_number_label")}
+                  </label>
+                  <div className="relative">
+                    <Briefcase
+                      size={16}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+                      aria-hidden
+                    />
+                    <input
+                      id="vendor-reg-number"
+                      className="input pl-9"
+                      value={registrationNumber}
+                      onChange={(e) => setRegistrationNumber(e.target.value)}
+                      maxLength={30}
+                      placeholder={t("vendors.form_reg_number_placeholder")}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </div>
+                  <p className="mt-0.5 text-[10px] text-ink-400 dark:text-umber-400">
+                    {t("vendors.form_reg_number_hint")}
+                  </p>
+                </div>
+              </div>
+
               {/* Beta notice + consent */}
               <div className="space-y-3 border-t border-paper-300 pt-4 dark:border-umber-700">
                 <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
@@ -1090,7 +1169,7 @@ function WaitlistContact() {
                 ← {t("vendors.step_back")}
               </button>
             )}
-            {step < 3 ? (
+            {step < 4 ? (
               <button
                 type="button"
                 onClick={advanceStep}

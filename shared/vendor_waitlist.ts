@@ -31,6 +31,12 @@ export interface SubmitVendorWaitlistInput {
    *  Only meaningful for mobile categories (photo/video, catering, DJs, etc.)
    *  — the frontend hides this field for fixed-location categories. */
   travel_radius_km: number | null;
+  /** Hungarian adószám (XXXXXXXX-Y-ZZ) or equivalent VAT/tax ID. Optional
+   *  at submission time; required before the listing goes live. */
+  tax_number: string | null;
+  /** Cégjegyzékszám (XX-YY-ZZZZZZ) for companies or egyéni vállalkozói
+   *  nyilvántartási szám for sole traders. Optional at submission. */
+  registration_number: string | null;
   /** Versions of the policy / disclosure docs the vendor clicked through.
    *  Must match the server's current constants — see `shared/legal.ts`. */
   privacy_version: string;
@@ -72,6 +78,8 @@ export interface VendorWaitlistAdminView {
   instagram_handle: string | null;
   price_list_url: string | null;
   travel_radius_km: number | null;
+  tax_number: string | null;
+  registration_number: string | null;
   status: VendorWaitlistStatus;
   reviewed_at: number | null;
   outcome_at: number | null;

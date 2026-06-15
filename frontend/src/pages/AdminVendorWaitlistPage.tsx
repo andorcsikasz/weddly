@@ -379,6 +379,8 @@ function EntryCard({
     channels.others.length > 0 ||
     !!entry.price_list_url ||
     !!entry.message ||
+    !!entry.tax_number ||
+    !!entry.registration_number ||
     !!entry.sent_subject ||
     !!entry.notes;
   const statusMeta = STATUS_PILL[entry.status];
@@ -495,6 +497,21 @@ function EntryCard({
                   <FileText size={13} aria-hidden className="shrink-0" />
                   <span>{entry.price_list_url.split("/").pop()}</span>
                 </a>
+              </div>
+            )}
+            {(entry.tax_number || entry.registration_number) && (
+              <div className="admin-tile">
+                <p className="eyebrow">Business verification</p>
+                {entry.tax_number && (
+                  <p className="mt-0.5 font-mono text-xs text-neutral-800 dark:text-paper-100">
+                    Tax: {entry.tax_number}
+                  </p>
+                )}
+                {entry.registration_number && (
+                  <p className="mt-0.5 font-mono text-xs text-neutral-800 dark:text-paper-100">
+                    Reg: {entry.registration_number}
+                  </p>
+                )}
               </div>
             )}
             {entry.message && (

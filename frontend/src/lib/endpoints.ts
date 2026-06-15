@@ -1545,6 +1545,8 @@ export interface SubmitVendorWaitlistForm {
   instagram_handle: string | null;
   price_list: File | null;
   travel_radius_km: number | null;
+  tax_number: string | null;
+  registration_number: string | null;
   privacy_version: string;
   vendor_beta_notice_version: string;
   /** Referral invite code from ?ref_code= on the vendor URL. */
@@ -1565,6 +1567,8 @@ export const vendorWaitlistApi = {
     if (input.price_list) form.append("price_list", input.price_list);
     if (input.travel_radius_km !== null)
       form.append("travel_radius_km", String(input.travel_radius_km));
+    if (input.tax_number) form.append("tax_number", input.tax_number);
+    if (input.registration_number) form.append("registration_number", input.registration_number);
     form.append("privacy_version", input.privacy_version);
     form.append("vendor_beta_notice_version", input.vendor_beta_notice_version);
     if (input.ref_code) form.append("ref_code", input.ref_code);
