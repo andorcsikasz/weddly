@@ -221,6 +221,11 @@ export interface AdminModerationDigestPayload {
   unresolvedUserFlags: number;
   /** Where to land in the admin app — typically /app/admin. */
   adminUrl: string;
+  /** Growth stats: couples and owner-users created in the last 7 days. */
+  newCouplesThisWeek: number;
+  newCouplesLastWeek: number;
+  newUsersThisWeek: number;
+  newUsersLastWeek: number;
 }
 
 export interface RsvpFollowupMissingMealPayload {
@@ -1303,6 +1308,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       p.newVendorWaitlistEntries +
       p.pendingListingClaims +
       p.unresolvedUserFlags;
+    const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+    const couplesDelta = p.newCouplesThisWeek - p.newCouplesLastWeek;
+    const usersDelta = p.newUsersThisWeek - p.newUsersLastWeek;
     return {
       subject: `Weddly moderation queue — ${total} pending`,
       ctaUrl: p.adminUrl,
@@ -1311,13 +1319,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
         paragraphs: [
           `Itt a heti moderációs összefoglaló — ${total} tétel várja a beavatkozást:`,
-          [
-            `• ${p.awaitingReviewSuppliers} elfogadásra váró közösségi szolgáltató`,
-            `• ${p.newVendorWaitlistEntries} új vendor-jelentkezés`,
-            `• ${p.pendingListingClaims} függő listing-igénylés`,
-            `• ${p.unresolvedUserFlags} aktív user-flag`,
-          ].join("\n"),
+          `• ${p.awaitingReviewSuppliers} elfogadásra váró közösségi szolgáltató`,
+          `• ${p.newVendorWaitlistEntries} új vendor-jelentkezés`,
+          `• ${p.pendingListingClaims} függő listing-igénylés`,
+          `• ${p.unresolvedUserFlags} aktív user-flag`,
           "Bármelyik tétel egy kattintásra van az admin oldalról.",
+          `Növekedés (utóbbi 7 nap / megelőző 7 nap): **${p.newCouplesThisWeek} új pár** (${sign(couplesDelta)}) · **${p.newUsersThisWeek} új felhasználó** (${sign(usersDelta)})`,
         ],
         cta: "Admin felület megnyitása",
         footnote: "Heti egyszer küldjük ezt az összefoglalót, hétfő reggel.",
@@ -1326,13 +1333,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Hi ${ctx.recipientName || "there"},`,
         paragraphs: [
           `Weekly moderation digest — ${total} items waiting:`,
-          [
-            `• ${p.awaitingReviewSuppliers} suppliers awaiting review`,
-            `• ${p.newVendorWaitlistEntries} new vendor waitlist submissions`,
-            `• ${p.pendingListingClaims} pending listing claims`,
-            `• ${p.unresolvedUserFlags} active user flags`,
-          ].join("\n"),
+          `• ${p.awaitingReviewSuppliers} suppliers awaiting review`,
+          `• ${p.newVendorWaitlistEntries} new vendor waitlist submissions`,
+          `• ${p.pendingListingClaims} pending listing claims`,
+          `• ${p.unresolvedUserFlags} active user flags`,
           "Everything is one click away from the admin console.",
+          `Growth (last 7 days / prior 7 days): **${p.newCouplesThisWeek} new couples** (${sign(couplesDelta)}) · **${p.newUsersThisWeek} new users** (${sign(usersDelta)})`,
         ],
         cta: "Open admin",
         footnote: "Sent once a week, Monday morning.",

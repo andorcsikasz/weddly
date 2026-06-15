@@ -506,6 +506,31 @@ function sweepAdminModerationDigest(ts: number): number {
   if (total === 0) return 0;
 
   const oneWeekAgo = ts - 7 * 24 * 60 * 60 * 1000;
+  const twoWeeksAgo = ts - 14 * 24 * 60 * 60 * 1000;
+  const newCouplesThisWeek = (
+    db
+      .prepare("SELECT COUNT(*) AS n FROM couples WHERE created_at >= ? AND is_demo = 0")
+      .get(oneWeekAgo) as { n: number }
+  ).n;
+  const newCouplesLastWeek = (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM couples WHERE created_at >= ? AND created_at < ? AND is_demo = 0",
+      )
+      .get(twoWeeksAgo, oneWeekAgo) as { n: number }
+  ).n;
+  const newUsersThisWeek = (
+    db
+      .prepare("SELECT COUNT(*) AS n FROM users WHERE created_at >= ? AND role = 'owner'")
+      .get(oneWeekAgo) as { n: number }
+  ).n;
+  const newUsersLastWeek = (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM users WHERE created_at >= ? AND created_at < ? AND role = 'owner'",
+      )
+      .get(twoWeeksAgo, oneWeekAgo) as { n: number }
+  ).n;
   let count = 0;
   for (const email of adminEmails) {
     const userRow = db
@@ -534,6 +559,10 @@ function sweepAdminModerationDigest(ts: number): number {
         pendingListingClaims,
         unresolvedUserFlags,
         adminUrl: `${CONFIG.frontendBaseUrl}/app/admin`,
+        newCouplesThisWeek,
+        newCouplesLastWeek,
+        newUsersThisWeek,
+        newUsersLastWeek,
       },
       {
         user: { id: userRow.id, email: userRow.email, full_name: userRow.full_name ?? "" },

@@ -155,6 +155,10 @@ const STUBS: KindPayload = {
     pendingListingClaims: 2,
     unresolvedUserFlags: 1,
     adminUrl: `${BASE_URL}/app/admin/suppliers`,
+    newCouplesThisWeek: 11,
+    newCouplesLastWeek: 8,
+    newUsersThisWeek: 14,
+    newUsersLastWeek: 12,
   },
   rsvp_weekly_digest_for_couple: {
     coupleDisplayName: "Mia & Lucas",
