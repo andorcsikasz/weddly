@@ -168,7 +168,7 @@ function ComingSoonBadge({ label }: { label: string }) {
 
 function CardLabel({ text }: { text: string }) {
   return (
-    <span className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-umber-500 dark:text-umber-400">
+    <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
       {text}
     </span>
   );
@@ -382,7 +382,7 @@ function FilmBanner({
           </div>
 
           {/* Headline — max-w prevents orphan words on narrow lines */}
-          <h2 className="max-w-sm font-serif text-2xl font-semibold leading-snug tracking-tight !text-paper-100 sm:text-3xl">
+          <h2 className="max-w-sm font-grotesk text-2xl font-semibold leading-snug !text-paper-50 sm:text-3xl">
             {t("media.film_empty_title")}
           </h2>
 
@@ -452,7 +452,7 @@ function StatTile({
 
   return (
     <div className="flex flex-col gap-0.5 rounded-xl border border-paper-200 bg-paper-50 px-3 py-2.5 dark:border-umber-700 dark:bg-umber-800">
-      <span className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-umber-500 dark:text-umber-400">{label}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">{label}</span>
       <span
         className={`text-base font-semibold tabular-nums ${
           accent ? "text-sage-700 dark:text-sage-400" : "text-ink-800 dark:text-paper-100"
@@ -523,7 +523,7 @@ function FilmStatusPanel({ album }: { album: PhotoAlbum }) {
     <div className="card mb-5 border-paper-200 bg-white/80 backdrop-blur-sm dark:border-umber-700 dark:bg-umber-800/80">
       {/* Status heading with pulsing dot when live */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 font-serif text-sm font-normal italic text-umber-600 dark:text-paper-200">
+        <h3 className="flex items-center gap-2 font-grotesk text-sm font-semibold text-ink-800 dark:text-paper-100">
           <span
             className={`h-2.5 w-2.5 rounded-full ${statusDot} ${status === "live" ? "animate-pulse" : ""}`}
             aria-hidden="true"
@@ -649,7 +649,7 @@ function FromGuestsCard({
       </div>
 
       <div>
-        <h3 className="font-serif text-base font-semibold text-ink-900 dark:text-paper-50">
+        <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
           {t("media.from_guests_title")}
         </h3>
         <p className="mt-1 text-sm text-umber-600 dark:text-umber-200">
@@ -750,7 +750,7 @@ function ToGuestsCard() {
       </div>
 
       <div>
-        <h3 className="font-serif text-base font-semibold text-ink-700 dark:text-paper-200">
+        <h3 className="font-grotesk text-base font-semibold text-ink-700 dark:text-paper-200">
           {t("media.to_guests_title")}
         </h3>
         <p className="mt-1 text-sm text-umber-500 dark:text-umber-300">{t("media.to_guests_desc")}</p>
@@ -814,7 +814,7 @@ function PhotographerCard({
       </div>
 
       <div>
-        <h3 className="font-serif text-base font-semibold text-ink-900 dark:text-paper-50">
+        <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
           {t("media.photographer_title")}
         </h3>
         <p className="mt-1 text-sm text-umber-600 dark:text-umber-200">
@@ -948,7 +948,7 @@ function FilmSettingsPanel({
   return (
     <div className="card mt-4">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-serif text-sm font-semibold text-ink-800 dark:text-paper-100">
+        <h3 className="font-grotesk text-sm font-semibold text-ink-800 dark:text-paper-100">
           {t("media.film_settings_title")}
         </h3>
         <button type="button" className="btn-outline btn-sm" onClick={onEditClick}>
@@ -999,7 +999,7 @@ function HowItWorksSection() {
     <div className="card mb-2 mt-6">
       <div className="mb-5 flex items-center gap-3">
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
-        <h3 className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-umber-500 dark:text-umber-400">
+        <h3 className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
           {t("media.film_how_title")}
         </h3>
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
@@ -1042,7 +1042,7 @@ function NextStepsSection({
     <div className="card mb-2 mt-6">
       <div className="mb-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
-        <h3 className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-umber-500 dark:text-umber-400">
+        <h3 className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
           {t("media.film_next_steps_title")}
         </h3>
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
@@ -1411,11 +1411,11 @@ export default function MediaPage() {
       {/* Page header: status pill when film is active, create button when not */}
       <header className="mb-5 flex items-start justify-between gap-4 border-b border-paper-200 pb-5 dark:border-umber-700">
         <div className="min-w-0">
-          <span className="font-mono text-[9.5px] uppercase tracking-[0.15em] text-umber-400 dark:text-umber-500">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400 dark:text-umber-500">
             Wedding Film
           </span>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-serif">{t("media.title")}</h1>
+            <h1 className="font-grotesk">{t("media.title")}</h1>
             {album &&
               albumStatus &&
               (() => {
