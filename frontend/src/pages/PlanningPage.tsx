@@ -530,6 +530,13 @@ export default function PlanningPage() {
               title: localizeText(tmpl.title, locale),
               assignee: trimmed || null,
               topic: topicForIndex(idx),
+              due_date: weddingDate
+                ? (() => {
+                    const d = new Date(weddingDate);
+                    d.setDate(d.getDate() + tmpl.deadline_days);
+                    return d.toISOString().split("T")[0];
+                  })()
+                : null,
             },
           ]
         : [],
@@ -830,6 +837,7 @@ export default function PlanningPage() {
           applying={bulkApplying}
           assigneeSuggestions={assigneeSuggestions}
           locale={locale}
+          weddingDate={weddingDate}
           onClose={() => setTaskWandOpen(false)}
           onApply={onApplyTaskTemplate}
         />
@@ -1094,6 +1102,7 @@ function TaskTemplateDialog({
   applying,
   assigneeSuggestions,
   locale,
+  weddingDate,
   onClose,
   onApply,
 }: {
@@ -1101,6 +1110,7 @@ function TaskTemplateDialog({
   applying: boolean;
   assigneeSuggestions: string[];
   locale: Locale;
+  weddingDate: string | null;
   onClose: () => void;
   onApply: (selected: Set<number>, defaultAssignee: string) => Promise<void>;
 }) {
@@ -1238,7 +1248,16 @@ function TaskTemplateDialog({
                             ) : (
                               <Circle size={14} className="shrink-0" aria-hidden="true" />
                             )}
-                            <span>{localizeText(tmpl.title, locale)}</span>
+                            <span className="flex-1">{localizeText(tmpl.title, locale)}</span>
+                            <span
+                              className={`ml-1 shrink-0 rounded px-1 py-0.5 font-mono text-[10px] tabular-nums ${
+                                on
+                                  ? "bg-paper-200 text-ink-500 dark:bg-umber-600 dark:text-paper-200"
+                                  : "bg-paper-200/60 text-ink-400 dark:bg-umber-700/40 dark:text-umber-400"
+                              }`}
+                            >
+                              {`T${tmpl.deadline_days}`}
+                            </span>
                           </button>
                         </li>
                       );

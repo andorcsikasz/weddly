@@ -22,45 +22,46 @@ export type TaskTemplateGroupId = "wedding" | "honeymoon";
 export const TASK_TEMPLATE_GROUPS: {
   id: TaskTemplateGroupId;
   label: LocaleText;
-  items: { title: LocaleText }[];
+  items: { title: LocaleText; deadline_days: number }[];
 }[] = [
   {
     id: "wedding",
     label: { hu: "Esküvő", en: "Wedding" },
     items: [
-      { title: { hu: "Helyszínt foglalni", en: "Book the venue" } },
-      { title: { hu: "Anyakönyvvezetőt egyeztetni", en: "Confirm registrar" } },
-      { title: { hu: "Meghívókat megrendelni", en: "Order invitations" } },
-      { title: { hu: "Fotóst lefoglalni", en: "Book photographer" } },
-      { title: { hu: "Zenekart vagy DJ-t lefoglalni", en: "Book band or DJ" } },
-      { title: { hu: "Virágost egyeztetni", en: "Confirm florist" } },
-      { title: { hu: "Tortát megrendelni", en: "Order wedding cake" } },
-      { title: { hu: "Menyasszonyi ruhát kiválasztani", en: "Choose wedding dress" } },
-      { title: { hu: "Vőlegény öltönyt kiválasztani", en: "Choose groom's suit" } },
-      { title: { hu: "Karikagyűrűket beszerezni", en: "Buy wedding rings" } },
-      { title: { hu: "Tanúkat felkérni", en: "Ask the witnesses" } },
-      { title: { hu: "Esküvői próbát egyeztetni", en: "Schedule wedding rehearsal" } },
+      { title: { hu: "Helyszínt foglalni", en: "Book the venue" }, deadline_days: -365 },
+      { title: { hu: "Anyakönyvvezetőt egyeztetni", en: "Confirm registrar" }, deadline_days: -365 },
+      { title: { hu: "Meghívókat megrendelni", en: "Order invitations" }, deadline_days: -90 },
+      { title: { hu: "Fotóst lefoglalni", en: "Book photographer" }, deadline_days: -300 },
+      { title: { hu: "Zenekart vagy DJ-t lefoglalni", en: "Book band or DJ" }, deadline_days: -270 },
+      { title: { hu: "Virágost egyeztetni", en: "Confirm florist" }, deadline_days: -180 },
+      { title: { hu: "Tortát megrendelni", en: "Order wedding cake" }, deadline_days: -90 },
+      { title: { hu: "Menyasszonyi ruhát kiválasztani", en: "Choose wedding dress" }, deadline_days: -270 },
+      { title: { hu: "Vőlegény öltönyt kiválasztani", en: "Choose groom's suit" }, deadline_days: -90 },
+      { title: { hu: "Karikagyűrűket beszerezni", en: "Buy wedding rings" }, deadline_days: -60 },
+      { title: { hu: "Tanúkat felkérni", en: "Ask the witnesses" }, deadline_days: -180 },
+      { title: { hu: "Esküvői próbát egyeztetni", en: "Schedule wedding rehearsal" }, deadline_days: -14 },
     ],
   },
   {
     id: "honeymoon",
     label: { hu: "Nászút", en: "Honeymoon" },
     items: [
-      { title: { hu: "Útlevél lejáratot ellenőrizni", en: "Check passport validity" } },
-      { title: { hu: "Vízum/ESTA igényt megnézni", en: "Check visa / ESTA requirements" } },
-      { title: { hu: "Repjegyet lefoglalni", en: "Book flights" } },
-      { title: { hu: "Szállást lefoglalni", en: "Book accommodation" } },
-      { title: { hu: "Utasbiztosítást kötni", en: "Take out travel insurance" } },
-      { title: { hu: "Bankot értesíteni az utazásról", en: "Notify the bank about travel" } },
+      { title: { hu: "Útlevél lejáratot ellenőrizni", en: "Check passport validity" }, deadline_days: -180 },
+      { title: { hu: "Vízum/ESTA igényt megnézni", en: "Check visa / ESTA requirements" }, deadline_days: -150 },
+      { title: { hu: "Repjegyet lefoglalni", en: "Book flights" }, deadline_days: -150 },
+      { title: { hu: "Szállást lefoglalni", en: "Book accommodation" }, deadline_days: -120 },
+      { title: { hu: "Utasbiztosítást kötni", en: "Take out travel insurance" }, deadline_days: -90 },
+      { title: { hu: "Bankot értesíteni az utazásról", en: "Notify the bank about travel" }, deadline_days: -30 },
       {
         title: {
           hu: "Devizát váltani / kártyát ellenőrizni",
           en: "Exchange currency / check cards",
         },
+        deadline_days: -14,
       },
-      { title: { hu: "Reptéri transzfert szervezni", en: "Arrange airport transfer" } },
-      { title: { hu: "Programot tervezni a helyszínen", en: "Plan activities at destination" } },
-      { title: { hu: "Csomagolási lista", en: "Pack list" } },
+      { title: { hu: "Reptéri transzfert szervezni", en: "Arrange airport transfer" }, deadline_days: -30 },
+      { title: { hu: "Programot tervezni a helyszínen", en: "Plan activities at destination" }, deadline_days: -60 },
+      { title: { hu: "Csomagolási lista", en: "Pack list" }, deadline_days: -3 },
     ],
   },
 ];
@@ -69,7 +70,7 @@ export const TASK_TEMPLATE_GROUPS: {
  *  selection state into this array, so the index order must stay stable
  *  (wedding first, then honeymoon). New items get appended to the end of
  *  their group to keep prior indices pointing to the same task. */
-export const TASK_TEMPLATE: { title: LocaleText }[] = TASK_TEMPLATE_GROUPS.flatMap((g) => g.items);
+export const TASK_TEMPLATE: { title: LocaleText; deadline_days: number }[] = TASK_TEMPLATE_GROUPS.flatMap((g) => g.items);
 
 /** Reserve honeymoon trip-prep tasks. NOT part of the base pack above, these
  *  are the backfill the honeymoon wand pulls from: for every base item a couple
