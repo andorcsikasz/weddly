@@ -1,6 +1,12 @@
 // Wedding Film — guest camera page. Reachable at /photos/:token.
-// No auth required. Mobile-first. Uses getUserMedia for viewfinder;
-// falls back to <input capture> when MediaDevices API is unavailable.
+// No auth required. Mobile-first.
+//
+// Camera strategy:
+//   Mobile  → skip getUserMedia entirely; use <input type="file" accept="image/*">
+//             WITHOUT the `capture` attribute. iOS shows a native sheet:
+//             "Take Photo / Photo Library / Browse" — works in Safari AND
+//             WKWebView-based in-app browsers (Instagram, WhatsApp, iMessage).
+//   Desktop → getUserMedia live viewfinder; falls back to file-input on denial.
 //
 // States:
 //   loading       — registering device / fetching album
@@ -38,6 +44,25 @@ function getStoredName(token: string): string | null {
 
 function storeName(token: string, name: string): void {
   localStorage.setItem(`weddly.film.${token}.name`, name);
+}
+
+// ─── device detection ─────────────────────────────────────────────────────────
+
+// True on phones/tablets. We skip getUserMedia on these because WKWebView
+// (the engine behind every iOS in-app browser) silently blocks camera access,
+// while a plain <input type="file"> always works.
+function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
+}
+
+// True when the page is running inside an in-app browser (Instagram, WhatsApp,
+// Facebook, TikTok…). Even <input type="file"> can misbehave there on iOS, so
+// we show a banner suggesting the user open in Safari.
+function isInAppBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return /Instagram|FBAN|FBAV|Twitter|Line\/|Musical\.ly|micromessenger/i.test(ua);
 }
 
 // ─── page states ─────────────────────────────────────────────────────────────
@@ -98,20 +123,43 @@ function ShotCounter({ used, max }: { used: number; max: number }) {
   );
 }
 
-// ─── camera capture hook ──────────────────────────────────────────────────────
+// Banner shown when the page is loaded inside an in-app browser on iOS.
+// <input type="file"> is unreliable in these contexts; Safari always works.
+function InAppBrowserBanner() {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+  return (
+    <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
+      <p className="font-medium mb-1">Open in Safari for best results</p>
+      <p className="text-amber-700 text-xs mb-2">
+        In-app browsers can block camera access. Tap the share icon and choose "Open in Safari".
+      </p>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        className="text-xs underline text-amber-700"
+      >
+        Got it
+      </button>
+    </div>
+  );
+}
 
-function useCameraCapture(aesthetic: FilmAesthetic) {
+// ─── desktop camera capture hook ─────────────────────────────────────────────
+// Only used on non-mobile devices where getUserMedia is reliable.
+
+function useDesktopCamera(aesthetic: FilmAesthetic) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [hasCamera, setHasCamera] = useState<boolean | null>(null);
+  const [hasStream, setHasStream] = useState<boolean | null>(null);
 
   useEffect(() => {
     const supported =
       typeof navigator !== "undefined" &&
       typeof navigator.mediaDevices?.getUserMedia === "function";
     if (!supported) {
-      setHasCamera(false);
+      setHasStream(false);
       return;
     }
     navigator.mediaDevices
@@ -122,11 +170,9 @@ function useCameraCapture(aesthetic: FilmAesthetic) {
           videoRef.current.srcObject = stream;
           void videoRef.current.play();
         }
-        setHasCamera(true);
+        setHasStream(true);
       })
-      .catch(() => {
-        setHasCamera(false);
-      });
+      .catch(() => setHasStream(false));
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
@@ -144,17 +190,14 @@ function useCameraCapture(aesthetic: FilmAesthetic) {
       ctx.filter = filterStyle(aesthetic);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(
-        (blob) => {
-          if (!blob) return resolve(null);
-          resolve(new File([blob], "shot.jpg", { type: "image/jpeg" }));
-        },
+        (blob) => resolve(blob ? new File([blob], "shot.jpg", { type: "image/jpeg" }) : null),
         "image/jpeg",
         0.82,
       );
     });
   }, [aesthetic]);
 
-  return { videoRef, canvasRef, hasCamera, capture };
+  return { videoRef, canvasRef, hasStream, capture };
 }
 
 // ─── viewfinder component ─────────────────────────────────────────────────────
@@ -175,7 +218,9 @@ function Viewfinder({
   onLimitReached: () => void;
 }) {
   const { t } = useT();
-  const { videoRef, canvasRef, hasCamera, capture } = useCameraCapture(album.filmAesthetic);
+  const mobile = isMobileDevice();
+  const inApp = isInAppBrowser();
+  const { videoRef, canvasRef, hasStream, capture } = useDesktopCamera(album.filmAesthetic);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -202,10 +247,7 @@ function Viewfinder({
     } catch (err: unknown) {
       const detail = (err as { detail?: unknown })?.detail;
       const code = (detail as { code?: string } | undefined)?.code;
-      if (code === "shot_limit") {
-        onLimitReached();
-        return;
-      }
+      if (code === "shot_limit") { onLimitReached(); return; }
       const status = (err as { status?: number })?.status;
       if (status === 413) setError(t("photos.error_too_large"));
       else if (status === 400) setError(t("photos.error_bad_type"));
@@ -215,12 +257,16 @@ function Viewfinder({
     }
   }
 
+  function openPicker() {
+    fileInputRef.current?.click();
+  }
+
   async function handleShutterClick() {
-    if (hasCamera) {
+    if (!mobile && hasStream) {
       const file = await capture();
       if (file) void shoot(file);
     } else {
-      fileInputRef.current?.click();
+      openPicker();
     }
   }
 
@@ -233,78 +279,127 @@ function Viewfinder({
   const cssFilter = filterStyle(album.filmAesthetic);
   const max = album.shotsPerGuest ?? 0;
 
+  // Desktop with live viewfinder
+  const showLiveViewfinder = !mobile && hasStream === true;
+  // Desktop without camera permission
+  const showDesktopFallback = !mobile && hasStream === false;
+
   return (
-    <div
-      className="relative w-full bg-ink-900 rounded-2xl overflow-hidden"
-      style={{ aspectRatio: "3/4" }}
-    >
-      {/* Viewfinder */}
-      {hasCamera ? (
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ filter: cssFilter }}
-        />
-      ) : (
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center bg-ink-800 text-paper-300"
-          onClick={handleShutterClick}
-        >
-          <Camera className="w-12 h-12 mb-3 text-paper-400" />
-          <p className="text-sm">{t("photos.choose_photo")}</p>
-        </div>
-      )}
+    <div>
+      {/* In-app browser warning — mobile only */}
+      {mobile && inApp && <InAppBrowserBanner />}
 
-      {/* Hidden canvas for filter-baked capture */}
-      <canvas ref={canvasRef} className="hidden" />
-
-      {/* Flash overlay */}
       <div
-        className="absolute inset-0 bg-white pointer-events-none transition-opacity duration-100"
-        style={{ opacity: flash ? 0.9 : 0 }}
-      />
+        className="relative w-full bg-ink-900 rounded-2xl overflow-hidden"
+        style={{ aspectRatio: "3/4" }}
+      >
+        {/* ── MOBILE: tap-to-pick UI (no getUserMedia) ─────────────────────── */}
+        {mobile && (
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={openPicker}
+            className="absolute inset-0 w-full flex flex-col items-center justify-center gap-4 text-paper-300 disabled:opacity-50"
+            aria-label={t("photos.choose_photo")}
+          >
+            <Camera className="w-14 h-14 text-paper-300" />
+            <span className="text-sm text-paper-400">{t("photos.choose_photo")}</span>
+          </button>
+        )}
 
-      {/* Shot counter overlay — top */}
-      {max > 0 && (
-        <div className="absolute top-3 left-0 right-0 flex justify-center px-4">
-          <div className="bg-black/50 rounded-full px-3 py-1 backdrop-blur-sm">
-            <ShotCounter used={shotCount} max={max} />
+        {/* ── DESKTOP: live viewfinder ─────────────────────────────────────── */}
+        {showLiveViewfinder && (
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: cssFilter }}
+          />
+        )}
+
+        {/* ── DESKTOP: fallback when getUserMedia denied ────────────────────── */}
+        {showDesktopFallback && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center bg-ink-800 text-paper-300 cursor-pointer"
+            onClick={openPicker}
+          >
+            <Camera className="w-12 h-12 mb-3 text-paper-400" />
+            <p className="text-sm">{t("photos.choose_photo")}</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Error overlay */}
-      {error && (
-        <div className="absolute top-14 left-4 right-4">
-          <p className="text-xs text-red-300 bg-red-900/80 rounded-lg px-3 py-2 text-center backdrop-blur-sm">
-            {error}
-          </p>
-        </div>
-      )}
+        {/* Hidden canvas for desktop filter-baked capture */}
+        {!mobile && <canvas ref={canvasRef} className="hidden" />}
 
-      {/* Shutter button */}
-      <div className="absolute bottom-5 left-0 right-0 flex justify-center">
+        {/* Flash overlay */}
+        <div
+          className="absolute inset-0 bg-white pointer-events-none transition-opacity duration-100"
+          style={{ opacity: flash ? 0.9 : 0 }}
+        />
+
+        {/* Shot counter overlay — top */}
+        {max > 0 && (
+          <div className="absolute top-3 left-0 right-0 flex justify-center px-4">
+            <div className="bg-black/50 rounded-full px-3 py-1 backdrop-blur-sm">
+              <ShotCounter used={shotCount} max={max} />
+            </div>
+          </div>
+        )}
+
+        {/* Error overlay */}
+        {error && (
+          <div className="absolute top-14 left-4 right-4">
+            <p className="text-xs text-red-300 bg-red-900/80 rounded-lg px-3 py-2 text-center backdrop-blur-sm">
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* Shutter button — shown on desktop only; mobile uses the whole-area tap */}
+        {!mobile && (
+          <div className="absolute bottom-5 left-0 right-0 flex justify-center">
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={handleShutterClick}
+              aria-label={t("photos.choose_photo")}
+              className={`w-16 h-16 rounded-full border-4 border-white bg-white/20 backdrop-blur-sm transition-transform active:scale-90 ${
+                uploading ? "opacity-50" : ""
+              }`}
+            >
+              <span className="block w-10 h-10 mx-auto rounded-full bg-white" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile: large CTA button below the card (easier to tap than a shutter overlay) */}
+      {mobile && (
         <button
           type="button"
           disabled={uploading}
-          onClick={handleShutterClick}
-          aria-label={t("photos.choose_photo")}
-          className={`w-16 h-16 rounded-full border-4 border-white bg-white/20 backdrop-blur-sm transition-transform active:scale-90 ${
+          onClick={openPicker}
+          className={`mt-4 w-full rounded-2xl bg-ink-900 py-4 text-base font-semibold text-paper-50 transition-opacity active:opacity-70 ${
             uploading ? "opacity-50" : ""
           }`}
         >
-          <span className="block w-10 h-10 mx-auto rounded-full bg-white" />
+          {uploading ? "Uploading…" : t("photos.choose_photo")}
         </button>
-      </div>
+      )}
 
-      {/* Fallback file input */}
+      {/*
+        File input — NO `capture` attribute on mobile.
+        Without `capture`, iOS Safari shows its native action sheet:
+          "Take Photo or Video" / "Photo Library" / "Browse"
+        This works in Safari AND most WKWebView-based in-app browsers.
+        Desktop keeps `capture="environment"` to skip the OS file picker.
+      */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
-        capture="environment"
+        {...(!mobile ? { capture: "environment" as const } : {})}
         className="sr-only"
         onChange={handleFileChange}
       />
@@ -318,10 +413,7 @@ function Countdown({ revealsAt, onRevealed }: { revealsAt: number; onRevealed: (
   const [remaining, setRemaining] = useState(Math.max(0, revealsAt - Date.now()));
 
   useEffect(() => {
-    if (remaining <= 0) {
-      onRevealed();
-      return;
-    }
+    if (remaining <= 0) { onRevealed(); return; }
     const id = setInterval(() => {
       const r = Math.max(0, revealsAt - Date.now());
       setRemaining(r);
@@ -381,42 +473,24 @@ export default function GuestPhotoPage() {
   const [state, setState] = useState<PageState>({ kind: "loading" });
   const [nameInput, setNameInput] = useState("");
 
-  // On mount: register device (this also enforces guest cap).
   useEffect(() => {
-    if (!token) {
-      setState({ kind: "not_found" });
-      return;
-    }
+    if (!token) { setState({ kind: "not_found" }); return; }
     const deviceId = getDeviceId(token);
     const storedName = getStoredName(token);
 
     photoAlbumApi
       .registerDevice(token, deviceId, storedName)
       .then(({ album, shotCount }) => {
-        if (!album.isUploadEnabled) {
-          setState({ kind: "disabled" });
-          return;
-        }
-
-        // Already at shot limit?
+        if (!album.isUploadEnabled) { setState({ kind: "disabled" }); return; }
         if (album.shotsPerGuest !== null && shotCount >= album.shotsPerGuest) {
-          setState({ kind: "limit_reached", album });
-          return;
+          setState({ kind: "limit_reached", album }); return;
         }
-
-        // Event ended?
         if (album.eventEndsAt !== null && Date.now() > album.eventEndsAt) {
-          setState({ kind: "disabled" });
-          return;
+          setState({ kind: "disabled" }); return;
         }
-
-        // Still developing?
         if (album.revealAt !== null && Date.now() < album.revealAt && shotCount > 0) {
-          setState({ kind: "developing", album });
-          return;
+          setState({ kind: "developing", album }); return;
         }
-
-        // First visit — capture name.
         if (storedName === null) {
           setState({ kind: "name_capture", album });
         } else {
@@ -425,11 +499,8 @@ export default function GuestPhotoPage() {
       })
       .catch((err: { status?: number }) => {
         const detail = (err as { detail?: { code?: string } })?.detail;
-        if (detail?.code === "guest_cap_reached") {
-          setState({ kind: "not_found" }); // treat as full film
-        } else {
-          setState({ kind: "not_found" });
-        }
+        if (detail?.code === "guest_cap_reached") setState({ kind: "not_found" });
+        else setState({ kind: "not_found" });
       });
   }, [token]);
 
@@ -447,13 +518,7 @@ export default function GuestPhotoPage() {
     photoAlbumApi
       .getPublicPhotos(token)
       .then((res) => {
-        if (!res.locked) {
-          setState({
-            kind: "gallery",
-            album,
-            uploads: res.uploads,
-          });
-        }
+        if (!res.locked) setState({ kind: "gallery", album, uploads: res.uploads });
       })
       .catch(() => {});
   }
