@@ -404,13 +404,17 @@ export const GTM_INLINE_CSP_HASH = `'sha256-${new Bun.CryptoHasher("sha256")
  *  our hash-based CSP without 'unsafe-inline'. The GA4 config tag (G-…) is
  *  wired up inside the GTM web UI, not in code, so it does not appear here.
  *  Container ids are public by design; we still guard the format to keep
- *  anything odd in the env out of the page source. */
+ *  anything odd in the env out of the page source.
+ *  The gtm.js loader is tagged data-cookieconsent="statistics" so Cookiebot
+ *  auto-blocking holds it until the visitor consents. The dataLayer bootstrap
+ *  runs immediately (harmless — no cookies, no network) so any pre-consent
+ *  dataLayer.push() calls queue correctly. */
 function gtmScriptTag(): string {
   const id = gtmContainerIdEnv();
   if (!id || !/^GTM-[A-Z0-9]+$/.test(id)) return "";
   return (
     `<script>${GTM_INLINE_BOOTSTRAP}</script>` +
-    `<script async src="https://www.googletagmanager.com/gtm.js?id=${id}"></script>`
+    `<script type="text/plain" data-cookieconsent="statistics" async src="https://www.googletagmanager.com/gtm.js?id=${id}"></script>`
   );
 }
 
