@@ -774,7 +774,10 @@ export default function MediaPage() {
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-paper-400">
                     Wedding Film
                   </p>
-                  <h1 className="font-serif text-3xl font-normal italic leading-tight text-paper-50 sm:text-4xl">
+                  <h1
+                    className="font-serif text-3xl font-semibold italic leading-tight text-paper-50 sm:text-4xl"
+                    style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}
+                  >
                     {album.title || t("media.film_empty_title")}
                   </h1>
                   {album.eventEndsAt && (
