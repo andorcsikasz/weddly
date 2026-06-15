@@ -149,9 +149,58 @@ function QrPlaceholder({ className }: { className?: string }) {
 
 function ComingSoonBadge({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-paper-200 px-2.5 py-0.5 text-xs font-medium text-ink-500 dark:bg-umber-700 dark:text-umber-200">
+    <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-300">
       {label}
     </span>
+  );
+}
+
+// Small caps card label shown top-right of a card.
+function CardLabel({ text }: { text: string }) {
+  return (
+    <span className="text-[10px] font-bold uppercase tracking-widest text-ink-400 dark:text-umber-500">
+      {text}
+    </span>
+  );
+}
+
+// Status chip used in the dark banner row.
+function StatusChip({ done, label }: { done: boolean; label: string }) {
+  return (
+    <span
+      className={`flex items-center gap-1.5 text-xs ${done ? "text-sage-400" : "text-umber-500"}`}
+    >
+      {done ? (
+        <Check size={11} aria-hidden="true" />
+      ) : (
+        <span className="inline-block h-3 w-3 rounded-full border border-umber-600" />
+      )}
+      {label}
+    </span>
+  );
+}
+
+// Decorative film-strip column shown on the right side of FilmBanner.
+function FilmStripDecor() {
+  return (
+    <div
+      className="hidden lg:flex shrink-0 -mt-1 flex-col gap-1.5 -rotate-2 opacity-20 select-none pointer-events-none"
+      aria-hidden="true"
+    >
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="flex items-stretch gap-1">
+          <div className="flex w-2 flex-col justify-around">
+            <div className="h-1.5 rounded-[1px] bg-paper-50" />
+            <div className="h-1.5 rounded-[1px] bg-paper-50" />
+          </div>
+          <div className="h-16 w-24 rounded border border-paper-50 bg-ink-800" />
+          <div className="flex w-2 flex-col justify-around">
+            <div className="h-1.5 rounded-[1px] bg-paper-50" />
+            <div className="h-1.5 rounded-[1px] bg-paper-50" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -177,76 +226,91 @@ function Countdown({ targetMs, label }: { targetMs: number; label: string }) {
   );
 }
 
-// Hero card — product pitch for Wedding Film.
-function FilmHeroCard({
+// Dark cinematic banner — shown always, adapts based on whether a film exists.
+function FilmBanner({
   album,
+  photographerSaved,
   onCreateClick,
 }: {
   album: PhotoAlbum | null;
+  photographerSaved: boolean;
   onCreateClick: () => void;
 }) {
   const { t } = useT();
-
   const uploadUrl = album ? `${window.location.origin}/photos/${album.uploadToken}` : null;
 
   return (
-    <div className="card mb-5 overflow-hidden border-paper-300 bg-gradient-to-br from-paper-50 to-paper-100 dark:border-umber-700 dark:from-umber-900 dark:to-umber-850">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-ink-900">
-            <Film size={20} aria-hidden="true" />
+    <div className="card mb-5 overflow-hidden border-ink-800 bg-ink-900 dark:border-ink-700 dark:bg-ink-900">
+      <div className="flex items-start gap-6">
+        {/* Left column */}
+        <div className="min-w-0 flex-1">
+          {/* Icon row + live stat pills */}
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-umber-800 text-paper-200">
+              <Film size={20} aria-hidden="true" />
+            </div>
+            {album && (
+              <div className="ml-auto flex gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-umber-700 px-2.5 py-1 text-xs text-paper-300">
+                  <Camera size={11} aria-hidden="true" />
+                  {album.photoCount} {album.photoCount === 1 ? "photo" : "photos"}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-umber-700 px-2.5 py-1 text-xs text-paper-300">
+                  <Users size={11} aria-hidden="true" />
+                  {album.participantCount} {album.participantCount === 1 ? "guest" : "guests"}
+                </span>
+              </div>
+            )}
           </div>
-          <div className="max-w-lg">
-            <h2 className="font-grotesk text-xl font-semibold leading-snug tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
-              {t("media.film_title")}
-            </h2>
-            <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{t("media.film_sub")}</p>
+
+          {/* Headline */}
+          <h2 className="font-grotesk text-2xl font-semibold leading-snug text-paper-50 sm:text-3xl">
+            {t("media.film_empty_title")}
+          </h2>
+
+          {/* Status chips */}
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+            <StatusChip
+              done={!!album}
+              label={album ? t("media.film_title") : t("media.film_status_no_film")}
+            />
+            <StatusChip
+              done={photographerSaved}
+              label={
+                photographerSaved
+                  ? t("media.photographer_title")
+                  : t("media.film_status_no_photographer")
+              }
+            />
+          </div>
+
+          {/* CTA + no-app hint */}
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {album && uploadUrl ? (
+              <a
+                href={uploadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-paper-50 px-4 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+              >
+                <Camera size={14} aria-hidden="true" />
+                {t("media.film_cta_view")}
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={onCreateClick}
+                className="inline-flex items-center gap-2 rounded-lg bg-paper-50 px-4 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+              >
+                {t("media.film_cta_create")}
+              </button>
+            )}
+            <span className="text-xs text-umber-500">{t("media.film_no_app_hint")}</span>
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {album && uploadUrl ? (
-            <a
-              href={uploadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary btn-sm inline-flex items-center gap-1.5"
-            >
-              <Camera size={14} aria-hidden="true" />
-              {t("media.film_cta_view")}
-            </a>
-          ) : (
-            <button type="button" className="btn-primary btn-sm" onClick={onCreateClick}>
-              {t("media.film_cta_create")}
-            </button>
-          )}
-          {album && (
-            <a
-              href={uploadUrl ?? "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
-            >
-              <Eye size={14} aria-hidden="true" />
-              {t("media.film_cta_preview")}
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* Pill row — quick feature hints */}
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-paper-200 pt-4 dark:border-umber-700">
-        {(["No app download", "No guest sign-up", "Shot limit", "Delayed reveal"] as const).map(
-          (hint) => (
-            <span
-              key={hint}
-              className="inline-flex items-center gap-1 rounded-full border border-paper-200 bg-white px-2.5 py-0.5 text-xs text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200"
-            >
-              <Check size={10} className="text-sage-600" aria-hidden="true" />
-              {hint}
-            </span>
-          ),
-        )}
+        {/* Right: decorative film strip (large screens only) */}
+        <FilmStripDecor />
       </div>
     </div>
   );
@@ -421,8 +485,11 @@ function FromGuestsCard({
 
   return (
     <div className="card flex flex-col gap-5 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
-        <Users size={20} aria-hidden="true" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink-900 text-paper-50 dark:bg-ink-800 dark:text-paper-100">
+          <Users size={20} aria-hidden="true" />
+        </div>
+        <CardLabel text="FROM GUESTS" />
       </div>
 
       <div>
@@ -515,7 +582,7 @@ function FromGuestsCard({
 function ToGuestsCard() {
   const { t } = useT();
   return (
-    <div className="card flex flex-col gap-5 border-paper-300 bg-white opacity-80 dark:border-umber-700 dark:bg-umber-850">
+    <div className="card flex flex-col gap-5 border-2 border-dashed border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850">
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-400 dark:bg-umber-700 dark:text-umber-400">
           <Share2 size={20} aria-hidden="true" />
@@ -570,8 +637,11 @@ function PhotographerCard({
       ref={isEditing ? cardRef : undefined}
       className="card flex flex-col gap-5 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
-        <Camera size={20} aria-hidden="true" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+          <Camera size={20} aria-hidden="true" />
+        </div>
+        <CardLabel text="PHOTOGRAPHER" />
       </div>
 
       <div>
@@ -742,14 +812,19 @@ function HowItWorksSection() {
   ];
 
   return (
-    <div className="mt-8 mb-2">
-      <h3 className="font-grotesk mb-4 text-sm font-semibold uppercase tracking-wider text-ink-400 dark:text-umber-400">
-        {t("media.film_how_title")}
-      </h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="card mt-6 mb-2 border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-850">
+      {/* Centered divider header */}
+      <div className="mb-5 flex items-center gap-3">
+        <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
+        <h3 className="font-grotesk text-xs font-semibold uppercase tracking-wider text-ink-400 dark:text-umber-400">
+          {t("media.film_how_title")}
+        </h3>
+        <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
+      </div>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         {steps.map((s) => (
           <div key={s.n} className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-paper-200 text-xs font-bold text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink-900 text-xs font-bold text-paper-50 dark:bg-paper-50 dark:text-ink-900">
               {s.n}
             </span>
             <div>
@@ -759,30 +834,6 @@ function HowItWorksSection() {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-// Empty state — shown in place of the hero when no film exists yet and the
-// couple hasn't clicked "Create".
-function FilmEmptyState({ onCreateClick }: { onCreateClick: () => void }) {
-  const { t } = useT();
-  return (
-    <div className="card mb-5 flex flex-col items-start gap-4 border-paper-300 bg-gradient-to-br from-paper-50 to-paper-100 dark:border-umber-700 dark:from-umber-900 dark:to-umber-850">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-ink-900">
-        <Film size={20} aria-hidden="true" />
-      </div>
-      <div>
-        <h2 className="font-grotesk text-xl font-semibold leading-snug text-ink-900 sm:text-2xl dark:text-paper-50">
-          {t("media.film_empty_title")}
-        </h2>
-        <p className="mt-2 max-w-lg text-sm text-ink-600 dark:text-umber-200">
-          {t("media.film_empty_body")}
-        </p>
-      </div>
-      <button type="button" className="btn-primary" onClick={onCreateClick}>
-        {t("media.film_cta_create")}
-      </button>
     </div>
   );
 }
@@ -1109,12 +1160,12 @@ export default function MediaPage() {
         <p className="mt-1.5 text-sm text-umber-700 dark:text-umber-300">{t("media.sub")}</p>
       </header>
 
-      {/* Hero / empty state */}
-      {album ? (
-        <FilmHeroCard album={album} onCreateClick={() => setShowFilmModal(true)} />
-      ) : (
-        <FilmEmptyState onCreateClick={() => setShowFilmModal(true)} />
-      )}
+      {/* Dark cinematic banner — adapts to empty / active state */}
+      <FilmBanner
+        album={album}
+        photographerSaved={!!photographerUrl}
+        onCreateClick={() => setShowFilmModal(true)}
+      />
 
       {/* Live stats panel — only when a film exists */}
       {album && <FilmStatusPanel album={album} />}

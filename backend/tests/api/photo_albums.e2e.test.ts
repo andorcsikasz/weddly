@@ -17,9 +17,7 @@ function wipeFilm(): void {
 }
 
 // Minimal valid JPEG (magic bytes FF D8 FF + padding).
-const FAKE_JPEG = new Uint8Array([
-  0xff, 0xd8, 0xff, 0xe0, ...Array<number>(100).fill(0),
-]);
+const FAKE_JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, ...Array<number>(100).fill(0)]);
 
 describe("photo-albums API", () => {
   let token: string;
@@ -112,7 +110,10 @@ describe("photo-albums API", () => {
       body: fd,
     });
     expect(res.status).toBe(201);
-    const body = (await res.json()) as { upload: { id: number; fileUrl: string }; shotCount: number };
+    const body = (await res.json()) as {
+      upload: { id: number; fileUrl: string };
+      shotCount: number;
+    };
     expect(body.shotCount).toBe(1);
     expect(typeof body.upload.fileUrl).toBe("string");
   });
@@ -141,9 +142,7 @@ describe("photo-albums API", () => {
 
   test("GET /:token/photos unlocks after reveal_at passes", async () => {
     // Patch reveal_at to a time in the past.
-    db.exec(
-      `UPDATE photo_albums SET reveal_at = 1 WHERE upload_token = '${albumToken}'`,
-    );
+    db.exec(`UPDATE photo_albums SET reveal_at = 1 WHERE upload_token = '${albumToken}'`);
     const r = await req<{ locked: boolean; uploads: unknown[]; total: number }>(
       "GET",
       `/api/photo-albums/${albumToken}/photos`,
