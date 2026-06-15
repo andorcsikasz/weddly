@@ -20,7 +20,7 @@
 
 import type { FilmAesthetic, PhotoAlbumPublic } from "@shared/types";
 import { FILM_FILTERS } from "@shared/types";
-import { Camera, CheckCircle, Images } from "lucide-react";
+import { Camera, CheckCircle, Images, QrCode } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
@@ -83,6 +83,16 @@ function filterStyle(aesthetic: FilmAesthetic): string {
   return FILM_FILTERS[aesthetic] ?? "none";
 }
 
+function formatFilmCountdown(ms: number): string {
+  if (ms <= 0) return "0m";
+  const d = Math.floor(ms / 86_400_000);
+  const h = Math.floor((ms % 86_400_000) / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
 // ─── sub-components ──────────────────────────────────────────────────────────
 
 function FilmShell({ children, dark }: { children: React.ReactNode; dark?: boolean }) {
@@ -107,18 +117,12 @@ function FilmHeading({ album }: { album: PhotoAlbumPublic }) {
 }
 
 function ShotCounter({ used, max }: { used: number; max: number }) {
-  const remaining = max - used;
+  const current = used + 1;
   return (
-    <div className="flex items-center justify-center gap-1 mb-4">
-      {Array.from({ length: max }, (_, i) => (
-        <span
-          key={i}
-          className={`block h-1.5 w-4 rounded-full transition-colors ${
-            i < used ? "bg-ink-300" : "bg-ink-800"
-          }`}
-        />
-      ))}
-      <span className="ml-2 text-xs text-ink-500">{remaining} left</span>
+    <div className="flex items-center justify-center gap-3">
+      <span className="font-grotesk text-base tabular-nums text-paper-400/60">{current - 1 > 0 ? current - 1 : ""}</span>
+      <span className="font-grotesk text-xl font-bold tabular-nums text-paper-50">{current}</span>
+      <span className="font-grotesk text-base tabular-nums text-paper-400/60">{current < max ? current + 1 : ""}</span>
     </div>
   );
 }
@@ -141,6 +145,31 @@ function InAppBrowserBanner() {
       >
         Got it
       </button>
+    </div>
+  );
+}
+
+function FilmBar({ album, token }: { album: PhotoAlbumPublic; token: string }) {
+  const remaining = album.eventEndsAt ? Math.max(0, album.eventEndsAt - Date.now()) : null;
+  const countdown = remaining !== null ? formatFilmCountdown(remaining) : null;
+
+  return (
+    <div className="flex items-center gap-3 bg-black/80 px-4 py-3 backdrop-blur-sm">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-paper-50">
+          {album.title || album.displayName}
+        </p>
+        {countdown && (
+          <p className="text-[11px] text-paper-400">{countdown} left</p>
+        )}
+      </div>
+      <a
+        href={`/photos/${token}`}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10"
+        aria-label="Share QR"
+      >
+        <QrCode size={14} className="text-paper-300" aria-hidden="true" />
+      </a>
     </div>
   );
 }
@@ -225,6 +254,7 @@ function Viewfinder({
   const [uploading, setUploading] = useState(false);
   const [flash, setFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
   const deviceId = getDeviceId(token);
 
   async function shoot(file: File) {
@@ -233,12 +263,14 @@ function Viewfinder({
     setUploading(true);
     setFlash(true);
     setTimeout(() => setFlash(false), 120);
+    const previewUrl = URL.createObjectURL(file);
     try {
       const result = await photoAlbumApi.upload(token, file, {
         deviceId,
         guestName: guestName ?? undefined,
         filterApplied: album.filmAesthetic,
       });
+      setLastPhotoUrl(previewUrl);
       if (album.shotsPerGuest !== null && result.shotCount >= album.shotsPerGuest) {
         onLimitReached();
       } else {
@@ -285,116 +317,117 @@ function Viewfinder({
   const showDesktopFallback = !mobile && hasStream === false;
 
   return (
-    <div>
-      {/* In-app browser warning — mobile only */}
-      {mobile && inApp && <InAppBrowserBanner />}
+    <div className="flex min-h-dvh flex-col bg-black">
+      <FilmBar album={album} token={token} />
 
-      <div
-        className="relative w-full bg-ink-900 rounded-2xl overflow-hidden"
-        style={{ aspectRatio: "3/4" }}
-      >
-        {/* ── MOBILE: tap-to-pick UI (no getUserMedia) ─────────────────────── */}
+      {/* Viewfinder area — fills available space */}
+      <div className="relative flex-1" style={{ minHeight: "50vh" }}>
+        {/* ── MOBILE: dark placeholder with last photo ───────────────── */}
         {mobile && (
           <button
             type="button"
             disabled={uploading}
             onClick={openPicker}
-            className="absolute inset-0 w-full flex flex-col items-center justify-center gap-4 text-paper-300 disabled:opacity-50"
+            className="absolute inset-0 flex w-full flex-col items-center justify-center disabled:opacity-50"
             aria-label={t("photos.choose_photo")}
           >
-            <Camera className="w-14 h-14 text-paper-300" />
-            <span className="text-sm text-paper-400">{t("photos.choose_photo")}</span>
+            {lastPhotoUrl ? (
+              <img
+                src={lastPhotoUrl}
+                alt=""
+                className="h-full w-full object-cover"
+                style={{ filter: filterStyle(album.filmAesthetic) }}
+                aria-hidden="true"
+              />
+            ) : (
+              <Camera className="h-14 w-14 text-paper-600" aria-hidden="true" />
+            )}
           </button>
         )}
 
-        {/* ── DESKTOP: live viewfinder ─────────────────────────────────────── */}
+        {/* ── DESKTOP: live viewfinder ───────────────────────────────── */}
         {showLiveViewfinder && (
           <video
             ref={videoRef}
             playsInline
             muted
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
             style={{ filter: cssFilter }}
           />
         )}
 
-        {/* ── DESKTOP: fallback when getUserMedia denied ────────────────────── */}
+        {/* ── DESKTOP: fallback when getUserMedia denied ─────────────── */}
         {showDesktopFallback && (
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center bg-ink-800 text-paper-300 cursor-pointer"
+          <button
+            type="button"
             onClick={openPicker}
+            className="absolute inset-0 flex w-full flex-col items-center justify-center gap-3 bg-umber-950 text-paper-400"
           >
-            <Camera className="w-12 h-12 mb-3 text-paper-400" />
+            <Camera className="h-12 w-12" aria-hidden="true" />
             <p className="text-sm">{t("photos.choose_photo")}</p>
-          </div>
+          </button>
         )}
 
-        {/* Hidden canvas for desktop filter-baked capture */}
         {!mobile && <canvas ref={canvasRef} className="hidden" />}
 
         {/* Flash overlay */}
         <div
-          className="absolute inset-0 bg-white pointer-events-none transition-opacity duration-100"
+          className="pointer-events-none absolute inset-0 bg-white transition-opacity duration-100"
           style={{ opacity: flash ? 0.9 : 0 }}
         />
 
-        {/* Shot counter overlay — top */}
-        {max > 0 && (
-          <div className="absolute top-3 left-0 right-0 flex justify-center px-4">
-            <div className="bg-black/50 rounded-full px-3 py-1 backdrop-blur-sm">
-              <ShotCounter used={shotCount} max={max} />
-            </div>
+        {/* In-app browser warning */}
+        {mobile && inApp && (
+          <div className="absolute left-3 right-3 top-3">
+            <InAppBrowserBanner />
           </div>
         )}
 
-        {/* Error overlay */}
+        {/* Error */}
         {error && (
-          <div className="absolute top-14 left-4 right-4">
-            <p className="text-xs text-red-300 bg-red-900/80 rounded-lg px-3 py-2 text-center backdrop-blur-sm">
+          <div className="absolute left-4 right-4 top-4">
+            <p className="rounded-xl bg-red-900/80 px-3 py-2 text-center text-xs text-red-300 backdrop-blur-sm">
               {error}
             </p>
           </div>
         )}
 
-        {/* Shutter button — shown on desktop only; mobile uses the whole-area tap */}
-        {!mobile && (
-          <div className="absolute bottom-5 left-0 right-0 flex justify-center">
-            <button
-              type="button"
-              disabled={uploading}
-              onClick={handleShutterClick}
-              aria-label={t("photos.choose_photo")}
-              className={`w-16 h-16 rounded-full border-4 border-white bg-white/20 backdrop-blur-sm transition-transform active:scale-90 ${
-                uploading ? "opacity-50" : ""
-              }`}
-            >
-              <span className="block w-10 h-10 mx-auto rounded-full bg-white" />
-            </button>
+        {/* Last photo thumbnail — bottom right */}
+        {lastPhotoUrl && (
+          <div className="absolute bottom-4 right-4 h-12 w-12 overflow-hidden rounded-xl border border-white/20 shadow-lg">
+            <img
+              src={lastPhotoUrl}
+              alt="Last shot"
+              className="h-full w-full object-cover"
+              style={{ filter: filterStyle(album.filmAesthetic) }}
+            />
           </div>
         )}
       </div>
 
-      {/* Mobile: large CTA button below the card (easier to tap than a shutter overlay) */}
-      {mobile && (
-        <button
-          type="button"
-          disabled={uploading}
-          onClick={openPicker}
-          className={`mt-4 w-full rounded-2xl bg-ink-900 py-4 text-base font-semibold text-paper-50 transition-opacity active:opacity-70 ${
-            uploading ? "opacity-50" : ""
-          }`}
-        >
-          {uploading ? "Uploading…" : t("photos.choose_photo")}
-        </button>
-      )}
+      {/* Bottom controls */}
+      <div className="flex flex-col items-center gap-4 pb-10 pt-6">
+        {/* Shot counter */}
+        {max > 0 && <ShotCounter used={shotCount} max={max} />}
 
-      {/*
-        File input — NO `capture` attribute on mobile.
-        Without `capture`, iOS Safari shows its native action sheet:
-          "Take Photo or Video" / "Photo Library" / "Browse"
-        This works in Safari AND most WKWebView-based in-app browsers.
-        Desktop keeps `capture="environment"` to skip the OS file picker.
-      */}
+        {/* Shutter row */}
+        <div className="relative flex w-full items-center justify-center">
+          {/* Desktop shutter (also shown as the primary tap on mobile) */}
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={handleShutterClick}
+            aria-label={t("photos.choose_photo")}
+            className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-paper-200/40 bg-white transition-transform active:scale-90 disabled:opacity-50"
+          >
+            {uploading && (
+              <span className="h-6 w-6 animate-spin rounded-full border-2 border-ink-300 border-t-ink-900" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -551,11 +584,18 @@ export default function GuestPhotoPage() {
 
   if (state.kind === "name_capture") {
     return (
-      <FilmShell>
-        <FilmHeading album={state.album} />
-        <div className="card">
-          <h1 className="text-lg font-semibold text-ink-900 mb-1">{t("photos.name_heading")}</h1>
-          <p className="text-sm text-ink-500 mb-4">{t("photos.name_sub")}</p>
+      <FilmShell dark>
+        <div className="mb-8 text-center">
+          <p className="font-serif italic text-3xl text-paper-50">{state.album.displayName}</p>
+          {state.album.title && (
+            <p className="mt-1 text-sm text-paper-400">{state.album.title}</p>
+          )}
+        </div>
+        <div className="rounded-2xl border border-umber-700 bg-umber-900 p-5">
+          <h1 className="mb-1 font-grotesk text-lg font-semibold text-paper-50">
+            {t("photos.name_heading")}
+          </h1>
+          <p className="mb-4 text-sm text-paper-400">{t("photos.name_sub")}</p>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -568,17 +608,20 @@ export default function GuestPhotoPage() {
               onChange={(e) => setNameInput(e.target.value)}
               placeholder={t("photos.name_placeholder")}
               autoFocus
-              className="w-full border border-paper-300 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-blush-500 mb-3"
+              className="mb-3 w-full rounded-xl border border-umber-700 bg-umber-800 px-4 py-3 text-sm text-paper-50 placeholder-umber-500 focus:border-umber-500 focus:outline-none"
             />
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => handleNameSubmit(null)}
-                className="btn-ghost flex-1 text-sm"
+                className="flex-1 rounded-xl border border-umber-700 py-2.5 text-sm text-paper-400 transition-colors hover:bg-umber-800"
               >
                 {t("photos.name_skip")}
               </button>
-              <button type="submit" className="btn-primary flex-1 text-sm">
+              <button
+                type="submit"
+                className="flex-1 rounded-xl bg-paper-50 py-2.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+              >
                 {t("photos.name_continue")}
               </button>
             </div>
@@ -632,30 +675,15 @@ export default function GuestPhotoPage() {
   // viewfinder
   const { album, guestName, shotCount } = state;
   return (
-    <FilmShell>
-      <div className="flex items-center justify-between mb-4">
-        <p className="font-serif italic text-lg text-ink-900">{album.displayName}</p>
-        {album.filmAesthetic !== "natural" && (
-          <span className="text-xs text-ink-400 capitalize bg-paper-100 rounded-full px-2 py-0.5">
-            {album.filmAesthetic}
-          </span>
-        )}
-      </div>
-
-      <Viewfinder
-        album={album}
-        guestName={guestName}
-        shotCount={shotCount}
-        token={token}
-        onShotTaken={(count) =>
-          setState((s) => (s.kind === "viewfinder" ? { ...s, shotCount: count } : s))
-        }
-        onLimitReached={() => setState({ kind: "limit_reached", album })}
-      />
-
-      {guestName && (
-        <p className="text-center text-xs text-ink-400 mt-3">Shooting as {guestName}</p>
-      )}
-    </FilmShell>
+    <Viewfinder
+      album={album}
+      guestName={guestName}
+      shotCount={shotCount}
+      token={token}
+      onShotTaken={(count) =>
+        setState((s) => (s.kind === "viewfinder" ? { ...s, shotCount: count } : s))
+      }
+      onLimitReached={() => setState({ kind: "limit_reached", album })}
+    />
   );
 }

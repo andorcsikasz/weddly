@@ -8,10 +8,12 @@ import {
   ChevronRight,
   Clock3,
   Copy,
+  Download,
   ExternalLink,
   Film,
   GalleryHorizontalEnd,
   Link2,
+  Lock,
   Pencil,
   QrCode,
   Share2,
@@ -73,6 +75,16 @@ function toDatetimeLocal(ms: number): string {
 
 function daysUntil(ms: number): number {
   return Math.max(0, Math.ceil((ms - Date.now()) / 86400000));
+}
+
+function formatPreciseCountdown(ms: number): string {
+  if (ms <= 0) return "0m";
+  const d = Math.floor(ms / 86_400_000);
+  const h = Math.floor((ms % 86_400_000) / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 const DEMO_STRIP = ["/demo/film-01.jpg", "/demo/film-02.jpg", "/demo/film-03.jpg"];
@@ -497,6 +509,7 @@ export default function MediaPage() {
   const [filmAccess, setFilmAccess] = useState<FilmAccessCheck | null>(null);
   const [showFilmModal, setShowFilmModal] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  const [showParticipants, setShowParticipants] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [coupleUploading, setCoupleUploading] = useState(false);
@@ -680,6 +693,9 @@ export default function MediaPage() {
     : [];
 
   const extraPhotos = album ? Math.max(0, album.photoCount - DEMO_STRIP.length) : 0;
+  const countdownStr = album?.eventEndsAt
+    ? formatPreciseCountdown(Math.max(0, album.eventEndsAt - Date.now()))
+    : null;
 
   return (
     <div>
@@ -758,7 +774,7 @@ export default function MediaPage() {
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-paper-400">
                     Wedding Film
                   </p>
-                  <h1 className="font-grotesk text-2xl font-semibold leading-tight text-paper-50 sm:text-3xl">
+                  <h1 className="font-serif text-3xl font-normal italic leading-tight text-paper-50 sm:text-4xl">
                     {album.title || t("media.film_empty_title")}
                   </h1>
                   {album.eventEndsAt && (
@@ -782,49 +798,77 @@ export default function MediaPage() {
             <div className="grid grid-cols-3 divide-x divide-umber-800 border-b border-umber-800">
               <div className="flex flex-col items-center py-5 text-center">
                 <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
+                  {album.photoCount.toLocaleString()}
+                </span>
+                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+                  Moments
+                </span>
+              </div>
+              <div className="flex flex-col items-center py-5 text-center">
+                <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
+                  {countdownStr ?? "--"}
+                </span>
+                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+                  Left
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowParticipants((v) => !v)}
+                className="flex flex-col items-center py-5 text-center transition-colors hover:bg-umber-900"
+              >
+                <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
                   {album.participantCount}
                 </span>
-                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
-                  {t("media.film_stats_guests")}
+                <span className="mt-0.5 flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+                  People
+                  <ChevronRight size={10} aria-hidden="true" className={`transition-transform ${showParticipants ? "rotate-90" : ""}`} />
                 </span>
-              </div>
-              <div className="flex flex-col items-center py-5 text-center">
-                <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
-                  {daysLeft ?? "--"}
-                </span>
-                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
-                  Days left
-                </span>
-              </div>
-              <div className="flex flex-col items-center py-5 text-center">
-                <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
-                  {album.photoCount}
-                </span>
-                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
-                  {t("media.film_stats_photos")}
-                </span>
-              </div>
+              </button>
             </div>
+            {/* Inline participants list — expands when People is tapped */}
+            {showParticipants && album && (
+              <div className="border-b border-umber-800 px-4 py-3">
+                <ParticipantDashboard albumToken={album.uploadToken} />
+              </div>
+            )}
 
             {/* ── Action buttons ────────────────────────────────────── */}
             {uploadUrl && (
-              <div className="flex gap-3 p-4">
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-umber-700 bg-umber-900 py-3 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800"
+              <div className="flex gap-2 p-4">
+                <a
+                  href={photoAlbumApi.qrUrl(album.uploadToken)}
+                  download="guest-qr.png"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-umber-700 bg-umber-900 py-3 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800"
                 >
-                  <QrCode size={15} aria-hidden="true" />
-                  {linkCopied ? t("media.from_guests_copied") : t("media.film_cta_share")}
-                </button>
+                  <Download size={14} aria-hidden="true" />
+                  Export
+                </a>
                 <button
                   type="button"
                   onClick={() => setShowQr(true)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-paper-50 py-3 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-umber-700 bg-umber-900 py-3 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800"
                 >
-                  <Camera size={15} aria-hidden="true" />
-                  {t("media.film_stats_camera")}
+                  <QrCode size={14} aria-hidden="true" />
+                  Invite
                 </button>
+                <a
+                  href={uploadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-paper-50 py-3 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+                >
+                  <Camera size={14} aria-hidden="true" />
+                  Camera
+                </a>
+              </div>
+            )}
+
+            {/* ── Privacy notice ────────────────────────────────────── */}
+            {uploadUrl && (
+              <div className="mx-4 mb-3 flex items-center gap-2.5 rounded-xl border border-umber-800 bg-umber-900/60 px-4 py-3">
+                <Lock size={13} className="shrink-0 text-umber-400" aria-hidden="true" />
+                <span className="text-xs text-paper-400">Only the host can see everyone's photos until reveal</span>
               </div>
             )}
 
@@ -885,23 +929,29 @@ export default function MediaPage() {
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                 Recent photos
               </p>
-              <div className="flex gap-2.5 overflow-x-auto pb-0.5">
+              <div className="columns-2 gap-2 space-y-2">
                 {DEMO_STRIP.map((src, i) => {
                   const isLast = i === DEMO_STRIP.length - 1 && extraPhotos > 0;
+                  const demoNames = ["Maria K.", "David S.", "Anna B."];
                   return (
                     <div
                       key={src}
-                      className="relative h-28 w-[4.5rem] flex-shrink-0 overflow-hidden rounded-xl"
+                      className="relative overflow-hidden rounded-xl break-inside-avoid"
                     >
                       <img
                         src={src}
                         alt=""
-                        className="h-full w-full object-cover"
+                        className="w-full object-cover"
                         aria-hidden="true"
                       />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2.5 pb-2 pt-6">
+                        <span className="text-[11px] font-medium text-paper-100">
+                          {demoNames[i]}
+                        </span>
+                      </div>
                       {isLast && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/55">
-                          <span className="font-grotesk text-sm font-semibold text-paper-50">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                          <span className="font-grotesk text-xl font-semibold text-paper-50">
                             +{extraPhotos}
                           </span>
                         </div>
@@ -910,12 +960,6 @@ export default function MediaPage() {
                   );
                 })}
               </div>
-              {/* Participant list */}
-              {album && (
-                <div className="mt-3">
-                  <ParticipantDashboard albumToken={album.uploadToken} />
-                </div>
-              )}
             </div>
 
             {/* ── Settings (iOS rows) ───────────────────────────────── */}
