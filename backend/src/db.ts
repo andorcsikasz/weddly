@@ -1181,11 +1181,17 @@ export function now(): number {
 db.exec("CREATE INDEX IF NOT EXISTS idx_photo_albums_couple ON photo_albums(couple_id)");
 db.exec("CREATE INDEX IF NOT EXISTS idx_photo_albums_token ON photo_albums(upload_token)");
 db.exec("CREATE INDEX IF NOT EXISTS idx_photo_uploads_album ON photo_uploads(album_id)");
-db.exec("CREATE INDEX IF NOT EXISTS idx_photo_uploads_device ON photo_uploads(album_id, device_id)");
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_photo_uploads_device ON photo_uploads(album_id, device_id)",
+);
 
 // Wedding Film: new columns on existing tables (additive only).
 addColumnIfMissing("photo_albums", "cover_image_url", "cover_image_url TEXT");
-addColumnIfMissing("photo_albums", "film_aesthetic", "film_aesthetic TEXT NOT NULL DEFAULT 'natural'");
+addColumnIfMissing(
+  "photo_albums",
+  "film_aesthetic",
+  "film_aesthetic TEXT NOT NULL DEFAULT 'natural'",
+);
 addColumnIfMissing("photo_albums", "event_ends_at", "event_ends_at INTEGER");
 addColumnIfMissing("photo_albums", "guest_cap", "guest_cap INTEGER NOT NULL DEFAULT 5");
 addColumnIfMissing("photo_albums", "stripe_payment_id", "stripe_payment_id TEXT");

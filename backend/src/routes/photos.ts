@@ -76,9 +76,7 @@ interface AlbumRow {
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function safeAesthetic(raw: string | null): FilmAesthetic {
-  return FILM_AESTHETICS.includes(raw as FilmAesthetic)
-    ? (raw as FilmAesthetic)
-    : "natural";
+  return FILM_AESTHETICS.includes(raw as FilmAesthetic) ? (raw as FilmAesthetic) : "natural";
 }
 
 function countPhotos(albumId: number): number {
@@ -129,9 +127,9 @@ function toAlbum(row: AlbumRow): PhotoAlbum {
 
 function checkFilmAccess(coupleId: number, coupleCreatedAt: number): FilmAccessCheck {
   const memberCount = (
-    db
-      .prepare("SELECT COUNT(*) AS c FROM couple_members WHERE couple_id = ?")
-      .get(coupleId) as { c: number }
+    db.prepare("SELECT COUNT(*) AS c FROM couple_members WHERE couple_id = ?").get(coupleId) as {
+      c: number;
+    }
   ).c;
   const ageMs = now() - coupleCreatedAt;
   const isLoyalCouple = ageMs >= FIVE_MONTHS_MS && memberCount >= 2;
@@ -155,9 +153,9 @@ async function handleFilmCheckout(ctx: Ctx): Promise<Response> {
   const access = checkFilmAccess(couple.id, couple.created_at);
   if (access.free) throw new HttpError(400, "Film is already free for this couple");
 
-  const row = db
-    .prepare("SELECT * FROM photo_albums WHERE couple_id = ?")
-    .get(couple.id) as AlbumRow | undefined;
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
   if (!row) throw new HttpError(404, "Create the film first");
   if (row.paid_at !== null) throw new HttpError(400, "Film already activated");
 
@@ -199,9 +197,9 @@ async function handleCreateAlbum(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple found");
 
-  const existing = db
-    .prepare("SELECT * FROM photo_albums WHERE couple_id = ?")
-    .get(couple.id) as AlbumRow | undefined;
+  const existing = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
   if (existing) {
     return json({ album: toAlbum(existing) });
   }
@@ -292,9 +290,9 @@ async function handleGetCurrentAlbum(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple found");
 
-  const row = db
-    .prepare("SELECT * FROM photo_albums WHERE couple_id = ?")
-    .get(couple.id) as AlbumRow | undefined;
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
 
   return json({ album: row ? toAlbum(row) : null });
 }
@@ -305,9 +303,9 @@ async function handleUpdateAlbum(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple found");
 
-  const row = db
-    .prepare("SELECT * FROM photo_albums WHERE couple_id = ?")
-    .get(couple.id) as AlbumRow | undefined;
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
   if (!row) throw new HttpError(404, "No album found");
 
   const body = (await ctx.req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -382,9 +380,9 @@ async function handleListPhotos(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple found");
 
-  const row = db
-    .prepare("SELECT * FROM photo_albums WHERE couple_id = ?")
-    .get(couple.id) as AlbumRow | undefined;
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
   if (!row) throw new HttpError(404, "No album found");
 
   const uploads = db
@@ -405,9 +403,9 @@ async function handleListDevices(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple found");
 
-  const row = db
-    .prepare("SELECT * FROM photo_albums WHERE couple_id = ?")
-    .get(couple.id) as AlbumRow | undefined;
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
   if (!row) throw new HttpError(404, "No album found");
 
   const devices = db
@@ -557,9 +555,9 @@ async function handleGetPublicPhotos(ctx: Ctx): Promise<Response> {
 /** GET /api/photo-albums/:token/qr — printable QR code SVG. */
 async function handleGetQr(ctx: Ctx): Promise<Response> {
   const token = ctx.params.token ?? "";
-  const row = db
-    .prepare("SELECT 1 AS ok FROM photo_albums WHERE upload_token = ?")
-    .get(token) as { ok: 1 } | undefined;
+  const row = db.prepare("SELECT 1 AS ok FROM photo_albums WHERE upload_token = ?").get(token) as
+    | { ok: 1 }
+    | undefined;
   if (!row) throw new HttpError(404, "Album not found");
 
   const url = `${CONFIG.frontendBaseUrl}/photos/${token}`;
@@ -668,7 +666,9 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   // Best-effort temp cleanup.
   void Bun.file(tmpPath)
     .exists()
-    .then((e) => { if (e) void Bun.write(tmpPath, ""); })
+    .then((e) => {
+      if (e) void Bun.write(tmpPath, "");
+    })
     .catch(() => {});
 
   const shotCount = (

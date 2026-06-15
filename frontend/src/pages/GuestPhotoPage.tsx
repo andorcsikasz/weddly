@@ -15,12 +15,7 @@
 import type { FilmAesthetic, PhotoAlbumPublic } from "@shared/types";
 import { FILM_FILTERS } from "@shared/types";
 import { Camera, CheckCircle, Images } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -239,7 +234,10 @@ function Viewfinder({
   const max = album.shotsPerGuest ?? 0;
 
   return (
-    <div className="relative w-full bg-ink-900 rounded-2xl overflow-hidden" style={{ aspectRatio: "3/4" }}>
+    <div
+      className="relative w-full bg-ink-900 rounded-2xl overflow-hidden"
+      style={{ aspectRatio: "3/4" }}
+    >
       {/* Viewfinder */}
       {hasCamera ? (
         <video
@@ -531,10 +529,7 @@ export default function GuestPhotoPage() {
         <FilmHeading album={state.album} />
         <p className="text-center text-sm text-umber-300 mb-8">Your photos are developing…</p>
         {state.album.revealAt && (
-          <Countdown
-            revealsAt={state.album.revealAt}
-            onRevealed={handleRevealed}
-          />
+          <Countdown revealsAt={state.album.revealAt} onRevealed={handleRevealed} />
         )}
       </FilmShell>
     );

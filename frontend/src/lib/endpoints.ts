@@ -1929,7 +1929,9 @@ async function publicFilmFetch<T>(path: string, init?: RequestInit): Promise<T> 
       const p = JSON.parse(text) as { code?: string; message?: string };
       if (p.code) backendCode = p.code;
       if (p.message) msg = p.message;
-    } catch { /* */ }
+    } catch {
+      /* */
+    }
     const apiCode = res.status >= 500 ? "server_error" : "client_error";
     throw new ApiError(res.status, apiCode, msg, backendCode ? { code: backendCode } : undefined);
   }
@@ -1946,14 +1948,16 @@ export const photoAlbumApi = {
     apiFetch<{ url: string }>("POST", "/api/photo-albums/checkout", {}),
 
   /** Create (or return existing) the couple's film. */
-  create(opts: {
-    title?: string;
-    filmAesthetic?: FilmAesthetic;
-    shotsPerGuest?: number | null;
-    revealAt?: number | null;
-    eventEndsAt?: number | null;
-    coverImageUrl?: string | null;
-  } = {}): Promise<{ album: PhotoAlbum }> {
+  create(
+    opts: {
+      title?: string;
+      filmAesthetic?: FilmAesthetic;
+      shotsPerGuest?: number | null;
+      revealAt?: number | null;
+      eventEndsAt?: number | null;
+      coverImageUrl?: string | null;
+    } = {},
+  ): Promise<{ album: PhotoAlbum }> {
     const body: Record<string, unknown> = {};
     if (opts.title !== undefined) body.title = opts.title;
     if (opts.filmAesthetic !== undefined) body.film_aesthetic = opts.filmAesthetic;
@@ -2020,11 +2024,12 @@ export const photoAlbumApi = {
   },
 
   /** Public: reveal-locked photo list. */
-  getPublicPhotos: (token: string): Promise<
+  getPublicPhotos: (
+    token: string,
+  ): Promise<
     | { locked: true; revealsAt: number; photoCount: number }
     | { locked: false; uploads: unknown[]; total: number }
-  > =>
-    publicFilmFetch(`/api/photo-albums/${token}/photos`),
+  > => publicFilmFetch(`/api/photo-albums/${token}/photos`),
 
   /** Public: upload a photo. Returns upload id + fileUrl + updated shotCount. */
   async upload(
