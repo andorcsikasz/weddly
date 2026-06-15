@@ -348,7 +348,7 @@ function FilmBanner({
   }
 
   return (
-    <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-umber-950 via-umber-900 to-umber-800 p-6 shadow-pop">
+    <div className="relative mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-umber-950 via-umber-900 to-umber-800 p-5 shadow-pop">
       {/* Radial vignette — dark edges, lighter centre */}
       <div
         className="pointer-events-none absolute inset-0"
@@ -520,7 +520,7 @@ function FilmStatusPanel({ album }: { album: PhotoAlbum }) {
     status === "live" ? "bg-sage-500" : status === "developing" ? "bg-amber-400" : "bg-paper-400";
 
   return (
-    <div className="card mb-5 border-paper-200 bg-white/80 backdrop-blur-sm dark:border-umber-700 dark:bg-umber-800/80">
+    <div className="card mb-3 border-paper-200 bg-white/80 backdrop-blur-sm dark:border-umber-700 dark:bg-umber-800/80">
       {/* Status heading with pulsing dot when live */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 font-grotesk text-sm font-semibold text-ink-800 dark:text-paper-100">
@@ -640,7 +640,7 @@ function FromGuestsCard({
   }
 
   return (
-    <div className="card-hover flex flex-col gap-5">
+    <div className="card-hover flex flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink-900 text-paper-50 dark:bg-ink-800 dark:text-paper-100">
           <Users size={20} aria-hidden="true" />
@@ -648,14 +648,9 @@ function FromGuestsCard({
         <CardLabel text="FROM GUESTS" />
       </div>
 
-      <div>
-        <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
-          {t("media.from_guests_title")}
-        </h3>
-        <p className="mt-1 text-sm text-umber-600 dark:text-umber-200">
-          {t("media.from_guests_desc")}
-        </p>
-      </div>
+      <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+        {t("media.from_guests_title")}
+      </h3>
 
       {album && uploadUrl ? (
         <div className="space-y-4">
@@ -714,10 +709,7 @@ function FromGuestsCard({
           />
         </div>
       ) : (
-        <div className="mt-auto space-y-3">
-          <p className="text-sm text-ink-500 dark:text-umber-300">
-            {t("media.from_guests_coming_note")}
-          </p>
+        <div className="mt-auto">
           <button type="button" className="btn-primary btn-sm" onClick={onCreateClick}>
             <Link2 size={14} aria-hidden="true" />
             {t("media.film_cta_create")}
@@ -732,13 +724,8 @@ function FromGuestsCard({
 // fill the card and communicate upcoming value.
 function ToGuestsCard() {
   const { t } = useT();
-  const features = [
-    t("media.to_guests_feature_1"),
-    t("media.to_guests_feature_2"),
-    t("media.to_guests_feature_3"),
-  ];
   return (
-    <div className="card-hover flex flex-col gap-5 border-2 border-dashed bg-paper-50/60">
+    <div className="card-hover flex flex-col gap-3 border-2 border-dashed bg-paper-50/60 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-400 dark:bg-umber-700 dark:text-umber-400">
           <Share2 size={20} aria-hidden="true" />
@@ -749,20 +736,9 @@ function ToGuestsCard() {
         </div>
       </div>
 
-      <div>
-        <h3 className="font-grotesk text-base font-semibold text-ink-700 dark:text-paper-200">
-          {t("media.to_guests_title")}
-        </h3>
-        <p className="mt-1 text-sm text-umber-500 dark:text-umber-300">{t("media.to_guests_desc")}</p>
-        <ul className="mt-3 space-y-1.5">
-          {features.map((f) => (
-            <li key={f} className="flex items-start gap-2 text-xs text-ink-500 dark:text-umber-400">
-              <Check size={11} className="mt-0.5 shrink-0 text-sage-500" aria-hidden="true" />
-              {f}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <h3 className="font-grotesk text-base font-semibold text-ink-700 dark:text-paper-200">
+        {t("media.to_guests_title")}
+      </h3>
 
       <div className="mt-auto">
         <button type="button" className="btn-outline btn-sm" disabled>
@@ -804,7 +780,7 @@ function PhotographerCard({
   return (
     <div
       ref={cardRef}
-      className="card-hover flex flex-col gap-5"
+      className="card-hover flex flex-col gap-3 p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
@@ -813,14 +789,9 @@ function PhotographerCard({
         <CardLabel text="PHOTOGRAPHER" />
       </div>
 
-      <div>
-        <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
-          {t("media.photographer_title")}
-        </h3>
-        <p className="mt-1 text-sm text-umber-600 dark:text-umber-200">
-          {t("media.photographer_desc")}
-        </p>
-      </div>
+      <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+        {t("media.photographer_title")}
+      </h3>
 
       <div className="mt-auto">
         {isEditing ? (
@@ -946,7 +917,7 @@ function FilmSettingsPanel({
   ];
 
   return (
-    <div className="card mt-4">
+    <div className="card mt-3">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-grotesk text-sm font-semibold text-ink-800 dark:text-paper-100">
           {t("media.film_settings_title")}
@@ -996,8 +967,8 @@ function HowItWorksSection() {
     { n: "3", title: t("media.film_how_3_title"), body: t("media.film_how_3_body") },
   ];
   return (
-    <div className="card mb-2 mt-6">
-      <div className="mb-5 flex items-center gap-3">
+    <div className="card mb-2 mt-4">
+      <div className="mb-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
         <h3 className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
           {t("media.film_how_title")}
@@ -1039,7 +1010,7 @@ function NextStepsSection({
     { done: false, label: t("media.to_guests_cta"), action: null },
   ];
   return (
-    <div className="card mb-2 mt-6">
+    <div className="card mb-2 mt-4">
       <div className="mb-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
         <h3 className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
@@ -1406,10 +1377,10 @@ export default function MediaPage() {
   if (loading) return null;
 
   return (
-    <div className="max-w-5xl">
+    <div>
       <FilmGrain />
       {/* Page header: status pill when film is active, create button when not */}
-      <header className="mb-5 flex items-start justify-between gap-4 border-b border-paper-200 pb-5 dark:border-umber-700">
+      <header className="mb-4 flex items-start justify-between gap-4 border-b border-paper-200 pb-4 dark:border-umber-700">
         <div className="min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400 dark:text-umber-500">
             Wedding Film
@@ -1467,7 +1438,7 @@ export default function MediaPage() {
       {album && <FilmStatusPanel album={album} />}
 
       {/* Feature cards grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <FromGuestsCard
           album={album}
           access={filmAccess}
