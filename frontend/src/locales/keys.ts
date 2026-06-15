@@ -1859,6 +1859,33 @@ export interface LocaleMessages {
     feedback_success: string;
     feedback_empty_error: string;
   };
+  /** /photos/:token — public guest upload page. */
+  photos: {
+    loading: string;
+    not_found: string;
+    not_found_sub: string;
+    uploads_disabled: string;
+    uploads_disabled_sub: string;
+    name_heading: string;
+    name_sub: string;
+    name_placeholder: string;
+    name_skip: string;
+    name_continue: string;
+    ready_heading: string;
+    ready_sub: string;
+    ready_sub_limit: string;
+    choose_photo: string;
+    uploading: string;
+    success_heading: string;
+    success_sub: string;
+    success_add_more: string;
+    limit_heading: string;
+    limit_sub: string;
+    error_too_large: string;
+    error_bad_type: string;
+    error_generic: string;
+    shot_count: string;
+  };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   /** /app/design — the curated wedding visual-identity editor. */
   design: {

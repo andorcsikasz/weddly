@@ -1352,3 +1352,31 @@ CREATE TABLE IF NOT EXISTS referral_grants (
   granted_at INTEGER NOT NULL,
   UNIQUE(referral_type, referred_id)
 );
+
+-- Guest photo collection. One album per couple, created when they click
+-- "Create upload link" on /app/media. upload_token is the credential
+-- embedded in the QR code and share link (/photos/:token).
+CREATE TABLE IF NOT EXISTS photo_albums (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  upload_token TEXT NOT NULL UNIQUE,
+  title TEXT,
+  shots_per_guest INTEGER,
+  is_upload_enabled INTEGER NOT NULL DEFAULT 1,
+  allow_guest_viewing INTEGER NOT NULL DEFAULT 0,
+  reveal_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- Individual photos submitted by guests through /photos/:token.
+CREATE TABLE IF NOT EXISTS photo_uploads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  album_id INTEGER NOT NULL REFERENCES photo_albums(id) ON DELETE CASCADE,
+  device_id TEXT NOT NULL,
+  guest_name TEXT,
+  file_path TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  file_size INTEGER NOT NULL,
+  uploaded_at INTEGER NOT NULL
+);

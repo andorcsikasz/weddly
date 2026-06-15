@@ -1175,3 +1175,10 @@ addColumnIfMissing(
 export function now(): number {
   return Date.now();
 }
+
+// Guest photo album tables (defined in schema.sql) — indexes here per the
+// May 2026 addColumnIfMissing/schema.sql ordering rule.
+db.exec("CREATE INDEX IF NOT EXISTS idx_photo_albums_couple ON photo_albums(couple_id)");
+db.exec("CREATE INDEX IF NOT EXISTS idx_photo_albums_token ON photo_albums(upload_token)");
+db.exec("CREATE INDEX IF NOT EXISTS idx_photo_uploads_album ON photo_uploads(album_id)");
+db.exec("CREATE INDEX IF NOT EXISTS idx_photo_uploads_device ON photo_uploads(album_id, device_id)");

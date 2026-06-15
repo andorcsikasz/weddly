@@ -1,21 +1,15 @@
 // Weddly Photos — guest photo collection hub.
 //
 // Three panels:
-//   "From guests"    — QR/link-based guest uploads. Empty → create modal → active mock.
+//   "From guests"    — QR/link-based guest uploads. Empty → create modal → active.
 //   "To guests"      — shared reveal gallery. Coming soon.
 //   "By photographer"— couple saves photographer gallery link. Live (existing backend).
-//
-// The hero card above funnels directly into the From-guests create flow.
-// When the guest-upload backend lands, wire CreateAlbumModal to
-//   POST /api/weddings/:weddingId/photo-albums
-// and replace `albumCreated` local state with the returned album record.
 
-import type { Couple, MediaLinks } from "@shared/types";
+import type { Couple, MediaLinks, PhotoAlbum } from "@shared/types";
 import { Camera, Copy, ExternalLink, Eye, Link2, Pencil, Share2, Users } from "lucide-react";
 import { type FormEvent, type SVGProps, useEffect, useRef, useState } from "react";
-import { InfoHint } from "../components/InfoHint";
 import { Dialog, useToast } from "../components/ui";
-import { coupleApi } from "../lib/endpoints";
+import { coupleApi, photoAlbumApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 // --- helpers ----------------------------------------------------------------
@@ -118,7 +112,7 @@ function HeroCard({ onCreateClick }: { onCreateClick: () => void }) {
     <div className="card mb-5 overflow-hidden border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-lg">
-          <h2 className="font-serif text-xl italic leading-snug text-ink-900 sm:text-2xl dark:text-paper-50">
+          <h2 className="font-grotesk text-xl font-semibold leading-snug tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
             {t("media.hero_title")}
           </h2>
           <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">{t("media.hero_sub")}</p>
@@ -138,18 +132,23 @@ function HeroCard({ onCreateClick }: { onCreateClick: () => void }) {
 
 // "From guests" panel — primary feature card.
 function FromGuestsCard({
-  albumCreated,
+  album,
   onCreateClick,
 }: {
-  albumCreated: boolean;
+  album: PhotoAlbum | null;
   onCreateClick: () => void;
 }) {
   const { t } = useT();
   const [copied, setCopied] = useState(false);
-  const mockLink = "photos.weddly.xyz/g/your-wedding";
+
+  const uploadUrl = album
+    ? `${window.location.origin}/photos/${album.uploadToken}`
+    : null;
+  const displayLink = uploadUrl ? uploadUrl.replace(/^https?:\/\//, "") : null;
 
   function handleCopy() {
-    navigator.clipboard.writeText(`https://${mockLink}`).catch(() => {});
+    if (!uploadUrl) return;
+    navigator.clipboard.writeText(uploadUrl).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -160,7 +159,7 @@ function FromGuestsCard({
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
           <Users size={20} aria-hidden="true" />
         </div>
-        {albumCreated && (
+        {album && (
           <span className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-sage-800 dark:bg-sage-900/40 dark:text-sage-300">
             <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden="true" />
             {t("media.from_guests_active_label")}
@@ -177,7 +176,7 @@ function FromGuestsCard({
         </p>
       </div>
 
-      {albumCreated ? (
+      {album && displayLink ? (
         <div className="space-y-4">
           {/* QR + link row */}
           <div className="flex items-start gap-4">
@@ -189,7 +188,7 @@ function FromGuestsCard({
                 {t("media.from_guests_link_label")}
               </p>
               <p className="truncate rounded-lg border border-paper-200 bg-paper-50 px-3 py-2 font-mono text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200">
-                {mockLink}
+                {displayLink}
               </p>
               <button
                 type="button"
@@ -206,14 +205,11 @@ function FromGuestsCard({
           <div className="flex items-center gap-2 rounded-lg bg-paper-50 px-3 py-2 dark:bg-umber-800">
             <Camera size={14} className="text-ink-400 dark:text-umber-400" aria-hidden="true" />
             <span className="text-xs text-ink-500 dark:text-umber-300">
-              {t("media.from_guests_photos_zero")}
+              {album.photoCount === 0
+                ? t("media.from_guests_photos_zero")
+                : t("media.from_guests_photos_count").replace("{{n}}", String(album.photoCount))}
             </span>
           </div>
-
-          {/* Coming-soon note */}
-          <p className="text-xs text-ink-400 dark:text-umber-400">
-            {t("media.from_guests_coming_note")}
-          </p>
         </div>
       ) : (
         <div className="mt-auto">
@@ -373,8 +369,7 @@ function PhotographerCard({
   );
 }
 
-// Create-album modal — shows settings preview; locally transitions to active state.
-// When the backend is ready, replace the submit handler with an API call.
+// Create-album modal — calls the real API on submit.
 function CreateAlbumModal({
   open,
   onClose,
@@ -382,20 +377,24 @@ function CreateAlbumModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (album: PhotoAlbum) => void;
 }) {
   const { t } = useT();
+  const toast = useToast();
   const [creating, setCreating] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setCreating(true);
-    // Simulate async create (replace with real API call when backend is ready).
-    setTimeout(() => {
-      setCreating(false);
-      onCreated();
+    try {
+      const { album } = await photoAlbumApi.create();
+      onCreated(album);
       onClose();
-    }, 700);
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setCreating(false);
+    }
   }
 
   return (
@@ -481,16 +480,18 @@ export default function MediaPage() {
     draftRef.current = draft;
   }, [draft]);
 
-  // "From guests" album state — local mock until backend ships.
-  const [albumCreated, setAlbumCreated] = useState(false);
+  // "From guests" album state — backed by real API.
+  const [album, setAlbum] = useState<PhotoAlbum | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    coupleApi
-      .current()
-      .then((res) => {
-        if (!cancelled) setCouple(res.couple);
+    Promise.all([coupleApi.current(), photoAlbumApi.current()])
+      .then(([coupleRes, albumRes]) => {
+        if (!cancelled) {
+          setCouple(coupleRes.couple);
+          setAlbum(albumRes.album);
+        }
       })
       .catch(() => {});
     return () => {
@@ -551,9 +552,9 @@ export default function MediaPage() {
 
   return (
     <>
-      <header className="mb-5 flex items-center gap-2">
+      <header className="mb-5">
         <h1 className="font-grotesk">{t("media.title")}</h1>
-        <InfoHint text={t("media.sub")} />
+        <p className="mt-1.5 text-sm text-umber-700 dark:text-umber-300">{t("media.sub")}</p>
       </header>
 
       <HeroCard onCreateClick={() => setShowCreateModal(true)} />
@@ -561,7 +562,7 @@ export default function MediaPage() {
       {/* Feature cards — three panels in a responsive grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <FromGuestsCard
-          albumCreated={albumCreated}
+          album={album}
           onCreateClick={() => setShowCreateModal(true)}
         />
         <ToGuestsCard />
@@ -582,7 +583,7 @@ export default function MediaPage() {
       <CreateAlbumModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onCreated={() => setAlbumCreated(true)}
+        onCreated={(newAlbum) => setAlbum(newAlbum)}
       />
     </>
   );

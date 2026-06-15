@@ -30,6 +30,8 @@ import type {
   GuestGroupTag,
   Household,
   MediaLinks,
+  PhotoAlbum,
+  PhotoAlbumPublic,
   MoodboardPin,
   MoodboardState,
   PlaceSuggestion,
@@ -1911,3 +1913,67 @@ export const tableNumbersPdfUrl = "/api/print/table-numbers";
 
 /** A5 menu cards in the couple's wedding style. Download via `fetchPdfBlob`. */
 export const menuPdfUrl = "/api/print/menu";
+
+// ─── Photo album ─────────────────────────────────────────────────────────────
+
+export const photoAlbumApi = {
+  /** Create (or return existing) the couple's photo album. */
+  create: (): Promise<{ album: PhotoAlbum }> =>
+    apiFetch<{ album: PhotoAlbum }>("POST", "/api/photo-albums"),
+
+  /** Fetch the current couple's album (null if none exists). */
+  current: (): Promise<{ album: PhotoAlbum | null }> =>
+    apiFetch<{ album: PhotoAlbum | null }>("GET", "/api/photo-albums/current"),
+
+  /** Update album settings (is_upload_enabled, shots_per_guest, title). */
+  update(patch: Partial<Pick<PhotoAlbum, "isUploadEnabled" | "shotsPerGuest" | "title">>): Promise<{ album: PhotoAlbum }> {
+    const body: Record<string, unknown> = {};
+    if ("isUploadEnabled" in patch) body.is_upload_enabled = patch.isUploadEnabled;
+    if ("shotsPerGuest" in patch) body.shots_per_guest = patch.shotsPerGuest ?? null;
+    if ("title" in patch) body.title = patch.title ?? null;
+    return apiFetch<{ album: PhotoAlbum }>("PATCH", "/api/photo-albums/current", body);
+  },
+
+  /** Public: fetch album info by upload token (no auth needed). */
+  async getPublic(token: string): Promise<PhotoAlbumPublic> {
+    const res = await fetch(`/api/photo-albums/${token}`);
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      let msg = "Album not found";
+      try { msg = (JSON.parse(text) as { message?: string }).message ?? msg; } catch { /* */ }
+      throw new ApiError(res.status, res.status >= 500 ? "server_error" : "client_error", msg);
+    }
+    const r = (await res.json()) as { album: PhotoAlbumPublic };
+    return r.album;
+  },
+
+  /** Public: upload a photo to an album. Returns the new upload id + fileUrl. */
+  async upload(
+    token: string,
+    file: File,
+    opts: { guestName?: string; deviceId: string },
+  ): Promise<{ id: number; fileUrl: string }> {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("device_id", opts.deviceId);
+    if (opts.guestName) form.append("guest_name", opts.guestName);
+    const res = await fetch(`/api/photo-albums/${token}/photos`, {
+      method: "POST",
+      body: form,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      let backendCode: string | undefined;
+      let msg = "Upload failed";
+      try {
+        const p = JSON.parse(text) as { code?: string; message?: string };
+        if (p.code) backendCode = p.code;
+        if (p.message) msg = p.message;
+      } catch { /* */ }
+      const apiCode = res.status >= 500 ? "server_error" : "client_error";
+      throw new ApiError(res.status, apiCode, msg, backendCode ? { code: backendCode } : undefined);
+    }
+    const r = (await res.json()) as { upload: { id: number; fileUrl: string } };
+    return r.upload;
+  },
+};

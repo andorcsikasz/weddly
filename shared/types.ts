@@ -250,6 +250,29 @@ export type MediaSource = "guests" | "photographer" | "other";
  *  a link. Stored couple-side as a single JSON blob (`media_links_json`). */
 export type MediaLinks = Record<MediaSource, string | null>;
 
+/** Guest photo collection album owned by a couple. */
+export interface PhotoAlbum {
+  id: number;
+  uploadToken: string;
+  title: string | null;
+  shotsPerGuest: number | null;
+  revealAt: number | null;
+  isUploadEnabled: boolean;
+  allowGuestViewing: boolean;
+  photoCount: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** Subset of album info shown on the public guest upload page. */
+export interface PhotoAlbumPublic {
+  displayName: string;
+  weddingDate: string | null;
+  title: string | null;
+  shotsPerGuest: number | null;
+  isUploadEnabled: boolean;
+}
+
 export interface Couple {
   id: number;
   partner_a_id: number;

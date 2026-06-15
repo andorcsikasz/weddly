@@ -65,6 +65,7 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const SettingsLayout = lazy(() => import("./pages/SettingsLayout"));
 const BillingSettings = lazy(() => import("./pages/BillingSettings"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const GuestPhotoPage = lazy(() => import("./pages/GuestPhotoPage"));
 const RsvpCheckinPage = lazy(() => import("./pages/RsvpCheckinPage"));
 const RsvpPage = lazy(() => import("./pages/RsvpPage"));
 const SchedulePage = lazy(() => import("./pages/SchedulePage"));
@@ -464,6 +465,14 @@ export default function App() {
           element={
             <Page>
               <RsvpCheckinPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/photos/:token"
+          element={
+            <Page>
+              <GuestPhotoPage />
             </Page>
           }
         />
