@@ -29,6 +29,9 @@ import type {
   Guest,
   GuestGroupTag,
   Household,
+  FilmAccessCheck,
+  FilmAesthetic,
+  FilmDevice,
   MediaLinks,
   PhotoAlbum,
   PhotoAlbumPublic,
@@ -1914,66 +1917,128 @@ export const tableNumbersPdfUrl = "/api/print/table-numbers";
 /** A5 menu cards in the couple's wedding style. Download via `fetchPdfBlob`. */
 export const menuPdfUrl = "/api/print/menu";
 
-// ─── Photo album ─────────────────────────────────────────────────────────────
+// ─── Wedding Film / Photo album ───────────────────────────────────────────────
+
+async function publicFilmFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, init);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    let backendCode: string | undefined;
+    let msg = "Request failed";
+    try {
+      const p = JSON.parse(text) as { code?: string; message?: string };
+      if (p.code) backendCode = p.code;
+      if (p.message) msg = p.message;
+    } catch { /* */ }
+    const apiCode = res.status >= 500 ? "server_error" : "client_error";
+    throw new ApiError(res.status, apiCode, msg, backendCode ? { code: backendCode } : undefined);
+  }
+  return res.json() as Promise<T>;
+}
 
 export const photoAlbumApi = {
-  /** Create (or return existing) the couple's photo album. */
-  create: (): Promise<{ album: PhotoAlbum }> =>
-    apiFetch<{ album: PhotoAlbum }>("POST", "/api/photo-albums"),
+  /** Pricing eligibility check for the current couple. */
+  filmAccess: (): Promise<{ access: FilmAccessCheck }> =>
+    apiFetch<{ access: FilmAccessCheck }>("GET", "/api/photo-albums/film-access"),
+
+  /** Create (or return existing) the couple's film. */
+  create(opts: {
+    title?: string;
+    filmAesthetic?: FilmAesthetic;
+    shotsPerGuest?: number | null;
+    revealAt?: number | null;
+    eventEndsAt?: number | null;
+    coverImageUrl?: string | null;
+  } = {}): Promise<{ album: PhotoAlbum }> {
+    const body: Record<string, unknown> = {};
+    if (opts.title !== undefined) body.title = opts.title;
+    if (opts.filmAesthetic !== undefined) body.film_aesthetic = opts.filmAesthetic;
+    if (opts.shotsPerGuest !== undefined) body.shots_per_guest = opts.shotsPerGuest;
+    if (opts.revealAt !== undefined) body.reveal_at = opts.revealAt;
+    if (opts.eventEndsAt !== undefined) body.event_ends_at = opts.eventEndsAt;
+    if (opts.coverImageUrl !== undefined) body.cover_image_url = opts.coverImageUrl;
+    return apiFetch<{ album: PhotoAlbum }>("POST", "/api/photo-albums", body);
+  },
 
   /** Fetch the current couple's album (null if none exists). */
   current: (): Promise<{ album: PhotoAlbum | null }> =>
     apiFetch<{ album: PhotoAlbum | null }>("GET", "/api/photo-albums/current"),
 
-  /** Update album settings (is_upload_enabled, shots_per_guest, title). */
-  update(patch: Partial<Pick<PhotoAlbum, "isUploadEnabled" | "shotsPerGuest" | "title">>): Promise<{ album: PhotoAlbum }> {
+  /** Update album settings. */
+  update(patch: {
+    isUploadEnabled?: boolean;
+    shotsPerGuest?: number | null;
+    title?: string | null;
+    filmAesthetic?: FilmAesthetic;
+    revealAt?: number | null;
+    eventEndsAt?: number | null;
+    coverImageUrl?: string | null;
+  }): Promise<{ album: PhotoAlbum }> {
     const body: Record<string, unknown> = {};
     if ("isUploadEnabled" in patch) body.is_upload_enabled = patch.isUploadEnabled;
     if ("shotsPerGuest" in patch) body.shots_per_guest = patch.shotsPerGuest ?? null;
     if ("title" in patch) body.title = patch.title ?? null;
+    if ("filmAesthetic" in patch) body.film_aesthetic = patch.filmAesthetic;
+    if ("revealAt" in patch) body.reveal_at = patch.revealAt ?? null;
+    if ("eventEndsAt" in patch) body.event_ends_at = patch.eventEndsAt ?? null;
+    if ("coverImageUrl" in patch) body.cover_image_url = patch.coverImageUrl ?? null;
     return apiFetch<{ album: PhotoAlbum }>("PATCH", "/api/photo-albums/current", body);
   },
 
-  /** Public: fetch album info by upload token (no auth needed). */
-  async getPublic(token: string): Promise<PhotoAlbumPublic> {
-    const res = await fetch(`/api/photo-albums/${token}`);
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      let msg = "Album not found";
-      try { msg = (JSON.parse(text) as { message?: string }).message ?? msg; } catch { /* */ }
-      throw new ApiError(res.status, res.status >= 500 ? "server_error" : "client_error", msg);
-    }
-    const r = (await res.json()) as { album: PhotoAlbumPublic };
-    return r.album;
+  /** Host-only: all uploads bypassing reveal lock. */
+  listPhotos: (): Promise<{ uploads: unknown[]; total: number }> =>
+    apiFetch("GET", "/api/photo-albums/current/photos"),
+
+  /** Host-only: participant list. */
+  listDevices: (): Promise<{ devices: FilmDevice[]; total: number }> =>
+    apiFetch("GET", "/api/photo-albums/current/devices"),
+
+  // ── Public (no auth) ───────────────────────────────────────────────────────
+
+  /** Public: fetch album metadata. */
+  getPublic: (token: string): Promise<{ album: PhotoAlbumPublic }> =>
+    publicFilmFetch<{ album: PhotoAlbumPublic }>(`/api/photo-albums/${token}`),
+
+  /** Public: register guest device before any upload. */
+  registerDevice(
+    token: string,
+    deviceId: string,
+    guestName: string | null,
+  ): Promise<{ album: PhotoAlbumPublic; shotCount: number }> {
+    return publicFilmFetch<{ album: PhotoAlbumPublic; shotCount: number }>(
+      `/api/photo-albums/${token}/devices`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id: deviceId, guest_name: guestName }),
+      },
+    );
   },
 
-  /** Public: upload a photo to an album. Returns the new upload id + fileUrl. */
+  /** Public: reveal-locked photo list. */
+  getPublicPhotos: (token: string): Promise<
+    | { locked: true; revealsAt: number; photoCount: number }
+    | { locked: false; uploads: unknown[]; total: number }
+  > =>
+    publicFilmFetch(`/api/photo-albums/${token}/photos`),
+
+  /** Public: upload a photo. Returns upload id + fileUrl + updated shotCount. */
   async upload(
     token: string,
     file: File,
-    opts: { guestName?: string; deviceId: string },
-  ): Promise<{ id: number; fileUrl: string }> {
+    opts: { guestName?: string; deviceId: string; filterApplied?: FilmAesthetic },
+  ): Promise<{ upload: { id: number; fileUrl: string }; shotCount: number }> {
     const form = new FormData();
     form.append("file", file);
     form.append("device_id", opts.deviceId);
     if (opts.guestName) form.append("guest_name", opts.guestName);
-    const res = await fetch(`/api/photo-albums/${token}/photos`, {
-      method: "POST",
-      body: form,
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      let backendCode: string | undefined;
-      let msg = "Upload failed";
-      try {
-        const p = JSON.parse(text) as { code?: string; message?: string };
-        if (p.code) backendCode = p.code;
-        if (p.message) msg = p.message;
-      } catch { /* */ }
-      const apiCode = res.status >= 500 ? "server_error" : "client_error";
-      throw new ApiError(res.status, apiCode, msg, backendCode ? { code: backendCode } : undefined);
-    }
-    const r = (await res.json()) as { upload: { id: number; fileUrl: string } };
-    return r.upload;
+    if (opts.filterApplied) form.append("filter_applied", opts.filterApplied);
+    return publicFilmFetch<{ upload: { id: number; fileUrl: string }; shotCount: number }>(
+      `/api/photo-albums/${token}/photos`,
+      { method: "POST", body: form },
+    );
   },
+
+  /** QR code SVG URL — embed directly in <img src> or open in new tab. */
+  qrUrl: (token: string) => `/api/photo-albums/${token}/qr`,
 };

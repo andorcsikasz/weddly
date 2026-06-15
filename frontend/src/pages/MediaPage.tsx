@@ -5,8 +5,9 @@
 //   "To guests"      — shared reveal gallery. Coming soon.
 //   "By photographer"— couple saves photographer gallery link. Live (existing backend).
 
-import type { Couple, MediaLinks, PhotoAlbum } from "@shared/types";
-import { Camera, Copy, ExternalLink, Eye, Link2, Pencil, Share2, Users } from "lucide-react";
+import type { Couple, FilmAccessCheck, FilmAesthetic, MediaLinks, PhotoAlbum } from "@shared/types";
+import { FILM_AESTHETICS } from "@shared/types";
+import { Camera, Check, Copy, ExternalLink, Eye, Link2, Pencil, QrCode, Share2, Users } from "lucide-react";
 import { type FormEvent, type SVGProps, useEffect, useRef, useState } from "react";
 import { Dialog, useToast } from "../components/ui";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
@@ -180,9 +181,15 @@ function FromGuestsCard({
         <div className="space-y-4">
           {/* QR + link row */}
           <div className="flex items-start gap-4">
-            <div className="shrink-0 rounded-xl border border-paper-200 bg-paper-50 p-2 dark:border-umber-700 dark:bg-umber-800">
+            <a
+              href={photoAlbumApi.qrUrl(album.uploadToken)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open printable QR code"
+              className="shrink-0 rounded-xl border border-paper-200 bg-paper-50 p-2 hover:border-ink-300 transition-colors dark:border-umber-700 dark:bg-umber-800"
+            >
               <QrPlaceholder className="h-16 w-16 text-ink-800 dark:text-paper-100" />
-            </div>
+            </a>
             <div className="min-w-0 flex-1 space-y-1.5">
               <p className="text-xs font-medium text-ink-500 dark:text-umber-300">
                 {t("media.from_guests_link_label")}
@@ -190,25 +197,42 @@ function FromGuestsCard({
               <p className="truncate rounded-lg border border-paper-200 bg-paper-50 px-3 py-2 font-mono text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200">
                 {displayLink}
               </p>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
-                onClick={handleCopy}
-              >
-                <Copy size={12} aria-hidden="true" />
-                {copied ? t("media.from_guests_copied") : t("media.from_guests_copy")}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                  onClick={handleCopy}
+                >
+                  <Copy size={12} aria-hidden="true" />
+                  {copied ? t("media.from_guests_copied") : t("media.from_guests_copy")}
+                </button>
+                <a
+                  href={photoAlbumApi.qrUrl(album.uploadToken)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                >
+                  <QrCode size={12} aria-hidden="true" />
+                  Print QR
+                </a>
+              </div>
             </div>
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-2 rounded-lg bg-paper-50 px-3 py-2 dark:bg-umber-800">
-            <Camera size={14} className="text-ink-400 dark:text-umber-400" aria-hidden="true" />
-            <span className="text-xs text-ink-500 dark:text-umber-300">
+          <div className="flex items-center gap-3 rounded-lg bg-paper-50 px-3 py-2 dark:bg-umber-800">
+            <span className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+              <Camera size={12} aria-hidden="true" />
               {album.photoCount === 0
                 ? t("media.from_guests_photos_zero")
                 : t("media.from_guests_photos_count").replace("{{n}}", String(album.photoCount))}
             </span>
+            {album.participantCount > 0 && (
+              <span className="flex items-center gap-1.5 text-xs text-ink-400 dark:text-umber-400">
+                <Users size={12} aria-hidden="true" />
+                {album.participantCount} participant{album.participantCount !== 1 ? "s" : ""}
+              </span>
+            )}
           </div>
         </div>
       ) : (
@@ -369,7 +393,25 @@ function PhotographerCard({
   );
 }
 
-// Create-album modal — calls the real API on submit.
+// Aesthetic filter labels shown in the picker.
+const AESTHETIC_LABELS: Record<FilmAesthetic, string> = {
+  natural: "Natural",
+  vintage: "Vintage",
+  bw: "B&W",
+  cinematic: "Cinematic",
+  warm: "Warm",
+};
+
+// Sample gradient to preview each aesthetic in the picker.
+const AESTHETIC_PREVIEW: Record<FilmAesthetic, string> = {
+  natural: "bg-gradient-to-br from-sky-100 to-blue-200",
+  vintage: "bg-gradient-to-br from-amber-100 to-orange-200",
+  bw: "bg-gradient-to-br from-gray-200 to-gray-400",
+  cinematic: "bg-gradient-to-br from-slate-300 to-indigo-200",
+  warm: "bg-gradient-to-br from-orange-100 to-yellow-200",
+};
+
+// Wedding Film creation modal — full settings form.
 function CreateAlbumModal({
   open,
   onClose,
@@ -382,12 +424,32 @@ function CreateAlbumModal({
   const { t } = useT();
   const toast = useToast();
   const [creating, setCreating] = useState(false);
+  const [access, setAccess] = useState<FilmAccessCheck | null>(null);
+
+  // Film settings.
+  const [title, setTitle] = useState("");
+  const [aesthetic, setAesthetic] = useState<FilmAesthetic>("natural");
+  const [shots, setShots] = useState<string>("15");
+
+  // Load pricing eligibility when modal opens.
+  useEffect(() => {
+    if (!open) return;
+    photoAlbumApi
+      .filmAccess()
+      .then((r) => setAccess(r.access))
+      .catch(() => setAccess({ free: false, reason: null, priceEurCents: 990 }));
+  }, [open]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setCreating(true);
     try {
-      const { album } = await photoAlbumApi.create();
+      const shotsNum = parseInt(shots, 10);
+      const { album } = await photoAlbumApi.create({
+        title: title.trim() || undefined,
+        filmAesthetic: aesthetic,
+        shotsPerGuest: Number.isFinite(shotsNum) && shotsNum > 0 ? shotsNum : null,
+      });
       onCreated(album);
       onClose();
     } catch {
@@ -397,6 +459,13 @@ function CreateAlbumModal({
     }
   }
 
+  const priceLabel =
+    access === null
+      ? "…"
+      : access.free
+        ? "Free"
+        : `€${((access.priceEurCents ?? 990) / 100).toFixed(2)}`;
+
   return (
     <Dialog
       open={open}
@@ -405,60 +474,96 @@ function CreateAlbumModal({
       closeOnBackdrop
       onClose={onClose}
       footer={
-        <div className="flex justify-end gap-2">
-          <button type="button" className="btn-ghost btn-sm" onClick={onClose} disabled={creating}>
-            {t("common.cancel")}
-          </button>
-          <button
-            type="submit"
-            form="create-album-form"
-            className="btn-primary btn-sm"
-            disabled={creating}
-          >
-            {creating ? t("media.create_modal_creating") : t("media.create_modal_submit")}
-          </button>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-ink-400">
+            {access?.free ? (
+              <span className="flex items-center gap-1 text-sage-700">
+                <Check size={12} />
+                Free — loyal couple
+              </span>
+            ) : (
+              `Access: ${priceLabel}`
+            )}
+          </span>
+          <div className="flex gap-2">
+            <button type="button" className="btn-ghost btn-sm" onClick={onClose} disabled={creating}>
+              {t("common.cancel")}
+            </button>
+            <button
+              type="submit"
+              form="create-album-form"
+              className="btn-primary btn-sm"
+              disabled={creating}
+            >
+              {creating ? t("media.create_modal_creating") : t("media.create_modal_submit")}
+            </button>
+          </div>
         </div>
       }
     >
       <form id="create-album-form" onSubmit={handleSubmit} className="space-y-5">
-        <p className="text-sm text-ink-600 dark:text-umber-200">{t("media.create_modal_desc")}</p>
-
-        {/* Settings preview — disabled until backend ships */}
-        <div className="space-y-3 rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800">
-          <SettingRow label="Shots per guest" value="Unlimited" coming />
-          <SettingRow label="Guest name required" value="Optional" coming />
-          <SettingRow label="Reveal timing" value="Instant" coming />
+        {/* Film name */}
+        <div>
+          <label className="block text-sm font-medium text-ink-700 dark:text-paper-200 mb-1">
+            Film name <span className="font-normal text-ink-400">(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={200}
+            placeholder="e.g. Anna &amp; Bence — Summer 2026"
+            className="input text-sm w-full"
+          />
         </div>
 
-        <p className="text-xs text-ink-400 dark:text-umber-400">
-          {t("media.from_guests_coming_note")}
-        </p>
+        {/* Aesthetic picker */}
+        <div>
+          <p className="text-sm font-medium text-ink-700 dark:text-paper-200 mb-2">
+            Film look
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {FILM_AESTHETICS.map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setAesthetic(a)}
+                className={`flex flex-col items-center gap-1 rounded-xl p-0.5 border-2 transition-colors ${
+                  aesthetic === a
+                    ? "border-ink-900 dark:border-paper-100"
+                    : "border-transparent hover:border-paper-300"
+                }`}
+              >
+                <div
+                  className={`w-12 h-12 rounded-lg ${AESTHETIC_PREVIEW[a]}`}
+                />
+                <span className="text-[10px] text-ink-600 dark:text-umber-300">
+                  {AESTHETIC_LABELS[a]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Shot limit */}
+        <div>
+          <label className="block text-sm font-medium text-ink-700 dark:text-paper-200 mb-1">
+            Shots per guest
+          </label>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={1}
+              max={500}
+              value={shots}
+              onChange={(e) => setShots(e.target.value)}
+              className="input text-sm w-24"
+            />
+            <span className="text-sm text-ink-500">photos per person</span>
+          </div>
+        </div>
       </form>
     </Dialog>
-  );
-}
-
-function SettingRow({
-  label,
-  value,
-  coming,
-}: {
-  label: string;
-  value: string;
-  coming?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-sm text-ink-600 dark:text-umber-200">{label}</span>
-      <span className="flex items-center gap-1.5 text-sm font-medium text-ink-400 dark:text-umber-400">
-        {value}
-        {coming && (
-          <span className="rounded-full bg-paper-200 px-1.5 py-0.5 text-[10px] text-ink-400 dark:bg-umber-700">
-            soon
-          </span>
-        )}
-      </span>
-    </div>
   );
 }
 

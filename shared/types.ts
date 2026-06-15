@@ -251,26 +251,86 @@ export type MediaSource = "guests" | "photographer" | "other";
 export type MediaLinks = Record<MediaSource, string | null>;
 
 /** Guest photo collection album owned by a couple. */
+export type FilmAesthetic = "natural" | "vintage" | "bw" | "cinematic" | "warm";
+
+export const FILM_AESTHETICS: FilmAesthetic[] = ["natural", "vintage", "bw", "cinematic", "warm"];
+
+/** CSS filter values applied client-side for each aesthetic. */
+export const FILM_FILTERS: Record<FilmAesthetic, string> = {
+  natural: "none",
+  vintage: "sepia(0.4) contrast(1.1) brightness(0.9) saturate(0.8)",
+  bw: "grayscale(1) contrast(1.2)",
+  cinematic: "contrast(1.15) saturate(1.2) brightness(0.92) hue-rotate(-5deg)",
+  warm: "sepia(0.15) saturate(1.3) brightness(1.05)",
+};
+
+export type FilmStripeTier = "free" | "ten" | "twentyfive" | "fifty" | "hundred" | "twohundred";
+
+export const FILM_TIER_CAPS: Record<FilmStripeTier, number> = {
+  free: 5,
+  ten: 10,
+  twentyfive: 25,
+  fifty: 50,
+  hundred: 100,
+  twohundred: 200,
+};
+
+/** Price in EUR cents for each paid tier (free = 0). */
+export const FILM_TIER_PRICE_EUR_CENTS: Record<FilmStripeTier, number> = {
+  free: 0,
+  ten: 990,
+  twentyfive: 1990,
+  fifty: 3990,
+  hundred: 6990,
+  twohundred: 9990,
+};
+
 export interface PhotoAlbum {
   id: number;
   uploadToken: string;
   title: string | null;
   shotsPerGuest: number | null;
   revealAt: number | null;
+  eventEndsAt: number | null;
   isUploadEnabled: boolean;
   allowGuestViewing: boolean;
+  filmAesthetic: FilmAesthetic;
+  coverImageUrl: string | null;
+  guestCap: number;
+  stripeTier: FilmStripeTier | null;
+  paidAt: number | null;
   photoCount: number;
+  participantCount: number;
   createdAt: number;
   updatedAt: number;
 }
 
-/** Subset of album info shown on the public guest upload page. */
+/** Subset of album info shown on the public guest-camera page. */
 export interface PhotoAlbumPublic {
   displayName: string;
   weddingDate: string | null;
   title: string | null;
   shotsPerGuest: number | null;
   isUploadEnabled: boolean;
+  eventEndsAt: number | null;
+  revealAt: number | null;
+  filmAesthetic: FilmAesthetic;
+  coverImageUrl: string | null;
+}
+
+export interface FilmDevice {
+  deviceId: string;
+  guestName: string | null;
+  joinedAt: number;
+  shotCount: number;
+}
+
+export interface FilmAccessCheck {
+  free: boolean;
+  /** 'loyal_couple' = 5+ months old account with both partners joined. */
+  reason: "loyal_couple" | "paid" | null;
+  /** Price in EUR cents if not free. */
+  priceEurCents: number;
 }
 
 export interface Couple {

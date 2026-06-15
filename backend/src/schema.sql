@@ -1378,5 +1378,18 @@ CREATE TABLE IF NOT EXISTS photo_uploads (
   file_path TEXT NOT NULL,
   mime_type TEXT NOT NULL,
   file_size INTEGER NOT NULL,
-  uploaded_at INTEGER NOT NULL
+  uploaded_at INTEGER NOT NULL,
+  filter_applied TEXT,
+  thumbnail_path TEXT
+);
+
+-- Unique devices that have joined a film (registered on first visit, before any upload).
+-- Used for guest-cap enforcement and real-time participation stats.
+CREATE TABLE IF NOT EXISTS film_devices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  album_id INTEGER NOT NULL REFERENCES photo_albums(id) ON DELETE CASCADE,
+  device_id TEXT NOT NULL,
+  guest_name TEXT,
+  joined_at INTEGER NOT NULL,
+  UNIQUE(album_id, device_id)
 );
