@@ -113,7 +113,7 @@ function toAlbum(row: AlbumRow): PhotoAlbum {
     allowGuestViewing: row.allow_guest_viewing === 1,
     filmAesthetic: safeAesthetic(row.film_aesthetic),
     coverImageUrl: row.cover_image_url,
-    guestCap: row.guest_cap ?? 5,
+    guestCap: row.guest_cap ?? 15,
     stripeTier: (row.stripe_tier as FilmStripeTier | null) ?? null,
     paidAt: row.paid_at,
     photoCount: countPhotos(row.id),

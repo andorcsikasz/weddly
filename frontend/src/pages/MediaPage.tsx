@@ -1125,14 +1125,14 @@ function FilmModal({
   const [title, setTitle] = useState(album?.title ?? "");
   const [aesthetic, setAesthetic] = useState<FilmAesthetic>(album?.filmAesthetic ?? "natural");
   const [shots, setShots] = useState<string>(
-    album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "15",
+    album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "16",
   );
 
   useEffect(() => {
     if (!open) return;
     setTitle(album?.title ?? "");
     setAesthetic(album?.filmAesthetic ?? "natural");
-    setShots(album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "15");
+    setShots(album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "16");
     if (!isEdit) {
       photoAlbumApi
         .filmAccess()

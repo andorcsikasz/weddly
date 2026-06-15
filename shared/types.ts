@@ -267,7 +267,7 @@ export const FILM_FILTERS: Record<FilmAesthetic, string> = {
 export type FilmStripeTier = "free" | "ten" | "twentyfive" | "fifty" | "hundred" | "twohundred";
 
 export const FILM_TIER_CAPS: Record<FilmStripeTier, number> = {
-  free: 5,
+  free: 15,
   ten: 10,
   twentyfive: 25,
   fifty: 50,
