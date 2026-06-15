@@ -141,6 +141,23 @@ function QrPlaceholder({ className }: { className?: string }) {
 
 // --- sub-components ---------------------------------------------------------
 
+// Ambient film-grain overlay — fixed, scoped to this page via mount/unmount.
+function FilmGrain() {
+  return (
+    <div
+      className="film-grain pointer-events-none fixed inset-[-200%] z-50 h-[400%] w-[400%] select-none"
+      aria-hidden="true"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C%2Fsvg%3E")`,
+        backgroundSize: "160px",
+        opacity: 0.022,
+        mixBlendMode: "overlay" as React.CSSProperties["mixBlendMode"],
+        animation: "analog-grain 0.4s steps(2) infinite",
+      }}
+    />
+  );
+}
+
 function ComingSoonBadge({ label }: { label: string }) {
   return (
     <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-300">
@@ -151,7 +168,7 @@ function ComingSoonBadge({ label }: { label: string }) {
 
 function CardLabel({ text }: { text: string }) {
   return (
-    <span className="text-[10px] font-bold uppercase tracking-widest text-ink-400 dark:text-umber-500">
+    <span className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-umber-500 dark:text-umber-400">
       {text}
     </span>
   );
@@ -178,7 +195,7 @@ function StatusChip({
       {label}
     </>
   );
-  const base = `flex items-center gap-1.5 text-xs ${done ? "text-sage-400" : "text-umber-500"}`;
+  const base = `flex items-center gap-1.5 text-xs ${done ? "text-sage-400" : "text-paper-400"}`;
   if (onClick && !done) {
     return (
       <button
@@ -331,13 +348,22 @@ function FilmBanner({
   }
 
   return (
-    <div className="card mb-6 overflow-hidden border-ink-800 bg-ink-900 dark:border-ink-700 dark:bg-ink-900 dark:ring-1 dark:ring-white/10">
-      <div className="flex items-start gap-6">
+    <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-umber-950 via-umber-900 to-umber-800 p-6 shadow-pop">
+      {/* Radial vignette — dark edges, lighter centre */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        aria-hidden="true"
+        style={{
+          background:
+            "radial-gradient(ellipse at 30% 50%, transparent 30%, rgba(0,0,0,0.45) 100%)",
+        }}
+      />
+      <div className="relative z-10 flex items-start gap-6">
         {/* Left column */}
         <div className="min-w-0 flex-1">
           {/* Icon row + plain stat indicators */}
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-umber-800 text-paper-200">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-paper-200">
               <Film size={20} aria-hidden="true" />
             </div>
             {album && (
@@ -356,7 +382,7 @@ function FilmBanner({
           </div>
 
           {/* Headline — max-w prevents orphan words on narrow lines */}
-          <h2 className="max-w-sm font-grotesk text-2xl font-semibold leading-snug !text-paper-50 sm:text-3xl">
+          <h2 className="max-w-sm font-serif text-2xl font-semibold leading-snug tracking-tight !text-paper-100 sm:text-3xl">
             {t("media.film_empty_title")}
           </h2>
 
@@ -397,7 +423,7 @@ function FilmBanner({
                 {t("media.film_cta_create")}
               </button>
             )}
-            <span className="text-xs text-umber-500">{t("media.film_no_app_hint")}</span>
+            <span className="text-xs text-paper-400/70">{t("media.film_no_app_hint")}</span>
           </div>
         </div>
 
@@ -426,7 +452,7 @@ function StatTile({
 
   return (
     <div className="flex flex-col gap-0.5 rounded-xl border border-paper-200 bg-paper-50 px-3 py-2.5 dark:border-umber-700 dark:bg-umber-800">
-      <span className="text-xs text-ink-400 dark:text-umber-400">{label}</span>
+      <span className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-umber-500 dark:text-umber-400">{label}</span>
       <span
         className={`text-base font-semibold tabular-nums ${
           accent ? "text-sage-700 dark:text-sage-400" : "text-ink-800 dark:text-paper-100"
@@ -494,10 +520,10 @@ function FilmStatusPanel({ album }: { album: PhotoAlbum }) {
     status === "live" ? "bg-sage-500" : status === "developing" ? "bg-amber-400" : "bg-paper-400";
 
   return (
-    <div className="card mb-5 border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-850">
+    <div className="card mb-5 border-paper-200 bg-white/80 backdrop-blur-sm dark:border-umber-700 dark:bg-umber-800/80">
       {/* Status heading with pulsing dot when live */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 font-grotesk text-sm font-semibold text-ink-800 dark:text-paper-100">
+        <h3 className="flex items-center gap-2 font-serif text-sm font-normal italic text-umber-600 dark:text-paper-200">
           <span
             className={`h-2.5 w-2.5 rounded-full ${statusDot} ${status === "live" ? "animate-pulse" : ""}`}
             aria-hidden="true"
@@ -614,7 +640,7 @@ function FromGuestsCard({
   }
 
   return (
-    <div className="card flex flex-col gap-5 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850">
+    <div className="card-hover flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink-900 text-paper-50 dark:bg-ink-800 dark:text-paper-100">
           <Users size={20} aria-hidden="true" />
@@ -623,10 +649,10 @@ function FromGuestsCard({
       </div>
 
       <div>
-        <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+        <h3 className="font-serif text-base font-semibold text-ink-900 dark:text-paper-50">
           {t("media.from_guests_title")}
         </h3>
-        <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+        <p className="mt-1 text-sm text-umber-600 dark:text-umber-200">
           {t("media.from_guests_desc")}
         </p>
       </div>
@@ -712,7 +738,7 @@ function ToGuestsCard() {
     t("media.to_guests_feature_3"),
   ];
   return (
-    <div className="card flex flex-col gap-5 border-2 border-dashed border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850">
+    <div className="card-hover flex flex-col gap-5 border-2 border-dashed bg-paper-50/60">
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-400 dark:bg-umber-700 dark:text-umber-400">
           <Share2 size={20} aria-hidden="true" />
@@ -724,10 +750,10 @@ function ToGuestsCard() {
       </div>
 
       <div>
-        <h3 className="font-grotesk text-base font-semibold text-ink-700 dark:text-paper-200">
+        <h3 className="font-serif text-base font-semibold text-ink-700 dark:text-paper-200">
           {t("media.to_guests_title")}
         </h3>
-        <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("media.to_guests_desc")}</p>
+        <p className="mt-1 text-sm text-umber-500 dark:text-umber-300">{t("media.to_guests_desc")}</p>
         <ul className="mt-3 space-y-1.5">
           {features.map((f) => (
             <li key={f} className="flex items-start gap-2 text-xs text-ink-500 dark:text-umber-400">
@@ -778,7 +804,7 @@ function PhotographerCard({
   return (
     <div
       ref={cardRef}
-      className="card flex flex-col gap-5 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850"
+      className="card-hover flex flex-col gap-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
@@ -788,10 +814,10 @@ function PhotographerCard({
       </div>
 
       <div>
-        <h3 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+        <h3 className="font-serif text-base font-semibold text-ink-900 dark:text-paper-50">
           {t("media.photographer_title")}
         </h3>
-        <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+        <p className="mt-1 text-sm text-umber-600 dark:text-umber-200">
           {t("media.photographer_desc")}
         </p>
       </div>
@@ -920,9 +946,9 @@ function FilmSettingsPanel({
   ];
 
   return (
-    <div className="card mt-4 border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-850">
+    <div className="card mt-4">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-grotesk text-sm font-semibold text-ink-800 dark:text-paper-100">
+        <h3 className="font-serif text-sm font-semibold text-ink-800 dark:text-paper-100">
           {t("media.film_settings_title")}
         </h3>
         <button type="button" className="btn-outline btn-sm" onClick={onEditClick}>
@@ -970,10 +996,10 @@ function HowItWorksSection() {
     { n: "3", title: t("media.film_how_3_title"), body: t("media.film_how_3_body") },
   ];
   return (
-    <div className="card mb-2 mt-6 border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-850">
+    <div className="card mb-2 mt-6">
       <div className="mb-5 flex items-center gap-3">
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
-        <h3 className="font-grotesk text-xs font-semibold uppercase tracking-wider text-ink-400 dark:text-umber-400">
+        <h3 className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-umber-500 dark:text-umber-400">
           {t("media.film_how_title")}
         </h3>
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
@@ -1013,10 +1039,10 @@ function NextStepsSection({
     { done: false, label: t("media.to_guests_cta"), action: null },
   ];
   return (
-    <div className="card mb-2 mt-6 border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-850">
+    <div className="card mb-2 mt-6">
       <div className="mb-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
-        <h3 className="font-grotesk text-xs font-semibold uppercase tracking-wider text-ink-400 dark:text-umber-400">
+        <h3 className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-umber-500 dark:text-umber-400">
           {t("media.film_next_steps_title")}
         </h3>
         <div className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
@@ -1381,11 +1407,15 @@ export default function MediaPage() {
 
   return (
     <div className="max-w-5xl">
+      <FilmGrain />
       {/* Page header: status pill when film is active, create button when not */}
-      <header className="mb-5 flex items-start justify-between gap-4">
+      <header className="mb-5 flex items-start justify-between gap-4 border-b border-paper-200 pb-5 dark:border-umber-700">
         <div className="min-w-0">
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.15em] text-umber-400 dark:text-umber-500">
+            Wedding Film
+          </span>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-grotesk">{t("media.title")}</h1>
+            <h1 className="font-serif">{t("media.title")}</h1>
             {album &&
               albumStatus &&
               (() => {
@@ -1409,7 +1439,7 @@ export default function MediaPage() {
                 );
               })()}
           </div>
-          <p className="mt-1.5 text-sm text-umber-700 dark:text-umber-300">
+          <p className="mt-1.5 text-sm italic text-umber-500 dark:text-umber-300">
             {album ? t("media.film_header_active", { count: album.photoCount }) : t("media.sub")}
           </p>
         </div>

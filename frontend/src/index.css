@@ -1339,3 +1339,46 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     animation: none;
   }
 }
+
+/* ── Analog film grain (Media page ambient texture) ─────────────────
+   Subtle noise overlay that shifts every 2 frames to mimic real film
+   grain movement. Opacity and blend mode are set inline on the element
+   so the effect can be scoped to the Photos page only. */
+@keyframes analog-grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-2%, -3%);
+  }
+  20% {
+    transform: translate(3%, 2%);
+  }
+  30% {
+    transform: translate(-1%, 4%);
+  }
+  40% {
+    transform: translate(2%, -2%);
+  }
+  50% {
+    transform: translate(-3%, 1%);
+  }
+  60% {
+    transform: translate(1%, -4%);
+  }
+  70% {
+    transform: translate(-2%, 3%);
+  }
+  80% {
+    transform: translate(4%, -1%);
+  }
+  90% {
+    transform: translate(-1%, 2%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .film-grain {
+    animation: none !important;
+  }
+}
