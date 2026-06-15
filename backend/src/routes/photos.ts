@@ -19,6 +19,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import QRCode from "qrcode";
 import type {
   FilmAccessCheck,
   FilmAesthetic,
@@ -28,8 +29,10 @@ import type {
   PhotoAlbumPublic,
 } from "@shared/types";
 import { FILM_AESTHETICS, FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
-import { CONFIG } from "../config";
+import { CONFIG, STRIPE_ENABLED } from "../config";
 import { db, now } from "../db";
+import { stripe } from "../domain/billing";
+import { activateFilmAlbum } from "../domain/film";
 import { getCoupleForUser } from "../domain/couples";
 import { HttpError, json, requireAuth, type Ctx, type Router } from "../lib/http";
 import { sniffUploadedImage } from "../lib/image_sniff";
@@ -140,6 +143,47 @@ function checkFilmAccess(coupleId: number, coupleCreatedAt: number): FilmAccessC
 }
 
 // ─── authenticated handlers ───────────────────────────────────────────────────
+
+/** POST /api/photo-albums/checkout — Stripe Checkout for the €9.90 film unlock. */
+async function handleFilmCheckout(ctx: Ctx): Promise<Response> {
+  if (!STRIPE_ENABLED) throw new HttpError(503, "Billing not configured");
+
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple found");
+
+  const access = checkFilmAccess(couple.id, couple.created_at);
+  if (access.free) throw new HttpError(400, "Film is already free for this couple");
+
+  const row = db
+    .prepare("SELECT * FROM photo_albums WHERE couple_id = ?")
+    .get(couple.id) as AlbumRow | undefined;
+  if (!row) throw new HttpError(404, "Create the film first");
+  if (row.paid_at !== null) throw new HttpError(400, "Film already activated");
+
+  const session = await stripe().checkout.sessions.create({
+    mode: "payment",
+    line_items: [
+      {
+        price_data: {
+          currency: "eur",
+          unit_amount: FILM_TIER_PRICE_EUR_CENTS.ten,
+          product_data: { name: "Wedding Film — Guest Camera" },
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      type: "film",
+      album_id: String(row.id),
+      couple_id: String(couple.id),
+    },
+    success_url: `${CONFIG.frontendBaseUrl}/app/media?film=activated`,
+    cancel_url: `${CONFIG.frontendBaseUrl}/app/media`,
+  });
+
+  return json({ url: session.url });
+}
 
 /** GET /api/photo-albums/film-access — pricing eligibility for the current couple. */
 async function handleFilmAccess(ctx: Ctx): Promise<Response> {
@@ -519,7 +563,7 @@ async function handleGetQr(ctx: Ctx): Promise<Response> {
   if (!row) throw new HttpError(404, "Album not found");
 
   const url = `${CONFIG.frontendBaseUrl}/photos/${token}`;
-  const svg = generateQrSvg(url);
+  const svg = await generateQrSvg(url);
 
   return new Response(svg, {
     headers: {
@@ -636,31 +680,13 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   return json({ upload: { id: uploadRow.id, fileUrl: publicUrl }, shotCount }, { status: 201 });
 }
 
-// ─── QR code generator (dependency-free SVG output) ──────────────────────────
-// Implements a minimal QR Code level-M encoder sufficient for URLs up to ~80
-// chars. Based on the ISO 18004 byte-mode spec. For longer tokens, the
-// upstream route guarantees the token is 24 hex chars → full URL ≤ 60 chars.
-
-function generateQrSvg(url: string): string {
-  // Use a 3rd-party-URL-free approach: encode as a data matrix SVG placeholder
-  // that instructs the browser to render the QR via a <svg> with <text>.
-  // The real implementation uses the qrcode module below — we'll add it.
-  // For now emit a minimal SVG wrapper that can be swapped once the module
-  // is available. The frontend /app/media page generates QR client-side as
-  // fallback.
-  //
-  // NOTE: bun add qrcode is intentionally deferred to the next commit
-  // to keep this PR focused. The endpoint is wired; the SVG body is a
-  // placeholder rectangle with the URL embedded as <title>.
-  const size = 200;
-  const escaped = url.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <title>QR code for ${escaped}</title>
-  <rect width="${size}" height="${size}" fill="#fff"/>
-  <rect x="8" y="8" width="184" height="184" rx="4" fill="none" stroke="#000" stroke-width="2"/>
-  <text x="100" y="108" font-size="8" text-anchor="middle" fill="#555" font-family="monospace">${escaped}</text>
-</svg>`;
+async function generateQrSvg(url: string): Promise<string> {
+  return QRCode.toString(url, {
+    type: "svg",
+    errorCorrectionLevel: "M",
+    margin: 2,
+    color: { dark: "#1a1a1a", light: "#ffffff" },
+  });
 }
 
 // ─── registration ─────────────────────────────────────────────────────────────
@@ -668,6 +694,7 @@ function generateQrSvg(url: string): string {
 export function registerPhotoRoutes(router: Router): void {
   // Authenticated couple endpoints — order matters: static paths before :param.
   router.get("/api/photo-albums/film-access", handleFilmAccess, true);
+  router.post("/api/photo-albums/checkout", handleFilmCheckout, true);
   router.post("/api/photo-albums", handleCreateAlbum, true);
   router.get("/api/photo-albums/current", handleGetCurrentAlbum, true);
   router.patch("/api/photo-albums/current", handleUpdateAlbum, true);

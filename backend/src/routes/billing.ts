@@ -18,6 +18,7 @@ import {
   stripe,
 } from "../domain/billing";
 import { getCoupleForUser, toCoupleBilling } from "../domain/couples";
+import { activateFilmAlbum } from "../domain/film";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { getUserById } from "../domain/users";
 import {
@@ -157,6 +158,18 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
   switch (event.type) {
     case "checkout.session.completed": {
       const s = event.data.object as Stripe.Checkout.Session;
+
+      // Film one-time payment — separate path from the subscription flow.
+      if (s.metadata?.type === "film") {
+        const albumId = Number(s.metadata.album_id);
+        if (Number.isInteger(albumId) && albumId > 0) {
+          const paymentIntentId = s.payment_intent ? String(s.payment_intent) : null;
+          activateFilmAlbum(albumId, paymentIntentId);
+        }
+        break;
+      }
+
+      // Subscription flow (default).
       const coupleId = Number(s.metadata?.couple_id ?? s.client_reference_id);
       if (Number.isInteger(coupleId) && coupleId > 0) {
         if (s.customer) setStripeCustomerId(coupleId, String(s.customer));

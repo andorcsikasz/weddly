@@ -5,10 +5,11 @@
 //   "To guests"      — shared reveal gallery. Coming soon.
 //   "By photographer"— couple saves photographer gallery link. Live (existing backend).
 
-import type { Couple, FilmAccessCheck, FilmAesthetic, MediaLinks, PhotoAlbum } from "@shared/types";
+import type { Couple, FilmAccessCheck, FilmAesthetic, FilmDevice, MediaLinks, PhotoAlbum } from "@shared/types";
 import { FILM_AESTHETICS } from "@shared/types";
 import { Camera, Check, Copy, ExternalLink, Eye, Link2, Pencil, QrCode, Share2, Users } from "lucide-react";
 import { type FormEvent, type SVGProps, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Dialog, useToast } from "../components/ui";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -134,10 +135,14 @@ function HeroCard({ onCreateClick }: { onCreateClick: () => void }) {
 // "From guests" panel — primary feature card.
 function FromGuestsCard({
   album,
+  access,
   onCreateClick,
+  onUpgradeClick,
 }: {
   album: PhotoAlbum | null;
+  access: FilmAccessCheck | null;
   onCreateClick: () => void;
+  onUpgradeClick: () => void;
 }) {
   const { t } = useT();
   const [copied, setCopied] = useState(false);
@@ -146,6 +151,9 @@ function FromGuestsCard({
     ? `${window.location.origin}/photos/${album.uploadToken}`
     : null;
   const displayLink = uploadUrl ? uploadUrl.replace(/^https?:\/\//, "") : null;
+
+  const filmStatus = album ? getFilmStatus(album) : null;
+  const needsUpgrade = album !== null && album.paidAt === null && access !== null && !access.free;
 
   function handleCopy() {
     if (!uploadUrl) return;
@@ -160,10 +168,14 @@ function FromGuestsCard({
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
           <Users size={20} aria-hidden="true" />
         </div>
-        {album && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-sage-800 dark:bg-sage-900/40 dark:text-sage-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden="true" />
-            {t("media.from_guests_active_label")}
+        {filmStatus && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[filmStatus]}`}
+          >
+            {filmStatus === "live" && (
+              <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden="true" />
+            )}
+            {STATUS_LABEL[filmStatus]}
           </span>
         )}
       </div>
@@ -230,10 +242,30 @@ function FromGuestsCard({
             {album.participantCount > 0 && (
               <span className="flex items-center gap-1.5 text-xs text-ink-400 dark:text-umber-400">
                 <Users size={12} aria-hidden="true" />
-                {album.participantCount} participant{album.participantCount !== 1 ? "s" : ""}
+                {album.participantCount}/{album.guestCap}
               </span>
             )}
           </div>
+
+          {/* Upgrade prompt for non-free couples with the 5-guest trial cap */}
+          {needsUpgrade && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-700/40 dark:bg-amber-900/20">
+              <p className="text-xs text-amber-800 dark:text-amber-200">
+                Trial limit: up to {album.guestCap} guests.{" "}
+                <button
+                  type="button"
+                  className="font-semibold underline underline-offset-2 hover:no-underline"
+                  onClick={onUpgradeClick}
+                >
+                  Unlock for €9.90
+                </button>{" "}
+                to allow up to 200 guests.
+              </p>
+            </div>
+          )}
+
+          {/* Live participant dashboard */}
+          <ParticipantDashboard albumToken={album.uploadToken} />
         </div>
       ) : (
         <div className="mt-auto">
@@ -389,6 +421,90 @@ function PhotographerCard({
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Film status helpers ─────────────────────────────────────────────────────
+
+type FilmStatus = "live" | "developing" | "revealed";
+
+function getFilmStatus(album: PhotoAlbum): FilmStatus {
+  const ts = Date.now();
+  const eventEnded = album.eventEndsAt !== null && ts >= album.eventEndsAt;
+  const uploading = album.isUploadEnabled && !eventEnded;
+  if (uploading) return "live";
+  if (album.revealAt !== null && ts < album.revealAt) return "developing";
+  return "revealed";
+}
+
+const STATUS_LABEL: Record<FilmStatus, string> = {
+  live: "Shooting",
+  developing: "Developing",
+  revealed: "Revealed",
+};
+
+const STATUS_CLASSES: Record<FilmStatus, string> = {
+  live: "bg-sage-100 text-sage-800 dark:bg-sage-900/40 dark:text-sage-300",
+  developing: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  revealed: "bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200",
+};
+
+// Live-polling participant list shown when the film is active.
+function ParticipantDashboard({ albumToken }: { albumToken: string }) {
+  const [devices, setDevices] = useState<FilmDevice[]>([]);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    function poll() {
+      photoAlbumApi
+        .listDevices()
+        .then((r) => { if (active) setDevices(r.devices); })
+        .catch(() => {});
+    }
+    poll();
+    const id = setInterval(poll, 10_000);
+    return () => { active = false; clearInterval(id); };
+  }, [albumToken]);
+
+  if (devices.length === 0) return null;
+
+  const preview = devices.slice(0, expanded ? devices.length : 5);
+
+  return (
+    <div className="rounded-lg border border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between px-3 py-2 text-left"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <span className="flex items-center gap-1.5 text-xs font-medium text-ink-600 dark:text-umber-200">
+          <Users size={12} aria-hidden="true" />
+          {devices.length} participant{devices.length !== 1 ? "s" : ""}
+        </span>
+        <span className="text-xs text-ink-400 dark:text-umber-400">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <ul className="border-t border-paper-200 dark:border-umber-700">
+          {preview.map((d) => (
+            <li
+              key={d.deviceId}
+              className="flex items-center justify-between px-3 py-1.5 text-xs text-ink-600 dark:text-umber-200 odd:bg-paper-50 dark:odd:bg-umber-800"
+            >
+              <span className="truncate">{d.guestName ?? "Anonymous"}</span>
+              <span className="ml-2 shrink-0 tabular-nums text-ink-400">
+                {d.shotCount} shot{d.shotCount !== 1 ? "s" : ""}
+              </span>
+            </li>
+          ))}
+          {!expanded && devices.length > 5 && (
+            <li className="px-3 py-1.5 text-xs text-ink-400 dark:text-umber-400">
+              +{devices.length - 5} more
+            </li>
+          )}
+        </ul>
+      )}
     </div>
   );
 }
@@ -572,6 +688,7 @@ function CreateAlbumModal({
 export default function MediaPage() {
   const { t, locale } = useT();
   const toast = useToast();
+  const location = useLocation();
 
   // Photographer gallery link (live — existing backend).
   const [couple, setCouple] = useState<Couple | null>(null);
@@ -587,15 +704,17 @@ export default function MediaPage() {
 
   // "From guests" album state — backed by real API.
   const [album, setAlbum] = useState<PhotoAlbum | null>(null);
+  const [filmAccess, setFilmAccess] = useState<FilmAccessCheck | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([coupleApi.current(), photoAlbumApi.current()])
-      .then(([coupleRes, albumRes]) => {
+    Promise.all([coupleApi.current(), photoAlbumApi.current(), photoAlbumApi.filmAccess()])
+      .then(([coupleRes, albumRes, accessRes]) => {
         if (!cancelled) {
           setCouple(coupleRes.couple);
           setAlbum(albumRes.album);
+          setFilmAccess(accessRes.access);
         }
       })
       .catch(() => {});
@@ -603,6 +722,26 @@ export default function MediaPage() {
       cancelled = true;
     };
   }, []);
+
+  // After Stripe redirects back with ?film=activated, show a success toast and
+  // refresh the album so the new guest_cap is reflected.
+  useEffect(() => {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get("film") !== "activated") return;
+    toast.success("Film activated! Guests can now join — up to 200 participants.");
+    photoAlbumApi.current().then((r) => setAlbum(r.album)).catch(() => {});
+    // Replace the URL without the query param so refreshing doesn't retrigger.
+    window.history.replaceState(null, "", location.pathname);
+  }, []);
+
+  async function handleUpgradeFilm() {
+    try {
+      const { url } = await photoAlbumApi.filmCheckout();
+      window.location.href = url;
+    } catch {
+      toast.error(t("common.error_generic"));
+    }
+  }
 
   const photographerUrl = couple?.media_links?.photographer ?? null;
 
@@ -668,7 +807,9 @@ export default function MediaPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <FromGuestsCard
           album={album}
+          access={filmAccess}
           onCreateClick={() => setShowCreateModal(true)}
+          onUpgradeClick={handleUpgradeFilm}
         />
         <ToGuestsCard />
         <PhotographerCard
