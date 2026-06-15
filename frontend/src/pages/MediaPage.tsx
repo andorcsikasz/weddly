@@ -948,7 +948,7 @@ export default function MediaPage() {
                         aria-hidden="true"
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2.5 pb-2 pt-6">
-                        <span className="text-[11px] font-medium text-paper-100">
+                        <span className="text-[9px] font-medium text-paper-100">
                           {demoNames[i]}
                         </span>
                       </div>
