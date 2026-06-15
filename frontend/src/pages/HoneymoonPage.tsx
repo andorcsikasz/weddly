@@ -271,6 +271,9 @@ export default function HoneymoonPage() {
   // us tell "not searched yet" (show the button) apart from "searched, no live
   // offer came back" (show the empty hint + a retry).
   const [flightSearched, setFlightSearched] = useState(false);
+  // Whether the flight estimate section is visible. Off by default — the plane
+  // icon on the WHERE tile toggles it. Auto-fetches on first open.
+  const [flightSectionOpen, setFlightSectionOpen] = useState(false);
   // Honeymoon-topic todos pulled from /api/planning. The planning page is
   // the source of truth; we mirror the rows here so couples can tick items
   // off without leaving /app/honeymoon. Tasks with topic === null are
@@ -337,12 +340,12 @@ export default function HoneymoonPage() {
   }, []);
 
   // Clear any prior estimate whenever the destination or dates change so a
-  // stale result for the old trip never lingers and the "Get flight prices"
-  // button comes back for a fresh search. We deliberately do NOT auto-fetch
-  // here. The upstream search runs only on an explicit button press.
+  // stale result for the old trip never lingers. Also collapse the section so
+  // the new trip always starts fresh. We deliberately do NOT auto-fetch here.
   useEffect(() => {
     setFlightEstimate(null);
     setFlightSearched(false);
+    setFlightSectionOpen(false);
   }, [couple?.honeymoon_destination, couple?.honeymoon_start_date, couple?.honeymoon_end_date]);
 
   // Kick off the flight-price search for the current destination + dates.
@@ -667,7 +670,14 @@ export default function HoneymoonPage() {
           onSave={(v) => saveTrip({ honeymoon_destination: v })}
           tripReady={tripReady}
           flightLoading={flightLoading}
-          onFlightClick={loadFlightEstimate}
+          flightSectionOpen={flightSectionOpen}
+          onFlightToggle={() => {
+            setFlightSectionOpen((prev) => {
+              const next = !prev;
+              if (next && !flightSearched && !flightLoading) void loadFlightEstimate();
+              return next;
+            });
+          }}
         />
         <BudgetSummaryTile
           planned={totals.planned}
@@ -681,11 +691,10 @@ export default function HoneymoonPage() {
 
       <DestinationCoverPhoto destination={couple?.honeymoon_destination ?? null} />
 
-      {/* Flight prices are never fetched automatically. The upstream search
-       *  costs money, so we wait for an explicit button press. Once offers
-       *  come back the card replaces the button; changing the destination or
-       *  dates clears it and the button returns for a fresh search. */}
-      {tripReady &&
+      {/* Flight estimate section — hidden until the plane icon on the WHERE
+       *  tile is toggled on. Auto-fetches on first open; stays cached until
+       *  destination or dates change. */}
+      {tripReady && flightSectionOpen &&
         (flightEstimate && flightEstimate.offers.length > 0 ? (
           <FlightEstimateCard
             estimate={flightEstimate}
@@ -1024,14 +1033,16 @@ function DestinationTile({
   onSave,
   tripReady,
   flightLoading,
-  onFlightClick,
+  flightSectionOpen,
+  onFlightToggle,
 }: {
   value: string | null;
   loaded: boolean;
   onSave: (v: string | null) => Promise<void>;
   tripReady: boolean;
   flightLoading: boolean;
-  onFlightClick: () => Promise<void>;
+  flightSectionOpen: boolean;
+  onFlightToggle: () => void;
 }) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
@@ -1089,14 +1100,18 @@ function DestinationTile({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            void onFlightClick();
+            onFlightToggle();
           }}
-          disabled={flightLoading}
-          className="absolute bottom-3 left-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-paper-50/20 bg-paper-50/10 text-paper-100 shadow-soft transition hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700 disabled:opacity-60"
+          aria-pressed={flightSectionOpen}
+          className={`absolute bottom-3 left-3 inline-flex h-8 w-8 items-center justify-center rounded-full border shadow-soft transition ${
+            flightSectionOpen
+              ? "border-blush-300 bg-paper-50 text-blush-700 hover:bg-paper-100"
+              : "border-paper-50/20 bg-paper-50/10 text-paper-100 hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700"
+          }`}
           aria-label={t("honeymoon.flight_estimate_search")}
           title={t("honeymoon.flight_estimate_search")}
         >
-          {flightLoading ? (
+          {flightLoading && flightSectionOpen ? (
             <Loader2 size={14} className="animate-spin" aria-hidden="true" />
           ) : (
             <Plane size={14} aria-hidden="true" />
