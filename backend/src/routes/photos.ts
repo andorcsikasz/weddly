@@ -680,6 +680,70 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   return json({ upload: { id: uploadRow.id, fileUrl: publicUrl }, shotCount }, { status: 201 });
 }
 
+/** POST /api/photo-albums/current/photos — couple uploads their own photo (multipart). */
+async function handleCoupleUpload(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple found");
+
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
+  if (!row) throw new HttpError(404, "Create the film first");
+
+  rateLimit(ctx.clientIp ?? "unknown", "photo:couple-upload", UPLOAD_BUCKET);
+
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required");
+  });
+
+  const raw = form.get("file");
+  if (!(raw instanceof File)) throw new HttpError(400, "`file` field required");
+  if (raw.size > MAX_PHOTO_BYTES) throw new HttpError(413, "Image too large (max 8 MB)");
+
+  const sniffed = await sniffUploadedImage(raw);
+  if (!sniffed) throw new HttpError(400, "Only JPEG, PNG and WebP images accepted");
+  const ext = PHOTO_MIME_EXT[sniffed];
+
+  const filterApplied = form.get("filter_applied");
+  const filter =
+    typeof filterApplied === "string" && FILM_AESTHETICS.includes(filterApplied as FilmAesthetic)
+      ? filterApplied
+      : row.film_aesthetic;
+
+  const ts = now();
+  const dir = join(CONFIG.uploadsDir, "couples", String(row.couple_id), "photos", String(row.id));
+  if (!existsSync(dir)) await mkdir(dir, { recursive: true });
+
+  const tmpId = `${ts}-${randomBytes(4).toString("hex")}`;
+  const tmpPath = join(dir, `tmp-${tmpId}.${ext}`);
+  await Bun.write(tmpPath, raw);
+
+  const uploadRow = db
+    .prepare(
+      `INSERT INTO photo_uploads
+         (album_id, device_id, guest_name, file_path, mime_type, file_size,
+          filter_applied, uploaded_at)
+       VALUES (?, ?, ?, '', ?, ?, ?, ?)
+       RETURNING id`,
+    )
+    .get(row.id, "couple", null, sniffed, raw.size, filter, ts) as { id: number };
+
+  const finalPath = join(dir, `${uploadRow.id}.${ext}`);
+  const publicUrl = `/uploads/couples/${row.couple_id}/photos/${row.id}/${uploadRow.id}.${ext}`;
+  await Bun.write(finalPath, Bun.file(tmpPath));
+  db.prepare("UPDATE photo_uploads SET file_path = ? WHERE id = ?").run(publicUrl, uploadRow.id);
+
+  void Bun.file(tmpPath)
+    .exists()
+    .then((e) => {
+      if (e) void Bun.write(tmpPath, "");
+    })
+    .catch(() => {});
+
+  return json({ upload: { id: uploadRow.id, fileUrl: publicUrl } }, { status: 201 });
+}
+
 async function generateQrSvg(url: string): Promise<string> {
   return QRCode.toString(url, {
     type: "svg",
@@ -698,6 +762,7 @@ export function registerPhotoRoutes(router: Router): void {
   router.post("/api/photo-albums", handleCreateAlbum, true);
   router.get("/api/photo-albums/current", handleGetCurrentAlbum, true);
   router.patch("/api/photo-albums/current", handleUpdateAlbum, true);
+  router.post("/api/photo-albums/current/photos", handleCoupleUpload, true);
   router.get("/api/photo-albums/current/photos", handleListPhotos, true);
   router.get("/api/photo-albums/current/devices", handleListDevices, true);
 

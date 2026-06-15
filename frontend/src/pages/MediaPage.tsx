@@ -15,6 +15,7 @@ import {
   Pencil,
   QrCode,
   Share2,
+  Upload,
   Users,
 } from "lucide-react";
 import React, { type FormEvent, useEffect, useRef, useState } from "react";
@@ -231,7 +232,7 @@ function ParticipantDashboard({ albumToken }: { albumToken: string }) {
           <Users size={12} aria-hidden="true" />
           {devices.length} joined
         </span>
-        <span className="text-xs text-umber-600">{expanded ? "▲" : "▼"}</span>
+        <span className="text-xs text-umber-400">{expanded ? "▲" : "▼"}</span>
       </button>
       {expanded && (
         <ul className="mt-1 space-y-1">
@@ -241,7 +242,7 @@ function ParticipantDashboard({ albumToken }: { albumToken: string }) {
               className="flex items-center justify-between text-xs text-paper-400"
             >
               <span className="truncate">{d.guestName ?? "Anonymous"}</span>
-              <span className="ml-2 shrink-0 tabular-nums text-umber-500">
+              <span className="ml-2 shrink-0 tabular-nums text-paper-400">
                 {d.shotCount} shot{d.shotCount !== 1 ? "s" : ""}
               </span>
             </li>
@@ -498,6 +499,12 @@ export default function MediaPage() {
   const [showQr, setShowQr] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [coupleUploading, setCoupleUploading] = useState(false);
+  const [coupleUploadProgress, setCoupleUploadProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+  const coupleUploadRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -536,6 +543,26 @@ export default function MediaPage() {
     } catch {
       toast.error(t("common.error_generic"));
     }
+  }
+
+  async function handleCoupleUpload(files: FileList) {
+    if (files.length === 0) return;
+    const list = Array.from(files);
+    setCoupleUploading(true);
+    setCoupleUploadProgress({ done: 0, total: list.length });
+    let done = 0;
+    for (const file of list) {
+      try {
+        await photoAlbumApi.uploadAsCouple(file);
+      } catch {
+        // skip failed files, continue with the rest
+      }
+      done++;
+      setCoupleUploadProgress({ done, total: list.length });
+    }
+    setCoupleUploading(false);
+    setCoupleUploadProgress(null);
+    photoAlbumApi.current().then((r) => setAlbum(r.album)).catch(() => {});
   }
 
   const photographerUrl = couple?.media_links?.photographer ?? null;
@@ -798,6 +825,34 @@ export default function MediaPage() {
                   <Camera size={15} aria-hidden="true" />
                   {t("media.film_stats_camera")}
                 </button>
+              </div>
+            )}
+
+            {/* ── Couple upload ─────────────────────────────────────── */}
+            {uploadUrl && (
+              <div className="px-4 pb-4">
+                <button
+                  type="button"
+                  disabled={coupleUploading}
+                  onClick={() => coupleUploadRef.current?.click()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-umber-700 bg-umber-900 py-3 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800 disabled:opacity-60"
+                >
+                  <Upload size={15} aria-hidden="true" />
+                  {coupleUploadProgress
+                    ? `Uploading ${coupleUploadProgress.done}/${coupleUploadProgress.total}...`
+                    : "Add your own photos"}
+                </button>
+                <input
+                  ref={coupleUploadRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files) void handleCoupleUpload(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
               </div>
             )}
 

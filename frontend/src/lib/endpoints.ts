@@ -2052,6 +2052,35 @@ export const photoAlbumApi = {
     );
   },
 
+  /** Authenticated: couple uploads their own photo to the film. */
+  async uploadAsCouple(
+    file: File,
+    opts?: { filterApplied?: FilmAesthetic },
+  ): Promise<{ upload: { id: number; fileUrl: string } }> {
+    const form = new FormData();
+    form.append("file", file);
+    if (opts?.filterApplied) form.append("filter_applied", opts.filterApplied);
+    const tok = getToken();
+    const headers: Record<string, string> = tok ? { Authorization: `Bearer ${tok}` } : {};
+    const res = await fetch("/api/photo-albums/current/photos", {
+      method: "POST",
+      headers,
+      body: form,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      let msg = "Upload failed";
+      try {
+        const p = JSON.parse(text) as { message?: string };
+        if (p.message) msg = p.message;
+      } catch {
+        /* */
+      }
+      throw new Error(msg);
+    }
+    return res.json() as Promise<{ upload: { id: number; fileUrl: string } }>;
+  },
+
   /** QR code SVG URL — embed directly in <img src> or open in new tab. */
   qrUrl: (token: string) => `/api/photo-albums/${token}/qr`,
 };
