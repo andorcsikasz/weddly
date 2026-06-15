@@ -223,17 +223,21 @@ export default function LandingPage() {
         {/* Content layer */}
         <div className="hero-content-wrap">
           <div className="mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-16 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
-            <div>
-              <h1 className="max-w-[14ch] whitespace-pre-line font-grotesk text-5xl font-bold leading-[0.9] tracking-tighter text-umber-900 dark:text-paper-50 sm:whitespace-normal sm:text-[5.5rem] sm:leading-[0.88] lg:max-w-[12ch] lg:text-[7rem]">
-                {t("landing.hero_title")}
-              </h1>
-              <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-center">
-                <Link
-                  to="/signup"
-                  className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
-                >
-                  {t("landing.cta_signup")}
-                </Link>
+            <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
+              <div>
+                <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+                  {t("landing.hero_title")}
+                </h1>
+                <div className="mt-4 max-w-[18ch] sm:mt-8 sm:max-w-md">
+                  <Link
+                    to="/signup"
+                    className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
+                  >
+                    {t("landing.cta_signup")}
+                  </Link>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end lg:mt-0 lg:justify-end">
                 <DemoLaunchCard />
               </div>
             </div>
@@ -282,28 +286,25 @@ export default function LandingPage() {
           anchor lives here (rather than on a dedicated strip above) so the
           footer "Funkciók" link and the interactive-budget demo's "#phases"
           jump still land on the first feature block. */}
-      <section id="phases" className="relative scroll-mt-20 bg-umber-900">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-28">
+      <section id="phases" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
-              <p className="mb-4 font-grotesk text-[11px] font-semibold uppercase tracking-[0.22em] text-umber-400">
-                01
-              </p>
-              <h2 className="font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-paper-50 sm:text-5xl lg:text-6xl">
+              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
-              <ul className="mt-7 space-y-1.5">
-                <IconRow icon={<Wallet size={16} />} tone="light">{t("landing.block_budget_bullet_1")}</IconRow>
-                <IconRow icon={<Users size={16} />} tone="light">{t("landing.block_budget_bullet_2")}</IconRow>
-                <IconRow icon={<History size={16} />} tone="light">{t("landing.block_budget_bullet_3")}</IconRow>
+              <ul className="mt-7 space-y-1">
+                <IconRow icon={<Wallet size={16} />}>{t("landing.block_budget_bullet_1")}</IconRow>
+                <IconRow icon={<Users size={16} />}>{t("landing.block_budget_bullet_2")}</IconRow>
+                <IconRow icon={<History size={16} />}>{t("landing.block_budget_bullet_3")}</IconRow>
               </ul>
             </div>
             <div className="relative">
-              <div className="relative rotate-[-2deg] bg-white p-5 ring-1 ring-paper-200 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] sm:p-6">
+              <div className="relative rotate-[-2deg] bg-white dark:bg-umber-800 p-5 ring-1 ring-paper-300 dark:ring-umber-700 shadow-pop sm:p-6">
                 <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
                   <BudgetMockup className="h-auto w-full" />
                 </LazyMount>
-                <p className="mt-4 text-center font-serif text-sm italic text-umber-700">
+                <p className="mt-4 text-center font-serif text-sm italic text-umber-700 dark:text-umber-300">
                   {t("landing.block_budget_eyebrow")}
                 </p>
               </div>
@@ -318,13 +319,10 @@ export default function LandingPage() {
           bullets, mockup) — the mockup is wide and reads better below the
           copy at narrow widths. */}
       <section className="relative bg-paper-100/70 dark:bg-umber-900/70">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-16">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12">
             <div>
-              <p className="mb-4 font-grotesk text-[11px] font-semibold uppercase tracking-[0.22em] text-umber-400/80 dark:text-umber-400">
-                02
-              </p>
-              <h2 className="font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+              <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
               <ul className="mt-7 space-y-1">
@@ -353,13 +351,10 @@ export default function LandingPage() {
           breaks the paper-50/white monotony with a subtle diagonal
           texture so this mid-page beat reads as a distinct chapter. */}
       <section className="stationery-light relative overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
             <div className="max-w-sm">
-              <p className="mb-4 font-grotesk text-[11px] font-semibold uppercase tracking-[0.22em] text-umber-400/80 dark:text-umber-400">
-                03
-              </p>
-              <h2 className="whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+              <h2 className="whitespace-pre-line font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
               <ul className="mt-7 space-y-1">
@@ -385,12 +380,9 @@ export default function LandingPage() {
 
       {/* ════════════════════════ 07 · Suppliers ════════════════════════ */}
       <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-28 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
-            <p className="mb-4 font-grotesk text-[11px] font-semibold uppercase tracking-[0.22em] text-umber-400/80 dark:text-umber-400">
-              04
-            </p>
-            <h2 className="font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+            <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
               {t("landing.suppliers_section_title")}
             </h2>
             <p className="mt-5 max-w-xl font-grotesk text-base text-umber-700 dark:text-umber-200 sm:text-lg">
@@ -423,26 +415,26 @@ export default function LandingPage() {
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-20">
           <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
             {t("landing.audience_title")}
           </h2>
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <AudienceCard
-              icon={<Heart size={24} strokeWidth={1.5} />}
-              title={t("landing.card_couples_title")}
+          <div className="mt-8 divide-y divide-paper-300 dark:divide-umber-700 border-y border-paper-300 dark:border-umber-700">
+            <AudienceRow
+              icon={<Heart size={20} strokeWidth={1.5} />}
+              row={t("landing.card_couples_title")}
               ctaLabel={t("landing.card_couples_cta")}
               to="/signup"
             />
-            <AudienceCard
-              icon={<Store size={24} strokeWidth={1.5} />}
-              title={t("landing.card_vendors_title")}
+            <AudienceRow
+              icon={<Store size={20} strokeWidth={1.5} />}
+              row={t("landing.card_vendors_title")}
               ctaLabel={t("landing.card_vendors_cta")}
               to="/vendors"
             />
-            <AudienceCard
-              icon={<Mail size={24} strokeWidth={1.5} />}
-              title={t("landing.card_guests_title")}
+            <AudienceRow
+              icon={<Mail size={20} strokeWidth={1.5} />}
+              row={t("landing.card_guests_title")}
               ctaLabel={t("landing.card_guests_cta")}
               onClick={() => {
                 void askGuestCode();
@@ -586,23 +578,27 @@ export default function LandingPage() {
       {/* ════════════════════════ Closing ════════════════════════
           Stationery texture, faded WĒDDLY watermark, huge italic
           headline, signature, eucalyptus stem ornament. */}
-      <section className="relative flex min-h-[40vh] items-center justify-center overflow-hidden bg-umber-900 px-4 py-24 text-center sm:min-h-[50vh] sm:px-6 sm:py-32">
-        {/* Faint wedding photo layer behind the dark surface */}
-        <div aria-hidden="true" className="hero-photo-img absolute inset-0 opacity-[0.12]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-umber-900/60 to-umber-900/90" aria-hidden="true" />
+      <section className="stationery relative flex min-h-[40vh] items-center justify-center px-4 py-24 text-center sm:min-h-[50vh] sm:px-6 sm:py-24">
+        {/* Only the dark headline lives in flow, so the section's items-center
+            puts the *dark text* at the true vertical middle of the stationery.
+            The WĒDDLY wordmark above and the desktop CTA below are both
+            absolutely positioned (bottom-full / top-full) so their weight
+            doesn't pull the headline off center. py-24 reserves the room those
+            absolute elements need (their gap + height stays under the 96px
+            pads). */}
         <div className="relative w-full max-w-4xl">
           <Wordmark
             size="md"
-            className="absolute inset-x-0 bottom-full mb-8 text-umber-600"
+            className="absolute inset-x-0 bottom-full mb-8 text-paper-400 dark:text-umber-600"
           />
-          <h2 className="whitespace-pre-line font-grotesk text-5xl font-bold leading-[0.94] tracking-tight text-paper-50 sm:text-6xl lg:text-7xl">
+          <h2 className="whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-umber-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
             {t("landing.closing_title")}
           </h2>
+          {/* Closing CTA shown on desktop only. On mobile/tablet the persistent
+              MobileStickySignup bar already keeps "Start planning" a thumb-tap
+              away, so a second button here just duplicates it. */}
           <div className="absolute inset-x-0 top-full mt-10 hidden justify-center lg:flex">
-            <Link
-              to="/signup"
-              className="btn btn-landing btn-lg btn-lifted bg-paper-50 text-umber-900 hover:bg-paper-100"
-            >
+            <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg">
               {t("landing.cta_signup")}
             </Link>
           </div>
@@ -1158,24 +1154,18 @@ function IconRow({
 }: {
   icon: ReactNode;
   children: ReactNode;
-  // "coffee" swaps the accent to the warm umber/oat palette (pricing card).
-  // "light" renders pale text for use on dark espresso section backgrounds.
-  tone?: "blush" | "coffee" | "light";
+  // "coffee" swaps the accent to the warm umber/oat palette (used on the
+  // pricing card) instead of the default blush so no pink/red leaks in.
+  tone?: "blush" | "coffee";
 }) {
   const iconColor =
-    tone === "coffee"
-      ? "text-umber-600 dark:text-umber-300"
-      : tone === "light"
-        ? "text-umber-300"
-        : "text-umber-500 dark:text-umber-300";
-  const textColor =
-    tone === "light" ? "text-paper-200" : "text-umber-900 dark:text-paper-100";
+    tone === "coffee" ? "text-umber-600 dark:text-umber-300" : "text-umber-500 dark:text-umber-300";
   return (
     <li className="flex items-center gap-3">
       <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center ${iconColor}`}>
         {icon}
       </span>
-      <span className={`font-grotesk text-base ${textColor}`}>{children}</span>
+      <span className="font-grotesk text-base text-umber-900 dark:text-paper-100">{children}</span>
     </li>
   );
 }
@@ -1490,50 +1480,6 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
         ))}
       </div>
     </div>
-  );
-}
-
-function AudienceCard({
-  icon,
-  title,
-  ctaLabel,
-  to,
-  onClick,
-}: {
-  icon: ReactNode;
-  title: string;
-  ctaLabel: string;
-  to?: string;
-  onClick?: () => void;
-}) {
-  const className =
-    "group flex h-full flex-col justify-between rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 sm:p-7";
-  const inner = (
-    <>
-      <div>
-        <span className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-umber-900 text-paper-50 dark:bg-umber-700 dark:text-paper-100">
-          {icon}
-        </span>
-        <h3 className="font-grotesk text-base font-semibold leading-snug text-umber-900 dark:text-paper-50 sm:text-lg">
-          {title}
-        </h3>
-      </div>
-      <span className="mt-5 inline-flex items-center gap-1.5 font-grotesk text-sm font-medium text-umber-700 dark:text-paper-200 transition-colors group-hover:text-umber-500 dark:group-hover:text-umber-300">
-        {ctaLabel}
-        <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">
-          →
-        </span>
-      </span>
-    </>
-  );
-  return to ? (
-    <Link to={to} className={className}>
-      {inner}
-    </Link>
-  ) : (
-    <button type="button" onClick={onClick} className={className}>
-      {inner}
-    </button>
   );
 }
 
