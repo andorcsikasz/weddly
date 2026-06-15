@@ -33,6 +33,25 @@ import { Dialog, useToast } from "../components/ui";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
+// Inline SVG — no Google Drive icon in Lucide. Three triangles meeting at the
+// centroid form the Drive logo (green = left arm, blue = right arm, yellow = bottom).
+function GoogleDriveIcon({ size = 16, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 2 2 22 12 15z" fill="#00ac47" />
+      <path d="M12 2 12 15 22 22z" fill="#4285f4" />
+      <path d="M2 22 12 15 22 22z" fill="#fbbc04" />
+    </svg>
+  );
+}
+
 // --- helpers ----------------------------------------------------------------
 
 function isHttpUrl(value: string): boolean {
@@ -264,7 +283,7 @@ function FilmBanner({
           </div>
 
           {/* Headline */}
-          <h2 className="font-grotesk text-2xl font-semibold leading-snug text-paper-50 sm:text-3xl">
+          <h2 className="font-grotesk text-2xl font-semibold leading-snug !text-paper-50 sm:text-3xl">
             {t("media.film_empty_title")}
           </h2>
 
@@ -638,8 +657,9 @@ function PhotographerCard({
       className="card flex flex-col gap-5 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
-          <Camera size={20} aria-hidden="true" />
+        <div className="flex h-10 shrink-0 items-center gap-2 rounded-xl bg-paper-100 px-2.5 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+          <Camera size={18} aria-hidden="true" />
+          <GoogleDriveIcon size={15} />
         </div>
         <CardLabel text="PHOTOGRAPHER" />
       </div>
