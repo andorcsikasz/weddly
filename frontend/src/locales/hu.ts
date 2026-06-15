@@ -1658,7 +1658,7 @@ const hu: LocaleMessages = {
   media: {
     title: "Képek",
     dev_badge: "Fejlesztés alatt",
-    sub: "Gyűjtsd össze a vendégfotókat, tárold a fotósgaléria linkjét, és oszd meg az emlékeket — egy helyen.",
+    sub: "Gyűjtsd össze a vendégfotókat, tárold a fotósgaléria linkjét, és oszd meg az emlékeket, egy helyen.",
     coming_soon_title: "Hamarosan",
     coming_soon_body:
       "Az esküvő után feltölthetitek a képeket, és egy kattintással elküldhetitek a letöltési linket minden vendégnek, aki igent mondott, közvetlenül innen, külön galéria-fiók nélkül.",
@@ -1690,8 +1690,11 @@ const hu: LocaleMessages = {
       "A vendégfeltöltés hamarosan elindul. Állítsd be az albumodat, és oszd meg a linket az esküvő előtt.",
     to_guests_title: "Közös galéria",
     to_guests_desc:
-      "Ossz meg kiválasztott emlékeket a vendégekkel az esküvő után — opcionális késleltetett megjelenítéssel.",
+      "Ossz meg kiválasztott emlékeket a vendégekkel az esküvő után, opcionális feltárási időponttal.",
     to_guests_cta: "Közös galéria beállítása",
+    to_guests_feature_1: "Válogatott képek megosztása minden vendéggel",
+    to_guests_feature_2: "Feltárási időpont beállítása a meglepetéshez",
+    to_guests_feature_3: "Nincs szükség külön galériafiókra",
     photographer_title: "Profi galéria",
     photographer_desc:
       "Mentsd el a fotóstól érkező galéria linket, leadási határidőt vagy letöltési utasítást.",
@@ -1732,14 +1735,11 @@ const hu: LocaleMessages = {
     film_unlimited: "Korlátlan",
     film_how_title: "Hogyan működik",
     film_how_1_title: "Hozd létre az esküvői filmet",
-    film_how_1_body:
-      "Válaszd ki a nevet, a fotókorlátot, a film stílusát és a feltárás időpontját.",
+    film_how_1_body: "Add meg a nevet, korlátot, stílust és a feltárás időpontját.",
     film_how_2_title: "Oszd meg a QR-kódot",
-    film_how_2_body:
-      "Helyezd asztalokra, táblákra, meghívókra vagy a vendégoldalra. A vendégek app és regisztráció nélkül csatlakoznak.",
+    film_how_2_body: "Tedd ki asztalokra, meghívókra. A vendégek app nélkül csatlakoznak.",
     film_how_3_title: "Éljétek újra együtt",
-    film_how_3_body:
-      "A fotók a feltárás időpontjáig rejtve maradnak, majd az album közös emlékgalériává válik.",
+    film_how_3_body: "A képek rejtve maradnak a feltárásig, majd közös galéria nyílik.",
     film_settings_title: "Film beállításai",
     film_settings_name: "Film neve",
     film_settings_aesthetic: "Film megjelenés",
@@ -1748,12 +1748,16 @@ const hu: LocaleMessages = {
     film_settings_cap: "Vendégkapacitás",
     film_settings_upload: "Feltöltés állapota",
     film_settings_unnamed: "Névtelen film",
-    film_empty_title: "Rögzítsd a pillanatokat, amiket a fotós nem láthat.",
+    film_empty_title: "Rögzítsd, amit a fotós nem láthat.",
     film_empty_body:
       "Vendégeid látni fogják a nevetést, a khaoszt, a csendes pillantásokat és az apró pillanatokat körülöttük.",
     film_no_app_hint: "A vendégeknek nem kell app",
     film_status_no_film: "Film nincs létrehozva",
     film_status_no_photographer: "Fotósgaléria nincs mentve",
+    film_cta_share: "Vendéglink megosztása",
+    film_header_active: "Az esküvői film él. {count} kép feltöltve.",
+    film_next_steps_title: "Mi van még hátra",
+    film_qr_title: "Vendégkamera linkje",
   },
   photos: {
     loading: "Betoltes…",

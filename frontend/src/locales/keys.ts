@@ -1843,6 +1843,9 @@ export interface LocaleMessages {
     to_guests_title: string;
     to_guests_desc: string;
     to_guests_cta: string;
+    to_guests_feature_1: string;
+    to_guests_feature_2: string;
+    to_guests_feature_3: string;
     photographer_title: string;
     photographer_desc: string;
     photographer_cta: string;
@@ -1896,6 +1899,10 @@ export interface LocaleMessages {
     film_no_app_hint: string;
     film_status_no_film: string;
     film_status_no_photographer: string;
+    film_cta_share: string;
+    film_header_active: string;
+    film_next_steps_title: string;
+    film_qr_title: string;
   };
   /** /photos/:token — public guest upload page. */
   photos: {

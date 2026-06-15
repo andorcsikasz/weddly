@@ -1641,7 +1641,7 @@ const en: LocaleMessages = {
   media: {
     title: "Photos",
     dev_badge: "Under development",
-    sub: "Collect guest photos, store your photographer's gallery, and share memories — all in one place.",
+    sub: "Collect guest photos, store your photographer's gallery, and share memories, all in one place.",
     coming_soon_title: "Coming soon",
     coming_soon_body:
       "Upload the photos after the wedding and send a download link to every guest who said yes, straight from this page, no separate gallery account needed.",
@@ -1673,8 +1673,11 @@ const en: LocaleMessages = {
       "Guest uploads are launching soon. Set up your album now and share the link before your wedding.",
     to_guests_title: "Shared Gallery",
     to_guests_desc:
-      "Share selected memories with guests after the wedding — with optional reveal timing.",
+      "Share selected memories with guests after the wedding, with optional reveal timing.",
     to_guests_cta: "Set up shared gallery",
+    to_guests_feature_1: "Share selected photos with all guests",
+    to_guests_feature_2: "Set a reveal date for a surprise moment",
+    to_guests_feature_3: "No separate gallery account needed",
     photographer_title: "Pro Gallery",
     photographer_desc:
       "Save your photographer's gallery link, delivery notes, or download instructions.",
@@ -1715,13 +1718,11 @@ const en: LocaleMessages = {
     film_unlimited: "Unlimited",
     film_how_title: "How it works",
     film_how_1_title: "Create your Wedding Film",
-    film_how_1_body: "Choose the name, shot limit, film style, and when the photos should reveal.",
+    film_how_1_body: "Set the name, shot limit, look, and reveal time.",
     film_how_2_title: "Share the QR code",
-    film_how_2_body:
-      "Place it on tables, signs, invitations, or your guest page. Guests join without an app or account.",
+    film_how_2_body: "Place it on tables, signs, or invitations. Guests join without an app.",
     film_how_3_title: "Relive the day together",
-    film_how_3_body:
-      "Photos stay hidden until reveal time, then the album becomes a shared memory gallery.",
+    film_how_3_body: "Photos stay hidden until reveal time, then open as a shared gallery.",
     film_settings_title: "Film settings",
     film_settings_name: "Film name",
     film_settings_aesthetic: "Film look",
@@ -1730,12 +1731,16 @@ const en: LocaleMessages = {
     film_settings_cap: "Guest cap",
     film_settings_upload: "Upload status",
     film_settings_unnamed: "Untitled film",
-    film_empty_title: "Capture the moments your photographer can't see.",
+    film_empty_title: "Capture what your photographer misses.",
     film_empty_body:
       "Your guests will see the laughter, chaos, quiet glances, and tiny moments happening all around you.",
     film_no_app_hint: "No app needed for guests",
     film_status_no_film: "Film not created",
     film_status_no_photographer: "Photographer not saved",
+    film_cta_share: "Share guest link",
+    film_header_active: "Wedding Film is live. {count} photos captured so far.",
+    film_next_steps_title: "What's next",
+    film_qr_title: "Guest camera link",
   },
   photos: {
     loading: "Loading…",
