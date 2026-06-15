@@ -1,14 +1,33 @@
-// Weddly Photos — guest photo collection hub.
+// Weddly Photos — Wedding Film product hub.
 //
 // Three panels:
 //   "From guests"    — QR/link-based guest uploads. Empty → create modal → active.
 //   "To guests"      — shared reveal gallery. Coming soon.
 //   "By photographer"— couple saves photographer gallery link. Live (existing backend).
 
-import type { Couple, FilmAccessCheck, FilmAesthetic, FilmDevice, MediaLinks, PhotoAlbum } from "@shared/types";
+import type {
+  Couple,
+  FilmAccessCheck,
+  FilmAesthetic,
+  FilmDevice,
+  MediaLinks,
+  PhotoAlbum,
+} from "@shared/types";
 import { FILM_AESTHETICS } from "@shared/types";
-import { Camera, Check, Copy, ExternalLink, Eye, Link2, Pencil, QrCode, Share2, Users } from "lucide-react";
-import { type FormEvent, type SVGProps, useEffect, useRef, useState } from "react";
+import {
+  Camera,
+  Check,
+  Copy,
+  ExternalLink,
+  Eye,
+  Film,
+  Link2,
+  Pencil,
+  QrCode,
+  Share2,
+  Users,
+} from "lucide-react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Dialog, useToast } from "../components/ui";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
@@ -25,11 +44,43 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
-// Simplified QR code silhouette used as a placeholder before real generation.
+// --- film status ------------------------------------------------------------
+
+type FilmStatus = "live" | "developing" | "revealed";
+
+function getFilmStatus(album: PhotoAlbum): FilmStatus {
+  const ts = Date.now();
+  const eventEnded = album.eventEndsAt !== null && ts >= album.eventEndsAt;
+  const uploading = album.isUploadEnabled && !eventEnded;
+  if (uploading) return "live";
+  if (album.revealAt !== null && ts < album.revealAt) return "developing";
+  return "revealed";
+}
+
+function formatDuration(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+function formatRevealDate(ms: number): string {
+  return new Date(ms).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// --- QR placeholder (used before the real SVG loads) -----------------------
+
 function QrPlaceholder({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 80 80" aria-hidden="true" className={className} fill="currentColor">
-      {/* top-left finder */}
       <rect
         x="4"
         y="4"
@@ -41,7 +92,6 @@ function QrPlaceholder({ className }: { className?: string }) {
         strokeWidth="3.5"
       />
       <rect x="11" y="11" width="10" height="10" rx="1.5" />
-      {/* top-right finder */}
       <rect
         x="52"
         y="4"
@@ -53,7 +103,6 @@ function QrPlaceholder({ className }: { className?: string }) {
         strokeWidth="3.5"
       />
       <rect x="59" y="11" width="10" height="10" rx="1.5" />
-      {/* bottom-left finder */}
       <rect
         x="4"
         y="52"
@@ -65,7 +114,6 @@ function QrPlaceholder({ className }: { className?: string }) {
         strokeWidth="3.5"
       />
       <rect x="11" y="59" width="10" height="10" rx="1.5" />
-      {/* data modules */}
       <rect x="34" y="4" width="6" height="6" rx="1" />
       <rect x="42" y="4" width="6" height="6" rx="1" />
       <rect x="34" y="12" width="6" height="6" rx="1" />
@@ -107,27 +155,239 @@ function ComingSoonBadge({ label }: { label: string }) {
   );
 }
 
-// Hero card at the top of the page.
-function HeroCard({ onCreateClick }: { onCreateClick: () => void }) {
-  const { t } = useT();
+// Countdown: live timer that ticks every second.
+function Countdown({ targetMs, label }: { targetMs: number; label: string }) {
+  const [remaining, setRemaining] = useState(() => targetMs - Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const r = targetMs - Date.now();
+      setRemaining(r);
+      if (r <= 0) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [targetMs]);
+
+  if (remaining <= 0) return null;
+
   return (
-    <div className="card mb-5 overflow-hidden border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900">
+    <span className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
+      {label} {formatDuration(remaining)}
+    </span>
+  );
+}
+
+// Hero card — product pitch for Wedding Film.
+function FilmHeroCard({
+  album,
+  onCreateClick,
+}: {
+  album: PhotoAlbum | null;
+  onCreateClick: () => void;
+}) {
+  const { t } = useT();
+
+  const uploadUrl = album ? `${window.location.origin}/photos/${album.uploadToken}` : null;
+
+  return (
+    <div className="card mb-5 overflow-hidden border-paper-300 bg-gradient-to-br from-paper-50 to-paper-100 dark:border-umber-700 dark:from-umber-900 dark:to-umber-850">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="max-w-lg">
-          <h2 className="font-grotesk text-xl font-semibold leading-snug tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
-            {t("media.hero_title")}
-          </h2>
-          <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">{t("media.hero_sub")}</p>
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-ink-900">
+            <Film size={20} aria-hidden="true" />
+          </div>
+          <div className="max-w-lg">
+            <h2 className="font-grotesk text-xl font-semibold leading-snug tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
+              {t("media.film_title")}
+            </h2>
+            <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{t("media.film_sub")}</p>
+          </div>
         </div>
+
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <button type="button" className="btn-primary btn-sm" onClick={onCreateClick}>
-            {t("media.hero_cta_create")}
-          </button>
-          <button type="button" className="btn-ghost btn-sm" disabled>
-            {t("media.hero_cta_preview")}
-          </button>
+          {album && uploadUrl ? (
+            <a
+              href={uploadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary btn-sm inline-flex items-center gap-1.5"
+            >
+              <Camera size={14} aria-hidden="true" />
+              {t("media.film_cta_view")}
+            </a>
+          ) : (
+            <button type="button" className="btn-primary btn-sm" onClick={onCreateClick}>
+              {t("media.film_cta_create")}
+            </button>
+          )}
+          {album && (
+            <a
+              href={uploadUrl ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+            >
+              <Eye size={14} aria-hidden="true" />
+              {t("media.film_cta_preview")}
+            </a>
+          )}
         </div>
       </div>
+
+      {/* Pill row — quick feature hints */}
+      <div className="mt-4 flex flex-wrap gap-2 border-t border-paper-200 pt-4 dark:border-umber-700">
+        {(["No app download", "No guest sign-up", "Shot limit", "Delayed reveal"] as const).map(
+          (hint) => (
+            <span
+              key={hint}
+              className="inline-flex items-center gap-1 rounded-full border border-paper-200 bg-white px-2.5 py-0.5 text-xs text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200"
+            >
+              <Check size={10} className="text-sage-600" aria-hidden="true" />
+              {hint}
+            </span>
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Film status panel — warm stat pills shown when an album exists.
+function FilmStatusPanel({ album }: { album: PhotoAlbum }) {
+  const { t } = useT();
+  const status = getFilmStatus(album);
+  const now = Date.now();
+
+  const stats: Array<{ label: string; value: string; accent?: boolean }> = [
+    {
+      label: t("media.film_stats_photos"),
+      value: String(album.photoCount),
+      accent: album.photoCount > 0,
+    },
+    {
+      label: t("media.film_stats_guests"),
+      value: `${album.participantCount} / ${album.guestCap}`,
+    },
+    {
+      label: t("media.film_stats_shots"),
+      value: album.shotsPerGuest != null ? String(album.shotsPerGuest) : t("media.film_unlimited"),
+    },
+    {
+      label: t("media.film_stats_upload"),
+      value: album.isUploadEnabled ? t("media.film_status_open") : t("media.film_status_closed"),
+      accent: album.isUploadEnabled,
+    },
+  ];
+
+  const statusLabel =
+    status === "live"
+      ? t("media.film_status_shooting")
+      : status === "developing"
+        ? t("media.film_status_developing")
+        : t("media.film_status_revealed");
+
+  const statusDot =
+    status === "live" ? "bg-sage-500" : status === "developing" ? "bg-amber-400" : "bg-paper-400";
+
+  return (
+    <div className="card mb-5 border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-850">
+      {/* Status badge + countdown */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-ink-700 dark:text-paper-100">
+          <span className={`h-2 w-2 rounded-full ${statusDot}`} aria-hidden="true" />
+          {statusLabel}
+        </span>
+        <span className="text-xs text-ink-400 dark:text-umber-400">
+          {status === "live" && album.eventEndsAt && album.eventEndsAt > now && (
+            <Countdown targetMs={album.eventEndsAt} label={t("media.film_ends_in")} />
+          )}
+          {status === "developing" && album.revealAt && album.revealAt > now && (
+            <Countdown targetMs={album.revealAt} label={t("media.film_reveals_in")} />
+          )}
+          {status === "revealed" && (
+            <span className="text-xs text-ink-400 dark:text-umber-400">
+              {t("media.film_revealed")}
+              {album.revealAt ? ` — ${formatRevealDate(album.revealAt)}` : ""}
+            </span>
+          )}
+        </span>
+      </div>
+
+      {/* Stat pills */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="flex flex-col gap-0.5 rounded-xl border border-paper-200 bg-paper-50 px-3 py-2.5 dark:border-umber-700 dark:bg-umber-800"
+          >
+            <span className="text-xs text-ink-400 dark:text-umber-400">{s.label}</span>
+            <span
+              className={`text-base font-semibold tabular-nums ${
+                s.accent ? "text-sage-700 dark:text-sage-400" : "text-ink-800 dark:text-paper-100"
+              }`}
+            >
+              {s.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Live-polling participant list (collapsed by default).
+function ParticipantDashboard({ albumToken }: { albumToken: string }) {
+  const [devices, setDevices] = useState<FilmDevice[]>([]);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    function poll() {
+      photoAlbumApi
+        .listDevices()
+        .then((r) => {
+          if (active) setDevices(r.devices);
+        })
+        .catch(() => {});
+    }
+    poll();
+    const id = setInterval(poll, 10_000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [albumToken]);
+
+  if (devices.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between px-3 py-2 text-left"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <span className="flex items-center gap-1.5 text-xs font-medium text-ink-600 dark:text-umber-200">
+          <Users size={12} aria-hidden="true" />
+          {devices.length} participant{devices.length !== 1 ? "s" : ""}
+        </span>
+        <span className="text-xs text-ink-400 dark:text-umber-400">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <ul className="border-t border-paper-200 dark:border-umber-700">
+          {devices.map((d) => (
+            <li
+              key={d.deviceId}
+              className="flex items-center justify-between px-3 py-1.5 text-xs text-ink-600 dark:text-umber-200 odd:bg-paper-50 dark:odd:bg-umber-800"
+            >
+              <span className="truncate">{d.guestName ?? "Anonymous"}</span>
+              <span className="ml-2 shrink-0 tabular-nums text-ink-400">
+                {d.shotCount} shot{d.shotCount !== 1 ? "s" : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -147,12 +407,9 @@ function FromGuestsCard({
   const { t } = useT();
   const [copied, setCopied] = useState(false);
 
-  const uploadUrl = album
-    ? `${window.location.origin}/photos/${album.uploadToken}`
-    : null;
+  const uploadUrl = album ? `${window.location.origin}/photos/${album.uploadToken}` : null;
   const displayLink = uploadUrl ? uploadUrl.replace(/^https?:\/\//, "") : null;
 
-  const filmStatus = album ? getFilmStatus(album) : null;
   const needsUpgrade = album !== null && album.paidAt === null && access !== null && !access.free;
 
   function handleCopy() {
@@ -164,20 +421,8 @@ function FromGuestsCard({
 
   return (
     <div className="card flex flex-col gap-5 border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-850">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
-          <Users size={20} aria-hidden="true" />
-        </div>
-        {filmStatus && (
-          <span
-            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[filmStatus]}`}
-          >
-            {filmStatus === "live" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden="true" />
-            )}
-            {STATUS_LABEL[filmStatus]}
-          </span>
-        )}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+        <Users size={20} aria-hidden="true" />
       </div>
 
       <div>
@@ -191,7 +436,7 @@ function FromGuestsCard({
 
       {album && displayLink ? (
         <div className="space-y-4">
-          {/* QR + link row */}
+          {/* QR + link */}
           <div className="flex items-start gap-4">
             <a
               href={photoAlbumApi.qrUrl(album.uploadToken)}
@@ -231,23 +476,7 @@ function FromGuestsCard({
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="flex items-center gap-3 rounded-lg bg-paper-50 px-3 py-2 dark:bg-umber-800">
-            <span className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
-              <Camera size={12} aria-hidden="true" />
-              {album.photoCount === 0
-                ? t("media.from_guests_photos_zero")
-                : t("media.from_guests_photos_count").replace("{{n}}", String(album.photoCount))}
-            </span>
-            {album.participantCount > 0 && (
-              <span className="flex items-center gap-1.5 text-xs text-ink-400 dark:text-umber-400">
-                <Users size={12} aria-hidden="true" />
-                {album.participantCount}/{album.guestCap}
-              </span>
-            )}
-          </div>
-
-          {/* Upgrade prompt for non-free couples with the 5-guest trial cap */}
+          {/* Upgrade notice */}
           {needsUpgrade && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-700/40 dark:bg-amber-900/20">
               <p className="text-xs text-amber-800 dark:text-amber-200">
@@ -264,14 +493,17 @@ function FromGuestsCard({
             </div>
           )}
 
-          {/* Live participant dashboard */}
+          {/* Participant list */}
           <ParticipantDashboard albumToken={album.uploadToken} />
         </div>
       ) : (
-        <div className="mt-auto">
+        <div className="mt-auto space-y-3">
+          <p className="text-sm text-ink-500 dark:text-umber-300">
+            {t("media.from_guests_coming_note")}
+          </p>
           <button type="button" className="btn-primary btn-sm" onClick={onCreateClick}>
             <Link2 size={14} aria-hidden="true" />
-            {t("media.from_guests_cta")}
+            {t("media.film_cta_create")}
           </button>
         </div>
       )}
@@ -279,7 +511,7 @@ function FromGuestsCard({
   );
 }
 
-// "To guests" panel — shared gallery reveal. Coming soon.
+// "To guests" — reveal/share. Coming soon.
 function ToGuestsCard() {
   const { t } = useT();
   return (
@@ -425,86 +657,132 @@ function PhotographerCard({
   );
 }
 
-// ─── Film status helpers ─────────────────────────────────────────────────────
+// Film settings read-only summary.
+function FilmSettingsPanel({
+  album,
+  onEditClick,
+}: {
+  album: PhotoAlbum;
+  onEditClick: () => void;
+}) {
+  const { t } = useT();
 
-type FilmStatus = "live" | "developing" | "revealed";
+  const aestheticLabel: Record<string, string> = {
+    natural: "Natural",
+    vintage: "Vintage",
+    bw: "B&W",
+    cinematic: "Cinematic",
+    warm: "Warm",
+  };
 
-function getFilmStatus(album: PhotoAlbum): FilmStatus {
-  const ts = Date.now();
-  const eventEnded = album.eventEndsAt !== null && ts >= album.eventEndsAt;
-  const uploading = album.isUploadEnabled && !eventEnded;
-  if (uploading) return "live";
-  if (album.revealAt !== null && ts < album.revealAt) return "developing";
-  return "revealed";
-}
-
-const STATUS_LABEL: Record<FilmStatus, string> = {
-  live: "Shooting",
-  developing: "Developing",
-  revealed: "Revealed",
-};
-
-const STATUS_CLASSES: Record<FilmStatus, string> = {
-  live: "bg-sage-100 text-sage-800 dark:bg-sage-900/40 dark:text-sage-300",
-  developing: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  revealed: "bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-umber-200",
-};
-
-// Live-polling participant list shown when the film is active.
-function ParticipantDashboard({ albumToken }: { albumToken: string }) {
-  const [devices, setDevices] = useState<FilmDevice[]>([]);
-  const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    function poll() {
-      photoAlbumApi
-        .listDevices()
-        .then((r) => { if (active) setDevices(r.devices); })
-        .catch(() => {});
-    }
-    poll();
-    const id = setInterval(poll, 10_000);
-    return () => { active = false; clearInterval(id); };
-  }, [albumToken]);
-
-  if (devices.length === 0) return null;
-
-  const preview = devices.slice(0, expanded ? devices.length : 5);
+  const rows: Array<{ label: string; value: string }> = [
+    {
+      label: t("media.film_settings_name"),
+      value: album.title ?? t("media.film_settings_unnamed"),
+    },
+    {
+      label: t("media.film_settings_aesthetic"),
+      value: aestheticLabel[album.filmAesthetic] ?? album.filmAesthetic,
+    },
+    {
+      label: t("media.film_settings_shots"),
+      value: album.shotsPerGuest != null ? String(album.shotsPerGuest) : t("media.film_unlimited"),
+    },
+    {
+      label: t("media.film_settings_reveal"),
+      value: album.revealAt ? formatRevealDate(album.revealAt) : "Not set",
+    },
+    {
+      label: t("media.film_settings_cap"),
+      value: String(album.guestCap),
+    },
+    {
+      label: t("media.film_settings_upload"),
+      value: album.isUploadEnabled ? t("media.film_status_open") : t("media.film_status_closed"),
+    },
+  ];
 
   return (
-    <div className="rounded-lg border border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between px-3 py-2 text-left"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        <span className="flex items-center gap-1.5 text-xs font-medium text-ink-600 dark:text-umber-200">
-          <Users size={12} aria-hidden="true" />
-          {devices.length} participant{devices.length !== 1 ? "s" : ""}
-        </span>
-        <span className="text-xs text-ink-400 dark:text-umber-400">{expanded ? "▲" : "▼"}</span>
+    <div className="card mt-4 border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-850">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-grotesk text-sm font-semibold text-ink-800 dark:text-paper-100">
+          {t("media.film_settings_title")}
+        </h3>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+          onClick={onEditClick}
+        >
+          <Pencil size={11} aria-hidden="true" />
+          {t("common.edit")}
+        </button>
+      </div>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+        {rows.map((r) => (
+          <div key={r.label}>
+            <dt className="text-xs text-ink-400 dark:text-umber-400">{r.label}</dt>
+            <dd className="mt-0.5 text-sm font-medium text-ink-700 dark:text-paper-200">
+              {r.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+// "How it works" — 3 step guide shown below the feature cards.
+function HowItWorksSection() {
+  const { t } = useT();
+
+  const steps = [
+    { n: "1", title: t("media.film_how_1_title"), body: t("media.film_how_1_body") },
+    { n: "2", title: t("media.film_how_2_title"), body: t("media.film_how_2_body") },
+    { n: "3", title: t("media.film_how_3_title"), body: t("media.film_how_3_body") },
+  ];
+
+  return (
+    <div className="mt-8 mb-2">
+      <h3 className="font-grotesk mb-4 text-sm font-semibold uppercase tracking-wider text-ink-400 dark:text-umber-400">
+        {t("media.film_how_title")}
+      </h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {steps.map((s) => (
+          <div key={s.n} className="flex gap-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-paper-200 text-xs font-bold text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+              {s.n}
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-ink-800 dark:text-paper-100">{s.title}</p>
+              <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">{s.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Empty state — shown in place of the hero when no film exists yet and the
+// couple hasn't clicked "Create".
+function FilmEmptyState({ onCreateClick }: { onCreateClick: () => void }) {
+  const { t } = useT();
+  return (
+    <div className="card mb-5 flex flex-col items-start gap-4 border-paper-300 bg-gradient-to-br from-paper-50 to-paper-100 dark:border-umber-700 dark:from-umber-900 dark:to-umber-850">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-ink-900">
+        <Film size={20} aria-hidden="true" />
+      </div>
+      <div>
+        <h2 className="font-grotesk text-xl font-semibold leading-snug text-ink-900 sm:text-2xl dark:text-paper-50">
+          {t("media.film_empty_title")}
+        </h2>
+        <p className="mt-2 max-w-lg text-sm text-ink-600 dark:text-umber-200">
+          {t("media.film_empty_body")}
+        </p>
+      </div>
+      <button type="button" className="btn-primary" onClick={onCreateClick}>
+        {t("media.film_cta_create")}
       </button>
-      {expanded && (
-        <ul className="border-t border-paper-200 dark:border-umber-700">
-          {preview.map((d) => (
-            <li
-              key={d.deviceId}
-              className="flex items-center justify-between px-3 py-1.5 text-xs text-ink-600 dark:text-umber-200 odd:bg-paper-50 dark:odd:bg-umber-800"
-            >
-              <span className="truncate">{d.guestName ?? "Anonymous"}</span>
-              <span className="ml-2 shrink-0 tabular-nums text-ink-400">
-                {d.shotCount} shot{d.shotCount !== 1 ? "s" : ""}
-              </span>
-            </li>
-          ))}
-          {!expanded && devices.length > 5 && (
-            <li className="px-3 py-1.5 text-xs text-ink-400 dark:text-umber-400">
-              +{devices.length - 5} more
-            </li>
-          )}
-        </ul>
-      )}
     </div>
   );
 }
@@ -527,51 +805,72 @@ const AESTHETIC_PREVIEW: Record<FilmAesthetic, string> = {
   warm: "bg-gradient-to-br from-orange-100 to-yellow-200",
 };
 
-// Wedding Film creation modal — full settings form.
-function CreateAlbumModal({
+// Wedding Film creation / edit modal.
+function FilmModal({
   open,
+  album,
   onClose,
-  onCreated,
+  onSaved,
 }: {
   open: boolean;
+  album: PhotoAlbum | null;
   onClose: () => void;
-  onCreated: (album: PhotoAlbum) => void;
+  onSaved: (album: PhotoAlbum) => void;
 }) {
   const { t } = useT();
   const toast = useToast();
-  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [access, setAccess] = useState<FilmAccessCheck | null>(null);
 
-  // Film settings.
-  const [title, setTitle] = useState("");
-  const [aesthetic, setAesthetic] = useState<FilmAesthetic>("natural");
-  const [shots, setShots] = useState<string>("15");
+  const isEdit = album !== null;
 
-  // Load pricing eligibility when modal opens.
+  const [title, setTitle] = useState(album?.title ?? "");
+  const [aesthetic, setAesthetic] = useState<FilmAesthetic>(album?.filmAesthetic ?? "natural");
+  const [shots, setShots] = useState<string>(
+    album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "15",
+  );
+
+  // Reset fields when modal opens for a different state.
   useEffect(() => {
     if (!open) return;
-    photoAlbumApi
-      .filmAccess()
-      .then((r) => setAccess(r.access))
-      .catch(() => setAccess({ free: false, reason: null, priceEurCents: 990 }));
+    setTitle(album?.title ?? "");
+    setAesthetic(album?.filmAesthetic ?? "natural");
+    setShots(album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "15");
+    if (!isEdit) {
+      photoAlbumApi
+        .filmAccess()
+        .then((r) => setAccess(r.access))
+        .catch(() => setAccess({ free: false, reason: null, priceEurCents: 990 }));
+    }
   }, [open]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setCreating(true);
+    setSaving(true);
     try {
       const shotsNum = parseInt(shots, 10);
-      const { album } = await photoAlbumApi.create({
-        title: title.trim() || undefined,
-        filmAesthetic: aesthetic,
-        shotsPerGuest: Number.isFinite(shotsNum) && shotsNum > 0 ? shotsNum : null,
-      });
-      onCreated(album);
+      const spg = Number.isFinite(shotsNum) && shotsNum > 0 ? shotsNum : null;
+
+      if (isEdit) {
+        const { album: updated } = await photoAlbumApi.update({
+          title: title.trim() || null,
+          filmAesthetic: aesthetic,
+          shotsPerGuest: spg,
+        });
+        onSaved(updated);
+      } else {
+        const { album: created } = await photoAlbumApi.create({
+          title: title.trim() || undefined,
+          filmAesthetic: aesthetic,
+          shotsPerGuest: spg,
+        });
+        onSaved(created);
+      }
       onClose();
     } catch {
       toast.error(t("common.error_generic"));
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
   }
 
@@ -585,43 +884,49 @@ function CreateAlbumModal({
   return (
     <Dialog
       open={open}
-      title={t("media.create_modal_title")}
+      title={isEdit ? t("media.film_settings_title") : t("media.create_modal_title")}
       role="dialog"
       closeOnBackdrop
       onClose={onClose}
       footer={
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-ink-400">
-            {access?.free ? (
-              <span className="flex items-center gap-1 text-sage-700">
-                <Check size={12} />
-                Free — loyal couple
-              </span>
-            ) : (
-              `Access: ${priceLabel}`
-            )}
-          </span>
-          <div className="flex gap-2">
-            <button type="button" className="btn-ghost btn-sm" onClick={onClose} disabled={creating}>
+          {!isEdit && (
+            <span className="text-xs text-ink-400">
+              {access?.free ? (
+                <span className="flex items-center gap-1 text-sage-700">
+                  <Check size={12} />
+                  Free — loyal couple
+                </span>
+              ) : (
+                `Access: ${priceLabel}`
+              )}
+            </span>
+          )}
+          <div className="flex gap-2 ml-auto">
+            <button type="button" className="btn-ghost btn-sm" onClick={onClose} disabled={saving}>
               {t("common.cancel")}
             </button>
             <button
               type="submit"
-              form="create-album-form"
+              form="film-modal-form"
               className="btn-primary btn-sm"
-              disabled={creating}
+              disabled={saving}
             >
-              {creating ? t("media.create_modal_creating") : t("media.create_modal_submit")}
+              {saving
+                ? t("media.create_modal_creating")
+                : isEdit
+                  ? t("common.save")
+                  : t("media.create_modal_submit")}
             </button>
           </div>
         </div>
       }
     >
-      <form id="create-album-form" onSubmit={handleSubmit} className="space-y-5">
-        {/* Film name */}
+      <form id="film-modal-form" onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm font-medium text-ink-700 dark:text-paper-200 mb-1">
-            Film name <span className="font-normal text-ink-400">(optional)</span>
+            {t("media.film_settings_name")}{" "}
+            <span className="font-normal text-ink-400">(optional)</span>
           </label>
           <input
             type="text"
@@ -633,10 +938,9 @@ function CreateAlbumModal({
           />
         </div>
 
-        {/* Aesthetic picker */}
         <div>
           <p className="text-sm font-medium text-ink-700 dark:text-paper-200 mb-2">
-            Film look
+            {t("media.film_settings_aesthetic")}
           </p>
           <div className="flex gap-2 flex-wrap">
             {FILM_AESTHETICS.map((a) => (
@@ -650,9 +954,7 @@ function CreateAlbumModal({
                     : "border-transparent hover:border-paper-300"
                 }`}
               >
-                <div
-                  className={`w-12 h-12 rounded-lg ${AESTHETIC_PREVIEW[a]}`}
-                />
+                <div className={`w-12 h-12 rounded-lg ${AESTHETIC_PREVIEW[a]}`} />
                 <span className="text-[10px] text-ink-600 dark:text-umber-300">
                   {AESTHETIC_LABELS[a]}
                 </span>
@@ -661,10 +963,9 @@ function CreateAlbumModal({
           </div>
         </div>
 
-        {/* Shot limit */}
         <div>
           <label className="block text-sm font-medium text-ink-700 dark:text-paper-200 mb-1">
-            Shots per guest
+            {t("media.film_settings_shots")}
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -686,7 +987,7 @@ function CreateAlbumModal({
 // --- page -------------------------------------------------------------------
 
 export default function MediaPage() {
-  const { t, locale } = useT();
+  const { t } = useT();
   const toast = useToast();
   const location = useLocation();
 
@@ -702,10 +1003,11 @@ export default function MediaPage() {
     draftRef.current = draft;
   }, [draft]);
 
-  // "From guests" album state — backed by real API.
+  // Film state.
   const [album, setAlbum] = useState<PhotoAlbum | null>(null);
   const [filmAccess, setFilmAccess] = useState<FilmAccessCheck | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showFilmModal, setShowFilmModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -715,22 +1017,26 @@ export default function MediaPage() {
           setCouple(coupleRes.couple);
           setAlbum(albumRes.album);
           setFilmAccess(accessRes.access);
+          setLoading(false);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // After Stripe redirects back with ?film=activated, show a success toast and
-  // refresh the album so the new guest_cap is reflected.
+  // After Stripe redirects back with ?film=activated, show toast + refresh album.
   useEffect(() => {
     const qs = new URLSearchParams(location.search);
     if (qs.get("film") !== "activated") return;
     toast.success("Film activated! Guests can now join — up to 200 participants.");
-    photoAlbumApi.current().then((r) => setAlbum(r.album)).catch(() => {});
-    // Replace the URL without the query param so refreshing doesn't retrigger.
+    photoAlbumApi
+      .current()
+      .then((r) => setAlbum(r.album))
+      .catch(() => {});
     window.history.replaceState(null, "", location.pathname);
   }, []);
 
@@ -794,6 +1100,8 @@ export default function MediaPage() {
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [editing]);
 
+  if (loading) return null;
+
   return (
     <>
       <header className="mb-5">
@@ -801,14 +1109,22 @@ export default function MediaPage() {
         <p className="mt-1.5 text-sm text-umber-700 dark:text-umber-300">{t("media.sub")}</p>
       </header>
 
-      <HeroCard onCreateClick={() => setShowCreateModal(true)} />
+      {/* Hero / empty state */}
+      {album ? (
+        <FilmHeroCard album={album} onCreateClick={() => setShowFilmModal(true)} />
+      ) : (
+        <FilmEmptyState onCreateClick={() => setShowFilmModal(true)} />
+      )}
 
-      {/* Feature cards — three panels in a responsive grid */}
+      {/* Live stats panel — only when a film exists */}
+      {album && <FilmStatusPanel album={album} />}
+
+      {/* Feature cards grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <FromGuestsCard
           album={album}
           access={filmAccess}
-          onCreateClick={() => setShowCreateModal(true)}
+          onCreateClick={() => setShowFilmModal(true)}
           onUpgradeClick={handleUpgradeFilm}
         />
         <ToGuestsCard />
@@ -826,10 +1142,18 @@ export default function MediaPage() {
         />
       </div>
 
-      <CreateAlbumModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onCreated={(newAlbum) => setAlbum(newAlbum)}
+      {/* Film settings summary */}
+      {album && <FilmSettingsPanel album={album} onEditClick={() => setShowFilmModal(true)} />}
+
+      {/* How it works */}
+      <HowItWorksSection />
+
+      {/* Film creation / edit modal */}
+      <FilmModal
+        open={showFilmModal}
+        album={album}
+        onClose={() => setShowFilmModal(false)}
+        onSaved={(a) => setAlbum(a)}
       />
     </>
   );
