@@ -729,32 +729,47 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     filter: saturate(1.2) brightness(0.75);
   }
 
-  /* Full-bleed overlay: solid cream left (headline readable), fades by 58%
-     so the couple shows clearly on the right. */
+  /* Left content zone + smooth bottom dissolve into the page background.
+     Radial center sits a touch lower (54% vs 46%) so the cream mass anchors
+     around the title rather than the top third. The linear-gradient(to top)
+     layer fades the photo's bottom edge softly into paper-50 instead of
+     ending abruptly. */
   .hero-overlay {
     position: absolute;
     inset: 0;
     pointer-events: none;
     background:
+      linear-gradient(
+        to top,
+        rgba(251, 250, 246, 0.98) 0%,
+        rgba(251, 250, 246, 0.55) 9%,
+        rgba(251, 250, 246, 0) 20%
+      ),
       radial-gradient(
-        ellipse 64% 76% at 18% 46%,
+        ellipse 64% 76% at 18% 54%,
         rgba(251, 250, 246, 0.99) 0%,
         rgba(251, 250, 246, 0.96) 30%,
         rgba(251, 250, 246, 0.78) 48%,
-        rgba(251, 250, 246, 0.42) 66%,
-        rgba(251, 250, 246, 0.10) 100%
+        rgba(251, 250, 246, 0.38) 66%,
+        rgba(251, 250, 246, 0.06) 100%
       ),
       linear-gradient(
         90deg,
         rgba(251, 250, 246, 0.92) 0%,
-        rgba(251, 250, 246, 0.78) 30%,
-        rgba(251, 250, 246, 0.32) 58%,
-        rgba(251, 250, 246, 0.06) 100%
+        rgba(251, 250, 246, 0.75) 30%,
+        rgba(251, 250, 246, 0.26) 58%,
+        rgba(251, 250, 246, 0) 100%
       );
   }
   @media (max-width: 639px) {
     .hero-overlay {
       background:
+        linear-gradient(
+          to top,
+          rgba(251, 250, 246, 0.98) 0%,
+          rgba(251, 250, 246, 0.60) 10%,
+          rgba(251, 250, 246, 0) 22%
+        ),
         linear-gradient(
           180deg,
           rgba(251, 250, 246, 0.97) 0%,
@@ -765,20 +780,26 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   .dark .hero-overlay {
     background:
+      linear-gradient(
+        to top,
+        rgba(58, 51, 36, 0.98) 0%,
+        rgba(58, 51, 36, 0.55) 9%,
+        rgba(58, 51, 36, 0) 20%
+      ),
       radial-gradient(
-        ellipse 64% 76% at 18% 46%,
+        ellipse 64% 76% at 18% 54%,
         rgba(58, 51, 36, 0.99) 0%,
         rgba(58, 51, 36, 0.96) 30%,
         rgba(58, 51, 36, 0.78) 48%,
-        rgba(58, 51, 36, 0.42) 66%,
-        rgba(58, 51, 36, 0.10) 100%
+        rgba(58, 51, 36, 0.38) 66%,
+        rgba(58, 51, 36, 0.06) 100%
       ),
       linear-gradient(
         90deg,
         rgba(58, 51, 36, 0.92) 0%,
-        rgba(58, 51, 36, 0.78) 30%,
-        rgba(58, 51, 36, 0.32) 58%,
-        rgba(58, 51, 36, 0.06) 100%
+        rgba(58, 51, 36, 0.75) 30%,
+        rgba(58, 51, 36, 0.26) 58%,
+        rgba(58, 51, 36, 0) 100%
       );
   }
 
