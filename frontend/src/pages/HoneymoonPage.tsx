@@ -694,7 +694,8 @@ export default function HoneymoonPage() {
       {/* Flight estimate section — hidden until the plane icon on the WHERE
        *  tile is toggled on. Auto-fetches on first open; stays cached until
        *  destination or dates change. */}
-      {tripReady && flightSectionOpen &&
+      {tripReady &&
+        flightSectionOpen &&
         (flightEstimate && flightEstimate.offers.length > 0 ? (
           <FlightEstimateCard
             estimate={flightEstimate}

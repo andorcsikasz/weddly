@@ -738,7 +738,7 @@ function PhotographerCard({
             className="btn-outline btn-sm inline-flex items-center gap-1.5"
             onClick={onStartEdit}
           >
-            <Link2 size={14} aria-hidden="true" />
+            <GoogleDriveIcon size={14} />
             {t("media.photographer_cta")}
           </button>
         )}

@@ -75,6 +75,26 @@ export function tableFootprintMm(tb: SeatingTable): { w: number; h: number } {
   return { w: localW * cos + localH * sin, h: localW * sin + localH * cos };
 }
 
+/** Which room wall is the head table hugging (determined by closest wall). */
+export type HeadWall = "top" | "bottom" | "left" | "right";
+
+/** Return the wall the head table is currently nearest to. */
+export function detectHeadWall(
+  head: SeatingTable,
+  roomWidthMm: number,
+  roomHeightMm: number,
+): HeadWall {
+  const dTop = head.y_mm;
+  const dBottom = roomHeightMm - head.y_mm;
+  const dLeft = head.x_mm;
+  const dRight = roomWidthMm - head.x_mm;
+  const min = Math.min(dTop, dBottom, dLeft, dRight);
+  if (dTop === min) return "top";
+  if (dBottom === min) return "bottom";
+  if (dLeft === min) return "left";
+  return "right";
+}
+
 export interface SymmetricLayoutInput {
   tables: SeatingTable[];
   roomWidthMm: number;
@@ -101,21 +121,21 @@ export interface SymmetricLayoutResult {
 /** Compute target positions for "symmetric" auto-arrange.
  *
  *  Layout strategy:
- *    - Head table (if any) hugs the top wall on the vertical centreline.
- *    - Guest tables fill a row-major grid below. Grid dimensions are chosen
- *      so the most-square cell pattern matches the room aspect, then clamped
- *      to whatever fits the available area with MIN_AISLE_MM between every
- *      adjacent pair. The largest guest footprint sets the cell size — every
- *      aisle is at least MIN_AISLE_MM regardless of which two tables sit
- *      next to each other.
+ *    - Head table (if any) snaps to whichever wall it is currently nearest,
+ *      centred on the perpendicular axis so the symmetry axis is the X axis
+ *      (horizontal mid-line) when the head is on a side wall, or the Y axis
+ *      (vertical mid-line) when it is on the top or bottom wall.
+ *    - Guest tables fill a row-major grid in the remaining space. Grid
+ *      dimensions are chosen so the most-square cell pattern matches the
+ *      available area aspect, then clamped to whatever fits with MIN_AISLE_MM
+ *      between every adjacent pair. The largest guest footprint sets the cell
+ *      size — every aisle is at least MIN_AISLE_MM.
  *    - When the room is genuinely too small to honour MIN_AISLE everywhere
- *      (crowded mode), we still keep MIN_AISLE between every pair and let
- *      the grid overflow into the wall margin (or past the room) rather
- *      than overlapping chairs. `meta.crowded = true` so callers can warn.
+ *      (crowded mode), the grid overflows into the wall margin on the side
+ *      opposite the head rather than overlapping chairs.
  *    - When the grid is smaller than the available area it is centred so
- *      the result reads balanced. With a head table present we anchor the
- *      grid's top to the head-clearance line so HEAD_CLEARANCE_MM is never
- *      compressed by centring.
+ *      the result reads balanced. With a head table present the grid is
+ *      clamped away from the head to preserve HEAD_CLEARANCE_MM.
  *
  *  Sizes and rotations are not changed — only x_mm / y_mm. Tables not in
  *  the input are absent from the returned map. */
@@ -136,22 +156,54 @@ export function computeSymmetricLayout(input: SymmetricLayoutInput): SymmetricLa
   const head = tables.find((tb) => tb.shape === "head") ?? null;
   const guests = tables.filter((tb) => tb.shape !== "head");
 
-  let usedTopMm = WALL_MARGIN_MM;
+  // Detect which wall the head table is hugging so we can arrange guest
+  // tables symmetrically on the opposite side.
+  const headWall = head ? detectHeadWall(head, roomWidthMm, roomHeightMm) : "top";
+
+  // Place head table flush against its wall, centred on the perpendicular axis.
+  // `headPerp` is the table's short dimension (the one pointing into the room).
+  let availLeft = WALL_MARGIN_MM;
+  let availRight = roomWidthMm - WALL_MARGIN_MM;
+  let availTop = WALL_MARGIN_MM;
+  let availBottom = roomHeightMm - WALL_MARGIN_MM;
+
   if (head) {
-    const headRy = head.width_mm / 2;
-    positions.set(head.id, {
-      x_mm: Math.round(roomWidthMm / 2),
-      y_mm: Math.round(WALL_MARGIN_MM + headRy),
-    });
-    usedTopMm = WALL_MARGIN_MM + head.width_mm + HEAD_CLEARANCE_MM;
+    const headPerp = head.width_mm; // short side, perpendicular to wall
+    const headHalfPerp = headPerp / 2;
+    switch (headWall) {
+      case "top":
+        positions.set(head.id, {
+          x_mm: Math.round(roomWidthMm / 2),
+          y_mm: Math.round(WALL_MARGIN_MM + headHalfPerp),
+        });
+        availTop = WALL_MARGIN_MM + headPerp + HEAD_CLEARANCE_MM;
+        break;
+      case "bottom":
+        positions.set(head.id, {
+          x_mm: Math.round(roomWidthMm / 2),
+          y_mm: Math.round(roomHeightMm - WALL_MARGIN_MM - headHalfPerp),
+        });
+        availBottom = roomHeightMm - WALL_MARGIN_MM - headPerp - HEAD_CLEARANCE_MM;
+        break;
+      case "right":
+        positions.set(head.id, {
+          x_mm: Math.round(roomWidthMm - WALL_MARGIN_MM - headHalfPerp),
+          y_mm: Math.round(roomHeightMm / 2),
+        });
+        availRight = roomWidthMm - WALL_MARGIN_MM - headPerp - HEAD_CLEARANCE_MM;
+        break;
+      case "left":
+        positions.set(head.id, {
+          x_mm: Math.round(WALL_MARGIN_MM + headHalfPerp),
+          y_mm: Math.round(roomHeightMm / 2),
+        });
+        availLeft = WALL_MARGIN_MM + headPerp + HEAD_CLEARANCE_MM;
+        break;
+    }
   }
 
   if (guests.length === 0) return { positions, meta };
 
-  const availTop = usedTopMm;
-  const availBottom = roomHeightMm - WALL_MARGIN_MM;
-  const availLeft = WALL_MARGIN_MM;
-  const availRight = roomWidthMm - WALL_MARGIN_MM;
   const availW = Math.max(0, availRight - availLeft);
   const availH = Math.max(0, availBottom - availTop);
   if (availW <= 0 || availH <= 0) return { positions, meta };
@@ -174,12 +226,24 @@ export function computeSymmetricLayout(input: SymmetricLayoutInput): SymmetricLa
   // Per-axis maxima for each tier (the wall margin already covers the
   // table-to-wall gap, so no extra aisle is reserved at the edges):
   //   aisleMax: cols * fp + (cols - 1) * MIN_AISLE ≤ avail
-  //   touchMax: cols * fp ≤ roomDim (max grid span the room will tolerate)
+  //   touchMax: cols * fp ≤ maxGridDim
+
+  // In crowded mode the grid may overflow the wall margin on the side
+  // OPPOSITE the head, but must never encroach on the head clearance.
+  // Parallel to the head wall both margins are usable → full room extent.
+  const maxGridX =
+    headWall === "right" || headWall === "left"
+      ? availW + WALL_MARGIN_MM // head on a side wall: X is perpendicular, far margin usable
+      : roomWidthMm; // head on top/bottom: X is parallel, both margins usable
+  const maxGridY =
+    headWall === "top" || headWall === "bottom"
+      ? availH + WALL_MARGIN_MM // head on top/bottom: Y is perpendicular, far margin usable
+      : roomHeightMm; // head on a side wall: Y is parallel, both margins usable
+
   const aisleMaxCols = Math.max(0, Math.floor((availW + MIN_AISLE_MM) / (fpW + MIN_AISLE_MM)));
   const aisleMaxRows = Math.max(0, Math.floor((availH + MIN_AISLE_MM) / (fpH + MIN_AISLE_MM)));
-  const maxGridDimY = head ? Math.max(0, roomHeightMm - usedTopMm) : roomHeightMm;
-  const touchMaxCols = Math.max(0, Math.floor(roomWidthMm / fpW));
-  const touchMaxRows = Math.max(0, Math.floor(maxGridDimY / fpH));
+  const touchMaxCols = Math.max(0, Math.floor(maxGridX / fpW));
+  const touchMaxRows = Math.max(0, Math.floor(maxGridY / fpH));
 
   // Aim for a most-square grid that matches the room and per-table aspect
   // ratios together. A tall table in a wide room still wants more columns
@@ -217,8 +281,9 @@ export function computeSymmetricLayout(input: SymmetricLayoutInput): SymmetricLa
   //      up some aisle space (and may overlap chairs in truly impossible
   //      rooms), but keeps tables visually contained so the user sees the
   //      crowding instead of tables flying off the canvas.
-  // `maxDim` is the largest the grid extent is allowed to be — full room
-  // along x, but room-minus-head along y when a head table is present.
+  // `maxDim` is the largest the grid extent is allowed to be — bounded by
+  // the room on the side parallel to the head wall; bounded by the head
+  // clearance on the perpendicular side (see maxGridX / maxGridY above).
   const axisPitch = (count: number, fp: number, avail: number, maxDim: number): number => {
     if (count <= 1) return 0;
     const spreadPitch = (avail - fp) / (count - 1);
@@ -227,17 +292,32 @@ export function computeSymmetricLayout(input: SymmetricLayoutInput): SymmetricLa
     const roomCapPitch = (maxDim - fp) / (count - 1);
     return Math.min(aislePitch, roomCapPitch);
   };
-  const pitchX = axisPitch(cols, fpW, availW, roomWidthMm);
-  const pitchY = axisPitch(rows, fpH, availH, maxGridDimY);
+  const pitchX = axisPitch(cols, fpW, availW, maxGridX);
+  const pitchY = axisPitch(rows, fpH, availH, maxGridY);
 
   const gridW = (cols - 1) * pitchX + fpW;
   const gridH = (rows - 1) * pitchY + fpH;
 
-  // Centre the grid in the available area. With a head table we never lift
-  // the grid above availTop — that would eat into HEAD_CLEARANCE_MM.
-  const startX = availLeft + (availW - gridW) / 2;
+  // Centre the grid in the available area, then clamp so the grid never
+  // encroaches on the head clearance zone.
+  let startX = availLeft + (availW - gridW) / 2;
   let startY = availTop + (availH - gridH) / 2;
-  if (head && startY < availTop) startY = availTop;
+  if (head) {
+    switch (headWall) {
+      case "top":
+        if (startY < availTop) startY = availTop;
+        break;
+      case "bottom":
+        if (startY + gridH > availBottom) startY = availBottom - gridH;
+        break;
+      case "right":
+        if (startX + gridW > availRight) startX = availRight - gridW;
+        break;
+      case "left":
+        if (startX < availLeft) startX = availLeft;
+        break;
+    }
+  }
 
   const lastRowCount = n - (rows - 1) * cols;
   for (let i = 0; i < n; i++) {
