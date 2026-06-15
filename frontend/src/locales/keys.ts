@@ -1893,6 +1893,9 @@ export interface LocaleMessages {
     film_settings_unnamed: string;
     film_empty_title: string;
     film_empty_body: string;
+    film_no_app_hint: string;
+    film_status_no_film: string;
+    film_status_no_photographer: string;
   };
   /** /photos/:token — public guest upload page. */
   photos: {
@@ -3361,6 +3364,7 @@ export interface LocaleMessages {
     /** Saved-supplier star + filter chip. */
     save_aria: string;
     unsave_aria: string;
+    save_no_couple: string;
     saved_filter: string;
     /** Per-category "this is our pick" selection — one card per sub-category. */
     pick_aria: string;

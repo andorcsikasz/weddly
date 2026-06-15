@@ -69,7 +69,7 @@ import { ClaimListingModal } from "../components/ClaimListingModal";
 import { OutreachInbox } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
-import { Button, Skeleton } from "../components/ui";
+import { Button, Skeleton, useToast } from "../components/ui";
 import {
   hydrateCostPlanningCount,
   readCostPlanningCount,
@@ -213,6 +213,7 @@ export default function SuppliersPage() {
   // on the public directory and recognise their own business.
   const [claimTarget, setClaimTarget] = useState<{ id: string; name: string } | null>(null);
   const { user } = useAuth();
+  const toast = useToast();
   const [highlightId, setHighlightId] = useState<string | null>(null);
   // Couple shortlist ("saved" star). Server-side + shared between partners via
   // the supplier_saved store; starts empty and hydrates once we know the couple.
@@ -455,13 +456,16 @@ export default function SuppliersPage() {
 
   const togglePicked = useCallback(
     (supplier: DirectorySupplier | CoupleSupplier) => {
-      if (coupleId === null) return;
+      if (coupleId === null) {
+        toast.info(t("suppliers.save_no_couple"));
+        return;
+      }
       const cat = supplier.category;
       const isPicked = selection[cat] === supplier.id;
       const next = setSelection(coupleId, cat, isPicked ? null : supplier.id);
       setSelectionState(next);
     },
-    [coupleId, selection],
+    [coupleId, selection, toast, t],
   );
 
   // Once we know the couple, default the URL's `guests` filter — preferring
@@ -505,10 +509,13 @@ export default function SuppliersPage() {
 
   const toggleSaved = useCallback(
     (id: string) => {
-      if (coupleId === null) return;
+      if (coupleId === null) {
+        toast.info(t("suppliers.save_no_couple"));
+        return;
+      }
       setSavedState(setSavedStore(coupleId, id, !saved.has(id)));
     },
-    [coupleId, saved],
+    [coupleId, saved, toast, t],
   );
 
   // Cities derived from the loaded list. Sorted alphabetically by locale rules.

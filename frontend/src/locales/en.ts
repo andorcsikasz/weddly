@@ -1659,7 +1659,7 @@ const en: LocaleMessages = {
       "Create a private QR code so guests can share photos from your wedding. No app, no account, no chaos.",
     hero_cta_create: "Create guest photo link",
     hero_cta_preview: "Preview guest page",
-    from_guests_title: "From guests",
+    from_guests_title: "Guest Camera",
     from_guests_desc:
       "Let guests upload photos during and after the wedding using a private QR code or link.",
     from_guests_cta: "Create upload link",
@@ -1671,11 +1671,11 @@ const en: LocaleMessages = {
     from_guests_copied: "Copied!",
     from_guests_coming_note:
       "Guest uploads are launching soon. Set up your album now and share the link before your wedding.",
-    to_guests_title: "To guests",
+    to_guests_title: "Shared Gallery",
     to_guests_desc:
       "Share selected memories with guests after the wedding — with optional reveal timing.",
     to_guests_cta: "Set up shared gallery",
-    photographer_title: "By photographer",
+    photographer_title: "Pro Gallery",
     photographer_desc:
       "Save your photographer's gallery link, delivery notes, or download instructions.",
     photographer_cta: "Add photographer gallery",
@@ -1730,9 +1730,12 @@ const en: LocaleMessages = {
     film_settings_cap: "Guest cap",
     film_settings_upload: "Upload status",
     film_settings_unnamed: "Untitled film",
-    film_empty_title: "Ready to collect the moments your photographer might miss?",
+    film_empty_title: "Capture the moments your photographer can't see.",
     film_empty_body:
       "Your guests will see the laughter, chaos, quiet glances, and tiny moments happening all around you.",
+    film_no_app_hint: "No app needed for guests",
+    film_status_no_film: "Film not created",
+    film_status_no_photographer: "Photographer not saved",
   },
   photos: {
     loading: "Loading…",
@@ -2967,6 +2970,7 @@ const en: LocaleMessages = {
     price_legend: "Cheaper → Pricier",
     save_aria: "Save",
     unsave_aria: "Remove from saved",
+    save_no_couple: "Complete your profile to save vendors.",
     saved_filter: "Saved ({n})",
     pick_aria: "Pick this one",
     unpick_aria: "Remove our pick",

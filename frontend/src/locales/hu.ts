@@ -1676,7 +1676,7 @@ const hu: LocaleMessages = {
       "Hozz létre egy privát QR-kódot, hogy a vendégek megoszthassák fotóikat. App nélkül, regisztráció nélkül, káosz nélkül.",
     hero_cta_create: "Vendég fotólink létrehozása",
     hero_cta_preview: "Vendégoldal előnézete",
-    from_guests_title: "A vendégektől",
+    from_guests_title: "Vendégkamera",
     from_guests_desc:
       "Hagyd, hogy a vendégek fotókat töltsenek fel az esküvő alatt és után, privát QR-kóddal vagy linkkel.",
     from_guests_cta: "Feltöltési link létrehozása",
@@ -1688,11 +1688,11 @@ const hu: LocaleMessages = {
     from_guests_copied: "Másolva!",
     from_guests_coming_note:
       "A vendégfeltöltés hamarosan elindul. Állítsd be az albumodat, és oszd meg a linket az esküvő előtt.",
-    to_guests_title: "A vendégeknek",
+    to_guests_title: "Közös galéria",
     to_guests_desc:
       "Ossz meg kiválasztott emlékeket a vendégekkel az esküvő után — opcionális késleltetett megjelenítéssel.",
     to_guests_cta: "Közös galéria beállítása",
-    photographer_title: "A fotóstól",
+    photographer_title: "Profi galéria",
     photographer_desc:
       "Mentsd el a fotóstól érkező galéria linket, leadási határidőt vagy letöltési utasítást.",
     photographer_cta: "Fotósgaléria hozzáadása",
@@ -1748,10 +1748,12 @@ const hu: LocaleMessages = {
     film_settings_cap: "Vendégkapacitás",
     film_settings_upload: "Feltöltés állapota",
     film_settings_unnamed: "Névtelen film",
-    film_empty_title:
-      "Készen állsz összegyűjteni azokat a pillanatokat, amiket a fotós is kihagyhat?",
+    film_empty_title: "Rögzítsd a pillanatokat, amiket a fotós nem láthat.",
     film_empty_body:
       "Vendégeid látni fogják a nevetést, a khaoszt, a csendes pillantásokat és az apró pillanatokat körülöttük.",
+    film_no_app_hint: "A vendégeknek nem kell app",
+    film_status_no_film: "Film nincs létrehozva",
+    film_status_no_photographer: "Fotósgaléria nincs mentve",
   },
   photos: {
     loading: "Betoltes…",
@@ -3006,6 +3008,7 @@ const hu: LocaleMessages = {
     price_legend: "Olcsóbb → Drágább",
     save_aria: "Mentés",
     unsave_aria: "Mentés visszavonása",
+    save_no_couple: "Töltsd ki a profilodat a mentéshez.",
     saved_filter: "Mentett ({n})",
     pick_aria: "Választott szolgáltató",
     unpick_aria: "Választás visszavonása",

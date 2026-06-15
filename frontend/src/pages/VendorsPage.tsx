@@ -519,6 +519,16 @@ function WaitlistContact() {
         setStepError(t("vendors.form_err_email"));
         return;
       }
+      const radiusNum = travelRadiusKm ? Number.parseInt(travelRadiusKm, 10) : null;
+      if (
+        TRAVEL_RELEVANT_CATEGORIES.has(category as SupplierCategory) &&
+        radiusNum !== null &&
+        !Number.isNaN(radiusNum) &&
+        radiusNum < 0
+      ) {
+        setStepError(t("vendors.form_err_travel_radius"));
+        return;
+      }
     }
     setStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
   }
