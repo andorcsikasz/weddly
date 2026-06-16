@@ -896,33 +896,28 @@ export default function MediaPage() {
             )}
 
 
-            {/* ── Settings (iOS rows) ───────────────────────────────── */}
+            {/* ── Settings grid (3 columns) ─────────────────────────── */}
             <div className="border-t border-umber-800">
-              <p className="px-5 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+              <p className="px-4 pb-1 pt-3 text-[9px] font-semibold uppercase tracking-[0.28em] text-umber-500">
                 {t("media.film_settings_title")}
               </p>
-              {settingsRows.map((row, i) => (
-                <React.Fragment key={row.label}>
+              <div className="grid grid-cols-3">
+                {settingsRows.map((row) => (
                   <button
+                    key={row.label}
                     type="button"
                     onClick={() => setShowFilmModal(true)}
-                    className="flex w-full items-center gap-3.5 px-5 py-2.5 text-left transition-colors hover:bg-umber-900"
+                    className="flex flex-col px-4 py-2.5 text-left transition-colors hover:bg-umber-900 border-r border-t border-umber-800 last:border-r-0 [&:nth-child(3n)]:border-r-0"
                   >
-                    <span className="shrink-0 text-umber-400">{row.icon}</span>
-                    <span className="flex-1 text-sm text-paper-300">{row.label}</span>
-                    <span className="mr-1 max-w-[8rem] truncate text-right text-sm text-paper-400">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-umber-500 truncate w-full">
+                      {row.label}
+                    </span>
+                    <span className="mt-0.5 text-sm text-paper-300 truncate w-full">
                       {row.value}
                     </span>
-                    <ChevronRight size={14} className="shrink-0 text-umber-500" aria-hidden="true" />
                   </button>
-                  {row.dividerAfter && i < settingsRows.length - 1 && (
-                    <div className="mx-5 border-t border-dashed border-umber-800" />
-                  )}
-                  {!row.dividerAfter && i < settingsRows.length - 1 && (
-                    <div className="mx-5 border-t border-umber-900" />
-                  )}
-                </React.Fragment>
-              ))}
+                ))}
+              </div>
             </div>
 
             {/* ── Guest link ────────────────────────────────────────── */}
