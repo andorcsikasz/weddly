@@ -20,6 +20,7 @@ import {
   Bell,
   CalendarClock,
   ClipboardList,
+  Info,
   Mail,
   Send,
   Settings,
@@ -38,6 +39,7 @@ const KIND_ICON: Record<NotificationItem["kind"], IconCmp> = {
   rsvp_received_household: Mail,
   partner_task_added: ClipboardList,
   timeline_email_sent: Send,
+  admin_message: Info,
 };
 
 /** Compose the human label for a feed row from its kind + params. */
@@ -66,6 +68,8 @@ function useLabel() {
           : t("notifications.partner_task_added");
       case "timeline_email_sent":
         return t("notifications.timeline_email_sent");
+      case "admin_message":
+        return String(d.message ?? "");
       default:
         return "";
     }

@@ -25,6 +25,7 @@ import {
 } from "../domain/user_flags";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { insertCoupleNotification } from "../domain/notifications";
 import { createVerificationToken } from "./email_verify";
 
 function toUserFlag(row: UserFlagRow): UserFlag {
@@ -804,6 +805,42 @@ async function handleMarkSectionSeen(ctx: Ctx): Promise<Response> {
   return json({ ok: true, section: body.section, seen_at: ts });
 }
 
+async function handleNotifyCouple(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const coupleId = parseId(ctx);
+  const body = await readJson<{ message?: unknown; link?: unknown }>(ctx.req);
+  if (typeof body.message !== "string" || !body.message.trim()) {
+    throw new HttpError(400, "message required");
+  }
+  const message = body.message.trim();
+  const link = typeof body.link === "string" && body.link.trim() ? body.link.trim() : null;
+
+  const couple = db.prepare("SELECT * FROM couples WHERE id = ?").get(coupleId) as
+    | CoupleRow
+    | undefined;
+  if (!couple) throw new HttpError(404, "Couple not found");
+  if (couple.status === "deleting") throw new HttpError(400, "Workspace is purged");
+
+  insertCoupleNotification({
+    couple_id: coupleId,
+    kind: "admin_message",
+    actor_user_id: null,
+    data: { message },
+    link,
+  });
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: coupleId,
+    action: "admin.notify_couple",
+    target_kind: "couple",
+    target_id: coupleId,
+    note: message,
+  });
+
+  return json({ ok: true });
+}
+
 export function registerAdminUserRoutes(router: Router) {
   router.get("/api/admin/users", handleListUsers, true);
   router.get("/api/admin/couples", handleListCouples, true);
@@ -817,6 +854,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.get("/api/admin/users/:id/emails", handleListUserEmails, true);
   router.post("/api/admin/users/:id/beta", handleSetBetaTester, true);
   router.post("/api/admin/couples/:id/remind-invite-partner", handleRemindInvitePartner, true);
+  router.post("/api/admin/couples/:id/notify", handleNotifyCouple, true);
   router.post("/api/admin/couples/:id/grant-free", handleGrantFree, true);
   router.post("/api/admin/couples/:id/revoke-free", handleRevokeFree, true);
 }
