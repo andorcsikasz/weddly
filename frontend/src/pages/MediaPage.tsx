@@ -405,10 +405,11 @@ function FilmModal({
         </div>
       }
     >
-      <form id="film-modal-form" onSubmit={handleSubmit} className="space-y-3.5">
+      <form id="film-modal-form" onSubmit={handleSubmit} className="space-y-3">
+        {/* Film neve */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-ink-700 dark:text-paper-200">
-            {t("media.film_settings_name")}{" "}
+          <label className="mb-0.5 flex items-baseline gap-1.5 text-xs font-medium text-ink-700 dark:text-paper-200">
+            {t("media.film_settings_name")}
             <span className="font-normal text-ink-400">(optional)</span>
           </label>
           <input
@@ -421,77 +422,86 @@ function FilmModal({
           />
         </div>
 
-        <div>
-          <p className="mb-2 text-sm font-medium text-ink-700 dark:text-paper-200">
-            {t("media.film_settings_aesthetic")}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {FILM_AESTHETICS.map((a) => (
-              <button
-                key={a}
-                type="button"
-                onClick={() => setAesthetic(a)}
-                className={`flex flex-col items-center gap-1 rounded-xl border-2 p-0.5 transition-colors ${
-                  aesthetic === a
-                    ? "border-ink-900 dark:border-paper-100"
-                    : "border-transparent hover:border-paper-300"
-                }`}
-              >
-                <div className={`h-12 w-12 rounded-lg ${AESTHETIC_PREVIEW[a]}`} />
-                <span className="text-[10px] text-ink-600 dark:text-umber-300">
-                  {AESTHETIC_LABELS[a]}
-                </span>
-              </button>
-            ))}
+        {/* Megjelenés + Fotókorlát on one row */}
+        <div className="flex items-start gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="mb-1.5 text-xs font-medium text-ink-700 dark:text-paper-200">
+              {t("media.film_settings_aesthetic")}
+            </p>
+            <div className="flex gap-1.5">
+              {FILM_AESTHETICS.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setAesthetic(a)}
+                  title={AESTHETIC_LABELS[a]}
+                  className={`flex flex-col items-center gap-0.5 rounded-lg border-2 p-0.5 transition-colors ${
+                    aesthetic === a
+                      ? "border-ink-900 dark:border-paper-100"
+                      : "border-transparent hover:border-paper-300 dark:hover:border-umber-600"
+                  }`}
+                >
+                  <div className={`h-8 w-8 rounded-md ${AESTHETIC_PREVIEW[a]}`} />
+                  <span className="text-[9px] leading-tight text-ink-500 dark:text-umber-300">
+                    {AESTHETIC_LABELS[a]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="shrink-0">
+            <label className="mb-1.5 block text-xs font-medium text-ink-700 dark:text-paper-200">
+              {t("media.film_settings_shots")}
+            </label>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={shots}
+                onChange={(e) => setShots(e.target.value)}
+                className="input w-16 text-center text-sm"
+              />
+              <span className="text-xs text-ink-400">/ person</span>
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-ink-700 dark:text-paper-200">
-            {t("media.film_settings_shots")}
-          </label>
-          <div className="flex items-center gap-3">
-            <input
-              type="number"
-              min={1}
-              max={500}
-              value={shots}
-              onChange={(e) => setShots(e.target.value)}
-              className="input w-24 text-sm"
-            />
-            <span className="text-sm text-ink-500">photos per person</span>
-          </div>
-        </div>
-
+        {/* Date fields side by side */}
         {isEdit && (
-          <>
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-ink-700 dark:text-paper-200">
+              <label className="mb-0.5 flex items-baseline gap-1 text-xs font-medium text-ink-700 dark:text-paper-200">
                 {t("media.film_settings_ends")}
-                <span className="ml-1 font-normal text-ink-400">(optional)</span>
+                <span className="font-normal text-ink-400">(opt)</span>
               </label>
               <input
                 type="datetime-local"
                 value={eventEndsAt}
                 onChange={(e) => setEventEndsAt(e.target.value)}
-                className="input w-full text-sm"
+                className="input w-full text-xs"
               />
-              <p className="mt-1 text-xs text-ink-400">{t("media.film_settings_ends_hint")}</p>
+              <p className="mt-0.5 text-[10px] leading-snug text-ink-400">
+                {t("media.film_settings_ends_hint")}
+              </p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-ink-700 dark:text-paper-200">
+              <label className="mb-0.5 flex items-baseline gap-1 text-xs font-medium text-ink-700 dark:text-paper-200">
                 {t("media.film_settings_reveal")}
-                <span className="ml-1 font-normal text-ink-400">(optional)</span>
+                <span className="font-normal text-ink-400">(opt)</span>
               </label>
               <input
                 type="datetime-local"
                 value={revealAt}
                 onChange={(e) => setRevealAt(e.target.value)}
-                className="input w-full text-sm"
+                className="input w-full text-xs"
               />
-              <p className="mt-1 text-xs text-ink-400">{t("media.film_settings_reveal_hint")}</p>
+              <p className="mt-0.5 text-[10px] leading-snug text-ink-400">
+                {t("media.film_settings_reveal_hint")}
+              </p>
             </div>
-          </>
+          </div>
         )}
       </form>
     </Dialog>
@@ -592,8 +602,19 @@ export default function MediaPage() {
   const photographerUrl = couple?.media_links?.photographer ?? null;
   const albumStatus = album ? getFilmStatus(album) : null;
   const uploadUrl = album ? `${window.location.origin}/photos/${album.uploadToken}` : null;
+  const totalCapacity =
+    album !== null && album.shotsPerGuest != null
+      ? album.shotsPerGuest * album.guestCap
+      : null;
+  const nearGuestLimit = album !== null && album.participantCount >= album.guestCap - 2;
+  const nearPhotoLimit =
+    totalCapacity !== null && album !== null && album.photoCount >= Math.floor(totalCapacity * 0.8);
   const needsUpgrade =
-    album !== null && album.paidAt === null && filmAccess !== null && !filmAccess.free;
+    album !== null &&
+    album.paidAt === null &&
+    filmAccess !== null &&
+    !filmAccess.free &&
+    (nearGuestLimit || nearPhotoLimit);
 
   function startEdit() {
     setEditing(true);
