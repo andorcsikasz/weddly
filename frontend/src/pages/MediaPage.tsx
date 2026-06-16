@@ -738,93 +738,30 @@ export default function MediaPage() {
         {album ? (
           <>
             {/* ── Hero ──────────────────────────────────────────────── */}
-            <div className="relative">
-              <div className="relative aspect-[4/3] sm:aspect-[16/9]">
-                <img
-                  src={coverPhoto}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  aria-hidden="true"
-                />
-                {/* Bottom gradient for legibility */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(to top, rgba(15,10,7,1) 0%, rgba(15,10,7,0.6) 40%, transparent 70%)",
-                  }}
-                />
-                {/* Top gradient to soften */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(to bottom, rgba(15,10,7,0.4) 0%, transparent 30%)",
-                  }}
-                />
-
-                {/* Status badge — top left */}
-                <div className="absolute left-4 top-4">
-                  {albumStatus === "live" && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-xs font-medium text-paper-100 backdrop-blur-sm">
-                      <span
-                        className="h-1.5 w-1.5 animate-pulse rounded-full bg-sage-400"
-                        aria-hidden="true"
-                      />
-                      Live
-                    </span>
-                  )}
-                  {albumStatus === "developing" && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-xs font-medium text-paper-300 backdrop-blur-sm">
-                      <span
-                        className="h-1.5 w-1.5 rounded-full bg-amber-400"
-                        aria-hidden="true"
-                      />
-                      Developing
-                    </span>
-                  )}
-                  {albumStatus === "revealed" && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-xs font-medium text-paper-400 backdrop-blur-sm">
-                      Revealed
-                    </span>
-                  )}
-                </div>
-
-                {/* Edit button — top right */}
-                <button
-                  type="button"
-                  onClick={() => setShowFilmModal(true)}
-                  aria-label="Edit film settings"
-                  className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-paper-300 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-paper-50"
+            <div className="relative h-44 overflow-hidden">
+              <img
+                src={coverPhoto}
+                alt=""
+                className="h-full w-full object-cover"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(to top, rgba(15,10,7,1) 0%, rgba(15,10,7,0.55) 45%, transparent 75%)",
+                }}
+              />
+              <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
+                <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+                  Wedding Film
+                </p>
+                <h1
+                  className="font-serif text-2xl italic leading-tight text-paper-50"
+                  style={{ textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}
                 >
-                  <Pencil size={13} aria-hidden="true" />
-                </button>
-
-                {/* Title overlay — bottom left */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 pb-4">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-paper-400">
-                    Wedding Film
-                  </p>
-                  <h1
-                    className="font-serif text-3xl font-semibold italic leading-tight text-paper-50 sm:text-4xl"
-                    style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}
-                  >
-                    {album.title || t("media.film_empty_title")}
-                  </h1>
-                  {album.eventEndsAt && (
-                    <p className="mt-1 text-xs text-paper-400">
-                      {albumStatus === "live" && daysLeft !== null ? (
-                        daysLeft === 0 ? (
-                          <Countdown targetMs={album.eventEndsAt} label="Closes in" />
-                        ) : (
-                          `Closes in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`
-                        )
-                      ) : (
-                        `Closed ${formatRevealDate(album.eventEndsAt)}`
-                      )}
-                    </p>
-                  )}
-                </div>
+                  {album.title || t("media.film_empty_title")}
+                </h1>
               </div>
             </div>
 
@@ -1016,20 +953,19 @@ export default function MediaPage() {
         ) : (
           /* ── Empty state ────────────────────────────────────────── */
           <>
-            <div className="relative">
-              <div className="relative aspect-[4/3] sm:aspect-[16/9]">
-                <img
-                  src={DEMO_STRIP[0]}
-                  alt=""
-                  className="h-full w-full object-cover opacity-25"
-                  aria-hidden="true"
-                  style={{ filter: "blur(2px)" }}
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{ background: "rgba(15,10,7,0.5)" }}
-                />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+            <div className="relative h-44 overflow-hidden">
+              <img
+                src={DEMO_STRIP[0]}
+                alt=""
+                className="h-full w-full object-cover opacity-25"
+                aria-hidden="true"
+                style={{ filter: "blur(2px)" }}
+              />
+              <div
+                className="absolute inset-0"
+                style={{ background: "rgba(15,10,7,0.5)" }}
+              />
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-umber-700 bg-umber-900">
                     <Film size={22} className="text-umber-400" aria-hidden="true" />
                   </div>
@@ -1049,7 +985,6 @@ export default function MediaPage() {
                     {t("media.film_cta_create")}
                   </button>
                 </div>
-              </div>
             </div>
 
             {/* How it works — 3 columns */}
@@ -1072,9 +1007,9 @@ export default function MediaPage() {
         {/* ── Photographer row (always visible) ─────────────────────── */}
         <div
           ref={photographerRowRef}
-          className="border-t border-umber-800"
+          className="border-t-2 border-dashed border-umber-700 mt-1"
         >
-          <p className="px-5 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+          <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
             {t("media.photographer_title")}
           </p>
           {editing ? (
