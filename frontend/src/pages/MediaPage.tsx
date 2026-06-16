@@ -270,11 +270,13 @@ function ParticipantDashboard({ albumToken }: { albumToken: string }) {
 function FilmModal({
   open,
   album,
+  couple,
   onClose,
   onSaved,
 }: {
   open: boolean;
   album: PhotoAlbum | null;
+  couple: Couple | null;
   onClose: () => void;
   onSaved: (album: PhotoAlbum) => void;
 }) {
@@ -302,8 +304,17 @@ function FilmModal({
     setTitle(album?.title ?? "");
     setAesthetic(album?.filmAesthetic ?? "natural");
     setShots(album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "16");
-    setEventEndsAt(album?.eventEndsAt ? toDatetimeLocal(album.eventEndsAt) : "");
     setRevealAt(album?.revealAt ? toDatetimeLocal(album.revealAt) : "");
+    if (!isEdit) {
+      const b = couple?.bride_name?.trim();
+      const g = couple?.groom_name?.trim();
+      if (b || g) setTitle(`${b ?? ""} & ${g ?? ""} Wedding`.trim());
+      const wd = couple?.wedding_date ? new Date(couple.wedding_date).getTime() : null;
+      // wedding_date midnight + 1 day - 3 h = 21:00 on the day after the wedding
+      setEventEndsAt(wd ? toDatetimeLocal(wd + 45 * 60 * 60 * 1000) : "");
+    } else {
+      setEventEndsAt(album?.eventEndsAt ? toDatetimeLocal(album.eventEndsAt) : "");
+    }
     if (!isEdit) {
       photoAlbumApi
         .filmAccess()
@@ -1144,6 +1155,7 @@ export default function MediaPage() {
       <FilmModal
         open={showFilmModal}
         album={album}
+        couple={couple}
         onClose={() => setShowFilmModal(false)}
         onSaved={(a) => setAlbum(a)}
       />
