@@ -749,7 +749,7 @@ export default function MediaPage() {
                 className="absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to top, rgba(15,10,7,1) 0%, rgba(15,10,7,0.55) 45%, transparent 75%)",
+                    "linear-gradient(to top, rgba(15,10,7,1) 0%, rgba(15,10,7,0.92) 35%, rgba(15,10,7,0.6) 60%, transparent 80%)",
                 }}
               />
               <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
@@ -758,7 +758,7 @@ export default function MediaPage() {
                 </p>
                 <h1
                   className="font-serif text-2xl italic leading-snug text-paper-50"
-                  style={{ textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}
+                  style={{ textShadow: "0 2px 12px rgba(0,0,0,0.9)" }}
                 >
                   {album.title || t("media.film_empty_title")}
                 </h1>

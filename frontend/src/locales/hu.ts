@@ -1763,7 +1763,7 @@ const hu: LocaleMessages = {
     film_settings_cap: "Vendégkapacitás",
     film_settings_upload: "Feltöltés állapota",
     film_settings_unnamed: "Névtelen film",
-    film_empty_title: "Rögzítsd, amit a fotós nem láthat.",
+    film_empty_title: "Örökítsd meg azt is, amit a fotósod nem vesz észre.",
     film_empty_body:
       "Vendégeid látni fogják a nevetést, a khaoszt, a csendes pillantásokat és az apró pillanatokat körülöttük.",
     film_no_app_hint: "A vendégeknek nem kell app",
