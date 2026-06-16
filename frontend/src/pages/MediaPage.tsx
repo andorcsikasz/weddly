@@ -738,7 +738,7 @@ export default function MediaPage() {
         {album ? (
           <>
             {/* ── Hero ──────────────────────────────────────────────── */}
-            <div className="relative h-44 overflow-hidden">
+            <div className="relative h-52 overflow-hidden">
               <img
                 src={coverPhoto}
                 alt=""
@@ -752,12 +752,12 @@ export default function MediaPage() {
                     "linear-gradient(to top, rgba(15,10,7,1) 0%, rgba(15,10,7,0.55) 45%, transparent 75%)",
                 }}
               />
-              <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
+              <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
                 <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                   Wedding Film
                 </p>
                 <h1
-                  className="font-serif text-2xl italic leading-tight text-paper-50"
+                  className="font-serif text-2xl italic leading-snug text-paper-50"
                   style={{ textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}
                 >
                   {album.title || t("media.film_empty_title")}
@@ -953,7 +953,7 @@ export default function MediaPage() {
         ) : (
           /* ── Empty state ────────────────────────────────────────── */
           <>
-            <div className="relative h-44 overflow-hidden">
+            <div className="relative h-52 overflow-hidden">
               <img
                 src={DEMO_STRIP[0]}
                 alt=""
