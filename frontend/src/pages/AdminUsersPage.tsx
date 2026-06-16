@@ -4,6 +4,8 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ChevronsUpDown,
+  ChevronUp,
   DollarSign,
   Flag,
   FlagOff,
@@ -18,7 +20,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminPageHeader, AdminSectionHeader, Pill } from "../components/admin";
 import { FlagUserDialog } from "../components/FlagUserDialog";
 import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -150,6 +152,45 @@ export default function AdminUsersPage() {
   const [couplesOpen, setCouplesOpen] = useState(true);
   const [soloOpen, setSoloOpen] = useState(true);
   const [orphansOpen, setOrphansOpen] = useState(true);
+
+  type WorkspaceSortKey = "id" | "name" | "members" | "created_at" | "last_seen_at";
+  const [sortKey, setSortKey] = useState<WorkspaceSortKey>("id");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  function toggleSort(key: WorkspaceSortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "last_seen_at" ? "desc" : "asc");
+    }
+  }
+
+  function sortCouples(list: AdminCoupleView[]): AdminCoupleView[] {
+    const sign = sortDir === "asc" ? 1 : -1;
+    return [...list].sort((a, b) => {
+      switch (sortKey) {
+        case "id":
+          return (a.id - b.id) * sign;
+        case "name":
+          return workspaceLabel(a).localeCompare(workspaceLabel(b), "hu") * sign;
+        case "members": {
+          const aCount = a.partners.filter((p) => userById.has(p.id)).length;
+          const bCount = b.partners.filter((p) => userById.has(p.id)).length;
+          return (aCount - bCount) * sign;
+        }
+        case "created_at":
+          return (a.created_at - b.created_at) * sign;
+        case "last_seen_at": {
+          const aTs = a.last_seen_at ?? 0;
+          const bTs = b.last_seen_at ?? 0;
+          return (aTs - bTs) * sign;
+        }
+        default:
+          return 0;
+      }
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -946,15 +987,46 @@ export default function AdminUsersPage() {
 
   // Shared md+ column-label row for the card lists (paired couples + solo).
   // Matches the 5-column grid the cards use so the headers line up exactly.
+  function SortIcon({ col }: { col: WorkspaceSortKey }) {
+    if (sortKey !== col)
+      return <ChevronsUpDown size={11} className="ml-0.5 opacity-40" aria-hidden />;
+    return sortDir === "asc" ? (
+      <ChevronUp size={11} className="ml-0.5" aria-hidden />
+    ) : (
+      <ChevronDown size={11} className="ml-0.5" aria-hidden />
+    );
+  }
+  function SortBtn({
+    col,
+    children,
+    className,
+  }: {
+    col: WorkspaceSortKey;
+    children: ReactNode;
+    className?: string;
+  }) {
+    return (
+      <button
+        type="button"
+        onClick={() => toggleSort(col)}
+        className={`inline-flex cursor-pointer select-none items-center gap-0 transition-opacity hover:opacity-70 ${className ?? ""}`}
+      >
+        {children}
+        <SortIcon col={col} />
+      </button>
+    );
+  }
   const workspaceColumnHeader = (
     <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] gap-4 px-5 eyebrow md:grid">
-      <div>{t("admin.table_workspace_id")}</div>
-      <div>{t("admin.table_workspace_name")}</div>
-      <div>{t("admin.table_workspace_members")}</div>
+      <SortBtn col="id">{t("admin.table_workspace_id")}</SortBtn>
+      <SortBtn col="name">{t("admin.table_workspace_name")}</SortBtn>
+      <SortBtn col="members">{t("admin.table_workspace_members")}</SortBtn>
       <div>
-        <div>{t("admin.table_workspace_created")}</div>
-        <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
-          {t("admin.table_workspace_last_active")}
+        <SortBtn col="created_at">{t("admin.table_workspace_created")}</SortBtn>
+        <div className="mt-0.5">
+          <SortBtn col="last_seen_at" className="text-neutral-500/70 dark:text-umber-300/80">
+            {t("admin.table_workspace_last_active")}
+          </SortBtn>
         </div>
       </div>
       <div className="text-right">{t("admin.table_admin_actions")}</div>
@@ -1159,7 +1231,7 @@ export default function AdminUsersPage() {
                   ) : (
                     <>
                       {workspaceColumnHeader}
-                      <ul className="space-y-1.5">{couplePairs.map(renderCoupleCard)}</ul>
+                      <ul className="space-y-1.5">{sortCouples(couplePairs).map(renderCoupleCard)}</ul>
                     </>
                   ))}
               </section>
@@ -1188,7 +1260,7 @@ export default function AdminUsersPage() {
                   ) : (
                     <>
                       {workspaceColumnHeader}
-                      <ul className="space-y-1.5">{soloWorkspaces.map(renderCoupleCard)}</ul>
+                      <ul className="space-y-1.5">{sortCouples(soloWorkspaces).map(renderCoupleCard)}</ul>
                     </>
                   ))}
               </section>
