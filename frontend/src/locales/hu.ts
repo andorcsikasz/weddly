@@ -854,6 +854,8 @@ const hu: LocaleMessages = {
     own_invite_copied: "Link kimásolva!",
     already_in_other_couple:
       "Már egy másik munkaterülethez tartozol. Jelentkezz ki, és egy másik fiókkal nyisd meg ezt a meghívót.",
+    merge_from_invite_body:
+      "Van egy meglevo munkaterületed. Ha csatlakozol a(z) {couple} esküvohöz, a jelenlegi munkaterületed (vendéglista, költségvetés, ülésrend, minden) véglegesen törlodik. Ez visszavonhatatlan.",
     couple_full:
       "Ehhez a munkaterülethez már ketten csatlakoztak. Kérd meg a meghívót, hogy vonja vissza és küldje újra.",
     couple_gone: "Ez a munkaterület már nem létezik.",

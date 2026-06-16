@@ -844,6 +844,8 @@ const en: LocaleMessages = {
     own_invite_copied: "Link copied!",
     already_in_other_couple:
       "You're already part of another workspace. Sign out and use a different account to accept this invite.",
+    merge_from_invite_body:
+      "You already have a workspace. Joining {couple} will permanently delete your current workspace — guests, budget, seating, everything. This can't be undone.",
     couple_full: "This workspace already has two people. Ask the inviter to cancel and resend.",
     couple_gone: "This workspace no longer exists.",
     merge_banner_body:

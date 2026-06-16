@@ -1,19 +1,23 @@
-// Public partner-B invite page. Three branches:
+// Public partner-B invite page. Four branches:
 //   1. Logged-out viewer → sign-up CTA with the token preserved in router state.
 //   2. Logged-in viewer who IS the inviter (their own couple_id == invite's
 //      couple_id) → share-this-with-X panel, no accept button. This is the
 //      most common testing-yourself failure mode.
-//   3. Logged-in viewer on a different account → accept button.
+//   3. Logged-in viewer with no existing couple → plain accept button.
+//   4. Logged-in viewer who already has their own workspace → merge flow inline
+//      (type "MERGE" to confirm, then acceptInviteMerge purges the solo
+//      workspace and links them as partner B on the inviting couple).
 //
-// Errors from `acceptInvite` carry a structured `detail.code` ("couple_full",
-// "already_in_other_couple", "already_in_this_couple") so we can show the
-// user *what* actually went wrong rather than a generic "Valami félrement".
+// Branch 4 replaces the old dead-end "already_in_other_couple" error that told
+// users to sign out and use a different account — which was wrong: the merge
+// path exists precisely for this situation.
 
 import type { CoupleInvite } from "@shared/types";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { Skeleton } from "../components/ui";
+import { useEntryPrompt } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { coupleApi } from "../lib/endpoints";
@@ -26,12 +30,17 @@ export default function InvitePage() {
   const { t } = useT();
   useDocumentMeta("seo.invite_title", "seo.invite_description");
   const navigate = useNavigate();
+  const promptEntry = useEntryPrompt();
   const [invite, setInvite] = useState<{
     invite: CoupleInvite;
     couple_display_name: string | null;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
+  // true when the logged-in user already has their own workspace and needs
+  // the merge flow rather than the plain accept.
+  const [mergeNeeded, setMergeNeeded] = useState(false);
+  const [merging, setMerging] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -48,20 +57,6 @@ export default function InvitePage() {
       });
   }, [token, t]);
 
-  function errorFromAccept(e: unknown): string {
-    if (!(e instanceof ApiError)) return t("common.error_generic");
-    if (e.status === 410) return t("invite.expired");
-    if (e.status === 404) return t("invite.couple_gone");
-    const code = (e.detail as { code?: string } | null)?.code;
-    if (code === "already_in_other_couple") return t("invite.already_in_other_couple");
-    if (code === "couple_full") return t("invite.couple_full");
-    // "already_in_this_couple" shouldn't reach here — the own-invite branch
-    // below renders share UI instead of the accept button. If it does (e.g.
-    // race window), the per-couple message is still right.
-    if (code === "already_in_this_couple") return t("invite.own_invite_body", { email: "—" });
-    return t("common.error_generic");
-  }
-
   async function onAccept() {
     if (!token) return;
     setAccepting(true);
@@ -70,14 +65,50 @@ export default function InvitePage() {
       await refresh();
       navigate("/app", { replace: true });
     } catch (e) {
-      setError(errorFromAccept(e));
+      if (e instanceof ApiError) {
+        const code = (e.detail as { code?: string } | null)?.code;
+        if (code === "already_in_other_couple") {
+          // Don't surface a dead-end error — switch to the merge UI instead.
+          setMergeNeeded(true);
+          setAccepting(false);
+          return;
+        }
+        if (e.status === 410) { setError(t("invite.expired")); setAccepting(false); return; }
+        if (e.status === 404) { setError(t("invite.couple_gone")); setAccepting(false); return; }
+        if (code === "couple_full") { setError(t("invite.couple_full")); setAccepting(false); return; }
+        if (code === "already_in_this_couple") { setError(t("invite.own_invite_body", { email: "—" })); setAccepting(false); return; }
+      }
+      setError(t("common.error_generic"));
       setAccepting(false);
     }
   }
 
-  // Build the shareable link the same way the dashboard does so the copy
-  // button surfaces an identical URL (origin + path), avoiding "wait, why's
-  // this different from the one I copied earlier?" confusion.
+  async function onMerge() {
+    if (!token) return;
+    const phrase = "MERGE";
+    const result = await promptEntry({
+      title: t("invite.merge_confirm_title"),
+      label: t("invite.merge_confirm_label"),
+      placeholder: phrase,
+      helperText: t("invite.merge_confirm_help"),
+      confirmLabel: t("invite.merge_confirm_button"),
+      cancelLabel: t("common.cancel"),
+      validate: (v) =>
+        v.trim().toUpperCase() === phrase ? null : t("invite.merge_confirm_mismatch"),
+    });
+    if (result === null) return;
+    setMerging(true);
+    try {
+      await coupleApi.acceptInviteMerge(token);
+      await refresh();
+      navigate("/app", { replace: true });
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setMerging(false);
+    }
+  }
+
   const inviteUrl =
     typeof window !== "undefined" && token ? `${window.location.origin}/invite/${token}` : "";
   function onCopy() {
@@ -126,6 +157,23 @@ export default function InvitePage() {
                   {copied ? t("invite.own_invite_copied") : t("invite.own_invite_copy")}
                 </button>
               </div>
+            </>
+          ) : mergeNeeded ? (
+            <>
+              <h1 className="break-words hyphens-auto">{t("invite.title")}</h1>
+              <p className="mt-3 text-sm text-ink-700 break-words hyphens-auto">
+                {t("invite.merge_from_invite_body", {
+                  couple: invite.couple_display_name ?? "—",
+                })}
+              </p>
+              <button
+                type="button"
+                className="btn-accent btn-lg mt-6 w-full"
+                onClick={onMerge}
+                disabled={merging}
+              >
+                {merging ? t("invite.merge_running") : t("invite.merge_banner_cta")}
+              </button>
             </>
           ) : (
             <>

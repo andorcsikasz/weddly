@@ -1021,6 +1021,9 @@ export interface LocaleMessages {
     already_in_other_couple: string;
     couple_full: string;
     couple_gone: string;
+    /** Shown on the invite page when a logged-in user with their own workspace
+     *  visits a valid invite. Replaces the dead-end error with merge context. */
+    merge_from_invite_body: string;
     /** Dashboard banner shown when the user has a solo workspace AND there's
      *  a pending partner-invite addressed to their email. Accepting it via
      *  the merge flow purges their solo workspace and links them as partner
