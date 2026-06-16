@@ -394,7 +394,7 @@ function FilmModal({
         </div>
       }
     >
-      <form id="film-modal-form" onSubmit={handleSubmit} className="space-y-5">
+      <form id="film-modal-form" onSubmit={handleSubmit} className="space-y-3.5">
         <div>
           <label className="mb-1 block text-sm font-medium text-ink-700 dark:text-paper-200">
             {t("media.film_settings_name")}{" "}
@@ -770,7 +770,7 @@ export default function MediaPage() {
                 </button>
 
                 {/* Title overlay — bottom left */}
-                <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">
+                <div className="absolute bottom-0 left-0 right-0 p-4 pb-4">
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-paper-400">
                     Wedding Film
                   </p>
@@ -799,7 +799,7 @@ export default function MediaPage() {
 
             {/* ── Stats row ─────────────────────────────────────────── */}
             <div className="grid grid-cols-3 divide-x divide-umber-800 border-b border-umber-800">
-              <div className="flex flex-col items-center py-5 text-center">
+              <div className="flex flex-col items-center py-3 text-center">
                 <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
                   {album.photoCount.toLocaleString()}
                 </span>
@@ -807,7 +807,7 @@ export default function MediaPage() {
                   Moments
                 </span>
               </div>
-              <div className="flex flex-col items-center py-5 text-center">
+              <div className="flex flex-col items-center py-3 text-center">
                 <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
                   {countdownStr ?? "--"}
                 </span>
@@ -818,7 +818,7 @@ export default function MediaPage() {
               <button
                 type="button"
                 onClick={() => setShowParticipants((v) => !v)}
-                className="flex flex-col items-center py-5 text-center transition-colors hover:bg-umber-900"
+                className="flex flex-col items-center py-3 text-center transition-colors hover:bg-umber-900"
               >
                 <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
                   {album.participantCount}
@@ -838,11 +838,11 @@ export default function MediaPage() {
 
             {/* ── Action buttons ────────────────────────────────────── */}
             {uploadUrl && (
-              <div className="flex gap-2 p-4">
+              <div className="flex gap-2 px-4 py-3">
                 <a
                   href={photoAlbumApi.qrUrl(album.uploadToken)}
                   download="guest-qr.png"
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-umber-700 bg-umber-900 py-3 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-umber-700 bg-umber-900 py-2.5 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800"
                 >
                   <Download size={14} aria-hidden="true" />
                   Export
@@ -850,7 +850,7 @@ export default function MediaPage() {
                 <button
                   type="button"
                   onClick={() => setShowQr(true)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-umber-700 bg-umber-900 py-3 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-umber-700 bg-umber-900 py-2.5 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800"
                 >
                   <QrCode size={14} aria-hidden="true" />
                   Invite
@@ -859,7 +859,7 @@ export default function MediaPage() {
                   href={uploadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-paper-50 py-3 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-paper-50 py-2.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
                 >
                   <Camera size={14} aria-hidden="true" />
                   Camera
@@ -869,7 +869,7 @@ export default function MediaPage() {
 
             {/* ── Privacy notice ────────────────────────────────────── */}
             {uploadUrl && (
-              <div className="mx-4 mb-3 flex items-center gap-2.5 rounded-xl border border-umber-800 bg-umber-900/60 px-4 py-3">
+              <div className="mx-4 mb-2 flex items-center gap-2.5 rounded-xl border border-umber-800 bg-umber-900/60 px-4 py-2">
                 <Lock size={13} className="shrink-0 text-umber-400" aria-hidden="true" />
                 <span className="text-xs text-paper-400">Only the host can see everyone's photos until reveal</span>
               </div>
@@ -877,12 +877,12 @@ export default function MediaPage() {
 
             {/* ── Couple upload ─────────────────────────────────────── */}
             {uploadUrl && (
-              <div className="px-4 pb-4">
+              <div className="px-4 pb-3">
                 <button
                   type="button"
                   disabled={coupleUploading}
                   onClick={() => coupleUploadRef.current?.click()}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-umber-700 bg-umber-900 py-3 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800 disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-umber-700 bg-umber-900 py-2.5 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800 disabled:opacity-60"
                 >
                   <Upload size={15} aria-hidden="true" />
                   {coupleUploadProgress
@@ -928,8 +928,8 @@ export default function MediaPage() {
             )}
 
             {/* ── Gallery strip ─────────────────────────────────────── */}
-            <div className="border-t border-umber-800 px-4 pb-4 pt-4">
-              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+            <div className="border-t border-umber-800 px-4 pb-3 pt-3">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                 Recent photos
               </p>
               <div className="columns-2 gap-2 space-y-2">
@@ -967,7 +967,7 @@ export default function MediaPage() {
 
             {/* ── Settings (iOS rows) ───────────────────────────────── */}
             <div className="border-t border-umber-800">
-              <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+              <p className="px-5 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                 {t("media.film_settings_title")}
               </p>
               {settingsRows.map((row, i) => (
@@ -975,7 +975,7 @@ export default function MediaPage() {
                   <button
                     type="button"
                     onClick={() => setShowFilmModal(true)}
-                    className="flex w-full items-center gap-3.5 px-5 py-3.5 text-left transition-colors hover:bg-umber-900"
+                    className="flex w-full items-center gap-3.5 px-5 py-2.5 text-left transition-colors hover:bg-umber-900"
                   >
                     <span className="shrink-0 text-umber-400">{row.icon}</span>
                     <span className="flex-1 text-sm text-paper-300">{row.label}</span>
@@ -996,8 +996,8 @@ export default function MediaPage() {
 
             {/* ── Guest link ────────────────────────────────────────── */}
             {uploadUrl && (
-              <div className="border-t border-umber-800 px-5 py-4">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+              <div className="border-t border-umber-800 px-5 py-3">
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                   Guest link
                 </p>
                 <div className="flex items-center gap-2 rounded-xl border border-umber-800 bg-umber-900 px-3 py-2.5">
@@ -1035,7 +1035,7 @@ export default function MediaPage() {
                   className="absolute inset-0"
                   style={{ background: "rgba(15,10,7,0.5)" }}
                 />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 p-8 text-center">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-umber-700 bg-umber-900">
                     <Film size={22} className="text-umber-400" aria-hidden="true" />
                   </div>
@@ -1065,7 +1065,7 @@ export default function MediaPage() {
                 { n: "2", title: t("media.film_how_2_title"), body: t("media.film_how_2_body") },
                 { n: "3", title: t("media.film_how_3_title"), body: t("media.film_how_3_body") },
               ].map((s) => (
-                <div key={s.n} className="px-4 py-5">
+                <div key={s.n} className="px-4 py-3">
                   <span className="font-grotesk text-xs font-bold text-umber-400">{s.n}</span>
                   <p className="mt-1.5 text-xs font-semibold text-paper-300">{s.title}</p>
                   <p className="mt-1 text-xs leading-relaxed text-paper-400">{s.body}</p>
@@ -1080,12 +1080,12 @@ export default function MediaPage() {
           ref={photographerRowRef}
           className="border-t border-umber-800"
         >
-          <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+          <p className="px-5 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
             {t("media.photographer_title")}
           </p>
           {editing ? (
             <form
-              className="px-5 pb-5 pt-2"
+              className="px-5 pb-3 pt-2"
               onSubmit={(e) => {
                 e.preventDefault();
                 savePhotographerLink(draft);
@@ -1126,7 +1126,7 @@ export default function MediaPage() {
               )}
             </form>
           ) : (
-            <div className="flex items-center gap-3.5 px-5 pb-5 pt-3">
+            <div className="flex items-center gap-3.5 px-5 pb-3 pt-2">
               <Camera size={15} className="shrink-0 text-umber-400" aria-hidden="true" />
               {photographerUrl ? (
                 <>
@@ -1168,7 +1168,7 @@ export default function MediaPage() {
         </div>
 
         {/* ── Reveal gallery teaser (coming soon) ───────────────────── */}
-        <div className="flex items-center gap-3.5 border-t border-umber-800 px-5 py-4 opacity-50">
+        <div className="flex items-center gap-3.5 border-t border-umber-800 px-5 py-3 opacity-50">
           <Share2 size={15} className="shrink-0 text-paper-500" aria-hidden="true" />
           <span className="flex-1 text-sm text-paper-500">{t("media.to_guests_title")}</span>
           <span className="rounded-full border border-umber-600 px-2.5 py-0.5 text-[10px] font-medium text-paper-500">
