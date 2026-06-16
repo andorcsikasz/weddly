@@ -928,6 +928,7 @@ export default function MediaPage() {
             )}
 
             {/* ── Gallery strip ─────────────────────────────────────── */}
+            {album.photoCount > 0 && (
             <div className="border-t border-umber-800 px-4 pb-3 pt-3">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                 Recent photos
@@ -964,6 +965,7 @@ export default function MediaPage() {
                 })}
               </div>
             </div>
+            )}
 
             {/* ── Settings (iOS rows) ───────────────────────────────── */}
             <div className="border-t border-umber-800">
