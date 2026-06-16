@@ -692,7 +692,6 @@ export default function MediaPage() {
       ]
     : [];
 
-  const extraPhotos = album ? Math.max(0, album.photoCount - DEMO_STRIP.length) : 0;
   const countdownStr = album?.eventEndsAt
     ? formatPreciseCountdown(Math.max(0, album.eventEndsAt - Date.now()))
     : null;
@@ -927,45 +926,6 @@ export default function MediaPage() {
               </div>
             )}
 
-            {/* ── Gallery strip ─────────────────────────────────────── */}
-            {album.photoCount > 0 && (
-            <div className="border-t border-umber-800 px-4 pb-3 pt-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
-                Recent photos
-              </p>
-              <div className="columns-2 gap-2 space-y-2">
-                {DEMO_STRIP.map((src, i) => {
-                  const isLast = i === DEMO_STRIP.length - 1 && extraPhotos > 0;
-                  const demoNames = ["Maria K.", "David S.", "Anna B."];
-                  return (
-                    <div
-                      key={src}
-                      className="relative overflow-hidden rounded-xl break-inside-avoid"
-                    >
-                      <img
-                        src={src}
-                        alt=""
-                        className="w-full object-cover"
-                        aria-hidden="true"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2.5 pb-2 pt-6">
-                        <span className="text-[9px] font-medium text-paper-100">
-                          {demoNames[i]}
-                        </span>
-                      </div>
-                      {isLast && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                          <span className="font-grotesk text-xl font-semibold text-paper-50">
-                            +{extraPhotos}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            )}
 
             {/* ── Settings (iOS rows) ───────────────────────────────── */}
             <div className="border-t border-umber-800">
