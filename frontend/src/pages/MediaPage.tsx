@@ -1007,7 +1007,7 @@ export default function MediaPage() {
         {/* ── Photographer row (always visible) ─────────────────────── */}
         <div
           ref={photographerRowRef}
-          className="border-t-2 border-dashed border-umber-700 mt-1"
+          className="border-t-2 border-dashed border-umber-600 mt-2"
         >
           <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
             {t("media.photographer_title")}
