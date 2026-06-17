@@ -2976,9 +2976,13 @@ function SegmentButton({
       disabled={disabled}
       aria-pressed={active}
       aria-label={iconOnly ? label : undefined}
-      title={iconOnly ? label : undefined}
-      className={`${base} ${toneCls} disabled:cursor-not-allowed disabled:opacity-50`}
+      className={`${base} ${toneCls} disabled:cursor-not-allowed disabled:opacity-50${iconOnly ? " group relative" : ""}`}
     >
+      {iconOnly && (
+        <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-[11px] text-white opacity-0 group-hover:opacity-100">
+          {label}
+        </span>
+      )}
       {icon}
       {!iconOnly && <span className="truncate">{label}</span>}
     </button>
