@@ -226,7 +226,7 @@ export default function SeatingPage() {
   }, []);
 
   // Two-mode seating workspace: "edit" = drag/resize tables; "seat" = assign guests to chairs.
-  const [mode, setMode] = useState<"edit" | "seat">("edit");
+  const [mode, setMode] = useState<"edit" | "seat">("seat");
 
   const guestById = useMemo(() => new Map(guests.map((g) => [g.id, g])), [guests]);
   const seatedIds = useMemo(() => new Set(assignments.map((a) => a.guest_id)), [assignments]);
@@ -1439,7 +1439,7 @@ export default function SeatingPage() {
                       <li key={slot.role}>
                         <DraggableGuest
                           guest={slot.guest}
-                          tapMode={tapMode || true}
+                          tapMode={tapMode}
                           selected={selectedGuestId === slot.guest.id}
                           onTap={handleTapGuest}
                           partnerRole={slot.role}
@@ -1461,7 +1461,7 @@ export default function SeatingPage() {
                         <HouseholdGroup
                           householdId={entry.householdId}
                           guests={entry.guests}
-                          tapMode={tapMode || true}
+                          tapMode={tapMode}
                           selected={selectedHouseholdId === entry.householdId}
                           onTap={handleTapHousehold}
                           onUnlink={(id) => {
@@ -1483,7 +1483,7 @@ export default function SeatingPage() {
                       <li key={entry.guest.id}>
                         <DraggableGuest
                           guest={entry.guest}
-                          tapMode={tapMode || true}
+                          tapMode={tapMode}
                           selected={selectedGuestId === entry.guest.id}
                           onTap={handleTapGuest}
                           partnerRole={partnerRole(entry.guest)}
