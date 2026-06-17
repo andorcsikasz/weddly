@@ -333,14 +333,14 @@ export default function SchedulePage() {
                 className="flex min-w-0 flex-1 items-start gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
               >
                 <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start gap-0.5 leading-none">
+                  {isDayTwo(event.starts_at_minutes) && (
+                    <span className="text-[10px] font-semibold leading-none text-blush-600 dark:text-blush-400">
+                      +1
+                    </span>
+                  )}
                   <span className="stat-num text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                     {formatHHMM(event.starts_at_minutes)}
                   </span>
-                  {isDayTwo(event.starts_at_minutes) && (
-                    <span className="inline-flex items-center rounded-full bg-blush-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-                      {t("schedule.day_two_badge")}
-                    </span>
-                  )}
                   {event.duration_minutes !== null && event.duration_minutes > 0 && (
                     <span className="stat-num text-[11px] tabular-nums text-ink-400 dark:text-umber-300">
                       –{formatHHMM(event.starts_at_minutes + event.duration_minutes)}
@@ -958,12 +958,12 @@ function ScheduleWandDialog({
                     }`}
                   >
                     <span className="flex min-w-[5rem] shrink-0 flex-col items-start gap-0.5 leading-none tabular-nums">
-                      <span>{formatHHMM(row.starts_at_minutes)}</span>
                       {isDayTwo(row.starts_at_minutes) && (
-                        <span className="inline-flex items-center rounded-full bg-blush-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-                          {t("schedule.day_two_badge")}
+                        <span className="text-[10px] font-semibold leading-none text-blush-600 dark:text-blush-400">
+                          +1
                         </span>
                       )}
+                      <span>{formatHHMM(row.starts_at_minutes)}</span>
                     </span>
                     {/* Title + (conflict-badge OR duration) stacked in one
                      *  flex-1 column with min-w-0 so the title can shrink and
