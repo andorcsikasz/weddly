@@ -388,7 +388,7 @@ export default function SchedulePage() {
                 )
               )}
             <li
-              className={`flex items-center gap-4 px-4 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700 ${propH === null ? "py-3" : ""}`}
+              className={`group flex items-center gap-4 px-4 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700 ${propH === null ? "py-3" : ""}`}
               style={propH !== null ? { height: `${propH}px` } : undefined}
             >
               {/* The big edit hit-area is a `<button>` so keyboard users get
@@ -456,7 +456,7 @@ export default function SchedulePage() {
                   </span>
                 </span>
               </button>
-              <div className="ml-auto flex shrink-0 items-center gap-1">
+              <div className="ml-auto flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
                 <button
                   type="button"
                   aria-label={t("schedule.key_moment_toggle")}
