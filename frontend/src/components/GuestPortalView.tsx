@@ -521,13 +521,11 @@ function ScheduleRow({
   return (
     <li className="flex gap-3">
       <div className="w-20 shrink-0 pt-0.5 text-sm tabular-nums text-ink-700 dark:text-paper-100">
-        <span className="font-medium">{start}</span>
+        <span className="font-medium">
+          {start}
+          {dayTwo && <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">+1</sup>}
+        </span>
         {end && <span className="text-ink-400 dark:text-umber-300"> – {end}</span>}
-        {dayTwo && (
-          <span className="ml-1 rounded-full bg-blush-50 px-1.5 py-0.5 text-[10px] font-medium text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-            {t("guest_portal.schedule_next_day")}
-          </span>
-        )}
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-ink-900 dark:text-paper-50">{event.label}</div>

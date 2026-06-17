@@ -333,13 +333,11 @@ export default function SchedulePage() {
                 className="flex min-w-0 flex-1 items-start gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
               >
                 <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start gap-0.5 leading-none">
-                  {isDayTwo(event.starts_at_minutes) && (
-                    <span className="text-[10px] font-semibold leading-none text-blush-600 dark:text-blush-400">
-                      +1
-                    </span>
-                  )}
                   <span className="stat-num text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                     {formatHHMM(event.starts_at_minutes)}
+                    {isDayTwo(event.starts_at_minutes) && (
+                      <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">+1</sup>
+                    )}
                   </span>
                   {event.duration_minutes !== null && event.duration_minutes > 0 && (
                     <span className="stat-num text-[11px] tabular-nums text-ink-400 dark:text-umber-300">
@@ -958,12 +956,12 @@ function ScheduleWandDialog({
                     }`}
                   >
                     <span className="flex min-w-[5rem] shrink-0 flex-col items-start gap-0.5 leading-none tabular-nums">
-                      {isDayTwo(row.starts_at_minutes) && (
-                        <span className="text-[10px] font-semibold leading-none text-blush-600 dark:text-blush-400">
-                          +1
-                        </span>
-                      )}
-                      <span>{formatHHMM(row.starts_at_minutes)}</span>
+                      <span>
+                        {formatHHMM(row.starts_at_minutes)}
+                        {isDayTwo(row.starts_at_minutes) && (
+                          <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">+1</sup>
+                        )}
+                      </span>
                     </span>
                     {/* Title + (conflict-badge OR duration) stacked in one
                      *  flex-1 column with min-w-0 so the title can shrink and
