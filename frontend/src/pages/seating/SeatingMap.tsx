@@ -906,22 +906,19 @@ function TableShape({
   t,
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
+  const [dragOverTable, setDragOverTable] = useState(false);
+  // Clear the table-body hover highlight when the drag ends (drop or cancel).
+  useEffect(() => {
+    if (!dragOverTable) return;
+    function onDragEnd() { setDragOverTable(false); }
+    window.addEventListener("dragend", onDragEnd);
+    return () => window.removeEventListener("dragend", onDragEnd);
+  }, [dragOverTable]);
   // Half-dimensions used for shape rendering and chair placement.
   const { rx, ry } = halfDims(table);
   const chairs = chairOffsets(table.shape, table.seats, rx, ry);
 
-  // Stationery aesthetic from the landing-page mockup: clean white-ish
-  // table body, dark navy single stroke, blush rounded-rect chairs spaced
-  // just outside the perimeter. Selection swaps the body to a calm espresso
-  // (deep umber) fill with a darker rim AND thickens the stroke so the
-  // active table is unmissable on a crowded floor plan.
-  const strokeClass = isSelected
-    ? "stroke-umber-950 dark:stroke-paper-200"
-    : "stroke-ink-800 dark:stroke-umber-400";
   const strokeWidth = isSelected ? 22 : 14;
-  const fillClass = isSelected
-    ? "fill-umber-900 dark:fill-paper-100"
-    : "fill-paper-50 dark:fill-umber-800";
 
   // Long and head get a softer banquet-bench corner; square stays tighter.
   const rectCorner =
@@ -941,6 +938,26 @@ function TableShape({
   const chairCorner = CHAIR_CORNER_MM;
   const disabledSet = new Set(table.disabled_seats ?? []);
   const babySet = new Set(table.baby_seats ?? []);
+  // First non-disabled, non-occupied seat — used when a guest is dropped
+  // onto the table body instead of a specific chair.
+  const firstFreeSeat: number | null = seatMode
+    ? (() => {
+        for (let i = 0; i < table.seats; i++) {
+          if (!disabledSet.has(i) && !(seatGuests?.has(i) ?? false)) return i;
+        }
+        return null;
+      })()
+    : null;
+  const strokeClass = isSelected
+    ? "stroke-umber-950 dark:stroke-paper-200"
+    : dragOverTable && firstFreeSeat !== null
+      ? "stroke-blush-500 dark:stroke-blush-400"
+      : "stroke-ink-800 dark:stroke-umber-400";
+  const fillClass = isSelected
+    ? "fill-umber-900 dark:fill-paper-100"
+    : dragOverTable && firstFreeSeat !== null
+      ? "fill-blush-100 dark:fill-blush-400/20"
+      : "fill-paper-50 dark:fill-umber-800";
   // Centre of chair sits just outside the table edge with a fixed gap.
   const chairPushMm = chairHeightMm / 2 + 40;
 
@@ -978,6 +995,33 @@ function TableShape({
       transform={`translate(${cx} ${cy}) rotate(${rotation})`}
       data-seating-table={table.id}
       onPointerDown={seatMode ? undefined : onPointerDown}
+      onDragOver={
+        seatMode && firstFreeSeat !== null
+          ? (e: React.DragEvent<SVGGElement>) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              if (!dragOverTable) setDragOverTable(true);
+            }
+          : undefined
+      }
+      onDragLeave={
+        seatMode
+          ? (e: React.DragEvent<SVGGElement>) => {
+              if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
+                setDragOverTable(false);
+              }
+            }
+          : undefined
+      }
+      onDrop={
+        seatMode && firstFreeSeat !== null
+          ? (e: React.DragEvent<SVGGElement>) => {
+              e.preventDefault();
+              setDragOverTable(false);
+              onDropSeat?.(firstFreeSeat, e);
+            }
+          : undefined
+      }
       onKeyDown={(e) => {
         if (seatMode) return;
         if (e.key !== "Enter" && e.key !== " ") return;
@@ -1105,6 +1149,7 @@ function TableShape({
                     e.preventDefault();
                     e.stopPropagation();
                     setDragOverSeat(null);
+                    setDragOverTable(false);
                     onDropSeat?.(i, e);
                   }
                 : undefined
