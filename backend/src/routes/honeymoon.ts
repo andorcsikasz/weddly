@@ -40,9 +40,14 @@ const WIKI_UA = { "User-Agent": "Weddly/1.0 (https://weddly.co)" };
 // the component's max render width; going higher inflates download size.
 const MAX_WIDTH = 1280;
 
-// Filename patterns that indicate a non-photo (map, marker, seal, flag …).
+// Patterns in filenames that mean the file is NOT a travel photo.
+// Includes audio/video extensions, historical/cartographic content, satellite
+// imagery, OSM renders, administrative graphics, and non-image media.
 const NON_PHOTO_RE =
-  /marker|locator|location|_map[._]|\.svg\b|seal|flag|emblem|coat_of_arms|coat-of-arms|logo/i;
+  /marker|locator|location|_map[._]|\.svg\b|seal|flag|emblem|coat_of_arms|coat-of-arms|logo|atlas|chart|portolan|ESA|satellite|aerial|OSM|\.ogg\b|\.wav\b|\.mp3\b|\.mp4\b|\.webm\b|\.ogv\b/i;
+
+// Photo file extensions we accept (excludes SVG, audio, video, etc.)
+const PHOTO_EXT_RE = /\.(jpe?g|png|webp)$/i;
 
 function cityKey(city: string): string {
   return city.toLowerCase().trim();
@@ -55,10 +60,10 @@ function citySlug(city: string): string {
     .replace(/^-|-$/g, "");
 }
 
-/** Extract a bare filename (e.g. "Bali_panorama.jpg") from a Wikimedia thumb
+/** Extract a bare filename (e.g. "Funchal_Pico.jpg") from a Wikimedia thumb
  *  URL. Returns null when the URL doesn't match the expected path shape. */
 function filenameFromThumbUrl(url: string): string | null {
-  // Shape: …/thumb/<hash>/<filename>/<Npx-filename>
+  // Shape: …/thumb/<hash>/<filename>/<Npx-filename>[?query]
   const m = url.match(/\/thumb\/[^/]+\/[^/]+\/([^/?#]+)\/\d+px-/);
   return m?.[1] ? decodeURIComponent(m[1]) : null;
 }
@@ -98,9 +103,51 @@ async function commonsImageUrl(fileTitle: string): Promise<string | null> {
   return null;
 }
 
-/** Pick the first travel-photo-looking File title from the Wikipedia media
- *  list, then resolve it to the best available URL via Commons imageinfo. */
-async function mediaListPhoto(city: string): Promise<string | null> {
+function isTravelPhoto(title: string): boolean {
+  return PHOTO_EXT_RE.test(title) && !NON_PHOTO_RE.test(title);
+}
+
+/** Try the Wikivoyage summary first (travel-curated, always a scenic photo),
+ *  then its media-list. Returns the Commons imageinfo URL for the best match,
+ *  or null if Wikivoyage has no article for this destination. */
+async function wikivoyagePhoto(city: string): Promise<string | null> {
+  try {
+    const r = await fetch(
+      `https://en.wikivoyage.org/api/rest_v1/page/summary/${encodeURIComponent(city)}`,
+      { headers: WIKI_UA },
+    );
+    if (!r.ok) return null;
+    const data = (await r.json()) as { thumbnail?: { source: string } };
+    const src = data?.thumbnail?.source ?? null;
+    if (src && isTravelPhoto(filenameFromThumbUrl(src) ?? "")) {
+      const filename = filenameFromThumbUrl(src)!;
+      const url = await commonsImageUrl(filename);
+      if (url) return url;
+    }
+    // Fall through to Wikivoyage media-list.
+    const mr = await fetch(
+      `https://en.wikivoyage.org/api/rest_v1/page/media-list/${encodeURIComponent(city)}`,
+      { headers: WIKI_UA },
+    );
+    if (!mr.ok) return null;
+    const mdata = (await mr.json()) as {
+      items?: { title?: string; srcset?: { src: string }[] }[];
+    };
+    for (const item of mdata.items ?? []) {
+      const title = item.title ?? "";
+      if (!isTravelPhoto(title)) continue;
+      if (!item.srcset?.length) continue;
+      return commonsImageUrl(title);
+    }
+  } catch {
+    // fall through
+  }
+  return null;
+}
+
+/** Pick the first travel-photo-looking file from the Wikipedia media list.
+ *  Wikipedia is the fallback when Wikivoyage has no article. */
+async function wikipediaMediaListPhoto(city: string): Promise<string | null> {
   try {
     const r = await fetch(
       `https://en.wikipedia.org/api/rest_v1/page/media-list/${encodeURIComponent(city)}`,
@@ -112,7 +159,7 @@ async function mediaListPhoto(city: string): Promise<string | null> {
     };
     for (const item of data.items ?? []) {
       const title = item.title ?? "";
-      if (NON_PHOTO_RE.test(title)) continue;
+      if (!isTravelPhoto(title)) continue;
       if (!item.srcset?.length) continue;
       return commonsImageUrl(title);
     }
@@ -122,26 +169,37 @@ async function mediaListPhoto(city: string): Promise<string | null> {
   return null;
 }
 
-/** Resolve the best-quality photo URL for a city name. Uses the Wikipedia page
- *  summary thumbnail when it looks like a real photo, otherwise falls back to
- *  the article media list. All URLs are resolved via Commons imageinfo to get
- *  the highest available resolution up to MAX_WIDTH. */
-async function resolveWikimediaUrl(city: string): Promise<string | null> {
+/** Resolve the best-quality tourist photo for a destination city.
+ *  Source priority: Wikivoyage (travel-curated) → Wikipedia summary → Wikipedia media-list.
+ *  All URLs resolve through Commons imageinfo to get full resolution (up to MAX_WIDTH). */
+async function resolveDestinationPhoto(city: string): Promise<string | null> {
+  // 1. Wikivoyage — purpose-built travel wiki, photos are always scenic/tourist.
+  const voyageUrl = await wikivoyagePhoto(city);
+  if (voyageUrl) return voyageUrl;
+
+  // 2. Wikipedia page summary thumbnail (works well for many cities).
   try {
     const r = await fetch(
       `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(city)}`,
       { headers: WIKI_UA },
     );
-    if (!r.ok) return null;
-    const data = (await r.json()) as { thumbnail?: { source: string } };
-    const src = data?.thumbnail?.source ?? null;
-    if (!src || NON_PHOTO_RE.test(src)) return mediaListPhoto(city);
-    const filename = filenameFromThumbUrl(src);
-    if (!filename) return mediaListPhoto(city);
-    return (await commonsImageUrl(filename)) ?? mediaListPhoto(city);
+    if (r.ok) {
+      const data = (await r.json()) as { thumbnail?: { source: string } };
+      const src = data?.thumbnail?.source ?? null;
+      if (src) {
+        const filename = filenameFromThumbUrl(src);
+        if (filename && isTravelPhoto(filename)) {
+          const url = await commonsImageUrl(filename);
+          if (url) return url;
+        }
+      }
+    }
   } catch {
-    return null;
+    // fall through
   }
+
+  // 3. Wikipedia media-list — last resort.
+  return wikipediaMediaListPhoto(city);
 }
 
 const DEST_PHOTO_DIR = "destination-photos";
@@ -208,8 +266,8 @@ async function handleDestinationPhoto(ctx: Ctx): Promise<Response> {
     db.run("DELETE FROM destination_photo_cache WHERE city = ?", [key]);
   }
 
-  // Resolve from Wikipedia and download.
-  const remoteUrl = await resolveWikimediaUrl(city);
+  // Resolve from Wikivoyage / Wikipedia and download.
+  const remoteUrl = await resolveDestinationPhoto(city);
   if (!remoteUrl) return json({ photo_url: null });
   const localPath = await downloadAndCache(city, remoteUrl);
   return json({ photo_url: localPath });
