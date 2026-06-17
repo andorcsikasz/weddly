@@ -36,12 +36,14 @@ import type { Couple } from "@shared/types";
 import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
 import { Check, Download, Eye, Loader2, Pencil } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ComingSoon } from "../components/ComingSoon";
 import { InfoHint } from "../components/InfoHint";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { Link, useLocation } from "react-router-dom";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import {
   coupleApi,
   fetchPdfBlob,
@@ -183,8 +185,11 @@ function FontChip({
 }
 
 export default function DesignPage() {
+  const { user } = useAuth();
   const { t, locale } = useT();
   const toast = useToast();
+
+  if (!user?.is_admin) return <ComingSoon />;
 
   const [couple, setCouple] = useState<Couple | null>(null);
   const [design, setDesign] = useState<CoupleDesign>(() => resolveDesign(null));

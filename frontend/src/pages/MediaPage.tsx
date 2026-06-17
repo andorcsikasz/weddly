@@ -22,7 +22,9 @@ import {
 } from "lucide-react";
 import React, { type FormEvent, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { ComingSoon } from "../components/ComingSoon";
 import { Dialog, useToast } from "../components/ui";
+import { useAuth } from "../lib/auth";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
@@ -511,8 +513,11 @@ function FilmModal({
 // --- page -------------------------------------------------------------------
 
 export default function MediaPage() {
+  const { user } = useAuth();
   const { t } = useT();
   const toast = useToast();
+
+  if (!user?.is_admin) return <ComingSoon />;
   const location = useLocation();
 
   const [couple, setCouple] = useState<Couple | null>(null);

@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Eye,
   Globe,
+  HardHat,
   MessageCircle,
   Move,
   Palette,
@@ -44,6 +45,7 @@ import { WeddingSiteView } from "../components/WeddingSiteView";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import {
   coupleApi,
   coupleSupplierApi,
@@ -430,9 +432,21 @@ function CoverPositioner({
 }
 
 export default function GuestPageEditorPage() {
+  const { user } = useAuth();
   const { t, locale } = useT();
   useDocumentMeta("seo.guest_page_title", "seo.guest_page_description");
   const toast = useToast();
+
+  if (!user?.is_admin)
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-6 text-ink-900 dark:text-paper-100">
+        <HardHat size={36} strokeWidth={1.3} aria-hidden />
+        <p className="font-serif text-3xl italic">Coming soon..</p>
+        <p className="text-sm text-ink-600 dark:text-umber-300">
+          Our best people are on it. All three of them.
+        </p>
+      </div>
+    );
   const confirm = useConfirm();
   const navigate = useNavigate();
 
