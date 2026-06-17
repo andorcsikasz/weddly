@@ -116,6 +116,13 @@ function gapPx(minutes: number): number {
   return Math.min(80, Math.max(12, Math.round(minutes * 1.5)));
 }
 
+/** Height in pixels for a timed event row in proportional view.
+ *  Same 1.5 px/min scale as gapPx so events and gaps read on a shared axis.
+ *  Minimum 48 px so even a very short event has room for its label. */
+function eventRowPx(minutes: number): number {
+  return Math.max(48, Math.round(minutes * 1.5));
+}
+
 export default function SchedulePage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.schedule_title", "seo.schedule_description");
@@ -357,6 +364,12 @@ export default function SchedulePage() {
               proportional && prev !== null
                 ? Math.max(0, event.starts_at_minutes - eventEndMinutes(prev))
                 : 0;
+            // In proportional mode, timed events get a height scaled to their
+            // duration; open-ended events stay at the natural py-3 row height.
+            const propH =
+              proportional && event.duration_minutes !== null
+                ? eventRowPx(event.duration_minutes)
+                : null;
             return (
             <Fragment key={event.id}>
               {proportional && i > 0 && (
@@ -375,7 +388,8 @@ export default function SchedulePage() {
                 )
               )}
             <li
-              className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700"
+              className={`flex items-center gap-4 px-4 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700 ${propH === null ? "py-3" : ""}`}
+              style={propH !== null ? { height: `${propH}px` } : undefined}
             >
               {/* The big edit hit-area is a `<button>` so keyboard users get
                   a real Tab stop. We keep the delete action as a sibling
