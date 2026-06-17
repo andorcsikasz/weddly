@@ -896,8 +896,8 @@ export default function BudgetPage() {
 
       <section className="mt-8">
         <div className="mb-3">
-          <h2 className="font-grotesk">{t("budget.lines_title")}</h2>
-          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
+          <h2 className="font-grotesk tracking-tight leading-tight">{t("budget.lines_title")}</h2>
+          <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
         </div>
 
         {/* Mobile: each line is a stacked card so the planned/actual inputs
@@ -1194,14 +1194,14 @@ export default function BudgetPage() {
       </section>
 
       <section className="mt-8">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-grotesk">{t("budget.snapshots_title")}</h2>
-            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+            <h2 className="font-grotesk tracking-tight leading-tight">{t("budget.snapshots_title")}</h2>
+            <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">
               {t("budget.snapshots_sub")}
             </p>
           </div>
-          <button type="button" className="btn-outline" onClick={saveSnapshot}>
+          <button type="button" className="btn-outline shrink-0" onClick={saveSnapshot}>
             <Save size={16} /> {t("budget.save_snapshot")}
           </button>
         </div>
