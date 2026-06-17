@@ -489,6 +489,28 @@ export default function DashboardPage() {
   const confirmedGuests = guests.filter((g) => g.rsvp_status === "yes");
   const seatedConfirmed = confirmedGuests.filter((g) => seatedGuestIds.has(g.id)).length;
 
+  // ── Setup nudges — derived from couple state; injected into UpcomingTasksCard
+  //    until each condition is met. Disappear automatically, no DB rows needed.
+  const setupNudges = [
+    { key: "task_lock_guests", done: couple.guest_count_goal.kind !== "tbd", to: "/onboarding" },
+    { key: "task_lock_budget", done: couple.budget_goal.kind !== "tbd", to: "/onboarding" },
+    { key: "task_set_date", done: couple.wedding_date_goal.kind === "exact", to: "/onboarding" },
+    ...(couple.is_demo
+      ? []
+      : [
+          {
+            key: "task_invite_partner",
+            done: couple.partner_b_id !== null || invite !== null,
+            to: "#invite-partner",
+          },
+        ]),
+    { key: "task_add_guests", done: totalGuests > 0, to: "/app/guests" },
+    { key: "task_plan_budget", done: lines.length > 0, to: "/app/budget" },
+    { key: "task_add_tables", done: tableCount > 0, to: "/app/seating" },
+  ]
+    .filter((n) => !n.done)
+    .map((n) => ({ label: t(`dashboard.${n.key}`), to: n.to }));
+
   // ── Invite-partner inline card ────────────────────────────────────────
   const inviteUrl = invite ? `${window.location.origin}/invite/${invite.token}` : null;
   // Did the invite go out by email? Either we just sent it this session
@@ -1224,7 +1246,7 @@ export default function DashboardPage() {
       {!dayOfMode && (
         <>
           {/* ── Couple's own upcoming tasks — self-fetching; renders its own empty states. ── */}
-          <UpcomingTasksCard weddingDate={couple.wedding_date} />
+          <UpcomingTasksCard weddingDate={couple.wedding_date} nudges={setupNudges} />
 
           {/* ── Cost planning panel — full-width, inline-edit per category. ── */}
           <section className="mb-8">

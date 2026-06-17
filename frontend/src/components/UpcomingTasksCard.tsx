@@ -46,7 +46,13 @@ function selectUpcoming(items: PlanningItem[]): PlanningItem[] {
     .slice(0, MAX_ROWS);
 }
 
-export function UpcomingTasksCard({ weddingDate }: { weddingDate: string | null }) {
+export function UpcomingTasksCard({
+  weddingDate,
+  nudges,
+}: {
+  weddingDate: string | null;
+  nudges?: Array<{ label: string; to: string }>;
+}) {
   const { t } = useT();
   const toast = useToast();
   const [items, setItems] = useState<PlanningItem[] | null>(null);
@@ -114,6 +120,27 @@ export function UpcomingTasksCard({ weddingDate }: { weddingDate: string | null 
     };
   }
 
+  const hasNudges = nudges && nudges.length > 0;
+  const nudgeRowCls =
+    "flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-umber-900 transition hover:bg-paper-100 dark:text-paper-50 dark:hover:bg-umber-700";
+
+  function nudgeRow(nudge: { label: string; to: string }) {
+    const inner = (
+      <>
+        <ArrowRight size={14} className="shrink-0 text-umber-400 dark:text-umber-500" aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate">{nudge.label}</span>
+        <span className="shrink-0 rounded-full bg-paper-200 px-2 py-0.5 text-[11px] font-medium text-umber-600 dark:bg-umber-700 dark:text-umber-300">
+          {t("dashboard.upcoming_setup_badge")}
+        </span>
+      </>
+    );
+    return nudge.to.startsWith("#") ? (
+      <a href={nudge.to} className={nudgeRowCls}>{inner}</a>
+    ) : (
+      <Link to={nudge.to} className={nudgeRowCls}>{inner}</Link>
+    );
+  }
+
   return (
     <section className="card mb-8 p-0 font-grotesk">
       <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4">
@@ -128,7 +155,7 @@ export function UpcomingTasksCard({ weddingDate }: { weddingDate: string | null 
       </div>
 
       <div className="px-4 pb-4 md:px-6 md:pb-6">
-        {upcoming.length === 0 ? (
+        {upcoming.length === 0 && !hasNudges ? (
           // Two distinct empties: a couple with no tasks at all gets a nudge to
           // start; one whose tasks are all done/undated gets reassurance.
           hasAnyTask ? (
@@ -158,52 +185,66 @@ export function UpcomingTasksCard({ weddingDate }: { weddingDate: string | null 
           )
         ) : (
           <>
-            <ul className="grid gap-1">
-              {upcoming.map((item) => {
-                const chip = dueChip(item.due_date as string);
-                return (
-                  <li
-                    key={item.id}
-                    className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-umber-900 transition hover:bg-paper-100 dark:text-paper-50 dark:hover:bg-umber-700"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleDone(item)}
-                      aria-label={t("common.done")}
-                      className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-paper-400 bg-white transition hover:border-blush-500 dark:border-umber-600 dark:bg-umber-800"
-                    />
-                    <Link to="/app/planning" className="flex min-w-0 flex-1 items-center gap-2">
-                      <span className="min-w-0 flex-1 truncate">{item.title}</span>
-                      {item.priority === 2 && (
-                        <span
-                          className="shrink-0 font-bold text-blush-700 dark:text-blush-300"
-                          aria-hidden="true"
-                        >
-                          !!
-                        </span>
-                      )}
-                      {item.assignee && (
-                        <span className="shrink-0 truncate text-xs text-umber-500 dark:text-umber-300">
-                          {item.assignee}
-                        </span>
-                      )}
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.tone}`}
+            {hasNudges && (
+              <ul className="grid gap-1">
+                {nudges.map((nudge) => (
+                  <li key={nudge.label}>{nudgeRow(nudge)}</li>
+                ))}
+              </ul>
+            )}
+            {hasNudges && upcoming.length > 0 && (
+              <hr className="my-2 border-paper-200 dark:border-umber-700" />
+            )}
+            {upcoming.length > 0 && (
+              <>
+                <ul className="grid gap-1">
+                  {upcoming.map((item) => {
+                    const chip = dueChip(item.due_date as string);
+                    return (
+                      <li
+                        key={item.id}
+                        className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-umber-900 transition hover:bg-paper-100 dark:text-paper-50 dark:hover:bg-umber-700"
                       >
-                        {chip.label}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-            <Link
-              to="/app/planning"
-              className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blush-700 hover:underline dark:text-blush-300"
-            >
-              <span>{t("dashboard.upcoming_view_all")}</span>
-              <ArrowRight size={14} aria-hidden="true" />
-            </Link>
+                        <button
+                          type="button"
+                          onClick={() => toggleDone(item)}
+                          aria-label={t("common.done")}
+                          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-paper-400 bg-white transition hover:border-blush-500 dark:border-umber-600 dark:bg-umber-800"
+                        />
+                        <Link to="/app/planning" className="flex min-w-0 flex-1 items-center gap-2">
+                          <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                          {item.priority === 2 && (
+                            <span
+                              className="shrink-0 font-bold text-blush-700 dark:text-blush-300"
+                              aria-hidden="true"
+                            >
+                              !!
+                            </span>
+                          )}
+                          {item.assignee && (
+                            <span className="shrink-0 truncate text-xs text-umber-500 dark:text-umber-300">
+                              {item.assignee}
+                            </span>
+                          )}
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.tone}`}
+                          >
+                            {chip.label}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <Link
+                  to="/app/planning"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blush-700 hover:underline dark:text-blush-300"
+                >
+                  <span>{t("dashboard.upcoming_view_all")}</span>
+                  <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+              </>
+            )}
           </>
         )}
       </div>

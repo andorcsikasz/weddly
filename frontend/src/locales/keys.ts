@@ -882,6 +882,16 @@ export interface LocaleMessages {
     spend_actual: string;
     spend_cap: string;
     cost_per_guest: string;
+    /** Setup-nudge task labels — shown in UpcomingTasksCard until done. */
+    task_set_date: string;
+    task_lock_budget: string;
+    task_lock_guests: string;
+    task_invite_partner: string;
+    task_add_guests: string;
+    task_plan_budget: string;
+    task_add_tables: string;
+    /** Badge on setup-nudge rows inside the upcoming-tasks card. */
+    upcoming_setup_badge: string;
     /** "Your upcoming tasks" — the couple's own dated planning items. */
     upcoming_title: string;
     /** Trailing chip on the upcoming-tasks card: "{n} upcoming". */
