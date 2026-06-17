@@ -48,10 +48,13 @@ async function handleDestinationPhoto(ctx: Ctx): Promise<Response> {
     const data = (await r.json()) as { thumbnail?: { source: string } };
     const src = data?.thumbnail?.source ?? null;
     if (!src) return json({ photo_url: null });
-    // Upscale: Wikimedia Commons thumbnails embed the width in the URL path;
-    // replacing it with 800px gives a sharper cover photo without fetching the
-    // full-resolution original (which can be tens of MB).
-    return json({ photo_url: src.replace(/\/\d+px-/, "/800px-") });
+    // Try to upscale: Wikimedia Commons thumbnails embed the width in the URL
+    // path. SVG-derived thumbnails may return 400 for widths beyond their
+    // generated set, so we probe the 800px variant and fall back to the
+    // original if it doesn't exist.
+    const upscaled = src.replace(/\/\d+px-/, "/800px-");
+    const probe = await fetch(upscaled, { method: "HEAD" }).catch(() => null);
+    return json({ photo_url: probe?.ok ? upscaled : src });
   } catch {
     return json({ photo_url: null });
   }
