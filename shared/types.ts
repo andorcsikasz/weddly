@@ -402,6 +402,9 @@ export interface Couple {
    *  estimate. `null` falls back to a locale-aware default at read-time
    *  (HU → BUD, EN → VIE) so most couples never need to set it. */
   honeymoon_origin_iata: string | null;
+  /** Custom cover photo uploaded by the couple for the honeymoon destination
+   *  widget. When set, takes priority over the auto-generated Wikipedia photo. */
+  honeymoon_cover_path: string | null;
   /** Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
    *  Default `false` — when off, neither the public household RSVP form nor
    *  the in-app GuestDrawer renders the question. Flipping it on from the

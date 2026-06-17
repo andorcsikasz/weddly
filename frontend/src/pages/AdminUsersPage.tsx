@@ -62,11 +62,6 @@ function formatRelative(
   return formatDate(unixMs, locale);
 }
 
-/** Returns true for workspaces/users created in the last 48 hours. */
-function isNew(createdAt: number): boolean {
-  return Date.now() - createdAt < 48 * 60 * 60 * 1000;
-}
-
 function workspaceLabel(c: AdminCoupleView): string {
   if (c.display_name && c.display_name.trim()) return c.display_name;
   const a = c.bride_name?.trim();
@@ -84,6 +79,19 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserView[]>([]);
   const [couples, setCouples] = useState<AdminCoupleView[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Track which users the admin has already seen. On mount we read the
+  // timestamp of the previous visit (or fall back to 48h ago on first open)
+  // and immediately stamp the current visit so the next open won't re-highlight
+  // anything seen today.
+  const NEW_SEEN_KEY = "weddly.admin.users_last_seen";
+  const [newThreshold] = useState<number>(() => {
+    const stored = localStorage.getItem(NEW_SEEN_KEY);
+    return stored ? Number(stored) : Date.now() - 48 * 60 * 60 * 1000;
+  });
+  useEffect(() => {
+    localStorage.setItem(NEW_SEEN_KEY, String(Date.now()));
+  }, []);
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [verifySentIds, setVerifySentIds] = useState<Set<number>>(new Set());
   // Solo-workspace "nudge partner invite" — local pending state for the
@@ -835,7 +843,7 @@ export default function AdminUsersPage() {
     return (
       <li
         key={c.id}
-        className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(c.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
+        className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${c.created_at > newThreshold ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
       >
         <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] md:items-center">
           <div className="flex items-center gap-1.5 whitespace-nowrap">
@@ -1500,7 +1508,7 @@ export default function AdminUsersPage() {
                             <>
                               <tr
                                 key={u.id}
-                                className={`border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40${isNew(u.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
+                                className={`border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40${u.created_at > newThreshold ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
                               >
                                 <td className="px-3 py-2">
                                   {renderUserInfo(u, { showLastActive: true })}

@@ -808,7 +808,6 @@ function ReceivedGiftsTable({
         <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_guest")}</span>
         <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_gift")}</span>
         <span className="w-32 shrink-0">{t("wishlist_editor.received_col_category")}</span>
-        <span className="w-36 shrink-0">{t("wishlist_editor.received_col_amount")}</span>
         <span className="min-w-0 flex-1">{t("wishlist_editor.received_col_note")}</span>
         <span className="w-8 shrink-0" aria-hidden />
       </div>
@@ -862,9 +861,8 @@ function ReceivedGiftsTable({
                   ))}
                 </select>
               </div>
-              {/* Amount — only relevant for money category */}
-              <div className="w-36 shrink-0">
-                {r.category === "money" ? (
+              {r.category === "money" && (
+                <div className="w-36 shrink-0">
                   <div className="flex items-center gap-1">
                     <Banknote
                       size={13}
@@ -897,10 +895,8 @@ function ReceivedGiftsTable({
                     />
                     <span className="shrink-0 text-xs text-ink-400 dark:text-umber-400">{cur}</span>
                   </div>
-                ) : (
-                  <span />
-                )}
-              </div>
+                </div>
+              )}
               <input
                 type="text"
                 className={`${cellInput} min-w-0 flex-1 font-grotesk`}

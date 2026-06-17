@@ -5,10 +5,10 @@
 // when Amadeus credentials aren't set.
 
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { CONFIG } from "../config";
-import { getCoupleForUser } from "../domain/couples";
+import { type CoupleRow, getCoupleForUser, toCouple } from "../domain/couples";
 import { getFlightEstimate } from "../domain/honeymoon_flights";
 import { buildKonzinfoInfo } from "../domain/konzinfo";
 import { db } from "../db";

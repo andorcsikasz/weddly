@@ -1196,13 +1196,15 @@ addColumnIfMissing(
 );
 addColumnIfMissing("photo_albums", "event_ends_at", "event_ends_at INTEGER");
 addColumnIfMissing("photo_albums", "guest_cap", "guest_cap INTEGER NOT NULL DEFAULT 15");
-// Bump existing free-tier albums from the old trial cap of 5 to 15.
-db.exec("UPDATE photo_albums SET guest_cap = 15 WHERE guest_cap = 5 AND paid_at IS NULL");
 addColumnIfMissing("photo_albums", "stripe_payment_id", "stripe_payment_id TEXT");
 addColumnIfMissing("photo_albums", "stripe_tier", "stripe_tier TEXT");
 addColumnIfMissing("photo_albums", "paid_at", "paid_at INTEGER");
+// Bump existing free-tier albums from the old trial cap of 5 to 15.
+// Must run after paid_at column exists.
+db.exec("UPDATE photo_albums SET guest_cap = 15 WHERE guest_cap = 5 AND paid_at IS NULL");
 addColumnIfMissing("photo_uploads", "filter_applied", "filter_applied TEXT");
 addColumnIfMissing("photo_uploads", "thumbnail_path", "thumbnail_path TEXT");
+addColumnIfMissing("couples", "honeymoon_cover_path", "honeymoon_cover_path TEXT");
 
 // film_devices index lives here (not schema.sql) per project rule.
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_album ON film_devices(album_id)");

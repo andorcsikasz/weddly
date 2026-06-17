@@ -138,6 +138,7 @@ export interface CoupleRow {
   honeymoon_start_date: string | null;
   honeymoon_end_date: string | null;
   honeymoon_origin_iata: string | null;
+  honeymoon_cover_path: string | null;
   planning_count: number | null;
   frozen_categories_json: string;
   currency: string | null;
@@ -384,6 +385,7 @@ export function toCouple(row: CoupleRow): Couple {
     honeymoon_start_date: row.honeymoon_start_date,
     honeymoon_end_date: row.honeymoon_end_date,
     honeymoon_origin_iata: row.honeymoon_origin_iata,
+    honeymoon_cover_path: row.honeymoon_cover_path ?? null,
     planning_count: row.planning_count,
     frozen_categories: parseFrozenCategoriesJson(row.frozen_categories_json ?? "[]"),
     currency: rowToCurrency(row.currency),
