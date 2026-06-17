@@ -2302,6 +2302,9 @@ const hu: LocaleMessages = {
     open_ended: "Nyitott időtartam",
     time_conflict: "Erre az időre már „{label}” van — válassz másik időpontot.",
     wand_item_conflict: "Ütközik egy már létező programmal",
+    view_proportional: "Időarányos",
+    view_list: "Lista",
+    gap_label: "{n} perc szünet",
   },
   guests: {
     title: "Vendéglista",

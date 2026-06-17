@@ -16,6 +16,7 @@ import {
   SCHEDULE_MIN_DURATION,
 } from "@shared/schedule";
 import {
+  AlignJustify,
   Briefcase,
   Clock,
   Download,
@@ -29,7 +30,7 @@ import {
   Wand2,
   X,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Fragment, type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -109,6 +110,12 @@ function findConflictingEvent(
   return null;
 }
 
+/** Height in pixels for a proportional gap spacer. 1.5 px per minute,
+ *  clamped to [12, 80] so tiny gaps stay visible and huge ones stay compact. */
+function gapPx(minutes: number): number {
+  return Math.min(80, Math.max(12, Math.round(minutes * 1.5)));
+}
+
 export default function SchedulePage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.schedule_title", "seo.schedule_description");
@@ -121,6 +128,7 @@ export default function SchedulePage() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [wandOpen, setWandOpen] = useState(false);
   const [wandApplying, setWandApplying] = useState(false);
+  const [proportional, setProportional] = useState(false);
 
   async function refresh() {
     try {
@@ -275,6 +283,16 @@ export default function SchedulePage() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
+            className={`btn-ghost ${proportional ? "bg-paper-100 text-ink-900 dark:bg-umber-700 dark:text-paper-50" : ""}`}
+            onClick={() => setProportional((p) => !p)}
+            title={proportional ? t("schedule.view_list") : t("schedule.view_proportional")}
+            disabled={sortedEvents.length === 0}
+          >
+            {proportional ? <AlignJustify size={16} /> : <Clock size={16} />}
+            {proportional ? t("schedule.view_list") : t("schedule.view_proportional")}
+          </button>
+          <button
+            type="button"
             className="btn-outline"
             onClick={onDownloadPdf}
             disabled={downloadingPdf || sortedEvents.length === 0}
@@ -316,10 +334,35 @@ export default function SchedulePage() {
           </button>
         </div>
       ) : (
-        <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
-          {sortedEvents.map((event) => (
+        <ul
+          className={`card p-0 ${!proportional ? "divide-y divide-paper-200 dark:divide-umber-700" : ""}`}
+        >
+          {sortedEvents.map((event, i) => {
+            const prev = i > 0 ? (sortedEvents[i - 1] ?? null) : null;
+            const gapMinutes =
+              proportional && prev !== null
+                ? Math.max(0, event.starts_at_minutes - eventEndMinutes(prev))
+                : 0;
+            return (
+            <Fragment key={event.id}>
+              {proportional && i > 0 && (
+                gapMinutes === 0 ? (
+                  <li aria-hidden="true" className="border-t border-paper-200 dark:border-umber-700" />
+                ) : (
+                  <li
+                    aria-hidden="true"
+                    style={{ height: `${gapPx(gapMinutes)}px` }}
+                    className="flex items-center px-4 border-t border-dashed border-paper-200 dark:border-umber-700"
+                  >
+                    {gapMinutes >= 5 && (
+                      <span className="select-none pl-[calc(4.5rem+1rem)] text-[10px] tabular-nums text-ink-400 dark:text-umber-400">
+                        {t("schedule.gap_label", { n: gapMinutes })}
+                      </span>
+                    )}
+                  </li>
+                )
+              )}
             <li
-              key={event.id}
               className="flex items-start gap-4 px-4 py-3 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700"
             >
               {/* The big edit hit-area is a `<button>` so keyboard users get
@@ -422,7 +465,9 @@ export default function SchedulePage() {
                 </button>
               </div>
             </li>
-          ))}
+            </Fragment>
+            );
+          })}
         </ul>
       )}
 

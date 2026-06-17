@@ -2278,6 +2278,9 @@ const en: LocaleMessages = {
     open_ended: "Open-ended",
     time_conflict: "Already booked by “{label}” — pick a different time.",
     wand_item_conflict: "Conflicts with existing event",
+    view_proportional: "Proportional",
+    view_list: "List",
+    gap_label: "{n} min gap",
   },
   guests: {
     title: "Guest list",
