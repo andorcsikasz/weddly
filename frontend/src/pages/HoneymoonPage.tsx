@@ -689,7 +689,12 @@ export default function HoneymoonPage() {
         />
       </section>
 
-      <DestinationCoverPhoto destination={couple?.honeymoon_destination ?? null} />
+      <DestinationCoverPhoto
+        destination={couple?.honeymoon_destination ?? null}
+        customCoverPath={couple?.honeymoon_cover_path ?? null}
+        onUploaded={(c) => setCouple(c)}
+        onReset={() => setCouple((prev) => (prev ? { ...prev, honeymoon_cover_path: null } : prev))}
+      />
 
       {/* Flight estimate section — hidden until the plane icon on the WHERE
        *  tile is toggled on. Auto-fetches on first open; stays cached until
@@ -991,39 +996,118 @@ function DaysTile({
   );
 }
 
-function DestinationCoverPhoto({ destination }: { destination: string | null }) {
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+function DestinationCoverPhoto({
+  destination,
+  customCoverPath,
+  onUploaded,
+  onReset,
+}: {
+  destination: string | null;
+  customCoverPath: string | null;
+  onUploaded: (couple: Couple) => void;
+  onReset: () => void;
+}) {
+  const { t } = useT();
+  const [autoUrl, setAutoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!destination) {
-      setPhotoUrl(null);
+    if (customCoverPath || !destination) {
+      setAutoUrl(null);
       return;
     }
     const city = (destination.split(",")[0] ?? destination).trim();
     let cancelled = false;
     honeymoonApi
       .destinationPhoto(city)
-      .then((r) => {
-        if (!cancelled) setPhotoUrl(r.photo_url);
-      })
-      .catch(() => {
-        if (!cancelled) setPhotoUrl(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [destination]);
+      .then((r) => { if (!cancelled) setAutoUrl(r.photo_url); })
+      .catch(() => { if (!cancelled) setAutoUrl(null); });
+    return () => { cancelled = true; };
+  }, [destination, customCoverPath]);
 
+  const photoUrl = customCoverPath ?? autoUrl;
   if (!destination || !photoUrl) return null;
 
   const city = (destination.split(",")[0] ?? destination).trim();
+
+  async function handleFile(file: File) {
+    if (uploading) return;
+    setUploading(true);
+    try {
+      const result = await honeymoonApi.uploadCover(file);
+      onUploaded(result.couple);
+    } catch {
+      // silently ignore
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleReset() {
+    await honeymoonApi.deleteCover();
+    onReset();
+  }
+
   return (
-    <div className="relative mt-3 h-40 overflow-hidden rounded-2xl">
+    <div
+      className={`group relative mt-3 h-40 overflow-hidden rounded-2xl${dragging ? " ring-2 ring-blush-400" : ""}`}
+      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        const file = e.dataTransfer.files[0];
+        if (file) void handleFile(file);
+      }}
+    >
       <img src={photoUrl} alt={city} className="h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-ink-900/50 to-transparent" />
       <p className="absolute bottom-3 left-4 font-grotesk text-sm font-semibold text-paper-50">
         {city}
       </p>
+
+      <div
+        className={`absolute inset-0 flex flex-col items-center justify-center gap-2 bg-ink-900/60 transition-opacity${dragging || uploading ? " opacity-100" : " opacity-0 group-hover:opacity-100"}`}
+      >
+        {uploading ? (
+          <span className="font-grotesk text-sm text-paper-50">{t("honeymoon.cover_uploading")}</span>
+        ) : dragging ? (
+          <span className="font-grotesk text-sm text-paper-50">{t("honeymoon.cover_drag")}</span>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="rounded-lg bg-paper-50/20 px-3 py-1.5 font-grotesk text-sm font-medium text-paper-50 backdrop-blur-sm hover:bg-paper-50/30"
+            >
+              {t("honeymoon.cover_upload")}
+            </button>
+            {customCoverPath && (
+              <button
+                type="button"
+                onClick={() => void handleReset()}
+                className="font-grotesk text-xs text-paper-200 underline hover:text-paper-50"
+              >
+                {t("honeymoon.cover_reset")}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleFile(file);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }

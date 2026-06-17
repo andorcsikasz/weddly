@@ -1623,6 +1623,10 @@ const en: LocaleMessages = {
       insurance: "Insurance",
       other: "Other",
     },
+    cover_upload: "Upload photo",
+    cover_drag: "Drop photo here",
+    cover_reset: "Reset to auto",
+    cover_uploading: "Uploading…",
   },
   travel_safety: {
     title: "Travel safety",

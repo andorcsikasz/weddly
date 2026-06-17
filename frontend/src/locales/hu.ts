@@ -1640,6 +1640,10 @@ const hu: LocaleMessages = {
       insurance: "Biztosítás",
       other: "Egyéb",
     },
+    cover_upload: "Fotó feltöltése",
+    cover_drag: "Húzz ide egy fotót",
+    cover_reset: "Visszaállítás automatikusra",
+    cover_uploading: "Feltöltés…",
   },
   travel_safety: {
     title: "Biztonságos utazás",

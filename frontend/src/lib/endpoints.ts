@@ -727,6 +727,19 @@ export const honeymoonApi = {
       "GET",
       `/api/honeymoon/destination-photo?destination=${encodeURIComponent(destination)}`,
     ),
+  uploadCover: async (file: File): Promise<{ couple: Couple }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = getToken();
+    const res = await fetch("/api/honeymoon/cover", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json() as Promise<{ couple: Couple }>;
+  },
+  deleteCover: () => apiFetch<{ ok: true }>("DELETE", "/api/honeymoon/cover"),
 };
 
 /** Day-of run-of-show timeline. Times are minutes from midnight in wedding-

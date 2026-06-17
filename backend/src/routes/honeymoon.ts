@@ -12,7 +12,7 @@ import { type CoupleRow, getCoupleForUser, toCouple } from "../domain/couples";
 import { getFlightEstimate } from "../domain/honeymoon_flights";
 import { buildKonzinfoInfo } from "../domain/konzinfo";
 import { db } from "../db";
-import { type Ctx, json, requireAuth, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
 
 async function handleFlightEstimate(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
@@ -273,8 +273,80 @@ async function handleDestinationPhoto(ctx: Ctx): Promise<Response> {
   return json({ photo_url: localPath });
 }
 
+const MAX_HONEYMOON_COVER_BYTES = 4 * 1024 * 1024;
+const SUPPORTED_COVER_MIMES: Record<string, "jpg" | "png" | "webp"> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+async function handleUploadHoneymoonCover(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple");
+
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
+  });
+  const raw = form.get("file");
+  if (!(raw instanceof File))
+    throw new HttpError(400, "`file` field required", { code: "missing_file" });
+  if (raw.size <= 0) throw new HttpError(400, "Empty file", { code: "empty_file" });
+  if (raw.size > MAX_HONEYMOON_COVER_BYTES)
+    throw new HttpError(413, "File too large (max 4 MB)", { code: "file_too_large" });
+
+  const ext = SUPPORTED_COVER_MIMES[raw.type];
+  if (!ext)
+    throw new HttpError(415, `Unsupported image type: ${raw.type || "unknown"}`, {
+      code: "unsupported_type",
+    });
+
+  const dir = join(CONFIG.uploadsDir, "couples", String(couple.id));
+  await mkdir(dir, { recursive: true });
+
+  for (const e of ["jpg", "png", "webp"] as const) {
+    if (e === ext) continue;
+    const old = join(dir, `honeymoon-cover.${e}`);
+    if (existsSync(old)) await unlink(old).catch(() => {});
+  }
+
+  const filePath = join(dir, `honeymoon-cover.${ext}`);
+  await writeFile(filePath, new Uint8Array(await raw.arrayBuffer()));
+
+  const publicPath = `/uploads/couples/${couple.id}/honeymoon-cover.${ext}`;
+  db.run("UPDATE couples SET honeymoon_cover_path = ? WHERE id = ?", [publicPath, couple.id]);
+
+  const updated = db
+    .query<CoupleRow, [number]>("SELECT * FROM couples WHERE id = ?")
+    .get(couple.id);
+  if (!updated) throw new HttpError(500, "Couple disappeared after update");
+  return json({ couple: toCouple(updated) });
+}
+
+async function handleDeleteHoneymoonCover(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple");
+
+  if (couple.honeymoon_cover_path) {
+    const noQuery = couple.honeymoon_cover_path.split("?")[0] ?? "";
+    if (noQuery.startsWith("/uploads/")) {
+      const rel = noQuery.slice("/uploads/".length);
+      if (!rel.includes("..")) {
+        const diskPath = join(CONFIG.uploadsDir, rel);
+        if (existsSync(diskPath)) await unlink(diskPath).catch(() => {});
+      }
+    }
+    db.run("UPDATE couples SET honeymoon_cover_path = NULL WHERE id = ?", [couple.id]);
+  }
+
+  return json({ ok: true });
+}
+
 export function registerHoneymoonRoutes(router: Router) {
   router.get("/api/honeymoon/flight-estimate", handleFlightEstimate, true);
   router.get("/api/honeymoon/konzinfo", handleKonzinfo, true);
   router.get("/api/honeymoon/destination-photo", handleDestinationPhoto, true);
+  router.post("/api/honeymoon/cover", handleUploadHoneymoonCover, true);
+  router.delete("/api/honeymoon/cover", handleDeleteHoneymoonCover, true);
 }

@@ -1797,6 +1797,10 @@ export interface LocaleMessages {
       insurance: string;
       other: string;
     };
+    cover_upload: string;
+    cover_drag: string;
+    cover_reset: string;
+    cover_uploading: string;
   };
   /** Honeymoon travel-safety block — Hungarian Konzuli Szolgálat (KonzInfo)
    *  country card + pre-trip checklist. Rendered on HoneymoonPage. */
