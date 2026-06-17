@@ -85,6 +85,10 @@ export default function AdminUsersPage() {
   // and immediately stamp the current visit so the next open won't re-highlight
   // anything seen today.
   const NEW_SEEN_KEY = "weddly.admin.users_last_seen";
+  // pageLoadTime is captured once at mount and used to enforce the 30-minute
+  // green window: a user only shows as new if they joined since the last visit
+  // AND within 30 minutes of this page load.
+  const [pageLoadTime] = useState<number>(() => Date.now());
   const [newThreshold] = useState<number>(() => {
     const stored = localStorage.getItem(NEW_SEEN_KEY);
     return stored ? Number(stored) : Date.now() - 48 * 60 * 60 * 1000;
@@ -92,6 +96,8 @@ export default function AdminUsersPage() {
   useEffect(() => {
     localStorage.setItem(NEW_SEEN_KEY, String(Date.now()));
   }, []);
+  const isNew = (createdAt: number) =>
+    createdAt > newThreshold && createdAt > pageLoadTime - 30 * 60 * 1000;
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [verifySentIds, setVerifySentIds] = useState<Set<number>>(new Set());
   // Solo-workspace "nudge partner invite" — local pending state for the
@@ -843,7 +849,7 @@ export default function AdminUsersPage() {
     return (
       <li
         key={c.id}
-        className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${c.created_at > newThreshold ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
+        className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(c.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
       >
         <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] md:items-center">
           <div className="flex items-center gap-1.5 whitespace-nowrap">
@@ -1508,7 +1514,7 @@ export default function AdminUsersPage() {
                             <>
                               <tr
                                 key={u.id}
-                                className={`border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40${u.created_at > newThreshold ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
+                                className={`border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40${isNew(u.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
                               >
                                 <td className="px-3 py-2">
                                   {renderUserInfo(u, { showLastActive: true })}
