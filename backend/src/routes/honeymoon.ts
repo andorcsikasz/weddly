@@ -36,6 +36,9 @@ async function handleKonzinfo(ctx: Ctx): Promise<Response> {
 }
 
 const WIKI_UA = { "User-Agent": "Weddly/1.0 (https://weddly.co)" };
+// Max width we ask Commons for. Capped at 1280 — covers any HiDPI display at
+// the component's max render width; going higher inflates download size.
+const MAX_WIDTH = 1280;
 
 // Filename patterns that indicate a non-photo (map, marker, seal, flag …).
 const NON_PHOTO_RE =
@@ -52,17 +55,51 @@ function citySlug(city: string): string {
     .replace(/^-|-$/g, "");
 }
 
-/** Try to resolve a Wikimedia thumbnail URL to a photo-suitable variant.
- *  Returns the 800px upscaled URL when Wikimedia serves it (200), otherwise
- *  the original URL — ensures we never hand the browser a 400. */
-async function wikimediaPhoto(src: string): Promise<string> {
-  const upscaled = src.replace(/\/\d+px-/, "/800px-");
-  const probe = await fetch(upscaled, { method: "HEAD" }).catch(() => null);
-  return probe?.ok ? upscaled : src;
+/** Extract a bare filename (e.g. "Bali_panorama.jpg") from a Wikimedia thumb
+ *  URL. Returns null when the URL doesn't match the expected path shape. */
+function filenameFromThumbUrl(url: string): string | null {
+  // Shape: …/thumb/<hash>/<filename>/<Npx-filename>
+  const m = url.match(/\/thumb\/[^/]+\/[^/]+\/([^/?#]+)\/\d+px-/);
+  return m?.[1] ? decodeURIComponent(m[1]) : null;
 }
 
-/** Pick the first travel-photo-looking image from the Wikipedia media list.
- *  Skips SVGs, maps, seals, flags, logos, and coats of arms. */
+/** Query the Wikimedia Commons imageinfo API for the best-quality URL at up to
+ *  MAX_WIDTH pixels. If the original is smaller than MAX_WIDTH it returns the
+ *  original (no upscaling). Returns null on any error. */
+async function commonsImageUrl(fileTitle: string): Promise<string | null> {
+  try {
+    const title = fileTitle.startsWith("File:") ? fileTitle : `File:${fileTitle}`;
+    const params = new URLSearchParams({
+      action: "query",
+      titles: title,
+      prop: "imageinfo",
+      iiprop: "url",
+      iiurlwidth: String(MAX_WIDTH),
+      format: "json",
+    });
+    const r = await fetch(
+      `https://commons.wikimedia.org/w/api.php?${params}`,
+      { headers: WIKI_UA },
+    );
+    if (!r.ok) return null;
+    const data = (await r.json()) as {
+      query?: { pages?: Record<string, { imageinfo?: { thumburl?: string; url?: string }[] }> };
+    };
+    const pages = data.query?.pages ?? {};
+    for (const page of Object.values(pages)) {
+      const ii = page.imageinfo?.[0];
+      // thumburl is set when the original exceeds MAX_WIDTH; url is the
+      // original itself when it's already smaller.
+      return ii?.thumburl ?? ii?.url ?? null;
+    }
+  } catch {
+    // fall through
+  }
+  return null;
+}
+
+/** Pick the first travel-photo-looking File title from the Wikipedia media
+ *  list, then resolve it to the best available URL via Commons imageinfo. */
 async function mediaListPhoto(city: string): Promise<string | null> {
   try {
     const r = await fetch(
@@ -76,10 +113,8 @@ async function mediaListPhoto(city: string): Promise<string | null> {
     for (const item of data.items ?? []) {
       const title = item.title ?? "";
       if (NON_PHOTO_RE.test(title)) continue;
-      const src = item.srcset?.at(-1)?.src;
-      if (!src) continue;
-      const abs = src.startsWith("//") ? `https:${src}` : src;
-      return wikimediaPhoto(abs);
+      if (!item.srcset?.length) continue;
+      return commonsImageUrl(title);
     }
   } catch {
     // fall through
@@ -87,7 +122,10 @@ async function mediaListPhoto(city: string): Promise<string | null> {
   return null;
 }
 
-/** Resolve the best Wikipedia photo URL for a city name. */
+/** Resolve the best-quality photo URL for a city name. Uses the Wikipedia page
+ *  summary thumbnail when it looks like a real photo, otherwise falls back to
+ *  the article media list. All URLs are resolved via Commons imageinfo to get
+ *  the highest available resolution up to MAX_WIDTH. */
 async function resolveWikimediaUrl(city: string): Promise<string | null> {
   try {
     const r = await fetch(
@@ -98,7 +136,9 @@ async function resolveWikimediaUrl(city: string): Promise<string | null> {
     const data = (await r.json()) as { thumbnail?: { source: string } };
     const src = data?.thumbnail?.source ?? null;
     if (!src || NON_PHOTO_RE.test(src)) return mediaListPhoto(city);
-    return wikimediaPhoto(src);
+    const filename = filenameFromThumbUrl(src);
+    if (!filename) return mediaListPhoto(city);
+    return (await commonsImageUrl(filename)) ?? mediaListPhoto(city);
   } catch {
     return null;
   }
