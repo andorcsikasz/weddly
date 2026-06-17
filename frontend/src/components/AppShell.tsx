@@ -570,7 +570,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl gap-8 px-4 pb-28 pt-6 sm:px-6 sm:pb-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+      <div className="mx-auto flex max-w-7xl gap-4 px-4 pb-28 pt-6 sm:px-6 sm:pb-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
         {/*
          * Sidebar visibility:
          *   - Phone (<768px): hidden — bottom-nav is the spatial nav.

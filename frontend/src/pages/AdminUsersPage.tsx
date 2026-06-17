@@ -1048,7 +1048,7 @@ export default function AdminUsersPage() {
     );
   }
   const workspaceColumnHeader = (
-    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] gap-4 px-5 eyebrow md:grid">
+    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] gap-4 px-4 eyebrow md:grid">
       <SortBtn col="id">{t("admin.table_workspace_id")}</SortBtn>
       <SortBtn col="name">{t("admin.table_workspace_name")}</SortBtn>
       <SortBtn col="members">{t("admin.table_workspace_members")}</SortBtn>
@@ -1106,7 +1106,7 @@ export default function AdminUsersPage() {
         <>
           <section className="mb-6">
             <AdminSectionHeader title={t("admin.workspaces_section")} />
-            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] gap-4 px-5 eyebrow md:grid">
+            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] gap-4 px-4 eyebrow md:grid">
               <div>{t("admin.table_workspace_id")}</div>
               <div>{t("admin.table_workspace_name")}</div>
               <div>{t("admin.table_workspace_members")}</div>

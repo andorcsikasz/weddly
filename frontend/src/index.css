@@ -705,13 +705,12 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
 
   /* Full-width, no zoom. background-size: 100% auto renders the image at
-     natural proportions (1440×810 at desktop). The section is 100dvh ≈ 900px
-     so the bottom 90px shows the cream background — that is intentional.
-     The full couple scene (bouquet area, dress, groom) is visible without
-     any zoom or crop. Filter adds warmth and depth. */
+     natural proportions (1440×810 at desktop). The element extends 12% below
+     the section so the image fills all the way to the bottom edge (the section
+     clips it via overflow:hidden). Filter adds warmth and depth. */
   .hero-photo-img {
     position: absolute;
-    inset: 0;
+    inset: 0 0 -12% 0;
     background-image: url("/cover-hero.png");
     background-size: 100% auto;
     background-position: center top;
