@@ -211,6 +211,7 @@ function toAdminCouple(
     demo_total_events: totalEvents,
     invite_partner_reminded_at: row.invite_partner_reminded_at ?? null,
     billing: c.billing,
+    wedding_date: row.wedding_date ?? null,
   };
 }
 

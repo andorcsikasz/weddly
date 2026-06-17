@@ -176,6 +176,8 @@ export interface AdminCoupleView {
   /** Subscription / billing snapshot — lets the admin see who's free
    *  (founding / trial) vs paying vs lapsed, and act on it. */
   billing: CoupleBilling;
+  /** ISO date string (YYYY-MM-DD) of the wedding day, or null when not set. */
+  wedding_date: string | null;
 }
 
 // ─── Couples (the workspace) ─────────────────────────────────────────────────

@@ -839,6 +839,8 @@ export interface LocaleMessages {
     budget_ceiling: string;
     pick_up_where: string;
     coming_soon: string;
+    coming_soon_headline: string;
+    coming_soon_body: string;
     feature_budget: string;
     feature_guests: string;
     feature_seating: string;
@@ -4077,6 +4079,7 @@ export interface LocaleMessages {
     table_workspace_id: string;
     table_workspace_name: string;
     table_workspace_members: string;
+    table_workspace_wedding_date: string;
     /** Creation date column on the workspaces list (e.g. "2026. máj. 12."). */
     table_workspace_created: string;
     /** Most recent activity column — coarse "X minutes/hours/days ago" via

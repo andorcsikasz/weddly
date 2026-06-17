@@ -62,6 +62,11 @@ function formatRelative(
   return formatDate(unixMs, locale);
 }
 
+/** Returns true for workspaces/users created in the last 48 hours. */
+function isNew(createdAt: number): boolean {
+  return Date.now() - createdAt < 48 * 60 * 60 * 1000;
+}
+
 function workspaceLabel(c: AdminCoupleView): string {
   if (c.display_name && c.display_name.trim()) return c.display_name;
   const a = c.bride_name?.trim();
@@ -153,7 +158,7 @@ export default function AdminUsersPage() {
   const [soloOpen, setSoloOpen] = useState(true);
   const [orphansOpen, setOrphansOpen] = useState(true);
 
-  type WorkspaceSortKey = "id" | "name" | "members" | "created_at" | "last_seen_at";
+  type WorkspaceSortKey = "id" | "name" | "members" | "wedding_date" | "created_at" | "last_seen_at";
   const [sortKey, setSortKey] = useState<WorkspaceSortKey>("id");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -162,7 +167,7 @@ export default function AdminUsersPage() {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortKey(key);
-      setSortDir(key === "last_seen_at" ? "desc" : "asc");
+      setSortDir(key === "last_seen_at" || key === "wedding_date" ? "asc" : "asc");
     }
   }
 
@@ -178,6 +183,11 @@ export default function AdminUsersPage() {
           const aCount = a.partners.filter((p) => userById.has(p.id)).length;
           const bCount = b.partners.filter((p) => userById.has(p.id)).length;
           return (aCount - bCount) * sign;
+        }
+        case "wedding_date": {
+          const aD = a.wedding_date ?? "9999-99-99";
+          const bD = b.wedding_date ?? "9999-99-99";
+          return aD.localeCompare(bD) * sign;
         }
         case "created_at":
           return (a.created_at - b.created_at) * sign;
@@ -825,9 +835,9 @@ export default function AdminUsersPage() {
     return (
       <li
         key={c.id}
-        className="admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+        className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(c.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
       >
-        <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] md:items-center">
           <div className="flex items-center gap-1.5 whitespace-nowrap">
             <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
               {workspaceId(c)}
@@ -888,6 +898,13 @@ export default function AdminUsersPage() {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+          <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
+            {c.wedding_date ? (
+              <span className="font-medium text-ink-700 dark:text-paper-200">{c.wedding_date}</span>
+            ) : (
+              <span className="text-neutral-400 dark:text-umber-500">—</span>
             )}
           </div>
           <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
@@ -1017,10 +1034,11 @@ export default function AdminUsersPage() {
     );
   }
   const workspaceColumnHeader = (
-    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] gap-4 px-5 eyebrow md:grid">
+    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] gap-4 px-5 eyebrow md:grid">
       <SortBtn col="id">{t("admin.table_workspace_id")}</SortBtn>
       <SortBtn col="name">{t("admin.table_workspace_name")}</SortBtn>
       <SortBtn col="members">{t("admin.table_workspace_members")}</SortBtn>
+      <SortBtn col="wedding_date">{t("admin.table_workspace_wedding_date")}</SortBtn>
       <div>
         <SortBtn col="created_at">{t("admin.table_workspace_created")}</SortBtn>
         <div className="mt-0.5">
@@ -1074,10 +1092,11 @@ export default function AdminUsersPage() {
         <>
           <section className="mb-6">
             <AdminSectionHeader title={t("admin.workspaces_section")} />
-            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] gap-4 px-5 eyebrow md:grid">
+            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] gap-4 px-5 eyebrow md:grid">
               <div>{t("admin.table_workspace_id")}</div>
               <div>{t("admin.table_workspace_name")}</div>
               <div>{t("admin.table_workspace_members")}</div>
+              <div>{t("admin.table_workspace_wedding_date")}</div>
               <div>
                 <div>{t("admin.table_workspace_created")}</div>
                 <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
@@ -1089,13 +1108,14 @@ export default function AdminUsersPage() {
             <ul className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <li key={i} className="admin-card">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_10rem_auto] md:items-center">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_auto] md:items-center">
                     <Skeleton width={56} height={18} rounded="sm" />
                     <Skeleton width={160} height={16} />
                     <div className="flex flex-col gap-1.5">
                       <Skeleton width="80%" height={14} />
                       <Skeleton width="60%" height={12} />
                     </div>
+                    <Skeleton width={64} height={12} />
                     <div className="flex flex-col gap-1">
                       <Skeleton width={96} height={12} />
                       <Skeleton width={72} height={11} />
@@ -1480,7 +1500,7 @@ export default function AdminUsersPage() {
                             <>
                               <tr
                                 key={u.id}
-                                className="border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40"
+                                className={`border-t border-paper-200 transition-colors duration-150 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-700/40${isNew(u.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
                               >
                                 <td className="px-3 py-2">
                                   {renderUserInfo(u, { showLastActive: true })}
