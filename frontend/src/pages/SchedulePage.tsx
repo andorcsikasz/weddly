@@ -280,38 +280,52 @@ export default function SchedulePage() {
           <h1 className="font-grotesk">{t("schedule.title")}</h1>
           <InfoHint text={t("schedule.sub")} />
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="inline-flex items-stretch overflow-hidden rounded-xl border border-paper-300 shadow-sm dark:border-umber-600">
+          {/* Proportional view toggle */}
           <button
             type="button"
-            className={`btn-ghost ${proportional ? "bg-paper-100 text-ink-900 dark:bg-umber-700 dark:text-paper-50" : ""}`}
+            className={`inline-flex h-9 w-10 items-center justify-center transition-colors ${
+              proportional
+                ? "bg-umber-200 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
+                : "text-ink-500 hover:bg-paper-100 hover:text-ink-800 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            }`}
             onClick={() => setProportional((p) => !p)}
             title={proportional ? t("schedule.view_list") : t("schedule.view_proportional")}
+            aria-pressed={proportional}
             disabled={sortedEvents.length === 0}
           >
             {proportional ? <AlignJustify size={16} /> : <Clock size={16} />}
-            {proportional ? t("schedule.view_list") : t("schedule.view_proportional")}
           </button>
+          <div className="w-px self-stretch bg-paper-300 dark:bg-umber-600" />
+          {/* Download PDF */}
           <button
             type="button"
-            className="btn-outline"
+            className="inline-flex h-9 w-10 items-center justify-center text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-800 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
             onClick={onDownloadPdf}
             disabled={downloadingPdf || sortedEvents.length === 0}
+            title={t("schedule.download_pdf")}
           >
             <Download size={16} />
-            {t("schedule.download_pdf")}
           </button>
+          <div className="w-px self-stretch bg-paper-300 dark:bg-umber-600" />
+          {/* Suggest timeline */}
           <button
             type="button"
-            className="btn-ghost"
+            className="inline-flex h-9 w-10 items-center justify-center text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
             onClick={() => setWandOpen(true)}
             title={t("schedule.wand_button_hint")}
           >
-            <Wand2 size={16} aria-hidden="true" />
-            {t("schedule.wand_button")}
+            <Wand2 size={16} />
           </button>
-          <button type="button" className="btn-primary" onClick={() => setEditing({ event: null })}>
+          <div className="w-px self-stretch bg-paper-300 dark:bg-umber-600" />
+          {/* New event — primary slot at the end */}
+          <button
+            type="button"
+            className="inline-flex h-9 w-10 items-center justify-center bg-ink-900 text-paper-50 transition-colors hover:bg-ink-700 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
+            onClick={() => setEditing({ event: null })}
+            title={t("schedule.add_event")}
+          >
             <Plus size={16} />
-            {t("schedule.add_event")}
           </button>
         </div>
       </header>
