@@ -882,20 +882,7 @@ export interface LocaleMessages {
     spend_actual: string;
     spend_cap: string;
     cost_per_guest: string;
-    tasks_title: string;
-    tasks_progress: string;
-    task_set_date: string;
-    task_lock_budget: string;
-    task_lock_guests: string;
-    task_invite_partner: string;
-    task_add_guests: string;
-    task_get_rsvps: string;
-    task_plan_budget: string;
-    task_under_cap: string;
-    task_add_tables: string;
-    task_seat_guests: string;
-    /** "Your upcoming tasks" — the couple's own dated planning items, surfaced
-     *  below the setup checklist. */
+    /** "Your upcoming tasks" — the couple's own dated planning items. */
     upcoming_title: string;
     /** Trailing chip on the upcoming-tasks card: "{n} upcoming". */
     upcoming_count: string;
@@ -925,10 +912,6 @@ export interface LocaleMessages {
       other: string;
       of_total: string;
     };
-    /** "Next action" hero CTA above the KPIs. */
-    next_action_label: string;
-    /** Inline set-date dialog opened from the "Next step: lock the wedding date"
-     *  CTA — keeps the user on the dashboard instead of bouncing to onboarding. */
     set_date_dialog_title: string;
     set_date_dialog_body: string;
     set_date_dialog_save: string;

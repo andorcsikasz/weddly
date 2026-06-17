@@ -177,9 +177,6 @@ export default function DashboardPage() {
   const toast = useToast();
   const { user: currentUser } = useAuth();
   const [data, setData] = useState<Loaded | null | "loading">("loading");
-  // Shared open/closed state for the two side-by-side overview cards (Setup
-  // checklist + RSVP breakdown) so collapsing one collapses both.
-  const [overviewOpen, setOverviewOpen] = useState(true);
   const [rsvpOpen, setRsvpOpen] = useState(false);
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
   const [copied, setCopied] = useState(false);
@@ -491,55 +488,6 @@ export default function DashboardPage() {
   // ── Seating ───────────────────────────────────────────────────────────
   const confirmedGuests = guests.filter((g) => g.rsvp_status === "yes");
   const seatedConfirmed = confirmedGuests.filter((g) => seatedGuestIds.has(g.id)).length;
-
-  // ── Setup checklist (derived — no `tasks` table in v1). ───────────────
-  // `to` lets the "Next step" CTA jump straight to the relevant page.
-  const tasks: { key: string; done: boolean; to?: string }[] = [
-    {
-      key: "task_lock_guests",
-      done: couple.guest_count_goal.kind !== "tbd",
-      to: "/onboarding",
-    },
-    { key: "task_lock_budget", done: couple.budget_goal.kind !== "tbd", to: "/onboarding" },
-    { key: "task_set_date", done: couple.wedding_date_goal.kind === "exact", to: "/onboarding" },
-    // Counts as done once the invite has been sent — partner B's actual
-    // acceptance is reflected elsewhere (partner card on Profile). This
-    // prevents the "Next step" CTA from pointing at a section that we
-    // hide as soon as an invite is in flight.
-    // Omitted in the demo workspace — there's no real partner to invite,
-    // so the row would always sit unchecked and lead nowhere useful.
-    ...(couple.is_demo
-      ? []
-      : [
-          {
-            key: "task_invite_partner",
-            done: couple.partner_b_id !== null || invite !== null,
-            to:
-              couple.partner_b_id !== null || invite !== null ? "/app/profile" : "#invite-partner",
-          },
-        ]),
-    { key: "task_add_guests", done: totalGuests > 0, to: "/app/guests" },
-    { key: "task_plan_budget", done: lines.length > 0, to: "/app/budget" },
-    {
-      key: "task_under_cap",
-      done: cap === null ? false : !overCap && lines.length > 0,
-      to: "/app/budget",
-    },
-    {
-      key: "task_get_rsvps",
-      done: rsvp.yes + rsvp.no + rsvp.maybe > 0,
-      to: "/app/guests",
-    },
-    { key: "task_add_tables", done: tableCount > 0, to: "/app/seating" },
-    {
-      key: "task_seat_guests",
-      done: confirmedGuests.length > 0 && seatedConfirmed === confirmedGuests.length,
-      to: "/app/seating",
-    },
-  ];
-  const tasksDone = tasks.filter((t) => t.done).length;
-  const tasksTotal = tasks.length;
-  const nextTask = tasks.find((task) => !task.done);
 
   // ── Invite-partner inline card ────────────────────────────────────────
   const inviteUrl = invite ? `${window.location.origin}/invite/${invite.token}` : null;
@@ -949,41 +897,6 @@ export default function DashboardPage() {
           </section>
         ))}
 
-      {/* ── Next-action CTA — surfaces the first incomplete checklist item.
-          Hash targets use a plain <a> so the browser scrolls to the section
-          natively; react-router's <Link> swallows the navigation and never
-          scrolls, which made this CTA appear inert. The "lock the wedding
-          date" task is special-cased into a modal so the user doesn't get
-          punted out to /onboarding for a single date field. Hidden in day-of
-          mode where the jumbo check-in panel takes over. ── */}
-      {!dayOfMode &&
-        nextTask &&
-        (nextTask.key === "task_set_date" ? (
-          <button
-            type="button"
-            className="btn-primary mb-6 inline-flex"
-            onClick={() => {
-              setDatePickerDraft(couple.wedding_date_goal.exact_date ?? "");
-              setDatePickerOpen(true);
-            }}
-          >
-            {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
-          </button>
-        ) : nextTask.to ? (
-          nextTask.to.startsWith("#") ? (
-            <a href={nextTask.to} className="btn-primary mb-6 inline-flex">
-              {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
-            </a>
-          ) : (
-            <Link to={nextTask.to} className="btn-primary mb-6 inline-flex">
-              {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
-            </Link>
-          )
-        ) : (
-          <div className="mb-6 inline-flex rounded-xl bg-blush-50 px-4 py-2 text-sm font-medium text-blush-800 dark:bg-blush-400/15 dark:text-blush-300">
-            {t("dashboard.next_action_label", { label: t(`dashboard.${nextTask.key}`) })}
-          </div>
-        ))}
 
       {/* ── Inline wedding-date picker dialog (CTA target). ──────────────
           Reuses the same WeddingDateGoal shape as the header/KPI inline
@@ -1310,108 +1223,7 @@ export default function DashboardPage() {
           stays focused on the jumbo check-in panel. ───────────────── */}
       {!dayOfMode && (
         <>
-          {/* ── Two-column body: tasks + breakdowns ────────────────────── */}
-          {tasksDone < tasksTotal && (
-            <section className="mb-8 grid gap-4 lg:grid-cols-3">
-              {/* Tasks (spans 2/3 on lg). Hidden once all tasks are complete;
-               *  reappears if any task is later undone. On phones this collapses
-               *  behind a disclosure so the dashboard's first scroll isn't
-               *  dominated by an 8-item checklist. */}
-              <MobileCollapsibleCard
-                className="card lg:col-span-2 p-0 font-grotesk"
-                bodyClassName="px-4 pb-4 md:px-6 md:pb-6"
-                open={overviewOpen}
-                onToggle={setOverviewOpen}
-                title={t("dashboard.tasks_title")}
-                trailing={
-                  <span>
-                    {t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
-                  </span>
-                }
-              >
-                <div
-                  className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={tasksTotal}
-                  aria-valuenow={tasksDone}
-                  aria-label={t("dashboard.tasks_progress", { done: tasksDone, total: tasksTotal })}
-                >
-                  <div
-                    className="h-full rounded-full bg-blush-500 transition-all"
-                    style={{ width: `${(tasksDone / tasksTotal) * 100}%` }}
-                  />
-                </div>
-                <ul className="grid gap-1 sm:grid-cols-2">
-                  {tasks.map((task) => {
-                    const tone = task.done
-                      ? "text-umber-500 dark:text-umber-300"
-                      : "text-umber-900 dark:text-paper-50";
-                    const body = (
-                      <>
-                        <span
-                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                            task.done
-                              ? "border-blush-500 bg-blush-500 text-white"
-                              : "border-paper-400 bg-white dark:border-umber-600 dark:bg-umber-800"
-                          }`}
-                        >
-                          {task.done && (
-                            <svg
-                              viewBox="0 0 12 12"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-3 w-3"
-                              aria-hidden="true"
-                            >
-                              <path d="M2.5 6.5L5 9l4.5-5" />
-                            </svg>
-                          )}
-                        </span>
-                        <span
-                          className={
-                            task.done
-                              ? "line-through decoration-ink-300 dark:decoration-umber-600"
-                              : ""
-                          }
-                        >
-                          {t(`dashboard.${task.key}`)}
-                        </span>
-                      </>
-                    );
-                    const rowCls = `flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700 ${tone}`;
-                    return (
-                      <li key={task.key}>
-                        {task.to ? (
-                          task.to.startsWith("#") ? (
-                            <a href={task.to} className={rowCls}>
-                              {body}
-                            </a>
-                          ) : (
-                            <Link to={task.to} className={rowCls}>
-                              {body}
-                            </Link>
-                          )
-                        ) : (
-                          <div
-                            className={`flex items-center gap-2 rounded-lg px-2 py-1 text-sm ${tone}`}
-                          >
-                            {body}
-                          </div>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </MobileCollapsibleCard>
-            </section>
-          )}
-
-          {/* ── Couple's own upcoming tasks — hands off from the setup checklist
-              to the living plan. Self-fetching; renders its own empty states. ── */}
+          {/* ── Couple's own upcoming tasks — self-fetching; renders its own empty states. ── */}
           <UpcomingTasksCard weddingDate={couple.wedding_date} />
 
           {/* ── Cost planning panel — full-width, inline-edit per category. ── */}
