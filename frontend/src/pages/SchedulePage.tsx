@@ -366,18 +366,16 @@ export default function SchedulePage() {
                   <li
                     aria-hidden="true"
                     style={{ height: `${gapPx(gapMinutes)}px` }}
-                    className="flex items-center px-4 border-t border-dashed border-paper-200 dark:border-umber-700"
+                    className="flex items-center border-y border-dashed border-paper-300 bg-paper-100/50 px-4 dark:border-umber-600 dark:bg-umber-800/40"
                   >
-                    {gapMinutes >= 5 && (
-                      <span className="select-none pl-[calc(4.5rem+1rem)] text-[10px] tabular-nums text-ink-400 dark:text-umber-400">
-                        {t("schedule.gap_label", { n: gapMinutes })}
-                      </span>
-                    )}
+                    <span className="select-none pl-[calc(4.5rem+1rem)] text-[10px] tabular-nums text-ink-400 dark:text-umber-400">
+                      {t("schedule.gap_label", { n: gapMinutes })}
+                    </span>
                   </li>
                 )
               )}
             <li
-              className="flex items-start gap-4 px-4 py-3 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700"
+              className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700"
             >
               {/* The big edit hit-area is a `<button>` so keyboard users get
                   a real Tab stop. We keep the delete action as a sibling
@@ -387,7 +385,7 @@ export default function SchedulePage() {
                 type="button"
                 onClick={() => setEditing({ event })}
                 aria-label={t("schedule.edit_event")}
-                className="flex min-w-0 flex-1 items-start gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
+                className="flex min-w-0 flex-1 items-center gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
               >
                 <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start gap-0.5 leading-none">
                   <span className="stat-num text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
