@@ -907,6 +907,8 @@ function TableShape({
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
   const [dragOverTable, setDragOverTable] = useState(false);
+  // Index of the seat currently being dragged OUT of this table (for the ghost visual).
+  const [draggingSeat, setDraggingSeat] = useState<number | null>(null);
   // Clear the table-body hover highlight when the drag ends (drop or cancel).
   useEffect(() => {
     if (!dragOverTable) return;
@@ -1070,19 +1072,22 @@ function TableShape({
         const isOccupied = seatMode ? seatGuest !== null : i < filledSeats;
         const isSelectedSeat = seatMode && seatGuest !== null && seatGuest.id === selectedGuestId;
         const isDragHover = seatMode && dragOverSeat === i;
+        const isDraggingOut = draggingSeat === i;
 
         const fillClassName = isDisabled
           ? "fill-paper-200"
           : seatMode
-            ? isDragHover
-              ? isOccupied
-                ? "fill-blush-700"
-                : "fill-blush-400"
-              : isSelectedSeat
-                ? "fill-blush-600"
-                : isOccupied
-                  ? "fill-ink-700"
-                  : "fill-blush-200"
+            ? isDraggingOut
+              ? "fill-ink-300 dark:fill-umber-600"
+              : isDragHover
+                ? isOccupied
+                  ? "fill-blush-700"
+                  : "fill-blush-400"
+                : isSelectedSeat
+                  ? "fill-blush-600"
+                  : isOccupied
+                    ? "fill-ink-700"
+                    : "fill-blush-200"
             : isOccupied
               ? "fill-ink-800"
               : "fill-blush-300";
@@ -1114,6 +1119,7 @@ function TableShape({
                       JSON.stringify({ guestId: seatGuest!.id }),
                     );
                     e.dataTransfer.effectAllowed = "move";
+                    setDraggingSeat(i);
                     onChairDragStart?.(i, seatGuest!.id);
                   }
                 : undefined
@@ -1121,6 +1127,7 @@ function TableShape({
             onDragEnd={
               canDragOut
                 ? (e: React.DragEvent) => {
+                    setDraggingSeat(null);
                     onChairDragEnd?.(e);
                   }
                 : undefined
@@ -1225,7 +1232,7 @@ function TableShape({
                 dominantBaseline="central"
                 fontSize={seatMode ? chairWidthMm * 0.26 : chairHeightMm * 0.6}
                 fontWeight={600}
-                className={`font-grotesk ${isOccupied ? "fill-paper-50" : seatMode ? "fill-ink-400" : "fill-ink-700"}`}
+                className={`font-grotesk ${isDraggingOut ? "fill-ink-500 dark:fill-umber-400" : isOccupied ? "fill-paper-50" : seatMode ? "fill-ink-400" : "fill-ink-700"}`}
                 style={{ pointerEvents: "none", userSelect: "none" }}
               >
                 {seatMode ? (guestLabel ?? String(i + 1)) : i + 1}
