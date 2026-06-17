@@ -4,9 +4,14 @@
 // route lets us cache + refresh independently and skip the network entirely
 // when Amadeus credentials aren't set.
 
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import { extname, join } from "node:path";
+import { CONFIG } from "../config";
 import { getCoupleForUser } from "../domain/couples";
 import { getFlightEstimate } from "../domain/honeymoon_flights";
 import { buildKonzinfoInfo } from "../domain/konzinfo";
+import { db } from "../db";
 import { type Ctx, json, requireAuth, type Router } from "../lib/http";
 
 async function handleFlightEstimate(ctx: Ctx): Promise<Response> {
@@ -36,6 +41,17 @@ const WIKI_UA = { "User-Agent": "Weddly/1.0 (https://weddly.co)" };
 const NON_PHOTO_RE =
   /marker|locator|location|_map[._]|\.svg\b|seal|flag|emblem|coat_of_arms|coat-of-arms|logo/i;
 
+function cityKey(city: string): string {
+  return city.toLowerCase().trim();
+}
+
+function citySlug(city: string): string {
+  return city
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 /** Try to resolve a Wikimedia thumbnail URL to a photo-suitable variant.
  *  Returns the 800px upscaled URL when Wikimedia serves it (200), otherwise
  *  the original URL — ensures we never hand the browser a 400. */
@@ -60,10 +76,8 @@ async function mediaListPhoto(city: string): Promise<string | null> {
     for (const item of data.items ?? []) {
       const title = item.title ?? "";
       if (NON_PHOTO_RE.test(title)) continue;
-      // Pick the largest srcset entry (last in the array).
       const src = item.srcset?.at(-1)?.src;
       if (!src) continue;
-      // Normalise protocol-relative URLs.
       const abs = src.startsWith("//") ? `https:${src}` : src;
       return wikimediaPhoto(abs);
     }
@@ -73,37 +87,92 @@ async function mediaListPhoto(city: string): Promise<string | null> {
   return null;
 }
 
-/** Wikipedia thumbnail for the honeymoon destination city. Accepts a
- *  `?destination=` query param (the raw destination string; this handler
- *  extracts the first comma-segment as the article title). When the page
- *  summary thumbnail is a map/marker/SVG it falls back to the article media
- *  list and picks the first real travel photo. Always returns
+/** Resolve the best Wikipedia photo URL for a city name. */
+async function resolveWikimediaUrl(city: string): Promise<string | null> {
+  try {
+    const r = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(city)}`,
+      { headers: WIKI_UA },
+    );
+    if (!r.ok) return null;
+    const data = (await r.json()) as { thumbnail?: { source: string } };
+    const src = data?.thumbnail?.source ?? null;
+    if (!src || NON_PHOTO_RE.test(src)) return mediaListPhoto(city);
+    return wikimediaPhoto(src);
+  } catch {
+    return null;
+  }
+}
+
+const DEST_PHOTO_DIR = "destination-photos";
+
+/** Download `remoteUrl` to `uploads/destination-photos/<slug>.<ext>` and
+ *  return the public `/uploads/…` path, or null on any error. */
+async function downloadAndCache(
+  city: string,
+  remoteUrl: string,
+): Promise<string | null> {
+  try {
+    const dir = join(CONFIG.uploadsDir, DEST_PHOTO_DIR);
+    if (!existsSync(dir)) await mkdir(dir, { recursive: true });
+
+    const res = await fetch(remoteUrl);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+
+    // Derive extension from the remote URL (strip query string first).
+    const rawExt = extname(remoteUrl.split("?")[0] ?? "").toLowerCase();
+    const ext = [".jpg", ".jpeg", ".png", ".webp"].includes(rawExt)
+      ? rawExt
+      : ".jpg";
+
+    const filename = `${citySlug(city)}${ext}`;
+    const filePath = join(dir, filename);
+    await writeFile(filePath, new Uint8Array(buf));
+
+    const localPath = `/uploads/${DEST_PHOTO_DIR}/${filename}`;
+    db.run(
+      `INSERT OR REPLACE INTO destination_photo_cache (city, local_path, fetched_at)
+       VALUES (?, ?, strftime('%s','now'))`,
+      [cityKey(city), localPath],
+    );
+    return localPath;
+  } catch {
+    return null;
+  }
+}
+
+/** Wikipedia cover photo for the honeymoon destination. Downloads and caches
+ *  the image locally on first request so subsequent loads are served from our
+ *  own uploads volume rather than Wikimedia. Always returns
  *  `{ photo_url: string | null }` — never errors. */
 async function handleDestinationPhoto(ctx: Ctx): Promise<Response> {
   requireAuth(ctx);
   const destination = ctx.url.searchParams.get("destination");
   if (!destination) return json({ photo_url: null });
   const city = (destination.split(",")[0] ?? destination).trim();
-  try {
-    const r = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(city)}`,
-      { headers: WIKI_UA },
-    );
-    if (!r.ok) return json({ photo_url: null });
-    const data = (await r.json()) as { thumbnail?: { source: string } };
-    const src = data?.thumbnail?.source ?? null;
+  const key = cityKey(city);
 
-    // If there is no thumbnail, or it looks like a map/marker/SVG, try the
-    // media-list to find an actual scenic photo.
-    if (!src || NON_PHOTO_RE.test(src)) {
-      const fallback = await mediaListPhoto(city);
-      return json({ photo_url: fallback });
-    }
+  // Check local cache first.
+  const cached = db
+    .query<{ local_path: string }, [string]>(
+      "SELECT local_path FROM destination_photo_cache WHERE city = ?",
+    )
+    .get(key);
 
-    return json({ photo_url: await wikimediaPhoto(src) });
-  } catch {
-    return json({ photo_url: null });
+  if (cached) {
+    // Verify the file still exists (could be lost after a data migration).
+    const onDisk = join(CONFIG.uploadsDir, cached.local_path.replace(/^\/uploads\//, ""));
+    if (existsSync(onDisk)) return json({ photo_url: cached.local_path });
+    // File missing — evict stale cache entry and re-fetch below.
+    db.run("DELETE FROM destination_photo_cache WHERE city = ?", [key]);
   }
+
+  // Resolve from Wikipedia and download.
+  const remoteUrl = await resolveWikimediaUrl(city);
+  if (!remoteUrl) return json({ photo_url: null });
+  const localPath = await downloadAndCache(city, remoteUrl);
+  return json({ photo_url: localPath });
 }
 
 export function registerHoneymoonRoutes(router: Router) {

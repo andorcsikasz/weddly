@@ -1393,3 +1393,11 @@ CREATE TABLE IF NOT EXISTS film_devices (
   joined_at INTEGER NOT NULL,
   UNIQUE(album_id, device_id)
 );
+
+-- Cache of Wikipedia destination cover photos downloaded to /uploads.
+-- Keyed by the normalised city name (lower-case, stripped).
+CREATE TABLE IF NOT EXISTS destination_photo_cache (
+  city        TEXT    PRIMARY KEY,
+  local_path  TEXT    NOT NULL,
+  fetched_at  INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
