@@ -89,6 +89,10 @@ import type {
   VendorWaitlistAdminView,
   VendorWaitlistEntry,
 } from "@shared/vendor_waitlist";
+import type {
+  DecidePlannerWaitlistInput,
+  PlannerWaitlistAdminView,
+} from "@shared/planner_waitlist";
 import type { CouplePick } from "@shared/picks";
 import type { SavedSupplier } from "@shared/saved";
 import type {
@@ -1434,7 +1438,7 @@ export const adminUserApi = {
    *  for this admin+section so the next badge poll counts only rows authored
    *  AFTER the visit. AppShell fires this on navigation into the matching
    *  /app/admin/{section} path. */
-  markSectionSeen: (section: "suppliers" | "users" | "vendor_waitlist" | "feedback") =>
+  markSectionSeen: (section: "suppliers" | "users" | "vendor_waitlist" | "planner_waitlist" | "feedback") =>
     apiFetch<{ ok: true; section: string; seen_at: number }>(
       "POST",
       "/api/admin/sidebar-badges/seen",
@@ -1604,6 +1608,62 @@ export const vendorWaitlistApi = {
     }
     return JSON.parse(text) as { entry: VendorWaitlistEntry };
   },
+};
+
+export interface SubmitPlannerWaitlistForm {
+  full_name: string;
+  email: string;
+  phone: string;
+  company_name: string | null;
+  city: string | null;
+  years_experience: number | null;
+  message: string | null;
+  privacy_version: string;
+}
+
+export const plannerWaitlistApi = {
+  submit: async (input: SubmitPlannerWaitlistForm): Promise<{ entry: { id: number } }> => {
+    const res = await fetch("/api/planners/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Submit failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as { entry: { id: number } };
+  },
+};
+
+export const adminPlannerWaitlistApi = {
+  list: (status?: string) =>
+    apiFetch<{ entries: PlannerWaitlistAdminView[] }>(
+      "GET",
+      `/api/admin/planner-waitlist${status ? `?status=${status}` : ""}`,
+    ),
+  decide: (id: number, body: DecidePlannerWaitlistInput) =>
+    apiFetch<{ entry: PlannerWaitlistAdminView | null }>(
+      "POST",
+      `/api/admin/planner-waitlist/${id}/decide`,
+      { body: JSON.stringify(body) },
+    ),
+  reopen: (id: number) =>
+    apiFetch<{ entry: PlannerWaitlistAdminView | null }>(
+      "POST",
+      `/api/admin/planner-waitlist/${id}/reopen`,
+    ),
 };
 
 export interface FeedbackInput {

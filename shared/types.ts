@@ -121,6 +121,7 @@ export interface AdminSidebarBadges {
   suppliers: number;
   users: number;
   vendor_waitlist: number;
+  planner_waitlist: number;
   feedback: number;
 }
 

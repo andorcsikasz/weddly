@@ -697,11 +697,12 @@ async function handleResendFlagEmail(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
-type AdminSection = "suppliers" | "users" | "vendor_waitlist" | "feedback";
+type AdminSection = "suppliers" | "users" | "vendor_waitlist" | "planner_waitlist" | "feedback";
 const VALID_SECTIONS: ReadonlySet<AdminSection> = new Set([
   "suppliers",
   "users",
   "vendor_waitlist",
+  "planner_waitlist",
   "feedback",
 ]);
 
@@ -717,6 +718,7 @@ function seenWatermarks(userId: number): Record<AdminSection, number> {
     suppliers: 0,
     users: 0,
     vendor_waitlist: 0,
+    planner_waitlist: 0,
     feedback: 0,
   };
   for (const r of rows) {
@@ -777,6 +779,11 @@ function handleSidebarBadges(ctx: Ctx): Response {
       .prepare("SELECT COUNT(*) AS n FROM vendor_waitlist WHERE status = 'new' AND created_at > ?")
       .get(seen.vendor_waitlist) as { n: number }
   ).n;
+  const planner_waitlist = (
+    db
+      .prepare("SELECT COUNT(*) AS n FROM planner_waitlist WHERE status = 'new' AND created_at > ?")
+      .get(seen.planner_waitlist) as { n: number }
+  ).n;
   const feedback = (
     db
       .prepare(
@@ -784,7 +791,7 @@ function handleSidebarBadges(ctx: Ctx): Response {
       )
       .get(seen.feedback) as { n: number }
   ).n;
-  return json({ suppliers, users, vendor_waitlist, feedback });
+  return json({ suppliers, users, vendor_waitlist, planner_waitlist, feedback });
 }
 
 /** Upsert the admin's `seen_at` for one sidebar section. The frontend

@@ -171,6 +171,12 @@ function PublicHeader() {
             {t("landing.nav_vendors")}
           </Link>
           <Link
+            to="/planners"
+            className="relative px-1 py-1.5 text-sm text-umber-900 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
+          >
+            {t("landing.nav_planners")}
+          </Link>
+          <Link
             to="/rsvp"
             className="relative px-1 py-1.5 text-sm text-umber-900 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
           >
@@ -269,6 +275,14 @@ function PublicHeader() {
             >
               <Store size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
               <span>{t("landing.nav_vendors")}</span>
+            </Link>
+            <Link
+              to="/planners"
+              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              onClick={() => setMenuOpen(false)}
+            >
+              <Store size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
+              <span>{t("landing.nav_planners")}</span>
             </Link>
             <Link
               to="/rsvp"
@@ -448,6 +462,9 @@ function PublicFooter() {
           <FooterColumn title={t("landing.footer_vendors")}>
             <FooterLink to="/vendors">{t("landing.footer_vendors_waitlist")}</FooterLink>
             <FooterLink to="/about">{t("landing.footer_about_link")}</FooterLink>
+          </FooterColumn>
+          <FooterColumn title={t("landing.footer_planners")}>
+            <FooterLink to="/planners">{t("landing.footer_planners_waitlist")}</FooterLink>
           </FooterColumn>
           <FooterColumn title={t("landing.footer_guests")}>
             <button

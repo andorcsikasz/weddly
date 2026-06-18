@@ -1165,6 +1165,9 @@ export interface LocaleMessages {
      *  column (the original `footer_vendors_about` also pointed at
      *  /vendors, creating a duplicate). Now links to /about. */
     footer_about_link: string;
+    footer_planners: string;
+    footer_planners_waitlist: string;
+    nav_planners: string;
     footer_band_prompt: string;
     footer_band_cta: string;
     footer_band_cta_vendor: string;
@@ -3801,6 +3804,7 @@ export interface LocaleMessages {
     nav_suppliers: string;
     nav_users: string;
     nav_waitlist: string;
+    nav_planner_waitlist: string;
     nav_taxonomy: string;
     nav_financial_planner: string;
     nav_email_preview: string;
@@ -6119,5 +6123,46 @@ export interface LocaleMessages {
       faq_q3: string;
       faq_a3: string;
     };
+  };
+  planners: {
+    eyebrow: string;
+    hero_title: string;
+    hero_body: string;
+    step1_title: string;
+    step2_title: string;
+    label_full_name: string;
+    placeholder_full_name: string;
+    label_email: string;
+    placeholder_email: string;
+    label_phone: string;
+    placeholder_phone: string;
+    label_company: string;
+    placeholder_company: string;
+    label_city: string;
+    placeholder_city: string;
+    label_years: string;
+    label_message: string;
+    placeholder_message: string;
+    privacy_consent_prefix: string;
+    privacy_link: string;
+    privacy_consent_suffix: string;
+    submit: string;
+    submitting: string;
+    success_title: string;
+    success_body: string;
+    back_home: string;
+    not_a_planner: string;
+    vendor_link: string;
+    benefit_1_title: string;
+    benefit_1_body: string;
+    benefit_2_title: string;
+    benefit_2_body: string;
+    benefit_3_title: string;
+    benefit_3_body: string;
+    err_full_name: string;
+    err_email: string;
+    err_phone: string;
+    err_years: string;
+    err_privacy: string;
   };
 }

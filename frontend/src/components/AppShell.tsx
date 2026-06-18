@@ -256,6 +256,14 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     group: "inbox",
   },
   {
+    to: "/app/admin/planner-waitlist",
+    labelKey: "admin.nav_planner_waitlist",
+    tabKey: "admin.nav_planner_waitlist",
+    icon: <Inbox size={18} />,
+    badgeKey: "planner_waitlist",
+    group: "inbox",
+  },
+  {
     to: "/app/admin/feedback",
     labelKey: "admin.nav_feedback",
     tabKey: "admin.nav_feedback",
@@ -383,11 +391,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   // mapping mirrors ADMIN_ITEMS' `badgeKey`.
   useEffect(() => {
     if (!user?.is_admin) return;
-    let section: "suppliers" | "users" | "vendor_waitlist" | "feedback" | null = null;
+    let section: "suppliers" | "users" | "vendor_waitlist" | "planner_waitlist" | "feedback" | null = null;
     if (location.pathname.startsWith("/app/admin/suppliers")) section = "suppliers";
     else if (location.pathname.startsWith("/app/admin/users")) section = "users";
     else if (location.pathname.startsWith("/app/admin/vendor-waitlist"))
       section = "vendor_waitlist";
+    else if (location.pathname.startsWith("/app/admin/planner-waitlist"))
+      section = "planner_waitlist";
     else if (location.pathname.startsWith("/app/admin/feedback")) section = "feedback";
     if (!section) return;
     // Optimistic zero — the server roundtrip will catch up in <100ms.

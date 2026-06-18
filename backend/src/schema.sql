@@ -446,6 +446,28 @@ CREATE TABLE IF NOT EXISTS vendor_waitlist (
 );
 CREATE INDEX IF NOT EXISTS idx_vendor_waitlist_status ON vendor_waitlist(status, created_at DESC);
 
+-- Wedding-planner waitlist. Planners are not suppliers — they are a
+-- separate user type with broader workspace access (Phase 2+). Phase 1
+-- is pure data collection so we can qualify the cohort before building
+-- the planner product surface.
+CREATE TABLE IF NOT EXISTS planner_waitlist (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  full_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  company_name TEXT,
+  city TEXT,
+  years_experience INTEGER,
+  message TEXT,
+  status TEXT NOT NULL DEFAULT 'new',  -- 'new' | 'under_review' | 'accepted' | 'rejected'
+  reviewed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at INTEGER,
+  outcome_at INTEGER,
+  notes TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_planner_waitlist_status ON planner_waitlist(status, created_at DESC);
+
 -- Feedback submissions from the in-product "Visszajelzés" dialog. The
 -- dialog is exposed on both the public landing (source='landing') and
 -- the signed-in app shell (source='app'); when the submitter is

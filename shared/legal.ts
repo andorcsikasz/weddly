@@ -15,6 +15,10 @@ export const TERMS_VERSION = "2026-05-18";
  *  documents because the wording on /vendors changes independently. */
 export const VENDOR_BETA_NOTICE_VERSION = "2026-05-18";
 
+/** Disclosure on the planner waitlist form — bumped separately from the
+ *  privacy/terms docs because /planners copy evolves independently. */
+export const PLANNER_WAITLIST_NOTICE_VERSION = "2026-06-18";
+
 /** Discriminator string stored in `user_consents.document`. Matches the
  *  union the backend recognises. */
 export type LegalDocument = "privacy" | "terms" | "vendor_beta_notice";

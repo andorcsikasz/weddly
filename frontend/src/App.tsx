@@ -32,6 +32,7 @@ import RegisterPage from "./pages/RegisterPage";
 import SubscriptionTermsPage from "./pages/SubscriptionTermsPage";
 import TermsPage from "./pages/TermsPage";
 import VendorsPage from "./pages/VendorsPage";
+import PlannersPage from "./pages/PlannersPage";
 
 const AppShellLayout = lazy(() =>
   import("./components/AppShell").then((m) => ({ default: m.AppShellLayout })),
@@ -48,6 +49,7 @@ const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
 const AdminSuppliersPage = lazy(() => import("./pages/AdminSuppliersPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminVendorWaitlistPage = lazy(() => import("./pages/AdminVendorWaitlistPage"));
+const AdminPlannerWaitlistPage = lazy(() => import("./pages/AdminPlannerWaitlistPage"));
 const BudgetPage = lazy(() => import("./pages/BudgetPage"));
 const ChangeEmailPage = lazy(() => import("./pages/ChangeEmailPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
@@ -197,6 +199,14 @@ export default function App() {
           element={
             <Page>
               <VendorsPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/planners"
+          element={
+            <Page>
+              <PlannersPage />
             </Page>
           }
         />
@@ -744,6 +754,16 @@ export default function App() {
               <Page>
                 <RequireAdmin>
                   <AdminVendorWaitlistPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/planner-waitlist"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminPlannerWaitlistPage />
                 </RequireAdmin>
               </Page>
             }

@@ -36,6 +36,7 @@ import { registerAdminFinancialPlannerRoutes } from "./routes/admin_financial_pl
 import { registerAdminSupplierRoutes } from "./routes/admin_suppliers";
 import { registerAdminUserRoutes } from "./routes/admin_users";
 import { registerVendorWaitlistRoutes } from "./routes/vendor_waitlist";
+import { registerPlannerWaitlistRoutes } from "./routes/planner_waitlist";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAuthAppleRoutes } from "./routes/auth_apple";
 import { registerAuthGoogleRoutes } from "./routes/auth_google";
@@ -162,6 +163,7 @@ registerAdminAnalyticsRoutes(router);
 registerAdminEmailPreviewRoutes(router);
 registerAdminFinancialPlannerRoutes(router);
 registerVendorWaitlistRoutes(router);
+registerPlannerWaitlistRoutes(router);
 registerUserCoupleRoutes(router);
 registerUserProfileRoutes(router);
 registerFeedbackRoutes(router);
