@@ -34,6 +34,7 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pill, type PillTone } from "../components/admin";
 import { EUROPE_NAMES, EUROPE_PATHS, EUROPE_VIEWBOX } from "../lib/europeGeo";
+import { EUROPE_ISO_SET, WORLD_NAMES, WORLD_PATHS, WORLD_VIEWBOX } from "../lib/worldGeo";
 import { Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminAnalyticsApi } from "../lib/endpoints";
@@ -1345,10 +1346,12 @@ function AcqDimTable({
   rows,
   keyHeader,
   locale,
+  maxRows,
 }: {
   rows: AcquisitionDimensionRow[];
   keyHeader: string;
   locale: "hu" | "en";
+  maxRows?: number;
 }) {
   const { t } = useT();
   if (rows.length === 0) {
@@ -1358,6 +1361,7 @@ function AcqDimTable({
       </p>
     );
   }
+  const visible = maxRows != null ? rows.slice(0, maxRows) : rows;
   const max = Math.max(0, ...rows.map((r) => r.signups));
   return (
     <div className="overflow-x-auto">
@@ -1371,7 +1375,7 @@ function AcqDimTable({
           </tr>
         </thead>
         <tbody>
-          {rows.slice(0, 10).map((r) => (
+          {visible.map((r) => (
             <tr
               key={r.key ?? "__null__"}
               className="border-t border-paper-200 dark:border-umber-700"
@@ -1526,6 +1530,85 @@ function EuropeChoropleth({
   );
 }
 
+function WorldChoropleth({
+  rows,
+  locale,
+}: {
+  rows: AcquisitionDimensionRow[];
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const counts = new Map<string, number>();
+  let unknown = 0;
+  for (const r of rows) {
+    if (r.key === null) {
+      unknown += r.signups;
+    } else {
+      counts.set(r.key, (counts.get(r.key) ?? 0) + r.signups);
+    }
+  }
+  const max = Math.max(0, ...counts.values());
+  const bucket = (c: number): number => {
+    if (c <= 0) return 0;
+    if (max <= 0) return 1;
+    return Math.min(5, Math.ceil((c / max) * 5));
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <svg
+        viewBox={WORLD_VIEWBOX}
+        className="h-auto w-full"
+        role="img"
+        aria-label={t("admin.analytics_acq_map_title")}
+      >
+        <g strokeWidth={0.4} className="stroke-paper-100 dark:stroke-umber-900">
+          {Object.entries(WORLD_PATHS).map(([iso, d]) => {
+            const c = counts.get(iso) ?? 0;
+            return (
+              <path key={iso} d={d} className={ACQ_CHORO_FILL[bucket(c)]}>
+                <title>{`${WORLD_NAMES[iso] ?? iso}: ${formatNumber(c, locale)}`}</title>
+              </path>
+            );
+          })}
+        </g>
+      </svg>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-neutral-500 dark:text-umber-300">
+        <div className="flex items-center gap-1">
+          <span>{t("admin.analytics_acq_map_less")}</span>
+          {ACQ_CHORO_FILL.slice(1).map((cls) => (
+            <svg key={cls} width="14" height="10" aria-hidden="true">
+              <rect width="14" height="10" rx="2" className={cls} />
+            </svg>
+          ))}
+          <span>{t("admin.analytics_acq_map_more")}</span>
+        </div>
+        {unknown > 0 && (
+          <span>
+            {t("admin.analytics_acq_unknown")}: {formatNumber(unknown, locale)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Picks Europe or World choropleth based on whether any signup comes from
+ *  outside the European country set. Defaults to Europe when all signups are
+ *  either European or unresolved (null country). */
+function AcquisitionChoropleth({
+  rows,
+  locale,
+}: {
+  rows: AcquisitionDimensionRow[];
+  locale: "hu" | "en";
+}) {
+  const hasNonEurope = rows.some((r) => r.key !== null && !EUROPE_ISO_SET.has(r.key));
+  if (hasNonEurope) return <WorldChoropleth rows={rows} locale={locale} />;
+  return <EuropeChoropleth rows={rows} locale={locale} />;
+}
+
 function AcquisitionSection({
   state,
   locale,
@@ -1601,7 +1684,7 @@ function AcquisitionSection({
           subtitle={t("admin.analytics_acq_map_sub")}
         >
           {countryKnown === 0 && <GeoIpNote />}
-          <EuropeChoropleth rows={d.by_country} locale={locale} />
+          <AcquisitionChoropleth rows={d.by_country} locale={locale} />
         </InnerCard>
       </div>
 
@@ -1642,6 +1725,7 @@ function AcquisitionSection({
             rows={campaignsByQuality}
             keyHeader={t("admin.analytics_acq_col_campaign")}
             locale={locale}
+            maxRows={10}
           />
         </InnerCard>
 
