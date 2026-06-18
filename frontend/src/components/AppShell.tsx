@@ -9,6 +9,7 @@ import {
   ChevronsRight,
   ClipboardList,
   Coins,
+  Compass,
   GanttChartSquare,
   Gift,
   Globe,
@@ -27,7 +28,6 @@ import {
   Palette,
   Plane,
   ShieldCheck,
-  Sparkles,
   Store,
   Sun,
   UserCog,
@@ -553,7 +553,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-label={t("tour.aria_label")}
                 title={t("tour.aria_label")}
               >
-                <Sparkles size={18} aria-hidden="true" />
+                <Compass size={18} aria-hidden="true" />
               </button>
             )}
             <button

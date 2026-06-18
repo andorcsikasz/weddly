@@ -5821,6 +5821,18 @@ export interface LocaleMessages {
     seating_body: string;
     design_title: string;
     design_body: string;
+    timeline_title: string;
+    timeline_body: string;
+    logistics_title: string;
+    logistics_body: string;
+    moodboard_title: string;
+    moodboard_body: string;
+    honeymoon_title: string;
+    honeymoon_body: string;
+    media_title: string;
+    media_body: string;
+    wishlist_title: string;
+    wishlist_body: string;
     guest_page_title: string;
     guest_page_body: string;
     step_position: string;

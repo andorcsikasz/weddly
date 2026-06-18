@@ -4,14 +4,20 @@
 
 import {
   Armchair,
+  Bed,
   CalendarClock,
+  Camera,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   Coins,
+  GanttChartSquare,
+  Gift,
   Globe,
+  Image as ImageIcon,
   LayoutDashboard,
   Palette,
+  Plane,
   Store,
   Users,
   X,
@@ -19,6 +25,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "../lib/i18n";
+import { useLocation } from "react-router-dom";
 
 interface TourStep {
   href: string;
@@ -59,6 +66,12 @@ const STEPS: TourStep[] = [
     icon: <ClipboardList size={20} />,
   },
   {
+    href: "/app/timeline",
+    titleKey: "tour.timeline_title",
+    bodyKey: "tour.timeline_body",
+    icon: <GanttChartSquare size={20} />,
+  },
+  {
     href: "/app/schedule",
     titleKey: "tour.schedule_title",
     bodyKey: "tour.schedule_body",
@@ -71,10 +84,40 @@ const STEPS: TourStep[] = [
     icon: <Armchair size={20} />,
   },
   {
+    href: "/app/logistics",
+    titleKey: "tour.logistics_title",
+    bodyKey: "tour.logistics_body",
+    icon: <Bed size={20} />,
+  },
+  {
+    href: "/app/moodboard",
+    titleKey: "tour.moodboard_title",
+    bodyKey: "tour.moodboard_body",
+    icon: <ImageIcon size={20} />,
+  },
+  {
     href: "/app/design",
     titleKey: "tour.design_title",
     bodyKey: "tour.design_body",
     icon: <Palette size={20} />,
+  },
+  {
+    href: "/app/honeymoon",
+    titleKey: "tour.honeymoon_title",
+    bodyKey: "tour.honeymoon_body",
+    icon: <Plane size={20} />,
+  },
+  {
+    href: "/app/media",
+    titleKey: "tour.media_title",
+    bodyKey: "tour.media_body",
+    icon: <Camera size={20} />,
+  },
+  {
+    href: "/app/wishlist",
+    titleKey: "tour.wishlist_title",
+    bodyKey: "tour.wishlist_body",
+    icon: <Gift size={20} />,
   },
   {
     href: "/app/guest-page",
@@ -171,19 +214,23 @@ interface Props {
 
 export function FeatureTour({ open, onClose }: Props) {
   const { t } = useT();
+  const location = useLocation();
   const [stepIndex, setStepIndex] = useState(0);
   const [fade, setFade] = useState<"in" | "out">("in");
   const fadeTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (open) {
-      setStepIndex(0);
+      const matchIdx = STEPS.findIndex((s) =>
+        s.href === "/app" ? location.pathname === "/app" : location.pathname.startsWith(s.href),
+      );
+      setStepIndex(matchIdx >= 0 ? matchIdx : 0);
       setFade("in");
     }
     return () => {
       if (fadeTimer.current) window.clearTimeout(fadeTimer.current);
     };
-  }, [open]);
+  }, [open, location.pathname]);
 
   const step = STEPS[stepIndex];
   const targetRect = useTargetRect(step?.href ?? "", open);
@@ -259,7 +306,7 @@ export function FeatureTour({ open, onClose }: Props) {
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute rounded-xl ring-2 ring-blush-400 ring-offset-1 transition-all duration-300 ease-out dark:ring-blush-300"
+            className="pointer-events-none absolute rounded-xl ring-2 ring-ink-700 ring-offset-1 transition-all duration-300 ease-out dark:ring-paper-100"
             style={spotStyle}
           />
         </>
@@ -281,7 +328,7 @@ export function FeatureTour({ open, onClose }: Props) {
         {/* Icon badge + counter + close */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blush-100 text-blush-700 dark:bg-umber-800 dark:text-blush-300">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink-700 dark:text-paper-200">
               {step.icon}
             </div>
             <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
@@ -319,7 +366,7 @@ export function FeatureTour({ open, onClose }: Props) {
               onClick={() => i !== stepIndex && goTo(i)}
               className={`h-1.5 rounded-full transition-all duration-200 ${
                 i === stepIndex
-                  ? "w-5 bg-blush-500 dark:bg-blush-400"
+                  ? "w-5 bg-ink-900 dark:bg-paper-100"
                   : "w-1.5 bg-paper-400 hover:bg-paper-500 dark:bg-umber-600 dark:hover:bg-umber-500"
               }`}
             />

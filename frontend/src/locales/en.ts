@@ -5249,6 +5249,20 @@ const en: LocaleMessages = {
     design_title: "Design",
     design_body:
       "Curate your visual identity — fonts, colours, patterns and printable stationery templates.",
+    timeline_title: "Timeline",
+    timeline_body: "Work in progress — a Gantt-style booking timeline is on its way.",
+    logistics_title: "Logistics",
+    logistics_body:
+      "Work in progress — accommodation and transfer assignment for your guests is coming soon.",
+    moodboard_title: "Moodboard",
+    moodboard_body: "Work in progress — a visual inspiration board is on its way.",
+    honeymoon_title: "Honeymoon",
+    honeymoon_body: "Work in progress — honeymoon planning tools are coming soon.",
+    media_title: "Photos",
+    media_body: "Work in progress — a shared photo gallery for after the big day is on its way.",
+    wishlist_title: "Wishlist",
+    wishlist_body:
+      "Work in progress — a curated gift wishlist for your guests is coming soon.",
     guest_page_title: "Guest page",
     guest_page_body:
       "Your public wedding page with the date, venue and RSVP link — share it with everyone.",
