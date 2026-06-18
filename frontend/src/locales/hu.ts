@@ -2306,6 +2306,7 @@ const hu: LocaleMessages = {
     time_conflict: "Erre az időre már „{label}” van — válassz másik időpontot.",
     wand_item_conflict: "Ütközik egy már létező programmal",
     view_proportional: "Időarányos",
+    view_timeline: "Idővonal",
     view_list: "Lista",
     gap_label: "{n} perc szünet",
   },

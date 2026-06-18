@@ -2523,6 +2523,7 @@ export interface LocaleMessages {
     /** Label for events with no duration set (duration_minutes is null). */
     open_ended: string;
     view_proportional: string;
+    view_timeline: string;
     view_list: string;
     /** Receives `{n}` — gap in minutes between two consecutive events. */
     gap_label: string;

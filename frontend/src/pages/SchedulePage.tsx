@@ -22,6 +22,7 @@ import {
   Download,
   Infinity,
   MapPin,
+  Milestone,
   Pencil,
   Plus,
   Star,
@@ -135,7 +136,7 @@ export default function SchedulePage() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [wandOpen, setWandOpen] = useState(false);
   const [wandApplying, setWandApplying] = useState(false);
-  const [proportional, setProportional] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "proportional" | "timeline">("list");
 
   async function refresh() {
     try {
@@ -292,16 +293,32 @@ export default function SchedulePage() {
           <button
             type="button"
             className={`inline-flex h-9 w-10 items-center justify-center transition-colors ${
-              proportional
+              viewMode === "proportional"
                 ? "bg-umber-200 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
                 : "text-ink-500 hover:bg-paper-100 hover:text-ink-800 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
             }`}
-            onClick={() => setProportional((p) => !p)}
-            title={proportional ? t("schedule.view_list") : t("schedule.view_proportional")}
-            aria-pressed={proportional}
+            onClick={() => setViewMode((m) => m === "proportional" ? "list" : "proportional")}
+            title={viewMode === "proportional" ? t("schedule.view_list") : t("schedule.view_proportional")}
+            aria-pressed={viewMode === "proportional"}
             disabled={sortedEvents.length === 0}
           >
-            {proportional ? <AlignJustify size={16} /> : <Clock size={16} />}
+            {viewMode === "proportional" ? <AlignJustify size={16} /> : <Clock size={16} />}
+          </button>
+          <div className="w-px self-stretch bg-paper-300 dark:bg-umber-600" />
+          {/* Timeline view toggle */}
+          <button
+            type="button"
+            className={`inline-flex h-9 w-10 items-center justify-center transition-colors ${
+              viewMode === "timeline"
+                ? "bg-umber-200 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
+                : "text-ink-500 hover:bg-paper-100 hover:text-ink-800 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            }`}
+            onClick={() => setViewMode((m) => m === "timeline" ? "list" : "timeline")}
+            title={viewMode === "timeline" ? t("schedule.view_list") : t("schedule.view_timeline")}
+            aria-pressed={viewMode === "timeline"}
+            disabled={sortedEvents.length === 0}
+          >
+            <Milestone size={16} />
           </button>
           <div className="w-px self-stretch bg-paper-300 dark:bg-umber-600" />
           {/* Download PDF */}
@@ -354,26 +371,32 @@ export default function SchedulePage() {
             {t("schedule.wand_button")}
           </button>
         </div>
+      ) : viewMode === "timeline" ? (
+        <ScheduleTimelineView
+          events={sortedEvents}
+          locale={locale}
+          onEdit={(event) => setEditing({ event })}
+        />
       ) : (
         <ul
           data-tour-target="schedule-events"
-          className={`card p-0 ${!proportional ? "divide-y divide-paper-200 dark:divide-umber-700" : ""}`}
+          className={`card p-0 ${viewMode === "list" ? "divide-y divide-paper-200 dark:divide-umber-700" : ""}`}
         >
           {sortedEvents.map((event, i) => {
             const prev = i > 0 ? (sortedEvents[i - 1] ?? null) : null;
             const gapMinutes =
-              proportional && prev !== null
+              viewMode === "proportional" && prev !== null
                 ? Math.max(0, event.starts_at_minutes - eventEndMinutes(prev))
                 : 0;
             // In proportional mode, timed events get a height scaled to their
             // duration; open-ended events stay at the natural py-3 row height.
             const propH =
-              proportional && event.duration_minutes !== null
+              viewMode === "proportional" && event.duration_minutes !== null
                 ? eventRowPx(event.duration_minutes)
                 : null;
             return (
               <Fragment key={event.id}>
-                {proportional &&
+                {viewMode === "proportional" &&
                   i > 0 &&
                   (gapMinutes === 0 ? (
                     <li
@@ -540,6 +563,89 @@ export default function SchedulePage() {
         />
       )}
     </>
+  );
+}
+
+function ScheduleTimelineView({
+  events,
+  locale,
+  onEdit,
+}: {
+  events: ScheduleEvent[];
+  locale: Locale;
+  onEdit: (event: ScheduleEvent) => void;
+}) {
+  return (
+    <div className="card p-6">
+      <div data-tour-target="schedule-events" className="relative mx-auto max-w-md">
+        {/* Dashed center line */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 left-1/2 w-0 -translate-x-px border-l-2 border-dashed border-paper-300 dark:border-umber-600"
+        />
+
+        {/* Top cap */}
+        <div className="relative z-10 mb-3 flex justify-center">
+          <div className="h-5 w-5 rounded-full border-2 border-paper-300 bg-paper-50 dark:border-umber-500 dark:bg-umber-800" />
+        </div>
+
+        {events.map((event, i) => {
+          const isLeft = i % 2 === 0;
+          const end =
+            event.duration_minutes !== null && event.duration_minutes > 0
+              ? formatHHMM(event.starts_at_minutes + event.duration_minutes)
+              : null;
+          const timeLabel = end
+            ? `${formatHHMM(event.starts_at_minutes)} – ${end}`
+            : `${formatHHMM(event.starts_at_minutes)} –`;
+          const day2 = isDayTwo(event.starts_at_minutes);
+
+          const content = (
+            <button
+              type="button"
+              onClick={() => onEdit(event)}
+              className={`block w-full rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 ${isLeft ? "text-right" : "text-left"}`}
+            >
+              <span className="mb-1 inline-block rounded-full border border-paper-200 bg-paper-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-700 dark:border-umber-600 dark:bg-umber-700 dark:text-paper-100">
+                {timeLabel}
+                {day2 && (
+                  <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>
+                )}
+              </span>
+              <div className="text-sm font-bold text-ink-900 dark:text-paper-50">
+                {localizeKnownLabel(event.label, locale)}
+              </div>
+              {event.location && (
+                <div
+                  className={`mt-0.5 flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300 ${isLeft ? "justify-end" : ""}`}
+                >
+                  <MapPin size={11} aria-hidden="true" />
+                  {event.location}
+                </div>
+              )}
+            </button>
+          );
+
+          return (
+            <div key={event.id} className="grid grid-cols-[1fr_2.5rem_1fr] items-start">
+              <div className="py-3 pr-4">{isLeft ? content : null}</div>
+              {/* Dot on the center line */}
+              <div className="relative z-10 flex justify-center pt-[1.1rem]">
+                <div className="h-3 w-3 rounded-full bg-umber-700 dark:bg-umber-400" />
+              </div>
+              <div className="py-3 pl-4">{!isLeft ? content : null}</div>
+            </div>
+          );
+        })}
+
+        {/* Bottom cap */}
+        <div className="relative z-10 mt-2 flex justify-center">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-paper-300 bg-paper-50 dark:border-umber-500 dark:bg-umber-800">
+            <div className="h-2 w-2 rounded-full bg-umber-700 dark:bg-umber-400" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

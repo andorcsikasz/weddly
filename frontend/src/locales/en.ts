@@ -2281,6 +2281,7 @@ const en: LocaleMessages = {
     time_conflict: "Already booked by “{label}” — pick a different time.",
     wand_item_conflict: "Conflicts with existing event",
     view_proportional: "Proportional",
+    view_timeline: "Timeline",
     view_list: "List",
     gap_label: "{n} min gap",
   },
