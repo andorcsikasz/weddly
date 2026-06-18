@@ -56,6 +56,8 @@ export function GuestPortalView({
   wishlist,
   currency = "HUF",
   onToggleWishlistInterest,
+  coupleSlug = "",
+  householdCode = "",
 }: {
   data: GuestPortalView;
   locale: Locale;
@@ -86,7 +88,11 @@ export function GuestPortalView({
   /** Live guest page only — toggles the household's soft "I'd like to help"
    *  interest on a group-gift item. Omitted on the couple-side editor preview,
    *  where the toggle is read-only (not wired). */
-  onToggleWishlistInterest?: (itemId: number, pledgedAmountMinor?: number | null) => void;
+  onToggleWishlistInterest?: (itemId: number, pledgedAmountMinor?: number | null, notificationEmail?: string) => void;
+  /** The couple's slug — passed down to GuestWishlistCard for contributor fetching. */
+  coupleSlug?: string;
+  /** The household's invite code — passed down to GuestWishlistCard. */
+  householdCode?: string;
 }) {
   const { t } = useT();
   const hasLocation = data.location_lat !== null && data.location_lng !== null;
@@ -403,6 +409,8 @@ export function GuestPortalView({
                         entry={entry}
                         currency={currency}
                         locale={locale}
+                        coupleSlug={coupleSlug}
+                        householdCode={householdCode}
                         onToggleInterest={onToggleWishlistInterest}
                         t={t}
                       />
@@ -435,6 +443,8 @@ export function GuestPortalView({
                         entry={entry}
                         currency={currency}
                         locale={locale}
+                        coupleSlug={coupleSlug}
+                        householdCode={householdCode}
                         onToggleInterest={onToggleWishlistInterest}
                         t={t}
                       />

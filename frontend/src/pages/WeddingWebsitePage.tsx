@@ -157,7 +157,7 @@ export default function WeddingWebsitePage() {
    *  reconcile the count + state from the server response. On failure we roll
    *  back to the pre-click snapshot. Only reachable on the code-bearing,
    *  confirmed-tier page (the button isn't rendered otherwise). */
-  function onToggleWishlistInterest(itemId: number, pledgedAmountMinor?: number | null) {
+  function onToggleWishlistInterest(itemId: number, pledgedAmountMinor?: number | null, notificationEmail?: string) {
     if (!hasCode) return;
     const isPledge = pledgedAmountMinor !== undefined;
     const snapshot = view;
@@ -187,7 +187,7 @@ export default function WeddingWebsitePage() {
       };
     });
     weddingWebsiteApi
-      .toggleWishlistInterest(slug, code, itemId, pledgedAmountMinor)
+      .toggleWishlistInterest(slug, code, itemId, pledgedAmountMinor, notificationEmail)
       .then((res) => {
         setView((cur) => {
           if (!cur || !cur.wishlist) return cur;
@@ -289,6 +289,7 @@ export default function WeddingWebsitePage() {
         hasCode={hasCode}
         rsvpHref={rsvpHref}
         onToggleWishlistInterest={onToggleWishlistInterest}
+        householdCode={code}
         confirmedHeadingRef={confirmedHeadingRef}
       />
     </div>

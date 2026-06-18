@@ -2195,6 +2195,24 @@ export interface LocaleMessages {
     /** Receives `{pledged}` + `{target}` — the GoFundMe-style "X / Y committed"
      *  line under a group gift's progress bar. */
     wishlist_pledged_progress: string;
+    /** Two-step pledge flow strings (gift items with a target amount). */
+    wishlist_pledge_simple_cta: string;
+    wishlist_pledge_simple_active: string;
+    wishlist_pledge_step1_warn: string;
+    wishlist_pledge_step1_confirm: string;
+    wishlist_pledge_step2_amount_label: string;
+    wishlist_pledge_step2_fill_remaining: string;
+    wishlist_pledge_step2_email_label: string;
+    wishlist_pledge_step2_email_placeholder: string;
+    wishlist_pledge_step2_email_note: string;
+    wishlist_pledge_step2_submit: string;
+    wishlist_pledge_step2_cancel: string;
+    wishlist_pledge_success: string;
+    wishlist_pledge_withdraw: string;
+    wishlist_pledge_contributors_others: string;
+    wishlist_pledge_contributors_remaining: string;
+    wishlist_pledge_contributors_funded: string;
+    wishlist_pledge_error_generic: string;
     schedule_title: string;
     schedule_empty: string;
     /** Label appended to a time when the event lands after midnight (day +1). */
