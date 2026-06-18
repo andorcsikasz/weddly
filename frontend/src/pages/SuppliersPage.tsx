@@ -60,7 +60,7 @@ import {
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookedSupplierCard } from "../components/BookedSupplierCard";
 import { CakeDrinksCalculator } from "../components/CakeDrinksCalculator";
 import { InfoHint } from "../components/InfoHint";
@@ -175,6 +175,7 @@ const SUPPLIERS_PAGE_SIZE = 50;
 
 export default function SuppliersPage() {
   const { t, locale } = useT();
+  const navigate = useNavigate();
   useDocumentMeta("seo.suppliers_title", "seo.suppliers_description");
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<DirectorySupplier[]>([]);
@@ -1579,16 +1580,23 @@ export default function SuppliersPage() {
                 <article
                   key={s.id}
                   data-supplier-id={s.id}
-                  className={`card !p-4 relative flex h-full flex-col ${
+                  onClick={() => navigate(`/app/suppliers/${encodeURIComponent(s.id)}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter")
+                      navigate(`/app/suppliers/${encodeURIComponent(s.id)}`);
+                  }}
+                  tabIndex={0}
+                  className={`card !p-4 relative flex h-full flex-col cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${
                     isPicked
                       ? "border-sage-400 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15"
                       : ""
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
-                  {/* Top-right corner: "save for later" toggles (pick + star).
-                    Compare and report now live in the bottom action row so
-                    every per-card action is visible at a glance. */}
-                  <div className="absolute right-3 top-3 inline-flex items-center gap-1">
+                  {/* Top-right: pick + save (stop propagation so they don't trigger navigation) */}
+                  <div
+                    className="absolute right-3 top-3 inline-flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       type="button"
                       onClick={() => togglePicked(s)}
@@ -1597,8 +1605,8 @@ export default function SuppliersPage() {
                       title={t("suppliers.pick_aria")}
                       className={
                         isPicked
-                          ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                          : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                          ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                          : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
                       }
                     >
                       {isPicked ? (
@@ -1609,12 +1617,6 @@ export default function SuppliersPage() {
                     </button>
                     <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
                   </div>
-                  {/* Single-column body: avatar + name + meta line (with price
-                    band and capacity inline so the meta strip stays one line),
-                    address, blurb, then a bottom action row that places the
-                    contact buttons on the left and the vote on the right
-                    corner. The right padding on the name reserves space for
-                    the pinned-corner controls above. */}
                   <div className="flex items-start gap-3 pr-16">
                     <Avatar
                       name={s.name}
@@ -1626,16 +1628,7 @@ export default function SuppliersPage() {
                       })}
                     />
                     <div className="min-w-0 flex-1">
-                      {user?.is_admin ? (
-                        <Link
-                          to={`/app/suppliers/${encodeURIComponent(s.id)}`}
-                          className="block truncate text-base font-semibold hover:underline"
-                        >
-                          {s.name}
-                        </Link>
-                      ) : (
-                        <h3 className="truncate text-base font-semibold">{s.name}</h3>
-                      )}
+                      <h3 className="truncate text-base font-semibold">{s.name}</h3>
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
                         <span className="inline-flex items-center gap-1 uppercase tracking-wide">
                           <Icon size={12} aria-hidden />
@@ -1720,29 +1713,38 @@ export default function SuppliersPage() {
                   <p className="mt-2 line-clamp-2 text-sm text-ink-700 dark:text-paper-100">
                     {locale === "hu" ? s.blurb_hu : s.blurb_en}
                   </p>
-                  <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <a
-                        href={s.website}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="btn-ghost btn-sm"
-                        aria-label={t("suppliers.visit_website")}
-                        title={t("suppliers.visit_website")}
-                        onClick={() => trackSupplierClick(s.id, "website_click")}
-                      >
-                        <Globe size={14} aria-hidden />
-                      </a>
+                  {/* Footer: contact icons left, compare + vote right.
+                    Entire row stops propagation — clicks here are intentional
+                    interactions, not card-level navigation. */}
+                  <div
+                    className="mt-auto flex items-center justify-between pt-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center gap-0.5">
+                      {s.website && (
+                        <a
+                          href={s.website}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                          aria-label={t("suppliers.visit_website")}
+                          title={t("suppliers.visit_website")}
+                          onClick={() => trackSupplierClick(s.id, "website_click")}
+                        >
+                          <Globe size={14} aria-hidden />
+                        </a>
+                      )}
                       {s.contact_phone && (
                         <PhoneReveal
                           phone={s.contact_phone}
                           onCall={() => trackSupplierClick(s.id, "phone_click")}
+                          iconOnly
                         />
                       )}
                       {s.contact_email && (
                         <a
                           href={`mailto:${s.contact_email}`}
-                          className="btn-ghost btn-sm"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                           aria-label={t("suppliers.contact_email")}
                         >
                           <Mail size={14} />
@@ -1752,22 +1754,13 @@ export default function SuppliersPage() {
                         <button
                           type="button"
                           onClick={() => setClaimTarget({ id: s.id, name: s.name })}
-                          className="btn-ghost btn-sm"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                           aria-label={t("vendor_claim.button_label")}
                           title={t("vendor_claim.button_label")}
                         >
                           <UserCheck size={14} aria-hidden />
                         </button>
                       )}
-                    </div>
-                    <div className="ml-auto flex items-center gap-1">
-                      <CompareToggle
-                        supplierId={s.id}
-                        isCompared={isCompared}
-                        capReached={compareCapReached}
-                        onToggle={() => toggleCompare(s.id)}
-                        t={t}
-                      />
                       <ReportButton
                         onReport={() =>
                           setReporting({
@@ -1775,6 +1768,15 @@ export default function SuppliersPage() {
                             name: s.name,
                           })
                         }
+                        t={t}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <CompareToggle
+                        supplierId={s.id}
+                        isCompared={isCompared}
+                        capReached={compareCapReached}
+                        onToggle={() => toggleCompare(s.id)}
                         t={t}
                       />
                       <VoteRow supplier={s} onVote={onVote} t={t} />
@@ -2222,6 +2224,7 @@ function PhoneReveal({
         type="button"
         onClick={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           setRevealed(true);
         }}
         className="btn-outline btn-sm"
