@@ -64,11 +64,7 @@ export default function SupplierMapModal({
       try {
         const alreadyHasCity =
           address && city && address.toLowerCase().includes(city.toLowerCase());
-        const query = address
-          ? alreadyHasCity
-            ? address
-            : `${address}, ${city}`
-          : city;
+        const query = address ? (alreadyHasCity ? address : `${address}, ${city}`) : city;
         const r = await placesApi.search(query);
         if (cancelled) return;
         const first = r.places[0];
