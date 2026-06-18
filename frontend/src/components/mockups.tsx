@@ -973,6 +973,7 @@ export function VendorListingMockup({ className }: Common) {
       role="img"
       aria-label={t("landing.mockup_aria_vendor")}
       className={className}
+      style={{ filter: "drop-shadow(3px 6px 14px rgba(28,25,23,0.10))" }}
     >
       <defs>
         {/* Clip the cover photo to the card's top rounded corners (r=16)
@@ -982,11 +983,10 @@ export function VendorListingMockup({ className }: Common) {
         </clipPath>
       </defs>
 
-      <g className="text-ink-900" opacity="0.06">
-        <rect x="4" y="10" width="360" height="222" rx="16" fill="currentColor" />
-      </g>
-
-      {/* Card fill — no stroke; the drop shadow provides visual separation */}
+      {/* Card fill — no stroke; drop-shadow filter on the SVG element provides
+          the shadow, so no separate shadow rect is needed (the rect approach
+          caused a corner artifact where the offset rect's rx=16 corner was
+          visible through the card's own rounded corner gap). */}
       <rect
         x="0"
         y="0"
