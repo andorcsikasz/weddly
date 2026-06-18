@@ -648,7 +648,7 @@ export default function AdminUsersPage() {
       <div className="flex min-w-0 flex-col gap-y-1">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="font-medium text-neutral-900 dark:text-paper-50">{u.full_name}</span>
-          <span className="text-xs text-neutral-500 dark:text-umber-300 break-all">{u.email}</span>
+          <span className="min-w-0 truncate text-xs text-neutral-500 dark:text-umber-300">{u.email}</span>
           {u.is_admin && (
             <Pill tone="violet" srLabel={t("admin.badge_admin")}>
               {t("admin.badge_admin")}
@@ -857,7 +857,7 @@ export default function AdminUsersPage() {
         key={c.id}
         className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(c.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
       >
-        <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_11rem] md:items-center">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,3fr)_6rem_10rem_11rem] md:items-center">
           <div className="flex items-center gap-1.5 whitespace-nowrap">
             <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
               {workspaceId(c)}
@@ -1054,7 +1054,7 @@ export default function AdminUsersPage() {
     );
   }
   const workspaceColumnHeader = (
-    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_11rem] gap-4 px-4 eyebrow md:grid">
+    <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,3fr)_6rem_10rem_11rem] gap-4 px-4 eyebrow md:grid">
       <SortBtn col="id">{t("admin.table_workspace_id")}</SortBtn>
       <SortBtn col="name">{t("admin.table_workspace_name")}</SortBtn>
       <SortBtn col="members">{t("admin.table_workspace_members")}</SortBtn>
@@ -1112,7 +1112,7 @@ export default function AdminUsersPage() {
         <>
           <section className="mb-6">
             <AdminSectionHeader title={t("admin.workspaces_section")} />
-            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_11rem] gap-4 px-4 eyebrow md:grid">
+            <div className="mb-2 hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,3fr)_6rem_10rem_11rem] gap-4 px-4 eyebrow md:grid">
               <div>{t("admin.table_workspace_id")}</div>
               <div>{t("admin.table_workspace_name")}</div>
               <div>{t("admin.table_workspace_members")}</div>
@@ -1128,7 +1128,7 @@ export default function AdminUsersPage() {
             <ul className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <li key={i} className="admin-card">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_10rem_11rem] md:items-center">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,3fr)_6rem_10rem_11rem] md:items-center">
                     <Skeleton width={56} height={18} rounded="sm" />
                     <Skeleton width={160} height={16} />
                     <div className="flex flex-col gap-1.5">
