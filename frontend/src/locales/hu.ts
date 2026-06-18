@@ -5281,101 +5281,101 @@ const hu: LocaleMessages = {
     dashboard_title: "Áttekintés",
     dashboard_body:
       "Az esküvő egyben: visszaszámláló, RSVP-összesítő, költségvetési pillanatkép és feladatlista, valós időben frissítve.",
-    dashboard_p1_title: "Visszaszámláló & RSVP",
+    dashboard_p1_title: "Visszaszámláló és RSVP",
     dashboard_p1_body:
-      "A felső kártya visszaszámol az esküvő napjáig, és mutatja az RSVP-pillanatképet: visszaigazolt, visszautasított, várakozó.",
+      "A felső kártya visszaszámlál az esküvő napjáig, és mutatja az RSVP-összesítőt: visszaigazolt, visszautasított, várakozó.",
     dashboard_p2_title: "Költségvetési pillanatkép",
     dashboard_p2_body:
-      "Tervezett vs. tényleges kiadás egy pillantásra, figyelmeztetéssel ha túllépés felé haladsz.",
+      "Tervezett és tényleges kiadás egymás mellett — ha a kereten túl csúszol, azonnal jelzi.",
     dashboard_p3_title: "Nyitott feladatok",
     dashboard_p3_body:
-      "A közelgő határidők és nyitott feladatok minden szekcióból itt jelennek meg, hogy semmi ne csússzon el.",
+      "A közelgő határidők és nyitott feladatok minden szekcióból ide gyűlnek össze, hogy semmi ne csússzon el.",
     guests_title: "Vendégek",
     guests_body:
       "Vendéglista háztartásokkal, RSVP-kódokkal, étkezési igényekkel és tömeges CSV-importtal.",
-    guests_p1_title: "Vendéglista & háztartások",
+    guests_p1_title: "Vendéglista és háztartások",
     guests_p1_body:
-      "Adj hozzá vendégeket egyenként vagy importálj százakat CSV-ből. Mindenki háztartáshoz tartozik a tisztább RSVP-követéshez.",
+      "Adj hozzá vendégeket egyenként, vagy importálj százakat CSV-ből. Mindenki háztartáshoz van rendelve — így az RSVP-válasz az egész família nevében érkezik.",
     guests_p2_title: "RSVP-kódok",
     guests_p2_body:
-      "Minden háztartás egyedi kódot kap. A vendégek ezt beírva erősítik meg a részvételt az esküvői oldalon.",
+      "Minden háztartás egyedi kódot kap. A vendégek ezt beírva erősítik meg a részvételüket az esküvői oldalon, regisztráció nélkül.",
     guests_p3_title: "Étkezési igények",
     guests_p3_body:
-      "Állítsd be az elérhető menülehetőségeket, a vendégek RSVP-kor választanak. Szűrj diétás jelölőkre a catering-rendeléshez.",
-    guests_p4_title: "Szűrők & exportálás",
+      "Állítsd be a kínált menülehetőségeket — a vendégek RSVP-kor választanak. Diétás szűrőkkel pillanatok alatt összeállítod a catering-listát.",
+    guests_p4_title: "Szűrők és exportálás",
     guests_p4_body:
-      "Szűrj RSVP-státusz, asztal vagy menü szerint, majd exportáld a szűrt listát CSV-ként a cateringnek vagy koordinátornak.",
+      "Szűrj RSVP-státusz, asztal vagy menü szerint, majd töltsd le a szűrt listát CSV-ben a cateringesnek vagy a koordinátornak.",
     budget_title: "Költségvetés",
-    budget_body: "Tervezett vs. tényleges kiadások kategóriánként, vendégenkénti összesítéssel.",
-    budget_p1_title: "Tervezett vs. tényleges",
+    budget_body: "Tervezett és tényleges kiadások kategóriánként, vendégenkénti összesítéssel.",
+    budget_p1_title: "Terv és valóság",
     budget_p1_body:
-      "Rögzítsd a tervezett összeget kategóriánként, és naplózd a tényleges kifizetéseket. A különbség élőben frissül.",
+      "Rögzítsd a tervezett keretet kategóriánként, majd naplózd a tényleges kifizetéseket. A különbség azonnal frissül.",
     budget_p2_title: "Kategóriák",
     budget_p2_body:
-      "Helyszín, catering, fotó — minden kiadás kategóriához van rendelve. Használd az alapértelmezetteket vagy adj hozzá sajátot.",
+      "Helyszín, catering, fotó — minden tétel kategóriához van rendelve. Használd a beépítetteket, vagy add hozzá a sajátjaidat.",
     budget_p3_title: "Vendégenkénti költség",
     budget_p3_body:
-      "A vendégenkénti költség automatikusan számolódik a tényleges kiadásból és a visszaigazolt vendégszámból.",
+      "A vendégenkénti összeg automatikusan számolódik a tényleges kiadásból és a visszaigazolt vendégszámból.",
     vendors_title: "Szolgáltatók",
     vendors_body:
       "Esküvői szállítók keresése kategória és város szerint, szerződések és fizetési ütemező.",
-    vendors_p1_title: "Keresés & jelölőlista",
+    vendors_p1_title: "Keresés és jelölőlista",
     vendors_p1_body:
-      "Böngészd az ellenőrzött szállítókat kategória és város szerint. Mentsd a kedvenceket és hasonlítsd össze őket.",
-    vendors_p2_title: "Szerződések & kapcsolattartók",
+      "Böngészd az ellenőrzött szállítókat kategória és város szerint. Mentsd a kedvenceket jelölőlistára, és hasonlítsd össze őket.",
+    vendors_p2_title: "Szerződések és kapcsolattartók",
     vendors_p2_body:
-      "Rögzítsd az aláírt szerződést, a kapcsolattartót és a megjegyzéseket minden foglalt szállítóhoz.",
+      "Rögzítsd az aláírt szerződést, a kapcsolattartót és a megjegyzéseket minden lefoglalt szállítóhoz — minden egy helyen.",
     vendors_p3_title: "Fizetési ütemező",
     vendors_p3_body:
-      "Kövesd az előlegeket és végösszegeket határidőkkel szállítónként. A költségvetés ezeket automatikusan összesíti.",
+      "Kövesd az előlegeket és végösszegeket határidőkkel, szállítónként. A költségvetés automatikusan összesíti ezeket.",
     planning_title: "Tervezés",
     planning_body: "Feladatok, ötletek és fontos döntések egy helyen, Gantt-nézet határidőkkel.",
-    planning_p1_title: "Feladatok & listák",
+    planning_p1_title: "Feladatok és listák",
     planning_p1_body:
-      "Adj hozzá feladatokat határidőkkel, rendeld hozzájuk magad vagy a partnered. Szűrj státusz szerint.",
+      "Adj hozzá feladatokat határidőkkel, rendeld hozzájuk magad vagy a partnered. Szűrj státusz szerint, hogy lásd, mi van még hátra.",
     planning_p2_title: "Döntések",
     planning_p2_body:
-      "131 kurált esküvői döntés — helyszín stílusa, fogadalomírás, tortavágás — kártyacsomag formájában, hogy semmi ne maradjon ki.",
+      "131 válogatott esküvői döntéspont — helyszínstílus, fogadalomírás, tortavágás — kártyacsomag formájában, hogy semmi ne maradjon ki.",
     planning_p3_title: "Ötletek",
     planning_p3_body:
-      "Szabad formátumú jegyzetek inspirációhoz, linkekhez és minden egyébhez. Mindkét partner között valós időben szinkronizálva.",
+      "Szabad formátumú noteszlap inspirációhoz, linkekhez és minden egyébhez. Mindkét partner valós időben látja.",
     schedule_title: "Program",
-    schedule_body: "Az esküvői nap forgatókönyve — exportáld PDF-ben egyetlen kattintással.",
+    schedule_body: "Az esküvői nap forgatókönyve — töltsd le PDF-ben egyetlen kattintással.",
     schedule_p1_title: "Napi forgatókönyv",
     schedule_p1_body:
       "Építs percre pontos ütemtervet az esküvői napra — szertartás, koktélóra, vacsora, első tánc — minden blokkhoz megjegyzéssel.",
-    schedule_p2_title: "Szolgáltatói kapcsolatok",
+    schedule_p2_title: "Szolgáltatói elérhetőségek",
     schedule_p2_body:
-      "Rendelj kapcsolattartót minden időblokkhoz, hogy a koordinátor tudja, kit hívjon az adott pillanatban.",
-    schedule_p3_title: "PDF exportálás",
+      "Rendelj kapcsolattartót minden időblokkhoz, hogy a koordinátor pontosan tudja, kit kell hívni az adott pillanatban.",
+    schedule_p3_title: "PDF letöltés",
     schedule_p3_body:
-      "Exportáld a teljes forgatókönyvet tiszta PDF-ként — egyet a helyszínnek, egyet a koordinátornak, egyet magatoknak.",
+      "Töltsd le a teljes forgatókönyvet egyetlen kattintással — egyet a helyszínnek, egyet a koordinátornak, egyet magatoknak.",
     seating_title: "Ülésrend",
     seating_body:
-      "Húzd az asztalokat és székeket a vászonra, majd exportálj A4/A3 PDF-et és ültetőkártyát.",
-    seating_p1_title: "Vászon & húzd-ejtsd",
+      "Húzd az asztalokat és székeket a vászonra, majd töltsd le A4/A3 PDF-et és ültetőkártyákat.",
+    seating_p1_title: "Szabad elrendezés",
     seating_p1_body:
-      "Húzd az asztalokat a szabad vászonra és rendezd el őket pontosan úgy, ahogy a terem kinéz majd. Görgetés és nagyítás érintéssel vagy touchpaddel.",
+      "Húzd az asztalokat a szabad vászonra, és rendezd el őket pontosan úgy, ahogy a terem kinéz majd. Nagyíts és gördíts érintőpaddel vagy érintőképernyővel.",
     seating_p2_title: "Asztalfajták",
     seating_p2_body:
-      "Kerek és téglalap alakú asztalok tetszőleges méretben. Állítsd be a kapacitást és az ülésrend azonnal frissül.",
+      "Kerek és téglalap alakú asztalok tetszőleges méretben. Állítsd be a férőhelyszámot — az ülésrend azonnal frissül.",
     seating_p3_title: "Vendégelhelyezés",
     seating_p3_body:
-      "Húzd a vendégeket az oldalsávból bármelyik székre. A be nem ültetett vendégek kiemelve jelennek meg.",
-    seating_p4_title: "PDF & ültetőkártyák",
+      "Húzd a vendégeket az oldalsávból bármelyik székre. A még nem elhelyezett vendégek kiemelve jelennek meg.",
+    seating_p4_title: "PDF és ültetőkártyák",
     seating_p4_body:
-      "Exportáld az ülésrendet A4 vagy A3 PDF-ként egy kattintással, plusz egyéni ültetőkártyát minden vendégnek.",
+      "Töltsd le az ülésrendet A4 vagy A3 PDF-ként egyetlen kattintással, és nyomtasd ki az egyéni ültetőkártyákat minden vendégnek.",
     design_title: "Dizájn",
     design_body: "Vizuális identitás: betűtípus, színpaletta, mintázat és nyomtatható sablonok.",
     design_p1_title: "Stíluskészlet",
     design_p1_body:
-      "Válaszd ki az esküvői betűtípusokat, a színpalettát és a papíráru-mintákat. Minden exportált fájl automatikusan átveszi a készletet.",
-    design_p2_title: "Papíráru-sablonok",
+      "Válaszd ki az esküvői betűtípust, a színpalettát és a papíráru-mintázatot. Minden letöltött PDF automatikusan átveszi a beállításokat.",
+    design_p2_title: "Nyomtatható sablonok",
     design_p2_body:
-      "Nyomtatásra kész meghívók, köszönőkártyák és asztalnévkártyák a stíluskészletedben. PDF-ként letölthető.",
-    design_p3_title: "Design-tudatos PDF-ek",
+      "Nyomtatásra kész ültetőkártyák, asztalnévkártyák és menükártyák a stíluskészletedben — egy kattintással letölthetők.",
+    design_p3_title: "Tematikus PDF-ek",
     design_p3_body:
-      "Az ülésrend oldalról exportált ülésrendek és ültetőkártyák automatikusan veszik át a stíluskészletet.",
+      "Az ültetési tervek és kártyák automatikusan veszik át a stíluskészletet — külön szerkesztés nélkül.",
     timeline_title: "Idővonal",
     timeline_body: "Fejlesztés alatt — a Gantt-nézetes foglalási idővonal hamarosan érkezik.",
     logistics_title: "Logisztika",

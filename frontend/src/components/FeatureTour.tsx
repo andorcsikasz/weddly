@@ -255,7 +255,7 @@ function useTargetRect(href: string, active: boolean, target?: string): DOMRect 
 function computeCardPos(targetRect: DOMRect | null): { left: number; top: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const gap = 20;
+  const gap = 16;
   const cardH = 268;
 
   if (!targetRect) {
@@ -265,27 +265,50 @@ function computeCardPos(targetRect: DOMRect | null): { left: number; top: number
     };
   }
 
-  if (targetRect.height > 60) {
+  // Clamp rect to the visible viewport so off-screen elements don't mislead placement.
+  const visTop = Math.max(0, targetRect.top);
+  const visBottom = Math.min(vh, targetRect.bottom);
+  const visLeft = Math.max(0, targetRect.left);
+  const visRight = Math.min(vw, targetRect.right);
+  const visCenterX = (visLeft + visRight) / 2;
+  const visCenterY = (visTop + visBottom) / 2;
+  const visWidth = visRight - visLeft;
+
+  // Tall bottom-nav strip → place card above it, horizontally centered.
+  if (targetRect.height > 60 && targetRect.bottom > vh * 0.7) {
     return {
       left: Math.max(16, Math.min((vw - CARD_W) / 2, vw - CARD_W - 16)),
       top: Math.max(16, targetRect.top - cardH - gap),
     };
   }
 
-  if (targetRect.left < vw * 0.45) {
-    const left = Math.min(targetRect.right + gap, vw - CARD_W - 16);
-    const top = Math.max(
-      80,
-      Math.min(vh - cardH - 16, targetRect.top + targetRect.height / 2 - cardH / 2),
-    );
+  // Wide element (>55% of viewport) → place below when there's room, else above.
+  if (visWidth > vw * 0.55) {
+    const belowTop = visBottom + gap;
+    const aboveTop = visTop - cardH - gap;
+    const left = Math.max(16, Math.min(visLeft + 16, vw - CARD_W - 16));
+    if (belowTop + cardH < vh - 8) return { left, top: belowTop };
+    return { left, top: Math.max(80, aboveTop) };
+  }
+
+  // Small/narrow element anchored near the top (toolbars, mode tabs) → place below.
+  if (visTop < vh * 0.25 && visBottom < vh * 0.35) {
+    return {
+      left: Math.max(16, Math.min(visCenterX - CARD_W / 2, vw - CARD_W - 16)),
+      top: visBottom + gap,
+    };
+  }
+
+  // Element on the left half → place card to the right.
+  if (visLeft < vw * 0.45) {
+    const left = Math.min(visRight + gap, vw - CARD_W - 16);
+    const top = Math.max(80, Math.min(vh - cardH - 16, visCenterY - cardH / 2));
     return { left, top };
   }
 
-  const left = Math.max(16, targetRect.left - CARD_W - gap);
-  const top = Math.max(
-    80,
-    Math.min(vh - cardH - 16, targetRect.top + targetRect.height / 2 - cardH / 2),
-  );
+  // Element on the right half → place card to the left.
+  const left = Math.max(16, visLeft - CARD_W - gap);
+  const top = Math.max(80, Math.min(vh - cardH - 16, visCenterY - cardH / 2));
   return { left, top };
 }
 
