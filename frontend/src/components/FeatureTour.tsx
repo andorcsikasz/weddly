@@ -63,8 +63,8 @@ const STEPS: TourStep[] = [
     pageSteps: [
       { titleKey: "tour.guests_p1_title", bodyKey: "tour.guests_p1_body", target: "guests-tools" },
       { titleKey: "tour.guests_p2_title", bodyKey: "tour.guests_p2_body", target: "guests-search" },
-      { titleKey: "tour.guests_p3_title", bodyKey: "tour.guests_p3_body" },
-      { titleKey: "tour.guests_p4_title", bodyKey: "tour.guests_p4_body" },
+      { titleKey: "tour.guests_p3_title", bodyKey: "tour.guests_p3_body" }, // no dedicated meal-filter element
+      { titleKey: "tour.guests_p4_title", bodyKey: "tour.guests_p4_body", target: "guests-tools" },
     ],
   },
   {
@@ -86,7 +86,7 @@ const STEPS: TourStep[] = [
     pageSteps: [
       { titleKey: "tour.vendors_p1_title", bodyKey: "tour.vendors_p1_body", target: "vendors-search" },
       { titleKey: "tour.vendors_p2_title", bodyKey: "tour.vendors_p2_body", target: "vendors-list" },
-      { titleKey: "tour.vendors_p3_title", bodyKey: "tour.vendors_p3_body" },
+      { titleKey: "tour.vendors_p3_title", bodyKey: "tour.vendors_p3_body", target: "vendors-list" },
     ],
   },
   {
@@ -96,8 +96,8 @@ const STEPS: TourStep[] = [
     icon: <ClipboardList size={20} />,
     pageSteps: [
       { titleKey: "tour.planning_p1_title", bodyKey: "tour.planning_p1_body", target: "planning-tabs" },
-      { titleKey: "tour.planning_p2_title", bodyKey: "tour.planning_p2_body" },
-      { titleKey: "tour.planning_p3_title", bodyKey: "tour.planning_p3_body" },
+      { titleKey: "tour.planning_p2_title", bodyKey: "tour.planning_p2_body", target: "planning-tabs" },
+      { titleKey: "tour.planning_p3_title", bodyKey: "tour.planning_p3_body", target: "planning-tabs" },
     ],
   },
   {
@@ -114,7 +114,7 @@ const STEPS: TourStep[] = [
     pageSteps: [
       { titleKey: "tour.schedule_p1_title", bodyKey: "tour.schedule_p1_body", target: "schedule-toolbar" },
       { titleKey: "tour.schedule_p2_title", bodyKey: "tour.schedule_p2_body", target: "schedule-events" },
-      { titleKey: "tour.schedule_p3_title", bodyKey: "tour.schedule_p3_body" },
+      { titleKey: "tour.schedule_p3_title", bodyKey: "tour.schedule_p3_body", target: "schedule-toolbar" },
     ],
   },
   {
@@ -149,7 +149,7 @@ const STEPS: TourStep[] = [
     pageSteps: [
       { titleKey: "tour.design_p1_title", bodyKey: "tour.design_p1_body", target: "design-style" },
       { titleKey: "tour.design_p2_title", bodyKey: "tour.design_p2_body", target: "design-tabs" },
-      { titleKey: "tour.design_p3_title", bodyKey: "tour.design_p3_body" },
+      { titleKey: "tour.design_p3_title", bodyKey: "tour.design_p3_body", target: "design-tabs" },
     ],
   },
   {
@@ -177,8 +177,8 @@ const STEPS: TourStep[] = [
     icon: <Globe size={20} />,
     pageSteps: [
       { titleKey: "tour.guest_page_p1_title", bodyKey: "tour.guest_page_p1_body", target: "guest-page-preview" },
-      { titleKey: "tour.guest_page_p2_title", bodyKey: "tour.guest_page_p2_body" },
-      { titleKey: "tour.guest_page_p3_title", bodyKey: "tour.guest_page_p3_body" },
+      { titleKey: "tour.guest_page_p2_title", bodyKey: "tour.guest_page_p2_body", target: "guest-page-preview" },
+      { titleKey: "tour.guest_page_p3_title", bodyKey: "tour.guest_page_p3_body", target: "guest-page-preview" },
     ],
   },
 ];
@@ -192,7 +192,10 @@ function buildActiveSteps(pathname: string): { steps: TourStep[]; initialIndex: 
     if (matched?.pageSteps) {
       return {
         steps: matched.pageSteps.map((ps) => ({
-          href: matched.href,
+          // When there is no page-element target, clear the href so the nav-link
+          // fallback in useTargetRect doesn't spotlight the sidebar item and push
+          // the card into the top-left corner of the content area.
+          href: ps.target ? matched.href : "",
           icon: matched.icon,
           titleKey: ps.titleKey,
           bodyKey: ps.bodyKey,
