@@ -24,6 +24,7 @@ import {
   Banknote,
   Camera,
   ChevronDown,
+  ChevronUp,
   ExternalLink,
   Gift,
   HandHeart,
@@ -82,12 +83,10 @@ function WishlistThumb({
   imageUrl,
   size = 40,
   Icon = Gift,
-  noBg = false,
 }: {
   imageUrl: string | null;
   size?: number;
   Icon?: typeof Gift;
-  noBg?: boolean;
 }) {
   const cls = "shrink-0 rounded-lg border border-paper-200 object-cover dark:border-umber-700";
   if (imageUrl) {
@@ -103,24 +102,15 @@ function WishlistThumb({
       />
     );
   }
-  if (noBg) {
-    return (
-      <span
-        className="flex shrink-0 items-center justify-center text-ink-700 dark:text-paper-200"
-        style={{ width: size, height: size }}
-        aria-hidden
-      >
-        <Icon size={Math.round(size * 0.5)} />
-      </span>
-    );
-  }
+  // No-image placeholder: bare icon, no background box. Thin stroke keeps it
+  // elegant and avoids the cheap clip-art feel of a filled box.
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-lg border border-paper-300 bg-paper-200 text-ink-400 dark:border-umber-700 dark:bg-umber-700/40 dark:text-umber-300"
+      className="flex shrink-0 items-center justify-center text-ink-900 dark:text-umber-200"
       style={{ width: size, height: size }}
       aria-hidden
     >
-      <Icon size={Math.round(size * 0.45)} />
+      <Icon size={Math.round(size * 0.5)} strokeWidth={1.5} />
     </span>
   );
 }
@@ -183,6 +173,7 @@ function WishlistProgress({
   const target = minorToWhole(targetMinor, currency);
   const pledged = minorToWhole(pledgedMinor, currency);
   const pct = target > 0 ? Math.min(100, Math.round((pledged / target) * 100)) : 0;
+  const fullyFunded = pct >= 100 && target > 0 && pledged > 0;
   return (
     <div className={layout === "beside" ? "w-40 shrink-0 sm:w-48" : "mt-2"}>
       <div
@@ -198,9 +189,18 @@ function WishlistProgress({
         />
       </div>
       <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-[11px] text-ink-500 dark:text-umber-300">
-        <span className="tabular-nums">
-          {formatMoney(pledged, currency, locale)} / {formatMoney(target, currency, locale)}
-        </span>
+        {fullyFunded ? (
+          <span className="tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
+            {t("wishlist_editor.progress_fully_funded")}
+          </span>
+        ) : (
+          <span className="tabular-nums">
+            {formatMoney(pledged, currency, locale)} / {formatMoney(target, currency, locale)}
+            {target > 0 && pledged > 0 && (
+              <span className="ml-1 text-ink-400 dark:text-umber-400"> · {pct}%</span>
+            )}
+          </span>
+        )}
         {interestCount > 0 && (
           <span>{t("wishlist_editor.pledged_count", { count: interestCount })}</span>
         )}
@@ -216,6 +216,10 @@ interface ItemViewProps {
   t: (key: string, vars?: Record<string, string | number>) => string;
   onEdit: () => void;
   onDelete: () => void;
+  index: number;
+  totalCount: number;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
 }
 
 /** A gift with a rough price shows the soft-pledge progress bar; requests carry
@@ -225,9 +229,39 @@ function itemHasBar(item: WishlistItem): boolean {
 }
 
 /** Edit + delete affordances, shared by both views. */
-function ItemActions({ t, onEdit, onDelete }: Pick<ItemViewProps, "t" | "onEdit" | "onDelete">) {
+function ItemActions({
+  t,
+  onEdit,
+  onDelete,
+  index,
+  totalCount,
+  onMoveUp,
+  onMoveDown,
+}: Pick<ItemViewProps, "t" | "onEdit" | "onDelete" | "index" | "totalCount" | "onMoveUp" | "onMoveDown">) {
+  const btnBase =
+    "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 disabled:pointer-events-none disabled:opacity-30 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100";
   return (
     <div className="flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        aria-label={t("wishlist_editor.reorder_up")}
+        title={t("wishlist_editor.reorder_up")}
+        className={btnBase}
+        onClick={onMoveUp}
+        disabled={index === 0}
+      >
+        <ChevronUp size={14} />
+      </button>
+      <button
+        type="button"
+        aria-label={t("wishlist_editor.reorder_down")}
+        title={t("wishlist_editor.reorder_down")}
+        className={btnBase}
+        onClick={onMoveDown}
+        disabled={index === totalCount - 1}
+      >
+        <ChevronDown size={14} />
+      </button>
       <button
         type="button"
         aria-label={t("common.edit")}
@@ -252,7 +286,7 @@ function ItemActions({ t, onEdit, onDelete }: Pick<ItemViewProps, "t" | "onEdit"
 
 /** "Sávos" view: a dense row. The progress bar sits BESIDE the content (before
  *  the action buttons) on wide screens. */
-function WishlistRow({ item, currency, locale, t, onEdit, onDelete }: ItemViewProps) {
+function WishlistRow({ item, currency, locale, t, onEdit, onDelete, index, totalCount, onMoveUp, onMoveDown }: ItemViewProps) {
   const cur = item.currency ?? currency;
   return (
     <li className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700">
@@ -265,7 +299,6 @@ function WishlistRow({ item, currency, locale, t, onEdit, onDelete }: ItemViewPr
         <WishlistThumb
           imageUrl={item.image_url}
           Icon={item.kind === "request" ? requestIconFor(item.title) : Gift}
-          noBg={item.kind === "request"}
         />
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
@@ -297,14 +330,22 @@ function WishlistRow({ item, currency, locale, t, onEdit, onDelete }: ItemViewPr
           />
         </div>
       )}
-      <ItemActions t={t} onEdit={onEdit} onDelete={onDelete} />
+      <ItemActions
+        t={t}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        index={index}
+        totalCount={totalCount}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+      />
     </li>
   );
 }
 
 /** "Kártya" view: a card with the image up top, then the title/meta, then the
  *  progress bar stacked BELOW. */
-function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete }: ItemViewProps) {
+function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete, index, totalCount, onMoveUp, onMoveDown }: ItemViewProps) {
   const cur = item.currency ?? currency;
   return (
     // Fixed card height with a 3/5 image · 2/5 text split. The whole row of
@@ -360,7 +401,15 @@ function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete }: ItemV
             />
           )}
           <div className="mt-2 flex justify-end">
-            <ItemActions t={t} onEdit={onEdit} onDelete={onDelete} />
+            <ItemActions
+              t={t}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              index={index}
+              totalCount={totalCount}
+              onMoveUp={onMoveUp}
+              onMoveDown={onMoveDown}
+            />
           </div>
         </div>
       </div>
@@ -1064,6 +1113,45 @@ export default function WishlistEditorPage() {
     }
   }
 
+  /** Swap `sort_order` between two adjacent items. Optimistic: update local
+   *  state immediately, then PATCH both rows. On any error reload the full
+   *  list so we're back in sync with the server. */
+  async function handleMoveItem(id: number, direction: "up" | "down") {
+    const sorted = [...items].sort((a, b) => {
+      if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+      return a.id - b.id;
+    });
+    const idx = sorted.findIndex((i) => i.id === id);
+    if (idx === -1) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    const item = sorted[idx];
+    const swapItem = sorted[swapIdx];
+    if (!item || !swapItem) return;
+
+    // Swap sort_order values.
+    const newOrder = item.sort_order;
+    const swapOrder = swapItem.sort_order;
+
+    // Optimistic update.
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id === item.id) return { ...i, sort_order: swapOrder };
+        if (i.id === swapItem.id) return { ...i, sort_order: newOrder };
+        return i;
+      }),
+    );
+
+    try {
+      await Promise.all([
+        wishlistApi.update(item.id, { sort_order: swapOrder }, { ifMatch: item.updated_at }),
+        wishlistApi.update(swapItem.id, { sort_order: newOrder }, { ifMatch: swapItem.updated_at }),
+      ]);
+    } catch {
+      // On conflict or network error, reload the authoritative list.
+      await refresh();
+    }
+  }
+
   const sortedItems = [...items].sort((a, b) => {
     if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
     return a.id - b.id;
@@ -1190,7 +1278,7 @@ export default function WishlistEditorPage() {
                   </div>
                 ) : view === "list" ? (
                   <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
-                    {gifts.map((item) => (
+                    {gifts.map((item, idx) => (
                       <WishlistRow
                         key={item.id}
                         item={item}
@@ -1199,12 +1287,16 @@ export default function WishlistEditorPage() {
                         t={t}
                         onEdit={() => setEditing({ item })}
                         onDelete={() => void onDelete(item)}
+                        index={idx}
+                        totalCount={gifts.length}
+                        onMoveUp={() => void handleMoveItem(item.id, "up")}
+                        onMoveDown={() => void handleMoveItem(item.id, "down")}
                       />
                     ))}
                   </ul>
                 ) : (
                   <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {gifts.map((item) => (
+                    {gifts.map((item, idx) => (
                       <WishlistCardItem
                         key={item.id}
                         item={item}
@@ -1213,6 +1305,10 @@ export default function WishlistEditorPage() {
                         t={t}
                         onEdit={() => setEditing({ item })}
                         onDelete={() => void onDelete(item)}
+                        index={idx}
+                        totalCount={gifts.length}
+                        onMoveUp={() => void handleMoveItem(item.id, "up")}
+                        onMoveDown={() => void handleMoveItem(item.id, "down")}
                       />
                     ))}
                   </ul>
@@ -1273,7 +1369,7 @@ export default function WishlistEditorPage() {
                   </div>
                 ) : (
                   <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700">
-                    {requests.map((item) => (
+                    {requests.map((item, idx) => (
                       <WishlistRow
                         key={item.id}
                         item={item}
@@ -1282,6 +1378,10 @@ export default function WishlistEditorPage() {
                         t={t}
                         onEdit={() => setEditing({ item })}
                         onDelete={() => void onDelete(item)}
+                        index={idx}
+                        totalCount={requests.length}
+                        onMoveUp={() => void handleMoveItem(item.id, "up")}
+                        onMoveDown={() => void handleMoveItem(item.id, "down")}
                       />
                     ))}
                   </ul>

@@ -2424,6 +2424,11 @@ export interface LocaleMessages {
     view_cards: string;
     /** Receives `{count}` — guests who pledged toward a group gift. */
     pledged_count: string;
+    /** Shown in the progress caption when the target is fully covered. */
+    progress_fully_funded: string;
+    /** Aria-labels / tooltips for the up/down reorder buttons. */
+    reorder_up: string;
+    reorder_down: string;
     /** Publish toggle in the editor header: share the list on the guest page. */
     publish_title: string;
     /** Toggle state labels. */
