@@ -5229,26 +5229,104 @@ const en: LocaleMessages = {
     dashboard_title: "Dashboard",
     dashboard_body:
       "Your wedding at a glance — countdown, RSVP summary, budget snapshot and pending tasks, all in real time.",
+    dashboard_p1_title: "Countdown & RSVP",
+    dashboard_p1_body:
+      "The top card counts down to your wedding day and shows a live RSVP snapshot — confirmed, declined and still waiting.",
+    dashboard_p2_title: "Budget snapshot",
+    dashboard_p2_body:
+      "Planned vs. actual spend at a glance, with a warning when you are trending over budget.",
+    dashboard_p3_title: "Open tasks",
+    dashboard_p3_body:
+      "Upcoming deadlines and open tasks from every section surface here so nothing gets missed.",
     guests_title: "Guests",
     guests_body:
       "Manage your guest list with households, RSVP codes, meal preferences and bulk CSV import.",
+    guests_p1_title: "Guest list & households",
+    guests_p1_body:
+      "Add guests one by one or import hundreds from a CSV. Each guest belongs to a household for cleaner RSVP tracking.",
+    guests_p2_title: "RSVP codes",
+    guests_p2_body:
+      "Every household gets a unique code. Guests enter it on your wedding page to confirm — no account needed.",
+    guests_p3_title: "Meal preferences",
+    guests_p3_body:
+      "Set available meal options and let guests choose during RSVP. Filter by dietary tag when preparing the catering order.",
+    guests_p4_title: "Filters & export",
+    guests_p4_body:
+      "Filter by RSVP status, table assignment or meal choice, then export the filtered list as CSV for your caterer or coordinator.",
     budget_title: "Budget",
     budget_body: "Track planned vs. actual spend by category, with a per-guest cost breakdown.",
+    budget_p1_title: "Planned vs. actual",
+    budget_p1_body:
+      "Enter a planned amount per category and log actual payments as they arrive. The gap updates live so overspending is caught early.",
+    budget_p2_title: "Categories",
+    budget_p2_body:
+      "Venue, catering, photography — every spend is tagged to a category. Use the defaults or add your own.",
+    budget_p3_title: "Per-guest cost",
+    budget_p3_body:
+      "Cost per guest is calculated automatically from actual spend and confirmed guest count — useful for setting the final budget ceiling.",
     vendors_title: "Suppliers",
     vendors_body:
       "Find vendors by category and city, manage contracts, payment schedules and contacts.",
+    vendors_p1_title: "Search & shortlist",
+    vendors_p1_body:
+      "Browse vetted suppliers by category and city. Save favourites to your shortlist and compare them side by side.",
+    vendors_p2_title: "Contracts & contacts",
+    vendors_p2_body:
+      "Log the signed contract, contact name and notes for each booked vendor — everything in one place.",
+    vendors_p3_title: "Payment schedule",
+    vendors_p3_body:
+      "Track deposits and final payments with due dates per vendor. The budget section pulls these totals automatically.",
     planning_title: "Planning",
     planning_body:
       "Tasks, ideas and big decisions in one place, with a Gantt-style timeline for deadlines.",
+    planning_p1_title: "Tasks & checklists",
+    planning_p1_body:
+      "Add tasks with due dates and assign them to you or your partner. Filter by status to see what is still open.",
+    planning_p2_title: "Decisions",
+    planning_p2_body:
+      "131 curated wedding decisions — venue style, vow writing, cake cutting — served as a guided deck so nothing slips through.",
+    planning_p3_title: "Ideas",
+    planning_p3_body:
+      "A free-form notes pad for inspiration, links and anything that does not fit a task. Synced between both partners in real time.",
     schedule_title: "Schedule",
     schedule_body:
       "Build your wedding-day run of show, then export it as a printable PDF in one click.",
+    schedule_p1_title: "Run of show",
+    schedule_p1_body:
+      "Build a minute-by-minute timeline for your wedding day — ceremony, cocktail hour, dinner, first dance — with notes for each block.",
+    schedule_p2_title: "Vendor contacts",
+    schedule_p2_body:
+      "Attach a vendor contact to each time block so the coordinator can reach the right person without scrambling.",
+    schedule_p3_title: "PDF export",
+    schedule_p3_body:
+      "Export the full run of show as a clean PDF — one copy for the venue, one for the coordinator, one for yourselves.",
     seating_title: "Seating",
     seating_body:
       "Drag tables and chairs onto a canvas, then export A4/A3 charts and place cards instantly.",
+    seating_p1_title: "Canvas drag & drop",
+    seating_p1_body:
+      "Drag tables onto a free-form canvas and arrange them exactly as the room will look. Pan and zoom with trackpad or touch.",
+    seating_p2_title: "Table types",
+    seating_p2_body:
+      "Round and rectangular tables in any size. Set the capacity per table and the chart updates in real time.",
+    seating_p3_title: "Guest assignment",
+    seating_p3_body:
+      "Drag guests from the sidebar list onto any chair. Unassigned guests are highlighted so no one gets left out.",
+    seating_p4_title: "PDF export & place cards",
+    seating_p4_body:
+      "Export the chart as A4 or A3 PDF in one click, plus individual place cards for every seated guest.",
     design_title: "Design",
     design_body:
       "Curate your visual identity — fonts, colours, patterns and printable stationery templates.",
+    design_p1_title: "Style kit",
+    design_p1_body:
+      "Pick your wedding fonts, colour palette and stationery patterns. Every export inherits the kit automatically.",
+    design_p2_title: "Stationery templates",
+    design_p2_body:
+      "Ready-to-print invitations, thank-you cards and table numbers, styled to your kit. Download as print-ready PDF.",
+    design_p3_title: "Design-aware PDFs",
+    design_p3_body:
+      "Seating charts and place cards from the seating page pick up your style kit — no manual formatting needed.",
     timeline_title: "Timeline",
     timeline_body: "Work in progress — a Gantt-style booking timeline is on its way.",
     logistics_title: "Logistics",
@@ -5266,6 +5344,15 @@ const en: LocaleMessages = {
     guest_page_title: "Guest page",
     guest_page_body:
       "Your public wedding page with the date, venue and RSVP link — share it with everyone.",
+    guest_page_p1_title: "Public wedding page",
+    guest_page_p1_body:
+      "A single shareable URL with your names, date, venue and a hero photo. Add a custom intro message and RSVP deadline.",
+    guest_page_p2_title: "RSVP flow",
+    guest_page_p2_body:
+      "Guests enter their unique code and confirm attendance, meal choice and dietary needs — all without creating an account.",
+    guest_page_p3_title: "Post-RSVP portal",
+    guest_page_p3_body:
+      "After confirming, guests unlock a private page with the schedule, accommodation options and your curated wishlist.",
     step_position: "{current} of {total}",
     skip: "Skip tour",
     done: "Done",

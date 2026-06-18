@@ -1,6 +1,6 @@
-// Spotlight-based feature tour triggered from the Sparkles button in the top nav.
-// Walks through key Weddly surfaces, highlighting the matching sidebar/bottom-nav link.
-// Works on desktop (sidebar) and mobile (bottom-nav or centered card when no link visible).
+// Context-aware feature tour triggered from the Compass button in the top nav.
+// When on a known page, shows that page's own feature steps (2-4 deep).
+// From an unrecognised path it falls back to the global overview (one step per surface).
 
 import {
   Armchair,
@@ -24,14 +24,21 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useT } from "../lib/i18n";
 import { useLocation } from "react-router-dom";
+import { useT } from "../lib/i18n";
+
+interface PageSubStep {
+  titleKey: string;
+  bodyKey: string;
+}
 
 interface TourStep {
   href: string;
   titleKey: string;
   bodyKey: string;
   icon: ReactNode;
+  // When present, clicking Compass on this page uses these steps instead of the global blurb.
+  pageSteps?: PageSubStep[];
 }
 
 const STEPS: TourStep[] = [
@@ -40,30 +47,56 @@ const STEPS: TourStep[] = [
     titleKey: "tour.dashboard_title",
     bodyKey: "tour.dashboard_body",
     icon: <LayoutDashboard size={20} />,
+    pageSteps: [
+      { titleKey: "tour.dashboard_p1_title", bodyKey: "tour.dashboard_p1_body" },
+      { titleKey: "tour.dashboard_p2_title", bodyKey: "tour.dashboard_p2_body" },
+      { titleKey: "tour.dashboard_p3_title", bodyKey: "tour.dashboard_p3_body" },
+    ],
   },
   {
     href: "/app/guests",
     titleKey: "tour.guests_title",
     bodyKey: "tour.guests_body",
     icon: <Users size={20} />,
+    pageSteps: [
+      { titleKey: "tour.guests_p1_title", bodyKey: "tour.guests_p1_body" },
+      { titleKey: "tour.guests_p2_title", bodyKey: "tour.guests_p2_body" },
+      { titleKey: "tour.guests_p3_title", bodyKey: "tour.guests_p3_body" },
+      { titleKey: "tour.guests_p4_title", bodyKey: "tour.guests_p4_body" },
+    ],
   },
   {
     href: "/app/budget",
     titleKey: "tour.budget_title",
     bodyKey: "tour.budget_body",
     icon: <Coins size={20} />,
+    pageSteps: [
+      { titleKey: "tour.budget_p1_title", bodyKey: "tour.budget_p1_body" },
+      { titleKey: "tour.budget_p2_title", bodyKey: "tour.budget_p2_body" },
+      { titleKey: "tour.budget_p3_title", bodyKey: "tour.budget_p3_body" },
+    ],
   },
   {
     href: "/app/vendors",
     titleKey: "tour.vendors_title",
     bodyKey: "tour.vendors_body",
     icon: <Store size={20} />,
+    pageSteps: [
+      { titleKey: "tour.vendors_p1_title", bodyKey: "tour.vendors_p1_body" },
+      { titleKey: "tour.vendors_p2_title", bodyKey: "tour.vendors_p2_body" },
+      { titleKey: "tour.vendors_p3_title", bodyKey: "tour.vendors_p3_body" },
+    ],
   },
   {
     href: "/app/planning",
     titleKey: "tour.planning_title",
     bodyKey: "tour.planning_body",
     icon: <ClipboardList size={20} />,
+    pageSteps: [
+      { titleKey: "tour.planning_p1_title", bodyKey: "tour.planning_p1_body" },
+      { titleKey: "tour.planning_p2_title", bodyKey: "tour.planning_p2_body" },
+      { titleKey: "tour.planning_p3_title", bodyKey: "tour.planning_p3_body" },
+    ],
   },
   {
     href: "/app/timeline",
@@ -76,12 +109,23 @@ const STEPS: TourStep[] = [
     titleKey: "tour.schedule_title",
     bodyKey: "tour.schedule_body",
     icon: <CalendarClock size={20} />,
+    pageSteps: [
+      { titleKey: "tour.schedule_p1_title", bodyKey: "tour.schedule_p1_body" },
+      { titleKey: "tour.schedule_p2_title", bodyKey: "tour.schedule_p2_body" },
+      { titleKey: "tour.schedule_p3_title", bodyKey: "tour.schedule_p3_body" },
+    ],
   },
   {
     href: "/app/seating",
     titleKey: "tour.seating_title",
     bodyKey: "tour.seating_body",
     icon: <Armchair size={20} />,
+    pageSteps: [
+      { titleKey: "tour.seating_p1_title", bodyKey: "tour.seating_p1_body" },
+      { titleKey: "tour.seating_p2_title", bodyKey: "tour.seating_p2_body" },
+      { titleKey: "tour.seating_p3_title", bodyKey: "tour.seating_p3_body" },
+      { titleKey: "tour.seating_p4_title", bodyKey: "tour.seating_p4_body" },
+    ],
   },
   {
     href: "/app/logistics",
@@ -100,6 +144,11 @@ const STEPS: TourStep[] = [
     titleKey: "tour.design_title",
     bodyKey: "tour.design_body",
     icon: <Palette size={20} />,
+    pageSteps: [
+      { titleKey: "tour.design_p1_title", bodyKey: "tour.design_p1_body" },
+      { titleKey: "tour.design_p2_title", bodyKey: "tour.design_p2_body" },
+      { titleKey: "tour.design_p3_title", bodyKey: "tour.design_p3_body" },
+    ],
   },
   {
     href: "/app/honeymoon",
@@ -124,13 +173,32 @@ const STEPS: TourStep[] = [
     titleKey: "tour.guest_page_title",
     bodyKey: "tour.guest_page_body",
     icon: <Globe size={20} />,
+    pageSteps: [
+      { titleKey: "tour.guest_page_p1_title", bodyKey: "tour.guest_page_p1_body" },
+      { titleKey: "tour.guest_page_p2_title", bodyKey: "tour.guest_page_p2_body" },
+      { titleKey: "tour.guest_page_p3_title", bodyKey: "tour.guest_page_p3_body" },
+    ],
   },
 ];
 
+// Flatten a global step + its pageSteps into a flat TourStep array for rendering.
+function buildActiveSteps(pathname: string): TourStep[] {
+  const matched = STEPS.find((s) =>
+    s.href === "/app" ? pathname === "/app" : pathname.startsWith(s.href),
+  );
+  if (matched?.pageSteps) {
+    return matched.pageSteps.map((ps) => ({
+      href: matched.href,
+      icon: matched.icon,
+      titleKey: ps.titleKey,
+      bodyKey: ps.bodyKey,
+    }));
+  }
+  return STEPS;
+}
+
 const CARD_W = 296;
 
-// Find the nav link element for a given route href, preferring visible elements.
-// Sidebar links are display:none on mobile (rect=0), so rect check distinguishes desktop from mobile.
 function findNavTarget(href: string): Element | null {
   const visible = (el: Element | null): Element | null => {
     if (!el) return null;
@@ -180,7 +248,6 @@ function computeCardPos(targetRect: DOMRect | null): { left: number; top: number
     };
   }
 
-  // Target in a tall bottom-nav strip → place card above it, horizontally centered
   if (targetRect.height > 60) {
     return {
       left: Math.max(16, Math.min((vw - CARD_W) / 2, vw - CARD_W - 16)),
@@ -188,7 +255,6 @@ function computeCardPos(targetRect: DOMRect | null): { left: number; top: number
     };
   }
 
-  // Target on the left (sidebar) → place card to the right
   if (targetRect.left < vw * 0.45) {
     const left = Math.min(targetRect.right + gap, vw - CARD_W - 16);
     const top = Math.max(
@@ -198,7 +264,6 @@ function computeCardPos(targetRect: DOMRect | null): { left: number; top: number
     return { left, top };
   }
 
-  // Target on the right → place card to the left
   const left = Math.max(16, targetRect.left - CARD_W - gap);
   const top = Math.max(
     80,
@@ -215,16 +280,18 @@ interface Props {
 export function FeatureTour({ open, onClose }: Props) {
   const { t } = useT();
   const location = useLocation();
+  const [activeSteps, setActiveSteps] = useState<TourStep[]>(() =>
+    buildActiveSteps(location.pathname),
+  );
   const [stepIndex, setStepIndex] = useState(0);
   const [fade, setFade] = useState<"in" | "out">("in");
   const fadeTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (open) {
-      const matchIdx = STEPS.findIndex((s) =>
-        s.href === "/app" ? location.pathname === "/app" : location.pathname.startsWith(s.href),
-      );
-      setStepIndex(matchIdx >= 0 ? matchIdx : 0);
+      const steps = buildActiveSteps(location.pathname);
+      setActiveSteps(steps);
+      setStepIndex(0);
       setFade("in");
     }
     return () => {
@@ -232,10 +299,10 @@ export function FeatureTour({ open, onClose }: Props) {
     };
   }, [open, location.pathname]);
 
-  const step = STEPS[stepIndex];
+  const step = activeSteps[stepIndex];
   const targetRect = useTargetRect(step?.href ?? "", open);
   const isFirst = stepIndex === 0;
-  const isLast = stepIndex === STEPS.length - 1;
+  const isLast = stepIndex === activeSteps.length - 1;
 
   const goTo = useCallback((next: number) => {
     if (fadeTimer.current) window.clearTimeout(fadeTimer.current);
@@ -325,7 +392,7 @@ export function FeatureTour({ open, onClose }: Props) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Icon badge + counter + close */}
+        {/* Icon + counter + close */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink-700 dark:text-paper-200">
@@ -334,7 +401,7 @@ export function FeatureTour({ open, onClose }: Props) {
             <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t("tour.step_position", {
                 current: String(stepIndex + 1),
-                total: String(STEPS.length),
+                total: String(activeSteps.length),
               })}
             </span>
           </div>
@@ -358,7 +425,7 @@ export function FeatureTour({ open, onClose }: Props) {
 
         {/* Dot progress */}
         <div className="mt-4 flex justify-center gap-1.5">
-          {STEPS.map((_, i) => (
+          {activeSteps.map((_, i) => (
             <button
               key={i}
               type="button"
