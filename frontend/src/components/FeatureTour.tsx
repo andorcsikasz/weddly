@@ -181,20 +181,27 @@ const STEPS: TourStep[] = [
   },
 ];
 
-// Flatten a global step + its pageSteps into a flat TourStep array for rendering.
-function buildActiveSteps(pathname: string): TourStep[] {
-  const matched = STEPS.find((s) =>
+function buildActiveSteps(pathname: string): { steps: TourStep[]; initialIndex: number } {
+  const matchedIdx = STEPS.findIndex((s) =>
     s.href === "/app" ? pathname === "/app" : pathname.startsWith(s.href),
   );
-  if (matched?.pageSteps) {
-    return matched.pageSteps.map((ps) => ({
-      href: matched.href,
-      icon: matched.icon,
-      titleKey: ps.titleKey,
-      bodyKey: ps.bodyKey,
-    }));
+  if (matchedIdx >= 0) {
+    const matched = STEPS[matchedIdx];
+    if (matched?.pageSteps) {
+      return {
+        steps: matched.pageSteps.map((ps) => ({
+          href: matched.href,
+          icon: matched.icon,
+          titleKey: ps.titleKey,
+          bodyKey: ps.bodyKey,
+        })),
+        initialIndex: 0,
+      };
+    }
+    // WIP page — use the global list but land on this page's step.
+    return { steps: STEPS, initialIndex: matchedIdx };
   }
-  return STEPS;
+  return { steps: STEPS, initialIndex: 0 };
 }
 
 const CARD_W = 296;
@@ -281,7 +288,7 @@ export function FeatureTour({ open, onClose }: Props) {
   const { t } = useT();
   const location = useLocation();
   const [activeSteps, setActiveSteps] = useState<TourStep[]>(() =>
-    buildActiveSteps(location.pathname),
+    buildActiveSteps(location.pathname).steps,
   );
   const [stepIndex, setStepIndex] = useState(0);
   const [fade, setFade] = useState<"in" | "out">("in");
@@ -289,9 +296,9 @@ export function FeatureTour({ open, onClose }: Props) {
 
   useEffect(() => {
     if (open) {
-      const steps = buildActiveSteps(location.pathname);
+      const { steps, initialIndex } = buildActiveSteps(location.pathname);
       setActiveSteps(steps);
-      setStepIndex(0);
+      setStepIndex(initialIndex);
       setFade("in");
     }
     return () => {
