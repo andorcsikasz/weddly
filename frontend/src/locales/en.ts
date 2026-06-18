@@ -5225,6 +5225,39 @@ const en: LocaleMessages = {
     skip: "Skip",
     step_position: "{current}/{total}",
   },
+  tour: {
+    dashboard_title: "Dashboard",
+    dashboard_body:
+      "Your wedding at a glance — countdown, RSVP summary, budget snapshot and pending tasks, all in real time.",
+    guests_title: "Guests",
+    guests_body:
+      "Manage your guest list with households, RSVP codes, meal preferences and bulk CSV import.",
+    budget_title: "Budget",
+    budget_body: "Track planned vs. actual spend by category, with a per-guest cost breakdown.",
+    vendors_title: "Suppliers",
+    vendors_body:
+      "Find vendors by category and city, manage contracts, payment schedules and contacts.",
+    planning_title: "Planning",
+    planning_body:
+      "Tasks, ideas and big decisions in one place, with a Gantt-style timeline for deadlines.",
+    schedule_title: "Schedule",
+    schedule_body:
+      "Build your wedding-day run of show, then export it as a printable PDF in one click.",
+    seating_title: "Seating",
+    seating_body:
+      "Drag tables and chairs onto a canvas, then export A4/A3 charts and place cards instantly.",
+    design_title: "Design",
+    design_body:
+      "Curate your visual identity — fonts, colours, patterns and printable stationery templates.",
+    guest_page_title: "Guest page",
+    guest_page_body:
+      "Your public wedding page with the date, venue and RSVP link — share it with everyone.",
+    step_position: "{current} of {total}",
+    skip: "Skip tour",
+    done: "Done",
+    next: "Next",
+    aria_label: "Feature tour",
+  },
   demo: {
     // ── Persistent banner that runs across the top of /app while the
     //    active workspace is a demo couple. ───────────────────────────

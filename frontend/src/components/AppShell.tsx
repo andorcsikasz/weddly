@@ -27,6 +27,7 @@ import {
   Palette,
   Plane,
   ShieldCheck,
+  Sparkles,
   Store,
   Sun,
   UserCog,
@@ -41,6 +42,7 @@ import { useAuth } from "../lib/auth";
 import { adminUserApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { CoachMarks } from "./CoachMarks";
+import { FeatureTour } from "./FeatureTour";
 import { DemoOverlay } from "./DemoOverlay";
 import { SubscriptionBanner } from "./SubscriptionBanner";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
@@ -333,6 +335,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // cut (Planning, Schedule, Seating, Honeymoon, Moodboard, Media). Admin
   // view doesn't need it because the admin nav already fits in 5 slots.
   const [moreOpen, setMoreOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   // Auto-close on route change so navigating to a sheet item dismisses it.
   useEffect(() => {
     setMoreOpen(false);
@@ -542,6 +545,17 @@ export function AppShell({ children }: { children: ReactNode }) {
              *  (passed down via `onOpenFeedback` below). Language stays inline
              *  on tablet+ where the header has horizontal room, and drops into
              *  the dropdown on phones via `sm:inline-flex`. */}
+            {user && !inAdminView && (
+              <button
+                type="button"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+                onClick={() => setTourOpen(true)}
+                aria-label={t("tour.aria_label")}
+                title={t("tour.aria_label")}
+              >
+                <Sparkles size={18} aria-hidden="true" />
+              </button>
+            )}
             <button
               type="button"
               className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
@@ -795,6 +809,7 @@ export function AppShell({ children }: { children: ReactNode }) {
        *  + viewport. Admin view skips so admins don't see couple-facing
        *  onboarding when they hop in to moderate. */}
       {!inAdminView && <CoachMarks />}
+      <FeatureTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 }

@@ -5277,6 +5277,36 @@ const hu: LocaleMessages = {
     skip: "Kihagyom",
     step_position: "{current}/{total}",
   },
+  tour: {
+    dashboard_title: "Áttekintés",
+    dashboard_body:
+      "Az esküvő egyben: visszaszámláló, RSVP-összesítő, költségvetési pillanatkép és feladatlista, valós időben frissítve.",
+    guests_title: "Vendégek",
+    guests_body:
+      "Vendéglista háztartásokkal, RSVP-kódokkal, étkezési igényekkel és tömeges CSV-importtal.",
+    budget_title: "Költségvetés",
+    budget_body: "Tervezett vs. tényleges kiadások kategóriánként, vendégenkénti összesítéssel.",
+    vendors_title: "Szolgáltatók",
+    vendors_body:
+      "Esküvői szállítók keresése kategória és város szerint, szerződések és fizetési ütemező.",
+    planning_title: "Tervezés",
+    planning_body: "Feladatok, ötletek és fontos döntések egy helyen, Gantt-nézet határidőkkel.",
+    schedule_title: "Program",
+    schedule_body: "Az esküvői nap forgatókönyve — exportáld PDF-ben egyetlen kattintással.",
+    seating_title: "Ülésrend",
+    seating_body:
+      "Húzd az asztalokat és székeket a vászonra, majd exportálj A4/A3 PDF-et és ültetőkártyát.",
+    design_title: "Dizájn",
+    design_body: "Vizuális identitás: betűtípus, színpaletta, mintázat és nyomtatható sablonok.",
+    guest_page_title: "Vendégoldal",
+    guest_page_body:
+      "A nyilvános esküvői oldalad: dátum, helyszín, RSVP-link — oszd meg mindenkivel.",
+    step_position: "{current} / {total}",
+    skip: "Kihagyom",
+    done: "Kész",
+    next: "Tovább",
+    aria_label: "Funkciókör",
+  },
   demo: {
     // ── Persistent banner that runs across the top of /app while the
     //    active workspace is a demo couple. ───────────────────────────

@@ -5801,6 +5801,34 @@ export interface LocaleMessages {
     skip: string;
     step_position: string;
   };
+  /** Feature tour triggered via the Sparkles button in the top nav.
+   *  One step per major Weddly surface — spotlights the sidebar link and
+   *  explains what the surface does. */
+  tour: {
+    dashboard_title: string;
+    dashboard_body: string;
+    guests_title: string;
+    guests_body: string;
+    budget_title: string;
+    budget_body: string;
+    vendors_title: string;
+    vendors_body: string;
+    planning_title: string;
+    planning_body: string;
+    schedule_title: string;
+    schedule_body: string;
+    seating_title: string;
+    seating_body: string;
+    design_title: string;
+    design_body: string;
+    guest_page_title: string;
+    guest_page_body: string;
+    step_position: string;
+    skip: string;
+    done: string;
+    next: string;
+    aria_label: string;
+  };
   /** /app chrome shown while the active workspace is a demo couple (is_demo).
    *  Two surfaces: a persistent banner across the top of /app, and a
    *  conversion popup that fires a few minutes in. Strings live here (not
