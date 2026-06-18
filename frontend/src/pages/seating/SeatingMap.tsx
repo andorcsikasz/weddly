@@ -121,6 +121,10 @@ type DragState =
       tableId: number;
       seatIndex: number;
       guestId: number;
+      guestName: string;
+      /** Client coords at drag-start — used to place the ghost before the first pointermove. */
+      initX: number;
+      initY: number;
     };
 
 export function SeatingMap({
@@ -175,6 +179,13 @@ export function SeatingMap({
     new Map(),
   );
   const [drag, setDrag] = useState<DragState | null>(null);
+  /** Ref to the floating ghost div — position updated imperatively on pointermove. */
+  const chairGhostRef = useRef<HTMLDivElement | null>(null);
+  /** Which chair the user is currently hovering over during a pointer-event chair drag. */
+  const [chairDragHoverTarget, setChairDragHoverTarget] = useState<{
+    tableId: number;
+    seatIndex: number;
+  } | null>(null);
 
   // Keyboard nudges fire onMove on every keydown which, when the user holds an
   // arrow key, sends a PATCH per step. Each PATCH uses the *same* stale
@@ -345,7 +356,33 @@ export function SeatingMap({
 
   function moveDrag(e: React.PointerEvent<SVGSVGElement>) {
     if (!drag) return;
-    if (drag.kind === "chair") return;
+    if (drag.kind === "chair") {
+      // Move ghost directly via DOM — avoids a re-render on every pointermove.
+      if (chairGhostRef.current) {
+        chairGhostRef.current.style.transform = `translate(${e.clientX + 14}px, ${e.clientY + 14}px)`;
+      }
+      // Find which chair (if any) the cursor is over, skipping the source seat.
+      const els = document.elementsFromPoint(e.clientX, e.clientY);
+      let found: { tableId: number; seatIndex: number } | null = null;
+      for (const el of els) {
+        const chair = (el as Element).closest?.("[data-seat-index]") as Element | null;
+        if (!chair) continue;
+        const seatIdx = chair.getAttribute("data-seat-index");
+        const tblId = chair.getAttribute("data-table-id");
+        if (seatIdx === null || tblId === null) continue;
+        const tId = Number(tblId);
+        const sIdx = Number(seatIdx);
+        if (tId === drag.tableId && sIdx === drag.seatIndex) continue; // skip source
+        found = { tableId: tId, seatIndex: sIdx };
+        break;
+      }
+      // Only trigger a re-render when the hovered chair actually changes.
+      setChairDragHoverTarget((prev) => {
+        if (prev?.tableId === found?.tableId && prev?.seatIndex === found?.seatIndex) return prev;
+        return found;
+      });
+      return;
+    }
     const p = toSvgPoint(e.clientX, e.clientY);
     if (!p) return;
 
@@ -416,18 +453,27 @@ export function SeatingMap({
       // Ignore pointer-leave — with capture active the pointer may briefly leave
       // the SVG bounds while the user drags over the HTML unassigned panel.
       if (e.type === "pointerleave") return;
-      const guestId = drag.guestId;
+      const { guestId, tableId: srcTableId, seatIndex: srcSeatIndex } = drag;
       setDrag(null);
+      setChairDragHoverTarget(null);
+      // Use closest() so that even when elementsFromPoint returns a leaf element
+      // (e.g. the <rect> inside the chair <g>) we still find the <g> ancestor
+      // that carries data-seat-index / data-table-id.
       const els = document.elementsFromPoint(e.clientX, e.clientY);
       let dropped = false;
       for (const el of els) {
-        const seatIdx = el.getAttribute("data-seat-index");
-        const tblId = el.getAttribute("data-table-id");
-        if (seatIdx !== null && tblId !== null) {
-          onSeatDrop?.(Number(tblId), Number(seatIdx), guestId);
-          dropped = true;
-          break;
-        }
+        const chair = (el as Element).closest?.("[data-seat-index]") as Element | null;
+        if (!chair) continue;
+        const seatIdx = chair.getAttribute("data-seat-index");
+        const tblId = chair.getAttribute("data-table-id");
+        if (seatIdx === null || tblId === null) continue;
+        const tId = Number(tblId);
+        const sIdx = Number(seatIdx);
+        // Skip the source seat — dropping back on yourself is a no-op, not a move.
+        if (tId === srcTableId && sIdx === srcSeatIndex) continue;
+        onSeatDrop?.(tId, sIdx, guestId);
+        dropped = true;
+        break;
       }
       if (!dropped) onSeatRelease?.(guestId);
       onChairDragFinish?.();
@@ -714,9 +760,23 @@ export function SeatingMap({
                     if (e.button !== 0) return;
                     e.stopPropagation();
                     (e.currentTarget as Element).setPointerCapture(e.pointerId);
-                    setDrag({ kind: "chair", tableId: table.id, seatIndex, guestId });
+                    const guestName = seatGuestsByTable?.get(table.id)?.get(seatIndex)?.name ?? "";
+                    setDrag({
+                      kind: "chair",
+                      tableId: table.id,
+                      seatIndex,
+                      guestId,
+                      guestName,
+                      initX: e.clientX,
+                      initY: e.clientY,
+                    });
                     onChairDragStart?.(table.id, seatIndex, guestId);
                   }}
+                  pointerHoverSeat={
+                    drag?.kind === "chair" && chairDragHoverTarget?.tableId === table.id
+                      ? chairDragHoverTarget.seatIndex
+                      : null
+                  }
                   t={t}
                 />
               );
@@ -724,6 +784,20 @@ export function SeatingMap({
           </svg>
         </div>
       </div>
+      {/* Drag ghost — floats at cursor position during a pointer-event chair drag. */}
+      {drag?.kind === "chair" &&
+        createPortal(
+          <div
+            ref={chairGhostRef}
+            className="pointer-events-none fixed left-0 top-0 z-[9999] select-none rounded bg-ink-800 px-2 py-1 text-xs font-semibold text-paper-50 shadow-lg dark:bg-umber-800"
+            style={{
+              transform: `translate(${drag.initX + 14}px, ${drag.initY + 14}px)`,
+            }}
+          >
+            {drag.guestName}
+          </div>,
+          document.body,
+        )}
     </>
   );
 
@@ -926,6 +1000,8 @@ interface TableShapeProps {
   onChairDragEnd?: (e: React.DragEvent) => void;
   /** Seat index currently being pointer-dragged out of this table (for ghost visual). */
   draggingSeatIndex?: number | null;
+  /** Seat index currently being hovered by a cross-table pointer drag — highlights the drop target. */
+  pointerHoverSeat?: number | null;
   /** Pointer-down on an occupied chair — initiates a pointer-event drag. */
   onChairPointerDown?: (
     e: React.PointerEvent<SVGGElement>,
@@ -964,6 +1040,7 @@ function TableShape({
   onChairDragStart,
   onChairDragEnd,
   draggingSeatIndex,
+  pointerHoverSeat,
   onChairPointerDown,
   t,
 }: TableShapeProps) {
@@ -1135,7 +1212,7 @@ function TableShape({
         const seatGuest = seatGuests?.get(i) ?? null;
         const isOccupied = seatGuests ? seatGuest !== null : i < filledSeats;
         const isSelectedSeat = seatMode && seatGuest !== null && seatGuest.id === selectedGuestId;
-        const isDragHover = seatMode && dragOverSeat === i;
+        const isDragHover = seatMode && (dragOverSeat === i || pointerHoverSeat === i);
         const isDraggingOut = draggingSeatIndex === i;
 
         const fillClassName = isDisabled
