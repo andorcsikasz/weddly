@@ -33,6 +33,7 @@ import {
   Unlink2,
   User,
   Users,
+  X,
 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -1398,8 +1399,16 @@ export default function SeatingPage() {
               />
             </div>
 
-            {/* Compact unassigned guests panel — 220px, sticky so it stays
-              alongside the map as the user scrolls. */}
+            {/* Right panel — shows selected table roster or unassigned list. */}
+            {selectedId !== null && selected ? (
+              <TableSeatPanel
+                table={selected}
+                seatGuests={seatGuestsByTable.get(selectedId)}
+                onUnassign={unassignGuest}
+                onClose={() => setSelectedId(null)}
+                t={t}
+              />
+            ) : (
             <aside
               data-tour-target="seating-unassigned"
               className={`w-[280px] shrink-0 rounded-xl border bg-paper-50 p-3 transition-colors dark:bg-umber-900 ${
@@ -1529,6 +1538,7 @@ export default function SeatingPage() {
                 </ul>
               )}
             </aside>
+            )}
           </div>
 
           {/* TableCard grid — scroll down to see per-table seat assignments */}
@@ -2444,6 +2454,92 @@ function ShapePicker({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function TableSeatPanel({
+  table,
+  seatGuests,
+  onUnassign,
+  onClose,
+  t,
+}: {
+  table: SeatingTable;
+  seatGuests: Map<number, { id: number; name: string }> | undefined;
+  onUnassign: (guestId: number) => void;
+  onClose: () => void;
+  t: (key: string) => string;
+}) {
+  const filled = seatGuests?.size ?? 0;
+  const disabledSet = new Set(table.disabled_seats ?? []);
+
+  return (
+    <div className="flex h-full w-[280px] shrink-0 flex-col rounded-xl border border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-900">
+      <div className="flex items-start justify-between gap-2 border-b border-paper-200 px-3 py-2.5 dark:border-umber-700">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
+            {table.label || `${table.id}`}
+          </p>
+          <p className="text-[11px] text-ink-500 dark:text-umber-400">
+            {t("seating.table_panel_filled")
+              .replace("{filled}", String(filled))
+              .replace("{total}", String(table.seats))}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-0.5 shrink-0 rounded p-0.5 text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-paper-100"
+          aria-label={t("seating.table_panel_close")}
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      <ol
+        className="flex-1 space-y-1 overflow-y-auto overscroll-contain p-2"
+        style={{ maxHeight: "calc(100vh - 260px)" }}
+      >
+        {Array.from({ length: table.seats }, (_, i) => {
+          if (disabledSet.has(i)) return null;
+          const guest = seatGuests?.get(i) ?? null;
+          return (
+            <li
+              key={i}
+              className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
+                guest
+                  ? "bg-ink-50 dark:bg-umber-800"
+                  : "bg-paper-100 dark:bg-umber-850"
+              }`}
+            >
+              <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-ink-400 dark:text-umber-500">
+                {i + 1}
+              </span>
+              {guest ? (
+                <>
+                  <span className="flex-1 truncate font-medium text-ink-900 dark:text-paper-50">
+                    {guest.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onUnassign(guest.id)}
+                    className="shrink-0 rounded p-0.5 text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                    aria-label={t("seating.table_panel_unassign")}
+                    title={t("seating.table_panel_unassign")}
+                  >
+                    <X size={11} />
+                  </button>
+                </>
+              ) : (
+                <span className="flex-1 text-[11px] italic text-ink-400 dark:text-umber-500">
+                  {t("seating.table_panel_empty_seat")}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

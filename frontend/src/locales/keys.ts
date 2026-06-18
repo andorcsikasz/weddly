@@ -3243,6 +3243,12 @@ export interface LocaleMessages {
     seat_tap_place: string;
     /** Used by unassign button that appears when a guest is click-selected in seat mode. */
     seat_unassign_selected: string;
+    /** Table seat-roster panel (right side, seat mode, table selected). */
+    table_panel_filled: string;
+    table_panel_seat_n: string;
+    table_panel_empty_seat: string;
+    table_panel_unassign: string;
+    table_panel_close: string;
   };
   suppliers: {
     title: string;

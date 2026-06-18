@@ -2915,6 +2915,11 @@ const hu: LocaleMessages = {
       "Húzd a vendégeket a listából a székekre, vagy koppints egy székre a kijelöléshez.",
     seat_tap_place: "{guest} kijelölve — koppints egy székre az elhelyezéshez.",
     seat_unassign_selected: "Eltávolítás",
+    table_panel_filled: "{filled}/{total} foglalt",
+    table_panel_seat_n: "{n}. szék",
+    table_panel_empty_seat: "üres",
+    table_panel_unassign: "Eltávolít",
+    table_panel_close: "Vissza a listához",
   },
   suppliers: {
     title: "Szolgáltatók",

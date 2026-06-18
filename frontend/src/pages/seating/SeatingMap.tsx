@@ -756,6 +756,7 @@ export function SeatingMap({
                   draggingSeatIndex={
                     drag?.kind === "chair" && drag.tableId === table.id ? drag.seatIndex : null
                   }
+                  onTableClick={() => onSelect(table.id)}
                   onChairPointerDown={(e, seatIndex, guestId) => {
                     if (e.button !== 0) return;
                     e.stopPropagation();
@@ -1008,6 +1009,8 @@ interface TableShapeProps {
     seatIndex: number,
     guestId: number,
   ) => void;
+  /** Click on the table body in seat mode — selects the table for the right panel. */
+  onTableClick?: () => void;
   t: (
     key:
       | "seating.add_seat"
@@ -1042,6 +1045,7 @@ function TableShape({
   draggingSeatIndex,
   pointerHoverSeat,
   onChairPointerDown,
+  onTableClick,
   t,
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
@@ -1136,6 +1140,14 @@ function TableShape({
       transform={`translate(${cx} ${cy}) rotate(${rotation})`}
       data-seating-table={table.id}
       onPointerDown={seatMode ? undefined : onPointerDown}
+      onClick={
+        seatMode && !tapMode
+          ? (e: React.MouseEvent<SVGGElement>) => {
+              e.stopPropagation();
+              onTableClick?.();
+            }
+          : undefined
+      }
       onDragOver={
         seatMode && firstFreeSeat !== null
           ? (e: React.DragEvent<SVGGElement>) => {

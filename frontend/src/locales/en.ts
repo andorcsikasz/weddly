@@ -2878,6 +2878,11 @@ const en: LocaleMessages = {
     seat_mode_help: "Drag guests from the list onto seats, or tap a chair to select and place.",
     seat_tap_place: "{guest} selected — tap a seat to place them.",
     seat_unassign_selected: "Unassign",
+    table_panel_filled: "{filled}/{total} filled",
+    table_panel_seat_n: "Seat {n}",
+    table_panel_empty_seat: "empty",
+    table_panel_unassign: "Remove",
+    table_panel_close: "Back to list",
   },
   suppliers: {
     title: "Suppliers",
