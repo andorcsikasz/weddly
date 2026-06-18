@@ -9,7 +9,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
-import type { WishlistItem } from "@shared/wishlist";
+import type { WishlistContributorsResult, WishlistItem } from "@shared/wishlist";
 
 function auditCount(coupleId: number, action: string): number {
   const row = db
@@ -276,5 +276,271 @@ describe("/api/wishlist — boundary validation", () => {
     wipeAll();
     const r = await req("GET", "/api/wishlist");
     expect(r.status).toBe(401);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group gift coordination — notification_email + contributor list
+//
+// All tests use the same public-wedding / household / RSVP scaffold:
+//   1. bootstrapCouple — creates the couple and returns a bearer token
+//   2. publish the couple (is_public, wishlist_published)
+//   3. create a household + guest via the couple-facing API
+//   4. set the guest's RSVP to yes via POST /api/rsvp/checkin (confirmed tier)
+//   5. create a wishlist item
+//   6. toggle interest via POST /api/public/wedding/:slug/:code/wishlist/:id/interest
+//
+// RESEND_API_KEY is empty in setup.ts, so sendGroupGiftNotification silently
+// no-ops. The toggle must still return 200 (never propagate email errors).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Helper: pull the slug for a couple from the DB. */
+function getSlug(coupleId: number): string {
+  const row = db.prepare("SELECT slug FROM couples WHERE id = ?").get(coupleId) as
+    | { slug: string }
+    | undefined;
+  if (!row) throw new Error(`no slug for couple ${coupleId}`);
+  return row.slug;
+}
+
+/** Helper: create a household + one guest via the couple API, then RSVP the
+ *  guest yes so the household is at the confirmed tier. Returns the code. */
+async function confirmedHousehold(
+  token: string,
+  slug: string,
+  label: string,
+): Promise<{ householdId: number; code: string }> {
+  const hh = await req<{ household: { id: number; code: string } }>(
+    "POST",
+    "/api/households",
+    { label },
+    { token },
+  );
+  if (hh.status !== 201) throw new Error(`household create failed: ${hh.status}`);
+  const g = await req<{ guest: { id: number } }>(
+    "POST",
+    "/api/guests",
+    { full_name: `${label} guest`, household_id: hh.data.household.id },
+    { token },
+  );
+  if (g.status !== 201) throw new Error(`guest create failed: ${g.status}`);
+  const checkin = await req("POST", "/api/rsvp/checkin", {
+    couple_slug: slug,
+    household_code: hh.data.household.code,
+    members: [{ guest_id: g.data.guest.id, rsvp_status: "yes" }],
+  });
+  if (checkin.status !== 200) throw new Error(`checkin failed: ${checkin.status}`);
+  return { householdId: hh.data.household.id, code: hh.data.household.code };
+}
+
+describe("group gift coordination", () => {
+  test("stores notification_email when toggling interest", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("gg-email-store@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
+    const slug = getSlug(coupleId);
+    const { code } = await confirmedHousehold(token, slug, "Smith");
+
+    // Create a gift item.
+    const created = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Espresso machine", kind: "gift", target_amount_minor: 200000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const itemId = created.data.item.id;
+
+    // Toggle interest WITH notification email.
+    const toggle = await req(
+      "POST",
+      `/api/public/wedding/${slug}/${code}/wishlist/${itemId}/interest`,
+      { pledged_amount_minor: 50000, notification_email: "guest@example.com" },
+    );
+    expect(toggle.status).toBe(200);
+
+    // Verify the email was stored in the DB (never exposed in HTTP responses).
+    const row = db
+      .prepare(
+        "SELECT notification_email FROM wishlist_interests WHERE item_id = ? AND notification_email IS NOT NULL",
+      )
+      .get(itemId) as { notification_email: string } | undefined;
+    expect(row).toBeDefined();
+    expect(row!.notification_email).toBe("guest@example.com");
+  });
+
+  test("GET /contributors returns 403 when household has not pledged", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("gg-unpledged@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
+    const slug = getSlug(coupleId);
+    const { code } = await confirmedHousehold(token, slug, "Jones");
+
+    const created = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Camera", kind: "gift", target_amount_minor: 300000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const itemId = created.data.item.id;
+
+    // Household has NOT toggled interest — no pledge row exists.
+    const r = await req(
+      "GET",
+      `/api/public/wedding/${slug}/${code}/wishlist/${itemId}/contributors`,
+    );
+    expect(r.status).toBe(403);
+  });
+
+  test("GET /contributors returns breakdown after pledging", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("gg-pledged-list@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
+    const slug = getSlug(coupleId);
+    const { code } = await confirmedHousehold(token, slug, "Taylor");
+
+    const created = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Stand mixer", kind: "gift", target_amount_minor: 150000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const itemId = created.data.item.id;
+
+    // Pledge first.
+    const toggle = await req(
+      "POST",
+      `/api/public/wedding/${slug}/${code}/wishlist/${itemId}/interest`,
+      { pledged_amount_minor: 75000 },
+    );
+    expect(toggle.status).toBe(200);
+
+    // Now GET contributors — should return 200 with the pledger in the list.
+    const r = await req<WishlistContributorsResult>(
+      "GET",
+      `/api/public/wedding/${slug}/${code}/wishlist/${itemId}/contributors`,
+    );
+    expect(r.status).toBe(200);
+    expect(Array.isArray(r.data.contributors)).toBe(true);
+    expect(r.data.contributors.length).toBe(1);
+    expect(r.data.contributors[0]!.label).toBe("Taylor");
+    expect(r.data.contributors[0]!.pledged_amount_minor).toBe(75000);
+    expect(r.data.total_pledged_minor).toBe(75000);
+    expect(r.data.target_amount_minor).toBe(150000);
+  });
+
+  test("GET /contributors not accessible via couple API (404)", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("gg-couple-api@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
+
+    const created = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Toaster", kind: "gift", target_amount_minor: 30000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const itemId = created.data.item.id;
+
+    // The couple-facing /api/wishlist surface has no contributors route.
+    const r = await req("GET", `/api/wishlist/${itemId}/contributors`, undefined, { token });
+    expect(r.status).toBe(404);
+  });
+
+  test("contributor breakdown computes pledged_pct correctly", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("gg-pct@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
+    const slug = getSlug(coupleId);
+    const { code } = await confirmedHousehold(token, slug, "Pct-fam");
+
+    const created = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Bicycle", kind: "gift", target_amount_minor: 200000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const itemId = created.data.item.id;
+
+    // Pledge exactly 25% of the target.
+    const toggle = await req(
+      "POST",
+      `/api/public/wedding/${slug}/${code}/wishlist/${itemId}/interest`,
+      { pledged_amount_minor: 50000 },
+    );
+    expect(toggle.status).toBe(200);
+
+    const r = await req<WishlistContributorsResult>(
+      "GET",
+      `/api/public/wedding/${slug}/${code}/wishlist/${itemId}/contributors`,
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.contributors[0]!.pledged_pct).toBe(25);
+    // remaining = 200000 - 50000 = 150000, remaining_pct = 75
+    expect(r.data.remaining_minor).toBe(150000);
+    expect(r.data.remaining_pct).toBe(75);
+  });
+
+  test("multiple pledgers each receive notification payload — second pledge sees both contributors", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("gg-multi@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1, wishlist_published = 1 WHERE id = ?").run(
+      coupleId,
+    );
+    const slug = getSlug(coupleId);
+    const { code: codeA } = await confirmedHousehold(token, slug, "Alpha");
+    const { code: codeB } = await confirmedHousehold(token, slug, "Beta");
+
+    const created = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Wine fridge", kind: "gift", target_amount_minor: 400000 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    const itemId = created.data.item.id;
+
+    // First household pledges.
+    const firstToggle = await req(
+      "POST",
+      `/api/public/wedding/${slug}/${codeA}/wishlist/${itemId}/interest`,
+      { pledged_amount_minor: 100000, notification_email: "alpha@example.com" },
+    );
+    expect(firstToggle.status).toBe(200);
+
+    // Second household pledges — email notification to Alpha would fire here
+    // but sendRawEmail silently swallows the RESEND_API_KEY="" error.
+    const secondToggle = await req(
+      "POST",
+      `/api/public/wedding/${slug}/${codeB}/wishlist/${itemId}/interest`,
+      { pledged_amount_minor: 80000, notification_email: "beta@example.com" },
+    );
+    expect(secondToggle.status).toBe(200);
+
+    // Both contributors should appear in the list (visible to either pledger).
+    const r = await req<WishlistContributorsResult>(
+      "GET",
+      `/api/public/wedding/${slug}/${codeB}/wishlist/${itemId}/contributors`,
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.contributors.length).toBe(2);
+    const labels = r.data.contributors.map((c) => c.label);
+    expect(labels).toContain("Alpha");
+    expect(labels).toContain("Beta");
+    expect(r.data.total_pledged_minor).toBe(180000);
   });
 });
