@@ -66,6 +66,7 @@ import type { ReceivedGift, UpsertReceivedGiftInput } from "@shared/received_gif
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type {
   UpsertWishlistItemInput,
+  WishlistContributorsResult,
   WishlistInterestToggleResult,
   WishlistItem,
   WishlistLinkPreview,
@@ -1038,22 +1039,42 @@ export const weddingWebsiteApi = {
    *  the credential; the server resolves it to the household, flips the
    *  interest row, and returns the fresh aggregate. 403 unless the slug+code
    *  resolves to the `confirmed` tier (>=1 RSVP yes) and the item is a
-   *  group gift. */
+   *  group gift. `notificationEmail` is stored server-side only — never
+   *  returned in any response. */
   toggleWishlistInterest: (
     slug: string,
     code: string,
     itemId: number,
     pledgedAmountMinor?: number | null,
-  ) =>
-    apiFetch<WishlistInterestToggleResult>(
+    notificationEmail?: string,
+  ) => {
+    const body: Record<string, unknown> =
+      pledgedAmountMinor === undefined ? {} : { pledged_amount_minor: pledgedAmountMinor };
+    if (notificationEmail) body.notification_email = notificationEmail;
+    return apiFetch<WishlistInterestToggleResult>(
       "POST",
       `/api/public/wedding/${encodeURIComponent(slug)}/${encodeURIComponent(
         code,
       )}/wishlist/${itemId}/interest`,
-      // Omit the key entirely for a pure toggle; send it (number or null) to set
-      // the soft pledge amount.
-      pledgedAmountMinor === undefined ? {} : { pledged_amount_minor: pledgedAmountMinor },
-    ),
+      body,
+    );
+  },
+  /** Public, code-gated, pledge-gated — retrieve the group-gift contributor
+   *  list for an item the requesting household has already pledged on.
+   *  Returns `null` when the household has not pledged (server returns 403).
+   *  No email addresses are included in the response. */
+  getContributors: async (
+    coupleSlug: string,
+    householdCode: string,
+    itemId: number,
+  ): Promise<WishlistContributorsResult | null> => {
+    const r = await fetch(
+      `/api/public/wedding/${encodeURIComponent(coupleSlug)}/${encodeURIComponent(householdCode)}/wishlist/${itemId}/contributors`,
+    );
+    if (r.status === 403) return null;
+    if (!r.ok) throw new Error("contributors fetch failed");
+    return r.json() as Promise<WishlistContributorsResult>;
+  },
 };
 
 export interface SeatingPlan {

@@ -1256,7 +1256,9 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
 -- the toggle endpoint inserts if absent, deletes if present. `household_code` /
 -- `household_label` are denormalised snapshots so the couple-side coordination
 -- view can render who tapped in without a join even if the household is later
--- relabelled. Indexes live in db.ts.
+-- relabelled. `notification_email` is the opt-in address a guest provides when
+-- pledging so they can receive group-gift coordination emails (never returned in
+-- any HTTP response; only read server-side for mailer). Indexes live in db.ts.
 CREATE TABLE IF NOT EXISTS wishlist_interests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
@@ -1265,6 +1267,7 @@ CREATE TABLE IF NOT EXISTS wishlist_interests (
   household_code TEXT NOT NULL,
   household_label TEXT NOT NULL,
   pledged_amount_minor INTEGER,                               -- soft, non-binding amount the household will chip in; minor units of the item's currency; NULL = tapped in without a number. No money moves.
+  notification_email TEXT,                                    -- opt-in email for group-gift coordination notifications; NULL when not provided; never returned in HTTP responses.
   created_at INTEGER NOT NULL,
   UNIQUE(item_id, household_id)
 );

@@ -131,9 +131,39 @@ export interface WishlistEntry {
  *    (no amount), one already in taps back out. (Backward-compatible default.)
  *  - `pledged_amount_minor` PRESENT (number ≥ 0 or null) → set pledge: ensure
  *    the household is in and record/replace its soft pledge amount; never
- *    leaves. Sending `null` keeps them in with no amount. */
+ *    leaves. Sending `null` keeps them in with no amount.
+ *  - `notification_email` OPTIONAL → the guest's opt-in email for group-gift
+ *    coordination notifications. Empty string treated as absent (not stored).
+ *    Validated as a valid email address; max 254 chars. Never returned in any
+ *    HTTP response — only used server-side to send coordination emails. */
 export interface WishlistInterestToggleInput {
   pledged_amount_minor?: number | null;
+  notification_email?: string;
+}
+
+/** One contributor in the group-gift coordination view. Only visible to guests
+ *  who have themselves pledged on the same item (gated on household pledge
+ *  membership). `label` is the household display label. Amounts are in minor
+ *  units of the item's effective currency. `pledged_pct` is null when the item
+ *  has no target price. */
+export interface WishlistContributor {
+  label: string;
+  pledged_amount_minor: number | null;
+  pledged_pct: number | null;
+}
+
+/** Response of GET /api/public/wedding/:slug/:code/wishlist/:itemId/contributors.
+ *  Only accessible to households that have already pledged on the item; returns
+ *  null (403) for non-pledgers. Aggregate coordination view — no individual
+ *  emails, no raw household codes, no couple-internal data. */
+export interface WishlistContributorsResult {
+  contributors: WishlistContributor[];
+  total_pledged_minor: number;
+  target_amount_minor: number | null;
+  /** Remaining amount to reach the target (null when no target set). */
+  remaining_minor: number | null;
+  /** Remaining as a percentage of target (null when no target set). */
+  remaining_pct: number | null;
 }
 
 /** Response shape of the toggle endpoint

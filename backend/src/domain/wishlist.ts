@@ -17,6 +17,8 @@ import {
   WISHLIST_MAX_TITLE_LEN,
   WISHLIST_MAX_URL_LEN,
   type UpsertWishlistItemInput,
+  type WishlistContributor,
+  type WishlistContributorsResult,
   type WishlistEntry,
   type WishlistItem,
   type WishlistKind,
@@ -24,6 +26,7 @@ import {
 import { db, now } from "../db";
 import type { HouseholdRow } from "./households";
 import { HttpError } from "../lib/http";
+import { sendRawEmail } from "./emails";
 
 export interface WishlistItemRow {
   id: number;
@@ -465,6 +468,24 @@ export interface InterestState {
   viewer_pledged_amount_minor: number | null;
 }
 
+export interface NotificationContributor {
+  label: string;
+  pledgedAmountMinor: number | null;
+  email: string | null;
+}
+
+export interface SetInterestResult extends InterestState {
+  wasInsert: boolean;
+  notificationPayload?: {
+    itemTitle: string;
+    itemUrl: string | null;
+    targetAmountMinor: number | null;
+    currency: string;
+    newContributorLabel: string;
+    allContributors: NotificationContributor[];
+  };
+}
+
 /** Read the post-write coordination state for one item + household: the helper
  *  count, the summed pledge, and the viewer's own membership + pledge. */
 function readInterestState(itemId: number, householdId: number): InterestState {
@@ -486,14 +507,18 @@ function readInterestState(itemId: number, householdId: number): InterestState {
  *  - `pledge` is a number ≥ 0 or null → SET PLEDGE: ensure the household is in
  *    and record/replace its amount (null = in, no number). Never leaves.
  *  The UNIQUE(item_id, household_id) constraint backstops a double-insert race;
- *  the code/label snapshot is taken from the household row. */
+ *  the code/label snapshot is taken from the household row.
+ *  `notificationEmail` is the opt-in address stored on the row; validated and
+ *  normalised by the caller before passing. Never returned in any response. */
 export function setInterest(
   coupleId: number,
   itemId: number,
   household: HouseholdRow,
   pledge: number | null | undefined,
-): InterestState {
+  notificationEmail?: string,
+): SetInterestResult {
   const existing = householdHasInterest(itemId, household.id);
+  let wasInsert = false;
 
   if (pledge === undefined) {
     // Pure toggle.
@@ -503,25 +528,269 @@ export function setInterest(
         household.id,
       );
     } else {
+      wasInsert = true;
       db.prepare(
         `INSERT INTO wishlist_interests
-           (couple_id, item_id, household_id, household_code, household_label, pledged_amount_minor, created_at)
-         VALUES (?, ?, ?, ?, ?, NULL, ?)`,
-      ).run(coupleId, itemId, household.id, household.code, household.label, now());
+           (couple_id, item_id, household_id, household_code, household_label, pledged_amount_minor, notification_email, created_at)
+         VALUES (?, ?, ?, ?, ?, NULL, ?, ?)`,
+      ).run(
+        coupleId,
+        itemId,
+        household.id,
+        household.code,
+        household.label,
+        notificationEmail ?? null,
+        now(),
+      );
     }
   } else if (existing) {
-    // Set pledge on an existing membership — update the amount in place.
+    // Set pledge on an existing membership — update the amount and email in place.
     db.prepare(
-      "UPDATE wishlist_interests SET pledged_amount_minor = ? WHERE item_id = ? AND household_id = ?",
-    ).run(pledge, itemId, household.id);
+      "UPDATE wishlist_interests SET pledged_amount_minor = ?, notification_email = ? WHERE item_id = ? AND household_id = ?",
+    ).run(pledge, notificationEmail ?? null, itemId, household.id);
   } else {
     // Set pledge while not yet in — join and record the amount.
+    wasInsert = true;
     db.prepare(
       `INSERT INTO wishlist_interests
-         (couple_id, item_id, household_id, household_code, household_label, pledged_amount_minor, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ).run(coupleId, itemId, household.id, household.code, household.label, pledge, now());
+         (couple_id, item_id, household_id, household_code, household_label, pledged_amount_minor, notification_email, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      coupleId,
+      itemId,
+      household.id,
+      household.code,
+      household.label,
+      pledge,
+      notificationEmail ?? null,
+      now(),
+    );
   }
 
-  return readInterestState(itemId, household.id);
+  const state = readInterestState(itemId, household.id);
+
+  // Build notification payload only when this was a new join (insert). On a
+  // pure toggle-out (delete) or an in-place pledge update, wasInsert is false.
+  let notificationPayload: SetInterestResult["notificationPayload"];
+  if (wasInsert) {
+    const itemRow = db
+      .prepare("SELECT title, url, target_amount_minor, currency FROM wishlist_items WHERE id = ?")
+      .get(itemId) as
+      | { title: string; url: string | null; target_amount_minor: number | null; currency: string | null }
+      | undefined;
+    const allInterestRows = db
+      .prepare(
+        "SELECT household_label, pledged_amount_minor, notification_email FROM wishlist_interests WHERE item_id = ? ORDER BY created_at ASC",
+      )
+      .all(itemId) as Array<{
+      household_label: string;
+      pledged_amount_minor: number | null;
+      notification_email: string | null;
+    }>;
+    if (itemRow) {
+      notificationPayload = {
+        itemTitle: itemRow.title,
+        itemUrl: itemRow.url,
+        targetAmountMinor: itemRow.target_amount_minor,
+        currency: itemRow.currency ?? "HUF",
+        newContributorLabel: household.label,
+        allContributors: allInterestRows.map((r) => ({
+          label: r.household_label,
+          pledgedAmountMinor: r.pledged_amount_minor,
+          email: r.notification_email,
+        })),
+      };
+    }
+  }
+
+  return { ...state, wasInsert, notificationPayload };
+}
+
+/** Retrieve the group-gift contributor list for a single item, visible only to
+ *  households that have already pledged. Returns `null` when the household has
+ *  not pledged (caller should 403). The result never includes email addresses —
+ *  those are operational data for the mailer only. */
+export function getContributorsForItem(
+  itemId: number,
+  householdId: number,
+): WishlistContributorsResult | null {
+  // Gate: household must have pledged.
+  const membership = db
+    .prepare("SELECT 1 FROM wishlist_interests WHERE item_id = ? AND household_id = ? LIMIT 1")
+    .get(itemId, householdId) as { 1: number } | null;
+  if (membership == null) return null;
+
+  const itemRow = db
+    .prepare("SELECT target_amount_minor FROM wishlist_items WHERE id = ?")
+    .get(itemId) as { target_amount_minor: number | null } | undefined;
+  if (!itemRow) return null;
+
+  const rows = db
+    .prepare(
+      "SELECT household_label, pledged_amount_minor FROM wishlist_interests WHERE item_id = ? ORDER BY created_at ASC",
+    )
+    .all(itemId) as Array<{ household_label: string; pledged_amount_minor: number | null }>;
+
+  const target = itemRow.target_amount_minor;
+  const total = rows.reduce((sum, r) => sum + (r.pledged_amount_minor ?? 0), 0);
+
+  const contributors: WishlistContributor[] = rows.map((r) => ({
+    label: r.household_label,
+    pledged_amount_minor: r.pledged_amount_minor,
+    pledged_pct:
+      target && target > 0 && r.pledged_amount_minor != null
+        ? Math.round((r.pledged_amount_minor / target) * 100)
+        : null,
+  }));
+
+  const remaining_minor = target != null ? Math.max(0, target - total) : null;
+  const remaining_pct =
+    target != null && target > 0 ? Math.round((Math.max(0, target - total) / target) * 100) : null;
+
+  return {
+    contributors,
+    total_pledged_minor: total,
+    target_amount_minor: target,
+    remaining_minor,
+    remaining_pct,
+  };
+}
+
+// ── Group gift email notifications ────────────────────────────────────────────
+
+/** Format an amount in minor units for display. HUF: "X Ft" with space as
+ *  thousands separator. EUR: "€X". Other: "X {CURRENCY}". */
+function formatAmount(minor: number, currency: string): string {
+  if (currency === "HUF") {
+    // Space-separated thousands (Hungarian style)
+    const formatted = minor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return `${formatted} Ft`;
+  }
+  if (currency === "EUR") {
+    return `€${minor}`;
+  }
+  return `${minor} ${currency}`;
+}
+
+/** Send group-gift coordination emails to relevant recipients. Two roles:
+ *  - EXISTING contributors who opted in → notified that a new household joined.
+ *  - NEW pledger who provided an email → confirmation of their own pledge.
+ *  All sends are fire-and-forget; errors are caught and logged but never
+ *  propagate to the HTTP response. Recipients only get emails if they opted
+ *  in (provided a notification_email at pledge time). */
+export async function sendGroupGiftNotification(params: {
+  to: string;
+  isNewPledger: boolean;
+  itemTitle: string;
+  itemUrl: string | null;
+  targetAmountMinor: number | null;
+  currency: string;
+  newContributorLabel: string;
+  contributors: Array<{ label: string; pledgedAmountMinor: number | null }>;
+  recipientLabel: string;
+}): Promise<void> {
+  const {
+    to,
+    isNewPledger,
+    itemTitle,
+    itemUrl,
+    targetAmountMinor,
+    currency,
+    newContributorLabel,
+    contributors,
+    recipientLabel,
+  } = params;
+
+  const total = contributors.reduce((s, c) => s + (c.pledgedAmountMinor ?? 0), 0);
+  const pct =
+    targetAmountMinor && targetAmountMinor > 0
+      ? Math.round((total / targetAmountMinor) * 100)
+      : null;
+
+  const subject = isNewPledger
+    ? `[${itemTitle}] Köszönjük, hogy csatlakozol! / Thanks for joining!`
+    : `[${itemTitle}] Újabb vendég csatlakozott / Another guest joined`;
+
+  // Build contributor table rows (HTML)
+  const tableRows = contributors
+    .map((c) => {
+      const isMe = c.label === recipientLabel;
+      const amountCell = c.pledgedAmountMinor != null ? formatAmount(c.pledgedAmountMinor, currency) : "-";
+      return `<tr${isMe ? ' style="font-weight:bold"' : ""}>
+        <td>${c.label}${isMe ? " [Te/You]" : ""}</td>
+        <td>${amountCell}</td>
+      </tr>`;
+    })
+    .join("\n");
+
+  const contributorTableHtml = `
+    <table style="border-collapse:collapse;width:100%;margin:12px 0">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc">Háztartás / Guest</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc">Összeg / Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tableRows}
+      </tbody>
+    </table>`;
+
+  const progressLine =
+    targetAmountMinor != null
+      ? `<p>Összesen / Total: <strong>${formatAmount(total, currency)} / ${formatAmount(targetAmountMinor, currency)}${pct != null ? ` (${pct}%)` : ""}</strong></p>`
+      : `<p>Összesen / Total: <strong>${formatAmount(total, currency)}</strong></p>`;
+
+  const itemUrlLink = itemUrl
+    ? `<p><a href="${itemUrl}">Megnézheted az ajándékot / View the gift item</a></p>`
+    : "";
+
+  let bodyHtml: string;
+  if (isNewPledger) {
+    const ownPledge = contributors.find((c) => c.label === recipientLabel);
+    const ownAmount =
+      ownPledge?.pledgedAmountMinor != null
+        ? formatAmount(ownPledge.pledgedAmountMinor, currency)
+        : "nincs megadva / not specified";
+    bodyHtml = `
+      <p>Megerősítjük, hogy szándéknyilatkozatod megérkezett a(z) <strong>${itemTitle}</strong> ajándékhoz.<br>
+      <em>We've noted your intention to contribute to <strong>${itemTitle}</strong>.</em></p>
+      <p>Vállalt összeg / Your pledge: <strong>${ownAmount}</strong></p>
+      ${contributors.length > 1 ? contributorTableHtml : ""}
+      ${progressLine}
+      ${itemUrlLink}
+      <p><em>Ez egy nem kötelező szándéknyilatkozat — bármikor visszavonhatod.<br>
+      This is a non-binding expression of interest — you can withdraw at any time.</em></p>`;
+  } else {
+    bodyHtml = `
+      <p>Örömmel értesítünk, hogy <strong>${newContributorLabel}</strong> is csatlakozott a(z) <strong>${itemTitle}</strong> ajándékhoz.<br>
+      <em>Another guest joined <strong>${itemTitle}</strong>.</em></p>
+      ${contributorTableHtml}
+      ${progressLine}
+      <p><strong>Egyeztessetek a vásárlásról! / Coordinate the purchase!</strong></p>
+      ${itemUrlLink}`;
+  }
+
+  const fullHtml = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:16px">
+    ${bodyHtml}
+    <hr style="margin-top:24px">
+    <p style="font-size:11px;color:#888">Ezt az e-mailt azért kaptad, mert megadtad e-mail-címedet egy ajándék-koordináció kapcsán a Weddly platformon.<br>
+    You received this email because you provided your address for gift coordination on the Weddly platform.</p>
+  </body></html>`;
+
+  // Plain-text version (fallback)
+  const textRows = contributors
+    .map((c) => {
+      const isMe = c.label === recipientLabel;
+      const amt = c.pledgedAmountMinor != null ? formatAmount(c.pledgedAmountMinor, currency) : "-";
+      return `${c.label}${isMe ? " [Te/You]" : ""}: ${amt}`;
+    })
+    .join("\n");
+
+  const fullText = isNewPledger
+    ? `${itemTitle} - köszönjük, hogy csatlakozol!\n\n${textRows}\n\nÖsszesen: ${formatAmount(total, currency)}${targetAmountMinor != null ? ` / ${formatAmount(targetAmountMinor, currency)}` : ""}${pct != null ? ` (${pct}%)` : ""}${itemUrl ? `\n\n${itemUrl}` : ""}`
+    : `Újabb vendég csatlakozott: ${newContributorLabel}\n\n${textRows}\n\nÖsszesen: ${formatAmount(total, currency)}${targetAmountMinor != null ? ` / ${formatAmount(targetAmountMinor, currency)}` : ""}${pct != null ? ` (${pct}%)` : ""}${itemUrl ? `\n\n${itemUrl}` : ""}`;
+
+  // sendRawEmail never throws (see domain/emails/send.ts).
+  await sendRawEmail({ to, subject, html: fullHtml, text: fullText });
 }

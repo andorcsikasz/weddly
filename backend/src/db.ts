@@ -1071,6 +1071,12 @@ addColumnIfMissing("wishlist_items", "currency", "currency TEXT");
 // tapping "I'd like to help" on a group gift. NULL on every legacy row (tapped
 // in without a number), so the additive add is a safe no-op.
 addColumnIfMissing("wishlist_interests", "pledged_amount_minor", "pledged_amount_minor INTEGER");
+// `notification_email` is the opt-in address a guest provides at pledge time so
+// they can receive group-gift coordination emails when other households join.
+// NULL when the guest didn't provide one (the common case). Never returned in
+// any HTTP response — only read server-side by the mailer. Additive: all
+// existing rows default to NULL (no notification).
+addColumnIfMissing("wishlist_interests", "notification_email", "notification_email TEXT");
 // Wishlist kinds collapsed from three (item / group_gift / personal) to two
 // (gift / request): item + group_gift are one "gift" bucket now, personal reads
 // as a "request". Normalize legacy rows once at boot so the stored value matches

@@ -2,7 +2,7 @@
 
 export type { EmailKind, EmailCategory } from "./kinds";
 export { KIND_CATEGORY } from "./kinds";
-export { sendKind, markDispatched } from "./send";
+export { sendKind, markDispatched, sendRawEmail } from "./send";
 export {
   ensurePreferences,
   getPreferencesByToken,

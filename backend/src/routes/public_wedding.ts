@@ -36,6 +36,7 @@ import type {
   PublicWeddingWebsiteView,
 } from "@shared/wedding_website";
 import type {
+  WishlistContributorsResult,
   WishlistEntry,
   WishlistInterestToggleInput,
   WishlistInterestToggleResult,
@@ -46,11 +47,13 @@ import { type CoupleRow, parseDesignJson } from "../domain/couples";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { listScheduleEvents } from "../domain/schedule";
 import {
+  getContributorsForItem,
   getWishlistItemScoped,
   listHouseholdPledges,
   listInterestStatsForItems,
   listWishlistItemRows,
   normalizeKind,
+  sendGroupGiftNotification,
   setInterest,
   toWishlistEntry,
 } from "../domain/wishlist";
@@ -359,7 +362,11 @@ async function handleToggleWishlistInterest(ctx: Ctx): Promise<Response> {
   // Optional soft pledge. Absent key → pure toggle (undefined). `null` → in,
   // no amount. A number must be a non-negative integer (minor units). No money
   // moves — this is a non-binding coordination figure.
-  const body = await readJson<WishlistInterestToggleInput>(ctx.req).catch(() => ({}));
+  // Cast to Record<string, unknown> so we can safely read arbitrary keys without
+  // TypeScript narrowing woes from the `WishlistInterestToggleInput | {}` union.
+  const body = (await readJson<WishlistInterestToggleInput>(ctx.req).catch(
+    () => ({}),
+  )) as Record<string, unknown>;
   let pledge: number | null | undefined;
   if (!("pledged_amount_minor" in body)) {
     pledge = undefined;
@@ -373,7 +380,113 @@ async function handleToggleWishlistInterest(ctx: Ctx): Promise<Response> {
     pledge = n;
   }
 
-  const result: WishlistInterestToggleResult = setInterest(couple.id, itemId, household, pledge);
+  // Optional notification email — the guest opts in by providing their address.
+  // Validated: must contain '@', max 254 chars, must look like a valid email.
+  // Empty string or absent → not stored.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  let notificationEmail: string | undefined;
+  if (
+    typeof body.notification_email === "string" &&
+    body.notification_email.trim().length > 0 &&
+    body.notification_email.trim().length <= 254 &&
+    EMAIL_RE.test(body.notification_email.trim())
+  ) {
+    notificationEmail = body.notification_email.trim();
+  }
+
+  const toggleResult = setInterest(couple.id, itemId, household, pledge, notificationEmail);
+
+  // Fire-and-forget email notifications when a new household joined.
+  if (toggleResult.wasInsert && toggleResult.notificationPayload) {
+    const payload = toggleResult.notificationPayload;
+    const { allContributors, newContributorLabel, itemTitle, itemUrl, targetAmountMinor, currency } =
+      payload;
+
+    // Notification-eligible contributors (those with an email), excluding the
+    // new pledger themselves (they get Email B, not Email A).
+    const existingWithEmail = allContributors.filter(
+      (c) => c.email != null && c.label !== newContributorLabel,
+    );
+
+    // Email A: notify existing opted-in contributors that a new household joined.
+    // Only send when there is at least one other contributor with an email.
+    if (existingWithEmail.length > 0) {
+      for (const contributor of existingWithEmail) {
+        if (!contributor.email) continue;
+        void sendGroupGiftNotification({
+          to: contributor.email,
+          isNewPledger: false,
+          itemTitle,
+          itemUrl,
+          targetAmountMinor,
+          currency,
+          newContributorLabel,
+          contributors: allContributors.map((c) => ({
+            label: c.label,
+            pledgedAmountMinor: c.pledgedAmountMinor,
+          })),
+          recipientLabel: contributor.label,
+        });
+      }
+    }
+
+    // Email B: confirmation to the new pledger (if they provided an email).
+    if (notificationEmail) {
+      void sendGroupGiftNotification({
+        to: notificationEmail,
+        isNewPledger: true,
+        itemTitle,
+        itemUrl,
+        targetAmountMinor,
+        currency,
+        newContributorLabel,
+        contributors: allContributors.map((c) => ({
+          label: c.label,
+          pledgedAmountMinor: c.pledgedAmountMinor,
+        })),
+        recipientLabel: newContributorLabel,
+      });
+    }
+  }
+
+  // Return only the WishlistInterestToggleResult fields — wasInsert and
+  // notificationPayload are internal and must not leak to the client.
+  const result: WishlistInterestToggleResult = {
+    interest_count: toggleResult.interest_count,
+    pledged_amount_minor: toggleResult.pledged_amount_minor,
+    viewer_has_interest: toggleResult.viewer_has_interest,
+    viewer_pledged_amount_minor: toggleResult.viewer_pledged_amount_minor,
+  };
+  return json(result);
+}
+
+/** GET the contributor list for a group-gift item. Only accessible to
+ *  households that have already pledged on the item — gates on confirmed tier
+ *  (valid code + ≥1 RSVP yes) AND on the household having tapped in.
+ *  Returns a `WishlistContributorsResult` or 403 with `{ error: "not_pledged" }`.
+ *  No email addresses are ever included in the response. */
+async function handleGetWishlistContributors(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "public:wedding:code", WEDDING_CODE_BUCKET);
+
+  const slug = ctx.params.slug ?? "";
+  const codeRaw = ctx.params.code ?? "";
+  const itemId = Number(ctx.params.itemId);
+  if (!Number.isFinite(itemId)) throw new HttpError(400, "Invalid item id");
+
+  const couple = resolveCoupleBySlug(slug, false);
+  const household = resolveHousehold(couple.id, codeRaw);
+
+  // Confirmed-tier gate.
+  const members = listMembers(household.id);
+  const anyYes = members.some((m) => m.rsvp_status === "yes");
+  if (!anyYes) {
+    throw new HttpError(403, "Please RSVP yes first", { code: "not_rsvpd" });
+  }
+
+  const result: WishlistContributorsResult | null = getContributorsForItem(itemId, household.id);
+  if (result == null) {
+    return json({ error: "not_pledged" }, { status: 403 });
+  }
   return json(result);
 }
 
@@ -389,6 +502,14 @@ export function registerPublicWeddingRoutes(router: Router) {
   router.post(
     "/api/public/wedding/:slug/:code/wishlist/:itemId/interest",
     handleToggleWishlistInterest,
+  );
+  // Group-gift contributor list. Confirmed-tier-gated + pledge-gated (only
+  // households that have already pledged can see the contributor list).
+  // Returns `WishlistContributorsResult`; 403 with `{ error: "not_pledged" }`
+  // for non-pledgers. No email addresses ever returned.
+  router.get(
+    "/api/public/wedding/:slug/:code/wishlist/:itemId/contributors",
+    handleGetWishlistContributors,
   );
   // Legacy redirect-shim — see comment on handleLegacyGuestPortal. Slated
   // for removal one release after Phase 2 ships.

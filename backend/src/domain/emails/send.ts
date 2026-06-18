@@ -268,6 +268,24 @@ async function sendKindInner<K extends EmailKind>(
   }
 }
 
+/** Send a raw ad-hoc email without going through the template/kind system.
+ *  Use ONLY for one-off outreach notifications that do not fit the kind
+ *  catalogue (e.g. guest group-gift coordination). The caller is responsible
+ *  for constructing both HTML and plain-text bodies and for wrapping the
+ *  call in a fire-and-forget `void` + try/catch. Never throws. */
+export async function sendRawEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<void> {
+  try {
+    await sendEmail({ to: opts.to, subject: opts.subject, html: opts.html, text: opts.text });
+  } catch {
+    // Best-effort — mirror the never-throw contract of sendKind.
+  }
+}
+
 /** Mark a `(couple_id, user_id, kind)` triplet as dispatched. Used by cron-
  *  driven sends so a worker crash or a re-run doesn't double-fire. The unique
  *  index in schema.sql makes this idempotent at the DB layer. */
