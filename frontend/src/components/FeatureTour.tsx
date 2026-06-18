@@ -248,7 +248,7 @@ function useTargetRect(href: string, active: boolean, target?: string): DOMRect 
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
-  }, [href, active]);
+  }, [href, active, target]);
   return rect;
 }
 
