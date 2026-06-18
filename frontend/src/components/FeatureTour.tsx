@@ -30,6 +30,7 @@ import { useT } from "../lib/i18n";
 interface PageSubStep {
   titleKey: string;
   bodyKey: string;
+  target?: string;
 }
 
 interface TourStep {
@@ -37,6 +38,7 @@ interface TourStep {
   titleKey: string;
   bodyKey: string;
   icon: ReactNode;
+  target?: string;
   // When present, clicking Compass on this page uses these steps instead of the global blurb.
   pageSteps?: PageSubStep[];
 }
@@ -48,8 +50,8 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.dashboard_body",
     icon: <LayoutDashboard size={20} />,
     pageSteps: [
-      { titleKey: "tour.dashboard_p1_title", bodyKey: "tour.dashboard_p1_body" },
-      { titleKey: "tour.dashboard_p2_title", bodyKey: "tour.dashboard_p2_body" },
+      { titleKey: "tour.dashboard_p1_title", bodyKey: "tour.dashboard_p1_body", target: "dashboard-kpi" },
+      { titleKey: "tour.dashboard_p2_title", bodyKey: "tour.dashboard_p2_body", target: "dashboard-budget" },
       { titleKey: "tour.dashboard_p3_title", bodyKey: "tour.dashboard_p3_body" },
     ],
   },
@@ -59,8 +61,8 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.guests_body",
     icon: <Users size={20} />,
     pageSteps: [
-      { titleKey: "tour.guests_p1_title", bodyKey: "tour.guests_p1_body" },
-      { titleKey: "tour.guests_p2_title", bodyKey: "tour.guests_p2_body" },
+      { titleKey: "tour.guests_p1_title", bodyKey: "tour.guests_p1_body", target: "guests-tools" },
+      { titleKey: "tour.guests_p2_title", bodyKey: "tour.guests_p2_body", target: "guests-search" },
       { titleKey: "tour.guests_p3_title", bodyKey: "tour.guests_p3_body" },
       { titleKey: "tour.guests_p4_title", bodyKey: "tour.guests_p4_body" },
     ],
@@ -71,9 +73,9 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.budget_body",
     icon: <Coins size={20} />,
     pageSteps: [
-      { titleKey: "tour.budget_p1_title", bodyKey: "tour.budget_p1_body" },
-      { titleKey: "tour.budget_p2_title", bodyKey: "tour.budget_p2_body" },
-      { titleKey: "tour.budget_p3_title", bodyKey: "tour.budget_p3_body" },
+      { titleKey: "tour.budget_p1_title", bodyKey: "tour.budget_p1_body", target: "budget-header" },
+      { titleKey: "tour.budget_p2_title", bodyKey: "tour.budget_p2_body", target: "budget-lines" },
+      { titleKey: "tour.budget_p3_title", bodyKey: "tour.budget_p3_body", target: "budget-table" },
     ],
   },
   {
@@ -82,8 +84,8 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.vendors_body",
     icon: <Store size={20} />,
     pageSteps: [
-      { titleKey: "tour.vendors_p1_title", bodyKey: "tour.vendors_p1_body" },
-      { titleKey: "tour.vendors_p2_title", bodyKey: "tour.vendors_p2_body" },
+      { titleKey: "tour.vendors_p1_title", bodyKey: "tour.vendors_p1_body", target: "vendors-search" },
+      { titleKey: "tour.vendors_p2_title", bodyKey: "tour.vendors_p2_body", target: "vendors-list" },
       { titleKey: "tour.vendors_p3_title", bodyKey: "tour.vendors_p3_body" },
     ],
   },
@@ -93,7 +95,7 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.planning_body",
     icon: <ClipboardList size={20} />,
     pageSteps: [
-      { titleKey: "tour.planning_p1_title", bodyKey: "tour.planning_p1_body" },
+      { titleKey: "tour.planning_p1_title", bodyKey: "tour.planning_p1_body", target: "planning-tabs" },
       { titleKey: "tour.planning_p2_title", bodyKey: "tour.planning_p2_body" },
       { titleKey: "tour.planning_p3_title", bodyKey: "tour.planning_p3_body" },
     ],
@@ -110,8 +112,8 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.schedule_body",
     icon: <CalendarClock size={20} />,
     pageSteps: [
-      { titleKey: "tour.schedule_p1_title", bodyKey: "tour.schedule_p1_body" },
-      { titleKey: "tour.schedule_p2_title", bodyKey: "tour.schedule_p2_body" },
+      { titleKey: "tour.schedule_p1_title", bodyKey: "tour.schedule_p1_body", target: "schedule-toolbar" },
+      { titleKey: "tour.schedule_p2_title", bodyKey: "tour.schedule_p2_body", target: "schedule-events" },
       { titleKey: "tour.schedule_p3_title", bodyKey: "tour.schedule_p3_body" },
     ],
   },
@@ -121,10 +123,10 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.seating_body",
     icon: <Armchair size={20} />,
     pageSteps: [
-      { titleKey: "tour.seating_p1_title", bodyKey: "tour.seating_p1_body" },
-      { titleKey: "tour.seating_p2_title", bodyKey: "tour.seating_p2_body" },
-      { titleKey: "tour.seating_p3_title", bodyKey: "tour.seating_p3_body" },
-      { titleKey: "tour.seating_p4_title", bodyKey: "tour.seating_p4_body" },
+      { titleKey: "tour.seating_p1_title", bodyKey: "tour.seating_p1_body", target: "seating-canvas" },
+      { titleKey: "tour.seating_p2_title", bodyKey: "tour.seating_p2_body", target: "seating-modes" },
+      { titleKey: "tour.seating_p3_title", bodyKey: "tour.seating_p3_body", target: "seating-unassigned" },
+      { titleKey: "tour.seating_p4_title", bodyKey: "tour.seating_p4_body", target: "seating-export" },
     ],
   },
   {
@@ -145,8 +147,8 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.design_body",
     icon: <Palette size={20} />,
     pageSteps: [
-      { titleKey: "tour.design_p1_title", bodyKey: "tour.design_p1_body" },
-      { titleKey: "tour.design_p2_title", bodyKey: "tour.design_p2_body" },
+      { titleKey: "tour.design_p1_title", bodyKey: "tour.design_p1_body", target: "design-style" },
+      { titleKey: "tour.design_p2_title", bodyKey: "tour.design_p2_body", target: "design-tabs" },
       { titleKey: "tour.design_p3_title", bodyKey: "tour.design_p3_body" },
     ],
   },
@@ -174,7 +176,7 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.guest_page_body",
     icon: <Globe size={20} />,
     pageSteps: [
-      { titleKey: "tour.guest_page_p1_title", bodyKey: "tour.guest_page_p1_body" },
+      { titleKey: "tour.guest_page_p1_title", bodyKey: "tour.guest_page_p1_body", target: "guest-page-preview" },
       { titleKey: "tour.guest_page_p2_title", bodyKey: "tour.guest_page_p2_body" },
       { titleKey: "tour.guest_page_p3_title", bodyKey: "tour.guest_page_p3_body" },
     ],
@@ -194,6 +196,7 @@ function buildActiveSteps(pathname: string): { steps: TourStep[]; initialIndex: 
           icon: matched.icon,
           titleKey: ps.titleKey,
           bodyKey: ps.bodyKey,
+          target: ps.target,
         })),
         initialIndex: 0,
       };
@@ -205,6 +208,13 @@ function buildActiveSteps(pathname: string): { steps: TourStep[]; initialIndex: 
 }
 
 const CARD_W = 296;
+
+function findPageTarget(target: string): Element | null {
+  const el = document.querySelector(`[data-tour-target="${target}"]`);
+  if (!el) return null;
+  const r = (el as HTMLElement).getBoundingClientRect();
+  return r.width > 0 && r.height > 0 ? el : null;
+}
 
 function findNavTarget(href: string): Element | null {
   const visible = (el: Element | null): Element | null => {
@@ -219,12 +229,12 @@ function findNavTarget(href: string): Element | null {
   );
 }
 
-function useTargetRect(href: string, active: boolean): DOMRect | null {
+function useTargetRect(href: string, active: boolean, target?: string): DOMRect | null {
   const [rect, setRect] = useState<DOMRect | null>(null);
   useEffect(() => {
     if (!active) return;
     const update = () => {
-      const el = findNavTarget(href);
+      const el = target ? findPageTarget(target) : findNavTarget(href);
       setRect(el ? (el as HTMLElement).getBoundingClientRect() : null);
     };
     update();
@@ -307,7 +317,7 @@ export function FeatureTour({ open, onClose }: Props) {
   }, [open, location.pathname]);
 
   const step = activeSteps[stepIndex];
-  const targetRect = useTargetRect(step?.href ?? "", open);
+  const targetRect = useTargetRect(step?.href ?? "", open, step?.target);
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === activeSteps.length - 1;
 

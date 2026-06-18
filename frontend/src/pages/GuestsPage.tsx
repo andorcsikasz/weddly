@@ -705,7 +705,7 @@ export default function GuestsPage() {
               label on hover (max-width + opacity transition) and surfaces a
               native tooltip via title. Keeps the toolbar compact while the
               primary "Add" CTA stays full beside it. */}
-          <div className="inline-flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100">
+          <div data-tour-target="guests-tools" className="inline-flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100">
             <button
               type="button"
               className={GUEST_TOOL_BTN}
@@ -782,7 +782,7 @@ export default function GuestsPage() {
           {/* `min-w-0` on mobile lets the search input shrink past 200px so
            * the optional "Clear" pill stays on the same line; the desktop
            * `sm:min-w-[200px]` floor protects laptop readability. */}
-          <div className="relative w-full min-w-0 flex-1 sm:w-auto sm:min-w-[200px]">
+          <div data-tour-target="guests-search" className="relative w-full min-w-0 flex-1 sm:w-auto sm:min-w-[200px]">
             <Search
               size={14}
               aria-hidden

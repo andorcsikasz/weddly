@@ -1086,7 +1086,7 @@ export default function DashboardPage() {
       {/* ── KPI tiles — hidden in day-of mode; the DayOfPanel above
           surfaces a compact stat row instead. ──────────────────────── */}
       {!dayOfMode && (
-        <section className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section data-tour-target="dashboard-kpi" className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {weddingPast ? (
             <PastWeddingTile
               label={t("dashboard.kpi_days_past")}
@@ -1248,7 +1248,7 @@ export default function DashboardPage() {
           <UpcomingTasksCard weddingDate={couple.wedding_date} nudges={setupNudges} />
 
           {/* ── Cost planning panel — full-width, inline-edit per category. ── */}
-          <section className="mb-8">
+          <section data-tour-target="dashboard-budget" className="mb-8">
             <CostPlanningCard
               lines={lines}
               baseline={baselineCount}

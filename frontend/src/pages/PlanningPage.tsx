@@ -606,6 +606,7 @@ export default function PlanningPage() {
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <nav
             role="tablist"
+            data-tour-target="planning-tabs"
             aria-label={t("planning.tabs_aria")}
             className="inline-flex gap-1 rounded-2xl border border-ink-900 bg-paper-100/50 p-1 dark:border-umber-700 dark:bg-umber-700/60"
           >

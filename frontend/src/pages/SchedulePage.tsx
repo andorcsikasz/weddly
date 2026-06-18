@@ -287,7 +287,7 @@ export default function SchedulePage() {
           <h1 className="font-grotesk">{t("schedule.title")}</h1>
           <InfoHint text={t("schedule.sub")} />
         </div>
-        <div className="inline-flex items-stretch overflow-hidden rounded-xl border border-paper-300 shadow-sm dark:border-umber-600">
+        <div data-tour-target="schedule-toolbar" className="inline-flex items-stretch overflow-hidden rounded-xl border border-paper-300 shadow-sm dark:border-umber-600">
           {/* Proportional view toggle */}
           <button
             type="button"
@@ -356,6 +356,7 @@ export default function SchedulePage() {
         </div>
       ) : (
         <ul
+          data-tour-target="schedule-events"
           className={`card p-0 ${!proportional ? "divide-y divide-paper-200 dark:divide-umber-700" : ""}`}
         >
           {sortedEvents.map((event, i) => {

@@ -1138,6 +1138,7 @@ export default function SeatingPage() {
         {/* Mode tabs — stretch to fill the remaining space */}
         <div
           role="tablist"
+          data-tour-target="seating-modes"
           className="flex min-w-0 flex-1 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:border-umber-600 dark:bg-umber-800"
         >
           {(["edit", "seat"] as const).map((m) => (
@@ -1162,7 +1163,7 @@ export default function SeatingPage() {
           // Edit mode right section — matches the w-[280px] right panel below.
           <div className="flex w-[280px] shrink-0 items-center justify-end gap-2">
             {/* Icon-only action strip */}
-            <div className="flex shrink-0 items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
+            <div data-tour-target="seating-export" className="flex shrink-0 items-stretch divide-x divide-ink-300 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:divide-umber-600 dark:border-umber-600 dark:bg-umber-800">
               <PrintChartMenu
                 disabled={previewLoading !== null}
                 onPick={(format) =>
@@ -1308,7 +1309,7 @@ export default function SeatingPage() {
         // Full-height flex (same proportions as seat mode). Map fills flex-1;
         // table editor sits in a fixed-width right column.
         <div className="flex h-[calc(100vh-196px)] gap-4">
-          <div className="min-w-0 flex-1">
+          <div data-tour-target="seating-canvas" className="min-w-0 flex-1">
             <SeatingMap
               tables={tables}
               assignments={assignments}
@@ -1351,7 +1352,7 @@ export default function SeatingPage() {
           <div className="flex h-[calc(100vh-196px)] gap-4">
             {/* Map: flex-1 so it takes all remaining width, h-full so the
               SeatingMap card stretches vertically. */}
-            <div className="min-w-0 flex-1">
+            <div data-tour-target="seating-canvas" className="min-w-0 flex-1">
               <SeatingMap
                 tables={tables}
                 assignments={assignments}
@@ -1400,6 +1401,7 @@ export default function SeatingPage() {
             {/* Compact unassigned guests panel — 220px, sticky so it stays
               alongside the map as the user scrolls. */}
             <aside
+              data-tour-target="seating-unassigned"
               className={`w-[280px] shrink-0 rounded-xl border bg-paper-50 p-3 transition-colors dark:bg-umber-900 ${
                 draggingSeatedId !== null
                   ? unassignedHover

@@ -1001,7 +1001,7 @@ export default function GuestPageEditorPage() {
         <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
       </div>
 
-      <section className="mb-8">
+      <section data-tour-target="guest-page-preview" className="mb-8">
         <p className="mb-3 text-sm text-ink-600 dark:text-umber-200">
           {t("guest_page_editor.preview_subtitle")}
         </p>

@@ -816,7 +816,7 @@ export default function SuppliersPage() {
       {/* Search + city filter + saved chip. Inputs share the soft pill
           look of the "Mentett" toggle so the row reads as one quiet
           control surface rather than competing heavyweight fields. */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div data-tour-target="vendors-search" className="mb-3 flex flex-wrap items-center gap-2">
         <label className="relative flex-1 min-w-[14rem]">
           <span className="sr-only">{t("suppliers.search_label")}</span>
           <Search
@@ -1275,6 +1275,7 @@ export default function SuppliersPage() {
             </div>
           )}
           <div
+            data-tour-target="vendors-list"
             className={
               viewMode === "line" ? "flex flex-col gap-2" : "grid auto-rows-fr gap-3 md:grid-cols-2"
             }

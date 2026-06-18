@@ -504,6 +504,7 @@ export default function DesignPage() {
             {/* Surface switcher: Website vs Print. */}
             <div
               role="tablist"
+              data-tour-target="design-tabs"
               aria-label={t("design.title")}
               className="flex w-full items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800"
             >
@@ -574,7 +575,7 @@ export default function DesignPage() {
               </h2>
             )}
             {/* Wedding style */}
-            <section>
+            <section data-tour-target="design-style">
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                 {t("design.section.style")}
               </h2>

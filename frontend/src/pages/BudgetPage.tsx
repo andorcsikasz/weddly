@@ -778,7 +778,7 @@ export default function BudgetPage() {
 
   return (
     <>
-      <header className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <header data-tour-target="budget-header" className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="flex min-w-0 items-center gap-2">
           <h1 className="font-grotesk">{t("budget.title")}</h1>
           <InfoHint text={t("budget.sub")} />
@@ -894,7 +894,7 @@ export default function BudgetPage() {
         onRemoveCustomRow={removeCustomRow}
       />
 
-      <section className="mt-8">
+      <section data-tour-target="budget-lines" className="mt-8">
         <div className="mb-3">
           <h2 className="font-grotesk tracking-tight leading-tight">{t("budget.lines_title")}</h2>
           <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
@@ -969,7 +969,7 @@ export default function BudgetPage() {
           <AddCustomRowMobile onAdd={addCustomRow} />
         </div>
 
-        <div className="card hidden overflow-hidden p-0 md:block">
+        <div data-tour-target="budget-table" className="card hidden overflow-hidden p-0 md:block">
           <table className="min-w-full text-sm">
             <thead className="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:text-umber-300">
               <tr>
