@@ -173,7 +173,7 @@ export function FeatureTour({ open, onClose }: Props) {
   const { t } = useT();
   const [stepIndex, setStepIndex] = useState(0);
   const [fade, setFade] = useState<"in" | "out">("in");
-  const fadeTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const fadeTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (open) {
