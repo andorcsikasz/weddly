@@ -43,7 +43,7 @@ const EMPTY: FormState = {
 };
 
 function PlannerWaitlistForm() {
-  const t = useT();
+  const { t } = useT();
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -337,7 +337,7 @@ function PlannerWaitlistForm() {
 // ── Benefits ──────────────────────────────────────────────────────────────────
 
 function Benefits() {
-  const t = useT();
+  const { t } = useT();
   const items = [
     {
       icon: <Users size={20} aria-hidden="true" />,
@@ -381,7 +381,7 @@ function Benefits() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function PlannersPage() {
-  const t = useT();
+  const { t } = useT();
   return (
     <PublicShell>
       <main id="main">

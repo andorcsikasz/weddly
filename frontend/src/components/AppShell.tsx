@@ -224,7 +224,7 @@ type AdminNavGroup = "inbox" | "manage" | "insights";
 /** Maps each admin nav row to the matching `AdminSidebarBadges` key.
  *  Items without a badgeKey never show a red index (e.g. Categories —
  *  admin-edited content with no inbox). */
-type AdminBadgeKey = "suppliers" | "users" | "vendor_waitlist" | "feedback";
+type AdminBadgeKey = "suppliers" | "users" | "vendor_waitlist" | "feedback" | "planner_waitlist";
 // `group` is re-typed (not intersected) — `NavItem.group` is
 // `NavGroup | undefined`, intersecting with `AdminNavGroup | undefined`
 // collapses to `never`. `Omit<NavItem, "group">` lets the admin variant

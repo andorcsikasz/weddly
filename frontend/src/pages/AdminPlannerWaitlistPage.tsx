@@ -72,7 +72,7 @@ function DecideModal({ entry, onClose, onSaved }: DecideModalProps) {
       if (result.entry) onSaved(result.entry);
       onClose();
     } catch {
-      toast("Nem sikerült menteni. Próbáld újra.", "error");
+      toast.error("Nem sikerült menteni. Próbáld újra.");
     } finally {
       setSaving(false);
     }
@@ -155,6 +155,7 @@ function EntryCard({ entry, onUpdate }: EntryCardProps) {
       title: "Visszanyitás?",
       body: `A(z) "${STATUS_LABELS[entry.status]}" döntést töröljük és az entry visszakerül a beérkezettekhez.`,
       confirmLabel: "Visszanyitás",
+      cancelLabel: "Mégse",
     });
     if (!ok) return;
     setReopening(true);
@@ -162,7 +163,7 @@ function EntryCard({ entry, onUpdate }: EntryCardProps) {
       const result = await adminPlannerWaitlistApi.reopen(entry.id);
       if (result.entry) onUpdate(result.entry);
     } catch {
-      toast("Nem sikerült visszanyitni.", "error");
+      toast.error("Nem sikerült visszanyitni.");
     } finally {
       setReopening(false);
     }
@@ -256,7 +257,7 @@ function EntryCard({ entry, onUpdate }: EntryCardProps) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AdminPlannerWaitlistPage() {
-  const t = useT();
+  const { t } = useT();
   const [filter, setFilter] = useState<PlannerWaitlistStatus>("new");
   const [entries, setEntries] = useState<PlannerWaitlistAdminView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -283,16 +284,17 @@ export default function AdminPlannerWaitlistPage() {
       />
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {ALL_STATUSES.map((s) => (
-          <AdminFilterChip
-            key={s}
-            active={filter === s}
-            count={entries.filter((e) => e.status === s).length}
-            onClick={() => setFilter(s)}
-          >
-            {FILTER_LABELS[s]}
-          </AdminFilterChip>
-        ))}
+        {ALL_STATUSES.map((s) => {
+          const count = entries.filter((e) => e.status === s).length;
+          return (
+            <AdminFilterChip
+              key={s}
+              label={`${FILTER_LABELS[s]}${count > 0 ? ` · ${count}` : ""}`}
+              active={filter === s}
+              onClick={() => setFilter(s)}
+            />
+          );
+        })}
       </div>
 
       {loading ? (
