@@ -601,16 +601,17 @@ export default function MediaPage() {
     }
     setCoupleUploading(false);
     setCoupleUploadProgress(null);
-    photoAlbumApi.current().then((r) => setAlbum(r.album)).catch(() => {});
+    photoAlbumApi
+      .current()
+      .then((r) => setAlbum(r.album))
+      .catch(() => {});
   }
 
   const photographerUrl = couple?.media_links?.photographer ?? null;
   const albumStatus = album ? getFilmStatus(album) : null;
   const uploadUrl = album ? `${window.location.origin}/photos/${album.uploadToken}` : null;
   const totalCapacity =
-    album !== null && album.shotsPerGuest != null
-      ? album.shotsPerGuest * album.guestCap
-      : null;
+    album !== null && album.shotsPerGuest != null ? album.shotsPerGuest * album.guestCap : null;
   const nearGuestLimit = album !== null && album.participantCount >= album.guestCap - 2;
   const nearPhotoLimit =
     totalCapacity !== null && album !== null && album.photoCount >= Math.floor(totalCapacity * 0.8);
@@ -739,7 +740,6 @@ export default function MediaPage() {
 
       {/* ── Dark canvas ───────────────────────────────────────────── */}
       <div className="overflow-hidden rounded-2xl bg-umber-950">
-
         {album ? (
           <>
             {/* ── Hero ──────────────────────────────────────────────── */}
@@ -798,7 +798,11 @@ export default function MediaPage() {
                 </span>
                 <span className="mt-0.5 flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
                   People
-                  <ChevronRight size={10} aria-hidden="true" className={`transition-transform ${showParticipants ? "rotate-90" : ""}`} />
+                  <ChevronRight
+                    size={10}
+                    aria-hidden="true"
+                    className={`transition-transform ${showParticipants ? "rotate-90" : ""}`}
+                  />
                 </span>
               </button>
             </div>
@@ -844,7 +848,9 @@ export default function MediaPage() {
             {uploadUrl && (
               <div className="mx-4 mb-2 flex items-center gap-2.5 rounded-xl border border-umber-800 bg-umber-900/60 px-4 py-2">
                 <Lock size={13} className="shrink-0 text-umber-400" aria-hidden="true" />
-                <span className="text-xs text-paper-400">Only the host can see everyone's photos until reveal</span>
+                <span className="text-xs text-paper-400">
+                  Only the host can see everyone's photos until reveal
+                </span>
               </div>
             )}
 
@@ -899,7 +905,6 @@ export default function MediaPage() {
                 </p>
               </div>
             )}
-
 
             {/* ── Settings grid (3 columns) ─────────────────────────── */}
             <div className="border-t border-umber-800">
@@ -961,30 +966,27 @@ export default function MediaPage() {
                 aria-hidden="true"
                 style={{ filter: "blur(2px)" }}
               />
-              <div
-                className="absolute inset-0"
-                style={{ background: "rgba(15,10,7,0.5)" }}
-              />
+              <div className="absolute inset-0" style={{ background: "rgba(15,10,7,0.5)" }} />
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-umber-700 bg-umber-900">
-                    <Film size={22} className="text-umber-400" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h1 className="font-grotesk text-2xl font-semibold text-paper-50 sm:text-3xl">
-                      {t("media.film_empty_title")}
-                    </h1>
-                    <p className="mx-auto mt-2 max-w-xs text-sm text-paper-400">
-                      {t("media.film_no_app_hint")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowFilmModal(true)}
-                    className="rounded-xl bg-paper-50 px-6 py-3 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
-                  >
-                    {t("media.film_cta_create")}
-                  </button>
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-umber-700 bg-umber-900">
+                  <Film size={22} className="text-umber-400" aria-hidden="true" />
                 </div>
+                <div>
+                  <h1 className="font-grotesk text-2xl font-semibold text-paper-50 sm:text-3xl">
+                    {t("media.film_empty_title")}
+                  </h1>
+                  <p className="mx-auto mt-2 max-w-xs text-sm text-paper-400">
+                    {t("media.film_no_app_hint")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFilmModal(true)}
+                  className="rounded-xl bg-paper-50 px-6 py-3 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+                >
+                  {t("media.film_cta_create")}
+                </button>
+              </div>
             </div>
 
             {/* How it works — 3 columns */}
@@ -1005,10 +1007,7 @@ export default function MediaPage() {
         )}
 
         {/* ── Photographer row (always visible) ─────────────────────── */}
-        <div
-          ref={photographerRowRef}
-          className="border-t-2 border-dashed border-umber-600 mt-2"
-        >
+        <div ref={photographerRowRef} className="border-t-2 border-dashed border-umber-600 mt-2">
           <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
             {t("media.photographer_title")}
           </p>
@@ -1081,7 +1080,9 @@ export default function MediaPage() {
                 </>
               ) : (
                 <>
-                  <span className="flex-1 text-sm text-umber-400">{t("media.photographer_cta")}</span>
+                  <span className="flex-1 text-sm text-umber-400">
+                    {t("media.photographer_cta")}
+                  </span>
                   <button
                     type="button"
                     onClick={startEdit}
@@ -1104,7 +1105,6 @@ export default function MediaPage() {
             {t("media.coming_soon_title")}
           </span>
         </div>
-
       </div>
 
       {/* ── Modals ──────────────────────────────────────────────────── */}

@@ -919,7 +919,6 @@ export default function DashboardPage() {
           </section>
         ))}
 
-
       {/* ── Inline wedding-date picker dialog (CTA target). ──────────────
           Reuses the same WeddingDateGoal shape as the header/KPI inline
           pickers so save → KPI tile flip works without a refetch. */}

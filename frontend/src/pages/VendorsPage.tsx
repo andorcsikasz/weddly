@@ -1039,7 +1039,6 @@ function WaitlistContact() {
                   />
                 </div>
               </div>
-
             </div>
           )}
 

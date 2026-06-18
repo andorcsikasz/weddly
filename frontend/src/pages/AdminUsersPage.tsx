@@ -172,7 +172,13 @@ export default function AdminUsersPage() {
   const [soloOpen, setSoloOpen] = useState(true);
   const [orphansOpen, setOrphansOpen] = useState(true);
 
-  type WorkspaceSortKey = "id" | "name" | "members" | "wedding_date" | "created_at" | "last_seen_at";
+  type WorkspaceSortKey =
+    | "id"
+    | "name"
+    | "members"
+    | "wedding_date"
+    | "created_at"
+    | "last_seen_at";
   const [sortKey, setSortKey] = useState<WorkspaceSortKey>("id");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -1265,7 +1271,9 @@ export default function AdminUsersPage() {
                   ) : (
                     <>
                       {workspaceColumnHeader}
-                      <ul className="space-y-1.5">{sortCouples(couplePairs).map(renderCoupleCard)}</ul>
+                      <ul className="space-y-1.5">
+                        {sortCouples(couplePairs).map(renderCoupleCard)}
+                      </ul>
                     </>
                   ))}
               </section>
@@ -1294,7 +1302,9 @@ export default function AdminUsersPage() {
                   ) : (
                     <>
                       {workspaceColumnHeader}
-                      <ul className="space-y-1.5">{sortCouples(soloWorkspaces).map(renderCoupleCard)}</ul>
+                      <ul className="space-y-1.5">
+                        {sortCouples(soloWorkspaces).map(renderCoupleCard)}
+                      </ul>
                     </>
                   ))}
               </section>

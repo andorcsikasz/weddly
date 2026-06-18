@@ -127,7 +127,11 @@ export function UpcomingTasksCard({
   function nudgeRow(nudge: { label: string; to: string }) {
     const inner = (
       <>
-        <ArrowRight size={14} className="shrink-0 text-umber-400 dark:text-umber-500" aria-hidden="true" />
+        <ArrowRight
+          size={14}
+          className="shrink-0 text-umber-400 dark:text-umber-500"
+          aria-hidden="true"
+        />
         <span className="min-w-0 flex-1 truncate">{nudge.label}</span>
         <span className="shrink-0 rounded-full bg-paper-200 px-2 py-0.5 text-[11px] font-medium text-umber-600 dark:bg-umber-700 dark:text-umber-300">
           {t("dashboard.upcoming_setup_badge")}
@@ -135,9 +139,13 @@ export function UpcomingTasksCard({
       </>
     );
     return nudge.to.startsWith("#") ? (
-      <a href={nudge.to} className={nudgeRowCls}>{inner}</a>
+      <a href={nudge.to} className={nudgeRowCls}>
+        {inner}
+      </a>
     ) : (
-      <Link to={nudge.to} className={nudgeRowCls}>{inner}</Link>
+      <Link to={nudge.to} className={nudgeRowCls}>
+        {inner}
+      </Link>
     );
   }
 

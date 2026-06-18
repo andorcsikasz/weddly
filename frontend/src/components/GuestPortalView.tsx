@@ -523,7 +523,11 @@ function ScheduleRow({
       <div className="w-20 shrink-0 pt-0.5 text-sm tabular-nums text-ink-700 dark:text-paper-100">
         <span className="font-medium">
           {start}
-          {dayTwo && <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">+1</sup>}
+          {dayTwo && (
+            <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">
+              +1
+            </sup>
+          )}
         </span>
         {end && <span className="text-ink-400 dark:text-umber-300"> – {end}</span>}
       </div>

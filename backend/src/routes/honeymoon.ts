@@ -82,10 +82,9 @@ async function commonsImageUrl(fileTitle: string): Promise<string | null> {
       iiurlwidth: String(MAX_WIDTH),
       format: "json",
     });
-    const r = await fetch(
-      `https://commons.wikimedia.org/w/api.php?${params}`,
-      { headers: WIKI_UA },
-    );
+    const r = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`, {
+      headers: WIKI_UA,
+    });
     if (!r.ok) return null;
     const data = (await r.json()) as {
       query?: { pages?: Record<string, { imageinfo?: { thumburl?: string; url?: string }[] }> };
@@ -206,10 +205,7 @@ const DEST_PHOTO_DIR = "destination-photos";
 
 /** Download `remoteUrl` to `uploads/destination-photos/<slug>.<ext>` and
  *  return the public `/uploads/…` path, or null on any error. */
-async function downloadAndCache(
-  city: string,
-  remoteUrl: string,
-): Promise<string | null> {
+async function downloadAndCache(city: string, remoteUrl: string): Promise<string | null> {
   try {
     const dir = join(CONFIG.uploadsDir, DEST_PHOTO_DIR);
     if (!existsSync(dir)) await mkdir(dir, { recursive: true });
@@ -220,9 +216,7 @@ async function downloadAndCache(
 
     // Derive extension from the remote URL (strip query string first).
     const rawExt = extname(remoteUrl.split("?")[0] ?? "").toLowerCase();
-    const ext = [".jpg", ".jpeg", ".png", ".webp"].includes(rawExt)
-      ? rawExt
-      : ".jpg";
+    const ext = [".jpg", ".jpeg", ".png", ".webp"].includes(rawExt) ? rawExt : ".jpg";
 
     const filename = `${citySlug(city)}${ext}`;
     const filePath = join(dir, filename);

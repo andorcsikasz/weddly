@@ -371,127 +371,133 @@ export default function SchedulePage() {
                 ? eventRowPx(event.duration_minutes)
                 : null;
             return (
-            <Fragment key={event.id}>
-              {proportional && i > 0 && (
-                gapMinutes === 0 ? (
-                  <li aria-hidden="true" className="border-t border-paper-200 dark:border-umber-700" />
-                ) : (
-                  <li
-                    aria-hidden="true"
-                    style={{ height: `${gapPx(gapMinutes)}px` }}
-                    className="flex items-center border-y border-dashed border-paper-300 bg-paper-100/50 px-4 dark:border-umber-600 dark:bg-umber-800/40"
-                  >
-                    <span className="select-none pl-[calc(4.5rem+1rem)] text-[10px] tabular-nums text-ink-400 dark:text-umber-400">
-                      {t("schedule.gap_label", { n: gapMinutes })}
-                    </span>
-                  </li>
-                )
-              )}
-            <li
-              className={`group flex items-center gap-4 px-4 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700 ${propH === null ? "py-3" : ""}`}
-              style={propH !== null ? { height: `${propH}px` } : undefined}
-            >
-              {/* The big edit hit-area is a `<button>` so keyboard users get
+              <Fragment key={event.id}>
+                {proportional &&
+                  i > 0 &&
+                  (gapMinutes === 0 ? (
+                    <li
+                      aria-hidden="true"
+                      className="border-t border-paper-200 dark:border-umber-700"
+                    />
+                  ) : (
+                    <li
+                      aria-hidden="true"
+                      style={{ height: `${gapPx(gapMinutes)}px` }}
+                      className="flex items-center border-y border-dashed border-paper-300 bg-paper-100/50 px-4 dark:border-umber-600 dark:bg-umber-800/40"
+                    >
+                      <span className="select-none pl-[calc(4.5rem+1rem)] text-[10px] tabular-nums text-ink-400 dark:text-umber-400">
+                        {t("schedule.gap_label", { n: gapMinutes })}
+                      </span>
+                    </li>
+                  ))}
+                <li
+                  className={`group flex items-center gap-4 px-4 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700 ${propH === null ? "py-3" : ""}`}
+                  style={propH !== null ? { height: `${propH}px` } : undefined}
+                >
+                  {/* The big edit hit-area is a `<button>` so keyboard users get
                   a real Tab stop. We keep the delete action as a sibling
                   button rather than nesting inside it (nested interactive
                   controls break a11y trees + violate HTML semantics). */}
-              <button
-                type="button"
-                onClick={() => setEditing({ event })}
-                aria-label={t("schedule.edit_event")}
-                className="flex min-w-0 flex-1 items-center gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
-              >
-                <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start gap-0.5 leading-none">
-                  <span className="stat-num text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
-                    {formatHHMM(event.starts_at_minutes)}
-                    {isDayTwo(event.starts_at_minutes) && (
-                      <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">+1</sup>
-                    )}
-                  </span>
-                  {event.duration_minutes !== null && event.duration_minutes > 0 && (
-                    <span className="stat-num text-[11px] tabular-nums text-ink-400 dark:text-umber-300">
-                      –{formatHHMM(event.starts_at_minutes + event.duration_minutes)}
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ event })}
+                    aria-label={t("schedule.edit_event")}
+                    className="flex min-w-0 flex-1 items-center gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
+                  >
+                    <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start gap-0.5 leading-none">
+                      <span className="stat-num text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                        {formatHHMM(event.starts_at_minutes)}
+                        {isDayTwo(event.starts_at_minutes) && (
+                          <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">
+                            +1
+                          </sup>
+                        )}
+                      </span>
+                      {event.duration_minutes !== null && event.duration_minutes > 0 && (
+                        <span className="stat-num text-[11px] tabular-nums text-ink-400 dark:text-umber-300">
+                          –{formatHHMM(event.starts_at_minutes + event.duration_minutes)}
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-ink-900 dark:text-paper-50">
-                    {localizeKnownLabel(event.label, locale)}
-                  </span>
-                  <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
-                    {event.duration_minutes !== null ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Clock size={12} aria-hidden="true" />
-                        {t("schedule.duration_unit", { n: event.duration_minutes })}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-ink-900 dark:text-paper-50">
+                        {localizeKnownLabel(event.label, locale)}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-ink-400 dark:text-umber-400">
-                        <Infinity size={12} aria-hidden="true" />
-                        {t("schedule.open_ended")}
+                      <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
+                        {event.duration_minutes !== null ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Clock size={12} aria-hidden="true" />
+                            {t("schedule.duration_unit", { n: event.duration_minutes })}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-ink-400 dark:text-umber-400">
+                            <Infinity size={12} aria-hidden="true" />
+                            {t("schedule.open_ended")}
+                          </span>
+                        )}
+                        {event.location && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin size={12} aria-hidden="true" />
+                            {event.location}
+                          </span>
+                        )}
+                        {event.responsible && (
+                          <span className="inline-flex items-center gap-1">
+                            <User size={12} aria-hidden="true" />
+                            {event.responsible}
+                          </span>
+                        )}
+                        {event.couple_supplier_id &&
+                          supplierNameById.get(event.couple_supplier_id) && (
+                            <span className="inline-flex items-center gap-1 text-umber-600 dark:text-umber-300">
+                              <Briefcase size={12} aria-hidden="true" />
+                              {supplierNameById.get(event.couple_supplier_id)}
+                            </span>
+                          )}
+                        {event.notes && (
+                          <span className="truncate">
+                            {event.notes.length > 80 ? `${event.notes.slice(0, 80)}…` : event.notes}
+                          </span>
+                        )}
                       </span>
-                    )}
-                    {event.location && (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin size={12} aria-hidden="true" />
-                        {event.location}
-                      </span>
-                    )}
-                    {event.responsible && (
-                      <span className="inline-flex items-center gap-1">
-                        <User size={12} aria-hidden="true" />
-                        {event.responsible}
-                      </span>
-                    )}
-                    {event.couple_supplier_id && supplierNameById.get(event.couple_supplier_id) && (
-                      <span className="inline-flex items-center gap-1 text-umber-600 dark:text-umber-300">
-                        <Briefcase size={12} aria-hidden="true" />
-                        {supplierNameById.get(event.couple_supplier_id)}
-                      </span>
-                    )}
-                    {event.notes && (
-                      <span className="truncate">
-                        {event.notes.length > 80 ? `${event.notes.slice(0, 80)}…` : event.notes}
-                      </span>
-                    )}
-                  </span>
-                </span>
-              </button>
-              <div className="ml-auto flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
-                <button
-                  type="button"
-                  aria-label={t("schedule.key_moment_toggle")}
-                  title={t("schedule.key_moment_toggle")}
-                  aria-pressed={event.is_key_moment}
-                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
-                    event.is_key_moment
-                      ? "text-blush-600 hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
-                      : "text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                  }`}
-                  onClick={() => void onToggleKey(event)}
-                >
-                  <Star size={14} fill={event.is_key_moment ? "currentColor" : "none"} />
-                </button>
-                <button
-                  type="button"
-                  aria-label={t("schedule.edit_event")}
-                  title={t("schedule.edit_event")}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                  onClick={() => setEditing({ event })}
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  type="button"
-                  aria-label={t("schedule.delete_event")}
-                  title={t("schedule.delete_event")}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
-                  onClick={() => void onDelete(event)}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </li>
-            </Fragment>
+                    </span>
+                  </button>
+                  <div className="ml-auto flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+                    <button
+                      type="button"
+                      aria-label={t("schedule.key_moment_toggle")}
+                      title={t("schedule.key_moment_toggle")}
+                      aria-pressed={event.is_key_moment}
+                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                        event.is_key_moment
+                          ? "text-blush-600 hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                          : "text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                      }`}
+                      onClick={() => void onToggleKey(event)}
+                    >
+                      <Star size={14} fill={event.is_key_moment ? "currentColor" : "none"} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t("schedule.edit_event")}
+                      title={t("schedule.edit_event")}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                      onClick={() => setEditing({ event })}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t("schedule.delete_event")}
+                      title={t("schedule.delete_event")}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                      onClick={() => void onDelete(event)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </li>
+              </Fragment>
             );
           })}
         </ul>
@@ -1030,7 +1036,9 @@ function ScheduleWandDialog({
                       <span>
                         {formatHHMM(row.starts_at_minutes)}
                         {isDayTwo(row.starts_at_minutes) && (
-                          <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">+1</sup>
+                          <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">
+                            +1
+                          </sup>
                         )}
                       </span>
                     </span>

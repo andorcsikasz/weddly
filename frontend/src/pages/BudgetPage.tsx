@@ -1196,7 +1196,9 @@ export default function BudgetPage() {
       <section className="mt-8">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-grotesk tracking-tight leading-tight">{t("budget.snapshots_title")}</h2>
+            <h2 className="font-grotesk tracking-tight leading-tight">
+              {t("budget.snapshots_title")}
+            </h2>
             <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">
               {t("budget.snapshots_sub")}
             </p>

@@ -120,9 +120,13 @@ function ShotCounter({ used, max }: { used: number; max: number }) {
   const current = used + 1;
   return (
     <div className="flex items-center justify-center gap-3">
-      <span className="font-grotesk text-base tabular-nums text-paper-400/60">{current - 1 > 0 ? current - 1 : ""}</span>
+      <span className="font-grotesk text-base tabular-nums text-paper-400/60">
+        {current - 1 > 0 ? current - 1 : ""}
+      </span>
       <span className="font-grotesk text-xl font-bold tabular-nums text-paper-50">{current}</span>
-      <span className="font-grotesk text-base tabular-nums text-paper-400/60">{current < max ? current + 1 : ""}</span>
+      <span className="font-grotesk text-base tabular-nums text-paper-400/60">
+        {current < max ? current + 1 : ""}
+      </span>
     </div>
   );
 }
@@ -159,9 +163,7 @@ function FilmBar({ album, token }: { album: PhotoAlbumPublic; token: string }) {
         <p className="truncate text-sm font-semibold text-paper-50">
           {album.title || album.displayName}
         </p>
-        {countdown && (
-          <p className="text-[11px] text-paper-400">{countdown} left</p>
-        )}
+        {countdown && <p className="text-[11px] text-paper-400">{countdown} left</p>}
       </div>
       <a
         href={`/photos/${token}`}
@@ -279,7 +281,10 @@ function Viewfinder({
     } catch (err: unknown) {
       const detail = (err as { detail?: unknown })?.detail;
       const code = (detail as { code?: string } | undefined)?.code;
-      if (code === "shot_limit") { onLimitReached(); return; }
+      if (code === "shot_limit") {
+        onLimitReached();
+        return;
+      }
       const status = (err as { status?: number })?.status;
       if (status === 413) setError(t("photos.error_too_large"));
       else if (status === 400) setError(t("photos.error_bad_type"));
@@ -446,7 +451,10 @@ function Countdown({ revealsAt, onRevealed }: { revealsAt: number; onRevealed: (
   const [remaining, setRemaining] = useState(Math.max(0, revealsAt - Date.now()));
 
   useEffect(() => {
-    if (remaining <= 0) { onRevealed(); return; }
+    if (remaining <= 0) {
+      onRevealed();
+      return;
+    }
     const id = setInterval(() => {
       const r = Math.max(0, revealsAt - Date.now());
       setRemaining(r);
@@ -507,22 +515,31 @@ export default function GuestPhotoPage() {
   const [nameInput, setNameInput] = useState("");
 
   useEffect(() => {
-    if (!token) { setState({ kind: "not_found" }); return; }
+    if (!token) {
+      setState({ kind: "not_found" });
+      return;
+    }
     const deviceId = getDeviceId(token);
     const storedName = getStoredName(token);
 
     photoAlbumApi
       .registerDevice(token, deviceId, storedName)
       .then(({ album, shotCount }) => {
-        if (!album.isUploadEnabled) { setState({ kind: "disabled" }); return; }
+        if (!album.isUploadEnabled) {
+          setState({ kind: "disabled" });
+          return;
+        }
         if (album.shotsPerGuest !== null && shotCount >= album.shotsPerGuest) {
-          setState({ kind: "limit_reached", album }); return;
+          setState({ kind: "limit_reached", album });
+          return;
         }
         if (album.eventEndsAt !== null && Date.now() > album.eventEndsAt) {
-          setState({ kind: "disabled" }); return;
+          setState({ kind: "disabled" });
+          return;
         }
         if (album.revealAt !== null && Date.now() < album.revealAt && shotCount > 0) {
-          setState({ kind: "developing", album }); return;
+          setState({ kind: "developing", album });
+          return;
         }
         if (storedName === null) {
           setState({ kind: "name_capture", album });
@@ -587,9 +604,7 @@ export default function GuestPhotoPage() {
       <FilmShell dark>
         <div className="mb-8 text-center">
           <p className="font-serif italic text-3xl text-paper-50">{state.album.displayName}</p>
-          {state.album.title && (
-            <p className="mt-1 text-sm text-paper-400">{state.album.title}</p>
-          )}
+          {state.album.title && <p className="mt-1 text-sm text-paper-400">{state.album.title}</p>}
         </div>
         <div className="rounded-2xl border border-umber-700 bg-umber-900 p-5">
           <h1 className="mb-1 font-grotesk text-lg font-semibold text-paper-50">

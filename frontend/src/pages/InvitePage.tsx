@@ -73,10 +73,26 @@ export default function InvitePage() {
           setAccepting(false);
           return;
         }
-        if (e.status === 410) { setError(t("invite.expired")); setAccepting(false); return; }
-        if (e.status === 404) { setError(t("invite.couple_gone")); setAccepting(false); return; }
-        if (code === "couple_full") { setError(t("invite.couple_full")); setAccepting(false); return; }
-        if (code === "already_in_this_couple") { setError(t("invite.own_invite_body", { email: "—" })); setAccepting(false); return; }
+        if (e.status === 410) {
+          setError(t("invite.expired"));
+          setAccepting(false);
+          return;
+        }
+        if (e.status === 404) {
+          setError(t("invite.couple_gone"));
+          setAccepting(false);
+          return;
+        }
+        if (code === "couple_full") {
+          setError(t("invite.couple_full"));
+          setAccepting(false);
+          return;
+        }
+        if (code === "already_in_this_couple") {
+          setError(t("invite.own_invite_body", { email: "—" }));
+          setAccepting(false);
+          return;
+        }
       }
       setError(t("common.error_generic"));
       setAccepting(false);

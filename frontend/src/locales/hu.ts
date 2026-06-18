@@ -698,7 +698,8 @@ const hu: LocaleMessages = {
     pick_up_where: "Vegyük fel a fonalat itt:",
     coming_soon: "Hamarosan",
     coming_soon_headline: "Hamarosan",
-    coming_soon_body: "Ezen a funkción még dolgozunk, hogy az esküvőtervezés még egyszerűbb legyen.",
+    coming_soon_body:
+      "Ezen a funkción még dolgozunk, hogy az esküvőtervezés még egyszerűbb legyen.",
     feature_budget: "Költségvetés",
     feature_guests: "Vendéglista",
     feature_seating: "Ültetési rend",

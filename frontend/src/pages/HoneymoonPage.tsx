@@ -1022,9 +1022,15 @@ function DestinationCoverPhoto({
     let cancelled = false;
     honeymoonApi
       .destinationPhoto(city)
-      .then((r) => { if (!cancelled) setAutoUrl(r.photo_url); })
-      .catch(() => { if (!cancelled) setAutoUrl(null); });
-    return () => { cancelled = true; };
+      .then((r) => {
+        if (!cancelled) setAutoUrl(r.photo_url);
+      })
+      .catch(() => {
+        if (!cancelled) setAutoUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [destination, customCoverPath]);
 
   const photoUrl = customCoverPath ?? autoUrl;
@@ -1053,7 +1059,10 @@ function DestinationCoverPhoto({
   return (
     <div
       className={`group relative mt-3 h-40 overflow-hidden rounded-2xl${dragging ? " ring-2 ring-blush-400" : ""}`}
-      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => {
         e.preventDefault();
@@ -1072,7 +1081,9 @@ function DestinationCoverPhoto({
         className={`absolute inset-0 flex flex-col items-center justify-center gap-2 bg-ink-900/60 transition-opacity${dragging || uploading ? " opacity-100" : " opacity-0 group-hover:opacity-100"}`}
       >
         {uploading ? (
-          <span className="font-grotesk text-sm text-paper-50">{t("honeymoon.cover_uploading")}</span>
+          <span className="font-grotesk text-sm text-paper-50">
+            {t("honeymoon.cover_uploading")}
+          </span>
         ) : dragging ? (
           <span className="font-grotesk text-sm text-paper-50">{t("honeymoon.cover_drag")}</span>
         ) : (
