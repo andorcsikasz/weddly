@@ -89,6 +89,12 @@ interface Props {
   onChairDragStart?: (tableId: number, seatIndex: number, guestId: number) => void;
   /** Called when a drag from an SVG chair ends. */
   onChairDragEnd?: (e: React.DragEvent) => void;
+  /** Pointer-event chair drag: called when the guest is released over a seat. */
+  onSeatDrop?: (tableId: number, seatIndex: number, guestId: number) => void;
+  /** Pointer-event chair drag: called when released outside any seat (unassign). */
+  onSeatRelease?: (guestId: number) => void;
+  /** Pointer-event chair drag: called when the drag gesture ends (drop or release). */
+  onChairDragFinish?: () => void;
 }
 
 type DragState =
@@ -109,6 +115,12 @@ type DragState =
       cy: number;
       startWidthMm: number;
       startLengthMm: number;
+    }
+  | {
+      kind: "chair";
+      tableId: number;
+      seatIndex: number;
+      guestId: number;
     };
 
 export function SeatingMap({
@@ -135,6 +147,9 @@ export function SeatingMap({
   selectedGuestId,
   onChairDragStart,
   onChairDragEnd,
+  onSeatDrop,
+  onSeatRelease,
+  onChairDragFinish,
 }: Props) {
   const { t } = useT();
   // Local aliases keep the rest of the component readable; the rendering
@@ -330,6 +345,7 @@ export function SeatingMap({
 
   function moveDrag(e: React.PointerEvent<SVGSVGElement>) {
     if (!drag) return;
+    if (drag.kind === "chair") return;
     const p = toSvgPoint(e.clientX, e.clientY);
     if (!p) return;
 
@@ -396,6 +412,32 @@ export function SeatingMap({
 
   function endDrag(e: React.PointerEvent<SVGSVGElement>) {
     if (!drag) return;
+    if (drag.kind === "chair") {
+      // Ignore pointer-leave — with capture active the pointer may briefly leave
+      // the SVG bounds while the user drags over the HTML unassigned panel.
+      if (e.type === "pointerleave") return;
+      const guestId = drag.guestId;
+      setDrag(null);
+      const els = document.elementsFromPoint(e.clientX, e.clientY);
+      let dropped = false;
+      for (const el of els) {
+        const seatIdx = el.getAttribute("data-seat-index");
+        const tblId = el.getAttribute("data-table-id");
+        if (seatIdx !== null && tblId !== null) {
+          onSeatDrop?.(Number(tblId), Number(seatIdx), guestId);
+          dropped = true;
+          break;
+        }
+      }
+      if (!dropped) onSeatRelease?.(guestId);
+      onChairDragFinish?.();
+      try {
+        (e.target as Element).releasePointerCapture(e.pointerId);
+      } catch {
+        /* noop */
+      }
+      return;
+    }
     if (drag.kind === "move") {
       const pos = localPos.get(drag.tableId);
       if (pos) onMove(drag.tableId, pos.x, pos.y);
@@ -665,6 +707,16 @@ export function SeatingMap({
                     onChairDragStart?.(table.id, seatIndex, guestId)
                   }
                   onChairDragEnd={onChairDragEnd}
+                  draggingSeatIndex={
+                    drag?.kind === "chair" && drag.tableId === table.id ? drag.seatIndex : null
+                  }
+                  onChairPointerDown={(e, seatIndex, guestId) => {
+                    if (e.button !== 0) return;
+                    e.stopPropagation();
+                    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+                    setDrag({ kind: "chair", tableId: table.id, seatIndex, guestId });
+                    onChairDragStart?.(table.id, seatIndex, guestId);
+                  }}
                   t={t}
                 />
               );
@@ -872,6 +924,14 @@ interface TableShapeProps {
   onChairDragStart?: (seatIndex: number, guestId: number) => void;
   /** Drag-end from an occupied chair in seat mode. */
   onChairDragEnd?: (e: React.DragEvent) => void;
+  /** Seat index currently being pointer-dragged out of this table (for ghost visual). */
+  draggingSeatIndex?: number | null;
+  /** Pointer-down on an occupied chair — initiates a pointer-event drag. */
+  onChairPointerDown?: (
+    e: React.PointerEvent<SVGGElement>,
+    seatIndex: number,
+    guestId: number,
+  ) => void;
   t: (
     key:
       | "seating.add_seat"
@@ -903,16 +963,18 @@ function TableShape({
   onTapSeat,
   onChairDragStart,
   onChairDragEnd,
+  draggingSeatIndex,
+  onChairPointerDown,
   t,
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
   const [dragOverTable, setDragOverTable] = useState(false);
-  // Index of the seat currently being dragged OUT of this table (for the ghost visual).
-  const [draggingSeat, setDraggingSeat] = useState<number | null>(null);
-  // Clear the table-body hover highlight when the drag ends (drop or cancel).
+  // Clear the table-body hover highlight when an HTML5 drag ends (drop or cancel).
   useEffect(() => {
     if (!dragOverTable) return;
-    function onDragEnd() { setDragOverTable(false); }
+    function onDragEnd() {
+      setDragOverTable(false);
+    }
     window.addEventListener("dragend", onDragEnd);
     return () => window.removeEventListener("dragend", onDragEnd);
   }, [dragOverTable]);
@@ -1067,12 +1129,14 @@ function TableShape({
         const py = c.dy + sinA * chairPushMm;
         const rotDeg = (c.angle * 180) / Math.PI + 90;
 
-        // Seat mode: derive state from actual assignment data.
-        const seatGuest = seatMode ? (seatGuests?.get(i) ?? null) : null;
-        const isOccupied = seatMode ? seatGuest !== null : i < filledSeats;
+        // Use actual assignment data when available (both edit and seat mode).
+        // Falls back to i < filledSeats (count-based) only when no assignment
+        // map was provided — keeps the edit-mode view in sync with seat-mode.
+        const seatGuest = seatGuests?.get(i) ?? null;
+        const isOccupied = seatGuests ? seatGuest !== null : i < filledSeats;
         const isSelectedSeat = seatMode && seatGuest !== null && seatGuest.id === selectedGuestId;
         const isDragHover = seatMode && dragOverSeat === i;
-        const isDraggingOut = draggingSeat === i;
+        const isDraggingOut = draggingSeatIndex === i;
 
         const fillClassName = isDisabled
           ? "fill-paper-200"
@@ -1108,27 +1172,13 @@ function TableShape({
         return (
           <g
             key={i}
-            // @ts-expect-error draggable is valid DOM on SVG but absent from React's SVGProps
-            draggable={canDragOut ? true : undefined}
-            onDragStart={
+            data-seat-index={String(i)}
+            data-table-id={String(table.id)}
+            onPointerDown={
               canDragOut
-                ? (e: React.DragEvent) => {
+                ? (e: React.PointerEvent<SVGGElement>) => {
                     e.stopPropagation();
-                    e.dataTransfer.setData(
-                      "application/x-weddly-guest",
-                      JSON.stringify({ guestId: seatGuest!.id }),
-                    );
-                    e.dataTransfer.effectAllowed = "move";
-                    setDraggingSeat(i);
-                    onChairDragStart?.(i, seatGuest!.id);
-                  }
-                : undefined
-            }
-            onDragEnd={
-              canDragOut
-                ? (e: React.DragEvent) => {
-                    setDraggingSeat(null);
-                    onChairDragEnd?.(e);
+                    onChairPointerDown?.(e, i, seatGuest!.id);
                   }
                 : undefined
             }

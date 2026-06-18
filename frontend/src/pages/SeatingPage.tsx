@@ -1327,6 +1327,7 @@ export default function SeatingPage() {
               roomHeightMm={roomHeightMm}
               onRoomChange={updateRoom}
               babySeatsByTable={babySeatsByTable}
+              seatGuestsByTable={seatGuestsByTable}
               fullHeight
             />
           </div>
@@ -1376,7 +1377,23 @@ export default function SeatingPage() {
                 tapMode={tapMode}
                 selectedGuestId={selectedGuestId}
                 onChairDragStart={(_, __, guestId) => startSeatedDrag(guestId)}
-                onChairDragEnd={endSeatedDrag}
+                onSeatDrop={(tableId, seatIndex, guestId) => {
+                  draggingSeatedRef.current = null;
+                  setDraggingSeatedId(null);
+                  setUnassignedHover(false);
+                  requestAssign(tableId, seatIndex, guestId);
+                }}
+                onSeatRelease={(guestId) => {
+                  draggingSeatedRef.current = null;
+                  setDraggingSeatedId(null);
+                  setUnassignedHover(false);
+                  unassignGuest(guestId);
+                }}
+                onChairDragFinish={() => {
+                  draggingSeatedRef.current = null;
+                  setDraggingSeatedId(null);
+                  setUnassignedHover(false);
+                }}
               />
             </div>
 
