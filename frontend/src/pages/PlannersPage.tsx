@@ -82,10 +82,10 @@ function PlanCard({
           onSelect(plan);
         }
       }}
-      className={`relative cursor-pointer rounded-2xl border p-5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 ${
+      className={`relative cursor-pointer rounded-2xl p-5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 ${
         selected
-          ? "border-umber-700 bg-umber-50 ring-2 ring-umber-700 dark:border-umber-400 dark:bg-umber-800 dark:ring-umber-400"
-          : "border-paper-300 bg-paper-50 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-600"
+          ? "border-2 border-umber-700 bg-umber-50 dark:border-umber-400 dark:bg-umber-800"
+          : "border border-paper-300 bg-paper-50 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-600"
       }`}
     >
       {badge && (
@@ -122,8 +122,8 @@ function PlanCard({
 
       {/* Dashed separator with ticket-punch notches */}
       <div className="relative -mx-5 my-4" aria-hidden="true">
-        <div className={`absolute left-0 top-0 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border bg-paper-200 dark:bg-umber-800 ${selected ? "border-umber-700 dark:border-umber-400" : "border-paper-300 dark:border-umber-700"}`} />
-        <div className={`absolute right-0 top-0 h-5 w-5 translate-x-1/2 -translate-y-1/2 rounded-full border bg-paper-200 dark:bg-umber-800 ${selected ? "border-umber-700 dark:border-umber-400" : "border-paper-300 dark:border-umber-700"}`} />
+        <div className={`absolute left-0 top-0 z-10 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-200 dark:bg-umber-800 ${selected ? "border-2 border-umber-700 dark:border-umber-400" : "border border-paper-300 dark:border-umber-700"}`} />
+        <div className={`absolute right-0 top-0 z-10 h-5 w-5 translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-200 dark:bg-umber-800 ${selected ? "border-2 border-umber-700 dark:border-umber-400" : "border border-paper-300 dark:border-umber-700"}`} />
         <div className="border-t border-dashed border-paper-300 dark:border-umber-700" />
       </div>
 
