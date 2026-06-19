@@ -228,7 +228,10 @@ export default function LandingPage() {
                 <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                   {t("landing.hero_title")}
                 </h1>
-                <div className="mt-4 max-w-[18ch] sm:mt-8 sm:max-w-md">
+                <p className="mt-4 max-w-sm font-grotesk text-base leading-snug text-umber-700 dark:text-umber-200 sm:mt-5 sm:text-lg">
+                  {t("landing.hero_sub")}
+                </p>
+                <div className="mt-4 max-w-[18ch] sm:mt-6 sm:max-w-md">
                   <Link
                     to="/signup"
                     className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"

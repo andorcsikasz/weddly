@@ -7,6 +7,7 @@ export interface LocaleMessages {
     edit: string;
     done: string;
     cancel: string;
+    dismiss: string;
     next: string;
     back: string;
     loading: string;
@@ -1040,6 +1041,7 @@ export interface LocaleMessages {
     hero_sub: string;
     cta_signup: string;
     cta_login: string;
+    cta_open_app: string;
     /** Wedding-site copy surfaced by the SEO prerender SSR body
      *  (frontend/scripts/prerender.ts). The dedicated landing section was
      *  cut; the React landing now mentions the wedding-site feature as one
@@ -1340,12 +1342,16 @@ export interface LocaleMessages {
     contact_body: string;
     contact_cta: string;
     step_1_title: string;
+    step_1_short: string;
     step_1_sub: string;
     step_2_title: string;
+    step_2_short: string;
     step_2_sub: string;
     step_3_title: string;
+    step_3_short: string;
     step_3_sub: string;
     step_4_title: string;
+    step_4_short: string;
     step_4_sub: string;
     form_tax_number_label: string;
     form_tax_number_placeholder: string;

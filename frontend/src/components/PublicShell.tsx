@@ -1,4 +1,5 @@
 import {
+  LayoutDashboard,
   Languages,
   LogIn,
   Menu,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { Wordmark } from "./Wordmark";
@@ -104,9 +106,14 @@ export function PublicShell({ children }: { children: ReactNode }) {
   );
 }
 
+function navLinkClass(active: boolean) {
+  return `relative px-1 py-1.5 text-sm text-umber-900 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50 ${active ? "font-medium after:w-[calc(100%-0.5rem)]" : "after:w-0"}`;
+}
+
 function PublicHeader() {
   const { t, locale, setLocale } = useT();
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const otherLocale = locale === "hu" ? "en" : "hu";
@@ -166,24 +173,27 @@ function PublicHeader() {
           aria-label={t("public.nav_audience_aria")}
           className="ml-2 hidden items-center gap-4 font-grotesk md:flex"
         >
-          <Link
-            to="/vendors"
-            className="relative px-1 py-1.5 text-sm text-umber-900 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
-          >
-            {t("landing.nav_vendors")}
-          </Link>
-          <Link
-            to="/planners"
-            className="relative px-1 py-1.5 text-sm text-umber-900 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
-          >
-            {t("landing.nav_planners")}
-          </Link>
-          <Link
-            to="/rsvp"
-            className="relative px-1 py-1.5 text-sm text-umber-900 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-0 after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50"
-          >
-            {t("landing.footer_guests")}
-          </Link>
+          {[
+            { to: "/vendors", label: t("landing.nav_vendors") },
+            { to: "/planners", label: t("landing.nav_planners") },
+            { to: "/rsvp", label: t("landing.footer_guests") },
+          ].map(({ to, label }) => {
+            const active = pathname === to;
+            return (
+              <Link
+                key={to}
+                to={to}
+                aria-current={active ? "page" : undefined}
+                className={`relative px-1 py-1.5 text-sm transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50 ${
+                  active
+                    ? "font-medium text-umber-900 after:w-[calc(100%-0.5rem)] dark:text-paper-50"
+                    : "text-umber-900 after:w-0 hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)]"
+                }`}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right cluster — left-to-right DOM order: feedback, locale,
@@ -380,43 +390,42 @@ function PublicFooter() {
   const { t, locale } = useT();
   const { pathname } = useLocation();
   const onVendorPage = pathname === "/vendors";
+  const isAudiencePage = pathname === "/planners" || pathname === "/vendors";
   const askGuestCode = useGuestCodePrompt();
   const couplesCardsPath =
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
     <footer className="mt-16 bg-paper-100/60 font-grotesk sm:mt-24 dark:bg-umber-950/60">
-      {/* Band: who-are-you. On the vendor page the "I'm a vendor" button
-       *  loops to the same page, so we swap it for a couples CTA instead. */}
-      <div className="bg-paper-50 dark:bg-umber-950">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-4 py-5 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
-          <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-umber-600 dark:text-umber-300">
-            {t("landing.footer_band_prompt")}
-          </span>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {onVendorPage ? (
-              <Link to="/" className={footerBandBtnClass}>
-                <Store size={15} aria-hidden />
-                {t("landing.footer_band_cta_couples")}
-              </Link>
-            ) : (
+      {/* Band: who-are-you. Hidden on audience pages (/planners, /vendors)
+       *  which already have their own escape-route sections immediately above
+       *  the footer — showing it again here would be a duplicate. On the
+       *  vendor page the "I'm a vendor" button loops to the same page, so
+       *  we swap it for a couples CTA instead. */}
+      {!isAudiencePage && (
+        <div className="bg-paper-50 dark:bg-umber-950">
+          <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-4 py-5 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
+            <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-umber-600 dark:text-umber-300">
+              {t("landing.footer_band_prompt")}
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <Link to="/vendors" className={footerBandBtnClass}>
                 <Store size={15} aria-hidden />
                 {t("landing.footer_band_cta_vendor")}
               </Link>
-            )}
-            <button
-              type="button"
-              className={footerBandBtnClass}
-              onClick={() => {
-                void askGuestCode();
-              }}
-            >
-              <UserCheck size={15} aria-hidden />
-              {t("landing.footer_band_cta")}
-            </button>
+              <button
+                type="button"
+                className={footerBandBtnClass}
+                onClick={() => {
+                  void askGuestCode();
+                }}
+              >
+                <UserCheck size={15} aria-hidden />
+                {t("landing.footer_band_cta")}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Mobile = 2-col grid: brand+tagline span the top row, then Couples
        *  fills the left column while Vendors + Guests stack in the right
@@ -468,10 +477,10 @@ function PublicFooter() {
         <div className="flex flex-col gap-y-4 lg:contents">
           <FooterColumn title={t("landing.footer_vendors")}>
             <FooterLink to="/vendors">{t("landing.footer_vendors_waitlist")}</FooterLink>
-            <FooterLink to="/about">{t("landing.footer_about_link")}</FooterLink>
           </FooterColumn>
           <FooterColumn title={t("landing.footer_planners")}>
             <FooterLink to="/planners">{t("landing.footer_planners_waitlist")}</FooterLink>
+            <FooterLink to="/about">{t("landing.footer_about_link")}</FooterLink>
           </FooterColumn>
           <FooterColumn title={t("landing.footer_guests")}>
             <button
@@ -512,9 +521,6 @@ function PublicFooter() {
           </Link>
           <Link to="/terms/vendor-subscription" className={legalLinkClass}>
             {t("landing.footer_legal_subscription")}
-          </Link>
-          <Link to="/about" className={legalLinkClass}>
-            {t("landing.footer_legal_about")}
           </Link>
         </div>
       </div>

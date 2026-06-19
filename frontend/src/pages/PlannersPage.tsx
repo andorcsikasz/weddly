@@ -11,7 +11,6 @@ import {
   FileText,
   LayoutGrid,
   Users,
-  X,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -55,7 +54,6 @@ interface PlanCardProps {
   period: string;
   couples: string;
   features: string[];
-  excluded?: string[];
   selected: boolean;
   onSelect: (plan: Plan) => void;
 }
@@ -67,7 +65,6 @@ function PlanCard({
   period,
   couples,
   features,
-  excluded = [],
   selected,
   onSelect,
 }: PlanCardProps) {
@@ -133,12 +130,6 @@ function PlanCard({
               className="mt-0.5 shrink-0 text-sage-600 dark:text-sage-400"
               aria-hidden="true"
             />
-            {f}
-          </li>
-        ))}
-        {excluded.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-umber-400 dark:text-umber-600">
-            <X size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
             {f}
           </li>
         ))}
@@ -292,10 +283,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   t("planners.plan_basic_feature_2"),
                   t("planners.plan_basic_feature_3"),
                 ]}
-                excluded={[
-                  t("planners.plan_basic_excl_1"),
-                  t("planners.plan_basic_excl_2"),
-                ]}
                 selected={form.selected_plan === "basic"}
                 onSelect={(p) => set("selected_plan", p)}
               />
@@ -310,7 +297,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   t("planners.plan_pro_feature_2"),
                   t("planners.plan_pro_feature_3"),
                 ]}
-                excluded={[t("planners.plan_pro_excl_1")]}
                 selected={form.selected_plan === "pro"}
                 onSelect={(p) => set("selected_plan", p)}
               />
@@ -636,7 +622,7 @@ export default function PlannersPage() {
 
         {/* ── Registration form ── */}
         <section className="border-t border-paper-200 dark:border-umber-800">
-          <RegistrationForm initialPlan="" />
+          <RegistrationForm initialPlan="pro" />
         </section>
 
         {/* ── Footer escape links ── */}

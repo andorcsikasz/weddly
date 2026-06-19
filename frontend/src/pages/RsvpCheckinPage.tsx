@@ -308,7 +308,7 @@ export default function RsvpCheckinPage() {
                 autoCapitalize="characters"
                 autoComplete="one-time-code"
                 enterKeyHint="go"
-                placeholder={"·".repeat(HOUSEHOLD_CODE_LENGTH)}
+                placeholder="AB12CD34"
                 onChange={(e) =>
                   setCodeInput(e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, ""))
                 }
@@ -339,7 +339,7 @@ export default function RsvpCheckinPage() {
             </div>
           )}
 
-          <button type="submit" className="btn-accent btn-lg mt-6 w-full" disabled={submitting}>
+          <button type="submit" className="btn-primary btn-lg mt-6 w-full" disabled={submitting}>
             {submitting ? t("common.loading") : t("rsvp.checkin_submit")}
           </button>
         </form>

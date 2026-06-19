@@ -197,6 +197,16 @@ export default function DashboardPage() {
   // would violate the Rules of Hooks (React error #310 on first → loaded
   // transition).
   const [inviteCancelling, setInviteCancelling] = useState(false);
+  // Session-dismiss for the slim pending invite banner. Does NOT cancel the
+  // backend invite — just hides the nudge for the rest of this browser session
+  // so a solo planner who already sent the invite isn't nagged on every visit.
+  const [inviteBannerDismissed, setInviteBannerDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem("weddly.invite_banner_dismissed") === "1";
+    } catch {
+      return false;
+    }
+  });
   // "Lock the wedding date" CTA opens a modal date picker in-place instead
   // of bouncing the user to /onboarding. State + draft live with the other
   // hooks above the early returns so the Rules of Hooks stays clean.
@@ -806,10 +816,9 @@ export default function DashboardPage() {
       {!dayOfMode &&
         !couple.is_demo &&
         !couple.partner_b_id &&
-        (invitedEmail ? (
+        (invitedEmail && !inviteBannerDismissed ? (
           // Slim pending banner: the email is out, we're waiting for them
-          // to join. Keeps a backup copy-link and a cancel affordance, but
-          // in a single row rather than the full stationery card.
+          // to join. The X hides it for the session (doesn't cancel the invite).
           <section
             id="invite-partner"
             data-coach-target="partner-invite"
@@ -837,6 +846,21 @@ export default function DashboardPage() {
                 disabled={inviteCancelling}
               >
                 {inviteCancelling ? t("dashboard.invite_cancelling") : t("dashboard.invite_cancel")}
+              </button>
+              <button
+                type="button"
+                aria-label={t("common.dismiss")}
+                className="btn-ghost btn-sm !p-1.5 text-ink-400 dark:text-umber-400"
+                onClick={() => {
+                  setInviteBannerDismissed(true);
+                  try {
+                    sessionStorage.setItem("weddly.invite_banner_dismissed", "1");
+                  } catch {
+                    // ignore
+                  }
+                }}
+              >
+                <X size={14} aria-hidden />
               </button>
             </div>
           </section>
