@@ -136,7 +136,7 @@ export default function SchedulePage() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [wandOpen, setWandOpen] = useState(false);
   const [wandApplying, setWandApplying] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "proportional" | "timeline">("list");
+  const [viewMode, setViewMode] = useState<"list" | "proportional" | "timeline">("timeline");
 
   async function refresh() {
     try {
@@ -611,8 +611,13 @@ function ScheduleTimelineView({
             <button
               type="button"
               onClick={() => onEdit(event)}
-              className={`block w-full rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 ${isLeft ? "text-right" : "text-left"}`}
+              className={`group/btn relative block w-full rounded-lg p-2 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:hover:bg-umber-700 ${isLeft ? "text-right" : "text-left"}`}
             >
+              <Pencil
+                size={11}
+                aria-hidden="true"
+                className={`absolute top-2 opacity-0 transition-opacity group-hover/btn:opacity-40 ${isLeft ? "left-2" : "right-2"}`}
+              />
               <span className="mb-1 inline-block rounded-full border border-paper-200 bg-paper-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-700 dark:border-umber-600 dark:bg-umber-700 dark:text-paper-100">
                 {timeLabel}
                 {day2 && <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>}
