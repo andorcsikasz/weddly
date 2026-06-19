@@ -80,10 +80,10 @@ function PlanCard({
           onSelect(plan);
         }
       }}
-      className={`relative cursor-pointer rounded-2xl border bg-paper-50 p-5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 dark:bg-umber-900 ${
+      className={`relative cursor-pointer rounded-2xl border p-5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 ${
         selected
-          ? "border-umber-700 ring-2 ring-umber-700 dark:border-umber-400 dark:ring-umber-400"
-          : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+          ? "border-umber-700 bg-umber-50 ring-2 ring-umber-700 dark:border-umber-400 dark:bg-umber-800 dark:ring-umber-400"
+          : "border-paper-300 bg-paper-50 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-600"
       }`}
     >
       {/* Top row: name + radio dot */}

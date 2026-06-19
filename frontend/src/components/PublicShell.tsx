@@ -238,25 +238,41 @@ function PublicHeader() {
               <Moon size={18} aria-hidden="true" />
             )}
           </button>
-          <Link
-            to="/login"
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
-            aria-label={t("landing.cta_login")}
-            title={t("landing.cta_login")}
-          >
-            <LogIn size={18} aria-hidden="true" />
-          </Link>
-          {/* Header signup CTA hidden on phones and on audience-specific pages
-           *  (/planners, /vendors) where the entire context is about vendors or
-           *  planners joining — "Start planning" would confuse them into
-           *  thinking the button is for them rather than couples. */}
-          {!isAudiencePage && (
+          {user ? (
             <Link
-              to="/signup"
+              to="/app"
+              className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
+              aria-label={t("landing.cta_open_app")}
+              title={t("landing.cta_open_app")}
+            >
+              <LayoutDashboard size={18} aria-hidden="true" />
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
+              aria-label={t("landing.cta_login")}
+              title={t("landing.cta_login")}
+            >
+              <LogIn size={18} aria-hidden="true" />
+            </Link>
+          )}
+          {user ? (
+            <Link
+              to="/app"
               className="btn-primary hidden shrink-0 whitespace-nowrap px-4 text-sm min-h-tap !py-2.5 sm:inline-flex sm:min-h-0 sm:!py-1.5"
             >
-              {t("landing.cta_signup")}
+              {t("landing.cta_open_app")}
             </Link>
+          ) : (
+            !isAudiencePage && (
+              <Link
+                to="/signup"
+                className="btn-primary hidden shrink-0 whitespace-nowrap px-4 text-sm min-h-tap !py-2.5 sm:inline-flex sm:min-h-0 sm:!py-1.5"
+              >
+                {t("landing.cta_signup")}
+              </Link>
+            )
           )}
           <button
             type="button"
@@ -313,14 +329,25 @@ function PublicHeader() {
               />
               <span>{t("landing.footer_guests")}</span>
             </Link>
-            <Link
-              to="/login"
-              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
-              onClick={() => setMenuOpen(false)}
-            >
-              <LogIn size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
-              <span>{t("landing.cta_login")}</span>
-            </Link>
+            {user ? (
+              <Link
+                to="/app"
+                className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+                onClick={() => setMenuOpen(false)}
+              >
+                <LayoutDashboard size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
+                <span>{t("landing.cta_open_app")}</span>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+                onClick={() => setMenuOpen(false)}
+              >
+                <LogIn size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
+                <span>{t("landing.cta_login")}</span>
+              </Link>
+            )}
             <button
               type="button"
               onClick={openFeedback}

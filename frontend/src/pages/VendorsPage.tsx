@@ -305,32 +305,65 @@ function Confetti() {
   );
 }
 
-/** Numbered step progress dots with connecting lines. */
-function StepDots({ current, total }: { current: number; total: number }) {
+/** Numbered step progress dots with connecting lines and optional short labels. */
+function StepDots({
+  current,
+  total,
+  labels,
+}: {
+  current: number;
+  total: number;
+  labels?: string[];
+}) {
   return (
-    <div className="flex items-center" aria-hidden>
-      {Array.from({ length: total }, (_, i) => i + 1).map((n) => (
-        <Fragment key={n}>
-          <div
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold transition-colors ${
-              n < current
-                ? "bg-umber-600 text-white"
-                : n === current
-                  ? "bg-ink-900 text-white dark:bg-paper-50 dark:text-ink-900"
-                  : "bg-paper-200 text-ink-400 dark:bg-umber-700 dark:text-umber-400"
-            }`}
-          >
-            {n < current ? <Check size={12} /> : n}
-          </div>
-          {n < total && (
+    <div aria-hidden>
+      <div className="flex items-center">
+        {Array.from({ length: total }, (_, i) => i + 1).map((n) => (
+          <Fragment key={n}>
             <div
-              className={`mx-1.5 h-px flex-1 transition-colors ${
-                n < current ? "bg-umber-600" : "bg-paper-300 dark:bg-umber-700"
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold transition-colors ${
+                n < current
+                  ? "bg-umber-600 text-white"
+                  : n === current
+                    ? "bg-ink-900 text-white dark:bg-paper-50 dark:text-ink-900"
+                    : "bg-paper-200 text-ink-400 dark:bg-umber-700 dark:text-umber-400"
               }`}
-            />
-          )}
-        </Fragment>
-      ))}
+            >
+              {n < current ? <Check size={12} /> : n}
+            </div>
+            {n < total && (
+              <div
+                className={`mx-1.5 h-px flex-1 transition-colors ${
+                  n < current ? "bg-umber-600" : "bg-paper-300 dark:bg-umber-700"
+                }`}
+              />
+            )}
+          </Fragment>
+        ))}
+      </div>
+      {labels && (
+        <div className="mt-1 flex">
+          {labels.map((label, i) => {
+            const n = i + 1;
+            return (
+              <Fragment key={label}>
+                <span
+                  className={`w-7 shrink-0 text-center text-[9px] leading-tight ${
+                    n === current
+                      ? "font-medium text-ink-700 dark:text-paper-100"
+                      : n < current
+                        ? "text-umber-600"
+                        : "text-ink-400 dark:text-umber-400"
+                  }`}
+                >
+                  {label}
+                </span>
+                {n < labels.length && <div className="mx-1.5 flex-1" />}
+              </Fragment>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -665,6 +698,12 @@ function WaitlistContact() {
     3: t("vendors.step_3_title"),
     4: t("vendors.step_4_title"),
   };
+  const stepLabels = [
+    t("vendors.step_1_short"),
+    t("vendors.step_2_short"),
+    t("vendors.step_3_short"),
+    t("vendors.step_4_short"),
+  ];
 
   return (
     <div className="relative">
@@ -674,7 +713,7 @@ function WaitlistContact() {
       />
       <div className="relative rounded-3xl border border-paper-400 bg-white p-6 shadow-soft sm:p-8 dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
         {/* Step progress */}
-        <StepDots current={step} total={4} />
+        <StepDots current={step} total={4} labels={stepLabels} />
 
         {/* Per-step header */}
         <div className="mt-5">
