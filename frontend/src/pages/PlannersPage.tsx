@@ -46,41 +46,6 @@ function planName(plan: Plan, t: (key: string) => string): string {
 
 // ── Step indicator (2-step) ───────────────────────────────────────────────────
 
-function StepIndicator({ step }: { step: Step }) {
-  return (
-    <div className="mb-8 flex items-center justify-center">
-      {([1, 2] as Step[]).map((s, idx) => {
-        const completed = step > s;
-        const current = step === s;
-        return (
-          <div key={s} className="flex items-center">
-            {idx > 0 && (
-              <div
-                className={`h-px w-10 transition-colors duration-300 ${
-                  completed ? "bg-umber-600 dark:bg-umber-500" : "bg-paper-300 dark:bg-umber-700"
-                }`}
-              />
-            )}
-            <div
-              className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium transition-colors ${
-                current || completed
-                  ? "bg-umber-700 text-paper-50 dark:bg-umber-500"
-                  : "border border-paper-300 text-umber-400 dark:border-umber-700 dark:text-umber-500"
-              }`}
-            >
-              {completed ? (
-                <Check size={11} strokeWidth={2.5} aria-hidden="true" />
-              ) : (
-                <span>{s}</span>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── Plan selection card (landing-style) ──────────────────────────────────────
 
 interface PlanCardProps {
@@ -152,7 +117,12 @@ function PlanCard({
       <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">{couples}</p>
 
       {/* Dashed separator */}
-      <div className="-mx-5 my-4 border-t border-dashed border-paper-300 dark:border-umber-700" aria-hidden="true" />
+      {/* Dashed separator with ticket-punch notches */}
+      <div className="relative -mx-5 my-4" aria-hidden="true">
+        <div className="absolute left-0 top-0 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-50 ring-1 ring-paper-300 dark:bg-umber-950 dark:ring-umber-700" />
+        <div className="absolute right-0 top-0 h-3.5 w-3.5 translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-50 ring-1 ring-paper-300 dark:bg-umber-950 dark:ring-umber-700" />
+        <div className="border-t border-dashed border-paper-300 dark:border-umber-700" />
+      </div>
 
       {/* Feature list */}
       <ul className="space-y-2">
@@ -290,8 +260,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
 
   return (
     <section id="waitlist" className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <StepIndicator step={step} />
-
       <form
         onSubmit={
           step === 1
