@@ -36,6 +36,10 @@ interface PlannerWaitlistRow {
   reviewed_at: number | null;
   outcome_at: number | null;
   notes: string | null;
+  selected_plan: string | null;
+  website: string | null;
+  weddings_per_year: number | null;
+  usage: string | null;
   created_at: number;
 }
 
@@ -53,6 +57,10 @@ function toAdminView(row: PlannerWaitlistRow) {
     reviewed_at: row.reviewed_at,
     outcome_at: row.outcome_at,
     notes: row.notes,
+    selected_plan: row.selected_plan ?? null,
+    website: row.website ?? null,
+    weddings_per_year: row.weddings_per_year ?? null,
+    usage: row.usage ?? null,
     created_at: row.created_at,
   };
 }
@@ -84,15 +92,30 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     years_experience = parsed;
   }
 
+  const selected_plan_raw = trimStr(body.selected_plan);
+  const selected_plan = ["basic", "pro", "unlimited"].includes(selected_plan_raw)
+    ? (selected_plan_raw as "basic" | "pro" | "unlimited")
+    : null;
+  const website = trimStr(body.website) || null;
+  const usage = trimStr(body.usage) || null;
+
+  let weddings_per_year: number | null = null;
+  if (body.weddings_per_year !== undefined && body.weddings_per_year !== null && body.weddings_per_year !== "") {
+    const parsed = Number(body.weddings_per_year);
+    if (!Number.isNaN(parsed) && Number.isInteger(parsed) && parsed >= 0 && parsed <= 500) {
+      weddings_per_year = parsed;
+    }
+  }
+
   const now = Math.floor(Date.now() / 1000);
   const row = db
     .prepare(
       `INSERT INTO planner_waitlist
-         (full_name, email, phone, company_name, city, years_experience, message, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         (full_name, email, phone, company_name, city, years_experience, message, selected_plan, website, weddings_per_year, usage, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        RETURNING *`,
     )
-    .get(full_name, email, phone, company_name, city, years_experience, message, now) as PlannerWaitlistRow;
+    .get(full_name, email, phone, company_name, city, years_experience, message, selected_plan, website, weddings_per_year, usage, now) as PlannerWaitlistRow;
 
   return json({ entry: { id: row.id, full_name: row.full_name, email: row.email, status: row.status, created_at: row.created_at } }, { status: 201 });
 }

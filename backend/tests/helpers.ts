@@ -11,6 +11,7 @@ import { expect } from "bun:test";
 
 import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import { db } from "../src/db";
+import { seedSupplierTaxonomy } from "../src/domain/supplier_taxonomy";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -191,7 +192,6 @@ export function wipeAll(): void {
   // Re-seed the supplier taxonomy after wiping — public directory + admin
   // taxonomy tests expect the 6 default groups / 14 categories to exist.
   // seedSupplierTaxonomy is idempotent so a partial wipe is safe.
-  const { seedSupplierTaxonomy } = require("../src/domain/supplier_taxonomy");
   seedSupplierTaxonomy();
   // Reset the billing kill-switch to its default (off) so a test that flips it
   // on doesn't leak enforcement into the next one. The singleton row is never

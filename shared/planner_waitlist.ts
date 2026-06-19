@@ -13,6 +13,10 @@ export interface SubmitPlannerWaitlistInput {
   years_experience: number | null;
   message: string | null;
   privacy_version: string;
+  selected_plan: "basic" | "pro" | "unlimited" | null;
+  website: string | null;
+  weddings_per_year: number | null;
+  usage: string | null;
 }
 
 export interface PlannerWaitlistEntry {
@@ -25,6 +29,10 @@ export interface PlannerWaitlistEntry {
   years_experience: number | null;
   message: string | null;
   status: PlannerWaitlistStatus;
+  selected_plan: "basic" | "pro" | "unlimited" | null;
+  website: string | null;
+  weddings_per_year: number | null;
+  usage: string | null;
   created_at: number;
 }
 
@@ -41,6 +49,10 @@ export interface PlannerWaitlistAdminView {
   reviewed_at: number | null;
   outcome_at: number | null;
   notes: string | null;
+  selected_plan: "basic" | "pro" | "unlimited" | null;
+  website: string | null;
+  weddings_per_year: number | null;
+  usage: string | null;
   created_at: number;
 }
 

@@ -1211,6 +1211,10 @@ db.exec("UPDATE photo_albums SET guest_cap = 15 WHERE guest_cap = 5 AND paid_at 
 addColumnIfMissing("photo_uploads", "filter_applied", "filter_applied TEXT");
 addColumnIfMissing("photo_uploads", "thumbnail_path", "thumbnail_path TEXT");
 addColumnIfMissing("couples", "honeymoon_cover_path", "honeymoon_cover_path TEXT");
+addColumnIfMissing("planner_waitlist", "selected_plan", "selected_plan TEXT");
+addColumnIfMissing("planner_waitlist", "website", "website TEXT");
+addColumnIfMissing("planner_waitlist", "weddings_per_year", "weddings_per_year INTEGER");
+addColumnIfMissing("planner_waitlist", "usage", "usage TEXT");
 
 // film_devices index lives here (not schema.sql) per project rule.
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_album ON film_devices(album_id)");

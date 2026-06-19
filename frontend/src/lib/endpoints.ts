@@ -1640,6 +1640,10 @@ export interface SubmitPlannerWaitlistForm {
   years_experience: number | null;
   message: string | null;
   privacy_version: string;
+  selected_plan: "basic" | "pro" | "unlimited" | null;
+  website: string | null;
+  weddings_per_year: number | null;
+  usage: string | null;
 }
 
 export const plannerWaitlistApi = {
