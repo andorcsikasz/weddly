@@ -1077,8 +1077,8 @@ const hu: LocaleMessages = {
     // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
     pricing_title: "Az első 200 párnak ingyenes.",
     pricing_body:
-      "Legyetek az első 200 pár között, és a Wēddly végig ingyenes marad a tervezésetek alatt, akár 18 hónapig. Utána 1 990 Ft havonta, 2 hét ingyenes próbával, minden funkcióval.",
-    pricing_amount: "1 990",
+      "Legyetek az első 200 pár között, és a Wēddly végig ingyenes marad a tervezésetek alatt, akár 18 hónapig. Utána 990 Ft havonta, 2 hét ingyenes próbával, minden funkcióval.",
+    pricing_amount: "990",
     pricing_amount_decimal: "",
     pricing_amount_sub: "/ hó",
     pricing_early_note: "Early access ár aug. 15-ig · utána 2 490 Ft / hó.",

@@ -66,7 +66,7 @@ export function partnerFreeWindowEnd(weddingMs: number | null, nowMs: number): n
  *  the display/forecast figures — the charged amount comes from the Stripe
  *  Price object, which must be kept in sync. */
 export const MONTHLY_PRICE: Record<Currency, number> = {
-  HUF: 1990,
+  HUF: 990,
   EUR: 5,
   USD: 5,
 };

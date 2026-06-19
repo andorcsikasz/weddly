@@ -749,7 +749,7 @@ function HealthRow({
  *  újraszámol. A számok HUF-ban; a matek a `subscriptionUnitEconomics`
  *  pure függvényből jön. Tájékoztató becslés, nem adótanácsadás. */
 function UnitEconomicsCard({ locale, liveHuf }: { locale: string; liveHuf: number }) {
-  const [priceA, setPriceA] = useState(1990);
+  const [priceA, setPriceA] = useState(990);
   const [priceB, setPriceB] = useState(2490);
   const ea = useMemo(() => subscriptionUnitEconomics(priceA), [priceA]);
   const eb = useMemo(() => subscriptionUnitEconomics(priceB), [priceB]);
