@@ -700,6 +700,7 @@ export default function MediaPage() {
   // Cover photo for hero
   const coverPhoto = album?.coverImageUrl ?? DEMO_STRIP[0];
   const daysLeft = album?.eventEndsAt ? daysUntil(album.eventEndsAt) : null;
+  const filmExpired = album?.eventEndsAt != null && Date.now() >= album.eventEndsAt;
 
   // iOS-style settings rows
   type SettingsRow = {
@@ -732,7 +733,9 @@ export default function MediaPage() {
           icon: <GalleryHorizontalEnd size={15} aria-hidden="true" />,
           label: t("media.film_settings_shots"),
           value:
-            album.shotsPerGuest != null ? String(album.shotsPerGuest) : t("media.film_unlimited"),
+            album.shotsPerGuest != null
+              ? `${album.shotsPerGuest} / ${t("media.film_per_person")}`
+              : t("media.film_unlimited"),
         },
         {
           icon: <Film size={15} aria-hidden="true" />,
@@ -771,14 +774,24 @@ export default function MediaPage() {
               />
               <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
                 <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.28em] text-umber-400">
-                  Wedding Film
+                  {t("media.film_title")}
                 </p>
-                <h1
-                  className="font-serif text-2xl italic leading-snug text-paper-50"
-                  style={{ textShadow: "0 2px 12px rgba(0,0,0,0.9)" }}
-                >
-                  {album.title || t("media.film_empty_title")}
-                </h1>
+                <div className="group flex items-center gap-2">
+                  <h1
+                    className="font-serif text-2xl italic leading-snug text-paper-50"
+                    style={{ textShadow: "0 2px 12px rgba(0,0,0,0.9)" }}
+                  >
+                    {album.title || t("media.film_settings_unnamed")}
+                  </h1>
+                  <button
+                    type="button"
+                    onClick={() => setShowFilmModal(true)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-umber-400 hover:text-paper-200"
+                    aria-label={t("media.film_settings_title")}
+                  >
+                    <Pencil size={13} aria-hidden="true" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -789,15 +802,15 @@ export default function MediaPage() {
                   {album.photoCount.toLocaleString()}
                 </span>
                 <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
-                  Moments
+                  {t("media.film_stat_moments")}
                 </span>
               </div>
               <div className="flex flex-col items-center py-3 text-center">
                 <span className="font-grotesk text-2xl font-semibold tabular-nums text-paper-50">
-                  {countdownStr ?? "--"}
+                  {filmExpired ? "—" : (countdownStr ?? "--")}
                 </span>
                 <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
-                  Left
+                  {filmExpired ? t("media.film_stat_closed") : t("media.film_stat_left")}
                 </span>
               </div>
               <button
@@ -809,7 +822,7 @@ export default function MediaPage() {
                   {album.participantCount}
                 </span>
                 <span className="mt-0.5 flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
-                  People
+                  {t("media.film_stat_people")}
                   <ChevronRight
                     size={10}
                     aria-hidden="true"
@@ -837,15 +850,15 @@ export default function MediaPage() {
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-umber-700 bg-umber-900 py-2.5 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800"
                 >
                   <Download size={14} aria-hidden="true" />
-                  Export
+                  {t("media.film_save_qr")}
                 </a>
                 <button
                   type="button"
                   onClick={() => setShowQr(true)}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-umber-700 bg-umber-900 py-2.5 text-sm font-medium text-paper-200 transition-colors hover:bg-umber-800"
                 >
-                  <QrCode size={14} aria-hidden="true" />
-                  Invite
+                  <Share2 size={14} aria-hidden="true" />
+                  {t("media.film_share_btn")}
                 </button>
                 <a
                   href={uploadUrl}
@@ -854,7 +867,7 @@ export default function MediaPage() {
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-paper-50 py-2.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
                 >
                   <Camera size={14} aria-hidden="true" />
-                  Camera
+                  {t("media.film_guest_view")}
                 </a>
               </div>
             )}
@@ -863,9 +876,15 @@ export default function MediaPage() {
             {uploadUrl && (
               <div className="mx-4 mb-2 flex items-center gap-2.5 rounded-xl border border-umber-800 bg-umber-900/60 px-4 py-2">
                 <Lock size={13} className="shrink-0 text-umber-400" aria-hidden="true" />
-                <span className="text-xs text-paper-400">
-                  Only the host can see everyone's photos until reveal
-                </span>
+                <span className="text-xs text-paper-400">{t("media.film_privacy_notice")}</span>
+              </div>
+            )}
+
+            {/* ── Expired alert ─────────────────────────────────────── */}
+            {filmExpired && (
+              <div className="mx-4 mb-2 flex items-center gap-2.5 rounded-xl border border-amber-800/50 bg-amber-950/40 px-4 py-2">
+                <AlertTriangle size={13} className="shrink-0 text-amber-500" aria-hidden="true" />
+                <span className="text-xs text-amber-300">{t("media.film_expired_alert")}</span>
               </div>
             )}
 
@@ -881,7 +900,7 @@ export default function MediaPage() {
                   <Upload size={15} aria-hidden="true" />
                   {coupleUploadProgress
                     ? `Uploading ${coupleUploadProgress.done}/${coupleUploadProgress.total}...`
-                    : "Add your own photos"}
+                    : t("media.film_add_own_photos")}
                 </button>
                 <input
                   ref={coupleUploadRef}
@@ -932,11 +951,18 @@ export default function MediaPage() {
                     key={row.label}
                     type="button"
                     onClick={() => setShowFilmModal(true)}
-                    className="flex flex-col px-4 py-2.5 text-left transition-colors hover:bg-umber-900 border-r border-t border-umber-800 last:border-r-0 [&:nth-child(3n)]:border-r-0"
+                    className="group flex flex-col px-4 py-2.5 text-left transition-colors hover:bg-umber-900 border-r border-t border-umber-800 last:border-r-0 [&:nth-child(3n)]:border-r-0"
                   >
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-umber-500 truncate w-full">
-                      {row.label}
-                    </span>
+                    <div className="flex w-full items-center justify-between">
+                      <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-umber-500 truncate">
+                        {row.label}
+                      </span>
+                      <Pencil
+                        size={8}
+                        aria-hidden="true"
+                        className="ml-1 shrink-0 text-umber-700 opacity-0 transition-opacity group-hover:opacity-100"
+                      />
+                    </div>
                     <span className="mt-0.5 text-sm text-paper-300 truncate w-full">
                       {row.value}
                     </span>
@@ -949,7 +975,7 @@ export default function MediaPage() {
             {uploadUrl && (
               <div className="border-t border-umber-800 px-5 py-3">
                 <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-400">
-                  Guest link
+                  {t("media.film_guest_link")}
                 </p>
                 <div className="flex items-center gap-2 rounded-xl border border-umber-800 bg-umber-900 px-3 py-2.5">
                   <span className="flex-1 truncate font-mono text-xs text-paper-400">
@@ -964,7 +990,7 @@ export default function MediaPage() {
                     }}
                     className="shrink-0 text-xs font-medium text-paper-400 transition-colors hover:text-paper-200"
                   >
-                    {linkCopied ? "Copied!" : "Copy"}
+                    {linkCopied ? t("media.from_guests_copied") : t("media.film_copy")}
                   </button>
                 </div>
               </div>
@@ -1104,7 +1130,7 @@ export default function MediaPage() {
                     className="flex items-center gap-1 text-xs font-medium text-paper-400 transition-colors hover:text-paper-100"
                   >
                     <Link2 size={12} aria-hidden="true" />
-                    Add link
+                    {t("media.collect_add")}
                   </button>
                 </>
               )}
@@ -1113,7 +1139,7 @@ export default function MediaPage() {
         </div>
 
         {/* ── Reveal gallery teaser (coming soon) ───────────────────── */}
-        <div className="flex items-center gap-3.5 border-t border-umber-800 px-5 py-3 opacity-50">
+        <div className="flex cursor-default items-center gap-3.5 border-t border-umber-800 px-5 py-3 opacity-40 select-none pointer-events-none">
           <Share2 size={15} className="shrink-0 text-paper-500" aria-hidden="true" />
           <span className="flex-1 text-sm text-paper-500">{t("media.to_guests_title")}</span>
           <span className="rounded-full border border-umber-600 px-2.5 py-0.5 text-[10px] font-medium text-paper-500">

@@ -1927,6 +1927,20 @@ export interface LocaleMessages {
     film_header_active: string;
     film_next_steps_title: string;
     film_qr_title: string;
+    film_stat_moments: string;
+    film_stat_left: string;
+    film_stat_closed: string;
+    film_stat_people: string;
+    film_guest_link: string;
+    film_copy: string;
+    film_add_own_photos: string;
+    film_privacy_notice: string;
+    film_save_qr: string;
+    film_share_btn: string;
+    film_guest_view: string;
+    film_expired_alert: string;
+    film_per_person: string;
+    film_no_participants: string;
   };
   /** /photos/:token — public guest upload page. */
   photos: {
