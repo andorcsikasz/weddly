@@ -6242,5 +6242,15 @@ export interface LocaleMessages {
     err_years: string;
     err_privacy: string;
     err_plan: string;
+    features_title: string;
+    features_tagline: string;
+    feature_guestlist_name: string;
+    feature_guestlist_desc: string;
+    feature_seating_name: string;
+    feature_seating_desc: string;
+    feature_tasks_name: string;
+    feature_tasks_desc: string;
+    feature_docs_name: string;
+    feature_docs_desc: string;
   };
 }

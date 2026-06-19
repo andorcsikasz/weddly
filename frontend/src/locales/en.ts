@@ -5764,6 +5764,16 @@ const en: LocaleMessages = {
     err_years: "Enter a number between 0 and 60.",
     err_privacy: "You must accept the privacy policy to continue.",
     err_plan: "Please select a plan to continue.",
+    features_title: "Everything a planner needs",
+    features_tagline: "Every couple separate, every tool in one view",
+    feature_guestlist_name: "Guest list",
+    feature_guestlist_desc: "RSVP tracking, dietary notes, seating assignments",
+    feature_seating_name: "Seating chart",
+    feature_seating_desc: "Drag-and-drop layout, PDF export in A4/A3/A6",
+    feature_tasks_name: "Tasks & schedule",
+    feature_tasks_desc: "Timeline view, task assignments, deadline tracking",
+    feature_docs_name: "Documents",
+    feature_docs_desc: "Contracts, run sheets, notes — organised per couple",
   },
 };
 

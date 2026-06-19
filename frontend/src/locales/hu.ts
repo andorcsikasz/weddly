@@ -5812,6 +5812,16 @@ const hu: LocaleMessages = {
     err_years: "0 és 60 közötti számot adj meg.",
     err_privacy: "Az adatvédelmi tájékoztató elfogadása szükséges.",
     err_plan: "Válassz csomagot a folytatáshoz.",
+    features_title: "Minden ami kell egy szervező munkához",
+    features_tagline: "Minden pár külön, minden nézetből kezelve",
+    feature_guestlist_name: "Vendéglista",
+    feature_guestlist_desc: "RSVP nyomkövetés, étkezési igények, ültetési hozzárendelés",
+    feature_seating_name: "Ültetésterv",
+    feature_seating_desc: "Drag-and-drop elrendezés, PDF export A4/A3/A6 méretben",
+    feature_tasks_name: "Feladatok és ütemterv",
+    feature_tasks_desc: "Idővonal nézet, feladat kiosztás, határidők nyomon követése",
+    feature_docs_name: "Dokumentumok",
+    feature_docs_desc: "Szerződések, futólapok, jegyzetek — paronként rendezve",
   },
 };
 
