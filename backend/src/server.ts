@@ -482,6 +482,14 @@ async function handleRequest(req: Request): Promise<Response> {
     });
   }
 
+  // Singular-typo redirect — /planner → /planners (permanent, browser-cached).
+  if (url.pathname === "/planner") {
+    return new Response(null, {
+      status: 301,
+      headers: { Location: `/planners${url.search}`, "Cache-Control": "public, max-age=3600" },
+    });
+  }
+
   if (req.method === "OPTIONS") return corsPreflight(req);
 
   const cors = corsHeaders(req.headers.get("origin"));

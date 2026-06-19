@@ -5744,7 +5744,7 @@ const hu: LocaleMessages = {
     hero_title: "Minden párod,\negy munkaterületen.",
     hero_body:
       "Vendéglista, ültetés, feladatok, dokumentumok — minden párodnál, egy helyen.",
-    hero_cta: "Kérem a hozzáférést",
+    hero_cta: "Jelentkezem",
     couple_escape: "Párként tervez?",
     couple_escape_link: "Erre jöjj",
     pricing_eyebrow: "Árképzés",
@@ -5857,6 +5857,7 @@ const hu: LocaleMessages = {
     beta_step_3_body: "",
     step_label_contact: "Kapcsolat",
     form_title: "Jelentkezés a béta programra",
+    step1_cta: "Tovább a jelentkezéshez",
   },
 };
 

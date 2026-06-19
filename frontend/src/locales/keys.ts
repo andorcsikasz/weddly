@@ -6287,5 +6287,6 @@ export interface LocaleMessages {
     beta_step_3_body: string;
     step_label_contact: string;
     form_title: string;
+    step1_cta: string;
   };
 }

@@ -5695,7 +5695,7 @@ const en: LocaleMessages = {
     hero_title: "Every couple you manage,\none workspace.",
     hero_body:
       "Guest list, seating, tasks, and documents — every couple, one workspace.",
-    hero_cta: "Request access",
+    hero_cta: "Sign up",
     couple_escape: "Planning as a couple?",
     couple_escape_link: "This way",
     pricing_eyebrow: "Pricing",
@@ -5810,6 +5810,7 @@ const en: LocaleMessages = {
     beta_step_3_body: "",
     step_label_contact: "Contact",
     form_title: "Apply for the beta",
+    step1_cta: "Continue to registration",
   },
 };
 

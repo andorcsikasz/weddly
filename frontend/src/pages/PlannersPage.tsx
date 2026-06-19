@@ -12,7 +12,7 @@ import {
   LayoutGrid,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
 import { plannerWaitlistApi } from "../lib/endpoints";
@@ -56,6 +56,7 @@ interface PlanCardProps {
   features: string[];
   selected: boolean;
   onSelect: (plan: Plan) => void;
+  badge?: string;
 }
 
 function PlanCard({
@@ -67,6 +68,7 @@ function PlanCard({
   features,
   selected,
   onSelect,
+  badge,
 }: PlanCardProps) {
   return (
     <div
@@ -86,6 +88,11 @@ function PlanCard({
           : "border-paper-300 bg-paper-50 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-600"
       }`}
     >
+      {badge && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-umber-700 px-3 py-0.5 text-xs font-semibold text-paper-50">
+          {badge}
+        </div>
+      )}
       {/* Top row: name + radio dot */}
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-grotesk text-sm font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
@@ -297,6 +304,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   t("planners.plan_pro_feature_2"),
                   t("planners.plan_pro_feature_3"),
                 ]}
+                badge={t("planners.plan_pro_badge")}
                 selected={form.selected_plan === "pro"}
                 onSelect={(p) => set("selected_plan", p)}
               />
@@ -324,7 +332,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
             )}
 
             <button type="submit" className="btn-primary w-full py-2.5 text-sm">
-              {t("common.next")} →
+              {t("planners.step1_cta")} →
             </button>
           </div>
         )}
@@ -523,22 +531,24 @@ function BetaOffer() {
             {t("planners.beta_body")}
           </p>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          <div className="mt-10 flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center">
             {steps.map((s, i) => (
-              <div key={s.title} className="flex flex-col items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-umber-600 text-sm font-semibold text-paper-300">
-                  {i + 1}
+              <Fragment key={s.title}>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-umber-600 text-sm font-semibold text-paper-300">
+                    {i + 1}
+                  </div>
+                  <p className="text-sm font-semibold text-paper-100">{s.title}</p>
+                  {s.body && <p className="text-xs leading-relaxed text-paper-400">{s.body}</p>}
                 </div>
-                <p className="text-sm font-semibold text-paper-100">{s.title}</p>
-                {s.body && <p className="text-xs leading-relaxed text-paper-400">{s.body}</p>}
                 {i < steps.length - 1 && (
                   <ArrowRight
                     size={14}
-                    className="mt-1 hidden text-umber-500 sm:block"
+                    className="hidden shrink-0 text-umber-500 sm:block"
                     aria-hidden="true"
                   />
                 )}
-              </div>
+              </Fragment>
             ))}
           </div>
 
@@ -548,7 +558,7 @@ function BetaOffer() {
               e.preventDefault();
               document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="mt-10 inline-block rounded-md bg-paper-50 px-8 py-3 text-sm font-medium text-umber-900 transition-colors hover:bg-paper-200"
+            className="btn btn-lg mt-10 bg-paper-50 text-umber-900 hover:bg-paper-200"
           >
             {t("planners.hero_cta")}
           </a>
@@ -630,20 +640,11 @@ export default function PlannersPage() {
           <p className="mb-3 text-sm text-umber-600 dark:text-umber-400">
             {t("planners.not_a_planner")}
           </p>
-          <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
-            <Link
-              to="/"
-              className="text-sm text-umber-700 underline hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
-            >
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Link to="/" className="btn-outline btn-sm">
               {t("planners.back_home")}
             </Link>
-            <span className="hidden text-umber-400 sm:block" aria-hidden="true">
-              ·
-            </span>
-            <Link
-              to="/vendors"
-              className="text-sm text-umber-700 underline hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
-            >
+            <Link to="/vendors" className="btn-outline btn-sm">
               {t("planners.vendor_link")}
             </Link>
           </div>
