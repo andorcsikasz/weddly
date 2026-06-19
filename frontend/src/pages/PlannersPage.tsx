@@ -18,7 +18,9 @@ function trimStr(v: string): string {
 
 // ── Registration form ─────────────────────────────────────────────────────────
 
-type Step = 1 | 2;
+type Step = 1 | 2 | 3;
+
+const TOTAL_STEPS = 3;
 
 interface FormState {
   full_name: string;
@@ -41,6 +43,9 @@ const EMPTY: FormState = {
   message: "",
   privacy_accepted: false,
 };
+
+const backBtnClass =
+  "flex-1 rounded-md border border-paper-300 px-4 py-2.5 text-sm text-umber-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-800";
 
 function PlannerWaitlistForm() {
   const { t } = useT();
@@ -73,7 +78,6 @@ function PlannerWaitlistForm() {
 
   function validateStep2(): boolean {
     const errs: Partial<Record<keyof FormState, string>> = {};
-    if (!form.privacy_accepted) errs.privacy_accepted = t("planners.err_privacy");
     if (
       form.years_experience !== "" &&
       (Number.isNaN(Number(form.years_experience)) ||
@@ -86,14 +90,26 @@ function PlannerWaitlistForm() {
     return Object.keys(errs).length === 0;
   }
 
+  function validateStep3(): boolean {
+    const errs: Partial<Record<keyof FormState, string>> = {};
+    if (!form.privacy_accepted) errs.privacy_accepted = t("planners.err_privacy");
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   function handleNext() {
-    setTouched(new Set(["full_name", "email", "phone"] as (keyof FormState)[]));
-    if (validateStep1()) setStep(2);
+    if (step === 1) {
+      setTouched(new Set(["full_name", "email", "phone"] as (keyof FormState)[]));
+      if (validateStep1()) setStep(2);
+    } else if (step === 2) {
+      if (validateStep2()) setStep(3);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!validateStep2()) return;
+    if (step < 3) { handleNext(); return; }
+    if (!validateStep3()) return;
     setSubmitting(true);
     setServerError(null);
     try {
@@ -107,6 +123,10 @@ function PlannerWaitlistForm() {
           form.years_experience !== "" ? Number(form.years_experience) : null,
         message: trimStr(form.message) || null,
         privacy_version: PRIVACY_VERSION,
+        selected_plan: null,
+        website: null,
+        weddings_per_year: null,
+        usage: null,
       });
       setDone(true);
     } catch {
@@ -144,7 +164,7 @@ function PlannerWaitlistForm() {
       {/* Step indicator */}
       <div className="mb-8 flex flex-col items-center gap-2">
         <div className="flex gap-2">
-          {([1, 2] as Step[]).map((s) => (
+          {([1, 2, 3] as Step[]).map((s) => (
             <span
               key={s}
               className={`h-2 w-2 rounded-full transition-colors ${
@@ -158,11 +178,12 @@ function PlannerWaitlistForm() {
           ))}
         </div>
         <p className="text-xs text-umber-500 dark:text-umber-400">
-          {t("planners.step_indicator", { current: String(step), total: "2" })}
+          {t("planners.step_indicator", { current: String(step), total: String(TOTAL_STEPS) })}
         </p>
       </div>
 
-      <form onSubmit={step === 1 ? (e) => { e.preventDefault(); handleNext(); } : handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate>
+        {/* ── Step 1: Contact ───────────────────────────────────────── */}
         {step === 1 && (
           <div className="space-y-5">
             <h2 className="font-display text-2xl font-semibold text-umber-900 dark:text-paper-50">
@@ -229,6 +250,7 @@ function PlannerWaitlistForm() {
           </div>
         )}
 
+        {/* ── Step 2: Business profile ──────────────────────────────── */}
         {step === 2 && (
           <div className="space-y-5">
             <h2 className="font-display text-2xl font-semibold text-umber-900 dark:text-paper-50">
@@ -285,6 +307,24 @@ function PlannerWaitlistForm() {
               {errors.years_experience && <p className={errClass}>{errors.years_experience}</p>}
             </div>
 
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setStep(1)} className={backBtnClass}>
+                ← {t("common.back")}
+              </button>
+              <button type="submit" className="btn-primary flex-[2] py-2.5 text-sm">
+                {t("common.next")} →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 3: Message + privacy + submit ────────────────────── */}
+        {step === 3 && (
+          <div className="space-y-5">
+            <h2 className="font-display text-2xl font-semibold text-umber-900 dark:text-paper-50">
+              {t("planners.step3_title")}
+            </h2>
+
             <div>
               <label htmlFor="pw-message" className={labelClass}>
                 {t("planners.label_message")}
@@ -301,7 +341,7 @@ function PlannerWaitlistForm() {
             </div>
 
             <div>
-              <label className="flex items-start gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-start gap-2">
                 <input
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 accent-umber-700 dark:accent-umber-300"
@@ -326,11 +366,7 @@ function PlannerWaitlistForm() {
             )}
 
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="flex-1 rounded-md border border-paper-300 px-4 py-2.5 text-sm text-umber-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-800"
-              >
+              <button type="button" onClick={() => setStep(2)} className={backBtnClass}>
                 ← {t("common.back")}
               </button>
               <button
