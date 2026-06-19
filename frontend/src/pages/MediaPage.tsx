@@ -62,6 +62,7 @@ function formatDuration(ms: number): string {
 
 function formatRevealDate(ms: number): string {
   return new Date(ms).toLocaleString(undefined, {
+    year: "numeric",
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -211,9 +212,16 @@ function QrModal({
 
 // --- participant list (live-polling) ----------------------------------------
 
-function ParticipantDashboard({ albumToken }: { albumToken: string }) {
+function ParticipantDashboard({
+  albumToken,
+  fallbackCount,
+}: {
+  albumToken: string;
+  fallbackCount: number;
+}) {
+  const { t } = useT();
   const [devices, setDevices] = useState<FilmDevice[]>([]);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -233,34 +241,38 @@ function ParticipantDashboard({ albumToken }: { albumToken: string }) {
     };
   }, [albumToken]);
 
-  if (devices.length === 0) return null;
+  const displayCount = devices.length > 0 ? devices.length : fallbackCount;
 
   return (
     <div>
       <button
         type="button"
-        className="flex w-full items-center justify-between py-2 text-left"
+        className="flex w-full items-center justify-between py-1 text-left"
         onClick={() => setExpanded((v) => !v)}
       >
         <span className="flex items-center gap-2 text-xs text-paper-400">
           <Users size={12} aria-hidden="true" />
-          {devices.length} joined
+          {displayCount} joined
         </span>
         <span className="text-xs text-umber-400">{expanded ? "▲" : "▼"}</span>
       </button>
       {expanded && (
         <ul className="mt-1 space-y-1">
-          {devices.map((d) => (
-            <li
-              key={d.deviceId}
-              className="flex items-center justify-between text-xs text-paper-400"
-            >
-              <span className="truncate">{d.guestName ?? "Anonymous"}</span>
-              <span className="ml-2 shrink-0 tabular-nums text-paper-400">
-                {d.shotCount} shot{d.shotCount !== 1 ? "s" : ""}
-              </span>
-            </li>
-          ))}
+          {devices.length > 0 ? (
+            devices.map((d) => (
+              <li
+                key={d.deviceId}
+                className="flex items-center justify-between text-xs text-paper-400"
+              >
+                <span className="truncate">{d.guestName ?? "Anonymous"}</span>
+                <span className="ml-2 shrink-0 tabular-nums text-paper-400">
+                  {d.shotCount} shot{d.shotCount !== 1 ? "s" : ""}
+                </span>
+              </li>
+            ))
+          ) : (
+            <li className="text-xs text-umber-500">{t("media.film_no_participants")}</li>
+          )}
         </ul>
       )}
     </div>
@@ -809,7 +821,10 @@ export default function MediaPage() {
             {/* Inline participants list — expands when People is tapped */}
             {showParticipants && album && (
               <div className="border-b border-umber-800 px-4 py-3">
-                <ParticipantDashboard albumToken={album.uploadToken} />
+                <ParticipantDashboard
+                  albumToken={album.uploadToken}
+                  fallbackCount={album.participantCount}
+                />
               </div>
             )}
 
