@@ -145,6 +145,7 @@ function PublicHeader() {
   return (
     <header
       data-scroll-hide="true"
+      data-at-top={atTop ? "true" : undefined}
       className={`sticky top-0 z-40 border-b bg-paper-50/85 backdrop-blur transition-[transform,border-color,box-shadow] duration-200 dark:bg-umber-900/85 ${
         atTop
           ? "border-transparent"
@@ -204,6 +205,7 @@ function PublicHeader() {
         <div className="ml-auto flex items-center gap-3">
           <button
             type="button"
+            data-nav-icon
             onClick={openFeedback}
             className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
             aria-label={t("landing.nav_feedback")}
@@ -213,6 +215,7 @@ function PublicHeader() {
           </button>
           <button
             type="button"
+            data-nav-icon
             onClick={() => setLocale(otherLocale)}
             className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:inline-flex"
             aria-label={t("nav.switch_language")}
@@ -222,6 +225,7 @@ function PublicHeader() {
           </button>
           <button
             type="button"
+            data-nav-icon
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-md transition-colors sm:h-8 sm:w-8 ${
               theme === "dark"
@@ -241,6 +245,7 @@ function PublicHeader() {
           {user ? (
             <Link
               to="/app"
+              data-nav-icon
               className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
               aria-label={t("landing.cta_open_app")}
               title={t("landing.cta_open_app")}
@@ -250,6 +255,7 @@ function PublicHeader() {
           ) : (
             <Link
               to="/login"
+              data-nav-icon
               className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 sm:inline-flex"
               aria-label={t("landing.cta_login")}
               title={t("landing.cta_login")}
@@ -276,6 +282,7 @@ function PublicHeader() {
           )}
           <button
             type="button"
+            data-nav-icon
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             aria-controls="public-mobile-nav"

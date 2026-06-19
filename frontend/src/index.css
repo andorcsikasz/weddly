@@ -684,6 +684,17 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     box-shadow: none !important;
   }
 
+  /* When the header floats over the hero photo (fully transparent, at top),
+     icon buttons need to flip light so they read against the dark photo on
+     the right side of the frame where the cream overlay doesn't reach. */
+  html.landing-hero-active header[data-at-top="true"] [data-nav-icon] {
+    color: rgba(251, 250, 246, 0.90);
+  }
+  html.landing-hero-active header[data-at-top="true"] [data-nav-icon]:hover {
+    background-color: rgba(251, 250, 246, 0.15);
+    color: #fbfaf5;
+  }
+
   .hero-section {
     position: relative;
     overflow: hidden;
