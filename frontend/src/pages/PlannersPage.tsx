@@ -273,7 +273,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
         {/* ── Step 1: Plan selection ── */}
         {step === 1 && (
           <div className="space-y-5">
-            <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
+            <h2 className="font-grotesk text-center text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
               {t("planners.step0_title")}
             </h2>
 
@@ -598,15 +598,14 @@ export default function PlannersPage() {
             >
               {t("planners.hero_cta")}
             </a>
-            <p className="mt-5 text-sm text-umber-500 dark:text-umber-400">
-              {t("planners.couple_escape")}{" "}
-              <Link
-                to="/signup"
-                className="text-umber-700 underline underline-offset-2 hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
-              >
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <span className="text-sm text-umber-500 dark:text-umber-400">
+                {t("planners.couple_escape")}
+              </span>
+              <Link to="/signup" className="btn btn-outline btn-sm">
                 {t("planners.couple_escape_link")}
               </Link>
-            </p>
+            </div>
           </div>
 
           <div className="mt-12 lg:mt-0">

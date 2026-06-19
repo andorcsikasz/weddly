@@ -210,6 +210,7 @@ export default function App() {
             </Page>
           }
         />
+        <Route path="/planner" element={<Navigate to="/planners" replace />} />
         {/* SEO tool pages mounted at /eszkozok/* (HU) and /tools/* (EN).
          *  Each slug pair targets a long-tail search query in its locale and
          *  shares the bilingual ROUTE_SEO entry — the visitor's locale picks

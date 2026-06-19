@@ -493,7 +493,7 @@ function PublicFooter() {
         <FooterColumn title={t("landing.footer_couples")}>
           <FooterLink to="/signup">{t("landing.footer_couples_signup")}</FooterLink>
           <FooterLink to="/login">{t("landing.footer_couples_signin")}</FooterLink>
-          <FooterAnchor href="#phases">{t("landing.footer_couples_features")}</FooterAnchor>
+          <FooterAnchor href="/#phases">{t("landing.footer_couples_features")}</FooterAnchor>
           <FooterLink to="/blog">{t("blog.eyebrow")}</FooterLink>
           <FooterLink to={couplesCardsPath}>{t("landing.footer_couples_cards")}</FooterLink>
         </FooterColumn>
