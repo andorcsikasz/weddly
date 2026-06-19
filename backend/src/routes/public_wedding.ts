@@ -364,9 +364,10 @@ async function handleToggleWishlistInterest(ctx: Ctx): Promise<Response> {
   // moves — this is a non-binding coordination figure.
   // Cast to Record<string, unknown> so we can safely read arbitrary keys without
   // TypeScript narrowing woes from the `WishlistInterestToggleInput | {}` union.
-  const body = (await readJson<WishlistInterestToggleInput>(ctx.req).catch(
-    () => ({}),
-  )) as Record<string, unknown>;
+  const body = (await readJson<WishlistInterestToggleInput>(ctx.req).catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
   let pledge: number | null | undefined;
   if (!("pledged_amount_minor" in body)) {
     pledge = undefined;
@@ -399,8 +400,14 @@ async function handleToggleWishlistInterest(ctx: Ctx): Promise<Response> {
   // Fire-and-forget email notifications when a new household joined.
   if (toggleResult.wasInsert && toggleResult.notificationPayload) {
     const payload = toggleResult.notificationPayload;
-    const { allContributors, newContributorLabel, itemTitle, itemUrl, targetAmountMinor, currency } =
-      payload;
+    const {
+      allContributors,
+      newContributorLabel,
+      itemTitle,
+      itemUrl,
+      targetAmountMinor,
+      currency,
+    } = payload;
 
     // Notification-eligible contributors (those with an email), excluding the
     // new pledger themselves (they get Email B, not Email A).

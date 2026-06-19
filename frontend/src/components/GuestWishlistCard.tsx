@@ -131,7 +131,10 @@ function ContributorBreakdown({
     <div className="rounded-lg border border-paper-200 bg-paper-50 p-2.5 dark:border-umber-700 dark:bg-umber-800/60">
       <ul className="space-y-1">
         {result.contributors.map((c, i) => (
-          <li key={i} className="flex items-center justify-between gap-2 text-xs text-ink-700 dark:text-paper-100">
+          <li
+            key={i}
+            className="flex items-center justify-between gap-2 text-xs text-ink-700 dark:text-paper-100"
+          >
             <span className="font-medium">{c.label}</span>
             <span className="tabular-nums text-ink-500 dark:text-umber-300">
               {c.pledged_amount_minor !== null
@@ -178,7 +181,11 @@ export function GuestWishlistCard({
   householdCode: string;
   /** Pure toggle when called with just the id; sets the soft pledge when given
    *  an amount (minor units) or null. Absent → non-interactive (preview). */
-  onToggleInterest?: (itemId: number, pledgedAmountMinor?: number | null, notificationEmail?: string) => void;
+  onToggleInterest?: (
+    itemId: number,
+    pledgedAmountMinor?: number | null,
+    notificationEmail?: string,
+  ) => void;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const cur = entry.currency ?? currency;
@@ -201,7 +208,9 @@ export function GuestWishlistCard({
   const initialState: PledgeState = entry.viewer_has_interest ? "pledged" : "idle";
   const [pledgeState, setPledgeState] = useState<PledgeState>(initialState);
   const [submitting, setSubmitting] = useState(false);
-  const [contributors, setContributors] = useState<WishlistContributorsResult | null | "loading">("loading");
+  const [contributors, setContributors] = useState<WishlistContributorsResult | null | "loading">(
+    "loading",
+  );
 
   // Amount input state (whole units as digit string)
   const remaining =
@@ -331,9 +340,7 @@ export function GuestWishlistCard({
         )}
 
         {/* Progress bar — gift items with a target only */}
-        {hasBar && (
-          <ProgressBlock entry={entry} currency={currency} locale={locale} t={t} />
-        )}
+        {hasBar && <ProgressBlock entry={entry} currency={currency} locale={locale} t={t} />}
 
         {/* Interest count — aggregate only, no names */}
         {entry.interest_count > 0 && isGift && (
@@ -415,8 +422,8 @@ export function GuestWishlistCard({
                         onClick={() => setAmount(String(remainingWhole))}
                         className="cursor-pointer text-xs text-ink-500 underline underline-offset-2 dark:text-umber-300"
                       >
-                        {t("guest_portal.wishlist_pledge_step2_fill_remaining")}
-                        {" "}({formatMoney(remainingWhole, cur, locale)})
+                        {t("guest_portal.wishlist_pledge_step2_fill_remaining")} (
+                        {formatMoney(remainingWhole, cur, locale)})
                       </button>
                     )}
                   </div>

@@ -648,7 +648,9 @@ export default function AdminUsersPage() {
       <div className="flex min-w-0 flex-col gap-y-1">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="font-medium text-neutral-900 dark:text-paper-50">{u.full_name}</span>
-          <span className="min-w-0 truncate text-xs text-neutral-500 dark:text-umber-300">{u.email}</span>
+          <span className="min-w-0 truncate text-xs text-neutral-500 dark:text-umber-300">
+            {u.email}
+          </span>
           {u.is_admin && (
             <Pill tone="violet" srLabel={t("admin.badge_admin")}>
               {t("admin.badge_admin")}

@@ -82,7 +82,11 @@ export interface WeddingSiteViewProps {
   /** Live page only — href the RSVP CTA points at (pre-fills slug + code). */
   rsvpHref?: string;
   /** Live page only — soft "I'd like to help" toggle on a group-gift item. */
-  onToggleWishlistInterest?: (itemId: number, pledgedAmountMinor?: number | null, notificationEmail?: string) => void;
+  onToggleWishlistInterest?: (
+    itemId: number,
+    pledgedAmountMinor?: number | null,
+    notificationEmail?: string,
+  ) => void;
   /** The household's invite code, for contributor fetch after pledge. */
   householdCode?: string;
   /** Live page only — ref to the confirmed-tier heading so the page can shift

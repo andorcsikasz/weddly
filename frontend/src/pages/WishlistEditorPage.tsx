@@ -237,7 +237,10 @@ function ItemActions({
   totalCount,
   onMoveUp,
   onMoveDown,
-}: Pick<ItemViewProps, "t" | "onEdit" | "onDelete" | "index" | "totalCount" | "onMoveUp" | "onMoveDown">) {
+}: Pick<
+  ItemViewProps,
+  "t" | "onEdit" | "onDelete" | "index" | "totalCount" | "onMoveUp" | "onMoveDown"
+>) {
   const btnBase =
     "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 disabled:pointer-events-none disabled:opacity-30 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100";
   return (
@@ -286,7 +289,18 @@ function ItemActions({
 
 /** "Sávos" view: a dense row. The progress bar sits BESIDE the content (before
  *  the action buttons) on wide screens. */
-function WishlistRow({ item, currency, locale, t, onEdit, onDelete, index, totalCount, onMoveUp, onMoveDown }: ItemViewProps) {
+function WishlistRow({
+  item,
+  currency,
+  locale,
+  t,
+  onEdit,
+  onDelete,
+  index,
+  totalCount,
+  onMoveUp,
+  onMoveDown,
+}: ItemViewProps) {
   const cur = item.currency ?? currency;
   return (
     <li className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700">
@@ -345,7 +359,18 @@ function WishlistRow({ item, currency, locale, t, onEdit, onDelete, index, total
 
 /** "Kártya" view: a card with the image up top, then the title/meta, then the
  *  progress bar stacked BELOW. */
-function WishlistCardItem({ item, currency, locale, t, onEdit, onDelete, index, totalCount, onMoveUp, onMoveDown }: ItemViewProps) {
+function WishlistCardItem({
+  item,
+  currency,
+  locale,
+  t,
+  onEdit,
+  onDelete,
+  index,
+  totalCount,
+  onMoveUp,
+  onMoveDown,
+}: ItemViewProps) {
   const cur = item.currency ?? currency;
   return (
     // Fixed card height with a 3/5 image · 2/5 text split. The whole row of

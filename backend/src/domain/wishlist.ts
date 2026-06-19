@@ -576,7 +576,12 @@ export function setInterest(
     const itemRow = db
       .prepare("SELECT title, url, target_amount_minor, currency FROM wishlist_items WHERE id = ?")
       .get(itemId) as
-      | { title: string; url: string | null; target_amount_minor: number | null; currency: string | null }
+      | {
+          title: string;
+          url: string | null;
+          target_amount_minor: number | null;
+          currency: string | null;
+        }
       | undefined;
     const allInterestRows = db
       .prepare(
@@ -715,7 +720,8 @@ export async function sendGroupGiftNotification(params: {
   const tableRows = contributors
     .map((c) => {
       const isMe = c.label === recipientLabel;
-      const amountCell = c.pledgedAmountMinor != null ? formatAmount(c.pledgedAmountMinor, currency) : "-";
+      const amountCell =
+        c.pledgedAmountMinor != null ? formatAmount(c.pledgedAmountMinor, currency) : "-";
       return `<tr${isMe ? ' style="font-weight:bold"' : ""}>
         <td>${c.label}${isMe ? " [Te/You]" : ""}</td>
         <td>${amountCell}</td>

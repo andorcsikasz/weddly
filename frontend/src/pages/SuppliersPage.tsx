@@ -1582,8 +1582,7 @@ export default function SuppliersPage() {
                   data-supplier-id={s.id}
                   onClick={() => navigate(`/app/suppliers/${encodeURIComponent(s.id)}`)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter")
-                      navigate(`/app/suppliers/${encodeURIComponent(s.id)}`);
+                    if (e.key === "Enter") navigate(`/app/suppliers/${encodeURIComponent(s.id)}`);
                   }}
                   tabIndex={0}
                   className={`card !p-4 relative flex h-full flex-col cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${

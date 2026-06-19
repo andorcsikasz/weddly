@@ -778,7 +778,10 @@ export default function BudgetPage() {
 
   return (
     <>
-      <header data-tour-target="budget-header" className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <header
+        data-tour-target="budget-header"
+        className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2"
+      >
         <div className="flex min-w-0 items-center gap-2">
           <h1 className="font-grotesk">{t("budget.title")}</h1>
           <InfoHint text={t("budget.sub")} />

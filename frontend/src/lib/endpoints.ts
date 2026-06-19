@@ -1459,7 +1459,9 @@ export const adminUserApi = {
    *  for this admin+section so the next badge poll counts only rows authored
    *  AFTER the visit. AppShell fires this on navigation into the matching
    *  /app/admin/{section} path. */
-  markSectionSeen: (section: "suppliers" | "users" | "vendor_waitlist" | "planner_waitlist" | "feedback") =>
+  markSectionSeen: (
+    section: "suppliers" | "users" | "vendor_waitlist" | "planner_waitlist" | "feedback",
+  ) =>
     apiFetch<{ ok: true; section: string; seen_at: number }>(
       "POST",
       "/api/admin/sidebar-badges/seen",

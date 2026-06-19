@@ -157,7 +157,11 @@ export default function WeddingWebsitePage() {
    *  reconcile the count + state from the server response. On failure we roll
    *  back to the pre-click snapshot. Only reachable on the code-bearing,
    *  confirmed-tier page (the button isn't rendered otherwise). */
-  function onToggleWishlistInterest(itemId: number, pledgedAmountMinor?: number | null, notificationEmail?: string) {
+  function onToggleWishlistInterest(
+    itemId: number,
+    pledgedAmountMinor?: number | null,
+    notificationEmail?: string,
+  ) {
     if (!hasCode) return;
     const isPledge = pledgedAmountMinor !== undefined;
     const snapshot = view;

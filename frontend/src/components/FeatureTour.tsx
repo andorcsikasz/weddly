@@ -50,8 +50,16 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.dashboard_body",
     icon: <LayoutDashboard size={20} />,
     pageSteps: [
-      { titleKey: "tour.dashboard_p1_title", bodyKey: "tour.dashboard_p1_body", target: "dashboard-kpi" },
-      { titleKey: "tour.dashboard_p2_title", bodyKey: "tour.dashboard_p2_body", target: "dashboard-budget" },
+      {
+        titleKey: "tour.dashboard_p1_title",
+        bodyKey: "tour.dashboard_p1_body",
+        target: "dashboard-kpi",
+      },
+      {
+        titleKey: "tour.dashboard_p2_title",
+        bodyKey: "tour.dashboard_p2_body",
+        target: "dashboard-budget",
+      },
       { titleKey: "tour.dashboard_p3_title", bodyKey: "tour.dashboard_p3_body" },
     ],
   },
@@ -84,9 +92,21 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.vendors_body",
     icon: <Store size={20} />,
     pageSteps: [
-      { titleKey: "tour.vendors_p1_title", bodyKey: "tour.vendors_p1_body", target: "vendors-search" },
-      { titleKey: "tour.vendors_p2_title", bodyKey: "tour.vendors_p2_body", target: "vendors-list" },
-      { titleKey: "tour.vendors_p3_title", bodyKey: "tour.vendors_p3_body", target: "vendors-list" },
+      {
+        titleKey: "tour.vendors_p1_title",
+        bodyKey: "tour.vendors_p1_body",
+        target: "vendors-search",
+      },
+      {
+        titleKey: "tour.vendors_p2_title",
+        bodyKey: "tour.vendors_p2_body",
+        target: "vendors-list",
+      },
+      {
+        titleKey: "tour.vendors_p3_title",
+        bodyKey: "tour.vendors_p3_body",
+        target: "vendors-list",
+      },
     ],
   },
   {
@@ -95,9 +115,21 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.planning_body",
     icon: <ClipboardList size={20} />,
     pageSteps: [
-      { titleKey: "tour.planning_p1_title", bodyKey: "tour.planning_p1_body", target: "planning-tabs" },
-      { titleKey: "tour.planning_p2_title", bodyKey: "tour.planning_p2_body", target: "planning-tabs" },
-      { titleKey: "tour.planning_p3_title", bodyKey: "tour.planning_p3_body", target: "planning-tabs" },
+      {
+        titleKey: "tour.planning_p1_title",
+        bodyKey: "tour.planning_p1_body",
+        target: "planning-tabs",
+      },
+      {
+        titleKey: "tour.planning_p2_title",
+        bodyKey: "tour.planning_p2_body",
+        target: "planning-tabs",
+      },
+      {
+        titleKey: "tour.planning_p3_title",
+        bodyKey: "tour.planning_p3_body",
+        target: "planning-tabs",
+      },
     ],
   },
   {
@@ -112,9 +144,21 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.schedule_body",
     icon: <CalendarClock size={20} />,
     pageSteps: [
-      { titleKey: "tour.schedule_p1_title", bodyKey: "tour.schedule_p1_body", target: "schedule-toolbar" },
-      { titleKey: "tour.schedule_p2_title", bodyKey: "tour.schedule_p2_body", target: "schedule-events" },
-      { titleKey: "tour.schedule_p3_title", bodyKey: "tour.schedule_p3_body", target: "schedule-toolbar" },
+      {
+        titleKey: "tour.schedule_p1_title",
+        bodyKey: "tour.schedule_p1_body",
+        target: "schedule-toolbar",
+      },
+      {
+        titleKey: "tour.schedule_p2_title",
+        bodyKey: "tour.schedule_p2_body",
+        target: "schedule-events",
+      },
+      {
+        titleKey: "tour.schedule_p3_title",
+        bodyKey: "tour.schedule_p3_body",
+        target: "schedule-toolbar",
+      },
     ],
   },
   {
@@ -123,10 +167,26 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.seating_body",
     icon: <Armchair size={20} />,
     pageSteps: [
-      { titleKey: "tour.seating_p1_title", bodyKey: "tour.seating_p1_body", target: "seating-canvas" },
-      { titleKey: "tour.seating_p2_title", bodyKey: "tour.seating_p2_body", target: "seating-modes" },
-      { titleKey: "tour.seating_p3_title", bodyKey: "tour.seating_p3_body", target: "seating-unassigned" },
-      { titleKey: "tour.seating_p4_title", bodyKey: "tour.seating_p4_body", target: "seating-export" },
+      {
+        titleKey: "tour.seating_p1_title",
+        bodyKey: "tour.seating_p1_body",
+        target: "seating-canvas",
+      },
+      {
+        titleKey: "tour.seating_p2_title",
+        bodyKey: "tour.seating_p2_body",
+        target: "seating-modes",
+      },
+      {
+        titleKey: "tour.seating_p3_title",
+        bodyKey: "tour.seating_p3_body",
+        target: "seating-unassigned",
+      },
+      {
+        titleKey: "tour.seating_p4_title",
+        bodyKey: "tour.seating_p4_body",
+        target: "seating-export",
+      },
     ],
   },
   {
@@ -176,9 +236,21 @@ const STEPS: TourStep[] = [
     bodyKey: "tour.guest_page_body",
     icon: <Globe size={20} />,
     pageSteps: [
-      { titleKey: "tour.guest_page_p1_title", bodyKey: "tour.guest_page_p1_body", target: "guest-page-preview" },
-      { titleKey: "tour.guest_page_p2_title", bodyKey: "tour.guest_page_p2_body", target: "guest-page-preview" },
-      { titleKey: "tour.guest_page_p3_title", bodyKey: "tour.guest_page_p3_body", target: "guest-page-preview" },
+      {
+        titleKey: "tour.guest_page_p1_title",
+        bodyKey: "tour.guest_page_p1_body",
+        target: "guest-page-preview",
+      },
+      {
+        titleKey: "tour.guest_page_p2_title",
+        bodyKey: "tour.guest_page_p2_body",
+        target: "guest-page-preview",
+      },
+      {
+        titleKey: "tour.guest_page_p3_title",
+        bodyKey: "tour.guest_page_p3_body",
+        target: "guest-page-preview",
+      },
     ],
   },
 ];
@@ -323,8 +395,8 @@ interface Props {
 export function FeatureTour({ open, onClose }: Props) {
   const { t } = useT();
   const location = useLocation();
-  const [activeSteps, setActiveSteps] = useState<TourStep[]>(() =>
-    buildActiveSteps(location.pathname).steps,
+  const [activeSteps, setActiveSteps] = useState<TourStep[]>(
+    () => buildActiveSteps(location.pathname).steps,
   );
   const [stepIndex, setStepIndex] = useState(0);
   const [fade, setFade] = useState<"in" | "out">("in");

@@ -88,7 +88,11 @@ export function GuestPortalView({
   /** Live guest page only — toggles the household's soft "I'd like to help"
    *  interest on a group-gift item. Omitted on the couple-side editor preview,
    *  where the toggle is read-only (not wired). */
-  onToggleWishlistInterest?: (itemId: number, pledgedAmountMinor?: number | null, notificationEmail?: string) => void;
+  onToggleWishlistInterest?: (
+    itemId: number,
+    pledgedAmountMinor?: number | null,
+    notificationEmail?: string,
+  ) => void;
   /** The couple's slug — passed down to GuestWishlistCard for contributor fetching. */
   coupleSlug?: string;
   /** The household's invite code — passed down to GuestWishlistCard. */

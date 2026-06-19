@@ -84,7 +84,12 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, `privacy_version must be ${PRIVACY_VERSION}`);
 
   let years_experience: number | null = null;
-  if (body.years_experience !== undefined && body.years_experience !== null && body.years_experience !== 0 && body.years_experience !== "") {
+  if (
+    body.years_experience !== undefined &&
+    body.years_experience !== null &&
+    body.years_experience !== 0 &&
+    body.years_experience !== ""
+  ) {
     const parsed = Number(body.years_experience);
     if (!Number.isInteger(parsed) || parsed < 0 || parsed > 60) {
       throw new HttpError(400, "years_experience must be 0-60");
@@ -100,7 +105,11 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   const usage = trimStr(body.usage) || null;
 
   let weddings_per_year: number | null = null;
-  if (body.weddings_per_year !== undefined && body.weddings_per_year !== null && body.weddings_per_year !== "") {
+  if (
+    body.weddings_per_year !== undefined &&
+    body.weddings_per_year !== null &&
+    body.weddings_per_year !== ""
+  ) {
     const parsed = Number(body.weddings_per_year);
     if (!Number.isNaN(parsed) && Number.isInteger(parsed) && parsed >= 0 && parsed <= 500) {
       weddings_per_year = parsed;
@@ -115,9 +124,33 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        RETURNING *`,
     )
-    .get(full_name, email, phone, company_name, city, years_experience, message, selected_plan, website, weddings_per_year, usage, now) as PlannerWaitlistRow;
+    .get(
+      full_name,
+      email,
+      phone,
+      company_name,
+      city,
+      years_experience,
+      message,
+      selected_plan,
+      website,
+      weddings_per_year,
+      usage,
+      now,
+    ) as PlannerWaitlistRow;
 
-  return json({ entry: { id: row.id, full_name: row.full_name, email: row.email, status: row.status, created_at: row.created_at } }, { status: 201 });
+  return json(
+    {
+      entry: {
+        id: row.id,
+        full_name: row.full_name,
+        email: row.email,
+        status: row.status,
+        created_at: row.created_at,
+      },
+    },
+    { status: 201 },
+  );
 }
 
 function handleAdminList(ctx: Ctx): Response {

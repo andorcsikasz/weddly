@@ -391,7 +391,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   // mapping mirrors ADMIN_ITEMS' `badgeKey`.
   useEffect(() => {
     if (!user?.is_admin) return;
-    let section: "suppliers" | "users" | "vendor_waitlist" | "planner_waitlist" | "feedback" | null = null;
+    let section:
+      | "suppliers"
+      | "users"
+      | "vendor_waitlist"
+      | "planner_waitlist"
+      | "feedback"
+      | null = null;
     if (location.pathname.startsWith("/app/admin/suppliers")) section = "suppliers";
     else if (location.pathname.startsWith("/app/admin/users")) section = "users";
     else if (location.pathname.startsWith("/app/admin/vendor-waitlist"))

@@ -288,7 +288,10 @@ export default function SchedulePage() {
           <h1 className="font-grotesk">{t("schedule.title")}</h1>
           <InfoHint text={t("schedule.sub")} />
         </div>
-        <div data-tour-target="schedule-toolbar" className="inline-flex items-stretch overflow-hidden rounded-xl border border-paper-300 shadow-sm dark:border-umber-600">
+        <div
+          data-tour-target="schedule-toolbar"
+          className="inline-flex items-stretch overflow-hidden rounded-xl border border-paper-300 shadow-sm dark:border-umber-600"
+        >
           {/* Proportional view toggle */}
           <button
             type="button"
@@ -297,8 +300,12 @@ export default function SchedulePage() {
                 ? "bg-umber-200 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
                 : "text-ink-500 hover:bg-paper-100 hover:text-ink-800 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
             }`}
-            onClick={() => setViewMode((m) => m === "proportional" ? "list" : "proportional")}
-            title={viewMode === "proportional" ? t("schedule.view_list") : t("schedule.view_proportional")}
+            onClick={() => setViewMode((m) => (m === "proportional" ? "list" : "proportional"))}
+            title={
+              viewMode === "proportional"
+                ? t("schedule.view_list")
+                : t("schedule.view_proportional")
+            }
             aria-pressed={viewMode === "proportional"}
             disabled={sortedEvents.length === 0}
           >
@@ -313,7 +320,7 @@ export default function SchedulePage() {
                 ? "bg-umber-200 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
                 : "text-ink-500 hover:bg-paper-100 hover:text-ink-800 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
             }`}
-            onClick={() => setViewMode((m) => m === "timeline" ? "list" : "timeline")}
+            onClick={() => setViewMode((m) => (m === "timeline" ? "list" : "timeline"))}
             title={viewMode === "timeline" ? t("schedule.view_list") : t("schedule.view_timeline")}
             aria-pressed={viewMode === "timeline"}
             disabled={sortedEvents.length === 0}
@@ -608,9 +615,7 @@ function ScheduleTimelineView({
             >
               <span className="mb-1 inline-block rounded-full border border-paper-200 bg-paper-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-700 dark:border-umber-600 dark:bg-umber-700 dark:text-paper-100">
                 {timeLabel}
-                {day2 && (
-                  <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>
-                )}
+                {day2 && <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>}
               </span>
               <div className="text-sm font-bold text-ink-900 dark:text-paper-50">
                 {localizeKnownLabel(event.label, locale)}

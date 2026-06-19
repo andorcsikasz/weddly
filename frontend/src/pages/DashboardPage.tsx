@@ -1086,7 +1086,10 @@ export default function DashboardPage() {
       {/* ── KPI tiles — hidden in day-of mode; the DayOfPanel above
           surfaces a compact stat row instead. ──────────────────────── */}
       {!dayOfMode && (
-        <section data-tour-target="dashboard-kpi" className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section
+          data-tour-target="dashboard-kpi"
+          className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4"
+        >
           {weddingPast ? (
             <PastWeddingTile
               label={t("dashboard.kpi_days_past")}
