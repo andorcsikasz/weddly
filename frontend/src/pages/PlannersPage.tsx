@@ -119,8 +119,8 @@ function PlanCard({
       {/* Dashed separator */}
       {/* Dashed separator with ticket-punch notches */}
       <div className="relative -mx-5 my-4" aria-hidden="true">
-        <div className="absolute left-0 top-0 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-50 ring-1 ring-paper-300 dark:bg-umber-950 dark:ring-umber-700" />
-        <div className="absolute right-0 top-0 h-3.5 w-3.5 translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-50 ring-1 ring-paper-300 dark:bg-umber-950 dark:ring-umber-700" />
+        <div className="absolute left-0 top-0 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-50 dark:bg-umber-950" />
+        <div className="absolute right-0 top-0 h-5 w-5 translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-50 dark:bg-umber-950" />
         <div className="border-t border-dashed border-paper-300 dark:border-umber-700" />
       </div>
 
