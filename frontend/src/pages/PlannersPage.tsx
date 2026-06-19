@@ -3,7 +3,16 @@
 // workspace access in Phase 2+. Three pricing tiers: basic / pro / unlimited.
 
 import { PRIVACY_VERSION } from "@shared/legal";
-import { Calendar, Check, CheckCircle2, Clipboard, ClipboardList, FileText, LayoutGrid, Star, Users } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  LayoutGrid,
+  Star,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
@@ -295,14 +304,12 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
         phone: trimStr(form.phone),
         company_name: trimStr(form.company_name) || null,
         city: trimStr(form.city) || null,
-        years_experience:
-          form.years_experience !== "" ? Number(form.years_experience) : null,
+        years_experience: form.years_experience !== "" ? Number(form.years_experience) : null,
         message: trimStr(form.message) || null,
         privacy_version: PRIVACY_VERSION,
-          selected_plan: form.selected_plan || null,
+        selected_plan: form.selected_plan || null,
         website: trimStr(form.website) || null,
-        weddings_per_year:
-          form.weddings_per_year !== "" ? Number(form.weddings_per_year) : null,
+        weddings_per_year: form.weddings_per_year !== "" ? Number(form.weddings_per_year) : null,
         usage: form.usage || null,
       });
       setDone(true);
@@ -320,7 +327,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
           className="mx-auto mb-4 h-12 w-12 text-sage-600 dark:text-sage-400"
           aria-hidden="true"
         />
-        <h2 className="font-display mb-3 text-2xl font-semibold text-umber-900 dark:text-paper-50">
+        <h2 className="font-grotesk mb-3 text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
           {t("planners.success_title")}
         </h2>
         {form.selected_plan && (
@@ -367,7 +374,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
         {/* ── Step 1: Plan selection ── */}
         {step === 1 && (
           <div className="space-y-5">
-            <h2 className="font-display text-2xl font-semibold text-umber-900 dark:text-paper-50">
+            <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
               {t("planners.step0_title")}
             </h2>
 
@@ -433,7 +440,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
         {/* ── Step 2: Contact info ── */}
         {step === 2 && (
           <div className="space-y-5">
-            <h2 className="font-display text-2xl font-semibold text-umber-900 dark:text-paper-50">
+            <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
               {t("planners.step1_title")}
             </h2>
 
@@ -482,9 +489,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
                 }}
                 placeholder={t("planners.placeholder_email")}
               />
-              {touched.has("email") && errors.email && (
-                <p className={errClass}>{errors.email}</p>
-              )}
+              {touched.has("email") && errors.email && <p className={errClass}>{errors.email}</p>}
             </div>
 
             <div>
@@ -507,9 +512,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
                 }}
                 placeholder={t("planners.placeholder_phone")}
               />
-              {touched.has("phone") && errors.phone && (
-                <p className={errClass}>{errors.phone}</p>
-              )}
+              {touched.has("phone") && errors.phone && <p className={errClass}>{errors.phone}</p>}
             </div>
 
             <div className="flex gap-3">
@@ -526,7 +529,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
         {/* ── Step 3: Business info ── */}
         {step === 3 && (
           <div className="space-y-5">
-            <h2 className="font-display text-2xl font-semibold text-umber-900 dark:text-paper-50">
+            <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
               {t("planners.step2_title")}
             </h2>
 
@@ -577,9 +580,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
                 onChange={(e) => set("years_experience", e.target.value)}
                 placeholder="0"
               />
-              {errors.years_experience && (
-                <p className={errClass}>{errors.years_experience}</p>
-              )}
+              {errors.years_experience && <p className={errClass}>{errors.years_experience}</p>}
             </div>
 
             <div>
@@ -628,7 +629,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
         {/* ── Step 4: Usage + privacy ── */}
         {step === 4 && (
           <div className="space-y-5">
-            <h2 className="font-display text-2xl font-semibold text-umber-900 dark:text-paper-50">
+            <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
               {t("planners.step_label_usage")}
             </h2>
 
@@ -718,50 +719,6 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
   );
 }
 
-// ── Benefits ──────────────────────────────────────────────────────────────────
-
-function Benefits() {
-  const { t } = useT();
-  const items = [
-    {
-      icon: <Users size={20} aria-hidden="true" />,
-      title: t("planners.benefit_1_title"),
-      body: t("planners.benefit_1_body"),
-    },
-    {
-      icon: <ClipboardList size={20} aria-hidden="true" />,
-      title: t("planners.benefit_2_title"),
-      body: t("planners.benefit_2_body"),
-    },
-    {
-      icon: <Clipboard size={20} aria-hidden="true" />,
-      title: t("planners.benefit_3_title"),
-      body: t("planners.benefit_3_body"),
-    },
-  ];
-  return (
-    <section className="border-t border-paper-200 dark:border-umber-800">
-      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-3">
-          {items.map((item) => (
-            <div key={item.title} className="flex flex-col gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-paper-200 text-umber-700 dark:bg-umber-800 dark:text-umber-300">
-                {item.icon}
-              </div>
-              <h3 className="font-grotesk text-base font-semibold text-umber-900 dark:text-paper-50">
-                {item.title}
-              </h3>
-              <p className="text-sm leading-relaxed text-umber-700 dark:text-umber-300">
-                {item.body}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ── Feature showcase ──────────────────────────────────────────────────────────
 
 function FeatureShowcase() {
@@ -791,7 +748,7 @@ function FeatureShowcase() {
   return (
     <section className="border-t border-paper-200 dark:border-umber-800">
       <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="font-display mb-10 text-center text-3xl font-semibold text-umber-900 dark:text-paper-50">
+        <h2 className="font-grotesk mb-10 text-center text-3xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
           {t("planners.features_title")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -800,15 +757,11 @@ function FeatureShowcase() {
               key={f.name}
               className="flex flex-col gap-3 rounded-2xl bg-paper-100 p-5 shadow-sm dark:bg-umber-900"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-paper-200 text-umber-700 dark:bg-umber-800 dark:text-umber-300">
-                {f.icon}
-              </div>
+              <div className="text-umber-800 dark:text-umber-100">{f.icon}</div>
               <h3 className="font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
                 {f.name}
               </h3>
-              <p className="text-xs leading-relaxed text-umber-600 dark:text-umber-400">
-                {f.desc}
-              </p>
+              <p className="text-xs leading-relaxed text-umber-600 dark:text-umber-400">{f.desc}</p>
             </div>
           ))}
         </div>
@@ -885,7 +838,7 @@ function PricingSection({ onSelectPlan }: PricingSectionProps) {
         <p className="font-grotesk mb-2 text-xs font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
           {t("planners.pricing_eyebrow")}
         </p>
-        <h2 className="font-display mb-2 text-3xl font-semibold text-umber-900 dark:text-paper-50">
+        <h2 className="font-grotesk mb-2 text-3xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
           {t("planners.pricing_title")}
         </h2>
         <p className="mb-8 text-sm text-umber-600 dark:text-umber-400">
@@ -971,43 +924,47 @@ export default function PlannersPage() {
     <PublicShell>
       <main id="main">
         {/* ── Hero ── */}
-        <section className="mx-auto max-w-4xl px-4 pb-8 pt-16 sm:px-6 sm:pt-20 lg:px-8">
-          <p className="font-grotesk mb-3 text-xs font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
-            {t("planners.eyebrow")}
-          </p>
-          <h1 className="font-display mb-4 whitespace-pre-line text-4xl font-semibold italic leading-tight text-umber-900 sm:text-5xl dark:text-paper-50">
-            {t("planners.hero_title")}
-          </h1>
-          <p className="mb-6 max-w-xl text-lg leading-relaxed text-umber-700 dark:text-umber-300">
-            {t("planners.hero_body")}
-          </p>
-          <a
-            href="#waitlist"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="btn-primary inline-block px-6 py-3 text-sm"
-          >
-            {t("planners.hero_cta")}
-          </a>
-        </section>
-
-        {/* ── Couple escape hatch ── */}
-        <div className="mx-auto max-w-4xl px-4 pb-4 sm:px-6 lg:px-8">
-          <p className="text-sm text-umber-500 dark:text-umber-400">
-            {t("planners.couple_escape")}{" "}
-            <Link
-              to="/signup"
-              className="text-umber-700 underline hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
+        <section className="mx-auto max-w-6xl px-4 pb-8 pt-14 sm:px-6 sm:pt-20 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8 lg:pt-24">
+          <div>
+            <p className="font-grotesk mb-3 text-xs font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
+              {t("planners.eyebrow")}
+            </p>
+            <h1 className="font-display mb-4 whitespace-pre-line text-4xl font-semibold italic leading-tight text-umber-900 sm:text-5xl dark:text-paper-50">
+              {t("planners.hero_title")}
+            </h1>
+            <p className="mb-6 max-w-xl text-lg leading-relaxed text-umber-700 dark:text-umber-300">
+              {t("planners.hero_body")}
+            </p>
+            <a
+              href="#waitlist"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="btn-primary inline-block px-6 py-3 text-sm"
             >
-              {t("planners.couple_escape_link")}
-            </Link>
-          </p>
-        </div>
-
-        {/* ── Benefits ── */}
-        <Benefits />
+              {t("planners.hero_cta")}
+            </a>
+            <p className="mt-4 text-sm text-umber-500 dark:text-umber-400">
+              {t("planners.couple_escape")}{" "}
+              <Link
+                to="/signup"
+                className="text-umber-700 underline hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
+              >
+                {t("planners.couple_escape_link")}
+              </Link>
+            </p>
+          </div>
+          <div className="relative mt-10 lg:mt-0">
+            <img
+              src="/demo/film-02.jpg"
+              alt=""
+              aria-hidden="true"
+              className="h-[420px] w-full rounded-2xl object-cover shadow-lg lg:h-[540px]"
+            />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 rounded-b-2xl bg-gradient-to-t from-umber-900/30 to-transparent" />
+          </div>
+        </section>
 
         {/* ── Feature showcase ── */}
         <FeatureShowcase />
