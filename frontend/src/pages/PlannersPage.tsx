@@ -47,6 +47,7 @@ function PlannerWaitlistForm() {
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [touched, setTouched] = useState<Set<keyof FormState>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -55,6 +56,10 @@ function PlannerWaitlistForm() {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
     setServerError(null);
+  }
+
+  function touch(field: keyof FormState) {
+    setTouched((prev) => new Set(prev).add(field));
   }
 
   function validateStep1(): boolean {
@@ -82,6 +87,7 @@ function PlannerWaitlistForm() {
   }
 
   function handleNext() {
+    setTouched(new Set(["full_name", "email", "phone"] as (keyof FormState)[]));
     if (validateStep1()) setStep(2);
   }
 
@@ -135,20 +141,25 @@ function PlannerWaitlistForm() {
 
   return (
     <section id="waitlist" className="mx-auto max-w-lg px-4 py-12">
-      {/* Step dots */}
-      <div className="mb-8 flex justify-center gap-2">
-        {([1, 2] as Step[]).map((s) => (
-          <span
-            key={s}
-            className={`h-2 w-2 rounded-full transition-colors ${
-              step === s
-                ? "bg-umber-700 dark:bg-umber-300"
-                : step > s
-                  ? "bg-umber-400 dark:bg-umber-500"
-                  : "bg-paper-300 dark:bg-umber-700"
-            }`}
-          />
-        ))}
+      {/* Step indicator */}
+      <div className="mb-8 flex flex-col items-center gap-2">
+        <div className="flex gap-2">
+          {([1, 2] as Step[]).map((s) => (
+            <span
+              key={s}
+              className={`h-2 w-2 rounded-full transition-colors ${
+                step === s
+                  ? "bg-umber-700 dark:bg-umber-300"
+                  : step > s
+                    ? "bg-umber-400 dark:bg-umber-500"
+                    : "bg-paper-300 dark:bg-umber-700"
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-xs text-umber-500 dark:text-umber-400">
+          {t("planners.step_indicator", { current: String(step), total: "2" })}
+        </p>
       </div>
 
       <form onSubmit={step === 1 ? (e) => { e.preventDefault(); handleNext(); } : handleSubmit} noValidate>
@@ -170,9 +181,10 @@ function PlannerWaitlistForm() {
                 className={inputClass}
                 value={form.full_name}
                 onChange={(e) => set("full_name", e.target.value)}
+                onBlur={() => { touch("full_name"); validateStep1(); }}
                 placeholder={t("planners.placeholder_full_name")}
               />
-              {errors.full_name && <p className={errClass}>{errors.full_name}</p>}
+              {touched.has("full_name") && errors.full_name && <p className={errClass}>{errors.full_name}</p>}
             </div>
 
             <div>
@@ -187,9 +199,10 @@ function PlannerWaitlistForm() {
                 className={inputClass}
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
+                onBlur={() => { touch("email"); validateStep1(); }}
                 placeholder={t("planners.placeholder_email")}
               />
-              {errors.email && <p className={errClass}>{errors.email}</p>}
+              {touched.has("email") && errors.email && <p className={errClass}>{errors.email}</p>}
             </div>
 
             <div>
@@ -204,9 +217,10 @@ function PlannerWaitlistForm() {
                 className={inputClass}
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
+                onBlur={() => { touch("phone"); validateStep1(); }}
                 placeholder={t("planners.placeholder_phone")}
               />
-              {errors.phone && <p className={errClass}>{errors.phone}</p>}
+              {touched.has("phone") && errors.phone && <p className={errClass}>{errors.phone}</p>}
             </div>
 
             <button type="submit" className="btn-primary w-full py-2.5 text-sm">

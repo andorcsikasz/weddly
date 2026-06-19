@@ -685,6 +685,7 @@ function WaitlistContact() {
 
         <form
           onSubmit={onSubmit}
+          noValidate
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "BUTTON") {
               e.preventDefault();

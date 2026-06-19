@@ -106,10 +106,12 @@ export function PublicShell({ children }: { children: ReactNode }) {
 
 function PublicHeader() {
   const { t, locale, setLocale } = useT();
+  const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const otherLocale = locale === "hu" ? "en" : "hu";
   const { hidden, atTop } = useHeaderState();
+  const isAudiencePage = pathname === "/planners" || pathname === "/vendors";
 
   // Theme toggle shared with AppShell via `localStorage["weddly.theme"]`.
   // Public default is `light` (the warm paper marketing aesthetic); /app
@@ -211,7 +213,11 @@ function PublicHeader() {
           <button
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 sm:h-8 sm:w-8 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-md transition-colors sm:h-8 sm:w-8 ${
+              theme === "dark"
+                ? "bg-umber-800 text-paper-50 hover:bg-umber-700 dark:bg-umber-700 dark:text-paper-50 dark:hover:bg-umber-600"
+                : "text-umber-800 hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            }`}
             aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
             aria-pressed={theme === "dark"}
             title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
@@ -230,17 +236,18 @@ function PublicHeader() {
           >
             <LogIn size={18} aria-hidden="true" />
           </Link>
-          {/* Header signup CTA hidden on phones: it competed with the
-           *  hamburger for the right edge and pushed the wordmark closer
-           *  to the moon toggle than to the brand origin. The mobile
-           *  menu and the landing's own hero+sticky CTA carry signup
-           *  intent below sm. Tablet+ still gets the inline button. */}
-          <Link
-            to="/signup"
-            className="btn-primary hidden shrink-0 whitespace-nowrap px-4 text-sm min-h-tap !py-2.5 sm:inline-flex sm:min-h-0 sm:!py-1.5"
-          >
-            {t("landing.cta_signup")}
-          </Link>
+          {/* Header signup CTA hidden on phones and on audience-specific pages
+           *  (/planners, /vendors) where the entire context is about vendors or
+           *  planners joining — "Start planning" would confuse them into
+           *  thinking the button is for them rather than couples. */}
+          {!isAudiencePage && (
+            <Link
+              to="/signup"
+              className="btn-primary hidden shrink-0 whitespace-nowrap px-4 text-sm min-h-tap !py-2.5 sm:inline-flex sm:min-h-0 sm:!py-1.5"
+            >
+              {t("landing.cta_signup")}
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}

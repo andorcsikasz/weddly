@@ -6158,6 +6158,7 @@ export interface LocaleMessages {
     eyebrow: string;
     hero_title: string;
     hero_body: string;
+    step_indicator: string;
     step1_title: string;
     step2_title: string;
     label_full_name: string;

@@ -5676,6 +5676,7 @@ const en: LocaleMessages = {
     hero_title: "Work with couples\nwho are planning now.",
     hero_body:
       "Weddly's planner workspace is coming soon. Join the waitlist — you'll be the first to know, and we'll shape the tool together.",
+    step_indicator: "Step {current} of {total}",
     step1_title: "Introduce yourself",
     step2_title: "A little more about you",
     label_full_name: "Full name",
@@ -5683,7 +5684,7 @@ const en: LocaleMessages = {
     label_email: "Email address",
     placeholder_email: "jane@weddingplanner.com",
     label_phone: "Phone number",
-    placeholder_phone: "+1 555 000 0000",
+    placeholder_phone: "+36 30 000 0000",
     label_company: "Business name",
     placeholder_company: "e.g. White Rose Wedding Studio",
     label_city: "City / region you work in",

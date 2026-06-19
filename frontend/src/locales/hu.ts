@@ -5724,6 +5724,7 @@ const hu: LocaleMessages = {
     hero_title: "Dolgozz azokkal,\nakik most terveznek.",
     hero_body:
       "A Wēddly szervezői felülete hamarosan érkezik. Regisztrálj a várólistára — elsőként értesítünk, és együtt alakítjuk ki a szervező eszközkészletet.",
+    step_indicator: "{current}. lépés / {total}",
     step1_title: "Mutatkozz be",
     step2_title: "Egy kicsit több rólad",
     label_full_name: "Teljes név",

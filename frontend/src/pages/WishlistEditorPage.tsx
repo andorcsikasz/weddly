@@ -744,7 +744,7 @@ function ReceivedGiftsTable({
       if (rgNonEmpty(r)) lastFilled = i;
     });
     const filled = rows.slice(0, lastFilled + 1);
-    const targetEmpties = Math.max(2, 3 - filled.length);
+    const targetEmpties = Math.max(1, 2 - filled.length);
     const empties = rows.slice(lastFilled + 1).slice(0, targetEmpties);
     while (empties.length < targetEmpties) empties.push(makeEmpty());
     return [...filled, ...empties];
