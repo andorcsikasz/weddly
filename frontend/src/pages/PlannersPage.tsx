@@ -10,7 +10,6 @@ import {
   ClipboardList,
   FileText,
   LayoutGrid,
-  Star,
   Users,
   X,
 } from "lucide-react";
@@ -47,52 +46,37 @@ function planName(plan: Plan, t: (key: string) => string): string {
 
 // ── Step indicator (2-step) ───────────────────────────────────────────────────
 
-const STEP_LABELS = ["planners.step_label_plan", "planners.step_label_contact"] as const;
-
 function StepIndicator({ step }: { step: Step }) {
-  const { t } = useT();
   return (
-    <div className="mb-8 flex flex-col items-center gap-3">
-      <div className="flex items-center">
-        {([1, 2] as Step[]).map((s, idx) => {
-          const completed = step > s;
-          const current = step === s;
-          return (
-            <div key={s} className="flex items-center">
-              {idx > 0 && (
-                <div
-                  className={`h-px w-8 transition-colors duration-300 sm:w-12 ${
-                    completed ? "bg-umber-600 dark:bg-umber-500" : "bg-paper-300 dark:bg-umber-700"
-                  }`}
-                />
-              )}
+    <div className="mb-8 flex items-center justify-center">
+      {([1, 2] as Step[]).map((s, idx) => {
+        const completed = step > s;
+        const current = step === s;
+        return (
+          <div key={s} className="flex items-center">
+            {idx > 0 && (
               <div
-                className={`flex items-center justify-center overflow-hidden rounded-full text-xs font-semibold transition-all duration-300 ease-in-out ${
-                  current
-                    ? "min-w-[7rem] gap-2 bg-umber-700 px-4 py-1.5 text-paper-50 dark:bg-umber-500"
-                    : completed
-                      ? "h-8 w-8 bg-umber-700 text-paper-50 dark:bg-umber-500"
-                      : "h-8 w-8 border border-paper-300 bg-paper-50 text-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-500"
+                className={`h-px w-10 transition-colors duration-300 ${
+                  completed ? "bg-umber-600 dark:bg-umber-500" : "bg-paper-300 dark:bg-umber-700"
                 }`}
-              >
-                {completed ? (
-                  <Check size={14} strokeWidth={2.5} aria-hidden="true" />
-                ) : (
-                  <span>{s}</span>
-                )}
-                {current && (
-                  <span className="whitespace-nowrap">
-                    {t(STEP_LABELS[idx] as Parameters<typeof t>[0])}
-                  </span>
-                )}
-              </div>
+              />
+            )}
+            <div
+              className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium transition-colors ${
+                current || completed
+                  ? "bg-umber-700 text-paper-50 dark:bg-umber-500"
+                  : "border border-paper-300 text-umber-400 dark:border-umber-700 dark:text-umber-500"
+              }`}
+            >
+              {completed ? (
+                <Check size={11} strokeWidth={2.5} aria-hidden="true" />
+              ) : (
+                <span>{s}</span>
+              )}
             </div>
-          );
-        })}
-      </div>
-      <p className="text-xs text-umber-500 dark:text-umber-400">
-        {t("planners.step_indicator", { current: String(step), total: "2" })}
-      </p>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -107,8 +91,6 @@ interface PlanCardProps {
   couples: string;
   features: string[];
   excluded?: string[];
-  badge?: string;
-  recommended?: boolean;
   selected: boolean;
   onSelect: (plan: Plan) => void;
 }
@@ -121,8 +103,6 @@ function PlanCard({
   couples,
   features,
   excluded = [],
-  badge,
-  recommended,
   selected,
   onSelect,
 }: PlanCardProps) {
@@ -141,24 +121,14 @@ function PlanCard({
       className={`relative cursor-pointer rounded-2xl border bg-paper-50 p-5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 dark:bg-umber-900 ${
         selected
           ? "border-umber-700 ring-2 ring-umber-700 dark:border-umber-400 dark:ring-umber-400"
-          : recommended
-            ? "border-umber-300 hover:border-umber-500 dark:border-umber-600 dark:hover:border-umber-400"
-            : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+          : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
       }`}
     >
-      {/* Top row: name + badge + radio dot */}
+      {/* Top row: name + radio dot */}
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          {badge && (
-            <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-umber-700 px-2.5 py-0.5 text-[11px] font-semibold text-paper-50 dark:bg-umber-500">
-              <Star size={9} aria-hidden="true" />
-              {badge}
-            </div>
-          )}
-          <h3 className="font-grotesk text-sm font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
-            {name}
-          </h3>
-        </div>
+        <h3 className="font-grotesk text-sm font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
+          {name}
+        </h3>
         {/* Radio indicator */}
         <div
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
@@ -372,8 +342,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   t("planners.plan_pro_feature_3"),
                 ]}
                 excluded={[t("planners.plan_pro_excl_1")]}
-                badge={t("planners.plan_pro_badge")}
-                recommended
                 selected={form.selected_plan === "pro"}
                 onSelect={(p) => set("selected_plan", p)}
               />
