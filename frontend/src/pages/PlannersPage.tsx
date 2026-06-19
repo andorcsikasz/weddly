@@ -191,14 +191,14 @@ function PlanCard({
         )}
       </div>
 
-      {/* Couple count — secondary */}
+      {/* Couple count — secondary, all on one line */}
       <div className="mt-1.5 flex items-baseline gap-1">
-        <span className="font-grotesk text-base font-semibold text-umber-700 dark:text-umber-300">
+        <span className="font-grotesk text-sm font-semibold text-umber-700 dark:text-umber-300">
           {coupleCount}
         </span>
         <span className="text-xs text-umber-500 dark:text-umber-400">{coupleLabel}</span>
+        <span className="ml-0.5 text-[10px] text-umber-400 dark:text-umber-500">{guests}</span>
       </div>
-      <p className="text-[10px] text-umber-400 dark:text-umber-500">{guests}</p>
 
       {/* Dashed separator with ticket-punch cutout notches */}
       <div className="relative -mx-4 my-3" aria-hidden="true">
