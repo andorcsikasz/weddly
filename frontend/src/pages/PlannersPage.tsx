@@ -237,7 +237,7 @@ function PlanCard({
   );
 }
 
-// ── Registration form (2 steps) ───────────────────────────────────────────────
+// ── Registration form (4 steps) ───────────────────────────────────────────────
 
 const EMPTY: FormState = {
   selected_plan: "",
@@ -256,7 +256,7 @@ const EMPTY: FormState = {
 
 function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   const { t } = useT();
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>(0);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
   const [form, setForm] = useState<FormState>({ ...EMPTY, selected_plan: initialPlan });
   const [prevPlan, setPrevPlan] = useState<Plan | "">(initialPlan);
@@ -277,42 +277,82 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
     setServerError(null);
   }
 
-  function validateStep1(): boolean {
+  function touch(...fields: (keyof FormState)[]) {
+    setTouched((prev) => {
+      const next = new Set(prev);
+      fields.forEach((f) => next.add(f));
+      return next;
+    });
+  }
+
+  function validateStep0(): boolean {
     const errs: Partial<Record<keyof FormState, string>> = {};
     if (!form.selected_plan) errs.selected_plan = t("planners.err_plan");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
 
-  function validateStep2(): boolean {
+  function validateStep1(): boolean {
     const errs: Partial<Record<keyof FormState, string>> = {};
     if (!trimStr(form.full_name)) errs.full_name = t("planners.err_full_name");
     if (!trimStr(form.email) || !form.email.includes("@")) errs.email = t("planners.err_email");
+    if (!trimStr(form.phone)) errs.phone = t("planners.err_phone");
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  function validateStep2(): boolean {
+    const errs: Partial<Record<keyof FormState, string>> = {};
+    const yrs = parseInt(form.years_experience, 10);
+    if (form.years_experience !== "" && (isNaN(yrs) || yrs < 0 || yrs > 60))
+      errs.years_experience = t("planners.err_years");
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  function validateStep3(): boolean {
+    const errs: Partial<Record<keyof FormState, string>> = {};
     if (!form.privacy_accepted) errs.privacy_accepted = t("planners.err_privacy");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleAdvance(e: React.FormEvent) {
     e.preventDefault();
-    setTouched(new Set(["full_name", "email", "privacy_accepted"] as (keyof FormState)[]));
-    if (!validateStep2()) return;
+    if (step === 0) {
+      touch("selected_plan");
+      if (validateStep0()) setStep(1);
+    } else if (step === 1) {
+      touch("full_name", "email", "phone");
+      if (validateStep1()) setStep(2);
+    } else if (step === 2) {
+      touch("years_experience");
+      if (validateStep2()) setStep(3);
+    } else {
+      touch("privacy_accepted");
+      if (validateStep3()) void doSubmit();
+    }
+  }
+
+  async function doSubmit() {
     setSubmitting(true);
     setServerError(null);
     try {
+      const yrs = parseInt(form.years_experience, 10);
+      const wpy = parseInt(form.weddings_per_year, 10);
       await plannerWaitlistApi.submit({
         full_name: trimStr(form.full_name),
         email: trimStr(form.email),
-        phone: null,
-        company_name: null,
-        city: null,
-        years_experience: null,
+        phone: trimStr(form.phone) || null,
+        company_name: trimStr(form.company_name) || null,
+        city: trimStr(form.city) || null,
+        years_experience: isNaN(yrs) ? null : yrs,
         message: trimStr(form.message) || null,
         privacy_version: PRIVACY_VERSION,
         selected_plan: form.selected_plan || null,
-        website: null,
-        weddings_per_year: null,
-        usage: null,
+        website: trimStr(form.website) || null,
+        weddings_per_year: isNaN(wpy) ? null : wpy,
+        usage: form.usage || null,
       });
       setDone(true);
     } catch {
@@ -351,65 +391,80 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
     );
   }
 
-  const inputClass =
+  const inputCls =
     "w-full rounded-md border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-umber-900 placeholder-umber-400 focus:border-umber-500 focus:outline-none focus:ring-1 focus:ring-umber-500 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-50 dark:placeholder-umber-500 dark:focus:border-umber-400 dark:focus:ring-umber-400";
-  const labelClass = "block text-sm font-medium text-umber-800 dark:text-umber-200 mb-1";
-  const errClass = "mt-1 text-xs text-red-600 dark:text-red-400";
+  const labelCls = "block text-sm font-medium text-umber-800 dark:text-umber-200 mb-1";
+  const errCls = "mt-1 text-xs text-red-600 dark:text-red-400";
+  const req = <span className="ml-1 text-red-500" aria-hidden="true">*</span>;
+  const opt = <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>;
+
+  const STEP_TITLES: Record<Step, string> = {
+    0: t("planners.step0_title"),
+    1: t("planners.step1_title"),
+    2: t("planners.step2_title"),
+    3: t("planners.step3_title"),
+  };
+
+  const USAGE_VALUES = ["guestlist", "seating", "tasks", "all"] as const;
+  const USAGE_LABEL_KEYS = [
+    "planners.usage_guestlist",
+    "planners.usage_seating",
+    "planners.usage_tasks",
+    "planners.usage_all",
+  ] as const;
 
   return (
-    <section id="waitlist" className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <form
-        onSubmit={
-          step === 1
-            ? (e) => {
-                e.preventDefault();
-                setTouched((prev) => new Set(prev).add("selected_plan"));
-                if (validateStep1()) setStep(2);
-              }
-            : handleSubmit
-        }
-        noValidate
-      >
-        {/* ── Step 1: Plan selection ── */}
-        {step === 1 && (
-          <div className="space-y-5">
-            <h2 className="font-grotesk text-center text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
-              {t("planners.step0_title")}
-            </h2>
+    <section id="waitlist" className="border-t border-paper-200 dark:border-umber-800">
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        {/* Always-visible heading */}
+        <div className="mb-8 text-center">
+          <p className="font-grotesk mb-1 text-xs font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
+            {t("planners.beta_eyebrow")}
+          </p>
+          <h2 className="font-grotesk text-3xl font-semibold tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
+            {t("planners.form_title")}
+          </h2>
+          <p className="mt-2 text-sm text-umber-600 dark:text-umber-400">
+            {t("planners.beta_body")}
+          </p>
+        </div>
 
-            {/* Billing period toggle */}
-            <div className="flex justify-center">
-              <div className="flex rounded-full border border-paper-300 p-1 text-xs dark:border-umber-700">
-                <button
-                  type="button"
-                  onClick={() => setBillingPeriod("monthly")}
-                  className={`rounded-full px-4 py-1.5 font-medium transition-all ${
-                    billingPeriod === "monthly"
-                      ? "bg-umber-900 text-paper-50 dark:bg-umber-600"
-                      : "text-umber-600 hover:text-umber-900 dark:text-umber-400 dark:hover:text-paper-100"
-                  }`}
-                >
-                  {t("planners.billing_monthly")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBillingPeriod("annual")}
-                  className={`flex items-center gap-2 rounded-full px-4 py-1.5 font-medium transition-all ${
-                    billingPeriod === "annual"
-                      ? "bg-umber-900 text-paper-50 dark:bg-umber-600"
-                      : "text-umber-600 hover:text-umber-900 dark:text-umber-400 dark:hover:text-paper-100"
-                  }`}
-                >
-                  {t("planners.billing_annual")}
-                  <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-semibold text-sage-700 dark:bg-sage-900 dark:text-sage-300">
-                    {t("planners.billing_save")}
-                  </span>
-                </button>
+        <StepIndicator step={step} t={t} />
+
+        <form onSubmit={handleAdvance} noValidate>
+          {/* ── Step 0: Plan selection ── */}
+          {step === 0 && (
+            <div className="space-y-5">
+              <h3 className="font-grotesk text-center text-xl font-semibold text-umber-900 dark:text-paper-50">
+                {STEP_TITLES[0]}
+              </h3>
+
+              {/* Billing toggle */}
+              <div className="flex justify-center">
+                <div className="flex rounded-full border border-paper-300 p-0.5 text-xs font-semibold dark:border-umber-700">
+                  {(["monthly", "annual"] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setBillingPeriod(p)}
+                      className={`rounded-full px-4 py-1.5 transition-colors ${
+                        billingPeriod === p
+                          ? "bg-umber-800 text-paper-50 dark:bg-umber-300 dark:text-umber-900"
+                          : "text-umber-600 hover:text-umber-900 dark:text-umber-400 dark:hover:text-paper-100"
+                      }`}
+                    >
+                      {p === "monthly" ? t("planners.billing_monthly") : t("planners.billing_annual")}
+                      {p === "annual" && (
+                        <span className="ml-1.5 rounded-full bg-sage-100 px-1.5 py-0.5 text-[10px] text-sage-700 dark:bg-sage-900 dark:text-sage-300">
+                          {t("planners.billing_save")}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="rounded-2xl bg-paper-200 p-3 dark:bg-umber-800">
-              <div role="radiogroup" aria-label={t("planners.step0_title")} className="grid gap-3 sm:grid-cols-3">
+              <div role="radiogroup" aria-label={STEP_TITLES[0]} className="grid gap-3 sm:grid-cols-3">
                 <PlanCard
                   plan="basic"
                   name={t("planners.plan_basic_name")}
@@ -474,135 +529,201 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   onSelect={(p) => set("selected_plan", p)}
                 />
               </div>
-            </div>
 
-            {touched.has("selected_plan") && errors.selected_plan && (
-              <p className={errClass} role="alert">
-                {errors.selected_plan}
-              </p>
-            )}
-
-            <button type="submit" className="btn-primary w-full py-2.5 text-sm">
-              {t("planners.step1_cta")} →
-            </button>
-          </div>
-        )}
-
-        {/* ── Step 2: Contact info ── */}
-        {step === 2 && (
-          <div className="mx-auto max-w-lg space-y-5">
-            <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
-              {t("planners.form_title")}
-            </h2>
-
-            <div>
-              <label htmlFor="pw-name" className={labelClass}>
-                {t("planners.label_full_name")}
-                <span className="ml-1 text-red-500" aria-hidden="true">
-                  *
-                </span>
-              </label>
-              <input
-                id="pw-name"
-                type="text"
-                autoComplete="name"
-                className={inputClass}
-                value={form.full_name}
-                onChange={(e) => set("full_name", e.target.value)}
-                onBlur={() => setTouched((prev) => new Set(prev).add("full_name"))}
-                placeholder={t("planners.placeholder_full_name")}
-              />
-              {touched.has("full_name") && errors.full_name && (
-                <p className={errClass}>{errors.full_name}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="pw-email" className={labelClass}>
-                {t("planners.label_email")}
-                <span className="ml-1 text-red-500" aria-hidden="true">
-                  *
-                </span>
-              </label>
-              <input
-                id="pw-email"
-                type="email"
-                autoComplete="email"
-                className={inputClass}
-                value={form.email}
-                onChange={(e) => set("email", e.target.value)}
-                onBlur={() => setTouched((prev) => new Set(prev).add("email"))}
-                placeholder={t("planners.placeholder_email")}
-              />
-              {touched.has("email") && errors.email && (
-                <p className={errClass}>{errors.email}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="pw-message" className={labelClass}>
-                {t("planners.label_message")}
-                <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>
-              </label>
-              <textarea
-                id="pw-message"
-                rows={3}
-                className={inputClass}
-                value={form.message}
-                onChange={(e) => set("message", e.target.value)}
-                placeholder={t("planners.placeholder_message")}
-              />
-            </div>
-
-            <div>
-              <label className="flex cursor-pointer items-start gap-2">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-umber-700 dark:accent-umber-300"
-                  checked={form.privacy_accepted}
-                  onChange={(e) => set("privacy_accepted", e.target.checked)}
-                />
-                <span className="text-xs text-umber-700 dark:text-umber-300">
-                  {t("planners.privacy_consent_prefix")}{" "}
-                  <Link to="/privacy" target="_blank" rel="noopener" className="underline">
-                    {t("planners.privacy_link")}
-                  </Link>
-                  {t("planners.privacy_consent_suffix")}
-                </span>
-              </label>
-              {touched.has("privacy_accepted") && errors.privacy_accepted && (
-                <p className={errClass} role="alert">
-                  {errors.privacy_accepted}
+              {touched.has("selected_plan") && errors.selected_plan && (
+                <p className={errCls} role="alert">
+                  {errors.selected_plan}
                 </p>
               )}
-            </div>
 
-            {serverError && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                {serverError}
-              </p>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="flex-1 rounded-md border border-paper-300 px-4 py-2.5 text-sm text-umber-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-800"
-              >
-                ← {t("common.back")}
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="btn-primary flex-[2] py-2.5 text-sm disabled:opacity-60"
-              >
-                {submitting ? t("planners.submitting") : t("planners.submit")}
+              <button type="submit" className="btn-primary w-full py-2.5 text-sm">
+                {t("planners.step1_cta")} →
               </button>
             </div>
-          </div>
-        )}
-      </form>
+          )}
+
+          {/* ── Step 1: Introduce yourself ── */}
+          {step === 1 && (
+            <div className="mx-auto max-w-lg space-y-5">
+              <h3 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
+                {STEP_TITLES[1]}
+              </h3>
+              <div>
+                <label htmlFor="pw-name" className={labelCls}>
+                  {t("planners.label_full_name")}{req}
+                </label>
+                <input id="pw-name" type="text" autoComplete="name" className={inputCls}
+                  value={form.full_name} onChange={(e) => set("full_name", e.target.value)}
+                  onBlur={() => touch("full_name")} placeholder={t("planners.placeholder_full_name")}
+                />
+                {touched.has("full_name") && errors.full_name && <p className={errCls}>{errors.full_name}</p>}
+              </div>
+              <div>
+                <label htmlFor="pw-email" className={labelCls}>
+                  {t("planners.label_email")}{req}
+                </label>
+                <input id="pw-email" type="email" autoComplete="email" className={inputCls}
+                  value={form.email} onChange={(e) => set("email", e.target.value)}
+                  onBlur={() => touch("email")} placeholder={t("planners.placeholder_email")}
+                />
+                {touched.has("email") && errors.email && <p className={errCls}>{errors.email}</p>}
+              </div>
+              <div>
+                <label htmlFor="pw-phone" className={labelCls}>
+                  {t("planners.label_phone")}{req}
+                </label>
+                <input id="pw-phone" type="tel" autoComplete="tel" className={inputCls}
+                  value={form.phone} onChange={(e) => set("phone", e.target.value)}
+                  onBlur={() => touch("phone")} placeholder={t("planners.placeholder_phone")}
+                />
+                {touched.has("phone") && errors.phone && <p className={errCls}>{errors.phone}</p>}
+              </div>
+              <NavRow onBack={() => setStep(0)} t={t} />
+            </div>
+          )}
+
+          {/* ── Step 2: About your business ── */}
+          {step === 2 && (
+            <div className="mx-auto max-w-lg space-y-5">
+              <h3 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
+                {STEP_TITLES[2]}
+              </h3>
+              <div>
+                <label htmlFor="pw-company" className={labelCls}>{t("planners.label_company")}{opt}</label>
+                <input id="pw-company" type="text" autoComplete="organization" className={inputCls}
+                  value={form.company_name} onChange={(e) => set("company_name", e.target.value)}
+                  placeholder={t("planners.placeholder_company")}
+                />
+              </div>
+              <div>
+                <label htmlFor="pw-city" className={labelCls}>{t("planners.label_city")}{opt}</label>
+                <input id="pw-city" type="text" autoComplete="address-level2" className={inputCls}
+                  value={form.city} onChange={(e) => set("city", e.target.value)}
+                  placeholder={t("planners.placeholder_city")}
+                />
+              </div>
+              <div>
+                <label htmlFor="pw-years" className={labelCls}>{t("planners.label_years")}{opt}</label>
+                <input id="pw-years" type="number" min={0} max={60} className={inputCls}
+                  value={form.years_experience} onChange={(e) => set("years_experience", e.target.value)}
+                  onBlur={() => touch("years_experience")}
+                />
+                {touched.has("years_experience") && errors.years_experience && <p className={errCls}>{errors.years_experience}</p>}
+              </div>
+              <div>
+                <label htmlFor="pw-website" className={labelCls}>{t("planners.label_website")}{opt}</label>
+                <input id="pw-website" type="url" autoComplete="url" className={inputCls}
+                  value={form.website} onChange={(e) => set("website", e.target.value)}
+                  placeholder={t("planners.placeholder_website")}
+                />
+              </div>
+              <div>
+                <label htmlFor="pw-wpy" className={labelCls}>{t("planners.label_weddings_per_year")}{opt}</label>
+                <input id="pw-wpy" type="number" min={0} className={inputCls}
+                  value={form.weddings_per_year} onChange={(e) => set("weddings_per_year", e.target.value)}
+                  placeholder={t("planners.placeholder_weddings_per_year")}
+                />
+              </div>
+              <NavRow onBack={() => setStep(1)} t={t} />
+            </div>
+          )}
+
+          {/* ── Step 3: Almost there ── */}
+          {step === 3 && (
+            <div className="mx-auto max-w-lg space-y-5">
+              <h3 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
+                {STEP_TITLES[3]}
+              </h3>
+
+              {/* Usage radio */}
+              <div>
+                <p className={labelCls}>{t("planners.label_usage")}</p>
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  {USAGE_VALUES.map((val, i) => (
+                    <label key={val} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                      form.usage === val
+                        ? "border-umber-700 bg-umber-50 text-umber-900 dark:border-umber-400 dark:bg-umber-800 dark:text-paper-50"
+                        : "border-paper-300 text-umber-700 hover:border-paper-400 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600"
+                    }`}>
+                      <input type="radio" name="usage" value={val} checked={form.usage === val}
+                        onChange={() => set("usage", val)} className="sr-only"
+                      />
+                      <div className={`h-3 w-3 shrink-0 rounded-full border ${
+                        form.usage === val
+                          ? "border-umber-700 bg-umber-700 dark:border-umber-400 dark:bg-umber-400"
+                          : "border-paper-400 dark:border-umber-600"
+                      }`} />
+                      {t(USAGE_LABEL_KEYS[i]!)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="pw-message" className={labelCls}>{t("planners.label_message")}{opt}</label>
+                <textarea id="pw-message" rows={3} className={inputCls}
+                  value={form.message} onChange={(e) => set("message", e.target.value)}
+                  placeholder={t("planners.placeholder_message")}
+                />
+              </div>
+
+              <div>
+                <label className="flex cursor-pointer items-start gap-2">
+                  <input type="checkbox" className="mt-0.5 h-4 w-4 accent-umber-700 dark:accent-umber-300"
+                    checked={form.privacy_accepted} onChange={(e) => set("privacy_accepted", e.target.checked)}
+                  />
+                  <span className="text-xs text-umber-700 dark:text-umber-300">
+                    {t("planners.privacy_consent_prefix")}{" "}
+                    <Link to="/privacy" target="_blank" rel="noopener" className="underline">
+                      {t("planners.privacy_link")}
+                    </Link>
+                    {t("planners.privacy_consent_suffix")}
+                  </span>
+                </label>
+                {touched.has("privacy_accepted") && errors.privacy_accepted && (
+                  <p className={errCls} role="alert">{errors.privacy_accepted}</p>
+                )}
+              </div>
+
+              {serverError && (
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">{serverError}</p>
+              )}
+
+              <NavRow onBack={() => setStep(2)} t={t} isSubmit submitting={submitting} />
+            </div>
+          )}
+        </form>
+      </div>
     </section>
+  );
+}
+
+function NavRow({
+  onBack,
+  t,
+  isSubmit,
+  submitting,
+}: {
+  onBack: () => void;
+  t: (k: string) => string;
+  isSubmit?: boolean;
+  submitting?: boolean;
+}) {
+  return (
+    <div className="flex gap-3 pt-2">
+      <button type="button" onClick={onBack}
+        className="flex-1 rounded-md border border-paper-300 px-4 py-2.5 text-sm text-umber-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-800"
+      >
+        ← {t("common.back")}
+      </button>
+      <button type="submit" disabled={submitting}
+        className="btn-primary flex-[2] py-2.5 text-sm disabled:opacity-60"
+      >
+        {isSubmit
+          ? submitting ? t("planners.submitting") : t("planners.submit")
+          : `${t("common.next")} →`}
+      </button>
+    </div>
   );
 }
 
@@ -768,9 +889,7 @@ export default function PlannersPage() {
         <BetaOffer />
 
         {/* ── Registration form ── */}
-        <section className="border-t border-paper-200 dark:border-umber-800">
-          <RegistrationForm initialPlan="pro" />
-        </section>
+        <RegistrationForm initialPlan="pro" />
 
         {/* ── Footer escape links ── */}
         <section className="border-t border-paper-200 px-4 py-10 text-center dark:border-umber-800">
