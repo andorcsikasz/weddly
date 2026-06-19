@@ -21,12 +21,19 @@ import { useT } from "../lib/i18n";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Plan = "basic" | "pro" | "unlimited";
-type Step = 1 | 2;
+type Step = 0 | 1 | 2 | 3;
 
 interface FormState {
   selected_plan: Plan | "";
   full_name: string;
   email: string;
+  phone: string;
+  company_name: string;
+  city: string;
+  years_experience: string;
+  website: string;
+  weddings_per_year: string;
+  usage: string;
   message: string;
   privacy_accepted: boolean;
 }
@@ -43,32 +50,91 @@ function planName(plan: Plan, t: (key: string) => string): string {
   return t("planners.plan_unlimited_name");
 }
 
-// ── Step indicator (2-step) ───────────────────────────────────────────────────
+// ── Step indicator ────────────────────────────────────────────────────────────
+
+const STEP_LABELS = [
+  "planners.step_label_plan",
+  "planners.step_label_intro",
+  "planners.step_label_business",
+  "planners.step_label_usage",
+] as const;
+
+function StepIndicator({ step, t }: { step: Step; t: (k: string) => string }) {
+  return (
+    <div className="mb-8 flex items-center">
+      {([0, 1, 2, 3] as Step[]).map((s, i) => (
+        <div key={s} className="flex items-center">
+          <div className="flex flex-col items-center gap-1">
+            <div
+              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                s < step
+                  ? "bg-umber-700 text-paper-50 dark:bg-umber-400 dark:text-umber-900"
+                  : s === step
+                    ? "border-2 border-umber-700 bg-paper-50 text-umber-900 dark:border-umber-400 dark:bg-umber-900 dark:text-paper-50"
+                    : "border border-paper-300 bg-paper-50 text-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-600"
+              }`}
+            >
+              {s < step ? <Check size={12} aria-hidden="true" /> : s + 1}
+            </div>
+            <span
+              className={`hidden text-[10px] font-medium uppercase tracking-wider sm:block ${
+                s === step
+                  ? "text-umber-800 dark:text-paper-100"
+                  : "text-umber-400 dark:text-umber-600"
+              }`}
+            >
+              {t(STEP_LABELS[s]!)}
+            </span>
+          </div>
+          {i < 3 && (
+            <div
+              className={`mb-4 h-px w-8 sm:w-16 ${
+                s < step ? "bg-umber-700 dark:bg-umber-400" : "bg-paper-300 dark:bg-umber-700"
+              }`}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ── Plan selection card (landing-style) ──────────────────────────────────────
 
 interface PlanCardProps {
   plan: Plan;
   name: string;
+  coupleCount: string;
+  coupleLabel: string;
+  guests: string;
   price: string;
   period: string;
-  couples: string;
+  annualPrice: string;
+  annualPriceMonth: string;
+  annualBilledLabel: string;
   features: string[];
   selected: boolean;
   onSelect: (plan: Plan) => void;
   badge?: string;
+  billingPeriod: "monthly" | "annual";
 }
 
 function PlanCard({
   plan,
   name,
+  coupleCount,
+  coupleLabel,
+  guests,
   price,
   period,
-  couples,
+  annualPrice,
+  annualPriceMonth,
+  annualBilledLabel,
   features,
   selected,
   onSelect,
   badge,
+  billingPeriod,
 }: PlanCardProps) {
   return (
     <div
@@ -98,7 +164,6 @@ function PlanCard({
         <h3 className="font-grotesk text-sm font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
           {name}
         </h3>
-        {/* Radio indicator */}
         <div
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
             selected
@@ -111,14 +176,42 @@ function PlanCard({
         </div>
       </div>
 
-      {/* Price block */}
-      <div className="mt-3 flex items-baseline gap-1">
-        <span className="font-grotesk text-3xl font-bold tracking-tight text-umber-900 dark:text-paper-50">
-          {price}
-        </span>
-        <span className="font-grotesk text-sm text-umber-500 dark:text-umber-400">{period}</span>
+      {/* Couple count — main selling point */}
+      <div className="mt-3">
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-grotesk text-4xl font-bold tracking-tight text-umber-900 dark:text-paper-50">
+            {coupleCount}
+          </span>
+          <span className="font-grotesk text-sm font-medium text-umber-600 dark:text-umber-400">
+            {coupleLabel}
+          </span>
+        </div>
+        <p className="mt-0.5 text-xs text-umber-400 dark:text-umber-500">{guests}</p>
       </div>
-      <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">{couples}</p>
+
+      {/* Price — switches by billing period */}
+      <div className="mt-2.5">
+        {billingPeriod === "monthly" ? (
+          <div className="flex items-baseline gap-1">
+            <span className="font-grotesk text-lg font-semibold text-umber-700 dark:text-umber-300">
+              {price}
+            </span>
+            <span className="text-xs text-umber-500 dark:text-umber-400">{period}</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-1">
+              <span className="font-grotesk text-lg font-semibold text-umber-700 dark:text-umber-300">
+                {annualPriceMonth}
+              </span>
+              <span className="text-xs text-umber-500 dark:text-umber-400">{period}</span>
+            </div>
+            <p className="text-xs text-umber-400 dark:text-umber-500">
+              {annualPrice} {annualBilledLabel}
+            </p>
+          </>
+        )}
+      </div>
 
       {/* Dashed separator with ticket-punch notches */}
       <div className="relative -mx-5 my-4" aria-hidden="true">
@@ -150,6 +243,13 @@ const EMPTY: FormState = {
   selected_plan: "",
   full_name: "",
   email: "",
+  phone: "",
+  company_name: "",
+  city: "",
+  years_experience: "",
+  website: "",
+  weddings_per_year: "",
+  usage: "",
   message: "",
   privacy_accepted: false,
 };
@@ -157,6 +257,7 @@ const EMPTY: FormState = {
 function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   const { t } = useT();
   const [step, setStep] = useState<Step>(1);
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
   const [form, setForm] = useState<FormState>({ ...EMPTY, selected_plan: initialPlan });
   const [prevPlan, setPrevPlan] = useState<Plan | "">(initialPlan);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -276,52 +377,103 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
               {t("planners.step0_title")}
             </h2>
 
-            <div className="rounded-2xl bg-paper-200 p-3 dark:bg-umber-800">
-            <div role="radiogroup" aria-label={t("planners.step0_title")} className="grid gap-3 sm:grid-cols-3">
-              <PlanCard
-                plan="basic"
-                name={t("planners.plan_basic_name")}
-                price={t("planners.plan_basic_price")}
-                period={t("planners.plan_basic_period")}
-                couples={t("planners.plan_basic_couples")}
-                features={[
-                  t("planners.plan_basic_feature_1"),
-                  t("planners.plan_basic_feature_2"),
-                  t("planners.plan_basic_feature_3"),
-                ]}
-                selected={form.selected_plan === "basic"}
-                onSelect={(p) => set("selected_plan", p)}
-              />
-              <PlanCard
-                plan="pro"
-                name={t("planners.plan_pro_name")}
-                price={t("planners.plan_pro_price")}
-                period={t("planners.plan_pro_period")}
-                couples={t("planners.plan_pro_couples")}
-                features={[
-                  t("planners.plan_pro_feature_1"),
-                  t("planners.plan_pro_feature_2"),
-                  t("planners.plan_pro_feature_3"),
-                ]}
-                badge={t("planners.plan_pro_badge")}
-                selected={form.selected_plan === "pro"}
-                onSelect={(p) => set("selected_plan", p)}
-              />
-              <PlanCard
-                plan="unlimited"
-                name={t("planners.plan_unlimited_name")}
-                price={t("planners.plan_unlimited_price")}
-                period={t("planners.plan_unlimited_period")}
-                couples={t("planners.plan_unlimited_couples")}
-                features={[
-                  t("planners.plan_unlimited_feature_1"),
-                  t("planners.plan_unlimited_feature_2"),
-                  t("planners.plan_unlimited_feature_3"),
-                ]}
-                selected={form.selected_plan === "unlimited"}
-                onSelect={(p) => set("selected_plan", p)}
-              />
+            {/* Billing period toggle */}
+            <div className="flex justify-center">
+              <div className="flex rounded-full border border-paper-300 p-1 text-xs dark:border-umber-700">
+                <button
+                  type="button"
+                  onClick={() => setBillingPeriod("monthly")}
+                  className={`rounded-full px-4 py-1.5 font-medium transition-all ${
+                    billingPeriod === "monthly"
+                      ? "bg-umber-900 text-paper-50 dark:bg-umber-600"
+                      : "text-umber-600 hover:text-umber-900 dark:text-umber-400 dark:hover:text-paper-100"
+                  }`}
+                >
+                  {t("planners.billing_monthly")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingPeriod("annual")}
+                  className={`flex items-center gap-2 rounded-full px-4 py-1.5 font-medium transition-all ${
+                    billingPeriod === "annual"
+                      ? "bg-umber-900 text-paper-50 dark:bg-umber-600"
+                      : "text-umber-600 hover:text-umber-900 dark:text-umber-400 dark:hover:text-paper-100"
+                  }`}
+                >
+                  {t("planners.billing_annual")}
+                  <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-semibold text-sage-700 dark:bg-sage-900 dark:text-sage-300">
+                    {t("planners.billing_save")}
+                  </span>
+                </button>
+              </div>
             </div>
+
+            <div className="rounded-2xl bg-paper-200 p-3 dark:bg-umber-800">
+              <div role="radiogroup" aria-label={t("planners.step0_title")} className="grid gap-3 sm:grid-cols-3">
+                <PlanCard
+                  plan="basic"
+                  name={t("planners.plan_basic_name")}
+                  coupleCount={t("planners.plan_basic_couple_count")}
+                  coupleLabel={t("planners.plan_basic_couple_label")}
+                  guests={t("planners.plan_basic_guests")}
+                  price={t("planners.plan_basic_price")}
+                  period={t("planners.plan_basic_period")}
+                  annualPrice={t("planners.plan_basic_annual_price")}
+                  annualPriceMonth={t("planners.plan_basic_annual_permonth")}
+                  annualBilledLabel={t("planners.plan_annual_billed")}
+                  features={[
+                    t("planners.plan_basic_feature_1"),
+                    t("planners.plan_basic_feature_2"),
+                    t("planners.plan_basic_feature_3"),
+                  ]}
+                  billingPeriod={billingPeriod}
+                  selected={form.selected_plan === "basic"}
+                  onSelect={(p) => set("selected_plan", p)}
+                />
+                <PlanCard
+                  plan="pro"
+                  name={t("planners.plan_pro_name")}
+                  coupleCount={t("planners.plan_pro_couple_count")}
+                  coupleLabel={t("planners.plan_pro_couple_label")}
+                  guests={t("planners.plan_pro_guests")}
+                  price={t("planners.plan_pro_price")}
+                  period={t("planners.plan_pro_period")}
+                  annualPrice={t("planners.plan_pro_annual_price")}
+                  annualPriceMonth={t("planners.plan_pro_annual_permonth")}
+                  annualBilledLabel={t("planners.plan_annual_billed")}
+                  features={[
+                    t("planners.plan_pro_feature_1"),
+                    t("planners.plan_pro_feature_2"),
+                    t("planners.plan_pro_feature_3"),
+                    t("planners.plan_pro_feature_4"),
+                    t("planners.plan_pro_feature_5"),
+                  ]}
+                  badge={t("planners.plan_pro_badge")}
+                  billingPeriod={billingPeriod}
+                  selected={form.selected_plan === "pro"}
+                  onSelect={(p) => set("selected_plan", p)}
+                />
+                <PlanCard
+                  plan="unlimited"
+                  name={t("planners.plan_unlimited_name")}
+                  coupleCount={t("planners.plan_unlimited_couple_count")}
+                  coupleLabel={t("planners.plan_unlimited_couple_label")}
+                  guests={t("planners.plan_unlimited_guests")}
+                  price={t("planners.plan_unlimited_price")}
+                  period={t("planners.plan_unlimited_period")}
+                  annualPrice={t("planners.plan_unlimited_annual_price")}
+                  annualPriceMonth={t("planners.plan_unlimited_annual_permonth")}
+                  annualBilledLabel={t("planners.plan_annual_billed")}
+                  features={[
+                    t("planners.plan_unlimited_feature_1"),
+                    t("planners.plan_unlimited_feature_2"),
+                    t("planners.plan_unlimited_feature_3"),
+                  ]}
+                  billingPeriod={billingPeriod}
+                  selected={form.selected_plan === "unlimited"}
+                  onSelect={(p) => set("selected_plan", p)}
+                />
+              </div>
             </div>
 
             {touched.has("selected_plan") && errors.selected_plan && (
