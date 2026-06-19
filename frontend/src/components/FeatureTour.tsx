@@ -548,7 +548,7 @@ export function FeatureTour({ open, onClose }: Props) {
               onClick={() => i !== stepIndex && goTo(i)}
               className={`h-1.5 rounded-full transition-all duration-200 ${
                 i === stepIndex
-                  ? "w-5 bg-ink-900 dark:bg-paper-100"
+                  ? "w-5 bg-blush-500 dark:bg-paper-100"
                   : "w-1.5 bg-paper-400 hover:bg-paper-500 dark:bg-umber-600 dark:hover:bg-umber-500"
               }`}
             />
