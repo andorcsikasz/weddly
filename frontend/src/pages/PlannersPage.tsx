@@ -119,8 +119,8 @@ function PlanCard({
       {/* Dashed separator */}
       {/* Dashed separator with ticket-punch notches */}
       <div className="relative -mx-5 my-4" aria-hidden="true">
-        <div className="absolute left-0 top-0 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-50 dark:bg-umber-950" />
-        <div className="absolute right-0 top-0 h-5 w-5 translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-50 dark:bg-umber-950" />
+        <div className="absolute left-0 top-0 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-200 dark:bg-umber-800" />
+        <div className="absolute right-0 top-0 h-5 w-5 translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-200 dark:bg-umber-800" />
         <div className="border-t border-dashed border-paper-300 dark:border-umber-700" />
       </div>
 
@@ -279,6 +279,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
               {t("planners.step0_title")}
             </h2>
 
+            <div className="rounded-2xl bg-paper-200 p-3 dark:bg-umber-800">
             <div role="radiogroup" aria-label={t("planners.step0_title")} className="grid gap-3 sm:grid-cols-3">
               <PlanCard
                 plan="basic"
@@ -327,6 +328,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 selected={form.selected_plan === "unlimited"}
                 onSelect={(p) => set("selected_plan", p)}
               />
+            </div>
             </div>
 
             {touched.has("selected_plan") && errors.selected_plan && (
