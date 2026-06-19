@@ -120,11 +120,10 @@ function PlanCard({
       </div>
       <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">{couples}</p>
 
-      {/* Dashed separator */}
       {/* Dashed separator with ticket-punch notches */}
       <div className="relative -mx-5 my-4" aria-hidden="true">
-        <div className="absolute left-0 top-0 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-200 dark:bg-umber-800" />
-        <div className="absolute right-0 top-0 h-5 w-5 translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-200 dark:bg-umber-800" />
+        <div className={`absolute left-0 top-0 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border bg-paper-200 dark:bg-umber-800 ${selected ? "border-umber-700 dark:border-umber-400" : "border-paper-300 dark:border-umber-700"}`} />
+        <div className={`absolute right-0 top-0 h-5 w-5 translate-x-1/2 -translate-y-1/2 rounded-full border bg-paper-200 dark:bg-umber-800 ${selected ? "border-umber-700 dark:border-umber-400" : "border-paper-300 dark:border-umber-700"}`} />
         <div className="border-t border-dashed border-paper-300 dark:border-umber-700" />
       </div>
 
@@ -519,34 +518,21 @@ function BetaOffer() {
   ];
   return (
     <section className="border-t border-paper-200 dark:border-umber-800">
-      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="rounded-2xl bg-umber-900 px-8 py-12 text-center dark:bg-umber-950">
-          <span className="inline-block rounded-full bg-umber-700 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-paper-50 dark:bg-umber-600">
-            {t("planners.beta_badge")}
-          </span>
-          <h2 className="font-grotesk mt-4 text-3xl font-semibold tracking-tight text-paper-50 sm:text-4xl">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="rounded-2xl bg-umber-900 px-6 py-8 text-center sm:px-10 dark:bg-umber-950">
+          <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
             {t("planners.beta_title")}
           </h2>
-          <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-paper-300">
+          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-paper-400">
             {t("planners.beta_body")}
           </p>
 
-          <div className="mt-10 flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center">
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
             {steps.map((s, i) => (
               <Fragment key={s.title}>
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-umber-600 text-sm font-semibold text-paper-300">
-                    {i + 1}
-                  </div>
-                  <p className="text-sm font-semibold text-paper-100">{s.title}</p>
-                  {s.body && <p className="text-xs leading-relaxed text-paper-400">{s.body}</p>}
-                </div>
+                <span className="text-sm text-paper-300">{s.title}</span>
                 {i < steps.length - 1 && (
-                  <ArrowRight
-                    size={14}
-                    className="hidden shrink-0 text-umber-500 sm:block"
-                    aria-hidden="true"
-                  />
+                  <ArrowRight size={12} className="shrink-0 text-umber-600" aria-hidden="true" />
                 )}
               </Fragment>
             ))}
@@ -558,7 +544,7 @@ function BetaOffer() {
               e.preventDefault();
               document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="btn btn-lg mt-10 bg-paper-50 text-umber-900 hover:bg-paper-200"
+            className="btn btn-lg mt-6 bg-paper-50 text-umber-900 hover:bg-paper-200"
           >
             {t("planners.hero_cta")}
           </a>
