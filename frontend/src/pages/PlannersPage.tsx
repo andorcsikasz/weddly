@@ -1,10 +1,10 @@
-// /planners — wedding-planner product landing + registration form.
-// Phase 1: data collection. Planners get a separate user type with broader
-// workspace access in Phase 2+. Three pricing tiers: basic / pro / unlimited.
+// /planners — wedding-planner product landing + beta registration.
+// Phase 1: data collection for 25-person beta cohort (2 years free).
+// Phase 2: open paid tiers (basic / pro / unlimited).
 
 import { PRIVACY_VERSION } from "@shared/legal";
 import {
-  Calendar,
+  ArrowRight,
   Check,
   CheckCircle2,
   ClipboardList,
@@ -22,19 +22,12 @@ import { useT } from "../lib/i18n";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Plan = "basic" | "pro" | "unlimited";
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2;
 
 interface FormState {
   selected_plan: Plan | "";
   full_name: string;
   email: string;
-  phone: string;
-  company_name: string;
-  city: string;
-  years_experience: string;
-  website: string;
-  weddings_per_year: string;
-  usage: string;
   message: string;
   privacy_accepted: boolean;
 }
@@ -51,28 +44,23 @@ function planName(plan: Plan, t: (key: string) => string): string {
   return t("planners.plan_unlimited_name");
 }
 
-// ── Step indicator ────────────────────────────────────────────────────────────
+// ── Step indicator (2-step) ───────────────────────────────────────────────────
 
-const STEP_LABELS = [
-  "planners.step_label_plan",
-  "planners.step_label_intro",
-  "planners.step_label_business",
-  "planners.step_label_usage",
-] as const;
+const STEP_LABELS = ["planners.step_label_plan", "planners.step_label_contact"] as const;
 
 function StepIndicator({ step }: { step: Step }) {
   const { t } = useT();
   return (
     <div className="mb-8 flex flex-col items-center gap-3">
       <div className="flex items-center">
-        {([1, 2, 3, 4] as Step[]).map((s, idx) => {
+        {([1, 2] as Step[]).map((s, idx) => {
           const completed = step > s;
           const current = step === s;
           return (
             <div key={s} className="flex items-center">
               {idx > 0 && (
                 <div
-                  className={`h-px w-6 transition-colors duration-300 sm:w-10 ${
+                  className={`h-px w-8 transition-colors duration-300 sm:w-12 ${
                     completed ? "bg-umber-600 dark:bg-umber-500" : "bg-paper-300 dark:bg-umber-700"
                   }`}
                 />
@@ -80,7 +68,7 @@ function StepIndicator({ step }: { step: Step }) {
               <div
                 className={`flex items-center justify-center overflow-hidden rounded-full text-xs font-semibold transition-all duration-300 ease-in-out ${
                   current
-                    ? "min-w-[6.5rem] gap-2 bg-umber-700 px-4 py-1.5 text-paper-50 dark:bg-umber-500"
+                    ? "min-w-[7rem] gap-2 bg-umber-700 px-4 py-1.5 text-paper-50 dark:bg-umber-500"
                     : completed
                       ? "h-8 w-8 bg-umber-700 text-paper-50 dark:bg-umber-500"
                       : "h-8 w-8 border border-paper-300 bg-paper-50 text-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-500"
@@ -102,13 +90,13 @@ function StepIndicator({ step }: { step: Step }) {
         })}
       </div>
       <p className="text-xs text-umber-500 dark:text-umber-400">
-        {t("planners.step_indicator", { current: String(step), total: "4" })}
+        {t("planners.step_indicator", { current: String(step), total: "2" })}
       </p>
     </div>
   );
 }
 
-// ── Plan selection card (inside form) ─────────────────────────────────────────
+// ── Plan selection card ───────────────────────────────────────────────────────
 
 interface PlanCardProps {
   plan: Plan;
@@ -181,7 +169,6 @@ function PlanCard({
           </li>
         ))}
       </ul>
-      {/* Selection radio dot */}
       <div
         className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors ${
           selected
@@ -195,28 +182,17 @@ function PlanCard({
   );
 }
 
-// ── Registration form ─────────────────────────────────────────────────────────
+// ── Registration form (2 steps) ───────────────────────────────────────────────
 
 const EMPTY: FormState = {
   selected_plan: "",
   full_name: "",
   email: "",
-  phone: "",
-  company_name: "",
-  city: "",
-  years_experience: "",
-  website: "",
-  weddings_per_year: "",
-  usage: "",
   message: "",
   privacy_accepted: false,
 };
 
-interface RegistrationFormProps {
-  initialPlan: Plan | "";
-}
-
-function RegistrationForm({ initialPlan }: RegistrationFormProps) {
+function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   const { t } = useT();
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<FormState>({ ...EMPTY, selected_plan: initialPlan });
@@ -227,7 +203,6 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
   const [done, setDone] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  // Sync initialPlan when parent updates it (e.g. pricing CTA clicked)
   if (initialPlan !== prevPlan && initialPlan !== "") {
     setPrevPlan(initialPlan);
     setForm((prev) => ({ ...prev, selected_plan: initialPlan }));
@@ -237,10 +212,6 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
     setServerError(null);
-  }
-
-  function touch(field: keyof FormState) {
-    setTouched((prev) => new Set(prev).add(field));
   }
 
   function validateStep1(): boolean {
@@ -254,63 +225,31 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
     const errs: Partial<Record<keyof FormState, string>> = {};
     if (!trimStr(form.full_name)) errs.full_name = t("planners.err_full_name");
     if (!trimStr(form.email) || !form.email.includes("@")) errs.email = t("planners.err_email");
-    if (!trimStr(form.phone)) errs.phone = t("planners.err_phone");
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  function validateStep3(): boolean {
-    const errs: Partial<Record<keyof FormState, string>> = {};
-    if (
-      form.years_experience !== "" &&
-      (Number.isNaN(Number(form.years_experience)) ||
-        Number(form.years_experience) < 0 ||
-        Number(form.years_experience) > 60)
-    ) {
-      errs.years_experience = t("planners.err_years");
-    }
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  function validateStep4(): boolean {
-    const errs: Partial<Record<keyof FormState, string>> = {};
     if (!form.privacy_accepted) errs.privacy_accepted = t("planners.err_privacy");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
 
-  function handleNext() {
-    if (step === 1) {
-      setTouched((prev) => new Set(prev).add("selected_plan"));
-      if (validateStep1()) setStep(2);
-    } else if (step === 2) {
-      setTouched(new Set(["full_name", "email", "phone"] as (keyof FormState)[]));
-      if (validateStep2()) setStep(3);
-    } else if (step === 3) {
-      if (validateStep3()) setStep(4);
-    }
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!validateStep4()) return;
+    setTouched(new Set(["full_name", "email", "privacy_accepted"] as (keyof FormState)[]));
+    if (!validateStep2()) return;
     setSubmitting(true);
     setServerError(null);
     try {
       await plannerWaitlistApi.submit({
         full_name: trimStr(form.full_name),
         email: trimStr(form.email),
-        phone: trimStr(form.phone),
-        company_name: trimStr(form.company_name) || null,
-        city: trimStr(form.city) || null,
-        years_experience: form.years_experience !== "" ? Number(form.years_experience) : null,
+        phone: null,
+        company_name: null,
+        city: null,
+        years_experience: null,
         message: trimStr(form.message) || null,
         privacy_version: PRIVACY_VERSION,
         selected_plan: form.selected_plan || null,
-        website: trimStr(form.website) || null,
-        weddings_per_year: form.weddings_per_year !== "" ? Number(form.weddings_per_year) : null,
-        usage: form.usage || null,
+        website: null,
+        weddings_per_year: null,
+        usage: null,
       });
       setDone(true);
     } catch {
@@ -353,8 +292,6 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
     "w-full rounded-md border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-umber-900 placeholder-umber-400 focus:border-umber-500 focus:outline-none focus:ring-1 focus:ring-umber-500 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-50 dark:placeholder-umber-500 dark:focus:border-umber-400 dark:focus:ring-umber-400";
   const labelClass = "block text-sm font-medium text-umber-800 dark:text-umber-200 mb-1";
   const errClass = "mt-1 text-xs text-red-600 dark:text-red-400";
-  const backBtnClass =
-    "flex-1 rounded-md border border-paper-300 px-4 py-2.5 text-sm text-umber-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-800";
 
   return (
     <section id="waitlist" className="mx-auto max-w-lg px-4 py-12 sm:px-6">
@@ -362,10 +299,11 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
 
       <form
         onSubmit={
-          step < 4
+          step === 1
             ? (e) => {
                 e.preventDefault();
-                handleNext();
+                setTouched((prev) => new Set(prev).add("selected_plan"));
+                if (validateStep1()) setStep(2);
               }
             : handleSubmit
         }
@@ -441,7 +379,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
         {step === 2 && (
           <div className="space-y-5">
             <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
-              {t("planners.step1_title")}
+              {t("planners.form_title")}
             </h2>
 
             <div>
@@ -458,10 +396,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
                 className={inputClass}
                 value={form.full_name}
                 onChange={(e) => set("full_name", e.target.value)}
-                onBlur={() => {
-                  touch("full_name");
-                  validateStep2();
-                }}
+                onBlur={() => setTouched((prev) => new Set(prev).add("full_name"))}
                 placeholder={t("planners.placeholder_full_name")}
               />
               {touched.has("full_name") && errors.full_name && (
@@ -483,177 +418,12 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
                 className={inputClass}
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
-                onBlur={() => {
-                  touch("email");
-                  validateStep2();
-                }}
+                onBlur={() => setTouched((prev) => new Set(prev).add("email"))}
                 placeholder={t("planners.placeholder_email")}
               />
-              {touched.has("email") && errors.email && <p className={errClass}>{errors.email}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="pw-phone" className={labelClass}>
-                {t("planners.label_phone")}
-                <span className="ml-1 text-red-500" aria-hidden="true">
-                  *
-                </span>
-              </label>
-              <input
-                id="pw-phone"
-                type="tel"
-                autoComplete="tel"
-                className={inputClass}
-                value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
-                onBlur={() => {
-                  touch("phone");
-                  validateStep2();
-                }}
-                placeholder={t("planners.placeholder_phone")}
-              />
-              {touched.has("phone") && errors.phone && <p className={errClass}>{errors.phone}</p>}
-            </div>
-
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setStep(1)} className={backBtnClass}>
-                ← {t("common.back")}
-              </button>
-              <button type="submit" className="btn-primary flex-[2] py-2.5 text-sm">
-                {t("common.next")} →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Step 3: Business info ── */}
-        {step === 3 && (
-          <div className="space-y-5">
-            <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
-              {t("planners.step2_title")}
-            </h2>
-
-            <div>
-              <label htmlFor="pw-company" className={labelClass}>
-                {t("planners.label_company")}
-                <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>
-              </label>
-              <input
-                id="pw-company"
-                type="text"
-                autoComplete="organization"
-                className={inputClass}
-                value={form.company_name}
-                onChange={(e) => set("company_name", e.target.value)}
-                placeholder={t("planners.placeholder_company")}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="pw-city" className={labelClass}>
-                {t("planners.label_city")}
-                <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>
-              </label>
-              <input
-                id="pw-city"
-                type="text"
-                autoComplete="address-level2"
-                className={inputClass}
-                value={form.city}
-                onChange={(e) => set("city", e.target.value)}
-                placeholder={t("planners.placeholder_city")}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="pw-years" className={labelClass}>
-                {t("planners.label_years")}
-                <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>
-              </label>
-              <input
-                id="pw-years"
-                type="number"
-                min={0}
-                max={60}
-                className={inputClass}
-                value={form.years_experience}
-                onChange={(e) => set("years_experience", e.target.value)}
-                placeholder="0"
-              />
-              {errors.years_experience && <p className={errClass}>{errors.years_experience}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="pw-website" className={labelClass}>
-                {t("planners.label_website")}
-                <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>
-              </label>
-              <input
-                id="pw-website"
-                type="url"
-                autoComplete="url"
-                className={inputClass}
-                value={form.website}
-                onChange={(e) => set("website", e.target.value)}
-                placeholder={t("planners.placeholder_website")}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="pw-weddings" className={labelClass}>
-                {t("planners.label_weddings_per_year")}
-                <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>
-              </label>
-              <input
-                id="pw-weddings"
-                type="number"
-                min={0}
-                className={inputClass}
-                value={form.weddings_per_year}
-                onChange={(e) => set("weddings_per_year", e.target.value)}
-                placeholder={t("planners.placeholder_weddings_per_year")}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setStep(2)} className={backBtnClass}>
-                ← {t("common.back")}
-              </button>
-              <button type="submit" className="btn-primary flex-[2] py-2.5 text-sm">
-                {t("common.next")} →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Step 4: Usage + privacy ── */}
-        {step === 4 && (
-          <div className="space-y-5">
-            <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
-              {t("planners.step_label_usage")}
-            </h2>
-
-            <div>
-              <label htmlFor="pw-usage" className={labelClass}>
-                {t("planners.label_usage")}
-                <span className="ml-1 text-red-500" aria-hidden="true">
-                  *
-                </span>
-              </label>
-              <select
-                id="pw-usage"
-                className={inputClass}
-                value={form.usage}
-                onChange={(e) => set("usage", e.target.value)}
-              >
-                <option value="" disabled>
-                  —
-                </option>
-                <option value="guestlist">{t("planners.usage_guestlist")}</option>
-                <option value="seating">{t("planners.usage_seating")}</option>
-                <option value="tasks">{t("planners.usage_tasks")}</option>
-                <option value="all">{t("planners.usage_all")}</option>
-              </select>
+              {touched.has("email") && errors.email && (
+                <p className={errClass}>{errors.email}</p>
+              )}
             </div>
 
             <div>
@@ -663,7 +433,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
               </label>
               <textarea
                 id="pw-message"
-                rows={4}
+                rows={3}
                 className={inputClass}
                 value={form.message}
                 onChange={(e) => set("message", e.target.value)}
@@ -687,7 +457,7 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
                   {t("planners.privacy_consent_suffix")}
                 </span>
               </label>
-              {errors.privacy_accepted && (
+              {touched.has("privacy_accepted") && errors.privacy_accepted && (
                 <p className={errClass} role="alert">
                   {errors.privacy_accepted}
                 </p>
@@ -701,7 +471,11 @@ function RegistrationForm({ initialPlan }: RegistrationFormProps) {
             )}
 
             <div className="flex gap-3">
-              <button type="button" onClick={() => setStep(3)} className={backBtnClass}>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="flex-1 rounded-md border border-paper-300 px-4 py-2.5 text-sm text-umber-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-800"
+              >
                 ← {t("common.back")}
               </button>
               <button
@@ -761,7 +535,9 @@ function FeatureShowcase() {
               <h3 className="font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
                 {f.name}
               </h3>
-              <p className="text-xs leading-relaxed text-umber-600 dark:text-umber-400">{f.desc}</p>
+              <p className="text-xs leading-relaxed text-umber-600 dark:text-umber-400">
+                {f.desc}
+              </p>
             </div>
           ))}
         </div>
@@ -773,137 +549,59 @@ function FeatureShowcase() {
   );
 }
 
-// ── Pricing section ───────────────────────────────────────────────────────────
+// ── Beta offer ────────────────────────────────────────────────────────────────
 
-interface PricingSectionProps {
-  onSelectPlan: (plan: Plan) => void;
-}
-
-function PricingSection({ onSelectPlan }: PricingSectionProps) {
+function BetaOffer() {
   const { t } = useT();
-
-  const plans: {
-    plan: Plan;
-    name: string;
-    price: string;
-    period: string;
-    couples: string;
-    features: string[];
-    badge?: string;
-    recommended?: boolean;
-  }[] = [
-    {
-      plan: "basic",
-      name: t("planners.plan_basic_name"),
-      price: t("planners.plan_basic_price"),
-      period: t("planners.plan_basic_period"),
-      couples: t("planners.plan_basic_couples"),
-      features: [
-        t("planners.plan_basic_feature_1"),
-        t("planners.plan_basic_feature_2"),
-        t("planners.plan_basic_feature_3"),
-      ],
-    },
-    {
-      plan: "pro",
-      name: t("planners.plan_pro_name"),
-      price: t("planners.plan_pro_price"),
-      period: t("planners.plan_pro_period"),
-      couples: t("planners.plan_pro_couples"),
-      features: [
-        t("planners.plan_pro_feature_1"),
-        t("planners.plan_pro_feature_2"),
-        t("planners.plan_pro_feature_3"),
-      ],
-      badge: t("planners.plan_pro_badge"),
-      recommended: true,
-    },
-    {
-      plan: "unlimited",
-      name: t("planners.plan_unlimited_name"),
-      price: t("planners.plan_unlimited_price"),
-      period: t("planners.plan_unlimited_period"),
-      couples: t("planners.plan_unlimited_couples"),
-      features: [
-        t("planners.plan_unlimited_feature_1"),
-        t("planners.plan_unlimited_feature_2"),
-        t("planners.plan_unlimited_feature_3"),
-      ],
-    },
+  const steps = [
+    { title: t("planners.beta_step_1_title"), body: t("planners.beta_step_1_body") },
+    { title: t("planners.beta_step_2_title"), body: t("planners.beta_step_2_body") },
+    { title: t("planners.beta_step_3_title"), body: t("planners.beta_step_3_body") },
   ];
-
   return (
     <section className="border-t border-paper-200 dark:border-umber-800">
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-        <p className="font-grotesk mb-2 text-xs font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
-          {t("planners.pricing_eyebrow")}
-        </p>
-        <h2 className="font-grotesk mb-2 text-3xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
-          {t("planners.pricing_title")}
-        </h2>
-        <p className="mb-8 text-sm text-umber-600 dark:text-umber-400">
-          {t("planners.pricing_trial")}
-        </p>
+      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="rounded-2xl bg-umber-900 px-8 py-12 text-center dark:bg-umber-950">
+          <span className="inline-block rounded-full bg-umber-700 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-paper-50 dark:bg-umber-600">
+            {t("planners.beta_badge")}
+          </span>
+          <h2 className="font-grotesk mt-4 text-3xl font-semibold tracking-tight text-paper-50 sm:text-4xl">
+            {t("planners.beta_title")}
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-paper-300">
+            {t("planners.beta_body")}
+          </p>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          {plans.map(({ plan, name, price, period, couples, features, badge, recommended }) => (
-            <div
-              key={plan}
-              className={`relative flex flex-col rounded-xl border-2 p-5 ${
-                recommended
-                  ? "border-umber-400 dark:border-umber-500"
-                  : "border-paper-200 dark:border-umber-800"
-              }`}
-            >
-              {badge && (
-                <div className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-umber-700 px-2.5 py-0.5 text-xs font-semibold text-paper-50 dark:bg-umber-500">
-                  <Star size={10} aria-hidden="true" />
-                  {badge}
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {steps.map((s, i) => (
+              <div key={s.title} className="flex flex-col items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-umber-600 text-sm font-semibold text-paper-300">
+                  {i + 1}
                 </div>
-              )}
-              <h3 className="font-grotesk text-base font-semibold text-umber-900 dark:text-paper-50">
-                {name}
-              </h3>
-              <div className="mt-1 flex items-baseline gap-0.5">
-                <span className="text-2xl font-bold text-umber-900 dark:text-paper-50">
-                  {price}
-                </span>
-                <span className="text-sm text-umber-500 dark:text-umber-400">{period}</span>
+                <p className="text-sm font-semibold text-paper-100">{s.title}</p>
+                <p className="text-xs leading-relaxed text-paper-400">{s.body}</p>
+                {i < steps.length - 1 && (
+                  <ArrowRight
+                    size={14}
+                    className="mt-1 hidden text-umber-500 sm:block"
+                    aria-hidden="true"
+                  />
+                )}
               </div>
-              <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">{couples}</p>
-              <ul className="mt-4 grow space-y-2">
-                {features.map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-start gap-2 text-sm text-umber-700 dark:text-umber-300"
-                  >
-                    <Check
-                      size={14}
-                      className="mt-0.5 shrink-0 text-sage-600 dark:text-sage-400"
-                      aria-hidden="true"
-                    />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <button
-                type="button"
-                onClick={() => onSelectPlan(plan)}
-                className={`mt-6 w-full rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
-                  recommended
-                    ? "bg-umber-700 text-paper-50 hover:bg-umber-800 dark:bg-umber-500 dark:hover:bg-umber-400"
-                    : "border border-umber-700 text-umber-800 hover:bg-paper-100 dark:border-umber-500 dark:text-umber-200 dark:hover:bg-umber-800"
-                }`}
-              >
-                {t("planners.plan_cta")}
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <p className="mt-4 text-center text-xs text-umber-400 dark:text-umber-600">
-          {t("planners.pricing_active_note")}
-        </p>
+          <a
+            href="#waitlist"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="mt-10 inline-block rounded-md bg-paper-50 px-8 py-3 text-sm font-medium text-umber-900 transition-colors hover:bg-paper-200"
+          >
+            {t("planners.hero_cta")}
+          </a>
+        </div>
       </div>
     </section>
   );
@@ -913,12 +611,6 @@ function PricingSection({ onSelectPlan }: PricingSectionProps) {
 
 export default function PlannersPage() {
   const { t } = useT();
-  const [selectedPlan, setSelectedPlan] = useState<Plan | "">("");
-
-  function onSelectPlan(plan: Plan) {
-    setSelectedPlan(plan);
-    document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
-  }
 
   return (
     <PublicShell>
@@ -929,10 +621,10 @@ export default function PlannersPage() {
             <p className="font-grotesk mb-3 text-xs font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
               {t("planners.eyebrow")}
             </p>
-            <h1 className="font-display mb-4 whitespace-pre-line text-4xl font-semibold italic leading-tight text-umber-900 sm:text-5xl dark:text-paper-50">
+            <h1 className="font-grotesk mb-5 whitespace-pre-line text-4xl font-semibold leading-[1.05] tracking-tight text-umber-900 sm:text-5xl dark:text-paper-50">
               {t("planners.hero_title")}
             </h1>
-            <p className="mb-6 max-w-xl text-lg leading-relaxed text-umber-700 dark:text-umber-300">
+            <p className="mb-8 max-w-lg text-lg leading-relaxed text-umber-700 dark:text-umber-300">
               {t("planners.hero_body")}
             </p>
             <a
@@ -941,46 +633,45 @@ export default function PlannersPage() {
                 e.preventDefault();
                 document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="btn-primary inline-block px-6 py-3 text-sm"
+              className="btn-primary inline-block px-8 py-3 text-sm"
             >
               {t("planners.hero_cta")}
             </a>
-            <p className="mt-4 text-sm text-umber-500 dark:text-umber-400">
+            <p className="mt-5 text-sm text-umber-500 dark:text-umber-400">
               {t("planners.couple_escape")}{" "}
               <Link
                 to="/signup"
-                className="text-umber-700 underline hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
+                className="text-umber-700 underline underline-offset-2 hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
               >
                 {t("planners.couple_escape_link")}
               </Link>
             </p>
           </div>
-          <div className="relative mt-10 lg:mt-0">
-            <img
-              src="/demo/film-02.jpg"
-              alt=""
-              aria-hidden="true"
-              className="h-[420px] w-full rounded-2xl object-cover shadow-lg lg:h-[540px]"
-            />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 rounded-b-2xl bg-gradient-to-t from-umber-900/30 to-transparent" />
+
+          <div className="mt-12 lg:mt-0">
+            <div className="relative overflow-hidden rounded-2xl shadow-lg">
+              <img
+                src="/demo/film-02.jpg"
+                alt=""
+                aria-hidden="true"
+                className="aspect-[4/5] w-full object-cover"
+                loading="eager"
+                decoding="async"
+              />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-umber-900/20 to-transparent" />
+            </div>
           </div>
         </section>
 
         {/* ── Feature showcase ── */}
         <FeatureShowcase />
 
-        {/* ── Pricing ── */}
-        <PricingSection onSelectPlan={onSelectPlan} />
+        {/* ── Beta offer + onboarding steps ── */}
+        <BetaOffer />
 
-        {/* ── Trial note + Registration form ── */}
+        {/* ── Registration form ── */}
         <section className="border-t border-paper-200 dark:border-umber-800">
-          <div className="mx-auto max-w-4xl px-4 pt-12 text-center sm:px-6 lg:px-8">
-            <div className="inline-flex items-center justify-center gap-2 text-umber-500 dark:text-umber-400">
-              <Calendar size={16} aria-hidden="true" />
-              <span className="text-sm">{t("planners.pricing_trial")}</span>
-            </div>
-          </div>
-          <RegistrationForm initialPlan={selectedPlan} />
+          <RegistrationForm initialPlan="" />
         </section>
 
         {/* ── Footer escape links ── */}
@@ -1000,7 +691,7 @@ export default function PlannersPage() {
             </span>
             <Link
               to="/vendors"
-              className="text-sm text-umber-700 underline hover:text-umber-300 dark:text-umber-300 dark:hover:text-paper-50"
+              className="text-sm text-umber-700 underline hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
             >
               {t("planners.vendor_link")}
             </Link>

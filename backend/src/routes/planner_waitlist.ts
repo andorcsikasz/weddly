@@ -71,7 +71,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   const body = await readJson<Record<string, unknown>>(ctx.req);
   const full_name = trimStr(body.full_name);
   const email = trimStr(body.email);
-  const phone = trimStr(body.phone);
+  const phone = trimStr(body.phone) || null;
   const company_name = trimStr(body.company_name) || null;
   const city = trimStr(body.city) || null;
   const message = trimStr(body.message) || null;
@@ -79,7 +79,6 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
 
   if (!full_name) throw new HttpError(400, "full_name required");
   if (!email || !email.includes("@")) throw new HttpError(400, "valid email required");
-  if (!phone) throw new HttpError(400, "phone required");
   if (privacy_version !== PRIVACY_VERSION)
     throw new HttpError(400, `privacy_version must be ${PRIVACY_VERSION}`);
 

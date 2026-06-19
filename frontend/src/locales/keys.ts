@@ -6252,5 +6252,17 @@ export interface LocaleMessages {
     feature_tasks_desc: string;
     feature_docs_name: string;
     feature_docs_desc: string;
+    beta_badge: string;
+    beta_eyebrow: string;
+    beta_title: string;
+    beta_body: string;
+    beta_step_1_title: string;
+    beta_step_1_body: string;
+    beta_step_2_title: string;
+    beta_step_2_body: string;
+    beta_step_3_title: string;
+    beta_step_3_body: string;
+    step_label_contact: string;
+    form_title: string;
   };
 }

@@ -5775,6 +5775,19 @@ const en: LocaleMessages = {
     feature_tasks_desc: "Per-couple task boards that keep every detail on track, even when six timelines are running at once.",
     feature_docs_name: "Documents",
     feature_docs_desc: "Contracts, proposals, run sheets — all the critical paperwork lives with the couple it belongs to.",
+    beta_badge: "25 spots",
+    beta_eyebrow: "Beta programme",
+    beta_title: "Join the first 25 planners",
+    beta_body:
+      "The first 25 sign-ups get 2 years of free access. Fill in the form — we'll reach out and get you set up.",
+    beta_step_1_title: "Fill in the form",
+    beta_step_1_body: "Name, email, a couple of lines about yourself.",
+    beta_step_2_title: "We get in touch",
+    beta_step_2_body: "A quick chat about how you work.",
+    beta_step_3_title: "2 years free",
+    beta_step_3_body: "Your workspace goes live. No limits, no card, for 2 years.",
+    step_label_contact: "Contact",
+    form_title: "Apply for the beta",
   },
 };
 

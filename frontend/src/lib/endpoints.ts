@@ -1636,7 +1636,7 @@ export const vendorWaitlistApi = {
 export interface SubmitPlannerWaitlistForm {
   full_name: string;
   email: string;
-  phone: string;
+  phone: string | null;
   company_name: string | null;
   city: string | null;
   years_experience: number | null;

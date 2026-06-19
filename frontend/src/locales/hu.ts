@@ -5822,6 +5822,19 @@ const hu: LocaleMessages = {
     feature_tasks_desc: "Páronként kezelt feladatlista, hogy semmi ne csússzon el, ha egyszerre hat esküvo fut.",
     feature_docs_name: "Dokumentumok",
     feature_docs_desc: "Szerződések, ajánlatok, run sheet-ek — minden fontos anyag egy helyen, minden párnál elérhető.",
+    beta_badge: "25 férőhely",
+    beta_eyebrow: "Béta program",
+    beta_title: "Csatlakozz az első 25 szervező közé",
+    beta_body:
+      "Az első 25 regisztráló 2 év ingyenes hozzáférést kap. Töltsd ki a formot — mi felvesszük veled a kapcsolatot és bevezetünk a rendszerbe.",
+    beta_step_1_title: "Kitöltöd a formot",
+    beta_step_1_body: "Név, email, pár sor magadról.",
+    beta_step_2_title: "Felvesszük veled a kapcsolatot",
+    beta_step_2_body: "Személyesen egyeztetünk az igényeidről.",
+    beta_step_3_title: "2 év ingyenes hozzáférés",
+    beta_step_3_body: "Elindítjuk a munkaterületed. Nincs korlát, nincs kártya, 2 évig.",
+    step_label_contact: "Kapcsolat",
+    form_title: "Jelentkezés a béta programra",
   },
 };
 
