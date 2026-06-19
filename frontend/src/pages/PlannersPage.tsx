@@ -148,7 +148,7 @@ function PlanCard({
           onSelect(plan);
         }
       }}
-      className={`relative cursor-pointer rounded-2xl p-5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 ${
+      className={`relative cursor-pointer rounded-2xl p-4 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 ${
         selected
           ? "border-2 border-umber-700 bg-umber-50 dark:border-umber-400 dark:bg-umber-800"
           : "border border-paper-300 bg-paper-50 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-600"
@@ -159,73 +159,68 @@ function PlanCard({
           {badge}
         </div>
       )}
-      {/* Top row: name + radio dot */}
+      {/* Top row: name + radio */}
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-grotesk text-sm font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
+        <h3 className="font-grotesk text-[11px] font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
           {name}
         </h3>
         <div
-          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
             selected
-              ? "border-umber-700 bg-umber-700 dark:border-umber-400 dark:bg-umber-400"
-              : "border-paper-300 dark:border-umber-600"
+              ? "border-umber-700 bg-paper-50 dark:border-umber-400 dark:bg-umber-900"
+              : "border-umber-300 dark:border-umber-600"
           }`}
           aria-hidden="true"
         >
-          {selected && <div className="h-2 w-2 rounded-full bg-paper-50" />}
+          {selected && <div className="h-1.5 w-1.5 rounded-full bg-umber-700 dark:bg-umber-400" />}
         </div>
       </div>
 
-      {/* Couple count — main selling point */}
-      <div className="mt-3">
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-grotesk text-4xl font-bold tracking-tight text-umber-900 dark:text-paper-50">
-            {coupleCount}
+      {/* Price — main visual anchor */}
+      <div className="mt-2">
+        <div className="flex items-baseline gap-1">
+          <span className="font-grotesk text-2xl font-bold tracking-tight text-umber-900 dark:text-paper-50">
+            {billingPeriod === "monthly" ? price : annualPriceMonth}
           </span>
-          <span className="font-grotesk text-sm font-medium text-umber-600 dark:text-umber-400">
-            {coupleLabel}
-          </span>
+          <span className="text-[11px] text-umber-500 dark:text-umber-400">{period}</span>
         </div>
-        <p className="mt-0.5 text-xs text-umber-400 dark:text-umber-500">{guests}</p>
-      </div>
-
-      {/* Price — switches by billing period */}
-      <div className="mt-2.5">
-        {billingPeriod === "monthly" ? (
-          <div className="flex items-baseline gap-1">
-            <span className="font-grotesk text-lg font-semibold text-umber-700 dark:text-umber-300">
-              {price}
-            </span>
-            <span className="text-xs text-umber-500 dark:text-umber-400">{period}</span>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-baseline gap-1">
-              <span className="font-grotesk text-lg font-semibold text-umber-700 dark:text-umber-300">
-                {annualPriceMonth}
-              </span>
-              <span className="text-xs text-umber-500 dark:text-umber-400">{period}</span>
-            </div>
-            <p className="text-xs text-umber-400 dark:text-umber-500">
-              {annualPrice} {annualBilledLabel}
-            </p>
-          </>
+        {billingPeriod === "annual" && (
+          <p className="mt-0.5 text-[10px] text-umber-400 dark:text-umber-500">
+            {annualPrice} {annualBilledLabel}
+          </p>
         )}
       </div>
 
-      {/* Dashed separator with ticket-punch notches */}
-      <div className="relative -mx-5 my-4" aria-hidden="true">
-        <div className={`absolute left-0 top-0 z-10 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-200 dark:bg-umber-800 ${selected ? "border-2 border-umber-700 dark:border-umber-400" : "border border-paper-300 dark:border-umber-700"}`} />
-        <div className={`absolute right-0 top-0 z-10 h-5 w-5 translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-200 dark:bg-umber-800 ${selected ? "border-2 border-umber-700 dark:border-umber-400" : "border border-paper-300 dark:border-umber-700"}`} />
+      {/* Couple count — secondary */}
+      <div className="mt-1.5 flex items-baseline gap-1">
+        <span className="font-grotesk text-base font-semibold text-umber-700 dark:text-umber-300">
+          {coupleCount}
+        </span>
+        <span className="text-xs text-umber-500 dark:text-umber-400">{coupleLabel}</span>
+      </div>
+      <p className="text-[10px] text-umber-400 dark:text-umber-500">{guests}</p>
+
+      {/* Dashed separator with ticket-punch cutout notches */}
+      <div className="relative -mx-4 my-3" aria-hidden="true">
+        <div
+          className={`absolute left-0 top-0 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-paper-100 dark:bg-umber-950 ${
+            selected ? "border-umber-700 dark:border-umber-400" : "border-umber-300 dark:border-umber-600"
+          }`}
+        />
+        <div
+          className={`absolute right-0 top-0 z-10 h-4 w-4 translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-paper-100 dark:bg-umber-950 ${
+            selected ? "border-umber-700 dark:border-umber-400" : "border-umber-300 dark:border-umber-600"
+          }`}
+        />
         <div className="border-t border-dashed border-paper-300 dark:border-umber-700" />
       </div>
 
       {/* Feature list */}
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-umber-800 dark:text-umber-200">
+          <li key={f} className="flex items-start gap-1.5 text-xs text-umber-700 dark:text-umber-300">
             <Check
-              size={14}
+              size={12}
               className="mt-0.5 shrink-0 text-sage-600 dark:text-sage-400"
               aria-hidden="true"
             />
