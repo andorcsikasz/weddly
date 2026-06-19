@@ -15,8 +15,9 @@ import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } fro
  * line that needs to change.
  */
 export default function ImprintPage() {
-  const { t } = useT();
-  const [showHu, setShowHu] = useState(false);
+  const { t, locale } = useT();
+  const isHu = locale === "hu";
+  const [showSecondary, setShowSecondary] = useState(false);
   useDocumentMeta("imprint.seo_title", "imprint.seo_description");
 
   return (
@@ -29,18 +30,25 @@ export default function ImprintPage() {
           action={
             <button
               type="button"
-              onClick={() => setShowHu((v) => !v)}
+              onClick={() => setShowSecondary((v) => !v)}
               className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
             >
-              {showHu ? "Hide HU" : "HU"}
+              {showSecondary ? (isHu ? "Hide EN" : "Hide HU") : isHu ? "EN" : "HU"}
             </button>
           }
         />
-        <ImprintBodyForLocale strings={en.imprint} sectionLocale="en" />
-        {showHu && (
+        <ImprintBodyForLocale
+          strings={isHu ? hu.imprint : en.imprint}
+          sectionLocale={isHu ? "hu" : "en"}
+        />
+        {showSecondary && (
           <>
-            <SecondaryLanguageDivider label="Magyar" />
-            <ImprintBodyForLocale strings={hu.imprint} sectionLocale="hu" secondary />
+            <SecondaryLanguageDivider label={isHu ? "English" : "Magyar"} />
+            <ImprintBodyForLocale
+              strings={isHu ? en.imprint : hu.imprint}
+              sectionLocale={isHu ? "en" : "hu"}
+              secondary
+            />
           </>
         )}
         <BackLink />

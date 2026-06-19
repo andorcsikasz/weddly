@@ -10,8 +10,9 @@ import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function PrivacyPage() {
-  const { t } = useT();
-  const [showEn, setShowEn] = useState(false);
+  const { t, locale } = useT();
+  const isHu = locale === "hu";
+  const [showSecondary, setShowSecondary] = useState(false);
   useDocumentMeta("privacy.seo_title", "privacy.seo_description");
 
   return (
@@ -26,18 +27,25 @@ export default function PrivacyPage() {
           action={
             <button
               type="button"
-              onClick={() => setShowEn((v) => !v)}
+              onClick={() => setShowSecondary((v) => !v)}
               className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
             >
-              {showEn ? "Hide HU" : "HU"}
+              {showSecondary ? (isHu ? "Hide EN" : "Hide HU") : isHu ? "EN" : "HU"}
             </button>
           }
         />
-        <PrivacyBodyForLocale strings={en.privacy} sectionLocale="en" />
-        {showEn && (
+        <PrivacyBodyForLocale
+          strings={isHu ? hu.privacy : en.privacy}
+          sectionLocale={isHu ? "hu" : "en"}
+        />
+        {showSecondary && (
           <>
-            <SecondaryLanguageDivider label="Magyar" />
-            <PrivacyBodyForLocale strings={hu.privacy} sectionLocale="hu" secondary />
+            <SecondaryLanguageDivider label={isHu ? "English" : "Magyar"} />
+            <PrivacyBodyForLocale
+              strings={isHu ? en.privacy : hu.privacy}
+              sectionLocale={isHu ? "en" : "hu"}
+              secondary
+            />
           </>
         )}
         <BackLink />

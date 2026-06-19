@@ -13,8 +13,9 @@ import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } fro
  * English is shown by default; the Hungarian text is available via a toggle.
  */
 export default function SubscriptionTermsPage() {
-  const { t } = useT();
-  const [showEn, setShowEn] = useState(false);
+  const { t, locale } = useT();
+  const isHu = locale === "hu";
+  const [showSecondary, setShowSecondary] = useState(false);
   useDocumentMeta("subscription_terms.seo_title", "subscription_terms.seo_description");
 
   return (
@@ -27,20 +28,23 @@ export default function SubscriptionTermsPage() {
           action={
             <button
               type="button"
-              onClick={() => setShowEn((v) => !v)}
+              onClick={() => setShowSecondary((v) => !v)}
               className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
             >
-              {showEn ? "Hide HU" : "HU"}
+              {showSecondary ? (isHu ? "Hide EN" : "Hide HU") : isHu ? "EN" : "HU"}
             </button>
           }
         />
-        <SubscriptionBodyForLocale strings={en.subscription_terms} sectionLocale="en" />
-        {showEn && (
+        <SubscriptionBodyForLocale
+          strings={isHu ? hu.subscription_terms : en.subscription_terms}
+          sectionLocale={isHu ? "hu" : "en"}
+        />
+        {showSecondary && (
           <>
-            <SecondaryLanguageDivider label="Magyar" />
+            <SecondaryLanguageDivider label={isHu ? "English" : "Magyar"} />
             <SubscriptionBodyForLocale
-              strings={hu.subscription_terms}
-              sectionLocale="hu"
+              strings={isHu ? en.subscription_terms : hu.subscription_terms}
+              sectionLocale={isHu ? "en" : "hu"}
               secondary
             />
           </>
