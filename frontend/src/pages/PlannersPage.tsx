@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   Star,
   Users,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -96,7 +97,7 @@ function StepIndicator({ step }: { step: Step }) {
   );
 }
 
-// ── Plan selection card ───────────────────────────────────────────────────────
+// ── Plan selection card (landing-style) ──────────────────────────────────────
 
 interface PlanCardProps {
   plan: Plan;
@@ -105,6 +106,7 @@ interface PlanCardProps {
   period: string;
   couples: string;
   features: string[];
+  excluded?: string[];
   badge?: string;
   recommended?: boolean;
   selected: boolean;
@@ -118,6 +120,7 @@ function PlanCard({
   period,
   couples,
   features,
+  excluded = [],
   badge,
   recommended,
   selected,
@@ -135,31 +138,56 @@ function PlanCard({
           onSelect(plan);
         }
       }}
-      className={`relative cursor-pointer rounded-xl border-2 p-5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 ${
+      className={`relative cursor-pointer rounded-2xl border bg-paper-50 p-5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 dark:bg-umber-900 ${
         selected
-          ? "border-umber-700 bg-paper-50 shadow-md dark:border-umber-400 dark:bg-umber-900"
+          ? "border-umber-700 ring-2 ring-umber-700 dark:border-umber-400 dark:ring-umber-400"
           : recommended
-            ? "border-umber-300 bg-paper-50 hover:border-umber-500 dark:border-umber-600 dark:bg-umber-900 dark:hover:border-umber-400"
-            : "border-paper-200 bg-paper-50 hover:border-paper-400 dark:border-umber-800 dark:bg-umber-900 dark:hover:border-umber-600"
+            ? "border-umber-300 hover:border-umber-500 dark:border-umber-600 dark:hover:border-umber-400"
+            : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
       }`}
     >
-      {badge && (
-        <div className="mb-3 inline-flex items-center gap-1 rounded-full bg-umber-700 px-2.5 py-0.5 text-xs font-semibold text-paper-50 dark:bg-umber-500">
-          <Star size={10} aria-hidden="true" />
-          {badge}
+      {/* Top row: name + badge + radio dot */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          {badge && (
+            <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-umber-700 px-2.5 py-0.5 text-[11px] font-semibold text-paper-50 dark:bg-umber-500">
+              <Star size={9} aria-hidden="true" />
+              {badge}
+            </div>
+          )}
+          <h3 className="font-grotesk text-sm font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
+            {name}
+          </h3>
         </div>
-      )}
-      <h3 className="font-grotesk text-base font-semibold text-umber-900 dark:text-paper-50">
-        {name}
-      </h3>
-      <div className="mt-1 flex items-baseline gap-0.5">
-        <span className="text-2xl font-bold text-umber-900 dark:text-paper-50">{price}</span>
-        <span className="text-sm text-umber-500 dark:text-umber-400">{period}</span>
+        {/* Radio indicator */}
+        <div
+          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+            selected
+              ? "border-umber-700 bg-umber-700 dark:border-umber-400 dark:bg-umber-400"
+              : "border-paper-300 dark:border-umber-600"
+          }`}
+          aria-hidden="true"
+        >
+          {selected && <div className="h-2 w-2 rounded-full bg-paper-50" />}
+        </div>
       </div>
-      <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">{couples}</p>
-      <ul className="mt-4 space-y-2">
+
+      {/* Price block */}
+      <div className="mt-3 flex items-baseline gap-1">
+        <span className="font-grotesk text-3xl font-bold tracking-tight text-umber-900 dark:text-paper-50">
+          {price}
+        </span>
+        <span className="font-grotesk text-sm text-umber-500 dark:text-umber-400">{period}</span>
+      </div>
+      <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">{couples}</p>
+
+      {/* Dashed separator */}
+      <div className="-mx-5 my-4 border-t border-dashed border-paper-300 dark:border-umber-700" aria-hidden="true" />
+
+      {/* Feature list */}
+      <ul className="space-y-2">
         {features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-umber-700 dark:text-umber-300">
+          <li key={f} className="flex items-start gap-2 text-sm text-umber-800 dark:text-umber-200">
             <Check
               size={14}
               className="mt-0.5 shrink-0 text-sage-600 dark:text-sage-400"
@@ -168,16 +196,13 @@ function PlanCard({
             {f}
           </li>
         ))}
+        {excluded.map((f) => (
+          <li key={f} className="flex items-start gap-2 text-sm text-umber-400 dark:text-umber-600">
+            <X size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+            {f}
+          </li>
+        ))}
       </ul>
-      <div
-        className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors ${
-          selected
-            ? "border-umber-700 bg-umber-700 dark:border-umber-400 dark:bg-umber-400"
-            : "border-paper-300 dark:border-umber-600"
-        }`}
-      >
-        {selected && <div className="h-2 w-2 rounded-full bg-paper-50" />}
-      </div>
     </div>
   );
 }
@@ -294,7 +319,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   const errClass = "mt-1 text-xs text-red-600 dark:text-red-400";
 
   return (
-    <section id="waitlist" className="mx-auto max-w-lg px-4 py-12 sm:px-6">
+    <section id="waitlist" className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <StepIndicator step={step} />
 
       <form
@@ -316,7 +341,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
               {t("planners.step0_title")}
             </h2>
 
-            <div role="radiogroup" aria-label={t("planners.step0_title")} className="space-y-3">
+            <div role="radiogroup" aria-label={t("planners.step0_title")} className="grid gap-3 sm:grid-cols-3">
               <PlanCard
                 plan="basic"
                 name={t("planners.plan_basic_name")}
@@ -327,6 +352,10 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   t("planners.plan_basic_feature_1"),
                   t("planners.plan_basic_feature_2"),
                   t("planners.plan_basic_feature_3"),
+                ]}
+                excluded={[
+                  t("planners.plan_basic_excl_1"),
+                  t("planners.plan_basic_excl_2"),
                 ]}
                 selected={form.selected_plan === "basic"}
                 onSelect={(p) => set("selected_plan", p)}
@@ -342,6 +371,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   t("planners.plan_pro_feature_2"),
                   t("planners.plan_pro_feature_3"),
                 ]}
+                excluded={[t("planners.plan_pro_excl_1")]}
                 badge={t("planners.plan_pro_badge")}
                 recommended
                 selected={form.selected_plan === "pro"}
@@ -377,7 +407,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
 
         {/* ── Step 2: Contact info ── */}
         {step === 2 && (
-          <div className="space-y-5">
+          <div className="mx-auto max-w-lg space-y-5">
             <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
               {t("planners.form_title")}
             </h2>
@@ -541,9 +571,6 @@ function FeatureShowcase() {
             </div>
           ))}
         </div>
-        <p className="mt-8 text-center text-sm text-umber-500 dark:text-umber-400">
-          {t("planners.features_tagline")}
-        </p>
       </div>
     </section>
   );
@@ -579,7 +606,7 @@ function BetaOffer() {
                   {i + 1}
                 </div>
                 <p className="text-sm font-semibold text-paper-100">{s.title}</p>
-                <p className="text-xs leading-relaxed text-paper-400">{s.body}</p>
+                {s.body && <p className="text-xs leading-relaxed text-paper-400">{s.body}</p>}
                 {i < steps.length - 1 && (
                   <ArrowRight
                     size={14}

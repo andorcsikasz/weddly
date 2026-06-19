@@ -6172,6 +6172,8 @@ export interface LocaleMessages {
     plan_basic_feature_1: string;
     plan_basic_feature_2: string;
     plan_basic_feature_3: string;
+    plan_basic_excl_1: string;
+    plan_basic_excl_2: string;
     plan_pro_name: string;
     plan_pro_price: string;
     plan_pro_period: string;
@@ -6180,6 +6182,7 @@ export interface LocaleMessages {
     plan_pro_feature_1: string;
     plan_pro_feature_2: string;
     plan_pro_feature_3: string;
+    plan_pro_excl_1: string;
     plan_unlimited_name: string;
     plan_unlimited_price: string;
     plan_unlimited_period: string;
