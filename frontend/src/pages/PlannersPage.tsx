@@ -23,18 +23,29 @@ import { useT } from "../lib/i18n";
 type Plan = "basic" | "pro" | "unlimited";
 type Step = 0 | 1 | 2 | 3;
 
+const WEDDING_STYLE_VALUES = [
+  "romantic", "classic", "rustic", "modern", "bohemian",
+  "elegant", "vintage", "outdoor", "other",
+] as const;
+type WeddingStyleValue = (typeof WEDDING_STYLE_VALUES)[number] | "";
+
 interface FormState {
-  selected_plan: Plan | "";
   full_name: string;
   email: string;
   phone: string;
+  website: string;
+  reference_links: string;
   company_name: string;
   city: string;
-  years_experience: string;
-  website: string;
-  weddings_per_year: string;
-  usage: string;
+  km_radius: string;
+  weddings_done: string;
+  wedding_style_1: WeddingStyleValue;
+  wedding_style_2: WeddingStyleValue;
+  wedding_style_3: WeddingStyleValue;
+  other_style: string;
   message: string;
+  selected_plan: Plan | "";
+  early_bird: boolean;
   privacy_accepted: boolean;
 }
 
@@ -50,13 +61,29 @@ function planName(plan: Plan, t: (key: string) => string): string {
   return t("planners.plan_unlimited_name");
 }
 
+function styleLabel(val: WeddingStyleValue, t: (key: string) => string): string {
+  if (!val) return "";
+  const map: Record<string, string> = {
+    romantic: t("planners.style_romantic"),
+    classic: t("planners.style_classic"),
+    rustic: t("planners.style_rustic"),
+    modern: t("planners.style_modern"),
+    bohemian: t("planners.style_bohemian"),
+    elegant: t("planners.style_elegant"),
+    vintage: t("planners.style_vintage"),
+    outdoor: t("planners.style_outdoor"),
+    other: t("planners.style_other"),
+  };
+  return map[val] ?? val;
+}
+
 // ── Step indicator ────────────────────────────────────────────────────────────
 
 const STEP_LABELS = [
-  "planners.step_label_plan",
   "planners.step_label_intro",
   "planners.step_label_business",
-  "planners.step_label_usage",
+  "planners.step_label_message",
+  "planners.step_label_plan",
 ] as const;
 
 function StepIndicator({ step, t }: { step: Step; t: (k: string) => string }) {
@@ -235,17 +262,22 @@ function PlanCard({
 // ── Registration form (4 steps) ───────────────────────────────────────────────
 
 const EMPTY: FormState = {
-  selected_plan: "",
   full_name: "",
   email: "",
   phone: "",
+  website: "",
+  reference_links: "",
   company_name: "",
   city: "",
-  years_experience: "",
-  website: "",
-  weddings_per_year: "",
-  usage: "",
+  km_radius: "",
+  weddings_done: "",
+  wedding_style_1: "",
+  wedding_style_2: "",
+  wedding_style_3: "",
+  other_style: "",
   message: "",
+  selected_plan: "",
+  early_bird: false,
   privacy_accepted: false,
 };
 

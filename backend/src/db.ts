@@ -1215,6 +1215,13 @@ addColumnIfMissing("planner_waitlist", "selected_plan", "selected_plan TEXT");
 addColumnIfMissing("planner_waitlist", "website", "website TEXT");
 addColumnIfMissing("planner_waitlist", "weddings_per_year", "weddings_per_year INTEGER");
 addColumnIfMissing("planner_waitlist", "usage", "usage TEXT");
+addColumnIfMissing("planner_waitlist", "km_radius", "km_radius INTEGER");
+addColumnIfMissing("planner_waitlist", "wedding_style_1", "wedding_style_1 TEXT");
+addColumnIfMissing("planner_waitlist", "wedding_style_2", "wedding_style_2 TEXT");
+addColumnIfMissing("planner_waitlist", "wedding_style_3", "wedding_style_3 TEXT");
+addColumnIfMissing("planner_waitlist", "other_style", "other_style TEXT");
+addColumnIfMissing("planner_waitlist", "reference_links", "reference_links TEXT");
+addColumnIfMissing("planner_waitlist", "early_bird", "early_bird INTEGER NOT NULL DEFAULT 0");
 
 // film_devices index lives here (not schema.sql) per project rule.
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_album ON film_devices(album_id)");

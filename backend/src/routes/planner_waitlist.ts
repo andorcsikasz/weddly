@@ -40,6 +40,13 @@ interface PlannerWaitlistRow {
   website: string | null;
   weddings_per_year: number | null;
   usage: string | null;
+  km_radius: number | null;
+  wedding_style_1: string | null;
+  wedding_style_2: string | null;
+  wedding_style_3: string | null;
+  other_style: string | null;
+  reference_links: string | null;
+  early_bird: number;
   created_at: number;
 }
 
@@ -61,6 +68,13 @@ function toAdminView(row: PlannerWaitlistRow) {
     website: row.website ?? null,
     weddings_per_year: row.weddings_per_year ?? null,
     usage: row.usage ?? null,
+    km_radius: row.km_radius ?? null,
+    wedding_style_1: row.wedding_style_1 ?? null,
+    wedding_style_2: row.wedding_style_2 ?? null,
+    wedding_style_3: row.wedding_style_3 ?? null,
+    other_style: row.other_style ?? null,
+    reference_links: row.reference_links ?? null,
+    early_bird: row.early_bird === 1,
     created_at: row.created_at,
   };
 }
@@ -110,17 +124,34 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     body.weddings_per_year !== ""
   ) {
     const parsed = Number(body.weddings_per_year);
-    if (!Number.isNaN(parsed) && Number.isInteger(parsed) && parsed >= 0 && parsed <= 500) {
+    if (!Number.isNaN(parsed) && Number.isInteger(parsed) && parsed >= 0 && parsed <= 9999) {
       weddings_per_year = parsed;
     }
   }
+
+  let km_radius: number | null = null;
+  if (body.km_radius !== undefined && body.km_radius !== null && body.km_radius !== "") {
+    const parsed = Number(body.km_radius);
+    if (!Number.isNaN(parsed) && Number.isInteger(parsed) && parsed >= 0 && parsed <= 5000) {
+      km_radius = parsed;
+    }
+  }
+
+  const wedding_style_1 = trimStr(body.wedding_style_1) || null;
+  const wedding_style_2 = trimStr(body.wedding_style_2) || null;
+  const wedding_style_3 = trimStr(body.wedding_style_3) || null;
+  const other_style = trimStr(body.other_style) || null;
+  const reference_links = trimStr(body.reference_links) || null;
+  const early_bird = body.early_bird === true ? 1 : 0;
 
   const now = Math.floor(Date.now() / 1000);
   const row = db
     .prepare(
       `INSERT INTO planner_waitlist
-         (full_name, email, phone, company_name, city, years_experience, message, selected_plan, website, weddings_per_year, usage, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         (full_name, email, phone, company_name, city, years_experience, message, selected_plan, website,
+          weddings_per_year, usage, km_radius, wedding_style_1, wedding_style_2, wedding_style_3,
+          other_style, reference_links, early_bird, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        RETURNING *`,
     )
     .get(
@@ -135,6 +166,13 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
       website,
       weddings_per_year,
       usage,
+      km_radius,
+      wedding_style_1,
+      wedding_style_2,
+      wedding_style_3,
+      other_style,
+      reference_links,
+      early_bird,
       now,
     ) as PlannerWaitlistRow;
 

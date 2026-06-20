@@ -1639,13 +1639,18 @@ export interface SubmitPlannerWaitlistForm {
   phone: string | null;
   company_name: string | null;
   city: string | null;
-  years_experience: number | null;
   message: string | null;
   privacy_version: string;
   selected_plan: "basic" | "pro" | "unlimited" | null;
   website: string | null;
   weddings_per_year: number | null;
-  usage: string | null;
+  km_radius: number | null;
+  wedding_style_1: string | null;
+  wedding_style_2: string | null;
+  wedding_style_3: string | null;
+  other_style: string | null;
+  reference_links: string | null;
+  early_bird: boolean;
 }
 
 export const plannerWaitlistApi = {
