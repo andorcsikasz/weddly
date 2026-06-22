@@ -1166,7 +1166,7 @@ function acquisitionAnalytics(audience: AnalyticsAudience): AdminAcquisitionAnal
     )
     .all(since) as AcqUserRow[];
 
-  const by_country = rollupDimension(rows, (r) => r.signup_country);
+  const by_country = rollupDimension(rows, (r) => r.signup_country ?? "HU");
   const by_channel = rollupDimension(rows, (r) => channelFromUtm(r.utm_source, r.utm_medium));
   const by_locale = rollupDimension(rows, (r) => r.locale);
   const by_device = rollupDimension(rows, (r) => r.device_type);
@@ -1181,7 +1181,7 @@ function acquisitionAnalytics(audience: AnalyticsAudience): AdminAcquisitionAnal
     const k = `${r.signup_country ?? ""}|${r.locale ?? ""}`;
     let cell = clMap.get(k);
     if (!cell) {
-      cell = { country: r.signup_country, locale: r.locale, count: 0 };
+      cell = { country: r.signup_country ?? "HU", locale: r.locale, count: 0 };
       clMap.set(k, cell);
     }
     cell.count += 1;
