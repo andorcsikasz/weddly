@@ -116,10 +116,30 @@ export default function LandingPage() {
   useDocumentMeta("seo.home_title", "seo.home_description");
   const askGuestCode = useGuestCodePrompt();
 
-  // Make the sticky header transparent while the hero photo is in view.
+  // Make the sticky header transparent while the hero section is still visible.
+  // IntersectionObserver removes the class as soon as the hero scrolls out of
+  // view, so dark icons never float over a transparent header on pale sections.
   useEffect(() => {
-    document.documentElement.classList.add("landing-hero-active");
-    return () => document.documentElement.classList.remove("landing-hero-active");
+    const hero = document.querySelector<HTMLElement>(".hero-section");
+    if (!hero) {
+      document.documentElement.classList.add("landing-hero-active");
+      return () => document.documentElement.classList.remove("landing-hero-active");
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry!.isIntersecting) {
+          document.documentElement.classList.add("landing-hero-active");
+        } else {
+          document.documentElement.classList.remove("landing-hero-active");
+        }
+      },
+      { threshold: 0 },
+    );
+    obs.observe(hero);
+    return () => {
+      obs.disconnect();
+      document.documentElement.classList.remove("landing-hero-active");
+    };
   }, []);
   // Single source of truth (shared/seo_faq.ts) — same array also feeds the
   // FAQPage JSON-LD in seo_ssr.ts, so they can't drift.
