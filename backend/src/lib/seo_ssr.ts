@@ -418,6 +418,50 @@ function gtmScriptTag(): string {
   );
 }
 
+// ── Direct GA4 (bypass GTM) ───────────────────────────────────────────────────
+// Activated by GA4_MEASUREMENT_ID env var (e.g. "G-XXXXXXXXXX"). Use this
+// when GA4 is not configured inside the GTM container, or as an alternative
+// to GTM entirely. Remove this env var if/when the GTM container has its own
+// GA4 Configuration tag to avoid double-counting.
+//
+// The bootstrap (gtag function + dataLayer init) runs immediately — no cookies,
+// no network, so it is not consent-gated. The gtag/js loader and config call
+// are tagged data-cookieconsent="statistics" so Cookiebot holds them until the
+// visitor accepts statistics cookies. Both inline scripts are allow-listed in
+// the CSP via the hashes exported below.
+
+const GA4_GTAG_BOOTSTRAP =
+  "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}";
+
+function ga4MeasurementIdEnv(): string {
+  return (process.env.GA4_MEASUREMENT_ID ?? "").trim();
+}
+
+function ga4ConfigScript(id: string): string {
+  return `gtag('js',new Date());gtag('config','${id}');`;
+}
+
+/** All script-src CSP hashes needed for the direct GA4 snippet, space-joined.
+ *  Empty string when GA4_MEASUREMENT_ID is not set. server.ts splices this
+ *  into the script-src directive at startup. */
+export const GA4_CSP_HASHES: string = (() => {
+  const id = ga4MeasurementIdEnv();
+  if (!id || !/^G-[A-Z0-9]+$/.test(id)) return "";
+  const h = (s: string) =>
+    `'sha256-${new Bun.CryptoHasher("sha256").update(s).digest("base64")}'`;
+  return `${h(GA4_GTAG_BOOTSTRAP)} ${h(ga4ConfigScript(id))}`;
+})();
+
+function ga4ScriptTag(): string {
+  const id = ga4MeasurementIdEnv();
+  if (!id || !/^G-[A-Z0-9]+$/.test(id)) return "";
+  return (
+    `<script>${GA4_GTAG_BOOTSTRAP}</script>` +
+    `<script type="text/plain" data-cookieconsent="statistics" async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>` +
+    `<script type="text/plain" data-cookieconsent="statistics">${ga4ConfigScript(id)}</script>`
+  );
+}
+
 /** True when the request landed on the configured EN canonical host. Used
  *  by `localeForHost` to force EN regardless of `Accept-Language`. */
 function hostIsEnCanonical(host: string | null | undefined): boolean {
@@ -847,6 +891,7 @@ function buildHeadBlock(opts: {
     buildJsonLd({ locale, canonicalHost, pathname: path }),
     ...(plausibleScriptTag() ? [plausibleScriptTag()] : []),
     ...(gtmScriptTag() ? [gtmScriptTag()] : []),
+    ...(ga4ScriptTag() ? [ga4ScriptTag()] : []),
   ].join("\n    ");
 }
 

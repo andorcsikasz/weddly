@@ -21,7 +21,7 @@ import {
 } from "./lib/http";
 import { maybeCompress, negotiateEncoding } from "./lib/compression";
 import { log, makeLogger } from "./lib/logger";
-import { GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } from "./lib/seo_ssr";
+import { GA4_CSP_HASHES, GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } from "./lib/seo_ssr";
 import { entitlementBlock } from "./domain/billing";
 import { vendorEntitlementBlock } from "./domain/vendor_billing";
 import { ensureGeoDb } from "./lib/geoip";
@@ -199,7 +199,7 @@ const CSP = [
   // dataLayer `gtm.js` push) without opening the policy to 'unsafe-inline'.
   // Harmless when GTM is disabled — it just allow-lists a script that never
   // appears in the page.
-  `script-src 'self' ${GTM_INLINE_CSP_HASH} https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com`,
+  `script-src 'self' ${GTM_INLINE_CSP_HASH}${GA4_CSP_HASHES ? " " + GA4_CSP_HASHES : ""} https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com`,
   "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com https://appleid.cdn-apple.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.
