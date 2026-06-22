@@ -3858,6 +3858,10 @@ export interface LocaleMessages {
     nav_taxonomy: string;
     nav_financial_planner: string;
     nav_email_preview: string;
+    tab_suppliers: string;
+    tab_users: string;
+    tab_feedback: string;
+    tab_analytics: string;
     /** Financial planner (/app/admin/financial-planner). */
     fin_title: string;
     fin_subtitle: string;

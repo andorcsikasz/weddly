@@ -242,7 +242,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   {
     to: "/app/admin/suppliers",
     labelKey: "admin.nav_suppliers",
-    tabKey: "admin.nav_suppliers",
+    tabKey: "admin.tab_suppliers",
     icon: <ShieldCheck size={18} />,
     badgeKey: "suppliers",
     group: "inbox",
@@ -250,7 +250,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   {
     to: "/app/admin/vendor-waitlist",
     labelKey: "admin.nav_waitlist",
-    tabKey: "admin.nav_waitlist",
+    // no tabKey — goes to the phone More sheet
     icon: <Inbox size={18} />,
     badgeKey: "vendor_waitlist",
     group: "inbox",
@@ -258,7 +258,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   {
     to: "/app/admin/planner-waitlist",
     labelKey: "admin.nav_planner_waitlist",
-    tabKey: "admin.nav_planner_waitlist",
+    // no tabKey — goes to the phone More sheet
     icon: <Inbox size={18} />,
     badgeKey: "planner_waitlist",
     group: "inbox",
@@ -266,7 +266,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   {
     to: "/app/admin/feedback",
     labelKey: "admin.nav_feedback",
-    tabKey: "admin.nav_feedback",
+    tabKey: "admin.tab_feedback",
     icon: <MessageCircle size={18} />,
     badgeKey: "feedback",
     group: "inbox",
@@ -274,7 +274,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   {
     to: "/app/admin/couple-cards",
     labelKey: "admin.nav_couple_cards",
-    tabKey: "admin.nav_couple_cards",
+    // no tabKey — goes to the phone More sheet
     icon: <Layers size={18} />,
     group: "inbox",
   },
@@ -283,41 +283,38 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   {
     to: "/app/admin/users",
     labelKey: "admin.nav_users",
-    tabKey: "admin.nav_users",
+    tabKey: "admin.tab_users",
     icon: <UserCog size={18} />,
     badgeKey: "users",
     group: "manage",
   },
-  // Categories has no `tabKey` — the phone bottom-nav (5 slots) keeps the
-  // four moderation items + analytics; taxonomy CRUD is rarely done on a
-  // phone and stays reachable via desktop rail or direct URL.
   {
     to: "/app/admin/categories",
     labelKey: "admin.nav_taxonomy",
+    // no tabKey — goes to the phone More sheet
     icon: <LayoutList size={18} />,
     group: "manage",
   },
   {
     to: "/app/admin/blog",
     labelKey: "admin.nav_blog",
+    // no tabKey — goes to the phone More sheet
     icon: <BookOpen size={18} />,
     group: "manage",
   },
   {
     to: "/app/admin/email-preview",
     labelKey: "admin.nav_email_preview",
+    // no tabKey — goes to the phone More sheet
     icon: <Mail size={18} />,
     group: "manage",
   },
   // ── Insights ──────────────────────────────────────────────────────
   // Read-only rollups. Tail of the rail so moderation surfaces lead.
-  // `tabKey` is set so analytics survives on the phone bottom-nav too —
-  // previously it was unreachable on iPad portrait (sidebar hidden under
-  // 1024px) and on phone (no tabKey).
   {
     to: "/app/admin/analytics",
     labelKey: "admin.nav_analytics",
-    tabKey: "admin.nav_analytics",
+    tabKey: "admin.tab_analytics",
     icon: <LineChart size={18} />,
     group: "insights",
   },
@@ -341,7 +338,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { open: shortcutsOpen, setOpen: setShortcutsOpen } = useShortcutsHotkey();
   // Bottom-nav "More" sheet — surfaces the flows that didn't make the 4-tab
   // cut (Planning, Schedule, Seating, Honeymoon, Moodboard, Media). Admin
-  // view doesn't need it because the admin nav already fits in 5 slots.
+  // view uses the same sheet for its secondary items.
   const [moreOpen, setMoreOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   // Auto-close on route change so navigating to a sheet item dismisses it.
@@ -750,10 +747,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      {/* Phone bottom nav — couple view shows 4 tabKey-flagged items + a
-          "More" button that opens a bottom sheet with the rest. Admin view
-          keeps its existing 5-tab layout (the 5 admin pages all fit) and
-          inverts to a violet tint to mirror the desktop rail.
+      {/* Phone bottom nav — 4 tabKey-flagged items + "More" button that
+          opens a bottom sheet with the rest. Admin view uses the same 4+More
+          pattern with a short-label tab set (suppliers, feedback, users,
+          analytics) and a violet tint to mirror the desktop rail.
           `md:hidden` (was `lg:hidden`) — tablet now gets the icon-only rail
           above instead of duplicating with a bottom nav. */}
       <nav
@@ -769,7 +766,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-2">
           {displayItems
             .filter((item) => item.tabKey)
-            .slice(0, inAdminView ? 5 : 4)
+            .slice(0, 4)
             .map((item) => {
               const badgeKey = inAdminView ? (item as AdminNavItem).badgeKey : undefined;
               const badgeCount = badgeKey && adminBadges ? adminBadges[badgeKey] : 0;
@@ -785,27 +782,29 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </BottomLink>
               );
             })}
-          {!inAdminView && (
-            <button
-              type="button"
-              data-coach-target="more-button"
-              onClick={() => setMoreOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={moreOpen}
-              className={`flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] ${
-                moreOpen ? "text-ink-900 dark:text-paper-50" : "text-ink-500 dark:text-umber-200"
-              }`}
-            >
-              <MoreHorizontal size={18} aria-hidden="true" />
-              <span className="truncate">{t("nav.tab_more")}</span>
-            </button>
-          )}
+          <button
+            type="button"
+            data-coach-target="more-button"
+            onClick={() => setMoreOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={moreOpen}
+            className={`flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[11px] ${
+              moreOpen ? "text-ink-900 dark:text-paper-50" : "text-ink-500 dark:text-umber-200"
+            }`}
+          >
+            <MoreHorizontal size={18} aria-hidden="true" />
+            <span className="truncate">{t("nav.tab_more")}</span>
+          </button>
         </div>
       </nav>
 
       {moreOpen && (
         <MoreSheet
-          items={coupleItems.filter((item) => !item.tabKey)}
+          items={
+            inAdminView
+              ? (displayItems.filter((item) => !item.tabKey) as NavItem[])
+              : coupleItems.filter((item) => !item.tabKey)
+          }
           title={t("nav.more_sheet_title")}
           closeLabel={t("a11y.close")}
           onClose={() => setMoreOpen(false)}
