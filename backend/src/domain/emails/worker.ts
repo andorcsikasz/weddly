@@ -441,7 +441,7 @@ function sweepRsvpWeeklyDigest(ts: number): number {
     if (yesCount + noCount + maybeCount === 0) continue;
 
     db.prepare(
-      `INSERT INTO email_dispatches (couple_id, user_id, kind, dispatched_at)
+      `INSERT OR REPLACE INTO email_dispatches (couple_id, user_id, kind, dispatched_at)
        VALUES (?, ?, 'rsvp_weekly_digest_for_couple', ?)`,
     ).run(r.couple_id, r.user_id, ts);
     void sendKind(
@@ -547,6 +547,11 @@ function sweepAdminModerationDigest(ts: number): number {
       .get(userRow.id) as { at: number | null };
     if (lastSent.at !== null && lastSent.at > oneWeekAgo) continue;
 
+    // NULL couple_id means SQLite's UNIQUE constraint won't deduplicate; delete
+    // the old row first so we don't accumulate one row per sweep indefinitely.
+    db.prepare(
+      "DELETE FROM email_dispatches WHERE couple_id IS NULL AND user_id = ? AND kind = 'admin_moderation_digest'",
+    ).run(userRow.id);
     db.prepare(
       `INSERT INTO email_dispatches (couple_id, user_id, kind, dispatched_at)
        VALUES (NULL, ?, 'admin_moderation_digest', ?)`,
@@ -623,7 +628,7 @@ function sweepTimelineEscalation(ts: number): number {
     // Stamp the dispatch BEFORE the fire-and-forget send so a silent mailer
     // hiccup skips rather than re-sends on the next sweep.
     db.prepare(
-      "INSERT INTO email_dispatches (couple_id, user_id, kind, dispatched_at) VALUES (?, ?, 'timeline_escalation', ?)",
+      "INSERT OR REPLACE INTO email_dispatches (couple_id, user_id, kind, dispatched_at) VALUES (?, ?, 'timeline_escalation', ?)",
     ).run(r.couple_id, r.user_id, ts);
     void sendKind(
       "timeline_escalation",
