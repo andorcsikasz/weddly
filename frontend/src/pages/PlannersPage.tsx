@@ -24,8 +24,15 @@ type Plan = "basic" | "pro" | "unlimited";
 type Step = 0 | 1 | 2 | 3;
 
 const WEDDING_STYLE_VALUES = [
-  "romantic", "classic", "rustic", "modern", "bohemian",
-  "elegant", "vintage", "outdoor", "other",
+  "romantic",
+  "classic",
+  "rustic",
+  "modern",
+  "bohemian",
+  "elegant",
+  "vintage",
+  "outdoor",
+  "other",
 ] as const;
 type WeddingStyleValue = (typeof WEDDING_STYLE_VALUES)[number] | "";
 
@@ -231,12 +238,16 @@ function PlanCard({
       <div className="relative -mx-4 my-3" aria-hidden="true">
         <div
           className={`absolute left-0 top-0 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-paper-100 dark:bg-umber-950 ${
-            selected ? "border-umber-700 dark:border-umber-400" : "border-umber-300 dark:border-umber-600"
+            selected
+              ? "border-umber-700 dark:border-umber-400"
+              : "border-umber-300 dark:border-umber-600"
           }`}
         />
         <div
           className={`absolute right-0 top-0 z-10 h-4 w-4 translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-paper-100 dark:bg-umber-950 ${
-            selected ? "border-umber-700 dark:border-umber-400" : "border-umber-300 dark:border-umber-600"
+            selected
+              ? "border-umber-700 dark:border-umber-400"
+              : "border-umber-300 dark:border-umber-600"
           }`}
         />
         <div className="border-t border-dashed border-paper-300 dark:border-umber-700" />
@@ -245,7 +256,10 @@ function PlanCard({
       {/* Feature list */}
       <ul className="space-y-1.5">
         {features.map((f) => (
-          <li key={f} className="flex items-start gap-1.5 text-xs text-umber-700 dark:text-umber-300">
+          <li
+            key={f}
+            className="flex items-start gap-1.5 text-xs text-umber-700 dark:text-umber-300"
+          >
             <Check
               size={12}
               className="mt-0.5 shrink-0 text-sage-600 dark:text-sage-400"
@@ -422,7 +436,11 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
     "w-full rounded-md border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-umber-900 placeholder-umber-400 focus:border-umber-500 focus:outline-none focus:ring-1 focus:ring-umber-500 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-50 dark:placeholder-umber-500 dark:focus:border-umber-400 dark:focus:ring-umber-400";
   const labelCls = "block text-sm font-medium text-umber-800 dark:text-umber-200 mb-1";
   const errCls = "mt-1 text-xs text-red-600 dark:text-red-400";
-  const req = <span className="ml-1 text-red-500" aria-hidden="true">*</span>;
+  const req = (
+    <span className="ml-1 text-red-500" aria-hidden="true">
+      *
+    </span>
+  );
   const opt = <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>;
 
   const STEP_TITLES: Record<Step, string> = {
@@ -472,7 +490,9 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                           : "text-umber-600 hover:text-umber-900 dark:text-umber-400 dark:hover:text-paper-100"
                       }`}
                     >
-                      {p === "monthly" ? t("planners.billing_monthly") : t("planners.billing_annual")}
+                      {p === "monthly"
+                        ? t("planners.billing_monthly")
+                        : t("planners.billing_annual")}
                       {p === "annual" && (
                         <span className="ml-1.5 rounded-full bg-sage-100 px-1.5 py-0.5 text-[10px] text-sage-700 dark:bg-sage-900 dark:text-sage-300">
                           {t("planners.billing_save")}
@@ -483,7 +503,11 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 </div>
               </div>
 
-              <div role="radiogroup" aria-label={STEP_TITLES[0]} className="grid gap-3 sm:grid-cols-3">
+              <div
+                role="radiogroup"
+                aria-label={STEP_TITLES[0]}
+                className="grid gap-3 sm:grid-cols-3"
+              >
                 <PlanCard
                   plan="basic"
                   name={t("planners.plan_basic_name")}
@@ -569,31 +593,54 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
               </h3>
               <div>
                 <label htmlFor="pw-name" className={labelCls}>
-                  {t("planners.label_full_name")}{req}
+                  {t("planners.label_full_name")}
+                  {req}
                 </label>
-                <input id="pw-name" type="text" autoComplete="name" className={inputCls}
-                  value={form.full_name} onChange={(e) => set("full_name", e.target.value)}
-                  onBlur={() => touch("full_name")} placeholder={t("planners.placeholder_full_name")}
+                <input
+                  id="pw-name"
+                  type="text"
+                  autoComplete="name"
+                  className={inputCls}
+                  value={form.full_name}
+                  onChange={(e) => set("full_name", e.target.value)}
+                  onBlur={() => touch("full_name")}
+                  placeholder={t("planners.placeholder_full_name")}
                 />
-                {touched.has("full_name") && errors.full_name && <p className={errCls}>{errors.full_name}</p>}
+                {touched.has("full_name") && errors.full_name && (
+                  <p className={errCls}>{errors.full_name}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="pw-email" className={labelCls}>
-                  {t("planners.label_email")}{req}
+                  {t("planners.label_email")}
+                  {req}
                 </label>
-                <input id="pw-email" type="email" autoComplete="email" className={inputCls}
-                  value={form.email} onChange={(e) => set("email", e.target.value)}
-                  onBlur={() => touch("email")} placeholder={t("planners.placeholder_email")}
+                <input
+                  id="pw-email"
+                  type="email"
+                  autoComplete="email"
+                  className={inputCls}
+                  value={form.email}
+                  onChange={(e) => set("email", e.target.value)}
+                  onBlur={() => touch("email")}
+                  placeholder={t("planners.placeholder_email")}
                 />
                 {touched.has("email") && errors.email && <p className={errCls}>{errors.email}</p>}
               </div>
               <div>
                 <label htmlFor="pw-phone" className={labelCls}>
-                  {t("planners.label_phone")}{req}
+                  {t("planners.label_phone")}
+                  {req}
                 </label>
-                <input id="pw-phone" type="tel" autoComplete="tel" className={inputCls}
-                  value={form.phone} onChange={(e) => set("phone", e.target.value)}
-                  onBlur={() => touch("phone")} placeholder={t("planners.placeholder_phone")}
+                <input
+                  id="pw-phone"
+                  type="tel"
+                  autoComplete="tel"
+                  className={inputCls}
+                  value={form.phone}
+                  onChange={(e) => set("phone", e.target.value)}
+                  onBlur={() => touch("phone")}
+                  placeholder={t("planners.placeholder_phone")}
                 />
                 {touched.has("phone") && errors.phone && <p className={errCls}>{errors.phone}</p>}
               </div>
@@ -608,77 +655,140 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 {STEP_TITLES[2]}
               </h3>
               <div>
-                <label htmlFor="pw-company" className={labelCls}>{t("planners.label_company")}{opt}</label>
-                <input id="pw-company" type="text" autoComplete="organization" className={inputCls}
-                  value={form.company_name} onChange={(e) => set("company_name", e.target.value)}
+                <label htmlFor="pw-company" className={labelCls}>
+                  {t("planners.label_company")}
+                  {opt}
+                </label>
+                <input
+                  id="pw-company"
+                  type="text"
+                  autoComplete="organization"
+                  className={inputCls}
+                  value={form.company_name}
+                  onChange={(e) => set("company_name", e.target.value)}
                   placeholder={t("planners.placeholder_company")}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="pw-city" className={labelCls}>{t("planners.label_city")}{opt}</label>
-                  <input id="pw-city" type="text" autoComplete="address-level2" className={inputCls}
-                    value={form.city} onChange={(e) => set("city", e.target.value)}
+                  <label htmlFor="pw-city" className={labelCls}>
+                    {t("planners.label_city")}
+                    {opt}
+                  </label>
+                  <input
+                    id="pw-city"
+                    type="text"
+                    autoComplete="address-level2"
+                    className={inputCls}
+                    value={form.city}
+                    onChange={(e) => set("city", e.target.value)}
                     placeholder={t("planners.placeholder_city")}
                   />
                 </div>
                 <div>
-                  <label htmlFor="pw-km" className={labelCls}>{t("planners.label_km_radius")}{opt}</label>
-                  <input id="pw-km" type="number" min={0} max={5000} className={inputCls}
-                    value={form.km_radius} onChange={(e) => set("km_radius", e.target.value)}
+                  <label htmlFor="pw-km" className={labelCls}>
+                    {t("planners.label_km_radius")}
+                    {opt}
+                  </label>
+                  <input
+                    id="pw-km"
+                    type="number"
+                    min={0}
+                    max={5000}
+                    className={inputCls}
+                    value={form.km_radius}
+                    onChange={(e) => set("km_radius", e.target.value)}
                     placeholder={t("planners.placeholder_km_radius")}
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="pw-website" className={labelCls}>{t("planners.label_website")}{opt}</label>
-                  <input id="pw-website" type="url" autoComplete="url" className={inputCls}
-                    value={form.website} onChange={(e) => set("website", e.target.value)}
+                  <label htmlFor="pw-website" className={labelCls}>
+                    {t("planners.label_website")}
+                    {opt}
+                  </label>
+                  <input
+                    id="pw-website"
+                    type="url"
+                    autoComplete="url"
+                    className={inputCls}
+                    value={form.website}
+                    onChange={(e) => set("website", e.target.value)}
                     placeholder={t("planners.placeholder_website")}
                   />
                 </div>
                 <div>
-                  <label htmlFor="pw-wdone" className={labelCls}>{t("planners.label_weddings_done")}{opt}</label>
-                  <input id="pw-wdone" type="number" min={0} className={inputCls}
-                    value={form.weddings_done} onChange={(e) => set("weddings_done", e.target.value)}
+                  <label htmlFor="pw-wdone" className={labelCls}>
+                    {t("planners.label_weddings_done")}
+                    {opt}
+                  </label>
+                  <input
+                    id="pw-wdone"
+                    type="number"
+                    min={0}
+                    className={inputCls}
+                    value={form.weddings_done}
+                    onChange={(e) => set("weddings_done", e.target.value)}
                     placeholder={t("planners.placeholder_weddings_done")}
                   />
                 </div>
               </div>
               <div>
-                <label htmlFor="pw-reflinks" className={labelCls}>{t("planners.label_reference_links")}{opt}</label>
-                <input id="pw-reflinks" type="text" className={inputCls}
-                  value={form.reference_links} onChange={(e) => set("reference_links", e.target.value)}
+                <label htmlFor="pw-reflinks" className={labelCls}>
+                  {t("planners.label_reference_links")}
+                  {opt}
+                </label>
+                <input
+                  id="pw-reflinks"
+                  type="text"
+                  className={inputCls}
+                  value={form.reference_links}
+                  onChange={(e) => set("reference_links", e.target.value)}
                   placeholder={t("planners.placeholder_reference_links")}
                 />
               </div>
               <div>
                 <p className={labelCls}>{t("planners.label_style_intro")}</p>
                 <div className="mt-1 grid grid-cols-3 gap-2">
-                  {(["wedding_style_1", "wedding_style_2", "wedding_style_3"] as const).map((field, idx) => (
-                    <div key={field}>
-                      <label htmlFor={`pw-style-${idx}`} className="sr-only">{t(`planners.label_style_${idx + 1}` as Parameters<typeof t>[0])}</label>
-                      <select
-                        id={`pw-style-${idx}`}
-                        className={inputCls}
-                        value={form[field]}
-                        onChange={(e) => set(field, e.target.value as WeddingStyleValue)}
-                      >
-                        <option value="">{t("planners.placeholder_style")}</option>
-                        {WEDDING_STYLE_VALUES.filter(v => v !== "other").map((v) => (
-                          <option key={v} value={v}>{styleLabel(v, (k) => t(k as Parameters<typeof t>[0]))}</option>
-                        ))}
-                        <option value="other">{t("planners.style_other")}</option>
-                      </select>
-                    </div>
-                  ))}
+                  {(["wedding_style_1", "wedding_style_2", "wedding_style_3"] as const).map(
+                    (field, idx) => (
+                      <div key={field}>
+                        <label htmlFor={`pw-style-${idx}`} className="sr-only">
+                          {t(`planners.label_style_${idx + 1}` as Parameters<typeof t>[0])}
+                        </label>
+                        <select
+                          id={`pw-style-${idx}`}
+                          className={inputCls}
+                          value={form[field]}
+                          onChange={(e) => set(field, e.target.value as WeddingStyleValue)}
+                        >
+                          <option value="">{t("planners.placeholder_style")}</option>
+                          {WEDDING_STYLE_VALUES.filter((v) => v !== "other").map((v) => (
+                            <option key={v} value={v}>
+                              {styleLabel(v, (k) => t(k as Parameters<typeof t>[0]))}
+                            </option>
+                          ))}
+                          <option value="other">{t("planners.style_other")}</option>
+                        </select>
+                      </div>
+                    ),
+                  )}
                 </div>
-                {(form.wedding_style_1 === "other" || form.wedding_style_2 === "other" || form.wedding_style_3 === "other") && (
+                {(form.wedding_style_1 === "other" ||
+                  form.wedding_style_2 === "other" ||
+                  form.wedding_style_3 === "other") && (
                   <div className="mt-2">
-                    <label htmlFor="pw-otherstyle" className={labelCls}>{t("planners.label_other_style")}{opt}</label>
-                    <input id="pw-otherstyle" type="text" className={inputCls}
-                      value={form.other_style} onChange={(e) => set("other_style", e.target.value)}
+                    <label htmlFor="pw-otherstyle" className={labelCls}>
+                      {t("planners.label_other_style")}
+                      {opt}
+                    </label>
+                    <input
+                      id="pw-otherstyle"
+                      type="text"
+                      className={inputCls}
+                      value={form.other_style}
+                      onChange={(e) => set("other_style", e.target.value)}
                       placeholder={t("planners.placeholder_other_style")}
                     />
                   </div>
@@ -697,27 +807,44 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
 
               {/* Early bird */}
               <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-paper-300 p-4 transition-colors hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600">
-                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-umber-700 dark:accent-umber-300"
-                  checked={form.early_bird} onChange={(e) => set("early_bird", e.target.checked)}
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 accent-umber-700 dark:accent-umber-300"
+                  checked={form.early_bird}
+                  onChange={(e) => set("early_bird", e.target.checked)}
                 />
                 <div>
-                  <p className="text-sm font-medium text-umber-900 dark:text-paper-50">{t("planners.label_early_bird")}</p>
-                  <p className="text-xs text-umber-500 dark:text-umber-400">{t("planners.early_bird_body")}</p>
+                  <p className="text-sm font-medium text-umber-900 dark:text-paper-50">
+                    {t("planners.label_early_bird")}
+                  </p>
+                  <p className="text-xs text-umber-500 dark:text-umber-400">
+                    {t("planners.early_bird_body")}
+                  </p>
                 </div>
               </label>
 
               <div>
-                <label htmlFor="pw-message" className={labelCls}>{t("planners.label_message")}{opt}</label>
-                <textarea id="pw-message" rows={3} className={inputCls}
-                  value={form.message} onChange={(e) => set("message", e.target.value)}
+                <label htmlFor="pw-message" className={labelCls}>
+                  {t("planners.label_message")}
+                  {opt}
+                </label>
+                <textarea
+                  id="pw-message"
+                  rows={3}
+                  className={inputCls}
+                  value={form.message}
+                  onChange={(e) => set("message", e.target.value)}
                   placeholder={t("planners.placeholder_message")}
                 />
               </div>
 
               <div>
                 <label className="flex cursor-pointer items-start gap-2">
-                  <input type="checkbox" className="mt-0.5 h-4 w-4 accent-umber-700 dark:accent-umber-300"
-                    checked={form.privacy_accepted} onChange={(e) => set("privacy_accepted", e.target.checked)}
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-umber-700 dark:accent-umber-300"
+                    checked={form.privacy_accepted}
+                    onChange={(e) => set("privacy_accepted", e.target.checked)}
                   />
                   <span className="text-xs text-umber-700 dark:text-umber-300">
                     {t("planners.privacy_consent_prefix")}{" "}
@@ -728,12 +855,16 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   </span>
                 </label>
                 {touched.has("privacy_accepted") && errors.privacy_accepted && (
-                  <p className={errCls} role="alert">{errors.privacy_accepted}</p>
+                  <p className={errCls} role="alert">
+                    {errors.privacy_accepted}
+                  </p>
                 )}
               </div>
 
               {serverError && (
-                <p className="text-sm text-red-600 dark:text-red-400" role="alert">{serverError}</p>
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                  {serverError}
+                </p>
               )}
 
               <NavRow onBack={() => setStep(2)} t={t} isSubmit submitting={submitting} />
@@ -758,16 +889,22 @@ function NavRow({
 }) {
   return (
     <div className="flex gap-3 pt-2">
-      <button type="button" onClick={onBack}
+      <button
+        type="button"
+        onClick={onBack}
         className="flex-1 rounded-md border border-paper-300 px-4 py-2.5 text-sm text-umber-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-800"
       >
         ← {t("common.back")}
       </button>
-      <button type="submit" disabled={submitting}
+      <button
+        type="submit"
+        disabled={submitting}
         className="btn-primary flex-[2] py-2.5 text-sm disabled:opacity-60"
       >
         {isSubmit
-          ? submitting ? t("planners.submitting") : t("planners.submit")
+          ? submitting
+            ? t("planners.submitting")
+            : t("planners.submit")
           : `${t("common.next")} →`}
       </button>
     </div>
@@ -816,9 +953,7 @@ function FeatureShowcase() {
               <h3 className="font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
                 {f.name}
               </h3>
-              <p className="text-xs leading-relaxed text-umber-600 dark:text-umber-400">
-                {f.desc}
-              </p>
+              <p className="text-xs leading-relaxed text-umber-600 dark:text-umber-400">{f.desc}</p>
             </div>
           ))}
         </div>

@@ -229,7 +229,8 @@ function EntryCard({ entry, onUpdate }: EntryCardProps) {
           {(entry.city || entry.km_radius !== null) && (
             <p>
               <span className="font-medium text-umber-900 dark:text-paper-100">Helyszín:</span>{" "}
-              {entry.city}{entry.km_radius !== null ? ` · ${entry.km_radius} km` : ""}
+              {entry.city}
+              {entry.km_radius !== null ? ` · ${entry.km_radius} km` : ""}
             </p>
           )}
           {entry.weddings_per_year !== null && (
@@ -250,8 +251,12 @@ function EntryCard({ entry, onUpdate }: EntryCardProps) {
           {entry.website && (
             <p>
               <span className="font-medium text-umber-900 dark:text-paper-100">Web:</span>{" "}
-              <a href={entry.website.startsWith("http") ? entry.website : `https://${entry.website}`}
-                target="_blank" rel="noopener noreferrer" className="underline hover:text-umber-900 dark:hover:text-paper-50">
+              <a
+                href={entry.website.startsWith("http") ? entry.website : `https://${entry.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-umber-900 dark:hover:text-paper-50"
+              >
                 {entry.website}
               </a>
             </p>

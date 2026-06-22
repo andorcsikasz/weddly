@@ -5693,8 +5693,7 @@ const en: LocaleMessages = {
   planners: {
     eyebrow: "I'm a wedding planner",
     hero_title: "Every couple you manage,\none workspace.",
-    hero_body:
-      "Guest list, seating, tasks, and documents — every couple, one workspace.",
+    hero_body: "Guest list, seating, tasks, and documents — every couple, one workspace.",
     hero_cta: "Sign up",
     couple_escape: "Planning as a couple?",
     couple_escape_link: "This way",

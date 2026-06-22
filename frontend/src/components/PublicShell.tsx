@@ -342,7 +342,11 @@ function PublicHeader() {
                 className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
                 onClick={() => setMenuOpen(false)}
               >
-                <LayoutDashboard size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
+                <LayoutDashboard
+                  size={16}
+                  aria-hidden="true"
+                  className="text-umber-600 dark:text-umber-300"
+                />
                 <span>{t("landing.cta_open_app")}</span>
               </Link>
             ) : (
@@ -351,7 +355,11 @@ function PublicHeader() {
                 className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
                 onClick={() => setMenuOpen(false)}
               >
-                <LogIn size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
+                <LogIn
+                  size={16}
+                  aria-hidden="true"
+                  className="text-umber-600 dark:text-umber-300"
+                />
                 <span>{t("landing.cta_login")}</span>
               </Link>
             )}
