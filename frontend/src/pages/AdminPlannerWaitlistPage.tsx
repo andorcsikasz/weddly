@@ -226,17 +226,44 @@ function EntryCard({ entry, onUpdate }: EntryCardProps) {
               {entry.company_name}
             </p>
           )}
-          {entry.city && (
+          {(entry.city || entry.km_radius !== null) && (
             <p>
               <span className="font-medium text-umber-900 dark:text-paper-100">Helyszín:</span>{" "}
-              {entry.city}
+              {entry.city}{entry.km_radius !== null ? ` · ${entry.km_radius} km` : ""}
             </p>
           )}
-          {entry.years_experience !== null && (
+          {entry.weddings_per_year !== null && (
             <p>
-              <span className="font-medium text-umber-900 dark:text-paper-100">Tapasztalat:</span>{" "}
-              {entry.years_experience} év
+              <span className="font-medium text-umber-900 dark:text-paper-100">Esküvők száma:</span>{" "}
+              {entry.weddings_per_year}
             </p>
+          )}
+          {(entry.wedding_style_1 || entry.wedding_style_2 || entry.wedding_style_3) && (
+            <p>
+              <span className="font-medium text-umber-900 dark:text-paper-100">Stílusok:</span>{" "}
+              {[entry.wedding_style_1, entry.wedding_style_2, entry.wedding_style_3]
+                .filter(Boolean)
+                .join(", ")}
+              {entry.other_style ? ` (${entry.other_style})` : ""}
+            </p>
+          )}
+          {entry.website && (
+            <p>
+              <span className="font-medium text-umber-900 dark:text-paper-100">Web:</span>{" "}
+              <a href={entry.website.startsWith("http") ? entry.website : `https://${entry.website}`}
+                target="_blank" rel="noopener noreferrer" className="underline hover:text-umber-900 dark:hover:text-paper-50">
+                {entry.website}
+              </a>
+            </p>
+          )}
+          {entry.reference_links && (
+            <p>
+              <span className="font-medium text-umber-900 dark:text-paper-100">Referenciák:</span>{" "}
+              {entry.reference_links}
+            </p>
+          )}
+          {entry.early_bird && (
+            <p className="text-xs font-medium text-sage-700 dark:text-sage-400">Korai tesztelő</p>
           )}
           {entry.message && (
             <p className="mt-2 whitespace-pre-wrap rounded-md bg-paper-100 p-2 text-xs dark:bg-umber-800">

@@ -82,7 +82,7 @@ function styleLabel(val: WeddingStyleValue, t: (key: string) => string): string 
 const STEP_LABELS = [
   "planners.step_label_intro",
   "planners.step_label_business",
-  "planners.step_label_message",
+  "planners.step_label_usage",
   "planners.step_label_plan",
 ] as const;
 
@@ -329,12 +329,8 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   }
 
   function validateStep2(): boolean {
-    const errs: Partial<Record<keyof FormState, string>> = {};
-    const yrs = parseInt(form.years_experience, 10);
-    if (form.years_experience !== "" && (isNaN(yrs) || yrs < 0 || yrs > 60))
-      errs.years_experience = t("planners.err_years");
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+    setErrors({});
+    return true;
   }
 
   function validateStep3(): boolean {
@@ -353,7 +349,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
       touch("full_name", "email", "phone");
       if (validateStep1()) setStep(2);
     } else if (step === 2) {
-      touch("years_experience");
       if (validateStep2()) setStep(3);
     } else {
       touch("privacy_accepted");
@@ -365,21 +360,26 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
     setSubmitting(true);
     setServerError(null);
     try {
-      const yrs = parseInt(form.years_experience, 10);
-      const wpy = parseInt(form.weddings_per_year, 10);
+      const wpy = parseInt(form.weddings_done, 10);
+      const kmr = parseInt(form.km_radius, 10);
       await plannerWaitlistApi.submit({
         full_name: trimStr(form.full_name),
         email: trimStr(form.email),
         phone: trimStr(form.phone) || null,
         company_name: trimStr(form.company_name) || null,
         city: trimStr(form.city) || null,
-        years_experience: isNaN(yrs) ? null : yrs,
         message: trimStr(form.message) || null,
         privacy_version: PRIVACY_VERSION,
         selected_plan: form.selected_plan || null,
         website: trimStr(form.website) || null,
         weddings_per_year: isNaN(wpy) ? null : wpy,
-        usage: form.usage || null,
+        km_radius: isNaN(kmr) ? null : kmr,
+        wedding_style_1: form.wedding_style_1 || null,
+        wedding_style_2: form.wedding_style_2 || null,
+        wedding_style_3: form.wedding_style_3 || null,
+        other_style: trimStr(form.other_style) || null,
+        reference_links: trimStr(form.reference_links) || null,
+        early_bird: form.early_bird,
       });
       setDone(true);
     } catch {
@@ -431,14 +431,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
     2: t("planners.step2_title"),
     3: t("planners.step3_title"),
   };
-
-  const USAGE_VALUES = ["guestlist", "seating", "tasks", "all"] as const;
-  const USAGE_LABEL_KEYS = [
-    "planners.usage_guestlist",
-    "planners.usage_seating",
-    "planners.usage_tasks",
-    "planners.usage_all",
-  ] as const;
 
   return (
     <section id="waitlist" className="border-t border-paper-200 dark:border-umber-800">
@@ -622,34 +614,75 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   placeholder={t("planners.placeholder_company")}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="pw-city" className={labelCls}>{t("planners.label_city")}{opt}</label>
+                  <input id="pw-city" type="text" autoComplete="address-level2" className={inputCls}
+                    value={form.city} onChange={(e) => set("city", e.target.value)}
+                    placeholder={t("planners.placeholder_city")}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="pw-km" className={labelCls}>{t("planners.label_km_radius")}{opt}</label>
+                  <input id="pw-km" type="number" min={0} max={5000} className={inputCls}
+                    value={form.km_radius} onChange={(e) => set("km_radius", e.target.value)}
+                    placeholder={t("planners.placeholder_km_radius")}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="pw-website" className={labelCls}>{t("planners.label_website")}{opt}</label>
+                  <input id="pw-website" type="url" autoComplete="url" className={inputCls}
+                    value={form.website} onChange={(e) => set("website", e.target.value)}
+                    placeholder={t("planners.placeholder_website")}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="pw-wdone" className={labelCls}>{t("planners.label_weddings_done")}{opt}</label>
+                  <input id="pw-wdone" type="number" min={0} className={inputCls}
+                    value={form.weddings_done} onChange={(e) => set("weddings_done", e.target.value)}
+                    placeholder={t("planners.placeholder_weddings_done")}
+                  />
+                </div>
+              </div>
               <div>
-                <label htmlFor="pw-city" className={labelCls}>{t("planners.label_city")}{opt}</label>
-                <input id="pw-city" type="text" autoComplete="address-level2" className={inputCls}
-                  value={form.city} onChange={(e) => set("city", e.target.value)}
-                  placeholder={t("planners.placeholder_city")}
+                <label htmlFor="pw-reflinks" className={labelCls}>{t("planners.label_reference_links")}{opt}</label>
+                <input id="pw-reflinks" type="text" className={inputCls}
+                  value={form.reference_links} onChange={(e) => set("reference_links", e.target.value)}
+                  placeholder={t("planners.placeholder_reference_links")}
                 />
               </div>
               <div>
-                <label htmlFor="pw-years" className={labelCls}>{t("planners.label_years")}{opt}</label>
-                <input id="pw-years" type="number" min={0} max={60} className={inputCls}
-                  value={form.years_experience} onChange={(e) => set("years_experience", e.target.value)}
-                  onBlur={() => touch("years_experience")}
-                />
-                {touched.has("years_experience") && errors.years_experience && <p className={errCls}>{errors.years_experience}</p>}
-              </div>
-              <div>
-                <label htmlFor="pw-website" className={labelCls}>{t("planners.label_website")}{opt}</label>
-                <input id="pw-website" type="url" autoComplete="url" className={inputCls}
-                  value={form.website} onChange={(e) => set("website", e.target.value)}
-                  placeholder={t("planners.placeholder_website")}
-                />
-              </div>
-              <div>
-                <label htmlFor="pw-wpy" className={labelCls}>{t("planners.label_weddings_per_year")}{opt}</label>
-                <input id="pw-wpy" type="number" min={0} className={inputCls}
-                  value={form.weddings_per_year} onChange={(e) => set("weddings_per_year", e.target.value)}
-                  placeholder={t("planners.placeholder_weddings_per_year")}
-                />
+                <p className={labelCls}>{t("planners.label_style_intro")}</p>
+                <div className="mt-1 grid grid-cols-3 gap-2">
+                  {(["wedding_style_1", "wedding_style_2", "wedding_style_3"] as const).map((field, idx) => (
+                    <div key={field}>
+                      <label htmlFor={`pw-style-${idx}`} className="sr-only">{t(`planners.label_style_${idx + 1}` as Parameters<typeof t>[0])}</label>
+                      <select
+                        id={`pw-style-${idx}`}
+                        className={inputCls}
+                        value={form[field]}
+                        onChange={(e) => set(field, e.target.value as WeddingStyleValue)}
+                      >
+                        <option value="">{t("planners.placeholder_style")}</option>
+                        {WEDDING_STYLE_VALUES.filter(v => v !== "other").map((v) => (
+                          <option key={v} value={v}>{styleLabel(v, (k) => t(k as Parameters<typeof t>[0]))}</option>
+                        ))}
+                        <option value="other">{t("planners.style_other")}</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+                {(form.wedding_style_1 === "other" || form.wedding_style_2 === "other" || form.wedding_style_3 === "other") && (
+                  <div className="mt-2">
+                    <label htmlFor="pw-otherstyle" className={labelCls}>{t("planners.label_other_style")}{opt}</label>
+                    <input id="pw-otherstyle" type="text" className={inputCls}
+                      value={form.other_style} onChange={(e) => set("other_style", e.target.value)}
+                      placeholder={t("planners.placeholder_other_style")}
+                    />
+                  </div>
+                )}
               </div>
               <NavRow onBack={() => setStep(1)} t={t} />
             </div>
@@ -662,29 +695,16 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 {STEP_TITLES[3]}
               </h3>
 
-              {/* Usage radio */}
-              <div>
-                <p className={labelCls}>{t("planners.label_usage")}</p>
-                <div className="mt-1 grid grid-cols-2 gap-2">
-                  {USAGE_VALUES.map((val, i) => (
-                    <label key={val} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                      form.usage === val
-                        ? "border-umber-700 bg-umber-50 text-umber-900 dark:border-umber-400 dark:bg-umber-800 dark:text-paper-50"
-                        : "border-paper-300 text-umber-700 hover:border-paper-400 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600"
-                    }`}>
-                      <input type="radio" name="usage" value={val} checked={form.usage === val}
-                        onChange={() => set("usage", val)} className="sr-only"
-                      />
-                      <div className={`h-3 w-3 shrink-0 rounded-full border ${
-                        form.usage === val
-                          ? "border-umber-700 bg-umber-700 dark:border-umber-400 dark:bg-umber-400"
-                          : "border-paper-400 dark:border-umber-600"
-                      }`} />
-                      {t(USAGE_LABEL_KEYS[i]!)}
-                    </label>
-                  ))}
+              {/* Early bird */}
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-paper-300 p-4 transition-colors hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-umber-700 dark:accent-umber-300"
+                  checked={form.early_bird} onChange={(e) => set("early_bird", e.target.checked)}
+                />
+                <div>
+                  <p className="text-sm font-medium text-umber-900 dark:text-paper-50">{t("planners.label_early_bird")}</p>
+                  <p className="text-xs text-umber-500 dark:text-umber-400">{t("planners.early_bird_body")}</p>
                 </div>
-              </div>
+              </label>
 
               <div>
                 <label htmlFor="pw-message" className={labelCls}>{t("planners.label_message")}{opt}</label>
