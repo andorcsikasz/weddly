@@ -618,13 +618,13 @@ function ScheduleTimelineView({
                 aria-hidden="true"
                 className={`absolute top-2 opacity-0 transition-opacity group-hover/btn:opacity-40 ${isLeft ? "left-2" : "right-2"}`}
               />
-              <span className="mb-1 inline-block rounded-full border border-paper-200 bg-paper-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-700 dark:border-umber-600 dark:bg-umber-700 dark:text-paper-100">
-                {timeLabel}
-                {day2 && <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>}
-              </span>
               <div className="text-sm font-bold text-ink-900 dark:text-paper-50">
                 {localizeKnownLabel(event.label, locale)}
               </div>
+              <span className="mt-1 inline-block rounded-full border border-paper-200 bg-paper-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-700 dark:border-umber-600 dark:bg-umber-700 dark:text-paper-100">
+                {timeLabel}
+                {day2 && <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>}
+              </span>
               {event.location && (
                 <div
                   className={`mt-0.5 flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300 ${isLeft ? "justify-end" : ""}`}
@@ -640,7 +640,7 @@ function ScheduleTimelineView({
             <div key={event.id} className="grid grid-cols-[1fr_2.5rem_1fr] items-start">
               <div className="py-3 pr-4">{isLeft ? content : null}</div>
               {/* Dot on the center line */}
-              <div className="relative z-10 flex justify-center pt-[1.1rem]">
+              <div className="relative z-10 flex justify-center pt-[1.4rem]">
                 <div className="h-3 w-3 rounded-full bg-umber-700 dark:bg-umber-400" />
               </div>
               <div className="py-3 pl-4">{!isLeft ? content : null}</div>
