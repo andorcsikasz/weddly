@@ -588,13 +588,8 @@ function ScheduleTimelineView({
         {/* Dashed center line */}
         <div
           aria-hidden="true"
-          className="absolute inset-y-0 left-1/2 w-0 -translate-x-px border-l-2 border-dashed border-paper-300 dark:border-umber-600"
+          className="absolute top-7 bottom-14 left-1/2 w-0 -translate-x-px border-l-2 border-dashed border-paper-300 dark:border-umber-600"
         />
-
-        {/* Top cap */}
-        <div className="relative z-10 mb-3 flex justify-center">
-          <div className="h-5 w-5 rounded-full border-2 border-paper-300 bg-paper-50 dark:border-umber-500 dark:bg-umber-800" />
-        </div>
 
         {events.map((event, i) => {
           const isLeft = i % 2 === 0;
@@ -648,12 +643,6 @@ function ScheduleTimelineView({
           );
         })}
 
-        {/* Bottom cap */}
-        <div className="relative z-10 mt-2 flex justify-center">
-          <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-paper-300 bg-paper-50 dark:border-umber-500 dark:bg-umber-800">
-            <div className="h-2 w-2 rounded-full bg-umber-700 dark:bg-umber-400" />
-          </div>
-        </div>
       </div>
     </div>
   );
