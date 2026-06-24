@@ -90,7 +90,7 @@ function formatPreciseCountdown(ms: number): string {
   return `${m}m`;
 }
 
-const DEMO_STRIP = ["/demo/film-hero.jpg", "/demo/film-02.jpg", "/demo/film-03.jpg"];
+const DEMO_STRIP = ["/demo/film-hero.png", "/demo/film-02.jpg", "/demo/film-03.jpg"];
 
 const AESTHETIC_LABELS: Record<FilmAesthetic, string> = {
   natural: "Natural",
@@ -762,14 +762,14 @@ export default function MediaPage() {
               <img
                 src={coverPhoto}
                 alt=""
-                className="h-full w-full object-cover object-bottom"
+                className="h-full w-full object-cover object-center"
                 aria-hidden="true"
               />
               <div
                 className="absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to top, rgba(15,10,7,1) 0%, rgba(15,10,7,0.92) 35%, rgba(15,10,7,0.6) 60%, transparent 80%)",
+                    "linear-gradient(to top, rgba(15,10,7,0.82) 0%, rgba(15,10,7,0.7) 30%, rgba(15,10,7,0.3) 60%, transparent 80%)",
                 }}
               />
               <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
@@ -779,7 +779,7 @@ export default function MediaPage() {
                 <div className="group flex items-center gap-2">
                   <h1
                     className="font-serif text-xl italic leading-snug text-white"
-                    style={{ textShadow: "0 2px 12px rgba(0,0,0,0.9)" }}
+                    style={{ textShadow: "0 1px 6px rgba(0,0,0,0.6), 0 0 24px rgba(0,0,0,0.4)" }}
                   >
                     {couple?.display_name || album.title || t("media.film_settings_unnamed")}
                   </h1>
