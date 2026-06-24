@@ -939,22 +939,112 @@ function Confetti() {
   );
 }
 
-/**
- * Final confirmation shown once onboarding commits. A green check inside a
- * circle lands the "you're done" beat; the button hands off to the dashboard.
- */
+const EXTRA_PRESET_IDS = ["civil", "abroad", "custom"] as const;
+type ExtraPresetId = (typeof EXTRA_PRESET_IDS)[number];
+
+interface ExtraDraft {
+  name: string;
+  date: string; // YYYY-MM-DD or ""
+}
+
+function buildDateGoalFromDateStr(dateStr: string): WeddingDateGoal {
+  if (dateStr && isPlausibleDateIso(dateStr) && dateStr >= todayIso()) {
+    return {
+      kind: "exact",
+      exact_date: dateStr,
+      target_year: Number(dateStr.slice(0, 4)),
+      target_month: Number(dateStr.slice(5, 7)),
+      target_season: null,
+    };
+  }
+  return { kind: "tbd", exact_date: null, target_year: null, target_month: null, target_season: null };
+}
+
 function AllSet({ onContinue }: { onContinue: () => void }) {
   const { t } = useT();
-  // Auto-hand off to the dashboard after a 7s countdown (the runner fill on the
-  // CTA visualises it). Fires once on mount; clicking the button short-circuits
-  // it, and unmounting (e.g. the redirect itself) clears the timer. A ref keeps
-  // the latest onContinue without restarting the countdown on re-render.
   const continueRef = useRef(onContinue);
   continueRef.current = onContinue;
+
+  // Auto-redirect after 7s; cancelled the moment the user engages with extras.
+  const timerRef = useRef<number | null>(null);
+  const timerCancelledRef = useRef(false);
   useEffect(() => {
-    const id = window.setTimeout(() => continueRef.current(), 7000);
-    return () => window.clearTimeout(id);
+    timerRef.current = window.setTimeout(() => {
+      if (!timerCancelledRef.current) continueRef.current();
+    }, 7000);
+    return () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    };
   }, []);
+
+  const [selected, setSelected] = useState<Set<ExtraPresetId>>(new Set());
+  const [drafts, setDrafts] = useState<Partial<Record<ExtraPresetId, ExtraDraft>>>({});
+  const [creating, setCreating] = useState(false);
+  const [created, setCreated] = useState<Set<ExtraPresetId>>(new Set());
+  const [extrasError, setExtrasError] = useState<string | null>(null);
+
+  function cancelTimer() {
+    if (!timerCancelledRef.current) {
+      timerCancelledRef.current = true;
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    }
+  }
+
+  function getDefaultName(id: ExtraPresetId): string {
+    if (id === "civil") return t("onboarding.extra_preset_civil");
+    if (id === "abroad") return t("onboarding.extra_preset_abroad");
+    return "";
+  }
+
+  function togglePreset(id: ExtraPresetId) {
+    cancelTimer();
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        setDrafts((d) => {
+          const nd = { ...d };
+          delete nd[id];
+          return nd;
+        });
+      } else {
+        if (next.size >= 2) return prev;
+        next.add(id);
+        setDrafts((d) => ({ ...d, [id]: { name: getDefaultName(id), date: "" } }));
+      }
+      return next;
+    });
+  }
+
+  function updateDraft(id: ExtraPresetId, field: keyof ExtraDraft, value: string) {
+    setDrafts((d) => ({ ...d, [id]: { ...d[id]!, [field]: value } }));
+  }
+
+  const selectedList = EXTRA_PRESET_IDS.filter((id) => selected.has(id));
+  const hasExtras = selectedList.length > 0;
+  const canSubmit = selectedList.every((id) => (drafts[id]?.name ?? "").trim().length > 0);
+
+  async function handleCreateExtras() {
+    if (!canSubmit || creating) return;
+    setCreating(true);
+    setExtrasError(null);
+    try {
+      for (const id of selectedList) {
+        if (created.has(id)) continue;
+        const draft = drafts[id]!;
+        await coupleApi.createAdditional({
+          event_name: draft.name.trim(),
+          wedding_date_goal: buildDateGoalFromDateStr(draft.date),
+        });
+        setCreated((prev) => new Set([...prev, id]));
+      }
+      continueRef.current();
+    } catch {
+      setExtrasError(t("common.error_generic"));
+      setCreating(false);
+    }
+  }
+
   return (
     <Shell>
       <div className="mx-auto max-w-xl">
@@ -980,20 +1070,90 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
             <h1 className="mt-6 font-grotesk text-umber-900 dark:text-paper-50">
               {t("onboarding.all_set_title")}
             </h1>
-            <button
-              type="button"
-              className="btn-primary btn-landing btn-lg relative mt-8 w-full overflow-hidden"
-              onClick={onContinue}
-            >
-              {/* Countdown fill — sweeps left → right over 7s, then the timer
-                  above redirects. Behind the label, decorative only. */}
-              <span
-                aria-hidden
-                className="btn-runner pointer-events-none absolute inset-y-0 left-0 bg-paper-50/15"
-              />
-              <span className="relative z-10">{t("onboarding.all_set_continue")}</span>
-            </button>
+            {hasExtras ? (
+              <button
+                type="button"
+                className="mt-8 w-full text-sm text-umber-500 transition hover:text-umber-700 dark:text-umber-400 dark:hover:text-umber-200"
+                onClick={onContinue}
+              >
+                {t("onboarding.extra_skip")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-primary btn-landing btn-lg relative mt-8 w-full overflow-hidden"
+                onClick={onContinue}
+              >
+                <span
+                  aria-hidden
+                  className="btn-runner pointer-events-none absolute inset-y-0 left-0 bg-paper-50/15"
+                />
+                <span className="relative z-10">{t("onboarding.all_set_continue")}</span>
+              </button>
+            )}
           </div>
+        </div>
+
+        <div className="mt-5 rounded-xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+          <p className="text-sm font-semibold text-umber-800 dark:text-paper-100">
+            {t("onboarding.extra_events_heading")}
+          </p>
+          <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
+            {t("onboarding.extra_events_body")}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {EXTRA_PRESET_IDS.map((id) => (
+              <KindButton
+                key={id}
+                active={selected.has(id)}
+                onClick={() => togglePreset(id)}
+                label={
+                  id === "civil"
+                    ? t("onboarding.extra_preset_civil")
+                    : id === "abroad"
+                      ? t("onboarding.extra_preset_abroad")
+                      : t("onboarding.extra_preset_custom")
+                }
+              />
+            ))}
+          </div>
+          {hasExtras && (
+            <div className="mt-4 flex flex-col gap-3">
+              {selectedList.map((id) => {
+                const draft = drafts[id]!;
+                return (
+                  <div key={id} className="flex gap-2">
+                    <input
+                      className="input flex-1"
+                      value={draft.name}
+                      onChange={(e) => updateDraft(id, "name", e.target.value)}
+                      placeholder={t("onboarding.extra_event_name_placeholder")}
+                      aria-label={t("onboarding.extra_event_name_placeholder")}
+                    />
+                    <input
+                      type="date"
+                      className="input w-40"
+                      value={draft.date}
+                      onChange={(e) => updateDraft(id, "date", e.target.value)}
+                      aria-label={t("onboarding.extra_event_date_label")}
+                      title={t("onboarding.extra_event_date_label")}
+                    />
+                  </div>
+                );
+              })}
+              {extrasError !== null && (
+                <p className="text-sm text-red-600 dark:text-red-400">{extrasError}</p>
+              )}
+              <button
+                type="button"
+                className="btn-accent btn-lg w-full"
+                disabled={!canSubmit || creating}
+                onClick={handleCreateExtras}
+              >
+                {creating ? t("onboarding.extra_entering") : t("onboarding.extra_enter_cta")}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </Shell>

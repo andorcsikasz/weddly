@@ -778,6 +778,17 @@ export interface LocaleMessages {
     welcome_existing_style_label: string;
     welcome_existing_edit_hint: string;
     welcome_existing_continue: string;
+    // ── Extra-event section shown below the AllSet card ───────────────
+    extra_events_heading: string;
+    extra_events_body: string;
+    extra_preset_civil: string;
+    extra_preset_abroad: string;
+    extra_preset_custom: string;
+    extra_event_name_placeholder: string;
+    extra_event_date_label: string;
+    extra_enter_cta: string;
+    extra_entering: string;
+    extra_skip: string;
   };
   goal: {
     date_tbd: string;
