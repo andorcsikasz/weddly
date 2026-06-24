@@ -146,6 +146,7 @@ interface PlanCardProps {
   features: string[];
   selected: boolean;
   onSelect: (plan: Plan) => void;
+  earlyBird?: boolean;
 }
 
 function PlanCard({
@@ -159,6 +160,7 @@ function PlanCard({
   features,
   selected,
   onSelect,
+  earlyBird,
 }: PlanCardProps) {
   return (
     <div
@@ -182,11 +184,27 @@ function PlanCard({
         {name}
       </h3>
 
-      <div className="mt-2 flex items-baseline gap-1">
-        <span className="font-grotesk text-2xl font-bold tracking-tight text-umber-900 dark:text-paper-50">
-          {price}
-        </span>
-        <span className="text-[11px] text-umber-500 dark:text-umber-400">{period}</span>
+      <div className="mt-2">
+        <div className="flex items-baseline gap-1">
+          <span
+            className={`font-grotesk text-2xl font-bold tracking-tight ${
+              earlyBird
+                ? "line-through text-umber-300 dark:text-umber-600"
+                : "text-umber-900 dark:text-paper-50"
+            }`}
+          >
+            {price}
+          </span>
+          <span className="text-[11px] text-umber-500 dark:text-umber-400">{period}</span>
+        </div>
+        {earlyBird && (
+          <div className="flex items-baseline gap-1">
+            <span className="font-grotesk text-2xl font-bold tracking-tight text-sage-600 dark:text-sage-400">
+              0 Ft
+            </span>
+            <span className="text-[11px] text-umber-500 dark:text-umber-400">{period}</span>
+          </div>
+        )}
       </div>
 
       <div className="mt-1.5 flex items-baseline gap-1">
@@ -675,6 +693,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   ]}
                   selected={form.selected_plan === "basic"}
                   onSelect={(p) => set("selected_plan", p)}
+                  earlyBird={form.early_bird}
                 />
                 <PlanCard
                   plan="pro"
@@ -693,6 +712,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   ]}
                   selected={form.selected_plan === "pro"}
                   onSelect={(p) => set("selected_plan", p)}
+                  earlyBird={form.early_bird}
                 />
                 <PlanCard
                   plan="unlimited"
@@ -709,6 +729,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   ]}
                   selected={form.selected_plan === "unlimited"}
                   onSelect={(p) => set("selected_plan", p)}
+                  earlyBird={form.early_bird}
                 />
               </div>
 
