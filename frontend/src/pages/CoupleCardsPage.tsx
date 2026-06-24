@@ -859,6 +859,33 @@ function CardView({
   onSuggestionSubmit: () => void;
 }) {
   const { t } = useT();
+
+  // Swipe-to-navigate: left = next card, right = prev card.
+  // Evaluated during pointermove (not pointerup) so the browser's scroll
+  // lock (which fires pointercancel, never pointerup) doesn't swallow the gesture.
+  const cardSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const cardSwipeFired = useRef(false);
+  const handleCardPointerDown = (e: React.PointerEvent) => {
+    cardSwipeStart.current = { x: e.clientX, y: e.clientY };
+    cardSwipeFired.current = false;
+  };
+  const handleCardPointerMove = (e: React.PointerEvent) => {
+    const start = cardSwipeStart.current;
+    if (!start) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) <= 50 || Math.abs(dx) <= Math.abs(dy)) return;
+    cardSwipeStart.current = null;
+    cardSwipeFired.current = true;
+    if (dx < 0) {
+      onNext();
+    } else if (canGoBack) {
+      onPrev();
+    }
+  };
+  const handleCardPointerClear = () => {
+    cardSwipeStart.current = null;
+  };
   return (
     <section className="relative">
       <div className="mx-auto max-w-3xl px-4 pt-8 pb-16 sm:px-6 sm:pt-12 sm:pb-24">
@@ -916,7 +943,18 @@ function CardView({
           ) : (
             <button
               type="button"
-              onClick={onNext}
+              onClick={() => {
+                if (cardSwipeFired.current) {
+                  cardSwipeFired.current = false;
+                  return;
+                }
+                onNext();
+              }}
+              onPointerDown={handleCardPointerDown}
+              onPointerMove={handleCardPointerMove}
+              onPointerUp={handleCardPointerClear}
+              onPointerCancel={handleCardPointerClear}
+              style={{ touchAction: "pan-y" }}
               aria-label={t("tools.couple_cards.flip_card")}
               className={`couple-card group relative flex aspect-[3/2] w-full cursor-pointer flex-col items-center justify-between rounded-[2.25rem] px-7 py-8 text-left transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-12 sm:py-12 ${
                 deckId === "lemonade"
