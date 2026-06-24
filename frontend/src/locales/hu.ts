@@ -5978,7 +5978,7 @@ const hu: LocaleMessages = {
   planner_home: {
     title: "Szervező munkaterület",
     welcome: "Üdv, {{name}}!",
-    subtitle: "Az esküvőszervező irányítópultod hamarosan elkészül.",
+    subtitle: "Szervező munkaterület",
     clients_heading: "Ügyfeleim",
     clients_empty: "Még nincs ügyfeled hozzáadva.",
     coming_soon: "Hamarosan elérhető",

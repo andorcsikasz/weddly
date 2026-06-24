@@ -5930,7 +5930,7 @@ const en: LocaleMessages = {
   planner_home: {
     title: "Planner workspace",
     welcome: "Welcome, {{name}}!",
-    subtitle: "Your wedding planner dashboard is coming soon.",
+    subtitle: "Planner workspace",
     clients_heading: "My clients",
     clients_empty: "No clients added yet.",
     coming_soon: "Coming soon",

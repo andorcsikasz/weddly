@@ -1,17 +1,12 @@
-import { CalendarRange, ClipboardList, MessageSquare, User, Users } from "lucide-react";
+import { MessageSquare, User, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { PlannerClientView, PlannerInviteView, PlannerTaskRow } from "@shared/types";
+import { Wordmark } from "../components/Wordmark";
 import { plannerApi } from "../lib/endpoints";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { formatDate } from "../lib/format";
-
-interface FeatureTile {
-  icon: React.ElementType;
-  name: string;
-  desc: string;
-}
 
 function ClientNotes({
   coupleId,
@@ -216,50 +211,37 @@ export default function PlannerHomePage() {
     }
   }
 
-  const tiles: FeatureTile[] = [
-    {
-      icon: Users,
-      name: t("planner_home.feature_clients"),
-      desc: t("planner_home.feature_clients_desc"),
-    },
-    {
-      icon: CalendarRange,
-      name: t("planner_home.feature_timeline"),
-      desc: t("planner_home.feature_timeline_desc"),
-    },
-    {
-      icon: ClipboardList,
-      name: t("planner_home.feature_runsheet"),
-      desc: t("planner_home.feature_runsheet_desc"),
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-paper-50 dark:bg-umber-950">
-      <header className="border-b border-paper-200 bg-white px-4 py-4 dark:border-umber-800 dark:bg-umber-900 sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <span className="font-cormorant text-xl font-semibold italic text-umber-900 dark:text-paper-50">
-            Weddly
-          </span>
-          <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <Link
+            to="/app/planner"
+            className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+          >
+            <Wordmark size="sm" />
+          </Link>
+          <div className="flex items-center gap-1">
             <Link
               to="/app/planner/messages"
-              className="flex items-center gap-1.5 text-sm text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-paper-200 dark:hover:bg-umber-800"
+              aria-label={t("planner_home.messages_link")}
+              title={t("planner_home.messages_link")}
             >
-              <MessageSquare size={15} />
-              {t("planner_home.messages_link")}
+              <MessageSquare size={18} aria-hidden="true" />
             </Link>
             <Link
               to="/app/planner/profile"
-              className="flex items-center gap-1.5 text-sm text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-paper-200 dark:hover:bg-umber-800"
+              aria-label={t("planner_home.profile_link")}
+              title={t("planner_home.profile_link")}
             >
-              <User size={15} />
-              {t("planner_home.profile_link")}
+              <User size={18} aria-hidden="true" />
             </Link>
             <button
               type="button"
               onClick={() => void logout()}
-              className="text-sm text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
+              className="inline-flex h-11 items-center rounded-full px-3 text-sm text-ink-700 transition-colors hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
             >
               {t("planner_home.logout")}
             </button>
@@ -267,12 +249,11 @@ export default function PlannerHomePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-8">
-        <div className="mb-10">
-          <h1 className="font-grotesk text-3xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-10 pt-12">
+          <h1 className="font-serif italic text-4xl font-semibold sm:text-5xl text-ink-900 dark:text-paper-50">
             {t("planner_home.welcome").replace("{{name}}", user?.full_name.split(" ")[0] ?? "")}
           </h1>
-          <p className="mt-2 text-umber-500 dark:text-umber-400">{t("planner_home.subtitle")}</p>
         </div>
 
         {/* Pending invites from couples */}
@@ -414,7 +395,7 @@ export default function PlannerHomePage() {
 
         {/* Upcoming tasks across clients */}
         {!loading && clients.length > 0 && (
-          <section className="mb-12">
+          <section className="pb-12">
             <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
               {t("planner_home.upcoming_heading")}
             </h2>
@@ -424,28 +405,6 @@ export default function PlannerHomePage() {
           </section>
         )}
 
-        {/* Coming-soon feature tiles */}
-        <section>
-          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-umber-400 dark:text-umber-600">
-            {t("planner_home.coming_soon")}
-          </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {tiles.map(({ icon: Icon, name, desc }) => (
-              <div
-                key={name}
-                className="rounded-xl border border-paper-200 bg-white px-5 py-6 dark:border-umber-800 dark:bg-umber-900"
-              >
-                <Icon className="mb-3 h-5 w-5 text-umber-400 dark:text-umber-500" />
-                <p className="font-grotesk text-sm font-semibold text-umber-800 dark:text-paper-200">
-                  {name}
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-umber-500 dark:text-umber-400">
-                  {desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
       </main>
     </div>
   );
