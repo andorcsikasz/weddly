@@ -882,9 +882,38 @@ export default function MediaPage() {
 
             {/* ── Expired alert ─────────────────────────────────────── */}
             {filmExpired && (
-              <div className="mx-4 mb-2 flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2">
-                <AlertTriangle size={13} className="shrink-0 text-amber-600" aria-hidden="true" />
-                <span className="text-xs text-amber-700">{t("media.film_expired_alert")}</span>
+              <div className="mx-4 mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-100">
+                    <Lock size={13} className="text-amber-600" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-amber-800">
+                      {t("media.film_expired_alert")}
+                    </p>
+                    <p className="mt-0.5 text-xs text-amber-700">
+                      {t("media.film_expired_body")}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowFilmModal(true)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-100"
+                      >
+                        <CalendarDays size={11} aria-hidden="true" />
+                        {t("media.film_expired_action")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => coupleUploadRef.current?.click()}
+                        className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-100"
+                      >
+                        <Upload size={11} aria-hidden="true" />
+                        {t("media.film_add_own_photos")}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

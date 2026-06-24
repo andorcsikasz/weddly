@@ -1978,6 +1978,8 @@ export interface LocaleMessages {
     film_share_btn: string;
     film_guest_view: string;
     film_expired_alert: string;
+    film_expired_body: string;
+    film_expired_action: string;
     film_per_person: string;
     film_no_participants: string;
   };
