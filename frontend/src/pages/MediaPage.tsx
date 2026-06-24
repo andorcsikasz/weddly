@@ -781,7 +781,7 @@ export default function MediaPage() {
                     className="font-serif text-2xl italic leading-snug text-paper-50"
                     style={{ textShadow: "0 2px 12px rgba(0,0,0,0.9)" }}
                   >
-                    {album.title || t("media.film_settings_unnamed")}
+                    {couple?.display_name || album.title || t("media.film_settings_unnamed")}
                   </h1>
                   <button
                     type="button"
