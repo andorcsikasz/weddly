@@ -2268,6 +2268,8 @@ const en: LocaleMessages = {
     url_label: "Link",
     url_placeholder: "https://…",
     url_hint: "Paste a product link and we'll pull in its photo for the wish.",
+    url_preview_loading: "Loading preview...",
+    url_preview_miss: "No image found for this link.",
     delete_confirm_title: "Remove this wish?",
     delete_confirm_body: "It will disappear from your guest page. This can't be undone.",
     saved_toast: "Saved",

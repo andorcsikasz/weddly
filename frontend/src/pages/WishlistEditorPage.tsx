@@ -29,6 +29,7 @@ import {
   Gift,
   HandHeart,
   LayoutGrid,
+  Loader2,
   Music2,
   PackageCheck,
   Pencil,
@@ -1529,6 +1530,45 @@ function WishlistItemDialog({
   const [url, setUrl] = useState(existing?.url ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [titleError, setTitleError] = useState<string | null>(null);
+  const [previewStatus, setPreviewStatus] = useState<"idle" | "loading" | "found" | "miss">(
+    existing?.image_url ? "found" : "idle",
+  );
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(
+    existing?.image_url ?? null,
+  );
+  const lastFetchedUrlRef = useRef<string>(
+    existing?.image_url ? (existing.url ?? "") : "",
+  );
+  const fetchGenRef = useRef(0);
+
+  function handleUrlChange(newUrl: string) {
+    setUrl(newUrl);
+    if (newUrl.trim() !== lastFetchedUrlRef.current) {
+      setPreviewStatus("idle");
+      setPreviewImageUrl(null);
+    }
+  }
+
+  async function fetchUrlPreview(rawUrl: string) {
+    const trimmed = rawUrl.trim();
+    if (!trimmed || trimmed === lastFetchedUrlRef.current) return;
+    lastFetchedUrlRef.current = trimmed;
+    const gen = ++fetchGenRef.current;
+    setPreviewStatus("loading");
+    setPreviewImageUrl(null);
+    try {
+      const r = await wishlistApi.linkPreview(trimmed);
+      if (gen !== fetchGenRef.current) return;
+      if (r.image_url) {
+        setPreviewImageUrl(r.image_url);
+        setPreviewStatus("found");
+      } else {
+        setPreviewStatus("miss");
+      }
+    } catch {
+      if (gen === fetchGenRef.current) setPreviewStatus("miss");
+    }
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -1698,16 +1738,47 @@ function WishlistItemDialog({
                   </select>
                 </div>
               </FormRow>
-              <FormRow label={t("wishlist_editor.url_label")} hint={t("wishlist_editor.url_hint")}>
+              <div className="mb-3">
+                <label className="field-label">{t("wishlist_editor.url_label")}</label>
                 <input
                   className="input font-grotesk"
                   type="url"
                   value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  onChange={(e) => handleUrlChange(e.target.value)}
+                  onBlur={() => fetchUrlPreview(url)}
                   placeholder={t("wishlist_editor.url_placeholder")}
                   autoComplete="off"
                 />
-              </FormRow>
+                <div className="mt-1">
+                  {previewStatus === "idle" && (
+                    <p className="text-xs text-ink-500 dark:text-umber-300">
+                      {t("wishlist_editor.url_hint")}
+                    </p>
+                  )}
+                  {previewStatus === "loading" && (
+                    <div className="flex items-center gap-1.5 text-xs text-ink-400 dark:text-umber-400">
+                      <Loader2 size={12} className="animate-spin" />
+                      <span>{t("wishlist_editor.url_preview_loading")}</span>
+                    </div>
+                  )}
+                  {previewStatus === "found" && previewImageUrl && (
+                    <img
+                      src={previewImageUrl}
+                      alt=""
+                      width={56}
+                      height={56}
+                      className="rounded-lg border border-paper-200 object-cover dark:border-umber-700"
+                      style={{ width: 56, height: 56 }}
+                      onError={() => setPreviewStatus("miss")}
+                    />
+                  )}
+                  {previewStatus === "miss" && (
+                    <p className="text-xs text-ink-400 dark:text-umber-400">
+                      {t("wishlist_editor.url_preview_miss")}
+                    </p>
+                  )}
+                </div>
+              </div>
             </>
           )}
         </div>

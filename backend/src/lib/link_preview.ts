@@ -17,7 +17,8 @@ const MAX_REDIRECTS = 4;
 // 1 MiB is plenty to reach the <head> of any real product page; we also stop
 // reading as soon as </head> shows up (see readCappedHtml).
 const MAX_BODY_BYTES = 1024 * 1024;
-const PREVIEW_UA = "Mozilla/5.0 (compatible; WeddlyLinkPreview/1.0; +https://weddly.hu)";
+const PREVIEW_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
 /** Reserved / non-routable IPv4 ranges we refuse to fetch from. */
 function isBlockedIpv4(ip: string): boolean {
@@ -256,7 +257,11 @@ export async function fetchLinkPreview(rawUrl: string): Promise<WishlistLinkPrev
         method: "GET",
         redirect: "manual",
         signal: controller.signal,
-        headers: { "User-Agent": PREVIEW_UA, Accept: "text/html,application/xhtml+xml" },
+        headers: {
+            "User-Agent": PREVIEW_UA,
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "hu-HU,hu;q=0.9,en-US;q=0.8,en;q=0.7",
+          },
       });
 
       if (res.status >= 300 && res.status < 400) {

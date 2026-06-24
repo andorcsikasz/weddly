@@ -2489,6 +2489,8 @@ export interface LocaleMessages {
     url_label: string;
     url_placeholder: string;
     url_hint: string;
+    url_preview_loading: string;
+    url_preview_miss: string;
     delete_confirm_title: string;
     delete_confirm_body: string;
     saved_toast: string;

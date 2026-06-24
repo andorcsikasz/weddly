@@ -2293,6 +2293,8 @@ const hu: LocaleMessages = {
     url_label: "Link",
     url_placeholder: "https://…",
     url_hint: "Illessz be egy termék linket, és behúzzuk hozzá a fotót.",
+    url_preview_loading: "Kép betöltése...",
+    url_preview_miss: "Nem találtunk képet ehhez a linkhez.",
     delete_confirm_title: "Töröljük ezt a kívánságot?",
     delete_confirm_body: "Eltűnik a vendégoldalról. Ez nem vonható vissza.",
     saved_toast: "Mentve",
