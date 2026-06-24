@@ -6039,6 +6039,9 @@ const hu: LocaleMessages = {
   },
   planner_onboarding: {
     step_indicator: "{{current}} / {{total}}",
+    step_label_profile: "Profil",
+    step_label_package: "Csomag",
+    step_label_client: "Ügyfél",
     step1_title: "Üdvözlünk, {{name}}!",
     step1_body: "Állítsd be a profilodat, és máris készen állsz.",
     step1_cta: "Kezdjük el",

@@ -1,5 +1,6 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { Fragment, type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Check } from "lucide-react";
 import { Wordmark } from "../components/Wordmark";
 import { useAuth } from "../lib/auth";
 import { plannerApi } from "../lib/endpoints";
@@ -123,23 +124,54 @@ export default function PlannerOnboardingPage() {
           >
             <Wordmark size="sm" />
           </Link>
-          {step > 0 && step < TOTAL_STEPS - 1 && (
-            <p className="text-xs uppercase tracking-wider text-umber-500">
-              {t("planner_onboarding.step_indicator")
-                .replace("{{current}}", String(step))
-                .replace("{{total}}", String(TOTAL_STEPS - 1))}
-            </p>
-          )}
         </div>
       </header>
 
       <main className="mx-auto max-w-xl px-4 py-10 sm:px-6">
         {step > 0 && step < TOTAL_STEPS - 1 && (
-          <div className="mb-6 h-1 w-full rounded-full bg-paper-300 dark:bg-umber-700">
-            <div
-              className="h-1 rounded-full bg-umber-800 transition-all"
-              style={{ width: `${(step / (TOTAL_STEPS - 1)) * 100}%` }}
-            />
+          <div className="mb-8 flex items-start">
+            {([1, 2, 3] as const).map((s, i) => {
+              const active = step === s;
+              const done = step > s;
+              const labels = [
+                t("planner_onboarding.step_label_profile"),
+                t("planner_onboarding.step_label_package"),
+                t("planner_onboarding.step_label_client"),
+              ];
+              return (
+                <Fragment key={s}>
+                  <div className="flex flex-col items-center gap-1">
+                    <div
+                      className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                        done
+                          ? "bg-umber-700 text-paper-50 dark:bg-umber-400 dark:text-umber-900"
+                          : active
+                            ? "border-2 border-umber-700 bg-paper-50 text-umber-900 dark:border-umber-400 dark:bg-umber-900 dark:text-paper-50"
+                            : "border border-paper-300 bg-paper-50 text-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-600"
+                      }`}
+                    >
+                      {done ? <Check size={12} aria-hidden="true" /> : s}
+                    </div>
+                    <span
+                      className={`hidden text-[10px] font-medium uppercase tracking-wider sm:block ${
+                        active
+                          ? "text-umber-800 dark:text-paper-100"
+                          : "text-umber-400 dark:text-umber-600"
+                      }`}
+                    >
+                      {labels[i]}
+                    </span>
+                  </div>
+                  {i < 2 && (
+                    <div
+                      className={`mt-3.5 h-px flex-1 ${
+                        done ? "bg-umber-700 dark:bg-umber-400" : "bg-paper-300 dark:bg-umber-700"
+                      }`}
+                    />
+                  )}
+                </Fragment>
+              );
+            })}
           </div>
         )}
 

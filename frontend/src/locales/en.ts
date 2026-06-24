@@ -5991,6 +5991,9 @@ const en: LocaleMessages = {
   },
   planner_onboarding: {
     step_indicator: "{{current}} / {{total}}",
+    step_label_profile: "Profile",
+    step_label_package: "Package",
+    step_label_client: "Client",
     step1_title: "Welcome, {{name}}!",
     step1_body: "Set up your profile and you're ready to go.",
     step1_cta: "Get started",

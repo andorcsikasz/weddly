@@ -6472,6 +6472,9 @@ export interface LocaleMessages {
   };
   planner_onboarding: {
     step_indicator: string;
+    step_label_profile: string;
+    step_label_package: string;
+    step_label_client: string;
     step1_title: string;
     step1_body: string;
     step1_cta: string;
