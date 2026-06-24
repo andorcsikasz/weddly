@@ -762,7 +762,7 @@ export default function MediaPage() {
               <img
                 src={coverPhoto}
                 alt=""
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-bottom"
                 aria-hidden="true"
               />
               <div
@@ -778,7 +778,7 @@ export default function MediaPage() {
                 </p>
                 <div className="group flex items-center gap-2">
                   <h1
-                    className="font-serif text-2xl italic leading-snug text-paper-50"
+                    className="font-serif text-2xl italic leading-snug text-white"
                     style={{ textShadow: "0 2px 12px rgba(0,0,0,0.9)" }}
                   >
                     {couple?.display_name || album.title || t("media.film_settings_unnamed")}
