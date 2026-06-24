@@ -20,7 +20,7 @@ createRoot(root).render(
   <StrictMode>
     <I18nProvider>
       <AppProviders>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
             <App />
           </AuthProvider>
