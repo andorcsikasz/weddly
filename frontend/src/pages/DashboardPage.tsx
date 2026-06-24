@@ -797,9 +797,6 @@ export default function DashboardPage() {
           </h1>
           <EditableWeddingDate goal={couple.wedding_date_goal} onSave={saveWeddingDate} />
         </div>
-        <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-          {t("dashboard.title")}
-        </div>
       </header>
 
       {/* ── Invite partner: stays mounted until partner B actually joins
@@ -1656,6 +1653,11 @@ function DaysToGoTile({
         <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
           {days !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
         </div>
+        {goal.exact_date && (
+          <div className="mt-0.5 text-xs text-ink-400 dark:text-umber-400">
+            {formatDate(goal.exact_date, locale)}
+          </div>
+        )}
       </button>
       {editing && (
         <CalendarPicker

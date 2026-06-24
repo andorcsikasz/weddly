@@ -941,8 +941,14 @@ export default function PlanningPage() {
                 filter={boardFilter}
                 onToggleTaskDone={onToggleDone}
                 onPatchTask={onPatch}
-                onAddVendor={() => { setEditingVendor(null); setVendorModalOpen(true); }}
-                onEditVendor={(v) => { setEditingVendor(v); setVendorModalOpen(true); }}
+                onAddVendor={() => {
+                  setEditingVendor(null);
+                  setVendorModalOpen(true);
+                }}
+                onEditVendor={(v) => {
+                  setEditingVendor(v);
+                  setVendorModalOpen(true);
+                }}
               />
             ) : loading ? (
               <PlanningListSkeleton kind={activeKind} />
@@ -2260,10 +2266,7 @@ function vendorKanbanCol(vendor: CoupleSupplier): KanbanCol {
   return "todo";
 }
 
-const COL_STYLES: Record<
-  KanbanCol,
-  { topBorder: string; headerText: string; badge: string }
-> = {
+const COL_STYLES: Record<KanbanCol, { topBorder: string; headerText: string; badge: string }> = {
   todo: {
     topBorder: "border-t-2 border-t-ink-300 dark:border-t-umber-500",
     headerText: "text-ink-700 dark:text-umber-100",
@@ -2355,10 +2358,16 @@ function KanbanBoard({
             draggingId={draggingId}
             onToggleTaskDone={onToggleTaskDone}
             onDragStart={(id) => setDraggingId(id)}
-            onDragEnd={() => { setDraggingId(null); setDragOverCol(null); }}
+            onDragEnd={() => {
+              setDraggingId(null);
+              setDragOverCol(null);
+            }}
             onDragOver={() => setDragOverCol(col)}
             onDragLeave={() => setDragOverCol((prev) => (prev === col ? null : prev))}
-            onDrop={() => { handleDrop(col); setDragOverCol(null); }}
+            onDrop={() => {
+              handleDrop(col);
+              setDragOverCol(null);
+            }}
             onAddVendor={onAddVendor}
             onEditVendor={onEditVendor}
           />
@@ -2410,16 +2419,26 @@ function KanbanColumn({
       className={`flex min-w-[280px] flex-1 flex-col rounded-2xl border border-paper-200 bg-paper-50 transition-colors dark:border-umber-700 dark:bg-umber-800 ${styles.topBorder} ${
         isDragTarget ? "ring-2 ring-ink-300 dark:ring-umber-400" : ""
       }`}
-      onDragOver={(e) => { e.preventDefault(); onDragOver(); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        onDragOver();
+      }}
       onDragLeave={onDragLeave}
-      onDrop={(e) => { e.preventDefault(); onDrop(); }}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDrop();
+      }}
     >
       <div className="flex items-center gap-2 border-b border-paper-200 px-4 py-3 dark:border-umber-700">
-        <span className={`font-grotesk text-xs font-semibold uppercase tracking-[0.08em] ${styles.headerText}`}>
+        <span
+          className={`font-grotesk text-xs font-semibold uppercase tracking-[0.08em] ${styles.headerText}`}
+        >
           {label}
         </span>
         {total > 0 && (
-          <span className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium ${styles.badge}`}>
+          <span
+            className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium ${styles.badge}`}
+          >
             {total}
           </span>
         )}
@@ -2483,7 +2502,9 @@ function TaskKanbanCard({
       onClick={() => onToggleDone(item)}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggleDone(item); }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onToggleDone(item);
+      }}
       className={`w-full cursor-grab rounded-xl border p-3 text-left transition-colors active:cursor-grabbing hover:bg-paper-100 dark:hover:bg-umber-700 ${
         isDragging ? "opacity-40" : ""
       } ${
@@ -2735,12 +2756,7 @@ function VendorModal({
             </button>
           )}
           <div className="ml-auto flex gap-2">
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={onClose}
-              disabled={saving}
-            >
+            <button type="button" className="btn-ghost" onClick={onClose} disabled={saving}>
               {t("common.cancel")}
             </button>
             <button

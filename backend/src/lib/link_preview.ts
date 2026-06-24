@@ -258,10 +258,10 @@ export async function fetchLinkPreview(rawUrl: string): Promise<WishlistLinkPrev
         redirect: "manual",
         signal: controller.signal,
         headers: {
-            "User-Agent": PREVIEW_UA,
-            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "hu-HU,hu;q=0.9,en-US;q=0.8,en;q=0.7",
-          },
+          "User-Agent": PREVIEW_UA,
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "hu-HU,hu;q=0.9,en-US;q=0.8,en;q=0.7",
+        },
       });
 
       if (res.status >= 300 && res.status < 400) {

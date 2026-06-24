@@ -3,14 +3,7 @@
 // Phase 2: open paid tiers (basic / pro / unlimited).
 
 import { PRIVACY_VERSION } from "@shared/legal";
-import {
-  Check,
-  CheckCircle2,
-  ClipboardList,
-  FileText,
-  LayoutGrid,
-  Users,
-} from "lucide-react";
+import { Check, CheckCircle2, ClipboardList, FileText, LayoutGrid, Users } from "lucide-react";
 import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";

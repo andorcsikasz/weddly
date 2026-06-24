@@ -2578,7 +2578,7 @@ function TableCard({
 
   return (
     <div
-      className={`card cursor-pointer transition-shadow ${
+      className={`card !border-ink-800 cursor-pointer transition-shadow ${
         isSelected ? "ring-2 ring-umber-600 dark:ring-umber-400/60" : "hover:shadow-pop"
       }`}
       onClick={onSelect}

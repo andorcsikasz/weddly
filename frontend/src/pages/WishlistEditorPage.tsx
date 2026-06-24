@@ -1536,9 +1536,7 @@ function WishlistItemDialog({
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(
     existing?.image_url ?? null,
   );
-  const lastFetchedUrlRef = useRef<string>(
-    existing?.image_url ? (existing.url ?? "") : "",
-  );
+  const lastFetchedUrlRef = useRef<string>(existing?.image_url ? (existing.url ?? "") : "");
   const fetchGenRef = useRef(0);
 
   function handleUrlChange(newUrl: string) {

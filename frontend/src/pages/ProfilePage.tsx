@@ -2208,10 +2208,7 @@ function DocumentsPanel({
         </span>
       </button>
       {open && (
-        <div
-          id="documents-panel-body"
-          className="border-t border-paper-200 dark:border-umber-700"
-        >
+        <div id="documents-panel-body" className="border-t border-paper-200 dark:border-umber-700">
           {/* SR announce — fires when any row goes from "Delete" to armed
            *  "Click again to confirm". Single live region for the whole list
            *  is enough since only one row can be armed at a time. */}
@@ -2254,49 +2251,51 @@ function DocumentsPanel({
                 </div>
               )}
               <ul className="divide-y divide-paper-200 px-6 dark:divide-umber-700">
-              {filtered.map((doc) => (
-                <li key={doc.id} className="flex flex-wrap items-center gap-3 py-3 text-sm">
-                  <span className="rounded bg-paper-100 px-2 py-0.5 text-xs uppercase text-ink-600 dark:bg-umber-700/60 dark:text-umber-200">
-                    {t(`profile.archive_kind_${doc.kind}` as `profile.archive_kind_${ExportKind}`)}
-                    {doc.format ? ` · ${doc.format.toUpperCase()}` : ""}
-                  </span>
-                  <span className="font-medium text-ink-800 dark:text-paper-100">
-                    {doc.filename}
-                  </span>
-                  <span className="text-xs text-ink-500 dark:text-umber-300">
-                    {formatTimestamp(doc.created_at, locale)} · {formatBytes(doc.byte_size)}
-                  </span>
-                  <div className="ml-auto flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="btn-outline h-8 px-3 text-xs"
-                      onClick={() => onRedownload(doc)}
-                      disabled={redownloading === doc.id}
-                    >
-                      {redownloading === doc.id
-                        ? t("profile.export_downloading")
-                        : t("profile.archive_redownload")}
-                    </button>
-                    <button
-                      type="button"
-                      className={`h-8 rounded-xl border px-3 text-xs transition-colors ${
-                        armedDeleteId === doc.id
-                          ? "border-blush-700 bg-blush-700 text-paper-50 hover:bg-blush-800"
-                          : "border-paper-300 bg-white text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
-                      }`}
-                      onClick={() => onDelete(doc)}
-                      disabled={removing === doc.id}
-                    >
-                      {removing === doc.id
-                        ? t("profile.archive_deleting")
-                        : armedDeleteId === doc.id
-                          ? t("profile.archive_delete_confirm")
-                          : t("profile.archive_delete")}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                {filtered.map((doc) => (
+                  <li key={doc.id} className="flex flex-wrap items-center gap-3 py-3 text-sm">
+                    <span className="rounded bg-paper-100 px-2 py-0.5 text-xs uppercase text-ink-600 dark:bg-umber-700/60 dark:text-umber-200">
+                      {t(
+                        `profile.archive_kind_${doc.kind}` as `profile.archive_kind_${ExportKind}`,
+                      )}
+                      {doc.format ? ` · ${doc.format.toUpperCase()}` : ""}
+                    </span>
+                    <span className="font-medium text-ink-800 dark:text-paper-100">
+                      {doc.filename}
+                    </span>
+                    <span className="text-xs text-ink-500 dark:text-umber-300">
+                      {formatTimestamp(doc.created_at, locale)} · {formatBytes(doc.byte_size)}
+                    </span>
+                    <div className="ml-auto flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="btn-outline h-8 px-3 text-xs"
+                        onClick={() => onRedownload(doc)}
+                        disabled={redownloading === doc.id}
+                      >
+                        {redownloading === doc.id
+                          ? t("profile.export_downloading")
+                          : t("profile.archive_redownload")}
+                      </button>
+                      <button
+                        type="button"
+                        className={`h-8 rounded-xl border px-3 text-xs transition-colors ${
+                          armedDeleteId === doc.id
+                            ? "border-blush-700 bg-blush-700 text-paper-50 hover:bg-blush-800"
+                            : "border-paper-300 bg-white text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+                        }`}
+                        onClick={() => onDelete(doc)}
+                        disabled={removing === doc.id}
+                      >
+                        {removing === doc.id
+                          ? t("profile.archive_deleting")
+                          : armedDeleteId === doc.id
+                            ? t("profile.archive_delete_confirm")
+                            : t("profile.archive_delete")}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </>
           )}
         </div>
