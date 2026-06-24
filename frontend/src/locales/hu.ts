@@ -877,7 +877,7 @@ const hu: LocaleMessages = {
       "Költségvetés, vendéglista, RSVP, ültetési rend és saját esküvői oldal. Mindkettőtök ugyanazt látja, ugyanakkor.",
     cta_signup: "Kezdjétek el",
     cta_login: "Bejelentkezés",
-    cta_open_app: "Alkalmazás",
+    cta_open_app: "Bejelentkezés",
     brand_tagline_paper: "Budapest · Papírlevelek",
     // wsite_title + wsite_body are surfaced by the SEO prerender SSR body
     // (frontend/scripts/prerender.ts). They no longer have a dedicated
