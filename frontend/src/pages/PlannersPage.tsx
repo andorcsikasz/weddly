@@ -974,7 +974,7 @@ export default function PlannersPage() {
         <BetaOffer />
 
         {/* ── Registration form (planner beta waitlist) ── */}
-        <RegistrationForm initialPlan="" />
+        <RegistrationForm initialPlan="unlimited" />
 
         {/* ── Footer escape links ── */}
         <section className="border-t border-paper-200 px-4 py-10 text-center dark:border-umber-800">
