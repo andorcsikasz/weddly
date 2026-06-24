@@ -958,7 +958,13 @@ function buildDateGoalFromDateStr(dateStr: string): WeddingDateGoal {
       target_season: null,
     };
   }
-  return { kind: "tbd", exact_date: null, target_year: null, target_month: null, target_season: null };
+  return {
+    kind: "tbd",
+    exact_date: null,
+    target_year: null,
+    target_month: null,
+    target_season: null,
+  };
 }
 
 function AllSet({ onContinue }: { onContinue: () => void }) {

@@ -1586,9 +1586,7 @@ export default function SuppliersPage() {
                   }}
                   tabIndex={0}
                   className={`card !p-0 relative flex h-full flex-col cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${
-                    isPicked
-                      ? "border-sage-400 dark:border-sage-400/40"
-                      : ""
+                    isPicked ? "border-sage-400 dark:border-sage-400/40" : ""
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
                   {/* Hero image banner — edge-to-edge, clipped by card's rounded-2xl + overflow-hidden */}
@@ -1602,7 +1600,11 @@ export default function SuppliersPage() {
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
-                        <Icon size={36} className="text-ink-400/40 dark:text-umber-300/40" aria-hidden />
+                        <Icon
+                          size={36}
+                          className="text-ink-400/40 dark:text-umber-300/40"
+                          aria-hidden
+                        />
                       </div>
                     )}
                   </div>
@@ -1632,8 +1634,10 @@ export default function SuppliersPage() {
                     <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
                   </div>
                   {/* Card body */}
-                  <div className={`flex flex-1 flex-col px-4 pb-4 pt-3 ${isPicked ? "bg-sage-50/60 dark:bg-sage-400/15" : ""}`}>
-                  <div className="min-w-0 flex-1">
+                  <div
+                    className={`flex flex-1 flex-col px-4 pb-4 pt-3 ${isPicked ? "bg-sage-50/60 dark:bg-sage-400/15" : ""}`}
+                  >
+                    <div className="min-w-0 flex-1">
                       <h3 className="truncate text-base font-semibold">{s.name}</h3>
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
                         <span className="inline-flex items-center gap-1 uppercase tracking-wide">
@@ -1710,84 +1714,85 @@ export default function SuppliersPage() {
                         )}
                       </p>
                     </div>
-                  {s.address && (
-                    <p className="mt-2 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
-                      {s.address}
+                    {s.address && (
+                      <p className="mt-2 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
+                        {s.address}
+                      </p>
+                    )}
+                    <p className="mt-2 line-clamp-2 text-sm text-ink-700 dark:text-paper-100">
+                      {locale === "hu" ? s.blurb_hu : s.blurb_en}
                     </p>
-                  )}
-                  <p className="mt-2 line-clamp-2 text-sm text-ink-700 dark:text-paper-100">
-                    {locale === "hu" ? s.blurb_hu : s.blurb_en}
-                  </p>
-                  {/* Footer: contact icons left, compare + vote right.
+                    {/* Footer: contact icons left, compare + vote right.
                     Entire row stops propagation — clicks here are intentional
                     interactions, not card-level navigation. */}
-                  <div
-                    className="mt-3 flex items-center justify-between border-t border-paper-200 pt-3 dark:border-umber-700"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center gap-0.5">
-                      {s.website && (
-                        <a
-                          href={s.website}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                          aria-label={t("suppliers.visit_website")}
-                          title={t("suppliers.visit_website")}
-                          onClick={() => trackSupplierClick(s.id, "website_click")}
-                        >
-                          <Globe size={14} aria-hidden />
-                        </a>
-                      )}
-                      {s.contact_phone && (
-                        <PhoneReveal
-                          phone={s.contact_phone}
-                          onCall={() => trackSupplierClick(s.id, "phone_click")}
-                          iconOnly
+                    <div
+                      className="mt-3 flex items-center justify-between border-t border-paper-200 pt-3 dark:border-umber-700"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center gap-0.5">
+                        {s.website && (
+                          <a
+                            href={s.website}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                            aria-label={t("suppliers.visit_website")}
+                            title={t("suppliers.visit_website")}
+                            onClick={() => trackSupplierClick(s.id, "website_click")}
+                          >
+                            <Globe size={14} aria-hidden />
+                          </a>
+                        )}
+                        {s.contact_phone && (
+                          <PhoneReveal
+                            phone={s.contact_phone}
+                            onCall={() => trackSupplierClick(s.id, "phone_click")}
+                            iconOnly
+                          />
+                        )}
+                        {s.contact_email && (
+                          <a
+                            href={`mailto:${s.contact_email}`}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                            aria-label={t("suppliers.contact_email")}
+                          >
+                            <Mail size={14} />
+                          </a>
+                        )}
+                        {s.vendor_account_id === null && user?.role !== "vendor" && (
+                          <button
+                            type="button"
+                            onClick={() => setClaimTarget({ id: s.id, name: s.name })}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                            aria-label={t("vendor_claim.button_label")}
+                            title={t("vendor_claim.button_label")}
+                          >
+                            <UserCheck size={14} aria-hidden />
+                          </button>
+                        )}
+                        <ReportButton
+                          onReport={() =>
+                            setReporting({
+                              id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                              name: s.name,
+                            })
+                          }
+                          t={t}
                         />
-                      )}
-                      {s.contact_email && (
-                        <a
-                          href={`mailto:${s.contact_email}`}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                          aria-label={t("suppliers.contact_email")}
-                        >
-                          <Mail size={14} />
-                        </a>
-                      )}
-                      {s.vendor_account_id === null && user?.role !== "vendor" && (
-                        <button
-                          type="button"
-                          onClick={() => setClaimTarget({ id: s.id, name: s.name })}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                          aria-label={t("vendor_claim.button_label")}
-                          title={t("vendor_claim.button_label")}
-                        >
-                          <UserCheck size={14} aria-hidden />
-                        </button>
-                      )}
-                      <ReportButton
-                        onReport={() =>
-                          setReporting({
-                            id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                            name: s.name,
-                          })
-                        }
-                        t={t}
-                      />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <CompareToggle
-                        supplierId={s.id}
-                        isCompared={isCompared}
-                        capReached={compareCapReached}
-                        onToggle={() => toggleCompare(s.id)}
-                        t={t}
-                      />
-                      <VoteRow supplier={s} onVote={onVote} t={t} />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <CompareToggle
+                          supplierId={s.id}
+                          isCompared={isCompared}
+                          capReached={compareCapReached}
+                          onToggle={() => toggleCompare(s.id)}
+                          t={t}
+                        />
+                        <VoteRow supplier={s} onVote={onVote} t={t} />
+                      </div>
                     </div>
                   </div>
-                  </div>{/* end card body */}
+                  {/* end card body */}
                 </article>
               );
             })}

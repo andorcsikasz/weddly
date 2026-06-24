@@ -50,7 +50,12 @@ import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { DecisionsPanel, computeIntakeTotal } from "./DecisionsPanel";
 import { ApiError } from "../lib/api";
-import { type PlanningPromptTags, coupleApi, coupleSupplierApi, planningApi } from "../lib/endpoints";
+import {
+  type PlanningPromptTags,
+  coupleApi,
+  coupleSupplierApi,
+  planningApi,
+} from "../lib/endpoints";
 import { formatHuf, maxIsoDate, todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import {
@@ -812,7 +817,8 @@ export default function PlanningPage() {
               </div>
             )}
 
-            {activeKind === "task" && viewMode === "list" &&
+            {activeKind === "task" &&
+              viewMode === "list" &&
               (taskPriorityCounts.p1 > 0 || taskPriorityCounts.p2 > 0 || priorityFilter !== 0) && (
                 <div
                   role="radiogroup"
@@ -860,9 +866,7 @@ export default function PlanningPage() {
             {activeKind === "task" && viewMode === "board" ? (
               <KanbanBoard
                 tasks={items.filter(
-                  (i) =>
-                    i.kind === "task" &&
-                    !(i.seed_key && i.decision_status !== "promoted"),
+                  (i) => i.kind === "task" && !(i.seed_key && i.decision_status !== "promoted"),
                 )}
                 vendors={vendors}
                 filter={boardFilter}
@@ -2302,14 +2306,20 @@ function TaskKanbanCard({
       <div className="flex items-start gap-2">
         <span className="mt-0.5 shrink-0 text-ink-400 dark:text-umber-400">
           {item.done ? (
-            <CheckCircle2 size={14} className="text-sage-600 dark:text-sage-400" aria-hidden="true" />
+            <CheckCircle2
+              size={14}
+              className="text-sage-600 dark:text-sage-400"
+              aria-hidden="true"
+            />
           ) : (
             <Circle size={14} aria-hidden="true" />
           )}
         </span>
         <span
           className={`min-w-0 flex-1 text-sm leading-snug ${
-            item.done ? "text-ink-400 line-through dark:text-umber-400" : "text-ink-900 dark:text-paper-50"
+            item.done
+              ? "text-ink-400 line-through dark:text-umber-400"
+              : "text-ink-900 dark:text-paper-50"
           }`}
         >
           {item.title}
