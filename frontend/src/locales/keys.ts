@@ -135,6 +135,9 @@ export interface LocaleMessages {
     settings_focus_rsvp: string;
     settings_focus_partner: string;
     settings_back: string;
+    /** One-time feedback survey prompt (120-action gate). */
+    feedback_survey: string;
+    feedback_survey_intro: string;
   };
   timeline: {
     title: string;

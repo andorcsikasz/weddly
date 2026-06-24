@@ -1464,6 +1464,8 @@ const en: LocaleMessages = {
     settings_focus_rsvp: "Guest RSVPs",
     settings_focus_partner: "Partner activity",
     settings_back: "Back",
+    feedback_survey: "We'd love your feedback",
+    feedback_survey_intro: "We're here to make your life easier and your wedding unforgettable.",
   },
   timeline: {
     title: "Timeline",

@@ -18,7 +18,8 @@ export type NotificationKind =
   | "rsvp_received_household"
   | "partner_task_added"
   | "timeline_email_sent"
-  | "admin_message";
+  | "admin_message"
+  | "feedback_survey";
 
 /** One row in the bell / dashboard feed. `id` is a namespaced string ("tl:<taskId>"
  *  for computed timeline items, "evt:<rowId>" for stored events) so the two

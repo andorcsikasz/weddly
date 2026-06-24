@@ -23,6 +23,9 @@ type FeedbackDialogProps = {
    *  through to the backend so the admin triage list can label which surface
    *  the feedback is about, not just "App". App-source only. */
   context?: string;
+  /** Optional sentence shown above the form intro — used by the survey prompt
+   *  to set emotional context before the fields. */
+  preface?: string;
 };
 
 export function FeedbackDialog({
@@ -30,6 +33,7 @@ export function FeedbackDialog({
   onClose,
   source = "landing",
   context,
+  preface,
 }: FeedbackDialogProps) {
   const { t, locale } = useT();
   const [message, setMessage] = useState("");
@@ -114,6 +118,7 @@ export function FeedbackDialog({
         </div>
       ) : (
         <form id="feedback-form" onSubmit={onSubmit} className="space-y-6" noValidate>
+          {preface && <p className="text-base text-ink-800 dark:text-paper-100">{preface}</p>}
           <p className="text-sm text-ink-600 dark:text-umber-200">{t("landing.feedback_intro")}</p>
 
           {/* Segment 1 — free text */}

@@ -22,12 +22,14 @@ import {
   ClipboardList,
   Info,
   Mail,
+  MessageCircle,
   Send,
   Settings,
 } from "lucide-react";
 import { type ComponentType, type SVGProps, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { coupleApi, notificationApi } from "../lib/endpoints";
+import { FeedbackDialog } from "./FeedbackDialog";
 import { useT } from "../lib/i18n";
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
@@ -40,6 +42,7 @@ const KIND_ICON: Record<NotificationItem["kind"], IconCmp> = {
   partner_task_added: ClipboardList,
   timeline_email_sent: Send,
   admin_message: Info,
+  feedback_survey: MessageCircle,
 };
 
 /** Compose the human label for a feed row from its kind + params. */
@@ -70,6 +73,8 @@ function useLabel() {
         return t("notifications.timeline_email_sent");
       case "admin_message":
         return String(d.message ?? "");
+      case "feedback_survey":
+        return t("notifications.feedback_survey");
       default:
         return "";
     }
@@ -240,6 +245,8 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
   );
 }
 
+const SURVEY_POPUP_KEY = "weddly.survey_popup_shown";
+
 export function NotificationBell() {
   const { t } = useT();
   const navigate = useNavigate();
@@ -248,6 +255,7 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [surveyOpen, setSurveyOpen] = useState(false);
   const cancelled = useRef(false);
 
   useEffect(() => {
@@ -259,6 +267,13 @@ export function NotificationBell() {
           if (cancelled.current) return;
           setItems(feed.items);
           setUnread(feed.unread);
+          // Show the survey popup once — only if backend says there's a prompt
+          // and this browser hasn't seen it yet.
+          const hasSurvey = feed.items.some((i) => i.kind === "feedback_survey");
+          if (hasSurvey && !localStorage.getItem(SURVEY_POPUP_KEY)) {
+            localStorage.setItem(SURVEY_POPUP_KEY, "1");
+            setSurveyOpen(true);
+          }
         })
         .catch(() => {
           /* badge is non-critical — fail silently */
@@ -271,6 +286,14 @@ export function NotificationBell() {
       clearInterval(interval);
     };
   }, []);
+
+  function dismissSurvey() {
+    setSurveyOpen(false);
+    setItems((cur) => cur.filter((i) => i.kind !== "feedback_survey"));
+    void notificationApi.surveyDismiss().catch(() => {
+      /* non-critical */
+    });
+  }
 
   function toggleOpen() {
     const next = !open;
@@ -286,109 +309,125 @@ export function NotificationBell() {
   }
 
   function openItem(item: NotificationItem) {
+    if (item.kind === "feedback_survey") {
+      setOpen(false);
+      setShowSettings(false);
+      setSurveyOpen(true);
+      return;
+    }
     setOpen(false);
     setShowSettings(false);
     if (item.link) navigate(item.link);
   }
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={toggleOpen}
-        aria-label={t("notifications.aria_label")}
-        title={t("notifications.title")}
-        aria-expanded={open}
-        className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-      >
-        <Bell size={18} aria-hidden="true" />
-        {unread > 0 && (
-          <span
-            className="absolute right-1.5 top-1.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-semibold leading-4 text-paper-50"
-            aria-hidden="true"
-          >
-            {unread > 9 ? "9+" : unread}
-          </span>
-        )}
-      </button>
+    <>
+      {/* One-time survey pop-up — opens automatically once after 120 actions */}
+      <FeedbackDialog
+        open={surveyOpen}
+        onClose={dismissSurvey}
+        source="app"
+        context="survey_prompt"
+        preface={t("notifications.feedback_survey_intro")}
+      />
+      <div className="relative">
+        <button
+          type="button"
+          onClick={toggleOpen}
+          aria-label={t("notifications.aria_label")}
+          title={t("notifications.title")}
+          aria-expanded={open}
+          className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+        >
+          <Bell size={18} aria-hidden="true" />
+          {unread > 0 && (
+            <span
+              className="absolute right-1.5 top-1.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-semibold leading-4 text-paper-50"
+              aria-hidden="true"
+            >
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
+        </button>
 
-      {open && (
-        <>
-          <button
-            type="button"
-            aria-hidden="true"
-            tabIndex={-1}
-            className="fixed inset-0 z-30 cursor-default"
-            onClick={() => {
-              setOpen(false);
-              setShowSettings(false);
-            }}
-          />
-          <div
-            role="menu"
-            className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
-          >
-            {showSettings ? (
-              <SettingsPanel onBack={() => setShowSettings(false)} />
-            ) : (
-              <>
-                <div className="flex items-center justify-between border-b border-paper-200 px-4 py-3 dark:border-umber-700">
-                  <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
-                    {t("notifications.title")}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowSettings(true)}
-                    aria-label={t("notifications.settings_title")}
-                    title={t("notifications.settings_title")}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                  >
-                    <Settings size={14} aria-hidden="true" />
-                  </button>
-                </div>
-                {items.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
-                    {t("notifications.empty")}
-                  </p>
-                ) : (
-                  <ul className="max-h-96 divide-y divide-paper-200 overflow-y-auto dark:divide-umber-700">
-                    {items.map((item) => {
-                      const Icon = KIND_ICON[item.kind] ?? Bell;
-                      const overdue = item.kind === "timeline_overdue";
-                      return (
-                        <li key={item.id}>
-                          <button
-                            type="button"
-                            onClick={() => openItem(item)}
-                            className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
-                          >
-                            <span
-                              className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
+        {open && (
+          <>
+            <button
+              type="button"
+              aria-hidden="true"
+              tabIndex={-1}
+              className="fixed inset-0 z-30 cursor-default"
+              onClick={() => {
+                setOpen(false);
+                setShowSettings(false);
+              }}
+            />
+            <div
+              role="menu"
+              className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+            >
+              {showSettings ? (
+                <SettingsPanel onBack={() => setShowSettings(false)} />
+              ) : (
+                <>
+                  <div className="flex items-center justify-between border-b border-paper-200 px-4 py-3 dark:border-umber-700">
+                    <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
+                      {t("notifications.title")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowSettings(true)}
+                      aria-label={t("notifications.settings_title")}
+                      title={t("notifications.settings_title")}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                    >
+                      <Settings size={14} aria-hidden="true" />
+                    </button>
+                  </div>
+                  {items.length === 0 ? (
+                    <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
+                      {t("notifications.empty")}
+                    </p>
+                  ) : (
+                    <ul className="max-h-96 divide-y divide-paper-200 overflow-y-auto dark:divide-umber-700">
+                      {items.map((item) => {
+                        const Icon = KIND_ICON[item.kind] ?? Bell;
+                        const overdue = item.kind === "timeline_overdue";
+                        return (
+                          <li key={item.id}>
+                            <button
+                              type="button"
+                              onClick={() => openItem(item)}
+                              className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
                             >
-                              <Icon size={16} aria-hidden="true" />
-                            </span>
-                            <span
-                              className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
-                            >
-                              {label(item)}
-                            </span>
-                            {!item.read && (
                               <span
-                                className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
-                                aria-hidden="true"
-                              />
-                            )}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+                                className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
+                              >
+                                <Icon size={16} aria-hidden="true" />
+                              </span>
+                              <span
+                                className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
+                              >
+                                {label(item)}
+                              </span>
+                              {!item.read && (
+                                <span
+                                  className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }

@@ -109,6 +109,8 @@ function loadTasks(coupleId: number): TaskRow[] {
     .all(coupleId) as TaskRow[];
 }
 
+const SURVEY_ACTION_THRESHOLD = 120;
+
 /** Build the merged feed for a user: computed timeline items + stored events,
  *  newest-first, with per-item read state and the live timeline rollup the
  *  dashboard card uses. */
@@ -166,6 +168,29 @@ export function getNotificationFeed(userId: number): NotificationFeed {
       created_at: e.created_at,
       read: seenAt != null && e.created_at <= seenAt,
     });
+  }
+
+  // ── feedback survey prompt (virtual, computed) ──
+  // Inject once when the user has reached 120 actions and hasn't dismissed yet.
+  const userRow = db.prepare("SELECT survey_prompted_at FROM users WHERE id = ?").get(userId) as
+    | { survey_prompted_at: number | null }
+    | undefined;
+  if (userRow && userRow.survey_prompted_at == null) {
+    const actionCount = (
+      db.prepare("SELECT COUNT(*) AS cnt FROM audit_log WHERE actor_user_id = ?").get(userId) as {
+        cnt: number;
+      }
+    ).cnt;
+    if (actionCount >= SURVEY_ACTION_THRESHOLD) {
+      items.push({
+        id: "survey:prompt",
+        kind: "feedback_survey",
+        data: {},
+        link: null,
+        created_at: now(),
+        read: false,
+      });
+    }
   }
 
   items.sort((a, b) => b.created_at - a.created_at);

@@ -549,6 +549,7 @@ addColumnIfMissing("users", "utm_medium", "utm_medium TEXT");
 addColumnIfMissing("users", "utm_campaign", "utm_campaign TEXT");
 addColumnIfMissing("users", "utm_content", "utm_content TEXT");
 addColumnIfMissing("users", "utm_term", "utm_term TEXT");
+addColumnIfMissing("users", "survey_prompted_at", "survey_prompted_at INTEGER");
 
 // Group the acquisition dashboard's hottest breakdowns. Index AFTER the column
 // adds (the May 2026 prod-crash rule: indexes on addColumnIfMissing columns

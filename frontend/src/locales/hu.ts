@@ -1480,6 +1480,9 @@ const hu: LocaleMessages = {
     settings_focus_rsvp: "Vendégválaszok",
     settings_focus_partner: "Páros aktivitás",
     settings_back: "Vissza",
+    feedback_survey: "Mit gondolsz rólunk?",
+    feedback_survey_intro:
+      "Azért vagyunk, hogy megkönnyítsük az életedet és feledhetetlenné tegyük az esküvődet.",
   },
   timeline: {
     title: "Idővonal",

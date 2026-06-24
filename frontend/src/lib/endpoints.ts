@@ -889,6 +889,9 @@ export const notificationApi = {
   /** Stamp the read watermark ("I opened the bell"). Per-user, so it never
    *  clears the partner's badge. */
   markSeen: () => apiFetch<{ seen_at: number | null }>("POST", "/api/notifications/seen", {}),
+  /** Dismiss the one-time feedback survey prompt — sets survey_prompted_at
+   *  so the virtual bell item never reappears for this user. */
+  surveyDismiss: () => apiFetch<{ ok: true }>("POST", "/api/notifications/survey/dismiss", {}),
 };
 
 export const householdApi = {

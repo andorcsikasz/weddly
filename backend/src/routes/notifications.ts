@@ -6,6 +6,7 @@
 
 import { getCoupleForUser } from "../domain/couples";
 import { getNotificationFeed, markNotificationsSeen } from "../domain/notifications";
+import { db, now } from "../db";
 import { type Ctx, json, requireAuth, type Router } from "../lib/http";
 
 function handleList(ctx: Ctx): Response {
@@ -23,7 +24,14 @@ function handleMarkSeen(ctx: Ctx): Response {
   return json({ seen_at: seenAt });
 }
 
+function handleSurveyDismiss(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  db.prepare("UPDATE users SET survey_prompted_at = ? WHERE id = ?").run(now(), userId);
+  return json({ ok: true });
+}
+
 export function registerNotificationRoutes(router: Router) {
   router.get("/api/notifications", handleList, true);
   router.post("/api/notifications/seen", handleMarkSeen, true);
+  router.post("/api/notifications/survey/dismiss", handleSurveyDismiss, true);
 }
