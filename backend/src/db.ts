@@ -1260,3 +1260,6 @@ addColumnIfMissing("users", "planner_bio", "planner_bio TEXT");
 addColumnIfMissing("users", "planner_city", "planner_city TEXT");
 addColumnIfMissing("users", "planner_website", "planner_website TEXT");
 addColumnIfMissing("users", "planner_phone", "planner_phone TEXT");
+addColumnIfMissing("users", "planner_max_clients", "planner_max_clients INTEGER DEFAULT 4");
+addColumnIfMissing("users", "planner_plan", "planner_plan TEXT DEFAULT 'starter'");
+addColumnIfMissing("users", "planner_onboarding_done", "planner_onboarding_done INTEGER DEFAULT 0");

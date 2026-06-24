@@ -3,6 +3,7 @@ import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { getCoupleById, toCouple } from "../domain/couples";
 import { sendEmail } from "../lib/mailer";
+import type { PlannerPlan } from "@shared/types";
 
 function requirePlannerAuth(ctx: Ctx): number {
   const userId = requireAuth(ctx);
@@ -94,6 +95,21 @@ async function handleAddClient(ctx: Ctx): Promise<Response> {
     .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
     .get(userId, target.couple_id);
   if (existing) throw new HttpError(409, "This couple is already linked to your account");
+
+  const plannerRow = db
+    .prepare("SELECT planner_max_clients FROM users WHERE id = ?")
+    .get(userId) as { planner_max_clients: number | null } | undefined;
+  const maxClients = plannerRow?.planner_max_clients ?? 4;
+  const activeCount = (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS cnt FROM planner_clients WHERE planner_user_id = ? AND status = 'active'",
+      )
+      .get(userId) as { cnt: number }
+  ).cnt;
+  if (activeCount >= maxClients) {
+    throw new HttpError(422, "Client limit reached for your plan");
+  }
 
   db.prepare(
     "INSERT INTO planner_clients (planner_user_id, couple_id, status, created_at) VALUES (?, ?, 'active', ?)",
@@ -614,6 +630,122 @@ async function handleRevokePlanner(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+async function handleGetStats(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+
+  const clientCounts = db
+    .prepare(
+      `SELECT
+         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_clients,
+         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_invites
+       FROM planner_clients
+      WHERE planner_user_id = ?`,
+    )
+    .get(userId) as { active_clients: number | null; pending_invites: number | null };
+
+  const taskCounts = db
+    .prepare(
+      `SELECT
+         COUNT(*) AS total_tasks,
+         SUM(CASE WHEN pi.done = 1 THEN 1 ELSE 0 END) AS done_tasks,
+         SUM(CASE WHEN pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date < date('now') THEN 1 ELSE 0 END) AS overdue_tasks,
+         SUM(CASE WHEN pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date BETWEEN date('now') AND date('now', '+7 days') THEN 1 ELSE 0 END) AS due_this_week
+       FROM planning_items pi
+       JOIN planner_clients pc ON pc.couple_id = pi.couple_id AND pc.planner_user_id = ?
+      WHERE pi.kind = 'task'`,
+    )
+    .get(userId) as {
+    total_tasks: number | null;
+    done_tasks: number | null;
+    overdue_tasks: number | null;
+    due_this_week: number | null;
+  };
+
+  const upcomingWeddings = (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS cnt
+           FROM couples c
+           JOIN planner_clients pc ON pc.couple_id = c.id AND pc.planner_user_id = ?
+          WHERE c.wedding_date BETWEEN date('now') AND date('now', '+30 days')`,
+      )
+      .get(userId) as { cnt: number }
+  ).cnt;
+
+  const perClientRows = db
+    .prepare(
+      `SELECT pc.couple_id,
+              COALESCE(c.display_name, c.bride_name || ' & ' || c.groom_name) AS display_name,
+              c.wedding_date,
+              COUNT(pi.id) AS task_total,
+              SUM(CASE WHEN pi.done = 1 THEN 1 ELSE 0 END) AS task_done,
+              SUM(CASE WHEN pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date < date('now') THEN 1 ELSE 0 END) AS task_overdue,
+              SUM(CASE WHEN pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date BETWEEN date('now') AND date('now', '+7 days') THEN 1 ELSE 0 END) AS due_this_week
+         FROM planner_clients pc
+         JOIN couples c ON c.id = pc.couple_id
+         LEFT JOIN planning_items pi ON pi.couple_id = pc.couple_id AND pi.kind = 'task'
+        WHERE pc.planner_user_id = ? AND pc.status = 'active'
+        GROUP BY pc.couple_id
+        ORDER BY c.wedding_date ASC`,
+    )
+    .all(userId) as Array<{
+    couple_id: number;
+    display_name: string;
+    wedding_date: string | null;
+    task_total: number | null;
+    task_done: number | null;
+    task_overdue: number | null;
+    due_this_week: number | null;
+  }>;
+
+  const plannerMeta = db
+    .prepare(
+      "SELECT planner_plan, planner_max_clients, planner_onboarding_done FROM users WHERE id = ?",
+    )
+    .get(userId) as {
+    planner_plan: string | null;
+    planner_max_clients: number | null;
+    planner_onboarding_done: number | null;
+  } | undefined;
+
+  const plan = (plannerMeta?.planner_plan ?? "starter") as PlannerPlan;
+  const maxClients = plannerMeta?.planner_max_clients ?? 4;
+  const onboardingDone = (plannerMeta?.planner_onboarding_done ?? 0) === 1;
+
+  return json({
+    stats: {
+      active_clients: clientCounts.active_clients ?? 0,
+      pending_invites: clientCounts.pending_invites ?? 0,
+      total_tasks: taskCounts.total_tasks ?? 0,
+      done_tasks: taskCounts.done_tasks ?? 0,
+      overdue_tasks: taskCounts.overdue_tasks ?? 0,
+      due_this_week: taskCounts.due_this_week ?? 0,
+      upcoming_weddings_30d: upcomingWeddings,
+      per_client: perClientRows.map((r) => ({
+        couple_id: r.couple_id,
+        display_name: r.display_name,
+        wedding_date: r.wedding_date,
+        task_total: r.task_total ?? 0,
+        task_done: r.task_done ?? 0,
+        task_overdue: r.task_overdue ?? 0,
+        due_this_week: r.due_this_week ?? 0,
+      })),
+      plan,
+      max_clients: maxClients,
+      onboarding_done: onboardingDone,
+    },
+  });
+}
+
+async function handleCompleteOnboarding(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  db.prepare("UPDATE users SET planner_onboarding_done = 1, updated_at = ? WHERE id = ?").run(
+    now(),
+    userId,
+  );
+  return json({ ok: true });
+}
+
 export function registerPlannerRoutes(router: Router) {
   // Planner-side: client management
   router.get("/api/planner/clients", handleListClients, true);
@@ -622,6 +754,9 @@ export function registerPlannerRoutes(router: Router) {
   router.post("/api/planner/clients/:coupleId/enter", handleEnterClient, true);
   router.post("/api/planner/exit", handleExit, true);
   router.get("/api/planner/tasks", handleListTasks, true);
+  // Planner-side: stats + onboarding
+  router.get("/api/planner/stats", handleGetStats, true);
+  router.post("/api/planner/complete-onboarding", handleCompleteOnboarding, true);
   // Planner-side: messages
   router.get("/api/planner/messages", handleListInbox, true);
   router.get("/api/planner/messages/:coupleId", handleListThread, true);

@@ -84,6 +84,7 @@ const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
 const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
 const WishlistEditorPage = lazy(() => import("./pages/WishlistEditorPage"));
 const PlannerHomePage = lazy(() => import("./pages/PlannerHomePage"));
+const PlannerOnboardingPage = lazy(() => import("./pages/PlannerOnboardingPage"));
 const PlannerMessagesPage = lazy(() => import("./pages/PlannerMessagesPage"));
 const PlannerProfilePage = lazy(() => import("./pages/PlannerProfilePage"));
 
@@ -873,6 +874,16 @@ export default function App() {
             <RequireAuth>
               <Page>
                 <PlannerHomePage />
+              </Page>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/app/planner/onboarding"
+          element={
+            <RequireAuth>
+              <Page>
+                <PlannerOnboardingPage />
               </Page>
             </RequireAuth>
           }

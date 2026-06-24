@@ -60,6 +60,7 @@ import type {
   PlannerProfile,
   LinkedPlannerView,
   PlannerInviteView,
+  PlannerStats,
 } from "@shared/types";
 import type {
   AdminFinancialPlannerOverview,
@@ -2233,6 +2234,9 @@ export const plannerApi = {
     apiFetch<{ ok: boolean }>("POST", `/api/planner/invites/${coupleId}/accept`, {}),
   declineInvite: (coupleId: number) =>
     apiFetch<{ ok: boolean }>("POST", `/api/planner/invites/${coupleId}/decline`, {}),
+  stats: () => apiFetch<{ stats: PlannerStats }>("GET", "/api/planner/stats"),
+  completeOnboarding: () =>
+    apiFetch<{ ok: boolean }>("POST", "/api/planner/complete-onboarding", {}),
 };
 
 export const couplePlannerApi = {

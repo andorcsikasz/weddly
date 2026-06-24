@@ -1458,3 +1458,34 @@ export interface FlightEstimate {
   /** Server-side cache timestamp — let the frontend show "frissítve: …". */
   fetched_at: UnixMs;
 }
+
+export type PlannerPlan = "starter" | "pro" | "premium";
+export const PLANNER_PLAN_LIMITS: Record<PlannerPlan, number> = {
+  starter: 4,
+  pro: 7,
+  premium: 10,
+};
+
+export interface PlannerStatsPerClient {
+  couple_id: number;
+  display_name: string;
+  wedding_date: string | null;
+  task_total: number;
+  task_done: number;
+  task_overdue: number;
+  due_this_week: number;
+}
+
+export interface PlannerStats {
+  active_clients: number;
+  pending_invites: number;
+  total_tasks: number;
+  done_tasks: number;
+  overdue_tasks: number;
+  due_this_week: number;
+  upcoming_weddings_30d: number;
+  per_client: PlannerStatsPerClient[];
+  plan: PlannerPlan;
+  max_clients: number;
+  onboarding_done: boolean;
+}
