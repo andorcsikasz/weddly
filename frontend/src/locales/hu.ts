@@ -6040,8 +6040,7 @@ const hu: LocaleMessages = {
   planner_onboarding: {
     step_indicator: "{{current}} / {{total}}",
     step1_title: "Üdvözlünk, {{name}}!",
-    step1_body:
-      "A Weddly Planner segítségével kezelheted ügyfeleidet, nyomon követheted a feladatokat, és minden esküvői részletet egy helyen tartasz. Néhány lépéssel beállíthatod a profilodat és máris készen állsz.",
+    step1_body: "Állítsd be a profilodat, és máris készen állsz.",
     step1_cta: "Kezdjük el",
     step2_title: "Hozd létre a profilodat",
     step2_body: "Ezeket az adatokat az ügyfeleid láthatják a profilodon.",

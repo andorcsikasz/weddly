@@ -5992,8 +5992,7 @@ const en: LocaleMessages = {
   planner_onboarding: {
     step_indicator: "{{current}} / {{total}}",
     step1_title: "Welcome, {{name}}!",
-    step1_body:
-      "Weddly Planner helps you manage your clients, track tasks, and keep every wedding detail in one place. Set up your profile in a few quick steps.",
+    step1_body: "Set up your profile and you're ready to go.",
     step1_cta: "Get started",
     step2_title: "Create your profile",
     step2_body: "This information will be visible to your clients.",
