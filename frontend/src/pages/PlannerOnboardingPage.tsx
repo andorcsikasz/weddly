@@ -131,10 +131,10 @@ export default function PlannerOnboardingPage() {
         {/* ── Step 0: Welcome ── */}
         {step === 0 && (
           <div className="card animate-fade-in-up text-center">
-            <h1 className="font-serif italic text-3xl font-semibold text-ink-900 dark:text-paper-50 sm:text-4xl">
+            <h1 className="font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-5xl">
               {t("planner_onboarding.step1_title").replace("{{name}}", firstName)}
             </h1>
-            <p className="mt-4 text-sm text-umber-700 dark:text-umber-300">
+            <p className="mt-5 max-w-sm mx-auto font-grotesk text-base leading-snug text-umber-700 dark:text-umber-200">
               {t("planner_onboarding.step1_body")}
             </p>
             <button

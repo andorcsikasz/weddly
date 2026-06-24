@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import type { PlannerProfile } from "@shared/types";
+import { Wordmark } from "../components/Wordmark";
 import { plannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useToast } from "../components/ui";
@@ -67,11 +68,17 @@ export default function PlannerProfilePage() {
 
   return (
     <div className="min-h-screen bg-paper-50 dark:bg-umber-950">
-      <header className="border-b border-paper-200 bg-white px-4 py-4 dark:border-umber-800 dark:bg-umber-900 sm:px-8">
-        <div className="mx-auto flex max-w-xl items-center gap-3">
+      <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
+        <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-3 sm:px-6">
           <Link
             to="/app/planner"
-            className="flex items-center gap-1.5 text-sm text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
+            className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+          >
+            <Wordmark size="sm" />
+          </Link>
+          <Link
+            to="/app/planner"
+            className="inline-flex items-center gap-1.5 text-sm text-ink-700 hover:text-ink-900 dark:text-paper-200 dark:hover:text-paper-50"
           >
             <ArrowLeft size={15} />
             {t("planner_home.back_label")}
@@ -79,8 +86,8 @@ export default function PlannerProfilePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-xl px-4 py-10 sm:px-8">
-        <h1 className="mb-8 font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
+      <main className="mx-auto max-w-xl px-4 pt-10 pb-16 sm:px-6">
+        <h1 className="mb-8 font-grotesk text-3xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
           {t("planner_profile.heading")}
         </h1>
 
