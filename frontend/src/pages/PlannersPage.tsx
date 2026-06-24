@@ -578,7 +578,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
               </div>
               <div>
                 <p className={labelCls}>{t("planners.label_style_intro")}</p>
-                <div className="mt-1 grid grid-cols-3 gap-2">
+                <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {(["wedding_style_1", "wedding_style_2", "wedding_style_3"] as const).map(
                     (field, idx) => (
                       <div key={field}>
