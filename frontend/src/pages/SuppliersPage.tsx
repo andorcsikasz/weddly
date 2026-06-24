@@ -1585,15 +1585,30 @@ export default function SuppliersPage() {
                     if (e.key === "Enter") navigate(`/app/suppliers/${encodeURIComponent(s.id)}`);
                   }}
                   tabIndex={0}
-                  className={`card !p-4 relative flex h-full flex-col cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${
+                  className={`card !p-0 relative flex h-full flex-col cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${
                     isPicked
-                      ? "border-sage-400 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15"
+                      ? "border-sage-400 dark:border-sage-400/40"
                       : ""
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
-                  {/* Top-right: pick + save (stop propagation so they don't trigger navigation) */}
+                  {/* Hero image banner — edge-to-edge, clipped by card's rounded-2xl + overflow-hidden */}
+                  <div className="relative h-36 w-full shrink-0 bg-paper-200 dark:bg-umber-700">
+                    {s.hero_image_url ? (
+                      <img
+                        src={s.hero_image_url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Icon size={36} className="text-ink-400/40 dark:text-umber-300/40" aria-hidden />
+                      </div>
+                    )}
+                  </div>
+                  {/* Top-right: pick + save — float over the hero image */}
                   <div
-                    className="absolute right-3 top-3 inline-flex items-center gap-1"
+                    className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/80 px-1 py-1 backdrop-blur-sm"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
@@ -1604,29 +1619,21 @@ export default function SuppliersPage() {
                       title={t("suppliers.pick_aria")}
                       className={
                         isPicked
-                          ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                          : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                          ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                          : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-500 dark:hover:bg-umber-700 dark:hover:text-sage-300"
                       }
                     >
                       {isPicked ? (
-                        <BookmarkCheck size={15} className="fill-sage-200" aria-hidden />
+                        <BookmarkCheck size={13} className="fill-sage-200" aria-hidden />
                       ) : (
-                        <Bookmark size={15} aria-hidden />
+                        <Bookmark size={13} aria-hidden />
                       )}
                     </button>
                     <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
                   </div>
-                  <div className="flex items-start gap-3 pr-16">
-                    <Avatar
-                      name={s.name}
-                      heroUrl={s.hero_image_url}
-                      category={s.category}
-                      onClick={() => filterByCategory(s.category)}
-                      ariaLabel={t("suppliers.show_all_in_category", {
-                        category: t(`suppliers.cat.${s.category}`),
-                      })}
-                    />
-                    <div className="min-w-0 flex-1">
+                  {/* Card body */}
+                  <div className={`flex flex-1 flex-col px-4 pb-4 pt-3 ${isPicked ? "bg-sage-50/60 dark:bg-sage-400/15" : ""}`}>
+                  <div className="min-w-0 flex-1">
                       <h3 className="truncate text-base font-semibold">{s.name}</h3>
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
                         <span className="inline-flex items-center gap-1 uppercase tracking-wide">
@@ -1703,7 +1710,6 @@ export default function SuppliersPage() {
                         )}
                       </p>
                     </div>
-                  </div>
                   {s.address && (
                     <p className="mt-2 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
                       {s.address}
@@ -1781,6 +1787,7 @@ export default function SuppliersPage() {
                       <VoteRow supplier={s} onVote={onVote} t={t} />
                     </div>
                   </div>
+                  </div>{/* end card body */}
                 </article>
               );
             })}
