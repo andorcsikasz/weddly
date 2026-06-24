@@ -865,7 +865,7 @@ const en: LocaleMessages = {
       "Budget, guest list, RSVP, seating chart and your own wedding site. Both of you see the same picture, in real time.",
     cta_signup: "Start planning",
     cta_login: "Sign in",
-    cta_open_app: "Open app",
+    cta_open_app: "Login",
     brand_tagline_paper: "Paper letters · Stationery",
     // wsite_title + wsite_body are surfaced by the SEO prerender SSR body
     // (frontend/scripts/prerender.ts). They no longer have a dedicated
