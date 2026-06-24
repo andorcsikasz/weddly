@@ -139,6 +139,9 @@ export interface LocaleMessages {
     /** One-time feedback survey prompt (120-action gate). */
     feedback_survey: string;
     feedback_survey_intro: string;
+    show_history: string;
+    hide_history: string;
+    no_new: string;
   };
   timeline: {
     title: string;
