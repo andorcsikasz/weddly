@@ -773,13 +773,13 @@ export default function MediaPage() {
                 }}
               />
               <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
-                <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.28em] text-umber-400">
+                <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.28em] text-white/60">
                   {t("media.film_title")}
                 </p>
                 <div className="group flex items-center gap-2">
                   <h1
                     className="font-serif text-xl italic leading-snug text-white"
-                    style={{ textShadow: "0 1px 6px rgba(0,0,0,0.6), 0 0 24px rgba(0,0,0,0.4)" }}
+                    style={{ textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}
                   >
                     {couple?.display_name || album.title || t("media.film_settings_unnamed")}
                   </h1>
