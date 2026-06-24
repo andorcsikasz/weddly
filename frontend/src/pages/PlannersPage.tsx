@@ -4,7 +4,6 @@
 
 import { PRIVACY_VERSION } from "@shared/legal";
 import {
-  ArrowRight,
   Check,
   CheckCircle2,
   ClipboardList,
@@ -215,7 +214,10 @@ function PlanCard({
         <span className="ml-0.5 text-[10px] text-umber-400 dark:text-umber-500">{guests}</span>
       </div>
 
-      <div className="my-3 border-t border-dashed border-paper-300 dark:border-umber-700" aria-hidden="true" />
+      <div
+        className="my-3 border-t border-dashed border-paper-300 dark:border-umber-700"
+        aria-hidden="true"
+      />
 
       <ul className="space-y-1.5">
         {features.map((f) => (
@@ -868,42 +870,42 @@ function FeatureShowcase() {
 function BetaOffer() {
   const { t } = useT();
   const steps = [
-    { title: t("planners.beta_step_1_title"), body: t("planners.beta_step_1_body") },
-    { title: t("planners.beta_step_2_title"), body: t("planners.beta_step_2_body") },
-    { title: t("planners.beta_step_3_title"), body: t("planners.beta_step_3_body") },
+    t("planners.beta_step_1_title"),
+    t("planners.beta_step_2_title"),
+    t("planners.beta_step_3_title"),
   ];
   return (
     <section className="border-t border-paper-200 dark:border-umber-800">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="rounded-2xl bg-umber-900 px-6 py-8 text-center sm:px-10 dark:bg-umber-950">
-          <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
-            {t("planners.beta_title")}
-          </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-paper-400">
-            {t("planners.beta_body")}
-          </p>
+        <div className="rounded-2xl bg-umber-900 px-6 py-8 sm:px-10 dark:bg-umber-950">
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between sm:gap-12">
+            <div>
+              <h2 className="font-grotesk text-2xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
+                {t("planners.beta_title")}
+              </h2>
+              <a
+                href="#waitlist"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="btn btn-lg mt-5 inline-block bg-paper-50 text-umber-900 hover:bg-paper-200"
+              >
+                {t("planners.hero_cta")}
+              </a>
+            </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-            {steps.map((s, i) => (
-              <Fragment key={s.title}>
-                <span className="text-sm text-paper-300">{s.title}</span>
-                {i < steps.length - 1 && (
-                  <ArrowRight size={12} className="shrink-0 text-umber-600" aria-hidden="true" />
-                )}
-              </Fragment>
-            ))}
+            <ol className="flex shrink-0 flex-col gap-3">
+              {steps.map((label, i) => (
+                <li key={label} className="flex items-center gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-umber-600 text-xs font-semibold text-paper-400">
+                    {i + 1}
+                  </span>
+                  <span className="text-sm text-paper-300">{label}</span>
+                </li>
+              ))}
+            </ol>
           </div>
-
-          <a
-            href="#waitlist"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="btn btn-lg mt-6 inline-block bg-paper-50 text-umber-900 hover:bg-paper-200"
-          >
-            {t("planners.hero_cta")}
-          </a>
         </div>
       </div>
     </section>
