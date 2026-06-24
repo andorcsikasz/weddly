@@ -1473,6 +1473,7 @@ const hu: LocaleMessages = {
     rsvp_received_household: "{count} vendég válaszolt: {household}",
     partner_task_added: "A párod új teendőt vett fel",
     partner_task_added_named: "{name} új teendőt vett fel",
+    partner_task_added_self: "Új teendőt vettél fel",
     timeline_email_sent: "Emlékeztetőt küldtünk az ütemtervről",
     rsvp_yes: "igen",
     rsvp_no: "nem",

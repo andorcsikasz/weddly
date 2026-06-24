@@ -1457,6 +1457,7 @@ const en: LocaleMessages = {
     rsvp_received_household: "{count} guests replied: {household}",
     partner_task_added: "Your partner added a to-do",
     partner_task_added_named: "{name} added a to-do",
+    partner_task_added_self: "You added a to-do",
     timeline_email_sent: "We emailed you a timeline reminder",
     rsvp_yes: "yes",
     rsvp_no: "no",

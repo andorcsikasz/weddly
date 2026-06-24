@@ -66,6 +66,7 @@ function useLabel() {
           household: String(d.householdLabel ?? ""),
         });
       case "partner_task_added":
+        if (item.is_own_action) return t("notifications.partner_task_added_self");
         return d.actorName
           ? t("notifications.partner_task_added_named", { name: String(d.actorName) })
           : t("notifications.partner_task_added");

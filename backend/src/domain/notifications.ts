@@ -42,6 +42,7 @@ interface TaskRow {
 interface EventRow {
   id: number;
   kind: string;
+  actor_user_id: number | null;
   data_json: string | null;
   link: string | null;
   created_at: number;
@@ -140,17 +141,16 @@ export function getNotificationFeed(userId: number): NotificationFeed {
     });
   }
 
-  // ── stored events half (hide a row from its own actor) ──
+  // ── stored events half (all couple events; own-action rows are pre-read) ──
   const events = db
     .prepare(
-      `SELECT id, kind, data_json, link, created_at
+      `SELECT id, kind, actor_user_id, data_json, link, created_at
          FROM couple_notifications
         WHERE couple_id = ?
-          AND (actor_user_id IS NULL OR actor_user_id != ?)
         ORDER BY id DESC
         LIMIT ?`,
     )
-    .all(couple.id, userId, FEED_EVENT_LIMIT) as EventRow[];
+    .all(couple.id, FEED_EVENT_LIMIT) as EventRow[];
   for (const e of events) {
     let data: Record<string, string | number> = {};
     if (e.data_json) {
@@ -160,13 +160,16 @@ export function getNotificationFeed(userId: number): NotificationFeed {
         data = {};
       }
     }
+    const isOwnAction = e.actor_user_id != null && e.actor_user_id === userId;
     items.push({
       id: `evt:${e.id}`,
       kind: e.kind as NotificationKind,
       data,
       link: e.link,
       created_at: e.created_at,
-      read: seenAt != null && e.created_at <= seenAt,
+      // Own-action rows are always pre-read (history, not fresh notifications).
+      read: isOwnAction || (seenAt != null && e.created_at <= seenAt),
+      is_own_action: isOwnAction || undefined,
     });
   }
 

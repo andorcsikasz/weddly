@@ -104,6 +104,7 @@ export interface LocaleMessages {
     rsvp_received_household: string;
     partner_task_added: string;
     partner_task_added_named: string;
+    partner_task_added_self: string;
     timeline_email_sent: string;
     /** RSVP status words used inside `rsvp_received`. */
     rsvp_yes: string;

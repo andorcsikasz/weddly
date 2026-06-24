@@ -38,6 +38,10 @@ export interface NotificationItem {
   created_at: number;
   /** Computed against the per-user `notification_seen` watermark. */
   read: boolean;
+  /** True when the viewing user is the actor who caused this event — used to
+   *  label own-action history rows differently ("You added a to-do" vs
+   *  "Partner added a to-do") and to treat them as pre-read. */
+  is_own_action?: boolean;
 }
 
 /** GET /api/notifications response. `unread` drives the bell badge; `overdue` +
