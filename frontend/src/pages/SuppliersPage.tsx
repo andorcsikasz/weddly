@@ -1278,7 +1278,7 @@ export default function SuppliersPage() {
           <div
             data-tour-target="vendors-list"
             className={
-              viewMode === "line" ? "flex flex-col gap-2" : "grid auto-rows-fr gap-3 md:grid-cols-2"
+              viewMode === "line" ? "flex flex-col gap-2" : "grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3"
             }
           >
             {visibleSuppliers.map((s) => {
