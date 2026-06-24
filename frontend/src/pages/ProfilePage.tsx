@@ -1617,7 +1617,7 @@ function AccountSection({
       <div className="flex flex-wrap items-center gap-4">
         <UserAvatarDisc fullName={user.full_name} email={user.email} />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="font-grotesk text-lg">{t("profile.account_title")}</h2>
             <AccountTypeBadge role={user.role} userType={user.user_type} t={t} />
           </div>
@@ -1760,7 +1760,7 @@ function AccountTypeBadge({
 }) {
   if (userType === "planner") {
     return (
-      <span className="inline-flex items-center rounded-full bg-blush-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+      <span className="inline-flex items-center rounded-full bg-umber-800 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-paper-50 dark:bg-umber-200 dark:text-umber-900">
         {t("profile.account_type_planner")}
       </span>
     );
