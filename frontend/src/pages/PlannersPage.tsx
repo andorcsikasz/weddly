@@ -95,9 +95,9 @@ const STEP_LABELS = [
 
 function StepIndicator({ step, t }: { step: Step; t: (k: string) => string }) {
   return (
-    <div className="mb-8 flex items-center">
+    <div className="mb-8 flex items-start">
       {([0, 1, 2, 3] as Step[]).map((s, i) => (
-        <div key={s} className="flex items-center">
+        <Fragment key={s}>
           <div className="flex flex-col items-center gap-1">
             <div
               className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
@@ -122,18 +122,18 @@ function StepIndicator({ step, t }: { step: Step; t: (k: string) => string }) {
           </div>
           {i < 3 && (
             <div
-              className={`mb-4 h-px w-8 sm:w-16 ${
+              className={`mt-3.5 h-px flex-1 ${
                 s < step ? "bg-umber-700 dark:bg-umber-400" : "bg-paper-300 dark:bg-umber-700"
               }`}
             />
           )}
-        </div>
+        </Fragment>
       ))}
     </div>
   );
 }
 
-// ── Plan selection card (landing-style) ──────────────────────────────────────
+// ── Plan selection card ───────────────────────────────────────────────────────
 
 interface PlanCardProps {
   plan: Plan;
@@ -143,14 +143,9 @@ interface PlanCardProps {
   guests: string;
   price: string;
   period: string;
-  annualPrice: string;
-  annualPriceMonth: string;
-  annualBilledLabel: string;
   features: string[];
   selected: boolean;
   onSelect: (plan: Plan) => void;
-  badge?: string;
-  billingPeriod: "monthly" | "annual";
 }
 
 function PlanCard({
@@ -161,14 +156,9 @@ function PlanCard({
   guests,
   price,
   period,
-  annualPrice,
-  annualPriceMonth,
-  annualBilledLabel,
   features,
   selected,
   onSelect,
-  badge,
-  billingPeriod,
 }: PlanCardProps) {
   return (
     <div
@@ -182,50 +172,23 @@ function PlanCard({
           onSelect(plan);
         }
       }}
-      className={`relative cursor-pointer rounded-2xl p-4 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 ${
+      className={`cursor-pointer rounded-2xl p-4 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-500 focus-visible:ring-offset-2 ${
         selected
           ? "border-2 border-umber-700 bg-umber-50 dark:border-umber-400 dark:bg-umber-800"
           : "border border-paper-300 bg-paper-50 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-600"
       }`}
     >
-      {badge && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-umber-700 px-3 py-0.5 text-xs font-semibold text-paper-50">
-          {badge}
-        </div>
-      )}
-      {/* Top row: name + radio */}
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-grotesk text-[11px] font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
-          {name}
-        </h3>
-        <div
-          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-            selected
-              ? "border-umber-700 bg-paper-50 dark:border-umber-400 dark:bg-umber-900"
-              : "border-umber-300 dark:border-umber-600"
-          }`}
-          aria-hidden="true"
-        >
-          {selected && <div className="h-1.5 w-1.5 rounded-full bg-umber-700 dark:bg-umber-400" />}
-        </div>
+      <h3 className="font-grotesk text-[11px] font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
+        {name}
+      </h3>
+
+      <div className="mt-2 flex items-baseline gap-1">
+        <span className="font-grotesk text-2xl font-bold tracking-tight text-umber-900 dark:text-paper-50">
+          {price}
+        </span>
+        <span className="text-[11px] text-umber-500 dark:text-umber-400">{period}</span>
       </div>
 
-      {/* Price — main visual anchor */}
-      <div className="mt-2">
-        <div className="flex items-baseline gap-1">
-          <span className="font-grotesk text-2xl font-bold tracking-tight text-umber-900 dark:text-paper-50">
-            {billingPeriod === "monthly" ? price : annualPriceMonth}
-          </span>
-          <span className="text-[11px] text-umber-500 dark:text-umber-400">{period}</span>
-        </div>
-        {billingPeriod === "annual" && (
-          <p className="mt-0.5 text-[10px] text-umber-400 dark:text-umber-500">
-            {annualPrice} {annualBilledLabel}
-          </p>
-        )}
-      </div>
-
-      {/* Couple count — secondary, all on one line */}
       <div className="mt-1.5 flex items-baseline gap-1">
         <span className="font-grotesk text-sm font-semibold text-umber-700 dark:text-umber-300">
           {coupleCount}
@@ -234,26 +197,8 @@ function PlanCard({
         <span className="ml-0.5 text-[10px] text-umber-400 dark:text-umber-500">{guests}</span>
       </div>
 
-      {/* Dashed separator with ticket-punch cutout notches */}
-      <div className="relative -mx-4 my-3" aria-hidden="true">
-        <div
-          className={`absolute left-0 top-0 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-paper-100 dark:bg-umber-950 ${
-            selected
-              ? "border-umber-700 dark:border-umber-400"
-              : "border-umber-300 dark:border-umber-600"
-          }`}
-        />
-        <div
-          className={`absolute right-0 top-0 z-10 h-4 w-4 translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-paper-100 dark:bg-umber-950 ${
-            selected
-              ? "border-umber-700 dark:border-umber-400"
-              : "border-umber-300 dark:border-umber-600"
-          }`}
-        />
-        <div className="border-t border-dashed border-paper-300 dark:border-umber-700" />
-      </div>
+      <div className="my-3 border-t border-dashed border-paper-300 dark:border-umber-700" aria-hidden="true" />
 
-      {/* Feature list */}
       <ul className="space-y-1.5">
         {features.map((f) => (
           <li
@@ -273,7 +218,7 @@ function PlanCard({
   );
 }
 
-// ── Registration form (4 steps) ───────────────────────────────────────────────
+// ── Registration form (4 steps: intro → business → message → plan) ────────────
 
 const EMPTY: FormState = {
   full_name: "",
@@ -298,7 +243,6 @@ const EMPTY: FormState = {
 function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   const { t } = useT();
   const [step, setStep] = useState<Step>(0);
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
   const [form, setForm] = useState<FormState>({ ...EMPTY, selected_plan: initialPlan });
   const [prevPlan, setPrevPlan] = useState<Plan | "">(initialPlan);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -326,14 +270,8 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
     });
   }
 
+  // Step 0: contact (required)
   function validateStep0(): boolean {
-    const errs: Partial<Record<keyof FormState, string>> = {};
-    if (!form.selected_plan) errs.selected_plan = t("planners.err_plan");
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  function validateStep1(): boolean {
     const errs: Partial<Record<keyof FormState, string>> = {};
     if (!trimStr(form.full_name)) errs.full_name = t("planners.err_full_name");
     if (!trimStr(form.email) || !form.email.includes("@")) errs.email = t("planners.err_email");
@@ -342,13 +280,10 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
     return Object.keys(errs).length === 0;
   }
 
-  function validateStep2(): boolean {
-    setErrors({});
-    return true;
-  }
-
+  // Step 3: plan + privacy (required)
   function validateStep3(): boolean {
     const errs: Partial<Record<keyof FormState, string>> = {};
+    if (!form.selected_plan) errs.selected_plan = t("planners.err_plan");
     if (!form.privacy_accepted) errs.privacy_accepted = t("planners.err_privacy");
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -357,15 +292,16 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   function handleAdvance(e: React.FormEvent) {
     e.preventDefault();
     if (step === 0) {
-      touch("selected_plan");
+      touch("full_name", "email", "phone");
       if (validateStep0()) setStep(1);
     } else if (step === 1) {
-      touch("full_name", "email", "phone");
-      if (validateStep1()) setStep(2);
+      setErrors({});
+      setStep(2);
     } else if (step === 2) {
-      if (validateStep2()) setStep(3);
+      setErrors({});
+      setStep(3);
     } else {
-      touch("privacy_accepted");
+      touch("selected_plan", "privacy_accepted");
       if (validateStep3()) void doSubmit();
     }
   }
@@ -443,6 +379,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   );
   const opt = <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>;
 
+  // i18n keys already match the desired order: step0=Intro, step1=Business, step2=Tell us more, step3=Choose a plan
   const STEP_TITLES: Record<Step, string> = {
     0: t("planners.step0_title"),
     1: t("planners.step1_title"),
@@ -453,143 +390,14 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   return (
     <section id="waitlist" className="border-t border-paper-200 dark:border-umber-800">
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        {/* Always-visible heading */}
-        <div className="mb-8 text-center">
-          <p className="font-grotesk mb-1 text-xs font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
-            {t("planners.beta_eyebrow")}
-          </p>
-          <h2 className="font-grotesk text-3xl font-semibold tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
-            {t("planners.form_title")}
-          </h2>
-          <p className="mt-2 text-sm text-umber-600 dark:text-umber-400">
-            {t("planners.beta_body")}
-          </p>
-        </div>
-
         <StepIndicator step={step} t={t} />
 
         <form onSubmit={handleAdvance} noValidate>
-          {/* ── Step 0: Plan selection ── */}
+          {/* ── Step 0: Introduce yourself ── */}
           {step === 0 && (
-            <div className="space-y-5">
-              <h3 className="font-grotesk text-center text-xl font-semibold text-umber-900 dark:text-paper-50">
-                {STEP_TITLES[0]}
-              </h3>
-
-              {/* Billing toggle */}
-              <div className="flex justify-center">
-                <div className="flex rounded-full border border-paper-300 p-0.5 text-xs font-semibold dark:border-umber-700">
-                  {(["monthly", "annual"] as const).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setBillingPeriod(p)}
-                      className={`rounded-full px-4 py-1.5 transition-colors ${
-                        billingPeriod === p
-                          ? "bg-umber-800 text-paper-50 dark:bg-umber-300 dark:text-umber-900"
-                          : "text-umber-600 hover:text-umber-900 dark:text-umber-400 dark:hover:text-paper-100"
-                      }`}
-                    >
-                      {p === "monthly"
-                        ? t("planners.billing_monthly")
-                        : t("planners.billing_annual")}
-                      {p === "annual" && (
-                        <span className="ml-1.5 rounded-full bg-sage-100 px-1.5 py-0.5 text-[10px] text-sage-700 dark:bg-sage-900 dark:text-sage-300">
-                          {t("planners.billing_save")}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div
-                role="radiogroup"
-                aria-label={STEP_TITLES[0]}
-                className="grid gap-3 sm:grid-cols-3"
-              >
-                <PlanCard
-                  plan="basic"
-                  name={t("planners.plan_basic_name")}
-                  coupleCount={t("planners.plan_basic_couple_count")}
-                  coupleLabel={t("planners.plan_basic_couple_label")}
-                  guests={t("planners.plan_basic_guests")}
-                  price={t("planners.plan_basic_price")}
-                  period={t("planners.plan_basic_period")}
-                  annualPrice={t("planners.plan_basic_annual_price")}
-                  annualPriceMonth={t("planners.plan_basic_annual_permonth")}
-                  annualBilledLabel={t("planners.plan_annual_billed")}
-                  features={[
-                    t("planners.plan_basic_feature_1"),
-                    t("planners.plan_basic_feature_2"),
-                    t("planners.plan_basic_feature_3"),
-                  ]}
-                  billingPeriod={billingPeriod}
-                  selected={form.selected_plan === "basic"}
-                  onSelect={(p) => set("selected_plan", p)}
-                />
-                <PlanCard
-                  plan="pro"
-                  name={t("planners.plan_pro_name")}
-                  coupleCount={t("planners.plan_pro_couple_count")}
-                  coupleLabel={t("planners.plan_pro_couple_label")}
-                  guests={t("planners.plan_pro_guests")}
-                  price={t("planners.plan_pro_price")}
-                  period={t("planners.plan_pro_period")}
-                  annualPrice={t("planners.plan_pro_annual_price")}
-                  annualPriceMonth={t("planners.plan_pro_annual_permonth")}
-                  annualBilledLabel={t("planners.plan_annual_billed")}
-                  features={[
-                    t("planners.plan_pro_feature_1"),
-                    t("planners.plan_pro_feature_2"),
-                    t("planners.plan_pro_feature_3"),
-                    t("planners.plan_pro_feature_4"),
-                    t("planners.plan_pro_feature_5"),
-                  ]}
-                  badge={t("planners.plan_pro_badge")}
-                  billingPeriod={billingPeriod}
-                  selected={form.selected_plan === "pro"}
-                  onSelect={(p) => set("selected_plan", p)}
-                />
-                <PlanCard
-                  plan="unlimited"
-                  name={t("planners.plan_unlimited_name")}
-                  coupleCount={t("planners.plan_unlimited_couple_count")}
-                  coupleLabel={t("planners.plan_unlimited_couple_label")}
-                  guests={t("planners.plan_unlimited_guests")}
-                  price={t("planners.plan_unlimited_price")}
-                  period={t("planners.plan_unlimited_period")}
-                  annualPrice={t("planners.plan_unlimited_annual_price")}
-                  annualPriceMonth={t("planners.plan_unlimited_annual_permonth")}
-                  annualBilledLabel={t("planners.plan_annual_billed")}
-                  features={[
-                    t("planners.plan_unlimited_feature_1"),
-                    t("planners.plan_unlimited_feature_2"),
-                    t("planners.plan_unlimited_feature_3"),
-                  ]}
-                  billingPeriod={billingPeriod}
-                  selected={form.selected_plan === "unlimited"}
-                  onSelect={(p) => set("selected_plan", p)}
-                />
-              </div>
-
-              {touched.has("selected_plan") && errors.selected_plan && (
-                <p className={errCls} role="alert">
-                  {errors.selected_plan}
-                </p>
-              )}
-
-              <button type="submit" className="btn-primary w-full py-2.5 text-sm">
-                {t("planners.step1_cta")} →
-              </button>
-            </div>
-          )}
-
-          {/* ── Step 1: Introduce yourself ── */}
-          {step === 1 && (
             <div className="mx-auto max-w-lg space-y-5">
               <h3 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-                {STEP_TITLES[1]}
+                {STEP_TITLES[0]}
               </h3>
               <div>
                 <label htmlFor="pw-name" className={labelCls}>
@@ -644,15 +452,17 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 />
                 {touched.has("phone") && errors.phone && <p className={errCls}>{errors.phone}</p>}
               </div>
-              <NavRow onBack={() => setStep(0)} t={t} />
+              <button type="submit" className="btn-primary w-full py-2.5 text-sm">
+                {t("common.next")} →
+              </button>
             </div>
           )}
 
-          {/* ── Step 2: About your business ── */}
-          {step === 2 && (
+          {/* ── Step 1: Your business ── */}
+          {step === 1 && (
             <div className="mx-auto max-w-lg space-y-5">
               <h3 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-                {STEP_TITLES[2]}
+                {STEP_TITLES[1]}
               </h3>
               <div>
                 <label htmlFor="pw-company" className={labelCls}>
@@ -794,18 +604,16 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   </div>
                 )}
               </div>
-              <NavRow onBack={() => setStep(1)} t={t} />
+              <NavRow onBack={() => setStep(0)} t={t} />
             </div>
           )}
 
-          {/* ── Step 3: Almost there ── */}
-          {step === 3 && (
+          {/* ── Step 2: Tell us more ── */}
+          {step === 2 && (
             <div className="mx-auto max-w-lg space-y-5">
               <h3 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-                {STEP_TITLES[3]}
+                {STEP_TITLES[2]}
               </h3>
-
-              {/* Early bird */}
               <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-paper-300 p-4 transition-colors hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600">
                 <input
                   type="checkbox"
@@ -822,7 +630,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   </p>
                 </div>
               </label>
-
               <div>
                 <label htmlFor="pw-message" className={labelCls}>
                   {t("planners.label_message")}
@@ -837,6 +644,79 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   placeholder={t("planners.placeholder_message")}
                 />
               </div>
+              <NavRow onBack={() => setStep(1)} t={t} />
+            </div>
+          )}
+
+          {/* ── Step 3: Choose a plan ── */}
+          {step === 3 && (
+            <div className="space-y-5">
+              <h3 className="font-grotesk text-center text-xl font-semibold text-umber-900 dark:text-paper-50">
+                {STEP_TITLES[3]}
+              </h3>
+
+              <div
+                role="radiogroup"
+                aria-label={STEP_TITLES[3]}
+                className="grid gap-3 sm:grid-cols-3"
+              >
+                <PlanCard
+                  plan="basic"
+                  name={t("planners.plan_basic_name")}
+                  coupleCount={t("planners.plan_basic_couple_count")}
+                  coupleLabel={t("planners.plan_basic_couple_label")}
+                  guests={t("planners.plan_basic_guests")}
+                  price={t("planners.plan_basic_price")}
+                  period={t("planners.plan_basic_period")}
+                  features={[
+                    t("planners.plan_basic_feature_1"),
+                    t("planners.plan_basic_feature_2"),
+                    t("planners.plan_basic_feature_3"),
+                  ]}
+                  selected={form.selected_plan === "basic"}
+                  onSelect={(p) => set("selected_plan", p)}
+                />
+                <PlanCard
+                  plan="pro"
+                  name={t("planners.plan_pro_name")}
+                  coupleCount={t("planners.plan_pro_couple_count")}
+                  coupleLabel={t("planners.plan_pro_couple_label")}
+                  guests={t("planners.plan_pro_guests")}
+                  price={t("planners.plan_pro_price")}
+                  period={t("planners.plan_pro_period")}
+                  features={[
+                    t("planners.plan_pro_feature_1"),
+                    t("planners.plan_pro_feature_2"),
+                    t("planners.plan_pro_feature_3"),
+                    t("planners.plan_pro_feature_4"),
+                    t("planners.plan_pro_feature_5"),
+                  ]}
+                  selected={form.selected_plan === "pro"}
+                  onSelect={(p) => set("selected_plan", p)}
+                />
+                <PlanCard
+                  plan="unlimited"
+                  name={t("planners.plan_unlimited_name")}
+                  coupleCount={t("planners.plan_unlimited_couple_count")}
+                  coupleLabel={t("planners.plan_unlimited_couple_label")}
+                  guests={t("planners.plan_unlimited_guests")}
+                  price={t("planners.plan_unlimited_price")}
+                  period={t("planners.plan_unlimited_period")}
+                  features={[
+                    t("planners.plan_unlimited_feature_1"),
+                    t("planners.plan_unlimited_feature_2"),
+                    t("planners.plan_unlimited_feature_3"),
+                  ]}
+                  selected={form.selected_plan === "unlimited"}
+                  onSelect={(p) => set("selected_plan", p)}
+                />
+              </div>
+
+              {touched.has("selected_plan") && errors.selected_plan && (
+                <p className={errCls} role="alert">
+                  {errors.selected_plan}
+                </p>
+              )}
 
               <div>
                 <label className="flex cursor-pointer items-start gap-2">
@@ -999,7 +879,7 @@ function BetaOffer() {
               e.preventDefault();
               document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="btn btn-lg mt-6 bg-paper-50 text-umber-900 hover:bg-paper-200"
+            className="btn btn-lg mt-6 inline-block bg-paper-50 text-umber-900 hover:bg-paper-200"
           >
             {t("planners.hero_cta")}
           </a>
@@ -1067,11 +947,11 @@ export default function PlannersPage() {
         {/* ── Feature showcase ── */}
         <FeatureShowcase />
 
-        {/* ── Beta offer + onboarding steps ── */}
+        {/* ── Beta offer ── */}
         <BetaOffer />
 
-        {/* ── Registration form ── */}
-        <RegistrationForm initialPlan="pro" />
+        {/* ── Registration form (planner beta waitlist) ── */}
+        <RegistrationForm initialPlan="" />
 
         {/* ── Footer escape links ── */}
         <section className="border-t border-paper-200 px-4 py-10 text-center dark:border-umber-800">
