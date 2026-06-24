@@ -8,8 +8,8 @@
 // email nudge — there is one brain, this is just another view of it.
 
 import type { PlanningItem } from "@shared/types";
-import { ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowRight, ExternalLink, Settings2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { planningApi } from "../lib/endpoints";
@@ -17,7 +17,42 @@ import { todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useToast } from "./ui";
 
-const MAX_ROWS = 5;
+const SETTINGS_KEY = "weddly.upcoming-settings";
+
+type UpcomingTopic = "wedding" | "honeymoon" | "all";
+type UpcomingCount = 3 | 5 | 10;
+
+interface UpcomingSettings {
+  topic: UpcomingTopic;
+  count: UpcomingCount;
+}
+
+function loadSettings(): UpcomingSettings {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<UpcomingSettings>;
+      return {
+        topic: (["wedding", "honeymoon", "all"] as UpcomingTopic[]).includes(
+          parsed.topic as UpcomingTopic,
+        )
+          ? (parsed.topic as UpcomingTopic)
+          : "wedding",
+        count: ([3, 5, 10] as UpcomingCount[]).includes(parsed.count as UpcomingCount)
+          ? (parsed.count as UpcomingCount)
+          : 5,
+      };
+    }
+  } catch {
+    // ignore
+  }
+  return { topic: "wedding", count: 5 };
+}
+
+function saveSettings(s: UpcomingSettings) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+}
+
 const MS_PER_DAY = 86_400_000;
 
 /** Whole days from today to an ISO due date (negative = overdue). Both sides are
@@ -29,21 +64,22 @@ function daysUntil(dueIso: string, today: string): number {
   return Math.round((due - now) / MS_PER_DAY);
 }
 
-/** A dated, undone wedding task that hasn't happened yet — sorted soonest-first
- *  (overdue naturally floats to the top), capped, ready to render. */
-function selectUpcoming(items: PlanningItem[]): PlanningItem[] {
+/** A dated, undone task filtered + sorted by settings, capped, ready to render. */
+function selectUpcoming(items: PlanningItem[], settings: UpcomingSettings): PlanningItem[] {
   return items
-    .filter(
-      (it) => it.kind === "task" && !it.done && it.due_date !== null && it.topic !== "honeymoon",
-    )
+    .filter((it) => {
+      if (it.kind !== "task" || it.done || it.due_date === null) return false;
+      if (settings.topic === "wedding") return it.topic !== "honeymoon";
+      if (settings.topic === "honeymoon") return it.topic === "honeymoon";
+      return true;
+    })
     .sort((a, b) => {
-      // due_date is non-null here (filtered above); ISO strings sort lexically.
       const byDate = (a.due_date as string).localeCompare(b.due_date as string);
       if (byDate !== 0) return byDate;
-      if (a.priority !== b.priority) return b.priority - a.priority; // "!!" before "!"
-      return a.id - b.id; // stable tiebreak
+      if (a.priority !== b.priority) return b.priority - a.priority;
+      return a.id - b.id;
     })
-    .slice(0, MAX_ROWS);
+    .slice(0, settings.count);
 }
 
 export function UpcomingTasksCard({
@@ -56,6 +92,10 @@ export function UpcomingTasksCard({
   const { t } = useT();
   const toast = useToast();
   const [items, setItems] = useState<PlanningItem[] | null>(null);
+  const [settings, setSettings] = useState<UpcomingSettings>(loadSettings);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsBtnRef = useRef<HTMLButtonElement>(null);
+  const settingsPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +105,6 @@ export function UpcomingTasksCard({
         if (!cancelled) setItems(Array.isArray(res.items) ? res.items : []);
       })
       .catch(() => {
-        // Non-critical — the card just stays hidden until the next load.
         if (!cancelled) setItems([]);
       });
     return () => {
@@ -73,15 +112,43 @@ export function UpcomingTasksCard({
     };
   }, []);
 
-  // Still loading: render nothing rather than a skeleton — the onboarding card
-  // above already anchors the section.
+  // Close settings panel when clicking outside.
+  useEffect(() => {
+    if (!settingsOpen) return;
+    function onPointerDown(e: PointerEvent) {
+      if (
+        settingsPanelRef.current &&
+        !settingsPanelRef.current.contains(e.target as Node) &&
+        !settingsBtnRef.current?.contains(e.target as Node)
+      ) {
+        setSettingsOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [settingsOpen]);
+
+  function updateSettings(patch: Partial<UpcomingSettings>) {
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    saveSettings(next);
+  }
+
   if (items === null) return null;
 
   const today = todayIso();
-  const upcoming = selectUpcoming(items);
+  const upcoming = selectUpcoming(items, settings);
   const hasAnyTask = items.some((it) => it.kind === "task");
   const totalUpcoming = items.filter(
-    (it) => it.kind === "task" && !it.done && it.due_date !== null && it.topic !== "honeymoon",
+    (it) =>
+      it.kind === "task" &&
+      !it.done &&
+      it.due_date !== null &&
+      (settings.topic === "all"
+        ? true
+        : settings.topic === "honeymoon"
+          ? it.topic === "honeymoon"
+          : it.topic !== "honeymoon"),
   ).length;
 
   /** Optimistic done-toggle. The row no longer qualifies once done, so it drops
@@ -149,23 +216,101 @@ export function UpcomingTasksCard({
     );
   }
 
+  const TOPIC_OPTIONS: { value: UpcomingTopic; labelKey: string }[] = [
+    { value: "wedding", labelKey: "dashboard.upcoming_settings_topic_wedding" },
+    { value: "honeymoon", labelKey: "dashboard.upcoming_settings_topic_honeymoon" },
+    { value: "all", labelKey: "dashboard.upcoming_settings_topic_all" },
+  ];
+
+  const COUNT_OPTIONS: UpcomingCount[] = [3, 5, 10];
+
   return (
     <section className="card mb-8 p-0 font-grotesk">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 py-3 md:px-6 md:py-4">
         <h2 className="min-w-0 flex-1 truncate font-grotesk text-base font-medium text-umber-900 md:text-lg md:font-semibold dark:text-paper-50">
           {t("dashboard.upcoming_title")}
         </h2>
+
         {upcoming.length > 0 && (
           <span className="shrink-0 text-xs text-umber-500 dark:text-umber-300">
             {t("dashboard.upcoming_count", { n: totalUpcoming })}
           </span>
         )}
+
+        {/* Navigate to task management page */}
+        <Link
+          to="/app/planning"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-umber-400 transition hover:bg-paper-100 hover:text-umber-700 dark:text-umber-500 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+          title={t("dashboard.upcoming_view_all")}
+        >
+          <ExternalLink size={15} aria-hidden="true" />
+        </Link>
+
+        {/* Settings icon */}
+        <div className="relative shrink-0">
+          <button
+            ref={settingsBtnRef}
+            type="button"
+            onClick={() => setSettingsOpen((o) => !o)}
+            className={`flex h-7 w-7 items-center justify-center rounded-md text-umber-400 transition hover:bg-paper-100 hover:text-umber-700 dark:text-umber-500 dark:hover:bg-umber-700 dark:hover:text-paper-100 ${settingsOpen ? "bg-paper-100 text-umber-700 dark:bg-umber-700 dark:text-paper-100" : ""}`}
+            aria-label="Beállítások"
+          >
+            <Settings2 size={15} aria-hidden="true" />
+          </button>
+
+          {settingsOpen && (
+            <div
+              ref={settingsPanelRef}
+              className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-paper-200 bg-white p-3 shadow-lg dark:border-umber-700 dark:bg-umber-900"
+            >
+              {/* Topic filter */}
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-umber-400 dark:text-umber-500">
+                {t("dashboard.upcoming_settings_topic")}
+              </p>
+              <div className="mb-3 grid gap-0.5">
+                {TOPIC_OPTIONS.map(({ value, labelKey }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => updateSettings({ topic: value })}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition ${settings.topic === value ? "bg-paper-100 font-medium text-umber-900 dark:bg-umber-700 dark:text-paper-50" : "text-umber-600 hover:bg-paper-50 dark:text-umber-300 dark:hover:bg-umber-800"}`}
+                  >
+                    <span
+                      className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${settings.topic === value ? "border-blush-500 bg-blush-500" : "border-paper-400 dark:border-umber-600"}`}
+                    >
+                      {settings.topic === value && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                      )}
+                    </span>
+                    {t(labelKey as Parameters<typeof t>[0])}
+                  </button>
+                ))}
+              </div>
+
+              {/* Count selector */}
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-umber-400 dark:text-umber-500">
+                {t("dashboard.upcoming_settings_count")}
+              </p>
+              <div className="flex gap-1">
+                {COUNT_OPTIONS.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => updateSettings({ count: n })}
+                    className={`flex-1 rounded-lg py-1 text-sm font-medium transition ${settings.count === n ? "bg-blush-500 text-white" : "bg-paper-100 text-umber-600 hover:bg-paper-200 dark:bg-umber-700 dark:text-umber-300 dark:hover:bg-umber-600"}`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="px-4 pb-4 md:px-6 md:pb-6">
         {upcoming.length === 0 && !hasNudges ? (
-          // Two distinct empties: a couple with no tasks at all gets a nudge to
-          // start; one whose tasks are all done/undated gets reassurance.
           hasAnyTask ? (
             <div className="py-2">
               <p className="text-sm text-umber-500 dark:text-umber-300">

@@ -924,6 +924,11 @@ export interface LocaleMessages {
     /** Empty state when tasks exist but none are dated/pending — reassurance. */
     upcoming_empty_clear: string;
     upcoming_next_step_lock_date: string;
+    upcoming_settings_topic: string;
+    upcoming_settings_topic_wedding: string;
+    upcoming_settings_topic_honeymoon: string;
+    upcoming_settings_topic_all: string;
+    upcoming_settings_count: string;
     quick_links_title: string;
     /** Dashboard spending donuts: paid-vs-planned + category breakdown. */
     charts: {

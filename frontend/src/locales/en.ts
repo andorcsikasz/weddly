@@ -752,6 +752,11 @@ const en: LocaleMessages = {
     upcoming_empty_none_cta: "Start planning",
     upcoming_empty_clear: "Nothing urgent. Everything's on track.",
     upcoming_next_step_lock_date: "Next step: Lock the wedding date",
+    upcoming_settings_topic: "What to show?",
+    upcoming_settings_topic_wedding: "Wedding tasks",
+    upcoming_settings_topic_honeymoon: "Honeymoon tasks",
+    upcoming_settings_topic_all: "Both",
+    upcoming_settings_count: "How many?",
     quick_links_title: "Shortcuts",
     charts: {
       title: "Spending at a glance",
