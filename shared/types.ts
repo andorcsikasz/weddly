@@ -95,6 +95,35 @@ export interface PlannerMessage {
   created_at: UnixMs;
 }
 
+export interface PlannerProfile {
+  full_name: string;
+  email: string;
+  business_name: string | null;
+  planner_bio: string | null;
+  planner_city: string | null;
+  planner_website: string | null;
+  planner_phone: string | null;
+}
+
+export interface LinkedPlannerView {
+  planner_user_id: number;
+  full_name: string;
+  email: string;
+  business_name: string | null;
+  planner_city: string | null;
+  planner_bio: string | null;
+  status: "active" | "pending";
+  linked_at: number;
+}
+
+export interface PlannerInviteView {
+  couple_id: number;
+  display_name: string;
+  wedding_date: string | null;
+  status: "pending";
+  created_at: number;
+}
+
 // ─── Admin dashboard (users + couples directory) ─────────────────────────────
 
 export interface AdminUserView {
@@ -169,6 +198,29 @@ export interface AdminSidebarBadges {
   vendor_waitlist: number;
   planner_waitlist: number;
   feedback: number;
+}
+
+/** Source type for collected admin email entries. */
+export type AdminEmailSourceType = "user" | "guest" | "vendor" | "vendor_waitlist" | "planner_waitlist";
+
+/** One row in the admin email collection list. Emails come from every source
+ *  (registered users, wedding guests, vendor waitlist, planner waitlist, active
+ *  vendor accounts) and are read-only -- no delete is exposed. */
+export interface AdminEmailEntry {
+  email: string;
+  source_type: AdminEmailSourceType;
+  /** Display name or business name; null when not available. */
+  name: string | null;
+  /** Unix ms when the email was first added to this source table. */
+  added_at: number;
+  /** Extra context: couple slug for guests, category for waitlist entries. */
+  meta: string | null;
+}
+
+/** Paginated response for the admin email list endpoint. */
+export interface AdminEmailListResponse {
+  entries: AdminEmailEntry[];
+  total: number;
 }
 
 /** Admin-side projection of `user_flags`. Internal columns

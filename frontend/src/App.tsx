@@ -50,6 +50,7 @@ const AdminSuppliersPage = lazy(() => import("./pages/AdminSuppliersPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminVendorWaitlistPage = lazy(() => import("./pages/AdminVendorWaitlistPage"));
 const AdminPlannerWaitlistPage = lazy(() => import("./pages/AdminPlannerWaitlistPage"));
+const AdminEmailListPage = lazy(() => import("./pages/AdminEmailListPage"));
 const BudgetPage = lazy(() => import("./pages/BudgetPage"));
 const ChangeEmailPage = lazy(() => import("./pages/ChangeEmailPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
@@ -84,6 +85,7 @@ const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
 const WishlistEditorPage = lazy(() => import("./pages/WishlistEditorPage"));
 const PlannerHomePage = lazy(() => import("./pages/PlannerHomePage"));
 const PlannerMessagesPage = lazy(() => import("./pages/PlannerMessagesPage"));
+const PlannerProfilePage = lazy(() => import("./pages/PlannerProfilePage"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the
 // "continue with limited access" path. Lets the gate downgrade to an
@@ -849,6 +851,16 @@ export default function App() {
               </Page>
             }
           />
+          <Route
+            path="admin/email-list"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminEmailListPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
         </Route>
         {/* Planner workspace — separate route tree from the couple /app.
             RequireAuth only (planners must log in and verify email);
@@ -878,6 +890,14 @@ export default function App() {
           element={
             <RequireAuth>
               <PlannerMessagesPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/app/planner/profile"
+          element={
+            <RequireAuth>
+              <PlannerProfilePage />
             </RequireAuth>
           }
         />

@@ -3906,6 +3906,7 @@ export interface LocaleMessages {
     nav_taxonomy: string;
     nav_financial_planner: string;
     nav_email_preview: string;
+    nav_email_list: string;
     tab_suppliers: string;
     tab_users: string;
     tab_feedback: string;
@@ -4865,6 +4866,26 @@ export interface LocaleMessages {
     analytics_demo_top_features_empty: string;
     analytics_demo_feature_demos_one: string;
     analytics_demo_feature_demos_other: string;
+    /** /app/admin/email-list — collected emails from all sources. */
+    email_list_title: string;
+    email_list_subtitle: string;
+    email_list_load_error: string;
+    email_list_export_csv: string;
+    email_list_search_placeholder: string;
+    email_list_filter_all: string;
+    email_list_source_user: string;
+    email_list_source_vendor: string;
+    email_list_source_guest: string;
+    email_list_source_vendor_waitlist: string;
+    email_list_source_planner_waitlist: string;
+    email_list_col_email: string;
+    email_list_col_source: string;
+    email_list_col_name: string;
+    email_list_col_meta: string;
+    email_list_col_added: string;
+    email_list_empty_title: string;
+    email_list_empty_body: string;
+    email_list_count: string;
   };
   rsvp: {
     title: string;
@@ -5062,6 +5083,9 @@ export interface LocaleMessages {
      *  to partner / workspace. */
     account_title: string;
     account_body: string;
+    account_type_user: string;
+    account_type_planner: string;
+    account_type_vendor: string;
     account_email_label: string;
     account_name_label: string;
     account_name_placeholder: string;
@@ -6414,6 +6438,11 @@ export interface LocaleMessages {
     task_summary: string;
     task_summary_ok: string;
     messages_link: string;
+    profile_link: string;
+    back_label: string;
+    invites_heading: string;
+    invite_accept: string;
+    invite_decline: string;
   };
   planner_messages: {
     heading: string;
@@ -6435,5 +6464,31 @@ export interface LocaleMessages {
     to_placeholder: string;
     subject_placeholder: string;
     body_placeholder: string;
+  };
+  planner_profile: {
+    heading: string;
+    full_name_label: string;
+    business_name_label: string;
+    city_label: string;
+    phone_label: string;
+    website_label: string;
+    bio_label: string;
+    bio_placeholder: string;
+    save_button: string;
+    save_success: string;
+  };
+  couple_planners: {
+    heading: string;
+    empty: string;
+    invite_heading: string;
+    invite_placeholder: string;
+    invite_button: string;
+    invite_success: string;
+    invite_error_not_found: string;
+    invite_error_duplicate: string;
+    status_active: string;
+    status_pending: string;
+    revoke_button: string;
+    revoke_confirm: string;
   };
 }

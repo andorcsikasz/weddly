@@ -13,6 +13,8 @@ import type {
   Currency,
   DataExportSummary,
   ExportKind,
+  LinkedPlannerView,
+  UserRole,
 } from "@shared/types";
 import { CURRENCIES } from "@shared/types";
 import { TIMELINE_EMAIL_ESCALATION_VALUES } from "@shared/notifications";
@@ -51,6 +53,7 @@ import {
   authApi,
   budgetApi,
   coupleApi,
+  couplePlannerApi,
   documentsApi,
   exportApi,
   fetchGuestCsvBlob,
@@ -809,6 +812,8 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
 
       {showWorkspace && <WorkspacesPanel activeCoupleId={couple?.id ?? null} />}
 
+      {showWorkspace && <PlannerPanel t={t} />}
+
       {!tab && <ZoneLabel>{t("profile.zone_planning")}</ZoneLabel>}
 
       {showPlanning && (
@@ -1534,7 +1539,7 @@ function AccountSection({
   onLocaleChange,
   onSaved,
 }: {
-  user: { id: number; email: string; full_name: string; locale: "hu" | "en" | null } | null;
+  user: { id: number; email: string; full_name: string; locale: "hu" | "en" | null; role: UserRole; user_type: "couple" | "planner" } | null;
   t: T;
   locale: Locale;
   onLocaleChange: (next: Locale) => void;
@@ -1612,7 +1617,10 @@ function AccountSection({
       <div className="flex flex-wrap items-center gap-4">
         <UserAvatarDisc fullName={user.full_name} email={user.email} />
         <div className="min-w-0 flex-1">
-          <h2 className="font-grotesk text-lg">{t("profile.account_title")}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-grotesk text-lg">{t("profile.account_title")}</h2>
+            <AccountTypeBadge role={user.role} userType={user.user_type} t={t} />
+          </div>
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
             {t("profile.account_body")}
           </p>
@@ -1737,6 +1745,37 @@ function AccountSection({
         </li>
       </ul>
     </section>
+  );
+}
+
+/** Small pill that labels the account type: USER / PLANNER / VENDOR. */
+function AccountTypeBadge({
+  role,
+  userType,
+  t,
+}: {
+  role: UserRole;
+  userType: "couple" | "planner";
+  t: T;
+}) {
+  if (userType === "planner") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-blush-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+        {t("profile.account_type_planner")}
+      </span>
+    );
+  }
+  if (role === "vendor") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-400/15 dark:text-amber-300">
+        {t("profile.account_type_vendor")}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-full bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-umber-500 dark:bg-umber-700 dark:text-umber-200">
+      {t("profile.account_type_user")}
+    </span>
   );
 }
 
@@ -2150,6 +2189,126 @@ type T = (path: string, vars?: Record<string, string | number>) => string;
  *  ActivityPanel: header toggles a chevron, state lives in the component
  *  (open/close per visit, no persistence). Default closed so the section
  *  doesn't dominate the page when the archive grows. */
+function PlannerPanel({ t }: { t: T }) {
+  const [planners, setPlanners] = useState<LinkedPlannerView[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [inviteError, setInviteError] = useState("");
+
+  useEffect(() => {
+    couplePlannerApi.listPlanners().then((r) => setPlanners(r.planners)).catch(() => {});
+  }, []);
+
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+    setInviteStatus("loading");
+    setInviteError("");
+    try {
+      await couplePlannerApi.invitePlanner(inviteEmail.trim());
+      const r = await couplePlannerApi.listPlanners();
+      setPlanners(r.planners);
+      setInviteEmail("");
+      setInviteStatus("ok");
+    } catch (err) {
+      setInviteStatus("error");
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("409") || msg.toLowerCase().includes("already")) {
+        setInviteError(t("couple_planners.invite_error_duplicate"));
+      } else if (msg.includes("404") || msg.toLowerCase().includes("not found")) {
+        setInviteError(t("couple_planners.invite_error_not_found"));
+      } else {
+        setInviteError(msg || t("couple_planners.invite_error_not_found"));
+      }
+    }
+  }
+
+  async function handleRevoke(plannerUserId: number) {
+    await couplePlannerApi.revokePlanner(plannerUserId);
+    setPlanners((prev) => prev.filter((p) => p.planner_user_id !== plannerUserId));
+  }
+
+  return (
+    <section className="card mt-6">
+      <h2 className="font-grotesk text-lg">{t("couple_planners.heading")}</h2>
+
+      {planners.length === 0 ? (
+        <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">{t("couple_planners.empty")}</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-paper-200 dark:divide-umber-700">
+          {planners.map((p) => (
+            <li key={p.planner_user_id} className="flex items-center justify-between gap-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate font-medium text-ink-900 dark:text-paper-50">
+                  {p.business_name ?? p.full_name}
+                  {p.business_name && (
+                    <span className="ml-1.5 text-sm font-normal text-ink-500 dark:text-umber-300">
+                      ({p.full_name})
+                    </span>
+                  )}
+                </p>
+                {p.planner_city && (
+                  <p className="text-xs text-ink-500 dark:text-umber-400">{p.planner_city}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    p.status === "active"
+                      ? "bg-sage-100 text-sage-700 dark:bg-sage-900/30 dark:text-sage-400"
+                      : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                  }`}
+                >
+                  {p.status === "active" ? t("couple_planners.status_active") : t("couple_planners.status_pending")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleRevoke(p.planner_user_id)}
+                  className="btn-sm btn-outline text-xs"
+                >
+                  {t("couple_planners.revoke_button")}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-5 border-t border-paper-200 pt-5 dark:border-umber-700">
+        <p className="mb-3 text-sm font-medium text-ink-700 dark:text-umber-300">
+          {t("couple_planners.invite_heading")}
+        </p>
+        <form onSubmit={(e) => void handleInvite(e)} className="flex gap-2">
+          <input
+            type="email"
+            className="input flex-1 text-sm"
+            value={inviteEmail}
+            onChange={(e) => {
+              setInviteEmail(e.target.value);
+              if (inviteStatus !== "idle") setInviteStatus("idle");
+            }}
+            placeholder={t("couple_planners.invite_placeholder")}
+            disabled={inviteStatus === "loading"}
+          />
+          <button
+            type="submit"
+            disabled={inviteStatus === "loading" || !inviteEmail.trim()}
+            className="btn-primary btn-sm shrink-0"
+          >
+            {t("couple_planners.invite_button")}
+          </button>
+        </form>
+        {inviteStatus === "ok" && (
+          <p className="mt-2 text-xs text-sage-600">{t("couple_planners.invite_success")}</p>
+        )}
+        {inviteStatus === "error" && (
+          <p className="mt-2 text-xs text-red-500">{inviteError}</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function DocumentsPanel({
   documents,
   locale,

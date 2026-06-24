@@ -1,7 +1,7 @@
-import { CalendarRange, ClipboardList, MessageSquare, Users } from "lucide-react";
+import { CalendarRange, ClipboardList, MessageSquare, User, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import type { PlannerClientView, PlannerTaskRow } from "@shared/types";
+import type { PlannerClientView, PlannerInviteView, PlannerTaskRow } from "@shared/types";
 import { plannerApi } from "../lib/endpoints";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
@@ -154,6 +154,7 @@ export default function PlannerHomePage() {
 
   const [clients, setClients] = useState<PlannerClientView[]>([]);
   const [tasks, setTasks] = useState<PlannerTaskRow[]>([]);
+  const [invites, setInvites] = useState<PlannerInviteView[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [addStatus, setAddStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -161,10 +162,11 @@ export default function PlannerHomePage() {
   const [enteringId, setEnteringId] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all([plannerApi.listClients(), plannerApi.listTasks()])
-      .then(([cr, tr]) => {
+    Promise.all([plannerApi.listClients(), plannerApi.listTasks(), plannerApi.listInvites()])
+      .then(([cr, tr, ir]) => {
         setClients(cr.clients);
         setTasks(tr.tasks);
+        setInvites(ir.invites);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -186,6 +188,22 @@ export default function PlannerHomePage() {
       setAddStatus("error");
       setAddError(err instanceof Error ? err.message : t("planner_home.add_client_error"));
     }
+  }
+
+  async function handleAcceptInvite(coupleId: number) {
+    try {
+      await plannerApi.acceptInvite(coupleId);
+      const [cr, ir] = await Promise.all([plannerApi.listClients(), plannerApi.listInvites()]);
+      setClients(cr.clients);
+      setInvites(ir.invites);
+    } catch {}
+  }
+
+  async function handleDeclineInvite(coupleId: number) {
+    try {
+      await plannerApi.declineInvite(coupleId);
+      setInvites((prev) => prev.filter((i) => i.couple_id !== coupleId));
+    } catch {}
   }
 
   async function handleEnter(coupleId: number) {
@@ -231,6 +249,13 @@ export default function PlannerHomePage() {
               <MessageSquare size={15} />
               {t("planner_home.messages_link")}
             </Link>
+            <Link
+              to="/app/planner/profile"
+              className="flex items-center gap-1.5 text-sm text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
+            >
+              <User size={15} />
+              {t("planner_home.profile_link")}
+            </Link>
             <button
               type="button"
               onClick={() => void logout()}
@@ -249,6 +274,50 @@ export default function PlannerHomePage() {
           </h1>
           <p className="mt-2 text-umber-500 dark:text-umber-400">{t("planner_home.subtitle")}</p>
         </div>
+
+        {/* Pending invites from couples */}
+        {!loading && invites.length > 0 && (
+          <section className="mb-8">
+            <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+              {t("planner_home.invites_heading")}
+            </h2>
+            <div className="space-y-3">
+              {invites.map((inv) => (
+                <div
+                  key={inv.couple_id}
+                  className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-800/40 dark:bg-amber-900/10"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-grotesk font-semibold text-umber-900 dark:text-paper-50">
+                      {inv.display_name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
+                      {inv.wedding_date
+                        ? formatDate(inv.wedding_date, "hu")
+                        : t("planner_home.client_wedding_date_none")}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleAcceptInvite(inv.couple_id)}
+                      className="btn-primary btn-sm"
+                    >
+                      {t("planner_home.invite_accept")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeclineInvite(inv.couple_id)}
+                      className="btn-outline btn-sm"
+                    >
+                      {t("planner_home.invite_decline")}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Client roster */}
         <section className="mb-12">

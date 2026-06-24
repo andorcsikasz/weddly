@@ -1253,3 +1253,10 @@ db.exec(
 
 // Planner private notes per client — additive, null = no notes yet.
 addColumnIfMissing("planner_clients", "notes", "notes TEXT");
+
+// Planner profile fields — additive, all nullable (planners fill in later).
+addColumnIfMissing("users", "business_name", "business_name TEXT");
+addColumnIfMissing("users", "planner_bio", "planner_bio TEXT");
+addColumnIfMissing("users", "planner_city", "planner_city TEXT");
+addColumnIfMissing("users", "planner_website", "planner_website TEXT");
+addColumnIfMissing("users", "planner_phone", "planner_phone TEXT");

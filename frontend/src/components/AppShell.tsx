@@ -1,6 +1,7 @@
 // Authenticated shell: top bar + sidebar (desktop) / bottom tabs (mobile).
 import {
   Armchair,
+  AtSign,
   Bed,
   CalendarClock,
   Camera,
@@ -307,6 +308,13 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     labelKey: "admin.nav_email_preview",
     // no tabKey — goes to the phone More sheet
     icon: <Mail size={18} />,
+    group: "manage",
+  },
+  {
+    to: "/app/admin/email-list",
+    labelKey: "admin.nav_email_list",
+    // no tabKey — goes to the phone More sheet
+    icon: <AtSign size={18} />,
     group: "manage",
   },
   // ── Insights ──────────────────────────────────────────────────────

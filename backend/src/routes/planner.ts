@@ -354,14 +354,287 @@ async function handleSendMessage(ctx: Ctx): Promise<Response> {
   });
 }
 
+// ─── M3: Planner profile ──────────────────────────────────────────────────────
+
+async function handleGetProfile(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const row = db
+    .prepare(
+      "SELECT full_name, email, business_name, planner_bio, planner_city, planner_website, planner_phone FROM users WHERE id = ?",
+    )
+    .get(userId) as {
+    full_name: string;
+    email: string;
+    business_name: string | null;
+    planner_bio: string | null;
+    planner_city: string | null;
+    planner_website: string | null;
+    planner_phone: string | null;
+  } | undefined;
+  if (!row) throw new HttpError(404, "planner not found");
+  return json(row);
+}
+
+async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const body = await readJson<{
+    full_name?: unknown;
+    business_name?: unknown;
+    planner_bio?: unknown;
+    planner_city?: unknown;
+    planner_website?: unknown;
+    planner_phone?: unknown;
+  }>(ctx.req);
+
+  const fields: string[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const vals: any[] = [];
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() || null : undefined);
+
+  const fn = str(body.full_name);
+  if (fn !== undefined) { fields.push("full_name = ?"); vals.push(fn ?? ""); }
+  const bn = str(body.business_name);
+  if (bn !== undefined) { fields.push("business_name = ?"); vals.push(bn); }
+  const bio = str(body.planner_bio);
+  if (bio !== undefined) { fields.push("planner_bio = ?"); vals.push(bio); }
+  const city = str(body.planner_city);
+  if (city !== undefined) { fields.push("planner_city = ?"); vals.push(city); }
+  const web = str(body.planner_website);
+  if (web !== undefined) { fields.push("planner_website = ?"); vals.push(web); }
+  const phone = str(body.planner_phone);
+  if (phone !== undefined) { fields.push("planner_phone = ?"); vals.push(phone); }
+
+  if (fields.length > 0) {
+    db.prepare(`UPDATE users SET ${fields.join(", ")}, updated_at = ? WHERE id = ?`).run(
+      ...vals,
+      now(),
+      userId,
+    );
+  }
+
+  const updated = db
+    .prepare(
+      "SELECT full_name, email, business_name, planner_bio, planner_city, planner_website, planner_phone FROM users WHERE id = ?",
+    )
+    .get(userId);
+  return json(updated);
+}
+
+// ─── M1: Planner invite accept/decline ───────────────────────────────────────
+
+async function handleListInvites(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const rows = db
+    .prepare(
+      `SELECT pc.couple_id, pc.created_at,
+              COALESCE(c.display_name, c.bride_name || ' & ' || c.groom_name) AS display_name,
+              c.wedding_date
+         FROM planner_clients pc
+         JOIN couples c ON c.id = pc.couple_id
+        WHERE pc.planner_user_id = ? AND pc.status = 'pending'
+        ORDER BY pc.created_at DESC`,
+    )
+    .all(userId) as Array<{
+    couple_id: number;
+    created_at: number;
+    display_name: string;
+    wedding_date: string | null;
+  }>;
+  return json({
+    invites: rows.map((r) => ({ ...r, status: "pending" as const })),
+  });
+}
+
+async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  const link = db
+    .prepare(
+      "SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ? AND status = 'pending'",
+    )
+    .get(userId, coupleId);
+  if (!link) throw new HttpError(404, "Invite not found");
+
+  db.prepare(
+    "UPDATE planner_clients SET status = 'active' WHERE planner_user_id = ? AND couple_id = ?",
+  ).run(userId, coupleId);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "planner.accept_invite",
+    target_kind: "couple",
+    target_id: coupleId,
+  });
+
+  return json({ ok: true });
+}
+
+async function handleDeclineInvite(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  db.prepare(
+    "DELETE FROM planner_clients WHERE planner_user_id = ? AND couple_id = ? AND status = 'pending'",
+  ).run(userId, coupleId);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "planner.decline_invite",
+    target_kind: "couple",
+    target_id: coupleId,
+  });
+
+  return json({ ok: true });
+}
+
+// ─── M1: Couple-side planner endpoints ───────────────────────────────────────
+
+function requireCoupleAuth(ctx: Ctx): { userId: number; coupleId: number } {
+  const userId = requireAuth(ctx);
+  const user = db.prepare("SELECT couple_id FROM users WHERE id = ?").get(userId) as
+    | { couple_id: number | null }
+    | undefined;
+  if (!user?.couple_id) throw new HttpError(403, "No couple workspace");
+  return { userId, coupleId: user.couple_id };
+}
+
+async function handleListLinkedPlanners(ctx: Ctx): Promise<Response> {
+  const { coupleId } = requireCoupleAuth(ctx);
+  const rows = db
+    .prepare(
+      `SELECT pc.planner_user_id, pc.status, pc.created_at,
+              u.full_name, u.email, u.business_name, u.planner_city, u.planner_bio
+         FROM planner_clients pc
+         JOIN users u ON u.id = pc.planner_user_id
+        WHERE pc.couple_id = ?
+        ORDER BY pc.created_at DESC`,
+    )
+    .all(coupleId) as Array<{
+    planner_user_id: number;
+    status: string;
+    created_at: number;
+    full_name: string;
+    email: string;
+    business_name: string | null;
+    planner_city: string | null;
+    planner_bio: string | null;
+  }>;
+  return json({
+    planners: rows.map((r) => ({ ...r, linked_at: r.created_at })),
+  });
+}
+
+async function handleInvitePlanner(ctx: Ctx): Promise<Response> {
+  const { userId, coupleId } = requireCoupleAuth(ctx);
+
+  const body = await readJson<{ planner_email?: unknown }>(ctx.req);
+  if (typeof body.planner_email !== "string" || !body.planner_email.trim()) {
+    throw new HttpError(400, "planner_email required");
+  }
+  const plannerEmail = body.planner_email.trim().toLowerCase();
+
+  const planner = db.prepare("SELECT id, user_type FROM users WHERE LOWER(email) = ?").get(
+    plannerEmail,
+  ) as { id: number; user_type: string } | undefined;
+  if (!planner) throw new HttpError(404, "No planner found with that email");
+  if (planner.user_type !== "planner") throw new HttpError(404, "No planner found with that email");
+
+  const existing = db
+    .prepare("SELECT id, status FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+    .get(planner.id, coupleId) as { id: number; status: string } | undefined;
+  if (existing) throw new HttpError(409, "This planner is already linked to your account");
+
+  db.prepare(
+    "INSERT INTO planner_clients (planner_user_id, couple_id, status, created_at) VALUES (?, ?, 'pending', ?)",
+  ).run(planner.id, coupleId, now());
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "planner.couple_invite",
+    target_kind: "user",
+    target_id: planner.id,
+    note: `invited planner ${plannerEmail}`,
+  });
+
+  const couple = db
+    .prepare(
+      "SELECT COALESCE(display_name, bride_name || ' & ' || groom_name) AS name FROM couples WHERE id = ?",
+    )
+    .get(coupleId) as { name: string } | undefined;
+  const coupleName = couple?.name ?? "Egy pár";
+
+  const senderUser = db.prepare("SELECT email FROM users WHERE id = ?").get(userId) as
+    | { email: string }
+    | undefined;
+
+  const htmlBody = `<div style="font-family:sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
+<p>Kedves Tervező!</p>
+<p><strong>${coupleName}</strong> meghívott, hogy csatlakozz az ő Weddly munkaterületükhöz tervezőként.</p>
+<p>Nyisd meg a Weddly tervező felületed, és fogadd el vagy utasítsd el a meghívót.</p>
+<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0"/>
+<p style="font-size:13px;color:#888">Dear Planner — ${coupleName} has invited you to join their Weddly workspace as their planner. Open your Weddly planner dashboard to accept or decline.</p>
+</div>`;
+
+  await sendEmail({
+    to: plannerEmail,
+    subject: "Új ügyfél meghívó / New client invite — Weddly",
+    html: htmlBody,
+    text: `${coupleName} meghívott tervezőként a Weddly-n. Nyisd meg a tervező dashboardod a válaszhoz.`,
+    headers: senderUser ? { "Reply-To": senderUser.email } : undefined,
+  });
+
+  return json({ ok: true });
+}
+
+async function handleRevokePlanner(ctx: Ctx): Promise<Response> {
+  const { userId, coupleId } = requireCoupleAuth(ctx);
+  const plannerUserId = Number(ctx.params?.plannerUserId);
+  if (!Number.isFinite(plannerUserId) || plannerUserId <= 0) {
+    throw new HttpError(400, "plannerUserId required");
+  }
+
+  db.prepare(
+    "DELETE FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?",
+  ).run(plannerUserId, coupleId);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "planner.couple_revoke",
+    target_kind: "user",
+    target_id: plannerUserId,
+  });
+
+  return json({ ok: true });
+}
+
 export function registerPlannerRoutes(router: Router) {
+  // Planner-side: client management
   router.get("/api/planner/clients", handleListClients, true);
   router.post("/api/planner/clients", handleAddClient, true);
   router.patch("/api/planner/clients/:coupleId/notes", handleUpdateNotes, true);
   router.post("/api/planner/clients/:coupleId/enter", handleEnterClient, true);
   router.post("/api/planner/exit", handleExit, true);
   router.get("/api/planner/tasks", handleListTasks, true);
+  // Planner-side: messages
   router.get("/api/planner/messages", handleListInbox, true);
   router.get("/api/planner/messages/:coupleId", handleListThread, true);
   router.post("/api/planner/messages/:coupleId", handleSendMessage, true);
+  // Planner-side: profile (M3)
+  router.get("/api/planner/profile", handleGetProfile, true);
+  router.patch("/api/planner/profile", handleUpdateProfile, true);
+  // Planner-side: couple-initiated invites (M1)
+  router.get("/api/planner/invites", handleListInvites, true);
+  router.post("/api/planner/invites/:coupleId/accept", handleAcceptInvite, true);
+  router.post("/api/planner/invites/:coupleId/decline", handleDeclineInvite, true);
+  // Couple-side: planner panel (M7)
+  router.get("/api/couples/planners", handleListLinkedPlanners, true);
+  router.post("/api/couples/planner-invite", handleInvitePlanner, true);
+  router.delete("/api/couples/planners/:plannerUserId", handleRevokePlanner, true);
 }

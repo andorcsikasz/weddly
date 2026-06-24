@@ -128,6 +128,14 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     );
   const userId = Number(result.lastInsertRowid);
 
+  // Auto-promote to planner if email is on the waitlist.
+  const inWaitlist = db
+    .prepare("SELECT id FROM planner_waitlist WHERE LOWER(email) = ?")
+    .get(email.toLowerCase());
+  if (inWaitlist) {
+    db.prepare("UPDATE users SET user_type = 'planner' WHERE id = ?").run(userId);
+  }
+
   const ip = ctx.clientIp;
   const userAgent = ctx.req.headers.get("user-agent");
   recordConsent({

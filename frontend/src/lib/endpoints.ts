@@ -3,6 +3,8 @@
 import type {
   Accommodation,
   AdminCoupleView,
+  AdminEmailEntry,
+  AdminEmailListResponse,
   AdminEmailLogEntry,
   AdminSidebarBadges,
   AdminUserView,
@@ -55,6 +57,9 @@ import type {
   PlannerTaskRow,
   PlannerThreadPreview,
   PlannerMessage,
+  PlannerProfile,
+  LinkedPlannerView,
+  PlannerInviteView,
 } from "@shared/types";
 import type {
   AdminFinancialPlannerOverview,
@@ -1876,6 +1881,10 @@ export const adminVendorWaitlistApi = {
     ),
 };
 
+export const adminEmailListApi = {
+  list: () => apiFetch<AdminEmailListResponse>("GET", "/api/admin/email-list"),
+};
+
 export const adminEmailPreviewApi = {
   list: () =>
     apiFetch<{ kinds: { kind: string; category: string; subject: string }[] }>(
@@ -2216,4 +2225,20 @@ export const plannerApi = {
       body_text,
       recipient_email,
     }),
+  getProfile: () => apiFetch<PlannerProfile>("GET", "/api/planner/profile"),
+  updateProfile: (data: Partial<PlannerProfile>) =>
+    apiFetch<PlannerProfile>("PATCH", "/api/planner/profile", data),
+  listInvites: () => apiFetch<{ invites: PlannerInviteView[] }>("GET", "/api/planner/invites"),
+  acceptInvite: (coupleId: number) =>
+    apiFetch<{ ok: boolean }>("POST", `/api/planner/invites/${coupleId}/accept`, {}),
+  declineInvite: (coupleId: number) =>
+    apiFetch<{ ok: boolean }>("POST", `/api/planner/invites/${coupleId}/decline`, {}),
+};
+
+export const couplePlannerApi = {
+  listPlanners: () => apiFetch<{ planners: LinkedPlannerView[] }>("GET", "/api/couples/planners"),
+  invitePlanner: (email: string) =>
+    apiFetch<{ ok: boolean }>("POST", "/api/couples/planner-invite", { planner_email: email }),
+  revokePlanner: (plannerUserId: number) =>
+    apiFetch<{ ok: boolean }>("DELETE", `/api/couples/planners/${plannerUserId}`),
 };
