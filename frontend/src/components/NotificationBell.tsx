@@ -256,6 +256,7 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [surveyOpen, setSurveyOpen] = useState(false);
   const cancelled = useRef(false);
 
@@ -299,7 +300,7 @@ export function NotificationBell() {
   function toggleOpen() {
     const next = !open;
     setOpen(next);
-    if (!next) setShowSettings(false);
+    if (!next) { setShowSettings(false); setShowHistory(false); }
     if (next && unread > 0) {
       setUnread(0);
       setItems((cur) => cur.map((i) => ({ ...i, read: true })));
@@ -361,6 +362,7 @@ export function NotificationBell() {
               onClick={() => {
                 setOpen(false);
                 setShowSettings(false);
+                setShowHistory(false);
               }}
             />
             <div
@@ -385,44 +387,68 @@ export function NotificationBell() {
                       <Settings size={14} aria-hidden="true" />
                     </button>
                   </div>
-                  {items.length === 0 ? (
-                    <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
-                      {t("notifications.empty")}
-                    </p>
-                  ) : (
-                    <ul className="max-h-96 divide-y divide-paper-200 overflow-y-auto dark:divide-umber-700">
-                      {items.map((item) => {
-                        const Icon = KIND_ICON[item.kind] ?? Bell;
-                        const overdue = item.kind === "timeline_overdue";
-                        return (
-                          <li key={item.id}>
+                  {(() => {
+                    const unreadItems = items.filter((i) => !i.read);
+                    const readItems = items.filter((i) => i.read);
+                    const visibleItems = showHistory ? items : unreadItems;
+                    return (
+                      <>
+                        {visibleItems.length === 0 ? (
+                          <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
+                            {readItems.length > 0
+                              ? t("notifications.no_new")
+                              : t("notifications.empty")}
+                          </p>
+                        ) : (
+                          <ul className="max-h-96 divide-y divide-paper-200 overflow-y-auto dark:divide-umber-700">
+                            {visibleItems.map((item) => {
+                              const Icon = KIND_ICON[item.kind] ?? Bell;
+                              const overdue = item.kind === "timeline_overdue";
+                              return (
+                                <li key={item.id}>
+                                  <button
+                                    type="button"
+                                    onClick={() => openItem(item)}
+                                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
+                                  >
+                                    <span
+                                      className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
+                                    >
+                                      <Icon size={16} aria-hidden="true" />
+                                    </span>
+                                    <span
+                                      className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
+                                    >
+                                      {label(item)}
+                                    </span>
+                                    {!item.read && (
+                                      <span
+                                        className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
+                                        aria-hidden="true"
+                                      />
+                                    )}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                        {readItems.length > 0 && (
+                          <div className="border-t border-paper-200 px-4 py-2 dark:border-umber-700">
                             <button
                               type="button"
-                              onClick={() => openItem(item)}
-                              className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
+                              onClick={() => setShowHistory((v) => !v)}
+                              className="w-full text-center text-xs text-ink-400 transition-colors hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
                             >
-                              <span
-                                className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
-                              >
-                                <Icon size={16} aria-hidden="true" />
-                              </span>
-                              <span
-                                className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
-                              >
-                                {label(item)}
-                              </span>
-                              {!item.read && (
-                                <span
-                                  className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
-                                  aria-hidden="true"
-                                />
-                              )}
+                              {showHistory
+                                ? t("notifications.hide_history")
+                                : t("notifications.show_history")}
                             </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>
