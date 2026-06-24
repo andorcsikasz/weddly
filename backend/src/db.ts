@@ -1244,3 +1244,6 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_device ON film_devices(albu
 // planner_clients indexes live here (not schema.sql) per the May 2026 ordering rule.
 db.exec("CREATE INDEX IF NOT EXISTS idx_planner_clients_planner ON planner_clients(planner_user_id)");
 db.exec("CREATE INDEX IF NOT EXISTS idx_planner_clients_couple ON planner_clients(couple_id)");
+
+// Planner private notes per client — additive, null = no notes yet.
+addColumnIfMissing("planner_clients", "notes", "notes TEXT");

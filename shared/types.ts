@@ -62,6 +62,18 @@ export interface PlannerClientView {
   couple_status: string;
   confirmed_guests: number;
   linked_at: UnixMs;
+  notes: string | null;
+  task_summary: { total: number; done: number; overdue: number };
+}
+
+export interface PlannerTaskRow {
+  task_id: number;
+  couple_id: number;
+  display_name: string;
+  title: string;
+  due_date: string;
+  priority: number;
+  done: boolean;
 }
 
 // ─── Admin dashboard (users + couples directory) ─────────────────────────────

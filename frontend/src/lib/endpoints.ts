@@ -52,6 +52,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
   PlannerClientView,
+  PlannerTaskRow,
 } from "@shared/types";
 import type {
   AdminFinancialPlannerOverview,
@@ -2202,4 +2203,7 @@ export const plannerApi = {
   enterClient: (coupleId: number) =>
     apiFetch<{ couple: Couple }>("POST", `/api/planner/clients/${coupleId}/enter`, {}),
   exit: () => apiFetch<{ ok: boolean }>("POST", "/api/planner/exit", {}),
+  updateNotes: (coupleId: number, notes: string) =>
+    apiFetch<{ ok: boolean }>("PATCH", `/api/planner/clients/${coupleId}/notes`, { notes }),
+  listTasks: () => apiFetch<{ tasks: PlannerTaskRow[] }>("GET", "/api/planner/tasks"),
 };

@@ -6397,5 +6397,12 @@ export interface LocaleMessages {
     client_wedding_date_none: string;
     client_guests: string;
     clients_roster_heading: string;
+    notes_placeholder: string;
+    notes_saved: string;
+    notes_add: string;
+    upcoming_heading: string;
+    upcoming_empty: string;
+    task_summary: string;
+    task_summary_ok: string;
   };
 }

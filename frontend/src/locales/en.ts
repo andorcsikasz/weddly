@@ -5917,6 +5917,13 @@ const en: LocaleMessages = {
     client_wedding_date_none: "No date set",
     client_guests: "{{count}} guests",
     clients_roster_heading: "Clients",
+    notes_placeholder: "Private note...",
+    notes_saved: "Saved",
+    notes_add: "Add note",
+    upcoming_heading: "Upcoming tasks",
+    upcoming_empty: "No upcoming tasks across your clients.",
+    task_summary: "{{total}} tasks · {{overdue}} overdue",
+    task_summary_ok: "{{total}} tasks · {{done}} done",
   },
 };
 

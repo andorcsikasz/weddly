@@ -5965,6 +5965,13 @@ const hu: LocaleMessages = {
     client_wedding_date_none: "Nincs dátum beállítva",
     client_guests: "{{count}} vendég",
     clients_roster_heading: "Ügyfelek",
+    notes_placeholder: "Privát megjegyzés...",
+    notes_saved: "Mentve",
+    notes_add: "Megjegyzés hozzáadása",
+    upcoming_heading: "Közelgő feladatok",
+    upcoming_empty: "Nincs közelgő feladat az ügyfeleid között.",
+    task_summary: "{{total}} feladat · {{overdue}} lejárt",
+    task_summary_ok: "{{total}} feladat · {{done}} kész",
   },
 };
 

@@ -19,10 +19,13 @@ async function handleListClients(ctx: Ctx): Promise<Response> {
 
   const rows = db
     .prepare(
-      `SELECT pc.couple_id, pc.status, pc.created_at,
+      `SELECT pc.couple_id, pc.status, pc.created_at, pc.notes,
               c.bride_name, c.groom_name, c.display_name, c.wedding_date,
               c.status AS couple_status,
-              (SELECT COUNT(*) FROM guests g WHERE g.couple_id = c.id AND g.rsvp_status = 'yes') AS confirmed_guests
+              (SELECT COUNT(*) FROM guests g WHERE g.couple_id = c.id AND g.rsvp_status = 'yes') AS confirmed_guests,
+              (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task') AS task_total,
+              (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task' AND pi.done = 1) AS task_done,
+              (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task' AND pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date < date('now')) AS task_overdue
          FROM planner_clients pc
          JOIN couples c ON c.id = pc.couple_id
         WHERE pc.planner_user_id = ?
@@ -32,12 +35,16 @@ async function handleListClients(ctx: Ctx): Promise<Response> {
     couple_id: number;
     status: string;
     created_at: number;
+    notes: string | null;
     bride_name: string;
     groom_name: string;
     display_name: string | null;
     wedding_date: string | null;
     couple_status: string;
     confirmed_guests: number;
+    task_total: number;
+    task_done: number;
+    task_overdue: number;
   }>;
 
   return json({
@@ -51,6 +58,8 @@ async function handleListClients(ctx: Ctx): Promise<Response> {
       couple_status: r.couple_status,
       confirmed_guests: r.confirmed_guests,
       linked_at: r.created_at,
+      notes: r.notes,
+      task_summary: { total: r.task_total, done: r.task_done, overdue: r.task_overdue },
     })),
   });
 }
@@ -163,9 +172,60 @@ async function handleExit(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+async function handleUpdateNotes(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  const body = await readJson<{ notes?: unknown }>(ctx.req);
+  const notes = typeof body.notes === "string" ? body.notes.trim() || null : null;
+
+  const link = db
+    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+    .get(userId, coupleId);
+  if (!link) throw new HttpError(403, "Not linked to this workspace");
+
+  db.prepare(
+    "UPDATE planner_clients SET notes = ? WHERE planner_user_id = ? AND couple_id = ?",
+  ).run(notes, userId, coupleId);
+
+  return json({ ok: true });
+}
+
+async function handleListTasks(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+
+  const rows = db
+    .prepare(
+      `SELECT pi.id AS task_id, pi.couple_id, pi.title, pi.due_date, pi.priority, pi.done,
+              COALESCE(c.display_name, c.bride_name || ' & ' || c.groom_name) AS display_name
+         FROM planning_items pi
+         JOIN planner_clients pc ON pc.couple_id = pi.couple_id AND pc.planner_user_id = ?
+         JOIN couples c ON c.id = pi.couple_id
+        WHERE pi.kind = 'task'
+          AND pi.done = 0
+          AND pi.due_date IS NOT NULL
+        ORDER BY pi.due_date ASC
+        LIMIT 50`,
+    )
+    .all(userId) as Array<{
+    task_id: number;
+    couple_id: number;
+    title: string;
+    due_date: string;
+    priority: number;
+    done: number;
+    display_name: string;
+  }>;
+
+  return json({ tasks: rows.map((r) => ({ ...r, done: r.done === 1 })) });
+}
+
 export function registerPlannerRoutes(router: Router) {
   router.get("/api/planner/clients", handleListClients, true);
   router.post("/api/planner/clients", handleAddClient, true);
+  router.patch("/api/planner/clients/:coupleId/notes", handleUpdateNotes, true);
   router.post("/api/planner/clients/:coupleId/enter", handleEnterClient, true);
   router.post("/api/planner/exit", handleExit, true);
+  router.get("/api/planner/tasks", handleListTasks, true);
 }
