@@ -849,6 +849,41 @@ async function handleNotifyCouple(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+async function handleSetUserType(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const userId = parseId(ctx);
+
+  const body = await readJson<{ user_type?: unknown }>(ctx.req);
+  if (body.user_type !== "couple" && body.user_type !== "planner") {
+    throw new HttpError(400, '`user_type` must be "couple" or "planner"');
+  }
+
+  const target = db.prepare("SELECT id, email FROM users WHERE id = ?").get(userId) as
+    | { id: number; email: string }
+    | undefined;
+  if (!target) throw new HttpError(404, "User not found");
+  if (target.email.endsWith("@purged.local")) {
+    throw new HttpError(400, "Cannot update a purged user");
+  }
+
+  db.prepare("UPDATE users SET user_type = ?, updated_at = ? WHERE id = ?").run(
+    body.user_type,
+    Date.now(),
+    userId,
+  );
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.set_user_type",
+    target_kind: "user",
+    target_id: userId,
+    note: `user_type → ${body.user_type}`,
+  });
+
+  return json({ ok: true, user_type: body.user_type });
+}
+
 export function registerAdminUserRoutes(router: Router) {
   router.get("/api/admin/users", handleListUsers, true);
   router.get("/api/admin/couples", handleListCouples, true);
@@ -861,6 +896,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.post("/api/admin/users/:id/resend-flag-email", handleResendFlagEmail, true);
   router.get("/api/admin/users/:id/emails", handleListUserEmails, true);
   router.post("/api/admin/users/:id/beta", handleSetBetaTester, true);
+  router.post("/api/admin/users/:id/set-type", handleSetUserType, true);
   router.post("/api/admin/couples/:id/remind-invite-partner", handleRemindInvitePartner, true);
   router.post("/api/admin/couples/:id/notify", handleNotifyCouple, true);
   router.post("/api/admin/couples/:id/grant-free", handleGrantFree, true);

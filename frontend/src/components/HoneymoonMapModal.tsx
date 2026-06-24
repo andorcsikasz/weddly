@@ -6,7 +6,7 @@
 // canvas-sizing was prone to mounting in a half-grey state when the parent
 // flexbox animated in. The iframe is fully self-contained and always paints.
 
-import { ExternalLink, Loader2, MapPin, X } from "lucide-react";
+import { ExternalLink, Loader2, MapPin, Plane, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { placesApi } from "../lib/endpoints";
@@ -145,14 +145,21 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
             </div>
           )}
           {state === "ready" && coords && (
-            <iframe
-              key={`${coords.lat},${coords.lng}`}
-              title={t("honeymoon.map_iframe_title", { label })}
-              src={osmEmbedUrl(coords, label)}
-              loading="eager"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="absolute inset-0 h-full w-full border-0"
-            />
+            <>
+              <iframe
+                key={`${coords.lat},${coords.lng}`}
+                title={t("honeymoon.map_iframe_title", { label })}
+                src={osmEmbedUrl(coords, label)}
+                loading="eager"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="absolute inset-0 h-full w-full border-0"
+              />
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blush-500 shadow-lg">
+                  <Plane size={20} className="text-white" aria-hidden="true" />
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -175,7 +182,6 @@ function osmEmbedUrl(coords: Coords, label: string): string {
   const params = new URLSearchParams({
     bbox: bbox.join(","),
     layer: "mapnik",
-    marker: `${lat},${lng}`,
   });
   return `https://www.openstreetmap.org/export/embed.html?${params.toString()}`;
 }
