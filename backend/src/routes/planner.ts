@@ -22,7 +22,7 @@ async function handleListClients(ctx: Ctx): Promise<Response> {
       `SELECT pc.couple_id, pc.status, pc.created_at,
               c.bride_name, c.groom_name, c.display_name, c.wedding_date,
               c.status AS couple_status,
-              (SELECT COUNT(*) FROM guests g WHERE g.couple_id = c.id AND g.status = 'confirmed') AS confirmed_guests
+              (SELECT COUNT(*) FROM guests g WHERE g.couple_id = c.id AND g.rsvp_status = 'yes') AS confirmed_guests
          FROM planner_clients pc
          JOIN couples c ON c.id = pc.couple_id
         WHERE pc.planner_user_id = ?

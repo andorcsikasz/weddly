@@ -77,6 +77,8 @@ export interface CreateCoupleSupplierInput {
   price_huf?: number | null;
   /** Defaults to false on the server. */
   paid?: boolean;
+  probability?: number | null;
+  next_step?: string | null;
 }
 
 export interface UpdateCoupleSupplierInput {
@@ -85,4 +87,6 @@ export interface UpdateCoupleSupplierInput {
   notes?: string | null;
   price_huf?: number | null;
   paid?: boolean;
+  probability?: number | null;
+  next_step?: string | null;
 }

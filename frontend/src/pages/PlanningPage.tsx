@@ -581,7 +581,7 @@ export default function PlanningPage() {
     }
   }
 
-  async function onDeleteVendor(id: string) {
+  async function onDeleteVendor(id: string): Promise<boolean> {
     const ok = await confirm({
       title: t("planning.board_vendor_delete_confirm"),
       body: "",
@@ -589,12 +589,14 @@ export default function PlanningPage() {
       cancelLabel: t("common.cancel"),
       destructive: true,
     });
-    if (!ok) return;
+    if (!ok) return false;
     try {
       await coupleSupplierApi.remove(id);
       setVendors((prev) => prev.filter((v) => v.id !== id));
+      return true;
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      return false;
     }
   }
 
@@ -2658,7 +2660,7 @@ function VendorModal({
       price_huf: number | null;
     },
   ) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<boolean>;
 }) {
   const { t } = useT();
   const isEdit = vendor !== null;
@@ -2706,8 +2708,8 @@ function VendorModal({
 
   async function handleDelete() {
     if (!isEdit) return;
-    await onDelete(vendor.id);
-    onClose();
+    const deleted = await onDelete(vendor.id);
+    if (deleted) onClose();
   }
 
   return (
