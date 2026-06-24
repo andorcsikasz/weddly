@@ -19,6 +19,7 @@ export default function PlannerProfilePage() {
     planner_city: null,
     planner_website: null,
     planner_phone: null,
+    waitlist_prefill: null,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

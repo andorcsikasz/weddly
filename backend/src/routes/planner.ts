@@ -388,7 +388,23 @@ async function handleGetProfile(ctx: Ctx): Promise<Response> {
     planner_phone: string | null;
   } | undefined;
   if (!row) throw new HttpError(404, "planner not found");
-  return json(row);
+
+  const waitlistRow = db
+    .prepare(
+      "SELECT full_name, phone, company_name, city, website FROM planner_waitlist WHERE LOWER(email) = LOWER(?) ORDER BY id DESC LIMIT 1",
+    )
+    .get(row.email) as {
+    full_name: string | null;
+    phone: string | null;
+    company_name: string | null;
+    city: string | null;
+    website: string | null;
+  } | undefined;
+
+  return json({
+    ...row,
+    waitlist_prefill: waitlistRow ?? null,
+  });
 }
 
 async function handleUpdateProfile(ctx: Ctx): Promise<Response> {

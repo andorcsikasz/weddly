@@ -95,6 +95,14 @@ export interface PlannerMessage {
   created_at: UnixMs;
 }
 
+export interface PlannerWaitlistPrefill {
+  full_name: string | null;
+  phone: string | null;
+  company_name: string | null;
+  city: string | null;
+  website: string | null;
+}
+
 export interface PlannerProfile {
   full_name: string;
   email: string;
@@ -103,6 +111,7 @@ export interface PlannerProfile {
   planner_city: string | null;
   planner_website: string | null;
   planner_phone: string | null;
+  waitlist_prefill: PlannerWaitlistPrefill | null;
 }
 
 export interface LinkedPlannerView {
