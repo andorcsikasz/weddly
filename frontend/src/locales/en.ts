@@ -5880,6 +5880,21 @@ const en: LocaleMessages = {
     form_title: "Sign up",
     step1_cta: "Continue to registration",
   },
+  planner_home: {
+    title: "Planner workspace",
+    welcome: "Welcome, {{name}}!",
+    subtitle: "Your wedding planner dashboard is coming soon.",
+    clients_heading: "My clients",
+    clients_empty: "No clients added yet.",
+    coming_soon: "Coming soon",
+    feature_clients: "Client management",
+    feature_clients_desc: "Every couple in one place, with their own workspace.",
+    feature_timeline: "Timeline",
+    feature_timeline_desc: "Reusable wedding task templates and milestones.",
+    feature_runsheet: "Run sheet",
+    feature_runsheet_desc: "Minute-by-minute day planner with export.",
+    logout: "Log out",
+  },
 };
 
 export default en;

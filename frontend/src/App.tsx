@@ -82,6 +82,7 @@ const VendorHomePage = lazy(() => import("./pages/VendorHomePage"));
 const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
 const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
 const WishlistEditorPage = lazy(() => import("./pages/WishlistEditorPage"));
+const PlannerHomePage = lazy(() => import("./pages/PlannerHomePage"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the
 // "continue with limited access" path. Lets the gate downgrade to an
@@ -118,6 +119,19 @@ function RequireAdmin({ children }: { children: JSX.Element }) {
   return <div className="font-grotesk">{children}</div>;
 }
 
+// Like RequireAuth but also gates out planner accounts — they get redirected
+// to /app/planner so they don't land inside the couple workspace by accident.
+function RequireCoupleAuth({ children }: { children: JSX.Element }) {
+  const { user, loading } = useAuth();
+  if (loading) return <FullScreenLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.user_type === "planner") return <Navigate to="/app/planner" replace />;
+  if (!user.verified_email && !verifyBypassed()) {
+    return <VerifyEmailGate email={user.email} />;
+  }
+  return children;
+}
+
 /** Legacy `/g/:slug/:code` → `/w/:slug/:code`. The merged Vendégoldal
  *  endpoint now serves both audiences (anonymous + invited + confirmed)
  *  from a single React component, so we forward old guest-portal links
@@ -145,7 +159,9 @@ export function RedirectIfAuthed({ children }: { children: JSX.Element }) {
     }
   }, [user, demoSession, logout]);
   if (loading) return <FullScreenLoader />;
-  if (user && !demoSession) return <Navigate to="/app" replace />;
+  if (user && !demoSession) {
+    return <Navigate to={user.user_type === "planner" ? "/app/planner" : "/app"} replace />;
+  }
   return children;
 }
 
@@ -535,11 +551,11 @@ export default function App() {
         <Route
           path="/app"
           element={
-            <RequireAuth>
+            <RequireCoupleAuth>
               <Suspense fallback={<FullScreenLoader />}>
                 <AppShellLayout />
               </Suspense>
-            </RequireAuth>
+            </RequireCoupleAuth>
           }
         >
           <Route
@@ -830,6 +846,21 @@ export default function App() {
             }
           />
         </Route>
+        {/* Planner workspace — separate route tree from the couple /app.
+            RequireAuth only (planners must log in and verify email);
+            RequireCoupleAuth is not used here because planners ARE the
+            intended audience. The shell and features are a stub for Phase 1;
+            deeper planner-specific navigation lands in Phase 2. */}
+        <Route
+          path="/app/planner"
+          element={
+            <RequireAuth>
+              <Page>
+                <PlannerHomePage />
+              </Page>
+            </RequireAuth>
+          }
+        />
         <Route
           path="*"
           element={

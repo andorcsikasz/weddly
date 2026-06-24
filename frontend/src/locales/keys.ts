@@ -6360,4 +6360,19 @@ export interface LocaleMessages {
     form_title: string;
     step1_cta: string;
   };
+  planner_home: {
+    title: string;
+    welcome: string;
+    subtitle: string;
+    clients_heading: string;
+    clients_empty: string;
+    coming_soon: string;
+    feature_clients: string;
+    feature_clients_desc: string;
+    feature_timeline: string;
+    feature_timeline_desc: string;
+    feature_runsheet: string;
+    feature_runsheet_desc: string;
+    logout: string;
+  };
 }

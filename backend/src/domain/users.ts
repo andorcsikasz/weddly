@@ -49,6 +49,9 @@ export interface UserRow {
   utm_campaign?: string | null;
   utm_content?: string | null;
   utm_term?: string | null;
+  /** 'couple' (default) or 'planner'. Drives post-login routing and workspace
+   *  fork. Set to 'planner' via admin action after waitlist approval. */
+  user_type?: string | null;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var
@@ -74,6 +77,7 @@ export function toUser(row: UserRow): User {
     password_set: row.password_set !== 0,
     has_google: Boolean(row.google_sub),
     has_apple: Boolean(row.apple_sub),
+    user_type: row.user_type === "planner" ? "planner" : "couple",
     created_at: row.created_at,
   };
 }

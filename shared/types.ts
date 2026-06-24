@@ -41,6 +41,9 @@ export interface User {
   /** True when the user has a linked Apple account (`users.apple_sub` set).
    *  Drives the SessionExpiredDialog's choice of re-auth method. */
   has_apple: boolean;
+  /** 'couple' (default) or 'planner'. Drives post-login routing — planners
+   *  land on /app/planner, couples on /app. */
+  user_type: "couple" | "planner";
   created_at: UnixMs;
 }
 

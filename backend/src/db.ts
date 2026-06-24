@@ -551,11 +551,22 @@ addColumnIfMissing("users", "utm_content", "utm_content TEXT");
 addColumnIfMissing("users", "utm_term", "utm_term TEXT");
 addColumnIfMissing("users", "survey_prompted_at", "survey_prompted_at INTEGER");
 
+// Distinguishes planner accounts (wedding organiser business) from couple
+// accounts. Defaults to 'couple' so every existing + new self-registered user
+// stays on the couple path. Planners are promoted via admin action after their
+// waitlist application is approved.
+addColumnIfMissing(
+  "users",
+  "user_type",
+  "user_type TEXT NOT NULL DEFAULT 'couple'",
+);
+
 // Group the acquisition dashboard's hottest breakdowns. Index AFTER the column
 // adds (the May 2026 prod-crash rule: indexes on addColumnIfMissing columns
 // live in db.ts, never schema.sql).
 db.exec("CREATE INDEX IF NOT EXISTS idx_users_signup_country ON users(signup_country)");
 db.exec("CREATE INDEX IF NOT EXISTS idx_users_utm_campaign ON users(utm_campaign)");
+db.exec("CREATE INDEX IF NOT EXISTS idx_users_user_type ON users(user_type)");
 
 // One-shot stamp so the cron sweep doesn't re-send the "you forgot to pick
 // a meal" nudge every hour. NULL until we send, then frozen — the guest is

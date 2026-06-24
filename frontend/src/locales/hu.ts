@@ -5928,6 +5928,21 @@ const hu: LocaleMessages = {
     form_title: "Jelentkezem",
     step1_cta: "Tovább a jelentkezéshez",
   },
+  planner_home: {
+    title: "Szervező munkaterület",
+    welcome: "Üdv, {{name}}!",
+    subtitle: "Az esküvőszervező irányítópultod hamarosan elkészül.",
+    clients_heading: "Ügyfeleim",
+    clients_empty: "Még nincs ügyfeled hozzáadva.",
+    coming_soon: "Hamarosan elérhető",
+    feature_clients: "Ügyfélkezelés",
+    feature_clients_desc: "Minden házaspárod egy helyen, saját munkaterülettel.",
+    feature_timeline: "Idővonal",
+    feature_timeline_desc: "Sablonizálható esküvői feladatlista és mérföldkövek.",
+    feature_runsheet: "Run sheet",
+    feature_runsheet_desc: "Percre pontos napiterv szerkesztő és exportálás.",
+    logout: "Kijelentkezés",
+  },
 };
 
 export default hu;
