@@ -945,6 +945,7 @@ type ExtraPresetId = (typeof EXTRA_PRESET_IDS)[number];
 interface ExtraDraft {
   name: string;
   date: string; // YYYY-MM-DD or ""
+  country: string; // ISO 3166-1 alpha-2; only used by the "abroad" preset
 }
 
 function buildDateGoalFromDateStr(dateStr: string): WeddingDateGoal {
@@ -1010,7 +1011,7 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
       } else {
         if (next.size >= 2) return prev;
         next.add(id);
-        setDrafts((d) => ({ ...d, [id]: { name: getDefaultName(id), date: "" } }));
+        setDrafts((d) => ({ ...d, [id]: { name: getDefaultName(id), date: "", country: "" } }));
       }
       return next;
     });
@@ -1022,7 +1023,12 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
 
   const selectedList = EXTRA_PRESET_IDS.filter((id) => selected.has(id));
   const hasExtras = selectedList.length > 0;
-  const canSubmit = selectedList.every((id) => (drafts[id]?.name ?? "").trim().length > 0);
+  const canSubmit = selectedList.every((id) => {
+    const draft = drafts[id];
+    if (!draft || draft.name.trim().length === 0) return false;
+    if (id === "abroad" && draft.country.length !== 2) return false;
+    return true;
+  });
 
   async function handleCreateExtras() {
     if (!canSubmit || creating) return;
@@ -1035,6 +1041,7 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
         await coupleApi.createAdditional({
           event_name: draft.name.trim(),
           wedding_date_goal: buildDateGoalFromDateStr(draft.date),
+          ...(id === "abroad" && draft.country.length === 2 ? { country: draft.country } : {}),
         });
         setCreated((prev) => new Set([...prev, id]));
       }
@@ -1048,7 +1055,80 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
   return (
     <Shell>
       <div className="mx-auto max-w-xl">
-        <div className="card animate-fade-in-up relative overflow-hidden text-center">
+        <div className="rounded-xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+          <p className="text-sm font-semibold text-umber-800 dark:text-paper-100">
+            {t("onboarding.extra_events_heading")}
+          </p>
+          <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
+            {t("onboarding.extra_events_body")}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {EXTRA_PRESET_IDS.map((id) => (
+              <KindButton
+                key={id}
+                active={selected.has(id)}
+                onClick={() => togglePreset(id)}
+                label={
+                  id === "civil"
+                    ? t("onboarding.extra_preset_civil")
+                    : id === "abroad"
+                      ? t("onboarding.extra_preset_abroad")
+                      : t("onboarding.extra_preset_custom")
+                }
+              />
+            ))}
+          </div>
+          {hasExtras && (
+            <div className="mt-4 flex flex-col gap-3">
+              {selectedList.map((id) => {
+                const draft = drafts[id]!;
+                return (
+                  <div key={id} className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <input
+                        className="input flex-1"
+                        value={draft.name}
+                        onChange={(e) => updateDraft(id, "name", e.target.value)}
+                        placeholder={t("onboarding.extra_event_name_placeholder")}
+                        aria-label={t("onboarding.extra_event_name_placeholder")}
+                      />
+                      <input
+                        type="date"
+                        className="input w-40"
+                        value={draft.date}
+                        onChange={(e) => updateDraft(id, "date", e.target.value)}
+                        aria-label={t("onboarding.extra_event_date_label")}
+                        title={t("onboarding.extra_event_date_label")}
+                      />
+                    </div>
+                    {id === "abroad" && (
+                      <CountryCombobox
+                        value={draft.country}
+                        onChange={(code) => updateDraft(id, "country", code)}
+                        label={t("onboarding.country_label")}
+                        placeholder={t("onboarding.country_placeholder")}
+                        required
+                      />
+                    )}
+                  </div>
+                );
+              })}
+              {extrasError !== null && (
+                <p className="text-sm text-red-600 dark:text-red-400">{extrasError}</p>
+              )}
+              <button
+                type="button"
+                className="btn-accent btn-lg w-full"
+                disabled={!canSubmit || creating}
+                onClick={handleCreateExtras}
+              >
+                {creating ? t("onboarding.extra_entering") : t("onboarding.extra_enter_cta")}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="card animate-fade-in-up relative mt-5 overflow-hidden text-center">
           <Confetti />
           <div className="relative z-10">
             <div
@@ -1092,68 +1172,6 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
               </button>
             )}
           </div>
-        </div>
-
-        <div className="mt-5 rounded-xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
-          <p className="text-sm font-semibold text-umber-800 dark:text-paper-100">
-            {t("onboarding.extra_events_heading")}
-          </p>
-          <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
-            {t("onboarding.extra_events_body")}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {EXTRA_PRESET_IDS.map((id) => (
-              <KindButton
-                key={id}
-                active={selected.has(id)}
-                onClick={() => togglePreset(id)}
-                label={
-                  id === "civil"
-                    ? t("onboarding.extra_preset_civil")
-                    : id === "abroad"
-                      ? t("onboarding.extra_preset_abroad")
-                      : t("onboarding.extra_preset_custom")
-                }
-              />
-            ))}
-          </div>
-          {hasExtras && (
-            <div className="mt-4 flex flex-col gap-3">
-              {selectedList.map((id) => {
-                const draft = drafts[id]!;
-                return (
-                  <div key={id} className="flex gap-2">
-                    <input
-                      className="input flex-1"
-                      value={draft.name}
-                      onChange={(e) => updateDraft(id, "name", e.target.value)}
-                      placeholder={t("onboarding.extra_event_name_placeholder")}
-                      aria-label={t("onboarding.extra_event_name_placeholder")}
-                    />
-                    <input
-                      type="date"
-                      className="input w-40"
-                      value={draft.date}
-                      onChange={(e) => updateDraft(id, "date", e.target.value)}
-                      aria-label={t("onboarding.extra_event_date_label")}
-                      title={t("onboarding.extra_event_date_label")}
-                    />
-                  </div>
-                );
-              })}
-              {extrasError !== null && (
-                <p className="text-sm text-red-600 dark:text-red-400">{extrasError}</p>
-              )}
-              <button
-                type="button"
-                className="btn-accent btn-lg w-full"
-                disabled={!canSubmit || creating}
-                onClick={handleCreateExtras}
-              >
-                {creating ? t("onboarding.extra_entering") : t("onboarding.extra_enter_cta")}
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </Shell>
