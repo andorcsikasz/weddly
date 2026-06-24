@@ -4693,7 +4693,11 @@ const en: LocaleMessages = {
     archive_kind_json: "JSON",
     archive_kind_seating_pdf: "Seating",
     archive_kind_place_cards_pdf: "Place cards",
+    archive_kind_table_numbers_pdf: "Table numbers",
+    archive_kind_menu_pdf: "Menu",
+    archive_kind_schedule_pdf: "Run of show",
     archive_kind_guest_csv: "Guests",
+    archive_filter_all: "All",
     delete_account_title: "Pause & delete workspace",
     delete_account_body:
       "Starts a 30-day grace period. The workspace becomes read-only and our admin permanently deletes everything after 30 days. Either partner can cancel before the deadline.",

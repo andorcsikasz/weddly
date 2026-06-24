@@ -1081,9 +1081,10 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
   // Page layout — margins in mm so the print stays predictable across A4
   // printers. The right column is everything left after the time column.
   const marginX = 18;
-  const marginTopHeader = 18;
-  const headerHeightMm = 32; // couple name + date + table head
-  const marginBottom = 18;
+  const marginTopHeader = 16;
+  const headerHeightMm = 34; // brand strip + couple name + date + table head
+  const marginBottom = 20; // leaves room for the footer brand line
+  const footerHeightMm = 10;
   const timeColWidthMm = 28;
   const colGutterMm = 6;
   const contentWidthMm = pageW - 2 * marginX;
@@ -1091,37 +1092,76 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
 
   let page = pdf.addPage([mm(pageW), mm(pageH)]);
 
+  // Draws the WEDDLY wordmark letter-by-letter so we can manually space it
+  // to match the brand's spaced-caps feel (pdf-lib has no letter-spacing).
+  function drawWordmark(p: typeof page, x: number, y: number, f: PDFFont): void {
+    const letters = "WEDDLY";
+    const size = 10;
+    const gap = mm(1.6); // extra spacing between characters
+    let cx = x;
+    for (const ch of letters) {
+      p.drawText(ch, { x: cx, y, size, font: f, color: rgb(0.06, 0.09, 0.19) });
+      cx += f.widthOfTextAtSize(ch, size) + gap;
+    }
+  }
+
   async function drawPageHeader(p: typeof page, withTableHead = true): Promise<void> {
+    // Brand mark — top-right corner
+    const markFont = helvBold;
+    const brandX = mm(pageW - marginX - 28);
+    const brandY = mm(pageH - marginTopHeader);
+    drawWordmark(p, brandX, brandY, markFont);
+    const tagline = "wedding planning";
+    p.drawText(tagline, {
+      x: brandX,
+      y: brandY - mm(4.5),
+      size: 6.5,
+      font: helv,
+      color: rgb(0.5, 0.54, 0.65),
+    });
+
+    // Couple name — left side, larger than before
     const title = safe(input.couple_display_name);
     p.drawText(title, {
       x: mm(marginX),
       y: mm(pageH - marginTopHeader),
-      size: 22,
+      size: 26,
       font: await pickFontAsync(fontPair, title, "bold"),
       color: rgb(0.06, 0.09, 0.19),
     });
+    // Date + subtitle below the name
+    const dateY = pageH - marginTopHeader - 9;
     if (input.wedding_date) {
       const date = safe(input.wedding_date);
       p.drawText(date, {
         x: mm(marginX),
-        y: mm(pageH - marginTopHeader - 7),
+        y: mm(dateY),
         size: 11,
         font: await pickFontAsync(fontPair, date, "regular"),
-        color: rgb(0.27, 0.33, 0.48),
+        color: rgb(0.33, 0.39, 0.55),
       });
     }
     const subhead = "Időbeosztás / Run of show";
     p.drawText(subhead, {
-      x: mm(pageW - marginX - 60),
-      y: mm(pageH - marginTopHeader),
-      size: 11,
+      x: mm(marginX),
+      y: mm(dateY - 5.5),
+      size: 9,
       font: await pickFontAsync(fontPair, subhead, "regular"),
-      color: rgb(0.27, 0.33, 0.48),
+      color: rgb(0.5, 0.54, 0.65),
+    });
+
+    // Thick rule separating header from content
+    p.drawRectangle({
+      x: mm(marginX),
+      y: mm(pageH - marginTopHeader - 20),
+      width: mm(contentWidthMm),
+      height: 1.4,
+      color: rgb(0.16, 0.2, 0.38),
     });
 
     if (withTableHead) {
-      // Column headings + separator just above the first row.
-      const headY_mm = pageH - marginTopHeader - 18;
+      // Column headings + light separator just above the first row.
+      const headY_mm = pageH - marginTopHeader - 24;
       const timeHead = "Idő / Time";
       p.drawText(timeHead, {
         x: mm(marginX),
@@ -1142,10 +1182,22 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
         x: mm(marginX),
         y: mm(headY_mm - 2),
         width: mm(contentWidthMm),
-        height: 0.6,
-        color: rgb(0.7, 0.75, 0.85),
+        height: 0.5,
+        color: rgb(0.78, 0.82, 0.9),
       });
     }
+
+    // Footer brand line at the very bottom
+    const footerText = "weddly.hu";
+    const footerSize = 7;
+    const footerW = helv.widthOfTextAtSize(footerText, footerSize);
+    p.drawText(footerText, {
+      x: mm(pageW / 2) - footerW / 2,
+      y: mm(footerHeightMm),
+      size: footerSize,
+      font: helv,
+      color: rgb(0.65, 0.68, 0.75),
+    });
   }
 
   await drawPageHeader(page);
@@ -1165,7 +1217,7 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
   // First row starts just below the column heads. Each row's "top" is the
   // y-coord (in mm) of the row's first baseline; we move downward as we
   // draw and break to a new page when we'd cross marginBottom.
-  let cursorTopMm = pageH - marginTopHeader - headerHeightMm + 8;
+  let cursorTopMm = pageH - marginTopHeader - headerHeightMm + 4;
 
   for (let i = 0; i < input.events.length; i++) {
     const ev = input.events[i]!;
@@ -1203,7 +1255,7 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
     if (cursorTopMm - rowHeightMm < marginBottom) {
       page = pdf.addPage([mm(pageW), mm(pageH)]);
       await drawPageHeader(page);
-      cursorTopMm = pageH - marginTopHeader - headerHeightMm + 8;
+      cursorTopMm = pageH - marginTopHeader - headerHeightMm + 4;
     }
 
     // Time column — single line.

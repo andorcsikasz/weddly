@@ -5342,7 +5342,11 @@ export interface LocaleMessages {
     archive_kind_json: string;
     archive_kind_seating_pdf: string;
     archive_kind_place_cards_pdf: string;
+    archive_kind_table_numbers_pdf: string;
+    archive_kind_menu_pdf: string;
+    archive_kind_schedule_pdf: string;
     archive_kind_guest_csv: string;
+    archive_filter_all: string;
     /** Delete-account flow (30-day grace before admin purge). */
     delete_account_title: string;
     delete_account_body: string;

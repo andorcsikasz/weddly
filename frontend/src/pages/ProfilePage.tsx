@@ -2170,9 +2170,15 @@ function DocumentsPanel({
   onDelete: (doc: DataExportSummary) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [activeKind, setActiveKind] = useState<ExportKind | "all">("all");
   const toggleLabel = open
     ? t("profile.activity_toggle_collapse")
     : t("profile.activity_toggle_expand");
+
+  const presentKinds = Array.from(new Set(documents.map((d) => d.kind)));
+  const filtered =
+    activeKind === "all" ? documents : documents.filter((d) => d.kind === activeKind);
+
   return (
     <section className="card mt-6 p-0">
       <button
@@ -2204,7 +2210,7 @@ function DocumentsPanel({
       {open && (
         <div
           id="documents-panel-body"
-          className="border-t border-paper-200 px-6 py-4 dark:border-umber-700"
+          className="border-t border-paper-200 dark:border-umber-700"
         >
           {/* SR announce — fires when any row goes from "Delete" to armed
            *  "Click again to confirm". Single live region for the whole list
@@ -2213,10 +2219,42 @@ function DocumentsPanel({
             {armedDeleteId !== null ? t("profile.archive_delete_armed_announce") : ""}
           </span>
           {documents.length === 0 ? (
-            <p className="text-sm text-ink-500 dark:text-umber-300">{t("profile.archive_empty")}</p>
+            <p className="px-6 py-4 text-sm text-ink-500 dark:text-umber-300">
+              {t("profile.archive_empty")}
+            </p>
           ) : (
-            <ul className="divide-y divide-paper-200 dark:divide-umber-700">
-              {documents.map((doc) => (
+            <>
+              {presentKinds.length > 1 && (
+                <div className="flex flex-wrap gap-2 border-b border-paper-200 px-6 py-3 dark:border-umber-700">
+                  <button
+                    type="button"
+                    onClick={() => setActiveKind("all")}
+                    className={`rounded-full px-3 py-1 text-xs transition-colors ${
+                      activeKind === "all"
+                        ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-ink-900"
+                        : "bg-paper-100 text-ink-600 hover:bg-paper-200 dark:bg-umber-700 dark:text-umber-200 dark:hover:bg-umber-600"
+                    }`}
+                  >
+                    {t("profile.archive_filter_all")}
+                  </button>
+                  {presentKinds.map((kind) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      onClick={() => setActiveKind(kind)}
+                      className={`rounded-full px-3 py-1 text-xs transition-colors ${
+                        activeKind === kind
+                          ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-ink-900"
+                          : "bg-paper-100 text-ink-600 hover:bg-paper-200 dark:bg-umber-700 dark:text-umber-200 dark:hover:bg-umber-600"
+                      }`}
+                    >
+                      {t(`profile.archive_kind_${kind}` as `profile.archive_kind_${ExportKind}`)}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <ul className="divide-y divide-paper-200 px-6 dark:divide-umber-700">
+              {filtered.map((doc) => (
                 <li key={doc.id} className="flex flex-wrap items-center gap-3 py-3 text-sm">
                   <span className="rounded bg-paper-100 px-2 py-0.5 text-xs uppercase text-ink-600 dark:bg-umber-700/60 dark:text-umber-200">
                     {t(`profile.archive_kind_${doc.kind}` as `profile.archive_kind_${ExportKind}`)}
@@ -2259,6 +2297,7 @@ function DocumentsPanel({
                 </li>
               ))}
             </ul>
+            </>
           )}
         </div>
       )}

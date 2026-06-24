@@ -4746,7 +4746,11 @@ const hu: LocaleMessages = {
     archive_kind_json: "JSON",
     archive_kind_seating_pdf: "Ültetés",
     archive_kind_place_cards_pdf: "Ültetőkártyák",
+    archive_kind_table_numbers_pdf: "Asztalnév-kártyák",
+    archive_kind_menu_pdf: "Étlap",
+    archive_kind_schedule_pdf: "Időbeosztás",
     archive_kind_guest_csv: "Vendéglista",
+    archive_filter_all: "Összes",
     delete_account_title: "Munkaterület szüneteltetése és törlése",
     delete_account_body:
       "30 napos türelmi időt indít. A workspace csak olvasható ez idő alatt; 30 nap után az adminunk véglegesen törli az adatokat. Bármelyik partner visszavonhatja a határidő előtt.",
