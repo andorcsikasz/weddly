@@ -1657,6 +1657,18 @@ export interface LocaleMessages {
     template_first_dance: string;
     template_party: string;
     template_bride_dance: string;
+    // Board (kanban) view toggle + columns + filter chips.
+    view_list: string;
+    view_board: string;
+    board_col_todo: string;
+    board_col_inprogress: string;
+    board_col_done: string;
+    board_filter_all: string;
+    board_filter_tasks: string;
+    board_filter_vendors: string;
+    board_vendor_paid_badge: string;
+    board_vendor_considering_badge: string;
+    board_vendor_inprogress_badge: string;
   };
   /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */
   honeymoon: {

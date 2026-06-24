@@ -14,6 +14,7 @@ import {
   toIsoDate,
 } from "@shared/planning_timeline";
 import { type ConditionTag, INTAKE_DIMENSIONS } from "@shared/planning_prompts";
+import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { PlanningItem, PlanningKind } from "@shared/types";
 import {
   ArrowRight,
@@ -23,10 +24,12 @@ import {
   ChevronDown,
   ChevronUp,
   Circle,
+  Columns3,
   Dices,
   Flag,
   GanttChartSquare,
   Lightbulb,
+  LayoutList,
   ListChecks,
   Plus,
   Trash2,
@@ -47,8 +50,8 @@ import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { DecisionsPanel, computeIntakeTotal } from "./DecisionsPanel";
 import { ApiError } from "../lib/api";
-import { type PlanningPromptTags, coupleApi, planningApi } from "../lib/endpoints";
-import { maxIsoDate, todayIso } from "../lib/format";
+import { type PlanningPromptTags, coupleApi, coupleSupplierApi, planningApi } from "../lib/endpoints";
+import { formatHuf, maxIsoDate, todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import {
   DICE_CREATIVE_IDEAS,
@@ -180,14 +183,33 @@ export default function PlanningPage() {
   const [ideaWandOpen, setIdeaWandOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
   const [bulkApplying, setBulkApplying] = useState(false);
+  // Board (kanban) view state — only active on the Tasks tab.
+  const [viewMode, setViewMode] = useState<"list" | "board">("list");
+  const [boardFilter, setBoardFilter] = useState<"all" | "tasks" | "vendors">("all");
+  const [vendors, setVendors] = useState<CoupleSupplier[]>([]);
+  const [vendorsFetched, setVendorsFetched] = useState(false);
+
   // Priority filter for the tasks tab: 0 = show everything, 1 = important
   // only (priority === 1), 2 = SOS only (priority === 2). The two levels are
   // mutually exclusive — a task is either important or SOS, never both. Reset
   // on tab switch via the effect below so it doesn't quietly hide ideas.
   const [priorityFilter, setPriorityFilter] = useState<0 | 1 | 2>(0);
   useEffect(() => {
-    if (activeKind !== "task") setPriorityFilter(0);
+    if (activeKind !== "task") {
+      setPriorityFilter(0);
+      setViewMode("list");
+    }
   }, [activeKind]);
+
+  // Fetch vendors when the board view is first activated on the Tasks tab.
+  useEffect(() => {
+    if (viewMode !== "board" || vendorsFetched) return;
+    setVendorsFetched(true);
+    coupleSupplierApi
+      .list()
+      .then((r) => setVendors(r.suppliers))
+      .catch(() => undefined);
+  }, [viewMode, vendorsFetched]);
 
   // Decisions-tab intake answers + collapse state live here (not in
   // DecisionsPanel) so the collapsed intake bar can ride up in the tab row next
@@ -622,7 +644,7 @@ export default function PlanningPage() {
                   onClick={() => setActiveKind(tab.kind)}
                   className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm transition-colors sm:flex-none ${
                     active
-                      ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-paper-50 dark:text-umber-900"
+                      ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-umber-900 dark:text-paper-50"
                       : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
                   }`}
                 >
@@ -688,6 +710,39 @@ export default function PlanningPage() {
                   <Wand2 size={14} aria-hidden="true" />
                   <span>{t("planning.task_template_button")}</span>
                 </button>
+                {/* List / Board view toggle */}
+                <div
+                  role="group"
+                  aria-label={`${t("planning.view_list")} / ${t("planning.view_board")}`}
+                  className="inline-flex rounded-lg border border-ink-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("list")}
+                    aria-pressed={viewMode === "list"}
+                    title={t("planning.view_list")}
+                    className={`flex items-center rounded-l-lg px-2 py-1.5 transition-colors ${
+                      viewMode === "list"
+                        ? "bg-ink-800 text-paper-50 dark:bg-umber-900 dark:text-paper-50"
+                        : "text-ink-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-700"
+                    }`}
+                  >
+                    <LayoutList size={14} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("board")}
+                    aria-pressed={viewMode === "board"}
+                    title={t("planning.view_board")}
+                    className={`flex items-center rounded-r-lg px-2 py-1.5 transition-colors ${
+                      viewMode === "board"
+                        ? "bg-ink-800 text-paper-50 dark:bg-umber-900 dark:text-paper-50"
+                        : "text-ink-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-700"
+                    }`}
+                  >
+                    <Columns3 size={14} aria-hidden="true" />
+                  </button>
+                </div>
               </>
             )}
             {activeKind === "idea" && (
@@ -733,7 +788,31 @@ export default function PlanningPage() {
               onCreate={onCreate}
             />
 
-            {activeKind === "task" &&
+            {activeKind === "task" && viewMode === "board" && (
+              <div
+                role="radiogroup"
+                aria-label={t("planning.board_filter_all")}
+                className="mt-4 flex flex-wrap items-center gap-2 text-xs"
+              >
+                <PriorityFilterPill
+                  active={boardFilter === "all"}
+                  onClick={() => setBoardFilter("all")}
+                  label={t("planning.board_filter_all")}
+                />
+                <PriorityFilterPill
+                  active={boardFilter === "tasks"}
+                  onClick={() => setBoardFilter("tasks")}
+                  label={t("planning.board_filter_tasks")}
+                />
+                <PriorityFilterPill
+                  active={boardFilter === "vendors"}
+                  onClick={() => setBoardFilter("vendors")}
+                  label={t("planning.board_filter_vendors")}
+                />
+              </div>
+            )}
+
+            {activeKind === "task" && viewMode === "list" &&
               (taskPriorityCounts.p1 > 0 || taskPriorityCounts.p2 > 0 || priorityFilter !== 0) && (
                 <div
                   role="radiogroup"
@@ -778,7 +857,18 @@ export default function PlanningPage() {
                 </div>
               )}
 
-            {loading ? (
+            {activeKind === "task" && viewMode === "board" ? (
+              <KanbanBoard
+                tasks={items.filter(
+                  (i) =>
+                    i.kind === "task" &&
+                    !(i.seed_key && i.decision_status !== "promoted"),
+                )}
+                vendors={vendors}
+                filter={boardFilter}
+                onToggleTaskDone={onToggleDone}
+              />
+            ) : loading ? (
               <PlanningListSkeleton kind={activeKind} />
             ) : scoped.length === 0 ? (
               <EmptyState kind={activeKind} />
@@ -2065,5 +2155,232 @@ function PriorityFilterPill({
     >
       {label}
     </button>
+  );
+}
+
+// ─── Kanban board ────────────────────────────────────────────────────────────
+
+type KanbanCol = "todo" | "in_progress" | "done";
+
+function taskKanbanCol(item: PlanningItem): KanbanCol {
+  if (item.done) return "done";
+  if (item.start_date && item.start_date <= todayIso()) return "in_progress";
+  return "todo";
+}
+
+function vendorKanbanCol(vendor: CoupleSupplier): KanbanCol {
+  if (vendor.paid) return "done";
+  if (vendor.price_huf != null) return "in_progress";
+  return "todo";
+}
+
+function KanbanBoard({
+  tasks,
+  vendors,
+  filter,
+  onToggleTaskDone,
+}: {
+  tasks: PlanningItem[];
+  vendors: CoupleSupplier[];
+  filter: "all" | "tasks" | "vendors";
+  onToggleTaskDone: (item: PlanningItem) => void;
+}) {
+  const { t } = useT();
+
+  const cols: KanbanCol[] = ["todo", "in_progress", "done"];
+  const colLabelKey: Record<KanbanCol, string> = {
+    todo: "planning.board_col_todo",
+    in_progress: "planning.board_col_inprogress",
+    done: "planning.board_col_done",
+  };
+
+  const tasksByCol = useMemo(() => {
+    const map: Record<KanbanCol, PlanningItem[]> = { todo: [], in_progress: [], done: [] };
+    if (filter !== "vendors") {
+      for (const t of tasks) map[taskKanbanCol(t)].push(t);
+    }
+    return map;
+  }, [tasks, filter]);
+
+  const vendorsByCol = useMemo(() => {
+    const map: Record<KanbanCol, CoupleSupplier[]> = { todo: [], in_progress: [], done: [] };
+    if (filter !== "tasks") {
+      for (const v of vendors) map[vendorKanbanCol(v)].push(v);
+    }
+    return map;
+  }, [vendors, filter]);
+
+  return (
+    <div className="mt-4 overflow-x-auto pb-2">
+      <div className="flex gap-4" style={{ minWidth: "860px" }}>
+        {cols.map((col) => (
+          <KanbanColumn
+            key={col}
+            col={col}
+            label={t(colLabelKey[col])}
+            tasks={tasksByCol[col]}
+            vendors={vendorsByCol[col]}
+            onToggleTaskDone={onToggleTaskDone}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KanbanColumn({
+  col,
+  label,
+  tasks,
+  vendors,
+  onToggleTaskDone,
+}: {
+  col: KanbanCol;
+  label: string;
+  tasks: PlanningItem[];
+  vendors: CoupleSupplier[];
+  onToggleTaskDone: (item: PlanningItem) => void;
+}) {
+  const total = tasks.length + vendors.length;
+  const headerAccent =
+    col === "done"
+      ? "text-sage-700 dark:text-sage-300"
+      : col === "in_progress"
+        ? "text-umber-700 dark:text-umber-200"
+        : "text-ink-600 dark:text-umber-300";
+
+  return (
+    <div className="flex min-w-[280px] flex-1 flex-col rounded-2xl border border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800">
+      <div className="flex items-center gap-2 border-b border-paper-200 px-4 py-3 dark:border-umber-700">
+        <span
+          className={`font-grotesk text-xs font-semibold uppercase tracking-[0.08em] ${headerAccent}`}
+        >
+          {label}
+        </span>
+        {total > 0 && (
+          <span className="ml-auto rounded-full bg-paper-200 px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+            {total}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col gap-2 p-3">
+        {tasks.map((item) => (
+          <TaskKanbanCard key={item.id} item={item} onToggleDone={onToggleTaskDone} />
+        ))}
+        {vendors.map((vendor) => (
+          <VendorKanbanCard key={vendor.id} vendor={vendor} />
+        ))}
+        {total === 0 && (
+          <p className="py-4 text-center text-xs text-ink-300 dark:text-umber-500">—</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TaskKanbanCard({
+  item,
+  onToggleDone,
+}: {
+  item: PlanningItem;
+  onToggleDone: (item: PlanningItem) => void;
+}) {
+  const { t } = useT();
+  const priority = (item.priority ?? 0) as 0 | 1 | 2;
+  const status = timelineStatus(item.due_date, item.done, todayIso());
+
+  return (
+    <button
+      type="button"
+      onClick={() => onToggleDone(item)}
+      className={`w-full rounded-xl border p-3 text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-700 ${
+        item.done
+          ? "border-paper-200 bg-paper-50/50 dark:border-umber-700 dark:bg-umber-800/50"
+          : "border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-800"
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        <span className="mt-0.5 shrink-0 text-ink-400 dark:text-umber-400">
+          {item.done ? (
+            <CheckCircle2 size={14} className="text-sage-600 dark:text-sage-400" aria-hidden="true" />
+          ) : (
+            <Circle size={14} aria-hidden="true" />
+          )}
+        </span>
+        <span
+          className={`min-w-0 flex-1 text-sm leading-snug ${
+            item.done ? "text-ink-400 line-through dark:text-umber-400" : "text-ink-900 dark:text-paper-50"
+          }`}
+        >
+          {item.title}
+        </span>
+        {priority > 0 && (
+          <span className="shrink-0 rounded-full bg-blush-100 px-1.5 py-0.5 text-[10px] font-bold text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+            {priority === 1 ? "!" : "!!"}
+          </span>
+        )}
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-5">
+        {item.due_date && (
+          <span className="inline-flex items-center gap-1 text-[11px] text-ink-500 dark:text-umber-300">
+            <Calendar size={10} aria-hidden="true" />
+            {item.due_date}
+          </span>
+        )}
+        {item.assignee && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-paper-200 px-1.5 py-0.5 text-[10px] text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+            <User size={9} aria-hidden="true" />
+            {item.assignee}
+          </span>
+        )}
+        {status === "overdue" && (
+          <span className="rounded-full bg-blush-500 px-1.5 py-0.5 text-[10px] font-medium text-paper-50">
+            {t("planning.status_overdue")}
+          </span>
+        )}
+        {status === "due_soon" && (
+          <span className="rounded-full bg-blush-50 px-1.5 py-0.5 text-[10px] font-medium text-blush-700 ring-1 ring-blush-200 dark:bg-blush-400/15 dark:text-blush-300 dark:ring-blush-400/30">
+            {t("planning.status_due_soon")}
+          </span>
+        )}
+        {item.done && (
+          <span className="rounded-full bg-sage-100 px-1.5 py-0.5 text-[10px] font-medium text-sage-700 dark:bg-sage-400/15 dark:text-sage-300">
+            {t("planning.board_col_done")}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+function VendorKanbanCard({ vendor }: { vendor: CoupleSupplier }) {
+  const { t } = useT();
+  return (
+    <div className="rounded-xl border border-paper-200 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
+      <p className="text-sm font-medium text-ink-900 dark:text-paper-50">{vendor.name}</p>
+      <p className="mt-0.5 text-[11px] text-ink-500 dark:text-umber-300">
+        {t(`suppliers.cat.${vendor.category}`)}
+      </p>
+      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        {vendor.price_huf != null && (
+          <span className="text-[11px] text-ink-600 dark:text-umber-200">
+            {formatHuf(vendor.price_huf)} Ft
+          </span>
+        )}
+        {vendor.paid ? (
+          <span className="rounded-full bg-sage-100 px-1.5 py-0.5 text-[10px] font-medium text-sage-700 dark:bg-sage-400/15 dark:text-sage-300">
+            {t("planning.board_vendor_paid_badge")}
+          </span>
+        ) : vendor.price_huf != null ? (
+          <span className="rounded-full bg-umber-100 px-1.5 py-0.5 text-[10px] font-medium text-umber-700 dark:bg-umber-700/50 dark:text-umber-200">
+            {t("planning.board_vendor_inprogress_badge")}
+          </span>
+        ) : (
+          <span className="rounded-full bg-paper-200 px-1.5 py-0.5 text-[10px] font-medium text-ink-500 dark:bg-umber-700 dark:text-umber-300">
+            {t("planning.board_vendor_considering_badge")}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

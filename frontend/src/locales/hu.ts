@@ -1450,6 +1450,18 @@ const hu: LocaleMessages = {
     template_first_dance: "Nyitótánc",
     template_party: "Buli kezdete",
     template_bride_dance: "Menyasszonytánc",
+    // Board / kanban view
+    view_list: "Lista",
+    view_board: "Tábla",
+    board_col_todo: "Elvégzendő",
+    board_col_inprogress: "Folyamatban",
+    board_col_done: "Kész",
+    board_filter_all: "Mind",
+    board_filter_tasks: "Feladatok",
+    board_filter_vendors: "Szolgáltatók",
+    board_vendor_paid_badge: "Fizetve",
+    board_vendor_considering_badge: "Mérlegeljük",
+    board_vendor_inprogress_badge: "Egyeztetés alatt",
   },
   notifications: {
     aria_label: "Értesítések",

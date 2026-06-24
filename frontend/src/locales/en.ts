@@ -1434,6 +1434,18 @@ const en: LocaleMessages = {
     template_first_dance: "First dance",
     template_party: "Party begins",
     template_bride_dance: "Bride's dance",
+    // Board / kanban view
+    view_list: "List",
+    view_board: "Board",
+    board_col_todo: "To Do",
+    board_col_inprogress: "In Progress",
+    board_col_done: "Done",
+    board_filter_all: "All",
+    board_filter_tasks: "Tasks",
+    board_filter_vendors: "Vendors",
+    board_vendor_paid_badge: "Paid",
+    board_vendor_considering_badge: "Considering",
+    board_vendor_inprogress_badge: "Negotiating",
   },
   notifications: {
     aria_label: "Notifications",

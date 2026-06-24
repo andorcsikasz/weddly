@@ -642,7 +642,6 @@ function ScheduleTimelineView({
             </div>
           );
         })}
-
       </div>
     </div>
   );

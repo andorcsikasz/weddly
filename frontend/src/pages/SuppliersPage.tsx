@@ -1716,7 +1716,7 @@ export default function SuppliersPage() {
                     Entire row stops propagation — clicks here are intentional
                     interactions, not card-level navigation. */}
                   <div
-                    className="mt-auto flex items-center justify-between pt-3"
+                    className="mt-3 flex items-center justify-between border-t border-paper-200 pt-3 dark:border-umber-700"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center gap-0.5">
