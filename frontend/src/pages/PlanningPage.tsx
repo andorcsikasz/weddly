@@ -871,6 +871,7 @@ export default function PlanningPage() {
                 vendors={vendors}
                 filter={boardFilter}
                 onToggleTaskDone={onToggleDone}
+                onPatchTask={onPatch}
               />
             ) : loading ? (
               <PlanningListSkeleton kind={activeKind} />
@@ -2178,18 +2179,43 @@ function vendorKanbanCol(vendor: CoupleSupplier): KanbanCol {
   return "todo";
 }
 
+const COL_STYLES: Record<
+  KanbanCol,
+  { topBorder: string; headerText: string; badge: string }
+> = {
+  todo: {
+    topBorder: "border-t-2 border-t-ink-300 dark:border-t-umber-500",
+    headerText: "text-ink-700 dark:text-umber-100",
+    badge: "bg-ink-100 text-ink-700 dark:bg-umber-600 dark:text-umber-100",
+  },
+  in_progress: {
+    topBorder: "border-t-2 border-t-umber-400 dark:border-t-umber-300",
+    headerText: "text-umber-700 dark:text-umber-200",
+    badge: "bg-umber-100 text-umber-700 dark:bg-umber-600/60 dark:text-umber-100",
+  },
+  done: {
+    topBorder: "border-t-2 border-t-sage-500 dark:border-t-sage-400",
+    headerText: "text-sage-700 dark:text-sage-300",
+    badge: "bg-sage-100 text-sage-700 dark:bg-sage-400/20 dark:text-sage-300",
+  },
+};
+
 function KanbanBoard({
   tasks,
   vendors,
   filter,
   onToggleTaskDone,
+  onPatchTask,
 }: {
   tasks: PlanningItem[];
   vendors: CoupleSupplier[];
   filter: "all" | "tasks" | "vendors";
   onToggleTaskDone: (item: PlanningItem) => void;
+  onPatchTask: (item: PlanningItem, patch: Partial<PlanningItem>) => void;
 }) {
   const { t } = useT();
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<KanbanCol | null>(null);
 
   const cols: KanbanCol[] = ["todo", "in_progress", "done"];
   const colLabelKey: Record<KanbanCol, string> = {
@@ -2201,7 +2227,7 @@ function KanbanBoard({
   const tasksByCol = useMemo(() => {
     const map: Record<KanbanCol, PlanningItem[]> = { todo: [], in_progress: [], done: [] };
     if (filter !== "vendors") {
-      for (const t of tasks) map[taskKanbanCol(t)].push(t);
+      for (const task of tasks) map[taskKanbanCol(task)].push(task);
     }
     return map;
   }, [tasks, filter]);
@@ -2214,6 +2240,21 @@ function KanbanBoard({
     return map;
   }, [vendors, filter]);
 
+  function handleDrop(targetCol: KanbanCol) {
+    if (draggingId === null) return;
+    const task = tasks.find((t) => t.id === draggingId);
+    if (!task) return;
+    const from = taskKanbanCol(task);
+    if (from === targetCol) return;
+    if (targetCol === "done") {
+      onToggleTaskDone(task);
+    } else if (targetCol === "in_progress") {
+      onPatchTask(task, { done: false, start_date: todayIso() });
+    } else {
+      onPatchTask(task, { done: false, start_date: null });
+    }
+  }
+
   return (
     <div className="mt-4 overflow-x-auto pb-2">
       <div className="flex gap-4" style={{ minWidth: "860px" }}>
@@ -2224,7 +2265,14 @@ function KanbanBoard({
             label={t(colLabelKey[col])}
             tasks={tasksByCol[col]}
             vendors={vendorsByCol[col]}
+            isDragTarget={dragOverCol === col}
+            draggingId={draggingId}
             onToggleTaskDone={onToggleTaskDone}
+            onDragStart={(id) => setDraggingId(id)}
+            onDragEnd={() => { setDraggingId(null); setDragOverCol(null); }}
+            onDragOver={() => setDragOverCol(col)}
+            onDragLeave={() => setDragOverCol((prev) => (prev === col ? null : prev))}
+            onDrop={() => { handleDrop(col); setDragOverCol(null); }}
           />
         ))}
       </div>
@@ -2237,39 +2285,60 @@ function KanbanColumn({
   label,
   tasks,
   vendors,
+  isDragTarget,
+  draggingId,
   onToggleTaskDone,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: {
   col: KanbanCol;
   label: string;
   tasks: PlanningItem[];
   vendors: CoupleSupplier[];
+  isDragTarget: boolean;
+  draggingId: number | null;
   onToggleTaskDone: (item: PlanningItem) => void;
+  onDragStart: (id: number) => void;
+  onDragEnd: () => void;
+  onDragOver: () => void;
+  onDragLeave: () => void;
+  onDrop: () => void;
 }) {
   const total = tasks.length + vendors.length;
-  const headerAccent =
-    col === "done"
-      ? "text-sage-700 dark:text-sage-300"
-      : col === "in_progress"
-        ? "text-umber-700 dark:text-umber-200"
-        : "text-ink-600 dark:text-umber-300";
+  const styles = COL_STYLES[col];
 
   return (
-    <div className="flex min-w-[280px] flex-1 flex-col rounded-2xl border border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800">
+    <div
+      className={`flex min-w-[280px] flex-1 flex-col rounded-2xl border border-paper-200 bg-paper-50 transition-colors dark:border-umber-700 dark:bg-umber-800 ${styles.topBorder} ${
+        isDragTarget ? "ring-2 ring-ink-300 dark:ring-umber-400" : ""
+      }`}
+      onDragOver={(e) => { e.preventDefault(); onDragOver(); }}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => { e.preventDefault(); onDrop(); }}
+    >
       <div className="flex items-center gap-2 border-b border-paper-200 px-4 py-3 dark:border-umber-700">
-        <span
-          className={`font-grotesk text-xs font-semibold uppercase tracking-[0.08em] ${headerAccent}`}
-        >
+        <span className={`font-grotesk text-xs font-semibold uppercase tracking-[0.08em] ${styles.headerText}`}>
           {label}
         </span>
         {total > 0 && (
-          <span className="ml-auto rounded-full bg-paper-200 px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+          <span className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium ${styles.badge}`}>
             {total}
           </span>
         )}
       </div>
       <div className="flex flex-col gap-2 p-3">
         {tasks.map((item) => (
-          <TaskKanbanCard key={item.id} item={item} onToggleDone={onToggleTaskDone} />
+          <TaskKanbanCard
+            key={item.id}
+            item={item}
+            isDragging={draggingId === item.id}
+            onToggleDone={onToggleTaskDone}
+            onDragStart={() => onDragStart(item.id)}
+            onDragEnd={onDragEnd}
+          />
         ))}
         {vendors.map((vendor) => (
           <VendorKanbanCard key={vendor.id} vendor={vendor} />
@@ -2284,20 +2353,36 @@ function KanbanColumn({
 
 function TaskKanbanCard({
   item,
+  isDragging,
   onToggleDone,
+  onDragStart,
+  onDragEnd,
 }: {
   item: PlanningItem;
+  isDragging: boolean;
   onToggleDone: (item: PlanningItem) => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
 }) {
   const { t } = useT();
   const priority = (item.priority ?? 0) as 0 | 1 | 2;
   const status = timelineStatus(item.due_date, item.done, todayIso());
 
   return (
-    <button
-      type="button"
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
       onClick={() => onToggleDone(item)}
-      className={`w-full rounded-xl border p-3 text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-700 ${
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggleDone(item); }}
+      className={`w-full cursor-grab rounded-xl border p-3 text-left transition-colors active:cursor-grabbing hover:bg-paper-100 dark:hover:bg-umber-700 ${
+        isDragging ? "opacity-40" : ""
+      } ${
         item.done
           ? "border-paper-200 bg-paper-50/50 dark:border-umber-700 dark:bg-umber-800/50"
           : "border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-800"
@@ -2359,7 +2444,7 @@ function TaskKanbanCard({
           </span>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 
