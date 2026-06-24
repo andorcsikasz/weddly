@@ -28,6 +28,8 @@ interface Row {
   price_huf: number | null;
   paid: number;
   budget_line_id: number | null;
+  next_step: string | null;
+  probability: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -43,6 +45,8 @@ function toDto(r: Row): CoupleSupplier {
     paid: r.paid === 1,
     budget_line_id: r.budget_line_id,
     installments: listForSupplier(r.id),
+    next_step: r.next_step,
+    probability: r.probability,
     created_at: r.created_at,
     updated_at: r.updated_at,
   };

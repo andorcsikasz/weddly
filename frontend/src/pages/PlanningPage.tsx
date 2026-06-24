@@ -31,6 +31,7 @@ import {
   Lightbulb,
   LayoutList,
   ListChecks,
+  Pencil,
   Plus,
   Trash2,
   User,
@@ -193,6 +194,8 @@ export default function PlanningPage() {
   const [boardFilter, setBoardFilter] = useState<"all" | "tasks" | "vendors">("all");
   const [vendors, setVendors] = useState<CoupleSupplier[]>([]);
   const [vendorsFetched, setVendorsFetched] = useState(false);
+  const [vendorModalOpen, setVendorModalOpen] = useState(false);
+  const [editingVendor, setEditingVendor] = useState<CoupleSupplier | null>(null);
 
   // Priority filter for the tasks tab: 0 = show everything, 1 = important
   // only (priority === 1), 2 = SOS only (priority === 2). The two levels are
@@ -529,6 +532,70 @@ export default function PlanningPage() {
       setBulkApplying(false);
     }
     return added;
+  }
+
+  async function onCreateVendor(input: {
+    name: string;
+    category: string;
+    next_step: string | null;
+    probability: number | null;
+    price_huf: number | null;
+  }) {
+    try {
+      const r = await coupleSupplierApi.create({
+        name: input.name,
+        category: input.category as CoupleSupplier["category"],
+        next_step: input.next_step,
+        probability: input.probability,
+        price_huf: input.price_huf,
+      });
+      setVendors((prev) => [...prev, r.supplier]);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      throw e;
+    }
+  }
+
+  async function onUpdateVendor(
+    id: string,
+    input: {
+      name: string;
+      category: string;
+      next_step: string | null;
+      probability: number | null;
+      price_huf: number | null;
+    },
+  ) {
+    try {
+      const r = await coupleSupplierApi.update(id, {
+        name: input.name,
+        category: input.category as CoupleSupplier["category"],
+        next_step: input.next_step,
+        probability: input.probability,
+        price_huf: input.price_huf,
+      });
+      setVendors((prev) => prev.map((v) => (v.id === id ? r.supplier : v)));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      throw e;
+    }
+  }
+
+  async function onDeleteVendor(id: string) {
+    const ok = await confirm({
+      title: t("planning.board_vendor_delete_confirm"),
+      body: "",
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await coupleSupplierApi.remove(id);
+      setVendors((prev) => prev.filter((v) => v.id !== id));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
   }
 
   async function onApplyTaskTemplate(selected: Set<number>, defaultAssignee: string) {
@@ -872,6 +939,8 @@ export default function PlanningPage() {
                 filter={boardFilter}
                 onToggleTaskDone={onToggleDone}
                 onPatchTask={onPatch}
+                onAddVendor={() => { setEditingVendor(null); setVendorModalOpen(true); }}
+                onEditVendor={(v) => { setEditingVendor(v); setVendorModalOpen(true); }}
               />
             ) : loading ? (
               <PlanningListSkeleton kind={activeKind} />
@@ -967,6 +1036,16 @@ export default function PlanningPage() {
             );
             return added > 0;
           }}
+        />
+      )}
+
+      {vendorModalOpen && (
+        <VendorModal
+          vendor={editingVendor}
+          onClose={() => setVendorModalOpen(false)}
+          onCreate={onCreateVendor}
+          onUpdate={onUpdateVendor}
+          onDelete={onDeleteVendor}
         />
       )}
     </>
@@ -2206,12 +2285,16 @@ function KanbanBoard({
   filter,
   onToggleTaskDone,
   onPatchTask,
+  onAddVendor,
+  onEditVendor,
 }: {
   tasks: PlanningItem[];
   vendors: CoupleSupplier[];
   filter: "all" | "tasks" | "vendors";
   onToggleTaskDone: (item: PlanningItem) => void;
   onPatchTask: (item: PlanningItem, patch: Partial<PlanningItem>) => void;
+  onAddVendor: () => void;
+  onEditVendor: (vendor: CoupleSupplier) => void;
 }) {
   const { t } = useT();
   const [draggingId, setDraggingId] = useState<number | null>(null);
@@ -2265,6 +2348,7 @@ function KanbanBoard({
             label={t(colLabelKey[col])}
             tasks={tasksByCol[col]}
             vendors={vendorsByCol[col]}
+            filter={filter}
             isDragTarget={dragOverCol === col}
             draggingId={draggingId}
             onToggleTaskDone={onToggleTaskDone}
@@ -2273,6 +2357,8 @@ function KanbanBoard({
             onDragOver={() => setDragOverCol(col)}
             onDragLeave={() => setDragOverCol((prev) => (prev === col ? null : prev))}
             onDrop={() => { handleDrop(col); setDragOverCol(null); }}
+            onAddVendor={onAddVendor}
+            onEditVendor={onEditVendor}
           />
         ))}
       </div>
@@ -2285,6 +2371,7 @@ function KanbanColumn({
   label,
   tasks,
   vendors,
+  filter,
   isDragTarget,
   draggingId,
   onToggleTaskDone,
@@ -2293,11 +2380,14 @@ function KanbanColumn({
   onDragOver,
   onDragLeave,
   onDrop,
+  onAddVendor,
+  onEditVendor,
 }: {
   col: KanbanCol;
   label: string;
   tasks: PlanningItem[];
   vendors: CoupleSupplier[];
+  filter: "all" | "tasks" | "vendors";
   isDragTarget: boolean;
   draggingId: number | null;
   onToggleTaskDone: (item: PlanningItem) => void;
@@ -2306,7 +2396,10 @@ function KanbanColumn({
   onDragOver: () => void;
   onDragLeave: () => void;
   onDrop: () => void;
+  onAddVendor: () => void;
+  onEditVendor: (vendor: CoupleSupplier) => void;
 }) {
+  const { t } = useT();
   const total = tasks.length + vendors.length;
   const styles = COL_STYLES[col];
 
@@ -2341,10 +2434,19 @@ function KanbanColumn({
           />
         ))}
         {vendors.map((vendor) => (
-          <VendorKanbanCard key={vendor.id} vendor={vendor} />
+          <VendorKanbanCard key={vendor.id} vendor={vendor} onEdit={onEditVendor} />
         ))}
         {total === 0 && (
           <p className="py-4 text-center text-xs text-ink-300 dark:text-umber-500">—</p>
+        )}
+        {col === "todo" && filter !== "tasks" && (
+          <button
+            type="button"
+            onClick={onAddVendor}
+            className="mt-1 w-full rounded-xl border border-dashed border-paper-300 px-3 py-2 text-xs text-ink-500 hover:border-ink-300 hover:text-ink-700 transition-colors dark:border-umber-600 dark:text-umber-400 dark:hover:border-umber-500"
+          >
+            + {t("planning.board_vendor_add")}
+          </button>
         )}
       </div>
     </div>
@@ -2448,18 +2550,46 @@ function TaskKanbanCard({
   );
 }
 
-function VendorKanbanCard({ vendor }: { vendor: CoupleSupplier }) {
+function VendorKanbanCard({
+  vendor,
+  onEdit,
+}: {
+  vendor: CoupleSupplier;
+  onEdit: (vendor: CoupleSupplier) => void;
+}) {
   const { t } = useT();
   return (
     <div className="rounded-xl border border-paper-200 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
-      <p className="text-sm font-medium text-ink-900 dark:text-paper-50">{vendor.name}</p>
+      <div className="flex items-start gap-1">
+        <p className="min-w-0 flex-1 text-sm font-medium text-ink-900 dark:text-paper-50">
+          {vendor.name}
+        </p>
+        <button
+          type="button"
+          onClick={() => onEdit(vendor)}
+          aria-label={t("planning.board_vendor_edit_title")}
+          className="shrink-0 text-ink-300 transition-colors hover:text-ink-600 dark:text-umber-500 dark:hover:text-umber-200"
+        >
+          <Pencil size={12} aria-hidden="true" />
+        </button>
+      </div>
       <p className="mt-0.5 text-[11px] text-ink-500 dark:text-umber-300">
         {t(`suppliers.cat.${vendor.category}`)}
       </p>
+      {vendor.next_step && (
+        <p className="mt-0.5 text-[11px] italic text-ink-500 dark:text-umber-300">
+          {vendor.next_step}
+        </p>
+      )}
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         {vendor.price_huf != null && (
           <span className="text-[11px] text-ink-600 dark:text-umber-200">
             {formatHuf(vendor.price_huf)} Ft
+          </span>
+        )}
+        {vendor.probability != null && (
+          <span className="rounded-full bg-paper-200 px-1.5 py-0.5 text-[10px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+            {vendor.probability}%
           </span>
         )}
         {vendor.paid ? (
@@ -2477,5 +2607,249 @@ function VendorKanbanCard({ vendor }: { vendor: CoupleSupplier }) {
         )}
       </div>
     </div>
+  );
+}
+
+const VALID_CATEGORIES = [
+  "venue",
+  "accommodation",
+  "tent_pavilion",
+  "catering",
+  "cake_dessert",
+  "bar_drinks",
+  "decor_floral",
+  "lighting",
+  "music_dj",
+  "sound_tech",
+  "photo_video",
+  "entertainment",
+  "attire",
+  "hair_makeup",
+  "nails",
+  "rings",
+  "stationery",
+  "wedding_website",
+  "transport",
+] as const;
+
+function VendorModal({
+  vendor,
+  onClose,
+  onCreate,
+  onUpdate,
+  onDelete,
+}: {
+  vendor: CoupleSupplier | null;
+  onClose: () => void;
+  onCreate: (input: {
+    name: string;
+    category: string;
+    next_step: string | null;
+    probability: number | null;
+    price_huf: number | null;
+  }) => Promise<void>;
+  onUpdate: (
+    id: string,
+    input: {
+      name: string;
+      category: string;
+      next_step: string | null;
+      probability: number | null;
+      price_huf: number | null;
+    },
+  ) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const { t } = useT();
+  const isEdit = vendor !== null;
+
+  const [name, setName] = useState(vendor?.name ?? "");
+  const [category, setCategory] = useState<string>(vendor?.category ?? VALID_CATEGORIES[0]);
+  const [nextStep, setNextStep] = useState(vendor?.next_step ?? "");
+  const [probability, setProbability] = useState(
+    vendor?.probability != null ? String(vendor.probability) : "",
+  );
+  const [priceHuf, setPriceHuf] = useState(
+    vendor?.price_huf != null ? String(vendor.price_huf) : "",
+  );
+  const [nextStepError, setNextStepError] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    const trimmedNextStep = nextStep.trim();
+    if (!trimmedNextStep) {
+      setNextStepError(true);
+      return;
+    }
+    setNextStepError(false);
+    setSaving(true);
+    const input = {
+      name: name.trim() || (isEdit ? vendor.name : ""),
+      category,
+      next_step: trimmedNextStep,
+      probability: probability !== "" ? Number(probability) : null,
+      price_huf: priceHuf !== "" ? Number(priceHuf) : null,
+    };
+    try {
+      if (isEdit) {
+        await onUpdate(vendor.id, input);
+      } else {
+        await onCreate(input);
+      }
+      onClose();
+    } catch {
+      // error already toasted by parent handlers
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!isEdit) return;
+    await onDelete(vendor.id);
+    onClose();
+  }
+
+  return (
+    <Dialog
+      open
+      title={t(isEdit ? "planning.board_vendor_edit_title" : "planning.board_vendor_create_title")}
+      role="dialog"
+      closeOnBackdrop
+      onClose={() => {
+        if (!saving) onClose();
+      }}
+      footer={
+        <div className="flex w-full items-center gap-2">
+          {isEdit && (
+            <button
+              type="button"
+              className="btn-ghost text-blush-700 dark:text-blush-300"
+              onClick={handleDelete}
+              disabled={saving}
+            >
+              <Trash2 size={14} className="mr-1.5 inline" aria-hidden="true" />
+              {t("common.delete")}
+            </button>
+          )}
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={onClose}
+              disabled={saving}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleSave}
+              disabled={saving || !name.trim()}
+            >
+              {saving ? t("common.loading") : t("planning.board_vendor_save")}
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {/* Name */}
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            {t("planning.board_vendor_name_label")}
+          </span>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            maxLength={200}
+            className="w-full rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
+          />
+        </label>
+
+        {/* Category */}
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            {t("planning.board_vendor_category_label")}
+          </span>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
+          >
+            {VALID_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {t(`suppliers.cat.${cat}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* Next step */}
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+            {t("planning.board_vendor_next_step_label")}
+          </span>
+          <textarea
+            value={nextStep}
+            onChange={(e) => {
+              setNextStep(e.target.value);
+              if (e.target.value.trim()) setNextStepError(false);
+            }}
+            placeholder={t("planning.board_vendor_next_step_placeholder")}
+            rows={2}
+            maxLength={200}
+            className={`w-full rounded-lg border px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:text-paper-50 ${
+              nextStepError
+                ? "border-blush-500 bg-blush-50 dark:border-blush-400 dark:bg-umber-800"
+                : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
+            }`}
+          />
+          {nextStepError && (
+            <p className="mt-1 text-xs text-blush-600 dark:text-blush-400">
+              {t("planning.board_vendor_next_step_required")}
+            </p>
+          )}
+        </label>
+
+        <div className="flex gap-4">
+          {/* Probability */}
+          <label className="block flex-1">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {t("planning.board_vendor_probability_label")}
+            </span>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={probability}
+                onChange={(e) => setProbability(e.target.value)}
+                min={0}
+                max={100}
+                placeholder="—"
+                className="w-full rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
+              />
+              <span className="text-sm text-ink-500 dark:text-umber-300">%</span>
+            </div>
+          </label>
+
+          {/* Price */}
+          <label className="block flex-1">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {t("planning.board_vendor_amount_label")}
+            </span>
+            <input
+              type="number"
+              value={priceHuf}
+              onChange={(e) => setPriceHuf(e.target.value)}
+              min={0}
+              placeholder="—"
+              className="w-full rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
+            />
+          </label>
+        </div>
+      </div>
+    </Dialog>
   );
 }

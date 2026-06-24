@@ -52,6 +52,18 @@ export interface AuthSession {
   user: User;
 }
 
+export interface PlannerClientView {
+  couple_id: number;
+  status: string;
+  display_name: string;
+  bride_name: string;
+  groom_name: string;
+  wedding_date: string | null;
+  couple_status: string;
+  confirmed_guests: number;
+  linked_at: UnixMs;
+}
+
 // ─── Admin dashboard (users + couples directory) ─────────────────────────────
 
 export interface AdminUserView {

@@ -39,7 +39,7 @@ import { createPortal } from "react-dom";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
-import { adminUserApi } from "../lib/endpoints";
+import { adminUserApi, plannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { CoachMarks } from "./CoachMarks";
 import { FeatureTour } from "./FeatureTour";
@@ -531,6 +531,24 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Read-only billing banner — renders only when the couple's free
           period has lapsed and they aren't subscribed. No-ops otherwise. */}
       <SubscriptionBanner />
+      {/* Planner-mode banner — shown when a planner has entered a client
+          workspace (couple_id set). Lets them exit back to /app/planner. */}
+      {user?.user_type === "planner" && user.couple_id != null && (
+        <div className="flex items-center justify-between bg-sage-600 px-4 py-2 text-sm text-white sm:px-6">
+          <span className="font-medium">{t("planner_home.viewing_client")}</span>
+          <button
+            type="button"
+            className="rounded px-2 py-0.5 text-xs font-medium transition-colors hover:bg-sage-700"
+            onClick={() => {
+              void plannerApi.exit().then(() => {
+                window.location.assign("/app/planner");
+              });
+            }}
+          >
+            {t("planner_home.back_to_planner")}
+          </button>
+        </div>
+      )}
       <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
           {/* When signed in, the wordmark routes to the in-app dashboard so

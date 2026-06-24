@@ -1426,3 +1426,14 @@ CREATE TABLE IF NOT EXISTS destination_photo_cache (
   local_path  TEXT    NOT NULL,
   fetched_at  INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
+
+-- Planner-to-couple links. A planner can manage multiple couple workspaces;
+-- a couple can have at most one linked planner (enforced at the route layer).
+CREATE TABLE IF NOT EXISTS planner_clients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at INTEGER NOT NULL,
+  UNIQUE(planner_user_id, couple_id)
+);

@@ -1670,6 +1670,18 @@ export interface LocaleMessages {
     board_vendor_paid_badge: string;
     board_vendor_considering_badge: string;
     board_vendor_inprogress_badge: string;
+    board_vendor_add: string;
+    board_vendor_create_title: string;
+    board_vendor_edit_title: string;
+    board_vendor_name_label: string;
+    board_vendor_category_label: string;
+    board_vendor_next_step_label: string;
+    board_vendor_next_step_placeholder: string;
+    board_vendor_next_step_required: string;
+    board_vendor_probability_label: string;
+    board_vendor_amount_label: string;
+    board_vendor_save: string;
+    board_vendor_delete_confirm: string;
   };
   /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */
   honeymoon: {
@@ -6374,5 +6386,16 @@ export interface LocaleMessages {
     feature_runsheet: string;
     feature_runsheet_desc: string;
     logout: string;
+    viewing_client: string;
+    back_to_planner: string;
+    add_client_heading: string;
+    add_client_placeholder: string;
+    add_client_button: string;
+    add_client_success: string;
+    add_client_error: string;
+    enter_workspace: string;
+    client_wedding_date_none: string;
+    client_guests: string;
+    clients_roster_heading: string;
   };
 }

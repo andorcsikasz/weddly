@@ -125,7 +125,9 @@ function RequireCoupleAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
   if (loading) return <FullScreenLoader />;
   if (!user) return <Navigate to="/login" replace />;
-  if (user.user_type === "planner") return <Navigate to="/app/planner" replace />;
+  // Planners with an active client couple (couple_id set) are allowed through;
+  // planners with no active client bounce to their own dashboard.
+  if (user.user_type === "planner" && !user.couple_id) return <Navigate to="/app/planner" replace />;
   if (!user.verified_email && !verifyBypassed()) {
     return <VerifyEmailGate email={user.email} />;
   }

@@ -438,6 +438,8 @@ function backfillCoupleCountry(): void {
 // columns and made the dashboard read as if every aunt-cooking-line was
 // already paid. Existing rows keep their data — see couple_suppliers.ts.
 addColumnIfMissing("couple_suppliers", "paid", "paid INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("couple_suppliers", "probability", "probability INTEGER");
+addColumnIfMissing("couple_suppliers", "next_step", "next_step TEXT");
 
 // Admin-only freeform notes on community-submitted suppliers. Turns the
 // admin moderation page into a real CRM — moderators can jot triage notes
@@ -1238,3 +1240,7 @@ addColumnIfMissing("planner_waitlist", "early_bird", "early_bird INTEGER NOT NUL
 // film_devices index lives here (not schema.sql) per project rule.
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_album ON film_devices(album_id)");
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_device ON film_devices(album_id, device_id)");
+
+// planner_clients indexes live here (not schema.sql) per the May 2026 ordering rule.
+db.exec("CREATE INDEX IF NOT EXISTS idx_planner_clients_planner ON planner_clients(planner_user_id)");
+db.exec("CREATE INDEX IF NOT EXISTS idx_planner_clients_couple ON planner_clients(couple_id)");

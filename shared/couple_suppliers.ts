@@ -31,6 +31,10 @@ export interface CoupleSupplier {
    *  budget line's actual_huf equals the sum of paid installments. Ordered by
    *  sort_order then due_date. */
   installments: SupplierInstallment[];
+  /** Short free-text reminder of what to do next with this vendor (Kanban board). */
+  next_step: string | null;
+  /** 0–100 likelihood estimate used on the Kanban board to sort/colour cards. */
+  probability: number | null;
   created_at: number;
   updated_at: number;
 }

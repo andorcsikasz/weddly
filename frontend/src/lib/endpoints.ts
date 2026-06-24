@@ -51,6 +51,7 @@ import type {
   User,
   WeddingDateGoal,
   WeddingStyleTag,
+  PlannerClientView,
 } from "@shared/types";
 import type {
   AdminFinancialPlannerOverview,
@@ -2191,4 +2192,14 @@ export const photoAlbumApi = {
 
   /** QR code SVG URL — embed directly in <img src> or open in new tab. */
   qrUrl: (token: string) => `/api/photo-albums/${token}/qr`,
+};
+
+export const plannerApi = {
+  listClients: () =>
+    apiFetch<{ clients: PlannerClientView[] }>("GET", "/api/planner/clients"),
+  addClient: (email: string) =>
+    apiFetch<{ ok: boolean; couple_id: number }>("POST", "/api/planner/clients", { email }),
+  enterClient: (coupleId: number) =>
+    apiFetch<{ couple: Couple }>("POST", `/api/planner/clients/${coupleId}/enter`, {}),
+  exit: () => apiFetch<{ ok: boolean }>("POST", "/api/planner/exit", {}),
 };
