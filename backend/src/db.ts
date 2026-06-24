@@ -557,11 +557,7 @@ addColumnIfMissing("users", "survey_prompted_at", "survey_prompted_at INTEGER");
 // accounts. Defaults to 'couple' so every existing + new self-registered user
 // stays on the couple path. Planners are promoted via admin action after their
 // waitlist application is approved.
-addColumnIfMissing(
-  "users",
-  "user_type",
-  "user_type TEXT NOT NULL DEFAULT 'couple'",
-);
+addColumnIfMissing("users", "user_type", "user_type TEXT NOT NULL DEFAULT 'couple'");
 
 // Group the acquisition dashboard's hottest breakdowns. Index AFTER the column
 // adds (the May 2026 prod-crash rule: indexes on addColumnIfMissing columns
@@ -1242,8 +1238,18 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_album ON film_devices(album
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_device ON film_devices(album_id, device_id)");
 
 // planner_clients indexes live here (not schema.sql) per the May 2026 ordering rule.
-db.exec("CREATE INDEX IF NOT EXISTS idx_planner_clients_planner ON planner_clients(planner_user_id)");
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_planner_clients_planner ON planner_clients(planner_user_id)",
+);
 db.exec("CREATE INDEX IF NOT EXISTS idx_planner_clients_couple ON planner_clients(couple_id)");
+
+// planner_messages indexes — same ordering rule.
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_planner_messages_planner ON planner_messages(planner_user_id, created_at DESC)",
+);
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_planner_messages_thread ON planner_messages(planner_user_id, couple_id, created_at ASC)",
+);
 
 // Planner private notes per client — additive, null = no notes yet.
 addColumnIfMissing("planner_clients", "notes", "notes TEXT");

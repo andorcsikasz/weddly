@@ -6406,5 +6406,27 @@ export interface LocaleMessages {
     upcoming_empty: string;
     task_summary: string;
     task_summary_ok: string;
+    messages_link: string;
+  };
+  planner_messages: {
+    heading: string;
+    back: string;
+    inbox_empty: string;
+    select_client: string;
+    compose_heading: string;
+    field_to: string;
+    field_subject: string;
+    field_body: string;
+    send: string;
+    sending: string;
+    sent_ok: string;
+    error_send: string;
+    thread_heading: string;
+    msg_sent: string;
+    msg_received: string;
+    no_messages: string;
+    to_placeholder: string;
+    subject_placeholder: string;
+    body_placeholder: string;
   };
 }

@@ -83,6 +83,7 @@ const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
 const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
 const WishlistEditorPage = lazy(() => import("./pages/WishlistEditorPage"));
 const PlannerHomePage = lazy(() => import("./pages/PlannerHomePage"));
+const PlannerMessagesPage = lazy(() => import("./pages/PlannerMessagesPage"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the
 // "continue with limited access" path. Lets the gate downgrade to an
@@ -127,7 +128,8 @@ function RequireCoupleAuth({ children }: { children: JSX.Element }) {
   if (!user) return <Navigate to="/login" replace />;
   // Planners with an active client couple (couple_id set) are allowed through;
   // planners with no active client bounce to their own dashboard.
-  if (user.user_type === "planner" && !user.couple_id) return <Navigate to="/app/planner" replace />;
+  if (user.user_type === "planner" && !user.couple_id)
+    return <Navigate to="/app/planner" replace />;
   if (!user.verified_email && !verifyBypassed()) {
     return <VerifyEmailGate email={user.email} />;
   }
@@ -860,6 +862,22 @@ export default function App() {
               <Page>
                 <PlannerHomePage />
               </Page>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/app/planner/messages"
+          element={
+            <RequireAuth>
+              <PlannerMessagesPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/app/planner/messages/:coupleId"
+          element={
+            <RequireAuth>
+              <PlannerMessagesPage />
             </RequireAuth>
           }
         />

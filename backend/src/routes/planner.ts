@@ -2,12 +2,13 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { getCoupleById, toCouple } from "../domain/couples";
+import { sendEmail } from "../lib/mailer";
 
 function requirePlannerAuth(ctx: Ctx): number {
   const userId = requireAuth(ctx);
-  const user = db
-    .prepare("SELECT user_type FROM users WHERE id = ?")
-    .get(userId) as { user_type: string } | undefined;
+  const user = db.prepare("SELECT user_type FROM users WHERE id = ?").get(userId) as
+    | { user_type: string }
+    | undefined;
   if (!user || user.user_type !== "planner") {
     throw new HttpError(403, "Planner account required");
   }
@@ -22,6 +23,7 @@ async function handleListClients(ctx: Ctx): Promise<Response> {
       `SELECT pc.couple_id, pc.status, pc.created_at, pc.notes,
               c.bride_name, c.groom_name, c.display_name, c.wedding_date,
               c.status AS couple_status,
+              (SELECT u.email FROM users u WHERE u.couple_id = c.id LIMIT 1) AS primary_email,
               (SELECT COUNT(*) FROM guests g WHERE g.couple_id = c.id AND g.rsvp_status = 'yes') AS confirmed_guests,
               (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task') AS task_total,
               (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task' AND pi.done = 1) AS task_done,
@@ -36,6 +38,7 @@ async function handleListClients(ctx: Ctx): Promise<Response> {
     status: string;
     created_at: number;
     notes: string | null;
+    primary_email: string | null;
     bride_name: string;
     groom_name: string;
     display_name: string | null;
@@ -59,6 +62,7 @@ async function handleListClients(ctx: Ctx): Promise<Response> {
       confirmed_guests: r.confirmed_guests,
       linked_at: r.created_at,
       notes: r.notes,
+      primary_email: r.primary_email,
       task_summary: { total: r.task_total, done: r.task_done, overdue: r.task_overdue },
     })),
   });
@@ -73,9 +77,9 @@ async function handleAddClient(ctx: Ctx): Promise<Response> {
   }
   const email = body.email.trim().toLowerCase();
 
-  const target = db
-    .prepare("SELECT id, couple_id FROM users WHERE LOWER(email) = ?")
-    .get(email) as { id: number; couple_id: number | null } | undefined;
+  const target = db.prepare("SELECT id, couple_id FROM users WHERE LOWER(email) = ?").get(email) as
+    | { id: number; couple_id: number | null }
+    | undefined;
   if (!target) throw new HttpError(404, "No user found with that email");
   if (!target.couple_id) {
     throw new HttpError(400, "That user has not set up a wedding workspace yet");
@@ -87,9 +91,7 @@ async function handleAddClient(ctx: Ctx): Promise<Response> {
   }
 
   const existing = db
-    .prepare(
-      "SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?",
-    )
+    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
     .get(userId, target.couple_id);
   if (existing) throw new HttpError(409, "This couple is already linked to your account");
 
@@ -149,15 +151,12 @@ async function handleEnterClient(ctx: Ctx): Promise<Response> {
 async function handleExit(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
 
-  const user = db
-    .prepare("SELECT couple_id FROM users WHERE id = ?")
-    .get(userId) as { couple_id: number | null } | undefined;
+  const user = db.prepare("SELECT couple_id FROM users WHERE id = ?").get(userId) as
+    | { couple_id: number | null }
+    | undefined;
 
   const prevCoupleId = user?.couple_id ?? null;
-  db.prepare("UPDATE users SET couple_id = NULL, updated_at = ? WHERE id = ?").run(
-    now(),
-    userId,
-  );
+  db.prepare("UPDATE users SET couple_id = NULL, updated_at = ? WHERE id = ?").run(now(), userId);
 
   if (prevCoupleId != null) {
     addAuditLog({
@@ -221,6 +220,140 @@ async function handleListTasks(ctx: Ctx): Promise<Response> {
   return json({ tasks: rows.map((r) => ({ ...r, done: r.done === 1 })) });
 }
 
+async function handleListInbox(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+
+  const rows = db
+    .prepare(
+      `SELECT pm.couple_id,
+              COALESCE(c.display_name, c.bride_name || ' & ' || c.groom_name) AS display_name,
+              MAX(pm.created_at) AS last_at,
+              COUNT(*) AS message_count,
+              (SELECT pm2.subject FROM planner_messages pm2
+                WHERE pm2.planner_user_id = pm.planner_user_id AND pm2.couple_id = pm.couple_id
+                ORDER BY pm2.created_at DESC LIMIT 1) AS last_subject
+         FROM planner_messages pm
+         JOIN couples c ON c.id = pm.couple_id
+        WHERE pm.planner_user_id = ?
+        GROUP BY pm.couple_id
+        ORDER BY last_at DESC`,
+    )
+    .all(userId) as Array<{
+    couple_id: number;
+    display_name: string;
+    last_at: number;
+    message_count: number;
+    last_subject: string;
+  }>;
+
+  return json({ threads: rows });
+}
+
+async function handleListThread(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  const link = db
+    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+    .get(userId, coupleId);
+  if (!link) throw new HttpError(403, "Not linked to this workspace");
+
+  const messages = db
+    .prepare(
+      `SELECT id, direction, subject, body_text, recipient_email, status, created_at
+         FROM planner_messages
+        WHERE planner_user_id = ? AND couple_id = ?
+        ORDER BY created_at ASC`,
+    )
+    .all(userId, coupleId) as Array<{
+    id: number;
+    direction: string;
+    subject: string;
+    body_text: string;
+    recipient_email: string;
+    status: string;
+    created_at: number;
+  }>;
+
+  return json({ messages });
+}
+
+async function handleSendMessage(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  const link = db
+    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+    .get(userId, coupleId);
+  if (!link) throw new HttpError(403, "Not linked to this workspace");
+
+  const body = await readJson<{
+    subject?: unknown;
+    body_text?: unknown;
+    recipient_email?: unknown;
+  }>(ctx.req);
+  if (typeof body.subject !== "string" || !body.subject.trim())
+    throw new HttpError(400, "subject required");
+  if (typeof body.body_text !== "string" || !body.body_text.trim())
+    throw new HttpError(400, "body_text required");
+  if (typeof body.recipient_email !== "string" || !body.recipient_email.trim())
+    throw new HttpError(400, "recipient_email required");
+
+  const subject = body.subject.trim();
+  const bodyText = body.body_text.trim();
+  const recipientEmail = body.recipient_email.trim().toLowerCase();
+
+  const planner = db.prepare("SELECT full_name, email FROM users WHERE id = ?").get(userId) as
+    | { full_name: string; email: string }
+    | undefined;
+  if (!planner) throw new HttpError(500, "planner not found");
+
+  const ts = now();
+  db.prepare(
+    `INSERT INTO planner_messages (planner_user_id, couple_id, direction, subject, body_text, recipient_email, status, created_at)
+     VALUES (?, ?, 'out', ?, ?, ?, 'sent', ?)`,
+  ).run(userId, coupleId, subject, bodyText, recipientEmail, ts);
+
+  const msgId = (db.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }).id;
+
+  const htmlBody = `<div style="font-family:sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
+<p style="white-space:pre-wrap">${bodyText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0"/>
+<p style="font-size:13px;color:#888">Küldő: ${planner.full_name} (${planner.email}) | Weddly</p>
+</div>`;
+
+  await sendEmail({
+    to: recipientEmail,
+    subject,
+    html: htmlBody,
+    text: bodyText,
+    headers: { "Reply-To": planner.email },
+  });
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "planner.send_message",
+    target_kind: "couple",
+    target_id: coupleId,
+    note: subject,
+  });
+
+  return json({
+    message: {
+      id: msgId,
+      direction: "out",
+      subject,
+      body_text: bodyText,
+      recipient_email: recipientEmail,
+      status: "sent",
+      created_at: ts,
+    },
+  });
+}
+
 export function registerPlannerRoutes(router: Router) {
   router.get("/api/planner/clients", handleListClients, true);
   router.post("/api/planner/clients", handleAddClient, true);
@@ -228,4 +361,7 @@ export function registerPlannerRoutes(router: Router) {
   router.post("/api/planner/clients/:coupleId/enter", handleEnterClient, true);
   router.post("/api/planner/exit", handleExit, true);
   router.get("/api/planner/tasks", handleListTasks, true);
+  router.get("/api/planner/messages", handleListInbox, true);
+  router.get("/api/planner/messages/:coupleId", handleListThread, true);
+  router.post("/api/planner/messages/:coupleId", handleSendMessage, true);
 }

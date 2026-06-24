@@ -53,6 +53,8 @@ import type {
   WeddingStyleTag,
   PlannerClientView,
   PlannerTaskRow,
+  PlannerThreadPreview,
+  PlannerMessage,
 } from "@shared/types";
 import type {
   AdminFinancialPlannerOverview,
@@ -2196,8 +2198,7 @@ export const photoAlbumApi = {
 };
 
 export const plannerApi = {
-  listClients: () =>
-    apiFetch<{ clients: PlannerClientView[] }>("GET", "/api/planner/clients"),
+  listClients: () => apiFetch<{ clients: PlannerClientView[] }>("GET", "/api/planner/clients"),
   addClient: (email: string) =>
     apiFetch<{ ok: boolean; couple_id: number }>("POST", "/api/planner/clients", { email }),
   enterClient: (coupleId: number) =>
@@ -2206,4 +2207,13 @@ export const plannerApi = {
   updateNotes: (coupleId: number, notes: string) =>
     apiFetch<{ ok: boolean }>("PATCH", `/api/planner/clients/${coupleId}/notes`, { notes }),
   listTasks: () => apiFetch<{ tasks: PlannerTaskRow[] }>("GET", "/api/planner/tasks"),
+  listInbox: () => apiFetch<{ threads: PlannerThreadPreview[] }>("GET", "/api/planner/messages"),
+  listThread: (coupleId: number) =>
+    apiFetch<{ messages: PlannerMessage[] }>("GET", `/api/planner/messages/${coupleId}`),
+  sendMessage: (coupleId: number, subject: string, body_text: string, recipient_email: string) =>
+    apiFetch<{ message: PlannerMessage }>("POST", `/api/planner/messages/${coupleId}`, {
+      subject,
+      body_text,
+      recipient_email,
+    }),
 };

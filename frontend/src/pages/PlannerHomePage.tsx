@@ -1,5 +1,6 @@
-import { CalendarRange, ClipboardList, Users } from "lucide-react";
+import { CalendarRange, ClipboardList, MessageSquare, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import type { PlannerClientView, PlannerTaskRow } from "@shared/types";
 import { plannerApi } from "../lib/endpoints";
 import { useAuth } from "../lib/auth";
@@ -112,8 +113,12 @@ function UpcomingTasks({ tasks }: { tasks: PlannerTaskRow[] }) {
   }
 
   const priorityDot = (p: number) => {
-    if (p === 2) return <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500 mt-1.5" />;
-    if (p === 1) return <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 mt-1.5" />;
+    if (p === 2)
+      return <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500 mt-1.5" />;
+    if (p === 1)
+      return (
+        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 mt-1.5" />
+      );
     return null;
   };
 
@@ -218,13 +223,22 @@ export default function PlannerHomePage() {
           <span className="font-cormorant text-xl font-semibold italic text-umber-900 dark:text-paper-50">
             Weddly
           </span>
-          <button
-            type="button"
-            onClick={() => void logout()}
-            className="text-sm text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
-          >
-            {t("planner_home.logout")}
-          </button>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/app/planner/messages"
+              className="flex items-center gap-1.5 text-sm text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
+            >
+              <MessageSquare size={15} />
+              {t("planner_home.messages_link")}
+            </Link>
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="text-sm text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
+            >
+              {t("planner_home.logout")}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -325,9 +339,7 @@ export default function PlannerHomePage() {
             {addStatus === "ok" && (
               <p className="mt-2 text-xs text-sage-600">{t("planner_home.add_client_success")}</p>
             )}
-            {addStatus === "error" && (
-              <p className="mt-2 text-xs text-red-500">{addError}</p>
-            )}
+            {addStatus === "error" && <p className="mt-2 text-xs text-red-500">{addError}</p>}
           </div>
         </section>
 

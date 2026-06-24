@@ -1437,3 +1437,19 @@ CREATE TABLE IF NOT EXISTS planner_clients (
   created_at INTEGER NOT NULL,
   UNIQUE(planner_user_id, couple_id)
 );
+
+-- Planner ↔ client couple message thread. Each row is one outbound email
+-- the planner composed + sent. direction='out' in v1 (planner→client);
+-- reserved for future inbound webhook. Reply-To is the planner's own email
+-- so the client's reply lands directly in the planner's inbox.
+CREATE TABLE IF NOT EXISTS planner_messages (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  couple_id        INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  direction        TEXT    NOT NULL DEFAULT 'out',
+  subject          TEXT    NOT NULL,
+  body_text        TEXT    NOT NULL,
+  recipient_email  TEXT    NOT NULL,
+  status           TEXT    NOT NULL DEFAULT 'sent',
+  created_at       INTEGER NOT NULL
+);
