@@ -90,7 +90,7 @@ function formatPreciseCountdown(ms: number): string {
   return `${m}m`;
 }
 
-const DEMO_STRIP = ["/demo/film-01.jpg", "/demo/film-02.jpg", "/demo/film-03.jpg"];
+const DEMO_STRIP = ["/demo/film-hero.jpg", "/demo/film-02.jpg", "/demo/film-03.jpg"];
 
 const AESTHETIC_LABELS: Record<FilmAesthetic, string> = {
   natural: "Natural",
