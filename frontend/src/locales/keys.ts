@@ -2332,6 +2332,8 @@ export interface LocaleMessages {
    *  unlocked only after an RSVP-yes, so the couple never publishes the
    *  wrong block to the wrong audience. */
   guest_page_editor: {
+    coming_soon_title: string;
+    coming_soon_body: string;
     title: string;
     subtitle: string;
     /** Eye button in the header that opens the live public /w/:slug page. */

@@ -2149,6 +2149,8 @@ const hu: LocaleMessages = {
     },
   },
   guest_page_editor: {
+    coming_soon_title: "Hamarosan elérhető",
+    coming_soon_body: "A vendégoldal szerkesztő fejlesztés alatt áll.",
     title: "Vendégoldal",
     subtitle:
       "Ez az az oldal, amit megosztasz a vendégeitekkel. Akinek van a linked, az látja a nyilvános részt; az alsóbb információk csak az igennel visszajelölt vendégeknek nyílnak meg.",

@@ -2127,6 +2127,8 @@ const en: LocaleMessages = {
     },
   },
   guest_page_editor: {
+    coming_soon_title: "Coming soon",
+    coming_soon_body: "The guest page editor is under development.",
     title: "Guest page",
     subtitle:
       "The one page you share with guests. Anyone with the link sees the public block; the rest unlocks for guests who RSVP yes.",

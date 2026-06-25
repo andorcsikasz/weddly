@@ -1456,7 +1456,7 @@ export default function SeatingPage() {
                         )
                       : t("seating.drag_help")}
                 </p>
-                {unassigned.length === 0 && partnerSlots.length === 0 ? (
+                {guests.length > 0 && unassigned.length === 0 && partnerSlots.length === 0 ? (
                   <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
                     {t("seating.no_unassigned")}
                   </p>
