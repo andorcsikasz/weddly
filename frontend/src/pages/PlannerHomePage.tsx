@@ -1,100 +1,19 @@
-import { ChevronDown, ChevronUp, MessageSquare, User, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import type {
   PlannerClientView,
   PlannerInviteView,
   PlannerStats,
   PlannerTaskRow,
 } from "@shared/types";
-import { Wordmark } from "../components/Wordmark";
 import { plannerApi } from "../lib/endpoints";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { formatDate } from "../lib/format";
-
-// ─── ClientNotes ──────────────────────────────────────────────────────────────
-
-function ClientNotes({
-  coupleId,
-  initial,
-}: {
-  coupleId: number;
-  initial: string | null;
-}) {
-  const { t } = useT();
-  const [open, setOpen] = useState(initial != null && initial.length > 0);
-  const [value, setValue] = useState(initial ?? "");
-  const [saved, setSaved] = useState(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function handleBlur() {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    void plannerApi.updateNotes(coupleId, value).then(() => {
-      setSaved(true);
-      saveTimer.current = setTimeout(() => setSaved(false), 1500);
-    });
-  }
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="mt-2 text-xs text-umber-400 hover:text-umber-600 dark:text-umber-500 dark:hover:text-umber-300"
-      >
-        + {t("planner_home.notes_add")}
-      </button>
-    );
-  }
-
-  return (
-    <div className="mt-2">
-      <textarea
-        rows={2}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={handleBlur}
-        placeholder={t("planner_home.notes_placeholder")}
-        className="w-full resize-none rounded-lg border border-paper-200 px-2 py-1.5 text-xs text-ink-700 focus:outline-none focus:ring-1 focus:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200"
-      />
-      {saved && (
-        <p className="mt-0.5 text-[10px] text-sage-600">{t("planner_home.notes_saved")} ✓</p>
-      )}
-    </div>
-  );
-}
-
-// ─── TaskSummaryChip ──────────────────────────────────────────────────────────
-
-function TaskSummaryChip({
-  summary,
-}: {
-  summary: PlannerClientView["task_summary"];
-}) {
-  const { t } = useT();
-  if (summary.total === 0) return null;
-  if (summary.overdue > 0) {
-    const text = t("planner_home.task_summary")
-      .replace("{{total}}", String(summary.total))
-      .replace("{{overdue}}", String(summary.overdue));
-    const parts = text.split(String(summary.overdue));
-    return (
-      <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
-        {parts[0]}
-        <span className="font-medium text-red-500">{summary.overdue}</span>
-        {parts[1]}
-      </p>
-    );
-  }
-  return (
-    <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
-      {t("planner_home.task_summary_ok")
-        .replace("{{total}}", String(summary.total))
-        .replace("{{done}}", String(summary.done))}
-    </p>
-  );
-}
+import { PlannerDashTopbar } from "./planner/PlannerDashTopbar";
+import { PlannerDashPipeline } from "./planner/PlannerDashPipeline";
+import { PlannerDashRightRail } from "./planner/PlannerDashRightRail";
 
 // ─── KPI Tiles ────────────────────────────────────────────────────────────────
 
@@ -109,9 +28,11 @@ function KpiTile({
   value: string | number;
   unit: string;
   progress?: { done: number; total: number } | null;
-  accent?: "red";
+  accent?: "red" | "amber" | "green";
 }) {
-  const isRed = accent === "red";
+  const isRed = accent === "red" && Number(value) > 0;
+  const isAmber = accent === "amber" && Number(value) > 0;
+  const isGreen = accent === "green";
   return (
     <div className="card p-4">
       <div className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
@@ -120,9 +41,13 @@ function KpiTile({
       <div className="mt-2 text-center">
         <div
           className={`text-2xl font-bold leading-none tabular-nums ${
-            isRed && Number(value) > 0
+            isRed
               ? "text-red-500 dark:text-red-400"
-              : "text-ink-900 dark:text-paper-50"
+              : isAmber
+                ? "text-amber-500 dark:text-amber-400"
+                : isGreen
+                  ? "text-sage-600 dark:text-sage-400"
+                  : "text-ink-900 dark:text-paper-50"
           }`}
         >
           {value}
@@ -158,7 +83,7 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
   if (clients.length === 0) return null;
 
   return (
-    <section className="mb-8">
+    <section className="mb-0">
       <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
         {t("planner_home.chart_heading")}
       </h2>
@@ -230,7 +155,6 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
           })}
         </div>
 
-        {/* Legend */}
         <div className="mt-4 flex flex-wrap gap-3 border-t border-paper-100 pt-3 dark:border-umber-800">
           <span className="flex items-center gap-1.5 text-[10px] text-ink-500 dark:text-umber-400">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-sage-500" />
@@ -371,7 +295,7 @@ function TaskFilterPanel({
   );
 }
 
-// ─── UpcomingTasks (filtered) ─────────────────────────────────────────────────
+// ─── UpcomingTasks (grouped by time horizon) ─────────────────────────────────
 
 function applyTaskFilters(tasks: PlannerTaskRow[], filters: TaskFilters): PlannerTaskRow[] {
   let result = tasks;
@@ -406,26 +330,28 @@ function applyTaskFilters(tasks: PlannerTaskRow[], filters: TaskFilters): Planne
 function UpcomingTasks({
   tasks,
   filters,
-}: { tasks: PlannerTaskRow[]; filters: TaskFilters; clients: PlannerClientView[] }) {
+  clients,
+  showFilters,
+}: {
+  tasks: PlannerTaskRow[];
+  filters: TaskFilters;
+  clients: PlannerClientView[];
+  showFilters: boolean;
+}) {
   const { t, locale } = useT();
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const weekEnd = new Date();
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  const weekEndStr = weekEnd.toISOString().slice(0, 10);
 
   const filtered = applyTaskFilters(tasks, filters);
 
-  if (filtered.length === 0) {
-    return (
-      <p className="text-sm text-umber-400 dark:text-umber-500">
-        {t("planner_home.upcoming_empty")}
-      </p>
-    );
-  }
-
-  const grouped = new Map<number, { display_name: string; tasks: PlannerTaskRow[] }>();
-  for (const task of filtered) {
-    if (!grouped.has(task.couple_id)) {
-      grouped.set(task.couple_id, { display_name: task.display_name, tasks: [] });
-    }
-    grouped.get(task.couple_id)!.tasks.push(task);
-  }
+  const todayTasks = filtered.filter((tk) => tk.due_date === todayStr);
+  const weekTasks = filtered.filter(
+    (tk) => tk.due_date > todayStr && tk.due_date <= weekEndStr,
+  );
+  const laterTasks = filtered.filter((tk) => tk.due_date > weekEndStr);
 
   const priorityDot = (p: number) => {
     if (p === 2)
@@ -437,28 +363,144 @@ function UpcomingTasks({
     return null;
   };
 
+  const renderGroup = (groupTasks: PlannerTaskRow[]) => {
+    const grouped = new Map<number, { display_name: string; tasks: PlannerTaskRow[] }>();
+    for (const task of groupTasks) {
+      if (!grouped.has(task.couple_id)) {
+        grouped.set(task.couple_id, { display_name: task.display_name, tasks: [] });
+      }
+      grouped.get(task.couple_id)!.tasks.push(task);
+    }
+    return [...grouped.entries()].map(([coupleId, group]) => (
+      <div key={coupleId}>
+        <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-umber-500 dark:text-umber-400">
+          {group.display_name}
+        </h4>
+        <ul className="space-y-1.5">
+          {group.tasks.map((task) => (
+            <li key={task.task_id} className="flex items-start gap-2">
+              {priorityDot(task.priority)}
+              <span className="min-w-0 flex-1 text-sm text-ink-800 dark:text-paper-100">
+                {task.title}
+              </span>
+              <span className="shrink-0 rounded-full bg-paper-200 px-1.5 py-0.5 text-[10px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-200">
+                {formatDate(task.due_date, locale)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ));
+  };
+
+  if (filtered.length === 0) {
+    return (
+      <p className="text-sm text-umber-400 dark:text-umber-500">
+        {t("planner_home.upcoming_empty")}
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {[...grouped.entries()].map(([coupleId, group]) => (
-        <div key={coupleId}>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-umber-500 dark:text-umber-400">
-            {group.display_name}
+      {todayTasks.length > 0 && (
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-red-500 dark:text-red-400">
+            {t("planner_home.rail_today_title")}
           </h3>
-          <ul className="space-y-1.5">
-            {group.tasks.map((task) => (
-              <li key={task.task_id} className="flex items-start gap-2">
-                {priorityDot(task.priority)}
-                <span className="min-w-0 flex-1 text-sm text-ink-800 dark:text-paper-100">
-                  {task.title}
-                </span>
-                <span className="shrink-0 rounded-full bg-paper-200 px-1.5 py-0.5 text-[10px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-200">
-                  {formatDate(task.due_date, locale)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-4">{renderGroup(todayTasks)}</div>
         </div>
-      ))}
+      )}
+      {weekTasks.length > 0 && (
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-amber-600 dark:text-amber-400">
+            {t("planner_home.filter_timing_week")}
+          </h3>
+          <div className="space-y-4">{renderGroup(weekTasks)}</div>
+        </div>
+      )}
+      {laterTasks.length > 0 && (
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-umber-600 dark:text-umber-300">
+            {t("planner_home.filter_timing_all")}
+          </h3>
+          <div className="space-y-4">{renderGroup(laterTasks)}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── AddClientInlineCard ──────────────────────────────────────────────────────
+
+function AddClientInlineCard({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const { t } = useT();
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setStatus("loading");
+    setError("");
+    try {
+      await plannerApi.addClient(email.trim());
+      setStatus("ok");
+      setEmail("");
+      onSuccess();
+    } catch (err) {
+      setStatus("error");
+      setError(err instanceof Error ? err.message : t("planner_home.add_client_error"));
+    }
+  }
+
+  return (
+    <div className="card mt-4 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="font-grotesk text-sm font-semibold text-umber-800 dark:text-paper-200">
+          {t("planner_home.add_client_heading")}
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg p-1 text-umber-500 hover:bg-paper-100 hover:text-umber-800 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-paper-100"
+          aria-label={t("planner_home.back_label")}
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <form onSubmit={(e) => void handleSubmit(e)} className="flex gap-2">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (status !== "idle") setStatus("idle");
+          }}
+          placeholder={t("planner_home.add_client_placeholder")}
+          className="input flex-1 text-sm"
+          disabled={status === "loading"}
+          autoFocus
+        />
+        <button
+          type="submit"
+          disabled={status === "loading" || !email.trim()}
+          className="btn-primary btn-sm shrink-0"
+        >
+          {t("planner_home.add_client_button")}
+        </button>
+      </form>
+      {status === "ok" && (
+        <p className="mt-2 text-xs text-sage-600">{t("planner_home.add_client_success")}</p>
+      )}
+      {status === "error" && <p className="mt-2 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
@@ -474,18 +516,19 @@ export default function PlannerHomePage() {
   const [invites, setInvites] = useState<PlannerInviteView[]>([]);
   const [stats, setStats] = useState<PlannerStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
-  const [addStatus, setAddStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
-  const [addError, setAddError] = useState("");
   const [enteringId, setEnteringId] = useState<number | null>(null);
   const [taskFilters, setTaskFilters] = useState<TaskFilters>({
     clientId: null,
     priority: "all",
     timing: "all",
   });
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [showTaskFilters, setShowTaskFilters] = useState(false);
+
+  const refreshRef = useRef(false);
 
   useEffect(() => {
-    Promise.all([
+    void Promise.all([
       plannerApi.listClients(),
       plannerApi.listTasks(),
       plannerApi.listInvites(),
@@ -503,29 +546,6 @@ export default function PlannerHomePage() {
 
   if (!loading && stats !== null && !stats.onboarding_done) {
     return <Navigate to="/app/planner/onboarding" replace />;
-  }
-
-  async function handleAddClient(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setAddStatus("loading");
-    setAddError("");
-    try {
-      await plannerApi.addClient(email.trim());
-      const [cr, tr, sr] = await Promise.all([
-        plannerApi.listClients(),
-        plannerApi.listTasks(),
-        plannerApi.stats(),
-      ]);
-      setClients(cr.clients);
-      setTasks(tr.tasks);
-      setStats(sr.stats);
-      setEmail("");
-      setAddStatus("ok");
-    } catch (err) {
-      setAddStatus("error");
-      setAddError(err instanceof Error ? err.message : t("planner_home.add_client_error"));
-    }
   }
 
   async function handleAcceptInvite(coupleId: number) {
@@ -559,250 +579,181 @@ export default function PlannerHomePage() {
     }
   }
 
-  const planLabel = stats
-    ? t("planner_home.plan_chip")
-        .replace("{{plan}}", stats.plan)
-        .replace("{{used}}", String(stats.active_clients))
-        .replace("{{max}}", String(stats.max_clients))
-    : null;
+  async function handleAddClientSuccess() {
+    try {
+      const [cr, tr, sr] = await Promise.all([
+        plannerApi.listClients(),
+        plannerApi.listTasks(),
+        plannerApi.stats(),
+      ]);
+      setClients(cr.clients);
+      setTasks(tr.tasks);
+      setStats(sr.stats);
+      setShowAddClient(false);
+    } catch {}
+  }
+
+  const firstName = user?.full_name.split(" ")[0] ?? "";
 
   return (
     <div className="min-h-screen bg-paper-50 dark:bg-umber-950">
-      <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <Link
-            to="/app/planner"
-            className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
-          >
-            <Wordmark size="sm" />
-          </Link>
-          <div className="flex items-center gap-1">
-            <Link
-              to="/app/planner/messages"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-paper-200 dark:hover:bg-umber-800"
-              aria-label={t("planner_home.messages_link")}
-              title={t("planner_home.messages_link")}
-            >
-              <MessageSquare size={18} aria-hidden="true" />
-            </Link>
-            <Link
-              to="/app/planner/profile"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-paper-200 dark:hover:bg-umber-800"
-              aria-label={t("planner_home.profile_link")}
-              title={t("planner_home.profile_link")}
-            >
-              <User size={18} aria-hidden="true" />
-            </Link>
-            <button
-              type="button"
-              onClick={() => void logout()}
-              className="inline-flex h-11 items-center rounded-full px-3 text-sm text-ink-700 transition-colors hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
-            >
-              {t("planner_home.logout")}
-            </button>
-          </div>
-        </div>
-      </header>
+      <PlannerDashTopbar
+        plannerName={firstName}
+        urgentCount={stats?.overdue_tasks ?? 0}
+        plan={stats?.plan ?? ""}
+        maxClients={stats?.max_clients ?? 0}
+        activeClients={stats?.active_clients ?? 0}
+        onLogout={() => void logout()}
+      />
 
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 pt-12">
-          <h1 className="font-serif italic text-4xl font-semibold text-ink-900 dark:text-paper-50 sm:text-5xl">
-            {t("planner_home.welcome").replace("{{name}}", user?.full_name.split(" ")[0] ?? "")}
-          </h1>
-          {planLabel && (
-            <span className="mt-2 inline-flex items-center rounded-full border border-paper-300 bg-paper-100 px-3 py-1 text-xs font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
-              {planLabel}
-            </span>
+      <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:grid lg:grid-cols-[1fr_320px] lg:gap-6">
+        {/* LEFT COLUMN */}
+        <div className="min-w-0 space-y-6">
+          {/* KPI strip */}
+          {stats && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <KpiTile
+                label={t("planner_home.kpi_overdue")}
+                value={stats.overdue_tasks}
+                unit={t("planner_home.kpi_overdue_unit")}
+                accent={stats.overdue_tasks > 0 ? "red" : undefined}
+              />
+              <KpiTile
+                label={t("planner_home.kpi_due_this_week")}
+                value={stats.due_this_week}
+                unit={t("planner_home.kpi_due_week_unit")}
+                accent={stats.due_this_week > 0 ? "amber" : undefined}
+              />
+              <KpiTile
+                label={t("planner_home.kpi_total_tasks")}
+                value={stats.done_tasks}
+                unit={t("planner_home.kpi_tasks_unit")}
+                accent="green"
+                progress={
+                  stats.total_tasks > 0
+                    ? { done: stats.done_tasks, total: stats.total_tasks }
+                    : null
+                }
+              />
+              <KpiTile
+                label={t("planner_home.kpi_active_clients")}
+                value={stats.active_clients}
+                unit={t("planner_home.kpi_clients_unit")}
+                progress={
+                  stats.max_clients > 0
+                    ? { done: stats.active_clients, total: stats.max_clients }
+                    : null
+                }
+              />
+            </div>
           )}
-        </div>
 
-        {/* KPI tiles */}
-        {stats && (
-          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <KpiTile
-              label={t("planner_home.kpi_active_clients")}
-              value={stats.active_clients}
-              unit={t("planner_home.kpi_clients_unit")}
-              progress={
-                stats.max_clients > 0
-                  ? { done: stats.active_clients, total: stats.max_clients }
-                  : null
-              }
-            />
-            <KpiTile
-              label={t("planner_home.kpi_total_tasks")}
-              value={stats.total_tasks}
-              unit={t("planner_home.kpi_tasks_unit")}
-              progress={
-                stats.total_tasks > 0 ? { done: stats.done_tasks, total: stats.total_tasks } : null
-              }
-            />
-            <KpiTile
-              label={t("planner_home.kpi_overdue")}
-              value={stats.overdue_tasks}
-              unit={t("planner_home.kpi_overdue_unit")}
-              accent={stats.overdue_tasks > 0 ? "red" : undefined}
-            />
-            <KpiTile
-              label={t("planner_home.kpi_due_this_week")}
-              value={stats.due_this_week}
-              unit={t("planner_home.kpi_due_week_unit")}
-            />
-          </div>
-        )}
-
-        {/* Pending invites from couples */}
-        {!loading && invites.length > 0 && (
-          <section className="mb-8">
-            <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
-              {t("planner_home.invites_heading")}
-            </h2>
-            <div className="space-y-3">
-              {invites.map((inv) => (
-                <div
-                  key={inv.couple_id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-800/40 dark:bg-amber-900/10"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-grotesk font-semibold text-umber-900 dark:text-paper-50">
-                      {inv.display_name}
-                    </p>
-                    <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
-                      {inv.wedding_date
-                        ? formatDate(inv.wedding_date, "hu")
-                        : t("planner_home.client_wedding_date_none")}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void handleAcceptInvite(inv.couple_id)}
-                      className="btn-primary btn-sm"
-                    >
-                      {t("planner_home.invite_accept")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleDeclineInvite(inv.couple_id)}
-                      className="btn-outline btn-sm"
-                    >
-                      {t("planner_home.invite_decline")}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Task overview chart */}
-        {!loading && stats && stats.per_client.length > 0 && <TaskOverviewChart stats={stats} />}
-
-        {/* Client roster */}
-        <section className="mb-12">
-          <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
-            {t("planner_home.clients_roster_heading")}
-          </h2>
-
-          {loading ? (
-            <div className="space-y-3">
-              {[0, 1].map((i) => (
-                <div
-                  key={i}
-                  className="h-20 animate-pulse rounded-xl border border-paper-200 bg-paper-100 dark:border-umber-800 dark:bg-umber-800"
-                />
-              ))}
-            </div>
-          ) : clients.length === 0 ? (
-            <div className="rounded-xl border border-paper-200 bg-white px-6 py-10 text-center dark:border-umber-800 dark:bg-umber-900">
-              <Users className="mx-auto mb-3 h-8 w-8 text-paper-300 dark:text-umber-700" />
-              <p className="text-sm text-umber-400 dark:text-umber-500">
-                {t("planner_home.clients_empty")}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {clients.map((c) => (
-                <div
-                  key={c.couple_id}
-                  className="rounded-xl border border-paper-200 bg-white px-5 py-4 dark:border-umber-800 dark:bg-umber-900"
-                >
-                  <div className="flex items-start justify-between gap-4">
+          {/* Pending invites from couples */}
+          {!loading && invites.length > 0 && (
+            <section>
+              <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+                {t("planner_home.invites_heading")}
+              </h2>
+              <div className="space-y-3">
+                {invites.map((inv) => (
+                  <div
+                    key={inv.couple_id}
+                    className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-800/40 dark:bg-amber-900/10"
+                  >
                     <div className="min-w-0">
                       <p className="truncate font-grotesk font-semibold text-umber-900 dark:text-paper-50">
-                        {c.display_name}
+                        {inv.display_name}
                       </p>
                       <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
-                        {c.wedding_date
-                          ? formatDate(c.wedding_date, "hu")
+                        {inv.wedding_date
+                          ? formatDate(inv.wedding_date, "hu")
                           : t("planner_home.client_wedding_date_none")}
-                        {" · "}
-                        {t("planner_home.client_guests").replace(
-                          "{{count}}",
-                          String(c.confirmed_guests),
-                        )}
                       </p>
-                      <TaskSummaryChip summary={c.task_summary} />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleEnter(c.couple_id)}
-                      disabled={enteringId !== null}
-                      className="btn-outline btn-sm shrink-0"
-                    >
-                      {enteringId === c.couple_id ? "…" : t("planner_home.enter_workspace")}
-                    </button>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleAcceptInvite(inv.couple_id)}
+                        className="btn-primary btn-sm"
+                      >
+                        {t("planner_home.invite_accept")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeclineInvite(inv.couple_id)}
+                        className="btn-outline btn-sm"
+                      >
+                        {t("planner_home.invite_decline")}
+                      </button>
+                    </div>
                   </div>
-                  <ClientNotes coupleId={c.couple_id} initial={c.notes} />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </section>
           )}
 
-          {/* Add client form */}
-          <div className="mt-6 rounded-xl border border-paper-200 bg-white px-5 py-5 dark:border-umber-800 dark:bg-umber-900">
-            <p className="mb-3 font-grotesk text-sm font-semibold text-umber-800 dark:text-paper-200">
-              {t("planner_home.add_client_heading")}
-            </p>
-            <form onSubmit={(e) => void handleAddClient(e)} className="flex gap-2">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (addStatus !== "idle") setAddStatus("idle");
-                }}
-                placeholder={t("planner_home.add_client_placeholder")}
-                className="input flex-1 text-sm"
-                disabled={addStatus === "loading"}
-              />
-              <button
-                type="submit"
-                disabled={addStatus === "loading" || !email.trim()}
-                className="btn-primary btn-sm shrink-0"
-              >
-                {t("planner_home.add_client_button")}
-              </button>
-            </form>
-            {addStatus === "ok" && (
-              <p className="mt-2 text-xs text-sage-600">{t("planner_home.add_client_success")}</p>
-            )}
-            {addStatus === "error" && <p className="mt-2 text-xs text-red-500">{addError}</p>}
-          </div>
-        </section>
+          {/* Inline add-client card */}
+          {showAddClient && (
+            <AddClientInlineCard
+              onClose={() => setShowAddClient(false)}
+              onSuccess={() => void handleAddClientSuccess()}
+            />
+          )}
 
-        {/* Upcoming tasks across clients */}
-        {!loading && clients.length > 0 && (
-          <section className="pb-12">
-            <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
-              {t("planner_home.upcoming_heading")}
-            </h2>
-            <TaskFilterPanel clients={clients} filters={taskFilters} onChange={setTaskFilters} />
-            <div className="rounded-xl border border-paper-200 bg-white px-5 py-5 dark:border-umber-800 dark:bg-umber-900">
-              <UpcomingTasks tasks={tasks} filters={taskFilters} clients={clients} />
-            </div>
-          </section>
-        )}
+          {/* Pipeline */}
+          <PlannerDashPipeline
+            clients={clients}
+            entering={enteringId}
+            onEnter={handleEnter}
+            onAddClientClick={() => setShowAddClient(true)}
+            inviteCount={invites.length}
+          />
+
+          {/* Task overview chart */}
+          {!loading && stats && stats.per_client.length > 0 && <TaskOverviewChart stats={stats} />}
+
+          {/* Upcoming tasks */}
+          {!loading && clients.length > 0 && (
+            <section>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+                  {t("planner_home.upcoming_heading")}
+                </h2>
+                <button
+                  type="button"
+                  className="btn-outline btn-sm"
+                  onClick={() => setShowTaskFilters((v) => !v)}
+                >
+                  {t("planner_home.filter_all_clients")}
+                </button>
+              </div>
+              {showTaskFilters && (
+                <TaskFilterPanel
+                  clients={clients}
+                  filters={taskFilters}
+                  onChange={setTaskFilters}
+                />
+              )}
+              <div className="rounded-xl border border-paper-200 bg-white px-5 py-5 dark:border-umber-800 dark:bg-umber-900">
+                <UpcomingTasks
+                  tasks={tasks}
+                  filters={taskFilters}
+                  clients={clients}
+                  showFilters={showTaskFilters}
+                />
+              </div>
+            </section>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="mt-6 lg:mt-0 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)] lg:overflow-y-auto">
+          <PlannerDashRightRail
+            tasks={tasks}
+            clients={clients}
+            onAddClientClick={() => setShowAddClient(true)}
+          />
+        </div>
       </main>
     </div>
   );
