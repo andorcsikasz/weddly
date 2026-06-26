@@ -534,7 +534,7 @@ function buildJsonLd(opts: {
     sameAs: [
       `https://${CANONICAL_HOST}`,
       "https://www.instagram.com/weddly.hu",
-      "https://www.facebook.com/weddly.hu",
+      "https://www.facebook.com/tryweddly",
     ],
   };
   const blocks: object[] = [

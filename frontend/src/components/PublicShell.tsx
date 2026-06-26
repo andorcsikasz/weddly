@@ -498,7 +498,7 @@ function PublicFooter() {
               </svg>
             </a>
             <a
-              href="https://www.facebook.com/profile.php?id=61590496569299"
+              href="https://www.facebook.com/tryweddly"
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t("landing.footer_social_facebook")}
