@@ -1852,7 +1852,7 @@ function DocumentsDialog({
       onClose={onClose}
       footer={
         <button type="button" className="btn-ghost" onClick={onClose}>
-          {t("common.close")}
+          {t("common.dismiss")}
         </button>
       }
     >
