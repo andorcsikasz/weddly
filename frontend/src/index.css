@@ -802,15 +802,24 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       /* Cream is near-opaque behind the headline/sub/CTA at the top, then
          thins out so the photo emerges in the lower band (behind the demo
          card and below) — mirrors the desktop "text on cream, photo peeking"
-         read in a single-column layout. */
-      background: linear-gradient(
-        180deg,
-        rgba(251, 250, 246, 0.86) 0%,
-        rgba(251, 250, 246, 0.78) 20%,
-        rgba(251, 250, 246, 0.58) 38%,
-        rgba(251, 250, 246, 0.32) 58%,
-        rgba(251, 250, 246, 0.1) 100%
-      );
+         read in a single-column layout. The first layer is a bottom dissolve:
+         the photo's lower edge fades back into paper-50 so it blends into the
+         budget section below instead of hard-cutting at the section boundary. */
+      background:
+        linear-gradient(
+          to top,
+          rgba(251, 250, 246, 0.98) 0%,
+          rgba(251, 250, 246, 0.7) 7%,
+          rgba(251, 250, 246, 0) 17%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(251, 250, 246, 0.86) 0%,
+          rgba(251, 250, 246, 0.78) 20%,
+          rgba(251, 250, 246, 0.58) 38%,
+          rgba(251, 250, 246, 0.32) 58%,
+          rgba(251, 250, 246, 0.1) 100%
+        );
     }
   }
   .dark .hero-overlay {
