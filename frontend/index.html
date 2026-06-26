@@ -89,27 +89,38 @@
         backdrop-filter: blur(2px) !important;
       }
 
-      /* Main dialog card */
-      #CybotCookiebotDialog {
+      /* Main dialog card. `html body` prefix raises specificity above
+         Cookiebot's banner-template width rules — without it the bottom-bar
+         template stretches the dialog full-width and ignores max-width. */
+      html body #CybotCookiebotDialog {
         font-family: "General Sans", ui-sans-serif, system-ui, sans-serif !important;
         background: #f6f2e7 !important;
         border: 1px solid #e3d9bf !important;
-        border-radius: 1.25rem !important;
-        box-shadow: 0 20px 60px rgba(26, 20, 16, 0.18), 0 4px 16px rgba(26, 20, 16, 0.08) !important;
+        border-radius: 1rem !important;
+        box-shadow: 0 16px 48px rgba(26, 20, 16, 0.18), 0 4px 16px rgba(26, 20, 16, 0.08) !important;
         color: #1a1410 !important;
-        max-width: 440px !important;
-        width: calc(100vw - 2rem) !important;
+        max-width: 360px !important;
+        width: calc(100vw - 3rem) !important;
+        max-height: calc(100dvh - 3rem) !important;
+        overflow-y: auto !important;
         padding: 0 !important;
-        left: 1.5rem !important;
-        bottom: 1.5rem !important;
-        top: auto !important;
-        right: auto !important;
+        inset: auto auto 1.5rem 1.5rem !important;
         transform: none !important;
       }
 
-      /* Inner body wrapper */
-      #CybotCookiebotDialogBody {
-        padding: 1.75rem 1.75rem 0 !important;
+      /* Inner body wrapper — single column, tighter padding */
+      html body #CybotCookiebotDialogBody {
+        display: block !important;
+        max-width: none !important;
+        padding: 1.25rem 1.25rem 0 !important;
+      }
+
+      /* Hide the inline granular toggle row (Necessary / Preferences /
+         Statistics / Marketing) on the first screen so the card stays small;
+         it's still reachable behind the "Show details" link. */
+      html body #CybotCookiebotDialogBodyLevelButtonsSelectPane,
+      html body #CybotCookiebotDialogDetailBodyContentCookieContainerTypes {
+        display: none !important;
       }
 
       /* Header / logo row — hide Cookiebot's default logo area */
@@ -118,23 +129,23 @@
       }
 
       /* Title */
-      #CybotCookiebotDialogBodyContentTitle {
+      html body #CybotCookiebotDialogBodyContentTitle {
         font-family: "General Sans", ui-sans-serif, system-ui, sans-serif !important;
-        font-size: 1.125rem !important;
+        font-size: 0.9375rem !important;
         font-weight: 700 !important;
         letter-spacing: -0.01em !important;
         color: #1a1410 !important;
-        margin-bottom: 0.5rem !important;
+        margin-bottom: 0.375rem !important;
         margin-top: 0 !important;
         padding: 0 !important;
       }
 
       /* Body text */
-      #CybotCookiebotDialogBodyContentText,
-      #CybotCookiebotDialogBodyContentText * {
+      html body #CybotCookiebotDialogBodyContentText,
+      html body #CybotCookiebotDialogBodyContentText * {
         font-family: "General Sans", ui-sans-serif, system-ui, sans-serif !important;
-        font-size: 0.8125rem !important;
-        line-height: 1.55 !important;
+        font-size: 0.75rem !important;
+        line-height: 1.5 !important;
         color: #8a6841 !important;
       }
       #CybotCookiebotDialogBodyContentText a {
@@ -188,24 +199,31 @@
         background: #d35d42 !important;
       }
 
-      /* Buttons wrapper */
-      #CybotCookiebotDialogBodyButtonsWrapper {
-        padding: 1.25rem 1.75rem 1.5rem !important;
+      /* Buttons wrapper — force a static, single-column stack (the banner
+         template floats these to the right at full width otherwise). */
+      html body #CybotCookiebotDialogBodyButtonsWrapper {
+        position: static !important;
+        float: none !important;
+        width: auto !important;
+        max-width: none !important;
+        padding: 1rem 1.25rem 1.25rem !important;
         display: flex !important;
         flex-direction: column !important;
-        gap: 0.5rem !important;
+        align-items: stretch !important;
+        gap: 0.4rem !important;
         margin: 0 !important;
       }
 
       /* All buttons — base reset */
-      #CybotCookiebotDialogBodyButtonsWrapper button,
-      #CybotCookiebotDialogBodyButtonsWrapper a[id*="Button"] {
+      html body #CybotCookiebotDialogBodyButtonsWrapper button,
+      html body #CybotCookiebotDialogBodyButtonsWrapper a[id*="Button"] {
         font-family: "General Sans", ui-sans-serif, system-ui, sans-serif !important;
-        font-size: 0.875rem !important;
+        font-size: 0.8125rem !important;
         font-weight: 600 !important;
         border-radius: 9999px !important;
-        padding: 0.625rem 1.25rem !important;
+        padding: 0.5rem 1rem !important;
         width: 100% !important;
+        margin: 0 !important;
         text-align: center !important;
         cursor: pointer !important;
         transition: background 0.15s, color 0.15s, border-color 0.15s !important;
@@ -264,14 +282,13 @@
         padding-bottom: 1rem !important;
       }
 
-      /* Mobile: full-width at bottom */
+      /* Mobile: full-width at bottom (matching specificity so it still wins) */
       @media (max-width: 480px) {
-        #CybotCookiebotDialog {
-          left: 0 !important;
-          right: 0 !important;
-          bottom: 0 !important;
+        html body #CybotCookiebotDialog {
+          inset: auto 0 0 0 !important;
           width: 100% !important;
           max-width: 100% !important;
+          max-height: 85dvh !important;
           border-bottom-left-radius: 0 !important;
           border-bottom-right-radius: 0 !important;
           border-bottom: none !important;
