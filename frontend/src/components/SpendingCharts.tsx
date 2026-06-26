@@ -121,6 +121,27 @@ const SLICE_PALETTE: Array<{ stroke: string; dot: string }> = [
 
 const MAX_SLICES = 6; // top N categories; the rest collapse into "Other".
 
+/** Integer percentages that sum to exactly 100 (largest-remainder method).
+ *  Rounding each share independently with `Math.round` lets the legend add up
+ *  to 99 or 101 — e.g. 25+23+15+10+7+5+16 = 101 — which reads as a bug. We
+ *  floor every share, then hand the leftover points to the largest fractional
+ *  remainders so the visible numbers always total 100. */
+function percentagesTo100(amounts: number[], total: number): number[] {
+  if (total <= 0) return amounts.map(() => 0);
+  const exact = amounts.map((a) => (Math.max(0, a) / total) * 100);
+  const floors = exact.map((x) => Math.floor(x));
+  let leftover = 100 - floors.reduce((s, x) => s + x, 0);
+  const byRemainder = exact
+    .map((x, i) => ({ i, frac: x - Math.floor(x) }))
+    .sort((a, b) => b.frac - a.frac);
+  const out = [...floors];
+  for (let k = 0; leftover > 0 && k < byRemainder.length; k++, leftover--) {
+    const entry = byRemainder[k];
+    if (entry) out[entry.i] = (out[entry.i] ?? 0) + 1;
+  }
+  return out;
+}
+
 interface Slice {
   key: string;
   label: string;
@@ -324,22 +345,31 @@ export function SpendingCharts({
                 </span>
               </Donut>
               <ul className="min-w-0 flex-1 space-y-1.5">
-                {slices.map((s) => {
-                  const pct = total > 0 ? Math.round((s.amount / total) * 100) : 0;
-                  const Icon = CATEGORY_ICONS[s.key as BudgetCategory] ?? CATEGORY_ICONS.other;
-                  return (
-                    <li key={s.key} className="flex items-center gap-2 text-xs">
-                      <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`} />
-                      <LegendLabel label={s.label} Icon={Icon} />
-                      <span className="shrink-0 tabular-nums text-ink-500 dark:text-umber-300">
-                        {pct}%
-                      </span>
-                      <span className="w-20 shrink-0 text-right tabular-nums font-medium text-ink-800 dark:text-paper-100">
-                        {formatHufCompact(s.amount, locale)}
-                      </span>
-                    </li>
+                {(() => {
+                  const pcts = percentagesTo100(
+                    slices.map((s) => s.amount),
+                    total,
                   );
-                })}
+                  return slices.map((s, i) => {
+                    const pct = pcts[i] ?? 0;
+                    const Icon = CATEGORY_ICONS[s.key as BudgetCategory] ?? CATEGORY_ICONS.other;
+                    return (
+                      <li key={s.key} className="flex items-center gap-2 text-xs">
+                        <span
+                          aria-hidden
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`}
+                        />
+                        <LegendLabel label={s.label} Icon={Icon} />
+                        <span className="shrink-0 tabular-nums text-ink-500 dark:text-umber-300">
+                          {pct}%
+                        </span>
+                        <span className="w-20 shrink-0 text-right tabular-nums font-medium text-ink-800 dark:text-paper-100">
+                          {formatHufCompact(s.amount, locale)}
+                        </span>
+                      </li>
+                    );
+                  });
+                })()}
               </ul>
             </div>
           )}
