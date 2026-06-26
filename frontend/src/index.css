@@ -701,13 +701,12 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     position: relative;
     overflow: hidden;
     background: #fbfaf5;
-    min-height: calc(100dvh - 3.5rem);
-  }
-  @media (min-width: 640px) {
-    .hero-section {
-      margin-top: -3.5rem;
-      min-height: 100dvh;
-    }
+    /* Slide the section up under the sticky header on every viewport so the
+       background photo fills right up behind the (translucent) header — the
+       header keeps its own cream/backdrop-blur layer so it stays legible in
+       all cases. The hero content clears the header via its own `pt-16`. */
+    margin-top: -3.5rem;
+    min-height: 100dvh;
   }
 
   /* Absolute media wrapper — sits behind all content */
@@ -789,11 +788,11 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
          read in a single-column layout. */
       background: linear-gradient(
         180deg,
-        rgba(251, 250, 246, 0.97) 0%,
-        rgba(251, 250, 246, 0.95) 28%,
-        rgba(251, 250, 246, 0.8) 46%,
-        rgba(251, 250, 246, 0.42) 66%,
-        rgba(251, 250, 246, 0.12) 100%
+        rgba(251, 250, 246, 0.86) 0%,
+        rgba(251, 250, 246, 0.78) 20%,
+        rgba(251, 250, 246, 0.58) 38%,
+        rgba(251, 250, 246, 0.32) 58%,
+        rgba(251, 250, 246, 0.1) 100%
       );
     }
   }
