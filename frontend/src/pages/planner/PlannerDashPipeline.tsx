@@ -1,18 +1,20 @@
-import { Plus, UserPlus } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Plus, UserPlus } from "lucide-react";
 import { useState } from "react";
 import type { PlannerClientView } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 
+// Client avatar colors — warm, muted palette aligned with the design system.
+// Uses eucalyptus + blush + umber-adjacent tones instead of raw Tailwind colors.
 const CLIENT_COLORS = [
-  "bg-rose-200 text-rose-900",
-  "bg-emerald-200 text-emerald-900",
-  "bg-sky-200 text-sky-900",
+  "bg-blush-100 text-blush-800",
+  "bg-eucalyptus-100 text-eucalyptus-800",
+  "bg-amber-100 text-amber-800",
+  "bg-violet-100 text-violet-800",
+  "bg-eucalyptus-200 text-eucalyptus-900",
+  "bg-blush-200 text-blush-900",
   "bg-amber-200 text-amber-900",
-  "bg-violet-200 text-violet-900",
-  "bg-teal-200 text-teal-900",
-  "bg-orange-200 text-orange-900",
-  "bg-pink-200 text-pink-900",
+  "bg-paper-300 text-umber-800",
 ] as const;
 
 function initials(displayName: string): string {
@@ -37,10 +39,12 @@ function formatWeddingDate(ymd: string): string {
   return `${year}. ${month}. ${day}.`;
 }
 
-function healthDotClass(overdue: number): string {
-  if (overdue === 0) return "bg-emerald-400";
-  if (overdue < 3) return "bg-amber-400";
-  return "bg-red-400";
+function HealthIcon({ overdue }: { overdue: number }) {
+  if (overdue === 0)
+    return <CheckCircle2 size={14} className="shrink-0 text-eucalyptus-500" aria-hidden="true" />;
+  if (overdue < 3)
+    return <AlertTriangle size={14} className="shrink-0 text-amber-500" aria-hidden="true" />;
+  return <AlertTriangle size={14} className="shrink-0 text-red-500" aria-hidden="true" />;
 }
 
 // ─── InlineNotes ──────────────────────────────────────────────────────────────
@@ -152,16 +156,16 @@ function ClientCard({
             {client.display_name}
           </p>
           {client.wedding_date && (
-            <p className="text-xs text-umber-500 dark:text-umber-400">
-              {formatWeddingDate(client.wedding_date)}
-            </p>
+            <div className="mt-0.5 flex items-center gap-1">
+              <Clock size={11} className="shrink-0 text-umber-400" aria-hidden="true" />
+              <p className="text-xs text-umber-500 dark:text-umber-400">
+                {formatWeddingDate(client.wedding_date)}
+              </p>
+            </div>
           )}
         </div>
 
-        <div
-          className={`w-3 h-3 rounded-full flex-shrink-0 ${healthDotClass(overdue)}`}
-          title={`${overdue} overdue`}
-        />
+        <HealthIcon overdue={overdue} />
       </div>
 
       {/* Row 2: days until + guest count */}
@@ -189,7 +193,7 @@ function ClientCard({
         <div className="mt-3">
           <div className="h-1.5 rounded-full bg-paper-200 dark:bg-umber-700 overflow-hidden">
             <div
-              className="h-full rounded-full bg-emerald-400 transition-all"
+              className="h-full rounded-full bg-eucalyptus-500 transition-all"
               style={{ width: barWidth }}
             />
           </div>

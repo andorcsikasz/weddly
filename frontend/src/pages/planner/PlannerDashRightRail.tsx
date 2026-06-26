@@ -1,18 +1,17 @@
-import { AlertTriangle, CheckCircle2, MessageSquare, Plus, UserPlus } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  type LucideIcon,
+  MessageSquare,
+  Plus,
+  Sparkles,
+  UserPlus,
+  Zap,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import type { PlannerClientView, PlannerTaskRow } from "@shared/types";
 import { useT } from "../../lib/i18n";
-
-const CLIENT_DOT_COLORS = [
-  "bg-rose-200",
-  "bg-emerald-200",
-  "bg-sky-200",
-  "bg-amber-200",
-  "bg-violet-200",
-  "bg-teal-200",
-  "bg-orange-200",
-  "bg-pink-200",
-] as const;
 
 interface Props {
   tasks: PlannerTaskRow[];
@@ -20,17 +19,18 @@ interface Props {
   onAddClientClick: () => void;
 }
 
-function clientDotClass(coupleId: number): string {
-  return CLIENT_DOT_COLORS[coupleId % 8] ?? "bg-paper-200";
-}
-
 function clientDisplayName(clients: PlannerClientView[], coupleId: number): string {
   return clients.find((c) => c.couple_id === coupleId)?.display_name ?? "";
 }
 
-function SectionHeader({ label }: { label: string }) {
+function SectionHeader({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
-    <p className="mb-2 text-xs uppercase tracking-wider text-umber-500">{label}</p>
+    <div className="mb-2 flex items-center gap-1.5">
+      <Icon size={13} className="shrink-0 text-umber-500 dark:text-umber-400" aria-hidden="true" />
+      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
+        {label}
+      </p>
+    </div>
   );
 }
 
@@ -58,8 +58,8 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
       {/* SECTION A: TODAY'S AGENDA */}
       <div className="card p-4 space-y-3">
         <div>
-          <SectionHeader label={t("planner_home.rail_today_title")} />
-          <p className="text-xs text-umber-400 -mt-1">{todayLabel}</p>
+          <SectionHeader icon={Clock} label={t("planner_home.rail_today_title")} />
+          <p className="text-xs text-umber-400 -mt-1 ml-5">{todayLabel}</p>
         </div>
 
         {visibleToday.length === 0 ? (
@@ -67,9 +67,11 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
         ) : (
           <ul className="space-y-1.5">
             {visibleToday.map((tk) => (
-              <li key={tk.task_id} className="flex items-center gap-2 min-w-0">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${clientDotClass(tk.couple_id)}`}
+              <li key={tk.task_id} className="flex items-start gap-2 min-w-0">
+                <Clock
+                  size={12}
+                  className="mt-0.5 shrink-0 text-umber-300 dark:text-umber-500"
+                  aria-hidden="true"
                 />
                 <span className="flex-1 truncate text-sm text-ink-900 dark:text-paper-100">
                   {tk.title}
@@ -90,30 +92,47 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
       </div>
 
       {/* SECTION B: URGENT ALERTS */}
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
-        <SectionHeader label={t("planner_home.rail_urgent_title")} />
+      <div
+        className={
+          visibleOverdue.length === 0
+            ? "card p-4"
+            : "rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40"
+        }
+      >
+        <SectionHeader
+          icon={visibleOverdue.length === 0 ? Sparkles : AlertTriangle}
+          label={
+            visibleOverdue.length === 0
+              ? t("planner_home.rail_all_good")
+              : t("planner_home.rail_urgent_title")
+          }
+        />
 
         {visibleOverdue.length === 0 ? (
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-sage-600" aria-hidden="true" />
-            <span className="text-xs text-sage-600">{t("planner_home.rail_all_good")}</span>
+          <div className="flex items-center gap-1.5 ml-1">
+            <CheckCircle2 size={14} className="text-eucalyptus-500" aria-hidden="true" />
+            <span className="text-xs text-eucalyptus-600 dark:text-eucalyptus-400">
+              {t("planner_home.rail_all_good")}
+            </span>
           </div>
         ) : (
           <>
             <ul className="space-y-1.5">
               {visibleOverdue.map((tk) => (
-                <li key={tk.task_id} className="flex items-center gap-2 min-w-0">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      tk.priority >= 2 ? "bg-red-500" : "bg-amber-500"
+                <li key={tk.task_id} className="flex items-start gap-2 min-w-0">
+                  <AlertTriangle
+                    size={12}
+                    className={`mt-0.5 shrink-0 ${
+                      tk.priority >= 2 ? "text-red-500" : "text-amber-500"
                     }`}
+                    aria-hidden="true"
                   />
                   <span className="flex-1 truncate text-sm text-ink-900 dark:text-paper-100">
                     {tk.title}
                   </span>
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${clientDotClass(tk.couple_id)}`}
-                  />
+                  <span className="shrink-0 text-[10px] text-umber-500 dark:text-umber-400">
+                    {clientDisplayName(clients, tk.couple_id)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -128,7 +147,7 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
 
       {/* SECTION C: QUICK ACTIONS */}
       <div className="card p-4 space-y-2">
-        <SectionHeader label={t("planner_home.rail_actions_title")} />
+        <SectionHeader icon={Zap} label={t("planner_home.rail_actions_title")} />
 
         <button
           type="button"
@@ -147,10 +166,7 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
           {t("planner_home.rail_action_profile")}
         </Link>
 
-        <Link
-          to="/app/planner/messages"
-          className="btn-outline w-full justify-start gap-2 text-sm"
-        >
+        <Link to="/app/planner/messages" className="btn-outline w-full justify-start gap-2 text-sm">
           <MessageSquare className="w-4 h-4" aria-hidden="true" />
           {t("planner_home.rail_action_messages")}
         </Link>

@@ -87,6 +87,22 @@ export default {
           900: "#1a1410",
           950: "#0f0a07",
         },
+        // Eucalyptus — silvery muted teal-green. Planner workspace accent:
+        // healthy status, positive KPIs, "all good" states. Sits next to
+        // blush (warm) and umber (dark) without competing. Distinct from
+        // sage (which is a vivid forest green used for DIY supplier tags).
+        eucalyptus: {
+          50: "#f0f8f5",
+          100: "#d3ede6",
+          200: "#a7dacf",
+          300: "#73c3b2",
+          400: "#44a796",
+          500: "#2e8c7c",
+          600: "#237165",
+          700: "#1c5b52",
+          800: "#184944",
+          900: "#143c38",
+        },
         // WNRS-red — the saturated true red used on the couple-cards tool
         // surface (white-on-red cover card, red-on-white question card).
         // Kept out of the `blush` palette on purpose: blush is the warm

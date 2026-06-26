@@ -8,16 +8,18 @@ export default function PlannerSettingsSubscription() {
   const [stats, setStats] = useState<PlannerStats | null>(null);
 
   useEffect(() => {
-    plannerApi.stats().then((r) => setStats(r.stats)).catch(() => {});
+    plannerApi
+      .stats()
+      .then((r) => setStats(r.stats))
+      .catch(() => {});
   }, []);
 
   if (!stats) {
     return <div className="mt-8 h-48 animate-pulse rounded-2xl bg-paper-100 dark:bg-umber-800" />;
   }
 
-  const usedPct = stats.max_clients > 0
-    ? Math.round((stats.active_clients / stats.max_clients) * 100)
-    : 0;
+  const usedPct =
+    stats.max_clients > 0 ? Math.round((stats.active_clients / stats.max_clients) * 100) : 0;
 
   return (
     <div className="mt-8 space-y-6">
@@ -40,7 +42,7 @@ export default function PlannerSettingsSubscription() {
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
             <div
-              className="h-full rounded-full bg-umber-800 transition-all dark:bg-umber-400"
+              className="h-full rounded-full bg-eucalyptus-500 transition-all dark:bg-eucalyptus-400"
               style={{ width: `${usedPct}%` }}
             />
           </div>
@@ -48,10 +50,7 @@ export default function PlannerSettingsSubscription() {
 
         {stats.plan !== "premium" && (
           <div className="mt-6 border-t border-paper-200 pt-4 dark:border-umber-700">
-            <a
-              href="/app/planner/billing"
-              className="btn-primary block w-full text-center"
-            >
+            <a href="/app/planner/billing" className="btn-primary block w-full text-center">
               {t("planner_profile.subscription_upgrade_cta")}
             </a>
           </div>
