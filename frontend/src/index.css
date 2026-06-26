@@ -738,10 +738,10 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
          wide frame). It reads as a true background behind the hero text, like
          desktop — the overlay below keeps the top readable and reveals the
          photo in the lower band. */
-      background-image: url("/blog-covers/eskuvoi-ultetesi-rend-keszitese.jpg");
+      background-image: url("/hero-mobile-cover.jpg");
       background-position: center;
       opacity: 0.9;
-      filter: saturate(1.1) brightness(0.97);
+      filter: saturate(1.05) brightness(0.98);
     }
   }
   .dark .hero-photo-img {
