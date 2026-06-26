@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, Clock, Plus, UserPlus } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { PlannerClientView } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -108,15 +109,7 @@ function InlineNotes({
 
 // ─── ClientCard ───────────────────────────────────────────────────────────────
 
-function ClientCard({
-  client,
-  entering,
-  onEnter,
-}: {
-  client: PlannerClientView;
-  entering: number | null;
-  onEnter: (coupleId: number) => void;
-}) {
+function ClientCard({ client }: { client: PlannerClientView }) {
   const { t } = useT();
   const [notes, setNotes] = useState(client.notes);
 
@@ -126,7 +119,6 @@ function ClientCard({
   const barWidth = `${Math.round((done / Math.max(total, 1)) * 100)}%`;
 
   const days = client.wedding_date ? daysUntil(client.wedding_date) : null;
-  const isEntering = entering === client.couple_id;
 
   let daysLabel = "";
   let daysUrgent = false;
@@ -223,21 +215,12 @@ function ClientCard({
           />
         </div>
 
-        <button
-          type="button"
-          className="btn-primary btn-sm flex-shrink-0 flex items-center gap-1"
-          disabled={isEntering}
-          onClick={() => onEnter(client.couple_id)}
+        <Link
+          to={`/app/planner/clients/${client.couple_id}`}
+          className="btn-primary btn-sm flex-shrink-0"
         >
-          {isEntering ? (
-            <>
-              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-paper-50 border-t-transparent" />
-              {t("planner_home.pipeline_entering")}
-            </>
-          ) : (
-            t("planner_home.pipeline_enter")
-          )}
-        </button>
+          {t("planner_home.pipeline_enter")}
+        </Link>
       </div>
     </div>
   );
@@ -247,19 +230,11 @@ function ClientCard({
 
 interface Props {
   clients: PlannerClientView[];
-  entering: number | null;
-  onEnter: (coupleId: number) => void;
   onAddClientClick: () => void;
   inviteCount: number;
 }
 
-export function PlannerDashPipeline({
-  clients,
-  entering,
-  onEnter,
-  onAddClientClick,
-  inviteCount,
-}: Props) {
+export function PlannerDashPipeline({ clients, onAddClientClick, inviteCount }: Props) {
   const { t } = useT();
 
   return (
@@ -309,12 +284,7 @@ export function PlannerDashPipeline({
       ) : (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
           {clients.map((client) => (
-            <ClientCard
-              key={client.couple_id}
-              client={client}
-              entering={entering}
-              onEnter={onEnter}
-            />
+            <ClientCard key={client.couple_id} client={client} />
           ))}
         </div>
       )}

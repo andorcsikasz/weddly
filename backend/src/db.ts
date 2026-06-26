@@ -1253,6 +1253,13 @@ db.exec(
 
 // Planner private notes per client — additive, null = no notes yet.
 addColumnIfMissing("planner_clients", "notes", "notes TEXT");
+// Planner-side CRM fields — contact info, financials, pipeline stage.
+addColumnIfMissing("planner_clients", "client_phone", "client_phone TEXT");
+addColumnIfMissing("planner_clients", "client_alt_email", "client_alt_email TEXT");
+addColumnIfMissing("planner_clients", "lead_source", "lead_source TEXT");
+addColumnIfMissing("planner_clients", "contract_value", "contract_value INTEGER");
+addColumnIfMissing("planner_clients", "deposit_paid", "deposit_paid INTEGER");
+addColumnIfMissing("planner_clients", "stage", "stage TEXT DEFAULT 'active'");
 
 // Planner profile fields — additive, all nullable (planners fill in later).
 addColumnIfMissing("users", "business_name", "business_name TEXT");

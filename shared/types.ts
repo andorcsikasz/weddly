@@ -67,6 +67,24 @@ export interface PlannerClientView {
   task_summary: { total: number; done: number; overdue: number };
 }
 
+export interface PlannerClientCrm {
+  couple_id: number;
+  display_name: string;
+  bride_name: string;
+  groom_name: string;
+  wedding_date: string | null;
+  primary_email: string | null;
+  confirmed_guests: number;
+  task_summary: { total: number; done: number; overdue: number };
+  notes: string | null;
+  client_phone: string | null;
+  client_alt_email: string | null;
+  lead_source: string | null;
+  contract_value: number | null;
+  deposit_paid: number | null;
+  stage: string;
+}
+
 export interface PlannerTaskRow {
   task_id: number;
   couple_id: number;

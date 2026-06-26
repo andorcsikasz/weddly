@@ -514,7 +514,6 @@ export default function PlannerHomePage() {
   const [invites, setInvites] = useState<PlannerInviteView[]>([]);
   const [stats, setStats] = useState<PlannerStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [enteringId, setEnteringId] = useState<number | null>(null);
   const [taskFilters, setTaskFilters] = useState<TaskFilters>({
     clientId: null,
     priority: "all",
@@ -565,16 +564,6 @@ export default function PlannerHomePage() {
       await plannerApi.declineInvite(coupleId);
       setInvites((prev) => prev.filter((i) => i.couple_id !== coupleId));
     } catch {}
-  }
-
-  async function handleEnter(coupleId: number) {
-    setEnteringId(coupleId);
-    try {
-      await plannerApi.enterClient(coupleId);
-      window.location.assign("/app");
-    } catch {
-      setEnteringId(null);
-    }
   }
 
   async function handleAddClientSuccess() {
@@ -702,8 +691,6 @@ export default function PlannerHomePage() {
           {/* Pipeline */}
           <PlannerDashPipeline
             clients={clients}
-            entering={enteringId}
-            onEnter={handleEnter}
             onAddClientClick={() => setShowAddClient(true)}
             inviteCount={invites.length}
           />

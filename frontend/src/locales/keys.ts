@@ -6598,6 +6598,34 @@ export interface LocaleMessages {
     subject_placeholder: string;
     body_placeholder: string;
   };
+  planner_client: {
+    back_label: string;
+    contact_heading: string;
+    phone_label: string;
+    alt_email_label: string;
+    lead_source_label: string;
+    lead_source_placeholder: string;
+    financial_heading: string;
+    contract_value_label: string;
+    deposit_paid_label: string;
+    balance_label: string;
+    notes_heading: string;
+    notes_placeholder: string;
+    save_button: string;
+    save_success: string;
+    enter_workspace: string;
+    quick_call: string;
+    quick_email: string;
+    quick_whatsapp: string;
+    stage_label: string;
+    stage_inquiry: string;
+    stage_proposal: string;
+    stage_deposit: string;
+    stage_active: string;
+    stage_completed: string;
+    stage_archived: string;
+    no_phone: string;
+  };
   planner_profile: {
     heading: string;
     full_name_label: string;

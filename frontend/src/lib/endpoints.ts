@@ -55,6 +55,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
   PlannerClientView,
+  PlannerClientCrm,
   PlannerTaskRow,
   PlannerThreadPreview,
   PlannerMessage,
@@ -2275,6 +2276,10 @@ export const plannerApi = {
   stats: () => apiFetch<{ stats: PlannerStats }>("GET", "/api/planner/stats"),
   completeOnboarding: () =>
     apiFetch<{ ok: boolean }>("POST", "/api/planner/complete-onboarding", {}),
+  getClientCrm: (coupleId: number) =>
+    apiFetch<PlannerClientCrm>("GET", `/api/planner/clients/${coupleId}/crm`),
+  updateClientCrm: (coupleId: number, data: Partial<PlannerClientCrm>) =>
+    apiFetch<{ ok: boolean }>("PATCH", `/api/planner/clients/${coupleId}/crm`, data),
 };
 
 export const couplePlannerApi = {

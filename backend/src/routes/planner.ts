@@ -207,6 +207,104 @@ async function handleUpdateNotes(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+async function handleGetClientCrm(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  const row = db
+    .prepare(
+      `SELECT pc.couple_id, pc.notes, pc.client_phone, pc.client_alt_email, pc.lead_source,
+              pc.contract_value, pc.deposit_paid, pc.stage,
+              c.bride_name, c.groom_name, c.display_name, c.wedding_date,
+              (SELECT u.email FROM users u WHERE u.couple_id = c.id LIMIT 1) AS primary_email,
+              (SELECT COUNT(*) FROM guests g WHERE g.couple_id = c.id AND g.rsvp_status = 'yes') AS confirmed_guests,
+              (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task') AS task_total,
+              (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task' AND pi.done = 1) AS task_done,
+              (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task' AND pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date < date('now')) AS task_overdue
+         FROM planner_clients pc
+         JOIN couples c ON c.id = pc.couple_id
+        WHERE pc.planner_user_id = ? AND pc.couple_id = ?`,
+    )
+    .get(userId, coupleId) as
+    | {
+        couple_id: number;
+        notes: string | null;
+        client_phone: string | null;
+        client_alt_email: string | null;
+        lead_source: string | null;
+        contract_value: number | null;
+        deposit_paid: number | null;
+        stage: string | null;
+        bride_name: string;
+        groom_name: string;
+        display_name: string | null;
+        wedding_date: string | null;
+        primary_email: string | null;
+        confirmed_guests: number;
+        task_total: number;
+        task_done: number;
+        task_overdue: number;
+      }
+    | undefined;
+
+  if (!row) throw new HttpError(403, "Not linked to this workspace");
+
+  return json({
+    couple_id: row.couple_id,
+    display_name: row.display_name ?? `${row.bride_name} & ${row.groom_name}`,
+    bride_name: row.bride_name,
+    groom_name: row.groom_name,
+    wedding_date: row.wedding_date,
+    primary_email: row.primary_email,
+    confirmed_guests: row.confirmed_guests,
+    task_summary: { total: row.task_total, done: row.task_done, overdue: row.task_overdue },
+    notes: row.notes,
+    client_phone: row.client_phone,
+    client_alt_email: row.client_alt_email,
+    lead_source: row.lead_source,
+    contract_value: row.contract_value,
+    deposit_paid: row.deposit_paid,
+    stage: row.stage ?? "active",
+  });
+}
+
+async function handleUpdateClientCrm(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  const link = db
+    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+    .get(userId, coupleId);
+  if (!link) throw new HttpError(403, "Not linked to this workspace");
+
+  const body = await readJson<Record<string, unknown>>(ctx.req);
+
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() || null : undefined);
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : undefined);
+
+  const fields: Record<string, unknown> = {};
+  if (str(body.client_phone) !== undefined) fields["client_phone"] = str(body.client_phone);
+  if (str(body.client_alt_email) !== undefined) fields["client_alt_email"] = str(body.client_alt_email);
+  if (str(body.lead_source) !== undefined) fields["lead_source"] = str(body.lead_source);
+  if (num(body.contract_value) !== undefined) fields["contract_value"] = num(body.contract_value);
+  if (num(body.deposit_paid) !== undefined) fields["deposit_paid"] = num(body.deposit_paid);
+  if (str(body.stage) !== undefined) fields["stage"] = str(body.stage);
+  if ("notes" in body) fields["notes"] = str(body.notes);
+
+  if (Object.keys(fields).length === 0) return json({ ok: true });
+
+  const setClauses = Object.keys(fields)
+    .map((k) => `${k} = ?`)
+    .join(", ");
+  db.prepare(
+    `UPDATE planner_clients SET ${setClauses} WHERE planner_user_id = ? AND couple_id = ?`,
+  ).run(...Object.values(fields), userId, coupleId);
+
+  return json({ ok: true });
+}
+
 async function handleListTasks(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
 
@@ -792,6 +890,8 @@ export function registerPlannerRoutes(router: Router) {
   router.get("/api/planner/clients", handleListClients, true);
   router.post("/api/planner/clients", handleAddClient, true);
   router.patch("/api/planner/clients/:coupleId/notes", handleUpdateNotes, true);
+  router.get("/api/planner/clients/:coupleId/crm", handleGetClientCrm, true);
+  router.patch("/api/planner/clients/:coupleId/crm", handleUpdateClientCrm, true);
   router.post("/api/planner/clients/:coupleId/enter", handleEnterClient, true);
   router.post("/api/planner/exit", handleExit, true);
   router.get("/api/planner/tasks", handleListTasks, true);
