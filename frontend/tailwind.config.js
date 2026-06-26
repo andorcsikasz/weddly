@@ -1,6 +1,28 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  // The budget-donut slice colours (SpendingCharts SLICE_PALETTE) are composed
+  // as `stroke-chart-*` / `bg-chart-*` from a palette array. They ARE literal
+  // strings, so the content scan normally finds them — but safelisting them
+  // guarantees the utilities are always emitted regardless of scan/config
+  // reload timing (a stale dev-server config snapshot once dropped them and the
+  // donut rendered colourless). Keep in sync with theme.extend.colors.chart.
+  safelist: [
+    "stroke-chart-terracotta",
+    "stroke-chart-sage",
+    "stroke-chart-taupe",
+    "stroke-chart-rose",
+    "stroke-chart-olive",
+    "stroke-chart-ochre",
+    "stroke-chart-sand",
+    "bg-chart-terracotta",
+    "bg-chart-sage",
+    "bg-chart-taupe",
+    "bg-chart-rose",
+    "bg-chart-olive",
+    "bg-chart-ochre",
+    "bg-chart-sand",
+  ],
   // `dark` is applied to <html> by AppShell (mount/unmount). That scopes
   // the warm-dark theme to /app/* protected routes only — public pages
   // (landing, /login, /vendors) stay on the light paper palette.
