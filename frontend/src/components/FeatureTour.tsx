@@ -308,18 +308,43 @@ function useTargetRect(href: string, active: boolean, target?: string): DOMRect 
   const [rect, setRect] = useState<DOMRect | null>(null);
   useEffect(() => {
     if (!active) return;
+    const findEl = () => (target ? findPageTarget(target) : findNavTarget(href));
     const update = () => {
-      const el = target ? findPageTarget(target) : findNavTarget(href);
+      const el = findEl();
       setRect(el ? (el as HTMLElement).getBoundingClientRect() : null);
     };
+    // Scroll the spotlighted element into view once when this step activates.
+    // Without this, a target below the fold leaves the user staring at a dimmed
+    // screen with no visible highlight (it's down-page) — so the tour reads as
+    // "the screen just greyed out". Only scroll when it isn't already fully on
+    // screen, to avoid a needless jiggle for targets that are already visible.
+    // The scroll listener below keeps the spotlight glued to the element while
+    // the smooth scroll plays out, so the cutout animates onto the target.
+    const el = findEl();
+    if (el) {
+      const r = (el as HTMLElement).getBoundingClientRect();
+      const HEADER_H = 64; // sticky app header height — keep the target clear of it.
+      const fullyVisible = r.top >= HEADER_H && r.bottom <= window.innerHeight - 8;
+      if (!fullyVisible) {
+        (el as HTMLElement).scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "nearest",
+        });
+      }
+    }
     update();
     const t1 = window.setTimeout(update, 80);
     const t2 = window.setTimeout(update, 320);
+    // Settle pass after the smooth scroll finishes, so the final rect is exact
+    // even if the scroll listener missed the last frame.
+    const t3 = window.setTimeout(update, 650);
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
+      window.clearTimeout(t3);
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
