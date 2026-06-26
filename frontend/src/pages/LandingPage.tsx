@@ -249,7 +249,7 @@ export default function LandingPage() {
                   {t("landing.hero_title")}
                 </h1>
                 {t("landing.hero_sub") && (
-                  <p className="mt-4 max-w-sm font-grotesk text-base leading-snug text-umber-700 dark:text-umber-200 sm:mt-5 sm:text-lg">
+                  <p className="mt-4 hidden max-w-sm font-grotesk text-base leading-snug text-umber-700 dark:text-umber-200 sm:mt-5 sm:block sm:text-lg">
                     {t("landing.hero_sub")}
                   </p>
                 )}

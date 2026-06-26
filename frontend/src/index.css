@@ -688,13 +688,19 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
 
   /* While the hero section is in view the header is transparent; flip icons
-     light so they read against the dark photo on the right half of the frame. */
-  html.landing-hero-active header [data-nav-icon] {
-    color: rgba(251, 250, 246, 0.90);
-  }
-  html.landing-hero-active header [data-nav-icon]:hover {
-    background-color: rgba(251, 250, 246, 0.15);
-    color: #fbfaf5;
+     light so they read against the dark photo on the right half of the frame.
+     Scoped to sm+ ONLY: on phones the hero photo is anchored lower in the
+     frame, so the header sits over the light paper band at the top — white
+     icons there vanish. Below 640px the icons keep their dark default
+     (text-umber-800), which reads cleanly on that cream band. */
+  @media (min-width: 640px) {
+    html.landing-hero-active header [data-nav-icon] {
+      color: rgba(251, 250, 246, 0.90);
+    }
+    html.landing-hero-active header [data-nav-icon]:hover {
+      background-color: rgba(251, 250, 246, 0.15);
+      color: #fbfaf5;
+    }
   }
 
   .hero-section {
