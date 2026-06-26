@@ -667,7 +667,10 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
      enough on top. Font is self-hosted General Sans (`font-grotesk`) so
      every landing CTA matches the neo-grotesque demo button. */
   .btn-landing {
-    @apply font-grotesk font-semibold tracking-wide;
+    /* min-h-tap guarantees every landing CTA clears the 44px WCAG/iOS tap
+       floor even when it inherits the base `.btn` py-2 (which renders ~36px
+       on its own). Pairs with the existing typographic treatment. */
+    @apply min-h-tap font-grotesk font-semibold tracking-wide;
   }
 
   /* ── Landing hero ──────────────────────────────────────────────────────

@@ -47,7 +47,7 @@ export function DemoLaunchCard() {
        * roomier 238 px card on tablet+. */
       className="relative w-full max-w-[188px] rounded-2xl border border-umber-900/15 bg-paper-50/85 py-2.5 pl-3 pr-4 text-left backdrop-blur-md sm:max-w-[238px] sm:py-4 sm:pl-4 sm:pr-6 dark:border-paper-50/15 dark:bg-umber-900/80"
     >
-      <p className="font-grotesk text-[10px] font-medium uppercase tracking-[0.24em] text-umber-600 dark:text-umber-200">
+      <p className="font-grotesk text-[11px] font-medium uppercase tracking-[0.24em] text-umber-600 dark:text-umber-200">
         {t("landing.demo_card_eyebrow")}
       </p>
       <h2
@@ -66,7 +66,7 @@ export function DemoLaunchCard() {
         // umber-600 fill + cream text rather than the heavy near-black
         // espresso. Deliberately quieter than the umber-900 signup primary so
         // the demo reads as the secondary intent.
-        className="btn mt-2.5 inline-flex w-full items-center justify-center gap-1.5 bg-umber-600 py-1.5 font-grotesk text-xs font-medium text-paper-50 transition-colors hover:bg-umber-500 disabled:cursor-wait disabled:opacity-80 sm:mt-3 sm:gap-2 sm:py-2 sm:text-sm dark:bg-umber-200 dark:text-umber-900 dark:hover:bg-umber-100"
+        className="btn mt-2.5 inline-flex min-h-tap w-full items-center justify-center gap-1.5 bg-umber-600 py-1.5 font-grotesk text-xs font-medium text-paper-50 transition-colors hover:bg-umber-500 disabled:cursor-wait disabled:opacity-80 sm:mt-3 sm:gap-2 sm:py-2 sm:text-sm dark:bg-umber-200 dark:text-umber-900 dark:hover:bg-umber-100"
       >
         {busy ? (
           <>

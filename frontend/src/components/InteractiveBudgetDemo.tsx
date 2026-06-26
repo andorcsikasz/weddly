@@ -175,7 +175,7 @@ export function InteractiveBudgetDemo() {
                 step={1}
                 value={guests}
                 onChange={(e) => setGuests(clamp(Number(e.target.value), MIN_GUESTS, MAX_GUESTS))}
-                className="mt-1.5 w-full rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2"
+                className="mt-1.5 min-h-tap w-full cursor-pointer rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2 sm:min-h-0"
                 aria-label={t("landing.demo_guests_label")}
                 aria-valuetext={`${guests}`}
               />
@@ -201,7 +201,7 @@ export function InteractiveBudgetDemo() {
                 step={range.step}
                 value={budget}
                 onChange={(e) => setBudget(clamp(Number(e.target.value), range.min, range.max))}
-                className="mt-1.5 w-full rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2"
+                className="mt-1.5 min-h-tap w-full cursor-pointer rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2 sm:min-h-0"
                 aria-label={t("landing.demo_budget_label")}
                 aria-valuetext={formatMoney(budget, currency, locale)}
               />
@@ -213,7 +213,7 @@ export function InteractiveBudgetDemo() {
              *  rule, switch to `items-center` and pin a fixed h-12 so the
              *  tile stops growing when HUF formatting wraps long). */}
             <div className="flex h-12 items-center gap-3 rounded-xl bg-white px-4 ring-1 ring-paper-300 dark:bg-umber-800 dark:ring-umber-700">
-              <p className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.24em] text-umber-600 dark:text-umber-300">
+              <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.24em] text-umber-600 dark:text-umber-300">
                 {t("landing.demo_per_guest_label")}
               </p>
               <p className="ml-auto font-grotesk text-xl text-umber-900 sm:text-2xl lg:text-3xl dark:text-paper-50">

@@ -1066,7 +1066,7 @@ function BlogTeaser() {
     timeZone: "UTC",
   });
   return (
-    <section className="relative bg-paper-50 pt-12 sm:pt-20 dark:bg-umber-900">
+    <section className="relative overflow-x-clip bg-paper-50 pt-12 sm:pt-20 dark:bg-umber-900">
       {/* Title removed per request — the cards speak for themselves. */}
       {/* Mobile: horizontal snap carousel so all three posts are visible
        *  through swiping in one viewport. The first card peeks at ~80vw so
@@ -1091,7 +1091,7 @@ function BlogTeaser() {
                   category={post.category[locale]}
                 />
                 <div className="flex flex-1 flex-col p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
                     {post.category[locale]}
                   </p>
                   <h3 className="mt-1.5 font-grotesk text-base font-semibold leading-[1.15] tracking-tight text-umber-900 dark:text-paper-50">
@@ -1496,7 +1496,11 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
             type="button"
             aria-label={t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
             onClick={() => setActive(idx)}
-            className={`h-1.5 rounded-full transition-all ${
+            /* The visible dot stays 6px tall, but a transparent ::before
+               extends the hit area to a 44px-tall band that reaches each
+               neighbour's midpoint (gap-1.5 → +0.375rem), so the tap target
+               clears the WCAG/iOS floor without enlarging the dot itself. */
+            className={`relative h-1.5 rounded-full transition-all before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-[calc(100%+0.375rem)] before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] ${
               circularDelta(idx) === 0 ? "w-5 bg-wnrs-red" : "w-1.5 bg-umber-300 dark:bg-umber-700"
             }`}
           />

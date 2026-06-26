@@ -156,7 +156,7 @@ function PublicHeader() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           to="/"
-          className="shrink-0 text-umber-900 transition-colors hover:text-umber-800 dark:text-paper-50 dark:hover:text-umber-300"
+          className="-my-1 inline-flex min-h-tap shrink-0 items-center text-umber-900 transition-colors hover:text-umber-800 sm:my-0 sm:min-h-0 dark:text-paper-50 dark:hover:text-umber-300"
         >
           {/* Header wordmark sits between Wordmark's md and lg presets:
               bigger than the body brand mark, but tracked tightly so the
