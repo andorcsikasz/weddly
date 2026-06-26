@@ -44,7 +44,7 @@ import {
 import { type FormEvent, type JSX, type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ActivityPanel } from "../components/ActivityPanel";
-import { CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
+import { CATEGORY_ICONS, CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
 import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { TimelineStatusCard } from "../components/TimelineStatusCard";
@@ -177,6 +177,7 @@ export default function DashboardPage() {
   const { user: currentUser } = useAuth();
   const [data, setData] = useState<Loaded | null | "loading">("loading");
   const [rsvpOpen, setRsvpOpen] = useState(false);
+  const [roiOpen, setRoiOpen] = useState(false);
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
   const [copied, setCopied] = useState(false);
   // Partner-invite form state (email-or-link flow).
@@ -418,6 +419,23 @@ export default function DashboardPage() {
     scaledPlannedTotal > 0 && effectivePlanningCount > 0
       ? Math.round(scaledPlannedTotal / effectivePlanningCount)
       : null;
+  // Per-category aggregates for KPI tile breakdowns.
+  const byCat = new Map<BudgetCategory, { planned: number; actual: number }>();
+  for (const line of lines) {
+    const e = byCat.get(line.category) ?? { planned: 0, actual: 0 };
+    e.planned += line.planned_huf;
+    e.actual += line.actual_huf;
+    byCat.set(line.category, e);
+  }
+  const topByActual = [...byCat.entries()]
+    .filter(([, v]) => v.actual > 0)
+    .sort((a, b) => b[1].actual - a[1].actual)
+    .slice(0, 3);
+  const topByPlanned = [...byCat.entries()]
+    .filter(([, v]) => v.planned > 0)
+    .sort((a, b) => b[1].planned - a[1].planned)
+    .slice(0, 3);
+
   async function setCategoryPlanned(category: BudgetCategory, newTotal: number) {
     if (data === "loading" || data === null) return;
     try {
@@ -1127,6 +1145,7 @@ export default function DashboardPage() {
               label={t("dashboard.kpi_days_label")}
               days={daysUntil}
               goal={couple.wedding_date_goal}
+              createdAt={couple.created_at}
               onSave={saveWeddingDate}
             />
           )}
@@ -1229,6 +1248,7 @@ export default function DashboardPage() {
             onSaveCap={saveCap}
             progress={spentPct}
             progressOver={cap !== null && totalActual > cap}
+            lines={lines}
           />
           {eloping ? (
             <KpiTile
@@ -1257,6 +1277,48 @@ export default function DashboardPage() {
               unit={t("dashboard.kpi_roi_unit_planned", {
                 n: formatNumber(effectivePlanningCount, locale),
               })}
+              onToggle={topByPlanned.length > 0 ? () => setRoiOpen((v) => !v) : undefined}
+              expanded={roiOpen}
+              breakdown={
+                <div>
+                  <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                    {topByPlanned.map(([cat, v]) => {
+                      const total = topByPlanned.reduce((s, [, x]) => s + x.planned, 0);
+                      return (
+                        <div
+                          key={cat}
+                          className="h-full bg-ink-700 odd:opacity-60 even:opacity-90 dark:bg-paper-100"
+                          style={{ width: `${Math.round((v.planned / total) * 100)}%` }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="mt-2 flex flex-col gap-0.5">
+                    {topByPlanned.map(([cat, v]) => {
+                      const Icon = CATEGORY_ICONS[cat];
+                      const perGuest =
+                        effectivePlanningCount > 0
+                          ? Math.round(v.planned / effectivePlanningCount)
+                          : 0;
+                      return (
+                        <Link
+                          key={cat}
+                          to="/app/budget"
+                          className="flex min-w-0 items-center justify-between rounded px-1 py-0.5 text-xs transition hover:bg-paper-100 dark:hover:bg-umber-700/60"
+                        >
+                          <span className="flex min-w-0 flex-1 items-center gap-1.5 text-umber-800 dark:text-paper-100">
+                            {Icon && <Icon size={10} aria-hidden className="shrink-0 opacity-60" />}
+                            <span className="truncate">{t(`budget.cat.${cat}`)}</span>
+                          </span>
+                          <span className="shrink-0 pl-1 font-semibold tabular-nums text-umber-900 dark:text-paper-50">
+                            {formatHufCompact(perGuest, locale)} {currencySymbol(currency, locale)}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              }
             />
           )}
         </section>
@@ -1461,6 +1523,7 @@ function BudgetKpiTile({
   onSaveCap,
   progress,
   progressOver,
+  lines,
 }: {
   label: string;
   totalActual: number;
@@ -1470,12 +1533,23 @@ function BudgetKpiTile({
   onSaveCap: (next: number) => Promise<void>;
   progress: number | null;
   progressOver: boolean;
+  lines: BudgetLine[];
 }) {
   const { t } = useT();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [chartOpen, setChartOpen] = useState(false);
+
+  const topSpend = (() => {
+    const agg = new Map<BudgetCategory, number>();
+    for (const l of lines) {
+      if (l.actual_huf > 0) agg.set(l.category, (agg.get(l.category) ?? 0) + l.actual_huf);
+    }
+    return [...agg.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  })();
+  const maxSpend = topSpend[0]?.[1] ?? 1;
 
   function startEdit() {
     if (cap === null) return;
@@ -1510,59 +1584,110 @@ function BudgetKpiTile({
           <Wallet size={14} aria-hidden="true" />
         </span>
         {label}
-      </div>
-      <div className="stat-num mt-2 text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
-        {formatMoney(totalActual, currency, locale)}
-      </div>
-      <div className="mt-1 flex items-baseline justify-center gap-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
-        {cap === null ? (
-          <span>{t("dashboard.kpi_budget_no_cap")}</span>
-        ) : editing ? (
-          <input
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            autoFocus
-            disabled={saving}
-            value={draft}
-            onFocus={(e) => e.currentTarget.select()}
-            onChange={(e) => {
-              const digits = e.target.value.replace(/\D/g, "");
-              setDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
-            }}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
-              else if (e.key === "Escape") setEditing(false);
-            }}
-            aria-label={t("dashboard.kpi_budget_edit_aria")}
-            className="stat-num w-32 rounded border border-blush-500 bg-white px-1 py-1 text-center text-base font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 sm:py-0.5 sm:text-xs dark:bg-umber-800 dark:text-paper-50"
-          />
-        ) : (
-          <>
-            <span>{t("dashboard.kpi_budget_unit_connector")}</span>
-            <button
-              type="button"
-              onClick={() => toast.info(t("dashboard.kpi_budget_edit_hint"))}
-              onDoubleClick={startEdit}
-              title={t("dashboard.kpi_budget_edit_hint")}
-              aria-label={t("dashboard.kpi_budget_edit_aria")}
-              className="stat-num cursor-pointer underline decoration-dotted decoration-ink-400 underline-offset-4 transition hover:text-ink-900 hover:decoration-ink-700 dark:hover:text-paper-50 dark:hover:decoration-paper-100"
-            >
-              {formatMoney(cap, currency, locale)}
-            </button>
-          </>
+        {topSpend.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setChartOpen((v) => !v)}
+            className={`ml-auto flex items-center justify-center rounded p-0.5 transition-colors ${
+              chartOpen
+                ? "text-umber-600 dark:text-umber-300"
+                : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
+            }`}
+            aria-label={chartOpen ? "Hide breakdown" : "Show breakdown"}
+            aria-pressed={chartOpen}
+          >
+            <BarChart2 size={13} />
+          </button>
         )}
       </div>
-      {progress !== null && (
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-          <div
-            className={`h-full rounded-full transition-all ${
-              progressOver ? "bg-blush-700 dark:bg-blush-400" : "bg-ink-700 dark:bg-paper-100"
-            }`}
-            style={{ width: `${Math.max(2, progress)}%` }}
-          />
+      {chartOpen ? (
+        <div className="mt-2 h-[4.5rem] overflow-hidden">
+          <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+            {topSpend.map(([cat, v]) => (
+              <div
+                key={cat}
+                className="h-full bg-ink-700 odd:opacity-60 even:opacity-90 dark:bg-paper-100"
+                style={{ width: `${Math.round((v / maxSpend) * 100)}%` }}
+              />
+            ))}
+          </div>
+          <div className="mt-2 flex flex-col gap-0.5">
+            {topSpend.map(([cat, v]) => {
+              const Icon = CATEGORY_ICONS[cat];
+              return (
+                <Link
+                  key={cat}
+                  to="/app/budget"
+                  className="flex min-w-0 items-center justify-between rounded px-1 py-0.5 text-xs transition hover:bg-paper-100 dark:hover:bg-umber-700/60"
+                >
+                  <span className="flex min-w-0 flex-1 items-center gap-1.5 text-umber-800 dark:text-paper-100">
+                    {Icon && <Icon size={10} aria-hidden className="shrink-0 opacity-60" />}
+                    <span className="truncate">{t(`budget.cat.${cat}`)}</span>
+                  </span>
+                  <span className="shrink-0 pl-1 font-semibold tabular-nums text-umber-900 dark:text-paper-50">
+                    {formatHufCompact(v, locale)} {currencySymbol(currency, locale)}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
+      ) : (
+        <>
+          <div className="stat-num mt-2 text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
+            {formatMoney(totalActual, currency, locale)}
+          </div>
+          <div className="mt-1 flex items-baseline justify-center gap-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
+            {cap === null ? (
+              <span>{t("dashboard.kpi_budget_no_cap")}</span>
+            ) : editing ? (
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                autoFocus
+                disabled={saving}
+                value={draft}
+                onFocus={(e) => e.currentTarget.select()}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "");
+                  setDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
+                }}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+                  else if (e.key === "Escape") setEditing(false);
+                }}
+                aria-label={t("dashboard.kpi_budget_edit_aria")}
+                className="stat-num w-32 rounded border border-blush-500 bg-white px-1 py-1 text-center text-base font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 sm:py-0.5 sm:text-xs dark:bg-umber-800 dark:text-paper-50"
+              />
+            ) : (
+              <>
+                <span>{t("dashboard.kpi_budget_unit_connector")}</span>
+                <button
+                  type="button"
+                  onClick={() => toast.info(t("dashboard.kpi_budget_edit_hint"))}
+                  onDoubleClick={startEdit}
+                  title={t("dashboard.kpi_budget_edit_hint")}
+                  aria-label={t("dashboard.kpi_budget_edit_aria")}
+                  className="stat-num cursor-pointer underline decoration-dotted decoration-ink-400 underline-offset-4 transition hover:text-ink-900 hover:decoration-ink-700 dark:hover:text-paper-50 dark:hover:decoration-paper-100"
+                >
+                  {formatMoney(cap, currency, locale)}
+                </button>
+              </>
+            )}
+          </div>
+          {progress !== null && (
+            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  progressOver ? "bg-blush-700 dark:bg-blush-400" : "bg-ink-700 dark:bg-paper-100"
+                }`}
+                style={{ width: `${Math.max(2, progress)}%` }}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -1576,17 +1701,30 @@ function DaysToGoTile({
   label,
   days,
   goal,
+  createdAt,
   onSave,
 }: {
   label: string;
   days: number | null;
   goal: WeddingDateGoal;
+  createdAt: number;
   onSave: (next: WeddingDateGoal) => Promise<void>;
 }) {
   const { t, locale } = useT();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [chartOpen, setChartOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const planningPct = (() => {
+    if (!goal.exact_date) return null;
+    const weddingMs = new Date(goal.exact_date).getTime();
+    const nowMs = Date.now();
+    const totalMs = weddingMs - createdAt;
+    if (totalMs <= 0) return null;
+    return Math.max(0, Math.min(100, Math.round(((nowMs - createdAt) / totalMs) * 100)));
+  })();
+  const daysElapsed = Math.max(0, Math.floor((Date.now() - createdAt) / 86_400_000));
 
   useEffect(() => {
     if (!editing) return;
@@ -1636,25 +1774,61 @@ function DaysToGoTile({
           <CalendarHeart size={14} aria-hidden="true" />
         </span>
         {label}
+        {planningPct !== null && (
+          <button
+            type="button"
+            onClick={() => setChartOpen((v) => !v)}
+            className={`ml-auto flex items-center justify-center rounded p-0.5 transition-colors ${
+              chartOpen
+                ? "text-umber-600 dark:text-umber-300"
+                : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
+            }`}
+            aria-label={chartOpen ? "Hide timeline" : "Show timeline"}
+            aria-pressed={chartOpen}
+          >
+            <BarChart2 size={13} />
+          </button>
+        )}
       </div>
-      <button
-        type="button"
-        onClick={() => setEditing((v) => !v)}
-        disabled={saving}
-        title={t("dashboard.kpi_days_edit_hint")}
-        aria-label={t("dashboard.kpi_days_edit_hint")}
-        className="-mx-2 mt-1 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
-      >
-        <div className="stat-num text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
-          {days !== null ? formatNumber(days, locale) : "—"}
-        </div>
-        <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
-          {days !== null && goal.exact_date
-            ? goal.exact_date.replace(/-/g, ".")
-            : t("dashboard.kpi_days_tbd")}
-        </div>
-      </button>
-      {editing && (
+      <div className="mt-2 h-[4.5rem] overflow-hidden">
+        {chartOpen && planningPct !== null ? (
+          <div>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+              <div
+                className="h-full rounded-full bg-ink-700 transition-all dark:bg-paper-100"
+                style={{ width: `${planningPct}%` }}
+              />
+            </div>
+            <div className="mt-2 text-center">
+              <div className="stat-num text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
+                {planningPct}%
+              </div>
+              <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
+                {formatNumber(daysElapsed, locale)} nap eltelt · {days !== null ? formatNumber(days, locale) : "—"} hátra
+              </div>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            disabled={saving}
+            title={t("dashboard.kpi_days_edit_hint")}
+            aria-label={t("dashboard.kpi_days_edit_hint")}
+            className="-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
+          >
+            <div className="stat-num text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
+              {days !== null ? formatNumber(days, locale) : "—"}
+            </div>
+            <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
+              {days !== null && goal.exact_date
+                ? goal.exact_date.replace(/-/g, ".")
+                : t("dashboard.kpi_days_tbd")}
+            </div>
+          </button>
+        )}
+      </div>
+      {!chartOpen && editing && (
         <CalendarPicker
           value={goal.exact_date ?? null}
           min={todayIso()}
