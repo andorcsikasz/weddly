@@ -734,7 +734,14 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   @media (max-width: 639px) {
     .hero-photo-img {
-      opacity: 0.25;
+      /* Phones get their own editorial cover (the desktop crop is built for a
+         wide frame). It reads as a true background behind the hero text, like
+         desktop — the overlay below keeps the top readable and reveals the
+         photo in the lower band. */
+      background-image: url("/blog-covers/eskuvoi-ultetesi-rend-keszitese.jpg");
+      background-position: center;
+      opacity: 0.9;
+      filter: saturate(1.1) brightness(0.97);
     }
   }
   .dark .hero-photo-img {
@@ -776,19 +783,18 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   @media (max-width: 639px) {
     .hero-overlay {
-      background:
-        linear-gradient(
-          to top,
-          rgba(251, 250, 246, 0.98) 0%,
-          rgba(251, 250, 246, 0.60) 10%,
-          rgba(251, 250, 246, 0) 22%
-        ),
-        linear-gradient(
-          180deg,
-          rgba(251, 250, 246, 0.97) 0%,
-          rgba(251, 250, 246, 0.88) 60%,
-          rgba(251, 250, 246, 0.80) 100%
-        );
+      /* Cream is near-opaque behind the headline/sub/CTA at the top, then
+         thins out so the photo emerges in the lower band (behind the demo
+         card and below) — mirrors the desktop "text on cream, photo peeking"
+         read in a single-column layout. */
+      background: linear-gradient(
+        180deg,
+        rgba(251, 250, 246, 0.97) 0%,
+        rgba(251, 250, 246, 0.95) 28%,
+        rgba(251, 250, 246, 0.8) 46%,
+        rgba(251, 250, 246, 0.42) 66%,
+        rgba(251, 250, 246, 0.12) 100%
+      );
     }
   }
   .dark .hero-overlay {

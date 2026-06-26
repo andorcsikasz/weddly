@@ -267,19 +267,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile-only editorial photo — warms up the hero on phones, where the
-            full-bleed cover photo is dialled back to a faint 0.25 wash. Sits in
-            the empty band below the demo card; hidden from sm up, where the
-            desktop hero photo takes over. Decorative, so alt="". */}
-        <div className="relative z-[2] px-4 pb-4 sm:hidden">
-          <img
-            src="/blog-covers/eskuvoi-szertartas-menete.jpg"
-            alt=""
-            loading="lazy"
-            className="h-60 w-full rounded-2xl object-cover object-center shadow-pop ring-1 ring-paper-300/70 dark:ring-umber-700"
-          />
-        </div>
-
         {/* Dashboard preview — overlaps the bottom of the hero photo */}
         <div className="hero-dashboard">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
