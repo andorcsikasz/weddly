@@ -87,6 +87,10 @@ const PlannerHomePage = lazy(() => import("./pages/PlannerHomePage"));
 const PlannerOnboardingPage = lazy(() => import("./pages/PlannerOnboardingPage"));
 const PlannerMessagesPage = lazy(() => import("./pages/PlannerMessagesPage"));
 const PlannerProfilePage = lazy(() => import("./pages/PlannerProfilePage"));
+const PlannerSettingsLayout = lazy(() => import("./pages/planner/PlannerSettingsLayout"));
+const PlannerSettingsAccount = lazy(() => import("./pages/planner/PlannerSettingsAccount"));
+const PlannerSettingsSubscription = lazy(() => import("./pages/planner/PlannerSettingsSubscription"));
+const PlannerSettingsData = lazy(() => import("./pages/planner/PlannerSettingsData"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the
 // "continue with limited access" path. Lets the gate downgrade to an
@@ -906,12 +910,21 @@ export default function App() {
         />
         <Route
           path="/app/planner/profile"
+          element={<Navigate to="/app/planner/settings/account" replace />}
+        />
+        <Route
+          path="/app/planner/settings"
           element={
             <RequireAuth>
-              <PlannerProfilePage />
+              <PlannerSettingsLayout />
             </RequireAuth>
           }
-        />
+        >
+          <Route index element={<Navigate to="account" replace />} />
+          <Route path="account" element={<PlannerSettingsAccount />} />
+          <Route path="subscription" element={<PlannerSettingsSubscription />} />
+          <Route path="data" element={<PlannerSettingsData />} />
+        </Route>
         <Route
           path="*"
           element={

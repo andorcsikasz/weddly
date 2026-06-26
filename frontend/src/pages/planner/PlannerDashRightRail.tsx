@@ -140,7 +140,7 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
         </button>
 
         <Link
-          to="/app/planner/profile"
+          to="/app/planner/settings/account"
           className="btn-outline w-full justify-start gap-2 text-sm"
         >
           <UserPlus className="w-4 h-4" aria-hidden="true" />

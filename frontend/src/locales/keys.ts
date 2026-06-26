@@ -6476,6 +6476,8 @@ export interface LocaleMessages {
     topbar_profile_aria: string;
     topbar_profile_link: string;
     topbar_logout: string;
+    topbar_back_to_landing: string;
+    topbar_feedback: string;
     rail_today_title: string;
     rail_today_empty: string;
     rail_urgent_title: string;
@@ -6580,6 +6582,20 @@ export interface LocaleMessages {
     bio_placeholder: string;
     save_button: string;
     save_success: string;
+    tabs_aria: string;
+    tab_account: string;
+    tab_subscription: string;
+    tab_data: string;
+    subscription_heading: string;
+    subscription_plan_label: string;
+    subscription_clients_label: string;
+    subscription_upgrade_cta: string;
+    subscription_no_billing: string;
+    data_heading: string;
+    data_export_button: string;
+    data_delete_heading: string;
+    data_delete_body: string;
+    data_delete_button: string;
   };
   couple_planners: {
     heading: string;

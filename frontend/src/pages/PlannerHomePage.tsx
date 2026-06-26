@@ -599,6 +599,7 @@ export default function PlannerHomePage() {
     <div className="min-h-screen bg-paper-50 dark:bg-umber-950">
       <PlannerDashTopbar
         plannerName={firstName}
+        plannerEmail={user?.email ?? ""}
         urgentCount={stats?.overdue_tasks ?? 0}
         plan={stats?.plan ?? ""}
         maxClients={stats?.max_clients ?? 0}
