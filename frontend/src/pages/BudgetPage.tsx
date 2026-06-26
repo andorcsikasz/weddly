@@ -2072,7 +2072,7 @@ function BudgetMobileCard({
           layout had each label+input on its own row, so a 13-category list
           racked up an extra ~200px of vertical scroll. Tightened gaps
           (`mt-2 gap-2 mb-0.5`) cut another ~12 px per card × 13 cards. */}
-      <dl className="mt-2 grid grid-cols-2 gap-2">
+      <dl className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-2">
         <div className="min-w-0">
           <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.planned")}
@@ -2101,7 +2101,7 @@ function BudgetMobileCard({
             />
           </dd>
         </div>
-        <div className="col-span-2 min-w-0">
+        <div className="min-w-0">
           <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.paid")}
           </dt>
@@ -2171,7 +2171,7 @@ function BudgetMobileCustomCard({
           </button>
         </div>
       </header>
-      <dl className="mt-2 grid grid-cols-2 gap-2">
+      <dl className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-2">
         <div className="min-w-0">
           <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.planned")}
@@ -2198,7 +2198,7 @@ function BudgetMobileCustomCard({
             />
           </dd>
         </div>
-        <div className="col-span-2 min-w-0">
+        <div className="min-w-0">
           <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.paid")}
           </dt>
