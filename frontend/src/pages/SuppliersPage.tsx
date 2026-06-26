@@ -329,16 +329,38 @@ export default function SuppliersPage() {
   useEffect(() => {
     setCityInput(cityFilter);
   }, [cityFilter]);
+  // Drop every "narrowing" filter (search text, city, category chain, price,
+  // guests) plus the sibling shortlist toggle. The saved / picked chips are
+  // meant to surface the user's full marked set in one tap, so any leftover
+  // filter would be a confusing subtractor — they can re-apply filters after.
+  function clearNarrowingFilters(p: URLSearchParams) {
+    p.delete("q");
+    p.delete("city");
+    p.delete("price");
+    p.delete("guests");
+    setActiveGroup(null);
+    setActiveCat(null);
+  }
   function toggleSavedFilter() {
     const p = new URLSearchParams(params);
-    if (showSavedOnly) p.delete("saved");
-    else p.set("saved", "1");
+    if (showSavedOnly) {
+      p.delete("saved");
+    } else {
+      p.set("saved", "1");
+      p.delete("picked");
+      clearNarrowingFilters(p);
+    }
     setParams(p, { replace: true });
   }
   function togglePickedFilter() {
     const p = new URLSearchParams(params);
-    if (showPickedOnly) p.delete("picked");
-    else p.set("picked", "1");
+    if (showPickedOnly) {
+      p.delete("picked");
+    } else {
+      p.set("picked", "1");
+      p.delete("saved");
+      clearNarrowingFilters(p);
+    }
     setParams(p, { replace: true });
   }
   function toggleCompare(id: string) {
@@ -1012,13 +1034,18 @@ export default function SuppliersPage() {
         <button
           type="button"
           onClick={toggleSavedFilter}
+          disabled={saved.size === 0 && !showSavedOnly}
           aria-pressed={showSavedOnly}
           aria-label={t("suppliers.saved_filter", { n: saved.size })}
           title={t("suppliers.saved_filter", { n: saved.size })}
           className={
             showSavedOnly
               ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 dark:border-paper-50 px-3 text-sm font-medium text-ink-900 dark:text-paper-50"
-              : "inline-flex h-9 items-center gap-1.5 rounded-full border border-umber-600 dark:border-umber-700 px-3 text-sm text-ink-700 dark:text-paper-100 hover:border-umber-700 dark:hover:border-umber-600"
+              : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
+                  saved.size > 0
+                    ? "border-umber-600 text-ink-700 hover:border-umber-700 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
+                    : "border-umber-600 text-ink-500 dark:border-umber-700 dark:text-umber-300"
+                }`
           }
         >
           <Star size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
