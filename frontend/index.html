@@ -79,8 +79,9 @@
          Color tokens mirror tailwind.config.js exactly so a token change
          only needs updating here.
          paper-100:#f6f2e7  paper-200:#efe9d9  paper-300:#e3d9bf
-         blush-500:#d35d42  blush-600:#bf4a30
          umber-500:#8a6841  umber-700:#3a2e22  umber-900:#1a1410
+         Accent (Accept-all / active toggle / nav underline) = umber-900
+         near-black #1a1410, hover #000 — no red/blush in this surface.
       ──────────────────────────────────────────────────────────────────── */
 
       /* Overlay backdrop — very subtle so the page feels alive behind */
@@ -178,7 +179,7 @@
       }
       .CybotCookiebotDialogNavItemLink.CybotCookiebotDialogNavItemLinkActive {
         color: #1a1410 !important;
-        border-bottom-color: #d35d42 !important;
+        border-bottom-color: #1a1410 !important;
       }
 
       /* Details / checkboxes area */
@@ -196,7 +197,7 @@
         border-radius: 9999px !important;
       }
       input:checked + .CybotCookiebotDialogBodyLevelButtonSlider {
-        background: #d35d42 !important;
+        background: #1a1410 !important;
       }
 
       /* Buttons wrapper — force a static, single-column stack (the banner
@@ -231,16 +232,16 @@
         letter-spacing: 0 !important;
       }
 
-      /* Accept all — filled blush */
+      /* Accept all — filled near-black */
       #CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll {
-        background: #d35d42 !important;
+        background: #1a1410 !important;
         color: #fff !important;
-        border: 2px solid #d35d42 !important;
+        border: 2px solid #1a1410 !important;
         order: 1 !important;
       }
       #CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll:hover {
-        background: #bf4a30 !important;
-        border-color: #bf4a30 !important;
+        background: #000 !important;
+        border-color: #000 !important;
       }
 
       /* Allow selection — outline */
