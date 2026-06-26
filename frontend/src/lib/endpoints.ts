@@ -10,6 +10,7 @@ import type {
   AdminUserView,
   AuthSession,
   BudgetCategory,
+  BudgetDocument,
   BudgetGoal,
   BudgetLine,
   BudgetSnapshot,
@@ -980,6 +981,43 @@ export const budgetApi = {
       {},
     ),
   removeSnapshot: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/budget/snapshots/${id}`),
+};
+
+/** Invoice / receipt documents attached to a budget row (the bill icon in the
+ *  PAID column). `scope` is 'cat:<category>' for an aggregated category row or
+ *  'line:<id>' for a custom line. PDFs + images, ≤8 MB each. */
+export const budgetDocApi = {
+  list: () => apiFetch<{ documents: BudgetDocument[] }>("GET", "/api/budget/documents"),
+  /** Multipart upload — JSON-shaped `apiFetch` doesn't speak FormData, so we
+   *  hit fetch directly with the same auth header (mirrors moodboard upload). */
+  upload: async (scope: string, file: File): Promise<{ document: BudgetDocument }> => {
+    const form = new FormData();
+    form.append("scope", scope);
+    form.append("file", file);
+    const token = getToken();
+    const res = await fetch("/api/budget/documents", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Upload failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as { document: BudgetDocument };
+  },
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/budget/documents/${id}`),
 };
 
 export const incomeApi = {

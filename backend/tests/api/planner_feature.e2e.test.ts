@@ -127,12 +127,7 @@ describe("planner client limit", () => {
     for (let i = 1; i <= 4; i++) {
       const email = `couple${i}@weddly.test`;
       await bootstrapCouple(email);
-      const add = await req<{ ok: boolean }>(
-        "POST",
-        "/api/planner/clients",
-        { email },
-        { token },
-      );
+      const add = await req<{ ok: boolean }>("POST", "/api/planner/clients", { email }, { token });
       expect(add.status).toBe(200);
     }
 

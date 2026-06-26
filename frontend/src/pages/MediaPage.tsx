@@ -879,7 +879,9 @@ export default function MediaPage() {
                 {/* Privacy notice — slim inline */}
                 <div className="flex items-center gap-1.5 px-4 py-1.5">
                   <Lock size={10} className="shrink-0 text-umber-400" aria-hidden="true" />
-                  <span className="text-[11px] italic text-umber-400">{t("media.film_privacy_notice")}</span>
+                  <span className="text-[11px] italic text-umber-400">
+                    {t("media.film_privacy_notice")}
+                  </span>
                 </div>
               </>
             )}
@@ -895,9 +897,7 @@ export default function MediaPage() {
                     <p className="text-xs font-semibold text-amber-800">
                       {t("media.film_expired_alert")}
                     </p>
-                    <p className="mt-0.5 text-xs text-amber-700">
-                      {t("media.film_expired_body")}
-                    </p>
+                    <p className="mt-0.5 text-xs text-amber-700">{t("media.film_expired_body")}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -1015,10 +1015,7 @@ export default function MediaPage() {
                       {inner}
                     </button>
                   ) : (
-                    <div
-                      key={row.label}
-                      className={`${shared} cursor-default bg-paper-100/50`}
-                    >
+                    <div key={row.label} className={`${shared} cursor-default bg-paper-100/50`}>
                       {inner}
                     </div>
                   );

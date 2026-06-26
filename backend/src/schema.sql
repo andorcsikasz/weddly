@@ -78,6 +78,24 @@ CREATE TABLE IF NOT EXISTS budget_snapshots (
 );
 CREATE INDEX IF NOT EXISTS idx_snapshots_couple ON budget_snapshots(couple_id);
 
+-- Uploaded invoices / receipts attached to a budget row. `scope` anchors each
+-- document to what the user sees in the PAID column: 'cat:<category>' for an
+-- aggregated category row, or 'line:<budget_line_id>' for a custom line. The
+-- paid amount lives on budget_lines.paid_huf; this table is supplementary proof
+-- (the bill icon next to the paid-percentage checkmark). file_path is the
+-- public /uploads URL; the bytes live on the persistent volume.
+CREATE TABLE IF NOT EXISTS budget_documents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  scope TEXT NOT NULL,                                         -- 'cat:venue' | 'line:123'
+  file_path TEXT NOT NULL,                                     -- public URL, e.g. /uploads/couples/12/budget-docs/3.pdf
+  file_name TEXT NOT NULL,                                     -- original filename for display
+  mime TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_budget_documents_couple_scope ON budget_documents(couple_id, scope);
+
 -- Money that came IN (cash gifts, contributions). A standalone ledger — not
 -- tied to suppliers or budget lines. Powers the post-wedding "how much did we
 -- recover vs spend" report. amount_huf is integer minor units of the couple's

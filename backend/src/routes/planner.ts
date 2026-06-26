@@ -96,9 +96,9 @@ async function handleAddClient(ctx: Ctx): Promise<Response> {
     .get(userId, target.couple_id);
   if (existing) throw new HttpError(409, "This couple is already linked to your account");
 
-  const plannerRow = db
-    .prepare("SELECT planner_max_clients FROM users WHERE id = ?")
-    .get(userId) as { planner_max_clients: number | null } | undefined;
+  const plannerRow = db.prepare("SELECT planner_max_clients FROM users WHERE id = ?").get(userId) as
+    | { planner_max_clients: number | null }
+    | undefined;
   const maxClients = plannerRow?.planner_max_clients ?? 4;
   const activeCount = (
     db
@@ -378,28 +378,32 @@ async function handleGetProfile(ctx: Ctx): Promise<Response> {
     .prepare(
       "SELECT full_name, email, business_name, planner_bio, planner_city, planner_website, planner_phone FROM users WHERE id = ?",
     )
-    .get(userId) as {
-    full_name: string;
-    email: string;
-    business_name: string | null;
-    planner_bio: string | null;
-    planner_city: string | null;
-    planner_website: string | null;
-    planner_phone: string | null;
-  } | undefined;
+    .get(userId) as
+    | {
+        full_name: string;
+        email: string;
+        business_name: string | null;
+        planner_bio: string | null;
+        planner_city: string | null;
+        planner_website: string | null;
+        planner_phone: string | null;
+      }
+    | undefined;
   if (!row) throw new HttpError(404, "planner not found");
 
   const waitlistRow = db
     .prepare(
       "SELECT full_name, phone, company_name, city, website FROM planner_waitlist WHERE LOWER(email) = LOWER(?) ORDER BY id DESC LIMIT 1",
     )
-    .get(row.email) as {
-    full_name: string | null;
-    phone: string | null;
-    company_name: string | null;
-    city: string | null;
-    website: string | null;
-  } | undefined;
+    .get(row.email) as
+    | {
+        full_name: string | null;
+        phone: string | null;
+        company_name: string | null;
+        city: string | null;
+        website: string | null;
+      }
+    | undefined;
 
   return json({
     ...row,
@@ -424,17 +428,35 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
   const str = (v: unknown) => (typeof v === "string" ? v.trim() || null : undefined);
 
   const fn = str(body.full_name);
-  if (fn !== undefined) { fields.push("full_name = ?"); vals.push(fn ?? ""); }
+  if (fn !== undefined) {
+    fields.push("full_name = ?");
+    vals.push(fn ?? "");
+  }
   const bn = str(body.business_name);
-  if (bn !== undefined) { fields.push("business_name = ?"); vals.push(bn); }
+  if (bn !== undefined) {
+    fields.push("business_name = ?");
+    vals.push(bn);
+  }
   const bio = str(body.planner_bio);
-  if (bio !== undefined) { fields.push("planner_bio = ?"); vals.push(bio); }
+  if (bio !== undefined) {
+    fields.push("planner_bio = ?");
+    vals.push(bio);
+  }
   const city = str(body.planner_city);
-  if (city !== undefined) { fields.push("planner_city = ?"); vals.push(city); }
+  if (city !== undefined) {
+    fields.push("planner_city = ?");
+    vals.push(city);
+  }
   const web = str(body.planner_website);
-  if (web !== undefined) { fields.push("planner_website = ?"); vals.push(web); }
+  if (web !== undefined) {
+    fields.push("planner_website = ?");
+    vals.push(web);
+  }
   const phone = str(body.planner_phone);
-  if (phone !== undefined) { fields.push("planner_phone = ?"); vals.push(phone); }
+  if (phone !== undefined) {
+    fields.push("planner_phone = ?");
+    vals.push(phone);
+  }
 
   if (fields.length > 0) {
     db.prepare(`UPDATE users SET ${fields.join(", ")}, updated_at = ? WHERE id = ?`).run(
@@ -570,9 +592,9 @@ async function handleInvitePlanner(ctx: Ctx): Promise<Response> {
   }
   const plannerEmail = body.planner_email.trim().toLowerCase();
 
-  const planner = db.prepare("SELECT id, user_type FROM users WHERE LOWER(email) = ?").get(
-    plannerEmail,
-  ) as { id: number; user_type: string } | undefined;
+  const planner = db
+    .prepare("SELECT id, user_type FROM users WHERE LOWER(email) = ?")
+    .get(plannerEmail) as { id: number; user_type: string } | undefined;
   if (!planner) throw new HttpError(404, "No planner found with that email");
   if (planner.user_type !== "planner") throw new HttpError(404, "No planner found with that email");
 
@@ -631,9 +653,10 @@ async function handleRevokePlanner(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "plannerUserId required");
   }
 
-  db.prepare(
-    "DELETE FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?",
-  ).run(plannerUserId, coupleId);
+  db.prepare("DELETE FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?").run(
+    plannerUserId,
+    coupleId,
+  );
 
   addAuditLog({
     actor_user_id: userId,
@@ -718,11 +741,13 @@ async function handleGetStats(ctx: Ctx): Promise<Response> {
     .prepare(
       "SELECT planner_plan, planner_max_clients, planner_onboarding_done FROM users WHERE id = ?",
     )
-    .get(userId) as {
-    planner_plan: string | null;
-    planner_max_clients: number | null;
-    planner_onboarding_done: number | null;
-  } | undefined;
+    .get(userId) as
+    | {
+        planner_plan: string | null;
+        planner_max_clients: number | null;
+        planner_onboarding_done: number | null;
+      }
+    | undefined;
 
   const plan = (plannerMeta?.planner_plan ?? "starter") as PlannerPlan;
   const maxClients = plannerMeta?.planner_max_clients ?? 4;

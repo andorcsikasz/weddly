@@ -210,7 +210,12 @@ export interface AdminSidebarBadges {
 }
 
 /** Source type for collected admin email entries. */
-export type AdminEmailSourceType = "user" | "guest" | "vendor" | "vendor_waitlist" | "planner_waitlist";
+export type AdminEmailSourceType =
+  | "user"
+  | "guest"
+  | "vendor"
+  | "vendor_waitlist"
+  | "planner_waitlist";
 
 /** One row in the admin email collection list. Emails come from every source
  *  (registered users, wedding guests, vendor waitlist, planner waitlist, active
@@ -739,6 +744,25 @@ export interface BudgetSnapshot {
   name: string;
   /** JSON-encoded array of `BudgetLine` shape (without ids). */
   payload_json: string;
+  created_at: UnixMs;
+}
+
+/** An uploaded invoice / receipt attached to a budget row. `scope` anchors the
+ *  document to what the user sees in the table: `cat:<category>` for an
+ *  aggregated category row, or `line:<id>` for a custom line. Kept separate
+ *  from `paid_huf` — the paid amount is the source of truth, documents are
+ *  supplementary proof the user can attach via the bill icon in the PAID cell. */
+export interface BudgetDocument {
+  id: number;
+  couple_id: number;
+  /** `cat:<BudgetCategory>` or `line:<budget_line_id>`. */
+  scope: string;
+  /** Public URL, e.g. `/uploads/couples/12/budget-docs/3.pdf?v=...`. */
+  file_path: string;
+  /** Original filename, shown in the documents list. */
+  file_name: string;
+  mime: string;
+  size_bytes: number;
   created_at: UnixMs;
 }
 

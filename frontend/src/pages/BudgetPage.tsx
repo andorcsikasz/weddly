@@ -4,6 +4,7 @@
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import {
   type BudgetCategory,
+  type BudgetDocument,
   type BudgetLine,
   type BudgetSnapshot,
   type Couple,
@@ -14,12 +15,17 @@ import {
   ArrowUpRight,
   BarChart3,
   CircleCheck,
+  ExternalLink,
+  FileText,
+  Image as ImageIcon,
   Loader2,
   MoreHorizontal,
   Plus,
+  Receipt,
   RotateCcw,
   Save,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { type ChangeEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -32,7 +38,7 @@ import {
 } from "../components/CostPlanningCard";
 import { IncomeSection } from "../components/IncomeSection";
 import { InfoHint } from "../components/InfoHint";
-import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { Dialog, SegmentedControl, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
   applyCategoryActual,
@@ -47,7 +53,7 @@ import {
   subscribeCostPlanningCount,
   writeCostPlanningCount,
 } from "../lib/cost_planning";
-import { budgetApi, coupleApi, coupleSupplierApi } from "../lib/endpoints";
+import { budgetApi, budgetDocApi, coupleApi, coupleSupplierApi } from "../lib/endpoints";
 import { currencySymbol, formatMoney, formatNumber, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -125,6 +131,9 @@ export default function BudgetPage() {
   const location = useLocation();
   const [lines, setLines] = useState<BudgetLine[]>([]);
   const [snapshots, setSnapshots] = useState<BudgetSnapshot[]>([]);
+  // Uploaded invoices / receipts, keyed by scope below. Loaded alongside the
+  // lines so the bill icon can show its count badge without a per-row fetch.
+  const [documents, setDocuments] = useState<BudgetDocument[]>([]);
   const [couple, setCouple] = useState<Couple | null>(null);
   // DIY/booked suppliers — only their payment schedules matter here, for the
   // "Payments due" roll-up band above the budget table.
@@ -136,16 +145,18 @@ export default function BudgetPage() {
    *  the affected card and shows an inline spinner. Null when idle. */
   const [restoringId, setRestoringId] = useState<number | null>(null);
   async function refresh() {
-    const [linesR, snapsR, coupleR, suppliersR] = await Promise.all([
+    const [linesR, snapsR, coupleR, suppliersR, docsR] = await Promise.all([
       budgetApi.listLines(),
       budgetApi.listSnapshots(),
       coupleApi.current(),
       coupleSupplierApi.list(),
+      budgetDocApi.list(),
     ]);
     setLines(linesR.lines);
     setSnapshots(snapsR.snapshots);
     setCouple(coupleR.couple);
     setCoupleSuppliers(suppliersR.suppliers ?? []);
+    setDocuments(docsR.documents);
     // Seed the slider with the shared cost-planning count if /app/suppliers
     // or a prior session has one stored. Otherwise stay at `null` so the
     // slider defaults to the couple's onboarding target. Hydration moved
@@ -157,6 +168,29 @@ export default function BudgetPage() {
       if (stored !== null) setCount(stored);
     }
   }
+
+  // Re-pull just the documents after an upload / delete — cheaper than a full
+  // refresh and keeps the user's in-flight amount edits untouched.
+  const reloadDocuments = useCallback(async () => {
+    try {
+      const r = await budgetDocApi.list();
+      setDocuments(r.documents);
+    } catch {
+      // Non-fatal — the next full refresh will reconcile.
+    }
+  }, []);
+
+  // Group documents by their scope ('cat:<category>' | 'line:<id>') so each
+  // PaidCell can hand its bill icon the matching subset in O(1).
+  const docsByScope = useMemo(() => {
+    const map = new Map<string, BudgetDocument[]>();
+    for (const doc of documents) {
+      const list = map.get(doc.scope);
+      if (list) list.push(doc);
+      else map.set(doc.scope, [doc]);
+    }
+    return map;
+  }, [documents]);
 
   useEffect(() => {
     refresh();
@@ -946,10 +980,12 @@ export default function BudgetPage() {
                 readOnlyPlanned
                 readOnlyActual={!editable}
                 canDelete={canDelete}
+                scope={`cat:${cat}`}
+                documents={docsByScope.get(`cat:${cat}`) ?? []}
                 onPlannedCommit={(v) => setAggregatedPlanned(cat, v)}
                 onActualCommit={(v) => setAggregatedActual(cat, v)}
                 onPaidCommit={(v) => setAggregatedPaid(cat, v)}
-                onMarkFull={(full) => setAggregatedPaid(cat, full ? actual : 0)}
+                onDocsChanged={reloadDocuments}
                 onDelete={() => removeAllInCategory(cat)}
               />
             );
@@ -962,10 +998,12 @@ export default function BudgetPage() {
                 line={line}
                 currency={currency}
                 locale={locale}
+                scope={`line:${line.id}`}
+                documents={docsByScope.get(`line:${line.id}`) ?? []}
                 onPlannedCommit={(v) => save(line, "planned_huf", v)}
                 onActualCommit={(v) => save(line, "actual_huf", v)}
                 onPaidCommit={(v) => save(line, "paid_huf", v)}
-                onMarkFull={(full) => save(line, "paid_huf", full ? line.actual_huf : 0)}
+                onDocsChanged={reloadDocuments}
                 onDelete={() => removeLine(line.id)}
               />
             ))}
@@ -1054,8 +1092,12 @@ export default function BudgetPage() {
                         paid={bucket?.paid ?? 0}
                         actual={actual}
                         readOnly={!editable}
+                        scope={`cat:${cat}`}
+                        documents={docsByScope.get(`cat:${cat}`) ?? []}
+                        currency={currency}
+                        locale={locale}
                         onCommitAmount={(v) => setAggregatedPaid(cat, v)}
-                        onMarkFull={(full) => setAggregatedPaid(cat, full ? actual : 0)}
+                        onDocsChanged={reloadDocuments}
                       />
                     </td>
                     <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
@@ -1123,8 +1165,12 @@ export default function BudgetPage() {
                           paid={line.paid_huf}
                           actual={line.actual_huf}
                           readOnly={false}
+                          scope={`line:${line.id}`}
+                          documents={docsByScope.get(`line:${line.id}`) ?? []}
+                          currency={currency}
+                          locale={locale}
                           onCommitAmount={(v) => save(line, "paid_huf", v)}
-                          onMarkFull={(full) => save(line, "paid_huf", full ? line.actual_huf : 0)}
+                          onDocsChanged={reloadDocuments}
                         />
                       </td>
                       <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
@@ -1498,51 +1544,386 @@ function CategoryCell({ category }: { category: BudgetCategory }) {
 /** Read-only row that rolls every honeymoon-category line into one entry.
  *  The actual edits happen on /app/honeymoon — the chevron link in the
  *  action cell sends the user there. */
-/** Paid-amount cell: an inline amount input + a colour-coded "fully paid"
- *  toggle. Grey = nothing paid, amber = partial deposit, green = settled.
- *  The toggle marks the line(s) fully paid (paid = actual) or clears to 0. */
-function PaidCell({
-  paid,
-  actual,
-  readOnly,
-  onCommitAmount,
-  onMarkFull,
-}: {
-  paid: number;
-  actual: number;
-  readOnly: boolean;
-  onCommitAmount: (v: number) => void;
-  onMarkFull: (full: boolean) => void;
-}) {
-  const { t } = useT();
-  const state = actual > 0 && paid >= actual ? "paid" : paid > 0 ? "partial" : "unpaid";
+type PaidState = "paid" | "partial" | "unpaid";
+
+/** Small circular gauge that fills clockwise to `pct`. Renders a solid check
+ *  glyph once fully settled. Tone follows the paid state: grey = nothing,
+ *  amber = partial, green = settled. */
+function PercentRing({ pct, state }: { pct: number; state: PaidState }) {
   const tone =
     state === "paid"
       ? "text-emerald-600 dark:text-emerald-400"
       : state === "partial"
         ? "text-amber-600 dark:text-amber-400"
         : "text-ink-300 dark:text-umber-500";
+  if (state === "paid") return <CircleCheck size={18} aria-hidden className={tone} />;
+  const size = 18;
+  const cx = size / 2;
+  const r = 7;
+  const circ = 2 * Math.PI * r;
+  const clamped = Math.max(0, Math.min(100, pct));
+  const dash = (clamped / 100) * circ;
   return (
-    <div className="flex items-center gap-1.5">
-      <HufInput
-        value={paid}
-        onCommit={onCommitAmount}
-        readOnly={readOnly}
-        dataKey="paid"
-        ariaLabel={t("budget.paid")}
-      />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={tone} aria-hidden>
+      <circle cx={cx} cy={cx} r={r} fill="none" stroke="currentColor" strokeWidth={2} opacity={0.25} />
+      {clamped > 0 && (
+        <circle
+          cx={cx}
+          cy={cx}
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circ - dash}`}
+          transform={`rotate(-90 ${cx} ${cx})`}
+        />
+      )}
+    </svg>
+  );
+}
+
+/** Paid cell: two icons, no inline number. The percentage check opens a dialog
+ *  to record how much of the row is settled (enter a % or an exact amount and
+ *  flip between the two); thereafter the check fills to that fraction. The bill
+ *  icon attaches invoices / receipts and shows a count badge. */
+function PaidCell({
+  paid,
+  actual,
+  readOnly,
+  scope,
+  documents,
+  currency,
+  locale,
+  onCommitAmount,
+  onDocsChanged,
+}: {
+  paid: number;
+  actual: number;
+  readOnly: boolean;
+  scope: string;
+  documents: BudgetDocument[];
+  currency: Currency;
+  locale: "hu" | "en";
+  onCommitAmount: (v: number) => void;
+  onDocsChanged: () => void;
+}) {
+  const { t } = useT();
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
+  const pct = actual > 0 ? Math.round((Math.min(paid, actual) / actual) * 100) : 0;
+  const state: PaidState = actual > 0 && paid >= actual ? "paid" : paid > 0 ? "partial" : "unpaid";
+  const docCount = documents.length;
+  return (
+    <div className="flex items-center gap-1">
       <button
         type="button"
         disabled={readOnly || actual === 0}
-        onClick={() => onMarkFull(state !== "paid")}
-        aria-pressed={state === "paid"}
-        aria-label={t("budget.paid_mark_full")}
-        title={t("budget.paid_mark_full")}
-        className={`shrink-0 transition disabled:cursor-not-allowed disabled:opacity-30 ${tone}`}
+        onClick={() => setEntryOpen(true)}
+        aria-label={t("budget.paid_record")}
+        title={actual === 0 ? t("budget.paid_needs_actual") : `${t("budget.paid")}: ${pct}%`}
+        className="inline-flex items-center gap-1 rounded-md px-1 py-1 transition hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-umber-700"
       >
-        <CircleCheck size={18} aria-hidden />
+        <PercentRing pct={pct} state={state} />
+        {state === "partial" && (
+          <span className="text-xs font-medium tabular-nums text-amber-600 dark:text-amber-400">
+            {pct}%
+          </span>
+        )}
       </button>
+      <button
+        type="button"
+        onClick={() => setDocsOpen(true)}
+        aria-label={t("budget.docs_title")}
+        title={t("budget.docs_title")}
+        className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-400 transition hover:bg-paper-100 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+      >
+        <Receipt size={16} aria-hidden />
+        {docCount > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-emerald-600 px-0.5 text-[9px] font-semibold leading-none text-white">
+            {docCount}
+          </span>
+        )}
+      </button>
+      {entryOpen && (
+        <PaidEntryDialog
+          open={entryOpen}
+          onClose={() => setEntryOpen(false)}
+          paid={paid}
+          actual={actual}
+          currency={currency}
+          locale={locale}
+          onCommit={(v) => {
+            onCommitAmount(v);
+            setEntryOpen(false);
+          }}
+        />
+      )}
+      {docsOpen && (
+        <DocumentsDialog
+          open={docsOpen}
+          onClose={() => setDocsOpen(false)}
+          scope={scope}
+          documents={documents}
+          readOnly={readOnly}
+          onChanged={onDocsChanged}
+        />
+      )}
     </div>
+  );
+}
+
+/** Modal that records how much of a budget row is paid. Enter a percentage or
+ *  an exact amount and flip between the two — the opposite value updates live.
+ *  Commits an integer-Forint `paid` clamped to [0, actual]. */
+function PaidEntryDialog({
+  open,
+  onClose,
+  paid,
+  actual,
+  currency,
+  locale,
+  onCommit,
+}: {
+  open: boolean;
+  onClose: () => void;
+  paid: number;
+  actual: number;
+  currency: Currency;
+  locale: "hu" | "en";
+  onCommit: (paidHuf: number) => void;
+}) {
+  const { t } = useT();
+  const startPct = actual > 0 ? Math.round((Math.min(paid, actual) / actual) * 100) : 0;
+  const [mode, setMode] = useState<"pct" | "amount">("pct");
+  const [draft, setDraft] = useState<string>(String(startPct));
+  const num = Number(draft.replace(/[^\d]/g, ""));
+  const safeNum = Number.isFinite(num) ? num : 0;
+  const paidHuf =
+    mode === "pct"
+      ? Math.round((Math.min(100, Math.max(0, safeNum)) / 100) * actual)
+      : Math.min(actual, Math.max(0, safeNum));
+  const pct = actual > 0 ? Math.round((paidHuf / actual) * 100) : 0;
+  const sym = currencySymbol(currency, locale);
+  return (
+    <Dialog
+      open={open}
+      role="dialog"
+      closeOnBackdrop
+      title={t("budget.paid_record")}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn-ghost" onClick={onClose}>
+            {t("common.cancel")}
+          </button>
+          <button type="button" className="btn-primary" onClick={() => onCommit(paidHuf)}>
+            {t("common.save")}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-ink-600 dark:text-umber-200">{t("budget.paid_record_help")}</p>
+        <SegmentedControl
+          ariaLabel={t("budget.paid_unit")}
+          value={mode}
+          onChange={(m) => {
+            // Carry the current value across the flip so the number stays
+            // meaningful (50% becomes the matching amount, and vice versa).
+            if (m === "amount" && mode === "pct") setDraft(String(paidHuf));
+            else if (m === "pct" && mode === "amount") setDraft(String(pct));
+            setMode(m);
+          }}
+          options={[
+            { value: "pct", label: "%" },
+            { value: "amount", label: sym },
+          ]}
+        />
+        <div>
+          {/* biome-ignore lint/a11y/noAutofocus: focusing the only input in a deliberately-opened entry dialog is expected. */}
+          <input
+            type="text"
+            inputMode="numeric"
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
+            className="w-full rounded-lg border border-paper-300 bg-white px-3 py-2 text-lg tabular-nums text-ink-900 outline-none focus:border-blush-400 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
+            aria-label={mode === "pct" ? t("budget.paid_unit_pct") : t("budget.paid_unit_amount")}
+          />
+          <p className="mt-1.5 text-sm text-ink-500 dark:text-umber-300">
+            {mode === "pct" ? `= ${formatMoney(paidHuf, currency, locale)}` : `= ${pct}%`}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {[0, 25, 50, 75, 100].map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => {
+                setMode("pct");
+                setDraft(String(p));
+              }}
+              className="rounded-full border border-paper-300 px-2.5 py-1 text-xs font-medium text-ink-600 transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-600 dark:text-umber-200 dark:hover:text-blush-300"
+            >
+              {p}%
+            </button>
+          ))}
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
+/** Modal listing the invoices / receipts attached to one budget row, with an
+ *  upload control and per-document open / delete. PDFs + images, ≤8 MB each. */
+function DocumentsDialog({
+  open,
+  onClose,
+  scope,
+  documents,
+  readOnly,
+  onChanged,
+}: {
+  open: boolean;
+  onClose: () => void;
+  scope: string;
+  documents: BudgetDocument[];
+  readOnly: boolean;
+  onChanged: () => void;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function onPick(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file after a delete
+    if (!file) return;
+    setBusy(true);
+    try {
+      await budgetDocApi.upload(scope, file);
+      onChanged();
+      toast.success(t("budget.docs_uploaded"));
+    } catch (err) {
+      const code =
+        err instanceof ApiError && err.detail && typeof err.detail === "object"
+          ? (err.detail as { code?: unknown }).code
+          : undefined;
+      toast.error(
+        code === "file_too_large"
+          ? t("budget.docs_too_large")
+          : code === "unsupported_type"
+            ? t("budget.docs_bad_type")
+            : code === "upload_limit"
+              ? t("budget.docs_limit")
+              : t("budget.docs_upload_failed"),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDelete(doc: BudgetDocument) {
+    const ok = await confirm({
+      title: t("budget.docs_delete_confirm_title"),
+      body: doc.file_name,
+      confirmLabel: t("budget.delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await budgetDocApi.remove(doc.id);
+      onChanged();
+    } catch {
+      toast.error(t("budget.docs_upload_failed"));
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      role="dialog"
+      closeOnBackdrop
+      title={t("budget.docs_title")}
+      onClose={onClose}
+      footer={
+        <button type="button" className="btn-ghost" onClick={onClose}>
+          {t("common.close")}
+        </button>
+      }
+    >
+      <div className="space-y-4">
+        {documents.length === 0 ? (
+          <p className="text-sm text-ink-500 dark:text-umber-300">{t("budget.docs_empty")}</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {documents.map((doc) => {
+              const isPdf = doc.mime === "application/pdf";
+              return (
+                <li
+                  key={doc.id}
+                  className="flex items-center gap-2 rounded-lg border border-paper-200 px-2.5 py-2 dark:border-umber-700"
+                >
+                  {isPdf ? (
+                    <FileText size={16} className="shrink-0 text-ink-400 dark:text-umber-300" aria-hidden />
+                  ) : (
+                    <ImageIcon size={16} className="shrink-0 text-ink-400 dark:text-umber-300" aria-hidden />
+                  )}
+                  <a
+                    href={doc.file_path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-w-0 flex-1 items-center gap-1 truncate text-sm text-ink-800 hover:text-blush-700 dark:text-paper-100 dark:hover:text-blush-300"
+                  >
+                    <span className="truncate">{doc.file_name}</span>
+                    <ExternalLink size={12} className="shrink-0 opacity-60" aria-hidden />
+                  </a>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(doc)}
+                      aria-label={t("budget.delete")}
+                      className="shrink-0 text-ink-400 transition hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
+                    >
+                      <Trash2 size={14} aria-hidden />
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {!readOnly && (
+          <div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={onPick}
+            />
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => fileRef.current?.click()}
+              className="inline-flex items-center gap-2 rounded-lg border border-dashed border-paper-300 px-3 py-2 text-sm font-medium text-ink-600 transition hover:border-blush-300 hover:text-blush-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-umber-600 dark:text-umber-200 dark:hover:text-blush-300"
+            >
+              {busy ? (
+                <Loader2 size={16} className="animate-spin" aria-hidden />
+              ) : (
+                <Upload size={16} aria-hidden />
+              )}
+              {t("budget.docs_upload")}
+            </button>
+            <p className="mt-1.5 text-xs text-ink-400 dark:text-umber-300">{t("budget.docs_hint")}</p>
+          </div>
+        )}
+      </div>
+    </Dialog>
   );
 }
 
@@ -1623,10 +2004,12 @@ function BudgetMobileCard({
   readOnlyPlanned,
   readOnlyActual,
   canDelete,
+  scope,
+  documents,
   onPlannedCommit,
   onActualCommit,
   onPaidCommit,
-  onMarkFull,
+  onDocsChanged,
   onDelete,
 }: {
   id: string;
@@ -1639,10 +2022,12 @@ function BudgetMobileCard({
   readOnlyPlanned: boolean;
   readOnlyActual: boolean;
   canDelete: boolean;
+  scope: string;
+  documents: BudgetDocument[];
   onPlannedCommit: (v: number) => void | Promise<void>;
   onActualCommit: (v: number) => void | Promise<void>;
   onPaidCommit: (v: number) => void | Promise<void>;
-  onMarkFull: (full: boolean) => void;
+  onDocsChanged: () => void;
   onDelete: () => void;
 }) {
   const { t } = useT();
@@ -1712,8 +2097,12 @@ function BudgetMobileCard({
               paid={paid}
               actual={actual}
               readOnly={readOnlyActual}
+              scope={scope}
+              documents={documents}
+              currency={currency}
+              locale={locale}
               onCommitAmount={onPaidCommit}
-              onMarkFull={onMarkFull}
+              onDocsChanged={onDocsChanged}
             />
           </dd>
         </div>
@@ -1728,19 +2117,23 @@ function BudgetMobileCustomCard({
   line,
   currency,
   locale,
+  scope,
+  documents,
   onPlannedCommit,
   onActualCommit,
   onPaidCommit,
-  onMarkFull,
+  onDocsChanged,
   onDelete,
 }: {
   line: BudgetLine;
   currency: Currency;
   locale: "hu" | "en";
+  scope: string;
+  documents: BudgetDocument[];
   onPlannedCommit: (v: number) => void | Promise<void>;
   onActualCommit: (v: number) => void | Promise<void>;
   onPaidCommit: (v: number) => void | Promise<void>;
-  onMarkFull: (full: boolean) => void;
+  onDocsChanged: () => void;
   onDelete: () => void;
 }) {
   const { t } = useT();
@@ -1801,8 +2194,12 @@ function BudgetMobileCustomCard({
               paid={line.paid_huf}
               actual={line.actual_huf}
               readOnly={false}
+              scope={scope}
+              documents={documents}
+              currency={currency}
+              locale={locale}
               onCommitAmount={onPaidCommit}
-              onMarkFull={onMarkFull}
+              onDocsChanged={onDocsChanged}
             />
           </dd>
         </div>

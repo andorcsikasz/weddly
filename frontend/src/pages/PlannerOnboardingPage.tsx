@@ -37,22 +37,28 @@ export default function PlannerOnboardingPage() {
   const [clientError, setClientError] = useState("");
 
   useEffect(() => {
-    plannerApi.stats().then((s) => setActivePlan(s.stats.plan)).catch(() => {});
+    plannerApi
+      .stats()
+      .then((s) => setActivePlan(s.stats.plan))
+      .catch(() => {});
 
-    plannerApi.getProfile().then((profile) => {
-      // Pre-fill from saved profile first, then fall back to waitlist registration data.
-      const wl = profile.waitlist_prefill;
-      if (profile.full_name) setFullName(profile.full_name);
-      if (profile.business_name) setBusinessName(profile.business_name);
-      else if (wl?.company_name) setBusinessName(wl.company_name);
-      if (profile.planner_city) setCity(profile.planner_city);
-      else if (wl?.city) setCity(wl.city);
-      if (profile.planner_phone) setPhone(profile.planner_phone);
-      else if (wl?.phone) setPhone(wl.phone);
-      if (profile.planner_website) setWebsite(profile.planner_website);
-      else if (wl?.website) setWebsite(wl.website);
-      if (profile.planner_bio) setBio(profile.planner_bio);
-    }).catch(() => {});
+    plannerApi
+      .getProfile()
+      .then((profile) => {
+        // Pre-fill from saved profile first, then fall back to waitlist registration data.
+        const wl = profile.waitlist_prefill;
+        if (profile.full_name) setFullName(profile.full_name);
+        if (profile.business_name) setBusinessName(profile.business_name);
+        else if (wl?.company_name) setBusinessName(wl.company_name);
+        if (profile.planner_city) setCity(profile.planner_city);
+        else if (wl?.city) setCity(wl.city);
+        if (profile.planner_phone) setPhone(profile.planner_phone);
+        else if (wl?.phone) setPhone(wl.phone);
+        if (profile.planner_website) setWebsite(profile.planner_website);
+        else if (wl?.website) setWebsite(wl.website);
+        if (profile.planner_bio) setBio(profile.planner_bio);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -233,8 +239,7 @@ export default function PlannerOnboardingPage() {
 
               <div>
                 <label htmlFor="po_city" className="field-label">
-                  {t("planner_onboarding.city_label")}{" "}
-                  <span className="text-blush-600">*</span>
+                  {t("planner_onboarding.city_label")} <span className="text-blush-600">*</span>
                 </label>
                 <input
                   id="po_city"
@@ -429,20 +434,12 @@ export default function PlannerOnboardingPage() {
               </button>
               <div className="flex gap-2">
                 {clientStatus !== "ok" && (
-                  <button
-                    type="button"
-                    className="btn-outline"
-                    onClick={() => void handleFinish()}
-                  >
+                  <button type="button" className="btn-outline" onClick={() => void handleFinish()}>
                     {t("planner_onboarding.skip")}
                   </button>
                 )}
                 {clientStatus === "ok" && (
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    onClick={() => void handleFinish()}
-                  >
+                  <button type="button" className="btn-primary" onClick={() => void handleFinish()}>
                     {t("common.next")}
                   </button>
                 )}

@@ -1649,7 +1649,9 @@ function DaysToGoTile({
           {days !== null ? formatNumber(days, locale) : "—"}
         </div>
         <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
-          {days !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
+          {days !== null && goal.exact_date
+            ? goal.exact_date.replace(/-/g, ".")
+            : t("dashboard.kpi_days_tbd")}
         </div>
       </button>
       {editing && (

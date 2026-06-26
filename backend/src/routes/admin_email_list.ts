@@ -31,10 +31,7 @@ function collectEmails(): EmailRow[] {
 
   // ── Registered users ────────────────────────────────────────────────────────
   const users = db
-    .query<
-      { email: string; full_name: string; created_at: number; role: string },
-      []
-    >(
+    .query<{ email: string; full_name: string; created_at: number; role: string }, []>(
       `SELECT email, full_name, created_at, role
        FROM users
        WHERE status != 'suspended'

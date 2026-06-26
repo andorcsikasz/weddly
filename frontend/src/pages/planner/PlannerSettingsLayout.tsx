@@ -29,7 +29,10 @@ export default function PlannerSettingsLayout() {
   const [profile, setProfile] = useState<PlannerProfile | null>(null);
 
   useEffect(() => {
-    plannerApi.getProfile().then(setProfile).catch(() => {});
+    plannerApi
+      .getProfile()
+      .then(setProfile)
+      .catch(() => {});
   }, []);
 
   const initials = profile ? getInitials(profile.full_name, profile.email) : "?";
@@ -90,7 +93,12 @@ export default function PlannerSettingsLayout() {
                 }`
               }
             >
-              {t(tab.labelKey as "planner_profile.tab_account" | "planner_profile.tab_subscription" | "planner_profile.tab_data")}
+              {t(
+                tab.labelKey as
+                  | "planner_profile.tab_account"
+                  | "planner_profile.tab_subscription"
+                  | "planner_profile.tab_data",
+              )}
             </NavLink>
           ))}
         </nav>

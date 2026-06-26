@@ -89,7 +89,9 @@ const PlannerMessagesPage = lazy(() => import("./pages/PlannerMessagesPage"));
 const PlannerProfilePage = lazy(() => import("./pages/PlannerProfilePage"));
 const PlannerSettingsLayout = lazy(() => import("./pages/planner/PlannerSettingsLayout"));
 const PlannerSettingsAccount = lazy(() => import("./pages/planner/PlannerSettingsAccount"));
-const PlannerSettingsSubscription = lazy(() => import("./pages/planner/PlannerSettingsSubscription"));
+const PlannerSettingsSubscription = lazy(
+  () => import("./pages/planner/PlannerSettingsSubscription"),
+);
 const PlannerSettingsData = lazy(() => import("./pages/planner/PlannerSettingsData"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the

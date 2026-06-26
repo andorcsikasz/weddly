@@ -1539,7 +1539,14 @@ function AccountSection({
   onLocaleChange,
   onSaved,
 }: {
-  user: { id: number; email: string; full_name: string; locale: "hu" | "en" | null; role: UserRole; user_type: "couple" | "planner" } | null;
+  user: {
+    id: number;
+    email: string;
+    full_name: string;
+    locale: "hu" | "en" | null;
+    role: UserRole;
+    user_type: "couple" | "planner";
+  } | null;
   t: T;
   locale: Locale;
   onLocaleChange: (next: Locale) => void;
@@ -2196,7 +2203,10 @@ function PlannerPanel({ t }: { t: T }) {
   const [inviteError, setInviteError] = useState("");
 
   useEffect(() => {
-    couplePlannerApi.listPlanners().then((r) => setPlanners(r.planners)).catch(() => {});
+    couplePlannerApi
+      .listPlanners()
+      .then((r) => setPlanners(r.planners))
+      .catch(() => {});
   }, []);
 
   async function handleInvite(e: React.FormEvent) {
@@ -2233,7 +2243,9 @@ function PlannerPanel({ t }: { t: T }) {
       <h2 className="font-grotesk text-lg">{t("couple_planners.heading")}</h2>
 
       {planners.length === 0 ? (
-        <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">{t("couple_planners.empty")}</p>
+        <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
+          {t("couple_planners.empty")}
+        </p>
       ) : (
         <ul className="mt-4 divide-y divide-paper-200 dark:divide-umber-700">
           {planners.map((p) => (
@@ -2259,7 +2271,9 @@ function PlannerPanel({ t }: { t: T }) {
                       : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                   }`}
                 >
-                  {p.status === "active" ? t("couple_planners.status_active") : t("couple_planners.status_pending")}
+                  {p.status === "active"
+                    ? t("couple_planners.status_active")
+                    : t("couple_planners.status_pending")}
                 </span>
                 <button
                   type="button"
@@ -2301,9 +2315,7 @@ function PlannerPanel({ t }: { t: T }) {
         {inviteStatus === "ok" && (
           <p className="mt-2 text-xs text-sage-600">{t("couple_planners.invite_success")}</p>
         )}
-        {inviteStatus === "error" && (
-          <p className="mt-2 text-xs text-red-500">{inviteError}</p>
-        )}
+        {inviteStatus === "error" && <p className="mt-2 text-xs text-red-500">{inviteError}</p>}
       </div>
     </section>
   );

@@ -300,7 +300,10 @@ export function NotificationBell() {
   function toggleOpen() {
     const next = !open;
     setOpen(next);
-    if (!next) { setShowSettings(false); setShowHistory(false); }
+    if (!next) {
+      setShowSettings(false);
+      setShowHistory(false);
+    }
     if (next && unread > 0) {
       setUnread(0);
       setItems((cur) => cur.map((i) => ({ ...i, read: true })));

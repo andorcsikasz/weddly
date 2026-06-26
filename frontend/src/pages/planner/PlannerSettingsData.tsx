@@ -40,11 +40,7 @@ export default function PlannerSettingsData() {
           {t("planner_profile.data_delete_body")}
         </p>
         <div className="mt-4">
-          <button
-            type="button"
-            className="btn-outline text-sm"
-            onClick={() => {}}
-          >
+          <button type="button" className="btn-outline text-sm" onClick={() => {}}>
             {t("planner_profile.data_export_button")}
           </button>
         </div>

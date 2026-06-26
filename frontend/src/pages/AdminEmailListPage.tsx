@@ -174,12 +174,12 @@ export default function AdminEmailListPage() {
               {filtered.map((entry, i) => {
                 const pill = SOURCE_PILL[entry.source_type];
                 return (
-                  <tr key={`${entry.email}-${i}`} className="hover:bg-neutral-50 dark:hover:bg-umber-800/40">
+                  <tr
+                    key={`${entry.email}-${i}`}
+                    className="hover:bg-neutral-50 dark:hover:bg-umber-800/40"
+                  >
                     <td className="px-4 py-3 font-mono text-xs text-neutral-800 dark:text-umber-100">
-                      <a
-                        href={`mailto:${entry.email}`}
-                        className="hover:underline"
-                      >
+                      <a href={`mailto:${entry.email}`} className="hover:underline">
                         {entry.email}
                       </a>
                     </td>

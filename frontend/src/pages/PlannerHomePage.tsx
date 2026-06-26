@@ -348,9 +348,7 @@ function UpcomingTasks({
   const filtered = applyTaskFilters(tasks, filters);
 
   const todayTasks = filtered.filter((tk) => tk.due_date === todayStr);
-  const weekTasks = filtered.filter(
-    (tk) => tk.due_date > todayStr && tk.due_date <= weekEndStr,
-  );
+  const weekTasks = filtered.filter((tk) => tk.due_date > todayStr && tk.due_date <= weekEndStr);
   const laterTasks = filtered.filter((tk) => tk.due_date > weekEndStr);
 
   const priorityDot = (p: number) => {

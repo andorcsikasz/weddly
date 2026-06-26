@@ -63,7 +63,10 @@ export function PlannerDashTopbar({
           </Link>
           {urgentCount > 0 ? (
             <span className="mt-0.5 text-xs text-umber-700 dark:text-paper-200">
-              {"Üdv, " + plannerName + "! · " + t("planner_home.topbar_greeting_urgent").replace("{{n}}", String(urgentCount))}
+              {"Üdv, " +
+                plannerName +
+                "! · " +
+                t("planner_home.topbar_greeting_urgent").replace("{{n}}", String(urgentCount))}
             </span>
           ) : (
             <span className="mt-0.5 text-xs text-umber-700 dark:text-paper-200">

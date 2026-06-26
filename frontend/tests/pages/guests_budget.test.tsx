@@ -336,6 +336,7 @@ function installDefaultEndpoints(
   onGet((u) => u.startsWith("/api/guests/dietary-summary"), { meals: {}, dietary: {} });
   onGet((u) => u.startsWith("/api/guests"), { guests, total: guests.length });
   onGet((u) => u.startsWith("/api/households"), { households });
+  onGet((u) => u.startsWith("/api/budget/documents"), { documents: [] });
   onGet((u) => u.startsWith("/api/budget/lines"), { lines });
   onGet((u) => u.startsWith("/api/budget/snapshots"), { snapshots });
   // AuthProvider's /me probe — return a stub so the provider settles quickly.
