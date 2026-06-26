@@ -526,3 +526,39 @@ export function distanceContextForQuery(
 export function nearbyTownLabel(normalizedQuery: string): string | null {
   return resolveQueryCoords(normalizedQuery)?.city ?? null;
 }
+
+/** Typeahead lookup over the curated town dictionary. Returns canonical
+ *  town labels whose (diacritic-folded) name matches the typed fragment:
+ *  prefix matches first — shortest name wins so "Vác" outranks "Vácrátót" —
+ *  then substring matches, deduped, capped at `limit`. Powers both the
+ *  supplier-search and city-filter typeaheads. The raw (un-normalized)
+ *  query is fine; we fold it here. */
+export function searchTowns(query: string, limit = 7): string[] {
+  const q = normalize(query.trim());
+  if (!q) return [];
+  const seen = new Set<string>();
+  const prefix: string[] = [];
+  const contains: string[] = [];
+  for (const g of METRO_AREAS_HU) {
+    for (const c of g.cities) {
+      const norm = normalize(c.city);
+      if (seen.has(norm)) continue;
+      if (norm.startsWith(q)) {
+        seen.add(norm);
+        prefix.push(c.city);
+      } else if (norm.includes(q)) {
+        contains.push(c.city);
+      }
+    }
+  }
+  prefix.sort((a, b) => a.length - b.length || a.localeCompare(b, "hu"));
+  const out = [...prefix];
+  for (const name of contains) {
+    if (out.length >= limit) break;
+    const norm = normalize(name);
+    if (seen.has(norm)) continue;
+    seen.add(norm);
+    out.push(name);
+  }
+  return out.slice(0, limit);
+}

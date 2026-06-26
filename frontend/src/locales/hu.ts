@@ -3102,6 +3102,10 @@ const hu: LocaleMessages = {
     search_placeholder: "Név, város vagy leírás…",
     city_label: "Város",
     city_all: "Összes város",
+    suggest_city: "Település",
+    suggest_category: "Kategória",
+    suggest_supplier: "Szolgáltató",
+    nearby_plus_km: "+{km} km",
     empty_filtered: "Erre a szűrésre nincs találat. Próbálj más szót vagy várost.",
     load_more: "További {n} betöltése",
     bookedCard: {

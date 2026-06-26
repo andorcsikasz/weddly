@@ -16,6 +16,7 @@ import {
   metroKeysForQuery,
   NEARBY_RADIUS_KM,
   nearbyTownLabel,
+  searchTowns,
 } from "@/lib/hu_metro_areas";
 
 describe("metroKeysForCity", () => {
@@ -52,6 +53,32 @@ describe("metroKeysForQuery", () => {
 
   it("returns an empty array for an unknown query", () => {
     expect(metroKeysForQuery("xyzzy")).toEqual([]);
+  });
+});
+
+describe("searchTowns — typeahead lookup", () => {
+  it("prefix-matches and prefers the shorter name", () => {
+    const out = searchTowns("vác", 7);
+    // "Vác" should outrank "Vácrátót" (shortest prefix match wins).
+    expect(out[0]).toBe("Vác");
+    expect(out).toContain("Vácrátót");
+  });
+
+  it("is diacritic- and case-insensitive", () => {
+    expect(searchTowns("BUDA", 7)).toContain("Budapest");
+    expect(searchTowns("erd", 7)).toContain("Érd");
+  });
+
+  it("respects the limit and dedupes", () => {
+    const out = searchTowns("a", 5);
+    expect(out.length).toBeLessThanOrEqual(5);
+    expect(new Set(out).size).toBe(out.length);
+  });
+
+  it("returns nothing for an empty or unknown fragment", () => {
+    expect(searchTowns("", 7)).toEqual([]);
+    expect(searchTowns("   ", 7)).toEqual([]);
+    expect(searchTowns("zzzzqq", 7)).toEqual([]);
   });
 });
 

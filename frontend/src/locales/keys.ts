@@ -3438,6 +3438,13 @@ export interface LocaleMessages {
     /** City select / filter. */
     city_label: string;
     city_all: string;
+    /** Type tags on the supplier-search typeahead rows. */
+    suggest_city: string;
+    suggest_category: string;
+    suggest_supplier: string;
+    /** "+N km" suffix on the city filter when the typed town has no listing
+     *  of its own and results come from the surrounding radius. */
+    nearby_plus_km: string;
     /** Empty result state when search/city filters out everything. */
     empty_filtered: string;
     /** "Load more" button under the grid; {n} = how many more are hidden. */

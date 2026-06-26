@@ -3063,6 +3063,10 @@ const en: LocaleMessages = {
     search_placeholder: "Name, city, or description…",
     city_label: "City",
     city_all: "All cities",
+    suggest_city: "Town",
+    suggest_category: "Category",
+    suggest_supplier: "Supplier",
+    nearby_plus_km: "+{km} km",
     empty_filtered: "No suppliers match this search. Try a different word or city.",
     load_more: "Load {n} more",
     bookedCard: {
