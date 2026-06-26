@@ -86,6 +86,10 @@ export interface Listing {
  */
 export interface VendorAccount {
   id: number;
+  /** Public vendor reference code — "V" + 5 digits (e.g. `V09134`). Stable per
+   *  account, globally unique, shown in support / admin contexts. Null only on
+   *  legacy rows until the one-time boot backfill fills them in. */
+  vendor_code: string | null;
   owner_user_id: number;
   display_name: string;
   contact_email: string | null;

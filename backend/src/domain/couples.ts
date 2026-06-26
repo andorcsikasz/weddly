@@ -33,6 +33,7 @@ import type {
   WeddingStyleTag,
 } from "@shared/types";
 import { billingEnforcementOn, db } from "../db";
+import { generateOrganiserCode } from "./invite_codes";
 import { isAdminEmail } from "./users";
 
 const VALID_SUBSCRIPTION_STATUSES: ReadonlySet<SubscriptionStatus> = new Set(SUBSCRIPTION_STATUSES);
@@ -109,6 +110,7 @@ export interface CoupleRow {
   bride_name: string;
   groom_name: string;
   slug: string | null;
+  organiser_code: string | null;
   wedding_date: string | null;
   wedding_date_kind: string | null;
   wedding_target_year: number | null;
@@ -358,6 +360,7 @@ export function toCouple(row: CoupleRow): Couple {
     bride_name: row.bride_name,
     groom_name: row.groom_name,
     slug: row.slug,
+    organiser_code: row.organiser_code,
     wedding_date_goal: rowToDateGoal(row),
     wedding_date: row.wedding_date,
     previous_wedding_date: row.previous_wedding_date,
@@ -432,6 +435,34 @@ export function getCoupleById(id: number): CoupleRow | null {
   return (
     (db.prepare("SELECT * FROM couples WHERE id = ?").get(id) as CoupleRow | undefined) ?? null
   );
+}
+
+/** Generates a globally-unique organiser reference code ("O" + 5 digits),
+ *  retrying on the (vanishingly rare) collision and bailing loudly if the
+ *  space ever saturates. Mirrors the household-code uniqueness pattern. */
+export function uniqueOrganiserCode(): string {
+  const stmt = db.prepare("SELECT 1 FROM couples WHERE organiser_code = ?");
+  for (let attempt = 0; attempt < 64; attempt++) {
+    const code = generateOrganiserCode();
+    if (!stmt.get(code)) return code;
+  }
+  throw new Error("Could not generate a unique organiser code");
+}
+
+/** Assigns an organiser_code to a freshly-created couple. Idempotent: leaves
+ *  an already-coded row untouched so re-runs / double calls are safe. */
+export function assignOrganiserCode(coupleId: number, ts: number): string {
+  const existing = db
+    .prepare("SELECT organiser_code FROM couples WHERE id = ?")
+    .get(coupleId) as { organiser_code: string | null } | undefined;
+  if (existing?.organiser_code) return existing.organiser_code;
+  const code = uniqueOrganiserCode();
+  db.prepare("UPDATE couples SET organiser_code = ?, updated_at = ? WHERE id = ?").run(
+    code,
+    ts,
+    coupleId,
+  );
+  return code;
 }
 
 /** The workspace a user is currently viewing — same semantics as before.

@@ -273,6 +273,37 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     expect(explOnboard.data.couple.currency).toBe("USD");
   });
 
+  test("onboard mints a public organiser_code ('O' + 5 digits), stable on re-read", async () => {
+    wipeAll();
+    const reg = await req<RegisterResp>("POST", "/api/auth/register", {
+      email: "org-code@weddly.test",
+      password: "supersafe123",
+      full_name: "Org Code",
+    });
+    expect(reg.status).toBe(201);
+    await verifyUserEmail("org-code@weddly.test");
+
+    const onboard = await req<{ couple: { organiser_code: string | null } }>(
+      "POST",
+      "/api/couples/onboard",
+      { bride_name: "Anna", groom_name: "Bence" },
+      { token: reg.data.token },
+    );
+    expect(onboard.status).toBe(201);
+    const code = onboard.data.couple.organiser_code;
+    expect(code).toMatch(/^O\d{5}$/);
+
+    // The code is stored, not regenerated per read — /api/couples/current agrees.
+    const current = await req<{ couple: { organiser_code: string | null } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token: reg.data.token },
+    );
+    expect(current.status).toBe(200);
+    expect(current.data.couple.organiser_code).toBe(code);
+  });
+
   test("past wedding_date is accepted (eloping-after-the-fact)", async () => {
     wipeAll();
     const { token } = await freshUserNoCouple("past-date@weddly.test");

@@ -60,6 +60,7 @@ export interface ListingRow {
 
 export interface VendorAccountRow {
   id: number;
+  vendor_code: string | null;
   owner_user_id: number;
   display_name: string;
   contact_email: string | null;
@@ -121,6 +122,7 @@ export function toListing(row: ListingRow): Listing {
 export function toVendorAccount(row: VendorAccountRow): VendorAccount {
   return {
     id: row.id,
+    vendor_code: row.vendor_code,
     owner_user_id: row.owner_user_id,
     display_name: row.display_name,
     contact_email: row.contact_email,

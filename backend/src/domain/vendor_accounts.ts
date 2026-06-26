@@ -9,9 +9,11 @@
 
 import type { VendorAccount } from "@shared/listings";
 import { db, now } from "../db";
+import { generateVendorCode } from "./invite_codes";
 
 export interface VendorAccountRow {
   id: number;
+  vendor_code: string | null;
   owner_user_id: number;
   display_name: string;
   contact_email: string | null;
@@ -24,6 +26,7 @@ export interface VendorAccountRow {
 export function toVendorAccount(row: VendorAccountRow): VendorAccount {
   return {
     id: row.id,
+    vendor_code: row.vendor_code,
     owner_user_id: row.owner_user_id,
     display_name: row.display_name,
     contact_email: row.contact_email,
@@ -47,15 +50,28 @@ export interface CreateVendorAccountInput {
  *  owner_user_id makes the call idempotent for that user — a second call
  *  with the same userId will fail with a UNIQUE error, which surfaces a
  *  clean "already a vendor" path at the route layer). */
+/** Generates a globally-unique vendor reference code ("V" + 5 digits),
+ *  retrying on the (vanishingly rare) collision and bailing loudly if the
+ *  space ever saturates. Mirrors the household-code uniqueness pattern. */
+export function uniqueVendorCode(): string {
+  const stmt = db.prepare("SELECT 1 FROM vendor_accounts WHERE vendor_code = ?");
+  for (let attempt = 0; attempt < 64; attempt++) {
+    const code = generateVendorCode();
+    if (!stmt.get(code)) return code;
+  }
+  throw new Error("Could not generate a unique vendor code");
+}
+
 export function createVendorAccount(input: CreateVendorAccountInput): VendorAccountRow {
   const ts = now();
   const r = db
     .prepare(
       `INSERT INTO vendor_accounts
-         (owner_user_id, display_name, contact_email, contact_phone, vat_number, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (vendor_code, owner_user_id, display_name, contact_email, contact_phone, vat_number, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
+      uniqueVendorCode(),
       input.ownerUserId,
       input.displayName,
       input.contactEmail ?? null,

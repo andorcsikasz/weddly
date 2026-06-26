@@ -7,6 +7,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { partnerFreeWindowEnd } from "@shared/billing";
 import { CONFIG } from "./config";
+import { generateOrganiserCode, generateVendorCode } from "./domain/invite_codes";
 
 try {
   mkdirSync(dirname(CONFIG.dbPath), { recursive: true });
@@ -1270,3 +1271,50 @@ addColumnIfMissing("users", "planner_phone", "planner_phone TEXT");
 addColumnIfMissing("users", "planner_max_clients", "planner_max_clients INTEGER DEFAULT 4");
 addColumnIfMissing("users", "planner_plan", "planner_plan TEXT DEFAULT 'starter'");
 addColumnIfMissing("users", "planner_onboarding_done", "planner_onboarding_done INTEGER DEFAULT 0");
+
+// Public reference codes for the two principal parties — organisers (couples)
+// get "O" + 5 digits, vendors get "V" + 5 digits. New rows are assigned a code
+// at creation time (routes/couples.ts onboarding, domain/vendor_accounts.create);
+// pre-existing rows get backfilled once on boot below.
+addColumnIfMissing("couples", "organiser_code", "organiser_code TEXT");
+addColumnIfMissing("vendor_accounts", "vendor_code", "vendor_code TEXT");
+// Uniqueness indexes live here (not schema.sql) per the May 2026 ordering rule —
+// the column must exist before the index that references it. Partial so the
+// pre-backfill NULLs don't collide with each other.
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_couples_organiser_code ON couples(organiser_code) WHERE organiser_code IS NOT NULL",
+);
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_accounts_vendor_code ON vendor_accounts(vendor_code) WHERE vendor_code IS NOT NULL",
+);
+
+backfillReferenceCodes();
+function backfillReferenceCodes(): void {
+  // One-time fill for rows that pre-date the columns. Runs at boot before any
+  // concurrent writers, so a plain generate-check-insert loop is collision-safe.
+  for (const spec of [
+    { table: "couples", column: "organiser_code", gen: generateOrganiserCode },
+    { table: "vendor_accounts", column: "vendor_code", gen: generateVendorCode },
+  ] as const) {
+    const missing = db
+      .query(`SELECT id FROM ${spec.table} WHERE ${spec.column} IS NULL`)
+      .all() as { id: number }[];
+    if (missing.length === 0) continue;
+    const check = db.prepare(`SELECT 1 FROM ${spec.table} WHERE ${spec.column} = ?`);
+    const update = db.prepare(`UPDATE ${spec.table} SET ${spec.column} = ? WHERE id = ?`);
+    db.transaction(() => {
+      for (const r of missing) {
+        let code = "";
+        for (let attempt = 0; attempt < 64; attempt++) {
+          code = spec.gen();
+          if (!check.get(code)) break;
+          code = "";
+        }
+        if (!code) throw new Error(`Could not backfill a unique ${spec.column}`);
+        // updated_at intentionally left untouched — a backfill is not an edit.
+        update.run(code, r.id);
+      }
+    })();
+    console.log(`[db.backfill] assigned ${spec.column} to ${missing.length} ${spec.table} row(s)`);
+  }
+}

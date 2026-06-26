@@ -67,6 +67,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import {
   addCoupleMember,
+  assignOrganiserCode,
   type CoupleRow,
   getCoupleById,
   getCoupleForUser,
@@ -659,6 +660,10 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
       ts,
       newCoupleId,
     );
+
+    // Public organiser reference code ("O" + 5 digits) — assigned from minute
+    // zero alongside the slug so support / admin always have a stable handle.
+    assignOrganiserCode(newCoupleId, ts);
 
     // Record who referred this couple (drives the reward on partner B join).
     // Self-referral guard: a couple can't refer themselves.
@@ -3059,6 +3064,7 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
   const coupleId = Number(result.lastInsertRowid);
   const slug = uniqueCoupleSlug(deriveSlugBase(brideName, groomName, displayName), coupleId);
   db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(slug, ts, coupleId);
+  assignOrganiserCode(coupleId, ts);
 
   if (ceremonyKind) {
     db.prepare("UPDATE couples SET ceremony_kind = ?, updated_at = ? WHERE id = ?").run(

@@ -18,6 +18,32 @@ export function generateInviteToken(): string {
   return randomBytes(24).toString("hex");
 }
 
+/** Public reference codes for the two principal parties: organisers (couples)
+ *  get "O" + 5 digits, vendors get "V" + 5 digits — e.g. `O48217`, `V09134`.
+ *  Numeric-only after the prefix so they're easy to read aloud / type into a
+ *  support form. The 5-digit space (100k) is far larger than the current user
+ *  base; collisions are handled by a retry loop at the call site (see
+ *  `uniqueOrganiserCode` / `uniqueVendorCode`), which throws loudly if it ever
+ *  saturates rather than silently reusing a code. */
+const PUBLIC_REF_DIGITS = 5;
+
+function randomDigits(n: number): string {
+  const bytes = randomBytes(n);
+  let out = "";
+  for (let i = 0; i < n; i++) {
+    out += String(bytes[i]! % 10);
+  }
+  return out;
+}
+
+export function generateOrganiserCode(): string {
+  return `O${randomDigits(PUBLIC_REF_DIGITS)}`;
+}
+
+export function generateVendorCode(): string {
+  return `V${randomDigits(PUBLIC_REF_DIGITS)}`;
+}
+
 /** Household check-in code — Crockford base32, 8 chars (~40 bits of entropy).
  *  Bumped from the legacy 4-digit form in May 2026 because the share-with-
  *  guests workflow leaks the code into URLs the couple texts around, and a

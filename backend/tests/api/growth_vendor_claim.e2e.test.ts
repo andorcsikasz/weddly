@@ -349,12 +349,14 @@ describe("P2.C vendor claim — happy path", () => {
     expect(listing?.vendor_account_id).not.toBeNull();
 
     const account = db
-      .prepare("SELECT owner_user_id, display_name FROM vendor_accounts WHERE id = ?")
+      .prepare("SELECT owner_user_id, display_name, vendor_code FROM vendor_accounts WHERE id = ?")
       .get(listing!.vendor_account_id) as
-      | { owner_user_id: number; display_name: string }
+      | { owner_user_id: number; display_name: string; vendor_code: string | null }
       | undefined;
     expect(account?.display_name).toBe("Claim Photo Studio");
     expect(account?.owner_user_id).toBe(complete.data.user.id);
+    // Public vendor reference code is minted on account creation: "V" + 5 digits.
+    expect(account?.vendor_code).toMatch(/^V\d{5}$/);
 
     const finalClaim = db
       .prepare("SELECT status, verified_at, vendor_account_id FROM listing_claims WHERE id = ?")

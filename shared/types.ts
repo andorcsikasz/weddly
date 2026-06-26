@@ -477,6 +477,10 @@ export interface Couple {
    *  `households.code` to form the airport-style RSVP credential. May be
    *  null briefly between onboarding and the slug backfill. */
   slug: string | null;
+  /** Public organiser reference code — "O" + 5 digits (e.g. `O48217`). Stable
+   *  per couple, globally unique, shown in support / admin contexts. Null on
+   *  legacy rows that pre-date the column until the one-time boot backfill. */
+  organiser_code: string | null;
   /** Structured wedding-date goal — handles "Summer 2027" / "TBD" / exact dates. */
   wedding_date_goal: WeddingDateGoal;
   /** Back-compat shortcut. Equal to wedding_date_goal.exact_date. */
