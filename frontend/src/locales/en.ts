@@ -876,8 +876,7 @@ const en: LocaleMessages = {
   },
   landing: {
     hero_title: "Your whole\nwedding,\nin one place.",
-    hero_sub:
-      "Budget, guest list, RSVP, seating chart and your own wedding site. Both of you see the same picture, in real time.",
+    hero_sub: "",
     cta_signup: "Start planning",
     cta_login: "Sign in",
     cta_open_app: "Login",
