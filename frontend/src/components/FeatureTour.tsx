@@ -472,8 +472,16 @@ export function FeatureTour({ open, onClose }: Props) {
       aria-label={t("tour.aria_label")}
       className="fixed inset-0 z-[90]"
     >
-      {/* Dim backdrop */}
-      <div className="absolute inset-0 bg-ink-900/60" onClick={onClose} />
+      {/* Dim backdrop. When a target is spotlighted, the cutout div below dims
+          the whole screen via its huge box-shadow spread and leaves the target
+          as a bright hole — so we keep this layer transparent (click-to-close
+          only). Painting bg-ink-900/60 here too would re-dim the spotlighted
+          element, so the "highlighted place" never reads as fully bright.
+          Without a spotlight (centered card) we still need the full dim. */}
+      <div
+        className={`absolute inset-0 ${spotStyle ? "" : "bg-ink-900/60"}`}
+        onClick={onClose}
+      />
 
       {/* Spotlight cutout + ring */}
       {spotStyle && (

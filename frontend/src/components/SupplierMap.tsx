@@ -24,7 +24,7 @@ const PIN_STYLE = {
     color: "#fbfaf5", // paper-50
     weight: 2,
     opacity: 1,
-    fillOpacity: 0.95,
+    fillOpacity: 1,
   },
   hover: {
     fillColor: "#bf4a30", // blush-600

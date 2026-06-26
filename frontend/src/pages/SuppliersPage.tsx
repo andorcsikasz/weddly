@@ -93,7 +93,9 @@ import {
   metroKeysForQuery,
   NEARBY_RADIUS_KM,
   nearbyTownLabel,
+  searchTowns,
 } from "../lib/hu_metro_areas";
+import { Combobox, type ComboOption } from "../components/Combobox";
 import {
   readSelection,
   type SelectionMap,
@@ -153,6 +155,16 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
  *  sweets, cake and drink quantities from the guest count, so it surfaces only
  *  when one of these food/drink categories is the active filter. */
 const CALC_CATEGORIES = new Set<SupplierCategory>(["cake_dessert", "bar_drinks", "catering"]);
+
+/** Flat category list + its parent-group index, derived once from the group
+ *  table — powers the search typeahead's category suggestions and lets a
+ *  picked category jump straight to the right chain step. */
+const ALL_CATEGORIES: SupplierCategory[] = SUPPLIER_GROUPS.flatMap((g) => g.categories);
+const CATEGORY_GROUP: Record<SupplierCategory, SupplierGroup> = (() => {
+  const m = {} as Record<SupplierCategory, SupplierGroup>;
+  for (const g of SUPPLIER_GROUPS) for (const c of g.categories) m[c] = g.id;
+  return m;
+})();
 
 /** Diacritic-folded lower-case for case- and accent-insensitive matching. */
 function normalize(s: string): string {
@@ -310,6 +322,13 @@ export default function SuppliersPage() {
     else p.delete("city");
     setParams(p, { replace: true });
   }
+  // Editable text mirror of the committed `cityFilter` (which lives in the
+  // URL). Free typing updates only this; the filter commits on select/clear.
+  // Re-syncs whenever the URL value changes (back-button, deep link).
+  const [cityInput, setCityInput] = useState(cityFilter);
+  useEffect(() => {
+    setCityInput(cityFilter);
+  }, [cityFilter]);
   function toggleSavedFilter() {
     const p = new URLSearchParams(params);
     if (showSavedOnly) p.delete("saved");
@@ -526,6 +545,112 @@ export default function SuppliersPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b, locale === "hu" ? "hu" : "en"));
   }, [items, locale]);
 
+  // Google-style suggestions for the free-text bar: a short mixed list of
+  // matching towns, categories, and supplier names. Selecting a row routes to
+  // the right action (fill the query, jump to a card, or apply a category).
+  const searchSuggestions = useMemo<ComboOption[]>(() => {
+    const raw = query.trim();
+    const qn = normalize(raw);
+    if (qn.length < 2) return [];
+    const out: ComboOption[] = [];
+
+    // Towns: real supplier cities first, then dictionary towns nearby.
+    const citySeen = new Set<string>();
+    for (const c of cities) {
+      if (out.filter((o) => o.id.startsWith("city:")).length >= 3) break;
+      if (normalize(c).includes(qn)) {
+        citySeen.add(normalize(c));
+        out.push({ id: `city:${c}`, label: c, icon: MapPin, hint: t("suppliers.suggest_city") });
+      }
+    }
+    for (const town of searchTowns(raw, 8)) {
+      if (out.filter((o) => o.id.startsWith("city:")).length >= 3) break;
+      if (!citySeen.has(normalize(town))) {
+        citySeen.add(normalize(town));
+        out.push({
+          id: `city:${town}`,
+          label: town,
+          icon: MapPin,
+          hint: t("suppliers.suggest_city"),
+        });
+      }
+    }
+
+    // Categories (localized labels).
+    let catCount = 0;
+    for (const c of ALL_CATEGORIES) {
+      if (catCount >= 2) break;
+      const label = t(`suppliers.cat.${c}`);
+      if (normalize(label).includes(qn)) {
+        out.push({
+          id: `cat:${c}`,
+          label,
+          icon: CATEGORY_ICON[c],
+          hint: t("suppliers.suggest_category"),
+        });
+        catCount++;
+      }
+    }
+
+    // Supplier names.
+    let supCount = 0;
+    for (const s of items) {
+      if (supCount >= 3) break;
+      if (normalize(s.name).includes(qn)) {
+        out.push({
+          id: `sup:${s.id}`,
+          label: s.name,
+          icon: Store,
+          hint: s.city ?? t("suppliers.suggest_supplier"),
+        });
+        supCount++;
+      }
+    }
+
+    return out.slice(0, 7);
+  }, [query, cities, items, t]);
+
+  // Town suggestions for the city filter: supplier cities first, then the
+  // wider dictionary so couples can pick a settlement with no listing of its
+  // own (and get the radius fallback).
+  const cityOptions = useMemo<ComboOption[]>(() => {
+    const raw = cityInput.trim();
+    const qn = normalize(raw);
+    if (qn.length < 1) return [];
+    const seen = new Set<string>();
+    const out: ComboOption[] = [];
+    for (const c of cities) {
+      if (out.length >= 7) break;
+      if (normalize(c).includes(qn)) {
+        seen.add(normalize(c));
+        out.push({ id: c, label: c, icon: MapPin });
+      }
+    }
+    for (const town of searchTowns(raw, 12)) {
+      if (out.length >= 7) break;
+      if (!seen.has(normalize(town))) {
+        seen.add(normalize(town));
+        out.push({ id: town, label: town, icon: MapPin });
+      }
+    }
+    return out;
+  }, [cityInput, cities]);
+
+  // When the committed town has no supplier of its own, the distance (rounded
+  // up to 5 km) to the nearest in-radius result — shown as a "+N km" suffix.
+  const cityNearbyKm = useMemo<number | null>(() => {
+    if (!cityFilter) return null;
+    if (items.some((s) => s.city === cityFilter)) return null;
+    const qn = normalize(cityFilter);
+    let min = Number.POSITIVE_INFINITY;
+    for (const s of items) {
+      const km = distanceKmForQuery(qn, s.city, { lat: s.lat, lng: s.lng });
+      if (km != null && km <= NEARBY_RADIUS_KM && km < min) min = km;
+    }
+    if (!Number.isFinite(min)) return null;
+    return Math.max(5, Math.ceil(min / 5) * 5);
+  }, [cityFilter, items]);
+
   // Items after all the non-category filters (city, saved, price, guests,
   // free-text). Used twice: as the base for the displayed list AND to compute
   // counts for the chain steps + sub-category pills — pills show "how many
@@ -536,7 +661,21 @@ export default function SuppliersPage() {
   // (they don't have those fields); the free-text search hits name + notes.
   const filteredBeforeCategory = useMemo<(DirectorySupplier | CoupleSupplier)[]>(() => {
     let dir = items;
-    if (cityFilter) dir = dir.filter((s) => s.city === cityFilter);
+    if (cityFilter) {
+      // Exact-town match is the common case. When the typed settlement has no
+      // supplier of its own but is a known town, widen to a radius match so
+      // the user still sees the nearest options (the field shows "+N km").
+      const exact = dir.filter((s) => s.city === cityFilter);
+      if (exact.length > 0) {
+        dir = exact;
+      } else {
+        const qn = normalize(cityFilter);
+        dir = dir.filter((s) => {
+          const km = distanceKmForQuery(qn, s.city, { lat: s.lat, lng: s.lng });
+          return km != null && km <= NEARBY_RADIUS_KM;
+        });
+      }
+    }
     if (showSavedOnly) dir = dir.filter((s) => saved.has(s.id));
     if (showPickedOnly) {
       const pickedIds = new Set(Object.values(selection));
@@ -758,6 +897,22 @@ export default function SuppliersPage() {
     setActiveCat(cat);
   }
 
+  // Route a picked search suggestion to the right action: a supplier jumps to
+  // its card, a category pins the chain filter, a town fills the query (the
+  // existing metro/radius search takes it from there).
+  function onSearchSuggestion(option: ComboOption) {
+    const [kind, ...rest] = option.id.split(":");
+    const payload = rest.join(":");
+    if (kind === "sup") {
+      navigate(`/app/suppliers/${encodeURIComponent(payload)}`);
+    } else if (kind === "cat") {
+      filterByCategory(payload as SupplierCategory);
+      setQuery("");
+    } else {
+      setQuery(payload);
+    }
+  }
+
   return (
     <>
       <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -818,38 +973,42 @@ export default function SuppliersPage() {
           look of the "Mentett" toggle so the row reads as one quiet
           control surface rather than competing heavyweight fields. */}
       <div data-tour-target="vendors-search" className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="relative flex-1 min-w-[14rem]">
-          <span className="sr-only">{t("suppliers.search_label")}</span>
-          <Search
-            size={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-            aria-hidden
-          />
-          <input
-            type="search"
-            className="h-9 w-full rounded-full border border-umber-600 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
-            placeholder={t("suppliers.search_placeholder")}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label={t("suppliers.search_label")}
-          />
-        </label>
-        <label className="flex items-center gap-2">
-          <span className="sr-only">{t("suppliers.city_label")}</span>
-          <select
-            className="h-9 min-w-[10rem] rounded-full border border-umber-600 px-3 text-sm text-ink-800 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
-            value={cityFilter}
-            onChange={(e) => setCityFilter(e.target.value)}
-            aria-label={t("suppliers.city_label")}
-          >
-            <option value="">{t("suppliers.city_all")}</option>
-            {cities.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Combobox
+          className="min-w-[14rem] flex-1"
+          value={query}
+          onChange={setQuery}
+          onSelect={onSearchSuggestion}
+          options={searchSuggestions}
+          ariaLabel={t("suppliers.search_label")}
+          placeholder={t("suppliers.search_placeholder")}
+          leadingIcon={Search}
+          onClear={() => setQuery("")}
+          inputClassName="h-9 w-full rounded-full border border-umber-600 pl-9 pr-9 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
+        />
+        <Combobox
+          className="w-full sm:w-60"
+          value={cityInput}
+          onChange={(v) => {
+            setCityInput(v);
+            if (v.trim() === "") setCityFilter("");
+          }}
+          onSelect={(opt) => {
+            setCityFilter(opt.id);
+            setCityInput(opt.label);
+          }}
+          options={cityOptions}
+          ariaLabel={t("suppliers.city_label")}
+          placeholder={t("suppliers.city_all")}
+          leadingIcon={MapPin}
+          onClear={() => {
+            setCityFilter("");
+            setCityInput("");
+          }}
+          suffix={
+            cityNearbyKm != null ? t("suppliers.nearby_plus_km", { km: cityNearbyKm }) : undefined
+          }
+          inputClassName="h-9 w-full rounded-full border border-umber-600 pl-9 pr-20 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
+        />
         <button
           type="button"
           onClick={toggleSavedFilter}
@@ -1234,21 +1393,27 @@ export default function SuppliersPage() {
       })()}
 
       {viewMode === "map" ? (
-        <Suspense
-          fallback={
-            <Skeleton
-              variant="block"
-              rounded="2xl"
-              className="w-full"
-              style={{ height: "70vh", minHeight: "480px" }}
-              aria-label={t("common.loading")}
+        // Same tour target as the grid/list container so the feature tour's
+        // "vendors-list" steps still have something to spotlight in map view —
+        // otherwise steps 2-3 find no element and the card drifts to center
+        // with no highlight (the "compass not fully functional" report).
+        <div data-tour-target="vendors-list">
+          <Suspense
+            fallback={
+              <Skeleton
+                variant="block"
+                rounded="2xl"
+                className="w-full"
+                style={{ height: "70vh", minHeight: "480px" }}
+                aria-label={t("common.loading")}
+              />
+            }
+          >
+            <SupplierMap
+              suppliers={filtered.filter((s): s is DirectorySupplier => s.source !== "self")}
             />
-          }
-        >
-          <SupplierMap
-            suppliers={filtered.filter((s): s is DirectorySupplier => s.source !== "self")}
-          />
-        </Suspense>
+          </Suspense>
+        </div>
       ) : (
         <>
           {/* "Már foglaltam" card. Only appears once the couple has narrowed
