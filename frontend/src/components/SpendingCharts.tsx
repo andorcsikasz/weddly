@@ -289,7 +289,7 @@ export function SpendingCharts({
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Paid-vs-planned progress ring. */}
         <Card title={t("dashboard.charts.paid_title")}>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
             <Donut
               segments={[
                 { key: "paid", value: paid, colorClass: "stroke-sage-500 dark:stroke-sage-400" },
@@ -304,7 +304,7 @@ export function SpendingCharts({
                 {t("dashboard.charts.paid_center")}
               </span>
             </Donut>
-            <div className="min-w-0 flex-1 space-y-2">
+            <div className="w-full min-w-0 space-y-2 sm:flex-1">
               <StatRow
                 label={t("dashboard.charts.paid_label")}
                 value={formatMoney(paid, currency, locale)}
@@ -329,7 +329,7 @@ export function SpendingCharts({
               {t("dashboard.charts.distribution_empty")}
             </p>
           ) : (
-            <div className="flex items-center gap-5">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
               <Donut
                 segments={slices.map((s) => ({
                   key: s.key,
@@ -344,7 +344,7 @@ export function SpendingCharts({
                   {t("dashboard.charts.planned_label")}
                 </span>
               </Donut>
-              <ul className="min-w-0 flex-1 space-y-1.5">
+              <ul className="w-full min-w-0 space-y-1.5 sm:flex-1">
                 {(() => {
                   const pcts = percentagesTo100(
                     slices.map((s) => s.amount),
