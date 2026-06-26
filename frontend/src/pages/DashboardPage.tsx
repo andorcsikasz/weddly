@@ -75,7 +75,6 @@ import {
   formatHufCompact,
   formatMoney,
   formatNumber,
-  formatWeddingDateGoal,
   isPlausibleDateIso,
   todayIso,
 } from "../lib/format";
@@ -795,7 +794,6 @@ export default function DashboardPage() {
           <h1 className="font-grotesk text-3xl sm:text-4xl break-words hyphens-auto">
             {couple.display_name}
           </h1>
-          <EditableWeddingDate goal={couple.wedding_date_goal} onSave={saveWeddingDate} />
         </div>
       </header>
 
@@ -1634,7 +1632,7 @@ function DaysToGoTile({
       className="card relative p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
     >
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-50 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50 text-ink-700 dark:bg-umber-700/60 dark:text-paper-100">
           <CalendarHeart size={14} aria-hidden="true" />
         </span>
         {label}
@@ -1653,11 +1651,6 @@ function DaysToGoTile({
         <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
           {days !== null ? t("dashboard.kpi_days_unit") : t("dashboard.kpi_days_tbd")}
         </div>
-        {goal.exact_date && (
-          <div className="mt-0.5 text-xs text-ink-400 dark:text-umber-400">
-            {formatDate(goal.exact_date, locale)}
-          </div>
-        )}
       </button>
       {editing && (
         <CalendarPicker
@@ -1859,84 +1852,6 @@ function IconNavLink({ to, icon, label }: { to: string; icon: JSX.Element; label
     >
       {icon}
     </Link>
-  );
-}
-
-/** Wedding-date label that swaps to a native date picker on click. Picking a
- *  date saves it as kind='exact' (so a fuzzy "Summer 2027" goal becomes
- *  concrete the moment the user commits). Esc cancels; blur exits without
- *  saving when no change. */
-function EditableWeddingDate({
-  goal,
-  onSave,
-}: {
-  goal: WeddingDateGoal;
-  onSave: (next: WeddingDateGoal) => Promise<void>;
-}) {
-  const { t, locale } = useT();
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const dateText = formatWeddingDateGoal(goal, { t, locale });
-
-  // Close on click-outside and Escape while open.
-  useEffect(() => {
-    if (!editing) return;
-    const onMouse = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setEditing(false);
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setEditing(false);
-    };
-    document.addEventListener("mousedown", onMouse);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onMouse);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [editing]);
-
-  async function commit(ymd: string) {
-    if (!isPlausibleDateIso(ymd) || ymd < todayIso() || ymd === goal.exact_date) {
-      setEditing(false);
-      return;
-    }
-    setSaving(true);
-    try {
-      await onSave({
-        kind: "exact",
-        exact_date: ymd,
-        target_year: Number(ymd.slice(0, 4)),
-        target_month: Number(ymd.slice(5, 7)),
-        target_season: null,
-      });
-    } finally {
-      setSaving(false);
-      setEditing(false);
-    }
-  }
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setEditing((v) => !v)}
-        disabled={saving}
-        className="mt-1 rounded text-left text-sm text-ink-600 underline-offset-4 transition hover:text-ink-900 hover:underline hover:decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:text-umber-200 dark:hover:text-paper-50"
-      >
-        {dateText}
-      </button>
-      {editing && (
-        <CalendarPicker
-          value={goal.exact_date ?? null}
-          min={todayIso()}
-          onSelect={(ymd) => void commit(ymd)}
-          locale={locale}
-        />
-      )}
-    </div>
   );
 }
 
