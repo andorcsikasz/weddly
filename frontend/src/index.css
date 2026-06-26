@@ -714,6 +714,17 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     margin-top: -3.5rem;
     min-height: 100dvh;
   }
+  @media (max-width: 639px) {
+    /* The mobile header is taller than the sm+ one (h-11 icon buttons +
+       py-3 = 68px / 4.25rem, vs the 56px desktop bar). The base -3.5rem
+       pull left a ~12px band of bare paper-50 above the hero's cream-over-
+       photo top, which read as a faint white strip under the status bar.
+       Pull the section up by the full mobile header height so the hero
+       fills right to the top edge. */
+    .hero-section {
+      margin-top: -4.25rem;
+    }
+  }
 
   /* Absolute media wrapper — sits behind all content */
   .hero-media {
