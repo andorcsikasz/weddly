@@ -5,9 +5,11 @@
 // fetch. Colours come from tailwind tokens via `stroke-*` / `bg-*` utilities,
 // never raw hex.
 
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BudgetCategory, BudgetLine, Currency } from "@shared/types";
 import { formatHufCompact, formatMoney } from "../lib/format";
+import { CATEGORY_ICONS } from "./CostPlanningCard";
 
 type Locale = "hu" | "en";
 type T = (key: string, params?: Record<string, string | number>) => string;
@@ -103,17 +105,18 @@ const CATEGORY_ORDER: BudgetCategory[] = [
   "other",
 ];
 
-/** Distinguishable palette for the breakdown slices, light + dark safe. Each
- *  entry pairs the SVG `stroke-*` with the matching legend `bg-*` swatch. The
- *  7th colour catches the grouped "Other" bucket. */
+/** Warm "low-cortisol" categorical palette for the breakdown slices (see the
+ *  `chart` tokens in tailwind.config). Each entry pairs the SVG `stroke-*` with
+ *  the matching legend `bg-*` swatch. Ordered so no two browns sit adjacent on
+ *  the ring; the 7th colour catches the grouped "Other" bucket. */
 const SLICE_PALETTE: Array<{ stroke: string; dot: string }> = [
-  { stroke: "stroke-blush-500", dot: "bg-blush-500" },
-  { stroke: "stroke-sage-500", dot: "bg-sage-500" },
-  { stroke: "stroke-ink-500", dot: "bg-ink-500" },
-  { stroke: "stroke-umber-400", dot: "bg-umber-400" },
-  { stroke: "stroke-blush-300", dot: "bg-blush-300" },
-  { stroke: "stroke-sage-700", dot: "bg-sage-700" },
-  { stroke: "stroke-ink-300", dot: "bg-ink-300" },
+  { stroke: "stroke-chart-terracotta", dot: "bg-chart-terracotta" },
+  { stroke: "stroke-chart-sage", dot: "bg-chart-sage" },
+  { stroke: "stroke-chart-taupe", dot: "bg-chart-taupe" },
+  { stroke: "stroke-chart-rose", dot: "bg-chart-rose" },
+  { stroke: "stroke-chart-olive", dot: "bg-chart-olive" },
+  { stroke: "stroke-chart-ochre", dot: "bg-chart-ochre" },
+  { stroke: "stroke-chart-sand", dot: "bg-chart-sand" },
 ];
 
 const MAX_SLICES = 6; // top N categories; the rest collapse into "Other".
@@ -160,6 +163,58 @@ function buildDistribution(lines: BudgetLine[], t: T): { slices: Slice[]; total:
     });
   }
   return { slices, total };
+}
+
+/** Legend label that gracefully degrades when the row is too narrow for the
+ *  category name. The full label is always rendered (and measured) so the
+ *  `scrollWidth > clientWidth` check stays stable; when it overflows we fade
+ *  the text out (`opacity-0` keeps the box, so the measurement never toggles)
+ *  and surface the category icon with an immediate hover tooltip instead. */
+function LegendLabel({
+  label,
+  Icon,
+}: {
+  label: string;
+  Icon: ComponentType<{ size?: number; className?: string }>;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setOverflow(el.scrollWidth > el.clientWidth + 1);
+    check();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <span className="group relative min-w-0 flex-1">
+      <span
+        ref={ref}
+        className={`block truncate text-ink-700 dark:text-paper-100 ${
+          overflow ? "opacity-0" : ""
+        }`}
+      >
+        {label}
+      </span>
+      {overflow ? (
+        <span className="absolute inset-y-0 left-0 flex items-center">
+          <Icon size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
+          <span className="sr-only">{label}</span>
+          <span
+            role="tooltip"
+            className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden whitespace-nowrap rounded-md border border-paper-200 bg-paper-50 px-2 py-1 text-[11px] font-medium text-ink-700 shadow-pop group-hover:block dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+          >
+            {label}
+          </span>
+        </span>
+      ) : null}
+    </span>
+  );
 }
 
 function StatRow({ label, value, tone }: { label: string; value: string; tone?: "paid" }) {
@@ -271,12 +326,11 @@ export function SpendingCharts({
               <ul className="min-w-0 flex-1 space-y-1.5">
                 {slices.map((s) => {
                   const pct = total > 0 ? Math.round((s.amount / total) * 100) : 0;
+                  const Icon = CATEGORY_ICONS[s.key as BudgetCategory] ?? CATEGORY_ICONS.other;
                   return (
                     <li key={s.key} className="flex items-center gap-2 text-xs">
                       <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`} />
-                      <span className="min-w-0 flex-1 truncate text-ink-700 dark:text-paper-100">
-                        {s.label}
-                      </span>
+                      <LegendLabel label={s.label} Icon={Icon} />
                       <span className="shrink-0 tabular-nums text-ink-500 dark:text-umber-300">
                         {pct}%
                       </span>

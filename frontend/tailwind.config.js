@@ -146,6 +146,21 @@ export default {
           // cream page background (e.g. the card-position counter).
           ink: "#1e3a8a",
         },
+        // Chart: warm "low-cortisol" categorical palette for the budget
+        // distribution donut + legend (see SpendingCharts). Deliberately
+        // softer and more editorial than the blush/sage/ink utility tokens,
+        // which read as a finance dashboard on a pie chart. Tuned to stay
+        // distinguishable on both the light paper card and the dark umber
+        // surface, and ordered so no two browns sit adjacent on the ring.
+        chart: {
+          terracotta: "#c96f56",
+          sage: "#7f9b83",
+          taupe: "#a98663",
+          rose: "#d9a39a",
+          olive: "#5f7358",
+          ochre: "#d1a15f",
+          sand: "#e0c48d",
+        },
       },
       fontFamily: {
         // Self-hosted/system stack — we used to pull Inter from rsms.me and
