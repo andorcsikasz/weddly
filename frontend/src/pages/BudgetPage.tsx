@@ -1723,34 +1723,39 @@ function PaidEntryDialog({
         </>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         <p className="text-sm text-ink-600 dark:text-umber-200">{t("budget.paid_record_help")}</p>
-        <SegmentedControl
-          ariaLabel={t("budget.paid_unit")}
-          value={mode}
-          onChange={(m) => {
-            // Carry the current value across the flip so the number stays
-            // meaningful (50% becomes the matching amount, and vice versa).
-            if (m === "amount" && mode === "pct") setDraft(String(paidHuf));
-            else if (m === "pct" && mode === "amount") setDraft(String(pct));
-            setMode(m);
-          }}
-          options={[
-            { value: "pct", label: "%" },
-            { value: "amount", label: sym },
-          ]}
-        />
         <div>
-          {/* biome-ignore lint/a11y/noAutofocus: focusing the only input in a deliberately-opened entry dialog is expected. */}
-          <input
-            type="text"
-            inputMode="numeric"
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
-            className="w-full rounded-lg border border-paper-300 bg-white px-3 py-2 text-lg tabular-nums text-ink-900 outline-none focus:border-blush-400 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
-            aria-label={mode === "pct" ? t("budget.paid_unit_pct") : t("budget.paid_unit_amount")}
-          />
+          {/* Unit toggle + number on one row so the dialog stays short; the
+              computed conversion tucks directly underneath. */}
+          <div className="flex items-stretch gap-2">
+            <SegmentedControl
+              ariaLabel={t("budget.paid_unit")}
+              value={mode}
+              onChange={(m) => {
+                // Carry the current value across the flip so the number stays
+                // meaningful (50% becomes the matching amount, and vice versa).
+                if (m === "amount" && mode === "pct") setDraft(String(paidHuf));
+                else if (m === "pct" && mode === "amount") setDraft(String(pct));
+                setMode(m);
+              }}
+              options={[
+                { value: "pct", label: "%" },
+                { value: "amount", label: sym },
+              ]}
+              className="shrink-0"
+            />
+            {/* biome-ignore lint/a11y/noAutofocus: focusing the only input in a deliberately-opened entry dialog is expected. */}
+            <input
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
+              className="min-w-0 flex-1 rounded-lg border border-paper-300 bg-white px-3 text-lg tabular-nums text-ink-900 outline-none focus:border-blush-400 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
+              aria-label={mode === "pct" ? t("budget.paid_unit_pct") : t("budget.paid_unit_amount")}
+            />
+          </div>
           <p className="mt-1.5 text-sm text-ink-500 dark:text-umber-300">
             {mode === "pct" ? `= ${formatMoney(paidHuf, currency, locale)}` : `= ${pct}%`}
           </p>
