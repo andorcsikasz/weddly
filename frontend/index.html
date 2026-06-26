@@ -288,7 +288,14 @@
       WOFF2 files from /public/fonts and re-introduce @font-face rules
       in src/index.css -- but keep them self-hosted.
     -->
-    <script type="text/plain" data-cookieconsent="statistics">
+    <!-- Microsoft Clarity — loaded unconditionally (NOT consent-gated), per
+         product decision, so it starts recording without waiting for the
+         Cookiebot statistics opt-in. `data-cookieconsent="ignore"` exempts it
+         from Cookiebot's auto-blocking (data-blockingmode="auto"), which would
+         otherwise hold clarity.ms back until consent. clarity.ms is
+         allow-listed in the CSP (script-src / connect-src / img-src) in
+         backend/src/server.ts. -->
+    <script type="text/javascript" data-cookieconsent="ignore">
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
         t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
