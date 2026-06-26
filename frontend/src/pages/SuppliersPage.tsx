@@ -1871,10 +1871,50 @@ export default function SuppliersPage() {
                       ) : (
                         <DisabledActionIcon icon={Mail} label={t("suppliers.no_email")} />
                       )}
+                      {s.vendor_account_id === null && user?.role !== "vendor" && (
+                        <button
+                          type="button"
+                          onClick={() => setClaimTarget({ id: s.id, name: s.name })}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                          aria-label={t("vendor_claim.button_label")}
+                          title={t("vendor_claim.button_label")}
+                        >
+                          <UserCheck size={14} aria-hidden />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setReporting({
+                            id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                            name: s.name,
+                          })
+                        }
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                        aria-label={t("suppliers.report.aria_label")}
+                        title={t("suppliers.report.aria_label")}
+                      >
+                        <Flag size={14} aria-hidden />
+                      </button>
+                    </div>
+                    {/* Bottom-right: compare + community vote, also on the card */}
+                    <div
+                      className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <CompareToggle
+                        supplierId={s.id}
+                        isCompared={isCompared}
+                        capReached={compareCapReached}
+                        onToggle={() => toggleCompare(s.id)}
+                        t={t}
+                      />
+                      <VoteRow supplier={s} onVote={onVote} t={t} />
                     </div>
                   </div>
-                  {/* Card body — name + price on one line, a single tight meta
-                      line, and a slim action row. No address/blurb (less text). */}
+                  {/* Card body — name + price on one line and a single tight
+                      meta line. No address/blurb/action row (all moved onto the
+                      hero image above) so the body stays minimal. */}
                   <div
                     className={`flex flex-1 flex-col px-4 pb-3 pt-2.5 ${isPicked ? "bg-sage-50/60 dark:bg-sage-400/15" : ""}`}
                   >
@@ -1916,45 +1956,6 @@ export default function SuppliersPage() {
                         </span>
                       )}
                     </p>
-                    {/* Slim action row — secondary actions left, compare + vote
-                    right. Stops propagation so clicks here don't navigate. */}
-                    <div
-                      className="mt-auto flex items-center justify-between pt-3"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center gap-0.5">
-                        {s.vendor_account_id === null && user?.role !== "vendor" && (
-                          <button
-                            type="button"
-                            onClick={() => setClaimTarget({ id: s.id, name: s.name })}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                            aria-label={t("vendor_claim.button_label")}
-                            title={t("vendor_claim.button_label")}
-                          >
-                            <UserCheck size={14} aria-hidden />
-                          </button>
-                        )}
-                        <ReportButton
-                          onReport={() =>
-                            setReporting({
-                              id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                              name: s.name,
-                            })
-                          }
-                          t={t}
-                        />
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <CompareToggle
-                          supplierId={s.id}
-                          isCompared={isCompared}
-                          capReached={compareCapReached}
-                          onToggle={() => toggleCompare(s.id)}
-                          t={t}
-                        />
-                        <VoteRow supplier={s} onVote={onVote} t={t} />
-                      </div>
-                    </div>
                   </div>
                   {/* end card body */}
                 </article>
