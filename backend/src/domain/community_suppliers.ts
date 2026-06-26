@@ -102,6 +102,7 @@ export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySup
     // Defaults to null; routes/suppliers.ts overlays the real value from the
     // `listings` table once the vendor uploads a hero image.
     hero_image_url: null,
+    gallery_urls: null,
   };
 }
 

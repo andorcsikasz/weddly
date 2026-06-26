@@ -353,6 +353,26 @@ export default function SupplierDetailPage() {
               acquisition surface. */}
           <section className="mb-10">
             <HeroImage detail={detail} t={t} />
+            {detail.gallery_urls && detail.gallery_urls.length > 1 && (
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {detail.gallery_urls.slice(1).map((url, i) => (
+                  <a
+                    key={i}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0"
+                  >
+                    <img
+                      src={url}
+                      alt={`${detail.name} ${i + 2}`}
+                      loading="lazy"
+                      className="h-20 w-20 rounded-xl object-cover sm:h-24 sm:w-24"
+                    />
+                  </a>
+                ))}
+              </div>
+            )}
             <div className="mt-5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t(`suppliers.cat.${detail.category}`)} · {detail.city}
             </div>

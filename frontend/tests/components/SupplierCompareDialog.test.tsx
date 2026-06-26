@@ -33,6 +33,7 @@ function makeSupplier(over: Partial<DirectorySupplier> = {}): DirectorySupplier 
     price_band: 2,
     vendor_account_id: null,
     hero_image_url: null,
+    gallery_urls: null,
     votes_score: 0,
     user_vote: 0,
     ...over,

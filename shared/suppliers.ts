@@ -156,6 +156,11 @@ export interface DirectorySupplierBase {
    *  avatar. Surfaces on the public `/api/suppliers` cards alongside the
    *  vendor-claim overlay. */
   hero_image_url: string | null;
+  /** External photo gallery URLs for curated venues. Sourced at curation time
+   *  from the venue's own website. Null on community submissions and on curated
+   *  entries with no photo batch. hero_image_url is derived from [0] in the
+   *  DIRECTORY map. */
+  gallery_urls: string[] | null;
 }
 
 /** Wire shape returned by `/api/suppliers`. Adds per-request vote info on top
