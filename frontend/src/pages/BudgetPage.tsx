@@ -1723,44 +1723,46 @@ function PaidEntryDialog({
         </>
       }
     >
-      <div className="space-y-3">
-        <p className="text-sm text-ink-600 dark:text-umber-200">{t("budget.paid_record_help")}</p>
+      {/* Uber-style centred amount entry: everything stacks down the middle —
+          the unit toggle, one large focal number, its conversion, then the
+          quick presets. */}
+      <div className="space-y-4 text-center">
+        <p className="mx-auto max-w-xs text-sm text-ink-600 dark:text-umber-200">
+          {t("budget.paid_record_help")}
+        </p>
+        <div className="flex justify-center">
+          <SegmentedControl
+            ariaLabel={t("budget.paid_unit")}
+            value={mode}
+            onChange={(m) => {
+              // Carry the current value across the flip so the number stays
+              // meaningful (50% becomes the matching amount, and vice versa).
+              if (m === "amount" && mode === "pct") setDraft(String(paidHuf));
+              else if (m === "pct" && mode === "amount") setDraft(String(pct));
+              setMode(m);
+            }}
+            options={[
+              { value: "pct", label: "%" },
+              { value: "amount", label: sym },
+            ]}
+          />
+        </div>
         <div>
-          {/* Unit toggle + number on one row so the dialog stays short; the
-              computed conversion tucks directly underneath. */}
-          <div className="flex items-stretch gap-2">
-            <SegmentedControl
-              ariaLabel={t("budget.paid_unit")}
-              value={mode}
-              onChange={(m) => {
-                // Carry the current value across the flip so the number stays
-                // meaningful (50% becomes the matching amount, and vice versa).
-                if (m === "amount" && mode === "pct") setDraft(String(paidHuf));
-                else if (m === "pct" && mode === "amount") setDraft(String(pct));
-                setMode(m);
-              }}
-              options={[
-                { value: "pct", label: "%" },
-                { value: "amount", label: sym },
-              ]}
-              className="shrink-0"
-            />
-            {/* biome-ignore lint/a11y/noAutofocus: focusing the only input in a deliberately-opened entry dialog is expected. */}
-            <input
-              type="text"
-              inputMode="numeric"
-              autoFocus
-              value={draft}
-              onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
-              className="min-w-0 flex-1 rounded-lg border border-paper-300 bg-white px-3 text-lg tabular-nums text-ink-900 outline-none focus:border-blush-400 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
-              aria-label={mode === "pct" ? t("budget.paid_unit_pct") : t("budget.paid_unit_amount")}
-            />
-          </div>
-          <p className="mt-1.5 text-sm text-ink-500 dark:text-umber-300">
+          {/* biome-ignore lint/a11y/noAutofocus: focusing the only input in a deliberately-opened entry dialog is expected. */}
+          <input
+            type="text"
+            inputMode="numeric"
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
+            className="w-full rounded-xl border border-paper-300 bg-white px-3 py-3 text-center text-4xl font-semibold tabular-nums text-ink-900 outline-none focus:border-blush-400 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
+            aria-label={mode === "pct" ? t("budget.paid_unit_pct") : t("budget.paid_unit_amount")}
+          />
+          <p className="mt-2 text-sm text-ink-500 dark:text-umber-300">
             {mode === "pct" ? `= ${formatMoney(paidHuf, currency, locale)}` : `= ${pct}%`}
           </p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap justify-center gap-2">
           {[0, 25, 50, 75, 100].map((p) => (
             <button
               key={p}
@@ -1769,7 +1771,7 @@ function PaidEntryDialog({
                 setMode("pct");
                 setDraft(String(p));
               }}
-              className="rounded-full border border-paper-300 px-2.5 py-1 text-xs font-medium text-ink-600 transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-600 dark:text-umber-200 dark:hover:text-blush-300"
+              className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-600 dark:text-umber-200 dark:hover:text-blush-300"
             >
               {p}%
             </button>
