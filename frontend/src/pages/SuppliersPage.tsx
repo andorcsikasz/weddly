@@ -1783,8 +1783,10 @@ export default function SuppliersPage() {
                     isPicked ? "border-sage-400 dark:border-sage-400/40" : ""
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
-                  {/* Hero image banner — edge-to-edge, clipped by card's rounded-2xl + overflow-hidden */}
-                  <div className="relative h-36 w-full shrink-0 bg-paper-200 dark:bg-umber-700">
+                  {/* Hero image — the card's focal point. Pick + save float
+                      top-right; the contact actions float bottom-left so they
+                      live ON the card rather than in a separate text footer. */}
+                  <div className="relative h-40 w-full shrink-0 bg-paper-200 dark:bg-umber-700">
                     {s.hero_image_url ? (
                       <img
                         src={s.hero_image_url}
@@ -1801,165 +1803,126 @@ export default function SuppliersPage() {
                         />
                       </div>
                     )}
-                  </div>
-                  {/* Top-right: pick + save — float over the hero image */}
-                  <div
-                    className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/80 px-1 py-1 backdrop-blur-sm"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => togglePicked(s)}
-                      aria-label={isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")}
-                      aria-pressed={isPicked}
-                      title={t("suppliers.pick_aria")}
-                      className={
-                        isPicked
-                          ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                          : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-500 dark:hover:bg-umber-700 dark:hover:text-sage-300"
-                      }
-                    >
-                      {isPicked ? (
-                        <BookmarkCheck size={13} className="fill-sage-200" aria-hidden />
-                      ) : (
-                        <Bookmark size={13} aria-hidden />
-                      )}
-                    </button>
-                    <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
-                  </div>
-                  {/* Card body */}
-                  <div
-                    className={`flex flex-1 flex-col px-4 pb-4 pt-3 ${isPicked ? "bg-sage-50/60 dark:bg-sage-400/15" : ""}`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-base font-semibold">{s.name}</h3>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
-                        <span className="inline-flex items-center gap-1 uppercase tracking-wide">
-                          <Icon size={12} aria-hidden />
-                          {t(`suppliers.cat.${s.category}`)}
-                        </span>
-                        {s.venue_style && (
-                          <>
-                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                              ·
-                            </span>
-                            <span className="uppercase tracking-wide text-ink-600 dark:text-umber-200">
-                              {t(`suppliers.venue_style.${s.venue_style}`)}
-                            </span>
-                          </>
-                        )}
-                        <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                          ·
-                        </span>
-                        <span className="uppercase tracking-wide">{s.city}</span>
-                        <DistanceHint queryNorm={queryNorm} city={s.city} lat={s.lat} lng={s.lng} />
-                        {s.price_band !== null && (
-                          <>
-                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                              ·
-                            </span>
-                            <span
-                              className="text-ink-600 dark:text-umber-200"
-                              title={t("suppliers.price_legend")}
-                              aria-label={t("suppliers.price_legend")}
-                            >
-                              <PriceBandDots band={s.price_band} />
-                            </span>
-                          </>
-                        )}
-                        {(s.capacity_max ?? 0) > 0 && (
-                          <>
-                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                              ·
-                            </span>
-                            <span
-                              className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200"
-                              aria-label={t("suppliers.capacity_label")}
-                            >
-                              <Users size={11} aria-hidden />
-                              {s.capacity_min && s.capacity_max
-                                ? t("suppliers.capacity_range", {
-                                    min: s.capacity_min,
-                                    max: s.capacity_max,
-                                  })
-                                : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
-                            </span>
-                          </>
-                        )}
-                        {s.source === "community" && s.submitter_type === "self" && (
-                          <span
-                            className="inline-flex items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
-                            title={t("suppliers.self_pill_tooltip")}
-                            aria-label={t("suppliers.self_pill_tooltip")}
-                          >
-                            <Store size={10} aria-hidden />
-                            {t("suppliers.self_pill")}
-                          </span>
-                        )}
-                        {s.source === "community" && s.submitter_type !== "self" && (
-                          <span
-                            className="inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
-                            title={t("suppliers.community_pill_tooltip")}
-                            aria-label={t("suppliers.community_pill_tooltip")}
-                          >
-                            <Users size={10} aria-hidden />
-                            {t("suppliers.community_pill")}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    {s.address && (
-                      <p className="mt-2 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
-                        {s.address}
-                      </p>
-                    )}
-                    <p className="mt-2 line-clamp-2 text-sm text-ink-700 dark:text-paper-100">
-                      {locale === "hu" ? s.blurb_hu : s.blurb_en}
-                    </p>
-                    {/* Footer: contact icons left, compare + vote right.
-                    Entire row stops propagation — clicks here are intentional
-                    interactions, not card-level navigation. */}
+                    {/* Top-right: pick + save */}
                     <div
-                      className="mt-3 flex items-center justify-between border-t border-paper-200 pt-3 dark:border-umber-700"
+                      className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => togglePicked(s)}
+                        aria-label={
+                          isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")
+                        }
+                        aria-pressed={isPicked}
+                        title={t("suppliers.pick_aria")}
+                        className={
+                          isPicked
+                            ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                        }
+                      >
+                        {isPicked ? (
+                          <BookmarkCheck size={13} className="fill-sage-200" aria-hidden />
+                        ) : (
+                          <Bookmark size={13} aria-hidden />
+                        )}
+                      </button>
+                      <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
+                    </div>
+                    {/* Bottom-left: contact actions, moved onto the card */}
+                    <div
+                      className="absolute bottom-2 left-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {s.website ? (
+                        <a
+                          href={s.website}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                          aria-label={t("suppliers.visit_website")}
+                          title={t("suppliers.visit_website")}
+                          onClick={() => trackSupplierClick(s.id, "website_click")}
+                        >
+                          <Globe size={14} aria-hidden />
+                        </a>
+                      ) : (
+                        <DisabledActionIcon icon={Globe} label={t("suppliers.no_website")} />
+                      )}
+                      {s.contact_phone ? (
+                        <PhoneReveal
+                          phone={s.contact_phone}
+                          onCall={() => trackSupplierClick(s.id, "phone_click")}
+                          iconOnly
+                        />
+                      ) : (
+                        <DisabledActionIcon icon={Phone} label={t("suppliers.no_phone")} />
+                      )}
+                      {s.contact_email ? (
+                        <a
+                          href={`mailto:${s.contact_email}`}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                          aria-label={t("suppliers.contact_email")}
+                          title={t("suppliers.contact_email")}
+                        >
+                          <Mail size={14} />
+                        </a>
+                      ) : (
+                        <DisabledActionIcon icon={Mail} label={t("suppliers.no_email")} />
+                      )}
+                    </div>
+                  </div>
+                  {/* Card body — name + price on one line, a single tight meta
+                      line, and a slim action row. No address/blurb (less text). */}
+                  <div
+                    className={`flex flex-1 flex-col px-4 pb-3 pt-2.5 ${isPicked ? "bg-sage-50/60 dark:bg-sage-400/15" : ""}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="min-w-0 flex-1 truncate text-base font-semibold">{s.name}</h3>
+                      {s.price_band !== null && (
+                        <span
+                          className="shrink-0 text-ink-600 dark:text-umber-200"
+                          title={t("suppliers.price_legend")}
+                          aria-label={t("suppliers.price_legend")}
+                        >
+                          <PriceBandDots band={s.price_band} />
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 flex min-w-0 items-center gap-x-1.5 truncate text-xs text-ink-500 dark:text-umber-300">
+                      <Icon size={12} className="shrink-0" aria-hidden />
+                      <span className="uppercase tracking-wide">{t(`suppliers.cat.${s.category}`)}</span>
+                      <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                        ·
+                      </span>
+                      <span className="uppercase tracking-wide">{s.city}</span>
+                      <DistanceHint queryNorm={queryNorm} city={s.city} lat={s.lat} lng={s.lng} />
+                      {(s.capacity_max ?? 0) > 0 && (
+                        <span
+                          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200"
+                          aria-label={t("suppliers.capacity_label")}
+                        >
+                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                            ·
+                          </span>
+                          <Users size={11} aria-hidden />
+                          {s.capacity_min && s.capacity_max
+                            ? t("suppliers.capacity_range", {
+                                min: s.capacity_min,
+                                max: s.capacity_max,
+                              })
+                            : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
+                        </span>
+                      )}
+                    </p>
+                    {/* Slim action row — secondary actions left, compare + vote
+                    right. Stops propagation so clicks here don't navigate. */}
+                    <div
+                      className="mt-auto flex items-center justify-between pt-3"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center gap-0.5">
-                        {s.website ? (
-                          <a
-                            href={s.website}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                            aria-label={t("suppliers.visit_website")}
-                            title={t("suppliers.visit_website")}
-                            onClick={() => trackSupplierClick(s.id, "website_click")}
-                          >
-                            <Globe size={14} aria-hidden />
-                          </a>
-                        ) : (
-                          <DisabledActionIcon icon={Globe} label={t("suppliers.no_website")} />
-                        )}
-                        {s.contact_phone ? (
-                          <PhoneReveal
-                            phone={s.contact_phone}
-                            onCall={() => trackSupplierClick(s.id, "phone_click")}
-                            iconOnly
-                          />
-                        ) : (
-                          <DisabledActionIcon icon={Phone} label={t("suppliers.no_phone")} />
-                        )}
-                        {s.contact_email ? (
-                          <a
-                            href={`mailto:${s.contact_email}`}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                            aria-label={t("suppliers.contact_email")}
-                            title={t("suppliers.contact_email")}
-                          >
-                            <Mail size={14} />
-                          </a>
-                        ) : (
-                          <DisabledActionIcon icon={Mail} label={t("suppliers.no_email")} />
-                        )}
                         {s.vendor_account_id === null && user?.role !== "vendor" && (
                           <button
                             type="button"
