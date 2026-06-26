@@ -1481,7 +1481,12 @@ function KpiTile({
           </button>
         )}
       </div>
-      <div className="mt-2 h-[4.5rem] overflow-hidden">
+      {/* Collapsed: just value + unit (+ optional bar) → a tighter box so the
+          bar-less tiles don't leave a white gap. Only grow to fit the taller
+          breakdown when it's actually expanded. */}
+      <div
+        className={`mt-2 overflow-hidden ${expanded && breakdown ? "h-[4.5rem]" : "h-[3.75rem]"}`}
+      >
         {expanded && breakdown ? (
           breakdown
         ) : (
@@ -1790,7 +1795,9 @@ function DaysToGoTile({
           </button>
         )}
       </div>
-      <div className="mt-2 h-[4.5rem] overflow-hidden">
+      <div
+        className={`mt-2 overflow-hidden ${chartOpen ? "h-[4.5rem]" : "h-[3.75rem]"}`}
+      >
         {chartOpen && planningPct !== null ? (
           <div>
             <div className="h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
