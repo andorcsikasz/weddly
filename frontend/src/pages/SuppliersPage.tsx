@@ -1105,8 +1105,8 @@ export default function SuppliersPage() {
           clicking the $$$$ chip filters to band-4 suppliers only, not
           "up to 4". Click the same chip to clear. Suppliers with no
           declared value pass through so non-venue cards are not dropped. */}
-      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1 sm:gap-x-6 sm:px-4 dark:border-umber-700 dark:bg-umber-700/40">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="mb-3 flex flex-nowrap items-center justify-between gap-x-3 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1 sm:flex-wrap sm:justify-start sm:gap-x-6 sm:px-4 dark:border-umber-700 dark:bg-umber-700/40">
+        <div className="flex flex-nowrap items-center gap-2 shrink-0 sm:gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.price_filter_label")}
           </span>
@@ -1122,8 +1122,8 @@ export default function SuppliersPage() {
                   onClick={() => setPriceBand(priceBand === band ? null : band)}
                   className={
                     active
-                      ? "inline-flex h-6 w-5 items-center justify-center text-[11px] font-semibold text-ink-700 transition hover:text-ink-900 dark:text-paper-50"
-                      : "inline-flex h-6 w-5 items-center justify-center text-[11px] text-ink-300 transition hover:text-ink-500 dark:text-umber-500 dark:hover:text-umber-300"
+                      ? "inline-flex h-6 w-4 items-center justify-center text-[11px] sm:w-5 font-semibold text-ink-700 transition hover:text-ink-900 dark:text-paper-50"
+                      : "inline-flex h-6 w-4 items-center justify-center text-[11px] sm:w-5 text-ink-300 transition hover:text-ink-500 dark:text-umber-500 dark:hover:text-umber-300"
                   }
                 >
                   $
@@ -1135,7 +1135,7 @@ export default function SuppliersPage() {
             <button
               type="button"
               onClick={() => setPriceBand(null)}
-              className="text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+              className="hidden text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline sm:inline dark:text-umber-300 dark:hover:text-paper-100"
             >
               {t("suppliers.guests_filter_clear")}
             </button>
@@ -1154,7 +1154,7 @@ export default function SuppliersPage() {
           to="/app/budget"
           title={t("suppliers.guests_filter_edit_in_budget")}
           aria-label={t("suppliers.guests_filter_edit_in_budget")}
-          className="group inline-flex items-center gap-2 rounded-full px-1.5 py-0.5 transition hover:bg-paper-50 dark:hover:bg-umber-800"
+          className="group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 transition hover:bg-paper-50 sm:gap-2 dark:hover:bg-umber-800"
         >
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100">
             {t("suppliers.guests_filter_label")}
