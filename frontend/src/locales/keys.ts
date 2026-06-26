@@ -1196,6 +1196,7 @@ export interface LocaleMessages {
     footer_band_prompt: string;
     footer_band_cta: string;
     footer_band_cta_vendor: string;
+    footer_band_cta_planner: string;
     footer_band_cta_couples: string;
     skip_to_main: string;
     couple_cards_eyebrow: string;

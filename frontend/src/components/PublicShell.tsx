@@ -1,4 +1,5 @@
 import {
+  ClipboardList,
   LayoutDashboard,
   Languages,
   LogIn,
@@ -453,6 +454,10 @@ function PublicFooter() {
               <Link to="/vendors" className={footerBandBtnClass}>
                 <Store size={15} aria-hidden />
                 {t("landing.footer_band_cta_vendor")}
+              </Link>
+              <Link to="/planners" className={footerBandBtnClass}>
+                <ClipboardList size={15} aria-hidden />
+                {t("landing.footer_band_cta_planner")}
               </Link>
               <button
                 type="button"

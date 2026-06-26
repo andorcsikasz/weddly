@@ -1002,6 +1002,7 @@ const en: LocaleMessages = {
     footer_band_prompt: "Not planning a wedding?",
     footer_band_cta: "I'm a guest with an invite code",
     footer_band_cta_vendor: "I'm a wedding vendor",
+    footer_band_cta_planner: "I'm a wedding planner",
     footer_band_cta_couples: "Discover Weddly for couples",
     skip_to_main: "Skip to main content",
     couple_cards_eyebrow: "Before you say yes",

@@ -1015,6 +1015,7 @@ const hu: LocaleMessages = {
     footer_band_prompt: "Nem esküvőt szervezel?",
     footer_band_cta: "Vendég vagyok, van meghívókódom",
     footer_band_cta_vendor: "Szolgáltató vagyok",
+    footer_band_cta_planner: "Esküvőszervező vagyok",
     footer_band_cta_couples: "Fedezd fel a Wēddlyt párként",
     skip_to_main: "Ugrás a tartalomra",
     couple_cards_eyebrow: "Mielőtt igent mondtok",
