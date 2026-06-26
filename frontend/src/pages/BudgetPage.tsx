@@ -1705,6 +1705,12 @@ function PaidEntryDialog({
       : Math.min(actual, Math.max(0, safeNum));
   const pct = actual > 0 ? Math.round((paidHuf / actual) * 100) : 0;
   const sym = currencySymbol(currency, locale);
+  // Group the entered digits in thousands for display (space in HU, comma in
+  // EN) — the value stays digits-only internally; onChange strips the grouping.
+  const groupedDraft = draft.replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    locale === "hu" ? " " : ",",
+  );
   return (
     <Dialog
       open={open}
@@ -1753,7 +1759,7 @@ function PaidEntryDialog({
             type="text"
             inputMode="numeric"
             autoFocus
-            value={draft}
+            value={groupedDraft}
             onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
             className="w-full rounded-xl border border-paper-300 bg-white px-3 py-3 text-center text-4xl font-semibold tabular-nums text-ink-900 outline-none focus:border-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:focus:border-umber-300"
             aria-label={mode === "pct" ? t("budget.paid_unit_pct") : t("budget.paid_unit_amount")}
