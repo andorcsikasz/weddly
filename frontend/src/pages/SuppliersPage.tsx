@@ -52,7 +52,6 @@ import {
   Store,
   StickyNote,
   Tent,
-  UserCheck,
   Users,
   UtensilsCrossed,
   Wallet,
@@ -65,7 +64,6 @@ import { BookedSupplierCard } from "../components/BookedSupplierCard";
 import { CakeDrinksCalculator } from "../components/CakeDrinksCalculator";
 import { InfoHint } from "../components/InfoHint";
 import { DiyEntryModal } from "../components/DiyEntryModal";
-import { ClaimListingModal } from "../components/ClaimListingModal";
 import { OutreachInbox } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
@@ -221,10 +219,6 @@ export default function SuppliersPage() {
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
   // Report dialog state. `reporting` holds the numeric id + name; null when closed.
   const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
-  // Claim dialog state. `claimTarget` holds the public listing id (curated
-  // slug or `c{N}`) + name; null when closed. Surfaced to vendors who land
-  // on the public directory and recognise their own business.
-  const [claimTarget, setClaimTarget] = useState<{ id: string; name: string } | null>(null);
   const { user } = useAuth();
   const toast = useToast();
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -1830,73 +1824,6 @@ export default function SuppliersPage() {
                       </button>
                       <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
                     </div>
-                    {/* Bottom-left: contact actions, moved onto the card */}
-                    <div
-                      className="absolute bottom-2 left-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {s.website ? (
-                        <a
-                          href={s.website}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                          aria-label={t("suppliers.visit_website")}
-                          title={t("suppliers.visit_website")}
-                          onClick={() => trackSupplierClick(s.id, "website_click")}
-                        >
-                          <Globe size={14} aria-hidden />
-                        </a>
-                      ) : (
-                        <DisabledActionIcon icon={Globe} label={t("suppliers.no_website")} />
-                      )}
-                      {s.contact_phone ? (
-                        <PhoneReveal
-                          phone={s.contact_phone}
-                          onCall={() => trackSupplierClick(s.id, "phone_click")}
-                          iconOnly
-                        />
-                      ) : (
-                        <DisabledActionIcon icon={Phone} label={t("suppliers.no_phone")} />
-                      )}
-                      {s.contact_email ? (
-                        <a
-                          href={`mailto:${s.contact_email}`}
-                          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                          aria-label={t("suppliers.contact_email")}
-                          title={t("suppliers.contact_email")}
-                        >
-                          <Mail size={14} />
-                        </a>
-                      ) : (
-                        <DisabledActionIcon icon={Mail} label={t("suppliers.no_email")} />
-                      )}
-                      {s.vendor_account_id === null && user?.role !== "vendor" && (
-                        <button
-                          type="button"
-                          onClick={() => setClaimTarget({ id: s.id, name: s.name })}
-                          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                          aria-label={t("vendor_claim.button_label")}
-                          title={t("vendor_claim.button_label")}
-                        >
-                          <UserCheck size={14} aria-hidden />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setReporting({
-                            id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                            name: s.name,
-                          })
-                        }
-                        className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                        aria-label={t("suppliers.report.aria_label")}
-                        title={t("suppliers.report.aria_label")}
-                      >
-                        <Flag size={14} aria-hidden />
-                      </button>
-                    </div>
                     {/* Bottom-right: compare + community vote, also on the card */}
                     <div
                       className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
@@ -1996,11 +1923,6 @@ export default function SuppliersPage() {
           // optimistic insert and let the modal's "check your inbox" toast
           // do the talking.
         }}
-      />
-      <ClaimListingModal
-        listingId={claimTarget?.id ?? null}
-        listingName={claimTarget?.name ?? ""}
-        onClose={() => setClaimTarget(null)}
       />
       <ReportSupplierDialog
         supplierId={reporting?.id ?? null}

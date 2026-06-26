@@ -36,6 +36,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Disc3,
+  Flag,
   Flower2,
   Gem,
   Globe,
@@ -75,6 +76,7 @@ import {
 import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ComposeDialog } from "../components/OutreachInbox";
+import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
@@ -235,6 +237,8 @@ export default function SupplierDetailPage() {
   const [bookings, setBookings] = useState<SupplierBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapOpen, setMapOpen] = useState(false);
+  // Report dialog (community listings only). Holds the numeric id + name.
+  const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
 
   useEffect(() => {
     if (!detail) {
@@ -454,6 +458,58 @@ export default function SupplierDetailPage() {
                 {saveLabel}
               </button>
             </div>
+
+            {/* Quick contact + report actions — surfaced up here (not just in
+                the sidebar card) so they're reachable the moment the user opens
+                a listing, especially on mobile where the sidebar sits far
+                below. Mirrors the icon pill the directory card used to carry. */}
+            <div className="mt-3 flex items-center gap-1.5">
+              {detail.website && (
+                <a
+                  href={`/r/supplier/${encodeURIComponent(detail.id)}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-600 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                  aria-label={t("suppliers.detail.contact.website")}
+                  title={t("suppliers.detail.contact.website")}
+                >
+                  <Globe size={16} aria-hidden />
+                </a>
+              )}
+              {detail.contact_phone && (
+                <a
+                  href={`tel:${detail.contact_phone}`}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-600 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                  aria-label={detail.contact_phone}
+                  title={detail.contact_phone}
+                >
+                  <Phone size={16} aria-hidden />
+                </a>
+              )}
+              {detail.contact_email && (
+                <a
+                  href={`mailto:${detail.contact_email}`}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-600 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                  aria-label={detail.contact_email}
+                  title={detail.contact_email}
+                >
+                  <Mail size={16} aria-hidden />
+                </a>
+              )}
+              {detail.source === "community" && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setReporting({ id: Number(detail.id.slice(1)), name: detail.name })
+                  }
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-500 transition hover:border-ink-400 hover:bg-paper-100 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                  aria-label={t("suppliers.report.aria_label")}
+                  title={t("suppliers.report.aria_label")}
+                >
+                  <Flag size={16} aria-hidden />
+                </button>
+              )}
+            </div>
           </section>
 
           {/* About / blurb */}
@@ -591,6 +647,17 @@ export default function SupplierDetailPage() {
           />
         </Suspense>
       )}
+
+      <ReportSupplierDialog
+        supplierId={reporting?.id ?? null}
+        supplierName={reporting?.name ?? ""}
+        onClose={() => setReporting(null)}
+        onReported={({ autoHidden }) => {
+          // A report that flips the listing to hidden makes this detail page
+          // a dead end — send the user back to the directory.
+          if (autoHidden) navigate("/app/suppliers");
+        }}
+      />
     </div>
   );
 }
