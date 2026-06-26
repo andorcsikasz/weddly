@@ -300,7 +300,7 @@ async function handleUpdateClientCrm(ctx: Ctx): Promise<Response> {
     .join(", ");
   db.prepare(
     `UPDATE planner_clients SET ${setClauses} WHERE planner_user_id = ? AND couple_id = ?`,
-  ).run(...Object.values(fields), userId, coupleId);
+  ).run(...(Object.values(fields) as (string | number | null)[]), userId, coupleId);
 
   return json({ ok: true });
 }

@@ -56,6 +56,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     bride_name: "Anna",
     groom_name: "Béla",
     slug: "ANNABELA",
+    organiser_code: null,
     wedding_date_goal: {
       kind: "exact",
       exact_date: inDays(120),

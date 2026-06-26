@@ -164,6 +164,7 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
     bride_name: "Anna",
     groom_name: "Bence",
     slug: "MIALUCAS",
+    organiser_code: null,
     wedding_date_goal: {
       kind: "exact",
       exact_date: "2027-06-12",
