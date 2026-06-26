@@ -2658,7 +2658,7 @@ const hu: LocaleMessages = {
     paid: "Kifizetve",
     paid_mark_full: "Teljesen kifizetve",
     paid_record: "Kifizetés rögzítése",
-    paid_record_help: "Add meg, hogy a tervezett összeg hány százalékát fizetted ki, vagy válts át a pontos összegre.",
+    paid_record_help: "Add meg a kifizetett százalékot vagy összeget.",
     paid_needs_actual: "Előbb add meg a tényleges összeget",
     paid_unit: "Mértékegység",
     paid_unit_pct: "Százalék",

@@ -1755,7 +1755,7 @@ function PaidEntryDialog({
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
-            className="w-full rounded-xl border border-paper-300 bg-white px-3 py-3 text-center text-4xl font-semibold tabular-nums text-ink-900 outline-none focus:border-blush-400 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
+            className="w-full rounded-xl border border-paper-300 bg-white px-3 py-3 text-center text-4xl font-semibold tabular-nums text-ink-900 outline-none focus:border-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:focus:border-umber-300"
             aria-label={mode === "pct" ? t("budget.paid_unit_pct") : t("budget.paid_unit_amount")}
           />
           <p className="mt-2 text-sm text-ink-500 dark:text-umber-300">
@@ -1771,7 +1771,7 @@ function PaidEntryDialog({
                 setMode("pct");
                 setDraft(String(p));
               }}
-              className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-600 dark:text-umber-200 dark:hover:text-blush-300"
+              className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-umber-400 hover:text-umber-800 dark:border-umber-600 dark:text-umber-200 dark:hover:border-umber-400 dark:hover:text-paper-50"
             >
               {p}%
             </button>

@@ -2627,7 +2627,7 @@ const en: LocaleMessages = {
     paid: "Paid",
     paid_mark_full: "Mark fully paid",
     paid_record: "Record payment",
-    paid_record_help: "Enter what share of the planned cost you have paid, or flip to enter the exact amount.",
+    paid_record_help: "Enter the percentage or amount paid.",
     paid_needs_actual: "Add the actual amount first",
     paid_unit: "Unit",
     paid_unit_pct: "Percentage",
