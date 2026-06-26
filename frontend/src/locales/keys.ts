@@ -3352,8 +3352,10 @@ export interface LocaleMessages {
     sub: string;
     contact_email: string;
     visit_website: string;
-    /** Tooltips on the muted Phone/Mail chips in the Timeline point-of-contact
-     *  card when the supplier has no contact data on file. */
+    /** Tooltips on the muted Globe/Phone/Mail chips in the supplier card and
+     *  Timeline point-of-contact card when the supplier has no contact data on
+     *  file. */
+    no_website: string;
     no_phone: string;
     no_email: string;
     filter_all: string;

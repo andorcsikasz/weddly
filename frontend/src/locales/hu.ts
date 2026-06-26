@@ -1843,7 +1843,8 @@ const hu: LocaleMessages = {
     film_share_btn: "Megosztás",
     film_guest_view: "Kamera",
     film_expired_alert: "A feltöltési időszak lezárult.",
-    film_expired_body: "A vendégek már nem tölthetnek fel fotókat. Te és a párod bármikor hozzáadhattok képeket.",
+    film_expired_body:
+      "A vendégek már nem tölthetnek fel fotókat. Te és a párod bármikor hozzáadhattok képeket.",
     film_expired_action: "Határidő módosítása",
     film_per_person: "fő",
     film_no_participants: "Még senki nem csatlakozott.",
@@ -3020,6 +3021,7 @@ const hu: LocaleMessages = {
     sub: "Válogatott lista. Velük közvetlenül egyeztess; foglalni v2-ben tudtok majd.",
     contact_email: "E-mail",
     visit_website: "Weboldal",
+    no_website: "Nincs megadva weboldal",
     no_phone: "Nincs megadva telefonszám",
     no_email: "Nincs megadva email-cím",
     filter_all: "Mind",

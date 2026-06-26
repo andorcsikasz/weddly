@@ -1278,7 +1278,9 @@ export default function SuppliersPage() {
           <div
             data-tour-target="vendors-list"
             className={
-              viewMode === "line" ? "flex flex-col gap-2" : "grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3"
+              viewMode === "line"
+                ? "flex flex-col gap-2"
+                : "grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3"
             }
           >
             {visibleSuppliers.map((s) => {
@@ -1730,7 +1732,7 @@ export default function SuppliersPage() {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center gap-0.5">
-                        {s.website && (
+                        {s.website ? (
                           <a
                             href={s.website}
                             target="_blank"
@@ -1742,22 +1744,29 @@ export default function SuppliersPage() {
                           >
                             <Globe size={14} aria-hidden />
                           </a>
+                        ) : (
+                          <DisabledActionIcon icon={Globe} label={t("suppliers.no_website")} />
                         )}
-                        {s.contact_phone && (
+                        {s.contact_phone ? (
                           <PhoneReveal
                             phone={s.contact_phone}
                             onCall={() => trackSupplierClick(s.id, "phone_click")}
                             iconOnly
                           />
+                        ) : (
+                          <DisabledActionIcon icon={Phone} label={t("suppliers.no_phone")} />
                         )}
-                        {s.contact_email && (
+                        {s.contact_email ? (
                           <a
                             href={`mailto:${s.contact_email}`}
                             className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                             aria-label={t("suppliers.contact_email")}
+                            title={t("suppliers.contact_email")}
                           >
                             <Mail size={14} />
                           </a>
+                        ) : (
+                          <DisabledActionIcon icon={Mail} label={t("suppliers.no_email")} />
                         )}
                         {s.vendor_account_id === null && user?.role !== "vendor" && (
                           <button
@@ -2197,6 +2206,28 @@ function SaveToggle({
     >
       <Star size={15} aria-hidden className={isSaved ? "fill-blush-500 text-blush-500" : ""} />
     </button>
+  );
+}
+
+/** Placeholder slot for a contact action the supplier hasn't supplied (no
+ *  website / phone / email). Keeps every card's action row the same width so
+ *  the grid reads as a tidy column instead of a ragged one. The icon is
+ *  greyed, inert, and explains itself on hover. */
+function DisabledActionIcon({
+  icon: Icon,
+  label,
+}: {
+  icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
+  label: string;
+}) {
+  return (
+    <span
+      className="inline-flex h-7 w-7 cursor-default items-center justify-center rounded-full text-ink-300 dark:text-umber-600"
+      title={label}
+      aria-label={label}
+    >
+      <Icon size={14} aria-hidden />
+    </span>
   );
 }
 

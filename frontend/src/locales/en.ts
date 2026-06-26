@@ -1824,7 +1824,8 @@ const en: LocaleMessages = {
     film_share_btn: "Share",
     film_guest_view: "Camera",
     film_expired_alert: "Upload window has closed.",
-    film_expired_body: "Guests can no longer upload photos. You and your partner can still add your own.",
+    film_expired_body:
+      "Guests can no longer upload photos. You and your partner can still add your own.",
     film_expired_action: "Edit deadline",
     film_per_person: "person",
     film_no_participants: "No one has joined yet.",
@@ -2981,6 +2982,7 @@ const en: LocaleMessages = {
     sub: "Curated list. Reach out to them directly; booking arrives in v2.",
     contact_email: "Email",
     visit_website: "Website",
+    no_website: "No website on file",
     no_phone: "No phone on file",
     no_email: "No email on file",
     filter_all: "All",
