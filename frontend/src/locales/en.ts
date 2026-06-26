@@ -979,6 +979,7 @@ const en: LocaleMessages = {
     footer_tagline: "Low-cortisol wedding planning, for two.",
     footer_social_tiktok: "Follow us on TikTok",
     footer_social_facebook: "Follow us on Facebook",
+    footer_social_instagram: "Follow us on Instagram",
     footer_couples: "For couples",
     footer_vendors: "For vendors",
     footer_guests: "for guests",

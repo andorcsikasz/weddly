@@ -1170,6 +1170,7 @@ export interface LocaleMessages {
     footer_tagline: string;
     footer_social_tiktok: string;
     footer_social_facebook: string;
+    footer_social_instagram: string;
     footer_couples: string;
     footer_vendors: string;
     footer_guests: string;

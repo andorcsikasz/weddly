@@ -992,6 +992,7 @@ const hu: LocaleMessages = {
     footer_tagline: "Alacsony kortizolszintű esküvőtervezés kettőtöknek.",
     footer_social_tiktok: "Kövess minket TikTokon",
     footer_social_facebook: "Kövess minket Facebookon",
+    footer_social_instagram: "Kövess minket Instagramon",
     footer_couples: "Pároknak",
     footer_vendors: "Szolgáltatóknak",
     footer_guests: "vendégeknek",
