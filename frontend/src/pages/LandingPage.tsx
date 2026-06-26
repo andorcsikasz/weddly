@@ -1472,7 +1472,7 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
                       : t("tools.couple_cards.deck_number_label", { n: redLevel(deck.id) })}
                   </span>
                   {!isAccent ? (
-                    <span className="mt-4 font-display text-lg font-bold uppercase tracking-[0.04em]">
+                    <span className="mt-1.5 font-display text-sm font-bold uppercase tracking-[0.04em]">
                       ({t(deck.titleKey)})
                     </span>
                   ) : null}
