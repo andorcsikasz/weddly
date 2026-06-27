@@ -227,6 +227,10 @@ interface OnboardBody {
   /** Referral invite code from `?ref_code=` on the registration URL.
    *  8 uppercase alphanumeric chars. Silently ignored when invalid. */
   ref_code?: unknown;
+  /** Cover-photo focal point, 0–100 percent. Defaults to 50 (centred).
+   *  Fractional values are rounded to the nearest integer. */
+  cover_position_x?: unknown;
+  cover_position_y?: unknown;
 }
 
 const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
@@ -1393,6 +1397,16 @@ function parseCoverImageUrl(raw: unknown): string | null {
   return parsed.href;
 }
 
+/** Cover-photo focal point, 0–100 %. Fractional values are rounded. */
+function parseCoverPosition(raw: unknown, field: string): number {
+  if (raw === null || raw === undefined) throw new HttpError(400, `${field} is required`);
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (Number.isNaN(n) || n < 0 || n > 100) {
+    throw new HttpError(400, `${field} must be between 0 and 100`);
+  }
+  return Math.round(n);
+}
+
 /** A single photo-share URL slot on the Photos page. Empty string / null →
  *  null (clears the slot). Mirrors parseCoverImageUrl: explicit http(s) scheme
  *  required, length capped, the normalized href stored. */
@@ -1889,6 +1903,19 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         after: { cover_image_url: next },
       });
     }
+  }
+
+  if (body.cover_position_x !== undefined || body.cover_position_y !== undefined) {
+    const nextX =
+      body.cover_position_x !== undefined
+        ? parseCoverPosition(body.cover_position_x, "cover_position_x")
+        : couple.cover_position_x;
+    const nextY =
+      body.cover_position_y !== undefined
+        ? parseCoverPosition(body.cover_position_y, "cover_position_y")
+        : couple.cover_position_y;
+    if (nextX !== couple.cover_position_x) updates.push({ col: "cover_position_x", val: nextX });
+    if (nextY !== couple.cover_position_y) updates.push({ col: "cover_position_y", val: nextY });
   }
 
   if (body.guest_page_intro !== undefined) {
