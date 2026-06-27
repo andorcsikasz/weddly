@@ -5862,7 +5862,6 @@ const hu: LocaleMessages = {
   planners: {
     eyebrow: "Esküvőszervező vagyok",
     hero_title: "Minden párod,\negy munkaterületen.",
-    hero_body: "Vendéglista, ültetés, feladatok, dokumentumok — minden párodnál, egy helyen.",
     hero_cta: "Jelentkezem",
     couple_escape: "Párként tervez?",
     couple_escape_link: "Erre jöjj",

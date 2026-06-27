@@ -922,9 +922,6 @@ export default function PlannersPage() {
             <h1 className="font-grotesk mb-5 whitespace-pre-line text-4xl font-semibold leading-[1.05] tracking-tight text-umber-900 sm:text-5xl dark:text-paper-50">
               {t("planners.hero_title")}
             </h1>
-            <p className="mb-8 max-w-lg text-lg leading-relaxed text-umber-700 dark:text-umber-300">
-              {t("planners.hero_body")}
-            </p>
             <a
               href="#waitlist"
               onClick={(e) => {

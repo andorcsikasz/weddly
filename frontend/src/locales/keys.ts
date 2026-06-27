@@ -6301,7 +6301,6 @@ export interface LocaleMessages {
   planners: {
     eyebrow: string;
     hero_title: string;
-    hero_body: string;
     hero_cta: string;
     couple_escape: string;
     couple_escape_link: string;
