@@ -4828,6 +4828,19 @@ const hu: LocaleMessages = {
     delete_account_body:
       "30 napos türelmi időt indít. A workspace csak olvasható ez idő alatt; 30 nap után az adminunk véglegesen törli az adatokat. Bármelyik partner visszavonhatja a határidő előtt.",
     delete_account_button: "Szüneteltetés + 30 nap utáni törlés",
+    pause_reason_title: "Mielőtt szüneteltetnéd…",
+    pause_reason_intro:
+      "Segíts, hogy jobbak legyünk: miért szünetelteted a munkaterületet? Pár másodperc, de sokat jelent.",
+    pause_reason_note_label: "Bármi más, amit szeretnél megosztani (nem kötelező)",
+    pause_reason_note_placeholder: "Írd ide…",
+    pause_reason_continue: "Tovább",
+    pause_reason_required: "Válassz egy okot, vagy zárd be az ablakot.",
+    pause_reason_opt_wedding_done: "Az esküvő már megvolt",
+    pause_reason_opt_postponed: "Az esküvőt elhalasztottuk vagy lemondtuk",
+    pause_reason_opt_missing_features: "Hiányoznak funkciók, amikre szükségem van",
+    pause_reason_opt_too_expensive: "Túl drága lenne előfizetni",
+    pause_reason_opt_taking_break: "Csak szünetet tartok",
+    pause_reason_opt_other: "Egyéb",
     delete_account_confirm_title: "Töröljük ezt a workspace-t?",
     delete_account_confirm_label: "Erősítsd meg: írd be, hogy {phrase}",
     delete_account_confirm_help:

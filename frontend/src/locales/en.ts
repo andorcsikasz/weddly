@@ -4774,6 +4774,19 @@ const en: LocaleMessages = {
     delete_account_body:
       "Starts a 30-day grace period. The workspace becomes read-only and our admin permanently deletes everything after 30 days. Either partner can cancel before the deadline.",
     delete_account_button: "Pause + delete in 30 days",
+    pause_reason_title: "Before you pause…",
+    pause_reason_intro:
+      "Help us improve: why are you pausing your workspace? It takes a few seconds and means a lot.",
+    pause_reason_note_label: "Anything else you'd like to share (optional)",
+    pause_reason_note_placeholder: "Type here…",
+    pause_reason_continue: "Continue",
+    pause_reason_required: "Pick a reason, or close this window.",
+    pause_reason_opt_wedding_done: "The wedding already happened",
+    pause_reason_opt_postponed: "The wedding was postponed or called off",
+    pause_reason_opt_missing_features: "Missing features I need",
+    pause_reason_opt_too_expensive: "Subscription is too expensive",
+    pause_reason_opt_taking_break: "Just taking a break",
+    pause_reason_opt_other: "Other",
     delete_account_confirm_title: "Delete this workspace?",
     delete_account_confirm_label: "Type {phrase} to confirm",
     delete_account_confirm_help:

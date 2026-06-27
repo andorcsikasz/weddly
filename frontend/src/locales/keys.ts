@@ -5428,6 +5428,18 @@ export interface LocaleMessages {
     delete_account_title: string;
     delete_account_body: string;
     delete_account_button: string;
+    pause_reason_title: string;
+    pause_reason_intro: string;
+    pause_reason_note_label: string;
+    pause_reason_note_placeholder: string;
+    pause_reason_continue: string;
+    pause_reason_required: string;
+    pause_reason_opt_wedding_done: string;
+    pause_reason_opt_postponed: string;
+    pause_reason_opt_missing_features: string;
+    pause_reason_opt_too_expensive: string;
+    pause_reason_opt_taking_break: string;
+    pause_reason_opt_other: string;
     delete_account_confirm_title: string;
     /** TextField label inside the typed-confirm dialog. Receives `{phrase}`. */
     delete_account_confirm_label: string;

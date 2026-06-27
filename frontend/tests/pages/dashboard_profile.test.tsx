@@ -263,6 +263,10 @@ function buildFetch(routes: FetchRoutes): typeof fetch {
       return ok({ pause_request: { id: 99, scheduled_delete_at: Date.now() + 30 * 86_400_000 } });
     }
     if (url.endsWith("/api/couples/pause/cancel")) return ok({ ok: true });
+    // The linked-planners panel fires on mount; without an explicit route the
+    // tolerant `{}` default leaves `r.planners` undefined and the panel crashes
+    // on `planners.length`, which then poisons every later test in the file.
+    if (url.endsWith("/api/couples/planners")) return ok({ planners: [] });
     if (url.endsWith("/api/couples/partner")) return ok({ partner });
     if (url.endsWith("/api/couples/activity")) return ok({ entries: activity });
     if (url.endsWith("/api/exports") && (init?.method ?? "GET") === "GET") {
@@ -718,7 +722,7 @@ describe("<ProfilePage>", () => {
     expect(screen.getByText(/brunch the day after/i)).toBeInTheDocument();
   });
 
-  it("Pause workspace button opens a typed-phrase confirm dialog", async () => {
+  it("Pause workspace button opens the mini exit form, then the typed-phrase confirm", async () => {
     globalThis.fetch = buildFetch({});
     renderPage("profile");
 
@@ -729,13 +733,30 @@ describe("<ProfilePage>", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /pause \+ delete in 30 days/i }));
 
-    // EntryDialog opens with the typed-phrase challenge.
+    // The exit form asks WHY before anything destructive is confirmed.
+    await waitFor(() => expect(screen.getByText(/before you pause/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("radio", { name: /just taking a break/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    // Only now does the EntryDialog typed-phrase challenge open.
     await waitFor(() => expect(screen.getByText(/delete this workspace\?/i)).toBeInTheDocument());
   });
 
-  it("Pause-confirm with correct phrase calls /api/couples/pause", async () => {
+  it("Pause-confirm with correct phrase calls /api/couples/pause with the chosen reason", async () => {
     const calls: string[] = [];
-    globalThis.fetch = buildFetch({ calls });
+    let sentReason: string | undefined;
+    globalThis.fetch = buildFetch({
+      calls,
+      override: async (url, init) => {
+        if (url.endsWith("/api/couples/pause") && init?.method === "POST") {
+          sentReason = JSON.parse(String(init.body)).reason;
+          return ok({
+            pause_request: { id: 99, scheduled_delete_at: Date.now() + 30 * 86_400_000 },
+          });
+        }
+        return null;
+      },
+    });
     renderPage("profile");
 
     await waitFor(() =>
@@ -745,7 +766,12 @@ describe("<ProfilePage>", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /pause \+ delete in 30 days/i }));
 
-    // Type the verify phrase (bride+groom uppercased = ANNABÉLA — the
+    // Step 1: the mini exit form. Pick a reason and continue.
+    await waitFor(() => expect(screen.getByText(/before you pause/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("radio", { name: /too expensive/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    // Step 2: type the verify phrase (bride+groom uppercased = ANNABÉLA, the
     // accented É comes from Béla). The EntryDialog uses the phrase as the
     // placeholder; that's the most reliable selector here.
     const input = await screen.findByPlaceholderText("ANNABÉLA");
@@ -757,6 +783,8 @@ describe("<ProfilePage>", () => {
         true,
       ),
     );
+    // The canonical EN reason rides along on the request body.
+    expect(sentReason).toBe("Too expensive");
   });
 
   it("Cancel-pause button appears when pause is active and calls pause/cancel", async () => {

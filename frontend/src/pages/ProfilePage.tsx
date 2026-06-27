@@ -45,6 +45,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { CountryCombobox } from "../components/CountryCombobox";
+import { PauseReasonDialog } from "../components/PauseReasonDialog";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
 import { ApiError } from "../lib/api";
@@ -121,6 +122,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
   const [couple, setCouple] = useState<Couple | null>(null);
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
   const [pauseReq, setPauseReq] = useState<CouplePauseRequest | null>(null);
+  const [pauseFormOpen, setPauseFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [csvExporting, setCsvExporting] = useState(false);
@@ -212,7 +214,16 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
     refresh();
   }, []);
 
-  async function startPause() {
+  // Pausing is a two-step off-ramp: the mini exit form asks WHY (captured on
+  // the pause request for churn analysis), then the type-the-phrase
+  // confirmation guards against an accidental, irreversible 30-day deletion.
+  function startPause() {
+    if (!couple) return;
+    setPauseFormOpen(true);
+  }
+
+  async function confirmPause(reason: string) {
+    setPauseFormOpen(false);
     const phrase = deleteVerifyPhrase(couple);
     if (!phrase) return;
     const entered = await promptEntry({
@@ -229,7 +240,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
     });
     if (entered === null) return;
     try {
-      await pauseApi.request();
+      await pauseApi.request(reason);
       refresh();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -1177,6 +1188,12 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
           {error && <p className="field-error mt-3">{error}</p>}
         </section>
       )}
+
+      <PauseReasonDialog
+        open={pauseFormOpen}
+        onCancel={() => setPauseFormOpen(false)}
+        onSubmit={confirmPause}
+      />
     </>
   );
 }
