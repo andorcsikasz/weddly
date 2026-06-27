@@ -141,8 +141,18 @@ interface PartnerRow {
 }
 
 function partnersForCouple(coupleId: number): PartnerRow[] {
+  // Resolve members through `couple_members` (canonical membership), NOT
+  // `users.couple_id` (the per-user *active workspace* pointer). The pointer
+  // moves when an owner creates/switches workspaces, which used to make their
+  // other couples render memberless / email-less in this list.
   return db
-    .prepare("SELECT id, full_name, email FROM users WHERE couple_id = ? ORDER BY id ASC")
+    .prepare(
+      `SELECT u.id, u.full_name, u.email
+         FROM couple_members cm
+         JOIN users u ON u.id = cm.user_id
+        WHERE cm.couple_id = ?
+        ORDER BY u.id ASC`,
+    )
     .all(coupleId) as PartnerRow[];
 }
 
@@ -182,7 +192,12 @@ function toAdminCouple(
   // Workspace-level "last active" = the most recent partner activity. NULL
   // when neither partner has loaded the app since the column was added.
   const seen = db
-    .prepare("SELECT MAX(last_seen_at) AS max FROM users WHERE couple_id = ?")
+    .prepare(
+      `SELECT MAX(u.last_seen_at) AS max
+         FROM couple_members cm
+         JOIN users u ON u.id = cm.user_id
+        WHERE cm.couple_id = ?`,
+    )
     .get(c.id) as { max: number | null };
   // Per-feature event counts for the admin demo panel — populated only
   // for demos (real couples have a richer activity surface and these
@@ -193,7 +208,12 @@ function toAdminCouple(
   // Workspace inherits beta-tester status from its members — one tagged
   // member is enough to bucket the whole workspace out of the real-signup list.
   const betaRow = db
-    .prepare("SELECT 1 AS hit FROM users WHERE couple_id = ? AND is_beta_tester = 1 LIMIT 1")
+    .prepare(
+      `SELECT 1 AS hit
+         FROM couple_members cm
+         JOIN users u ON u.id = cm.user_id
+        WHERE cm.couple_id = ? AND u.is_beta_tester = 1 LIMIT 1`,
+    )
     .get(c.id) as { hit: number } | undefined;
   return {
     id: c.id,

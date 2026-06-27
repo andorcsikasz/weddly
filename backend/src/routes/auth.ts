@@ -21,7 +21,7 @@ import {
   recordLoginFailure,
 } from "../lib/rate_limit";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
-import { createVerificationToken } from "./email_verify";
+import { createVerificationToken, sendVerificationLink } from "./email_verify";
 
 interface RegisterBody {
   email?: unknown;
@@ -273,6 +273,18 @@ async function handleLogin(ctx: Ctx): Promise<Response> {
   }
 
   clearLoginFailures(email);
+
+  // Hard email-verification gate: an unverified account never gets a session.
+  // The password check above already proved identity, so re-sending the verify
+  // link here is not an enumeration vector — and it gives the locked-out user a
+  // fresh link without a separate step. We block with a typed 403 the login page
+  // routes to a "check your email / resend" screen. OAuth (Google/Apple) users
+  // are provider-attested (verified_email = 1) and so never trip this.
+  if (!row.verified_email) {
+    sendVerificationLink(row, "verify_resend");
+    throw new HttpError(403, "Email not verified", { code: "email_unverified" });
+  }
+
   const token = issueSession(row.id);
   alertOnNewDevice(ctx, row);
   const session: AuthSession = { token, user: toUser(row) };

@@ -40,11 +40,19 @@ const VALID_SUBSCRIPTION_STATUSES: ReadonlySet<SubscriptionStatus> = new Set(SUB
 
 /** True when any member of the couple is a beta tester. Beta workspaces get the
  *  platform free for as long as they are in beta, so they are never paywalled.
- *  Matches how the admin list derives the Beta badge (users.couple_id link). */
+ *  Membership is resolved through `couple_members` (canonical), NOT
+ *  `users.couple_id` (the active-workspace pointer) — otherwise a multi-workspace
+ *  beta member silently flips this couple's free pass on/off by switching which
+ *  workspace they have selected. */
 function coupleHasBetaMember(coupleId: number): boolean {
   return (
     db
-      .prepare("SELECT 1 AS hit FROM users WHERE couple_id = ? AND is_beta_tester = 1 LIMIT 1")
+      .prepare(
+        `SELECT 1 AS hit
+           FROM couple_members cm
+           JOIN users u ON u.id = cm.user_id
+          WHERE cm.couple_id = ? AND u.is_beta_tester = 1 LIMIT 1`,
+      )
       .get(coupleId) != null
   );
 }
@@ -54,9 +62,16 @@ function coupleHasBetaMember(coupleId: number): boolean {
  *  live. Sourced from the ADMIN_EMAILS allowlist (isAdminEmail), so it tracks
  *  env changes with no stored state. */
 function coupleHasAdminMember(coupleId: number): boolean {
-  const rows = db.prepare("SELECT email FROM users WHERE couple_id = ?").all(coupleId) as Array<{
-    email: string;
-  }>;
+  // Through `couple_members`, not `users.couple_id` — same active-pointer hazard
+  // as coupleHasBetaMember above.
+  const rows = db
+    .prepare(
+      `SELECT u.email AS email
+         FROM couple_members cm
+         JOIN users u ON u.id = cm.user_id
+        WHERE cm.couple_id = ?`,
+    )
+    .all(coupleId) as Array<{ email: string }>;
   return rows.some((r) => isAdminEmail(r.email));
 }
 

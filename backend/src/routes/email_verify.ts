@@ -8,8 +8,8 @@ import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { sendKind } from "../domain/emails";
-import { getUserById } from "../domain/users";
-import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
+import { getUserByEmail, getUserById, type UserRow } from "../domain/users";
+import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
 export const VERIFY_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
@@ -38,6 +38,31 @@ export function createVerificationToken(userId: number): string {
   return token;
 }
 
+/** Mint a fresh token, audit it, and email the verification link. Shared by
+ *  the register flow, the authenticated resend, the unauthenticated (locked-out)
+ *  resend, and the login gate. Fire-and-forget send — callers never block on
+ *  the mailer. No-op when the user is already verified. */
+export function sendVerificationLink(
+  user: Pick<UserRow, "id" | "email" | "full_name" | "verified_email">,
+  kind: "welcome_verify" | "verify_resend" = "verify_resend",
+): void {
+  if (user.verified_email) return;
+  const token = createVerificationToken(user.id);
+  addAuditLog({
+    actor_user_id: user.id,
+    couple_id: null,
+    action: "auth.verify_email_resend",
+    target_kind: "user",
+    target_id: user.id,
+  });
+  const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-email/${token}`;
+  void sendKind(
+    kind,
+    { verifyUrl },
+    { user: { id: user.id, email: user.email, full_name: user.full_name } },
+  );
+}
+
 async function handleResend(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "auth:verify_resend", RESEND_BUCKET);
   const userId = requireAuth(ctx);
@@ -45,22 +70,26 @@ async function handleResend(ctx: Ctx): Promise<Response> {
   if (!user) throw new HttpError(404, "User not found");
   if (user.verified_email) return json({ ok: true, already_verified: true });
 
-  const token = createVerificationToken(userId);
-  addAuditLog({
-    actor_user_id: userId,
-    couple_id: null,
-    action: "auth.verify_email_resend",
-    target_kind: "user",
-    target_id: userId,
-  });
+  sendVerificationLink(user, "verify_resend");
+  return json({ ok: true });
+}
 
-  const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-email/${token}`;
-  void sendKind(
-    "verify_resend",
-    { verifyUrl },
-    { user: { id: user.id, email: user.email, full_name: user.full_name } },
-  );
-
+/** Unauthenticated resend keyed by email. Needed because the login gate blocks
+ *  unverified users *before* they hold a session, so the authed `handleResend`
+ *  is unreachable for exactly the cohort that needs a fresh link. Always returns
+ *  200 with no signal about whether the address exists or is already verified —
+ *  closes the account-enumeration oracle. Rate-limited per IP like the authed
+ *  variant. */
+async function handleResendPublic(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "auth:verify_resend", RESEND_BUCKET);
+  const body = await readJson<{ email?: unknown }>(ctx.req);
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  if (email.includes("@") && !email.startsWith("@")) {
+    const user = getUserByEmail(email);
+    if (user && !user.verified_email && user.status !== "suspended") {
+      sendVerificationLink(user, "verify_resend");
+    }
+  }
   return json({ ok: true });
 }
 
@@ -98,5 +127,6 @@ async function handleConsume(ctx: Ctx): Promise<Response> {
 
 export function registerEmailVerifyRoutes(router: Router) {
   router.post("/api/auth/verify/request", handleResend, true);
+  router.post("/api/auth/verify/request-public", handleResendPublic);
   router.post("/api/auth/verify/:token", handleConsume);
 }

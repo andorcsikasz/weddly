@@ -2,6 +2,7 @@
 
 import type {
   Accommodation,
+  AccommodationRoom,
   AdminCoupleView,
   AdminEmailEntry,
   AdminEmailListResponse,
@@ -50,6 +51,7 @@ import type {
   Transfer,
   UpdateCoupleIncomeInput,
   UpsertAccommodationInput,
+  UpsertAccommodationRoomInput,
   UpsertTransferInput,
   User,
   WeddingDateGoal,
@@ -327,6 +329,11 @@ export const authApi = {
     ),
   requestVerify: () =>
     apiFetch<{ ok: true; already_verified?: boolean }>("POST", "/api/auth/verify/request", {}),
+  /** Unauthenticated resend keyed by email — for users the login gate blocks
+   *  before they hold a session. Always resolves `{ ok: true }` regardless of
+   *  whether the address exists (no account enumeration). */
+  requestVerifyPublic: (email: string) =>
+    apiFetch<{ ok: true }>("POST", "/api/auth/verify/request-public", { email }),
   verifyEmail: (token: string) =>
     apiFetch<{ ok: true }>("POST", `/api/auth/verify/${encodeURIComponent(token)}`, {}),
 };
@@ -1199,9 +1206,24 @@ export const accommodationApi = {
   update: (id: number, body: Partial<UpsertAccommodationInput>) =>
     apiFetch<{ accommodation: Accommodation }>("PATCH", `/api/accommodations/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/accommodations/${id}`),
-  /** Assign a guest to an accommodation (or pass null to unassign). */
+  /** Assign a guest to an accommodation (or pass null to unassign). Clears any
+   *  specific-room placement — use `accommodationRoomApi.assign` for rooms. */
   assign: (body: { guest_id: number; accommodation_id: number | null }) =>
     apiFetch<{ ok: true }>("POST", "/api/accommodations/assign", body),
+};
+
+/** Logistics: rooms within an accommodation. Optional subdivision — once an
+ *  accommodation has rooms, guests are assigned per room with a per-room cap. */
+export const accommodationRoomApi = {
+  list: () => apiFetch<{ rooms: AccommodationRoom[] }>("GET", "/api/accommodation-rooms"),
+  create: (body: UpsertAccommodationRoomInput) =>
+    apiFetch<{ room: AccommodationRoom }>("POST", "/api/accommodation-rooms", body),
+  update: (id: number, body: Partial<UpsertAccommodationRoomInput>) =>
+    apiFetch<{ room: AccommodationRoom }>("PATCH", `/api/accommodation-rooms/${id}`, body),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/accommodation-rooms/${id}`),
+  /** Assign a guest into a specific room (or pass null to unassign). */
+  assign: (body: { guest_id: number; room_id: number | null }) =>
+    apiFetch<{ ok: true }>("POST", "/api/accommodation-rooms/assign", body),
 };
 
 /** Logistics: transfer trips. v1 is "basic" — flat list, label + optional

@@ -237,6 +237,11 @@ export interface LocaleMessages {
     duplicate_email: string;
     short_password: string;
     rate_limited: string;
+    verify_required_title: string;
+    verify_required_body: string;
+    verify_resend_button: string;
+    verify_resent: string;
+    verify_back_to_login: string;
     forgot_link: string;
     forgot_title: string;
     forgot_help: string;
@@ -3204,6 +3209,19 @@ export interface LocaleMessages {
     household_unlink: string;
     household_relink: string;
     household_linked_aria: string;
+    /** Rooms within an accommodation: CRUD labels, the per-room capacity help,
+     *  delete confirm copy (`{name}`), and the "guests at the accommodation but
+     *  not yet in a room" strip header. */
+    add_room: string;
+    edit_room: string;
+    room_name: string;
+    room_name_placeholder: string;
+    room_capacity_help: string;
+    room_name_required: string;
+    room_deleted: string;
+    delete_room_title: string;
+    delete_room_body: string;
+    unroomed_label: string;
   };
   seating: {
     title: string;

@@ -846,6 +846,48 @@ describe("admin users — beta-tester marker", () => {
   });
 });
 
+// Regression: a multi-workspace owner used to make their OTHER couples render
+// memberless / email-less in the admin list, because membership was read from
+// `users.couple_id` (the active-workspace pointer) instead of `couple_members`.
+describe("admin couples — multi-workspace member resolution", () => {
+  interface CouplesWithPartners {
+    couples: {
+      id: number;
+      partners: { id: number; full_name: string; email: string }[];
+      last_seen_at: number | null;
+    }[];
+  }
+
+  test("the owner's non-active workspace still shows their email", async () => {
+    const adminToken = await bootstrapAdmin();
+    // Couple A is the owner's first (active) workspace.
+    const { token, coupleId: coupleA } = await bootstrapCouple("multiws-owner@weddly.test");
+
+    // Creating a second workspace auto-switches users.couple_id to couple B,
+    // leaving A with no user whose active pointer references it.
+    const second = await req<{ couple: { id: number } }>(
+      "POST",
+      "/api/couples",
+      { event_name: "Polgári szertartás" },
+      { token },
+    );
+    expect(second.status).toBe(201);
+    const coupleB = second.data.couple.id;
+    expect(coupleB).not.toBe(coupleA);
+
+    const list = await req<CouplesWithPartners>("GET", "/api/admin/couples", undefined, {
+      token: adminToken,
+    });
+    const rowA = list.data.couples.find((c) => c.id === coupleA);
+    const rowB = list.data.couples.find((c) => c.id === coupleB);
+
+    // BOTH workspaces resolve the owner through couple_members — neither is
+    // memberless, and both surface the real email.
+    expect(rowA?.partners.map((p) => p.email)).toContain("multiws-owner@weddly.test");
+    expect(rowB?.partners.map((p) => p.email)).toContain("multiws-owner@weddly.test");
+  });
+});
+
 describe("admin couples — remind-invite-partner nudge", () => {
   test("solo couple → email_log row + audit log + 200", async () => {
     const adminToken = await bootstrapAdmin();

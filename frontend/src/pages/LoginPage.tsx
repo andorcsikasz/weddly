@@ -6,8 +6,20 @@ import { Shell } from "../components/Shell";
 import { Button, PasswordField } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+/** A 403 from /api/auth/login whose body carries `detail.code = "email_unverified"`
+ *  means the password was correct but the account never verified its email.
+ *  The login gate blocks the session and auto-sends a fresh link. */
+function isUnverifiedEmailError(err: unknown): boolean {
+  return (
+    err instanceof ApiError &&
+    err.status === 403 &&
+    (err.detail as { code?: string } | null)?.code === "email_unverified"
+  );
+}
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -21,6 +33,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set once login is blocked on an unverified email — flips the card to the
+  // "check your inbox" notice instead of the login form.
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
   const emailRef = useRef<HTMLInputElement | null>(null);
   const errorId = useId();
 
@@ -41,10 +57,73 @@ export default function LoginPage() {
       await login(email.trim(), password);
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(messageFor(err, t));
+      if (isUnverifiedEmailError(err)) {
+        // Backend already mailed a fresh link on the blocked login; show the
+        // notice (resend stays available for "didn't get it").
+        setUnverifiedEmail(email.trim());
+        setResendState("idle");
+      } else {
+        setError(messageFor(err, t));
+      }
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function onResend() {
+    if (!unverifiedEmail || resendState === "sending") return;
+    setResendState("sending");
+    try {
+      await authApi.requestVerifyPublic(unverifiedEmail);
+    } catch {
+      // The endpoint always 200s; a network blip shouldn't strand the user, so
+      // treat any outcome as "sent" — the worst case is they retry.
+    }
+    setResendState("sent");
+  }
+
+  if (unverifiedEmail) {
+    return (
+      <Shell>
+        <div className="mx-auto max-w-md">
+          <div className="card">
+            <h1 className="text-2xl">{t("auth.verify_required_title")}</h1>
+            <p className="mt-4 text-sm text-ink-600">
+              {t("auth.verify_required_body", { email: unverifiedEmail })}
+            </p>
+            {resendState === "sent" ? (
+              <p className="mt-5 rounded-md bg-sage-50 px-3 py-2 text-sm text-sage-800 dark:bg-sage-900/20 dark:text-sage-200">
+                {t("auth.verify_resent")}
+              </p>
+            ) : (
+              <Button
+                type="button"
+                variant="primary"
+                fullWidth
+                className="mt-5"
+                loading={resendState === "sending"}
+                loadingLabel={t("common.loading")}
+                onClick={onResend}
+              >
+                {t("auth.verify_resend_button")}
+              </Button>
+            )}
+            <p className="mt-4 text-center text-sm text-ink-600">
+              <button
+                type="button"
+                className="font-medium text-ink-900 underline"
+                onClick={() => {
+                  setUnverifiedEmail(null);
+                  setResendState("idle");
+                }}
+              >
+                {t("auth.verify_back_to_login")}
+              </button>
+            </p>
+          </div>
+        </div>
+      </Shell>
+    );
   }
 
   return (

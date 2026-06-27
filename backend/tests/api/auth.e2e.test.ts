@@ -209,6 +209,7 @@ describe("POST /api/auth/login — validation + errors", () => {
       password: "supersafe123",
       full_name: "Case",
     });
+    await verifyUserEmail("case@example.com");
     const r = await req("POST", "/api/auth/login", {
       email: "CASE@Example.COM",
       password: "supersafe123",
@@ -240,6 +241,7 @@ describe("POST /api/auth/login — validation + errors", () => {
       password: "supersafe123",
       full_name: "Fresh",
     });
+    await verifyUserEmail("fresh@example.com");
     const r = await req<{ token: string; user: { email: string } }>("POST", "/api/auth/login", {
       email: "fresh@example.com",
       password: "supersafe123",
@@ -276,6 +278,198 @@ describe("POST /api/auth/login — validation + errors", () => {
   });
 });
 
+// ─── /api/auth/login — verified-email gate ──────────────────────────────────
+
+describe("POST /api/auth/login — verified-email gate", () => {
+  test("unverified account is blocked with 403 + email_unverified code", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "gate-unverified@example.com",
+      password: "supersafe123",
+      full_name: "Gate",
+    });
+    const r = await req<{ detail?: { code?: string } }>("POST", "/api/auth/login", {
+      email: "gate-unverified@example.com",
+      password: "supersafe123",
+    });
+    expect(r.status).toBe(403);
+    expect(r.data.detail?.code).toBe("email_unverified");
+  });
+
+  test("blocked login does NOT issue a session token", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "gate-notoken@example.com",
+      password: "supersafe123",
+      full_name: "Gate",
+    });
+    const r = await req<{ token?: string }>("POST", "/api/auth/login", {
+      email: "gate-notoken@example.com",
+      password: "supersafe123",
+    });
+    expect(r.status).toBe(403);
+    expect(r.data.token).toBeUndefined();
+  });
+
+  test("blocked login auto-sends a fresh verification link", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "gate-resend@example.com",
+      password: "supersafe123",
+      full_name: "Gate",
+    });
+    const before = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .get("gate-resend@example.com") as { n: number };
+    await req("POST", "/api/auth/login", {
+      email: "gate-resend@example.com",
+      password: "supersafe123",
+    });
+    const after = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .get("gate-resend@example.com") as { n: number };
+    expect(after.n).toBe(before.n + 1);
+  });
+
+  test("a wrong password on an unverified account still returns 401 (not 403)", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "gate-wrongpw@example.com",
+      password: "supersafe123",
+      full_name: "Gate",
+    });
+    const r = await req("POST", "/api/auth/login", {
+      email: "gate-wrongpw@example.com",
+      password: "this-is-wrong",
+    });
+    // Password is checked before the verify gate — no verification oracle for
+    // someone who doesn't even know the password.
+    expect(r.status).toBe(401);
+  });
+
+  test("once verified, the previously-blocked account logs in normally", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "gate-then-ok@example.com",
+      password: "supersafe123",
+      full_name: "Gate",
+    });
+    const blocked = await req("POST", "/api/auth/login", {
+      email: "gate-then-ok@example.com",
+      password: "supersafe123",
+    });
+    expect(blocked.status).toBe(403);
+    await verifyUserEmail("gate-then-ok@example.com");
+    const ok = await req<{ token: string }>("POST", "/api/auth/login", {
+      email: "gate-then-ok@example.com",
+      password: "supersafe123",
+    });
+    expect(ok.status).toBe(200);
+    expect(ok.data.token).toContain(".");
+  });
+});
+
+// ─── /api/auth/verify/request-public — unauthenticated resend ───────────────
+
+describe("POST /api/auth/verify/request-public", () => {
+  test("unknown email returns 200 and creates no token (no enumeration)", async () => {
+    wipeAll();
+    const r = await req<{ ok: true }>("POST", "/api/auth/verify/request-public", {
+      email: "nobody-public@example.com",
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.ok).toBe(true);
+    const rows = db.prepare("SELECT COUNT(*) AS n FROM email_verification_tokens").get() as {
+      n: number;
+    };
+    expect(rows.n).toBe(0);
+  });
+
+  test("malformed email (no @) returns 200 silently", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/auth/verify/request-public", { email: "not-an-email" });
+    expect(r.status).toBe(200);
+  });
+
+  test("unverified account gets a brand-new token + verify_resend email", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "public-unverified@example.com",
+      password: "supersafe123",
+      full_name: "PU",
+    });
+    const before = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .get("public-unverified@example.com") as { n: number };
+    const r = await req("POST", "/api/auth/verify/request-public", {
+      email: "public-unverified@example.com",
+    });
+    expect(r.status).toBe(200);
+    const after = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .get("public-unverified@example.com") as { n: number };
+    expect(after.n).toBe(before.n + 1);
+    const mail = db
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'verify_resend' AND to_email = ?")
+      .all("public-unverified@example.com") as { to_email: string }[];
+    expect(mail.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test("already-verified account gets no new token (silent 200)", async () => {
+    wipeAll();
+    await req("POST", "/api/auth/register", {
+      email: "public-verified@example.com",
+      password: "supersafe123",
+      full_name: "PV",
+    });
+    await verifyUserEmail("public-verified@example.com");
+    const before = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .get("public-verified@example.com") as { n: number };
+    const r = await req("POST", "/api/auth/verify/request-public", {
+      email: "public-verified@example.com",
+    });
+    expect(r.status).toBe(200);
+    const after = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+      )
+      .get("public-verified@example.com") as { n: number };
+    expect(after.n).toBe(before.n);
+  });
+
+  test("6th request-public from the same IP returns 429", async () => {
+    wipeAll();
+    const ip = "10.42.7.70";
+    for (let i = 0; i < 5; i++) {
+      const r = await req(
+        "POST",
+        "/api/auth/verify/request-public",
+        { email: `pubrl${i}@example.com` },
+        { clientIp: ip },
+      );
+      expect(r.status).toBe(200);
+    }
+    const sixth = await req(
+      "POST",
+      "/api/auth/verify/request-public",
+      { email: "pubrl6@example.com" },
+      { clientIp: ip },
+    );
+    expect(sixth.status).toBe(429);
+  });
+});
+
 // ─── /api/auth/logout ────────────────────────────────────────────────────────
 
 describe("POST /api/auth/logout", () => {
@@ -298,6 +492,7 @@ describe("POST /api/auth/logout", () => {
       password: "supersafe123",
       full_name: "Multi",
     });
+    await verifyUserEmail("multi@example.com");
     const a = await req<{ token: string }>("POST", "/api/auth/login", {
       email: "multi@example.com",
       password: "supersafe123",
@@ -399,6 +594,7 @@ describe("POST /api/auth/change-password", () => {
       password: "supersafe123",
       full_name: "CP",
     });
+    await verifyUserEmail("cp-revoke@example.com");
     // Three concurrent sessions, then we change the password using #1.
     const s1 = await req<{ token: string }>("POST", "/api/auth/login", {
       email: "cp-revoke@example.com",
@@ -2134,6 +2330,7 @@ describe("POST /api/auth/login — per-account throttle", () => {
       password: "supersafe123",
       full_name: "Reset",
     });
+    await verifyUserEmail(email);
 
     // A few failures, then a success resets the counter.
     for (let i = 0; i < 5; i++) {

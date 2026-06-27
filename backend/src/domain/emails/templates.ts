@@ -496,7 +496,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "E-mail cím megerősítése",
       ctaSubtext: "A link 7 napig érvényes.",
-      footnote: "Akkor is bejelentkezhetsz, ha most még nem kattintasz.",
+      footnote: "A megerősítés szükséges a bejelentkezéshez, ezért érdemes most elintézni.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
@@ -507,7 +507,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Confirm your email",
       ctaSubtext: "The link is valid for 7 days.",
-      footnote: "You can keep using Weddly while you wait.",
+      footnote: "You'll need to confirm before you can sign in, so it's best to do it now.",
     },
   }),
 
