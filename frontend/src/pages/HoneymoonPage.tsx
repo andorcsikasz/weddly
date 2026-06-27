@@ -631,11 +631,11 @@ export default function HoneymoonPage() {
             className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-100"
             aria-hidden="true"
           />
-          <div className="min-w-0 flex-1 text-sm">
-            <p className="font-semibold text-ink-900 dark:text-paper-50">
+          <div className="min-w-0 flex-1 text-sm sm:flex sm:items-baseline sm:gap-2">
+            <p className="font-semibold text-ink-900 dark:text-paper-50 sm:shrink-0">
               {t("honeymoon.before_wedding_title")}
             </p>
-            <p className="mt-0.5 text-ink-700 dark:text-paper-200">
+            <p className="mt-0.5 text-ink-700 dark:text-paper-200 sm:mt-0">
               {t("honeymoon.before_wedding_body", {
                 wedding: formatDateShort(couple.wedding_date, locale),
                 honeymoon: formatDateShort(couple.honeymoon_start_date, locale),
