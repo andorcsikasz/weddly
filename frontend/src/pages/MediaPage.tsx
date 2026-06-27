@@ -990,7 +990,7 @@ export default function MediaPage() {
                   const editable = row.editable !== false;
                   const inner = (
                     <>
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-umber-700">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
                         {row.icon}
                       </span>
                       <span className="min-w-0 flex-1 text-sm font-medium text-umber-900">
@@ -1154,7 +1154,7 @@ export default function MediaPage() {
             </form>
           ) : (
             <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-umber-700">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
                 <Camera size={17} aria-hidden="true" />
               </span>
               {photographerUrl ? (
@@ -1200,7 +1200,7 @@ export default function MediaPage() {
 
         {/* ── Reveal gallery teaser (coming soon) ───────────────────── */}
         <div className="pointer-events-none flex cursor-default select-none items-center gap-3 border-t border-paper-200 px-5 py-3.5 opacity-40">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-umber-700">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
             <Share2 size={17} aria-hidden="true" />
           </span>
           <span className="flex-1 text-sm font-medium text-umber-900">
