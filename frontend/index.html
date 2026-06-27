@@ -100,7 +100,7 @@
         border-radius: 1rem !important;
         box-shadow: 0 16px 48px rgba(26, 20, 16, 0.18), 0 4px 16px rgba(26, 20, 16, 0.08) !important;
         color: #1a1410 !important;
-        max-width: 360px !important;
+        max-width: 280px !important;
         width: calc(100vw - 3rem) !important;
         max-height: calc(100dvh - 3rem) !important;
         overflow-y: auto !important;
@@ -123,6 +123,12 @@
       html body #CybotCookiebotDialogDetailBodyContentCookieContainerTypes {
         display: none !important;
       }
+
+      /* Temporary: hide the "TEST" watermark. It shows because the CBID
+         dbc1cd47-… domain group (weddly.hu + tryweddly.com) isn't yet added to
+         the owning Cookiebot account (hello@tryweddly.com). Remove this rule
+         once the domains are configured there and the banner goes live. */
+      .CybotCookiebotDialogBodyInternalAlias { display: none !important; }
 
       /* Header / logo row — hide Cookiebot's default logo area */
       #CybotCookiebotDialogHeader {
