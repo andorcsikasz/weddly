@@ -29,6 +29,7 @@ import { storage, keyFromUploadUrl } from "./lib/storage";
 import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
+import { startBackupWorker } from "./domain/backup";
 import { startWishlistImageBackfill } from "./domain/wishlist_image_backfill";
 import { registerAccommodationRoutes } from "./routes/accommodations";
 import { registerAdminAnalyticsRoutes } from "./routes/admin_analytics";
@@ -614,6 +615,9 @@ const server = Bun.serve({
 if (process.env.NODE_ENV !== "test") {
   startPurgeWorker();
   startEmailWorker();
+  // Periodic SQLite → R2 disaster-recovery backups. No-op unless R2 is
+  // configured and R2_BACKUP_INTERVAL_HOURS > 0.
+  startBackupWorker();
   // Tidy any abandoned demo couples left over from a previous boot — keeps
   // the table sparse even when /api/demo/start hasn't been hit in days.
   runDemoBootSweep();
