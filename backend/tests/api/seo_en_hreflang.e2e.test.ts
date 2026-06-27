@@ -30,32 +30,32 @@ describe("seo: same-host EN hreflang for paired tool routes", () => {
   test("HU tool page emits an EN alternate pointing at the EN slug on weddly.hu", () => {
     const html = render(HU_TOOL, "hu");
     expect(html).toContain(
-      `<link rel="alternate" hreflang="hu" href="https://weddly.hu${HU_TOOL}" />`,
+      `<link rel="alternate" hreflang="hu" href="https://tryweddly.com${HU_TOOL}" />`,
     );
     expect(html).toContain(
-      `<link rel="alternate" hreflang="en" href="https://weddly.hu${EN_TOOL}" />`,
+      `<link rel="alternate" hreflang="en" href="https://tryweddly.com${EN_TOOL}" />`,
     );
     expect(html).toContain(
-      `<link rel="alternate" hreflang="x-default" href="https://weddly.hu${HU_TOOL}" />`,
+      `<link rel="alternate" hreflang="x-default" href="https://tryweddly.com${HU_TOOL}" />`,
     );
   });
 
   test("EN-rendered tool page canonicalises to the EN slug", () => {
     const html = render(HU_TOOL, "en-US");
-    expect(html).toContain(`<link rel="canonical" href="https://weddly.hu${EN_TOOL}" />`);
+    expect(html).toContain(`<link rel="canonical" href="https://tryweddly.com${EN_TOOL}" />`);
   });
 
   test("HU-rendered tool page canonicalises to the HU slug", () => {
     const html = render(HU_TOOL, "hu");
-    expect(html).toContain(`<link rel="canonical" href="https://weddly.hu${HU_TOOL}" />`);
+    expect(html).toContain(`<link rel="canonical" href="https://tryweddly.com${HU_TOOL}" />`);
   });
 });
 
 describe("seo: non-paired routes emit no EN alternate (single URL)", () => {
   test("/about has hu + x-default but no en alternate", () => {
     const html = render("/about", "hu");
-    expect(html).toContain(`hreflang="hu" href="https://weddly.hu/about"`);
-    expect(html).toContain(`hreflang="x-default" href="https://weddly.hu/about"`);
+    expect(html).toContain(`hreflang="hu" href="https://tryweddly.com/about"`);
+    expect(html).toContain(`hreflang="x-default" href="https://tryweddly.com/about"`);
     expect(html).not.toContain(`hreflang="en"`);
   });
 
@@ -68,14 +68,14 @@ describe("seo: non-paired routes emit no EN alternate (single URL)", () => {
 describe("seo: sitemap lists EN tool URLs in single-host mode", () => {
   test("includes a <loc> for the EN tool slug on weddly.hu", () => {
     const xml = renderSitemapXml("weddly.hu");
-    expect(xml).toContain(`<loc>https://weddly.hu${EN_TOOL}</loc>`);
-    expect(xml).toContain(`<loc>https://weddly.hu${HU_TOOL}</loc>`);
+    expect(xml).toContain(`<loc>https://tryweddly.com${EN_TOOL}</loc>`);
+    expect(xml).toContain(`<loc>https://tryweddly.com${HU_TOOL}</loc>`);
   });
 
   test("does not emit a duplicate EN loc for non-paired routes", () => {
     const xml = renderSitemapXml("weddly.hu");
     // /about appears once (no distinct EN slug), not twice.
-    const aboutLocs = (xml.match(/<loc>https:\/\/weddly\.hu\/about<\/loc>/g) ?? []).length;
+    const aboutLocs = (xml.match(/<loc>https:\/\/tryweddly\.com\/about<\/loc>/g) ?? []).length;
     expect(aboutLocs).toBe(1);
   });
 });

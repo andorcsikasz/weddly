@@ -89,6 +89,6 @@ describe("compression — integration against the live sitemap", () => {
     expect(res.status).toBe(200);
     const body = await res.text();
     expect(body).toContain("<urlset");
-    expect(body).toContain("https://weddly.hu/");
+    expect(body).toContain("https://tryweddly.com/");
   });
 });

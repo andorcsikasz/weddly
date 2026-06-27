@@ -10850,7 +10850,7 @@ describe("seo: locale detection", () => {
 
 describe("seo: /robots.txt", () => {
   test("robots advertises HU sitemap + disallows private paths", async () => {
-    const r = await fetchWithHost("/robots.txt", "weddly.hu");
+    const r = await fetchWithHost("/robots.txt", "tryweddly.com");
     expect(r.status).toBe(200);
     expect(r.headers.get("content-type")).toContain("text/plain");
     const body = await r.text();
@@ -10874,7 +10874,7 @@ describe("seo: /robots.txt", () => {
 
 describe("seo: /sitemap.xml", () => {
   test("sitemap has HU URLs, lastmod, and xhtml:link alternates", async () => {
-    const r = await fetchWithHost("/sitemap.xml", "weddly.hu");
+    const r = await fetchWithHost("/sitemap.xml", "tryweddly.com");
     expect(r.status).toBe(200);
     expect(r.headers.get("content-type")).toContain("application/xml");
     const body = await r.text();
@@ -11430,7 +11430,7 @@ describe("seo: per-route uniqueness", () => {
     expect(a.match(/<title>([^<]+)<\/title>/)?.[1]).toBe(b.match(/<title>([^<]+)<\/title>/)?.[1]);
     expect(a.match(/<h1>([^<]+)<\/h1>/)?.[1]).toBe(b.match(/<h1>([^<]+)<\/h1>/)?.[1]);
     // But the canonical URL still tracks the actual request path.
-    expect(b).toContain('href="https://weddly.hu/impresszum"');
+    expect(b).toContain('href="https://tryweddly.com/impresszum"');
   });
 
   test("every public route ships a unique <title> + <h1>", () => {

@@ -22,7 +22,11 @@ import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../sh
 import { db } from "../db";
 import { normalizeSlugInput } from "../domain/slug";
 
-export const HU_HOST = "weddly.hu";
+// Canonical apex moved from weddly.hu to tryweddly.com in the June 2026 domain
+// cutover. weddly.hu / weddly.xyz now 301-redirect here (see server.ts
+// LEGACY_HOSTS), so every public URL — canonical, og:url, sitemap, JSON-LD —
+// resolves to tryweddly.com. The constant name keeps its history.
+export const HU_HOST = "tryweddly.com";
 /** Canonical host for every public URL in SEO output. */
 export const CANONICAL_HOST = HU_HOST;
 
@@ -553,7 +557,7 @@ function buildJsonLd(opts: {
         "@type": "SearchAction",
         target: {
           "@type": "EntryPoint",
-          urlTemplate: "https://weddly.hu/blog?q={search_term_string}",
+          urlTemplate: `https://${CANONICAL_HOST}/blog?q={search_term_string}`,
         },
         "query-input": "required name=search_term_string",
       },

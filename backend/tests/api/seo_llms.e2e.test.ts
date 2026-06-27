@@ -29,7 +29,7 @@ describe("seo: /llms.txt", () => {
     expect(body).toContain("## Free wedding tools");
     expect(body).toContain("## Wedding blog");
     // EN canonical tool slug + a seeded blog post URL.
-    expect(body).toContain("https://weddly.hu/tools/wedding-budget-calculator");
-    expect(body).toContain("https://weddly.hu/blog/");
+    expect(body).toContain("https://tryweddly.com/tools/wedding-budget-calculator");
+    expect(body).toContain("https://tryweddly.com/blog/");
   });
 });

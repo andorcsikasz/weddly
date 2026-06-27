@@ -158,7 +158,7 @@ describe("/w/:slug SSR meta — couple-personalised <title> + OG tags", () => {
     expect(html).toContain("Festetics Palace");
     // og:image points at the couple-pasted cover URL, not the brand fallback.
     expect(html).toContain('property="og:image" content="https://images.example/cover.jpg"');
-    expect(html).not.toContain('content="https://weddly.hu/og.png"');
+    expect(html).not.toContain('content="https://tryweddly.com/og.png"');
   });
 
   test("private couple → SSR falls back to brand meta (no personalisation leak)", async () => {
@@ -189,7 +189,7 @@ describe("/w/:slug SSR meta — couple-personalised <title> + OG tags", () => {
     // names / dates / venue showing up in title or description. EN is
     // the default render locale now (no Accept-Language forwarded by
     // production server.ts), so the brand line we assert is the EN one.
-    expect(html).toContain('content="https://weddly.hu/og.png"');
+    expect(html).toContain('content="https://tryweddly.com/og.png"');
     expect(html).toContain("Weddly · Your shared wedding-planning workspace");
     // Spot-check that the bride/groom test names (set by bootstrapCouple)
     // do NOT leak into the head when is_public = 0.
