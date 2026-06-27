@@ -10,8 +10,40 @@
 import { expect } from "bun:test";
 
 import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
+import { __testPlaintextForHash } from "../src/auth/tokens";
 import { db } from "../src/db";
 import { seedSupplierTaxonomy } from "../src/domain/supplier_taxonomy";
+
+/** Single-use credential token tables whose values are now stored hashed
+ *  (auth/tokens.ts). Tests can't read the plaintext from the row anymore, so
+ *  `latestCredentialToken` resolves it through the test-only capture map. */
+type HashedTokenTable =
+  | "email_verification_tokens"
+  | "password_reset_tokens"
+  | "email_change_tokens";
+
+/** Recover the PLAINTEXT of the most-recent hashed credential token for an
+ *  email — the value a real user would receive in the link. Mirrors the
+ *  "click the emailed link" path now that only the hash is persisted. */
+export function latestCredentialToken(table: HashedTokenTable, email: string): string {
+  const row = db
+    .prepare(
+      `SELECT token FROM ${table} WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1`,
+    )
+    .get(email.trim().toLowerCase()) as { token: string } | undefined;
+  if (!row) throw new Error(`no ${table} row for ${email}`);
+  const plaintext = __testPlaintextForHash(row.token);
+  if (!plaintext) throw new Error(`no captured plaintext for ${table}/${email}`);
+  return plaintext;
+}
+
+/** As `latestCredentialToken` but resolves the plaintext for a given stored
+ *  hash directly (for sites that already hold a token row). */
+export function plaintextForStoredToken(storedHash: string): string {
+  const plaintext = __testPlaintextForHash(storedHash);
+  if (!plaintext) throw new Error("no captured plaintext for token hash");
+  return plaintext;
+}
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -208,14 +240,8 @@ export function wipeAll(): void {
 /** Mark the most recently-issued verification token for the email as used.
  *  Same code path a real user clicking the welcome-mail link would hit. */
 export async function verifyUserEmail(email: string): Promise<void> {
-  const normalized = email.trim().toLowerCase();
-  const row = db
-    .prepare(
-      "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
-    )
-    .get(normalized) as { token: string } | undefined;
-  if (!row) throw new Error(`no verification token for ${email}`);
-  const r = await req("POST", `/api/auth/verify/${row.token}`, {});
+  const token = latestCredentialToken("email_verification_tokens", email);
+  const r = await req("POST", `/api/auth/verify/${token}`, {});
   expect(r.status).toBe(200);
 }
 

@@ -9,8 +9,8 @@
 // without a network. Failures are soft — the endpoint returns nulls rather
 // than erroring, so a dead link never blocks saving the item.
 
-import { lookup } from "node:dns/promises";
 import type { WishlistLinkPreview } from "@shared/wishlist";
+import { isPublicHost } from "./ssrf";
 
 const FETCH_TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 4;
@@ -20,53 +20,10 @@ const MAX_BODY_BYTES = 1024 * 1024;
 const PREVIEW_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
-/** Reserved / non-routable IPv4 ranges we refuse to fetch from. */
-function isBlockedIpv4(ip: string): boolean {
-  const parts = ip.split(".").map((p) => Number(p));
-  if (parts.length !== 4 || parts.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) {
-    // Not a dotted-quad — let the caller treat it as "not an IPv4 literal".
-    return false;
-  }
-  const [a, b] = parts as [number, number, number, number];
-  if (a === 0) return true; // 0.0.0.0/8 "this network"
-  if (a === 10) return true; // 10/8 private
-  if (a === 127) return true; // loopback
-  if (a === 169 && b === 254) return true; // link-local 169.254/16
-  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16/12 private
-  if (a === 192 && b === 168) return true; // 192.168/16 private
-  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT 100.64/10
-  if (a >= 224) return true; // multicast + reserved (224+)
-  return false;
-}
-
-/** Reserved IPv6 ranges (loopback, link-local, unique-local, and v4-mapped
- *  forms that would otherwise sneak a private v4 through). */
-function isBlockedIpv6(ip: string): boolean {
-  const lower = ip.toLowerCase();
-  if (lower === "::1" || lower === "::") return true; // loopback / unspecified
-  if (lower.startsWith("fe80")) return true; // link-local
-  if (lower.startsWith("fc") || lower.startsWith("fd")) return true; // unique-local fc00::/7
-  // v4-mapped (::ffff:a.b.c.d) — extract the embedded v4 and re-check.
-  const mapped = lower.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  if (mapped?.[1] && isBlockedIpv4(mapped[1])) return true;
-  return false;
-}
-
-function isBlockedIp(ip: string): boolean {
-  return ip.includes(":") ? isBlockedIpv6(ip) : isBlockedIpv4(ip);
-}
-
-/** A hostname that's never legitimate for an external product link. */
-function isBlockedHostname(host: string): boolean {
-  const h = host.toLowerCase();
-  if (h === "localhost" || h.endsWith(".localhost")) return true;
-  if (h.endsWith(".local") || h.endsWith(".internal")) return true;
-  return false;
-}
-
 /** Validate the URL scheme/host, then DNS-resolve and confirm every address is
  *  publicly routable. Returns the parsed URL or throws so the caller can map
- *  to a soft null result. */
+ *  to a soft null result. The address/host blocking lives in lib/ssrf.ts, the
+ *  single source of truth shared with supplier enrichment. */
 async function assertSafeUrl(raw: string): Promise<URL> {
   let url: URL;
   try {
@@ -77,30 +34,7 @@ async function assertSafeUrl(raw: string): Promise<URL> {
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new Error("unsupported scheme");
   }
-  const host = url.hostname;
-  if (!host || isBlockedHostname(host)) throw new Error("blocked host");
-
-  // Literal IP in the host — check directly (DNS lookup of a literal just
-  // echoes it back, but we short-circuit to be explicit).
-  const literal = host.replace(/^\[|\]$/g, ""); // strip [..] for IPv6 literals
-  if (/^[\d.]+$/.test(literal) || literal.includes(":")) {
-    if (isBlockedIp(literal)) throw new Error("blocked ip");
-    return url;
-  }
-
-  // Hostname — resolve and refuse if ANY answer is non-routable. Checking
-  // before the fetch closes the obvious cases; it isn't a full guarantee
-  // against DNS-rebinding but is the standard mitigation at this layer.
-  let addrs: { address: string }[];
-  try {
-    addrs = await lookup(host, { all: true });
-  } catch {
-    throw new Error("dns failure");
-  }
-  if (addrs.length === 0) throw new Error("no address");
-  for (const a of addrs) {
-    if (isBlockedIp(a.address)) throw new Error("blocked resolved ip");
-  }
+  if (!(await isPublicHost(url.hostname))) throw new Error("blocked host");
   return url;
 }
 

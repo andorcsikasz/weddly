@@ -48,7 +48,12 @@ function seedFoundingCohort(n: number): void {
   })();
 }
 
-async function upload(token: string | null, scope: string, blob: Blob, name = "invoice"): Promise<Response> {
+async function upload(
+  token: string | null,
+  scope: string,
+  blob: Blob,
+  name = "invoice",
+): Promise<Response> {
   const form = new FormData();
   form.append("scope", scope);
   form.append("file", blob, name);
@@ -78,9 +83,14 @@ describe("budget documents — upload, list, serve, delete", () => {
 
   test("a fresh couple has no documents", async () => {
     const { token } = await bootstrapCouple("bd-empty@weddly.test");
-    const r = await req<{ documents: BudgetDocument[] }>("GET", "/api/budget/documents", undefined, {
-      token,
-    });
+    const r = await req<{ documents: BudgetDocument[] }>(
+      "GET",
+      "/api/budget/documents",
+      undefined,
+      {
+        token,
+      },
+    );
     expect(r.status).toBe(200);
     expect(r.data.documents).toEqual([]);
   });
@@ -106,7 +116,7 @@ describe("budget documents — upload, list, serve, delete", () => {
     expect(list.data.documents).toHaveLength(1);
   });
 
-  test("uploads an image to a line scope and serves it back from /uploads", async () => {
+  test("private docs are NOT public via /uploads; served only through the authed route", async () => {
     const { token } = await bootstrapCouple("bd-line@weddly.test");
     const lineId = await createLine(token);
     const res = await upload(token, `line:${lineId}`, tinyPngBlob(), "nyugta.png");
@@ -114,9 +124,23 @@ describe("budget documents — upload, list, serve, delete", () => {
     const { document } = (await res.json()) as { document: BudgetDocument };
     expect(document.mime).toBe("image/png");
 
-    const served = await fetch(`${BASE}${document.file_path}`);
+    // The public /uploads URL must be refused — these are private financial docs,
+    // and the old public-by-URL behaviour leaked them to anyone who guessed the
+    // (sequential) couple_id / doc_id.
+    const publicHit = await fetch(`${BASE}${document.file_path}`);
+    expect(publicHit.status).toBe(404);
+
+    // Unauthenticated download is rejected.
+    const anon = await fetch(`${BASE}/api/budget/documents/${document.id}/download`);
+    expect(anon.status).toBe(401);
+
+    // The owning couple can stream the bytes through the authenticated route.
+    const served = await fetch(`${BASE}/api/budget/documents/${document.id}/download`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(served.status).toBe(200);
     expect(served.headers.get("content-type")).toContain("image/png");
+    expect(served.headers.get("cache-control")).toContain("no-store");
     expect((await served.arrayBuffer()).byteLength).toBeGreaterThan(0);
   });
 
@@ -148,7 +172,11 @@ describe("budget documents — validation", () => {
 
   test("non-PDF / non-image bytes → 415", async () => {
     const { token } = await bootstrapCouple("bd-badtype@weddly.test");
-    const res = await upload(token, "cat:venue", new Blob(["not a document"], { type: "application/pdf" }));
+    const res = await upload(
+      token,
+      "cat:venue",
+      new Blob(["not a document"], { type: "application/pdf" }),
+    );
     expect(res.status).toBe(415);
   });
 
@@ -227,6 +255,12 @@ describe("budget documents — cross-couple isolation", () => {
     // B can't attach to A's line scope.
     const bAttach = await upload(b.token, `line:${aLine}`, tinyPdfBlob());
     expect(bAttach.status).toBe(404);
+
+    // B can't download A's document through the authed route (couple-scoped).
+    const bDownload = await fetch(`${BASE}/api/budget/documents/${document.id}/download`, {
+      headers: { Authorization: `Bearer ${b.token}` },
+    });
+    expect(bDownload.status).toBe(404);
 
     // B can't delete A's document.
     const del = await req("DELETE", `/api/budget/documents/${document.id}`, undefined, {

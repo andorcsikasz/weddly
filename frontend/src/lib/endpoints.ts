@@ -1019,6 +1019,17 @@ export const budgetDocApi = {
     return JSON.parse(text) as { document: BudgetDocument };
   },
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/budget/documents/${id}`),
+  /** Auth-protected blob fetch for a private invoice/receipt. These are no
+   *  longer served by the public `/uploads/*` URL — the caller opens the blob in
+   *  a new tab (mirrors `fetchSavedExportBlob`). */
+  fetchBlob: async (id: number): Promise<Blob> => {
+    const token = getToken();
+    const res = await fetch(`/api/budget/documents/${id}/download`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) throw new Error(`Document fetch failed: ${res.status}`);
+    return res.blob();
+  },
 };
 
 export const incomeApi = {

@@ -3,8 +3,8 @@
 // old one. Only when the new inbox clicks through does users.email flip.
 // Single-use tokens, 1h TTL.
 
-import { randomBytes } from "node:crypto";
 import { verifyPassword } from "../auth/password";
+import { hashToken, mintToken } from "../auth/tokens";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
@@ -67,12 +67,14 @@ async function handleRequest(ctx: Ctx): Promise<Response> {
     userId,
   );
 
-  const token = randomBytes(32).toString("hex");
+  // Plaintext token for the emailed confirm link; only its hash is stored, so a
+  // DB/backup read can't replay this account-email-takeover token. See auth/tokens.ts.
+  const token = mintToken();
   const ts = now();
   db.prepare(
     `INSERT INTO email_change_tokens (user_id, new_email, token, expires_at, consumed_at, created_at)
      VALUES (?, ?, ?, ?, NULL, ?)`,
-  ).run(userId, newEmail, token, ts + CHANGE_TTL_MS, ts);
+  ).run(userId, newEmail, hashToken(token), ts + CHANGE_TTL_MS, ts);
 
   addAuditLog({
     actor_user_id: userId,
@@ -113,9 +115,9 @@ async function handleConfirm(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Invalid token");
   }
 
-  const row = db.prepare("SELECT * FROM email_change_tokens WHERE token = ?").get(tokenRaw) as
-    | ChangeTokenRow
-    | undefined;
+  const row = db
+    .prepare("SELECT * FROM email_change_tokens WHERE token = ?")
+    .get(hashToken(tokenRaw)) as ChangeTokenRow | undefined;
   if (!row) throw new HttpError(400, "Invalid or expired token");
   if (row.consumed_at) throw new HttpError(400, "Invalid or expired token");
   const ts = now();

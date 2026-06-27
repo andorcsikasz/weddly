@@ -7,8 +7,20 @@ import { createVerificationToken } from "../src/domain/community_suppliers";
 import { runEmailSweep } from "../src/domain/emails/worker";
 import { runPurgeSweep } from "../src/domain/purge";
 import { seedSupplierTaxonomy } from "../src/domain/supplier_taxonomy";
+import { __testPlaintextForHash } from "../src/auth/tokens";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
+
+/** Resolve the PLAINTEXT of a stored (hashed) credential token — the value a
+ *  real user would receive in the emailed link. Reset / verify / change-email
+ *  tokens are stored as SHA-256 (auth/tokens.ts), so tests recover the original
+ *  through the test-only capture map. NOT for community/vendor tokens, which
+ *  are still stored in plaintext. */
+function pt(storedHash: string): string {
+  const plaintext = __testPlaintextForHash(storedHash);
+  if (!plaintext) throw new Error("no captured plaintext for token hash");
+  return plaintext;
+}
 
 interface ReqOpts {
   token?: string;
@@ -328,7 +340,7 @@ describe("auth", () => {
       .get("pwreset@example.com") as { token: string } | undefined;
     expect(tokenRow?.token).toBeTruthy();
     const reset = await req("POST", "/api/auth/reset", {
-      token: tokenRow!.token,
+      token: pt(tokenRow!.token),
       password: "evenmoresafer456",
     });
     expect(reset.status).toBe(200);
@@ -411,7 +423,7 @@ describe("auth", () => {
 
     const confirm = await req<{ ok: true; email: string }>(
       "POST",
-      `/api/auth/change-email/${tokenRow!.token}`,
+      `/api/auth/change-email/${pt(tokenRow!.token)}`,
       {},
     );
     expect(confirm.status).toBe(200);
@@ -434,7 +446,7 @@ describe("auth", () => {
     expect(loginOld.status).toBe(401);
 
     // Token is single-use.
-    const reuse = await req("POST", `/api/auth/change-email/${tokenRow!.token}`, {});
+    const reuse = await req("POST", `/api/auth/change-email/${pt(tokenRow!.token)}`, {});
     expect(reuse.status).toBe(400);
   });
 });
@@ -1460,7 +1472,7 @@ async function verifyUserEmail(email: string): Promise<void> {
     )
     .get(normalized) as { token: string } | undefined;
   if (!tokenRow) throw new Error(`no verification token for ${email}`);
-  const r = await req("POST", `/api/auth/verify/${tokenRow.token}`, {});
+  const r = await req("POST", `/api/auth/verify/${pt(tokenRow.token)}`, {});
   expect(r.status).toBe(200);
 }
 
@@ -2912,7 +2924,7 @@ describe("password reset", () => {
     expect(tokenRow?.token).toBeDefined();
 
     const reset = await req<{ ok: true }>("POST", "/api/auth/reset", {
-      token: tokenRow!.token,
+      token: pt(tokenRow!.token),
       password: "brandnewpw456",
     });
     expect(reset.status).toBe(200);
@@ -2934,7 +2946,7 @@ describe("password reset", () => {
 
     // Re-using the same token must fail.
     const reuse = await req("POST", "/api/auth/reset", {
-      token: tokenRow!.token,
+      token: pt(tokenRow!.token),
       password: "anotherpw789",
     });
     expect(reuse.status).toBe(400);
@@ -2957,7 +2969,7 @@ describe("password reset", () => {
       )
       .get("expired@weddly.test") as { token: string };
     const r = await req("POST", "/api/auth/reset", {
-      token: tokenRow.token,
+      token: pt(tokenRow.token),
       password: "newpassword123",
     });
     expect(r.status).toBe(400);
@@ -3050,7 +3062,7 @@ describe("email verification", () => {
       )
       .get("verify-flip@weddly.test") as { token: string };
 
-    const consume = await req<{ ok: true }>("POST", `/api/auth/verify/${tokenRow.token}`, {});
+    const consume = await req<{ ok: true }>("POST", `/api/auth/verify/${pt(tokenRow.token)}`, {});
     expect(consume.status).toBe(200);
 
     // /me reflects the flip.
@@ -3060,7 +3072,7 @@ describe("email verification", () => {
     expect(me.data.user.verified_email).toBe(true);
 
     // Re-using the same token must fail.
-    const reuse = await req("POST", `/api/auth/verify/${tokenRow.token}`, {});
+    const reuse = await req("POST", `/api/auth/verify/${pt(tokenRow.token)}`, {});
     expect(reuse.status).toBe(400);
   });
 
@@ -3080,7 +3092,7 @@ describe("email verification", () => {
       )
       .get("verify-expired@weddly.test") as { token: string };
 
-    const r = await req("POST", `/api/auth/verify/${tokenRow.token}`, {});
+    const r = await req("POST", `/api/auth/verify/${pt(tokenRow.token)}`, {});
     expect(r.status).toBe(400);
   });
 
@@ -3128,7 +3140,7 @@ describe("email verification", () => {
         "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
       )
       .get("verify-already@weddly.test") as { token: string };
-    await req("POST", `/api/auth/verify/${tokenRow.token}`, {});
+    await req("POST", `/api/auth/verify/${pt(tokenRow.token)}`, {});
 
     const resend = await req<{ ok: true; already_verified?: boolean }>(
       "POST",

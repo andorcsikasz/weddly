@@ -1,7 +1,13 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
+import {
+  req,
+  wipeAll,
+  verifyUserEmail,
+  bootstrapCouple,
+  plaintextForStoredToken,
+} from "../helpers";
 import { db } from "../../src/db";
 
 // ─── /api/auth/register ─────────────────────────────────────────────────────
@@ -585,7 +591,7 @@ describe("POST /api/auth/verify/:token — consume", () => {
         "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
       )
       .get("verify-exp@example.com") as { token: string };
-    const r = await req("POST", `/api/auth/verify/${row.token}`, {});
+    const r = await req("POST", `/api/auth/verify/${plaintextForStoredToken(row.token)}`, {});
     expect(r.status).toBe(400);
   });
 
@@ -601,9 +607,9 @@ describe("POST /api/auth/verify/:token — consume", () => {
         "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
       )
       .get("verify-once@example.com") as { token: string };
-    const first = await req("POST", `/api/auth/verify/${row.token}`, {});
+    const first = await req("POST", `/api/auth/verify/${plaintextForStoredToken(row.token)}`, {});
     expect(first.status).toBe(200);
-    const second = await req("POST", `/api/auth/verify/${row.token}`, {});
+    const second = await req("POST", `/api/auth/verify/${plaintextForStoredToken(row.token)}`, {});
     expect(second.status).toBe(400);
   });
 
@@ -860,12 +866,12 @@ describe("POST /api/auth/reset", () => {
       )
       .get("reset-once@example.com") as { token: string };
     const first = await req("POST", "/api/auth/reset", {
-      token: tokenRow.token,
+      token: plaintextForStoredToken(tokenRow.token),
       password: "newpassword-1",
     });
     expect(first.status).toBe(200);
     const second = await req("POST", "/api/auth/reset", {
-      token: tokenRow.token,
+      token: plaintextForStoredToken(tokenRow.token),
       password: "newpassword-2",
     });
     expect(second.status).toBe(400);
@@ -895,7 +901,7 @@ describe("POST /api/auth/reset", () => {
       .get("reset-rev@example.com") as { token: string };
 
     const reset = await req("POST", "/api/auth/reset", {
-      token: tokenRow.token,
+      token: plaintextForStoredToken(tokenRow.token),
       password: "rotated-after-reset-1",
     });
     expect(reset.status).toBe(200);
@@ -946,7 +952,7 @@ describe("POST /api/auth/reset", () => {
     db.prepare("UPDATE users SET status = 'suspended' WHERE id = ?").run(reg.data.user.id);
 
     const r = await req("POST", "/api/auth/reset", {
-      token: tokenRow.token,
+      token: plaintextForStoredToken(tokenRow.token),
       password: "attacker-chosen-pw",
     });
     // Same opaque error as an invalid token — no suspension oracle.
@@ -1190,7 +1196,11 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
         "SELECT token FROM email_change_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
       )
       .get("ce-exp@example.com") as { token: string };
-    const r = await req("POST", `/api/auth/change-email/${tokenRow.token}`, {});
+    const r = await req(
+      "POST",
+      `/api/auth/change-email/${plaintextForStoredToken(tokenRow.token)}`,
+      {},
+    );
     expect(r.status).toBe(400);
   });
 
@@ -1212,9 +1222,17 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
         "SELECT token FROM email_change_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
       )
       .get("ce-twice@example.com") as { token: string };
-    const first = await req("POST", `/api/auth/change-email/${tokenRow.token}`, {});
+    const first = await req(
+      "POST",
+      `/api/auth/change-email/${plaintextForStoredToken(tokenRow.token)}`,
+      {},
+    );
     expect(first.status).toBe(200);
-    const second = await req("POST", `/api/auth/change-email/${tokenRow.token}`, {});
+    const second = await req(
+      "POST",
+      `/api/auth/change-email/${plaintextForStoredToken(tokenRow.token)}`,
+      {},
+    );
     expect(second.status).toBe(400);
   });
 
@@ -1238,7 +1256,11 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
     // Suspend AFTER the token was issued.
     db.prepare("UPDATE users SET status = 'suspended' WHERE id = ?").run(reg.data.user.id);
 
-    const r = await req("POST", `/api/auth/change-email/${tokenRow.token}`, {});
+    const r = await req(
+      "POST",
+      `/api/auth/change-email/${plaintextForStoredToken(tokenRow.token)}`,
+      {},
+    );
     // Same opaque error as an invalid token — no suspension oracle.
     expect(r.status).toBe(400);
     // Email is unchanged and the token wasn't consumed.
@@ -1276,7 +1298,11 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
         "SELECT token FROM email_change_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
       )
       .get("ce-race@example.com") as { token: string };
-    const r = await req("POST", `/api/auth/change-email/${tokenRow.token}`, {});
+    const r = await req(
+      "POST",
+      `/api/auth/change-email/${plaintextForStoredToken(tokenRow.token)}`,
+      {},
+    );
     expect(r.status).toBe(409);
   });
 
@@ -1298,7 +1324,7 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
       .get(reg.data.user.id) as { token: string };
     const r = await req<{ ok: true; email: string }>(
       "POST",
-      `/api/auth/change-email/${tokenRow.token}`,
+      `/api/auth/change-email/${plaintextForStoredToken(tokenRow.token)}`,
       {},
     );
     expect(r.status).toBe(200);
@@ -2073,5 +2099,90 @@ describe("session sliding refresh", () => {
 
     const row = db.prepare("SELECT id FROM sessions WHERE id = ?").get(id);
     expect(row).toBeNull();
+  });
+});
+
+// ─── per-account failed-login throttle ──────────────────────────────────────
+// `req` spoofs a fresh random IP per call, so the per-IP AUTH_BUCKET never trips
+// here — these tests exercise the per-account ceiling specifically (distributed
+// credential-stuffing: many IPs, one target account).
+describe("POST /api/auth/login — per-account throttle", () => {
+  test("locks an account after repeated failures, then 429 regardless of IP", async () => {
+    wipeAll();
+    const email = "stuffing-target@example.com";
+    await req("POST", "/api/auth/register", {
+      email,
+      password: "supersafe123",
+      full_name: "Target",
+    });
+
+    // 10 wrong-password attempts are allowed (each a 401), each from a new IP.
+    for (let i = 0; i < 10; i++) {
+      const r = await req("POST", "/api/auth/login", { email, password: "wrong-password" });
+      expect(r.status).toBe(401);
+    }
+    // The 11th trips the per-account ceiling — even with the correct password.
+    const blocked = await req("POST", "/api/auth/login", { email, password: "supersafe123" });
+    expect(blocked.status).toBe(429);
+  });
+
+  test("a successful login clears the failure counter", async () => {
+    wipeAll();
+    const email = "stuffing-reset@example.com";
+    await req("POST", "/api/auth/register", {
+      email,
+      password: "supersafe123",
+      full_name: "Reset",
+    });
+
+    // A few failures, then a success resets the counter.
+    for (let i = 0; i < 5; i++) {
+      const r = await req("POST", "/api/auth/login", { email, password: "wrong-password" });
+      expect(r.status).toBe(401);
+    }
+    const ok = await req("POST", "/api/auth/login", { email, password: "supersafe123" });
+    expect(ok.status).toBe(200);
+
+    // Counter was cleared — another batch of failures is allowed (not 429).
+    for (let i = 0; i < 5; i++) {
+      const r = await req("POST", "/api/auth/login", { email, password: "wrong-password" });
+      expect(r.status).toBe(401);
+    }
+  });
+
+  test("the per-account ceiling does not leak account existence (missing email too)", async () => {
+    wipeAll();
+    const email = "no-such-account@example.com";
+    for (let i = 0; i < 10; i++) {
+      const r = await req("POST", "/api/auth/login", { email, password: "whatever-123" });
+      expect(r.status).toBe(401);
+    }
+    const blocked = await req("POST", "/api/auth/login", { email, password: "whatever-123" });
+    expect(blocked.status).toBe(429);
+  });
+});
+
+// ─── single-use credential tokens are hashed at rest ────────────────────────
+describe("credential tokens — hashed at rest", () => {
+  test("verification token is stored as a SHA-256 hash, link still works", async () => {
+    wipeAll();
+    const email = "hash-at-rest@example.com";
+    await req("POST", "/api/auth/register", {
+      email,
+      password: "supersafe123",
+      full_name: "Hashed",
+    });
+    const stored = db
+      .prepare(
+        "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
+      )
+      .get(email) as { token: string };
+    const plaintext = plaintextForStoredToken(stored.token);
+    // The DB holds the hash, never the value that was in the emailed link.
+    expect(stored.token).not.toBe(plaintext);
+    expect(stored.token).toMatch(/^[0-9a-f]{64}$/);
+    // The endpoint still accepts the plaintext (it hashes on lookup).
+    const r = await req("POST", `/api/auth/verify/${plaintext}`, {});
+    expect(r.status).toBe(200);
   });
 });

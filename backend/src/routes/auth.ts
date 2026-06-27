@@ -13,7 +13,13 @@ import { recordGrowthEvent } from "../domain/growth_events";
 import { buildSignupAcquisition } from "../domain/signup_meta";
 import { deviceFingerprint, recordKnownDevice } from "../domain/known_devices";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
-import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
+import {
+  AUTH_BUCKET,
+  assertLoginNotLocked,
+  clearLoginFailures,
+  rateLimit,
+  recordLoginFailure,
+} from "../lib/rate_limit";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
 import { createVerificationToken } from "./email_verify";
 
@@ -246,18 +252,27 @@ async function handleLogin(ctx: Ctx): Promise<Response> {
   const email = parseEmail(body.email);
   const password = parsePassword(body.password);
 
+  // Per-account failed-login ceiling — catches distributed stuffing the per-IP
+  // bucket can't. Checked before the user lookup so missing/real emails match.
+  assertLoginNotLocked(email);
+
   const row = getUserByEmail(email) as UserRow | null;
   if (!row) {
     // Burn an equivalent verify so the missing-user path costs the same as a
     // real one — closes the username-enumeration timing oracle.
     await burnPasswordVerify(password);
+    recordLoginFailure(email);
     throw new HttpError(401, "Invalid credentials");
   }
   if (row.status === "suspended") throw new HttpError(403, "Account suspended");
 
   const ok = await verifyPassword(password, row.password_hash);
-  if (!ok) throw new HttpError(401, "Invalid credentials");
+  if (!ok) {
+    recordLoginFailure(email);
+    throw new HttpError(401, "Invalid credentials");
+  }
 
+  clearLoginFailures(email);
   const token = issueSession(row.id);
   alertOnNewDevice(ctx, row);
   const session: AuthSession = { token, user: toUser(row) };

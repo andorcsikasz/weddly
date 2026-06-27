@@ -6,12 +6,14 @@
 //
 // Security notes:
 //   - Only http(s) URLs are fetched.
-//   - Hostnames are name-based; raw-IP and localhost hostnames are refused
-//     (no SSRF into 127.x / 10.x / 169.254.x / metadata services).
+//   - Every host is DNS-resolved and refused if it (or any redirect hop)
+//     resolves to a private/loopback/link-local/metadata address — see
+//     lib/ssrf.ts (no SSRF into 127.x / 10.x / 169.254.x / metadata services).
 //   - 5s timeout, 1 MB body cap.
 
 import { db, now } from "../db";
 import { log } from "../lib/logger";
+import { isPublicHost } from "../lib/ssrf";
 
 export interface EnrichmentResult {
   blurb: string | null;
@@ -123,6 +125,11 @@ async function fetchHtml(initial: URL): Promise<string | null> {
     let current: URL = initial;
     let res: Response | null = null;
     for (let i = 0; i <= MAX_REDIRECTS; i += 1) {
+      // DNS-resolve the host and refuse private/loopback/metadata addresses
+      // BEFORE connecting. `isFetchableUrl` only does syntactic checks, so a
+      // public-looking domain whose A record points at 169.254.169.254 / 10.x /
+      // 127.0.0.1 would otherwise pass. Runs on the initial URL and every hop.
+      if (!(await isPublicHost(current.hostname))) return null;
       res = await fetch(current.toString(), {
         method: "GET",
         redirect: "manual",

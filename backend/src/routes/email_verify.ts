@@ -3,7 +3,7 @@
 // users.verified_email = 1; handleResend issues a fresh token for the
 // current authenticated user.
 
-import { randomBytes } from "node:crypto";
+import { hashToken, mintToken } from "../auth/tokens";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
@@ -27,12 +27,14 @@ interface VerifyTokenRow {
 
 /** Generate + persist a fresh verification token. Used by register + resend. */
 export function createVerificationToken(userId: number): string {
-  const token = randomBytes(32).toString("hex");
+  // Return the plaintext token (for the emailed link) but persist only its hash
+  // so a DB/backup read can't replay it. See auth/tokens.ts.
+  const token = mintToken();
   const ts = now();
   db.prepare(
     `INSERT INTO email_verification_tokens (user_id, token, expires_at, consumed_at, created_at)
      VALUES (?, ?, ?, NULL, ?)`,
-  ).run(userId, token, ts + VERIFY_TTL_MS, ts);
+  ).run(userId, hashToken(token), ts + VERIFY_TTL_MS, ts);
   return token;
 }
 
@@ -69,9 +71,9 @@ async function handleConsume(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Invalid token");
   }
 
-  const row = db.prepare("SELECT * FROM email_verification_tokens WHERE token = ?").get(tokenRaw) as
-    | VerifyTokenRow
-    | undefined;
+  const row = db
+    .prepare("SELECT * FROM email_verification_tokens WHERE token = ?")
+    .get(hashToken(tokenRaw)) as VerifyTokenRow | undefined;
   if (!row) throw new HttpError(400, "Invalid or expired token");
   if (row.consumed_at) throw new HttpError(400, "Invalid or expired token");
   const ts = now();

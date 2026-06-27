@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import "../setup";
 import { db } from "../../src/db";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, latestCredentialToken, req, wipeAll } from "../helpers";
 
 // Promote the most recently registered user to planner type.
 function promoteToPlanner(email: string): void {
@@ -21,14 +21,9 @@ async function bootstrapPlanner(
   });
   expect(reg.status).toBe(201);
 
-  // Verify email via token in DB
-  const tokenRow = db
-    .prepare(
-      "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
-    )
-    .get(email.toLowerCase()) as { token: string } | undefined;
-  if (!tokenRow) throw new Error(`no verification token for ${email}`);
-  await req("POST", `/api/auth/verify/${tokenRow.token}`, {});
+  // Verify email via the captured plaintext token (stored hashed now).
+  const verifyToken = latestCredentialToken("email_verification_tokens", email);
+  await req("POST", `/api/auth/verify/${verifyToken}`, {});
 
   promoteToPlanner(email);
 

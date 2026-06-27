@@ -1565,7 +1565,15 @@ function PercentRing({ pct, state }: { pct: number; state: PaidState }) {
   const dash = (clamped / 100) * circ;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={tone} aria-hidden>
-      <circle cx={cx} cy={cx} r={r} fill="none" stroke="currentColor" strokeWidth={2} opacity={0.25} />
+      <circle
+        cx={cx}
+        cy={cx}
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        opacity={0.25}
+      />
       {clamped > 0 && (
         <circle
           cx={cx}
@@ -1707,10 +1715,7 @@ function PaidEntryDialog({
   const sym = currencySymbol(currency, locale);
   // Group the entered digits in thousands for display (space in HU, comma in
   // EN) — the value stays digits-only internally; onChange strips the grouping.
-  const groupedDraft = draft.replace(
-    /\B(?=(\d{3})+(?!\d))/g,
-    locale === "hu" ? " " : ",",
-  );
+  const groupedDraft = draft.replace(/\B(?=(\d{3})+(?!\d))/g, locale === "hu" ? " " : ",");
   return (
     <Dialog
       open={open}
@@ -1809,6 +1814,7 @@ function DocumentsDialog({
   const toast = useToast();
   const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
+  const [openingId, setOpeningId] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function onPick(e: ChangeEvent<HTMLInputElement>) {
@@ -1836,6 +1842,27 @@ function DocumentsDialog({
       );
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onOpen(doc: BudgetDocument) {
+    // These are private documents: no public URL anymore, so fetch the bytes
+    // with the auth token and open the resulting blob. Open the tab BEFORE the
+    // await (without noopener so we keep the handle) so popup blockers don't
+    // kill it, then point it at the blob.
+    const win = window.open("about:blank", "_blank");
+    setOpeningId(doc.id);
+    try {
+      const blob = await budgetDocApi.fetchBlob(doc.id);
+      const url = URL.createObjectURL(blob);
+      if (win) win.location.href = url;
+      else window.location.href = url; // popup blocked — same-tab fallback
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      win?.close();
+      toast.error(t("budget.docs_upload_failed"));
+    } finally {
+      setOpeningId(null);
     }
   }
 
@@ -1882,19 +1909,27 @@ function DocumentsDialog({
                   className="flex items-center gap-2 rounded-lg border border-paper-200 px-2.5 py-2 dark:border-umber-700"
                 >
                   {isPdf ? (
-                    <FileText size={16} className="shrink-0 text-ink-400 dark:text-umber-300" aria-hidden />
+                    <FileText
+                      size={16}
+                      className="shrink-0 text-ink-400 dark:text-umber-300"
+                      aria-hidden
+                    />
                   ) : (
-                    <ImageIcon size={16} className="shrink-0 text-ink-400 dark:text-umber-300" aria-hidden />
+                    <ImageIcon
+                      size={16}
+                      className="shrink-0 text-ink-400 dark:text-umber-300"
+                      aria-hidden
+                    />
                   )}
-                  <a
-                    href={doc.file_path}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-w-0 flex-1 items-center gap-1 truncate text-sm text-ink-800 hover:text-blush-700 dark:text-paper-100 dark:hover:text-blush-300"
+                  <button
+                    type="button"
+                    onClick={() => onOpen(doc)}
+                    disabled={openingId === doc.id}
+                    className="flex min-w-0 flex-1 items-center gap-1 truncate text-left text-sm text-ink-800 hover:text-blush-700 disabled:opacity-60 dark:text-paper-100 dark:hover:text-blush-300"
                   >
                     <span className="truncate">{doc.file_name}</span>
                     <ExternalLink size={12} className="shrink-0 opacity-60" aria-hidden />
-                  </a>
+                  </button>
                   {!readOnly && (
                     <button
                       type="button"
@@ -1932,7 +1967,9 @@ function DocumentsDialog({
               )}
               {t("budget.docs_upload")}
             </button>
-            <p className="mt-1.5 text-xs text-ink-400 dark:text-umber-300">{t("budget.docs_hint")}</p>
+            <p className="mt-1.5 text-xs text-ink-400 dark:text-umber-300">
+              {t("budget.docs_hint")}
+            </p>
           </div>
         )}
       </div>

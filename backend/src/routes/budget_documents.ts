@@ -82,7 +82,9 @@ function requireCouple(ctx: Ctx) {
 /** Sniff PDF (`%PDF`) or a supported image by its leading bytes. The multipart
  *  Content-Type is attacker-controlled, so the stored mime/extension come from
  *  the actual bytes, never the claimed type. */
-function sniffDocument(bytes: Uint8Array): "application/pdf" | "image/jpeg" | "image/png" | "image/webp" | null {
+function sniffDocument(
+  bytes: Uint8Array,
+): "application/pdf" | "image/jpeg" | "image/png" | "image/webp" | null {
   if (
     bytes.length >= 4 &&
     bytes[0] === 0x25 &&
@@ -200,6 +202,34 @@ async function handleUpload(ctx: Ctx): Promise<Response> {
   return json({ document: toDocument(row) }, { status: 201 });
 }
 
+/** Stream a couple's own invoice/receipt. These are private financial proof, so
+ *  unlike photos/moodboard they are NOT served by the public `/uploads/*`
+ *  handler (which now refuses `budget-docs` keys). Access is gated by the session
+ *  couple and the document row's `couple_id`, mirroring document_archive.ts. */
+async function handleDownload(ctx: Ctx): Promise<Response> {
+  const { couple } = requireCouple(ctx);
+  const id = Number(ctx.params.id);
+  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "Invalid id");
+
+  const row = db
+    .prepare("SELECT * FROM budget_documents WHERE id = ? AND couple_id = ?")
+    .get(id, couple.id) as DocRow | undefined;
+  if (!row) throw new HttpError(404, "Document not found");
+
+  const key = keyFromUploadUrl(row.file_path);
+  const served = key ? await storage.serve(key) : null;
+  if (!served) throw new HttpError(404, "Document not found");
+
+  // Sanitise the stored display name before it lands in a header (strip CR/LF +
+  // quotes so a hostile name can't inject extra headers / break the filename).
+  const safeName = row.file_name.replace(/[\r\n"\\]/g, "_").slice(0, 200) || "document";
+  const headers = new Headers(served.headers);
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("Content-Type", row.mime);
+  headers.set("Content-Disposition", `inline; filename="${safeName}"`);
+  return new Response(served.body, { status: served.status, headers });
+}
+
 async function handleDelete(ctx: Ctx): Promise<Response> {
   const { userId, couple } = requireCouple(ctx);
   const id = Number(ctx.params.id);
@@ -230,6 +260,7 @@ async function handleDelete(ctx: Ctx): Promise<Response> {
 
 export function registerBudgetDocumentRoutes(router: Router) {
   router.get("/api/budget/documents", handleList, true);
+  router.get("/api/budget/documents/:id/download", handleDownload, true);
   router.post("/api/budget/documents", handleUpload, true);
   router.delete("/api/budget/documents/:id", handleDelete, true);
 }

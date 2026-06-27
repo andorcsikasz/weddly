@@ -249,6 +249,9 @@ const CSP = [
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
+  // No plugins/<object>/<embed>. default-src 'self' already covers the fallback;
+  // this is the explicit, standard hardening directive.
+  "object-src 'none'",
 ].join("; ");
 
 const SECURITY_HEADERS: Record<string, string> = {
@@ -318,6 +321,18 @@ function isRsvpRoute(pathname: string): boolean {
   return pathname === "/rsvp" || pathname.startsWith("/rsvp/");
 }
 
+/** Strip single-use credential tokens that travel in the URL path (email
+ *  verification + email-change confirm) before the path is written to request
+ *  logs or attached to Sentry. An un-consumed token in a log line is a
+ *  replayable account/email-takeover credential; the redaction keeps the route
+ *  shape ("which endpoint") without the secret. Password reset is unaffected —
+ *  its token rides in the JSON body, which is never logged. */
+function redactPath(pathname: string): string {
+  return pathname
+    .replace(/^(\/api\/auth\/verify)\/[^/]+$/, "$1/[token]")
+    .replace(/^(\/api\/auth\/change-email)\/[^/]+$/, "$1/[token]");
+}
+
 /** decodeURIComponent that returns null on malformed percent-encoding (e.g.
  *  `%ZZ`) instead of throwing a URIError. This path runs OUTSIDE the request
  *  try/catch, so an uncaught throw here would emit a 500 with none of the
@@ -354,6 +369,11 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
     const rel = cleanPath.slice("/uploads/".length);
     const decodedRel = rel ? safeDecodeURIComponent(rel) : null;
     if (!decodedRel || decodedRel.includes("..")) return null;
+    // Private financial documents (invoices/receipts) are NOT public-by-URL like
+    // photos/moodboard images. They are couple-scoped behind the authenticated
+    // /api/budget/documents/:id/download route; refuse them here so an old
+    // public URL (or an id-enumeration probe) can't read another couple's files.
+    if (decodedRel.includes("/budget-docs/")) return null;
     const key = keyFromUploadUrl(decodedRel);
     if (!key) return null;
     return storage.serve(key);
@@ -541,10 +561,11 @@ async function handleRequest(req: Request): Promise<Response> {
     return new Response(r.body, { status: r.status, headers });
   }
 
+  const safeRoute = redactPath(url.pathname);
   const reqLog = makeLogger({
     requestId,
     method: req.method,
-    route: url.pathname,
+    route: safeRoute,
     ...(userId != null ? { userId } : {}),
   });
 
@@ -585,7 +606,7 @@ async function handleRequest(req: Request): Promise<Response> {
       captureException(e, {
         requestId,
         userId,
-        route: url.pathname,
+        route: safeRoute,
         method: req.method,
       });
     }
@@ -603,11 +624,31 @@ const server = Bun.serve({
   // upload (a 4 MB image plus multipart overhead) with headroom.
   maxRequestBodySize: 8 * 1024 * 1024,
   async fetch(req) {
+    let res: Response;
+    try {
+      res = await handleRequest(req);
+    } catch (e) {
+      // Last-resort guard: a throw from OUTSIDE handleRequest's own try/catch
+      // (e.g. the static/SSR fallback path, which runs before the handler try)
+      // would otherwise surface as Bun's default 500 with none of our security
+      // headers or request id. Emit a sanitized 500 instead.
+      captureException(e, { route: new URL(req.url).pathname, method: req.method });
+      res = httpErr(500, "Internal server error");
+    }
     // Compress dynamic text responses (SSR HTML, JSON, sitemap/robots/llms).
     // Static assets are served from precompressed siblings inside
     // handleRequest and already carry Content-Encoding, so this is a no-op
     // for them. See lib/compression.ts.
-    return maybeCompress(req, await handleRequest(req));
+    res = await maybeCompress(req, res);
+    // Belt-and-suspenders: guarantee the baseline security headers on EVERY
+    // response. The success + static branches in handleRequest already set them;
+    // the error branches (401/402/404/500) only set CORS, and the redirect/
+    // fallback paths set nothing — this closes that gap in one place.
+    const headers = new Headers(res.headers);
+    for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+      if (!headers.has(k)) headers.set(k, v);
+    }
+    return new Response(res.body, { status: res.status, headers });
   },
 });
 

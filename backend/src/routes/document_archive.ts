@@ -22,10 +22,13 @@ function handleDownload(ctx: Ctx): Response {
   if (!Number.isFinite(id) || id <= 0) throw new HttpError(400, "Bad id");
   const row = getExport(id, couple.id);
   if (!row) throw new HttpError(404, "Export not found");
+  // Filenames are generated internally today, but sanitise defensively so a
+  // future caller storing a name with a quote / CR / LF can't inject headers.
+  const safeName = row.filename.replace(/[\r\n"\\]/g, "_").slice(0, 200) || "export";
   return new Response(row.body, {
     headers: {
       "Content-Type": row.content_type,
-      "Content-Disposition": `attachment; filename="${row.filename}"`,
+      "Content-Disposition": `attachment; filename="${safeName}"`,
       "Cache-Control": "no-store",
     },
   });

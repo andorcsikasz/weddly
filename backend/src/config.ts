@@ -4,9 +4,24 @@ const DEV_JWT_SECRET = "dev-only-secret-change-me-in-production-please-012345678
 const DEFAULT_EMAIL_FROM = "Weddly <onboarding@resend.dev>";
 const IS_PROD = process.env.NODE_ENV === "production";
 
-if (IS_PROD && (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEV_JWT_SECRET)) {
+// Railway always injects RAILWAY_* vars into a deployed service. Treat their
+// presence as "this is a real deployment" even when NODE_ENV was forgotten, so
+// a misconfigured deploy can never boot on the publicly-known DEV_JWT_SECRET
+// (which would let anyone forge a session token for any user — `auth/session.ts`
+// signs sessions with this secret) or with an auth test-bypass enabled. This is
+// additive: with NODE_ENV=production already set, behaviour is unchanged.
+const ON_RAILWAY = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
+/** True when we must enforce production-grade secrets/hardening regardless of a
+ *  possibly-missing NODE_ENV. */
+const REQUIRE_PROD_HARDENING = IS_PROD || ON_RAILWAY;
+
+if (
+  REQUIRE_PROD_HARDENING &&
+  (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEV_JWT_SECRET)
+) {
   console.error(
-    "[config] FATAL: NODE_ENV=production requires a strong JWT_SECRET. " +
+    "[config] FATAL: a deployed environment requires a strong JWT_SECRET " +
+      "(NODE_ENV=production or a Railway deployment was detected). " +
       "Generate one with `openssl rand -hex 48` and set it in the Railway dashboard.",
   );
   process.exit(1);
@@ -68,7 +83,7 @@ export const CONFIG = {
    *  signed "test bearer" instead of a real Google JWT. The bearer is HMAC'd
    *  with `jwtSecret`, so only callers who already own the secret (i.e. the
    *  E2E test process) can mint one. Never set this in production. */
-  googleTestBypass: process.env.NODE_ENV !== "production" && process.env.GOOGLE_TEST_BYPASS === "1",
+  googleTestBypass: !REQUIRE_PROD_HARDENING && process.env.GOOGLE_TEST_BYPASS === "1",
   /** Apple "Sign in with Apple" Services ID (e.g. "hu.weddly.signin"). This is
    *  the `client_id` the Apple JS SDK is initialised with AND the `aud` claim
    *  the id-token verifier checks. When empty, `/api/auth/apple` returns 503 so
@@ -79,7 +94,7 @@ export const CONFIG = {
    *  signed "test bearer" instead of a real Apple JWT. The bearer is HMAC'd
    *  with `jwtSecret`, so only callers who already own the secret (i.e. the
    *  E2E test process) can mint one. Never set this in production. */
-  appleTestBypass: process.env.NODE_ENV !== "production" && process.env.APPLE_TEST_BYPASS === "1",
+  appleTestBypass: !REQUIRE_PROD_HARDENING && process.env.APPLE_TEST_BYPASS === "1",
   /** Numeric GA4 property id (e.g. "493210114") the admin Traffic section
    *  reports against. NOT the "G-…" measurement id — that one lives in the
    *  GTM container. Empty = GA4 traffic endpoint returns `configured:false`. */

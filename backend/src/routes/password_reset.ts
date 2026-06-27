@@ -2,8 +2,8 @@
 // single-use, 1h TTL. /forgot always returns 200 to avoid leaking which emails
 // are registered. Both endpoints are heavily rate-limited.
 
-import { randomBytes } from "node:crypto";
 import { hashPassword } from "../auth/password";
+import { hashToken, mintToken } from "../auth/tokens";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
@@ -46,12 +46,20 @@ async function handleForgot(ctx: Ctx): Promise<Response> {
     return json({ ok: true });
   }
 
-  const token = randomBytes(32).toString("hex");
+  // Invalidate any prior unconsumed reset tokens for this user so only the
+  // latest link is live (narrows the redemption window, mirrors email_change).
+  db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ? AND consumed_at IS NULL").run(
+    user.id,
+  );
+
+  // The plaintext token goes in the emailed link; only its hash is persisted,
+  // so a DB/backup read can't replay it. See auth/tokens.ts.
+  const token = mintToken();
   const ts = now();
   db.prepare(
     `INSERT INTO password_reset_tokens (user_id, token, expires_at, consumed_at, created_at)
      VALUES (?, ?, ?, NULL, ?)`,
-  ).run(user.id, token, ts + RESET_TTL_MS, ts);
+  ).run(user.id, hashToken(token), ts + RESET_TTL_MS, ts);
 
   addAuditLog({
     actor_user_id: user.id,
@@ -100,9 +108,9 @@ async function handleReset(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Password must be 8–1024 characters");
   }
 
-  const row = db.prepare("SELECT * FROM password_reset_tokens WHERE token = ?").get(body.token) as
-    | TokenRow
-    | undefined;
+  const row = db
+    .prepare("SELECT * FROM password_reset_tokens WHERE token = ?")
+    .get(hashToken(body.token)) as TokenRow | undefined;
   if (!row) throw new HttpError(400, "Invalid or expired token");
   if (row.consumed_at) throw new HttpError(400, "Invalid or expired token");
   const ts = now();
@@ -123,11 +131,11 @@ async function handleReset(ctx: Ctx): Promise<Response> {
   }
 
   const newHash = await hashPassword(body.password);
-  db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(
-    newHash,
-    ts,
-    row.user_id,
-  );
+  // Flip password_set so any future "this account has a password" check (and the
+  // reset/login paths that gate on it) stays consistent after a reset.
+  db.prepare(
+    "UPDATE users SET password_hash = ?, password_set = 1, updated_at = ? WHERE id = ?",
+  ).run(newHash, ts, row.user_id);
   db.prepare("UPDATE password_reset_tokens SET consumed_at = ? WHERE id = ?").run(ts, row.id);
   // Revoke all active sessions for this user — force re-login everywhere.
   db.prepare("DELETE FROM sessions WHERE user_id = ?").run(row.user_id);

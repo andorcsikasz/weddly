@@ -27,15 +27,16 @@ interface Route {
   requireAuth: boolean;
 }
 
+const IS_PROD = process.env.NODE_ENV === "production";
+
 // CORS allowlist: prod locks to FRONTEND_BASE_URL; dev permits localhost on
 // any port so Vite (5173) → API (8787) keeps working. Tests run same-origin.
+// The localhost entries are added ONLY outside production so a prod request
+// carrying `Origin: http://localhost:5173` can't get its origin reflected back.
 const CORS_ALLOWED_ORIGINS = new Set<string>([
   CONFIG.frontendBaseUrl,
-  // Common dev ports, only honoured when NODE_ENV !== production.
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
+  ...(IS_PROD ? [] : ["http://localhost:5173", "http://127.0.0.1:5173"]),
 ]);
-const IS_PROD = process.env.NODE_ENV === "production";
 
 function corsHeaders(origin: string | null): Record<string, string> {
   const allow =
