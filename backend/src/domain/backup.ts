@@ -67,7 +67,11 @@ async function pruneOldBackups(): Promise<void> {
   const keys: string[] = [];
   let cursor: string | undefined;
   do {
-    const page = await client.list({ prefix: "backups/", continuationToken: cursor, maxKeys: 1000 });
+    const page = await client.list({
+      prefix: "backups/",
+      continuationToken: cursor,
+      maxKeys: 1000,
+    });
     for (const o of page?.contents ?? []) keys.push(o.key);
     cursor = page?.isTruncated ? page.nextContinuationToken : undefined;
   } while (cursor);

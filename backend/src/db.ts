@@ -1296,9 +1296,9 @@ function backfillReferenceCodes(): void {
     { table: "couples", column: "organiser_code", gen: generateOrganiserCode },
     { table: "vendor_accounts", column: "vendor_code", gen: generateVendorCode },
   ] as const) {
-    const missing = db
-      .query(`SELECT id FROM ${spec.table} WHERE ${spec.column} IS NULL`)
-      .all() as { id: number }[];
+    const missing = db.query(`SELECT id FROM ${spec.table} WHERE ${spec.column} IS NULL`).all() as {
+      id: number;
+    }[];
     if (missing.length === 0) continue;
     const check = db.prepare(`SELECT 1 FROM ${spec.table} WHERE ${spec.column} = ?`);
     const update = db.prepare(`UPDATE ${spec.table} SET ${spec.column} = ? WHERE id = ?`);

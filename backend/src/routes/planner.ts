@@ -282,11 +282,13 @@ async function handleUpdateClientCrm(ctx: Ctx): Promise<Response> {
   const body = await readJson<Record<string, unknown>>(ctx.req);
 
   const str = (v: unknown) => (typeof v === "string" ? v.trim() || null : undefined);
-  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : undefined);
+  const num = (v: unknown) =>
+    typeof v === "number" && Number.isFinite(v) ? Math.round(v) : undefined;
 
   const fields: Record<string, unknown> = {};
   if (str(body.client_phone) !== undefined) fields["client_phone"] = str(body.client_phone);
-  if (str(body.client_alt_email) !== undefined) fields["client_alt_email"] = str(body.client_alt_email);
+  if (str(body.client_alt_email) !== undefined)
+    fields["client_alt_email"] = str(body.client_alt_email);
   if (str(body.lead_source) !== undefined) fields["lead_source"] = str(body.lead_source);
   if (num(body.contract_value) !== undefined) fields["contract_value"] = num(body.contract_value);
   if (num(body.deposit_paid) !== undefined) fields["deposit_paid"] = num(body.deposit_paid);

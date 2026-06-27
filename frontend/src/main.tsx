@@ -24,7 +24,11 @@ try {
   if (url.searchParams.has("h")) {
     url.searchParams.delete("h");
     const qs = url.searchParams.toString();
-    window.history.replaceState(window.history.state, "", `${url.pathname}${qs ? `?${qs}` : ""}${url.hash}`);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${qs ? `?${qs}` : ""}${url.hash}`,
+    );
   }
 } catch {
   // Never block boot on URL cleanup.

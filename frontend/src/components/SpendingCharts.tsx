@@ -216,9 +216,7 @@ function LegendLabel({
     <span className="group relative min-w-0 flex-1">
       <span
         ref={ref}
-        className={`block truncate text-ink-700 dark:text-paper-100 ${
-          overflow ? "opacity-0" : ""
-        }`}
+        className={`block truncate text-ink-700 dark:text-paper-100 ${overflow ? "opacity-0" : ""}`}
       >
         {label}
       </span>

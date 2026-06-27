@@ -44,7 +44,11 @@ import {
 import { type FormEvent, type JSX, type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ActivityPanel } from "../components/ActivityPanel";
-import { CATEGORY_ICONS, CostPlanningCard, PER_GUEST_CATEGORIES } from "../components/CostPlanningCard";
+import {
+  CATEGORY_ICONS,
+  CostPlanningCard,
+  PER_GUEST_CATEGORIES,
+} from "../components/CostPlanningCard";
 import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { TimelineStatusCard } from "../components/TimelineStatusCard";
@@ -1795,9 +1799,7 @@ function DaysToGoTile({
           </button>
         )}
       </div>
-      <div
-        className={`mt-2 overflow-hidden ${chartOpen ? "h-[4.5rem]" : "h-[3.75rem]"}`}
-      >
+      <div className={`mt-2 overflow-hidden ${chartOpen ? "h-[4.5rem]" : "h-[3.75rem]"}`}>
         {chartOpen && planningPct !== null ? (
           <div>
             <div className="h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
@@ -1811,7 +1813,8 @@ function DaysToGoTile({
                 {planningPct}%
               </div>
               <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
-                {formatNumber(daysElapsed, locale)} nap eltelt · {days !== null ? formatNumber(days, locale) : "—"} hátra
+                {formatNumber(daysElapsed, locale)} nap eltelt ·{" "}
+                {days !== null ? formatNumber(days, locale) : "—"} hátra
               </div>
             </div>
           </div>

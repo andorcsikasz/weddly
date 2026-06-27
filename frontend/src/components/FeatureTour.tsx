@@ -503,10 +503,7 @@ export function FeatureTour({ open, onClose }: Props) {
           only). Painting bg-ink-900/60 here too would re-dim the spotlighted
           element, so the "highlighted place" never reads as fully bright.
           Without a spotlight (centered card) we still need the full dim. */}
-      <div
-        className={`absolute inset-0 ${spotStyle ? "" : "bg-ink-900/60"}`}
-        onClick={onClose}
-      />
+      <div className={`absolute inset-0 ${spotStyle ? "" : "bg-ink-900/60"}`} onClick={onClose} />
 
       {/* Spotlight cutout + ring */}
       {spotStyle && (

@@ -13,12 +13,7 @@ import { hashPassword } from "../auth/password";
 import { issueSession } from "../auth/session";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import {
-  addCoupleMember,
-  assignOrganiserCode,
-  getCoupleById,
-  toCouple,
-} from "../domain/couples";
+import { addCoupleMember, assignOrganiserCode, getCoupleById, toCouple } from "../domain/couples";
 import { purgeStaleDemoCouples, seedShrekDemo } from "../domain/demo_seed";
 import { uniqueCoupleSlug } from "../domain/slug";
 import { toUser, type UserRow } from "../domain/users";

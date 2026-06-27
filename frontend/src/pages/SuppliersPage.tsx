@@ -1859,7 +1859,9 @@ export default function SuppliersPage() {
                     </div>
                     <p className="mt-0.5 flex min-w-0 items-center gap-x-1.5 truncate text-xs text-ink-500 dark:text-umber-300">
                       <Icon size={12} className="shrink-0" aria-hidden />
-                      <span className="uppercase tracking-wide">{t(`suppliers.cat.${s.category}`)}</span>
+                      <span className="uppercase tracking-wide">
+                        {t(`suppliers.cat.${s.category}`)}
+                      </span>
                       <span aria-hidden className="text-paper-400 dark:text-umber-300">
                         ·
                       </span>

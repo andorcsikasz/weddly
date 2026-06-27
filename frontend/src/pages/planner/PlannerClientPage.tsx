@@ -26,14 +26,7 @@ const CLIENT_COLORS = [
   "bg-paper-300 text-umber-800",
 ] as const;
 
-const STAGES = [
-  "inquiry",
-  "proposal",
-  "deposit",
-  "active",
-  "completed",
-  "archived",
-] as const;
+const STAGES = ["inquiry", "proposal", "deposit", "active", "completed", "archived"] as const;
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -235,7 +228,9 @@ export default function PlannerClientPage() {
             {crm.task_summary.overdue === 0 ? (
               <div className="flex items-center gap-1 text-xs text-eucalyptus-600 dark:text-eucalyptus-400">
                 <CheckCircle2 size={13} aria-hidden="true" />
-                <span>{crm.task_summary.done}/{crm.task_summary.total} feladat kész</span>
+                <span>
+                  {crm.task_summary.done}/{crm.task_summary.total} feladat kész
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">

@@ -12,7 +12,8 @@ import { dumpDbSnapshot, startBackupWorker, stopBackupWorker } from "../../src/d
 const SNAP = "./data/test-backup-snapshot.db";
 
 afterAll(() => {
-  for (const ext of ["", "-shm", "-wal"]) if (existsSync(SNAP + ext)) rmSync(SNAP + ext, { force: true });
+  for (const ext of ["", "-shm", "-wal"])
+    if (existsSync(SNAP + ext)) rmSync(SNAP + ext, { force: true });
 });
 
 describe("db backup", () => {

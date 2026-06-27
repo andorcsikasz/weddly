@@ -452,9 +452,9 @@ export function uniqueOrganiserCode(): string {
 /** Assigns an organiser_code to a freshly-created couple. Idempotent: leaves
  *  an already-coded row untouched so re-runs / double calls are safe. */
 export function assignOrganiserCode(coupleId: number, ts: number): string {
-  const existing = db
-    .prepare("SELECT organiser_code FROM couples WHERE id = ?")
-    .get(coupleId) as { organiser_code: string | null } | undefined;
+  const existing = db.prepare("SELECT organiser_code FROM couples WHERE id = ?").get(coupleId) as
+    | { organiser_code: string | null }
+    | undefined;
   if (existing?.organiser_code) return existing.organiser_code;
   const code = uniqueOrganiserCode();
   db.prepare("UPDATE couples SET organiser_code = ?, updated_at = ? WHERE id = ?").run(
