@@ -5,8 +5,7 @@
 // / rejected — each sending a template email via /decide. The admin can
 // re-open a decided entry back to the inbox via /reopen.
 
-import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { storage } from "../lib/storage";
 import { PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import type { SupplierCategory } from "@shared/suppliers";
 import type { VendorWaitlistOutcome } from "@shared/vendor_waitlist";
@@ -273,12 +272,11 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     priceListPath?.startsWith("__pending__:")
   ) {
     const ext = priceListPath.split(":")[1] ?? "pdf";
-    const relDir = join("vendor_waitlist", String(row.id));
-    const absDir = join(CONFIG.uploadsDir, relDir);
-    await mkdir(absDir, { recursive: true });
-    const relPath = join(relDir, `price_list.${ext}`);
-    await Bun.write(join(CONFIG.uploadsDir, relPath), await priceListFile.arrayBuffer());
-    db.prepare("UPDATE vendor_waitlist SET price_list_path = ? WHERE id = ?").run(relPath, row.id);
+    // The stored `price_list_path` is the bare storage key (no `/uploads/`
+    // prefix); priceListUrl() prepends `/uploads/` when serving it.
+    const key = `vendor_waitlist/${row.id}/price_list.${ext}`;
+    await storage.write(key, await priceListFile.arrayBuffer());
+    db.prepare("UPDATE vendor_waitlist SET price_list_path = ? WHERE id = ?").run(key, row.id);
     const refreshed = getVendorWaitlistById(row.id);
     if (refreshed) finalRow = refreshed;
   }

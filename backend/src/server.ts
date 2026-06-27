@@ -2,7 +2,7 @@
 // SPA static files are served from frontend/dist when SERVE_FRONTEND=1.
 
 import { existsSync } from "node:fs";
-import { join, resolve, sep } from "node:path";
+import { join, sep } from "node:path";
 import { extractToken, verifySessionToken } from "./auth/session";
 import { CONFIG } from "./config";
 import "./db"; // open DB + apply schema
@@ -25,6 +25,7 @@ import { GA4_CSP_HASHES, GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } f
 import { entitlementBlock } from "./domain/billing";
 import { vendorEntitlementBlock } from "./domain/vendor_billing";
 import { ensureGeoDb } from "./lib/geoip";
+import { storage, keyFromUploadUrl } from "./lib/storage";
 import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
@@ -339,41 +340,22 @@ function isInsideDir(child: string, base: string): boolean {
 async function tryServeStatic(req: Request, pathname: string): Promise<Response | null> {
   if (pathname.startsWith("/api/")) return null;
 
-  // User-uploaded files (vendor hero images today, more later). Served BEFORE
-  // the SPA/SERVE_FRONTEND guard because uploads live on the persistent
-  // /data volume regardless of whether the frontend bundle ships from the
-  // same process. Path traversal guard: the resolved file path must stay
-  // under CONFIG.uploadsDir. Query strings (e.g. the `?v=<timestamp>`
-  // cache-bust suffix we bake into hero URLs) are stripped before resolving.
+  // User-uploaded files (vendor hero images, couple photos, blog covers, …).
+  // Served BEFORE the SPA/SERVE_FRONTEND guard because uploads are addressed
+  // by a stable `/uploads/<key>` URL whether they live on the persistent
+  // /data volume (disk driver) or in Cloudflare R2 (r2 driver) — see
+  // `lib/storage.ts`. Traversal guard: decode BEFORE the `..` check so
+  // percent-encoded traversal (`%2e%2e`) can't slip past it, then hand the
+  // canonical key to the storage backend. Query strings (the `?v=<timestamp>`
+  // cache-bust suffix) are already stripped by keyFromUploadUrl.
   if (pathname.startsWith("/uploads/")) {
     const cleanPath = pathname.split("?")[0] ?? pathname;
     const rel = cleanPath.slice("/uploads/".length);
-    // Decode BEFORE the `..` check so percent-encoded traversal (`%2e%2e`)
-    // can't slip past it, and null-out malformed escapes rather than throwing.
     const decodedRel = rel ? safeDecodeURIComponent(rel) : null;
     if (!decodedRel || decodedRel.includes("..")) return null;
-    // Resolve both to absolute before the containment check. `uploadsDir` is
-    // relative in dev ("./data/uploads"), and `join` strips the leading "./",
-    // so a raw isInsideDir() comparison would reject every real file locally
-    // (prod's absolute "/data/uploads" happened to dodge this). resolve()
-    // normalises both sides so the guard is correct in dev and prod alike.
-    const baseDir = resolve(CONFIG.uploadsDir);
-    const uploadPath = resolve(baseDir, decodedRel);
-    if (!isInsideDir(uploadPath, baseDir)) return null;
-    if (existsSync(uploadPath)) {
-      const f = Bun.file(uploadPath);
-      if (await f.exists()) {
-        // 30-day cache — URLs change when the vendor re-uploads (the route
-        // appends `?v=<timestamp>` to bust the cache), so a long max-age
-        // here is safe.
-        return new Response(f, {
-          headers: {
-            "Cache-Control": "public, max-age=2592000",
-          },
-        });
-      }
-    }
-    return null;
+    const key = keyFromUploadUrl(decodedRel);
+    if (!key) return null;
+    return storage.serve(key);
   }
 
   if (!CONFIG.serveFrontend) return null;

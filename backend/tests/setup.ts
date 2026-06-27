@@ -84,6 +84,17 @@ process.env.STRIPE_WEBHOOK_SECRET = "";
 process.env.STRIPE_PRICE_EUR = "";
 process.env.STRIPE_PRICE_HUF = "";
 
+// Cloudflare R2 object storage stays disabled in tests so the storage layer
+// uses the local-disk backend (UPLOADS_DIR above) — pin every R2 field empty
+// so a stray .env value can't flip uploads/backups to a real bucket mid-suite.
+// Same regression guard as Stripe/GA4 above.
+process.env.R2_ENDPOINT = "";
+process.env.R2_ACCESS_KEY_ID = "";
+process.env.R2_SECRET_ACCESS_KEY = "";
+process.env.R2_BUCKET = "";
+process.env.R2_BACKUP_BUCKET = "";
+process.env.R2_BACKUP_INTERVAL_HOURS = "0";
+
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {
   const f = `./data/test-weddly.db${ext}`;

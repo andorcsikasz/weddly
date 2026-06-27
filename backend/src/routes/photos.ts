@@ -30,6 +30,7 @@ import type {
 } from "@shared/types";
 import { FILM_AESTHETICS, FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
+import { storage } from "../lib/storage";
 import { db, now } from "../db";
 import { stripe } from "../domain/billing";
 import { activateFilmAlbum } from "../domain/film";
@@ -641,13 +642,10 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
       : null;
 
   const ts = now();
-  const dir = join(CONFIG.uploadsDir, "couples", String(row.couple_id), "photos", String(row.id));
-  if (!existsSync(dir)) await mkdir(dir, { recursive: true });
-
-  const tmpId = `${ts}-${randomBytes(4).toString("hex")}`;
-  const tmpPath = join(dir, `tmp-${tmpId}.${ext}`);
-  await Bun.write(tmpPath, raw);
-
+  // Insert first so the row id names the object (stable, collision-free), then
+  // write the bytes once under the final key. The image bytes are already in
+  // memory (`raw`), so no temp file is needed — the storage backend (disk or
+  // R2) writes the final object directly.
   const uploadRow = db
     .prepare(
       `INSERT INTO photo_uploads
@@ -658,18 +656,10 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
     )
     .get(row.id, deviceId, guestName, sniffed, raw.size, filter, ts) as { id: number };
 
-  const finalPath = join(dir, `${uploadRow.id}.${ext}`);
-  const publicUrl = `/uploads/couples/${row.couple_id}/photos/${row.id}/${uploadRow.id}.${ext}`;
-  await Bun.write(finalPath, Bun.file(tmpPath));
+  const key = `couples/${row.couple_id}/photos/${row.id}/${uploadRow.id}.${ext}`;
+  const publicUrl = `/uploads/${key}`;
+  await storage.write(key, raw);
   db.prepare("UPDATE photo_uploads SET file_path = ? WHERE id = ?").run(publicUrl, uploadRow.id);
-
-  // Best-effort temp cleanup.
-  void Bun.file(tmpPath)
-    .exists()
-    .then((e) => {
-      if (e) void Bun.write(tmpPath, "");
-    })
-    .catch(() => {});
 
   const shotCount = (
     db
@@ -712,13 +702,8 @@ async function handleCoupleUpload(ctx: Ctx): Promise<Response> {
       : row.film_aesthetic;
 
   const ts = now();
-  const dir = join(CONFIG.uploadsDir, "couples", String(row.couple_id), "photos", String(row.id));
-  if (!existsSync(dir)) await mkdir(dir, { recursive: true });
-
-  const tmpId = `${ts}-${randomBytes(4).toString("hex")}`;
-  const tmpPath = join(dir, `tmp-${tmpId}.${ext}`);
-  await Bun.write(tmpPath, raw);
-
+  // Insert first to name the object by row id, then write the in-memory bytes
+  // once under the final key (no temp file needed — see handleGuestUpload).
   const uploadRow = db
     .prepare(
       `INSERT INTO photo_uploads
@@ -729,17 +714,10 @@ async function handleCoupleUpload(ctx: Ctx): Promise<Response> {
     )
     .get(row.id, "couple", null, sniffed, raw.size, filter, ts) as { id: number };
 
-  const finalPath = join(dir, `${uploadRow.id}.${ext}`);
-  const publicUrl = `/uploads/couples/${row.couple_id}/photos/${row.id}/${uploadRow.id}.${ext}`;
-  await Bun.write(finalPath, Bun.file(tmpPath));
+  const key = `couples/${row.couple_id}/photos/${row.id}/${uploadRow.id}.${ext}`;
+  const publicUrl = `/uploads/${key}`;
+  await storage.write(key, raw);
   db.prepare("UPDATE photo_uploads SET file_path = ? WHERE id = ?").run(publicUrl, uploadRow.id);
-
-  void Bun.file(tmpPath)
-    .exists()
-    .then((e) => {
-      if (e) void Bun.write(tmpPath, "");
-    })
-    .catch(() => {});
 
   return json({ upload: { id: uploadRow.id, fileUrl: publicUrl } }, { status: 201 });
 }

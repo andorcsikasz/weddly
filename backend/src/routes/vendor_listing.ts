@@ -11,14 +11,11 @@
 // Name / category / status / lat-lng are deliberately NOT editable — those
 // flow through admin moderation (name) or the geocode worker (lat-lng).
 
-import { existsSync } from "node:fs";
-import { mkdir, unlink } from "node:fs/promises";
-import { join } from "node:path";
 import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
-import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { sniffUploadedImage } from "../lib/image_sniff";
+import { keyFromUploadUrl, storage } from "../lib/storage";
 import {
   getListingById,
   getListingByVendorAccountId,
@@ -188,19 +185,6 @@ const SUPPORTED_HERO_MIMES: Record<string, "jpg" | "png" | "webp"> = {
   "image/webp": "webp",
 };
 
-/** Resolve an upload-relative URL (e.g. `/uploads/listings/v3/hero.png?v=…`)
- *  back to its on-disk path. Returns null if the URL isn't shaped like an
- *  uploads path — defends against `..`/absolute-path attempts even though
- *  the values we ever write are under our own control. */
-function uploadRelToDisk(publicUrl: string | null): string | null {
-  if (!publicUrl) return null;
-  const noQuery = publicUrl.split("?")[0] ?? publicUrl;
-  if (!noQuery.startsWith("/uploads/")) return null;
-  const rel = noQuery.slice("/uploads/".length);
-  if (rel.includes("..") || rel.startsWith("/")) return null;
-  return join(CONFIG.uploadsDir, rel);
-}
-
 async function handleUploadHero(ctx: Ctx): Promise<Response> {
   const { listing, account } = resolveVendorListing(ctx);
 
@@ -237,23 +221,15 @@ async function handleUploadHero(ctx: Ctx): Promise<Response> {
     });
   }
 
-  const dir = join(CONFIG.uploadsDir, "listings", listing.id);
-  await mkdir(dir, { recursive: true });
+  const key = `listings/${listing.id}/hero.${ext}`;
 
-  // Delete the previous hero file if the extension changed — Bun.write
+  // Delete the previous hero file if the extension changed — storage.write
   // overwrites same-name files in place, so this only matters for ext
   // transitions (e.g. PNG → WebP).
-  const previousDiskPath = uploadRelToDisk(listing.hero_image_url);
-  const newDiskPath = join(dir, `hero.${ext}`);
-  if (previousDiskPath && previousDiskPath !== newDiskPath && existsSync(previousDiskPath)) {
-    await unlink(previousDiskPath).catch(() => {
-      // Best-effort cleanup — the new file overwriting the column is the
-      // correctness contract; leaking a stale file under uploads doesn't
-      // surface to users and the next upload will overwrite it.
-    });
-  }
+  const prevKey = listing.hero_image_url ? keyFromUploadUrl(listing.hero_image_url) : null;
+  if (prevKey && prevKey !== key) await storage.delete(prevKey);
 
-  await Bun.write(newDiskPath, raw);
+  await storage.write(key, raw);
 
   // Cache-bust suffix tied to the upload timestamp so the browser sees a
   // fresh URL whenever the vendor uploads again. The static handler in
@@ -291,10 +267,8 @@ async function handleDeleteHero(ctx: Ctx): Promise<Response> {
     const view: VendorListingView = { listing, account };
     return json(view);
   }
-  const diskPath = uploadRelToDisk(listing.hero_image_url);
-  if (diskPath && existsSync(diskPath)) {
-    await unlink(diskPath).catch(() => {});
-  }
+  const k = keyFromUploadUrl(listing.hero_image_url);
+  if (k) await storage.delete(k);
   const ts = now();
   db.prepare("UPDATE listings SET hero_image_url = NULL, updated_at = ? WHERE id = ?").run(
     ts,

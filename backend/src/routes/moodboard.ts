@@ -10,10 +10,7 @@
 // Pinterest scraping is unreliable (private boards, 403s), so own-image upload
 // is the robust path; the preset keeps the page populated out of the box.
 
-import { existsSync } from "node:fs";
-import { mkdir, unlink } from "node:fs/promises";
-import { join } from "node:path";
-import { CONFIG } from "../config";
+import { storage, keyFromUploadUrl } from "../lib/storage";
 import { db, now } from "../db";
 import { getCoupleForUser } from "../domain/couples";
 import { fetchPinterestBoardPins, getMoodboardState, resolveBoardUrl } from "../domain/moodboard";
@@ -28,17 +25,6 @@ const SUPPORTED_MIMES: Record<string, "jpg" | "png" | "webp"> = {
   "image/png": "png",
   "image/webp": "webp",
 };
-
-/** Resolve a `/uploads/...` public URL back to its on-disk path, guarding
- *  against `..` / absolute-path escapes. Returns null for anything that isn't
- *  a local uploads URL. */
-function uploadUrlToDisk(publicUrl: string): string | null {
-  const noQuery = publicUrl.split("?")[0] ?? publicUrl;
-  if (!noQuery.startsWith("/uploads/")) return null;
-  const rel = noQuery.slice("/uploads/".length);
-  if (rel.includes("..") || rel.startsWith("/")) return null;
-  return join(CONFIG.uploadsDir, rel);
-}
 
 function requireCouple(ctx: Ctx) {
   const userId = requireAuth(ctx);
@@ -148,9 +134,6 @@ async function handleUploadImages(ctx: Ctx): Promise<Response> {
     validated.push({ file, ext });
   }
 
-  const dir = join(CONFIG.uploadsDir, "couples", String(couple.id), "moodboard");
-  await mkdir(dir, { recursive: true });
-
   const ts = now();
   const maxOrder = (
     db
@@ -170,7 +153,7 @@ async function handleUploadImages(ctx: Ctx): Promise<Response> {
     // Insert first so the row id names the file (stable, collision-free).
     const res = insert.run(couple.id, "", maxOrder + 1 + i, ts);
     const id = Number(res.lastInsertRowid);
-    await Bun.write(join(dir, `${id}.${ext}`), file);
+    await storage.write(`couples/${couple.id}/moodboard/${id}.${ext}`, file);
     setPath.run(`/uploads/couples/${couple.id}/moodboard/${id}.${ext}?v=${ts}`, id);
   }
 
@@ -203,12 +186,10 @@ async function handleDeleteImage(ctx: Ctx): Promise<Response> {
     throw new HttpError(404, "Image not found");
   }
 
-  const diskPath = uploadUrlToDisk(row.image_path);
-  if (diskPath && existsSync(diskPath)) {
-    await unlink(diskPath).catch(() => {
-      // A leaked file under uploads doesn't surface to users.
-    });
-  }
+  const key = keyFromUploadUrl(row.image_path);
+  // A leaked object under uploads doesn't surface to users (storage.delete
+  // swallows its own errors).
+  if (key) await storage.delete(key);
   db.prepare("DELETE FROM moodboard_images WHERE id = ? AND couple_id = ?").run(id, couple.id);
 
   const ts = now();

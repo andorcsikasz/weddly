@@ -10,16 +10,13 @@
 // the user attaches via the bill icon. Mirrors the moodboard upload pattern
 // (validate-before-write, insert-then-name-by-id, public /uploads URL).
 
-import { existsSync } from "node:fs";
-import { mkdir, unlink } from "node:fs/promises";
-import { join } from "node:path";
 import type { BudgetCategory, BudgetDocument } from "@shared/types";
-import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { getCoupleForUser } from "../domain/couples";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
 import { sniffImageMime } from "../lib/image_sniff";
+import { keyFromUploadUrl, storage } from "../lib/storage";
 
 const MAX_DOC_BYTES = 8 * 1024 * 1024;
 const MAX_DOCS_PER_SCOPE = 20;
@@ -177,9 +174,6 @@ async function handleUpload(ctx: Ctx): Promise<Response> {
   const rawName = entry.name || `document.${ext}`;
   const fileName = rawName.replace(/^.*[\\/]/, "").slice(0, 200) || `document.${ext}`;
 
-  const dir = join(CONFIG.uploadsDir, "couples", String(couple.id), "budget-docs");
-  await mkdir(dir, { recursive: true });
-
   const ts = now();
   // Insert first so the row id names the file (stable, collision-free).
   const res = db
@@ -188,7 +182,8 @@ async function handleUpload(ctx: Ctx): Promise<Response> {
     )
     .run(couple.id, scope, fileName, mime, entry.size, ts);
   const id = Number(res.lastInsertRowid);
-  await Bun.write(join(dir, `${id}.${ext}`), entry);
+  const key = `couples/${couple.id}/budget-docs/${id}.${ext}`;
+  await storage.write(key, entry);
   const filePath = `/uploads/couples/${couple.id}/budget-docs/${id}.${ext}?v=${ts}`;
   db.prepare("UPDATE budget_documents SET file_path = ? WHERE id = ?").run(filePath, id);
 
@@ -215,20 +210,10 @@ async function handleDelete(ctx: Ctx): Promise<Response> {
     .get(id, couple.id) as DocRow | undefined;
   if (!row) throw new HttpError(404, "Document not found");
 
-  // Resolve the public URL back to disk, guarding against `..` escapes, then
-  // unlink the bytes. A leaked file under uploads never surfaces to users.
-  const noQuery = row.file_path.split("?")[0] ?? row.file_path;
-  if (noQuery.startsWith("/uploads/")) {
-    const rel = noQuery.slice("/uploads/".length);
-    if (!rel.includes("..") && !rel.startsWith("/")) {
-      const diskPath = join(CONFIG.uploadsDir, rel);
-      if (existsSync(diskPath)) {
-        await unlink(diskPath).catch(() => {
-          // Best-effort cleanup; the DB row is the source of truth.
-        });
-      }
-    }
-  }
+  // Resolve the public URL back to a storage key, then delete the bytes. A
+  // leaked file under uploads never surfaces to users.
+  const k = keyFromUploadUrl(row.file_path);
+  if (k) await storage.delete(k);
   db.prepare("DELETE FROM budget_documents WHERE id = ? AND couple_id = ?").run(id, couple.id);
 
   addAuditLog({

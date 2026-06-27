@@ -1,9 +1,7 @@
 // Onboarding + workspace mgmt: complete the onboarding wizard, fetch the
 // current couple, generate a partner-B invite, accept an invite.
 
-import { existsSync } from "node:fs";
-import { mkdir, unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { storage, keyFromUploadUrl } from "../lib/storage";
 import {
   type BudgetCategory,
   type BudgetGoal,
@@ -2224,19 +2222,6 @@ const SUPPORTED_COVER_MIMES: Record<string, "jpg" | "png" | "webp"> = {
   "image/webp": "webp",
 };
 
-/** Resolve `/uploads/couples/<id>/cover.<ext>?v=…` back to the on-disk path,
- *  with a guard against `..` / absolute-path attempts. Returns null for any
- *  URL that doesn't match the local uploads prefix — that covers couples on
- *  legacy remote http(s) cover URLs we shouldn't try to unlink. */
-function coverUploadRelToDisk(publicUrl: string | null): string | null {
-  if (!publicUrl) return null;
-  const noQuery = publicUrl.split("?")[0] ?? publicUrl;
-  if (!noQuery.startsWith("/uploads/")) return null;
-  const rel = noQuery.slice("/uploads/".length);
-  if (rel.includes("..") || rel.startsWith("/")) return null;
-  return join(CONFIG.uploadsDir, rel);
-}
-
 async function handleUploadCover(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -2272,20 +2257,14 @@ async function handleUploadCover(ctx: Ctx): Promise<Response> {
     });
   }
 
-  const dir = join(CONFIG.uploadsDir, "couples", String(couple.id));
-  await mkdir(dir, { recursive: true });
+  const key = `couples/${couple.id}/cover.${ext}`;
 
-  // Best-effort cleanup if the extension is changing (Bun.write overwrites
+  // Best-effort cleanup if the extension is changing (storage.write overwrites
   // same-name files in place, so only ext transitions leak a stale file).
-  const previousDiskPath = coverUploadRelToDisk(couple.cover_image_url);
-  const newDiskPath = join(dir, `cover.${ext}`);
-  if (previousDiskPath && previousDiskPath !== newDiskPath && existsSync(previousDiskPath)) {
-    await unlink(previousDiskPath).catch(() => {
-      // Leaking a stale file under uploads doesn't surface to users.
-    });
-  }
+  const prevKey = couple.cover_image_url ? keyFromUploadUrl(couple.cover_image_url) : null;
+  if (prevKey && prevKey !== key) await storage.delete(prevKey);
 
-  await Bun.write(newDiskPath, raw);
+  await storage.write(key, raw);
 
   const ts = now();
   const publicUrl = `/uploads/couples/${couple.id}/cover.${ext}?v=${ts}`;

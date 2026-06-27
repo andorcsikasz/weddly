@@ -6,11 +6,7 @@
 // volume under /uploads/blog/<id>.<ext>, served by the static handler in
 // server.ts.
 
-import { existsSync } from "node:fs";
-import { mkdir, unlink } from "node:fs/promises";
-import { join } from "node:path";
 import type { BlogBlock, BlogPost } from "../../../shared/blog_posts";
-import { CONFIG } from "../config";
 import { db, now } from "../db";
 import {
   type BlogPostRow,
@@ -29,6 +25,7 @@ import { requireAdmin } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { sniffUploadedImage } from "../lib/image_sniff";
+import { keyFromUploadUrl, storage } from "../lib/storage";
 
 // ─── Validation helpers ─────────────────────────────────────────────────
 
@@ -300,13 +297,9 @@ function handleAdminDelete(ctx: Ctx): Response {
   const existing = getBlogPostById(id);
   if (!existing) throw new HttpError(404, "Post not found");
 
-  // Best-effort unlink the cover image so deleted posts don't leak files.
-  const localPath = coverUrlToDisk(existing.cover_image_url);
-  if (localPath && existsSync(localPath)) {
-    void unlink(localPath).catch(() => {
-      // Leaking a stale file under uploads is not user-visible.
-    });
-  }
+  // Best-effort delete the cover image so deleted posts don't leak files.
+  const k = existing.cover_image_url ? keyFromUploadUrl(existing.cover_image_url) : null;
+  if (k) void storage.delete(k);
 
   deleteBlogPost(id);
   addAuditLog({
@@ -328,15 +321,6 @@ const SUPPORTED_COVER_MIMES: Record<string, "jpg" | "png" | "webp"> = {
   "image/png": "png",
   "image/webp": "webp",
 };
-
-function coverUrlToDisk(publicUrl: string | null): string | null {
-  if (!publicUrl) return null;
-  const noQuery = publicUrl.split("?")[0] ?? publicUrl;
-  if (!noQuery.startsWith("/uploads/")) return null;
-  const rel = noQuery.slice("/uploads/".length);
-  if (rel.includes("..") || rel.startsWith("/")) return null;
-  return join(CONFIG.uploadsDir, rel);
-}
 
 async function handleAdminUploadCover(ctx: Ctx): Promise<Response> {
   const admin = requireAdmin(ctx);
@@ -373,18 +357,13 @@ async function handleAdminUploadCover(ctx: Ctx): Promise<Response> {
     });
   }
 
-  const dir = join(CONFIG.uploadsDir, "blog");
-  await mkdir(dir, { recursive: true });
+  const key = `blog/${id}.${ext}`;
 
-  const previousDiskPath = coverUrlToDisk(existing.cover_image_url);
-  const newDiskPath = join(dir, `${id}.${ext}`);
-  if (previousDiskPath && previousDiskPath !== newDiskPath && existsSync(previousDiskPath)) {
-    await unlink(previousDiskPath).catch(() => {
-      // Best-effort cleanup; an orphaned old-ext file is harmless.
-    });
-  }
+  // Best-effort cleanup; an orphaned old-ext file is harmless.
+  const prevKey = existing.cover_image_url ? keyFromUploadUrl(existing.cover_image_url) : null;
+  if (prevKey && prevKey !== key) await storage.delete(prevKey);
 
-  await Bun.write(newDiskPath, raw);
+  await storage.write(key, raw);
 
   const ts = now();
   const publicUrl = `/uploads/blog/${id}.${ext}?v=${ts}`;
@@ -410,10 +389,8 @@ function handleAdminClearCover(ctx: Ctx): Response {
   const existing = getBlogPostById(id);
   if (!existing) throw new HttpError(404, "Post not found");
 
-  const localPath = coverUrlToDisk(existing.cover_image_url);
-  if (localPath && existsSync(localPath)) {
-    void unlink(localPath).catch(() => {});
-  }
+  const k = existing.cover_image_url ? keyFromUploadUrl(existing.cover_image_url) : null;
+  if (k) void storage.delete(k);
   setBlogPostCoverImage(id, null);
   addAuditLog({
     actor_user_id: admin.id,

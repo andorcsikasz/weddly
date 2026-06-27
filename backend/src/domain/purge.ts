@@ -7,9 +7,7 @@
 // still reference; instead we DELETE child PII rows (they have ON DELETE CASCADE
 // to handle FKs) and stamp the couple as 'deleting' → fields nulled.
 
-import { rm } from "node:fs/promises";
-import { join } from "node:path";
-import { CONFIG } from "../config";
+import { storage } from "../lib/storage";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { log } from "../lib/logger";
@@ -226,15 +224,11 @@ export function purgeOneCouple(
   });
   applyPurge();
 
-  // Best-effort removal of this couple's uploaded files (moodboard images +
-  // cover). Outside the DB transaction — a leaked file under /uploads doesn't
-  // break erasure of the data itself, and fs errors must not roll back the purge.
-  void rm(join(CONFIG.uploadsDir, "couples", String(coupleId)), {
-    recursive: true,
-    force: true,
-  }).catch(() => {
-    /* leaked upload dir is non-fatal */
-  });
+  // Best-effort removal of this couple's uploaded files (photos, moodboard,
+  // cover, budget docs, honeymoon cover). Outside the DB transaction — a leaked
+  // object under uploads doesn't break erasure of the data itself, and storage
+  // errors must not roll back the purge (deletePrefix swallows its own errors).
+  void storage.deletePrefix(`couples/${coupleId}/`);
 }
 
 /**

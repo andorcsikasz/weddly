@@ -4,10 +4,8 @@
 // route lets us cache + refresh independently and skip the network entirely
 // when Amadeus credentials aren't set.
 
-import { existsSync } from "node:fs";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import { extname, join } from "node:path";
-import { CONFIG } from "../config";
+import { extname } from "node:path";
+import { storage, keyFromUploadUrl } from "../lib/storage";
 import { type CoupleRow, getCoupleForUser, toCouple } from "../domain/couples";
 import { getFlightEstimate } from "../domain/honeymoon_flights";
 import { buildKonzinfoInfo } from "../domain/konzinfo";
@@ -207,9 +205,6 @@ const DEST_PHOTO_DIR = "destination-photos";
  *  return the public `/uploads/…` path, or null on any error. */
 async function downloadAndCache(city: string, remoteUrl: string): Promise<string | null> {
   try {
-    const dir = join(CONFIG.uploadsDir, DEST_PHOTO_DIR);
-    if (!existsSync(dir)) await mkdir(dir, { recursive: true });
-
     const res = await fetch(remoteUrl);
     if (!res.ok) return null;
     const buf = await res.arrayBuffer();
@@ -219,10 +214,10 @@ async function downloadAndCache(city: string, remoteUrl: string): Promise<string
     const ext = [".jpg", ".jpeg", ".png", ".webp"].includes(rawExt) ? rawExt : ".jpg";
 
     const filename = `${citySlug(city)}${ext}`;
-    const filePath = join(dir, filename);
-    await writeFile(filePath, new Uint8Array(buf));
+    const key = `${DEST_PHOTO_DIR}/${filename}`;
+    await storage.write(key, new Uint8Array(buf));
 
-    const localPath = `/uploads/${DEST_PHOTO_DIR}/${filename}`;
+    const localPath = `/uploads/${key}`;
     db.run(
       `INSERT OR REPLACE INTO destination_photo_cache (city, local_path, fetched_at)
        VALUES (?, ?, strftime('%s','now'))`,
@@ -253,9 +248,10 @@ async function handleDestinationPhoto(ctx: Ctx): Promise<Response> {
     .get(key);
 
   if (cached) {
-    // Verify the file still exists (could be lost after a data migration).
-    const onDisk = join(CONFIG.uploadsDir, cached.local_path.replace(/^\/uploads\//, ""));
-    if (existsSync(onDisk)) return json({ photo_url: cached.local_path });
+    // Verify the object still exists (could be lost after a data migration).
+    const cachedKey = keyFromUploadUrl(cached.local_path);
+    if (cachedKey && (await storage.exists(cachedKey)))
+      return json({ photo_url: cached.local_path });
     // File missing — evict stale cache entry and re-fetch below.
     db.run("DELETE FROM destination_photo_cache WHERE city = ?", [key]);
   }
@@ -295,19 +291,16 @@ async function handleUploadHoneymoonCover(ctx: Ctx): Promise<Response> {
       code: "unsupported_type",
     });
 
-  const dir = join(CONFIG.uploadsDir, "couples", String(couple.id));
-  await mkdir(dir, { recursive: true });
-
+  // Remove any previous cover stored under a different extension.
   for (const e of ["jpg", "png", "webp"] as const) {
     if (e === ext) continue;
-    const old = join(dir, `honeymoon-cover.${e}`);
-    if (existsSync(old)) await unlink(old).catch(() => {});
+    await storage.delete(`couples/${couple.id}/honeymoon-cover.${e}`);
   }
 
-  const filePath = join(dir, `honeymoon-cover.${ext}`);
-  await writeFile(filePath, new Uint8Array(await raw.arrayBuffer()));
+  const key = `couples/${couple.id}/honeymoon-cover.${ext}`;
+  await storage.write(key, raw);
 
-  const publicPath = `/uploads/couples/${couple.id}/honeymoon-cover.${ext}`;
+  const publicPath = `/uploads/${key}`;
   db.run("UPDATE couples SET honeymoon_cover_path = ? WHERE id = ?", [publicPath, couple.id]);
 
   const updated = db
@@ -323,14 +316,8 @@ async function handleDeleteHoneymoonCover(ctx: Ctx): Promise<Response> {
   if (!couple) throw new HttpError(404, "No couple");
 
   if (couple.honeymoon_cover_path) {
-    const noQuery = couple.honeymoon_cover_path.split("?")[0] ?? "";
-    if (noQuery.startsWith("/uploads/")) {
-      const rel = noQuery.slice("/uploads/".length);
-      if (!rel.includes("..")) {
-        const diskPath = join(CONFIG.uploadsDir, rel);
-        if (existsSync(diskPath)) await unlink(diskPath).catch(() => {});
-      }
-    }
+    const k = keyFromUploadUrl(couple.honeymoon_cover_path);
+    if (k) await storage.delete(k);
     db.run("UPDATE couples SET honeymoon_cover_path = NULL WHERE id = ?", [couple.id]);
   }
 

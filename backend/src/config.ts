@@ -112,7 +112,32 @@ export const CONFIG = {
    *  downloads the GeoLite2-Country DB to `geoIpDbPath` at boot if it's
    *  missing. Empty = no download attempt, every country lookup returns null. */
   maxmindLicenseKey: process.env.MAXMIND_LICENSE_KEY ?? "",
+  /** Cloudflare R2 (S3-compatible) object storage. When all four core fields
+   *  are set, uploads + DB backups go to R2 instead of the local `/data`
+   *  volume; otherwise the app falls back to disk with zero behaviour change
+   *  (same "configured?" pattern as Stripe). `endpoint` is the account S3
+   *  endpoint `https://<account>.r2.cloudflarestorage.com`. */
+  r2: {
+    endpoint: process.env.R2_ENDPOINT ?? "",
+    accessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? "",
+    bucket: process.env.R2_BUCKET ?? "",
+    /** Optional separate bucket for SQLite backups; falls back to `bucket`. */
+    backupBucket: process.env.R2_BACKUP_BUCKET ?? "",
+    /** Hours between automatic SQLite backups to R2. 0 disables the job. */
+    backupIntervalHours: Number(process.env.R2_BACKUP_INTERVAL_HOURS ?? "24"),
+    /** How many most-recent DB backups to retain in R2 (older ones pruned). */
+    backupRetention: Number(process.env.R2_BACKUP_RETENTION ?? "14"),
+  },
 };
+
+/** True when R2 object storage is fully configured. Upload routes + the backup
+ *  job check this; when false everything uses the local disk fallback. */
+export const R2_ENABLED =
+  CONFIG.r2.endpoint !== "" &&
+  CONFIG.r2.accessKeyId !== "" &&
+  CONFIG.r2.secretAccessKey !== "" &&
+  CONFIG.r2.bucket !== "";
 
 /** True when a Stripe secret key is configured. Billing endpoints check this
  *  and 503 when false, mirroring the Google-OAuth "configured?" pattern. */
