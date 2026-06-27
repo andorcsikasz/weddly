@@ -19,11 +19,13 @@
 
 import type {
   Accommodation,
+  AccommodationRoom,
   Couple,
   Currency,
   Guest,
   Transfer,
   UpsertAccommodationInput,
+  UpsertAccommodationRoomInput,
   UpsertTransferInput,
 } from "@shared/types";
 import {
@@ -31,6 +33,7 @@ import {
   Bed,
   Bus,
   Crown,
+  DoorOpen,
   ExternalLink,
   Gem,
   Home,
@@ -50,7 +53,13 @@ import { type DragEvent, type FormEvent, useCallback, useEffect, useMemo, useSta
 import { InfoHint } from "../components/InfoHint";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { accommodationApi, coupleApi, guestApi, transferApi } from "../lib/endpoints";
+import {
+  accommodationApi,
+  accommodationRoomApi,
+  coupleApi,
+  guestApi,
+  transferApi,
+} from "../lib/endpoints";
 import { currencySymbol, formatHuf } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -74,6 +83,7 @@ export default function LogisticsPage() {
   const confirm = useConfirm();
   const [tab, setTab] = useState<LogisticsTab>("accommodation");
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
+  const [rooms, setRooms] = useState<AccommodationRoom[]>([]);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   // The couple — fetched alongside so we can pin the host pair at the top of
@@ -83,8 +93,14 @@ export default function LogisticsPage() {
   const [editingAccommodation, setEditingAccommodation] = useState<Accommodation | "new" | null>(
     null,
   );
+  // Room dialog: either creating a room under a parent accommodation, or
+  // editing an existing room. Null = closed.
+  const [editingRoom, setEditingRoom] = useState<
+    { mode: "new"; accommodationId: number } | { mode: "edit"; room: AccommodationRoom } | null
+  >(null);
   const [editingTransfer, setEditingTransfer] = useState<Transfer | "new" | null>(null);
   const [hoverAccommodationId, setHoverAccommodationId] = useState<number | null>(null);
+  const [hoverRoomId, setHoverRoomId] = useState<number | null>(null);
   const [hoverTransferId, setHoverTransferId] = useState<number | null>(null);
   const [sidebarHover, setSidebarHover] = useState(false);
   const [coarsePointer, setCoarsePointer] = useState(false);
@@ -110,13 +126,15 @@ export default function LogisticsPage() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const [acc, tr, gs, c] = await Promise.all([
+    const [acc, rm, tr, gs, c] = await Promise.all([
       accommodationApi.list(),
+      accommodationRoomApi.list(),
       transferApi.list(),
       guestApi.list(),
       coupleApi.current(),
     ]);
     setAccommodations(acc.accommodations);
+    setRooms(rm.rooms);
     setTransfers(tr.transfers);
     setGuests(gs.guests);
     setCouple(c.couple);
@@ -149,6 +167,29 @@ export default function LogisticsPage() {
       const arr = out.get(g.transfer_id) ?? [];
       arr.push(g);
       out.set(g.transfer_id, arr);
+    }
+    return out;
+  }, [guests]);
+  // Rooms grouped under their parent accommodation, and guests grouped by the
+  // room they sit in. An accommodation with an entry in `roomsByAccommodation`
+  // renders per-room drop zones; one without renders the flat single zone.
+  const roomsByAccommodation = useMemo(() => {
+    const out = new Map<number, AccommodationRoom[]>();
+    for (const r of rooms) {
+      const arr = out.get(r.accommodation_id) ?? [];
+      arr.push(r);
+      out.set(r.accommodation_id, arr);
+    }
+    return out;
+  }, [rooms]);
+  const roomById = useMemo(() => new Map(rooms.map((r) => [r.id, r])), [rooms]);
+  const guestsByRoom = useMemo(() => {
+    const out = new Map<number, Guest[]>();
+    for (const g of guests) {
+      if (g.accommodation_room_id == null) continue;
+      const arr = out.get(g.accommodation_room_id) ?? [];
+      arr.push(g);
+      out.set(g.accommodation_room_id, arr);
     }
     return out;
   }, [guests]);
@@ -311,6 +352,66 @@ export default function LogisticsPage() {
     [guests, guestById, assignAccommodationOne, toast, t],
   );
 
+  const assignRoomOne = useCallback(
+    async (guestId: number, roomId: number | null): Promise<boolean> => {
+      // Keep accommodation_id in lock-step with the room's parent so the
+      // sidebar's "unassigned" filter (accommodation_id == null) stays correct.
+      const accommodationId =
+        roomId == null ? null : (roomById.get(roomId)?.accommodation_id ?? null);
+      setGuests((prev) =>
+        prev.map((g) =>
+          g.id === guestId
+            ? { ...g, accommodation_room_id: roomId, accommodation_id: accommodationId }
+            : g,
+        ),
+      );
+      try {
+        await accommodationRoomApi.assign({ guest_id: guestId, room_id: roomId });
+        return true;
+      } catch (err) {
+        toast.error(err instanceof ApiError ? err.message : t("logistics.save_failed"));
+        await refresh();
+        return false;
+      }
+    },
+    [roomById, refresh, toast, t],
+  );
+
+  /** Capacity-aware room drop. Mirrors `assignAccommodationMany` but the cap is
+   *  the room's own `capacity` and overflow is refused per room. */
+  const assignRoomMany = useCallback(
+    async (guestIds: number[], room: AccommodationRoom) => {
+      if (guestIds.length === 0) return;
+      const currentlyAssigned = guests.filter((g) => g.accommodation_room_id === room.id).length;
+      const incoming = guestIds.filter((id) => {
+        const g = guestById.get(id);
+        return g != null && g.accommodation_room_id !== room.id;
+      });
+      if (incoming.length === 0) return;
+      const free = Math.max(0, room.capacity - currentlyAssigned);
+      if (free === 0) {
+        toast.error(t("logistics.full_blocked", { name: room.name }));
+        return;
+      }
+      const placed = incoming.slice(0, free);
+      const overflow = incoming.length - placed.length;
+      for (const id of placed) {
+        const ok = await assignRoomOne(id, room.id);
+        if (!ok) return;
+      }
+      if (overflow > 0) {
+        toast.info(
+          t("logistics.partial_placed", {
+            placed: String(placed.length),
+            total: String(incoming.length),
+            name: room.name,
+          }),
+        );
+      }
+    },
+    [guests, guestById, assignRoomOne, toast, t],
+  );
+
   /** Same shape as `assignAccommodationMany` but the transfer's `capacity`
    *  is optional — when null, no cap is enforced. */
   const assignTransferMany = useCallback(
@@ -368,6 +469,27 @@ export default function LogisticsPage() {
     [confirm, refresh, toast, t],
   );
 
+  const deleteRoom = useCallback(
+    async (room: AccommodationRoom) => {
+      const ok = await confirm({
+        title: t("logistics.delete_room_title"),
+        body: t("logistics.delete_room_body").replace("{name}", room.name),
+        confirmLabel: t("common.delete"),
+        cancelLabel: t("common.cancel"),
+        destructive: true,
+      });
+      if (!ok) return;
+      try {
+        await accommodationRoomApi.remove(room.id);
+        await refresh();
+        toast.success(t("logistics.room_deleted"));
+      } catch (err) {
+        toast.error(err instanceof ApiError ? err.message : t("logistics.save_failed"));
+      }
+    },
+    [confirm, refresh, toast, t],
+  );
+
   const deleteTransfer = useCallback(
     async (tr: Transfer) => {
       const ok = await confirm({
@@ -416,6 +538,15 @@ export default function LogisticsPage() {
     if (!data) return;
     void assignAccommodationMany(dragGuestIds(data), a);
   };
+  const dropOnRoom = (e: DragEvent<HTMLElement>, room: AccommodationRoom) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setHoverRoomId(null);
+    setHoverAccommodationId(null);
+    const data = readDrag(e);
+    if (!data) return;
+    void assignRoomMany(dragGuestIds(data), room);
+  };
   const dropOnTransfer = (e: DragEvent<HTMLElement>, tr: Transfer) => {
     e.preventDefault();
     setHoverTransferId(null);
@@ -430,7 +561,9 @@ export default function LogisticsPage() {
     if (!data) return;
     const ids = dragGuestIds(data);
     if (tab === "accommodation") {
-      for (const id of ids) void assignAccommodationOne(id, null);
+      // Room-aware unassign clears both accommodation_id and the room in one
+      // call, covering guests placed at either level.
+      for (const id of ids) void assignRoomOne(id, null);
     } else {
       for (const id of ids) void assignTransferOne(id, null);
     }
@@ -448,6 +581,11 @@ export default function LogisticsPage() {
   const handleTapAccommodation = (a: Accommodation) => {
     if (selectedGuestId == null) return;
     void assignAccommodationMany(tapTargetIds(selectedGuestId), a);
+    setSelectedGuestId(null);
+  };
+  const handleTapRoom = (room: AccommodationRoom) => {
+    if (selectedGuestId == null) return;
+    void assignRoomMany(tapTargetIds(selectedGuestId), room);
     setSelectedGuestId(null);
   };
   const handleTapTransfer = (tr: Transfer) => {
@@ -524,8 +662,12 @@ export default function LogisticsPage() {
                     <li key={a.id}>
                       <AccommodationCard
                         accommodation={a}
+                        rooms={roomsByAccommodation.get(a.id) ?? []}
                         assigned={guestsByAccommodation.get(a.id) ?? []}
+                        guestsByRoom={guestsByRoom}
                         isDropTarget={hoverAccommodationId === a.id}
+                        hoverRoomId={hoverRoomId}
+                        setHoverRoomId={setHoverRoomId}
                         onDragOver={(e) => {
                           e.preventDefault();
                           if (hoverAccommodationId !== a.id) setHoverAccommodationId(a.id);
@@ -535,12 +677,17 @@ export default function LogisticsPage() {
                           setHoverAccommodationId((cur) => (cur === a.id ? null : cur));
                         }}
                         onDrop={(e) => dropOnAccommodation(e, a)}
+                        onDropRoom={dropOnRoom}
                         onEdit={() => setEditingAccommodation(a)}
                         onDelete={() => deleteAccommodation(a)}
-                        onUnassign={(g) => assignAccommodationOne(g.id, null)}
+                        onAddRoom={() => setEditingRoom({ mode: "new", accommodationId: a.id })}
+                        onEditRoom={(room) => setEditingRoom({ mode: "edit", room })}
+                        onDeleteRoom={deleteRoom}
+                        onUnassign={(g) => assignRoomOne(g.id, null)}
                         onDragStartGuest={onDragStart}
                         tapArmed={tapMode && selectedGuestId !== null}
                         onTap={() => handleTapAccommodation(a)}
+                        onTapRoom={handleTapRoom}
                         t={t}
                       />
                     </li>
@@ -739,6 +886,22 @@ export default function LogisticsPage() {
           onClose={() => setEditingAccommodation(null)}
           onSaved={async () => {
             setEditingAccommodation(null);
+            await refresh();
+          }}
+        />
+      )}
+
+      {editingRoom !== null && (
+        <RoomDialog
+          accommodationId={
+            editingRoom.mode === "new"
+              ? editingRoom.accommodationId
+              : editingRoom.room.accommodation_id
+          }
+          initial={editingRoom.mode === "edit" ? editingRoom.room : null}
+          onClose={() => setEditingRoom(null)}
+          onSaved={async () => {
+            setEditingRoom(null);
             await refresh();
           }}
         />
@@ -1079,91 +1242,98 @@ function AssignedGuestChip({
   );
 }
 
-/** House-shaped accommodation card. The article is clip-path'd into a
- *  classic házikó silhouette (triangular roof above a rectangular body) so
- *  the surface reads as "a place to stay" at a glance. The roof zone gets a
- *  warmer blush tint to set it visually apart from the body; both areas are
- *  inside the same drop target so dragging onto either accepts the guest.
- *  The drop is refused outright when `assigned.length >= capacity` — the
- *  parent's `assignAccommodationMany` toasts the reason. */
+/** Accommodation card — Uber-style: a crisp dark frame, a clear header, and a
+ *  body that is either one flat drop zone (no rooms) or a stack of per-room
+ *  drop zones (each with its own capacity limit). Guests dragged onto the card
+ *  land in the relevant zone; a drop is refused once that zone is full. */
 function AccommodationCard({
   accommodation,
+  rooms,
   assigned,
+  guestsByRoom,
   isDropTarget,
+  hoverRoomId,
+  setHoverRoomId,
   onDragOver,
   onDragLeave,
   onDrop,
+  onDropRoom,
   onEdit,
   onDelete,
+  onAddRoom,
+  onEditRoom,
+  onDeleteRoom,
   onUnassign,
   onDragStartGuest,
   tapArmed,
   onTap,
+  onTapRoom,
   t,
 }: {
   accommodation: Accommodation;
+  rooms: AccommodationRoom[];
   assigned: Guest[];
+  guestsByRoom: Map<number, Guest[]>;
   isDropTarget: boolean;
+  hoverRoomId: number | null;
+  setHoverRoomId: (id: number | null) => void;
   onDragOver: (e: DragEvent<HTMLElement>) => void;
   onDragLeave: (e: DragEvent<HTMLElement>) => void;
   onDrop: (e: DragEvent<HTMLElement>) => void;
+  onDropRoom: (e: DragEvent<HTMLElement>, room: AccommodationRoom) => void;
   onEdit: () => void;
   onDelete: () => void;
+  onAddRoom: () => void;
+  onEditRoom: (room: AccommodationRoom) => void;
+  onDeleteRoom: (room: AccommodationRoom) => void;
   onUnassign: (g: Guest) => void;
   onDragStartGuest: (e: DragEvent<HTMLElement>, guestId: number, groupIds?: number[]) => void;
   tapArmed: boolean;
   onTap: () => void;
+  onTapRoom: (room: AccommodationRoom) => void;
   t: (k: string) => string;
 }) {
-  // Three states for the capacity meter on the card chrome:
-  //   • `atCapacity` (== capacity) → emerald — "perfectly filled, all good."
-  //     The drop is still refused (the count helper toasts a full_blocked
-  //     when free === 0) but the colour reads as confirmation, not alarm.
-  //   • `overCapacity` (> capacity) → rose — recoverable bug state. The
-  //     server happily stores overflow (the cap is advisory) but the UI
-  //     surfaces it so the couple can rebalance.
-  //   • below capacity → no colour, default chrome.
-  const atCapacity = assigned.length === accommodation.capacity;
-  const overCapacity = assigned.length > accommodation.capacity;
-  // Rectangular `card` again — the clip-path house silhouette read as crude
-  // at sm+ widths (the triangular roof dwarfed the body). A small Home icon
-  // next to the name keeps the "this is a lodging" cue without sacrificing
-  // the rest of the layout, and a slim blush top-rule echoes the same hue
-  // the rest of the page uses for warm accents.
+  const hasRooms = rooms.length > 0;
+  const roomGuests = (id: number): Guest[] => guestsByRoom.get(id) ?? [];
+  // Totals for the header meter. With rooms the cap is the sum of room caps and
+  // occupancy counts guests sitting in a room. Without rooms it's the flat
+  // accommodation capacity. `unroomed` catches legacy guests assigned at the
+  // accommodation level before rooms were added — surfaced so they can be moved.
+  const totalCap = hasRooms
+    ? rooms.reduce((sum, r) => sum + r.capacity, 0)
+    : accommodation.capacity;
+  const occupied = hasRooms
+    ? rooms.reduce((sum, r) => sum + roomGuests(r.id).length, 0)
+    : assigned.length;
+  const unroomed = hasRooms ? assigned.filter((g) => g.accommodation_room_id == null) : [];
+  const atCapacity = totalCap > 0 && occupied === totalCap;
+  const overCapacity = occupied > totalCap;
+
+  // Accommodation-level drag handlers only apply when there are no rooms — once
+  // rooms exist, guests must land in a specific room, so the card itself is not
+  // a drop target (each RoomDropZone handles its own drop + stopPropagation).
+  const cardDropProps = hasRooms ? {} : { onDragOver, onDragLeave, onDrop };
+
   return (
     <article
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      {...cardDropProps}
       onClick={(e) => {
-        if (!tapArmed) return;
+        if (!tapArmed || hasRooms) return;
         const target = e.target as HTMLElement;
         if (target.closest("button") || target.closest("a")) return;
         onTap();
       }}
       aria-label={accommodation.name}
-      className={`card relative flex h-full flex-col gap-3 overflow-hidden transition-colors ${
-        isDropTarget
+      className={`card relative flex h-full flex-col gap-3 border-2 border-ink-900 shadow-none transition-colors dark:border-umber-500 ${
+        isDropTarget && !hasRooms
           ? overCapacity
             ? "ring-2 ring-rose-400"
             : atCapacity
               ? "ring-2 ring-emerald-500 bg-emerald-50/40 dark:bg-emerald-400/10"
               : "ring-2 ring-blush-500 bg-blush-50/40 dark:bg-blush-400/10"
-          : overCapacity
-            ? "ring-1 ring-rose-300/60"
-            : atCapacity
-              ? "ring-1 ring-emerald-300/60"
-              : ""
-      } ${tapArmed ? "cursor-pointer ring-2 ring-blush-300 ring-dashed dark:ring-blush-400/40" : ""}`}
+          : ""
+      } ${!hasRooms && tapArmed ? "cursor-pointer ring-2 ring-blush-300 ring-dashed dark:ring-blush-400/40" : ""}`}
     >
-      {/* Slim blush top rule — the only chrome that hints at "lodging" now
-          that the house silhouette is gone. Sits inside the overflow-hidden
-          card so it tucks neatly against the rounded corners. */}
-      <span
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-0.5 bg-blush-300 dark:bg-blush-400/60"
-      />
-
       <header className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <h3 className="flex items-center gap-1.5 text-base font-semibold">
@@ -1211,7 +1381,7 @@ function AccommodationCard({
                   : undefined
             }
           >
-            {assigned.length}/{accommodation.capacity}
+            {occupied}/{totalCap}
           </span>
         </div>
         {accommodation.price_huf !== null && (
@@ -1238,17 +1408,196 @@ function AccommodationCard({
         )}
       </dl>
 
-      <div
-        className={`min-h-[44px] flex-1 rounded-md border border-dashed p-2 ${
-          overCapacity
-            ? "border-rose-300 bg-rose-50/40 dark:border-rose-400/40 dark:bg-rose-400/10"
+      {hasRooms ? (
+        <div className="flex flex-1 flex-col gap-2">
+          <ul className="grid gap-2">
+            {rooms.map((room) => (
+              <li key={room.id}>
+                <RoomDropZone
+                  room={room}
+                  assigned={roomGuests(room.id)}
+                  isDropTarget={hoverRoomId === room.id}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (hoverRoomId !== room.id) setHoverRoomId(room.id);
+                  }}
+                  onDragLeave={(e) => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+                    setHoverRoomId(hoverRoomId === room.id ? null : hoverRoomId);
+                  }}
+                  onDrop={(e) => onDropRoom(e, room)}
+                  onEdit={() => onEditRoom(room)}
+                  onDelete={() => onDeleteRoom(room)}
+                  onUnassign={onUnassign}
+                  onDragStartGuest={onDragStartGuest}
+                  tapArmed={tapArmed}
+                  onTap={() => onTapRoom(room)}
+                  t={t}
+                />
+              </li>
+            ))}
+          </ul>
+          {unroomed.length > 0 && (
+            <div className="rounded-md border border-dashed border-amber-300 bg-amber-50/50 p-2 dark:border-amber-400/40 dark:bg-amber-400/10">
+              <p className="mb-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                {t("logistics.unroomed_label")}
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {unroomed.map((g) => (
+                  <AssignedGuestChip
+                    key={g.id}
+                    guest={g}
+                    onUnassign={onUnassign}
+                    onDragStart={onDragStartGuest}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={onAddRoom}
+            className="btn-outline btn-sm mt-auto self-start"
+          >
+            <Plus size={14} aria-hidden /> {t("logistics.add_room")}
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-1 flex-col gap-2">
+          <div
+            className={`min-h-[44px] flex-1 rounded-md border border-dashed p-2 ${
+              overCapacity
+                ? "border-rose-300 bg-rose-50/40 dark:border-rose-400/40 dark:bg-rose-400/10"
+                : atCapacity
+                  ? "border-emerald-300 bg-emerald-50/40 dark:border-emerald-400/40 dark:bg-emerald-400/10"
+                  : "border-paper-300 dark:border-umber-700"
+            }`}
+          >
+            {assigned.length === 0 ? (
+              <p className="text-center text-xs text-ink-400 dark:text-umber-400">
+                {t("logistics.drop_guest_here")}
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1">
+                {assigned.map((g) => (
+                  <AssignedGuestChip
+                    key={g.id}
+                    guest={g}
+                    onUnassign={onUnassign}
+                    onDragStart={onDragStartGuest}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onAddRoom}
+            className="inline-flex items-center gap-1 self-start text-xs font-medium text-ink-500 hover:text-blush-600 dark:text-umber-300 dark:hover:text-blush-300"
+          >
+            <Plus size={12} aria-hidden /> {t("logistics.add_room")}
+          </button>
+        </div>
+      )}
+    </article>
+  );
+}
+
+/** One room inside an accommodation card. Its own drop target with a hard
+ *  per-room capacity limit (the parent's `assignRoomMany` refuses overflow).
+ *  `stopPropagation` on drop keeps the event from bubbling to the card. */
+function RoomDropZone({
+  room,
+  assigned,
+  isDropTarget,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onEdit,
+  onDelete,
+  onUnassign,
+  onDragStartGuest,
+  tapArmed,
+  onTap,
+  t,
+}: {
+  room: AccommodationRoom;
+  assigned: Guest[];
+  isDropTarget: boolean;
+  onDragOver: (e: DragEvent<HTMLElement>) => void;
+  onDragLeave: (e: DragEvent<HTMLElement>) => void;
+  onDrop: (e: DragEvent<HTMLElement>) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onUnassign: (g: Guest) => void;
+  onDragStartGuest: (e: DragEvent<HTMLElement>, guestId: number, groupIds?: number[]) => void;
+  tapArmed: boolean;
+  onTap: () => void;
+  t: (k: string) => string;
+}) {
+  const atCapacity = assigned.length === room.capacity;
+  const overCapacity = assigned.length > room.capacity;
+  return (
+    <div
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onClick={(e) => {
+        if (!tapArmed) return;
+        const target = e.target as HTMLElement;
+        if (target.closest("button")) return;
+        onTap();
+      }}
+      className={`group/room rounded-lg border p-2 transition-colors ${
+        isDropTarget
+          ? overCapacity
+            ? "border-rose-400 ring-1 ring-rose-400"
             : atCapacity
-              ? "border-emerald-300 bg-emerald-50/40 dark:border-emerald-400/40 dark:bg-emerald-400/10"
-              : "border-paper-300 dark:border-umber-700"
-        }`}
-      >
+              ? "border-emerald-500 bg-emerald-50/40 ring-1 ring-emerald-500 dark:bg-emerald-400/10"
+              : "border-blush-500 bg-blush-50/50 ring-1 ring-blush-500 dark:bg-blush-400/10"
+          : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900/50"
+      } ${tapArmed ? "cursor-pointer" : ""}`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="inline-flex min-w-0 items-center gap-1.5 text-sm font-medium text-ink-800 dark:text-paper-100">
+          <DoorOpen size={13} aria-hidden className="shrink-0 text-ink-500 dark:text-umber-300" />
+          <span className="truncate">{room.name}</span>
+        </span>
+        <div className="flex shrink-0 items-center gap-1">
+          <span
+            className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
+              overCapacity
+                ? "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300"
+                : atCapacity
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
+                  : "bg-paper-200 text-ink-700 dark:bg-umber-700 dark:text-paper-200"
+            }`}
+          >
+            {assigned.length}/{room.capacity}
+          </span>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded p-1 text-ink-400 opacity-60 hover:bg-paper-200 hover:text-ink-900 hover:opacity-100 dark:text-umber-300 dark:hover:bg-umber-700"
+            aria-label={t("common.edit")}
+            title={t("common.edit")}
+          >
+            <Pencil size={12} />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded p-1 text-ink-400 opacity-60 hover:bg-paper-200 hover:text-rose-600 hover:opacity-100 dark:text-umber-300 dark:hover:bg-umber-700"
+            aria-label={t("common.delete")}
+            title={t("common.delete")}
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
+      <div className="mt-1.5 min-h-[28px]">
         {assigned.length === 0 ? (
-          <p className="text-center text-xs text-ink-400 dark:text-umber-400">
+          <p className="text-[11px] text-ink-400 dark:text-umber-400">
             {t("logistics.drop_guest_here")}
           </p>
         ) : (
@@ -1264,7 +1613,7 @@ function AccommodationCard({
           </div>
         )}
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -1329,7 +1678,7 @@ function TransferTable({
               if (target.closest("button") || target.closest("a")) return;
               onTapTransfer(tr);
             }}
-            className={`card p-4 transition-colors ${
+            className={`card border-2 border-ink-900 p-4 shadow-none transition-colors dark:border-umber-500 ${
               hoverTransferId === tr.id
                 ? overCapacity
                   ? "bg-rose-50 dark:bg-rose-400/10"
@@ -1402,7 +1751,7 @@ function TransferTable({
         ))}
       </ul>
 
-      <div className="card hidden overflow-x-auto p-0 md:block">
+      <div className="card hidden overflow-x-auto border-2 border-ink-900 p-0 shadow-none md:block dark:border-umber-500">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-paper-300 bg-paper-100 text-left text-xs uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-300">
@@ -1731,6 +2080,95 @@ function CapacityStepper({
         <Plus size={14} aria-hidden />
       </button>
     </div>
+  );
+}
+
+/** Add / edit a single room within an accommodation. Just a name + a capacity
+ *  limit — the parent accommodation already carries address / price / contact. */
+function RoomDialog({
+  accommodationId,
+  initial,
+  onClose,
+  onSaved,
+}: {
+  accommodationId: number;
+  initial: AccommodationRoom | null;
+  onClose: () => void;
+  onSaved: () => void | Promise<void>;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const [name, setName] = useState(initial?.name ?? "");
+  const [capacity, setCapacity] = useState<number>(initial?.capacity ?? 2);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error(t("logistics.room_name_required"));
+      return;
+    }
+    if (!Number.isInteger(capacity) || capacity < 1) {
+      toast.error(t("logistics.capacity_invalid"));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      if (initial) {
+        await accommodationRoomApi.update(initial.id, { name: trimmed, capacity });
+      } else {
+        await accommodationRoomApi.create({
+          accommodation_id: accommodationId,
+          name: trimmed,
+          capacity,
+        });
+      }
+      await onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : t("logistics.save_failed"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      title={initial ? t("logistics.edit_room") : t("logistics.add_room")}
+      onClose={onClose}
+      closeOnBackdrop
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} disabled={submitting}>
+            {t("common.cancel")}
+          </Button>
+          <Button variant="primary" onClick={onSubmit} disabled={submitting}>
+            {t("common.save")}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-4">
+        <Field icon={DoorOpen} label={t("logistics.room_name")}>
+          <input
+            type="text"
+            className="input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t("logistics.room_name_placeholder")}
+            autoFocus
+          />
+        </Field>
+        <Field
+          icon={Users}
+          label={t("logistics.capacity")}
+          help={t("logistics.room_capacity_help")}
+        >
+          <CapacityStepper value={capacity} onChange={setCapacity} />
+        </Field>
+      </form>
+    </Dialog>
   );
 }
 

@@ -896,8 +896,14 @@ export interface Guest {
    *  may never fire it. `null` = not yet opened or pixel blocked. */
   invitation_opened_at: UnixMs | null;
   /** Logistics: lodging this guest is assigned to. Null = not yet assigned.
-   *  Edited via the /app/logistics drag-and-drop board. */
+   *  Edited via the /app/logistics drag-and-drop board. When the guest is
+   *  dropped onto a specific room, this stays in sync with the room's parent
+   *  accommodation so exports / queries that only read the accommodation keep
+   *  working. */
   accommodation_id: number | null;
+  /** Logistics: the specific room (within `accommodation_id`) this guest is in.
+   *  Null = assigned to a room-less accommodation, or not assigned at all. */
+  accommodation_room_id: number | null;
   /** Logistics: transfer trip this guest is on. Null = not yet assigned. */
   transfer_id: number | null;
   created_at: UnixMs;
@@ -1170,6 +1176,27 @@ export interface UpsertAccommodationInput {
   link?: string | null;
   contact?: string | null;
   notes?: string | null;
+}
+
+/** A single room within an `Accommodation` (e.g. "Hálószoba", "Tetőtér").
+ *  Rooms are optional — an accommodation with no rooms behaves as one flat
+ *  unit (drop guests straight onto it). Once it has rooms, guests are placed
+ *  into a specific room and `capacity` is enforced per room. */
+export interface AccommodationRoom {
+  id: number;
+  couple_id: number;
+  accommodation_id: number;
+  name: string;
+  capacity: number;
+  created_at: UnixMs;
+  updated_at: UnixMs;
+}
+
+export interface UpsertAccommodationRoomInput {
+  /** Required only on create — names the room and pins its parent. */
+  accommodation_id?: number;
+  name: string;
+  capacity?: number;
 }
 
 /** One transfer trip. v1 is "basic": label + free-form direction +

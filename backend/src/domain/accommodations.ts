@@ -2,7 +2,12 @@
 // happens via guests.accommodation_id (see guests.ts patch path). Schema
 // mirrors `shared/types.ts → Accommodation`.
 
-import type { Accommodation, UpsertAccommodationInput } from "@shared/types";
+import type {
+  Accommodation,
+  AccommodationRoom,
+  UpsertAccommodationInput,
+  UpsertAccommodationRoomInput,
+} from "@shared/types";
 import { db, now } from "../db";
 import { HttpError } from "../lib/http";
 
@@ -218,9 +223,115 @@ export function updateAccommodation(
 }
 
 export function deleteAccommodation(id: number, coupleId: number): boolean {
-  // ON DELETE SET NULL on guests.accommodation_id keeps the guest rows intact.
+  // ON DELETE SET NULL on guests.accommodation_id keeps the guest rows intact;
+  // the FK on guests.accommodation_room_id does the same as rooms cascade-delete.
   const result = db
     .prepare("DELETE FROM accommodations WHERE id = ? AND couple_id = ?")
+    .run(id, coupleId);
+  return result.changes > 0;
+}
+
+// ── Rooms ─────────────────────────────────────────────────────────────────
+// Optional subdivision of an accommodation. When an accommodation has rooms,
+// guests are placed into a specific room and the cap is enforced per room.
+
+export interface AccommodationRoomRow {
+  id: number;
+  couple_id: number;
+  accommodation_id: number;
+  name: string;
+  capacity: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export function toAccommodationRoom(row: AccommodationRoomRow): AccommodationRoom {
+  return {
+    id: row.id,
+    couple_id: row.couple_id,
+    accommodation_id: row.accommodation_id,
+    name: row.name,
+    capacity: row.capacity,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+export interface ParsedRoom {
+  name: string;
+  capacity: number;
+}
+
+export function parseRoomCreate(body: Partial<UpsertAccommodationRoomInput>): ParsedRoom {
+  return { name: parseName(body.name), capacity: parseCapacity(body.capacity, 2) };
+}
+
+export function parseRoomPatch(
+  body: Partial<UpsertAccommodationRoomInput>,
+  existing: AccommodationRoomRow,
+): ParsedRoom {
+  return {
+    name: body.name === undefined ? existing.name : parseName(body.name),
+    capacity: parseCapacity(body.capacity, existing.capacity),
+  };
+}
+
+/** All rooms across the couple's accommodations — the LogisticsPage fetches
+ *  these once and groups them client-side by accommodation_id. */
+export function listRoomsForCouple(coupleId: number): AccommodationRoom[] {
+  const rows = db
+    .prepare(
+      "SELECT * FROM accommodation_rooms WHERE couple_id = ? ORDER BY accommodation_id ASC, created_at ASC, id ASC",
+    )
+    .all(coupleId) as AccommodationRoomRow[];
+  return rows.map(toAccommodationRoom);
+}
+
+export function getRoomScoped(id: number, coupleId: number): AccommodationRoomRow | null {
+  return (
+    (db
+      .prepare("SELECT * FROM accommodation_rooms WHERE id = ? AND couple_id = ?")
+      .get(id, coupleId) as AccommodationRoomRow | undefined) ?? null
+  );
+}
+
+export function insertRoom(
+  coupleId: number,
+  accommodationId: number,
+  parsed: ParsedRoom,
+): AccommodationRoomRow {
+  const ts = now();
+  const result = db
+    .prepare(
+      `INSERT INTO accommodation_rooms
+         (couple_id, accommodation_id, name, capacity, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .run(coupleId, accommodationId, parsed.name, parsed.capacity, ts, ts);
+  const id = Number(result.lastInsertRowid);
+  return db
+    .prepare("SELECT * FROM accommodation_rooms WHERE id = ?")
+    .get(id) as AccommodationRoomRow;
+}
+
+export function updateRoom(id: number, coupleId: number, parsed: ParsedRoom): AccommodationRoomRow {
+  db.prepare(
+    "UPDATE accommodation_rooms SET name = ?, capacity = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+  ).run(parsed.name, parsed.capacity, now(), id, coupleId);
+  return db
+    .prepare("SELECT * FROM accommodation_rooms WHERE id = ?")
+    .get(id) as AccommodationRoomRow;
+}
+
+export function deleteRoom(id: number, coupleId: number): boolean {
+  // Clear both assignment columns for guests in this room before dropping it.
+  // The FK only nulls accommodation_room_id; accommodation_id would otherwise
+  // be left dangling on a now-roomless guest.
+  db.prepare(
+    "UPDATE guests SET accommodation_id = NULL, accommodation_room_id = NULL, updated_at = ? WHERE accommodation_room_id = ? AND couple_id = ?",
+  ).run(now(), id, coupleId);
+  const result = db
+    .prepare("DELETE FROM accommodation_rooms WHERE id = ? AND couple_id = ?")
     .run(id, coupleId);
   return result.changes > 0;
 }

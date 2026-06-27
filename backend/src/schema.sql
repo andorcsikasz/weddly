@@ -733,6 +733,24 @@ CREATE TABLE IF NOT EXISTS accommodations (
 );
 CREATE INDEX IF NOT EXISTS idx_accommodations_couple ON accommodations(couple_id);
 
+-- Logistics: rooms within a single accommodation. Optional — an accommodation
+-- with zero rooms is one flat unit (guests drop straight onto it, capped by
+-- accommodations.capacity). Once it has rooms, guests are placed into a
+-- specific room and `capacity` is the per-room hard cap (the UI refuses drops
+-- past it). Deleting the parent accommodation cascades its rooms; the matching
+-- guest assignment is cleared via guests.accommodation_room_id ON DELETE SET NULL.
+CREATE TABLE IF NOT EXISTS accommodation_rooms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  accommodation_id INTEGER NOT NULL REFERENCES accommodations(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  capacity INTEGER NOT NULL DEFAULT 2,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_accommodation_rooms_accommodation ON accommodation_rooms(accommodation_id);
+CREATE INDEX IF NOT EXISTS idx_accommodation_rooms_couple ON accommodation_rooms(couple_id);
+
 -- Logistics: transfer trips between airport/lodging/venue. A guest can sit in
 -- one transfer at a time (1:N via `guests.transfer_id`). v1 is intentionally
 -- "basic" per product spec — a flat list with a label + optional time/capacity;

@@ -703,8 +703,19 @@ addColumnIfMissing(
   "transfer_id",
   "transfer_id INTEGER REFERENCES transfers(id) ON DELETE SET NULL",
 );
+// Optional finer-grained lodging: the specific room (within accommodation_id)
+// a guest sits in. Cleared when its room is deleted; the parent accommodation
+// delete also clears accommodation_id via that column's own SET NULL FK.
+addColumnIfMissing(
+  "guests",
+  "accommodation_room_id",
+  "accommodation_room_id INTEGER REFERENCES accommodation_rooms(id) ON DELETE SET NULL",
+);
 db.exec("CREATE INDEX IF NOT EXISTS idx_guests_accommodation ON guests(accommodation_id)");
 db.exec("CREATE INDEX IF NOT EXISTS idx_guests_transfer ON guests(transfer_id)");
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_guests_accommodation_room ON guests(accommodation_room_id)",
+);
 
 // `auto_created = 1` marks the household-of-one that `guests.create` spawns
 // implicitly when the caller passes no `household_id` and no

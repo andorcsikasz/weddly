@@ -40,6 +40,7 @@ export interface GuestRow {
    *  `couples.groom_name` onto the matching guest rows. */
   partner_role: string | null;
   accommodation_id: number | null;
+  accommodation_room_id: number | null;
   transfer_id: number | null;
   created_at: number;
   updated_at: number;
@@ -117,6 +118,7 @@ export function toGuest(row: GuestRow): Guest {
     invitation_opened_at: row.invitation_opened_at,
     partner_role: normPartnerRole(row.partner_role),
     accommodation_id: row.accommodation_id,
+    accommodation_room_id: row.accommodation_room_id,
     transfer_id: row.transfer_id,
     created_at: row.created_at,
     updated_at: row.updated_at,
