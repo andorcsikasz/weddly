@@ -5,6 +5,11 @@
     <!-- Cookiebot consent manager — must be the first script in <head> so it
          can block other scripts before they fire. CBID is Weddly's account id. -->
     <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="dbc1cd47-eac4-464f-a0ac-bf68a48bab1e" data-blockingmode="auto" type="text/javascript"></script>
+    <!-- Usercentrics Web CMP — added alongside Cookiebot for trial evaluation.
+         Cookiebot stays the active consent gate (data-cookieconsent attributes),
+         so this loads async and does not block. Ruleset id maps to the
+         "Weddly GDPR Configuration" on the tryweddly.com Usercentrics account. -->
+    <script id="usercentrics-cmp" src="https://web.cmp.usercentrics.eu/ui/loader.js" data-ruleset-id="wiCPcu1cOkRtZk" async></script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="manifest" href="/manifest.webmanifest" />

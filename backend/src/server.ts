@@ -211,7 +211,10 @@ const CSP = [
   // banner UI from consentcdn.cookiebot.com; without both the cookie banner
   // (and therefore every consent-gated analytics script) silently fails to
   // load. Microsoft Clarity loads its tag from www.clarity.ms.
-  `script-src 'self' ${GTM_INLINE_CSP_HASH}${GA4_CSP_HASHES ? " " + GA4_CSP_HASHES : ""} https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com https://consent.cookiebot.com https://consentcdn.cookiebot.com https://www.clarity.ms`,
+  // Usercentrics Web CMP loads its loader/UI from web.cmp.usercentrics.eu and
+  // pulls config/assets from *.usercentrics.eu; it runs alongside Cookiebot
+  // during the trial evaluation.
+  `script-src 'self' ${GTM_INLINE_CSP_HASH}${GA4_CSP_HASHES ? " " + GA4_CSP_HASHES : ""} https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com https://consent.cookiebot.com https://consentcdn.cookiebot.com https://www.clarity.ms https://web.cmp.usercentrics.eu https://*.usercentrics.eu`,
   "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com https://appleid.cdn-apple.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.
@@ -228,7 +231,7 @@ const CSP = [
   // DEFAULT_PHOTO_BY_SLUG in BlogCoverArt — without this the SVG <image>
   // tag is blocked and every default blog cover falls back to the paper
   // composition.
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://imgsct.cookiebot.com https://*.clarity.ms https://c.bing.com",
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://imgsct.cookiebot.com https://*.clarity.ms https://c.bing.com https://*.usercentrics.eu",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
   // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may
@@ -238,14 +241,16 @@ const CSP = [
   // Cookiebot XHRs the consent state from consentcdn.cookiebot.com; Microsoft
   // Clarity beacons session data to *.clarity.ms and syncs the MUID via
   // c.bing.com.
-  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://*.clarity.ms https://c.bing.com",
+  // Usercentrics fetches its settings + records consent against *.usercentrics.eu
+  // and its consent runtime endpoints on *.service.consent.dev.
+  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://*.clarity.ms https://c.bing.com https://*.usercentrics.eu https://*.service.consent.dev",
   // OSM's /export/embed.html is iframed by the honeymoon map modal.
   // `blob:` is for the /app/seating PDF preview modal — the generated chart
   // is handed to <iframe src="blob:..."> so the browser's native PDF viewer
   // renders it inline. Without blob: in frame-src the iframe loads blank.
   // accounts.google.com renders the GSI one-tap / button iframe.
   // appleid.apple.com renders the Sign in with Apple popup/iframe.
-  "frame-src https://www.openstreetmap.org https://accounts.google.com https://appleid.apple.com https://consentcdn.cookiebot.com blob:",
+  "frame-src https://www.openstreetmap.org https://accounts.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://*.usercentrics.eu blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
