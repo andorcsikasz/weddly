@@ -771,17 +771,17 @@ export default function MediaPage() {
                 className="absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to top, rgba(15,10,7,0.82) 0%, rgba(15,10,7,0.7) 30%, rgba(15,10,7,0.3) 60%, transparent 80%)",
+                    "linear-gradient(to top, rgba(15,10,7,0.94) 0%, rgba(15,10,7,0.82) 30%, rgba(15,10,7,0.4) 62%, transparent 88%)",
                 }}
               />
               <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/60">
+                <p className="mb-1.5 font-grotesk text-[11px] font-semibold uppercase tracking-[0.16em] text-paper-200">
                   {t("media.film_title")}
                 </p>
                 <div className="group flex items-center gap-2">
                   <h1
-                    className="font-serif text-2xl italic leading-snug text-white"
-                    style={{ textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}
+                    className="font-serif text-2xl italic leading-snug text-paper-50"
+                    style={{ textShadow: "0 2px 10px rgba(0,0,0,0.65)" }}
                   >
                     {couple?.display_name || album.title || t("media.film_settings_unnamed")}
                   </h1>
