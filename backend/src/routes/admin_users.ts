@@ -322,6 +322,10 @@ function handleGrantFree(ctx: Ctx): Response {
   if (!couple) throw new HttpError(404, "Couple not found");
   if (couple.is_demo) throw new HttpError(400, "Cannot grant free access to a demo workspace");
 
+  // Only the first time we comp a workspace do we email — re-running the grant
+  // (which just re-stamps the window) shouldn't spam the couple's inbox.
+  const wasAlreadyFree = couple.subscription_status === "founding";
+
   grantFreeAccess(coupleId);
   addAuditLog({
     actor_user_id: admin.id,
@@ -330,6 +334,24 @@ function handleGrantFree(ctx: Ctx): Response {
     target_kind: "couple",
     target_id: coupleId,
   });
+
+  if (!wasAlreadyFree) {
+    const workspaceName =
+      couple.display_name && couple.display_name !== "Purged workspace"
+        ? couple.display_name
+        : undefined;
+    for (const member of partnersForCouple(coupleId)) {
+      if (member.email.endsWith("@purged.local")) continue;
+      void sendKind(
+        "free_access_granted",
+        { workspaceName },
+        {
+          user: { id: member.id, email: member.email, full_name: member.full_name },
+          couple_id: coupleId,
+        },
+      );
+    }
+  }
   const updated = db.prepare("SELECT * FROM couples WHERE id = ?").get(coupleId) as CoupleRow;
   return json({ couple: toAdminCouple(updated, new Map()) });
 }

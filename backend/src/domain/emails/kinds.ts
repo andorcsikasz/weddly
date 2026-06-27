@@ -21,6 +21,7 @@ export type EmailKind =
   | "account_admin_purged" // an admin immediately deleted the account (no 30-day grace)
   | "account_flagged" // admin flagged the account — 7-day window to reply or it gets purged
   | "account_flag_cleared" // admin resolved the flag — user is no longer under review
+  | "free_access_granted" // admin comped the workspace free Weddly access — heads-up to the couple
   | "rsvp_received_for_couple" // couple gets a notification when a guest RSVPs
   | "rsvp_received_household_for_couple" // aggregated notification: whole party RSVP'd in one go
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
@@ -101,6 +102,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // is implicitly waiting on either a reply window or a resolution — this
   // mail closes that loop.
   account_flag_cleared: "transactional",
+  // Transactional: an admin just comped this workspace free access — good news
+  // the couple should hear about right away, and it's account-critical (it
+  // changes their billing state), so never opt-out.
+  free_access_granted: "transactional",
   rsvp_received_for_couple: "transactional",
   rsvp_received_household_for_couple: "transactional",
   rsvp_thanks_for_guest: "transactional",

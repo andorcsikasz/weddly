@@ -145,6 +145,12 @@ export interface AccountFlagClearedPayload {
    *  Empty string when admin chose not to add one — body softens accordingly. */
   note: string;
 }
+export interface FreeAccessGrantedPayload {
+  /** Workspace label ("Andor & Sári") for a personal touch, or undefined when
+   *  the couple hasn't named the workspace yet — body falls back to a generic
+   *  line. */
+  workspaceName?: string;
+}
 /** Couple-wide RSVP progress shown as a "% replied so far" line. Matches the
  *  /app/guests denominator (every guest row). Optional so older enqueued jobs
  *  without it still render — the line is simply omitted. */
@@ -410,6 +416,7 @@ export type KindPayload = {
   account_admin_purged: AccountAdminPurgedPayload;
   account_flagged: AccountFlaggedPayload;
   account_flag_cleared: AccountFlagClearedPayload;
+  free_access_granted: FreeAccessGrantedPayload;
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
   rsvp_received_household_for_couple: RsvpReceivedHouseholdForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
@@ -963,6 +970,34 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         "The review flag that was on your account has been cleared — every feature is available again, and no data will be deleted.",
         ...(p.note ? [`Note from us: "${p.note}"`] : []),
+        "If anything's unclear, just reply to this email.",
+      ],
+      cta: "Open Weddly",
+    },
+  }),
+
+  free_access_granted: (p, ctx) => ({
+    subject: "Ajándék: ingyenes Weddly-hozzáférés / A gift: free Weddly access",
+    ctaUrl: CONFIG.frontendBaseUrl,
+    hu: {
+      preheader: "Megajándékoztunk titeket ingyenes Weddly-hozzáféréssel.",
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        p.workspaceName
+          ? `Jó hír: a(z) **${p.workspaceName}** munkaterületeteket megajándékoztuk ingyenes Weddly-hozzáféréssel.`
+          : "Jó hír: a munkaterületeteket megajándékoztuk ingyenes Weddly-hozzáféréssel.",
+        "Mostantól minden funkció korlátozás nélkül elérhető — vendéglista, ülésrend, költségvetés, RSVP és nyomtatható meghívók. Nincs teendőtök, fizetni sem kell.",
+        "Ha bármi kérdés van, válaszolj erre az e-mailre.",
+      ],
+      cta: "Weddly megnyitása",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        p.workspaceName
+          ? `Good news: we've gifted your **${p.workspaceName}** workspace free access to Weddly.`
+          : "Good news: we've gifted your workspace free access to Weddly.",
+        "Every feature is now unlocked — guest list, seating plan, budget, RSVP, and printable stationery. There's nothing to do and nothing to pay.",
         "If anything's unclear, just reply to this email.",
       ],
       cta: "Open Weddly",

@@ -77,6 +77,7 @@ const STUBS: KindPayload = {
     deadlineDateEn: "June 21, 2026",
   },
   account_flag_cleared: { note: "User responded — concern addressed." },
+  free_access_granted: { workspaceName: "Mia & Lucas" },
   rsvp_received_for_couple: {
     guestName: "Anna Kovács",
     rsvpStatus: "yes",

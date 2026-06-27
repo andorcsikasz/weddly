@@ -239,6 +239,15 @@ describe("billing state machine", () => {
     expect(granted.data.couple.billing.subscription_status).toBe("founding");
     expect(granted.data.couple.billing.entitled).toBe(true);
 
+    // The couple is notified by email that they were comped.
+    const mail = db
+      .prepare(
+        "SELECT kind, to_email FROM email_log WHERE couple_id = ? AND kind = 'free_access_granted' ORDER BY id DESC LIMIT 1",
+      )
+      .get(coupleId) as { kind: string; to_email: string } | undefined;
+    expect(mail?.kind).toBe("free_access_granted");
+    expect(mail?.to_email).toBe("comp@weddly.test");
+
     // The couple can edit again.
     const edit = await req("POST", "/api/households", { label: "Comped" }, { token });
     expect(edit.status).toBe(201);
