@@ -4627,6 +4627,9 @@ export interface LocaleMessages {
     analytics_weddings_total: string;
     analytics_weddings_with_date: string;
     analytics_weddings_lead_time: string;
+    analytics_weddings_lead_time_trend_title: string;
+    analytics_weddings_lead_time_trend_sub: string;
+    analytics_weddings_cohort_n: string;
     analytics_weddings_guest_target: string;
     analytics_weddings_peak_season: string;
     analytics_weddings_by_month: string;
@@ -4796,6 +4799,7 @@ export interface LocaleMessages {
     analytics_activity_active_users_7d: string;
     analytics_activity_pct_onboarded: string;
     analytics_activity_signups_sub: string;
+    analytics_vs_prev: string;
     analytics_activity_active_users_sub: string;
     analytics_activity_pct_onboarded_sub: string;
     /** Daily signups bar chart. */
@@ -4832,6 +4836,8 @@ export interface LocaleMessages {
     analytics_picks_col_source: string;
     /** Category coverage table. */
     analytics_picks_coverage_title: string;
+    analytics_picks_weekly_title: string;
+    analytics_picks_weekly_sub: string;
     analytics_picks_col_picked: string;
     analytics_picks_col_missing: string;
     analytics_picks_col_coverage_pct: string;

@@ -76,8 +76,17 @@ export interface AdminMoneyAnalytics {
 
 export interface AdminActivityAnalytics {
   /** Signups, bucketed by window. `total` is the all-time number,
-   *  excluding @purged.local tombstones. */
-  signups: { last_24h: number; last_7d: number; last_30d: number; total: number };
+   *  excluding @purged.local tombstones. `prev_7d` / `prev_30d` are the
+   *  immediately-preceding equal-length windows ([14d,7d) and [60d,30d)) for a
+   *  "vs previous period" delta on the headline. */
+  signups: {
+    last_24h: number;
+    last_7d: number;
+    last_30d: number;
+    total: number;
+    prev_7d: number;
+    prev_30d: number;
+  };
   /** Distinct users whose `last_seen_at` falls within the window. */
   active_users: { last_24h: number; last_7d: number; last_30d: number };
   /** Funnel stages: registered → verified email → onboarded a couple.
@@ -149,6 +158,9 @@ export interface AdminPicksAnalytics {
   }>;
   /** Aggregate breakdown of where the picks point. */
   source_breakdown: { curated: number; community: number; diy: number };
+  /** Pick volume per week over the last 12 Monday-anchored UTC weeks (oldest
+   *  first, zero weeks included). `week_start` is YYYY-MM-DD. */
+  picks_weekly: Array<{ week_start: string; count: number }>;
 }
 
 // ─── /api/admin/analytics/engagement ─────────────────────────────────────
@@ -421,6 +433,10 @@ export interface AdminWeddingAnalytics {
   /** Most-used wedding style tags (`couples.style_tags_json`) by couple count.
    *  Top 12. */
   top_style_tags: Array<{ tag: string; count: number }>;
+  /** Median signup→wedding lead time (days) per registration-month cohort, for
+   *  the last 6 calendar months (oldest first). `median` is 0 for a month with
+   *  no qualifying couples; `count` is that cohort's sample size. */
+  lead_time_by_cohort: Array<{ month: string; median: number; count: number }>;
 }
 
 // ─── /api/admin/analytics/guests ─────────────────────────────────────────

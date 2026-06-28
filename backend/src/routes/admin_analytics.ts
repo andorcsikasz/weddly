@@ -279,6 +279,13 @@ function activityAnalytics(audience: AnalyticsAudience): AdminActivityAnalytics 
   const w24h = now - DAY_MS;
   const w7d = now - 7 * DAY_MS;
   const w30d = now - 30 * DAY_MS;
+  // Previous-period boundaries for the signups "vs prev" delta: the 7d window
+  // before the current 7d ([14d, 7d)) and the 30d before the current 30d
+  // ([60d, 30d)). Only signups (discrete created_at events) get this — active
+  // users are keyed on a single last_seen_at point, so a windowed previous
+  // count there would silently undercount users active in both windows.
+  const w14d = now - 14 * DAY_MS;
+  const w60d = now - 60 * DAY_MS;
 
   // Purged tombstones use `…@purged.local` for the email — exclude so the
   // signup count doesn't keep ticking up every time someone deletes their
@@ -400,6 +407,8 @@ function activityAnalytics(audience: AnalyticsAudience): AdminActivityAnalytics 
       last_7d: countSince(REAL, w7d),
       last_30d: countSince(REAL, w30d),
       total: totalSignups,
+      prev_7d: countSince(REAL, w14d) - countSince(REAL, w7d),
+      prev_30d: countSince(REAL, w60d) - countSince(REAL, w30d),
     },
     active_users: {
       last_24h: activeSince(REAL, w24h),
@@ -573,6 +582,30 @@ function picksAnalytics(audience: AnalyticsAudience): AdminPicksAnalytics {
     sourceBreakdown[classifySource(p.supplier_id, curatedIds)] += 1;
   }
 
+  // Weekly pick volume over the last 12 Monday-anchored UTC weeks — a trend so
+  // the dashboard can tell real growth from a flat or newly-launched feature.
+  const PICK_TREND_WEEKS = 12;
+  const weekMs = 7 * DAY_MS;
+  const firstWeekStart = weekStartUtc(Date.now()) - (PICK_TREND_WEEKS - 1) * weekMs;
+  const pickedAtRows = db
+    .prepare(
+      `SELECT p.picked_at AS picked_at
+         FROM couple_picks p JOIN couples c ON c.id = p.couple_id
+        WHERE ${COUPLE_OK} AND p.picked_at >= ?`,
+    )
+    .all(firstWeekStart) as { picked_at: number }[];
+  const weekBins = new Array<number>(PICK_TREND_WEEKS).fill(0);
+  for (const r of pickedAtRows) {
+    const idx = Math.floor((r.picked_at - firstWeekStart) / weekMs);
+    if (idx >= 0 && idx < PICK_TREND_WEEKS) {
+      weekBins[idx] = (weekBins[idx] ?? 0) + 1;
+    }
+  }
+  const picksWeekly = weekBins.map((count, i) => ({
+    week_start: utcDateKey(firstWeekStart + i * weekMs),
+    count,
+  }));
+
   return {
     total_picks: totalPicks,
     total_couples: totalCouples,
@@ -581,6 +614,7 @@ function picksAnalytics(audience: AnalyticsAudience): AdminPicksAnalytics {
     top_picks: topPicks,
     category_coverage: categoryCoverage,
     source_breakdown: sourceBreakdown,
+    picks_weekly: picksWeekly,
   };
 }
 
@@ -1164,6 +1198,32 @@ function utcDateKey(ms: number): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 
+/** Monday-00:00-UTC of the week containing `ms`, as epoch ms. Used to anchor
+ *  weekly trend buckets so every week starts on the same weekday. */
+function weekStartUtc(ms: number): number {
+  const d = new Date(ms);
+  const dow = (d.getUTCDay() + 6) % 7; // 0=Mon .. 6=Sun
+  const midnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return midnight - dow * DAY_MS;
+}
+
+/** "YYYY-MM" (UTC) for cohort bucketing. */
+function monthKeyUtc(ms: number): string {
+  const d = new Date(ms);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/** The last `n` calendar-month keys ending with the month containing `nowMs`,
+ *  oldest first. Date.UTC normalises negative month indices across year ends. */
+function lastNMonthKeys(n: number, nowMs: number): string[] {
+  const d = new Date(nowMs);
+  const keys: string[] = [];
+  for (let i = n - 1; i >= 0; i -= 1) {
+    keys.push(monthKeyUtc(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - i, 1)));
+  }
+  return keys;
+}
+
 function acquisitionAnalytics(audience: AnalyticsAudience): AdminAcquisitionAnalytics {
   const now = Date.now();
   const since = now - ACQUISITION_WINDOW_DAYS * DAY_MS;
@@ -1603,6 +1663,9 @@ function weddingAnalytics(audience: AnalyticsAudience): AdminWeddingAnalytics {
     winter: 0,
   };
   const leadTimeDays: number[] = [];
+  // Lead times grouped by the couple's registration month, for a planning-horizon
+  // trend across cohorts (is the median moving as the audience changes?).
+  const leadTimeByCohort = new Map<string, number[]>();
   const guestTargets: number[] = [];
   const currencyCounts = new Map<string, number>();
   const countryCounts = new Map<string, number>();
@@ -1623,7 +1686,13 @@ function weddingAnalytics(audience: AnalyticsAudience): AdminWeddingAnalytics {
       // the median reflects forward planning, not back-dated test rows.
       const weddingMs = Date.UTC(d.year, d.month - 1, d.day);
       const days = Math.round((weddingMs - c.created_at) / DAY_MS);
-      if (days >= 0) leadTimeDays.push(days);
+      if (days >= 0) {
+        leadTimeDays.push(days);
+        const ck = monthKeyUtc(c.created_at);
+        const arr = leadTimeByCohort.get(ck);
+        if (arr) arr.push(days);
+        else leadTimeByCohort.set(ck, [days]);
+      }
     }
 
     const guests = c.target_guest_count ?? c.target_guest_count_max ?? c.target_guest_count_min;
@@ -1686,6 +1755,10 @@ function weddingAnalytics(audience: AnalyticsAudience): AdminWeddingAnalytics {
       count: seasonCounts[season],
     })),
     lead_time_days: quantiles(leadTimeDays),
+    lead_time_by_cohort: lastNMonthKeys(6, Date.now()).map((month) => {
+      const arr = leadTimeByCohort.get(month) ?? [];
+      return { month, median: arr.length > 0 ? quantiles(arr).median : 0, count: arr.length };
+    }),
     guest_count_target: quantiles(guestTargets),
     by_currency: toSorted(currencyCounts, "currency") as Array<{ currency: string; count: number }>,
     by_country: toSorted(countryCounts, "country") as Array<{ country: string; count: number }>,

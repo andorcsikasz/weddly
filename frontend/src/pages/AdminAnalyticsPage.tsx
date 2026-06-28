@@ -602,16 +602,40 @@ function SectionCard({
  *  optional sub-line. A shared min-height plus flex centring keeps every tile
  *  in a row on the same baseline whether or not it has a sub-line. Used in the
  *  KPI strip at the top of every section. */
+/** "vs previous period" delta badge. Renders nothing when the previous window
+ *  was empty (a percentage off zero says nothing). Up is olive, down terracotta
+ *  — both from the chart token palette, never raw hex. */
+function DeltaPill({ cur, prev }: { cur: number; prev: number }) {
+  const { t } = useT();
+  if (prev <= 0) return null;
+  const change = Math.round(((cur - prev) / prev) * 100);
+  const cls =
+    change > 0
+      ? "text-chart-olive"
+      : change < 0
+        ? "text-chart-terracotta"
+        : "text-neutral-400 dark:text-umber-400";
+  const arrow = change > 0 ? "▲" : change < 0 ? "▼" : "→";
+  return (
+    <span className={cls}>
+      {arrow} {Math.abs(change)}% {t("admin.analytics_vs_prev")}
+    </span>
+  );
+}
+
 function KpiTile({
   label,
   value,
   sub,
+  delta,
   demoNote,
   emphasis,
 }: {
   label: string;
   value: string;
   sub?: string;
+  /** Tiny colored "vs previous period" badge rendered under the value. */
+  delta?: React.ReactNode;
   /** Tiny muted line under `sub` flagging the demo-account count that the
    *  headline `value` deliberately excludes (e.g. "demo: 11"). */
   demoNote?: string;
@@ -630,6 +654,7 @@ function KpiTile({
       <div className="stat-num stat-num-centered mt-1 text-2xl font-semibold text-neutral-900 dark:text-paper-50">
         {value}
       </div>
+      {delta && <div className="mt-0.5 text-[11px] font-medium">{delta}</div>}
       {sub && (
         <div className="stat-num stat-num-centered mt-0.5 text-xs text-neutral-500 dark:text-umber-300">
           {sub}
@@ -908,6 +933,7 @@ function ActivitySection({
         <KpiTile
           label={t("admin.analytics_activity_signups_7d")}
           value={formatNumber(a.signups.last_7d, locale)}
+          delta={<DeltaPill cur={a.signups.last_7d} prev={a.signups.prev_7d} />}
           sub={t("admin.analytics_activity_signups_sub", {
             total: formatNumber(a.signups.total, locale),
           })}
@@ -917,6 +943,7 @@ function ActivitySection({
         <KpiTile
           label={t("admin.analytics_activity_signups_30d")}
           value={formatNumber(a.signups.last_30d, locale)}
+          delta={<DeltaPill cur={a.signups.last_30d} prev={a.signups.prev_30d} />}
           demoNote={demoNote(a.demo.signups.last_30d)}
         />
         <KpiTile
@@ -1906,6 +1933,11 @@ function WeddingsSection({
     count: r.count,
   }));
   const tagRows = w.top_style_tags.map((r) => ({ label: r.tag, count: r.count }));
+  const cohortRows = w.lead_time_by_cohort.map((c) => ({
+    label: monthLabel(Number(c.month.slice(5, 7)), locale),
+    count: c.median,
+    sub: t("admin.analytics_weddings_cohort_n", { count: formatNumber(c.count, locale) }),
+  }));
 
   return (
     <SectionCard title={title}>
@@ -1939,6 +1971,20 @@ function WeddingsSection({
             ).label
           }
         />
+      </div>
+
+      <div className="mb-3">
+        <InnerCard
+          title={t("admin.analytics_weddings_lead_time_trend_title")}
+          subtitle={t("admin.analytics_weddings_lead_time_trend_sub")}
+        >
+          <DistBars
+            rows={cohortRows}
+            locale={locale}
+            emptyLabel={t("admin.analytics_weddings_empty")}
+            labelWidth="3rem"
+          />
+        </InnerCard>
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -2251,6 +2297,7 @@ function PicksSection({
     () => [...p.category_coverage].sort((a, b) => b.coverage_pct - a.coverage_pct),
     [p.category_coverage],
   );
+  const weeklyRows = p.picks_weekly.map((w) => ({ label: w.week_start.slice(5), count: w.count }));
 
   return (
     <SectionCard title={title}>
@@ -2288,6 +2335,20 @@ function PicksSection({
               value={`${formatNumber(p.source_breakdown.curated, locale)} · ${formatNumber(p.source_breakdown.community, locale)} · ${formatNumber(p.source_breakdown.diy, locale)}`}
               sub={`${t("admin.analytics_source_curated")} · ${t("admin.analytics_source_community")} · ${t("admin.analytics_source_diy")}`}
             />
+          </div>
+
+          <div className="mb-3">
+            <InnerCard
+              title={t("admin.analytics_picks_weekly_title")}
+              subtitle={t("admin.analytics_picks_weekly_sub")}
+            >
+              <DistBars
+                rows={weeklyRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_picks_empty")}
+                labelWidth="3.5rem"
+              />
+            </InnerCard>
           </div>
 
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
