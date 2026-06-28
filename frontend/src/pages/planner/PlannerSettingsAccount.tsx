@@ -8,12 +8,13 @@ import { useT } from "../../lib/i18n";
 interface OutletCtx {
   profile: PlannerProfile | null;
   setProfile: (p: PlannerProfile) => void;
+  loadError: boolean;
 }
 
 export default function PlannerSettingsAccount() {
   const { t } = useT();
   const toast = useToast();
-  const { profile, setProfile } = useOutletContext<OutletCtx>();
+  const { profile, setProfile, loadError } = useOutletContext<OutletCtx>();
 
   const [form, setFormState] = useState<PlannerProfile | null>(null);
   const [saving, setSaving] = useState(false);
@@ -59,6 +60,9 @@ export default function PlannerSettingsAccount() {
   }
 
   if (!active) {
+    // The parent surfaces the load error banner; render nothing here rather
+    // than an endless skeleton once the fetch has failed.
+    if (loadError) return null;
     return <div className="mt-8 h-64 animate-pulse rounded-2xl bg-paper-100 dark:bg-umber-800" />;
   }
 

@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import type { PlannerClientView, PlannerMessage, PlannerThreadPreview } from "@shared/types";
 import { plannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 function formatTs(ts: number, locale: string): string {
   return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
@@ -273,6 +274,7 @@ function ThreadPanel({
 
 export default function PlannerMessagesPage() {
   const { t } = useT();
+  useDocumentMeta("planner_messages.meta_title", "planner_messages.meta_description");
   const { coupleId: coupleIdParam } = useParams<{ coupleId?: string }>();
   const activeCoupleId = coupleIdParam ? Number(coupleIdParam) : null;
 
@@ -315,6 +317,15 @@ export default function PlannerMessagesPage() {
       >
         {activeCoupleId ? (
           <ThreadPanel coupleId={activeCoupleId} clients={clients} />
+        ) : clients.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+            <p className="max-w-xs text-sm text-umber-500 dark:text-umber-400">
+              {t("planner_messages.empty_no_clients")}
+            </p>
+            <Link to="/app/planner" className="btn-primary btn-sm">
+              {t("planner_messages.empty_back_cta")}
+            </Link>
+          </div>
         ) : (
           <div className="flex flex-1 items-center justify-center text-sm text-umber-400 dark:text-umber-500">
             {t("planner_messages.select_client")}

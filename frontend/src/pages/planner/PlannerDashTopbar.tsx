@@ -1,4 +1,13 @@
-import { Bell, Home, LogOut, MessageCircle, UserRound } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  Home,
+  LogOut,
+  MailQuestion,
+  MessageCircle,
+  Users,
+  UserRound,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Wordmark } from "../../components/Wordmark";
@@ -8,6 +17,7 @@ interface Props {
   plannerName: string;
   plannerEmail: string;
   urgentCount: number;
+  pendingInvites: number;
   plan: string;
   maxClients: number;
   activeClients: number;
@@ -19,6 +29,7 @@ export function PlannerDashTopbar({
   plannerName,
   plannerEmail,
   urgentCount,
+  pendingInvites,
   plan,
   maxClients,
   activeClients,
@@ -28,16 +39,25 @@ export function PlannerDashTopbar({
   const { t } = useT();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside pointer + Escape.
+  const hasNotifications = urgentCount > 0 || pendingInvites > 0;
+
+  // Close menus on outside pointer + Escape.
   useEffect(() => {
-    if (!open) return;
+    if (!open && !notifOpen) return;
     const onPointer = (e: PointerEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (!wrapRef.current?.contains(target)) setOpen(false);
+      if (!notifRef.current?.contains(target)) setNotifOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        setNotifOpen(false);
+      }
     };
     document.addEventListener("pointerdown", onPointer);
     document.addEventListener("keydown", onKey);
@@ -45,11 +65,12 @@ export function PlannerDashTopbar({
       document.removeEventListener("pointerdown", onPointer);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, notifOpen]);
 
   // Auto-close on route change.
   useEffect(() => {
     setOpen(false);
+    setNotifOpen(false);
   }, [location.pathname]);
 
   const initials = getInitials(plannerName, plannerEmail);
@@ -78,20 +99,76 @@ export function PlannerDashTopbar({
         <div className="flex-1" />
 
         <div className="flex items-center gap-3">
-          <span className="rounded-full border border-umber-200 px-3 py-1 text-xs capitalize text-umber-600 dark:border-umber-600 dark:text-paper-200">
+          <span
+            className="flex items-center gap-1.5 rounded-full border border-umber-200 px-3 py-1 text-xs capitalize text-umber-600 dark:border-umber-600 dark:text-paper-200"
+            title={t("planner_home.topbar_clients_aria")}
+            aria-label={`${t("planner_home.topbar_clients_aria")}: ${activeClients}/${maxClients}`}
+          >
+            <Users size={13} aria-hidden="true" className="text-umber-400" />
             {plan + " · " + String(activeClients) + "/" + String(maxClients)}
           </span>
 
-          <button
-            type="button"
-            className="relative rounded-lg p-1.5 text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
-            aria-label={t("planner_home.topbar_notif_aria")}
-          >
-            <Bell size={18} />
-            {urgentCount > 0 && (
-              <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-500" />
+          <div className="relative" ref={notifRef}>
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={notifOpen}
+              onClick={() => setNotifOpen((v) => !v)}
+              className="relative rounded-lg p-1.5 text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
+              aria-label={t("planner_home.topbar_notif_aria")}
+            >
+              <Bell size={18} />
+              {hasNotifications && (
+                <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-500" />
+              )}
+            </button>
+
+            {notifOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full z-50 mt-2 w-72 max-w-[calc(100vw-1rem)] origin-top-right rounded-2xl border border-paper-300 bg-white p-2 font-grotesk shadow-pop dark:border-umber-700 dark:bg-umber-800"
+              >
+                <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
+                  {t("planner_home.notif_heading")}
+                </p>
+                <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
+                {!hasNotifications && (
+                  <p className="px-3 py-3 text-sm text-ink-500 dark:text-umber-300">
+                    {t("planner_home.notif_none")}
+                  </p>
+                )}
+                {urgentCount > 0 && (
+                  <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 dark:text-paper-100">
+                    <AlertTriangle size={15} className="shrink-0 text-red-500" aria-hidden="true" />
+                    <span>
+                      {t("planner_home.notif_overdue").replace("{{n}}", String(urgentCount))}
+                    </span>
+                  </div>
+                )}
+                {pendingInvites > 0 && (
+                  <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 dark:text-paper-100">
+                    <MailQuestion
+                      size={15}
+                      className="shrink-0 text-amber-500"
+                      aria-hidden="true"
+                    />
+                    <span>
+                      {t("planner_home.notif_invites").replace("{{n}}", String(pendingInvites))}
+                    </span>
+                  </div>
+                )}
+                <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
+                <Link
+                  to="/app/planner/messages"
+                  role="menuitem"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+                >
+                  <MessageCircle size={16} aria-hidden="true" />
+                  <span>{t("planner_home.notif_messages_link")}</span>
+                </Link>
+              </div>
             )}
-          </button>
+          </div>
 
           <div className="relative" ref={wrapRef}>
             <button

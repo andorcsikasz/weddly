@@ -6299,6 +6299,17 @@ const hu: LocaleMessages = {
     pipeline_empty_body: "Add hozzá az első ügyfelet, és azonnal látod a teljes képet.",
     pipeline_notes_add: "+ Megjegyzés",
     pipeline_entering: "Belépés...",
+    meta_title: "Tervező munkaterület · Weddly",
+    meta_description: "Kezeld az ügyfeleidet, a feladataidat és az üzeneteidet egy helyen.",
+    topbar_clients_aria: "Aktív ügyfelek a csomag keretéből",
+    notif_heading: "Értesítések",
+    notif_none: "Nincs új értesítésed.",
+    notif_overdue: "{{n}} lejárt feladat",
+    notif_invites: "{{n}} függő meghívó vár jóváhagyásra",
+    notif_messages_link: "Üzenetek megnyitása",
+    rail_all_good_body: "Nincs lejárt feladat egyetlen ügyfélnél sem.",
+    add_client_hint:
+      "A pár e-mailben kap egy hozzáférési kérést. A munkaterületüket csak a jóváhagyásuk után látod.",
   },
   planner_onboarding: {
     step_indicator: "{{current}} / {{total}}",
@@ -6306,7 +6317,7 @@ const hu: LocaleMessages = {
     step_label_package: "Csomag",
     step_label_client: "Ügyfél",
     step1_title: "Üdvözlünk, {{name}}!",
-    step1_body: "Állítsd be a profilodat, és máris készen állsz.",
+    step1_body: "Állítsd be a profilodat néhány lépésben — kevesebb mint 2 perc, és kezdheted is.",
     step1_cta: "Kezdjük el",
     step2_title: "Hozd létre a profilodat",
     step2_body: "Ezeket az adatokat az ügyfeleid láthatják a profilodon.",
@@ -6320,7 +6331,8 @@ const hu: LocaleMessages = {
     bio_label: "Bemutatkozás",
     bio_placeholder: "Néhány szó magadról és a munkádról (max. 400 karakter)...",
     bio_chars_remaining: "{{n}} karakter maradt",
-    save_error: "Nem sikerült menteni a profilt. Próbáld újra.",
+    save_error:
+      "Nem sikerült menteni a profilt. Ellenőrizd az internetkapcsolatot, és próbáld újra. Ha továbbra sem megy, írj a hello@tryweddly.com címre.",
     step3_title: "A csomagod",
     step3_body: "A csomagod meghatározza, hogy egyszerre hány ügyfelet kezelhetsz.",
     plan_starter_name: "Kezdő",
@@ -6346,6 +6358,11 @@ const hu: LocaleMessages = {
     step5_title: "Kész vagy!",
     step5_body: "A profilod be van állítva. Kezdd el kezelni az ügyfeleidet a Planner felületen.",
     step5_cta: "Ugrás a Planner felületre",
+    meta_title: "Tervező beállítása · Weddly",
+    meta_description: "Állítsd be a tervezői profilodat néhány lépésben.",
+    later: "Később",
+    first_client_hint:
+      "A pár e-mailben kap egy hozzáférési kérést. A munkaterületüket csak a jóváhagyásuk után látod.",
   },
   planner_messages: {
     heading: "Üzenetek",
@@ -6367,6 +6384,11 @@ const hu: LocaleMessages = {
     to_placeholder: "pl. menyasszony@example.com",
     subject_placeholder: "Tárgy",
     body_placeholder: "Írd ide az üzenetet…",
+    meta_title: "Üzenetek · Weddly",
+    meta_description: "Üzenetváltás az ügyfeleiddel.",
+    empty_no_clients:
+      "Még nincs ügyfeled. Adj hozzá egyet az irányítópulton, hogy üzenetet válthass.",
+    empty_back_cta: "Vissza az irányítópultra",
   },
   planner_client: {
     back_label: "Irányítópult",
@@ -6421,6 +6443,11 @@ const hu: LocaleMessages = {
     data_delete_heading: "Fiók törlése",
     data_delete_body: "A törölt fiók és ügyfélkapcsolatok visszaállíthatatlanul elvesznek.",
     data_delete_button: "Fiók törlése",
+    meta_title: "Beállítások · Weddly",
+    meta_description: "Kezeld a tervezői fiókodat, előfizetésedet és adataidat.",
+    load_error:
+      "Nem sikerült betölteni az adataidat. Frissítsd az oldalt, vagy jelentkezz be újra.",
+    badge_planner: "Tervező",
   },
   couple_planners: {
     heading: "Tervező",

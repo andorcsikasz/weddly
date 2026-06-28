@@ -10,6 +10,7 @@ import type {
 import { plannerApi } from "../lib/endpoints";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 import { formatDate } from "../lib/format";
 import { PlannerDashTopbar } from "./planner/PlannerDashTopbar";
 import { PlannerDashPipeline } from "./planner/PlannerDashPipeline";
@@ -495,6 +496,9 @@ function AddClientInlineCard({
           {t("planner_home.add_client_button")}
         </button>
       </form>
+      <p className="mt-2 text-xs text-umber-500 dark:text-umber-400">
+        {t("planner_home.add_client_hint")}
+      </p>
       {status === "ok" && (
         <p className="mt-2 text-xs text-sage-600">{t("planner_home.add_client_success")}</p>
       )}
@@ -508,6 +512,7 @@ function AddClientInlineCard({
 export default function PlannerHomePage() {
   const { user, logout } = useAuth();
   const { t } = useT();
+  useDocumentMeta("planner_home.meta_title", "planner_home.meta_description");
 
   const [clients, setClients] = useState<PlannerClientView[]>([]);
   const [tasks, setTasks] = useState<PlannerTaskRow[]>([]);
@@ -588,6 +593,7 @@ export default function PlannerHomePage() {
         plannerName={firstName}
         plannerEmail={user?.email ?? ""}
         urgentCount={stats?.overdue_tasks ?? 0}
+        pendingInvites={invites.length}
         plan={stats?.plan ?? ""}
         maxClients={stats?.max_clients ?? 0}
         activeClients={stats?.active_clients ?? 0}

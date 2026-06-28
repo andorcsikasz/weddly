@@ -110,9 +110,9 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
 
         {visibleOverdue.length === 0 ? (
           <div className="flex items-center gap-1.5 ml-1">
-            <CheckCircle2 size={14} className="text-eucalyptus-500" aria-hidden="true" />
+            <CheckCircle2 size={14} className="shrink-0 text-eucalyptus-500" aria-hidden="true" />
             <span className="text-xs text-eucalyptus-600 dark:text-eucalyptus-400">
-              {t("planner_home.rail_all_good")}
+              {t("planner_home.rail_all_good_body")}
             </span>
           </div>
         ) : (

@@ -6741,6 +6741,16 @@ export interface LocaleMessages {
     pipeline_empty_body: string;
     pipeline_notes_add: string;
     pipeline_entering: string;
+    meta_title: string;
+    meta_description: string;
+    topbar_clients_aria: string;
+    notif_heading: string;
+    notif_none: string;
+    notif_overdue: string;
+    notif_invites: string;
+    notif_messages_link: string;
+    rail_all_good_body: string;
+    add_client_hint: string;
   };
   planner_onboarding: {
     step_indicator: string;
@@ -6788,6 +6798,10 @@ export interface LocaleMessages {
     step5_title: string;
     step5_body: string;
     step5_cta: string;
+    meta_title: string;
+    meta_description: string;
+    later: string;
+    first_client_hint: string;
   };
   planner_messages: {
     heading: string;
@@ -6809,6 +6823,10 @@ export interface LocaleMessages {
     to_placeholder: string;
     subject_placeholder: string;
     body_placeholder: string;
+    meta_title: string;
+    meta_description: string;
+    empty_no_clients: string;
+    empty_back_cta: string;
   };
   planner_client: {
     back_label: string;
@@ -6863,6 +6881,10 @@ export interface LocaleMessages {
     data_delete_heading: string;
     data_delete_body: string;
     data_delete_button: string;
+    meta_title: string;
+    meta_description: string;
+    load_error: string;
+    badge_planner: string;
   };
   couple_planners: {
     heading: string;

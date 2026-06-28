@@ -5,6 +5,7 @@ import type { PlannerProfile } from "@shared/types";
 import { Wordmark } from "../../components/Wordmark";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
+import { useDocumentMeta } from "../../lib/seo";
 
 const TABS = [
   { id: "account", path: "account", labelKey: "planner_profile.tab_account" },
@@ -26,13 +27,18 @@ function getInitials(fullName: string, email: string): string {
 
 export default function PlannerSettingsLayout() {
   const { t } = useT();
+  useDocumentMeta("planner_profile.meta_title", "planner_profile.meta_description");
   const [profile, setProfile] = useState<PlannerProfile | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     plannerApi
       .getProfile()
-      .then(setProfile)
-      .catch(() => {});
+      .then((p) => {
+        setProfile(p);
+        setLoadError(false);
+      })
+      .catch(() => setLoadError(true));
   }, []);
 
   const initials = profile ? getInitials(profile.full_name, profile.email) : "?";
@@ -68,8 +74,8 @@ export default function PlannerSettingsLayout() {
               <span className="text-sm text-umber-500 dark:text-umber-300">
                 {profile?.email ?? ""}
               </span>
-              <span className="rounded-md bg-umber-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-paper-50 dark:bg-umber-700">
-                TERVEZŐ
+              <span className="rounded-md bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-umber-600 dark:bg-umber-800 dark:text-umber-300">
+                {t("planner_profile.badge_planner")}
               </span>
             </div>
           </div>
@@ -103,8 +109,17 @@ export default function PlannerSettingsLayout() {
           ))}
         </nav>
 
+        {loadError && (
+          <p
+            role="alert"
+            className="mt-6 rounded-xl border border-blush-200 bg-blush-50 px-4 py-3 text-sm text-blush-800 dark:border-blush-900/40 dark:bg-blush-950/30 dark:text-blush-300"
+          >
+            {t("planner_profile.load_error")}
+          </p>
+        )}
+
         <div className="pb-16">
-          <Outlet context={{ profile, setProfile }} />
+          <Outlet context={{ profile, setProfile, loadError }} />
         </div>
       </div>
     </div>

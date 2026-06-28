@@ -6,15 +6,29 @@ import { useT } from "../../lib/i18n";
 export default function PlannerSettingsSubscription() {
   const { t } = useT();
   const [stats, setStats] = useState<PlannerStats | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     plannerApi
       .stats()
-      .then((r) => setStats(r.stats))
-      .catch(() => {});
+      .then((r) => {
+        setStats(r.stats);
+        setLoadError(false);
+      })
+      .catch(() => setLoadError(true));
   }, []);
 
   if (!stats) {
+    if (loadError) {
+      return (
+        <p
+          role="alert"
+          className="mt-8 rounded-xl border border-blush-200 bg-blush-50 px-4 py-3 text-sm text-blush-800 dark:border-blush-900/40 dark:bg-blush-950/30 dark:text-blush-300"
+        >
+          {t("planner_profile.load_error")}
+        </p>
+      );
+    }
     return <div className="mt-8 h-48 animate-pulse rounded-2xl bg-paper-100 dark:bg-umber-800" />;
   }
 

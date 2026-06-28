@@ -5,6 +5,7 @@ import { Wordmark } from "../components/Wordmark";
 import { useAuth } from "../lib/auth";
 import { plannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 const TOTAL_STEPS = 5;
 
@@ -18,6 +19,7 @@ export default function PlannerOnboardingPage() {
   const { t } = useT();
   const { user } = useAuth();
   const navigate = useNavigate();
+  useDocumentMeta("planner_onboarding.meta_title", "planner_onboarding.meta_description");
 
   const [step, setStep] = useState(0);
   const [activePlan, setActivePlan] = useState<string>("starter");
@@ -130,6 +132,15 @@ export default function PlannerOnboardingPage() {
           >
             <Wordmark size="sm" />
           </Link>
+          {step < TOTAL_STEPS - 1 && (
+            <button
+              type="button"
+              onClick={() => void handleFinish()}
+              className="text-sm text-umber-500 underline-offset-2 transition-colors hover:text-umber-800 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+            >
+              {t("planner_onboarding.later")}
+            </button>
+          )}
         </div>
       </header>
 
@@ -416,6 +427,9 @@ export default function PlannerOnboardingPage() {
                     : t("planner_onboarding.first_client_add")}
                 </button>
               </div>
+              <p className="mt-2 text-xs text-umber-500 dark:text-umber-400">
+                {t("planner_onboarding.first_client_hint")}
+              </p>
               {clientStatus === "ok" && (
                 <p className="mt-2 text-xs text-sage-600 dark:text-sage-400">
                   {t("planner_onboarding.first_client_success")}
