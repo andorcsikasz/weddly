@@ -213,6 +213,7 @@ describe("auth", () => {
       password: "supersafe123",
       full_name: "Device",
     });
+    await verifyUserEmail("device@weddly.test");
 
     // First login from a fixed IP — registers the device silently (otherwise
     // every new user would get a "new device" mail about themselves).
@@ -267,6 +268,7 @@ describe("auth", () => {
       full_name: "PC",
     });
     expect(reg.status).toBe(201);
+    await verifyUserEmail("pwchange@example.com");
     const oldToken = reg.data.token;
 
     // Wrong current password → 401.
@@ -2911,6 +2913,7 @@ describe("password reset", () => {
       password: "originalpw123",
       full_name: "Reset User",
     });
+    await verifyUserEmail("reset@weddly.test");
 
     const r = await req<{ ok: true }>("POST", "/api/auth/forgot", { email: "reset@weddly.test" });
     expect(r.status).toBe(200);
