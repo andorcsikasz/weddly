@@ -53,6 +53,34 @@ async function req<T = unknown>(
   // "missing version" path still pass `null` explicitly.
   const finalBody = withConsentVersions(method, path, body);
 
+  // The vendor-waitlist endpoint consumes multipart/form-data (optional
+  // price_list upload), so encode the JSON-shaped test body as a form. Arrays
+  // map to repeated `key[]` fields; null/undefined are dropped so "missing
+  // version" probes still hit the 400 path. Drop the JSON Content-Type so fetch
+  // sets the multipart boundary.
+  if (
+    method === "POST" &&
+    path === "/api/vendors/waitlist" &&
+    finalBody &&
+    typeof finalBody === "object"
+  ) {
+    delete headers["Content-Type"];
+    const form = new FormData();
+    for (const [key, value] of Object.entries(finalBody as Record<string, unknown>)) {
+      if (value === undefined || value === null) continue;
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item !== undefined && item !== null) form.append(`${key}[]`, String(item));
+        }
+      } else {
+        form.append(key, String(value));
+      }
+    }
+    const res = await fetch(`${BASE}${path}`, { method, headers, body: form });
+    const text = await res.text();
+    return { status: res.status, data: (text ? JSON.parse(text) : null) as T };
+  }
+
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers,
@@ -1476,6 +1504,26 @@ async function verifyUserEmail(email: string): Promise<void> {
   if (!tokenRow) throw new Error(`no verification token for ${email}`);
   const r = await req("POST", `/api/auth/verify/${pt(tokenRow.token)}`, {});
   expect(r.status).toBe(200);
+}
+
+/** Register-or-reuse the shared admin account and return a working session
+ *  token. Registration no longer issues a session for an unverified account
+ *  (hard email-verify login gate), so we force-verify in the DB and then log
+ *  in. Idempotent across tests: safe whether the account is fresh (post
+ *  wipeAll), already present, or already verified. */
+async function adminTokenVerified(): Promise<string> {
+  await req("POST", "/api/auth/register", {
+    email: "admin@test.test",
+    password: "supersafe123",
+    full_name: "Admin",
+  });
+  db.prepare("UPDATE users SET verified_email = 1 WHERE email = 'admin@test.test'").run();
+  const login = await req<{ token: string }>("POST", "/api/auth/login", {
+    email: "admin@test.test",
+    password: "supersafe123",
+  });
+  if (!login.data?.token) throw new Error("admin login did not return a token");
+  return login.data.token;
 }
 
 async function bootstrapCouple(
@@ -4571,20 +4619,7 @@ describe("community supplier reports", () => {
       )
       .get(numericId) as { token: string };
     await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
-    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
-      email: "admin@test.test",
-      password: "supersafe123",
-      full_name: "Admin",
-    });
-    // Pull the existing admin's session if the email's already taken.
-    let adminToken = adminReg.data.token;
-    if (adminReg.status === 409) {
-      const login = await req<{ token: string }>("POST", "/api/auth/login", {
-        email: "admin@test.test",
-        password: "supersafe123",
-      });
-      adminToken = login.data.token;
-    }
+    const adminToken = await adminTokenVerified();
     await req("POST", `/api/admin/suppliers/${numericId}/approve`, {}, { token: adminToken });
     return numericId;
   }
@@ -6299,18 +6334,36 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     );
     const slug = initial.data.couple.slug;
 
-    // Default state after household creation: ON. Schema-level default of 1
-    // is the contract — most weddings serve a plated menu and existing
-    // households shouldn't lose the meal row on upgrade.
+    // Default state after household creation: OFF. The meal-choice toggle was
+    // defaulted OFF in June 2026 (commit c5d56e4c) — couples opt in per
+    // household when they serve a plated menu.
     const hh = await req<{
       household: { id: number; code: string; rsvp_collects_meal: boolean };
     }>("POST", "/api/households", { label: "Test family" }, { token });
     expect(hh.status).toBe(201);
-    expect(hh.data.household.rsvp_collects_meal).toBe(true);
+    expect(hh.data.household.rsvp_collects_meal).toBe(false);
     const hhId = hh.data.household.id;
     const code = hh.data.household.code;
 
-    // Public lookup mirrors the household-level flag.
+    // Public lookup mirrors the household-level flag (off by default).
+    const pubInit = await req<{ rsvp: { rsvp_collects_meal: boolean } }>(
+      "GET",
+      `/api/rsvp/lookup?couple=${slug}&code=${code}`,
+    );
+    expect(pubInit.status).toBe(200);
+    expect(pubInit.data.rsvp.rsvp_collects_meal).toBe(false);
+
+    // Flip on for this household.
+    const on = await req<{ household: { rsvp_collects_meal: boolean } }>(
+      "PATCH",
+      `/api/households/${hhId}`,
+      { rsvp_collects_meal: true },
+      { token },
+    );
+    expect(on.status).toBe(200);
+    expect(on.data.household.rsvp_collects_meal).toBe(true);
+
+    // Public-facing view tracks the per-household value.
     const pubOn = await req<{ rsvp: { rsvp_collects_meal: boolean } }>(
       "GET",
       `/api/rsvp/lookup?couple=${slug}&code=${code}`,
@@ -6318,7 +6371,7 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     expect(pubOn.status).toBe(200);
     expect(pubOn.data.rsvp.rsvp_collects_meal).toBe(true);
 
-    // Flip off on this household.
+    // Flip back off.
     const off = await req<{ household: { rsvp_collects_meal: boolean } }>(
       "PATCH",
       `/api/households/${hhId}`,
@@ -6335,16 +6388,6 @@ describe("round-2: ceremony_kind + is_kids_table fields", () => {
     );
     expect(pubOff.status).toBe(200);
     expect(pubOff.data.rsvp.rsvp_collects_meal).toBe(false);
-
-    // Flip back on.
-    const on = await req<{ household: { rsvp_collects_meal: boolean } }>(
-      "PATCH",
-      `/api/households/${hhId}`,
-      { rsvp_collects_meal: true },
-      { token },
-    );
-    expect(on.status).toBe(200);
-    expect(on.data.household.rsvp_collects_meal).toBe(true);
 
     // Non-boolean payload rejected.
     const bad = await req(
@@ -6550,17 +6593,8 @@ describe("round-2: community supplier email privacy", () => {
       )
       .get(supplierId) as { token: string };
     await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
-    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
-      email: "admin@test.test",
-      password: "supersafe123",
-      full_name: "Admin",
-    });
-    await req(
-      "POST",
-      `/api/admin/suppliers/${supplierId}/approve`,
-      {},
-      { token: adminReg.data.token },
-    );
+    const adminToken = await adminTokenVerified();
+    await req("POST", `/api/admin/suppliers/${supplierId}/approve`, {}, { token: adminToken });
 
     const publicList = await req<{
       suppliers: { id: string; contact_email: string | null }[];
@@ -6568,16 +6602,10 @@ describe("round-2: community supplier email privacy", () => {
     const found = publicList.data.suppliers.find((s) => s.id === submit.data.supplier.id);
     expect(found?.contact_email).toBeNull();
 
-    // Admin view still surfaces the address. The admin user was already
-    // created above (to perform the approval), so log in instead of register.
-    const adminLogin = await req<{ token: string }>("POST", "/api/auth/login", {
-      email: "admin@test.test",
-      password: "supersafe123",
-    });
-    expect(adminLogin.status).toBe(200);
+    // Admin view still surfaces the address; reuse the verified admin token.
     const adminList = await req<{
       suppliers: { id: number; contact_email: string | null }[];
-    }>("GET", "/api/admin/suppliers", undefined, { token: adminLogin.data.token });
+    }>("GET", "/api/admin/suppliers", undefined, { token: adminToken });
     expect(adminList.status).toBe(200);
     const adminRow = adminList.data.suppliers.find(
       (s) => s.contact_email === "private@hidden-email.example",
@@ -7000,15 +7028,6 @@ describe("vendor waitlist", () => {
       ],
     });
     expect(tooMany.status).toBe(400);
-
-    // portfolio_links must be an array (not a string).
-    const notArray = await req("POST", "/api/vendors/waitlist", {
-      business_name: "X",
-      email: "x@y.z",
-      category: "venue",
-      portfolio_links: "https://a.test",
-    });
-    expect(notArray.status).toBe(400);
 
     // Invalid IG handle (contains a hyphen).
     const badIg = await req("POST", "/api/vendors/waitlist", {

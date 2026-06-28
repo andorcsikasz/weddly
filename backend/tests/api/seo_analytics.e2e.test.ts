@@ -66,8 +66,10 @@ describe("seo: Google Tag Manager injection", () => {
     const html = render();
     // The gtm.js event push must be present — it's what fires Page View tags.
     expect(html).toContain("event:'gtm.js'");
+    // The gtm.js loader is Cookiebot consent-gated (type="text/plain" +
+    // data-cookieconsent="statistics") so it only runs after statistics consent.
     expect(html).toContain(
-      '<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-K9NCXCL9"></script>',
+      '<script type="text/plain" data-cookieconsent="statistics" async src="https://www.googletagmanager.com/gtm.js?id=GTM-K9NCXCL9"></script>',
     );
     // ...and it must run BEFORE the loader so the event is already on the
     // dataLayer when gtm.js processes it.

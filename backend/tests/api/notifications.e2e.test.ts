@@ -134,10 +134,12 @@ describe("notifications: couple-vs-user isolation", () => {
     expect(aBefore.data.unread).toBeGreaterThanOrEqual(1);
     expect(bBefore.data.unread).toBeGreaterThanOrEqual(1);
 
-    // B also sees the "partner added a to-do" event; A does not (hidden from
-    // its own actor).
+    // B sees the "partner added a to-do" event as a fresh notification. A (the
+    // actor) also sees it in the full couple history, but flagged as its own
+    // action and pre-read, so it never counts toward A's unread badge.
     expect(bBefore.data.items.some((i) => i.kind === "partner_task_added")).toBe(true);
-    expect(aBefore.data.items.some((i) => i.kind === "partner_task_added")).toBe(false);
+    const aOwn = aBefore.data.items.find((i) => i.kind === "partner_task_added");
+    expect(aOwn?.is_own_action).toBe(true);
 
     // A opens the bell.
     await req("POST", "/api/notifications/seen", {}, { token: aToken });

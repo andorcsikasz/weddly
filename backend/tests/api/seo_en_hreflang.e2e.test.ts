@@ -59,9 +59,13 @@ describe("seo: non-paired routes emit no EN alternate (single URL)", () => {
     expect(html).not.toContain(`hreflang="en"`);
   });
 
-  test("blog post has no en alternate (single slug)", () => {
+  test("a translated blog post emits its EN alternate (paired en_slug)", () => {
+    // bibliai-idezetek-eskuvore is paired with the EN slug bible-verses-for-
+    // weddings (SEED_EN_SLUG_BY_SLUG), so the SSR head exposes the EN alternate.
     const html = render("/blog/bibliai-idezetek-eskuvore", "hu");
-    expect(html).not.toContain(`hreflang="en"`);
+    expect(html).toContain(
+      `<link rel="alternate" hreflang="en" href="https://tryweddly.com/blog/bible-verses-for-weddings" />`,
+    );
   });
 });
 

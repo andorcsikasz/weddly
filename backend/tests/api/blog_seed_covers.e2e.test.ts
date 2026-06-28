@@ -21,6 +21,10 @@ function coverOf(slug: string): string | null {
 
 describe("blog: seed covers reach the public API", () => {
   test("every slug in SEED_COVER_BY_SLUG serves its cover via /api/blog/posts", async () => {
+    // Hermetic against the shared test DB: another suite may have NULLed a
+    // cover and not restored it. The seeder backfills NULL covers without
+    // clobbering admin-set (non-null) ones, so this realigns the seed state.
+    seedBlogPostsIfEmpty();
     const res = await fetch(`${BASE}/api/blog/posts`);
     expect(res.status).toBe(200);
     const { posts } = (await res.json()) as {

@@ -119,7 +119,10 @@ async function claimListing(
 }
 
 /** Bootstrap a claimed vendor and return their session token + listing id +
- *  vendor_account id (the claimed listing id is "v{accountId}"). */
+ *  vendor_account id. The account id is read off the claimed listing's
+ *  vendor_account_id rather than inferred from the listing slug — the two only
+ *  coincide on a clean DB, and diverge once other suites have advanced the
+ *  autoincrement sequences (the full-suite pollution that broke this). */
 async function bootstrapVendor(
   slug: string,
 ): Promise<{ vendorToken: string; listingId: string; accountId: number }> {
@@ -129,7 +132,10 @@ async function bootstrapVendor(
     `${slug} Studio`,
   );
   const claimed = await claimListing(listingId, `vendor-${slug}@weddly.test`, `Vendor ${slug}`);
-  return { ...claimed, accountId: Number(listingId.slice(1)) };
+  const acct = db
+    .prepare("SELECT vendor_account_id AS id FROM listings WHERE id = ?")
+    .get(listingId) as { id: number };
+  return { ...claimed, accountId: acct.id };
 }
 
 /** Admin creates an inbound booking (a couple inquiry) against a claimed
