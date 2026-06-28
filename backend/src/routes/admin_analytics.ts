@@ -37,7 +37,12 @@ import { listActiveCommunitySuppliers } from "../domain/community_suppliers";
 import { DIRECTORY } from "../domain/suppliers_data";
 import { channelFromUtm } from "../domain/signup_meta";
 import { requireAdmin } from "../domain/users";
-import { type Ga4ReportResponse, isGa4Configured, runGa4Report } from "../lib/ga4";
+import {
+  type Ga4ReportResponse,
+  isGa4Configured,
+  runGa4RealtimeReport,
+  runGa4Report,
+} from "../lib/ga4";
 import { type Ctx, json, type Router } from "../lib/http";
 import { log } from "../lib/logger";
 
@@ -1381,10 +1386,15 @@ function emptyTraffic(
     property_id: configured ? CONFIG.ga4PropertyId : "",
     totals_7d: { ...EMPTY_TRAFFIC_TOTALS },
     totals_28d: { ...EMPTY_TRAFFIC_TOTALS },
+    totals_prev_7d: { ...EMPTY_TRAFFIC_TOTALS },
+    new_vs_returning: { new_users: 0, returning_users: 0 },
     active_users_daily: [],
     top_pages: [],
     channels: [],
+    first_touch_channels: [],
+    events: [],
     countries: [],
+    realtime: { active_users: 0, by_country: [] },
     generated_at: now,
   };
 }
@@ -1410,11 +1420,29 @@ async function trafficAnalytics(): Promise<AdminTrafficAnalytics> {
 async function fetchTrafficFromGa4(now: number): Promise<AdminTrafficAnalytics> {
   const range7 = [{ startDate: "7daysAgo", endDate: "today" }];
   const range28 = [{ startDate: "28daysAgo", endDate: "today" }];
+  // The 7-day window immediately before range7, for week-over-week deltas.
+  const rangePrev7 = [{ startDate: "14daysAgo", endDate: "8daysAgo" }];
 
-  // Six independent reports, one shared access token, all in flight at once.
-  const [t7, t28, daily, pages, channels, countries] = await Promise.all([
+  // Independent reports, one shared access token, all in flight at once. The
+  // realtime report hits a different API surface and degrades to empty on its
+  // own (it may be unavailable while the standard reports succeed) rather than
+  // failing the whole section.
+  const [
+    t7,
+    t28,
+    tPrev7,
+    daily,
+    pages,
+    channels,
+    firstTouch,
+    events,
+    newReturning,
+    countries,
+    realtime,
+  ] = await Promise.all([
     runGa4Report({ dateRanges: range7, metrics: TRAFFIC_METRICS }),
     runGa4Report({ dateRanges: range28, metrics: TRAFFIC_METRICS }),
+    runGa4Report({ dateRanges: rangePrev7, metrics: TRAFFIC_METRICS }),
     runGa4Report({
       dateRanges: [{ startDate: "13daysAgo", endDate: "today" }],
       dimensions: [{ name: "date" }],
@@ -1424,7 +1452,11 @@ async function fetchTrafficFromGa4(now: number): Promise<AdminTrafficAnalytics> 
     runGa4Report({
       dateRanges: range7,
       dimensions: [{ name: "pagePath" }],
-      metrics: [{ name: "screenPageViews" }, { name: "activeUsers" }],
+      metrics: [
+        { name: "screenPageViews" },
+        { name: "activeUsers" },
+        { name: "userEngagementDuration" },
+      ],
       orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
       limit: 10,
     }),
@@ -1437,10 +1469,40 @@ async function fetchTrafficFromGa4(now: number): Promise<AdminTrafficAnalytics> 
     }),
     runGa4Report({
       dateRanges: range7,
+      dimensions: [{ name: "firstUserDefaultChannelGroup" }],
+      metrics: [{ name: "totalUsers" }],
+      orderBys: [{ metric: { metricName: "totalUsers" }, desc: true }],
+      limit: 10,
+    }),
+    runGa4Report({
+      dateRanges: range7,
+      dimensions: [{ name: "eventName" }],
+      metrics: [{ name: "eventCount" }],
+      orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+      limit: 12,
+    }),
+    runGa4Report({
+      dateRanges: range28,
+      dimensions: [{ name: "newVsReturning" }],
+      metrics: [{ name: "activeUsers" }],
+    }),
+    runGa4Report({
+      dateRanges: range7,
       dimensions: [{ name: "country" }],
       metrics: [{ name: "activeUsers" }],
       orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
       limit: 8,
+    }),
+    runGa4RealtimeReport({
+      dimensions: [{ name: "country" }],
+      metrics: [{ name: "activeUsers" }],
+      orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+      limit: 8,
+    }).catch((err) => {
+      log.warn("ga4.realtime_failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return { rows: [] } as Ga4ReportResponse;
     }),
   ]);
 
@@ -1464,26 +1526,61 @@ async function fetchTrafficFromGa4(now: number): Promise<AdminTrafficAnalytics> 
     }
   }
 
+  // Split active users into new vs returning. GA4 keys the dimension "new" /
+  // "returning" (plus an occasional "(not set)" bucket we drop).
+  let newUsers = 0;
+  let returningUsers = 0;
+  for (const row of newReturning.rows ?? []) {
+    const key = (row.dimensionValues[0]?.value ?? "").toLowerCase();
+    const v = Math.round(ga4Num(row.metricValues[0]?.value));
+    if (key === "new") newUsers = v;
+    else if (key === "returning") returningUsers = v;
+  }
+
+  const realtimeCountries = (realtime.rows ?? []).map((r) => ({
+    country: r.dimensionValues[0]?.value ?? "",
+    users: Math.round(ga4Num(r.metricValues[0]?.value)),
+  }));
+
   const payload: AdminTrafficAnalytics = {
     configured: true,
     error: null,
     property_id: CONFIG.ga4PropertyId,
     totals_7d: totalsFromReport(t7),
     totals_28d: totalsFromReport(t28),
+    totals_prev_7d: totalsFromReport(tPrev7),
+    new_vs_returning: { new_users: newUsers, returning_users: returningUsers },
     active_users_daily: daysScaffold,
-    top_pages: (pages.rows ?? []).map((r) => ({
-      path: r.dimensionValues[0]?.value ?? "",
-      views: Math.round(ga4Num(r.metricValues[0]?.value)),
-      users: Math.round(ga4Num(r.metricValues[1]?.value)),
-    })),
+    top_pages: (pages.rows ?? []).map((r) => {
+      const users = Math.round(ga4Num(r.metricValues[1]?.value));
+      const engagementSeconds = ga4Num(r.metricValues[2]?.value);
+      return {
+        path: r.dimensionValues[0]?.value ?? "",
+        views: Math.round(ga4Num(r.metricValues[0]?.value)),
+        users,
+        avg_engagement_seconds: users > 0 ? Math.round(engagementSeconds / users) : 0,
+      };
+    }),
     channels: (channels.rows ?? []).map((r) => ({
       channel: r.dimensionValues[0]?.value ?? "",
       sessions: Math.round(ga4Num(r.metricValues[0]?.value)),
+    })),
+    first_touch_channels: (firstTouch.rows ?? []).map((r) => ({
+      channel: r.dimensionValues[0]?.value ?? "",
+      users: Math.round(ga4Num(r.metricValues[0]?.value)),
+    })),
+    events: (events.rows ?? []).map((r) => ({
+      name: r.dimensionValues[0]?.value ?? "",
+      count: Math.round(ga4Num(r.metricValues[0]?.value)),
     })),
     countries: (countries.rows ?? []).map((r) => ({
       country: r.dimensionValues[0]?.value ?? "",
       users: Math.round(ga4Num(r.metricValues[0]?.value)),
     })),
+    realtime: {
+      active_users: realtimeCountries.reduce((sum, c) => sum + c.users, 0),
+      by_country: realtimeCountries,
+    },
     generated_at: now,
   };
   trafficCache = { payload, expiresAt: now + TRAFFIC_CACHE_TTL_MS };

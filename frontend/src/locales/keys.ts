@@ -616,6 +616,150 @@ export interface LocaleMessages {
     error_load: string;
     error_no_account: string;
   };
+  /** Vendor workspace (the role='vendor' shell at /vendor/*). Nav + the seven
+   *  pages: dashboard, clients (Weddly-sourced couples), listing editor, stats,
+   *  billing, settings, plus the freemium plan + upgrade-prompt copy. FREE tier
+   *  always works; PRO unlocks the CRM detail, payment tracking, advanced
+   *  stats, and the respond/status workflow. */
+  vendor: {
+    nav: {
+      dashboard: string;
+      clients: string;
+      listing: string;
+      stats: string;
+      billing: string;
+      settings: string;
+      section_workspace: string;
+      section_account: string;
+      logout: string;
+      brand_fallback: string;
+    };
+    dashboard: {
+      page_title: string;
+      page_body: string;
+      /** Receives `{name}` — vendor / business name. */
+      welcome: string;
+      inquiries_total: string;
+      inquiries_30d: string;
+      revenue_tracked: string;
+      blocked_dates: string;
+      upcoming_title: string;
+      no_upcoming: string;
+      view_clients: string;
+      view_listing: string;
+    };
+    clients: {
+      page_title: string;
+      page_body: string;
+      empty_title: string;
+      empty_body: string;
+      col_couple: string;
+      col_event_date: string;
+      col_status: string;
+      col_stage: string;
+      col_balance: string;
+      view: string;
+      back_to_clients: string;
+      no_event_date: string;
+      detail_title: string;
+      status_label: string;
+      stage_label: string;
+      stage_placeholder: string;
+      contract_value: string;
+      deposit_paid: string;
+      balance: string;
+      notes_label: string;
+      notes_placeholder: string;
+      contact_email: string;
+      no_contact_email: string;
+      save: string;
+      saving: string;
+      saved: string;
+      save_failed: string;
+      load_failed: string;
+    };
+    payments: {
+      title: string;
+      intro: string;
+      add: string;
+      label_field: string;
+      label_placeholder: string;
+      amount_field: string;
+      due_date_field: string;
+      no_due_date: string;
+      mark_paid: string;
+      mark_unpaid: string;
+      paid: string;
+      unpaid: string;
+      empty: string;
+      remove: string;
+      remove_confirm_title: string;
+      remove_confirm_body: string;
+      total: string;
+      total_paid: string;
+      total_outstanding: string;
+      added: string;
+      add_failed: string;
+      updated: string;
+      update_failed: string;
+      removed: string;
+      remove_failed: string;
+    };
+    stats: {
+      page_title: string;
+      page_body: string;
+      inquiries: string;
+      by_status: string;
+      upcoming: string;
+      completeness: string;
+      revenue: string;
+      blocked_dates: string;
+    };
+    billing: {
+      page_title: string;
+      page_body: string;
+      current_plan: string;
+      status_label: string;
+      /** Receives `{date}` — end of the founding free window. */
+      founding_until: string;
+      /** Receives `{date}` — trial end date. */
+      trial_until: string;
+      entitled_yes: string;
+      entitled_no: string;
+      /** Receives `{left}` + `{cap}` — founding spots left / total. */
+      founding_spots: string;
+      manage: string;
+      checkout_unavailable: string;
+    };
+    settings: {
+      page_title: string;
+      page_body: string;
+      account_name: string;
+      locale_label: string;
+      password_label: string;
+      change_password: string;
+      data_export_title: string;
+      data_export_body: string;
+      export_button: string;
+      save: string;
+      saving: string;
+      saved: string;
+      save_failed: string;
+    };
+    plan: {
+      free_label: string;
+      pro_label: string;
+      free_badge: string;
+      pro_badge: string;
+    };
+    upgrade: {
+      title: string;
+      body: string;
+      cta: string;
+      feature_locked: string;
+      learn_more: string;
+    };
+  };
   /** Supplier Outreach Inbox (P2.E v1) — the in-app surface where a couple
    *  sends a localised cold-outreach mail to up to 5 shortlisted vendors
    *  per campaign and browses the sent history. Replies arrive in the
@@ -4751,6 +4895,16 @@ export interface LocaleMessages {
     analytics_traffic_col_page: string;
     analytics_traffic_col_views: string;
     analytics_traffic_col_visitors: string;
+    analytics_traffic_col_avg_time: string;
+    analytics_traffic_realtime_label: string;
+    analytics_traffic_28d_label: string;
+    analytics_traffic_new_returning_title: string;
+    analytics_traffic_new_users: string;
+    analytics_traffic_returning_users: string;
+    analytics_traffic_first_touch_title: string;
+    analytics_traffic_first_touch_sub: string;
+    analytics_traffic_events_title: string;
+    analytics_traffic_events_sub: string;
     /** Compact KPI tile labels added in the 2026 redesign. */
     analytics_money_couples_with_budget_short: string;
     analytics_money_couples_with_actuals_short: string;

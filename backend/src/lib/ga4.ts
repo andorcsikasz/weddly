@@ -173,21 +173,43 @@ export interface Ga4ReportRequest {
  *  (rows-only) response. Throws when GA4 isn't configured or the call fails —
  *  the caller decides how to degrade. */
 export async function runGa4Report(request: Ga4ReportRequest): Promise<Ga4ReportResponse> {
+  return runGa4(":runReport", request);
+}
+
+/** A single GA4 realtime report request (the subset of `RunRealtimeReportRequest`
+ *  we use). Realtime has no `dateRanges` — it always covers the last 30 min. */
+export interface Ga4RealtimeRequest {
+  metrics: Array<{ name: string }>;
+  dimensions?: Array<{ name: string }>;
+  orderBys?: Array<Record<string, unknown>>;
+  limit?: number;
+}
+
+/** Run a GA4 *realtime* report (active users in the last 30 minutes). Same auth
+ *  + error contract as `runGa4Report`. */
+export async function runGa4RealtimeReport(
+  request: Ga4RealtimeRequest,
+): Promise<Ga4ReportResponse> {
+  return runGa4(":runRealtimeReport", request);
+}
+
+/** Shared transport for both the standard and realtime Data API endpoints. */
+async function runGa4(suffix: string, body: unknown): Promise<Ga4ReportResponse> {
   const account = parseServiceAccount();
   if (!account || !CONFIG.ga4PropertyId) {
     throw new Error("GA4 not configured");
   }
   const token = await getAccessToken(account);
-  const res = await fetch(`${DATA_API_BASE}/${CONFIG.ga4PropertyId}:runReport`, {
+  const res = await fetch(`${DATA_API_BASE}/${CONFIG.ga4PropertyId}${suffix}`, {
     method: "POST",
     headers: {
       authorization: `Bearer ${token}`,
       "content-type": "application/json",
     },
-    body: JSON.stringify(request),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new Error(`GA4 runReport failed: ${res.status} ${await res.text()}`);
+    throw new Error(`GA4 ${suffix} failed: ${res.status} ${await res.text()}`);
   }
   return (await res.json()) as Ga4ReportResponse;
 }

@@ -1168,15 +1168,41 @@ function TrafficSection({
     );
   }
 
+  const tp = d.totals_prev_7d;
   const channelMax = Math.max(0, ...d.channels.map((c) => c.sessions));
+  const firstTouchMax = Math.max(0, ...d.first_touch_channels.map((c) => c.users));
   const countryMax = Math.max(0, ...d.countries.map((c) => c.users));
+  const eventMax = Math.max(0, ...d.events.map((e) => e.count));
+  const nvr = d.new_vs_returning;
+  const nvrTotal = nvr.new_users + nvr.returning_users;
+  const rt = d.realtime;
 
   return (
     <SectionCard title={title} subtitle={subtitle}>
+      {rt.active_users > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-neutral-50 px-3 py-2 text-sm ring-1 ring-neutral-200 dark:bg-neutral-500/10 dark:ring-neutral-500/30">
+          <span className="inline-flex items-center gap-1.5 font-medium text-neutral-800 dark:text-paper-100">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-chart-olive" />
+            {t("admin.analytics_traffic_realtime_label")}
+          </span>
+          <span className="stat-num text-lg font-semibold text-neutral-900 dark:text-paper-50">
+            {formatNumber(rt.active_users, locale)}
+          </span>
+          {rt.by_country.length > 0 && (
+            <span className="text-xs text-neutral-500 dark:text-umber-300">
+              {rt.by_country
+                .slice(0, 4)
+                .map((c) => `${c.country} ${formatNumber(c.users, locale)}`)
+                .join(" · ")}
+            </span>
+          )}
+        </div>
+      )}
       <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <KpiTile
           label={t("admin.analytics_traffic_active_users")}
           value={formatNumber(t7.active_users, locale)}
+          delta={<DeltaPill cur={t7.active_users} prev={tp.active_users} />}
           sub={t("admin.analytics_traffic_28d_sub", {
             n: formatNumber(t28.active_users, locale),
           })}
@@ -1185,11 +1211,13 @@ function TrafficSection({
         <KpiTile
           label={t("admin.analytics_traffic_sessions")}
           value={formatNumber(t7.sessions, locale)}
+          delta={<DeltaPill cur={t7.sessions} prev={tp.sessions} />}
           sub={t("admin.analytics_traffic_28d_sub", { n: formatNumber(t28.sessions, locale) })}
         />
         <KpiTile
           label={t("admin.analytics_traffic_page_views")}
           value={formatNumber(t7.page_views, locale)}
+          delta={<DeltaPill cur={t7.page_views} prev={tp.page_views} />}
           sub={t("admin.analytics_traffic_28d_sub", { n: formatNumber(t28.page_views, locale) })}
         />
         <KpiTile
@@ -1200,6 +1228,85 @@ function TrafficSection({
           label={t("admin.analytics_traffic_avg_session")}
           value={formatLifetime(t7.avg_session_seconds, locale)}
         />
+      </div>
+
+      <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <InnerCard
+          title={t("admin.analytics_traffic_new_returning_title")}
+          subtitle={t("admin.analytics_traffic_28d_label")}
+        >
+          {nvrTotal === 0 ? (
+            <p className="text-sm text-neutral-500 dark:text-umber-300">
+              {t("admin.analytics_traffic_empty")}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center">
+                  <div className="stat-num text-2xl font-semibold text-neutral-900 dark:text-paper-50">
+                    {formatNumber(nvr.new_users, locale)}
+                  </div>
+                  <div className="eyebrow mt-0.5">{t("admin.analytics_traffic_new_users")}</div>
+                  <div className="stat-num text-xs text-neutral-500 dark:text-umber-300">
+                    {Math.round((nvr.new_users / nvrTotal) * 100)}%
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="stat-num text-2xl font-semibold text-neutral-900 dark:text-paper-50">
+                    {formatNumber(nvr.returning_users, locale)}
+                  </div>
+                  <div className="eyebrow mt-0.5">
+                    {t("admin.analytics_traffic_returning_users")}
+                  </div>
+                  <div className="stat-num text-xs text-neutral-500 dark:text-umber-300">
+                    {Math.round((nvr.returning_users / nvrTotal) * 100)}%
+                  </div>
+                </div>
+              </div>
+              <div className="flex h-2.5 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                <div
+                  className="bg-chart-olive"
+                  style={{ width: `${(nvr.new_users / nvrTotal) * 100}%` }}
+                />
+                <div
+                  className="bg-chart-terracotta"
+                  style={{ width: `${(nvr.returning_users / nvrTotal) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </InnerCard>
+
+        <InnerCard
+          title={t("admin.analytics_traffic_first_touch_title")}
+          subtitle={t("admin.analytics_traffic_first_touch_sub")}
+        >
+          {d.first_touch_channels.length === 0 ? (
+            <p className="text-sm text-neutral-500 dark:text-umber-300">
+              {t("admin.analytics_traffic_channels_empty")}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {d.first_touch_channels.slice(0, 6).map((c) => (
+                <li
+                  key={c.channel}
+                  className="grid grid-cols-[7rem_1fr_3rem] items-center gap-2 text-xs"
+                >
+                  <span className="truncate text-left text-neutral-700 dark:text-paper-100">
+                    {c.channel}
+                  </span>
+                  <HBar
+                    pct={firstTouchMax > 0 ? (c.users / firstTouchMax) * 100 : 0}
+                    ariaLabel={`${c.users}`}
+                  />
+                  <span className="stat-num text-right font-medium text-neutral-700 dark:text-paper-100">
+                    {formatNumber(c.users, locale)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </InnerCard>
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
@@ -1299,6 +1406,9 @@ function TrafficSection({
                     <th className="py-1 pl-2 text-right">
                       {t("admin.analytics_traffic_col_visitors")}
                     </th>
+                    <th className="py-1 pl-2 text-right">
+                      {t("admin.analytics_traffic_col_avg_time")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1313,11 +1423,47 @@ function TrafficSection({
                       <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                         {formatNumber(row.users, locale)}
                       </td>
+                      <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
+                        {formatLifetime(row.avg_engagement_seconds, locale)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          )}
+        </InnerCard>
+      </div>
+
+      <div className="mt-3">
+        <InnerCard
+          title={t("admin.analytics_traffic_events_title")}
+          subtitle={t("admin.analytics_traffic_events_sub")}
+        >
+          {d.events.length === 0 ? (
+            <p className="text-sm text-neutral-500 dark:text-umber-300">
+              {t("admin.analytics_traffic_empty")}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {d.events.slice(0, 10).map((e) => (
+                <li
+                  key={e.name}
+                  className="grid grid-cols-[10rem_1fr_4rem] items-center gap-2 text-xs"
+                >
+                  <span className="truncate text-left font-mono text-neutral-700 dark:text-paper-100">
+                    {e.name}
+                  </span>
+                  <HBar
+                    pct={eventMax > 0 ? (e.count / eventMax) * 100 : 0}
+                    ariaLabel={`${e.count}`}
+                  />
+                  <span className="stat-num text-right font-medium text-neutral-700 dark:text-paper-100">
+                    {formatNumber(e.count, locale)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </InnerCard>
       </div>

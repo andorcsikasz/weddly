@@ -36,10 +36,15 @@ describe("admin analytics — traffic (GA4)", () => {
     expect(d.property_id).toBe("");
     expect(d.totals_7d.active_users).toBe(0);
     expect(d.totals_28d.sessions).toBe(0);
+    expect(d.totals_prev_7d.active_users).toBe(0);
+    expect(d.new_vs_returning).toEqual({ new_users: 0, returning_users: 0 });
     expect(d.active_users_daily).toEqual([]);
     expect(d.top_pages).toEqual([]);
     expect(d.channels).toEqual([]);
+    expect(d.first_touch_channels).toEqual([]);
+    expect(d.events).toEqual([]);
     expect(d.countries).toEqual([]);
+    expect(d.realtime).toEqual({ active_users: 0, by_country: [] });
     expect(typeof d.generated_at).toBe("number");
   });
 

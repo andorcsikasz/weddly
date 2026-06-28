@@ -523,16 +523,37 @@ export interface AdminTrafficAnalytics {
   /** Trailing 7- and 28-day headline totals. */
   totals_7d: AdminTrafficTotals;
   totals_28d: AdminTrafficTotals;
+  /** The 7-day window immediately BEFORE `totals_7d` (14daysAgo..8daysAgo).
+   *  Drives the week-over-week delta pills on the headline KPIs — same shape
+   *  as `totals_7d` so the frontend just diffs the two. */
+  totals_prev_7d: AdminTrafficTotals;
+  /** Active users split by first-visit status over the last 28 days (GA4
+   *  `newVsReturning`). Surfaces whether traffic is growth- or retention-driven.
+   *  Both zero when GA4 reports nothing for the window. */
+  new_vs_returning: { new_users: number; returning_users: number };
   /** Daily active users for the last 14 days (UTC `YYYY-MM-DD`), zero-filled
    *  so the area chart shares the exact shape of `signups_daily`. */
   active_users_daily: Array<{ date: string; count: number }>;
-  /** Most-viewed page paths over the last 7 days. */
-  top_pages: Array<{ path: string; views: number; users: number }>;
-  /** GA4 default channel grouping (Organic Search, Direct, Referral, …) by
-   *  sessions over the last 7 days. */
+  /** Most-viewed page paths over the last 7 days. `avg_engagement_seconds` is
+   *  GA4's average engagement time per active user on that page
+   *  (userEngagementDuration / activeUsers, rounded). */
+  top_pages: Array<{ path: string; views: number; users: number; avg_engagement_seconds: number }>;
+  /** GA4 session default channel grouping (Organic Search, Direct, Referral, …)
+   *  by sessions over the last 7 days — last-touch, session-scoped. */
   channels: Array<{ channel: string; sessions: number }>;
+  /** GA4 FIRST-touch channel grouping (`firstUserDefaultChannelGroup`) by users
+   *  over the last 7 days — how people first found us, distinct from the
+   *  session-scoped `channels` above. */
+  first_touch_channels: Array<{ channel: string; users: number }>;
+  /** Top GA4 events by count over the last 7 days (page_view, session_start,
+   *  form_start, scroll, …). The public-facing funnel companion to the internal
+   *  audit-event rollups. */
+  events: Array<{ name: string; count: number }>;
   /** Top countries by active users over the last 7 days. */
   countries: Array<{ country: string; users: number }>;
+  /** Live snapshot — active users in the last 30 minutes (GA4 Realtime API),
+   *  with a per-country breakdown. As stale as the section cache (≤5 min). */
+  realtime: { active_users: number; by_country: Array<{ country: string; users: number }> };
   /** When the report was generated (unix ms) — drives the "as of" line. */
   generated_at: number;
 }
