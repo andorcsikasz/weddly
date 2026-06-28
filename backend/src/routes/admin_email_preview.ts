@@ -219,6 +219,22 @@ const STUBS: KindPayload = {
     body: "Hi, we came across your portfolio and love your work.\n\nWe're planning a 80-person garden wedding on September 12, 2026 and are looking for a florist for ceremony + reception. Would you be available, and could you share your packages?",
     outreachUrl: `${BASE_URL}/app/outreach`,
   },
+  planner_access_requested: {
+    plannerLabel: "Eventful Studio",
+    replyToEmail: "hello@eventful.studio",
+  },
+  planner_message: {
+    subject: "Venue walkthrough next week",
+    bodyText:
+      "Hi both,\n\nGreat news — the venue confirmed Tuesday at 3pm for the walkthrough.\nLet me know if that still works for you.\n\nBest,\nAnna",
+    senderName: "Anna Nagy",
+    senderEmail: "anna@eventful.studio",
+  },
+  planner_access_approved: { coupleName: "Mia & Lucas" },
+  planner_client_invite: {
+    coupleName: "Mia & Lucas",
+    replyToEmail: "mia@example.com",
+  },
 };
 
 const ALL_KINDS = Object.keys(KIND_CATEGORY) as EmailKind[];

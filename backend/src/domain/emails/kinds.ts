@@ -48,7 +48,11 @@ export type EmailKind =
   | "vendor_claim_verify" // P2.C — sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
-  | "supplier_outreach"; // P2.E — couple-initiated cold outreach to a shortlisted vendor
+  | "supplier_outreach" // P2.E — couple-initiated cold outreach to a shortlisted vendor
+  | "planner_access_requested" // a planner asked a couple for workspace access — couple decides
+  | "planner_message" // free-form planner → couple message (user-entered subject + body)
+  | "planner_access_approved" // couple approved the planner's access request — heads-up to the planner
+  | "planner_client_invite"; // couple invited a planner to their workspace — heads-up to the planner
 
 export type EmailCategory = "transactional" | "lifecycle" | "outreach";
 
@@ -173,4 +177,17 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // outside Weddly (in v1 — the inbound webhook + in-app threading land
   // in v1.5 once the reply-domain DNS is provisioned).
   supplier_outreach: "outreach",
+  // Transactional: the planner clicked "request access" and the couple now
+  // has to act (approve/decline) — the couple owns a Weddly account, so this
+  // is an account-relevant action mail, never opt-out.
+  planner_access_requested: "transactional",
+  // Transactional: a planner is sending a direct message to their client
+  // couple. The couple has an account; Reply-To routes back to the planner.
+  planner_message: "transactional",
+  // Transactional: the resolution of the planner's access request — the
+  // couple approved, and the planner is waiting to hear they can enter.
+  planner_access_approved: "transactional",
+  // Transactional: a couple invited this planner to their workspace; the
+  // planner has a Weddly account and is being asked to accept/decline.
+  planner_client_invite: "transactional",
 };

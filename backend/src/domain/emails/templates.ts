@@ -397,6 +397,39 @@ export interface SupplierOutreachPayload {
   outreachUrl: string;
 }
 
+export interface PlannerAccessRequestedPayload {
+  /** Planner's display label (business name, full name, or a generic fallback)
+   *  — surfaced in bold so the couple knows who is asking. */
+  plannerLabel: string;
+  /** Planner's email. Lands in Reply-To so the couple can reach back out. */
+  replyToEmail?: string;
+}
+
+export interface PlannerMessagePayload {
+  /** Subject line the planner typed — used verbatim. */
+  subject: string;
+  /** Plain-text body the planner typed. One paragraph per line so the
+   *  recipient sees the planner's line breaks (the shell escapes each). */
+  bodyText: string;
+  /** Planner's full name — surfaces in the "Küldő:" signature footnote. */
+  senderName: string;
+  /** Planner's email — surfaces in the footnote AND lands in Reply-To so the
+   *  couple's reply goes straight to the planner. */
+  senderEmail: string;
+}
+
+export interface PlannerAccessApprovedPayload {
+  /** Couple display name ("Mia & Lucas") — bold in the opening line. */
+  coupleName: string;
+}
+
+export interface PlannerClientInvitePayload {
+  /** Couple display name ("Mia & Lucas") — bold in the opening line. */
+  coupleName: string;
+  /** Inviting couple member's email, when available. Lands in Reply-To. */
+  replyToEmail?: string;
+}
+
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
@@ -444,6 +477,10 @@ export type KindPayload = {
   vendor_claim_admin_alert: VendorClaimAdminAlertPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
   supplier_outreach: SupplierOutreachPayload;
+  planner_access_requested: PlannerAccessRequestedPayload;
+  planner_message: PlannerMessagePayload;
+  planner_access_approved: PlannerAccessApprovedPayload;
+  planner_client_invite: PlannerClientInvitePayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -1785,6 +1822,109 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       },
     };
   },
+
+  // A planner clicked "request access" against a couple's workspace. The couple
+  // owns a Weddly account and must approve before the planner sees anything —
+  // this mail points them at the Planners panel to accept/decline. Reply-To is
+  // the planner's email so the couple can reach back out directly.
+  planner_access_requested: (p, ctx) => ({
+    subject: "Tervező hozzáférést kért / A planner requested access — Weddly",
+    ctaUrl: `${CONFIG.frontendBaseUrl}/app/settings/workspace`,
+    replyTo: p.replyToEmail,
+    hu: {
+      preheader: `${p.plannerLabel} hozzáférést kért a munkaterületetekhez.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `**${p.plannerLabel}** hozzáférést kért az esküvőtervező munkaterületetekhez a Weddly-n.`,
+        "Csak akkor lát bármit, ha jóváhagyod. Nyisd meg a beállítások Tervezők részét, és fogadd el vagy utasítsd el a kérést.",
+      ],
+      cta: "Tervezők megnyitása",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `**${p.plannerLabel}** has requested access to your Weddly workspace.`,
+        "They can't see anything until you approve. Open the Planners section in settings to accept or decline.",
+      ],
+      cta: "Open planners",
+    },
+  }),
+
+  // Free-form direct message a planner sends to their client couple. The
+  // subject + body are user-entered; we slot the body into the branded shell
+  // (one paragraph per line so the planner's breaks survive) and append a
+  // signature footnote. Reply-To routes the couple's reply to the planner.
+  planner_message: (p) => {
+    const bodyParas = p.bodyText.split("\n");
+    return {
+      subject: p.subject,
+      ctaUrl: CONFIG.frontendBaseUrl,
+      replyTo: p.senderEmail,
+      hu: {
+        preheader: p.subject,
+        greeting: "Szia!",
+        paragraphs: bodyParas,
+        cta: "Weddly megnyitása",
+        footnote: `Küldő: ${p.senderName} (${p.senderEmail}) | Weddly`,
+      },
+      en: {
+        greeting: "Hi there,",
+        paragraphs: bodyParas,
+        cta: "Open Weddly",
+        footnote: `Küldő: ${p.senderName} (${p.senderEmail}) | Weddly`,
+      },
+    };
+  },
+
+  // The couple approved the planner's pending access request. Heads-up to the
+  // planner that they can now enter the workspace from their dashboard.
+  planner_access_approved: (p, ctx) => ({
+    subject: "Ügyfél jóváhagyta a hozzáférést / Client approved your access — Weddly",
+    ctaUrl: `${CONFIG.frontendBaseUrl}/app/planner`,
+    hu: {
+      preheader: `${p.coupleName} jóváhagyta a hozzáférési kérésedet.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `**${p.coupleName}** jóváhagyta a hozzáférési kérésedet.`,
+        "Mostantól beléphetsz a munkaterületükre a tervező felületedről.",
+      ],
+      cta: "Tervező felület megnyitása",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `**${p.coupleName}** approved your access request.`,
+        "You can now enter their workspace from your planner dashboard.",
+      ],
+      cta: "Open planner dashboard",
+    },
+  }),
+
+  // A couple invited this planner to their workspace. Heads-up to the planner
+  // to accept/decline from their dashboard. Reply-To is the inviting couple
+  // member's email when available so the planner can reply directly.
+  planner_client_invite: (p, ctx) => ({
+    subject: "Új ügyfél meghívó / New client invite — Weddly",
+    ctaUrl: `${CONFIG.frontendBaseUrl}/app/planner`,
+    replyTo: p.replyToEmail,
+    hu: {
+      preheader: `${p.coupleName} meghívott tervezőként.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `**${p.coupleName}** meghívott, hogy csatlakozz az ő Weddly munkaterületükhöz tervezőként.`,
+        "Nyisd meg a Weddly tervező felületed, és fogadd el vagy utasítsd el a meghívót.",
+      ],
+      cta: "Meghívó megnyitása",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `**${p.coupleName}** has invited you to join their Weddly workspace as their planner.`,
+        "Open your Weddly planner dashboard to accept or decline.",
+      ],
+      cta: "Open invite",
+    },
+  }),
 };
 
 function rsvpStatusHu(status: "yes" | "no" | "maybe"): string {

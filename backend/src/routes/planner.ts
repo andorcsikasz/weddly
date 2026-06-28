@@ -2,7 +2,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { getCoupleById, toCouple } from "../domain/couples";
-import { sendEmail } from "../lib/mailer";
+import { sendKind } from "../domain/emails/send";
 import type { PlannerPlan } from "@shared/types";
 
 function requirePlannerAuth(ctx: Ctx): number {
@@ -146,20 +146,14 @@ async function handleAddClient(ctx: Ctx): Promise<Response> {
     | { email: string; full_name: string | null }
     | undefined;
   if (targetUser?.email) {
-    const htmlBody = `<div style="font-family:sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
-<p>Kedves ${targetUser.full_name?.trim() || "Pár"}!</p>
-<p><strong>${plannerLabel}</strong> hozzáférést kért az esküvőtervező munkaterületetekhez a Weddly-n.</p>
-<p>Csak akkor lát bármit, ha jóváhagyod. Nyisd meg a Profil → Tervezők részt, és fogadd el vagy utasítsd el a kérést.</p>
-<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0"/>
-<p style="font-size:13px;color:#888">Dear couple — ${plannerLabel} has requested access to your Weddly workspace. They can't see anything until you approve. Open Profile → Planners to accept or decline.</p>
-</div>`;
-    await sendEmail({
-      to: targetUser.email,
-      subject: "Tervező hozzáférést kért / A planner requested access — Weddly",
-      html: htmlBody,
-      text: `${plannerLabel} hozzáférést kért a Weddly munkaterületetekhez. Nyisd meg a Profil → Tervezők részt a válaszhoz.`,
-      headers: planner?.email ? { "Reply-To": planner.email } : undefined,
-    });
+    await sendKind(
+      "planner_access_requested",
+      { plannerLabel, replyToEmail: planner?.email },
+      {
+        user: { id: target.id, email: targetUser.email, full_name: targetUser.full_name ?? "" },
+        couple_id: target.couple_id,
+      },
+    );
   }
 
   return json({ ok: true, status: "pending", couple_id: target.couple_id });
@@ -472,19 +466,36 @@ async function handleSendMessage(ctx: Ctx): Promise<Response> {
 
   const msgId = (db.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }).id;
 
-  const htmlBody = `<div style="font-family:sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
-<p style="white-space:pre-wrap">${bodyText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
-<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0"/>
-<p style="font-size:13px;color:#888">Küldő: ${planner.full_name} (${planner.email}) | Weddly</p>
-</div>`;
+  // Resolve the recipient to a Weddly user when one matches the typed address
+  // (the couple owner, usually) so the mail renders in their locale + attaches
+  // to the email log. Otherwise treat it as a plain addressee.
+  const recipientUser = db
+    .prepare("SELECT id, email, full_name FROM users WHERE LOWER(email) = ?")
+    .get(recipientEmail) as { id: number; email: string; full_name: string | null } | undefined;
 
-  await sendEmail({
-    to: recipientEmail,
-    subject,
-    html: htmlBody,
-    text: bodyText,
-    headers: { "Reply-To": planner.email },
-  });
+  await sendKind(
+    "planner_message",
+    {
+      subject,
+      bodyText,
+      senderName: planner.full_name,
+      senderEmail: planner.email,
+    },
+    recipientUser
+      ? {
+          user: {
+            id: recipientUser.id,
+            email: recipientUser.email,
+            full_name: recipientUser.full_name ?? "",
+          },
+          couple_id: coupleId,
+        }
+      : {
+          user: null,
+          couple_id: coupleId,
+          guest: { email: recipientEmail, full_name: "" },
+        },
+  );
 
   addAuditLog({
     actor_user_id: userId,
@@ -784,17 +795,14 @@ async function handleAcceptPlannerRequest(ctx: Ctx): Promise<Response> {
     .get(coupleId) as { name: string } | undefined;
   if (planner?.email) {
     const coupleName = couple?.name ?? "Egy pár";
-    await sendEmail({
-      to: planner.email,
-      subject: "Ügyfél jóváhagyta a hozzáférést / Client approved your access — Weddly",
-      html: `<div style="font-family:sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
-<p>Kedves ${planner.full_name?.trim() || "Tervező"}!</p>
-<p><strong>${coupleName}</strong> jóváhagyta a hozzáférési kérésedet. Mostantól beléphetsz a munkaterületükre a tervező felületedről.</p>
-<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0"/>
-<p style="font-size:13px;color:#888">Dear planner — ${coupleName} approved your access request. You can now enter their workspace from your planner dashboard.</p>
-</div>`,
-      text: `${coupleName} jóváhagyta a hozzáférési kérésedet. Beléphetsz a munkaterületükre a tervező felületedről.`,
-    });
+    await sendKind(
+      "planner_access_approved",
+      { coupleName },
+      {
+        user: { id: plannerUserId, email: planner.email, full_name: planner.full_name ?? "" },
+        couple_id: coupleId,
+      },
+    );
   }
 
   return json({ ok: true });
@@ -810,8 +818,10 @@ async function handleInvitePlanner(ctx: Ctx): Promise<Response> {
   const plannerEmail = body.planner_email.trim().toLowerCase();
 
   const planner = db
-    .prepare("SELECT id, user_type FROM users WHERE LOWER(email) = ?")
-    .get(plannerEmail) as { id: number; user_type: string } | undefined;
+    .prepare("SELECT id, user_type, email, full_name FROM users WHERE LOWER(email) = ?")
+    .get(plannerEmail) as
+    | { id: number; user_type: string; email: string; full_name: string | null }
+    | undefined;
   if (!planner) throw new HttpError(404, "No planner found with that email");
   if (planner.user_type !== "planner") throw new HttpError(404, "No planner found with that email");
 
@@ -844,21 +854,14 @@ async function handleInvitePlanner(ctx: Ctx): Promise<Response> {
     | { email: string }
     | undefined;
 
-  const htmlBody = `<div style="font-family:sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
-<p>Kedves Tervező!</p>
-<p><strong>${coupleName}</strong> meghívott, hogy csatlakozz az ő Weddly munkaterületükhöz tervezőként.</p>
-<p>Nyisd meg a Weddly tervező felületed, és fogadd el vagy utasítsd el a meghívót.</p>
-<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0"/>
-<p style="font-size:13px;color:#888">Dear Planner — ${coupleName} has invited you to join their Weddly workspace as their planner. Open your Weddly planner dashboard to accept or decline.</p>
-</div>`;
-
-  await sendEmail({
-    to: plannerEmail,
-    subject: "Új ügyfél meghívó / New client invite — Weddly",
-    html: htmlBody,
-    text: `${coupleName} meghívott tervezőként a Weddly-n. Nyisd meg a tervező dashboardod a válaszhoz.`,
-    headers: senderUser ? { "Reply-To": senderUser.email } : undefined,
-  });
+  await sendKind(
+    "planner_client_invite",
+    { coupleName, replyToEmail: senderUser?.email },
+    {
+      user: { id: planner.id, email: planner.email, full_name: planner.full_name ?? "" },
+      couple_id: coupleId,
+    },
+  );
 
   return json({ ok: true });
 }
