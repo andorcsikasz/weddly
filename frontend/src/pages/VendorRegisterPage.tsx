@@ -42,6 +42,13 @@ export default function VendorRegisterPage() {
   const nameRef = useRef<HTMLInputElement | null>(null);
   const errorId = useId();
 
+  // Drop a stale validation error the moment the user starts correcting any
+  // field — otherwise the message lingers until the next submit, which reads as
+  // "still wrong" even after they've fixed it.
+  function clearError() {
+    setError((cur) => (cur ? null : cur));
+  }
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(min-width: 640px)").matches) nameRef.current?.focus();
@@ -183,9 +190,12 @@ export default function VendorRegisterPage() {
                 ref={nameRef}
                 id="vr_full_name"
                 type="text"
-                className={`input ${error ? "input-invalid" : ""}`}
+                className="input"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  clearError();
+                }}
                 autoComplete="name"
                 required
               />
@@ -199,7 +209,10 @@ export default function VendorRegisterPage() {
                 type="text"
                 className="input"
                 value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
+                onChange={(e) => {
+                  setBusinessName(e.target.value);
+                  clearError();
+                }}
                 maxLength={120}
                 autoComplete="organization"
                 required
@@ -213,7 +226,10 @@ export default function VendorRegisterPage() {
                 id="vr_category"
                 className="input"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as SupplierCategory | "")}
+                onChange={(e) => {
+                  setCategory(e.target.value as SupplierCategory | "");
+                  clearError();
+                }}
                 required
               >
                 <option value="" disabled>
@@ -237,9 +253,12 @@ export default function VendorRegisterPage() {
               <input
                 id="vr_email"
                 type="email"
-                className={`input ${error ? "input-invalid" : ""}`}
+                className="input"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  clearError();
+                }}
                 autoComplete="email"
                 inputMode="email"
                 required
@@ -249,7 +268,10 @@ export default function VendorRegisterPage() {
               id="vr_password"
               label={t("auth.password_label")}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearError();
+              }}
               required
               minLength={8}
               autoComplete="new-password"
@@ -259,7 +281,10 @@ export default function VendorRegisterPage() {
               id="vr_password_confirm"
               label={t("auth.password_confirm_label")}
               value={passwordConfirm}
-              onChange={(e) => setPasswordConfirm(e.target.value)}
+              onChange={(e) => {
+                setPasswordConfirm(e.target.value);
+                clearError();
+              }}
               required
               minLength={8}
               autoComplete="new-password"
@@ -285,11 +310,21 @@ export default function VendorRegisterPage() {
             </Button>
             <p className="field-help mt-3 text-center">
               {t("register.continuing_prefix")}
-              <Link to="/privacy" className="underline hover:text-umber-800">
+              <Link
+                to="/privacy"
+                target="_blank"
+                rel="noopener"
+                className="underline hover:text-umber-800"
+              >
                 {t("register.continuing_privacy_link")}
               </Link>
               {t("register.continuing_and")}
-              <Link to="/terms" className="underline hover:text-umber-800">
+              <Link
+                to="/terms"
+                target="_blank"
+                rel="noopener"
+                className="underline hover:text-umber-800"
+              >
                 {t("register.continuing_terms_link")}
               </Link>
               {t("register.continuing_suffix")}

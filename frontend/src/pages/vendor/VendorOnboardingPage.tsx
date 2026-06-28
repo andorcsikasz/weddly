@@ -240,7 +240,10 @@ export default function VendorOnboardingPage() {
                   id="vo_city"
                   className="input"
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => {
+                    setCity(e.target.value);
+                    if (profileError) setProfileError(null);
+                  }}
                   maxLength={80}
                   required
                 />
@@ -318,6 +321,9 @@ export default function VendorOnboardingPage() {
                   onChange={(e) => setBlurb(e.target.value)}
                   placeholder={t("vendor_onboarding.blurb_placeholder")}
                 />
+                <p className="mt-1 text-right text-xs tabular-nums text-umber-400">
+                  {blurb.length} / 2000
+                </p>
               </div>
 
               <div>
