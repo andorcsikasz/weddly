@@ -1185,7 +1185,11 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
   // savepoint inside this one.)
   const applyMerge = db.transaction(() => {
     db.prepare("UPDATE users SET couple_id = NULL, updated_at = ? WHERE id = ?").run(ts, userId);
-    purgeOneCouple(sourceCoupleId, { silent: true });
+    // Spare the merging user from the purge's PII scrub — they are mid-move to
+    // the target couple (linked just below), not being erased. Membership-based
+    // scoping would otherwise see them as the source's only member and wipe
+    // their email + name even though they keep using the product.
+    purgeOneCouple(sourceCoupleId, { silent: true, spareUserIds: [userId] });
 
     db.prepare("UPDATE couples SET partner_b_id = ?, updated_at = ? WHERE id = ?").run(
       userId,

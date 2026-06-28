@@ -18,11 +18,49 @@ import { listFlagsDueForPurge, markFlagPurged } from "./user_flags";
 
 export function purgeOneCouple(
   coupleId: number,
-  options: { adminInitiated?: boolean; silent?: boolean } = {},
+  options: { adminInitiated?: boolean; silent?: boolean; spareUserIds?: number[] } = {},
 ): void {
   const ts = now();
   const adminInitiated = options.adminInitiated === true;
   const silent = options.silent === true;
+  // Users the caller is mid-relocating to another workspace (the partner-merge
+  // flow links the merging user into the target couple AFTER this purge, so at
+  // this instant they still look like an exclusive member of the source). Skip
+  // every user-level effect for them — the caller owns their re-pointing.
+  const spareSet = new Set(options.spareUserIds ?? []);
+
+  // Resolve this workspace's members through `couple_members` (canonical), NOT
+  // `users.couple_id` — that column is just the active-workspace pointer, so it
+  // both MISSES a member who switched away and WRONGLY catches outsiders aimed
+  // here (e.g. a planner currently viewing this client). Scoping user-level PII
+  // erasure by the pointer over-deletes (nukes a multi-workspace user's global
+  // data + identity) and under-scrubs (skips a member pointing elsewhere).
+  const memberIds = (
+    db.prepare("SELECT user_id FROM couple_members WHERE couple_id = ?").all(coupleId) as Array<{
+      user_id: number;
+    }>
+  )
+    .map((r) => r.user_id)
+    .filter((uid) => !spareSet.has(uid));
+  // A member is fully erased only if THIS is their only non-deleting workspace.
+  // A member who still belongs to another live couple keeps their identity and
+  // global per-user data — we just drop their membership here and repoint their
+  // active pointer below if it aimed at this workspace.
+  const exclusiveIds = memberIds.filter(
+    (uid) =>
+      db
+        .prepare(
+          `SELECT 1 FROM couple_members cm
+             JOIN couples c ON c.id = cm.couple_id
+            WHERE cm.user_id = ? AND cm.couple_id != ? AND c.status != 'deleting'
+            LIMIT 1`,
+        )
+        .get(uid, coupleId) == null,
+  );
+  const sharedIds = memberIds.filter((uid) => !exclusiveIds.includes(uid));
+  // Integer DB ids → injection-safe to inline; lets us reuse one fragment across
+  // the user-scoped statements and skip them cleanly when the set is empty.
+  const exclusiveIdList = exclusiveIds.join(",");
 
   // Send the "your data is gone" notice BEFORE we scrub the user table —
   // afterwards the email column is rewritten to `deleted-…@purged.local`
@@ -38,11 +76,17 @@ export function purgeOneCouple(
       | { display_name: string }
       | undefined;
     const coupleDisplayName = couple?.display_name?.trim() || "your wedding";
-    const usersToNotify = (
-      db
-        .prepare("SELECT id, email, full_name FROM users WHERE couple_id = ?")
-        .all(coupleId) as Array<{ id: number; email: string; full_name: string }>
-    ).filter((u) => u.email && !u.email.endsWith("@purged.local"));
+    // Notify only the members actually being erased (exclusive to this
+    // workspace). A member who keeps their account because they belong to
+    // another live couple should not get a "your data is gone" notice.
+    const usersToNotify =
+      exclusiveIds.length === 0
+        ? []
+        : (
+            db
+              .prepare(`SELECT id, email, full_name FROM users WHERE id IN (${exclusiveIdList})`)
+              .all() as Array<{ id: number; email: string; full_name: string }>
+          ).filter((u) => u.email && !u.email.endsWith("@purged.local"));
     for (const u of usersToNotify) {
       const target = {
         user: { id: u.id, email: u.email, full_name: u.full_name },
@@ -122,9 +166,11 @@ export function purgeOneCouple(
     // belong to admins, not to this workspace, so they stay untouched.
     // supplier_review_tags cascades via FK ON DELETE CASCADE.
     db.prepare("DELETE FROM supplier_reviews WHERE couple_id = ?").run(coupleId);
-    db.prepare(
-      "DELETE FROM supplier_comments WHERE author_user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-    ).run(coupleId);
+    if (exclusiveIds.length > 0) {
+      db.prepare(
+        `DELETE FROM supplier_comments WHERE author_user_id IN (${exclusiveIdList})`,
+      ).run();
+    }
     db.prepare("DELETE FROM supplier_bookings WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM planning_items WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM schedule_events WHERE couple_id = ?").run(coupleId);
@@ -133,49 +179,78 @@ export function purgeOneCouple(
     db.prepare("DELETE FROM couple_income WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM data_exports WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM couple_invites WHERE couple_id = ?").run(coupleId);
-    // Feedback rows authored by users on this workspace — message body and
-    // from_email are both personally identifying content.
-    db.prepare(
-      "DELETE FROM feedback_submissions WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-    ).run(coupleId);
     // Email log + dispatch ledger: drop direct mentions of this couple. The
     // `to_email` column may also contain PII; scrub via the user-id link below.
     db.prepare("DELETE FROM email_log WHERE couple_id = ?").run(coupleId);
-    db.prepare(
-      "DELETE FROM email_log WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-    ).run(coupleId);
     db.prepare("DELETE FROM email_dispatches WHERE couple_id = ?").run(coupleId);
-    db.prepare(
-      "DELETE FROM email_dispatches WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-    ).run(coupleId);
-    db.prepare(
-      "DELETE FROM email_preferences WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-    ).run(coupleId);
 
-    // Sessions for users belonging to this couple — kill them so a returning
-    // user can't keep using a stale token.
-    db.prepare(
-      "DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE couple_id = ?)",
-    ).run(coupleId);
+    // User-scoped PII — feedback, per-user email artefacts, and sessions —
+    // for the members being fully erased (exclusive to this workspace). A
+    // member who keeps their account (still on another live couple) retains
+    // all of this; we only unlink them below.
+    if (exclusiveIds.length > 0) {
+      db.prepare(`DELETE FROM feedback_submissions WHERE user_id IN (${exclusiveIdList})`).run();
+      db.prepare(`DELETE FROM email_log WHERE user_id IN (${exclusiveIdList})`).run();
+      db.prepare(`DELETE FROM email_dispatches WHERE user_id IN (${exclusiveIdList})`).run();
+      db.prepare(`DELETE FROM email_preferences WHERE user_id IN (${exclusiveIdList})`).run();
+      // Kill their sessions so a returning user can't keep using a stale token.
+      db.prepare(`DELETE FROM sessions WHERE user_id IN (${exclusiveIdList})`).run();
+    }
+
+    // Members who survive (belong to another live couple): drop just their
+    // membership in this workspace and repoint their active pointer away if it
+    // aimed here, so they don't land on a tombstoned "Purged workspace".
+    for (const uid of sharedIds) {
+      const other = db
+        .prepare(
+          `SELECT cm.couple_id AS id FROM couple_members cm
+             JOIN couples c ON c.id = cm.couple_id
+            WHERE cm.user_id = ? AND cm.couple_id != ? AND c.status != 'deleting'
+            ORDER BY cm.created_at ASC LIMIT 1`,
+        )
+        .get(uid, coupleId) as { id: number } | undefined;
+      db.prepare(
+        "UPDATE users SET couple_id = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+      ).run(other?.id ?? null, ts, uid, coupleId);
+    }
 
     // Users: scrub PII but keep the row (FK target for audit_log + couples).
     // Acquisition fields are NULL'd too — a purged user must not retain
-    // country / UTM / device attribution (GDPR Art 17 erasure).
-    db.prepare(
-      `UPDATE users SET email = 'deleted-' || id || '@purged.local',
-                      password_hash = '!purged!',
-                      full_name = 'Purged user',
-                      status = 'suspended',
-                      signup_country = NULL,
-                      device_type = NULL,
-                      utm_source = NULL,
-                      utm_medium = NULL,
-                      utm_campaign = NULL,
-                      utm_content = NULL,
-                      utm_term = NULL,
-                      updated_at = ?
-       WHERE couple_id = ?`,
-    ).run(ts, coupleId);
+    // country / UTM / device attribution (GDPR Art 17 erasure). Only the
+    // exclusive members are anonymised; a member who still belongs to another
+    // live couple keeps their identity (they were unlinked + repointed above).
+    if (exclusiveIds.length > 0) {
+      db.prepare(
+        `UPDATE users SET email = 'deleted-' || id || '@purged.local',
+                        password_hash = '!purged!',
+                        full_name = 'Purged user',
+                        status = 'suspended',
+                        signup_country = NULL,
+                        device_type = NULL,
+                        utm_source = NULL,
+                        utm_medium = NULL,
+                        utm_campaign = NULL,
+                        utm_content = NULL,
+                        utm_term = NULL,
+                        updated_at = ?
+         WHERE id IN (${exclusiveIdList})`,
+      ).run(ts);
+    }
+
+    // Anyone else still pointing here (e.g. a planner who was viewing this
+    // client when it was purged) is not a member and must not be anonymised —
+    // just clear their stale active pointer so they don't land on the tombstone.
+    if (exclusiveIds.length > 0) {
+      db.prepare(
+        `UPDATE users SET couple_id = NULL, updated_at = ?
+          WHERE couple_id = ? AND id NOT IN (${exclusiveIdList})`,
+      ).run(ts, coupleId);
+    } else {
+      db.prepare("UPDATE users SET couple_id = NULL, updated_at = ? WHERE couple_id = ?").run(
+        ts,
+        coupleId,
+      );
+    }
 
     // Couple row: keep id + timestamps for retention; null out everything else.
     db.prepare(

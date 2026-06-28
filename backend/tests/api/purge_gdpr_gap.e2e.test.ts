@@ -252,3 +252,93 @@ describe("Audit 2026-06 GDPR purge — newly-covered PII tables", () => {
     expect(offenders).toEqual([]);
   }, 30_000);
 });
+
+// Multi-workspace safety: purging ONE of a user's workspaces must not erase the
+// user — they still belong to another live couple. Membership is resolved via
+// couple_members, not the active-workspace pointer, so the purge neither
+// over-deletes (scrubbing a multi-workspace user) nor under-scrubs.
+describe("purge — multi-workspace member is spared, not anonymized", () => {
+  test("purging one couple keeps the shared user's identity + repoints them", async () => {
+    wipeAll();
+    const { token, coupleId: coupleA } = await bootstrapCouple("multi-purge@weddly.test");
+    const userId = (
+      db.prepare("SELECT id FROM users WHERE email = ?").get("multi-purge@weddly.test") as {
+        id: number;
+      }
+    ).id;
+
+    // Second workspace for the same user (auto-switches the active pointer to B).
+    const second = await req<{ couple: { id: number } }>(
+      "POST",
+      "/api/couples",
+      { event_name: "Polgári szertartás" },
+      { token },
+    );
+    expect(second.status).toBe(201);
+    const coupleB = second.data.couple.id;
+
+    // Point the user back at A so the purge has to repoint them off the tombstone.
+    const sw = await req("POST", "/api/users/me/active-couple", { couple_id: coupleA }, { token });
+    expect(sw.status).toBe(200);
+
+    purgeOneCouple(coupleA);
+
+    // The user keeps their real identity — NOT scrubbed to @purged.local.
+    const after = db
+      .prepare("SELECT email, status, verified_email, couple_id FROM users WHERE id = ?")
+      .get(userId) as {
+      email: string;
+      status: string;
+      verified_email: number;
+      couple_id: number | null;
+    };
+    expect(after.email).toBe("multi-purge@weddly.test");
+    expect(after.status).toBe("active");
+    expect(after.verified_email).toBe(1);
+    // Repointed off the purged workspace onto their surviving one.
+    expect(after.couple_id).toBe(coupleB);
+
+    // Membership in A is gone; B survives.
+    const memA = db
+      .prepare("SELECT COUNT(*) AS n FROM couple_members WHERE couple_id = ? AND user_id = ?")
+      .get(coupleA, userId) as { n: number };
+    expect(memA.n).toBe(0);
+    const memB = db
+      .prepare("SELECT COUNT(*) AS n FROM couple_members WHERE couple_id = ? AND user_id = ?")
+      .get(coupleB, userId) as { n: number };
+    expect(memB.n).toBe(1);
+
+    // Couple A is tombstoned; couple B's row is untouched.
+    const aRow = db.prepare("SELECT status FROM couples WHERE id = ?").get(coupleA) as {
+      status: string;
+    };
+    expect(aRow.status).toBe("deleting");
+    const bRow = db.prepare("SELECT status FROM couples WHERE id = ?").get(coupleB) as {
+      status: string;
+    };
+    expect(bRow.status).not.toBe("deleting");
+
+    // The user's session survives — they weren't logged out of their account.
+    const me = await req("GET", "/api/auth/me", undefined, { token });
+    expect(me.status).toBe(200);
+  }, 30_000);
+
+  test("purging a solo user's only workspace still fully scrubs them", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("solo-purge@weddly.test");
+    const userId = (
+      db.prepare("SELECT id FROM users WHERE email = ?").get("solo-purge@weddly.test") as {
+        id: number;
+      }
+    ).id;
+
+    purgeOneCouple(coupleId);
+
+    const after = db.prepare("SELECT email, status FROM users WHERE id = ?").get(userId) as {
+      email: string;
+      status: string;
+    };
+    expect(after.email).toBe(`deleted-${userId}@purged.local`);
+    expect(after.status).toBe("suspended");
+  }, 30_000);
+});
