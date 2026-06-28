@@ -1394,6 +1394,7 @@ function emptyTraffic(
     first_touch_channels: [],
     events: [],
     countries: [],
+    devices: [],
     realtime: { active_users: 0, by_country: [] },
     generated_at: now,
   };
@@ -1417,6 +1418,112 @@ async function trafficAnalytics(): Promise<AdminTrafficAnalytics> {
   }
 }
 
+/** The raw GA4 report responses that feed one traffic payload. Bundled so the
+ *  pure mapping (`assembleTrafficPayload`) can be unit-tested with fixtures —
+ *  the GA4 Data API is unreachable from the suite. */
+export interface TrafficReports {
+  t7: Ga4ReportResponse;
+  t28: Ga4ReportResponse;
+  tPrev7: Ga4ReportResponse;
+  daily: Ga4ReportResponse;
+  pages: Ga4ReportResponse;
+  channels: Ga4ReportResponse;
+  firstTouch: Ga4ReportResponse;
+  events: Ga4ReportResponse;
+  newReturning: Ga4ReportResponse;
+  countries: Ga4ReportResponse;
+  devices: Ga4ReportResponse;
+  realtime: Ga4ReportResponse;
+}
+
+/** Map a set of GA4 report responses into the dashboard DTO. Pure — no network,
+ *  no cache, no clock beyond the `now` it's handed — so the mapping (zero-fill,
+ *  new/returning split, per-page engagement, realtime totals) is exercised
+ *  directly by `admin_traffic.e2e.test.ts` with fixture rows. */
+export function assembleTrafficPayload(now: number, r: TrafficReports): AdminTrafficAnalytics {
+  // Zero-fill the 14-day daily window so the chart x-axis stays uniform even
+  // on days GA4 reports no traffic.
+  const today = new Date(now);
+  today.setUTCHours(0, 0, 0, 0);
+  const daysScaffold: Array<{ date: string; count: number }> = [];
+  for (let i = 13; i >= 0; i -= 1) {
+    daysScaffold.push({ date: isoDayUtc(new Date(today.getTime() - i * DAY_MS)), count: 0 });
+  }
+  const dayIndex = new Map(daysScaffold.map((d, i) => [d.date, i]));
+  for (const row of r.daily.rows ?? []) {
+    // GA4's `date` dimension comes back as "YYYYMMDD".
+    const raw = row.dimensionValues[0]?.value ?? "";
+    const iso = raw.length === 8 ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}` : raw;
+    const idx = dayIndex.get(iso);
+    if (idx !== undefined) {
+      const bucket = daysScaffold[idx];
+      if (bucket) bucket.count = Math.round(ga4Num(row.metricValues[0]?.value));
+    }
+  }
+
+  // Split active users into new vs returning. GA4 keys the dimension "new" /
+  // "returning" (plus an occasional "(not set)" bucket we drop).
+  let newUsers = 0;
+  let returningUsers = 0;
+  for (const row of r.newReturning.rows ?? []) {
+    const key = (row.dimensionValues[0]?.value ?? "").toLowerCase();
+    const v = Math.round(ga4Num(row.metricValues[0]?.value));
+    if (key === "new") newUsers = v;
+    else if (key === "returning") returningUsers = v;
+  }
+
+  const realtimeCountries = (r.realtime.rows ?? []).map((row) => ({
+    country: row.dimensionValues[0]?.value ?? "",
+    users: Math.round(ga4Num(row.metricValues[0]?.value)),
+  }));
+
+  return {
+    configured: true,
+    error: null,
+    property_id: CONFIG.ga4PropertyId,
+    totals_7d: totalsFromReport(r.t7),
+    totals_28d: totalsFromReport(r.t28),
+    totals_prev_7d: totalsFromReport(r.tPrev7),
+    new_vs_returning: { new_users: newUsers, returning_users: returningUsers },
+    active_users_daily: daysScaffold,
+    top_pages: (r.pages.rows ?? []).map((row) => {
+      const users = Math.round(ga4Num(row.metricValues[1]?.value));
+      const engagementSeconds = ga4Num(row.metricValues[2]?.value);
+      return {
+        path: row.dimensionValues[0]?.value ?? "",
+        views: Math.round(ga4Num(row.metricValues[0]?.value)),
+        users,
+        avg_engagement_seconds: users > 0 ? Math.round(engagementSeconds / users) : 0,
+      };
+    }),
+    channels: (r.channels.rows ?? []).map((row) => ({
+      channel: row.dimensionValues[0]?.value ?? "",
+      sessions: Math.round(ga4Num(row.metricValues[0]?.value)),
+    })),
+    first_touch_channels: (r.firstTouch.rows ?? []).map((row) => ({
+      channel: row.dimensionValues[0]?.value ?? "",
+      users: Math.round(ga4Num(row.metricValues[0]?.value)),
+    })),
+    events: (r.events.rows ?? []).map((row) => ({
+      name: row.dimensionValues[0]?.value ?? "",
+      count: Math.round(ga4Num(row.metricValues[0]?.value)),
+    })),
+    countries: (r.countries.rows ?? []).map((row) => ({
+      country: row.dimensionValues[0]?.value ?? "",
+      users: Math.round(ga4Num(row.metricValues[0]?.value)),
+    })),
+    devices: (r.devices.rows ?? []).map((row) => ({
+      device: row.dimensionValues[0]?.value ?? "",
+      users: Math.round(ga4Num(row.metricValues[0]?.value)),
+    })),
+    realtime: {
+      active_users: realtimeCountries.reduce((sum, c) => sum + c.users, 0),
+      by_country: realtimeCountries,
+    },
+    generated_at: now,
+  };
+}
+
 async function fetchTrafficFromGa4(now: number): Promise<AdminTrafficAnalytics> {
   const range7 = [{ startDate: "7daysAgo", endDate: "today" }];
   const range28 = [{ startDate: "28daysAgo", endDate: "today" }];
@@ -1438,6 +1545,7 @@ async function fetchTrafficFromGa4(now: number): Promise<AdminTrafficAnalytics> 
     events,
     newReturning,
     countries,
+    devices,
     realtime,
   ] = await Promise.all([
     runGa4Report({ dateRanges: range7, metrics: TRAFFIC_METRICS }),
@@ -1493,6 +1601,12 @@ async function fetchTrafficFromGa4(now: number): Promise<AdminTrafficAnalytics> 
       orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
       limit: 8,
     }),
+    runGa4Report({
+      dateRanges: range7,
+      dimensions: [{ name: "deviceCategory" }],
+      metrics: [{ name: "activeUsers" }],
+      orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+    }),
     runGa4RealtimeReport({
       dimensions: [{ name: "country" }],
       metrics: [{ name: "activeUsers" }],
@@ -1506,83 +1620,20 @@ async function fetchTrafficFromGa4(now: number): Promise<AdminTrafficAnalytics> 
     }),
   ]);
 
-  // Zero-fill the 14-day daily window so the chart x-axis stays uniform even
-  // on days GA4 reports no traffic.
-  const today = new Date(now);
-  today.setUTCHours(0, 0, 0, 0);
-  const daysScaffold: Array<{ date: string; count: number }> = [];
-  for (let i = 13; i >= 0; i -= 1) {
-    daysScaffold.push({ date: isoDayUtc(new Date(today.getTime() - i * DAY_MS)), count: 0 });
-  }
-  const dayIndex = new Map(daysScaffold.map((d, i) => [d.date, i]));
-  for (const row of daily.rows ?? []) {
-    // GA4's `date` dimension comes back as "YYYYMMDD".
-    const raw = row.dimensionValues[0]?.value ?? "";
-    const iso = raw.length === 8 ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}` : raw;
-    const idx = dayIndex.get(iso);
-    if (idx !== undefined) {
-      const bucket = daysScaffold[idx];
-      if (bucket) bucket.count = Math.round(ga4Num(row.metricValues[0]?.value));
-    }
-  }
-
-  // Split active users into new vs returning. GA4 keys the dimension "new" /
-  // "returning" (plus an occasional "(not set)" bucket we drop).
-  let newUsers = 0;
-  let returningUsers = 0;
-  for (const row of newReturning.rows ?? []) {
-    const key = (row.dimensionValues[0]?.value ?? "").toLowerCase();
-    const v = Math.round(ga4Num(row.metricValues[0]?.value));
-    if (key === "new") newUsers = v;
-    else if (key === "returning") returningUsers = v;
-  }
-
-  const realtimeCountries = (realtime.rows ?? []).map((r) => ({
-    country: r.dimensionValues[0]?.value ?? "",
-    users: Math.round(ga4Num(r.metricValues[0]?.value)),
-  }));
-
-  const payload: AdminTrafficAnalytics = {
-    configured: true,
-    error: null,
-    property_id: CONFIG.ga4PropertyId,
-    totals_7d: totalsFromReport(t7),
-    totals_28d: totalsFromReport(t28),
-    totals_prev_7d: totalsFromReport(tPrev7),
-    new_vs_returning: { new_users: newUsers, returning_users: returningUsers },
-    active_users_daily: daysScaffold,
-    top_pages: (pages.rows ?? []).map((r) => {
-      const users = Math.round(ga4Num(r.metricValues[1]?.value));
-      const engagementSeconds = ga4Num(r.metricValues[2]?.value);
-      return {
-        path: r.dimensionValues[0]?.value ?? "",
-        views: Math.round(ga4Num(r.metricValues[0]?.value)),
-        users,
-        avg_engagement_seconds: users > 0 ? Math.round(engagementSeconds / users) : 0,
-      };
-    }),
-    channels: (channels.rows ?? []).map((r) => ({
-      channel: r.dimensionValues[0]?.value ?? "",
-      sessions: Math.round(ga4Num(r.metricValues[0]?.value)),
-    })),
-    first_touch_channels: (firstTouch.rows ?? []).map((r) => ({
-      channel: r.dimensionValues[0]?.value ?? "",
-      users: Math.round(ga4Num(r.metricValues[0]?.value)),
-    })),
-    events: (events.rows ?? []).map((r) => ({
-      name: r.dimensionValues[0]?.value ?? "",
-      count: Math.round(ga4Num(r.metricValues[0]?.value)),
-    })),
-    countries: (countries.rows ?? []).map((r) => ({
-      country: r.dimensionValues[0]?.value ?? "",
-      users: Math.round(ga4Num(r.metricValues[0]?.value)),
-    })),
-    realtime: {
-      active_users: realtimeCountries.reduce((sum, c) => sum + c.users, 0),
-      by_country: realtimeCountries,
-    },
-    generated_at: now,
-  };
+  const payload = assembleTrafficPayload(now, {
+    t7,
+    t28,
+    tPrev7,
+    daily,
+    pages,
+    channels,
+    firstTouch,
+    events,
+    newReturning,
+    countries,
+    devices,
+    realtime,
+  });
   trafficCache = { payload, expiresAt: now + TRAFFIC_CACHE_TTL_MS };
   return payload;
 }

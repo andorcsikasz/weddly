@@ -551,6 +551,10 @@ export interface AdminTrafficAnalytics {
   events: Array<{ name: string; count: number }>;
   /** Top countries by active users over the last 7 days. */
   countries: Array<{ country: string; users: number }>;
+  /** Device categories (desktop / mobile / tablet) by active users over the
+   *  last 7 days — GA4 `deviceCategory`. Cross-checks the internal signup device
+   *  capture, which under-reports (User-Agent only). */
+  devices: Array<{ device: string; users: number }>;
   /** Live snapshot — active users in the last 30 minutes (GA4 Realtime API),
    *  with a per-country breakdown. As stale as the section cache (≤5 min). */
   realtime: { active_users: number; by_country: Array<{ country: string; users: number }> };

@@ -92,12 +92,9 @@ describe("admin analytics — adoption + retention rollups", () => {
 
     // Picks: the new adoption denominator (total_couples) and numerator
     // (couples_with_any_pick) reconcile.
-    const picks = await req<AdminPicksAnalytics>(
-      "GET",
-      "/api/admin/analytics/picks",
-      undefined,
-      { token: admin },
-    );
+    const picks = await req<AdminPicksAnalytics>("GET", "/api/admin/analytics/picks", undefined, {
+      token: admin,
+    });
     expect(picks.status).toBe(200);
     expect(picks.data.total_couples).toBeGreaterThanOrEqual(1);
     expect(picks.data.couples_with_any_pick).toBe(1);

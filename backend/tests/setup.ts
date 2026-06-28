@@ -62,6 +62,11 @@ process.env.PLAUSIBLE_DOMAIN = "";
 // pinned empty so no real container id leaks into rendered test HTML.
 process.env.GTM_CONTAINER_ID = "";
 
+// GA4 gtag.js measurement id injected into the SSR <head> (seo_ssr.ts
+// ga4ScriptTag). Pinned empty so the real stream id from backend/.env never
+// leaks into rendered test HTML and trips the analytics-injection assertions.
+process.env.GA4_MEASUREMENT_ID = "";
+
 // GA4 Data API (admin Traffic section). Pinned empty so the suite never tries
 // to reach Google — the traffic endpoint returns `configured:false` instead.
 process.env.GA4_PROPERTY_ID = "";

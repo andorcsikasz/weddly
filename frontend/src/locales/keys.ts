@@ -4911,6 +4911,8 @@ export interface LocaleMessages {
     analytics_traffic_first_touch_sub: string;
     analytics_traffic_events_title: string;
     analytics_traffic_events_sub: string;
+    analytics_traffic_devices_title: string;
+    analytics_traffic_devices_sub: string;
     /** Compact KPI tile labels added in the 2026 redesign. */
     analytics_money_couples_with_budget_short: string;
     analytics_money_couples_with_actuals_short: string;

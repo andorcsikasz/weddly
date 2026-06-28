@@ -1172,6 +1172,7 @@ function TrafficSection({
   const channelMax = Math.max(0, ...d.channels.map((c) => c.sessions));
   const firstTouchMax = Math.max(0, ...d.first_touch_channels.map((c) => c.users));
   const countryMax = Math.max(0, ...d.countries.map((c) => c.users));
+  const deviceMax = Math.max(0, ...d.devices.map((c) => c.users));
   const eventMax = Math.max(0, ...d.events.map((e) => e.count));
   const nvr = d.new_vs_returning;
   const nvrTotal = nvr.new_users + nvr.returning_users;
@@ -1375,6 +1376,37 @@ function TrafficSection({
                     </span>
                     <HBar
                       pct={countryMax > 0 ? (c.users / countryMax) * 100 : 0}
+                      ariaLabel={`${c.users}`}
+                    />
+                    <span className="stat-num text-right font-medium text-neutral-700 dark:text-paper-100">
+                      {formatNumber(c.users, locale)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </InnerCard>
+
+          <InnerCard
+            title={t("admin.analytics_traffic_devices_title")}
+            subtitle={t("admin.analytics_traffic_devices_sub")}
+          >
+            {d.devices.length === 0 ? (
+              <p className="text-sm text-neutral-500 dark:text-umber-300">
+                {t("admin.analytics_traffic_countries_empty")}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {d.devices.slice(0, 6).map((c) => (
+                  <li
+                    key={c.device}
+                    className="grid grid-cols-[7rem_1fr_3rem] items-center gap-2 text-xs"
+                  >
+                    <span className="truncate text-left text-neutral-700 capitalize dark:text-paper-100">
+                      {c.device}
+                    </span>
+                    <HBar
+                      pct={deviceMax > 0 ? (c.users / deviceMax) * 100 : 0}
                       ariaLabel={`${c.users}`}
                     />
                     <span className="stat-num text-right font-medium text-neutral-700 dark:text-paper-100">

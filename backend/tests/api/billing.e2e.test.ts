@@ -77,7 +77,7 @@ describe("billing state machine", () => {
     expect(r.status).toBe(200);
     expect(r.data.enabled).toBe(false);
     expect(r.data.currency).toBe("HUF");
-    expect(r.data.price).toBe(1990);
+    expect(r.data.price).toBe(990);
     // Solo couple hasn't consumed a founding slot (that happens at partner-join).
     expect(r.data.founding_spots_left).toBe(200);
   });

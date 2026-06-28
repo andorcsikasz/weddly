@@ -4373,7 +4373,8 @@ const hu: LocaleMessages = {
     analytics_acq_conversion_sub: "regisztráció → onboarding → aktívvá válás",
     analytics_acq_by_country_title: "Konverzió országonként",
     analytics_acq_by_channel_title: "Csatorna",
-    analytics_acq_channel_note: "A UTM-címkézést tükrözi; címke nélküli látogató = Direkt.",
+    analytics_acq_channel_note:
+      "Regisztrációs attribúció a UTM-címkékből (saját adat, nem GA4-forgalom). Címke nélküli regisztráció = Direkt.",
     analytics_acq_by_device_title: "Eszköz",
     analytics_acq_campaigns_title: "Kampányok",
     analytics_acq_campaigns_sub: "aktiválás alapján",
@@ -4434,6 +4435,8 @@ const hu: LocaleMessages = {
     analytics_traffic_first_touch_sub: "Hogyan találtak ránk először",
     analytics_traffic_events_title: "GA4 események (7 nap)",
     analytics_traffic_events_sub: "Publikus tölcsér",
+    analytics_traffic_devices_title: "Eszközök (7 nap)",
+    analytics_traffic_devices_sub: "GA4 eszközkategória",
     analytics_money_couples_with_budget_short: "Költségvetést megadott",
     analytics_money_couples_with_actuals_short: "Tényleges kiadás",
     analytics_money_median_ceiling: "Medián keret",

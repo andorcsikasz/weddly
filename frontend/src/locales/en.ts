@@ -4325,7 +4325,8 @@ const en: LocaleMessages = {
     analytics_acq_conversion_sub: "signup → onboard → active",
     analytics_acq_by_country_title: "Conversion by country",
     analytics_acq_by_channel_title: "Channel",
-    analytics_acq_channel_note: "Reflects UTM tagging; an untagged visit counts as Direct.",
+    analytics_acq_channel_note:
+      "Signup attribution from UTM tags at registration (first-party, not GA4 traffic). An untagged signup counts as Direct.",
     analytics_acq_by_device_title: "Device",
     analytics_acq_campaigns_title: "Campaigns",
     analytics_acq_campaigns_sub: "by activation",
@@ -4386,6 +4387,8 @@ const en: LocaleMessages = {
     analytics_traffic_first_touch_sub: "How people first found us",
     analytics_traffic_events_title: "GA4 events (7d)",
     analytics_traffic_events_sub: "Public-facing funnel",
+    analytics_traffic_devices_title: "Devices (7d)",
+    analytics_traffic_devices_sub: "GA4 device category",
     analytics_money_couples_with_budget_short: "Budget set",
     analytics_money_couples_with_actuals_short: "Actuals logged",
     analytics_money_median_ceiling: "Median ceiling",

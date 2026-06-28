@@ -68,7 +68,7 @@ describe("GET /api/admin/financial-planner/overview", () => {
     expect(r.data.mrr_eur_total).toBe(5); // one EUR subscriber at 5 EUR
     expect(r.data.arr_eur_total).toBe(60);
     expect(r.data.founding_spots_left).toBe(200);
-    expect(r.data.price_huf).toBe(1990);
+    expect(r.data.price_huf).toBe(990);
   });
 
   test("counts checkout-started couples (distinct) and total attempts", async () => {

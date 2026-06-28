@@ -81,6 +81,34 @@ export async function req<T = unknown>(
 
   const finalBody = withConsentVersions(method, path, body);
 
+  // The vendor-waitlist endpoint consumes multipart/form-data (it accepts an
+  // optional price_list upload), so encode the JSON-shaped test body as a form.
+  // Arrays map to repeated `key[]` fields (e.g. portfolio_links[]); null/
+  // undefined are dropped so "missing version" probes still hit the 400 path.
+  // Drop the JSON Content-Type and let fetch set the multipart boundary.
+  if (
+    method === "POST" &&
+    path === "/api/vendors/waitlist" &&
+    finalBody &&
+    typeof finalBody === "object"
+  ) {
+    delete headers["Content-Type"];
+    const form = new FormData();
+    for (const [key, value] of Object.entries(finalBody as Record<string, unknown>)) {
+      if (value === undefined || value === null) continue;
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item !== undefined && item !== null) form.append(`${key}[]`, String(item));
+        }
+      } else {
+        form.append(key, String(value));
+      }
+    }
+    const res = await fetch(`${BASE}${path}`, { method, headers, body: form });
+    const text = await res.text();
+    return { status: res.status, data: (text ? JSON.parse(text) : null) as T };
+  }
+
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers,
