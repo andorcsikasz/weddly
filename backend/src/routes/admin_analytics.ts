@@ -471,6 +471,12 @@ function picksAnalytics(audience: AnalyticsAudience): AdminPicksAnalytics {
       )
       .get() as { n: number }
   ).n;
+  // Couple population in scope — the honest denominator for "how many couples
+  // have engaged with picks at all", as opposed to category coverage which is
+  // relative to couples that already made >=1 pick.
+  const totalCouples = (
+    db.prepare(`SELECT COUNT(*) AS n FROM couples c WHERE ${COUPLE_OK}`).get() as { n: number }
+  ).n;
 
   // Per-couple pick counts. Couples with zero picks are intentionally
   // excluded so the median doesn't get dragged to 0 — the analytics
@@ -569,6 +575,8 @@ function picksAnalytics(audience: AnalyticsAudience): AdminPicksAnalytics {
 
   return {
     total_picks: totalPicks,
+    total_couples: totalCouples,
+    couples_with_any_pick: couplesWithAny.size,
     picks_per_couple: picksPerCouple,
     top_picks: topPicks,
     category_coverage: categoryCoverage,
@@ -687,9 +695,15 @@ function engagementAnalytics(audience: AnalyticsAudience): AdminEngagementAnalyt
     }
   }
 
+  // D+60 settles only for users old enough to have their 60-days-later boundary
+  // in the past, so it runs over the >=60d subset of the cohort with its own
+  // size (cohort60) rather than diluting the rate with users who can't qualify.
+  const sixtyCutoff = now - 60 * DAY_MS;
   let d1Hits = 0;
   let d7Hits = 0;
   let d30Hits = 0;
+  let d60Hits = 0;
+  let cohort60 = 0;
   for (const u of cohortRows) {
     const audits = auditByUser.get(u.id) ?? [];
     const lastSeen = u.last_seen_at ?? 0;
@@ -706,18 +720,24 @@ function engagementAnalytics(audience: AnalyticsAudience): AdminEngagementAnalyt
     if (hasAfter(t1)) d1Hits += 1;
     if (hasAfter(t7)) d7Hits += 1;
     if (hasAfter(t30)) d30Hits += 1;
+    if (u.created_at <= sixtyCutoff) {
+      cohort60 += 1;
+      if (hasAfter(u.created_at + 60 * DAY_MS)) d60Hits += 1;
+    }
   }
 
   const cohortSize = cohortRows.length;
   const round3 = (n: number): number => Math.round(n * 1000) / 1000;
   const retention =
     cohortSize === 0
-      ? { cohort_size: 0, d1: null, d7: null, d30: null }
+      ? { cohort_size: 0, d1: null, d7: null, d30: null, d60: null, cohort_size_d60: cohort60 }
       : {
           cohort_size: cohortSize,
           d1: round3(d1Hits / cohortSize),
           d7: round3(d7Hits / cohortSize),
           d30: round3(d30Hits / cohortSize),
+          d60: cohort60 === 0 ? null : round3(d60Hits / cohort60),
+          cohort_size_d60: cohort60,
         };
 
   // ─── Time-of-day matrix: 7 rows (Mon..Sun) × 24 cols (0..23 UTC). ──────
@@ -1588,6 +1608,7 @@ function weddingAnalytics(audience: AnalyticsAudience): AdminWeddingAnalytics {
   const countryCounts = new Map<string, number>();
   const tagCounts = new Map<string, number>();
   let couplesWithDate = 0;
+  let couplesWithStyle = 0;
 
   for (const c of couples) {
     const d = parseIsoDate(c.wedding_date);
@@ -1617,11 +1638,16 @@ function weddingAnalytics(audience: AnalyticsAudience): AdminWeddingAnalytics {
       try {
         const tags = JSON.parse(c.style_tags_json) as unknown;
         if (Array.isArray(tags)) {
+          let hasStyle = false;
           for (const raw of tags) {
             if (typeof raw !== "string") continue;
             const tag = raw.trim();
-            if (tag) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+            if (tag) {
+              tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+              hasStyle = true;
+            }
           }
+          if (hasStyle) couplesWithStyle += 1;
         }
       } catch {
         // Malformed JSON on a single row shouldn't sink the whole rollup.
@@ -1652,6 +1678,7 @@ function weddingAnalytics(audience: AnalyticsAudience): AdminWeddingAnalytics {
   return {
     total_couples: totalCouples,
     couples_with_date: couplesWithDate,
+    couples_with_style: couplesWithStyle,
     wedding_month: monthCounts.map((count, i) => ({ month: i + 1, count })),
     wedding_weekday: weekdayCounts.map((count, i) => ({ weekday: i + 1, count })),
     wedding_season: (["spring", "summer", "autumn", "winter"] as const).map((season) => ({

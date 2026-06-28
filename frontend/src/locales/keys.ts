@@ -4632,6 +4632,7 @@ export interface LocaleMessages {
     analytics_weddings_by_month: string;
     analytics_weddings_by_weekday: string;
     analytics_weddings_style_tags: string;
+    analytics_weddings_style_adoption: string;
     analytics_weddings_locale_mix: string;
     analytics_weddings_by_currency: string;
     analytics_weddings_by_country: string;
@@ -4821,6 +4822,7 @@ export interface LocaleMessages {
     analytics_picks_total: string;
     analytics_picks_median_per_couple: string;
     analytics_picks_total_sub: string;
+    analytics_picks_adoption_sub: string;
     analytics_picks_median_sub: string;
     /** Top picks table. */
     analytics_picks_top_title: string;
@@ -4867,6 +4869,9 @@ export interface LocaleMessages {
     analytics_engagement_retention_d7: string;
     analytics_engagement_retention_d30: string;
     analytics_engagement_retention_cohort: string;
+    analytics_engagement_retention_title: string;
+    analytics_engagement_retention_day: string;
+    analytics_engagement_retention_small_sample: string;
     analytics_engagement_retention_empty: string;
     analytics_engagement_heatmap: string;
     analytics_engagement_heatmap_sub: string;

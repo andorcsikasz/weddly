@@ -1958,7 +1958,14 @@ function WeddingsSection({
             labelWidth="4rem"
           />
         </InnerCard>
-        <InnerCard title={t("admin.analytics_weddings_style_tags")}>
+        <InnerCard
+          title={t("admin.analytics_weddings_style_tags")}
+          subtitle={t("admin.analytics_weddings_style_adoption", {
+            picked: formatNumber(w.couples_with_style, locale),
+            total: formatNumber(w.total_couples, locale),
+            pct: pct(w.couples_with_style, w.total_couples),
+          })}
+        >
           <DistBars
             rows={tagRows}
             locale={locale}
@@ -2257,8 +2264,10 @@ function PicksSection({
             <KpiTile
               label={t("admin.analytics_picks_total")}
               value={formatNumber(p.total_picks, locale)}
-              sub={t("admin.analytics_picks_total_sub", {
-                avg: formatNumber(ppc.avg, locale),
+              sub={t("admin.analytics_picks_adoption_sub", {
+                picked: formatNumber(p.couples_with_any_pick, locale),
+                total: formatNumber(p.total_couples, locale),
+                pct: pct(p.couples_with_any_pick, p.total_couples),
               })}
               emphasis
             />
@@ -2499,6 +2508,59 @@ function LegendDot({
 
 // ─── Engagement section ────────────────────────────────────────────────────
 
+function RetentionCard({
+  retention,
+  locale,
+}: {
+  retention: AdminEngagementAnalytics["retention"];
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const cols = [
+    { day: 1, value: retention.d1 },
+    { day: 7, value: retention.d7 },
+    { day: 30, value: retention.d30 },
+    { day: 60, value: retention.d60 },
+  ];
+  return (
+    <InnerCard
+      title={t("admin.analytics_engagement_retention_title")}
+      subtitle={t("admin.analytics_engagement_retention_cohort", {
+        n: formatNumber(retention.cohort_size, locale),
+      })}
+    >
+      {retention.cohort_size > 0 && retention.cohort_size < 50 && (
+        <div className="mb-2 flex items-start gap-2 rounded-lg bg-chart-ochre/10 px-3 py-1.5 text-[11px] leading-snug text-neutral-700 ring-1 ring-chart-ochre/30 dark:text-paper-100">
+          <span aria-hidden="true">⚠️</span>
+          <span>{t("admin.analytics_engagement_retention_small_sample")}</span>
+        </div>
+      )}
+      <div className="grid grid-cols-4 gap-3">
+        {cols.map((c) => (
+          <div
+            key={c.day}
+            className="rounded-lg px-3 py-2 text-center ring-1 ring-paper-200 dark:ring-umber-700"
+          >
+            <div className="eyebrow">
+              {t("admin.analytics_engagement_retention_day", { n: c.day })}
+            </div>
+            <div className="stat-num text-lg font-semibold text-neutral-800 dark:text-paper-50">
+              {c.value === null ? "—" : `${Math.round(c.value * 100)}%`}
+            </div>
+            {c.day === 60 && (
+              <div className="text-[10px] text-neutral-500 dark:text-umber-300">
+                {t("admin.analytics_engagement_retention_cohort", {
+                  n: formatNumber(retention.cohort_size_d60, locale),
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </InnerCard>
+  );
+}
+
 function EngagementSection({
   state,
   locale,
@@ -2558,6 +2620,10 @@ function EngagementSection({
               : ""
           }
         />
+      </div>
+
+      <div className="mb-3">
+        <RetentionCard retention={e.retention} locale={locale} />
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.3fr_1fr]">

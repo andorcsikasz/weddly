@@ -120,6 +120,11 @@ export interface AdminActivityAnalytics {
 export interface AdminPicksAnalytics {
   /** Total rows in `couple_picks` (across all categories + couples). */
   total_picks: number;
+  /** Couple population in the audience scope — the denominator for picks
+   *  adoption (`couples_with_any_pick / total_couples`). */
+  total_couples: number;
+  /** Couples with at least one pick in any category. */
+  couples_with_any_pick: number;
   /** Distribution of pick count per couple (couples with 0 picks are
    *  excluded so the median doesn't get dragged to 0). */
   picks_per_couple: AdminAnalyticsStats;
@@ -170,6 +175,11 @@ export interface AdminEngagementAnalytics {
     d1: number | null;
     d7: number | null;
     d30: number | null;
+    /** D+60, computed over the >=60d-old subset of the cohort (the only users
+     *  whose 60-days-later boundary has settled). Null when that subset is
+     *  empty. Its denominator is `cohort_size_d60`, not `cohort_size`. */
+    d60: number | null;
+    cohort_size_d60: number;
   };
   /** 24×7 weekday-by-hour matrix of audit_log activity over the past
    *  30 days. `matrix[dow][hour]` — dow is 0..6 with 0=Monday (so the
@@ -382,6 +392,9 @@ export interface AdminWeddingAnalytics {
   total_couples: number;
   /** Couples with a parseable `wedding_date`. */
   couples_with_date: number;
+  /** Couples that have picked at least one style tag. 0 means the style
+   *  feature has zero adoption (drives a product alert in the UI). */
+  couples_with_style: number;
   /** Weddings per calendar month (1..12) across couples with a parseable date.
    *  Always 12 rows. */
   wedding_month: Array<{ month: number; count: number }>;
