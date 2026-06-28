@@ -27,7 +27,14 @@ export default function LoginPage() {
   useDocumentMeta("seo.login_title", "seo.login_description");
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? "/app";
+  // An explicit `from` (set when a guard bounced the user to /login) wins;
+  // otherwise the post-login destination follows the account type.
+  const explicitFrom = (location.state as { from?: string } | null)?.from ?? null;
+  // OAuth buttons can't know the role until the round-trip finishes, so they
+  // land on the explicit `from` or /app — the route guards (RequireCoupleAuth /
+  // RequireVendorAuth) then forward vendors to /vendor and planners to
+  // /app/planner. The password path below redirects by role directly.
+  const redirectTo = explicitFrom ?? "/app";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,8 +61,10 @@ export default function LoginPage() {
     setSubmitting(true);
     setError(null);
     try {
-      await login(email.trim(), password);
-      navigate(redirectTo, { replace: true });
+      const u = await login(email.trim(), password);
+      const fallback =
+        u.role === "vendor" ? "/vendor" : u.user_type === "planner" ? "/app/planner" : "/app";
+      navigate(explicitFrom ?? fallback, { replace: true });
     } catch (err) {
       if (isUnverifiedEmailError(err)) {
         // Backend already mailed a fresh link on the blocked login; show the

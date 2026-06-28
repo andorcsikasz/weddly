@@ -663,6 +663,12 @@ export interface LocaleMessages {
       no_event_date: string;
       detail_title: string;
       status_label: string;
+      status_requested: string;
+      status_vendor_seen: string;
+      status_confirmed: string;
+      status_declined: string;
+      status_cancelled: string;
+      status_expired: string;
       stage_label: string;
       stage_placeholder: string;
       contract_value: string;

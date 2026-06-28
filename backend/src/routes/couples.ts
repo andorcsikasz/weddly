@@ -566,6 +566,15 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
   // throwaway / typo-email accounts from polluting the couples table and
   // makes sure the password-reset path works the moment something goes wrong.
   const userId = requireVerifiedAuth(ctx, getUserById);
+  // Couple onboarding is for couples only. Vendors (role='vendor') and planners
+  // (user_type='planner') have their own workspaces and must never create a
+  // couple — 403 so the vendor/planner shells never surface the OnboardingWizard.
+  const onboardingUser = getUserById(userId);
+  if (onboardingUser?.role === "vendor" || onboardingUser?.user_type === "planner") {
+    throw new HttpError(403, "Couple onboarding is not available for this account type", {
+      code: "onboarding_not_allowed",
+    });
+  }
   const body = await readJson<OnboardBody>(ctx.req);
 
   const { brideName, groomName, displayName } = parseNames(body);

@@ -154,6 +154,14 @@ import type {
   CompleteVendorOnboardingInput,
   VendorOnboardingVerifyView,
 } from "@shared/vendor_onboarding";
+import type { VendorBilling } from "@shared/vendor_billing";
+import type { VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
+import type {
+  VendorClientDetail,
+  VendorClientPayment,
+  VendorClientView,
+  VendorStats,
+} from "@shared/vendor_clients";
 import type {
   VendorAvailabilityView,
   VendorListingEditInput,
@@ -1644,6 +1652,50 @@ export const vendorAvailabilityApi = {
     apiFetch<VendorAvailabilityView>(
       "DELETE",
       `/api/vendor/availability/me?date=${encodeURIComponent(date)}`,
+    ),
+};
+
+/** Vendor "clients" — couples that reached the vendor THROUGH Weddly (their
+ *  Weddly-sourced bookings). The basic list is FREE; the CRM detail + payment
+ *  tracking are PRO-gated server-side (a FREE vendor gets a 403 the UI turns
+ *  into an upgrade prompt). `id` is the supplier_bookings.id. */
+export const vendorClientsApi = {
+  list: () => apiFetch<{ clients: VendorClientView[] }>("GET", "/api/vendor/clients"),
+  get: (id: number) => apiFetch<VendorClientDetail>("GET", `/api/vendor/clients/${id}`),
+  update: (
+    id: number,
+    body: {
+      status?: string;
+      stage?: string | null;
+      vendor_notes?: string | null;
+      contract_value?: number | null;
+      deposit_paid?: number | null;
+    },
+  ) => apiFetch<{ client: VendorClientDetail }>("PATCH", `/api/vendor/clients/${id}`, body),
+  listPayments: (id: number) =>
+    apiFetch<{ payments: VendorClientPayment[] }>("GET", `/api/vendor/clients/${id}/payments`),
+  addPayment: (id: number, body: { label: string; amount: number; due_date: string | null }) =>
+    apiFetch<{ payment: VendorClientPayment }>("POST", `/api/vendor/clients/${id}/payments`, body),
+  updatePayment: (
+    paymentId: number,
+    body: { label?: string; amount?: number; due_date?: string | null; paid?: boolean },
+  ) =>
+    apiFetch<{ payment: VendorClientPayment }>("PATCH", `/api/vendor/payments/${paymentId}`, body),
+  deletePayment: (paymentId: number) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/vendor/payments/${paymentId}`),
+};
+
+/** Vendor dashboard / stats rollup for the signed-in vendor's account. */
+export const vendorStatsApi = {
+  get: () => apiFetch<VendorStats>("GET", "/api/vendor/stats"),
+};
+
+/** Vendor billing snapshot + derived FREE/PRO plan + per-feature flags. */
+export const vendorBillingApi = {
+  get: () =>
+    apiFetch<{ billing: VendorBilling; plan: VendorPlan; features: VendorFeatureFlags }>(
+      "GET",
+      "/api/vendor/billing",
     ),
 };
 

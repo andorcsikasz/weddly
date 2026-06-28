@@ -150,7 +150,10 @@ export default function RegisterPage() {
     // earlier demo launch on this device follows them into onboarding.
     clearDemoSessionFlag();
     setSession(pendingSession.token, pendingSession.user);
-    navigate("/onboarding", { replace: true });
+    // Vendors never see the couple OnboardingWizard — route them to their own
+    // workspace. Normal sign-ups are couples and go to onboarding.
+    const dest = pendingSession.user.role === "vendor" ? "/vendor" : "/onboarding";
+    navigate(dest, { replace: true });
   }
 
   if (pendingSession) {

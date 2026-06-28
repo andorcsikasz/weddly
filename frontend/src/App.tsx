@@ -79,7 +79,19 @@ const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazy(() => import("./pages/VendorClaimVerifyPage"));
 const VendorActivatePage = lazy(() => import("./pages/VendorActivatePage"));
-const VendorHomePage = lazy(() => import("./pages/VendorHomePage"));
+// VendorHomePage (pages/VendorHomePage.tsx) is the legacy standalone listing
+// editor — its body will be lifted into the in-shell VendorListingPage by a
+// feature agent, so it's no longer routed directly here.
+const VendorShellLayout = lazy(() =>
+  import("./components/VendorShell").then((m) => ({ default: m.VendorShellLayout })),
+);
+const VendorDashboardPage = lazy(() => import("./pages/vendor/VendorDashboardPage"));
+const VendorClientsPage = lazy(() => import("./pages/vendor/VendorClientsPage"));
+const VendorClientDetailPage = lazy(() => import("./pages/vendor/VendorClientDetailPage"));
+const VendorListingPage = lazy(() => import("./pages/vendor/VendorListingPage"));
+const VendorStatsPage = lazy(() => import("./pages/vendor/VendorStatsPage"));
+const VendorBillingPage = lazy(() => import("./pages/vendor/VendorBillingPage"));
+const VendorSettingsPage = lazy(() => import("./pages/vendor/VendorSettingsPage"));
 const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
 const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
 const WishlistEditorPage = lazy(() => import("./pages/WishlistEditorPage"));
@@ -93,6 +105,7 @@ const PlannerSettingsSubscription = lazy(
   () => import("./pages/planner/PlannerSettingsSubscription"),
 );
 const PlannerSettingsData = lazy(() => import("./pages/planner/PlannerSettingsData"));
+const PlannerBillingPage = lazy(() => import("./pages/planner/PlannerBillingPage"));
 const PlannerClientPage = lazy(() => import("./pages/planner/PlannerClientPage"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the
@@ -136,10 +149,26 @@ function RequireCoupleAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
   if (loading) return <FullScreenLoader />;
   if (!user) return <Navigate to="/login" replace />;
+  // Vendors have their own workspace at /vendor — never the couple /app shell.
+  if (user.role === "vendor") return <Navigate to="/vendor" replace />;
   // Planners with an active client couple (couple_id set) are allowed through;
   // planners with no active client bounce to their own dashboard.
   if (user.user_type === "planner" && !user.couple_id)
     return <Navigate to="/app/planner" replace />;
+  if (!user.verified_email && !verifyBypassed()) {
+    return <VerifyEmailGate email={user.email} />;
+  }
+  return children;
+}
+
+// Gate for the vendor workspace (/vendor/*). Vendor role only — anyone else is
+// bounced to the couple /app (which itself re-routes planners). Unverified
+// vendors hit the same VerifyEmailGate as couples.
+function RequireVendorAuth({ children }: { children: JSX.Element }) {
+  const { user, loading } = useAuth();
+  if (loading) return <FullScreenLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "vendor") return <Navigate to="/app" replace />;
   if (!user.verified_email && !verifyBypassed()) {
     return <VerifyEmailGate email={user.email} />;
   }
@@ -174,7 +203,9 @@ export function RedirectIfAuthed({ children }: { children: JSX.Element }) {
   }, [user, demoSession, logout]);
   if (loading) return <FullScreenLoader />;
   if (user && !demoSession) {
-    return <Navigate to={user.user_type === "planner" ? "/app/planner" : "/app"} replace />;
+    const dest =
+      user.role === "vendor" ? "/vendor" : user.user_type === "planner" ? "/app/planner" : "/app";
+    return <Navigate to={dest} replace />;
   }
   return children;
 }
@@ -477,14 +508,78 @@ export default function App() {
             </Page>
           }
         />
+        {/* Vendor workspace — its own shell tree, gated to role='vendor'.
+            The public token routes /vendor/activate/:token and
+            /vendor/claim/verify/:token are declared ABOVE and stay outside
+            the shell. Like /app, one mounted VendorShellLayout keeps the
+            header + nav alive across vendor navigation. */}
         <Route
           path="/vendor"
           element={
-            <Page>
-              <VendorHomePage />
-            </Page>
+            <RequireVendorAuth>
+              <Suspense fallback={<FullScreenLoader />}>
+                <VendorShellLayout />
+              </Suspense>
+            </RequireVendorAuth>
           }
-        />
+        >
+          <Route
+            index
+            element={
+              <Page>
+                <VendorDashboardPage />
+              </Page>
+            }
+          />
+          <Route
+            path="clients"
+            element={
+              <Page>
+                <VendorClientsPage />
+              </Page>
+            }
+          />
+          <Route
+            path="clients/:id"
+            element={
+              <Page>
+                <VendorClientDetailPage />
+              </Page>
+            }
+          />
+          <Route
+            path="listing"
+            element={
+              <Page>
+                <VendorListingPage />
+              </Page>
+            }
+          />
+          <Route
+            path="stats"
+            element={
+              <Page>
+                <VendorStatsPage />
+              </Page>
+            }
+          />
+          <Route
+            path="billing"
+            element={
+              <Page>
+                <VendorBillingPage />
+              </Page>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <Page>
+                <VendorSettingsPage />
+              </Page>
+            }
+          />
+        </Route>
         <Route
           path="/change-email/:token"
           element={
@@ -908,6 +1003,14 @@ export default function App() {
           element={
             <RequireAuth>
               <PlannerMessagesPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/app/planner/billing"
+          element={
+            <RequireAuth>
+              <PlannerBillingPage />
             </RequireAuth>
           }
         />

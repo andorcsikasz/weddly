@@ -1310,6 +1310,21 @@ db.exec(
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_accounts_vendor_code ON vendor_accounts(vendor_code) WHERE vendor_code IS NOT NULL",
 );
 
+// Vendor "clients" + payment tracking (vendor workspace). The client view is
+// supplier_bookings enriched with vendor-managed CRM fields: an agreed contract
+// value + deposit (integer minor units), a free-form pipeline stage, and the
+// vendor's private notes. Additive columns; the installment schedule lives in
+// the vendor_client_payments table (schema.sql).
+addColumnIfMissing("supplier_bookings", "contract_value", "contract_value INTEGER");
+addColumnIfMissing("supplier_bookings", "deposit_paid", "deposit_paid INTEGER");
+addColumnIfMissing("supplier_bookings", "stage", "stage TEXT");
+addColumnIfMissing("supplier_bookings", "vendor_notes", "vendor_notes TEXT");
+// Index on the payments table AFTER it exists (schema.sql) — every payment query
+// is scoped by booking, so the booking_id lookup is the hot path.
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_vendor_client_payments_booking ON vendor_client_payments(booking_id)",
+);
+
 backfillReferenceCodes();
 function backfillReferenceCodes(): void {
   // One-time fill for rows that pre-date the columns. Runs at boot before any

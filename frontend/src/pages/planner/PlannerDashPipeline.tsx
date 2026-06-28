@@ -40,6 +40,25 @@ function formatWeddingDate(ymd: string): string {
   return `${year}. ${month}. ${day}.`;
 }
 
+// Consent status of the planner↔couple link. "active" means the couple has
+// approved access; anything else (pending invite / requested) is awaiting the
+// couple's approval, so we surface it explicitly on the card.
+function ConsentBadge({ status }: { status: string }) {
+  const { t } = useT();
+  const isActive = status === "active";
+  return (
+    <span
+      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+        isActive
+          ? "bg-eucalyptus-100 text-eucalyptus-800 dark:bg-eucalyptus-900/30 dark:text-eucalyptus-300"
+          : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+      }`}
+    >
+      {isActive ? t("couple_planners.status_active") : t("planner_home.pipeline_pending")}
+    </span>
+  );
+}
+
 function HealthIcon({ overdue }: { overdue: number }) {
   if (overdue === 0)
     return <CheckCircle2 size={14} className="shrink-0 text-eucalyptus-500" aria-hidden="true" />;
@@ -157,7 +176,10 @@ function ClientCard({ client }: { client: PlannerClientView }) {
           )}
         </div>
 
-        <HealthIcon overdue={overdue} />
+        <div className="flex shrink-0 items-center gap-2">
+          <ConsentBadge status={client.status} />
+          <HealthIcon overdue={overdue} />
+        </div>
       </div>
 
       {/* Row 2: days until + guest count */}

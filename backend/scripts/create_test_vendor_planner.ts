@@ -8,10 +8,7 @@
 import { db, now } from "../src/db";
 import { hashPassword } from "../src/auth/password";
 import { getUserByEmail } from "../src/domain/users";
-import {
-  createVendorAccount,
-  getVendorAccountByOwnerUserId,
-} from "../src/domain/vendor_accounts";
+import { createVendorAccount, getVendorAccountByOwnerUserId } from "../src/domain/vendor_accounts";
 import { createVendorListing } from "../src/domain/listings";
 import { initVendorBilling } from "../src/domain/vendor_billing";
 

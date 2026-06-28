@@ -1171,6 +1171,26 @@ CREATE TABLE IF NOT EXISTS vendor_unavailable_dates (
 CREATE INDEX IF NOT EXISTS idx_vendor_unavailable_dates_vendor
   ON vendor_unavailable_dates(vendor_account_id, blocked_date);
 
+-- Vendor "payments" — lightweight, in-app-only money tracking per Weddly-sourced
+-- client (booking). NO real money movement / Stripe Connect: each row is one
+-- labelled installment in the vendor's payment schedule for a booking. Amount is
+-- integer minor units; currency follows the vendor's subscription (HUF | EUR).
+-- A PRO-tier feature (see shared/vendor_plan.ts). The index lives in db.ts AFTER
+-- this table per the additive-ordering rule.
+CREATE TABLE IF NOT EXISTS vendor_client_payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_id INTEGER NOT NULL REFERENCES supplier_bookings(id) ON DELETE CASCADE,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  label TEXT,
+  amount INTEGER NOT NULL,                                     -- integer minor units
+  currency TEXT NOT NULL,                                      -- 'HUF' | 'EUR'
+  due_date TEXT,                                               -- 'YYYY-MM-DD' or NULL
+  paid INTEGER NOT NULL DEFAULT 0,
+  paid_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 -- Denormalised supplier rollup. One row per supplier_id (lazy upsert from the
 -- domain layer on every review write). Saves an aggregation pass on the
 -- directory list endpoint and the detail GET. `top_tags` is a JSON array of
