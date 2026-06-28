@@ -104,6 +104,45 @@ describe("admin analytics — acquisition", () => {
     expect(find(d.by_channel, "paid")?.onboarded).toBe(0);
   });
 
+  test("country × locale: unresolved country stays null, never masquerades as HU", async () => {
+    // Regression: by_country and the country_locale cross-tab used to default a
+    // null signup_country to "HU" *in the displayed cell* while the grouping key
+    // kept it null — so a null-country signup rendered as a second row visually
+    // identical to the real "HU" row (duplicate "HU / xx" rows in the admin UI),
+    // and unknown_country was stuck at 0. Country never resolves in the suite,
+    // so every row here must carry country === null (→ "unknown" in the UI).
+    wipeAll();
+    const desktop =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537 Chrome/120 Safari/537";
+    for (const email of ["cl-a@example.com", "cl-b@example.com", "cl-c@example.com"]) {
+      await req(
+        "POST",
+        "/api/auth/register",
+        { email, password: "supersafe123", full_name: "CL" },
+        { headers: { "user-agent": desktop } },
+      );
+    }
+
+    const token = await bootstrapAdmin();
+    const res = await req<AdminAcquisitionAnalytics>(
+      "GET",
+      "/api/admin/analytics/acquisition",
+      undefined,
+      { token },
+    );
+    expect(res.status).toBe(200);
+    const d = res.data;
+
+    // No row defaults an unresolved country to "HU", and the cross-tab dedupes:
+    // the displayed (country, locale) pairs are unique.
+    expect(d.country_locale.length).toBeGreaterThan(0);
+    expect(d.country_locale.every((r) => r.country === null)).toBe(true);
+    const pairs = d.country_locale.map((r) => `${r.country ?? "∅"}|${r.locale ?? "∅"}`);
+    expect(new Set(pairs).size).toBe(pairs.length);
+    // by_country agrees: the only bucket is the null (unknown) one.
+    expect(d.by_country.every((r) => r.key === null)).toBe(true);
+  });
+
   test("admin gate — anon 401, non-admin couple-role 403", async () => {
     // Wipe so this file leaves no lingering admin@test.test for the next
     // suite's bootstrapAdmin to collide with (matches admin_growth_funnel).

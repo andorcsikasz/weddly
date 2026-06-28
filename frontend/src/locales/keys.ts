@@ -3631,6 +3631,9 @@ export interface LocaleMessages {
       err_invalid_email: string;
       err_too_long: string;
       err_rate_limited: string;
+      /** Shown when a contact email is already in the moderation queue: a
+       *  re-submission is rejected with a friendly "you're on the waitlist". */
+      err_duplicate_email: string;
       /** Hero "paste a Google Maps link" affordance copy + smart-fill input. */
       magic_title: string;
       magic_help: string;
@@ -4654,7 +4657,9 @@ export interface LocaleMessages {
     analytics_guests_total: string;
     analytics_guests_per_couple: string;
     analytics_guests_response_rate: string;
+    analytics_guests_response_rate_sub: string;
     analytics_guests_acceptance_rate: string;
+    analytics_guests_acceptance_rate_sub: string;
     analytics_guests_plus_one: string;
     analytics_guests_accommodation: string;
     analytics_guests_rsvp_title: string;

@@ -1166,7 +1166,11 @@ function acquisitionAnalytics(audience: AnalyticsAudience): AdminAcquisitionAnal
     )
     .all(since) as AcqUserRow[];
 
-  const by_country = rollupDimension(rows, (r) => r.signup_country ?? "HU");
+  // Keep an unresolved country as null (→ "unknown" in the UI) rather than
+  // defaulting it to HU: a null masquerading as HU defeats unknown_country, the
+  // coverage line, and the GeoIP note below, and (post-international-expansion)
+  // silently inflates the home market. by_locale/by_device already pass null.
+  const by_country = rollupDimension(rows, (r) => r.signup_country);
   const by_channel = rollupDimension(rows, (r) => channelFromUtm(r.utm_source, r.utm_medium));
   const by_locale = rollupDimension(rows, (r) => r.locale);
   const by_device = rollupDimension(rows, (r) => r.device_type);
@@ -1181,7 +1185,10 @@ function acquisitionAnalytics(audience: AnalyticsAudience): AdminAcquisitionAnal
     const k = `${r.signup_country ?? ""}|${r.locale ?? ""}`;
     let cell = clMap.get(k);
     if (!cell) {
-      cell = { country: r.signup_country ?? "HU", locale: r.locale, count: 0 };
+      // Display value must match the grouping key: defaulting only the cell to
+      // "HU" (while the key kept null as "") split one null-country bucket into a
+      // second row visually identical to the real "HU" row. Keep null → unknown.
+      cell = { country: r.signup_country, locale: r.locale, count: 0 };
       clMap.set(k, cell);
     }
     cell.count += 1;

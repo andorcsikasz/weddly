@@ -2129,10 +2129,21 @@ function GuestsSection({
             <KpiTile
               label={t("admin.analytics_guests_response_rate")}
               value={`${Math.round(g.response_rate * 100)}%`}
+              sub={t("admin.analytics_guests_response_rate_sub", {
+                answered: formatNumber(
+                  g.rsvp_breakdown.yes + g.rsvp_breakdown.no + g.rsvp_breakdown.maybe,
+                  locale,
+                ),
+                total: formatNumber(g.total_guests, locale),
+              })}
             />
             <KpiTile
               label={t("admin.analytics_guests_acceptance_rate")}
               value={`${Math.round(g.acceptance_rate * 100)}%`}
+              sub={t("admin.analytics_guests_acceptance_rate_sub", {
+                yes: formatNumber(g.rsvp_breakdown.yes, locale),
+                definite: formatNumber(g.rsvp_breakdown.yes + g.rsvp_breakdown.no, locale),
+              })}
             />
             <KpiTile
               label={t("admin.analytics_guests_plus_one")}
