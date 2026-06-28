@@ -324,8 +324,17 @@ export function SubmitSupplierModal({
       onClose();
     } catch (err) {
       if (err instanceof ApiError) {
+        const detailCode =
+          err.detail && typeof err.detail === "object"
+            ? (err.detail as { code?: string }).code
+            : undefined;
         if (err.status === 429) {
           toast.error(t("suppliers.submit.err_rate_limited"));
+        } else if (err.status === 409 && detailCode === "duplicate_email") {
+          // Re-submission from a contact already in the moderation queue: tell
+          // them they're already registered and waitlisted, not a hard error.
+          toast.info(t("suppliers.submit.err_duplicate_email"));
+          onClose();
         } else if (err.status >= 400 && err.status < 500) {
           toast.error(err.message);
         } else {

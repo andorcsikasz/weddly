@@ -4004,6 +4004,7 @@ describe("community suppliers", () => {
         validPayload({
           name: `Vendor ${i}`,
           website: `https://vendor-${i}.test`,
+          contact_email: `vendor-${i}@rl.test`,
         }),
         { token, clientIp: ip },
       );
@@ -4013,7 +4014,11 @@ describe("community suppliers", () => {
     const blocked = await req(
       "POST",
       "/api/suppliers/community",
-      validPayload({ name: "Vendor 6", website: "https://vendor-6.test" }),
+      validPayload({
+        name: "Vendor 6",
+        website: "https://vendor-6.test",
+        contact_email: "vendor-6@rl.test",
+      }),
       { token, clientIp: ip },
     );
     expect(blocked.status).toBe(429);
@@ -4038,6 +4043,9 @@ describe("community suppliers", () => {
       validPayload({
         name: "Different Name",
         website: "https://example.com/foo",
+        // Distinct email so this isolates the website dedupe path (a shared
+        // email would trip the contact-email dedupe first).
+        contact_email: "different@example.com",
       }),
       { token: tB, clientIp: "10.55.55.2" },
     );
@@ -4054,6 +4062,39 @@ describe("community suppliers", () => {
     expect(second.status).toBe(409);
     expect(typeof second.data.error).toBe("string");
     expect(second.data.error?.toLowerCase()).toContain("dupli");
+  });
+
+  test("dedupe: re-submitting with the same contact email returns 409 {code:'duplicate_email'}", async () => {
+    wipeAll();
+    const { token: tA } = await bootstrapCouple("emaildupA@weddly.test");
+    const { token: tB } = await bootstrapCouple("emaildupB@weddly.test");
+
+    const first = await req<SubmitResponse>(
+      "POST",
+      "/api/suppliers/community",
+      validPayload({
+        name: "Etalon Party Service",
+        website: "https://etalon-one.test",
+        contact_email: "info@etalon.test",
+      }),
+      { token: tA, clientIp: "10.66.66.1" },
+    );
+    expect(first.status).toBe(201);
+
+    // Same email, DIFFERENT website + submitter — isolates email dedupe from
+    // the website dedupe path. Should be blocked with the waitlist code.
+    const second = await req<{ error?: string; detail?: { code?: string } }>(
+      "POST",
+      "/api/suppliers/community",
+      validPayload({
+        name: "Etalon Party Service",
+        website: "https://etalon-two.test",
+        contact_email: "INFO@etalon.test", // case-insensitive match
+      }),
+      { token: tB, clientIp: "10.66.66.2" },
+    );
+    expect(second.status).toBe(409);
+    expect(second.data.detail?.code).toBe("duplicate_email");
   });
 
   test("public list excludes hidden; admin list still shows it", async () => {
@@ -4333,6 +4374,7 @@ describe("community suppliers", () => {
         validPayload({
           name: `Evil ${url.slice(0, 16)}`,
           website: url,
+          contact_email: `evil-${evilUrls.indexOf(url)}@ssrf.test`,
           contact_phone: null,
           blurb: "",
         }),

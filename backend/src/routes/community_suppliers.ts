@@ -11,6 +11,7 @@ import type { SupplierCategory } from "@shared/suppliers";
 import { CONFIG } from "../config";
 import {
   consumeVerificationToken,
+  findActiveByContactEmail,
   findActiveByWebsite,
   getCommunitySupplierById,
   insertCommunitySupplier,
@@ -212,6 +213,20 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   const input = parseSubmitBody(body);
 
   rateLimit(`user:${userId}`, "supplier_submit_user", { capacity: 5, refillRate: 1 / 3600 });
+
+  // Dedupe by contact email first: a vendor who already submitted (and is
+  // sitting in the verify / admin-review queue) shouldn't be able to pile up
+  // duplicate rows by re-submitting. We surface a friendly "already registered,
+  // you're on the waitlist" message rather than silently inserting again. The
+  // `code` lets the client show a localised, non-error-flavoured toast.
+  if (input.contact_email) {
+    const emailDup = findActiveByContactEmail(input.contact_email);
+    if (emailDup) {
+      throw new HttpError(409, "Already registered with this email — on the waitlist", {
+        code: "duplicate_email",
+      });
+    }
+  }
 
   if (shouldCheckDuplicate(input.website)) {
     const dup = findActiveByWebsite(input.website);

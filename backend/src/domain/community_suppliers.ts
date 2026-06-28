@@ -190,6 +190,25 @@ export function findActiveByWebsite(website: string): CommunitySupplierRow | nul
   );
 }
 
+/** Case-insensitive lookup for a live (active / pending verify / awaiting
+ *  admin review) community supplier with the same contact email. Used to
+ *  reject re-submissions from a vendor who is already in the moderation queue
+ *  so the same business doesn't pile up as duplicate rows. Hidden rows don't
+ *  block — the listing was already removed and the contact may be re-applying
+ *  with corrected details. */
+export function findActiveByContactEmail(email: string): CommunitySupplierRow | null {
+  return (
+    (db
+      .prepare(
+        `SELECT * FROM community_suppliers
+          WHERE LOWER(contact_email) = LOWER(?)
+            AND status IN ('active', 'pending', 'awaiting_review')
+          LIMIT 1`,
+      )
+      .get(email) as CommunitySupplierRow | undefined) ?? null
+  );
+}
+
 export function getCommunitySupplierById(id: number): CommunitySupplierRow | null {
   return (
     (db.prepare("SELECT * FROM community_suppliers WHERE id = ?").get(id) as
