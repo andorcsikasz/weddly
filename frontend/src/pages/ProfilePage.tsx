@@ -2255,6 +2255,12 @@ function PlannerPanel({ t }: { t: T }) {
     setPlanners((prev) => prev.filter((p) => p.planner_user_id !== plannerUserId));
   }
 
+  async function handleAccept(plannerUserId: number) {
+    await couplePlannerApi.acceptPlanner(plannerUserId);
+    const r = await couplePlannerApi.listPlanners();
+    setPlanners(r.planners);
+  }
+
   return (
     <section className="card mt-6">
       <h2 className="font-grotesk text-lg">{t("couple_planners.heading")}</h2>
@@ -2290,14 +2296,27 @@ function PlannerPanel({ t }: { t: T }) {
                 >
                   {p.status === "active"
                     ? t("couple_planners.status_active")
-                    : t("couple_planners.status_pending")}
+                    : p.initiated_by === "planner"
+                      ? t("couple_planners.status_requested")
+                      : t("couple_planners.status_pending")}
                 </span>
+                {p.status === "pending" && p.initiated_by === "planner" && (
+                  <button
+                    type="button"
+                    onClick={() => void handleAccept(p.planner_user_id)}
+                    className="btn-sm btn-primary text-xs"
+                  >
+                    {t("couple_planners.accept_button")}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => void handleRevoke(p.planner_user_id)}
                   className="btn-sm btn-outline text-xs"
                 >
-                  {t("couple_planners.revoke_button")}
+                  {p.status === "pending" && p.initiated_by === "planner"
+                    ? t("couple_planners.decline_button")
+                    : t("couple_planners.revoke_button")}
                 </button>
               </div>
             </li>

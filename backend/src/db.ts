@@ -1272,6 +1272,17 @@ addColumnIfMissing("planner_clients", "lead_source", "lead_source TEXT");
 addColumnIfMissing("planner_clients", "contract_value", "contract_value INTEGER");
 addColumnIfMissing("planner_clients", "deposit_paid", "deposit_paid INTEGER");
 addColumnIfMissing("planner_clients", "stage", "stage TEXT DEFAULT 'active'");
+// Who created the link — gates the pending→active accept transition by
+// direction. 'couple' = couple invited the planner (planner accepts);
+// 'planner' = planner requested the couple (couple accepts). Defaulting
+// existing rows to 'couple' is safe: every pre-existing pending row WAS a
+// couple-initiated invite (the only pending path before this column), and
+// active rows have already cleared the accept gate so their direction is moot.
+addColumnIfMissing(
+  "planner_clients",
+  "initiated_by",
+  "initiated_by TEXT NOT NULL DEFAULT 'couple'",
+);
 
 // Planner profile fields — additive, all nullable (planners fill in later).
 addColumnIfMissing("users", "business_name", "business_name TEXT");

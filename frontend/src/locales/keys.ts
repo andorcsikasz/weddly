@@ -6554,6 +6554,7 @@ export interface LocaleMessages {
     pipeline_tasks_done: string;
     pipeline_tasks_overdue: string;
     pipeline_enter: string;
+    pipeline_pending: string;
     pipeline_empty_title: string;
     pipeline_empty_body: string;
     pipeline_notes_add: string;
@@ -6692,6 +6693,9 @@ export interface LocaleMessages {
     invite_error_duplicate: string;
     status_active: string;
     status_pending: string;
+    status_requested: string;
+    accept_button: string;
+    decline_button: string;
     revoke_button: string;
     revoke_confirm: string;
   };

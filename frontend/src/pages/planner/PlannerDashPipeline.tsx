@@ -215,12 +215,20 @@ function ClientCard({ client }: { client: PlannerClientView }) {
           />
         </div>
 
-        <Link
-          to={`/app/planner/clients/${client.couple_id}`}
-          className="btn-primary btn-sm flex-shrink-0"
-        >
-          {t("planner_home.pipeline_enter")}
-        </Link>
+        {client.status === "active" ? (
+          <Link
+            to={`/app/planner/clients/${client.couple_id}`}
+            className="btn-primary btn-sm flex-shrink-0"
+          >
+            {t("planner_home.pipeline_enter")}
+          </Link>
+        ) : (
+          // Pending request — the couple hasn't approved access yet, so there's
+          // nothing to enter. Entering would 403 server-side.
+          <span className="btn-sm flex-shrink-0 cursor-default rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+            {t("planner_home.pipeline_pending")}
+          </span>
+        )}
       </div>
     </div>
   );

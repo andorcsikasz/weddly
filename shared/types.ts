@@ -140,6 +140,10 @@ export interface LinkedPlannerView {
   planner_city: string | null;
   planner_bio: string | null;
   status: "active" | "pending";
+  /** Who created the link. 'planner' + status 'pending' = the planner requested
+   *  access and the couple must accept; 'couple' + 'pending' = the couple
+   *  invited the planner and is waiting on them. */
+  initiated_by: "couple" | "planner";
   linked_at: number;
 }
 

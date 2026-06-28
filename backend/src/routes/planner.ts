@@ -100,31 +100,69 @@ async function handleAddClient(ctx: Ctx): Promise<Response> {
     | { planner_max_clients: number | null }
     | undefined;
   const maxClients = plannerRow?.planner_max_clients ?? 4;
-  const activeCount = (
+  // Count pending requests AND active clients against the cap. Pending grants
+  // no access, but bounding outstanding requests stops a planner from blasting
+  // a consent-request email at unlimited couples (each insert sends one).
+  const usedCount = (
     db
       .prepare(
-        "SELECT COUNT(*) AS cnt FROM planner_clients WHERE planner_user_id = ? AND status = 'active'",
+        "SELECT COUNT(*) AS cnt FROM planner_clients WHERE planner_user_id = ? AND status IN ('active', 'pending')",
       )
       .get(userId) as { cnt: number }
   ).cnt;
-  if (activeCount >= maxClients) {
+  if (usedCount >= maxClients) {
     throw new HttpError(422, "Client limit reached for your plan");
   }
 
+  // Consent-gated: the planner REQUESTS access (status='pending',
+  // initiated_by='planner'); the couple must accept before the planner can
+  // enter the workspace. Previously this inserted 'active' directly, letting
+  // any approved planner read/write any couple's data knowing only their
+  // email — a cross-tenant exposure. handleEnterClient requires 'active', so a
+  // pending request grants nothing until the couple approves.
   db.prepare(
-    "INSERT INTO planner_clients (planner_user_id, couple_id, status, created_at) VALUES (?, ?, 'active', ?)",
+    "INSERT INTO planner_clients (planner_user_id, couple_id, status, initiated_by, created_at) VALUES (?, ?, 'pending', 'planner', ?)",
   ).run(userId, target.couple_id, now());
 
   addAuditLog({
     actor_user_id: userId,
     couple_id: target.couple_id,
-    action: "planner.link_client",
+    action: "planner.request_client",
     target_kind: "couple",
     target_id: target.couple_id,
-    note: `linked by planner ${userId}`,
+    note: `access requested by planner ${userId}`,
   });
 
-  return json({ ok: true, couple_id: target.couple_id });
+  // Notify the couple so they can approve (or ignore) the request. The target
+  // user is the workspace contact whose email the planner supplied.
+  const planner = db
+    .prepare("SELECT full_name, business_name, email FROM users WHERE id = ?")
+    .get(userId) as
+    | { full_name: string | null; business_name: string | null; email: string }
+    | undefined;
+  const plannerLabel =
+    planner?.business_name?.trim() || planner?.full_name?.trim() || "Egy tervező";
+  const targetUser = db.prepare("SELECT email, full_name FROM users WHERE id = ?").get(target.id) as
+    | { email: string; full_name: string | null }
+    | undefined;
+  if (targetUser?.email) {
+    const htmlBody = `<div style="font-family:sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
+<p>Kedves ${targetUser.full_name?.trim() || "Pár"}!</p>
+<p><strong>${plannerLabel}</strong> hozzáférést kért az esküvőtervező munkaterületetekhez a Weddly-n.</p>
+<p>Csak akkor lát bármit, ha jóváhagyod. Nyisd meg a Profil → Tervezők részt, és fogadd el vagy utasítsd el a kérést.</p>
+<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0"/>
+<p style="font-size:13px;color:#888">Dear couple — ${plannerLabel} has requested access to your Weddly workspace. They can't see anything until you approve. Open Profile → Planners to accept or decline.</p>
+</div>`;
+    await sendEmail({
+      to: targetUser.email,
+      subject: "Tervező hozzáférést kért / A planner requested access — Weddly",
+      html: htmlBody,
+      text: `${plannerLabel} hozzáférést kért a Weddly munkaterületetekhez. Nyisd meg a Profil → Tervezők részt a válaszhoz.`,
+      headers: planner?.email ? { "Reply-To": planner.email } : undefined,
+    });
+  }
+
+  return json({ ok: true, status: "pending", couple_id: target.couple_id });
 }
 
 async function handleEnterClient(ctx: Ctx): Promise<Response> {
@@ -586,6 +624,7 @@ async function handleListInvites(ctx: Ctx): Promise<Response> {
          FROM planner_clients pc
          JOIN couples c ON c.id = pc.couple_id
         WHERE pc.planner_user_id = ? AND pc.status = 'pending'
+          AND pc.initiated_by = 'couple'
         ORDER BY pc.created_at DESC`,
     )
     .all(userId) as Array<{
@@ -604,15 +643,18 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   const coupleId = Number(ctx.params?.coupleId);
   if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
 
+  // Only couple-initiated invites are acceptable by the planner. A planner can
+  // NOT self-accept a request they themselves raised (initiated_by='planner') —
+  // that would re-open the consent-less cross-tenant access this flow closes.
   const link = db
     .prepare(
-      "SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ? AND status = 'pending'",
+      "SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ? AND status = 'pending' AND initiated_by = 'couple'",
     )
     .get(userId, coupleId);
   if (!link) throw new HttpError(404, "Invite not found");
 
   db.prepare(
-    "UPDATE planner_clients SET status = 'active' WHERE planner_user_id = ? AND couple_id = ?",
+    "UPDATE planner_clients SET status = 'active' WHERE planner_user_id = ? AND couple_id = ? AND initiated_by = 'couple'",
   ).run(userId, coupleId);
 
   addAuditLog({
@@ -661,7 +703,7 @@ async function handleListLinkedPlanners(ctx: Ctx): Promise<Response> {
   const { coupleId } = requireCoupleAuth(ctx);
   const rows = db
     .prepare(
-      `SELECT pc.planner_user_id, pc.status, pc.created_at,
+      `SELECT pc.planner_user_id, pc.status, pc.initiated_by, pc.created_at,
               u.full_name, u.email, u.business_name, u.planner_city, u.planner_bio
          FROM planner_clients pc
          JOIN users u ON u.id = pc.planner_user_id
@@ -671,6 +713,7 @@ async function handleListLinkedPlanners(ctx: Ctx): Promise<Response> {
     .all(coupleId) as Array<{
     planner_user_id: number;
     status: string;
+    initiated_by: string;
     created_at: number;
     full_name: string;
     email: string;
@@ -681,6 +724,80 @@ async function handleListLinkedPlanners(ctx: Ctx): Promise<Response> {
   return json({
     planners: rows.map((r) => ({ ...r, linked_at: r.created_at })),
   });
+}
+
+/** Couple-side approval of a planner-initiated access request. Flips the
+ *  pending row (initiated_by='planner') to active so the planner can finally
+ *  enter the workspace. The mirror of the planner's handleAcceptInvite — only
+ *  the OTHER party can approve, so neither side can unilaterally grant access. */
+async function handleAcceptPlannerRequest(ctx: Ctx): Promise<Response> {
+  const { userId, coupleId } = requireCoupleAuth(ctx);
+  const plannerUserId = Number(ctx.params?.plannerUserId);
+  if (!Number.isFinite(plannerUserId) || plannerUserId <= 0) {
+    throw new HttpError(400, "plannerUserId required");
+  }
+
+  const link = db
+    .prepare(
+      "SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ? AND status = 'pending' AND initiated_by = 'planner'",
+    )
+    .get(plannerUserId, coupleId);
+  if (!link) throw new HttpError(404, "No pending planner request found");
+
+  // Enforce the planner's active-client ceiling at approval time too — the
+  // limit check at request time is advisory; this is the one that gates access.
+  const plannerRow = db
+    .prepare("SELECT planner_max_clients FROM users WHERE id = ?")
+    .get(plannerUserId) as { planner_max_clients: number | null } | undefined;
+  const maxClients = plannerRow?.planner_max_clients ?? 4;
+  const activeCount = (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS cnt FROM planner_clients WHERE planner_user_id = ? AND status = 'active'",
+      )
+      .get(plannerUserId) as { cnt: number }
+  ).cnt;
+  if (activeCount >= maxClients) {
+    throw new HttpError(422, "This planner has reached their client limit");
+  }
+
+  db.prepare(
+    "UPDATE planner_clients SET status = 'active' WHERE planner_user_id = ? AND couple_id = ? AND initiated_by = 'planner'",
+  ).run(plannerUserId, coupleId);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "planner.couple_accept",
+    target_kind: "user",
+    target_id: plannerUserId,
+  });
+
+  // Let the planner know they now have access.
+  const planner = db
+    .prepare("SELECT email, full_name FROM users WHERE id = ?")
+    .get(plannerUserId) as { email: string; full_name: string | null } | undefined;
+  const couple = db
+    .prepare(
+      "SELECT COALESCE(display_name, bride_name || ' & ' || groom_name) AS name FROM couples WHERE id = ?",
+    )
+    .get(coupleId) as { name: string } | undefined;
+  if (planner?.email) {
+    const coupleName = couple?.name ?? "Egy pár";
+    await sendEmail({
+      to: planner.email,
+      subject: "Ügyfél jóváhagyta a hozzáférést / Client approved your access — Weddly",
+      html: `<div style="font-family:sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:600px">
+<p>Kedves ${planner.full_name?.trim() || "Tervező"}!</p>
+<p><strong>${coupleName}</strong> jóváhagyta a hozzáférési kérésedet. Mostantól beléphetsz a munkaterületükre a tervező felületedről.</p>
+<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0"/>
+<p style="font-size:13px;color:#888">Dear planner — ${coupleName} approved your access request. You can now enter their workspace from your planner dashboard.</p>
+</div>`,
+      text: `${coupleName} jóváhagyta a hozzáférési kérésedet. Beléphetsz a munkaterületükre a tervező felületedről.`,
+    });
+  }
+
+  return json({ ok: true });
 }
 
 async function handleInvitePlanner(ctx: Ctx): Promise<Response> {
@@ -914,5 +1031,6 @@ export function registerPlannerRoutes(router: Router) {
   // Couple-side: planner panel (M7)
   router.get("/api/couples/planners", handleListLinkedPlanners, true);
   router.post("/api/couples/planner-invite", handleInvitePlanner, true);
+  router.post("/api/couples/planners/:plannerUserId/accept", handleAcceptPlannerRequest, true);
   router.delete("/api/couples/planners/:plannerUserId", handleRevokePlanner, true);
 }

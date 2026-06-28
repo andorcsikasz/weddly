@@ -2319,6 +2319,10 @@ export const couplePlannerApi = {
   listPlanners: () => apiFetch<{ planners: LinkedPlannerView[] }>("GET", "/api/couples/planners"),
   invitePlanner: (email: string) =>
     apiFetch<{ ok: boolean }>("POST", "/api/couples/planner-invite", { planner_email: email }),
+  /** Approve a planner-initiated access request (status pending,
+   *  initiated_by 'planner'). Flips it to active so the planner can enter. */
+  acceptPlanner: (plannerUserId: number) =>
+    apiFetch<{ ok: boolean }>("POST", `/api/couples/planners/${plannerUserId}/accept`, {}),
   revokePlanner: (plannerUserId: number) =>
     apiFetch<{ ok: boolean }>("DELETE", `/api/couples/planners/${plannerUserId}`),
 };
