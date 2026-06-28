@@ -10,7 +10,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, verifyUserEmail } from "../helpers";
+import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 import type { AdminTrafficAnalytics } from "@shared/admin_analytics";
 import { assembleTrafficPayload, type TrafficReports } from "../../src/routes/admin_analytics";
 import type { Ga4ReportResponse } from "../../src/lib/ga4";
@@ -43,6 +43,9 @@ async function bootstrapAdmin(): Promise<string> {
 
 describe("admin analytics — traffic (GA4)", () => {
   test("returns configured:false with an empty shape when GA4 is unset", async () => {
+    // Reset first so admin@test.test registers cleanly regardless of which
+    // other admin file ran before us in the shared test process.
+    wipeAll();
     const token = await bootstrapAdmin();
     const res = await req<AdminTrafficAnalytics>("GET", "/api/admin/analytics/traffic", undefined, {
       token,
