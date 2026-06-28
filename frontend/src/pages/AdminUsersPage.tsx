@@ -854,61 +854,79 @@ export default function AdminUsersPage() {
       .map((p) => userById.get(p.id))
       .filter((u): u is AdminUserView => u != null);
     const statusLabel = c.status === "paused" ? t("admin.workspace_status_paused") : null;
+
+    // Shared clusters — composed into a 6-column grid on md+ and into a
+    // compact stacked layout on phones (where the grid would otherwise turn
+    // into six tall, full-width rows with the action icons detached from the
+    // member they belong to).
+    const idCluster = (
+      <div className="flex items-center gap-1.5 whitespace-nowrap">
+        <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
+          {workspaceId(c)}
+        </code>
+        {/* Early-bird mark: one of the first 200 founding couples. */}
+        {!c.is_demo && c.billing.is_founding_member && (
+          <span
+            title={t("admin.first200_early_bird")}
+            aria-label={t("admin.first200_early_bird")}
+            className="text-umber-600 dark:text-umber-300"
+          >
+            <Bird size={14} aria-hidden />
+          </span>
+        )}
+        {/* Grant/revoke free access — gift icon next to the ID. When the
+            workspace is free (founding) the gift gets a green frame + white
+            icon so it reads as "comped" at a glance; muted otherwise. */}
+        {!c.is_demo && (
+          <button
+            type="button"
+            onClick={() => onToggleFree(c)}
+            className={`inline-flex items-center rounded-md p-0.5 ${
+              c.billing.subscription_status === "founding"
+                ? "border border-sage-600 bg-sage-500 text-paper-50 hover:bg-sage-600 dark:border-sage-400 dark:bg-sage-600 dark:hover:bg-sage-500"
+                : "text-neutral-400 hover:text-neutral-700 dark:text-umber-400 dark:hover:text-paper-100"
+            }`}
+            title={
+              c.billing.subscription_status === "founding"
+                ? t("admin.revoke_free")
+                : t("admin.grant_free")
+            }
+            aria-label={
+              c.billing.subscription_status === "founding"
+                ? t("admin.revoke_free")
+                : t("admin.grant_free")
+            }
+          >
+            <Gift size={14} aria-hidden />
+          </button>
+        )}
+        {!c.is_demo && renderPaymentStatus(c)}
+      </div>
+    );
+
+    const nameCluster = (
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+        <span className="font-medium text-neutral-900 dark:text-paper-50">{workspaceLabel(c)}</span>
+        {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
+        {!c.is_demo && renderBillingPill(c)}
+      </div>
+    );
+
+    const weddingDateCell = c.wedding_date ? (
+      <span className="font-medium text-ink-700 dark:text-paper-200">{c.wedding_date}</span>
+    ) : (
+      <span className="text-neutral-400 dark:text-umber-500">—</span>
+    );
+
     return (
       <li
         key={c.id}
         className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(c.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
       >
-        <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,3fr)_6rem_10rem_11rem] md:items-center">
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
-              {workspaceId(c)}
-            </code>
-            {/* Early-bird mark: one of the first 200 founding couples. */}
-            {!c.is_demo && c.billing.is_founding_member && (
-              <span
-                title={t("admin.first200_early_bird")}
-                aria-label={t("admin.first200_early_bird")}
-                className="text-umber-600 dark:text-umber-300"
-              >
-                <Bird size={14} aria-hidden />
-              </span>
-            )}
-            {/* Grant/revoke free access — gift icon next to the ID. When the
-                workspace is free (founding) the gift gets a green frame + white
-                icon so it reads as "comped" at a glance; muted otherwise. */}
-            {!c.is_demo && (
-              <button
-                type="button"
-                onClick={() => onToggleFree(c)}
-                className={`inline-flex items-center rounded-md p-0.5 ${
-                  c.billing.subscription_status === "founding"
-                    ? "border border-sage-600 bg-sage-500 text-paper-50 hover:bg-sage-600 dark:border-sage-400 dark:bg-sage-600 dark:hover:bg-sage-500"
-                    : "text-neutral-400 hover:text-neutral-700 dark:text-umber-400 dark:hover:text-paper-100"
-                }`}
-                title={
-                  c.billing.subscription_status === "founding"
-                    ? t("admin.revoke_free")
-                    : t("admin.grant_free")
-                }
-                aria-label={
-                  c.billing.subscription_status === "founding"
-                    ? t("admin.revoke_free")
-                    : t("admin.grant_free")
-                }
-              >
-                <Gift size={14} aria-hidden />
-              </button>
-            )}
-            {!c.is_demo && renderPaymentStatus(c)}
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="font-medium text-neutral-900 dark:text-paper-50">
-              {workspaceLabel(c)}
-            </span>
-            {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
-            {!c.is_demo && renderBillingPill(c)}
-          </div>
+        {/* Desktop / tablet: aligned 6-column grid. */}
+        <div className="hidden gap-x-4 gap-y-1 md:grid md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,3fr)_6rem_10rem_11rem] md:items-center">
+          {idCluster}
+          {nameCluster}
           <div>
             {members.length === 0 ? (
               <span className="text-xs text-neutral-500 dark:text-umber-300">—</span>
@@ -923,11 +941,7 @@ export default function AdminUsersPage() {
             )}
           </div>
           <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
-            {c.wedding_date ? (
-              <span className="font-medium text-ink-700 dark:text-paper-200">{c.wedding_date}</span>
-            ) : (
-              <span className="text-neutral-400 dark:text-umber-500">—</span>
-            )}
+            {weddingDateCell}
           </div>
           <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
             <div>{formatDate(c.created_at, locale)}</div>
@@ -949,6 +963,39 @@ export default function AdminUsersPage() {
             )}
           </div>
         </div>
+
+        {/* Phone: compact stack — id + name on one line, each member's info
+            paired with its own action icons, dates collapsed to one row. */}
+        <div className="space-y-1.5 md:hidden">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {idCluster}
+            {nameCluster}
+          </div>
+          {members.length > 0 && (
+            <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
+              {members.map((u) => (
+                <li
+                  key={u.id}
+                  className="flex items-start justify-between gap-2 py-1.5 first:pt-0 last:pb-0"
+                >
+                  <div className="min-w-0">{renderUserInfo(u)}</div>
+                  {renderUserActions(u, {
+                    remindCouple: members.length === 1 ? c : undefined,
+                  })}
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-neutral-500 dark:text-umber-300">
+            {weddingDateCell}
+            <span className="text-neutral-300 dark:text-umber-600">·</span>
+            <span>{formatDate(c.created_at, locale)}</span>
+            <span className="text-neutral-500/70 dark:text-umber-300/80">
+              {formatRelative(c.last_seen_at, locale, t)}
+            </span>
+          </div>
+        </div>
+
         <div className="px-0.5">{members.map((u) => renderEmailLogPanel(u.id))}</div>
       </li>
     );
