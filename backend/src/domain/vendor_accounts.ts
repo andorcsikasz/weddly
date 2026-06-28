@@ -19,6 +19,7 @@ export interface VendorAccountRow {
   contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
+  onboarding_done: number;
   created_at: number;
   updated_at: number;
 }
@@ -32,6 +33,7 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
     contact_email: row.contact_email,
     contact_phone: row.contact_phone,
     vat_number: row.vat_number,
+    onboarding_done: row.onboarding_done === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -43,6 +45,10 @@ export interface CreateVendorAccountInput {
   contactEmail?: string | null;
   contactPhone?: string | null;
   vatNumber?: string | null;
+  /** Self-serve signups run the in-app onboarding wizard, so they start with
+   *  `onboarding_done = 0`. The claim flow (no wizard) leaves this at the
+   *  column default of 1. */
+  onboardingDone?: boolean;
 }
 
 /** Creates the vendor_accounts row. Caller is responsible for having set
@@ -67,8 +73,8 @@ export function createVendorAccount(input: CreateVendorAccountInput): VendorAcco
   const r = db
     .prepare(
       `INSERT INTO vendor_accounts
-         (vendor_code, owner_user_id, display_name, contact_email, contact_phone, vat_number, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (vendor_code, owner_user_id, display_name, contact_email, contact_phone, vat_number, onboarding_done, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       uniqueVendorCode(),
@@ -77,6 +83,7 @@ export function createVendorAccount(input: CreateVendorAccountInput): VendorAcco
       input.contactEmail ?? null,
       input.contactPhone ?? null,
       input.vatNumber ?? null,
+      input.onboardingDone === false ? 0 : 1,
       ts,
       ts,
     );

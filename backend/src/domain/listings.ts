@@ -66,6 +66,7 @@ export interface VendorAccountRow {
   contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
+  onboarding_done: number;
   created_at: number;
   updated_at: number;
 }
@@ -128,6 +129,7 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
     contact_email: row.contact_email,
     contact_phone: row.contact_phone,
     vat_number: row.vat_number,
+    onboarding_done: row.onboarding_done === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

@@ -417,10 +417,7 @@ export default function LandingPage() {
               <Link to="/signup" className="btn-primary btn-lifted btn-landing w-full sm:w-auto">
                 {t("landing.suppliers_couple_cta")}
               </Link>
-              <Link
-                to="/vendors#waitlist"
-                className="btn-outline btn-lifted btn-landing w-full sm:w-auto"
-              >
+              <Link to="/vendors" className="btn-outline btn-lifted btn-landing w-full sm:w-auto">
                 {t("landing.suppliers_vendor_cta")}
               </Link>
             </div>

@@ -1,0 +1,196 @@
+// Self-serve vendor signup — the planner-style "create an account directly,
+// then run an in-app onboarding wizard" path that replaces the waitlist →
+// admin-accept → token-activation flow.
+//
+// Covers (major-change rule — new endpoints + auth + schema + money/state):
+//   - POST /api/vendor/register creates users(role='vendor') + vendor_account +
+//     a live listing + a founding subscription, and issues a working session
+//   - the fresh account starts with onboarding_done = 0 (wizard pending)
+//   - duplicate email → 409; stale consent versions → 400; bad category → 400
+//   - founding badge while slots remain; trial once the cohort is full
+//   - POST /api/vendor/onboarding/complete flips the flag and is idempotent
+
+import "../setup";
+
+import { describe, expect, test } from "bun:test";
+import type { AuthSession } from "@shared/types";
+import type { VendorListingView } from "@shared/listings";
+import { VENDOR_FOUNDING_CAP } from "@shared/vendor_billing";
+import { db } from "../../src/db";
+import { req, wipeAll } from "../helpers";
+
+interface RegBody {
+  email?: string;
+  password?: string;
+  full_name?: string;
+  business_name?: string;
+  category?: string;
+  privacy_version?: string | null;
+  terms_version?: string | null;
+  locale?: string;
+}
+
+function register(body: RegBody) {
+  return req<AuthSession>("POST", "/api/vendor/register", body);
+}
+
+const baseBody: RegBody = {
+  email: "studio@test.test",
+  password: "supersafe123",
+  full_name: "Anna Photographer",
+  business_name: "Florea Studio",
+  category: "photo_video",
+  locale: "en",
+};
+
+describe("vendor self-serve registration", () => {
+  test("creates a vendor user + account + listing + founding sub and a working session", async () => {
+    wipeAll();
+    const reg = await register(baseBody);
+    expect(reg.status).toBe(201);
+    expect(reg.data.token).toBeTruthy();
+    expect(reg.data.user.role).toBe("vendor");
+    expect(reg.data.user.email).toBe("studio@test.test");
+
+    // user row is role='vendor', unverified (soft verification)
+    const user = db
+      .prepare("SELECT id, role, verified_email FROM users WHERE email = ?")
+      .get("studio@test.test") as { id: number; role: string; verified_email: number };
+    expect(user.role).toBe("vendor");
+    expect(user.verified_email).toBe(0);
+
+    // vendor_account exists, owned by the user, with onboarding pending
+    const account = db
+      .prepare(
+        "SELECT id, display_name, contact_email, onboarding_done FROM vendor_accounts WHERE owner_user_id = ?",
+      )
+      .get(user.id) as {
+      id: number;
+      display_name: string;
+      contact_email: string;
+      onboarding_done: number;
+    };
+    expect(account.display_name).toBe("Florea Studio");
+    expect(account.contact_email).toBe("studio@test.test");
+    expect(account.onboarding_done).toBe(0);
+
+    // a live listing was seeded for the account
+    const listing = db
+      .prepare("SELECT category, name, status FROM listings WHERE vendor_account_id = ?")
+      .get(account.id) as { category: string; name: string; status: string };
+    expect(listing.category).toBe("photo_video");
+    expect(listing.name).toBe("Florea Studio");
+    expect(listing.status).toBe("active");
+
+    // a founding subscription was granted (first vendor → free year)
+    const sub = db
+      .prepare(
+        "SELECT subscription_status, is_founding_member, currency FROM vendor_subscriptions WHERE vendor_account_id = ?",
+      )
+      .get(account.id) as {
+      subscription_status: string;
+      is_founding_member: number;
+      currency: string;
+    };
+    expect(sub.subscription_status).toBe("founding");
+    expect(sub.is_founding_member).toBe(1);
+    expect(sub.currency).toBe("EUR"); // locale 'en' → EUR
+
+    // the issued session can read the vendor's own listing
+    const me = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, {
+      token: reg.data.token,
+    });
+    expect(me.status).toBe(200);
+    expect(me.data.account.onboarding_done).toBe(false);
+    expect(me.data.listing.name).toBe("Florea Studio");
+  });
+
+  test("rejects a duplicate email with 409", async () => {
+    wipeAll();
+    const first = await register(baseBody);
+    expect(first.status).toBe(201);
+    const dup = await register({ ...baseBody, business_name: "Other Studio" });
+    expect(dup.status).toBe(409);
+  });
+
+  test("rejects a stale consent version with 400", async () => {
+    wipeAll();
+    const stale = await register({ ...baseBody, privacy_version: "1999-01-01" });
+    expect(stale.status).toBe(400);
+    // no user was created
+    const exists = db.prepare("SELECT 1 FROM users WHERE email = ?").get("studio@test.test");
+    expect(exists).toBeNull();
+  });
+
+  test("rejects an unknown category with 400", async () => {
+    wipeAll();
+    const bad = await register({ ...baseBody, category: "not_a_real_category" });
+    expect(bad.status).toBe(400);
+  });
+
+  test("hands the next vendor a trial once the founding cohort is full", async () => {
+    wipeAll();
+    // Exhaust the founding cohort by seeding CAP granted badges. FK constraints
+    // mean each sub needs a real account, and each account a real owner user.
+    const insUser = db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+       VALUES (?, 'x', 'Seed', 'active', 'vendor', 1, 0, 0)`,
+    );
+    const insAcct = db.prepare(
+      `INSERT INTO vendor_accounts (owner_user_id, display_name, contact_email, onboarding_done, created_at, updated_at)
+       VALUES (?, 'Seed', NULL, 1, 0, 0)`,
+    );
+    const insSub = db.prepare(
+      `INSERT INTO vendor_subscriptions
+         (vendor_account_id, subscription_status, is_founding_member, currency, created_at, updated_at)
+       VALUES (?, 'founding', 1, 'EUR', 0, 0)`,
+    );
+    for (let i = 1; i <= VENDOR_FOUNDING_CAP; i++) {
+      const u = insUser.run(`seed${i}@test.test`);
+      const a = insAcct.run(Number(u.lastInsertRowid));
+      insSub.run(Number(a.lastInsertRowid));
+    }
+
+    const reg = await register(baseBody);
+    expect(reg.status).toBe(201);
+    const account = db
+      .prepare("SELECT id FROM vendor_accounts WHERE owner_user_id = ?")
+      .get(reg.data.user.id) as { id: number };
+    const sub = db
+      .prepare(
+        "SELECT subscription_status, is_founding_member FROM vendor_subscriptions WHERE vendor_account_id = ?",
+      )
+      .get(account.id) as { subscription_status: string; is_founding_member: number };
+    expect(sub.subscription_status).toBe("trialing");
+    expect(sub.is_founding_member).toBe(0);
+  });
+
+  test("onboarding/complete flips the flag and is idempotent", async () => {
+    wipeAll();
+    const reg = await register(baseBody);
+    const token = reg.data.token;
+
+    const first = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/onboarding/complete",
+      undefined,
+      { token },
+    );
+    expect(first.status).toBe(200);
+    expect(first.data.account.onboarding_done).toBe(true);
+
+    // replay is fine
+    const second = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/onboarding/complete",
+      undefined,
+      { token },
+    );
+    expect(second.status).toBe(200);
+    expect(second.data.account.onboarding_done).toBe(true);
+
+    // persisted
+    const me = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, { token });
+    expect(me.data.account.onboarding_done).toBe(true);
+  });
+});

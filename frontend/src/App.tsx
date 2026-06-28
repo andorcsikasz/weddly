@@ -78,7 +78,8 @@ const SupplierDetailPage = lazy(() => import("./pages/SupplierDetailPage"));
 const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazy(() => import("./pages/VendorClaimVerifyPage"));
-const VendorActivatePage = lazy(() => import("./pages/VendorActivatePage"));
+const VendorRegisterPage = lazy(() => import("./pages/VendorRegisterPage"));
+const VendorOnboardingPage = lazy(() => import("./pages/vendor/VendorOnboardingPage"));
 // VendorHomePage (pages/VendorHomePage.tsx) is the legacy standalone listing
 // editor — its body will be lifted into the in-shell VendorListingPage by a
 // feature agent, so it's no longer routed directly here.
@@ -175,6 +176,18 @@ function RequireVendorAuth({ children }: { children: JSX.Element }) {
   return children;
 }
 
+// Lighter vendor gate for the post-signup onboarding wizard: role only, NO
+// verify gate — a fresh self-serve vendor should be able to finish onboarding
+// before clicking the verification email (mirrors couples reaching /onboarding
+// pre-verification). The wizard's own load redirects to /vendor if already done.
+function RequireVendorRole({ children }: { children: JSX.Element }) {
+  const { user, loading } = useAuth();
+  if (loading) return <FullScreenLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "vendor") return <Navigate to="/app" replace />;
+  return children;
+}
+
 /** Legacy `/g/:slug/:code` → `/w/:slug/:code`. The merged Vendégoldal
  *  endpoint now serves both audiences (anonymous + invited + confirmed)
  *  from a single React component, so we forward old guest-portal links
@@ -261,6 +274,16 @@ export default function App() {
             <Page>
               <VendorsPage />
             </Page>
+          }
+        />
+        <Route
+          path="/vendors/signup"
+          element={
+            <RedirectIfAuthed>
+              <Page>
+                <VendorRegisterPage />
+              </Page>
+            </RedirectIfAuthed>
           }
         />
         <Route
@@ -500,12 +523,20 @@ export default function App() {
             </Page>
           }
         />
+        {/* Legacy waitlist activation link — the token flow is retired in
+            favour of self-serve signup. Any old accept-email link lands on the
+            new signup page instead of a dead route. */}
+        <Route path="/vendor/activate/:token" element={<Navigate to="/vendors/signup" replace />} />
+        {/* Post-signup onboarding wizard — outside the VendorShell, role-only
+            gate (no verify gate) so a fresh vendor can finish it immediately. */}
         <Route
-          path="/vendor/activate/:token"
+          path="/vendor/onboarding"
           element={
-            <Page>
-              <VendorActivatePage />
-            </Page>
+            <RequireVendorRole>
+              <Page>
+                <VendorOnboardingPage />
+              </Page>
+            </RequireVendorRole>
           }
         />
         {/* Vendor workspace — its own shell tree, gated to role='vendor'.

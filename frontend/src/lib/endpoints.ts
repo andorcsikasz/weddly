@@ -1587,6 +1587,31 @@ export const vendorClaimApi = {
  *     a founding/trial subscription, returns a fresh AuthSession to install via
  *     useAuth().setSession. No card is asked — the first 100 vendors are free
  *     for a year. */
+/** Self-serve vendor signup — creates a role='vendor' account and returns a
+ *  session (persist via useAuth().setSession, then run the in-app onboarding
+ *  wizard at /vendor/onboarding). Replaces the waitlist + token-activation flow. */
+export const vendorAuthApi = {
+  register: (body: {
+    email: string;
+    password: string;
+    full_name: string;
+    business_name: string;
+    category: string;
+    privacy_version: string;
+    terms_version: string;
+    locale?: string;
+    referrer?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_content?: string;
+    utm_term?: string;
+  }) => apiFetch<AuthSession>("POST", "/api/vendor/register", body),
+};
+
+/** @deprecated Legacy waitlist → admin-accept → emailed token activation flow.
+ *  Superseded by self-serve `vendorAuthApi.register`; kept until the backend
+ *  token routes are removed. */
 export const vendorOnboardingApi = {
   verify: (token: string) =>
     apiFetch<{ onboarding: VendorOnboardingVerifyView }>(
@@ -1639,6 +1664,10 @@ export const vendorListingApi = {
     return JSON.parse(text) as VendorListingView;
   },
   deleteHero: () => apiFetch<VendorListingView>("DELETE", "/api/vendor/listing/me/hero"),
+  /** Marks the post-signup onboarding wizard complete so the dashboard stops
+   *  redirecting back into it. Returns the refreshed view (account.onboarding_done
+   *  is now true). Idempotent. */
+  completeOnboarding: () => apiFetch<VendorListingView>("POST", "/api/vendor/onboarding/complete"),
 };
 
 /** Vendor self-serve availability — the booked/blocked days a claimed vendor

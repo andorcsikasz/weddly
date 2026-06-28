@@ -20,7 +20,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
@@ -31,12 +31,17 @@ import { useT } from "../../lib/i18n";
 export default function VendorDashboardPage() {
   const { t, locale } = useT();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [stats, setStats] = useState<VendorStats | null>(null);
   const [plan, setPlan] = useState<VendorPlan | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
+  // A self-serve vendor who hasn't finished the signup wizard is bounced into
+  // it. Tracked so we render the skeleton (not a flash of the dashboard) while
+  // the redirect resolves.
+  const [redirecting, setRedirecting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,7 +75,13 @@ export default function VendorDashboardPage() {
     vendorListingApi
       .me()
       .then((view) => {
-        if (!cancelled) setBusinessName(view.account.display_name);
+        if (cancelled) return;
+        if (!view.account.onboarding_done) {
+          setRedirecting(true);
+          navigate("/vendor/onboarding", { replace: true });
+          return;
+        }
+        setBusinessName(view.account.display_name);
       })
       .catch(() => {
         /* no listing/account yet — greeting falls back below */
@@ -78,11 +89,11 @@ export default function VendorDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [navigate]);
 
   const greetingName = businessName ?? user?.full_name ?? t("vendor.nav.brand_fallback");
 
-  if (loading) {
+  if (loading || redirecting) {
     return <DashboardSkeleton title={t("vendor.dashboard.page_title")} />;
   }
 

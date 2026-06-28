@@ -289,9 +289,42 @@ async function handleDeleteHero(ctx: Ctx): Promise<Response> {
   return json(view);
 }
 
+// ── Onboarding completion ──────────────────────────────────────────────────
+//
+// The self-serve signup wizard (frontend /vendor/onboarding) edits the listing
+// through the PATCH/hero endpoints above, then calls this once to mark the
+// account onboarded so the dashboard stops redirecting back into the wizard.
+// Idempotent — a replay (double-click, retry after a blip) just re-stamps 1.
+// Deliberately NOT under the entitlement EDIT prefixes so a mid-onboarding
+// vendor can always finish.
+
+async function handleCompleteOnboarding(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  if (!account.onboarding_done) {
+    db.prepare("UPDATE vendor_accounts SET onboarding_done = 1, updated_at = ? WHERE id = ?").run(
+      now(),
+      account.id,
+    );
+    addAuditLog({
+      actor_user_id: account.owner_user_id,
+      couple_id: null,
+      action: "vendor.onboarding_complete",
+      target_kind: "vendor_account",
+      target_id: account.id,
+      after: { onboarding_done: true },
+    });
+  }
+  const view: VendorListingView = {
+    listing,
+    account: { ...account, onboarding_done: true },
+  };
+  return json(view);
+}
+
 export function registerVendorListingRoutes(router: Router) {
   router.get("/api/vendor/listing/me", handleGetMe);
   router.patch("/api/vendor/listing/me", handlePatchMe);
   router.post("/api/vendor/listing/me/hero", handleUploadHero);
   router.delete("/api/vendor/listing/me/hero", handleDeleteHero);
+  router.post("/api/vendor/onboarding/complete", handleCompleteOnboarding);
 }

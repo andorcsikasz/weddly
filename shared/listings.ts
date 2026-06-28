@@ -95,6 +95,10 @@ export interface VendorAccount {
   contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
+  /** Whether the vendor has finished the post-signup onboarding wizard. The
+   *  dashboard redirects into the wizard while this is false. True for accounts
+   *  created via the claim flow (no wizard) and for all pre-wizard rows. */
+  onboarding_done: boolean;
   created_at: number;
   updated_at: number;
 }

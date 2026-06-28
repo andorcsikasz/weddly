@@ -1300,6 +1300,17 @@ addColumnIfMissing("users", "planner_onboarding_done", "planner_onboarding_done 
 // pre-existing rows get backfilled once on boot below.
 addColumnIfMissing("couples", "organiser_code", "organiser_code TEXT");
 addColumnIfMissing("vendor_accounts", "vendor_code", "vendor_code TEXT");
+// Self-serve vendor signup runs a short in-app onboarding wizard after the
+// account is created; this flag is flipped on completion so the dashboard
+// stops redirecting back into the wizard. DEFAULT 1 (= already onboarded) so
+// every pre-existing row and every account minted by the claim flow (which has
+// no wizard) is treated as done — only the self-serve register path inserts a
+// 0 to opt a fresh signup into the wizard.
+addColumnIfMissing(
+  "vendor_accounts",
+  "onboarding_done",
+  "onboarding_done INTEGER NOT NULL DEFAULT 1",
+);
 // Uniqueness indexes live here (not schema.sql) per the May 2026 ordering rule —
 // the column must exist before the index that references it. Partial so the
 // pre-backfill NULLs don't collide with each other.
