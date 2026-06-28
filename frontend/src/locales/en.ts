@@ -4119,6 +4119,8 @@ const en: LocaleMessages = {
     // Honeymoon
     analytics_section_honeymoon: "Honeymoon",
     analytics_honeymoon_empty: "No couple has set a honeymoon destination yet.",
+    analytics_honeymoon_insufficient:
+      "Only {n} couples have entered honeymoon data — too few to read into. Charts unlock at 10.",
     analytics_honeymoon_with_destination: "Destination set",
     analytics_honeymoon_adoption: "{pct}% of couples",
     analytics_honeymoon_top_destination: "Top destination",
@@ -4176,6 +4178,7 @@ const en: LocaleMessages = {
     analytics_acq_conversion_sub: "signup → onboard → active",
     analytics_acq_by_country_title: "Conversion by country",
     analytics_acq_by_channel_title: "Channel",
+    analytics_acq_channel_note: "Reflects UTM tagging; an untagged visit counts as Direct.",
     analytics_acq_by_device_title: "Device",
     analytics_acq_campaigns_title: "Campaigns",
     analytics_acq_campaigns_sub: "by activation",
@@ -4261,6 +4264,7 @@ const en: LocaleMessages = {
     analytics_money_col_couples_with_data: "Couples",
     analytics_money_histogram_title: "Budget distribution",
     analytics_money_histogram_no_budget: "No budget",
+    analytics_money_no_budget_warning: "{pct} of couples ({count}) haven't set a budget yet.",
     analytics_money_histogram_bucket_upper: "up to {max}",
     analytics_activity_signups_7d: "Signups (7d)",
     analytics_activity_active_users_7d: "Active users (7d)",
@@ -4347,6 +4351,7 @@ const en: LocaleMessages = {
     analytics_engagement_top_features: "Top features",
     analytics_engagement_top_features_empty: "No feature usage data yet.",
     analytics_engagement_users: "{count} users",
+    analytics_engagement_events_per_user: "{value}/user",
     analytics_engagement_total_label: "Total",
     analytics_engagement_total_picks: "picks",
     analytics_engagement_top_users: "Most active users",

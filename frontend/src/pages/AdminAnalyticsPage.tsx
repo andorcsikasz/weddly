@@ -721,6 +721,11 @@ function MoneySection({
   const m = state.data;
   const hasMoneyData = m.couples_with_budget > 0;
   const histogramMax = Math.max(0, ...m.budget_histogram.map((b) => b.count));
+  // "No budget" share, derived from the histogram so numerator + denominator
+  // are self-consistent (bucket_max_huf === 0 is the no-budget bucket; the full
+  // histogram sums to every couple in the audience-scoped money view).
+  const noBudgetCount = m.budget_histogram.find((b) => b.bucket_max_huf === 0)?.count ?? 0;
+  const moneyCouples = m.budget_histogram.reduce((s, b) => s + b.count, 0);
 
   return (
     <SectionCard title={title}>
@@ -730,6 +735,17 @@ function MoneySection({
         </p>
       ) : (
         <>
+          {noBudgetCount > 0 && moneyCouples > 0 && (
+            <div className="mb-3 flex items-start gap-2 rounded-lg bg-chart-ochre/10 px-3 py-2 text-xs leading-snug text-neutral-700 ring-1 ring-chart-ochre/30 dark:text-paper-100">
+              <span aria-hidden="true">⚠️</span>
+              <span>
+                {t("admin.analytics_money_no_budget_warning", {
+                  pct: pct(noBudgetCount, moneyCouples),
+                  count: formatNumber(noBudgetCount, locale),
+                })}
+              </span>
+            </div>
+          )}
           <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <KpiTile
               label={t("admin.analytics_money_couples_with_budget_short")}
@@ -1706,7 +1722,10 @@ function AcquisitionSection({
         </InnerCard>
 
         <div className="flex flex-col gap-3">
-          <InnerCard title={t("admin.analytics_acq_by_channel_title")}>
+          <InnerCard
+            title={t("admin.analytics_acq_by_channel_title")}
+            subtitle={t("admin.analytics_acq_channel_note")}
+          >
             <AcqBarList rows={d.by_channel} locale={locale} />
           </InnerCard>
           <InnerCard title={t("admin.analytics_acq_by_device_title")}>
@@ -2003,9 +2022,11 @@ function HoneymoonSection({
 
   return (
     <SectionCard title={title}>
-      {h.couples_with_destination === 0 ? (
+      {h.couples_with_destination < 10 ? (
         <p className="text-sm text-neutral-500 dark:text-umber-300">
-          {t("admin.analytics_honeymoon_empty")}
+          {h.couples_with_destination === 0
+            ? t("admin.analytics_honeymoon_empty")
+            : t("admin.analytics_honeymoon_insufficient", { n: h.couples_with_destination })}
         </p>
       ) : (
         <>
@@ -2697,6 +2718,14 @@ function TopFeaturesList({
               </div>
               <div className="text-[10px] text-neutral-500 dark:text-umber-300">
                 {t("admin.analytics_engagement_users", { count: row.users })}
+                {row.users > 0 && (
+                  <>
+                    {" · "}
+                    {t("admin.analytics_engagement_events_per_user", {
+                      value: (row.count / row.users).toFixed(1),
+                    })}
+                  </>
+                )}
               </div>
             </div>
             <div className="relative h-2 w-full rounded-full bg-paper-200 dark:bg-umber-700">

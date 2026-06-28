@@ -4166,6 +4166,8 @@ const hu: LocaleMessages = {
     // Honeymoon
     analytics_section_honeymoon: "Nászút",
     analytics_honeymoon_empty: "Még egy pár sem adott meg nászúti célt.",
+    analytics_honeymoon_insufficient:
+      "Csak {n} pár adott meg nászúti adatot — túl kevés a következtetéshez. A diagramok 10 pártól jelennek meg.",
     analytics_honeymoon_with_destination: "Cél megadva",
     analytics_honeymoon_adoption: "a párok {pct}%-a",
     analytics_honeymoon_top_destination: "Legnépszerűbb cél",
@@ -4223,6 +4225,7 @@ const hu: LocaleMessages = {
     analytics_acq_conversion_sub: "regisztráció → onboarding → aktívvá válás",
     analytics_acq_by_country_title: "Konverzió országonként",
     analytics_acq_by_channel_title: "Csatorna",
+    analytics_acq_channel_note: "A UTM-címkézést tükrözi; címke nélküli látogató = Direkt.",
     analytics_acq_by_device_title: "Eszköz",
     analytics_acq_campaigns_title: "Kampányok",
     analytics_acq_campaigns_sub: "aktiválás alapján",
@@ -4308,6 +4311,7 @@ const hu: LocaleMessages = {
     analytics_money_col_couples_with_data: "Pár",
     analytics_money_histogram_title: "Költségkeret eloszlás",
     analytics_money_histogram_no_budget: "Nincs megadva",
+    analytics_money_no_budget_warning: "A párok {pct}-a ({count}) még nem állított be költségvetést.",
     analytics_money_histogram_bucket_upper: "{max}-ig",
     analytics_activity_signups_7d: "Új regisztráció (7 nap)",
     analytics_activity_active_users_7d: "Aktív felhasználó (7 nap)",
@@ -4394,6 +4398,7 @@ const hu: LocaleMessages = {
     analytics_engagement_top_features: "Legtöbbet használt funkciók",
     analytics_engagement_top_features_empty: "Még nincs funkcióhasználati adat.",
     analytics_engagement_users: "{count} felhasználó",
+    analytics_engagement_events_per_user: "{value}/fő",
     analytics_engagement_total_label: "Összesen",
     analytics_engagement_total_picks: "választás",
     analytics_engagement_top_users: "Legaktívabb felhasználók",

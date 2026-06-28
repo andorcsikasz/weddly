@@ -4641,6 +4641,7 @@ export interface LocaleMessages {
     // Honeymoon section (destinations, origins, trip length, seasonality).
     analytics_section_honeymoon: string;
     analytics_honeymoon_empty: string;
+    analytics_honeymoon_insufficient: string;
     analytics_honeymoon_with_destination: string;
     analytics_honeymoon_adoption: string;
     analytics_honeymoon_top_destination: string;
@@ -4698,6 +4699,7 @@ export interface LocaleMessages {
     analytics_acq_conversion_sub: string;
     analytics_acq_by_country_title: string;
     analytics_acq_by_channel_title: string;
+    analytics_acq_channel_note: string;
     analytics_acq_by_device_title: string;
     analytics_acq_campaigns_title: string;
     analytics_acq_campaigns_sub: string;
@@ -4786,6 +4788,7 @@ export interface LocaleMessages {
     /** Budget histogram chart. */
     analytics_money_histogram_title: string;
     analytics_money_histogram_no_budget: string;
+    analytics_money_no_budget_warning: string;
     analytics_money_histogram_bucket_upper: string;
     /** Activity KPIs. */
     analytics_activity_signups_7d: string;
@@ -4886,6 +4889,7 @@ export interface LocaleMessages {
     analytics_engagement_top_features: string;
     analytics_engagement_top_features_empty: string;
     analytics_engagement_users: string;
+    analytics_engagement_events_per_user: string;
     analytics_engagement_total_label: string;
     analytics_engagement_total_picks: string;
     /** Top active users leaderboard inside the engagement panel — ranks
