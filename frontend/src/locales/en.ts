@@ -6157,7 +6157,7 @@ const en: LocaleMessages = {
     privacy_consent_prefix: "I have read and accept the",
     privacy_link: "privacy policy",
     privacy_consent_suffix: ". Your data is used solely for this waitlist.",
-    submit: "Register",
+    submit: "Send application",
     submitting: "Sending…",
     success_title: "We've got your registration!",
     success_body:
@@ -6166,6 +6166,14 @@ const en: LocaleMessages = {
     back_home: "Back to homepage",
     not_a_planner: "Not a wedding planner?",
     vendor_link: "Sign up as a vendor",
+    meta_title: "For wedding planners · Weddly",
+    meta_description:
+      "Join the Weddly planner beta: all your couples in one workspace, with 2 years free for early testers.",
+    already_have_access: "Already have access?",
+    login_link: "Log in",
+    success_next_intro: "While we review your application:",
+    success_follow: "Follow us on Instagram",
+    success_explore: "Explore Weddly",
     benefit_1_title: "Visibility with planning couples",
     benefit_1_body:
       "Couples find you directly inside their planning workspace — no ad spend needed.",

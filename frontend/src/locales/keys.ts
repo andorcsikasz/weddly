@@ -6660,6 +6660,13 @@ export interface LocaleMessages {
     back_home: string;
     not_a_planner: string;
     vendor_link: string;
+    meta_title: string;
+    meta_description: string;
+    already_have_access: string;
+    login_link: string;
+    success_next_intro: string;
+    success_follow: string;
+    success_explore: string;
     benefit_1_title: string;
     benefit_1_body: string;
     benefit_2_title: string;

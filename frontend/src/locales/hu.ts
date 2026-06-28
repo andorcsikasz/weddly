@@ -6207,7 +6207,7 @@ const hu: LocaleMessages = {
     privacy_consent_prefix: "Elolvastam és elfogadom az",
     privacy_link: "adatvédelmi tájékoztatót",
     privacy_consent_suffix: ". Az adataimat kizárólag a várólistán való részvételhez használjuk.",
-    submit: "Regisztrálok",
+    submit: "Elküldöm a jelentkezést",
     submitting: "Küldés…",
     success_title: "Megkaptuk a jelentkezésedet!",
     success_body:
@@ -6216,6 +6216,14 @@ const hu: LocaleMessages = {
     back_home: "Vissza a főoldalra",
     not_a_planner: "Nem esküvőszervező vagy?",
     vendor_link: "Szolgáltatóként jelentkezem",
+    meta_title: "Esküvőszervezőknek · Weddly",
+    meta_description:
+      "Csatlakozz a Weddly szervező béta programjához: minden párod egy munkaterületen, 2 év ingyenes hozzáférés a korai tesztelőknek.",
+    already_have_access: "Már van hozzáférésed?",
+    login_link: "Jelentkezz be",
+    success_next_intro: "Amíg a jelentkezésedet feldolgozzuk:",
+    success_follow: "Kövess minket Instagramon",
+    success_explore: "Fedezd fel a Weddlyt",
     benefit_1_title: "Láthatóság a tervező pároknak",
     benefit_1_body:
       "A párok közvetlenül a tervező felületükön találnak rád — nem kell hirdetésekre költeni.",

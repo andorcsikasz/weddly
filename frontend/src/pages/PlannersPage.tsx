@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
 import { plannerWaitlistApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useDocumentMeta } from "../lib/seo";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -85,42 +86,65 @@ const STEP_LABELS = [
   "planners.step_label_plan",
 ] as const;
 
-function StepIndicator({ step, t }: { step: Step; t: (k: string) => string }) {
+function StepIndicator({
+  step,
+  t,
+  onStepSelect,
+}: {
+  step: Step;
+  t: (k: string) => string;
+  onStepSelect?: (s: Step) => void;
+}) {
   return (
     <div className="mb-8 flex items-start">
-      {([0, 1, 2, 3] as Step[]).map((s, i) => (
-        <Fragment key={s}>
-          <div className="flex flex-col items-center gap-1">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                s < step
-                  ? "bg-umber-700 text-paper-50 dark:bg-umber-400 dark:text-umber-900"
-                  : s === step
-                    ? "border-2 border-umber-700 bg-paper-50 text-umber-900 dark:border-umber-400 dark:bg-umber-900 dark:text-paper-50"
-                    : "border border-paper-300 bg-paper-50 text-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-600"
-              }`}
+      {([0, 1, 2, 3] as Step[]).map((s, i) => {
+        const done = s < step;
+        // Completed steps are clickable to jump back; the current and future
+        // steps are not (forward navigation must pass validation).
+        const Wrapper = done ? "button" : "div";
+        return (
+          <Fragment key={s}>
+            <Wrapper
+              {...(done
+                ? {
+                    type: "button" as const,
+                    onClick: () => onStepSelect?.(s),
+                    "aria-label": `${t(STEP_LABELS[s]!)} — ${t("common.back")}`,
+                  }
+                : {})}
+              className={`flex flex-col items-center gap-1 ${done ? "cursor-pointer" : ""}`}
             >
-              {s < step ? <Check size={12} aria-hidden="true" /> : s + 1}
-            </div>
-            <span
-              className={`hidden text-[10px] font-medium uppercase tracking-wider sm:block ${
-                s === step
-                  ? "text-umber-800 dark:text-paper-100"
-                  : "text-umber-400 dark:text-umber-600"
-              }`}
-            >
-              {t(STEP_LABELS[s]!)}
-            </span>
-          </div>
-          {i < 3 && (
-            <div
-              className={`mt-3.5 h-px flex-1 ${
-                s < step ? "bg-umber-700 dark:bg-umber-400" : "bg-paper-300 dark:bg-umber-700"
-              }`}
-            />
-          )}
-        </Fragment>
-      ))}
+              <div
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                  done
+                    ? "bg-umber-700 text-paper-50 dark:bg-umber-400 dark:text-umber-900"
+                    : s === step
+                      ? "border-2 border-umber-700 bg-paper-50 text-umber-900 dark:border-umber-400 dark:bg-umber-900 dark:text-paper-50"
+                      : "border border-paper-300 bg-paper-50 text-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-600"
+                }`}
+              >
+                {done ? <Check size={12} aria-hidden="true" /> : s + 1}
+              </div>
+              <span
+                className={`hidden text-[10px] font-medium uppercase tracking-wider sm:block ${
+                  s === step
+                    ? "text-umber-800 dark:text-paper-100"
+                    : "text-umber-400 dark:text-umber-600"
+                }`}
+              >
+                {t(STEP_LABELS[s]!)}
+              </span>
+            </Wrapper>
+            {i < 3 && (
+              <div
+                className={`mt-3.5 h-px flex-1 ${
+                  done ? "bg-umber-700 dark:bg-umber-400" : "bg-paper-300 dark:bg-umber-700"
+                }`}
+              />
+            )}
+          </Fragment>
+        );
+      })}
     </div>
   );
 }
@@ -249,7 +273,9 @@ const EMPTY: FormState = {
   other_style: "",
   message: "",
   selected_plan: "",
-  early_bird: false,
+  // Opt-out: the early-tester offer (2 years free for feedback) is clearly in
+  // the user's favour, so it starts checked and they can uncheck it.
+  early_bird: true,
   privacy_accepted: false,
 };
 
@@ -287,7 +313,9 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   function validateStep0(): boolean {
     const errs: Partial<Record<keyof FormState, string>> = {};
     if (!trimStr(form.full_name)) errs.full_name = t("planners.err_full_name");
-    if (!trimStr(form.email) || !form.email.includes("@")) errs.email = t("planners.err_email");
+    // Require a real-looking address (local@domain.tld) rather than just an "@".
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimStr(form.email)))
+      errs.email = t("planners.err_email");
     if (!trimStr(form.phone)) errs.phone = t("planners.err_phone");
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -371,12 +399,34 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
           </p>
         )}
         <p className="text-umber-700 dark:text-umber-300">{t("planners.success_body")}</p>
-        <Link
-          to="/"
-          className="mt-8 inline-block text-sm text-umber-700 underline hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
-        >
-          {t("planners.back_home")}
-        </Link>
+
+        <div className="mt-8 border-t border-paper-200 pt-6 dark:border-umber-800">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
+            {t("planners.success_next_intro")}
+          </p>
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:justify-center">
+            <Link to="/" className="btn-primary px-5 py-2.5 text-sm">
+              {t("planners.success_explore")}
+            </Link>
+            <a
+              href="https://www.instagram.com/tryweddly"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-outline px-5 py-2.5 text-sm"
+            >
+              {t("planners.success_follow")}
+            </a>
+          </div>
+          <p className="mt-5 text-sm text-umber-500 dark:text-umber-400">
+            {t("planners.already_have_access")}{" "}
+            <Link
+              to="/login"
+              className="font-medium text-umber-800 underline hover:text-umber-900 dark:text-paper-200 dark:hover:text-paper-50"
+            >
+              {t("planners.login_link")}
+            </Link>
+          </p>
+        </div>
       </div>
     );
   }
@@ -403,7 +453,17 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   return (
     <section id="waitlist" className="border-t border-paper-200 dark:border-umber-800">
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        <StepIndicator step={step} t={t} />
+        <StepIndicator step={step} t={t} onStepSelect={(s) => setStep(s)} />
+
+        <p className="mb-6 text-center text-sm text-umber-500 dark:text-umber-400">
+          {t("planners.already_have_access")}{" "}
+          <Link
+            to="/login"
+            className="font-medium text-umber-800 underline hover:text-umber-900 dark:text-paper-200 dark:hover:text-paper-50"
+          >
+            {t("planners.login_link")}
+          </Link>
+        </p>
 
         <form onSubmit={handleAdvance} noValidate>
           {/* ── Step 0: Introduce yourself ── */}
@@ -575,27 +635,44 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 <p className={labelCls}>{t("planners.label_style_intro")}</p>
                 <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {(["wedding_style_1", "wedding_style_2", "wedding_style_3"] as const).map(
-                    (field, idx) => (
-                      <div key={field}>
-                        <label htmlFor={`pw-style-${idx}`} className="sr-only">
-                          {t(`planners.label_style_${idx + 1}` as Parameters<typeof t>[0])}
-                        </label>
-                        <select
-                          id={`pw-style-${idx}`}
-                          className={inputCls}
-                          value={form[field]}
-                          onChange={(e) => set(field, e.target.value as WeddingStyleValue)}
-                        >
-                          <option value="">{t("planners.placeholder_style")}</option>
-                          {WEDDING_STYLE_VALUES.filter((v) => v !== "other").map((v) => (
-                            <option key={v} value={v}>
-                              {styleLabel(v, (k) => t(k as Parameters<typeof t>[0]))}
-                            </option>
-                          ))}
-                          <option value="other">{t("planners.style_other")}</option>
-                        </select>
-                      </div>
-                    ),
+                    (field, idx) => {
+                      // Styles already picked in the OTHER two dropdowns, so the
+                      // same one can't be selected twice (keep this field's own
+                      // value visible so it stays selected).
+                      const takenElsewhere = (
+                        ["wedding_style_1", "wedding_style_2", "wedding_style_3"] as const
+                      )
+                        .filter((f) => f !== field)
+                        .map((f) => form[f])
+                        .filter(Boolean);
+                      const available = (v: WeddingStyleValue) =>
+                        v === form[field] || !takenElsewhere.includes(v);
+                      return (
+                        <div key={field}>
+                          <label htmlFor={`pw-style-${idx}`} className="sr-only">
+                            {t(`planners.label_style_${idx + 1}` as Parameters<typeof t>[0])}
+                          </label>
+                          <select
+                            id={`pw-style-${idx}`}
+                            className={inputCls}
+                            value={form[field]}
+                            onChange={(e) => set(field, e.target.value as WeddingStyleValue)}
+                          >
+                            <option value="">{t("planners.placeholder_style")}</option>
+                            {WEDDING_STYLE_VALUES.filter((v) => v !== "other" && available(v)).map(
+                              (v) => (
+                                <option key={v} value={v}>
+                                  {styleLabel(v, (k) => t(k as Parameters<typeof t>[0]))}
+                                </option>
+                              ),
+                            )}
+                            {available("other") && (
+                              <option value="other">{t("planners.style_other")}</option>
+                            )}
+                          </select>
+                        </div>
+                      );
+                    },
                   )}
                 </div>
                 {(form.wedding_style_1 === "other" ||
@@ -650,8 +727,8 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 </label>
                 <textarea
                   id="pw-message"
-                  rows={3}
-                  className={inputCls}
+                  rows={6}
+                  className={`${inputCls} resize-y`}
                   value={form.message}
                   onChange={(e) => set("message", e.target.value)}
                   placeholder={t("planners.placeholder_message")}
@@ -909,6 +986,7 @@ function BetaOffer() {
 
 export default function PlannersPage() {
   const { t } = useT();
+  useDocumentMeta("planners.meta_title", "planners.meta_description");
 
   return (
     <PublicShell>
@@ -963,8 +1041,10 @@ export default function PlannersPage() {
         {/* ── Beta offer ── */}
         <BetaOffer />
 
-        {/* ── Registration form (planner beta waitlist) ── */}
-        <RegistrationForm initialPlan="unlimited" />
+        {/* ── Registration form (planner beta waitlist) ──
+            No plan is preselected: the user picks deliberately on step 4
+            rather than being defaulted into the largest tier. */}
+        <RegistrationForm initialPlan="" />
 
         {/* ── Footer escape links ── */}
         <section className="border-t border-paper-200 px-4 py-10 text-center dark:border-umber-800">
