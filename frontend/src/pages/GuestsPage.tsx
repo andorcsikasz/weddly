@@ -3984,31 +3984,53 @@ function GuestStat({
     tone === "primary"
       ? "text-2xl font-semibold tabular-nums text-ink-900 dark:text-paper-50"
       : "text-2xl font-semibold tabular-nums text-ink-600 dark:text-umber-300";
+  // The number + icon read as a glyph pair; the icon alone is ambiguous
+  // (target / people / house / paper-plane), so an INSTANT styled tooltip
+  // names it on hover/focus. We render our own (group-hover) tooltip rather
+  // than the native `title` attribute, which only appears after a ~1s OS
+  // delay and can't be styled.
+  const tip = actionTitle ?? label;
   const inner = (
     <>
       <dd>{value}</dd>
       <dt aria-hidden>{icon}</dt>
-      <span className="sr-only">{actionTitle ?? label}</span>
     </>
+  );
+  // Decorative — the accessible name is carried by aria-label on the trigger,
+  // so we hide the duplicate text from screen readers to avoid double reads.
+  const tooltip = (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-umber-900 px-2.5 py-1.5 text-xs font-normal normal-case leading-none tracking-normal text-paper-50 opacity-0 shadow-pop transition-opacity duration-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
+    >
+      {tip}
+    </span>
   );
   if (onClick) {
     return (
-      <button
-        type="button"
-        onClick={onClick}
-        title={actionTitle ?? label}
-        aria-pressed={dimmed ? false : undefined}
-        className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:hover:text-blush-300 ${cls} ${
-          dimmed ? "opacity-35 hover:opacity-100" : ""
-        }`}
-      >
-        {inner}
-      </button>
+      <div className="group relative inline-flex">
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={tip}
+          aria-pressed={dimmed ? false : undefined}
+          className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:hover:text-blush-300 ${cls} ${
+            dimmed ? "opacity-35 hover:opacity-100" : ""
+          }`}
+        >
+          {inner}
+        </button>
+        {tooltip}
+      </div>
     );
   }
   return (
-    <div className={`inline-flex items-center gap-1 leading-none ${cls}`} title={label}>
+    <div
+      className={`group relative inline-flex items-center gap-1 leading-none ${cls}`}
+      aria-label={tip}
+    >
       {inner}
+      {tooltip}
     </div>
   );
 }
