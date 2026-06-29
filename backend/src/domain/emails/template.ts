@@ -75,15 +75,19 @@ export interface RenderedEmail {
 // Soft-Modern palette — matches the landing page tokens. Hex literals here
 // (not Tailwind tokens) because email clients can't reach Tailwind. Keep this
 // list in sync with `frontend/tailwind.config.js` whenever the brand shifts.
+// Dark "specialty-coffee" palette. The email field is set to the exact warm
+// near-black of the logo PNG (#15100a) so the logo square blends in and only
+// the white dove reads — an Uber-style flat dark canvas, no floating panels.
 const COLOR = {
-  bg: "#faf7f2", // warm cream surface
-  card: "#ffffff",
-  ink: "#1f1d1b", // near-black ink, slightly warm
-  muted: "#6e6863",
-  divider: "#ece6dd",
-  accent: "#7c5a3e", // walnut, the brand's primary
-  accentInk: "#ffffff",
-  enInk: "#5a5550",
+  bg: "#15100a", // warm near-black — matches the logo field so the dove blends
+  card: "#15100a", // flat: content sits directly on the dark canvas, no panel
+  ink: "#f7f1e6", // warm near-white — headlines + body copy
+  muted: "#998c7a", // warm grey — footer, asides, the "why am I getting this" line
+  divider: "rgba(247,241,230,0.12)", // hairline rule on dark
+  accent: "#e7bd92", // warm tan — links + secondary CTAs, bright enough on dark
+  accentInk: "#15100a", // dark text that sits ON the cream CTA button
+  enInk: "#cdc1ae", // dimmer light ink — secondary/bilingual body
+  cta: "#f5efe2", // cream CTA button fill — Uber-style high contrast on dark
 } as const;
 
 // Social channels surfaced in the footer. Icons are 48×48 monochrome PNGs
@@ -222,12 +226,12 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <!-- Pin the colour scheme to "light" — Apple Mail honours both meta tags,
-         Gmail iOS partially. Until we hand-tune a dark palette, this keeps the
-         cream + walnut brand identity readable; the auto-invert otherwise
-         flips the cream bg to muddy brown and the walnut CTA loses contrast. -->
-    <meta name="color-scheme" content="light only" />
-    <meta name="supported-color-schemes" content="light" />
+    <!-- The template is hand-tuned dark, so we advertise a dark scheme: Apple
+         Mail + Outlook.com honour both tags and skip their auto-invert (which
+         is what mangles light emails in dark mode). Every colour below is set
+         explicitly, so clients that ignore these tags still render as intended. -->
+    <meta name="color-scheme" content="dark" />
+    <meta name="supported-color-schemes" content="dark" />
     <title>Weddly</title>
     <style>
       /* General Sans — self-hosted at the Weddly CDN. Supported by Apple Mail,
@@ -259,10 +263,12 @@ export function renderEmail(input: RenderInput): RenderedEmail {
          viewport; the larger CTA + 1.2 line-height gives a comfortable
          ≥50px tap target (the inline value is borderline 44px). */
       @media (max-width: 480px) {
-        .wd-card { padding: 24px 20px 22px 20px !important; }
-        .wd-cta { padding: 15px 26px !important; font-size: 16px !important; line-height: 1.2 !important; }
-        .wd-secondary { padding: 14px 20px 0 20px !important; }
-        .wd-footer { padding: 24px 20px 8px 20px !important; }
+        .wd-card { padding: 8px 22px 24px 22px !important; }
+        .wd-h1 { font-size: 26px !important; line-height: 1.18 !important; }
+        .wd-cta { padding: 15px 28px !important; font-size: 16px !important; line-height: 1.2 !important; }
+        .wd-secondary { padding: 18px 22px 0 22px !important; }
+        .wd-footer { padding: 26px 22px 10px 22px !important; }
+        .wd-header { padding: 0 22px 26px 22px !important; }
       }
     </style>
   </head>
@@ -275,14 +281,14 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       <tr>
         <td align="center" style="padding:32px 16px;">
           <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
-            <!-- Brand header — wide-tracked serif caps with a macron over the
-                 E. The macron is precomposed (U+0112) so it renders consistently
-                 across every email client without needing a stacked diacritic. -->
+            <!-- Brand header — top-left lockup (Uber-style): the white dove
+                 logo sits on a square whose fill matches ${"`COLOR.bg`"}, so the
+                 square edges vanish and only the dove reads. The wordmark uses
+                 General Sans (the landing font) instead of the old serif. -->
             <tr>
-              <td align="center" style="padding:0 0 24px 0;">
-                <span style="display:inline-block;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;letter-spacing:0.32em;color:${COLOR.ink};text-transform:none;">
-                  WĒDDLY
-                </span>
+              <td class="wd-header" align="left" style="padding:0 8px 30px 8px;">
+                <img src="${escapeAttr(`${CONFIG.frontendBaseUrl}/logo.png`)}" width="38" height="38" alt="Weddly" style="display:inline-block;vertical-align:middle;border:0;outline:none;width:38px;height:38px;border-radius:9px;" />
+                <span style="display:inline-block;vertical-align:middle;margin-left:11px;font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:19px;font-weight:600;letter-spacing:0.24em;color:${COLOR.ink};">WĒDDLY</span>
               </td>
             </tr>
             ${cards}
@@ -312,24 +318,28 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       const paras = block.paragraphs
         .map(
           (p) =>
-            `<p style="margin:0 0 14px 0;color:${COLOR.ink};font-size:16px;line-height:1.55;word-break:break-word;hyphens:auto;">${renderBold(p)}</p>`,
+            `<p style="margin:0 0 16px 0;color:${COLOR.enInk};font-size:16px;line-height:1.6;word-break:break-word;hyphens:auto;">${renderBold(p)}</p>`,
         )
         .join("");
       const footnote = block.footnote
-        ? `<p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
+        ? `<p style="margin:18px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
         : "";
+      // Flat dark canvas (no panel/shadow), left-aligned, with the greeting
+      // promoted to a big bold General Sans headline — the Uber-style "one
+      // large statement, then the action" rhythm. The CTA is a cream pill with
+      // dark ink, the highest-contrast element on the dark field.
       return `<tr>
-              <td class="wd-card" style="background-color:${COLOR.card};border-radius:14px;padding:32px 32px 28px 32px;box-shadow:0 1px 2px rgba(31,29,27,0.04),0 4px 18px rgba(31,29,27,0.06);">
-                <p style="margin:0 0 18px 0;color:${COLOR.ink};font-size:18px;font-weight:600;line-height:1.4;word-break:break-word;hyphens:auto;">
+              <td class="wd-card" align="left" style="padding:4px 32px 28px 32px;">
+                <h1 class="wd-h1" style="margin:0 0 22px 0;color:${COLOR.ink};font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:30px;font-weight:600;line-height:1.16;letter-spacing:-0.01em;word-break:break-word;hyphens:auto;">
                   ${escapeHtml(block.greeting)}
-                </p>
+                </h1>
                 ${renderOutreachOrientation(category, locale)}
                 ${paras}
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0 0;">
                   <tr>
-                    <td style="border-radius:8px;background-color:${COLOR.accent};">
+                    <td style="border-radius:10px;background-color:${COLOR.cta};">
                       <a href="${escapeAttr(ctaUrl)}" class="wd-cta"
-                         style="display:inline-block;padding:13px 24px;font-size:15px;font-weight:600;color:${COLOR.accentInk};text-decoration:none;border-radius:8px;letter-spacing:0.01em;line-height:1.2;">
+                         style="display:inline-block;padding:15px 30px;font-size:16px;font-weight:600;color:${COLOR.accentInk};text-decoration:none;border-radius:10px;letter-spacing:0.01em;line-height:1.2;">
                         ${escapeHtml(block.cta)}
                       </a>
                     </td>
@@ -434,8 +444,8 @@ export function renderEmail(input: RenderInput): RenderedEmail {
           ).join("")}
         </tr>
       </table>
-      <p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;letter-spacing:0.04em;">
-        <span style="font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:0.24em;">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">tryweddly.com</a>
+      <p style="margin:16px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;letter-spacing:0.04em;">
+        <span style="font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:600;letter-spacing:0.22em;color:${COLOR.enInk};">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">tryweddly.com</a>
       </p>
     `;
   }
