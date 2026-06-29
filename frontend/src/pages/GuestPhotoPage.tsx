@@ -110,7 +110,7 @@ function FilmShell({ children, dark }: { children: React.ReactNode; dark?: boole
 function FilmHeading({ album }: { album: PhotoAlbumPublic }) {
   return (
     <div className="text-center mb-6">
-      <p className="font-serif italic text-2xl text-ink-900">{album.displayName}</p>
+      <p className="font-serif text-2xl text-ink-900">{album.displayName}</p>
       {album.title && <p className="mt-0.5 text-sm text-ink-500">{album.title}</p>}
     </div>
   );
@@ -588,7 +588,7 @@ export default function GuestPhotoPage() {
     return (
       <FilmShell>
         <div className="text-center">
-          <p className="font-serif italic text-xl text-ink-900 mb-2">
+          <p className="font-serif text-xl text-ink-900 mb-2">
             {isClosed ? t("photos.uploads_disabled") : t("photos.not_found")}
           </p>
           <p className="text-sm text-ink-500">
@@ -603,14 +603,16 @@ export default function GuestPhotoPage() {
     return (
       <FilmShell dark>
         <div className="mb-8 text-center">
-          <p className="font-serif italic text-3xl text-paper-50">{state.album.displayName}</p>
-          {state.album.title && <p className="mt-1 text-sm text-paper-400">{state.album.title}</p>}
+          <p className="font-serif text-3xl text-paper-50">{state.album.displayName}</p>
+          {state.album.title && (
+            <p className="mt-1.5 text-sm text-paper-500">{state.album.title}</p>
+          )}
         </div>
-        <div className="rounded-2xl border border-umber-700 bg-umber-900 p-5">
-          <h1 className="mb-1 font-grotesk text-lg font-semibold text-paper-50">
+        <div className="rounded-3xl border border-ink-700/70 bg-ink-800 p-6 shadow-xl">
+          <h1 className="mb-1.5 font-grotesk text-xl font-semibold text-paper-50">
             {t("photos.name_heading")}
           </h1>
-          <p className="mb-4 text-sm text-paper-400">{t("photos.name_sub")}</p>
+          <p className="mb-5 text-sm text-paper-400">{t("photos.name_sub")}</p>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -623,19 +625,19 @@ export default function GuestPhotoPage() {
               onChange={(e) => setNameInput(e.target.value)}
               placeholder={t("photos.name_placeholder")}
               autoFocus
-              className="mb-3 w-full rounded-xl border border-umber-700 bg-umber-800 px-4 py-3 text-sm text-paper-50 placeholder-umber-500 focus:border-umber-500 focus:outline-none"
+              className="mb-3 w-full rounded-2xl border border-ink-600 bg-ink-900 px-4 py-3.5 text-base text-paper-50 placeholder-paper-500 transition-colors focus:border-paper-300 focus:outline-none"
             />
-            <div className="flex gap-2">
+            <div className="flex gap-2.5">
               <button
                 type="button"
                 onClick={() => handleNameSubmit(null)}
-                className="flex-1 rounded-xl border border-umber-700 py-2.5 text-sm text-paper-400 transition-colors hover:bg-umber-800"
+                className="flex-1 rounded-2xl border border-ink-600 py-3.5 text-sm font-medium text-paper-300 transition-colors hover:bg-ink-700/60"
               >
                 {t("photos.name_skip")}
               </button>
               <button
                 type="submit"
-                className="flex-1 rounded-xl bg-paper-50 py-2.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
+                className="flex-1 rounded-2xl bg-paper-50 py-3.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-white"
               >
                 {t("photos.name_continue")}
               </button>
