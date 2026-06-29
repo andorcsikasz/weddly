@@ -13,7 +13,15 @@
 // Endpoints (unchanged): vendorListingApi.me/patch/uploadHero/deleteHero,
 // vendorAvailabilityApi.me/block/unblock.
 
-import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type DragEvent as ReactDragEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import type {
   VendorAvailabilityView,
@@ -25,6 +33,11 @@ import { TextField } from "../../components/ui/TextField";
 import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
+import VendorListingPreview from "./VendorListingPreview";
+
+/** Visual price-band scale shown in the editor. Each level maps to the same
+ *  "1".."5" string the backend stores; the labels/descriptions are i18n keys. */
+const PRICE_LEVELS = [1, 2, 3, 4, 5] as const;
 
 /** Form state mirrors the backend's editable fields with every value coerced
  *  to string for the controlled inputs — empty string maps back to `null`
@@ -154,6 +167,35 @@ function formToPatch(form: FormState, baseline: VendorListingView): VendorListin
   return patch;
 }
 
+/** Client-side guard mirrored from the autosave/save gate: a saveable form
+ *  needs a non-empty city and, when BOTH capacity bounds are set, min ≤ max. */
+function isFormSaveable(form: FormState): boolean {
+  if (form.city.trim().length === 0) return false;
+  const min = form.capacity_min.trim();
+  const max = form.capacity_max.trim();
+  if (min.length > 0 && max.length > 0 && Number(min) > Number(max)) return false;
+  return true;
+}
+
+const looksLikeEmail = (s: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+
+/** Geometry + validity for the capacity visual track. Scales the filled band
+ *  against a soft reference so the segment reads proportionally; flags an
+ *  invalid range when both bounds are set and min exceeds max. */
+function capacityTrack(form: FormState): { left: number; right: number; invalid: boolean } {
+  const minStr = form.capacity_min.trim();
+  const maxStr = form.capacity_max.trim();
+  const min = Number(minStr);
+  const max = Number(maxStr);
+  const hasMin = minStr.length > 0 && Number.isFinite(min);
+  const hasMax = maxStr.length > 0 && Number.isFinite(max);
+  const invalid = hasMin && hasMax && min > max;
+  const ref = Math.max(hasMax ? max : 0, hasMin ? min : 0, 200);
+  const left = hasMin ? Math.min(100, Math.max(0, (min / ref) * 100)) : 0;
+  const right = hasMax ? Math.min(100, Math.max(0, (max / ref) * 100)) : 100;
+  return { left, right: Math.max(left, right), invalid };
+}
+
 export default function VendorListingPage() {
   const { t, locale } = useT();
   const toast = useToast();
@@ -163,7 +205,11 @@ export default function VendorListingPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [heroBusy, setHeroBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const heroInputRef = useRef<HTMLInputElement | null>(null);
+  // Always-current form snapshot so an autosave can tell whether the vendor
+  // kept typing during its round trip (reference changes on every keystroke).
+  const formRef = useRef<FormState | null>(form);
 
   // Availability: the booked/blocked days. Managed independently of the
   // listing form — each block/unblock hits the server and re-renders from the
@@ -193,16 +239,20 @@ export default function VendorListingPage() {
     void loadView();
   }, [loadView]);
 
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
   const onChange = (key: keyof FormState) => (e: { target: { value: string } }) => {
     setForm((prev) => (prev ? { ...prev, [key]: e.target.value } : prev));
   };
 
-  const onHeroPick = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // Reset the input value so the SAME file can be picked again after a
-    // failed upload — the change event only fires when the path changes.
-    e.target.value = "";
-    if (!file || heroBusy) return;
+  const uploadHeroFile = async (file: File) => {
+    if (heroBusy) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("vendor_home.hero_upload_failed"));
+      return;
+    }
     setHeroBusy(true);
     try {
       const next = await vendorListingApi.uploadHero(file);
@@ -213,6 +263,22 @@ export default function VendorListingPage() {
     } finally {
       setHeroBusy(false);
     }
+  };
+
+  const onHeroPick = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset the input value so the SAME file can be picked again after a
+    // failed upload - the change event only fires when the path changes.
+    e.target.value = "";
+    if (!file) return;
+    void uploadHeroFile(file);
+  };
+
+  const onHeroDrop = (e: ReactDragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) void uploadHeroFile(file);
   };
 
   const onHeroDelete = async () => {
@@ -260,25 +326,79 @@ export default function VendorListingPage() {
     }
   };
 
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  // Dirty = the form diverges from the last-loaded view. Saveable = passes the
+  // client guard. Autosave fires only when BOTH hold; the explicit Save button
+  // shares the same routine as a manual fallback.
+  const dirty = form && view ? Object.keys(formToPatch(form, view)).length > 0 : false;
+  const saveable = form ? isFormSaveable(form) : false;
+
+  const runSave = useCallback(
+    async (mode: "auto" | "manual") => {
+      if (!form || !view || saving) return;
+      if (!isFormSaveable(form)) return;
+      if (Object.keys(formToPatch(form, view)).length === 0) return;
+      setSaving(true);
+      try {
+        const patch = formToPatch(form, view);
+        const next = await vendorListingApi.patch(patch);
+        setView(next);
+        if (mode === "manual") {
+          setForm(viewToForm(next));
+          toast.success(t("vendor_home.save_success"));
+        } else if (formRef.current === form) {
+          // No keystrokes landed during the round trip, so it's safe to
+          // normalise the visible fields to the server's trimmed values.
+          // This also prevents a trailing-whitespace autosave loop. If the
+          // vendor kept typing, leave their live text untouched.
+          setForm(viewToForm(next));
+        }
+      } catch {
+        toast.error(t("vendor_home.save_failed"));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [form, view, saving, t, toast],
+  );
+
+  // Debounced autosave: ~1s after the last edit, persist a valid dirty form.
+  // Each keystroke clears the prior timer, so the PATCH only lands once the
+  // vendor pauses typing.
+  useEffect(() => {
+    if (!dirty || !saveable || saving) return;
+    const id = setTimeout(() => {
+      void runSave("auto");
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [dirty, saveable, saving, runSave]);
+
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!form || !view || saving) return;
-    setSaving(true);
-    try {
-      const patch = formToPatch(form, view);
-      const next = await vendorListingApi.patch(patch);
-      setView(next);
-      setForm(viewToForm(next));
-      toast.success(t("vendor_home.save_success"));
-    } catch {
-      toast.error(t("vendor_home.save_failed"));
-    } finally {
-      setSaving(false);
-    }
+    void runSave("manual");
   };
 
+  const setPriceBand = (level: number) => {
+    setForm((prev) =>
+      prev ? { ...prev, price_band: prev.price_band === String(level) ? "" : String(level) } : prev,
+    );
+  };
+
+  // Autosave status pill shown near the top of the form.
+  const autosaveStatus: "saving" | "unsaved" | "saved" = saving
+    ? "saving"
+    : dirty
+      ? "unsaved"
+      : "saved";
+
+  const supportEmailRaw = t("about.paragraph_contact_email");
+  const supportEmail = looksLikeEmail(supportEmailRaw)
+    ? supportEmailRaw.trim()
+    : "hello@tryweddly.com";
+
+  const track = form ? capacityTrack(form) : null;
+
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-6xl">
       <div className="mb-4">
         <h1 className="font-grotesk text-3xl">{t("vendor_home.page_title")}</h1>
         <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
@@ -295,48 +415,160 @@ export default function VendorListingPage() {
       {view?.billing && <BillingBanner billing={view.billing} locale={locale} t={t} />}
 
       {form && view && (
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="card">
-            <h2 className="text-lg font-semibold">{view.listing.name}</h2>
-            <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-              {t("vendor_home.name_locked")}
-            </p>
-          </div>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          {/* Live couple's-eye preview: stacked above the form on small
+              screens, sticky right column from lg up. */}
+          <aside className="order-1 space-y-2 lg:sticky lg:top-6 lg:order-2">
+            <h2 className="text-sm font-semibold text-ink-700 dark:text-umber-100">
+              {t("vendor_home.preview_panel_title")}
+            </h2>
+            <VendorListingPreview
+              name={view.listing.name}
+              heroUrl={view.listing.hero_image_url ?? null}
+              city={form.city}
+              priceBand={form.price_band}
+              capacityMin={form.capacity_min}
+              capacityMax={form.capacity_max}
+              blurb={
+                locale === "hu" ? form.blurb_hu || form.blurb_en : form.blurb_en || form.blurb_hu
+              }
+            />
+          </aside>
 
-          <fieldset className="card space-y-3" disabled={saving || heroBusy}>
-            <legend className="font-semibold">{t("vendor_home.section_hero")}</legend>
-            <p className="text-sm text-ink-600 dark:text-umber-200">
-              {t("vendor_home.hero_intro")}
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-paper-100 ring-1 ring-paper-300 dark:bg-umber-800 dark:ring-umber-700">
-                {view.listing.hero_image_url ? (
-                  <img
-                    src={view.listing.hero_image_url}
-                    alt={t("vendor_home.hero_current_alt")}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
+          <form onSubmit={onSubmit} className="order-2 space-y-4 lg:order-1">
+            {/* Autosave status: live region near the top of the editor. */}
+            <div className="flex items-center justify-end" aria-live="polite">
+              {autosaveStatus === "saving" && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
                   <span
-                    className="px-3 text-center text-[11px] text-ink-500 dark:text-umber-300"
-                    role="img"
-                    aria-label={t("vendor_home.hero_placeholder_alt")}
-                  >
-                    {t("vendor_home.hero_placeholder_alt")}
-                  </span>
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 animate-pulse rounded-full bg-umber-500 dark:bg-umber-300"
+                  />
+                  {t("vendor_home.autosave_saving")}
+                </span>
+              )}
+              {autosaveStatus === "saved" && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-sage-700 dark:text-sage-300">
+                  <span aria-hidden="true">✓</span>
+                  {t("vendor_home.autosave_saved")}
+                </span>
+              )}
+              {autosaveStatus === "unsaved" && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-umber-600 dark:text-umber-300">
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-400"
+                  />
+                  {t("vendor_home.autosave_unsaved")}
+                </span>
+              )}
+            </div>
+
+            {/* Brand lock info card: the listing name is admin-moderated. */}
+            <div className="card flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-500 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-200 dark:ring-umber-700"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                >
+                  <rect x="4" y="9" width="12" height="8" rx="1.5" />
+                  <path d="M7 9V6.5a3 3 0 0 1 6 0V9" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-100">
+                  {view.listing.name}
+                </h2>
+                <p className="mt-1 text-sm font-medium text-ink-700 dark:text-umber-100">
+                  {t("vendor_home.brand_locked_card_title")}
+                </p>
+                <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                  {t("vendor_home.brand_locked_card_body")}
+                </p>
+                <a
+                  href={`mailto:${supportEmail}`}
+                  className="mt-2 inline-flex text-sm font-medium text-umber-700 underline decoration-paper-300 underline-offset-2 hover:text-umber-900 dark:text-umber-200 dark:hover:text-paper-100"
+                >
+                  {t("vendor_home.brand_locked_contact_cta")}
+                </a>
+              </div>
+            </div>
+
+            <fieldset className="card space-y-3" disabled={saving || heroBusy}>
+              <legend className="font-semibold">{t("vendor_home.section_hero")}</legend>
+              <p className="text-sm text-ink-600 dark:text-umber-200">
+                {t("vendor_home.hero_intro")}
+              </p>
+              <input
+                ref={heroInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={onHeroPick}
+              />
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label={
+                  view.listing.hero_image_url
+                    ? t("vendor_home.hero_replace")
+                    : t("vendor_home.hero_upload")
+                }
+                onClick={() => heroInputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    heroInputRef.current?.click();
+                  }
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={onHeroDrop}
+                className={`relative flex min-h-[12rem] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
+                  dragOver
+                    ? "border-umber-500 bg-paper-100 dark:border-umber-400 dark:bg-umber-800"
+                    : "border-paper-300 bg-paper-50 hover:border-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-500"
+                }`}
+              >
+                {view.listing.hero_image_url ? (
+                  <>
+                    <img
+                      src={view.listing.hero_image_url}
+                      alt={t("vendor_home.hero_current_alt")}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <span className="relative z-10 rounded-lg bg-ink-900/55 px-3 py-1.5 text-xs font-medium text-paper-50">
+                      {heroBusy
+                        ? t("vendor_home.hero_uploading")
+                        : t("vendor_home.hero_dropzone_replace")}
+                    </span>
+                  </>
+                ) : (
+                  <div className="px-4 py-8">
+                    <p className="text-sm font-medium text-ink-700 dark:text-umber-100">
+                      {heroBusy
+                        ? t("vendor_home.hero_uploading")
+                        : t("vendor_home.hero_dropzone_cta")}
+                    </p>
+                    <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                      {t("vendor_home.hero_dropzone_hint")}
+                    </p>
+                  </div>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <input
-                  ref={heroInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={onHeroPick}
-                />
                 <button
                   type="button"
-                  className="btn-accent"
+                  className="btn-primary"
                   onClick={() => heroInputRef.current?.click()}
                   disabled={heroBusy}
                 >
@@ -357,125 +589,192 @@ export default function VendorListingPage() {
                   </button>
                 )}
               </div>
-            </div>
-          </fieldset>
+            </fieldset>
 
-          <fieldset className="card space-y-3" disabled={saving}>
-            <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>
-            <label className="block" htmlFor="vendor-blurb-hu">
-              <span className="field-label">{t("vendor_home.label_blurb_hu")}</span>
-              <textarea
-                id="vendor-blurb-hu"
-                className="input"
-                rows={4}
-                maxLength={2000}
-                value={form.blurb_hu}
-                onChange={onChange("blurb_hu")}
-              />
-            </label>
-            <label className="block" htmlFor="vendor-blurb-en">
-              <span className="field-label">{t("vendor_home.label_blurb_en")}</span>
-              <textarea
-                id="vendor-blurb-en"
-                className="input"
-                rows={4}
-                maxLength={2000}
-                value={form.blurb_en}
-                onChange={onChange("blurb_en")}
-              />
-            </label>
-            <p className="text-xs text-ink-500 dark:text-umber-300">
-              {t("vendor_home.label_blurb_hint")}
-            </p>
-          </fieldset>
+            <fieldset className="card space-y-3" disabled={saving}>
+              <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>
+              <label className="block" htmlFor="vendor-blurb-hu">
+                <span className="field-label">{t("vendor_home.label_blurb_hu")}</span>
+                <textarea
+                  id="vendor-blurb-hu"
+                  className="input"
+                  rows={4}
+                  maxLength={2000}
+                  value={form.blurb_hu}
+                  onChange={onChange("blurb_hu")}
+                />
+              </label>
+              <label className="block" htmlFor="vendor-blurb-en">
+                <span className="field-label">{t("vendor_home.label_blurb_en")}</span>
+                <textarea
+                  id="vendor-blurb-en"
+                  className="input"
+                  rows={4}
+                  maxLength={2000}
+                  value={form.blurb_en}
+                  onChange={onChange("blurb_en")}
+                />
+              </label>
+              <p className="text-xs text-ink-500 dark:text-umber-300">
+                {t("vendor_home.label_blurb_hint")}
+              </p>
+            </fieldset>
 
-          <fieldset className="card space-y-3" disabled={saving}>
-            <legend className="font-semibold">{t("vendor_home.section_contact")}</legend>
-            <TextField
-              id="vendor-city"
-              label={t("vendor_home.label_city")}
-              value={form.city}
-              onChange={onChange("city")}
-              maxLength={80}
-              required
-            />
-            <TextField
-              id="vendor-address"
-              label={t("vendor_home.label_address")}
-              value={form.address}
-              onChange={onChange("address")}
-              maxLength={240}
-            />
-            <TextField
-              id="vendor-website"
-              label={t("vendor_home.label_website")}
-              value={form.website}
-              onChange={onChange("website")}
-              type="url"
-              maxLength={240}
-            />
-            <TextField
-              id="vendor-contact-email"
-              label={t("vendor_home.label_contact_email")}
-              helperText={t("vendor_home.label_contact_email_hint")}
-              value={form.contact_email}
-              onChange={onChange("contact_email")}
-              type="email"
-              maxLength={120}
-            />
-            <TextField
-              id="vendor-contact-phone"
-              label={t("vendor_home.label_contact_phone")}
-              value={form.contact_phone}
-              onChange={onChange("contact_phone")}
-              type="tel"
-              maxLength={40}
-            />
-          </fieldset>
-
-          <fieldset className="card space-y-3" disabled={saving}>
-            <legend className="font-semibold">{t("vendor_home.section_pricing")}</legend>
-            <TextField
-              id="vendor-price-band"
-              label={t("vendor_home.label_price_band")}
-              helperText={t("vendor_home.label_price_band_help")}
-              value={form.price_band}
-              onChange={onChange("price_band")}
-              type="number"
-              min={1}
-              max={5}
-            />
-            <div className="grid grid-cols-2 gap-3">
+            <fieldset className="card space-y-3" disabled={saving}>
+              <legend className="font-semibold">{t("vendor_home.section_contact")}</legend>
               <TextField
-                id="vendor-capacity-min"
-                label={t("vendor_home.label_capacity_min")}
-                value={form.capacity_min}
-                onChange={onChange("capacity_min")}
-                type="number"
-                min={0}
-                max={5000}
+                id="vendor-city"
+                label={t("vendor_home.label_city")}
+                value={form.city}
+                onChange={onChange("city")}
+                maxLength={80}
+                required
               />
               <TextField
-                id="vendor-capacity-max"
-                label={t("vendor_home.label_capacity_max")}
-                value={form.capacity_max}
-                onChange={onChange("capacity_max")}
-                type="number"
-                min={0}
-                max={5000}
+                id="vendor-address"
+                label={t("vendor_home.label_address")}
+                value={form.address}
+                onChange={onChange("address")}
+                maxLength={240}
               />
-            </div>
-          </fieldset>
+              <TextField
+                id="vendor-website"
+                label={t("vendor_home.label_website")}
+                value={form.website}
+                onChange={onChange("website")}
+                type="url"
+                maxLength={240}
+              />
+              <TextField
+                id="vendor-contact-email"
+                label={t("vendor_home.label_contact_email")}
+                helperText={t("vendor_home.label_contact_email_hint")}
+                value={form.contact_email}
+                onChange={onChange("contact_email")}
+                type="email"
+                maxLength={120}
+              />
+              <TextField
+                id="vendor-contact-phone"
+                label={t("vendor_home.label_contact_phone")}
+                value={form.contact_phone}
+                onChange={onChange("contact_phone")}
+                type="tel"
+                maxLength={40}
+              />
+            </fieldset>
 
-          <div className="flex items-center justify-between gap-3 pt-2">
-            <Link to="/vendors" className="btn-ghost">
-              {t("vendor_home.back_to_directory")}
-            </Link>
-            <button type="submit" className="btn-accent" disabled={saving}>
-              {saving ? t("vendor_home.saving") : t("vendor_home.save")}
-            </button>
-          </div>
-        </form>
+            <fieldset className="card space-y-4" disabled={saving}>
+              <legend className="font-semibold">{t("vendor_home.section_pricing")}</legend>
+
+              <div>
+                <span className="field-label">{t("vendor_home.label_price_band")}</span>
+                <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+                  {t("vendor_home.label_price_band_help")}
+                </p>
+                <div
+                  role="group"
+                  aria-label={t("vendor_home.label_price_band")}
+                  className="grid grid-cols-2 gap-2 sm:grid-cols-5"
+                >
+                  {PRICE_LEVELS.map((lvl) => {
+                    const active = form.price_band === String(lvl);
+                    return (
+                      <button
+                        key={lvl}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setPriceBand(lvl)}
+                        className={`flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition ${
+                          active
+                            ? "border-umber-500 bg-paper-100 ring-1 ring-umber-500 dark:border-umber-400 dark:bg-umber-800 dark:ring-umber-400"
+                            : "border-paper-300 bg-paper-50 hover:border-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-500"
+                        }`}
+                      >
+                        <span className="inline-flex items-center gap-0.5" aria-hidden="true">
+                          {PRICE_LEVELS.map((g) => (
+                            <span
+                              key={g}
+                              className={
+                                g <= lvl
+                                  ? "text-xs font-semibold text-umber-700 dark:text-umber-200"
+                                  : "text-xs font-semibold text-paper-300 dark:text-umber-700"
+                              }
+                            >
+                              €
+                            </span>
+                          ))}
+                        </span>
+                        <span className="text-sm font-medium text-ink-800 dark:text-paper-100">
+                          {t(`vendor_home.price_band_level_${lvl}_name`)}
+                        </span>
+                        <span className="text-[11px] leading-snug text-ink-500 dark:text-umber-300">
+                          {t(`vendor_home.price_band_level_${lvl}_desc`)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <span className="field-label">{t("vendor_home.capacity_range_label")}</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <TextField
+                    id="vendor-capacity-min"
+                    label={t("vendor_home.capacity_min_label")}
+                    value={form.capacity_min}
+                    onChange={onChange("capacity_min")}
+                    type="number"
+                    min={0}
+                    max={5000}
+                  />
+                  <TextField
+                    id="vendor-capacity-max"
+                    label={t("vendor_home.capacity_max_label")}
+                    value={form.capacity_max}
+                    onChange={onChange("capacity_max")}
+                    type="number"
+                    min={0}
+                    max={5000}
+                  />
+                </div>
+                {track && (
+                  <div
+                    className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-100 dark:bg-umber-800"
+                    aria-hidden="true"
+                  >
+                    <div
+                      className={`h-full rounded-full ${
+                        track.invalid
+                          ? "bg-blush-400 dark:bg-blush-400"
+                          : "bg-umber-400 dark:bg-umber-500"
+                      }`}
+                      style={{
+                        marginLeft: `${track.left}%`,
+                        width: `${Math.max(0, track.right - track.left)}%`,
+                      }}
+                    />
+                  </div>
+                )}
+                {track?.invalid && (
+                  <p className="mt-1 text-xs text-blush-600 dark:text-blush-300">
+                    {t("vendor_home.capacity_invalid")}
+                  </p>
+                )}
+              </div>
+            </fieldset>
+
+            <div className="flex items-center justify-between gap-3 pt-2">
+              <Link to="/vendors" className="btn-ghost">
+                {t("vendor_home.back_to_directory")}
+              </Link>
+              <button type="submit" className="btn-accent" disabled={saving}>
+                {saving ? t("vendor_home.saving") : t("vendor_home.save")}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
       {availability && (

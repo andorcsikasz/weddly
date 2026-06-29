@@ -1,32 +1,35 @@
 // Vendor dashboard — the home surface for a role='vendor' user at /vendor.
-// Renders inside VendorShell. Greets the vendor by business name, rolls up the
-// key counters from vendorStatsApi.get() (total + 30-day inquiries, revenue
-// tracked, blocked dates, listing completeness, plan status), previews the
-// upcoming Weddly-sourced bookings, and offers quick links into the listing,
-// stats, and billing surfaces. FREE-tier vendors see a graceful upgrade banner;
-// nothing here is PRO-gated, so the page always renders the basics.
+// Renders inside VendorShell. Greets the vendor by business name, then acts as a
+// command center: a completeness alert strip, a hero "last 30 days" inquiries
+// number with secondary KPIs, contextual smart-action cards derived from the
+// real fetched data, and a preview of upcoming Weddly-sourced bookings. FREE-tier
+// vendors see a graceful upgrade banner; nothing here is PRO-gated.
 
 import {
   ArrowRight,
   BarChart3,
   CalendarClock,
   CalendarOff,
-  CreditCard,
+  CheckCircle2,
+  Image as ImageIcon,
   Inbox,
   RefreshCw,
   Sparkles,
-  Store,
   TrendingUp,
   Wallet,
+  X,
 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
+import { Skeleton, SkeletonText } from "../../components/ui";
 import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useAuth } from "../../lib/auth";
 import { useT } from "../../lib/i18n";
+
+const COMPLETENESS_DISMISS_KEY = "weddly.vendor_completeness_dismissed";
 
 export default function VendorDashboardPage() {
   const { t, locale } = useT();
@@ -36,12 +39,25 @@ export default function VendorDashboardPage() {
   const [stats, setStats] = useState<VendorStats | null>(null);
   const [plan, setPlan] = useState<VendorPlan | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
+  // Captured from the listing view so the smart-action cards can suggest a cover
+  // photo when the hero image is still missing.
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
   // A self-serve vendor who hasn't finished the signup wizard is bounced into
   // it. Tracked so we render the skeleton (not a flash of the dashboard) while
   // the redirect resolves.
   const [redirecting, setRedirecting] = useState(false);
+  // The listing-completeness percent the vendor last dismissed the alert at.
+  // Re-shows the alert if the percent later changes (read from localStorage so
+  // the dismissal survives reloads).
+  const [dismissedPct, setDismissedPct] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const raw = window.localStorage.getItem(COMPLETENESS_DISMISS_KEY);
+    if (raw == null) return null;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,9 +83,9 @@ export default function VendorDashboardPage() {
     void load();
   }, [load]);
 
-  // Best-effort business name for the greeting. A vendor without a listing yet
-  // falls back to their account name, then the generic brand label — never
-  // blocks the dashboard.
+  // Best-effort business name + hero image for the greeting and action cards. A
+  // vendor without a listing yet falls back to their account name, then the
+  // generic brand label - never blocks the dashboard.
   useEffect(() => {
     let cancelled = false;
     vendorListingApi
@@ -82,6 +98,7 @@ export default function VendorDashboardPage() {
           return;
         }
         setBusinessName(view.account.display_name);
+        setHeroImageUrl(view.listing.hero_image_url);
       })
       .catch(() => {
         /* no listing/account yet — greeting falls back below */
@@ -90,6 +107,15 @@ export default function VendorDashboardPage() {
       cancelled = true;
     };
   }, [navigate]);
+
+  const dismissCompleteness = useCallback((pct: number) => {
+    setDismissedPct(pct);
+    try {
+      window.localStorage.setItem(COMPLETENESS_DISMISS_KEY, String(pct));
+    } catch {
+      /* private mode / storage full - the in-memory dismissal still holds */
+    }
+  }, []);
 
   const greetingName = businessName ?? user?.full_name ?? t("vendor.nav.brand_fallback");
 
@@ -111,9 +137,85 @@ export default function VendorDashboardPage() {
 
   const isFree = plan === "free";
   const currency = stats.currency;
+  const pct = Math.round(stats.listing_completeness);
+  const completenessDone = pct >= 100;
+  const revenuePositive = stats.revenue_tracked > 0;
+  const showCompletenessAlert = !completenessDone && dismissedPct !== pct;
+
+  // Smart action cards derived from the real, fetched data - no invented signals.
+  const actions: ActionCardProps[] = [];
+  if (heroImageUrl == null) {
+    actions.push({
+      to: "/vendor/listing",
+      icon: <ImageIcon size={18} aria-hidden="true" />,
+      title: t("vendor.dashboard.action_cover_title"),
+      body: t("vendor.dashboard.action_cover_body"),
+      tone: "lemonade",
+    });
+  }
+  if (!completenessDone) {
+    actions.push({
+      to: "/vendor/listing",
+      icon: <BarChart3 size={18} aria-hidden="true" />,
+      title: t("vendor.dashboard.action_finish_title", { pct: String(pct) }),
+      body: t("vendor.dashboard.action_finish_body"),
+      tone: "lemonade",
+    });
+  }
+  if (stats.upcoming.length > 0) {
+    actions.push({
+      to: "/vendor/clients",
+      icon: <CalendarClock size={18} aria-hidden="true" />,
+      title: t("vendor.dashboard.action_upcoming_title", { count: String(stats.upcoming.length) }),
+      body: t("vendor.dashboard.action_upcoming_body"),
+      tone: "sage",
+    });
+  }
+  if (actions.length === 0) {
+    actions.push({
+      to: "/vendor/listing",
+      icon: <CheckCircle2 size={18} aria-hidden="true" />,
+      title: t("vendor.dashboard.action_allset_title"),
+      body: t("vendor.dashboard.action_allset_body"),
+      tone: "sage",
+    });
+  }
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Completeness alert strip - only while the listing is incomplete and the
+          vendor hasn't dismissed this exact percent. */}
+      {showCompletenessAlert && (
+        <div className="flex items-start gap-3 rounded-2xl border border-lemonade-yellow/40 bg-lemonade-yellow/10 p-4 dark:border-lemonade-yellow/30 dark:bg-lemonade-yellow/10">
+          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lemonade-yellow/30 text-ink-900 dark:bg-lemonade-yellow/20 dark:text-paper-50">
+            <Sparkles size={18} aria-hidden="true" />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
+              {t("vendor.dashboard.completeness_alert", { pct: String(pct) })}
+            </p>
+            <p className="text-sm text-ink-600 dark:text-paper-300">
+              {t("vendor.dashboard.completeness_alert_body")}
+            </p>
+            <Link
+              to="/vendor/listing"
+              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-lemonade-yellowInk transition-colors hover:text-umber-900 dark:text-lemonade-yellow dark:hover:text-lemonade-yellow/80"
+            >
+              <span>{t("vendor.dashboard.complete_now")}</span>
+              <ArrowRight size={15} aria-hidden="true" />
+            </Link>
+          </div>
+          <button
+            type="button"
+            onClick={() => dismissCompleteness(pct)}
+            aria-label={t("vendor.dashboard.dismiss")}
+            className="-m-1 shrink-0 rounded-lg p-1 text-ink-500 transition-colors hover:bg-lemonade-yellow/20 hover:text-ink-900 dark:text-paper-400 dark:hover:bg-lemonade-yellow/20 dark:hover:text-paper-50"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       {/* Greeting */}
       <header className="flex flex-col gap-1">
         <h1 className="font-serif text-2xl italic text-ink-900 sm:text-3xl dark:text-paper-50">
@@ -144,22 +246,41 @@ export default function VendorDashboardPage() {
         </div>
       )}
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+      {/* HERO metric - last 30 days of inquiries, the number that matters most. */}
+      <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6 dark:border-umber-700 dark:bg-umber-900">
+        <div className="flex flex-col gap-1">
+          <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
+            <TrendingUp size={16} aria-hidden="true" />
+            {t("vendor.dashboard.hero_label")}
+          </span>
+          <span className="font-serif text-5xl leading-none text-ink-900 sm:text-6xl dark:text-paper-50">
+            {stats.inquiries_30d}
+          </span>
+          <span className="text-sm text-ink-600 dark:text-paper-300">
+            {t("vendor.dashboard.hero_hint")}
+          </span>
+        </div>
+        <Link
+          to="/vendor/clients"
+          className="inline-flex shrink-0 items-center gap-1 self-start rounded-xl border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-paper-100 sm:self-auto dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
+        >
+          <span>{t("vendor.dashboard.view_clients")}</span>
+          <ArrowRight size={15} aria-hidden="true" />
+        </Link>
+      </section>
+
+      {/* Secondary KPIs */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KpiCard
           icon={<Inbox size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.inquiries_total")}
           value={String(stats.inquiries_total)}
         />
         <KpiCard
-          icon={<TrendingUp size={18} aria-hidden="true" />}
-          label={t("vendor.dashboard.inquiries_30d")}
-          value={String(stats.inquiries_30d)}
-        />
-        <KpiCard
           icon={<Wallet size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.revenue_tracked")}
           value={formatMoney(stats.revenue_tracked, currency, locale)}
+          tone={revenuePositive ? "sage" : undefined}
         />
         <KpiCard
           icon={<CalendarOff size={18} aria-hidden="true" />}
@@ -169,19 +290,12 @@ export default function VendorDashboardPage() {
         <KpiCard
           icon={<BarChart3 size={18} aria-hidden="true" />}
           label={t("vendor.stats.completeness")}
-          value={`${Math.round(stats.listing_completeness)}%`}
-        />
-        <KpiCard
-          icon={<CreditCard size={18} aria-hidden="true" />}
-          label={t("vendor.billing.current_plan")}
-          value={t(isFree ? "vendor.plan.free_label" : "vendor.plan.pro_label")}
-          sub={t(
-            stats.billing.entitled ? "vendor.billing.entitled_yes" : "vendor.billing.entitled_no",
-          )}
+          value={`${pct}%`}
+          tone={completenessDone ? "sage" : "lemonade"}
         />
       </div>
 
-      {/* Upcoming events preview + quick links */}
+      {/* Upcoming events preview + smart action cards */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <section className="lg:col-span-2 flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
           <div className="flex items-center justify-between gap-2">
@@ -226,67 +340,96 @@ export default function VendorDashboardPage() {
           )}
         </section>
 
-        <section className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
-          <QuickLink
-            to="/vendor/clients"
-            icon={<Inbox size={18} aria-hidden="true" />}
-            label={t("vendor.nav.clients")}
-          />
-          <QuickLink
-            to="/vendor/listing"
-            icon={<Store size={18} aria-hidden="true" />}
-            label={t("vendor.dashboard.view_listing")}
-          />
-          <QuickLink
-            to="/vendor/stats"
-            icon={<BarChart3 size={18} aria-hidden="true" />}
-            label={t("vendor.nav.stats")}
-          />
-          <QuickLink
-            to="/vendor/billing"
-            icon={<CreditCard size={18} aria-hidden="true" />}
-            label={t("vendor.nav.billing")}
-          />
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+            {t("vendor.dashboard.actions_title")}
+          </h2>
+          <div className="flex flex-col gap-3">
+            {actions.map((action) => (
+              <ActionCard key={`${action.title}-${action.to}`} {...action} />
+            ))}
+          </div>
         </section>
       </div>
     </div>
   );
 }
 
+type KpiTone = "sage" | "lemonade";
+
 function KpiCard({
   icon,
   label,
   value,
   sub,
+  tone,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   sub?: string;
+  tone?: KpiTone;
 }) {
+  const iconTone =
+    tone === "sage"
+      ? "text-sage-600 dark:text-sage-300"
+      : tone === "lemonade"
+        ? "text-lemonade-yellowInk dark:text-lemonade-yellow"
+        : "text-ink-500 dark:text-paper-400";
+  const valueTone =
+    tone === "sage"
+      ? "text-sage-700 dark:text-sage-300"
+      : tone === "lemonade"
+        ? "text-lemonade-yellowInk dark:text-lemonade-yellow"
+        : "text-ink-900 dark:text-paper-50";
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
-      <div className="flex items-center gap-2 text-ink-500 dark:text-paper-400">
+      <div className={`flex items-center gap-2 ${iconTone}`}>
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
       </div>
-      <div className="text-2xl font-semibold text-ink-900 dark:text-paper-50">{value}</div>
+      <div className={`text-2xl font-semibold ${valueTone}`}>{value}</div>
       {sub && <div className="text-xs text-ink-500 dark:text-paper-400">{sub}</div>}
     </div>
   );
 }
 
-function QuickLink({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
+type ActionTone = "sage" | "lemonade";
+
+type ActionCardProps = {
+  to: string;
+  icon: ReactNode;
+  title: string;
+  body: string;
+  tone: ActionTone;
+};
+
+function ActionCard({ to, icon, title, body, tone }: ActionCardProps) {
+  const accent =
+    tone === "sage"
+      ? "bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300"
+      : "bg-lemonade-yellow/20 text-lemonade-yellowInk dark:bg-lemonade-yellow/15 dark:text-lemonade-yellow";
   return (
     <Link
       to={to}
-      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
+      className="group flex items-start gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:hover:bg-umber-800"
     >
-      <span className="flex items-center gap-3">
+      <span
+        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${accent}`}
+      >
         {icon}
-        <span>{label}</span>
       </span>
-      <ArrowRight size={15} aria-hidden="true" />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="flex items-center gap-1 text-sm font-medium text-ink-900 dark:text-paper-50">
+          <span className="truncate">{title}</span>
+          <ArrowRight
+            size={15}
+            aria-hidden="true"
+            className="shrink-0 text-ink-400 transition-transform group-hover:translate-x-0.5 dark:text-paper-400"
+          />
+        </span>
+        <span className="text-sm text-ink-600 dark:text-paper-300">{body}</span>
+      </div>
     </Link>
   );
 }
@@ -297,17 +440,43 @@ function DashboardSkeleton({ title }: { title: string }) {
       <h1 className="font-serif text-2xl italic text-ink-900 sm:text-3xl dark:text-paper-50">
         {title}
       </h1>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
+      {/* Hero metric */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-6 dark:border-umber-700 dark:bg-umber-900">
+        <Skeleton variant="line" width="40%" height={12} />
+        <Skeleton width={140} height={48} rounded="lg" />
+        <Skeleton variant="line" width="55%" height={12} />
+      </div>
+      {/* Secondary KPIs */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-24 animate-pulse rounded-2xl border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800"
-          />
+            className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900"
+          >
+            <Skeleton variant="line" width="70%" height={10} />
+            <Skeleton width={72} height={24} rounded="md" />
+          </div>
         ))}
       </div>
+      {/* Upcoming + actions */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="h-56 animate-pulse rounded-2xl border border-paper-300 bg-paper-100 lg:col-span-2 dark:border-umber-700 dark:bg-umber-800" />
-        <div className="h-56 animate-pulse rounded-2xl border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800" />
+        <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-700 dark:bg-umber-900">
+          <Skeleton variant="line" width="35%" height={12} />
+          <SkeletonText lines={4} />
+        </div>
+        <div className="flex flex-col gap-3">
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              className="flex items-start gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900"
+            >
+              <Skeleton variant="circle" width={36} />
+              <div className="flex-1">
+                <SkeletonText lines={2} lastLineWidth="80%" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

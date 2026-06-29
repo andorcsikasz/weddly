@@ -1,17 +1,21 @@
 // Vendor stats — the analytics surface for a role='vendor' user at /vendor/stats.
 // Renders inside VendorShell. Reads the rollup from vendorStatsApi.get() and the
 // derived plan/feature flags from vendorBillingApi.get(). FREE-tier vendors see
-// the summary KPI numbers (inquiry counts, revenue tracked, blocked dates,
-// listing completeness gauge) plus a graceful upgrade CTA in place of the
-// detailed analytics; PRO-tier vendors additionally see the inquiries-over-time
-// comparison, the by-status breakdown bars, and the upcoming events list.
-// No real chart library — simple bars/gauges built from design tokens.
+// the summary KPI numbers (inquiry counts, revenue tracked, blocked dates) plus a
+// graceful upgrade CTA in place of the detailed analytics; PRO-tier vendors
+// additionally see the inquiries-over-time comparison, the by-status donut, and
+// the upcoming events list.
+// No real chart library - the donut and bars are hand-rolled from design tokens.
+// Backend follow-up: there is no daily inquiry time series yet, so this page
+// deliberately ships no date-range filter and no trend line. Once the rollup
+// carries a per-day series we can add a proper sparkline / range pills here.
 
-import { BarChart3, CalendarClock, Inbox, Lock, RefreshCw } from "lucide-react";
+import { BarChart3, CalendarClock, Inbox, Info, Lock, RefreshCw } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorFeatureFlags } from "@shared/vendor_plan";
+import { Skeleton, SkeletonText } from "../../components/ui";
 import { vendorBillingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
@@ -26,6 +30,10 @@ const KNOWN_STATUSES = new Set([
   "cancelled",
   "expired",
 ]);
+
+// Editorial chart palette (see tailwind theme.extend.colors.chart). We cycle
+// through these per status; the suffixes are safelisted as stroke-/bg-chart-*.
+const CHART_COLORS = ["terracotta", "sage", "taupe", "rose", "olive", "ochre", "sand"] as const;
 
 export default function VendorStatsPage() {
   const { t, locale } = useT();
@@ -74,18 +82,19 @@ export default function VendorStatsPage() {
 
   const advancedUnlocked = features?.advanced_stats ?? false;
   const currency = stats.currency;
-  const completeness = Math.max(0, Math.min(100, Math.round(stats.listing_completeness)));
 
-  // Status breakdown rows, busiest first, with a human label where we have one.
-  const statusRows = Object.entries(stats.by_status)
+  // Status breakdown, busiest first, with a human label and a cycled palette
+  // colour where we have one.
+  const statusSegments = Object.entries(stats.by_status)
     .filter(([, count]) => count > 0)
     .sort((a, b) => b[1] - a[1])
-    .map(([status, count]) => ({
+    .map(([status, count], i) => ({
       status,
       count,
       label: KNOWN_STATUSES.has(status) ? t(`suppliers.detail.calendar.status.${status}`) : status,
+      color: CHART_COLORS[i % CHART_COLORS.length] ?? "terracotta",
     }));
-  const statusMax = statusRows.reduce((m, r) => Math.max(m, r.count), 0);
+  const statusTotal = statusSegments.reduce((sum, s) => sum + s.count, 0);
 
   // Inquiries-over-time is a two-bar comparison (all time vs last 30 days) —
   // the rollup doesn't carry a full time series.
@@ -116,6 +125,7 @@ export default function VendorStatsPage() {
           icon={<BarChart3 size={18} aria-hidden="true" />}
           label={t("vendor.stats.revenue")}
           value={formatMoney(stats.revenue_tracked, currency, locale)}
+          help={t("vendor.stats.revenue_help")}
         />
         <StatCard
           icon={<CalendarClock size={18} aria-hidden="true" />}
@@ -123,30 +133,6 @@ export default function VendorStatsPage() {
           value={String(stats.blocked_dates_count)}
         />
       </div>
-
-      {/* Listing completeness gauge — always visible. */}
-      <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-            {t("vendor.stats.completeness")}
-          </h2>
-          <span className="text-sm font-semibold text-ink-900 tabular-nums dark:text-paper-50">
-            {completeness}%
-          </span>
-        </div>
-        <div
-          className="h-2.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800"
-          role="progressbar"
-          aria-valuenow={completeness}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div
-            className="h-full rounded-full bg-blush-400 transition-all"
-            style={{ width: `${completeness}%` }}
-          />
-        </div>
-      </section>
 
       {/* Detailed analytics — PRO only. FREE sees an upgrade prompt. */}
       {advancedUnlocked ? (
@@ -172,26 +158,46 @@ export default function VendorStatsPage() {
             </div>
           </section>
 
-          {/* By status */}
+          {/* By status - donut + legend */}
           <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
             <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
               {t("vendor.stats.by_status")}
             </h2>
-            {statusRows.length === 0 ? (
-              <p className="py-4 text-center text-sm text-ink-500 dark:text-paper-400">
-                {t("vendor.clients.empty_body")}
-              </p>
+            {statusTotal === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-2">
+                <StatusDonut segments={[]} total={0} centerLabel={t("vendor.stats.inquiries")} />
+                <p className="text-center text-sm text-ink-500 dark:text-paper-400">
+                  {t("vendor.stats.status_empty")}
+                </p>
+              </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                {statusRows.map((row) => (
-                  <BarRow
-                    key={row.status}
-                    label={row.label}
-                    count={row.count}
-                    max={statusMax}
-                    locale={locale}
-                  />
-                ))}
+              <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
+                <StatusDonut
+                  segments={statusSegments}
+                  total={statusTotal}
+                  centerLabel={t("vendor.stats.inquiries")}
+                />
+                <ul className="flex w-full flex-col gap-2">
+                  {statusSegments.map((seg) => (
+                    <li
+                      key={seg.status}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          aria-hidden="true"
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full bg-chart-${seg.color}`}
+                        />
+                        <span className="truncate text-ink-700 dark:text-paper-200">
+                          {seg.label}
+                        </span>
+                      </span>
+                      <span className="shrink-0 font-semibold text-ink-900 tabular-nums dark:text-paper-50">
+                        {seg.count.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </section>
@@ -249,14 +255,100 @@ export default function VendorStatsPage() {
   );
 }
 
-function StatCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function StatCard({
+  icon,
+  label,
+  value,
+  help,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  help?: string;
+}) {
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
       <div className="flex items-center gap-2 text-ink-500 dark:text-paper-400">
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
+        {help ? (
+          <span
+            className="ml-auto inline-flex cursor-help text-ink-400 dark:text-paper-500"
+            title={help}
+          >
+            <Info size={14} aria-hidden="true" />
+            <span className="sr-only">{help}</span>
+          </span>
+        ) : null}
       </div>
       <div className="text-2xl font-semibold text-ink-900 dark:text-paper-50">{value}</div>
+    </div>
+  );
+}
+
+// Inline SVG donut built from stroke-dasharray arcs over a base ring. The svg
+// itself is rotated -90deg so the first arc starts at 12 o'clock; the total sits
+// in the middle. An empty `segments` array renders just the muted base ring as a
+// skeleton-like placeholder.
+function StatusDonut({
+  segments,
+  total,
+  centerLabel,
+}: {
+  segments: { status: string; count: number; color: string }[];
+  total: number;
+  centerLabel: string;
+}) {
+  const size = 132;
+  const stroke = 18;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  let drawn = 0;
+
+  return (
+    <div className="relative h-32 w-32 shrink-0">
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="h-32 w-32 -rotate-90"
+        role="img"
+        aria-label={centerLabel}
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          strokeWidth={stroke}
+          className="stroke-paper-200 dark:stroke-umber-800"
+        />
+        {total > 0 &&
+          segments.map((seg) => {
+            const length = (seg.count / total) * circumference;
+            const arc = (
+              <circle
+                key={seg.status}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                strokeWidth={stroke}
+                strokeDasharray={`${length} ${circumference - length}`}
+                strokeDashoffset={-drawn}
+                className={`stroke-chart-${seg.color}`}
+              />
+            );
+            drawn += length;
+            return arc;
+          })}
+      </svg>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-xl font-semibold text-ink-900 tabular-nums dark:text-paper-50">
+          {total}
+        </span>
+        <span className="text-[10px] font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
+          {centerLabel}
+        </span>
+      </div>
     </div>
   );
 }
@@ -331,14 +423,24 @@ function StatsSkeleton({ title }: { title: string }) {
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-24 animate-pulse rounded-2xl border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800"
-          />
+            className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900"
+          >
+            <Skeleton variant="line" height={12} width="55%" />
+            <Skeleton height={28} width="70%" rounded="md" />
+          </div>
         ))}
       </div>
-      <div className="h-20 animate-pulse rounded-2xl border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="h-48 animate-pulse rounded-2xl border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800" />
-        <div className="h-48 animate-pulse rounded-2xl border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800" />
+        <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+          <Skeleton variant="line" height={12} width="40%" />
+          <SkeletonText lines={2} />
+        </div>
+        <div className="flex items-center gap-6 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+          <Skeleton variant="circle" width={128} />
+          <div className="flex-1">
+            <SkeletonText lines={4} />
+          </div>
+        </div>
       </div>
     </div>
   );

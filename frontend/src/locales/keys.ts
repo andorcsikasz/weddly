@@ -615,6 +615,37 @@ export interface LocaleMessages {
     availability_unblock_failed: string;
     error_load: string;
     error_no_account: string;
+    preview_panel_title: string;
+    price_band_level_1_name: string;
+    price_band_level_2_name: string;
+    price_band_level_3_name: string;
+    price_band_level_4_name: string;
+    price_band_level_5_name: string;
+    price_band_level_1_desc: string;
+    price_band_level_2_desc: string;
+    price_band_level_3_desc: string;
+    price_band_level_4_desc: string;
+    price_band_level_5_desc: string;
+    capacity_range_label: string;
+    capacity_min_label: string;
+    capacity_max_label: string;
+    capacity_invalid: string;
+    brand_locked_card_title: string;
+    brand_locked_card_body: string;
+    brand_locked_contact_cta: string;
+    autosave_saving: string;
+    autosave_saved: string;
+    autosave_unsaved: string;
+    hero_dropzone_cta: string;
+    hero_dropzone_hint: string;
+    hero_dropzone_replace: string;
+    preview_no_photo: string;
+    /** Receives `{min}` - minimum guest capacity. */
+    preview_capacity_from: string;
+    /** Receives `{max}` - maximum guest capacity. */
+    preview_capacity_upto: string;
+    /** Receives `{range}` - formatted guest capacity range. */
+    preview_capacity_guests: string;
   };
   /** Vendor workspace (the role='vendor' shell at /vendor/*). Nav + the seven
    *  pages: dashboard, clients (Weddly-sourced couples), listing editor, stats,
@@ -633,6 +664,8 @@ export interface LocaleMessages {
       section_account: string;
       logout: string;
       brand_fallback: string;
+      collapse_sidebar: string;
+      expand_sidebar: string;
     };
     dashboard: {
       page_title: string;
@@ -647,12 +680,35 @@ export interface LocaleMessages {
       no_upcoming: string;
       view_clients: string;
       view_listing: string;
+      /** Receives `{pct}` - listing completeness percentage. */
+      completeness_alert: string;
+      completeness_alert_body: string;
+      complete_now: string;
+      dismiss: string;
+      hero_label: string;
+      hero_hint: string;
+      actions_title: string;
+      action_cover_title: string;
+      action_cover_body: string;
+      /** Receives `{pct}` - listing completeness percentage. */
+      action_finish_title: string;
+      action_finish_body: string;
+      /** Receives `{count}` - number of upcoming events. */
+      action_upcoming_title: string;
+      action_upcoming_body: string;
+      action_allset_title: string;
+      action_allset_body: string;
     };
     clients: {
       page_title: string;
       page_body: string;
       empty_title: string;
       empty_body: string;
+      empty_title_new: string;
+      empty_step_1: string;
+      empty_step_2: string;
+      empty_step_3: string;
+      empty_cta_listing: string;
       col_couple: string;
       col_event_date: string;
       col_status: string;
@@ -720,6 +776,8 @@ export interface LocaleMessages {
       completeness: string;
       revenue: string;
       blocked_dates: string;
+      status_empty: string;
+      revenue_help: string;
     };
     billing: {
       page_title: string;
@@ -736,6 +794,19 @@ export interface LocaleMessages {
       founding_spots: string;
       manage: string;
       checkout_unavailable: string;
+      per_month: string;
+      compare_title: string;
+      you_are_here: string;
+      free_price: string;
+      payment_portal_note: string;
+      upgrade_value: string;
+      upgrade_cta: string;
+      invoice_history_title: string;
+      invoice_col_date: string;
+      invoice_col_amount: string;
+      invoice_col_status: string;
+      invoice_col_download: string;
+      invoice_empty: string;
     };
     settings: {
       page_title: string;

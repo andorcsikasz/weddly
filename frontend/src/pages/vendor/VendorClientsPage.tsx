@@ -5,12 +5,13 @@
 // behind an upgrade nudge for FREE vendors. Plan is read from the billing
 // snapshot (vendorBillingApi.get) so the soft paywall matches the server gate.
 
-import { Lock } from "lucide-react";
+import { ArrowRight, Lock, MailOpen, Search, UserPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Currency } from "@shared/types";
 import type { VendorClientView } from "@shared/vendor_clients";
 import { isVendorFeatureEnabled, type VendorPlan } from "@shared/vendor_plan";
+import { Skeleton } from "../../components/ui";
 import { vendorBillingApi, vendorClientsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
@@ -87,6 +88,95 @@ function UpgradeNudge() {
   );
 }
 
+// Ghost version of the real table: same column header + 4 placeholder rows
+// built on the shared grid template, so the structure is legible from the
+// first paint instead of three anonymous pills.
+function GhostTable() {
+  const { t } = useT();
+  return (
+    <div
+      className="overflow-hidden rounded-xl border border-paper-200 dark:border-umber-800"
+      aria-hidden="true"
+    >
+      <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-paper-200 bg-paper-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-500 sm:grid dark:border-umber-800 dark:bg-umber-900 dark:text-umber-300">
+        <span>{t("vendor.clients.col_couple")}</span>
+        <span>{t("vendor.clients.col_event_date")}</span>
+        <span>{t("vendor.clients.col_status")}</span>
+        <span>{t("vendor.clients.col_stage")}</span>
+        <span className="text-right">{t("vendor.clients.col_balance")}</span>
+      </div>
+      <div className="divide-y divide-paper-200 dark:divide-umber-800">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="grid grid-cols-1 gap-2 px-4 py-3.5 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3"
+          >
+            <Skeleton variant="line" height={14} width="70%" />
+            <Skeleton variant="line" height={12} width="55%" />
+            <Skeleton height={20} width={84} rounded="full" />
+            <Skeleton variant="line" height={12} width="45%" />
+            <div className="flex sm:justify-end">
+              <Skeleton variant="line" height={12} width={64} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Zero-clients state: a warm causal mini-flow (listing -> inquiry -> client)
+// plus a single CTA back to the listing editor. There is no public listing URL
+// to share (the supplier page is auth-gated under /app), so no copy-link here.
+function EmptyClients() {
+  const { t } = useT();
+  const steps = [
+    { Icon: Search, label: t("vendor.clients.empty_step_1") },
+    { Icon: MailOpen, label: t("vendor.clients.empty_step_2") },
+    { Icon: UserPlus, label: t("vendor.clients.empty_step_3") },
+  ];
+  return (
+    <div className="rounded-xl border border-paper-300 bg-paper-50 p-8 text-center dark:border-umber-700 dark:bg-umber-900">
+      <p className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+        {t("vendor.clients.empty_title_new")}
+      </p>
+
+      <div className="mx-auto mt-6 flex max-w-xl flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-center sm:gap-1">
+        {steps.map(({ Icon, label }, i) => (
+          <div
+            key={label}
+            className="flex items-center gap-3 sm:flex-1 sm:flex-col sm:gap-2 sm:text-center"
+          >
+            <div className="flex flex-col items-center gap-2 sm:contents">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-umber-700 dark:bg-umber-800 dark:text-eucalyptus-300">
+                <Icon size={18} aria-hidden="true" />
+              </span>
+              <span className="text-sm text-ink-700 sm:max-w-[10rem] dark:text-paper-200">
+                {label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <ArrowRight
+                size={16}
+                aria-hidden="true"
+                className="ml-auto shrink-0 rotate-90 text-ink-300 sm:ml-0 sm:mt-3 sm:rotate-0 sm:self-start dark:text-umber-400"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      <Link
+        to="/vendor/listing"
+        className="btn-primary btn-sm mt-7 inline-flex items-center gap-1.5"
+      >
+        {t("vendor.clients.empty_cta_listing")}
+        <ArrowRight size={15} aria-hidden="true" />
+      </Link>
+    </div>
+  );
+}
+
 export default function VendorClientsPage() {
   const { t, locale } = useT();
   const [clients, setClients] = useState<VendorClientView[]>([]);
@@ -154,27 +244,13 @@ export default function VendorClientsPage() {
       {!isPro && <UpgradeNudge />}
 
       {loading ? (
-        <div className="space-y-2" aria-hidden="true">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-14 animate-pulse rounded-xl border border-paper-200 bg-paper-100 dark:border-umber-800 dark:bg-umber-900"
-            />
-          ))}
-        </div>
+        <GhostTable />
       ) : failed ? (
         <p className="rounded-xl border border-paper-300 bg-paper-50 p-4 text-sm text-ink-600 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-300">
           {t("vendor.clients.load_failed")}
         </p>
       ) : clients.length === 0 ? (
-        <div className="rounded-xl border border-paper-300 bg-paper-50 p-8 text-center dark:border-umber-700 dark:bg-umber-900">
-          <p className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
-            {t("vendor.clients.empty_title")}
-          </p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-ink-600 dark:text-paper-300">
-            {t("vendor.clients.empty_body")}
-          </p>
-        </div>
+        <EmptyClients />
       ) : (
         <>
           {/* Status filter */}
