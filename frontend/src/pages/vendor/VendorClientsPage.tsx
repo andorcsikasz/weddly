@@ -6,7 +6,7 @@
 // snapshot (vendorBillingApi.get) so the soft paywall matches the server gate.
 
 import { ArrowRight, Lock, MailOpen, Search, UserPlus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Currency } from "@shared/types";
 import type { VendorClientView } from "@shared/vendor_clients";
@@ -144,30 +144,25 @@ function EmptyClients() {
         {t("vendor.clients.empty_title_new")}
       </p>
 
-      <div className="mx-auto mt-6 flex max-w-xl flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-center sm:gap-1">
+      <div className="mx-auto mt-6 flex max-w-xl flex-col items-stretch gap-2 sm:flex-row sm:items-start sm:justify-center sm:gap-2">
         {steps.map(({ Icon, label }, i) => (
-          <div
-            key={label}
-            className="flex items-center gap-3 sm:flex-1 sm:flex-col sm:gap-2 sm:text-center"
-          >
-            <div className="flex flex-col items-center gap-2 sm:contents">
-              <Icon
-                size={20}
-                aria-hidden="true"
-                className="shrink-0 text-steel-700 dark:text-steel-300"
-              />
-              <span className="text-sm text-ink-700 sm:max-w-[10rem] dark:text-paper-200">
-                {label}
+          <Fragment key={label}>
+            <div className="flex items-center gap-3 sm:w-32 sm:flex-col sm:gap-2 sm:text-center">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center">
+                <Icon
+                  size={20}
+                  aria-hidden="true"
+                  className="text-steel-700 dark:text-steel-300"
+                />
               </span>
+              <span className="text-sm text-ink-700 dark:text-paper-200">{label}</span>
             </div>
             {i < steps.length - 1 && (
-              <ArrowRight
-                size={16}
-                aria-hidden="true"
-                className="ml-auto shrink-0 rotate-90 text-ink-300 sm:ml-0 sm:mt-3 sm:rotate-0 sm:self-start dark:text-umber-400"
-              />
+              <span className="flex h-8 items-center justify-center text-steel-400 dark:text-steel-500">
+                <ArrowRight size={16} aria-hidden="true" className="rotate-90 sm:rotate-0" />
+              </span>
             )}
-          </div>
+          </Fragment>
         ))}
       </div>
 
