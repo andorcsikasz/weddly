@@ -77,7 +77,7 @@ export default function GuestListTemplatePage() {
               },
               {
                 title: "Nagy Zoltán",
-                muted: ["zoltan@…", "+36 70 …", "—", "pending"],
+                muted: ["zoltan@…", "+36 70 …", "-", "pending"],
                 values: [
                   "Nagy",
                   "Zoltán",
@@ -85,7 +85,7 @@ export default function GuestListTemplatePage() {
                   "+36 70 …",
                   "Nagy család",
                   "glutén-mentes",
-                  "—",
+                  "-",
                   "pending",
                 ],
               },
@@ -157,7 +157,7 @@ export default function GuestListTemplatePage() {
                   <td className="px-3 py-2 text-ink-500 dark:text-umber-300">+36 70 …</td>
                   <td className="px-3 py-2 text-ink-700 dark:text-paper-200">Nagy család</td>
                   <td className="px-3 py-2 text-ink-700 dark:text-paper-200">glutén-mentes</td>
-                  <td className="px-3 py-2 text-ink-500 dark:text-umber-300">—</td>
+                  <td className="px-3 py-2 text-ink-500 dark:text-umber-300">-</td>
                   <td className="px-3 py-2 text-ink-500 dark:text-umber-300">pending</td>
                 </tr>
               </tbody>

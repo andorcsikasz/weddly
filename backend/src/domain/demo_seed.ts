@@ -1,6 +1,6 @@
 // Shrek & Fiona demo wedding seeder. Builds one fully-furnished couple
-// workspace — guests, households, budget, transfers, accommodations, schedule,
-// planning tasks, seating tables — so a landing-page visitor lands in /app
+// workspace, guests, households, budget, transfers, accommodations, schedule,
+// planning tasks, seating tables, so a landing-page visitor lands in /app
 // with every surface already populated. Designed to be funny but every row is
 // shaped like real production data, so the visitor sees the actual UI.
 //
@@ -52,7 +52,7 @@ interface HouseholdSeed {
   members: GuestSeed[];
 }
 
-/** The fairytale guest list — 15 named guests organised into households so
+/** The fairytale guest list, 15 named guests organised into households so
  *  the household view, RSVP flow, dietary aggregates and seating chart all
  *  show non-trivial data on first load. */
 const HOUSEHOLDS: HouseholdSeed[] = [
@@ -67,7 +67,7 @@ const HOUSEHOLDS: HouseholdSeed[] = [
         kind: "adult",
         rsvp_status: "yes",
         meal_choice: "fish",
-        dietary: "no shellfish — turns back into a frog",
+        dietary: "no shellfish, turns back into a frog",
         notes: "Father of the bride.",
       },
       {
@@ -101,7 +101,7 @@ const HOUSEHOLDS: HouseholdSeed[] = [
         kind: "adult",
         rsvp_status: "yes",
         meal_choice: "meat",
-        dietary: "extra spicy — fire-breather",
+        dietary: "extra spicy, fire-breather",
         notes: "Tail does not fit under round tables.",
       },
     ],
@@ -117,7 +117,7 @@ const HOUSEHOLDS: HouseholdSeed[] = [
         kind: "adult",
         rsvp_status: "yes",
         meal_choice: "fish",
-        dietary: "lactose intolerant — but loves cream",
+        dietary: "lactose intolerant, but loves cream",
         notes: "Eyes will be deployed.",
       },
     ],
@@ -143,7 +143,7 @@ const HOUSEHOLDS: HouseholdSeed[] = [
         rsvp_status: "maybe",
         meal_choice: "vegetarian",
         dietary: null,
-        notes: "Anxious — depends on the wolf situation.",
+        notes: "Anxious, depends on the wolf situation.",
       },
       {
         full_name: "Pig Three (Bricks)",
@@ -209,7 +209,7 @@ const HOUSEHOLDS: HouseholdSeed[] = [
         rsvp_status: "no",
         meal_choice: null,
         dietary: null,
-        notes: "Declined — long story.",
+        notes: "Declined, long story.",
       },
     ],
   },
@@ -248,7 +248,7 @@ const HOUSEHOLDS: HouseholdSeed[] = [
   {
     label: "Three Blind Mice",
     group_tag: "shared_friends",
-    notes: "Need help finding their seats — please print large place cards.",
+    notes: "Need help finding their seats, please print large place cards.",
     members: [
       {
         full_name: "Mouse #1",
@@ -281,7 +281,7 @@ const HOUSEHOLDS: HouseholdSeed[] = [
   },
 ];
 
-/** Budget — Forints. Roughly mirrors DEFAULT_BUDGET_SPLIT but each line gets
+/** Budget, Forints. Roughly mirrors DEFAULT_BUDGET_SPLIT but each line gets
  *  a Far-Far-Away-flavoured label so the visitor reads them as the demo's. */
 const BUDGET_LINES: Array<{
   category:
@@ -305,7 +305,7 @@ const BUDGET_LINES: Array<{
   actual: number;
   notes: string | null;
 }> = [
-  // Sized for an intimate 15-guest HU wedding — ~3.2M HUF total,
+  // Sized for an intimate 15-guest HU wedding, ~3.2M HUF total,
   // ~215K per guest. Sits between the mid (90K/fő) and max (150K/fő) bands
   // in shared/budget_benchmarks.ts for ≤30-guest weddings: the demo is meant
   // to look like a boutique wedding, not a Vegas elopement or a 200-fő bash.
@@ -318,7 +318,7 @@ const BUDGET_LINES: Array<{
   },
   {
     category: "catering",
-    label: "Far Far Away catering — onion-forward menu",
+    label: "Far Far Away catering, onion-forward menu",
     planned: 450_000,
     actual: 0,
     notes: null,
@@ -349,7 +349,7 @@ const BUDGET_LINES: Array<{
     label: "Magic Mirror live broadcast",
     planned: 420_000,
     actual: 420_000,
-    notes: "Books fast — Mirror is in high demand.",
+    notes: "Books fast, Mirror is in high demand.",
   },
   {
     category: "music_dj",
@@ -367,7 +367,7 @@ const BUDGET_LINES: Array<{
   },
   {
     category: "hair_makeup",
-    label: "Royal grooming — Fiona prep",
+    label: "Royal grooming, Fiona prep",
     planned: 75_000,
     actual: 0,
     notes: null,
@@ -381,7 +381,7 @@ const BUDGET_LINES: Array<{
   },
   {
     category: "honeymoon",
-    label: "Honeymoon — Honeymoon Isle (the literal one)",
+    label: "Honeymoon, Honeymoon Isle (the literal one)",
     planned: 320_000,
     actual: 0,
     notes: null,
@@ -402,7 +402,7 @@ const BUDGET_LINES: Array<{
   },
   {
     category: "rings",
-    label: "Wedding bands — solid iron",
+    label: "Wedding bands, solid iron",
     planned: 180_000,
     actual: 180_000,
     notes: "Resized for ogre fingers.",
@@ -419,14 +419,14 @@ interface SchedSeed {
 
 const SCHEDULE_EVENTS: SchedSeed[] = [
   {
-    label: "Donkey arrives (early — as always)",
+    label: "Donkey arrives (early, as always)",
     starts_at_minutes: 9 * 60,
     duration_minutes: 30,
     location: "Swamp gate",
     notes: "Bring his own coffee.",
   },
   {
-    label: "Hair & makeup — Fiona",
+    label: "Hair & makeup, Fiona",
     starts_at_minutes: 10 * 60,
     duration_minutes: 90,
     location: "The royal tent",
@@ -440,7 +440,7 @@ const SCHEDULE_EVENTS: SchedSeed[] = [
     notes: "Mead on tap.",
   },
   {
-    label: "Ceremony — Shrek + Fiona",
+    label: "Ceremony, Shrek + Fiona",
     starts_at_minutes: 15 * 60 + 30,
     duration_minutes: 45,
     location: "Onion arch",
@@ -475,7 +475,7 @@ const SCHEDULE_EVENTS: SchedSeed[] = [
     notes: "Hard cap: 20 min. (Likely will run over.)",
   },
   {
-    label: "Cake cutting — seven-tier ogre cake",
+    label: "Cake cutting, seven-tier ogre cake",
     starts_at_minutes: 21 * 60 + 30,
     duration_minutes: 15,
     location: "Marquee",
@@ -493,7 +493,7 @@ const SCHEDULE_EVENTS: SchedSeed[] = [
     starts_at_minutes: 25 * 60,
     duration_minutes: 30,
     location: "Swamp gate",
-    notes: "Past midnight — day-2 row.",
+    notes: "Past midnight, day-2 row.",
   },
 ];
 
@@ -515,13 +515,13 @@ interface PlanningSeed {
 }
 
 const PLANNING_ITEMS: PlanningSeed[] = [
-  // Done tasks — drawn as solid bars in the past months. Spaced so the
+  // Done tasks, drawn as solid bars in the past months. Spaced so the
   // Gantt reads chronologically: venue first, then suppliers, then invites.
   {
     kind: "task",
     topic: "wedding",
     title: "Book the swamp",
-    body: "Confirm with the Witch — onion fields included.",
+    body: "Confirm with the Witch, onion fields included.",
     done: true,
     start_offset: -150,
     due_offset: -135,
@@ -550,13 +550,13 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     assignee: "Donkey",
     priority: 1,
   },
-  // Open tasks — bars staggered through the next 6 weeks so the Gantt has
+  // Open tasks, bars staggered through the next 6 weeks so the Gantt has
   // visible parallel lanes rather than one straight column.
   {
     kind: "task",
     topic: "wedding",
     title: "Final dress fitting",
-    body: "Ogre-cut alteration — needs one more pass.",
+    body: "Ogre-cut alteration, needs one more pass.",
     done: false,
     start_offset: -42,
     due_offset: -21,
@@ -578,7 +578,7 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     kind: "task",
     topic: "wedding",
     title: "Chase Fairy Godmother for plus-one",
-    body: "She RSVPed no — see if she'll bring Charming anyway.",
+    body: "She RSVPed no, see if she'll bring Charming anyway.",
     done: false,
     start_offset: -28,
     due_offset: -14,
@@ -607,7 +607,7 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     assignee: "Fiona",
     priority: 1,
   },
-  // Honeymoon — real, boring travel-prep tasks with a light fairytale
+  // Honeymoon, real, boring travel-prep tasks with a light fairytale
   // garnish. Five entries so /app/honeymoon reads as a populated checklist
   // instead of a single-item placeholder.
   {
@@ -676,7 +676,7 @@ const PLANNING_ITEMS: PlanningSeed[] = [
     assignee: null,
     priority: 0,
   },
-  // Ideas — no date ranges (`start_offset` + `due_offset` null). The
+  // Ideas, no date ranges (`start_offset` + `due_offset` null). The
   // planning page surfaces these under the "ötletek" tab and they're
   // intentionally excluded from the Gantt.
   {
@@ -714,7 +714,7 @@ const PLANNING_ITEMS: PlanningSeed[] = [
   },
 ];
 
-/** Idempotent helper — generate a household code unique within this couple. */
+/** Idempotent helper, generate a household code unique within this couple. */
 function uniqueHhCode(coupleId: number): string {
   const stmt = db.prepare("SELECT 1 FROM households WHERE couple_id = ? AND code = ?");
   for (let i = 0; i < 50; i++) {
@@ -724,7 +724,7 @@ function uniqueHhCode(coupleId: number): string {
   throw new Error(`Could not allocate a unique household code for couple ${coupleId}`);
 }
 
-/** Idempotent helper — generate a globally-unique guest invite code. */
+/** Idempotent helper, generate a globally-unique guest invite code. */
 function uniqueGuestCode(): string {
   const stmt = db.prepare("SELECT 1 FROM guests WHERE invite_code = ?");
   for (let i = 0; i < 50; i++) {
@@ -734,7 +734,7 @@ function uniqueGuestCode(): string {
   throw new Error("Could not allocate a unique invite code");
 }
 
-/** Seat assignments — pair each guest_id with a (table_id, seat_index). The
+/** Seat assignments, pair each guest_id with a (table_id, seat_index). The
  *  caller passes back the actual IDs after the INSERTs, so we shape the
  *  pre-DB plan as labels + nicknames and resolve them inside the transaction. */
 interface SeatPlan {
@@ -761,8 +761,8 @@ interface SeatPlan {
 // A 2.4 × 0.9 m head table is therefore length_mm: 2400, width_mm: 900.
 //
 // Layout: head table centred against the top wall, three round guest
-// tables in a triangle below — left + right at mid-room, friends down
-// below them — so the portrait floor reads as used end-to-end without
+// tables in a triangle below, left + right at mid-room, friends down
+// below them, so the portrait floor reads as used end-to-end without
 // crowding.
 const SEAT_PLAN: SeatPlan = {
   tables: [
@@ -777,7 +777,7 @@ const SEAT_PLAN: SeatPlan = {
       is_kids_table: false,
     },
     {
-      label: "Family — bride's side",
+      label: "Family, bride's side",
       shape: "round",
       seats: 8,
       x_mm: 2_500,
@@ -797,7 +797,7 @@ const SEAT_PLAN: SeatPlan = {
       is_kids_table: false,
     },
     {
-      label: "Friends — fairytale crowd",
+      label: "Friends, fairytale crowd",
       shape: "round",
       seats: 8,
       x_mm: 5_000,
@@ -816,7 +816,7 @@ const SEAT_PLAN: SeatPlan = {
       ],
     },
     {
-      table_label: "Family — bride's side",
+      table_label: "Family, bride's side",
       seats: [
         { index: 0, full_name: "King Harold" },
         { index: 1, full_name: "Queen Lillian" },
@@ -831,7 +831,7 @@ const SEAT_PLAN: SeatPlan = {
       ],
     },
     {
-      table_label: "Friends — fairytale crowd",
+      table_label: "Friends, fairytale crowd",
       seats: [
         { index: 0, full_name: "Pig One (Straw)" },
         { index: 1, full_name: "Pig Three (Bricks)" },
@@ -860,7 +860,7 @@ interface AccommodationSeed {
 
 const ACCOMMODATIONS: AccommodationSeed[] = [
   {
-    name: "Far Far Away Inn — royal suite",
+    name: "Far Far Away Inn, royal suite",
     address: "1 Cobblestone Square, Far Far Away",
     capacity: 2,
     price_huf: 95_000,
@@ -902,7 +902,7 @@ interface TransferSeed {
 
 const TRANSFERS: TransferSeed[] = [
   {
-    label: "Donkey shuttle — pickup",
+    label: "Donkey shuttle, pickup",
     direction: "Far Far Away → Swamp",
     depart_at: null,
     capacity: 6,
@@ -910,11 +910,11 @@ const TRANSFERS: TransferSeed[] = [
     assigned_to: ["Puss in Boots", "Gingerbread Man", "Pinocchio", "Geppetto"],
   },
   {
-    label: "Donkey shuttle — return",
+    label: "Donkey shuttle, return",
     direction: "Swamp → Far Far Away",
     depart_at: null,
     capacity: 6,
-    notes: "Post-cake. Wear a seatbelt — Donkey takes the corners hard.",
+    notes: "Post-cake. Wear a seatbelt, Donkey takes the corners hard.",
     assigned_to: ["Mouse #1", "Mouse #2", "Mouse #3"],
   },
 ];
@@ -976,7 +976,7 @@ export function seedShrekDemo(coupleId: number): SeedResult {
       coupleId,
     );
 
-    // 1. Host household — Shrek & Fiona as guests at their own wedding. The
+    // 1. Host household, Shrek & Fiona as guests at their own wedding. The
     //    partner_role markers pin them to the top of /app/guests + /app/seating.
     const hostCode = uniqueHhCode(coupleId);
     const hostHhRes = db
@@ -1000,7 +1000,7 @@ export function seedShrekDemo(coupleId: number): SeedResult {
     );
 
     // Bride first so she appears at the top of the household. Parameter
-    // order matches the INSERT above — invitation_delivered_at is hardcoded
+    // order matches the INSERT above, invitation_delivered_at is hardcoded
     // NULL in the SQL, so it does NOT take a positional value here.
     insertGuest.run(
       coupleId,
@@ -1068,7 +1068,7 @@ export function seedShrekDemo(coupleId: number): SeedResult {
           null,
           m.notes,
           respondedAt, // rsvp_responded_at
-          ts, // invited_at — invitation_delivered_at stays NULL in SQL
+          ts, // invited_at, invitation_delivered_at stays NULL in SQL
           hhId,
           null,
           ts,
@@ -1089,7 +1089,7 @@ export function seedShrekDemo(coupleId: number): SeedResult {
       insertBudget.run(coupleId, b.category, b.label, b.planned, b.actual, b.notes, ts, ts);
       result.budget_lines_created += 1;
     }
-    // Stamp the budget ceiling on the couple — sum of planned rows.
+    // Stamp the budget ceiling on the couple, sum of planned rows.
     const totalPlanned = BUDGET_LINES.reduce((s, b) => s + b.planned, 0);
     db.prepare(
       "UPDATE couples SET budget_ceiling_huf = ?, budget_kind = 'exact', target_guest_count = ?, guest_count_kind = 'exact', updated_at = ? WHERE id = ?",
@@ -1265,20 +1265,20 @@ function addDaysIso(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** Default demo lifetime — 4 hours. Beyond that the workspace is reaped
+/** Default demo lifetime, 4 hours. Beyond that the workspace is reaped
  *  by the next sweep tick. Visitors abandoning the trial almost always
  *  drop in the first few minutes; anyone still poking around after four
  *  hours is keeping the row warm against the next visitor's fresh start. */
 export const DEMO_MAX_AGE_MS = 4 * 60 * 60 * 1000;
 
-/** Housekeeping — purge demo couples older than `maxAgeMs`. Called from
+/** Housekeeping, purge demo couples older than `maxAgeMs`. Called from
  *  three places: inline on `POST /api/demo/start` (lazy cleanup before
  *  the next seed), the boot-time sweep in server.ts, and the hourly
  *  `runPurgeSweep()` in domain/purge.ts so abandoned demos disappear on
  *  their own without depending on landing-page traffic.
  *
  *  Before hard-delete we snapshot the demo's audit_log into `demo_usage`
- *  — one row per purged demo capturing lifetime + per-feature event
+ * , one row per purged demo capturing lifetime + per-feature event
  *  counts. That preserves the "what did visitors actually try?" signal
  *  for the admin analytics surface even after the source rows are gone.
  *
@@ -1297,7 +1297,7 @@ export function purgeStaleDemoCouples(maxAgeMs: number = DEMO_MAX_AGE_MS): numbe
   let purged = 0;
   for (const r of rows) {
     try {
-      // Capture member user ids BEFORE purgeOneCouple nulls them out — we'll
+      // Capture member user ids BEFORE purgeOneCouple nulls them out, we'll
       // hard-delete those rows below since a demo has no retention claim on
       // them.
       const userIds = (
@@ -1311,7 +1311,7 @@ export function purgeStaleDemoCouples(maxAgeMs: number = DEMO_MAX_AGE_MS): numbe
 
       purgeOneCouple(r.id, { silent: true });
 
-      // Now scrub the audit_log entries for this demo — they were just
+      // Now scrub the audit_log entries for this demo, they were just
       // aggregated into demo_usage and would block the user DELETE under
       // FK enforcement.
       db.prepare("DELETE FROM audit_log WHERE couple_id = ?").run(r.id);
@@ -1330,7 +1330,7 @@ export function purgeStaleDemoCouples(maxAgeMs: number = DEMO_MAX_AGE_MS): numbe
       db.prepare("DELETE FROM couples WHERE id = ?").run(r.id);
       purged += 1;
     } catch {
-      // Skip a row that fails — next sweep will retry.
+      // Skip a row that fails, next sweep will retry.
     }
   }
   return purged;
@@ -1348,7 +1348,7 @@ function snapshotDemoUsage(
   userIds: number[],
 ): void {
   // Pull every audit row attributable to this demo. We match by couple_id
-  // OR actor_user_id ∈ demo's users — the demo.start row is logged with
+  // OR actor_user_id ∈ demo's users, the demo.start row is logged with
   // the demo's couple_id, but subsequent in-app actions also stamp
   // actor_user_id so the OR catches any anomalies (e.g. a future action
   // that forgets to set couple_id).

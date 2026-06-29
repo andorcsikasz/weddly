@@ -729,7 +729,7 @@ export function CostPlanningCard({
               <span
                 className={`stat-num ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
               >
-                {cap !== null ? formatMoney(cap, currency, locale) : "—"}
+                {cap !== null ? formatMoney(cap, currency, locale) : "-"}
               </span>
             )}
           </div>
@@ -1572,7 +1572,7 @@ function EditableHuf({
           : "text-ink-400 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
       } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200`}
     >
-      {value !== null ? formatMoney(value, currency, locale) : (placeholder ?? "—")}
+      {value !== null ? formatMoney(value, currency, locale) : (placeholder ?? "-")}
     </button>
   );
 }

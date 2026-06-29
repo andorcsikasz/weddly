@@ -476,7 +476,7 @@ function PocRow({
       title={t("suppliers.no_phone")}
     >
       <Phone size={11} aria-hidden="true" />
-      <span>—</span>
+      <span>-</span>
     </span>
   );
   const emailPill = supplier?.email ? (
@@ -494,7 +494,7 @@ function PocRow({
       title={t("suppliers.no_email")}
     >
       <Mail size={11} aria-hidden="true" />
-      <span>—</span>
+      <span>-</span>
     </span>
   );
   const websitePill = supplier?.website ? (
@@ -1181,7 +1181,7 @@ function TimelineEditDialog({
               <option value="">{t("timeline.supplier_none")}</option>
               {pocList.map(({ pick, supplier }) => {
                 const label = supplier
-                  ? `${supplier.name} — ${t(`suppliers.cat.${supplier.category}`)}`
+                  ? `${supplier.name} · ${t(`suppliers.cat.${supplier.category}`)}`
                   : pick.supplier_id;
                 return (
                   <option key={pick.supplier_id} value={pick.supplier_id}>

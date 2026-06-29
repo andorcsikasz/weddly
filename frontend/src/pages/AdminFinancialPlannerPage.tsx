@@ -303,7 +303,7 @@ export default function AdminFinancialPlannerPage() {
           </h2>
           <ul className="mt-3 space-y-1.5">
             {data.mrr_by_currency.length === 0 && (
-              <li className="text-sm text-neutral-500 dark:text-umber-300">—</li>
+              <li className="text-sm text-neutral-500 dark:text-umber-300">-</li>
             )}
             {data.mrr_by_currency.map((m) => (
               <li key={m.currency} className="flex items-center justify-between text-sm">
@@ -635,10 +635,10 @@ function StripeHealthCard({ locale }: { locale: string }) {
           {/* Élő fiók-adatok, ha a ping sikerült */}
           {h.connection?.ok && (
             <div className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-              <HealthRow label="Fiók" value={h.connection.accountId ?? "—"} mono />
+              <HealthRow label="Fiók" value={h.connection.accountId ?? "-"} mono />
               <HealthRow
                 label="Ország"
-                value={h.connection.country ? h.connection.country.toUpperCase() : "—"}
+                value={h.connection.country ? h.connection.country.toUpperCase() : "-"}
               />
               <HealthRow
                 label="Kártyás fizetés"
@@ -655,7 +655,7 @@ function StripeHealthCard({ locale }: { locale: string }) {
               <HealthRow
                 label="Alap pénznem"
                 value={
-                  h.connection.defaultCurrency ? h.connection.defaultCurrency.toUpperCase() : "—"
+                  h.connection.defaultCurrency ? h.connection.defaultCurrency.toUpperCase() : "-"
                 }
               />
             </div>
@@ -819,7 +819,7 @@ function UnitEconomicsCard({ locale, liveHuf }: { locale: string; liveHuf: numbe
 
       {liveHuf > 0 && liveHuf !== priceA && liveHuf !== priceB && (
         <p className="mt-2 text-xs text-neutral-500 dark:text-umber-300">
-          Élő HUF listaár jelenleg: {ft(liveHuf)} — írd be valamelyik mezőbe az összevetéshez.
+          Élő HUF listaár jelenleg: {ft(liveHuf)}, írd be valamelyik mezőbe az összevetéshez.
         </p>
       )}
 

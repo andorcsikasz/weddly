@@ -2458,7 +2458,7 @@ function KanbanColumn({
           <VendorKanbanCard key={vendor.id} vendor={vendor} onEdit={onEditVendor} />
         ))}
         {total === 0 && (
-          <p className="py-4 text-center text-xs text-ink-300 dark:text-umber-500">—</p>
+          <p className="py-4 text-center text-xs text-ink-300 dark:text-umber-500">-</p>
         )}
         {col === "todo" && filter !== "tasks" && (
           <button
@@ -2845,7 +2845,7 @@ function VendorModal({
                 onChange={(e) => setProbability(e.target.value)}
                 min={0}
                 max={100}
-                placeholder="—"
+                placeholder="-"
                 className="w-full rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
               />
               <span className="text-sm text-ink-500 dark:text-umber-300">%</span>
@@ -2862,7 +2862,7 @@ function VendorModal({
               value={priceHuf}
               onChange={(e) => setPriceHuf(e.target.value)}
               min={0}
-              placeholder="—"
+              placeholder="-"
               className="w-full rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
             />
           </label>

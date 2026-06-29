@@ -450,7 +450,7 @@ export default function AdminUsersPage() {
     }
     const phrase = t("admin.delete_user_confirm_phrase");
     const result = await promptEntry({
-      title: `${t("admin.delete_user_confirm_title")} — ${u.email}`,
+      title: `${t("admin.delete_user_confirm_title")}: ${u.email}`,
       label: t("admin.delete_user_confirm_label"),
       placeholder: t("admin.delete_user_confirm_placeholder"),
       helperText: t("admin.delete_user_confirm_help"),
@@ -937,7 +937,7 @@ export default function AdminUsersPage() {
     const weddingDateCell = c.wedding_date ? (
       <span className="font-medium text-ink-700 dark:text-paper-200">{c.wedding_date}</span>
     ) : (
-      <span className="text-neutral-400 dark:text-umber-500">—</span>
+      <span className="text-neutral-400 dark:text-umber-500">-</span>
     );
 
     return (
@@ -951,7 +951,7 @@ export default function AdminUsersPage() {
           {nameCluster}
           <div>
             {members.length === 0 ? (
-              <span className="text-xs text-neutral-500 dark:text-umber-300">—</span>
+              <span className="text-xs text-neutral-500 dark:text-umber-300">-</span>
             ) : (
               <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
                 {members.map((u) => (
@@ -1521,7 +1521,7 @@ export default function AdminUsersPage() {
                         const members = c.partners
                           .map((p) => userById.get(p.id))
                           .filter((u): u is AdminUserView => u != null);
-                        const firstMemberEmail = members[0]?.email ?? "—";
+                        const firstMemberEmail = members[0]?.email ?? "-";
                         // Feature-usage chips: sort by event count desc, show the
                         // top 6 inline + a "+N more" pill when the demo went deep.
                         const counts = c.demo_feature_counts ?? {};

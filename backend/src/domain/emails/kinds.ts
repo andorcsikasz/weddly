@@ -12,47 +12,47 @@ export type EmailKind =
   | "email_change_warning" // sent to the OLD address letting them know a change is in flight
   | "partner_invite" // partner-B co-pilot invite link
   | "partner_invite_accepted" // inviter gets a heads-up that partner B joined the workspace
-  | "partner_invite_declined" // invitee clicked "no thanks" — inviter heads-up so they can re-send to a new address
+  | "partner_invite_declined" // invitee clicked "no thanks", inviter heads-up so they can re-send to a new address
   | "partner_invite_reminder" // admin-triggered nudge to a solo couple to invite their partner
-  | "partner_left_workspace" // partner B left the workspace — owner heads-up
+  | "partner_left_workspace" // partner B left the workspace, owner heads-up
   | "couple_paused" // workspace paused → 30-day delete countdown started
   | "couple_pause_cancelled" // either partner cancelled the pause; both get a heads-up
   | "account_purged" // 30-day window elapsed, all couple data deleted
   | "account_admin_purged" // an admin immediately deleted the account (no 30-day grace)
-  | "account_flagged" // admin flagged the account — 7-day window to reply or it gets purged
-  | "account_flag_cleared" // admin resolved the flag — user is no longer under review
-  | "free_access_granted" // admin comped the workspace free Weddly access — heads-up to the couple
+  | "account_flagged" // admin flagged the account, 7-day window to reply or it gets purged
+  | "account_flag_cleared" // admin resolved the flag, user is no longer under review
+  | "free_access_granted" // admin comped the workspace free Weddly access, heads-up to the couple
   | "rsvp_received_for_couple" // couple gets a notification when a guest RSVPs
   | "rsvp_received_household_for_couple" // aggregated notification: whole party RSVP'd in one go
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
   | "guest_invite" // sent to a guest with a one-click /rsvp/{code} link
   | "onboarding_nudge" // 24h after signup if they haven't onboarded a couple
-  | "onboarding_nudge_week" // 7 days after signup, still no workspace — second, warmer nudge
+  | "onboarding_nudge_week" // 7 days after signup, still no workspace, second, warmer nudge
   | "milestone_t90" // 90 days before the wedding
   | "milestone_t30" // 30 days before
   | "milestone_t7" // 7 days before
   | "timeline_escalation" // proactive-timeline push: tasks overdue/due-soon + couple opted into email
   | "wedding_today" // morning-of congratulations
-  | "wedding_today_followup" // T+7 days — quick how-was-it / NPS nudge
+  | "wedding_today_followup" // T+7 days, quick how-was-it / NPS nudge
   | "wedding_date_changed" // couple edited the wedding date, notify guests
   | "rsvp_deadline_approaching" // T-14 nudge listing how many guests haven't RSVPd yet
-  | "rsvp_followup_missing_meal" // guest RSVP'd yes but skipped meal pick — one-shot nudge
+  | "rsvp_followup_missing_meal" // guest RSVP'd yes but skipped meal pick, one-shot nudge
   | "admin_moderation_digest" // weekly digest of the moderation queue (admin recipients only)
   | "rsvp_weekly_digest_for_couple" // weekly RSVP roll-up for couples on digest mode
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
   | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
-  | "community_supplier_published" // admin approved the listing — it's now live
+  | "community_supplier_published" // admin approved the listing, it's now live
   | "community_supplier_rejected" // admin rejected a pending listing during moderation
-  | "community_supplier_reported" // first user report on a live listing — heads-up to the contact
-  | "vendor_claim_verify" // P2.C — sent to a listing's contact_email when someone clicks "this is mine"
+  | "community_supplier_reported" // first user report on a live listing, heads-up to the contact
+  | "vendor_claim_verify" // P2.C, sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
-  | "supplier_outreach" // P2.E — couple-initiated cold outreach to a shortlisted vendor
-  | "planner_access_requested" // a planner asked a couple for workspace access — couple decides
+  | "supplier_outreach" // P2.E, couple-initiated cold outreach to a shortlisted vendor
+  | "planner_access_requested" // a planner asked a couple for workspace access, couple decides
   | "planner_message" // free-form planner → couple message (user-entered subject + body)
-  | "planner_access_approved" // couple approved the planner's access request — heads-up to the planner
-  | "planner_client_invite"; // couple invited a planner to their workspace — heads-up to the planner
+  | "planner_access_approved" // couple approved the planner's access request, heads-up to the planner
+  | "planner_client_invite"; // couple invited a planner to their workspace, heads-up to the planner
 
 export type EmailCategory = "transactional" | "lifecycle" | "outreach";
 
@@ -64,7 +64,7 @@ export type EmailCategory = "transactional" | "lifecycle" | "outreach";
  * unsubscribe footer link.
  *
  * Outreach = cold mail to a recipient who has no Weddly account and didn't
- * trigger anything themselves — a couple added them to the supplier directory,
+ * trigger anything themselves, a couple added them to the supplier directory,
  * or someone hit the public claim-start endpoint with their contact email.
  * Drives the footer copy ("you don't have an account, ignore = nothing
  * happens") so the recipient isn't told a false "this concerns your account".
@@ -75,14 +75,14 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   password_reset: "transactional",
   password_changed: "transactional",
   // Transactional: the user (or someone with their password) just signed in
-  // — they're either expecting this mail or they need it RIGHT NOW. Either
+  //, they're either expecting this mail or they need it RIGHT NOW. Either
   // way, never lifecycle.
   new_device_signin: "transactional",
   email_change_verify: "transactional",
   email_change_warning: "transactional",
   partner_invite: "transactional",
   // Transactional: the inviter clicked Invite Partner and is waiting to see
-  // whether/when partner B joins — this is the resolution of that action.
+  // whether/when partner B joins, this is the resolution of that action.
   partner_invite_accepted: "transactional",
   // Transactional: same resolution arc as accept, just the other branch. The
   // inviter needs to know to either re-send to a different address or move
@@ -103,10 +103,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   account_admin_purged: "transactional",
   account_flagged: "transactional",
   // Transactional: the user got the original "you're under review" mail and
-  // is implicitly waiting on either a reply window or a resolution — this
+  // is implicitly waiting on either a reply window or a resolution, this
   // mail closes that loop.
   account_flag_cleared: "transactional",
-  // Transactional: an admin just comped this workspace free access — good news
+  // Transactional: an admin just comped this workspace free access, good news
   // the couple should hear about right away, and it's account-critical (it
   // changes their billing state), so never opt-out.
   free_access_granted: "transactional",
@@ -114,7 +114,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   rsvp_received_household_for_couple: "transactional",
   rsvp_thanks_for_guest: "transactional",
   // Transactional: the couple explicitly clicked "send invite" for this
-  // guest in /app/guests — the recipient is waiting on the link.
+  // guest in /app/guests, the recipient is waiting on the link.
   guest_invite: "transactional",
   onboarding_nudge: "lifecycle",
   onboarding_nudge_week: "lifecycle",
@@ -149,10 +149,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Outreach: a couple added this business to the community directory; the
   // recipient never asked for anything and has no Weddly account.
   community_supplier_verify: "outreach",
-  // Outreach: same recipient (no Weddly account) — the listing they
+  // Outreach: same recipient (no Weddly account), the listing they
   // confirmed has now passed admin moderation and is publicly visible.
   community_supplier_published: "outreach",
-  // Outreach: same recipient — moderation said no. Close the loop with a
+  // Outreach: same recipient, moderation said no. Close the loop with a
   // reason instead of leaving the verified listing silently hidden.
   community_supplier_rejected: "outreach",
   // Outreach: a couple reported wrong/missing info on the live listing.
@@ -160,31 +160,31 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // so a single bad-faith reporter can't spam the inbox.
   community_supplier_reported: "outreach",
   // Outreach: anyone (no auth required) can hit /api/vendor/claim/start with a
-  // listing id, and the listing's contact_email gets the mail — the recipient
+  // listing id, and the listing's contact_email gets the mail, the recipient
   // didn't necessarily start the flow themselves.
   vendor_claim_verify: "outreach",
-  // Transactional: internal ops correspondence to the admin allowlist — a
+  // Transactional: internal ops correspondence to the admin allowlist, a
   // claim just started and a human may want to watch it. Same framing as
   // admin_moderation_digest; never opt-out.
   vendor_claim_admin_alert: "transactional",
   // Transactional: the vendor just completed the claim form (set their own
-  // password, clicked through) — this is the success confirmation closing
+  // password, clicked through), this is the success confirmation closing
   // that loop. They now have a Weddly vendor account.
   vendor_claim_approved: "transactional",
   // Outreach: the recipient is a shortlisted vendor; the couple initiated
   // the message via /app/outreach but the vendor has no Weddly account.
   // Reply-To is the couple's own email, so a reply goes straight to them
-  // outside Weddly (in v1 — the inbound webhook + in-app threading land
+  // outside Weddly (in v1, the inbound webhook + in-app threading land
   // in v1.5 once the reply-domain DNS is provisioned).
   supplier_outreach: "outreach",
   // Transactional: the planner clicked "request access" and the couple now
-  // has to act (approve/decline) — the couple owns a Weddly account, so this
+  // has to act (approve/decline), the couple owns a Weddly account, so this
   // is an account-relevant action mail, never opt-out.
   planner_access_requested: "transactional",
   // Transactional: a planner is sending a direct message to their client
   // couple. The couple has an account; Reply-To routes back to the planner.
   planner_message: "transactional",
-  // Transactional: the resolution of the planner's access request — the
+  // Transactional: the resolution of the planner's access request, the
   // couple approved, and the planner is waiting to hear they can enter.
   planner_access_approved: "transactional",
   // Transactional: a couple invited this planner to their workspace; the

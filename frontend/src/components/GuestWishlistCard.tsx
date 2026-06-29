@@ -139,7 +139,7 @@ function ContributorBreakdown({
             <span className="tabular-nums text-ink-500 dark:text-umber-300">
               {c.pledged_amount_minor !== null
                 ? formatAmount(c.pledged_amount_minor, cur, locale)
-                : "—"}
+                : "-"}
               {c.pledged_pct !== null ? ` (${c.pledged_pct}%)` : ""}
             </span>
           </li>

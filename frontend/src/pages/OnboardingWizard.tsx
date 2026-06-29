@@ -445,7 +445,7 @@ export default function OnboardingWizard() {
       <form className="mx-auto max-w-xl" onSubmit={onSubmit}>
         <div className="mb-6">
           <p className="text-xs uppercase tracking-wider text-umber-600">
-            {step + 1} / {TOTAL_STEPS} — {t(`onboarding.step${step + 1}_short`)}
+            {step + 1} / {TOTAL_STEPS} · {t(`onboarding.step${step + 1}_short`)}
           </p>
           <div className="mt-2 h-1 w-full rounded-full bg-paper-300">
             <div

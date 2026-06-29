@@ -206,7 +206,7 @@ export default function RsvpCheckinPage() {
         ) : (
           <Link
             to="/"
-            aria-label="Weddly — back to home"
+            aria-label="Weddly, back to home"
             className="inline-block text-ink-700 transition-colors hover:text-ink-900"
           >
             <Wordmark size="sm" />

@@ -1571,7 +1571,7 @@ export default function SeatingPage() {
       {preview && (
         <Dialog
           open={true}
-          title={`${t("seating.preview_title")} — ${preview.label}`}
+          title={`${t("seating.preview_title")}: ${preview.label}`}
           onClose={closePreview}
           size="lg"
           closeOnBackdrop
@@ -2668,7 +2668,7 @@ function TableCard({
                             onTap={onTapGuest}
                           />
                         ) : (
-                          <span>—</span>
+                          <span>-</span>
                         )}
                       </div>
                     </li>

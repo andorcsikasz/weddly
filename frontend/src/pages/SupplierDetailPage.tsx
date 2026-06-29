@@ -1538,13 +1538,13 @@ function AdminMetaSection({
           <dt className="text-xs uppercase tracking-wide text-ink-500">
             {t("suppliers.detail.adminMeta.vendorAccount")}
           </dt>
-          <dd>{detail.vendor_account_id ?? "—"}</dd>
+          <dd>{detail.vendor_account_id ?? "-"}</dd>
         </div>
         <div>
           <dt className="text-xs uppercase tracking-wide text-ink-500">
             {t("suppliers.detail.adminMeta.commentsCount")}
           </dt>
-          <dd>{detail.comments_count ?? "—"}</dd>
+          <dd>{detail.comments_count ?? "-"}</dd>
         </div>
         <div className="sm:col-span-2">
           <dt className="text-xs uppercase tracking-wide text-ink-500">

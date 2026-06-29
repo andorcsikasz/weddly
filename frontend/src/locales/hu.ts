@@ -30,75 +30,75 @@ const hu: LocaleMessages = {
     tagline: "Esküvőtervezés közösen, egy nyugodt helyen.",
   },
   seo: {
-    home_title: "Wēddly — az egész esküvőtök egy helyen",
+    home_title: "Wēddly · az egész esküvőtök egy helyen",
     home_description:
       "Költségvetés, vendéglista, RSVP, ültetés és nyomtatványok egy közös felületen. Pár perc beállítás, és estékből percek lesznek.",
-    login_title: "Bejelentkezés — Wēddly",
+    login_title: "Bejelentkezés · Wēddly",
     login_description: "Lépj be a páros felületetekre, ott folytatjátok, ahol abbahagytátok.",
-    register_title: "Indítsátok el a páros felületeteket — Wēddly",
+    register_title: "Indítsátok el a páros felületeteket · Wēddly",
     register_description:
       "Pár perc alatt fent vagytok. Egy közös felület kettőtöknek az esküvőtervezéshez.",
-    invite_title: "Csatlakozz a páros felületetekre — Wēddly",
+    invite_title: "Csatlakozz a páros felületetekre · Wēddly",
     invite_description: "A párod hívott, hogy közösen tervezzétek végig az esküvőtöket.",
-    dashboard_title: "Vezérlőpult — Wēddly",
+    dashboard_title: "Vezérlőpult · Wēddly",
     dashboard_description:
-      "Visszaszámláló, RSVP, költés és teendők egy nézetben — ott folytatjátok, ahol abbahagytátok.",
-    profile_title: "Profil — Wēddly",
+      "Visszaszámláló, RSVP, költés és teendők egy nézetben, ott folytatjátok, ahol abbahagytátok.",
+    profile_title: "Profil · Wēddly",
     profile_description: "Fiók, biztonság, exportok és a páros felület beállításai egy helyen.",
-    guests_title: "Vendégek — Wēddly",
+    guests_title: "Vendégek · Wēddly",
     guests_description:
-      "Háztartások, RSVP-kódok, ételválasztások és import — minden vendéginformáció rendezett listában.",
-    suppliers_title: "Szolgáltatók — Wēddly",
+      "Háztartások, RSVP-kódok, ételválasztások és import, minden vendéginformáció rendezett listában.",
+    suppliers_title: "Szolgáltatók · Wēddly",
     suppliers_description:
-      "Magyar esküvői szolgáltatók — kategória, város és visszajelzések szerint szűrve.",
-    budget_title: "Költségvetés — Wēddly",
+      "Magyar esküvői szolgáltatók, kategória, város és visszajelzések szerint szűrve.",
+    budget_title: "Költségvetés · Wēddly",
     budget_description:
       "Tervezett és tényleges költések kategóriánként, pillanatképekkel és vendégenkénti megoszlással.",
-    seating_title: "Ültetés — Wēddly",
+    seating_title: "Ültetés · Wēddly",
     seating_description:
-      "Asztalok, székek és ültetés egy vászonra húzva — A4/A3 PDF és helykártyák egy kattintásra.",
-    logistics_title: "Logisztika — Wēddly",
+      "Asztalok, székek és ültetés egy vászonra húzva, A4/A3 PDF és helykártyák egy kattintásra.",
+    logistics_title: "Logisztika · Wēddly",
     logistics_description:
-      "Szállás és transzfer beosztás drag and drop módon — minden vendéget a helyére.",
-    planning_title: "Tervezés — Wēddly",
+      "Szállás és transzfer beosztás drag and drop módon, minden vendéget a helyére.",
+    planning_title: "Tervezés · Wēddly",
     planning_description:
-      "Feladatok, ötletek és az esküvői napi programterv egy helyen — gyorsan rögzíthető, később könnyen átrendezhető.",
-    admin_suppliers_title: "Admin · Szolgáltatók — Wēddly",
+      "Feladatok, ötletek és az esküvői napi programterv egy helyen, gyorsan rögzíthető, később könnyen átrendezhető.",
+    admin_suppliers_title: "Admin · Szolgáltatók · Wēddly",
     admin_suppliers_description:
-      "Közösségi beküldések moderálása — elfogadás, elrejtés és törlés a Weddly admin felületéről.",
-    admin_feedback_title: "Admin · Visszajelzések — Wēddly",
+      "Közösségi beküldések moderálása, elfogadás, elrejtés és törlés a Weddly admin felületéről.",
+    admin_feedback_title: "Admin · Visszajelzések · Wēddly",
     admin_feedback_description:
       "A landingről és az appból érkező Visszajelzés űrlap beadásainak kezelése.",
-    admin_analytics_title: "Admin · Analitika — Wēddly",
+    admin_analytics_title: "Admin · Analitika · Wēddly",
     admin_analytics_description:
       "Pénz, aktivitás és szolgáltató-választások aggregált nézete a Weddly admin felületén.",
-    notfound_title: "Az oldal nem található — Wēddly",
+    notfound_title: "Az oldal nem található · Wēddly",
     notfound_description: "Ez a link már nem él, vagy elgépelés történt.",
-    onboarding_title: "Indítás — Wēddly",
+    onboarding_title: "Indítás · Wēddly",
     onboarding_description:
       "Pár perc beállítás: nevek, dátum, létszám, költségvetés. Ennyiből pontosan indul a tervezés.",
-    rsvp_checkin_title: "RSVP check-in — Wēddly",
+    rsvp_checkin_title: "RSVP check-in · Wēddly",
     rsvp_checkin_description:
       "Add meg a páros kódot és a 8 karakteres azonosítót a meghívóról, és nézd meg a háztartásod RSVP-jét.",
-    rsvp_legacy_title: "RSVP — Wēddly",
+    rsvp_legacy_title: "RSVP · Wēddly",
     rsvp_legacy_description: "Visszajelzés a meghívóhoz tartozó kóddal.",
-    reset_password_title: "Új jelszó megadása — Wēddly",
+    reset_password_title: "Új jelszó megadása · Wēddly",
     reset_password_description: "Add meg az új jelszót, és bejelentkezhetsz a páros felületedre.",
-    forgot_password_title: "Jelszó visszaállítása — Wēddly",
+    forgot_password_title: "Jelszó visszaállítása · Wēddly",
     forgot_password_description:
       "Megküldjük a visszaállító linket arra az e-mailre, amivel regisztráltatok.",
-    schedule_title: "Programterv — Wēddly",
+    schedule_title: "Programterv · Wēddly",
     schedule_description:
-      "Az esküvő napjának menetrendje: érkezés, szertartás, vacsora, tánc — egy nyomtatható oldalon.",
-    guest_portal_title: "Esküvői infók — Wēddly",
+      "Az esküvő napjának menetrendje: érkezés, szertartás, vacsora, tánc, egy nyomtatható oldalon.",
+    guest_portal_title: "Esküvői infók · Wēddly",
     guest_portal_description:
-      "A meghívótok egy helyen: a dátum, a helyszín és a menetrend — bármikor előkereshető.",
-    guest_page_title: "Vendégoldal — Wēddly",
+      "A meghívótok egy helyen: a dátum, a helyszín és a menetrend, bármikor előkereshető.",
+    guest_page_title: "Vendégoldal · Wēddly",
     guest_page_description:
-      "Egy oldal, amit megosztasz a vendégekkel — felül a nyilvános infók, lentebb pedig az RSVP után megnyíló részletek.",
-    wedding_site_title: "Esküvői oldal — Weddly",
+      "Egy oldal, amit megosztasz a vendégekkel, felül a nyilvános infók, lentebb pedig az RSVP után megnyíló részletek.",
+    wedding_site_title: "Esküvői oldal · Weddly",
     wedding_site_description:
-      "A pár nyilvános esküvői oldala — dátum, helyszín, programterv és RSVP egy helyen.",
+      "A pár nyilvános esküvői oldala, dátum, helyszín, programterv és RSVP egy helyen.",
   },
   a11y: {
     close: "Bezárás",
@@ -159,7 +159,7 @@ const hu: LocaleMessages = {
       "Küldtünk egy linket a postafiókodba. A megerősítés kell ahhoz, hogy a jelszó-visszaállítás működjön, ha valaha szükséged lenne rá.",
     banner_resend: "Link újraküldése",
     banner_resending: "Küldés…",
-    banner_resent: "Elküldve — nézd meg a postafiókod.",
+    banner_resent: "Elküldve, nézd meg a postafiókod.",
     banner_dismiss: "Bezárás",
     page_title: "E-mail megerősítés",
     page_loading: "Megerősítés folyamatban…",
@@ -173,13 +173,13 @@ const hu: LocaleMessages = {
     check_inbox_skip: "Tovább a tervezéshez",
     gate_title: "Erősítsd meg az e-mail címed a tervezés indításához",
     gate_body:
-      "Mielőtt felépítenéd az esküvői munkaterületed, kattints az általunk küldött linkre — így biztos, hogy később vissza tudod állítani a fiókod, ha kell. Egy pillanat az egész.",
+      "Mielőtt felépítenéd az esküvői munkaterületed, kattints az általunk küldött linkre, így biztos, hogy később vissza tudod állítani a fiókod, ha kell. Egy pillanat az egész.",
     gate_email_intro: "A linket erre a címre küldtük:",
     gate_resend: "Link újraküldése",
     gate_resending: "Küldés…",
-    gate_resent: "Elküldve — nézd meg a postafiókod.",
-    gate_already_verified: "Már meg van erősítve — folytasd.",
-    gate_refresh: "Megerősítettem — tovább",
+    gate_resent: "Elküldve, nézd meg a postafiókod.",
+    gate_already_verified: "Már meg van erősítve, folytasd.",
+    gate_refresh: "Megerősítettem, tovább",
     gate_logout: "Kijelentkezés",
     gate_continue_limited: "Tovább korlátozott hozzáféréssel →",
     gate_open_inbox: "{provider} megnyitása",
@@ -245,7 +245,7 @@ const hu: LocaleMessages = {
     back_home: "Vissza a főoldalra",
     eyebrow: "Esküvő · Weddly",
     date_tbd: "A dátum még kiderül",
-    venue_approx: "Helyszín — pontos cím a meghívóban",
+    venue_approx: "Helyszín, pontos cím a meghívóban",
     location_eyebrow: "Helyszín",
     schedule_eyebrow: "Egy kis ízelítő",
     schedule_title: "A nap menete",
@@ -256,7 +256,7 @@ const hu: LocaleMessages = {
     invited_eyebrow: "A meghívó",
     rsvp_personal_title: "Számítunk rátok",
     rsvp_personal_body:
-      "Egyetlen kattintással válaszolhattok — a háztartás kódját már beírtuk helyettetek.",
+      "Egyetlen kattintással válaszolhattok, a háztartás kódját már beírtuk helyettetek.",
     rsvp_personal_cta: "Válaszadás →",
     rsvp_manage_cta: "Válasz módosítása",
     confirmed_title: "Csak a visszajelölt vendégeknek",
@@ -317,7 +317,7 @@ const hu: LocaleMessages = {
     cover_image_placeholder: "https://…",
     cover_image_hint:
       "Tölts fel egy fájlt, vagy másold be egy nyilvánosan elérhető kép http(s) linkjét.",
-    cover_image_invalid: "Ennek http(s) linknek kell lennie — más sémát nem fogadunk el.",
+    cover_image_invalid: "Ennek http(s) linknek kell lennie, más sémát nem fogadunk el.",
     cover_upload_button: "Kép feltöltése",
     cover_upload_uploading: "Feltöltés…",
     cover_upload_replace: "Másik kép",
@@ -338,14 +338,14 @@ const hu: LocaleMessages = {
     page_body: "Erősítsd meg, hogy a Weddly közösségi katalógusába kerülhetsz.",
     page_loading: "Megerősítjük…",
     page_success:
-      "Köszönjük — mostantól a páraknak is megjelenik a hirdetésed a Weddly katalógusban. Ha bármi adatot változtatnál, írj nekünk.",
-    page_already: "Ez a link már fel lett használva — a hirdetésed él. Nem kell újra kattintanod.",
+      "Köszönjük, mostantól a páraknak is megjelenik a hirdetésed a Weddly katalógusban. Ha bármi adatot változtatnál, írj nekünk.",
+    page_already: "Ez a link már fel lett használva, a hirdetésed él. Nem kell újra kattintanod.",
     page_invalid:
-      "Nem ismerjük fel ezt a linket. Lehet, hogy elgépelődött vagy egy régi e-mailből származik — kérj újat a Weddly csapatától.",
+      "Nem ismerjük fel ezt a linket. Lehet, hogy elgépelődött vagy egy régi e-mailből származik, kérj újat a Weddly csapatától.",
     page_expired:
-      "A link már lejárt. Írj nekünk és küldünk egy újat — a hirdetés addig nem jelenik meg.",
+      "A link már lejárt. Írj nekünk és küldünk egy újat, a hirdetés addig nem jelenik meg.",
     page_missing:
-      "Ez a hirdetés már nem létezik — valószínűleg törölte a csapat vagy lejárt a beküldés.",
+      "Ez a hirdetés már nem létezik, valószínűleg törölte a csapat vagy lejárt a beküldés.",
     page_home: "Vissza a Weddly főoldalra",
   },
   vendor_claim: {
@@ -355,7 +355,7 @@ const hu: LocaleMessages = {
     page_invalid:
       "Nem ismerjük fel ezt a linket. Lehet, hogy elgépelődött vagy egy régi e-mailből származik.",
     page_expired: "A link már lejárt. Indítsd újra az átvételt a Weddly katalógusban.",
-    page_cancelled: "Ezt az igénylést időközben visszavontuk — kezdd újra a katalógusból.",
+    page_cancelled: "Ezt az igénylést időközben visszavontuk, kezdd újra a katalógusból.",
     page_already_verified:
       "Ez a listing már át lett véve. Ha te voltál, jelentkezz be a vendor email címeddel.",
     page_home: "Vissza a Weddly katalógusra",
@@ -363,7 +363,7 @@ const hu: LocaleMessages = {
     modal_body_intro:
       "Igényelnéd a(z) {name} listing tulajdonjogát? Egy megerősítő emailt küldünk a listingen szereplő hivatalos címre.",
     modal_body_email_hidden:
-      "Adatvédelmi okból a teljes címet nem mutatjuk — a megerősítés után te leszel a listing kezelője.",
+      "Adatvédelmi okból a teljes címet nem mutatjuk, a megerősítés után te leszel a listing kezelője.",
     modal_email_label: "A te email címed",
     modal_email_help: "Az admin csapatunk ezzel látja, ki kezdeményezte az átvételt.",
     modal_email_invalid: "Adj meg egy érvényes email címet.",
@@ -371,16 +371,16 @@ const hu: LocaleMessages = {
     modal_submitting: "Küldés…",
     modal_close: "Rendben",
     modal_sent_body:
-      "Email úton van a {email} címre. Kattints rajta a megerősítéshez — a link 7 napig érvényes.",
+      "Email úton van a {email} címre. Kattints rajta a megerősítéshez, a link 7 napig érvényes.",
     modal_sent_hint:
       "Ha nem érkezik meg pár percen belül, ellenőrizd a spam mappát, vagy próbáld újra később.",
     modal_err_already_claimed: "Ezt a listinget már átvette valaki.",
     modal_err_no_email: "Ezen a listingen nincs email cím, így nem tudjuk megerősíteni.",
     modal_err_not_found: "Nem találjuk ezt a listinget.",
-    modal_err_rate_limited: "Túl sok kérés érkezett — várj néhány percet, mielőtt újra próbálnád.",
+    modal_err_rate_limited: "Túl sok kérés érkezett, várj néhány percet, mielőtt újra próbálnád.",
     form_title: "Hozd létre a vendor fiókod",
     form_intro:
-      "Sikeresen megerősítetted, hogy a(z) {name} listing email címe ({email}) a tiéd. Állíts be egy jelszót — innentől te kezeled a listinget.",
+      "Sikeresen megerősítetted, hogy a(z) {name} listing email címe ({email}) a tiéd. Állíts be egy jelszót, innentől te kezeled a listinget.",
     form_name_label: "Teljes név",
     form_password_label: "Jelszó",
     form_password_hint: "Min. 8 karakter.",
@@ -425,7 +425,7 @@ const hu: LocaleMessages = {
     page_title: "A te listingjed",
     page_body: "Szerkeszd, ahogy a párok látnak a Weddly katalógusban.",
     welcome: "Üdv, {name}!",
-    intro: "Sikeresen átvetted a listingedet. Az alábbi mezőket a párok is látják — tartsd élesen.",
+    intro: "Sikeresen átvetted a listingedet. Az alábbi mezőket a párok is látják, tartsd élesen.",
     billing_founding: "Alapító tag · ingyenes eddig: {date}. Bankkártya nem kell, előtte szólunk.",
     billing_trial: "Próbaidő · a hirdetésed eddig látható: {date}.",
     billing_lapsed:
@@ -448,29 +448,29 @@ const hu: LocaleMessages = {
     label_capacity_max: "Kapacitás (max)",
     section_hero: "Borítókép",
     hero_intro:
-      "A párok először a listing kártyán találkoznak a vállalkozásoddal. Tölts fel egy fotót, amely megmutatja a stílusotokat — JPG, PNG vagy WebP, legfeljebb 4 MB.",
+      "A párok először a listing kártyán találkoznak a vállalkozásoddal. Tölts fel egy fotót, amely megmutatja a stílusotokat, JPG, PNG vagy WebP, legfeljebb 4 MB.",
     hero_upload: "Fotó feltöltése",
     hero_replace: "Fotó cseréje",
     hero_delete: "Fotó eltávolítása",
     hero_uploading: "Töltődik…",
     hero_upload_success: "Borítókép frissítve.",
-    hero_upload_failed: "Nem sikerült feltölteni — JPG, PNG vagy WebP, max 4 MB.",
+    hero_upload_failed: "Nem sikerült feltölteni, JPG, PNG vagy WebP, max 4 MB.",
     hero_delete_success: "Borítókép eltávolítva.",
-    hero_delete_failed: "Nem sikerült eltávolítani — próbáld újra.",
-    hero_placeholder_alt: "Még nincs borítókép — tölts fel egyet a megjelenéshez.",
+    hero_delete_failed: "Nem sikerült eltávolítani, próbáld újra.",
+    hero_placeholder_alt: "Még nincs borítókép, tölts fel egyet a megjelenéshez.",
     hero_current_alt: "A listingedhez tartozó jelenlegi borítókép.",
     save: "Mentés",
     saving: "Mentés…",
     save_success: "Listing frissítve.",
-    save_failed: "Nem sikerült menteni — próbáld újra.",
-    name_locked: "A márkanév zárolt — ügyfélszolgálati ticketet nyiss a módosításhoz.",
+    save_failed: "Nem sikerült menteni, próbáld újra.",
+    name_locked: "A márkanév zárolt, ügyfélszolgálati ticketet nyiss a módosításhoz.",
     back_to_directory: "Vissza a katalógusba",
     section_availability: "Foglaltság",
     availability_intro:
       "Jelöld be a már lefoglalt napokat. A párok ezeket látják a naptáradban, a következő szabad dátum pedig automatikusan frissül.",
     availability_add_label: "Nap blokkolása",
     availability_add: "Hozzáadás",
-    availability_empty: "Még nincs blokkolt nap — a naptárad teljesen szabadnak mutat.",
+    availability_empty: "Még nincs blokkolt nap, a naptárad teljesen szabadnak mutat.",
     availability_remove: "{date} feloldása",
     availability_next_free: "Következő szabad dátum: {date}",
     availability_none_free: "Nincs szabad nap a következő 12 hónapban.",
@@ -479,7 +479,7 @@ const hu: LocaleMessages = {
     availability_unblocked: "Nap feloldva.",
     availability_unblock_failed: "Nem sikerült feloldani a dátumot. Próbáld újra.",
     error_load:
-      "Nem tudtuk betölteni a listingedet. Próbáld újra — ha nem megy, nyiss ügyfélszolgálati ticketet.",
+      "Nem tudtuk betölteni a listingedet. Próbáld újra, ha nem megy, nyiss ügyfélszolgálati ticketet.",
     error_no_account:
       "Ehhez a bejelentkezéshez nincs vendor fiók kapcsolva. Ha most vetted át a listinget, jelentkezz ki és vissza.",
     preview_panel_title: "Élő előnézet",
@@ -593,13 +593,13 @@ const hu: LocaleMessages = {
       save: "Mentés",
       saving: "Mentés…",
       saved: "Ügyfél frissítve.",
-      save_failed: "Nem sikerült menteni — próbáld újra.",
+      save_failed: "Nem sikerült menteni, próbáld újra.",
       load_failed: "Nem tudtuk betölteni ezt az ügyfelet.",
     },
     payments: {
       title: "Fizetési ütemezés",
       intro:
-        "Kövesd nyomon a részleteket ennél az ügyfélnél. Semmit nem terhelünk meg — ez csak a saját nyilvántartásod.",
+        "Kövesd nyomon a részleteket ennél az ügyfélnél. Semmit nem terhelünk meg, ez csak a saját nyilvántartásod.",
       add: "Részlet hozzáadása",
       label_field: "Megnevezés",
       label_placeholder: "pl. Végső egyenleg",
@@ -677,7 +677,7 @@ const hu: LocaleMessages = {
       save: "Mentés",
       saving: "Mentés…",
       saved: "Beállítások mentve.",
-      save_failed: "Nem sikerült menteni — próbáld újra.",
+      save_failed: "Nem sikerült menteni, próbáld újra.",
     },
     plan: {
       free_label: "Ingyenes",
@@ -704,7 +704,7 @@ const hu: LocaleMessages = {
       "A válaszok a saját e-mail fiókodba érkeznek (Reply-To). A teljes inbox-élmény a következő körben jön.",
     empty_title: "Még nem küldtél ki megkeresést",
     empty_body:
-      "Válassz pár szolgáltatót a katalógusból, és írj nekik egy közös üzenetet — a Weddly-n keresztül megy ki, de a válaszuk hozzád ér.",
+      "Válassz pár szolgáltatót a katalógusból, és írj nekik egy közös üzenetet, a Weddly-n keresztül megy ki, de a válaszuk hozzád ér.",
     recipient_count: "{n} címzett",
     recipients_header: "Címzettek",
     detail_loading: "Betöltjük a részleteket…",
@@ -712,7 +712,7 @@ const hu: LocaleMessages = {
     error_detail: "Nem tudtuk betölteni ezt a megkeresést.",
     send: "Küldés",
     sending: "Küldés…",
-    send_success: "Sikerült — {n} címzett kapta meg.",
+    send_success: "Sikerült, {n} címzett kapta meg.",
     status_queued: "Sorban",
     status_sent: "Kiküldve",
     status_bounced: "Visszapattant",
@@ -732,19 +732,19 @@ const hu: LocaleMessages = {
     tpl_placeholder_date: "[dátum]",
     tpl_placeholder_guests: "[létszám]",
     tpl_quote: "Árajánlat",
-    tpl_quote_subject: "Árajánlatkérés — {date} dátumú esküvő",
+    tpl_quote_subject: "Árajánlatkérés, {date} dátumú esküvő",
     tpl_quote_body:
-      "Sziasztok!\n\n{date} dátumra tervezzük az esküvőnket, {guests} fő részvételével. Szeretnénk árajánlatot kérni a szolgáltatásaitokra — küldenétek a csomagjaitokat és minden lényeges részletet?\n\nElőre is köszönjük, várjuk a válaszotokat!",
+      "Sziasztok!\n\n{date} dátumra tervezzük az esküvőnket, {guests} fő részvételével. Szeretnénk árajánlatot kérni a szolgáltatásaitokra, küldenétek a csomagjaitokat és minden lényeges részletet?\n\nElőre is köszönjük, várjuk a válaszotokat!",
     tpl_availability: "Elérhetőség",
     tpl_availability_subject: "Szabad-e a(z) {date}?",
     tpl_availability_body:
       "Sziasztok!\n\nA(z) {date} napra szervezzük az esküvőnket. Visszajeleznétek, hogy szabad-e a naptáratokban ez a dátum?\n\nKöszönjük!",
     tpl_details: "Részletek",
-    tpl_details_subject: "Esküvői részletek — {date}",
+    tpl_details_subject: "Esküvői részletek, {date}",
     tpl_details_body:
-      "Sziasztok!\n\nAz esküvőnket {date} napjára tervezzük, {guests} fő részvételével. Szívesen megismerkednénk veletek — küldenétek pár szót a munkátokról, a csomagjaitokról és a folyamatról?\n\nKöszönjük!",
+      "Sziasztok!\n\nAz esküvőnket {date} napjára tervezzük, {guests} fő részvételével. Szívesen megismerkednénk veletek, küldenétek pár szót a munkátokról, a csomagjaitokról és a folyamatról?\n\nKöszönjük!",
     tpl_intro: "Bemutatkozás",
-    tpl_intro_subject: "Portfólió kérés — {date} esküvő",
+    tpl_intro_subject: "Portfólió kérés, {date} esküvő",
     tpl_intro_body:
       "Sziasztok!\n\nA(z) {date} napra tervezett esküvőnkhöz ({guests} fő) keressük a megfelelő szolgáltatókat. Be tudnátok mutatkozni, és küldenétek pár referenciát vagy portfóliót?\n\nKöszönjük!",
     err_no_suppliers: "Adj hozzá legalább egy szolgáltatót.",
@@ -752,20 +752,20 @@ const hu: LocaleMessages = {
     err_rate_limited: "Túl gyakori: heti legfeljebb 3 körlevél mehet ki.",
     err_supplier_not_found: "Egy vagy több ID nem található a katalógusban.",
     err_supplier_no_email: "Egy vagy több szolgáltatónak nincs publikus e-mail címe.",
-    err_generic: "Nem sikerült kiküldeni — próbáld újra.",
+    err_generic: "Nem sikerült kiküldeni, próbáld újra.",
   },
   change_email: {
     page_title: "Új e-mail cím megerősítése",
     page_loading: "Megerősítjük…",
     page_success:
-      "Kész — innentől a(z) {email} cím a bejelentkezésed. Mindenhonnan kiléptettünk, jelentkezz be újra.",
+      "Kész, innentől a(z) {email} cím a bejelentkezésed. Mindenhonnan kiléptettünk, jelentkezz be újra.",
     page_invalid:
       "Ez a link nem érvényes vagy lejárt. Próbáld újra a Profil oldalról, vagy lépj kapcsolatba velünk.",
   },
   onboarding: {
     welcome: "Üdvözlünk a {name}-n!",
     intro:
-      "Pár kérdés, és kezetekben az egész. Ezek csak kiindulópontok — bármit átírhattok útközben, a Wēddly meg követi.",
+      "Pár kérdés, és kezetekben az egész. Ezek csak kiindulópontok, bármit átírhattok útközben, a Wēddly meg követi.",
     step1_title: "Kik házasodnak?",
     step1_help: "A neveitek a kezelőfelületen jelennek meg, pl. „Allie & Noah”.",
     step1_short: "Páros",
@@ -784,7 +784,7 @@ const hu: LocaleMessages = {
     target_guest_count_label: "Célzott létszám",
     step4_title: "Mekkora a tervezett keret?",
     budget_label: "Felső költségkeret (Ft)",
-    budget_help: "Ez alapján bontjuk fel a kategóriákat — később egyenként finomíthatod.",
+    budget_help: "Ez alapján bontjuk fel a kategóriákat, később egyenként finomíthatod.",
     step5_title: "Melyik országban lesz az esküvő?",
     country_label: "Ország",
     country_helper:
@@ -802,7 +802,7 @@ const hu: LocaleMessages = {
     style_destination: "Külföldi",
     finish: "Indítsuk!",
     saving: "Mentés…",
-    submit_failed: "A mentés most nem sikerült. Az adataid biztonságban vannak — próbáld újra.",
+    submit_failed: "A mentés most nem sikerült. Az adataid biztonságban vannak, próbáld újra.",
     submit_retry: "Újra",
     all_set_title: "Minden kész!",
     all_set_body: "A munkaterületetek elkészült. Innen indul a tervezés.",
@@ -817,7 +817,7 @@ const hu: LocaleMessages = {
     date_month_label: "Cél hónap",
     date_season_label: "Cél évszak",
     date_kind_help_tbd:
-      "Semmi gond — bármit lerögzíthetsz később. Most csak körülbelülre tervezünk.",
+      "Semmi gond, bármit lerögzíthetsz később. Most csak körülbelülre tervezünk.",
     guest_kind_question: "Mennyire pontos a vendéglétszám?",
     guest_kind_exact: "Konkrét szám",
     guest_kind_range: "Tartomány",
@@ -841,7 +841,7 @@ const hu: LocaleMessages = {
     ceremony_kind_both: "Mindkettő",
     ceremony_kind_skip: "Most kihagyom",
     ceremony_kind_help:
-      "Ezt később bármikor beállíthatjátok a Profilban — segít a szolgáltatóknál az ajánlatkérésnél.",
+      "Ezt később bármikor beállíthatjátok a Profilban, segít a szolgáltatóknál az ajánlatkérésnél.",
     welcome_existing_eyebrow: "Üdv újra",
     welcome_existing_title: "{names}",
     welcome_existing_body:
@@ -905,7 +905,7 @@ const hu: LocaleMessages = {
     invite_email_placeholder: "pl. anna@example.com",
     invite_email_help: "Hagyd üresen, ha csak egy megosztható linket szeretnél.",
     invite_email_invalid: "Adj meg egy érvényes e-mail címet.",
-    invite_email_own: "A saját e-mail címedet nem hívhatod meg — már bent vagy a munkaterületen.",
+    invite_email_own: "A saját e-mail címedet nem hívhatod meg, már bent vagy a munkaterületen.",
     invite_send: "Meghívó küldése",
     invite_sending: "Küldés…",
     invite_sent: "Elküldve a(z) {email} címre",
@@ -1030,27 +1030,27 @@ const hu: LocaleMessages = {
     day_of_tomorrow_label: "Holnap lesz",
     day_of_checkin_title: "Vendég bejelentkezés",
     day_of_checkin_intro:
-      "Mutasd a vendégeknek ezt a linket — beírják a 8 karakteres kódot a meghívóról.",
+      "Mutasd a vendégeknek ezt a linket, beírják a 8 karakteres kódot a meghívóról.",
     day_of_checkin_copy: "Link másolása",
     day_of_checkin_copied: "Kimásolva!",
     day_of_checkin_no_slug:
-      "Még nincs páros azonosító — állítsd be a Vendégek oldalon a check-in elindításához.",
-    day_of_qr_todo: "(QR-kód a v2-ben — addig csak a fenti link kell)",
+      "Még nincs páros azonosító, állítsd be a Vendégek oldalon a check-in elindításához.",
+    day_of_qr_todo: "(QR-kód a v2-ben, addig csak a fenti link kell)",
     welcome_desk_open: "Üdvözlő pult tablet megnyitása",
-    welcome_desk_help: "Új lapon nyílik, kiosk-zárral — add át a tabletet a fogadásnál.",
+    welcome_desk_help: "Új lapon nyílik, kiosk-zárral, add át a tabletet a fogadásnál.",
     day_of_stats_yes: "Visszajelzett vendég",
     day_of_stats_checked_in: "Ma bejelentkezett",
     day_of_dietary_title: "Étrendi összegzés",
     day_of_dietary_empty: "Még nincs visszajelzés.",
     day_of_schedule_title: "Következő programpontok",
-    day_of_schedule_empty: "Még nincs programterv — szerkeszd a Programterv oldalon.",
+    day_of_schedule_empty: "Még nincs programterv, szerkeszd a Programterv oldalon.",
     day_of_schedule_open: "Teljes programterv",
     day_of_print_title: "Nyomtatás",
     day_of_print_place_cards: "Helykártyák nyomtatása (visszajelzettek)",
     day_of_print_seating: "Ültetési rend (A4 PDF)",
     // ── Caterer summary tile (planning-mode, ≤7 days) ─────────────────
     caterer_title: "Catering összegzés",
-    caterer_sub: "Vidd el a vendéglátódnak — vagy másold át egy e-mailbe.",
+    caterer_sub: "Vidd el a vendéglátódnak, vagy másold át egy e-mailbe.",
     caterer_copy: "Szöveg másolása",
     caterer_copied: "Kimásolva a vágólapra.",
     caterer_total: "összesen {n} fő számolva",
@@ -1075,10 +1075,10 @@ const hu: LocaleMessages = {
     expired: "Ez a meghívó már lejárt vagy felhasználva.",
     accept: "Csatlakozás",
     accepting: "Csatlakozás…",
-    need_account: "Először regisztrálj — utána automatikusan visszairányítunk.",
+    need_account: "Először regisztrálj, utána automatikusan visszairányítunk.",
     own_invite_title: "Ez a saját meghívó linked",
     own_invite_body:
-      "Te magad hoztad létre ezt a munkaterületet — itt már bent vagy. Küldd el az alábbi linket {email} címre, és ha másik fiókkal nyitja meg, csatlakozik hozzád.",
+      "Te magad hoztad létre ezt a munkaterületet, itt már bent vagy. Küldd el az alábbi linket {email} címre, és ha másik fiókkal nyitja meg, csatlakozik hozzád.",
     own_invite_share_label: "Oszd meg ezt a linket",
     own_invite_copy: "Link másolása",
     own_invite_copied: "Link kimásolva!",
@@ -1098,9 +1098,9 @@ const hu: LocaleMessages = {
     merge_confirm_label: "Gépeld be: MERGE",
     merge_confirm_help: "A megerősítéshez gépeld be nagybetűvel: MERGE",
     merge_confirm_button: "Csatlakozás",
-    merge_confirm_mismatch: "Nem egyezik — gépeld be: MERGE",
+    merge_confirm_mismatch: "Nem egyezik, gépeld be: MERGE",
     merge_running: "Összevonás…",
-    merge_success: "Csatlakoztál — üdv az új munkaterületen.",
+    merge_success: "Csatlakoztál, üdv az új munkaterületen.",
   },
   landing: {
     hero_title: "Az egész\nesküvőtök,\negy helyen.",
@@ -1297,11 +1297,11 @@ const hu: LocaleMessages = {
     testimonials_eyebrow: "A bétából",
     testimonials_title: "Párok, akik már a Wēddlyvel tervezték az esküvőjüket",
     t1_quote:
-      "Egy helyen van minden — költségvetés, vendégek, ültetés. Mindketten ugyanazt látjuk, és tudjuk, mi a következő lépés.",
+      "Egy helyen van minden, költségvetés, vendégek, ültetés. Mindketten ugyanazt látjuk, és tudjuk, mi a következő lépés.",
     t1_name: "Allie & Noah",
     t1_meta: "Budapest · béta-interjúkból összeállítva",
     t2_quote:
-      "Nem kellett kitalálnunk, mit hol és mikor csináljunk — a Wēddly végigvezetett a folyamaton.",
+      "Nem kellett kitalálnunk, mit hol és mikor csináljunk, a Wēddly végigvezetett a folyamaton.",
     t2_name: "Eszter & Dani",
     t2_meta: "Debrecen · béta-interjúkból összeállítva",
     t3_quote: "Egyszerűen működik. Több eszközre nincs is szükségünk.",
@@ -1357,7 +1357,7 @@ const hu: LocaleMessages = {
     mockup_vendor_category: "Virágdekoráció · Bécs",
     mockup_vendor_reviews: "4,9 · 23 értékelés",
     mockup_vendor_cta: "Profil megtekintése",
-    // ── Landing "try the demo" card — small tilted sticker on the right
+    // ── Landing "try the demo" card, small tilted sticker on the right
     //    of the hero. Eyebrow + italic title + one button. The fairytale
     //    identity is the reveal once the visitor lands in /app. ─────────
     demo_card_eyebrow: "regisztráció nélkül",
@@ -1367,7 +1367,7 @@ const hu: LocaleMessages = {
     demo_card_error: "Nem indult. Próbáld újra.",
   },
   vendors: {
-    seo_title: "Szolgáltatóknak — Wēddly",
+    seo_title: "Szolgáltatóknak · Wēddly",
     seo_description:
       "Iratkozzatok fel a Wēddly válogatott szolgáltatói listájára, és érjétek el a most tervező párokat.",
     pill: "Korai hozzáférés",
@@ -1377,13 +1377,13 @@ const hu: LocaleMessages = {
     trust_signal: "Csatlakozz a 47 várólistás szolgáltató mellé",
     benefit_1_title: "Válogatott válogatás",
     benefit_1_body:
-      "Kategóriánként korlátozott a hely, így a párok pont azt böngészik, ami passzol hozzájuk — és ti pont azokat éritek el, akik most döntenek.",
+      "Kategóriánként korlátozott a hely, így a párok pont azt böngészik, ami passzol hozzájuk, és ti pont azokat éritek el, akik most döntenek.",
     benefit_2_title: "Helyi piac, helyi adatok",
     benefit_2_body:
       "A párok ott keresnek, ahol a helyi szolgáltatók is dolgoznak; mi a kategóriát, a régiót és az árszintet hozzuk össze.",
     benefit_3_title: "Most közvetlen kapcsolat",
     benefit_3_body:
-      "A párok telefonon, e-mailen, Instagramon érnek el titeket — semmi platformközi kommunikáció. A foglalás, üzenetek és értékelések később jönnek, és időben szólunk.",
+      "A párok telefonon, e-mailen, Instagramon érnek el titeket, semmi platformközi kommunikáció. A foglalás, üzenetek és értékelések később jönnek, és időben szólunk.",
     form_title: "Iratkozzatok fel",
     form_business_label: "Vállalkozás neve",
     form_email_label: "E-mail",
@@ -1399,22 +1399,22 @@ const hu: LocaleMessages = {
     form_submitting: "Küldés…",
     form_success_title: "Várólistán vagytok.",
     form_success_body:
-      "Még nem fogadunk be szolgáltatókat — visszaigazoló e-mailt küldtünk a megadott címre, és értesítünk, amint nyitunk a kategóriátokban.",
+      "Még nem fogadunk be szolgáltatókat, visszaigazoló e-mailt küldtünk a megadott címre, és értesítünk, amint nyitunk a kategóriátokban.",
     form_message_label: "Üzenet",
     form_message_placeholder: "Pár sor a szolgáltatásotokról.",
     form_err_required: "Töltsd ki a vállalkozás nevét.",
     form_err_email: "Érvényes e-mail cím szükséges.",
     form_err_category: "Válassz egy kategóriát.",
-    form_err_rate_limited: "Sok jelentkezés érkezett — próbáld pár perc múlva.",
+    form_err_rate_limited: "Sok jelentkezés érkezett, próbáld pár perc múlva.",
     step_1_title: "Mutatkozzatok be",
     step_1_short: "Bemutatkozás",
     step_1_sub: "Melyik kategóriában dolgoztok, és mi a vállalkozás neve?",
     step_2_title: "Elérhetőségek",
     step_2_short: "Elérhetőség",
-    step_2_sub: "Ide küldjük a visszaigazolást — csak egy e-mail, semmi spam.",
+    step_2_sub: "Ide küldjük a visszaigazolást, csak egy e-mail, semmi spam.",
     step_3_title: "Mutassátok meg a munkáitokat",
     step_3_short: "Munkák",
-    step_3_sub: "Teljesen opcionális — de egy portfólió link sokat segít.",
+    step_3_sub: "Teljesen opcionális, de egy portfólió link sokat segít.",
     step_4_title: "Vállalkozás azonosítása",
     step_4_short: "Azonosítás",
     step_4_sub: "Most opcionális. Listád közzététele előtt szükséges lesz.",
@@ -1432,9 +1432,9 @@ const hu: LocaleMessages = {
     contact_cta: "Csatlakozz a várólistára",
     contact_subject: "Szolgáltatói várólista",
     back_to_landing: "Vissza a főoldalra",
-    beta_notice_title: "Béta alatt ingyenes — semmi rejtett költség",
+    beta_notice_title: "Béta alatt ingyenes, semmi rejtett költség",
     beta_notice_body:
-      "Béta alatt ingyenes. Ha később árazást vezetünk be, 30 nappal előre szólunk — semmi meglepetés, semmi spam.",
+      "Béta alatt ingyenes. Ha később árazást vezetünk be, 30 nappal előre szólunk, semmi meglepetés, semmi spam.",
     beta_notice_terms_link: "Szolgáltatói ÁSZF",
     privacy_consent_prefix: "Elolvastam és elfogadom az ",
     privacy_consent_link: "adatkezelési tájékoztatót",
@@ -1447,7 +1447,7 @@ const hu: LocaleMessages = {
     section_contact_sub: "Hogy elérjünk titeket, és tudjuk, hol dolgoztok.",
     section_portfolio_title: "Portfólió",
     section_portfolio_sub:
-      "Mutassátok meg a munkáitokat — ez alapján döntünk a felvételről. Opcionális, de nagyon ajánlott.",
+      "Mutassátok meg a munkáitokat, ez alapján döntünk a felvételről. Opcionális, de nagyon ajánlott.",
     section_optional_label: "opcionális",
     portfolio_links_label: "Portfólió linkek",
     portfolio_links_placeholder: "https://…",
@@ -1455,23 +1455,23 @@ const hu: LocaleMessages = {
     portfolio_add_link: "Új link",
     portfolio_count_hint: "1–3 link bőven elég.",
     portfolio_hint_default:
-      "Galéria, weboldal, Instagram poszt, Drive mappa — bármi, amit megosztanátok.",
+      "Galéria, weboldal, Instagram poszt, Drive mappa, bármi, amit megosztanátok.",
     portfolio_hint_venue_stay:
       "Helyszín fotók, tárlatvezető videó, Google Maps panoráma, vagy a saját weboldal galériája.",
     portfolio_hint_food_drink:
       "Étlap PDF / link, kóstolós fotók, korábbi esemény galéria, vagy social poszt.",
     portfolio_hint_atmosphere:
-      "Instagram posztok, web galériák — 3–6 darab elég, amiből látszik a stílusotok.",
+      "Instagram posztok, web galériák, 3–6 darab elég, amiből látszik a stílusotok.",
     portfolio_hint_experience:
       "YouTube / Vimeo / Mixcloud / Spotify link, korábbi esküvő galéria, demoszett.",
     portfolio_hint_style:
-      "Lookbook, Instagram galéria, weboldal — fontos, hogy ránézésre lássuk a stílust.",
+      "Lookbook, Instagram galéria, weboldal, fontos, hogy ránézésre lássuk a stílust.",
     portfolio_hint_details:
-      "Web, online katalógus, korábbi munkák galériája — amit szívesen megmutatnátok.",
+      "Web, online katalógus, korábbi munkák galériája, amit szívesen megmutatnátok.",
     instagram_label: "Instagram",
     instagram_placeholder: "viragstudio_bp",
     form_err_portfolio_link:
-      "Az egyik portfólió link nem érvényes URL — próbáld https://-vel kezdeni.",
+      "Az egyik portfólió link nem érvényes URL, próbáld https://-vel kezdeni.",
     form_err_travel_radius: "Az utazási távolság nem lehet negatív.",
     form_err_instagram_handle:
       "Az Instagram fióknév csak betűt, számot, pontot és aláhúzást tartalmazhat (max 30 karakter).",
@@ -1483,10 +1483,10 @@ const hu: LocaleMessages = {
     signup_cta: "Hirdesd a vállalkozásod",
     have_account_cta: "Van már fiókod? Jelentkezz be",
     cta_title: "Készen állsz, hogy több párhoz elérj?",
-    cta_body: "Hozd létre a szolgáltatói profilod két perc alatt — bankkártya nélkül.",
+    cta_body: "Hozd létre a szolgáltatói profilod két perc alatt, bankkártya nélkül.",
   },
   vendor_register: {
-    seo_title: "Légy szolgáltató — Weddly",
+    seo_title: "Légy szolgáltató · Weddly",
     seo_description: "Hozd létre a Weddly szolgáltatói profilod, és érd el a most tervező párokat.",
     title: "Szolgáltatói fiók létrehozása",
     subtitle: "Hirdesd a vállalkozásod a Weddlyn, és érd el a most tervező párokat.",
@@ -1518,7 +1518,7 @@ const hu: LocaleMessages = {
     blurb_label: "Rövid bemutatkozás",
     blurb_placeholder: "Egy-két mondat arról, mit csináltok, és miért vagytok jó választás.",
     price_band_label: "Árkategória",
-    price_band_hint: "Nagyjából hol helyezkedtek el — a megfizethetőtől a prémiumig.",
+    price_band_hint: "Nagyjából hol helyezkedtek el, a megfizethetőtől a prémiumig.",
     hero_label: "Borítókép",
     hero_cta: "Borítókép feltöltése",
     hero_replace: "Kép cseréje",
@@ -1621,19 +1621,19 @@ const hu: LocaleMessages = {
     delete_confirm_title: "Törlöd ezt a tételt?",
     delete_confirm_body: "Ez a művelet nem visszavonható.",
     empty_task: "Még nincs feladat. Adj hozzá egyet, hogy nyomon követhesd, mi van hátra.",
-    empty_idea: "Még nincs ötlet. Írj le bármit, ami eszedbe jut — később úgyis válogattok belőle.",
+    empty_idea: "Még nincs ötlet. Írj le bármit, ami eszedbe jut, később úgyis válogattok belőle.",
     empty_schedule:
       "Még üres a programterv. Indulj egy szertartás-időponttal, aztán bontsd ki a napot.",
     template_button: "Sablon készítése",
     template_button_hint:
-      "Tipikus magyar esküvői nap egy kattintásra — a szertartás időpontjához igazítva.",
+      "Tipikus magyar esküvői nap egy kattintásra, a szertartás időpontjához igazítva.",
     template_dialog_title: "Programterv sablon",
     template_dialog_body:
       "Mikor kezdődik a szertartás? Ehhez igazítjuk a többi programpont időpontját.",
     template_ceremony_label: "Szertartás kezdete",
     template_confirm: "Sablon generálása",
     template_warning_existing:
-      "Már van programpontotok a listán. Az új tételek hozzáadódnak ezekhez — szükség esetén duplikátumokat törölhettek utólag.",
+      "Már van programpontotok a listán. Az új tételek hozzáadódnak ezekhez, szükség esetén duplikátumokat törölhettek utólag.",
     template_preview_label: "Előnézet",
     template_done_one: "{count} programpont hozzáadva",
     template_done_other: "{count} programpont hozzáadva",
@@ -1642,7 +1642,7 @@ const hu: LocaleMessages = {
     assignee_placeholder: "Felelős",
     assignee_add: "Felelős",
     assignee_edit_hint: "Kattints a felelős átírásához",
-    idea_suggested_by: "— {name} javasolta",
+    idea_suggested_by: "{name} javasolta",
     timeline_link: "Idővonal",
     timeline_link_hint: "Nyisd meg a feladatok Gantt-nézetét",
     task_group_wedding: "Esküvő",
@@ -1658,10 +1658,10 @@ const hu: LocaleMessages = {
     // Safe-timeline generator button + dialog on the Tasks tab.
     timeline_gen_button: "Ütemterv összeállítása",
     timeline_gen_button_hint:
-      "A biztonságos esküvői ütemterv — minden teendő a határidejével, az esküvő dátumából kiszámolva.",
+      "A biztonságos esküvői ütemterv, minden teendő a határidejével, az esküvő dátumából kiszámolva.",
     timeline_gen_dialog_title: "Ütemterv összeállítása",
     timeline_gen_dialog_body:
-      "Ezek a teendők egy bevált esküvői ütemtervet adnak, mindegyik a saját ideális határidejével. Nézzétek át, igazítsatok a dátumokon, és vegyétek ki amire nincs szükség — utána bármikor módosítható.",
+      "Ezek a teendők egy bevált esküvői ütemtervet adnak, mindegyik a saját ideális határidejével. Nézzétek át, igazítsatok a dátumokon, és vegyétek ki amire nincs szükség, utána bármikor módosítható.",
     timeline_gen_no_date:
       "Még nincs pontos esküvői dátumotok, ezért a határidők üresek. Hozzáadhatjátok a teendőket most, és később beírhatjátok a dátumokat.",
     timeline_gen_already: "Már a listátokon",
@@ -1675,7 +1675,7 @@ const hu: LocaleMessages = {
     // Task tab wand (varázspálca) + dialog.
     task_template_button: "Sablon feladatok",
     task_template_button_hint:
-      "12 klasszikus magyar esküvői teendő — opcionálisan közös felelőssel egyszerre.",
+      "12 klasszikus magyar esküvői teendő, opcionálisan közös felelőssel egyszerre.",
     task_template_dialog_title: "Feladat-sablon",
     task_template_dialog_body:
       "Ha mind a 12 feladaton ugyanaz a felelős, add meg itt egyszer. Üresen hagyva későbbi szerkesztéssel jelölitek.",
@@ -1695,12 +1695,12 @@ const hu: LocaleMessages = {
       "9 alap ötlet, amit a magyar esküvőkön szoktak megfontolni. Innen szűrhetitek tovább.",
     idea_template_dialog_title: "Ötlet-sablon",
     idea_template_dialog_body:
-      "Hozzáadjuk a listához — mindegyiknél automatikusan jelöljük, hogy melyikőtök vette fel.",
+      "Hozzáadjuk a listához, mindegyiknél automatikusan jelöljük, hogy melyikőtök vette fel.",
     template_ideas_done_one: "{count} ötlet hozzáadva",
     template_ideas_done_other: "{count} ötlet hozzáadva",
     // Dice (🎲) randomiser on the Idea tab.
     dice_button: "Dobj 3 ötletet",
-    dice_button_hint: "Véletlenszerű, kreatív ötletek — válogass és fogadj el amelyiket szereted.",
+    dice_button_hint: "Véletlenszerű, kreatív ötletek, válogass és fogadj el amelyiket szereted.",
     dice_dialog_title: "Kreatív ötlet-dobás",
     dice_dialog_body:
       "3 véletlen ötlet a kreatív gyűjteményből. Fogadd el egyenként, vagy dobj újat ha nem szóltak meg.",
@@ -1797,7 +1797,7 @@ const hu: LocaleMessages = {
     title: "Idővonal",
     sub: "Lásd, mikor zajlanak a feladataid, és kit hívj fel sürgős esetben.",
     poc_title: "Kapcsolattartók",
-    poc_empty: "Még nincs kiválasztott szolgáltató — válassz a /app/suppliers oldalon.",
+    poc_empty: "Még nincs kiválasztott szolgáltató, válassz a /app/suppliers oldalon.",
     chart_title: "Feladat-idővonal",
     no_dates_title: "Dátum nélküli feladatok",
     no_dates_empty: "Minden feladatnak van dátuma.",
@@ -1824,14 +1824,14 @@ const hu: LocaleMessages = {
     wedding_marker: "Esküvő napja",
     window_empty: "Ebben az időszakban nincs feladat",
     empty_gutter_title: "Ide jönnek a feladataid",
-    empty_gutter_sub: "Generálj néhányat — pár kattintással kész a teljes esküvői ütemterv.",
+    empty_gutter_sub: "Generálj néhányat, pár kattintással kész a teljes esküvői ütemterv.",
     empty_gutter_cta: "Feladatok generálása",
     empty_add_task: "Feladat hozzáadása",
     outside_before_one: "{count} korábban",
     outside_before_other: "{count} korábban",
     outside_after_one: "még {count} később",
     outside_after_other: "még {count} később",
-    seo_title: "Idővonal — Weddly",
+    seo_title: "Idővonal · Weddly",
     seo_description: "Esküvői feladataid Gantt-nézetben + kapcsolattartók.",
     all_day_label: "egész napos",
     now_label: "Most",
@@ -1849,10 +1849,10 @@ const hu: LocaleMessages = {
   },
   honeymoon: {
     title: "Nászút",
-    sub: "Tervezzétek meg a nászutatokat — úti cél, dátumok, költségek — egy helyen.",
-    before_wedding_title: "Várj — ez biztosan jó?",
+    sub: "Tervezzétek meg a nászutatokat, úti cél, dátumok, költségek, egy helyen.",
+    before_wedding_title: "Várj, ez biztosan jó?",
     before_wedding_body:
-      "A nászút kezdete {honeymoon}, de az esküvő {wedding}. A legtöbb pár az esküvő után indul — nézd át a dátumokat.",
+      "A nászút kezdete {honeymoon}, de az esküvő {wedding}. A legtöbb pár az esküvő után indul, nézd át a dátumokat.",
     countdown_future_one: "Még {count} nap",
     countdown_future_other: "Még {count} nap",
     countdown_today: "Ma indul!",
@@ -1887,7 +1887,7 @@ const hu: LocaleMessages = {
     flight_expand_aria: "Repjegy becslés kinyitása",
     flight_collapse_aria: "Repjegy becslés összecsukása",
     flight_price_disclaimer:
-      "Az árak folyamatosan változnak — a kijelölt ár csak a mai napon érvényes.",
+      "Az árak folyamatosan változnak, a kijelölt ár csak a mai napon érvényes.",
     flight_price_disclaimer_dated:
       "Az árak folyamatosan változnak, így ez az ár csak ma ({date}) érvényes.",
     flight_save_cta: "Ezt választjuk",
@@ -1898,14 +1898,14 @@ const hu: LocaleMessages = {
     flight_save_confirm_cta: "Mentés a tervbe",
     flight_save_todo_title: "Repjegy megvásárlása",
     flight_save_todo_note:
-      "{carrier} · ~{price}. Az árak változnak — ez az ár csak {date} napon volt érvényes. Foglalás:",
+      "{carrier} · ~{price}. Az árak változnak, ez az ár csak {date} napon volt érvényes. Foglalás:",
     flight_save_done: "Hozzáadtuk a repjegyet a költségvetéshez és a teendőkhöz.",
     todo_title: "Nászúti teendők",
     todo_sub_count: "{done} / {total} kész",
     todo_sub_empty: "Még nincs nászúti teendő",
     todo_manage_link: "Szerkesztés a Tervezésben →",
     todo_empty_body:
-      "Nyisd meg a tervezés varázspálcáját, és kapcsold be a Nászút csoportot — útlevél, repjegy, biztosítás, csomagolás.",
+      "Nyisd meg a tervezés varázspálcáját, és kapcsold be a Nászút csoportot, útlevél, repjegy, biztosítás, csomagolás.",
     todo_empty_cta: "Tervezés megnyitása",
     todo_check_aria: "Jelölés késznek",
     todo_uncheck_aria: "Visszajelölés",
@@ -1944,7 +1944,7 @@ const hu: LocaleMessages = {
       "Adj hozzá tételeket a tervezett kiadásokhoz. A változások a Költségvetésben is megjelennek.",
     costs_empty_title: "Még nincs költség",
     costs_empty_body:
-      "Kezdd egy kategóriával — utazás, szállás, étkezés, programok. A tervezett összeget bármikor szerkesztheted.",
+      "Kezdd egy kategóriával, utazás, szállás, étkezés, programok. A tervezett összeget bármikor szerkesztheted.",
     costs_empty_short: "Kezdd egy kategóriával:",
     cost_actual_inline: "Eddig: {actual}",
     slider_aria: "{label} tervezett összeg",
@@ -2035,7 +2035,7 @@ const hu: LocaleMessages = {
     photographer_open: "Galéria megnyitása",
     create_modal_title: "Vendég fotóalbum beállítása",
     create_modal_desc:
-      "A vendégek megnyitják a linket telefonon, fotóznak vagy feltöltenek — és minden az albumodba kerül. App nélkül, regisztráció nélkül.",
+      "A vendégek megnyitják a linket telefonon, fotóznak vagy feltöltenek, és minden az albumodba kerül. App nélkül, regisztráció nélkül.",
     create_modal_submit: "Album létrehozása",
     create_modal_creating: "Létrehozás…",
     feedback_title: "Mire lenne szükségetek?",
@@ -2240,7 +2240,7 @@ const hu: LocaleMessages = {
     print_preview: {
       sample_name: "Vendég neve",
       sample_table: "1. asztal",
-      caption: "Élő előnézet — a letöltött PDF ezt az arculatot követi.",
+      caption: "Élő előnézet, a letöltött PDF ezt az arculatot követi.",
       template_label: "Kártyatípus",
       tpl: {
         place_card: "Ültetőkártya",
@@ -2318,7 +2318,7 @@ const hu: LocaleMessages = {
     error_private:
       "Ez a tábla titkos vagy nem nyilvános. Tedd publikussá a Pinteresten (Tábla beállítások → „Titkos” kikapcsolása), majd próbáld újra.",
     error_empty:
-      "A tábla még üres — nincs rajta egy pin sem. Tűzz fel néhány képet a Pinteresten, aztán térj vissza ide.",
+      "A tábla még üres, nincs rajta egy pin sem. Tűzz fel néhány képet a Pinteresten, aztán térj vissza ide.",
     error_fetch: "Nem tudtuk most elérni a Pinterestet. Próbáld újra pár perc múlva.",
     preset_badge: "Ajánlott",
     replace_title: "Tegyétek a sajátotokká",
@@ -2335,7 +2335,7 @@ const hu: LocaleMessages = {
     back_to_preset: "Vissza az ajánlotthoz",
   },
   guest_portal: {
-    date_tbd: "Esküvő dátuma — még pontosítás alatt",
+    date_tbd: "Esküvő dátuma, még pontosítás alatt",
     edit_section_hint: "Kattints a szerkesztéshez",
     countdown_title: "Visszaszámlálás",
     countdown_add_date: "Add meg az esküvő dátumát",
@@ -2375,7 +2375,7 @@ const hu: LocaleMessages = {
     wishlist_pledge_contributors_funded: "Az ajándék teljesen fedezett! 🎉",
     wishlist_pledge_error_generic: "Valami hiba történt. Kérjük, próbáld újra.",
     schedule_title: "Menetrend",
-    schedule_empty: "A pár még nem tette közzé a menetrendet — nézzétek meg újra később.",
+    schedule_empty: "A pár még nem tette közzé a menetrendet, nézzétek meg újra később.",
     schedule_next_day: "másnap",
     location_title: "Helyszín",
     location_open_map: "Megnyitás térképen",
@@ -2392,7 +2392,7 @@ const hu: LocaleMessages = {
       no: "Nem megyek",
       pending: "Még válaszra vár",
     },
-    household_title: "A ti foglalásotok — {label}",
+    household_title: "A ti foglalásotok, {label}",
     gate_title: "Először jelöljétek igennel a meghívást",
     gate_body:
       "Ez az oldal akkor nyílik meg, ha legalább egy fő igennel visszajelölt. Először töltsétek ki az RSVP-t.",
@@ -2428,11 +2428,11 @@ const hu: LocaleMessages = {
     preview_live_hint_not_published: "Az oldal még privát. Tedd közzé, hogy a vendégek lássák",
     section_share_title: "Megosztás a vendégekkel",
     section_share_body:
-      "Ezt a linket küldd a vendégeknek. WhatsApp-on, e-mailben vagy save-the-date-en — aki megnyitja, a ti esküvői oldalatokra érkezik.",
+      "Ezt a linket küldd a vendégeknek. WhatsApp-on, e-mailben vagy save-the-date-en, aki megnyitja, a ti esküvői oldalatokra érkezik.",
     section_public_eyebrow: "Bárki látja, akinek elküldöd a linket",
     section_public_title: "Nyilvános tartalom",
     section_public_hint:
-      "Itt állítod a helyszín nevét és a borítóképet, ami a nyilvános oldalon megjelenik. A pontos címet hagyd lentebb — az csak RSVP után jelenik meg.",
+      "Itt állítod a helyszín nevét és a borítóképet, ami a nyilvános oldalon megjelenik. A pontos címet hagyd lentebb, az csak RSVP után jelenik meg.",
     section_unlocked_eyebrow: "RSVP után nyílik meg",
     section_unlocked_title: "Amit a visszajelölt vendégek látnak",
     section_unlocked_hint:
@@ -2441,7 +2441,7 @@ const hu: LocaleMessages = {
     section_unlocked_link_profile: "Helyszín koordinátája",
     intro_label: "Üdvözlő szöveg (mindenki látja)",
     intro_placeholder:
-      "Pár sor a vendégeknek — pl. „Köszönjük, hogy velünk ünnepeltek. Itt találtok minden infót, ami a napon kell.”",
+      "Pár sor a vendégeknek, pl. „Köszönjük, hogy velünk ünnepeltek. Itt találtok minden infót, ami a napon kell.”",
     intro_hint:
       "Bárki látja, aki megnyitja a linket. Hagyd üresen, ha nem akarsz nyilvános köszöntőt.",
     intro_suggestions_heading: "Nincs ötleted? Válassz egy köszöntőt, aztán alakítsd a sajátoddá:",
@@ -2452,7 +2452,7 @@ const hu: LocaleMessages = {
       "Hálásak vagyunk, hogy jelenlétetekkel még szebbé teszitek az esküvőnk napját.",
     intro_suggestion_5:
       "Köszönjük, hogy szeretetetekkel és jelenlétetekkel részesei vagytok a mi napunknak.",
-    intro_suggestion_applied: "Szöveg hozzáadva — szerkeszd az alábbi mezőben.",
+    intro_suggestion_applied: "Szöveg hozzáadva, szerkeszd az alábbi mezőben.",
     useful_info_label: "Hasznos infók",
     useful_info_placeholder: "Parkolás: ...\nMegközelítés: ...\nSzállás: ...",
     useful_info_hint:
@@ -2496,16 +2496,16 @@ const hu: LocaleMessages = {
       "Ezt látja most a vendég. Mentsd el a fenti módosításokat, hogy itt is frissüljön a dátum, a menetrend és a térkép.",
     share_per_household_title: "Személyes linkek háztartásonként",
     share_per_household_subtitle:
-      "Minden háztartásnak saját linkje van. Aki a saját linkjén keresztül érkezik, annak automatikusan a háztartása töltődik be az RSVP űrlapon — nem kell kódot beírni.",
+      "Minden háztartásnak saját linkje van. Aki a saját linkjén keresztül érkezik, annak automatikusan a háztartása töltődik be az RSVP űrlapon, nem kell kódot beírni.",
     share_per_household_summary: "Háztartásonkénti személyes linkek mutatása",
     share_per_household_empty:
-      "Először adjatok hozzá háztartást a Vendégek oldalon — itt akkor jelennek meg a személyes linkek, ha van legalább egy.",
+      "Először adjatok hozzá háztartást a Vendégek oldalon, itt akkor jelennek meg a személyes linkek, ha van legalább egy.",
     share_per_household_member_count_one: "1 vendég",
     share_per_household_member_count_other: "{count} vendég",
     share_per_household_copy_link: "Link másolása",
     share_per_household_copy_link_aria: "Személyes link másolása ehhez: {label}",
     share_per_household_whatsapp: "WhatsApp",
-    share_per_household_whatsapp_aria: "Megosztás WhatsAppon — {label}",
+    share_per_household_whatsapp_aria: "Megosztás WhatsAppon, {label}",
     share_per_household_rotate: "Új kód",
     share_per_household_rotate_aria: "Új kód generálása ehhez: {label}",
     share_per_household_rotate_confirm_title: "Új kódot generálsz ennek a háztartásnak?",
@@ -2519,7 +2519,7 @@ const hu: LocaleMessages = {
       "Minden háztartás linkjének másolása tabulátorral elválasztott listaként",
     share_per_household_copy_all_success: "Az összes személyes linket a vágólapra másoltuk.",
     whatsapp_message_template:
-      "Szia {guest_name}! Itt a személyes linked az esküvői oldalunkhoz — nyisd meg, és visszajelölheted is rajta: {link}",
+      "Szia {guest_name}! Itt a személyes linked az esküvői oldalunkhoz, nyisd meg, és visszajelölheted is rajta: {link}",
   },
   guest_preview: {
     title: "Vendégoldal előnézet",
@@ -2535,7 +2535,7 @@ const hu: LocaleMessages = {
     share_copy_slug_aria: "Páros kód másolása",
     share_copy_link_aria: "RSVP link másolása",
     share_copied: "Vágólapra másolva",
-    share_copy_failed: "Nem sikerült másolni — másoljátok kézzel.",
+    share_copy_failed: "Nem sikerült másolni, másoljátok kézzel.",
     share_no_slug:
       "A páros kódotok akkor jelenik meg, ha a munkaterület befejezte az onboardingot.",
   },
@@ -2543,7 +2543,7 @@ const hu: LocaleMessages = {
     title: "Kívánságlista",
     dev_badge: "Fejlesztés alatt",
     subtitle:
-      "Egy kedves lista azokról, amiknek örülnétek — egy nagyobb közös ajándék, kisebb meglepetések vagy egy személyes gesztus. A visszajelzett vendégek a vendégoldalon látják. A Weddlyn keresztül nem mozog pénz.",
+      "Egy kedves lista azokról, amiknek örülnétek, egy nagyobb közös ajándék, kisebb meglepetések vagy egy személyes gesztus. A visszajelzett vendégek a vendégoldalon látják. A Weddlyn keresztül nem mozog pénz.",
     add_item: "Új kívánság",
     empty_state: "Még nincs egy kívánság sem. Vegyétek fel az elsőt.",
     title_label: "Megnevezés",
@@ -2567,7 +2567,7 @@ const hu: LocaleMessages = {
     description_label: "Leírás",
     description_placeholder: "Egy mondat arról, miért fontos ez nektek (nem kötelező)",
     target_amount_label: "Hozzávetőleges összeg",
-    target_amount_hint: "Csak egy kívánság, nem számla — segít a vendégeknek a nagyságrendben.",
+    target_amount_hint: "Csak egy kívánság, nem számla, segít a vendégeknek a nagyságrendben.",
     currency_aria: "Pénznem ehhez a kívánsághoz",
     url_label: "Link",
     url_placeholder: "https://…",
@@ -2612,7 +2612,7 @@ const hu: LocaleMessages = {
   },
   schedule: {
     title: "Programterv",
-    sub: "Az esküvő napjának menetrendje — érkezés, szertartás, vacsora, tánc. Egy A4-es oldalra nyomtatható, kiosztható a szolgáltatóknak.",
+    sub: "Az esküvő napjának menetrendje, érkezés, szertartás, vacsora, tánc. Egy A4-es oldalra nyomtatható, kiosztható a szolgáltatóknak.",
     add_event: "Új programpont",
     edit_event: "Programpont szerkesztése",
     delete_event: "Programpont törlése",
@@ -2639,7 +2639,7 @@ const hu: LocaleMessages = {
     label_required: "Adj meg egy nevet a programpontnak.",
     time_required: "Adj meg egy érvényes időpontot.",
     save_failed: "Nem sikerült menteni. Próbáld újra.",
-    save_conflict: "Egy másik szerkesztő közben módosította — frissítettük az adatokat.",
+    save_conflict: "Egy másik szerkesztő közben módosította, frissítettük az adatokat.",
     empty_title: "Még nincs programterv",
     empty_body:
       "Adj hozzá programpontokat, vagy generálj javaslatot a kezdő és záró időpont alapján.",
@@ -2647,15 +2647,15 @@ const hu: LocaleMessages = {
     wand_button_hint: "Kezdő- és záróidő alapján javasolt menetrend",
     wand_dialog_title: "Menetrend javaslata",
     wand_dialog_body:
-      "Add meg, mikor kezdődik és mikor zárul a nap — a fontosabb programpontokat ennek megfelelően osztjuk el.",
+      "Add meg, mikor kezdődik és mikor zárul a nap, a fontosabb programpontokat ennek megfelelően osztjuk el.",
     wand_start_label: "Kezdés",
     wand_end_label: "Zárás",
     wand_overnight_hint:
-      "A zárás éjfél után van — az éjszakai programpontokat másnapra osztjuk be.",
+      "A zárás éjfél után van, az éjszakai programpontokat másnapra osztjuk be.",
     wand_window_error: "A kezdés és a zárás nem lehet ugyanaz az időpont.",
     field_next_day: "Másnap (éjfél után)",
     day_two_badge: "másnap",
-    wand_warning_existing: "Már vannak programpontok — az új sorok melléjük kerülnek.",
+    wand_warning_existing: "Már vannak programpontok, az új sorok melléjük kerülnek.",
     wand_select_label: "{count} / {total} kiválasztva",
     wand_select_all: "Mind",
     wand_select_none: "Egyik sem",
@@ -2663,7 +2663,7 @@ const hu: LocaleMessages = {
     wand_apply_done: "{count} programpont hozzáadva.",
     duration_unit: "{n} perc",
     open_ended: "Nyitott időtartam",
-    time_conflict: "Erre az időre már „{label}” van — válassz másik időpontot.",
+    time_conflict: "Erre az időre már „{label}” van, válassz másik időpontot.",
     wand_item_conflict: "Ütközik egy már létező programmal",
     view_proportional: "Időarányos",
     view_timeline: "Idővonal",
@@ -2722,7 +2722,7 @@ const hu: LocaleMessages = {
     meal: "Étrend",
     orphans_title: "Néhány vendég még háztartás nélkül van",
     orphans_body:
-      "Ahhoz, hogy elküldhesd a check-in linket, mindenki kerüljön egy háztartásba. Egy kattintással létrehozunk mindenkinek egy egy fős háztartást — később összevonhatod a párokat.",
+      "Ahhoz, hogy elküldhesd a check-in linket, mindenki kerüljön egy háztartásba. Egy kattintással létrehozunk mindenkinek egy egy fős háztartást, később összevonhatod a párokat.",
     orphans_assign_button: "Vendégek hozzárendelése háztartásokhoz",
     orphans_assigning: "Hozzárendelés…",
     orphans_support_link: "Kapcsolatfelvétel a támogatással",
@@ -2763,7 +2763,7 @@ const hu: LocaleMessages = {
     group_other: "Egyéb",
     empty_title: "Még nincsenek vendégek",
     empty_body:
-      "Add hozzá az elsőt, vagy importálj egy egész listát CSV-ből — a sablon segít a formátumban.",
+      "Add hozzá az elsőt, vagy importálj egy egész listát CSV-ből, a sablon segít a formátumban.",
     empty_cta_add: "Első vendég hozzáadása",
     saving: "Mentés…",
     import_done_one: "Importálva: {count} vendég",
@@ -2796,7 +2796,7 @@ const hu: LocaleMessages = {
     meals_pending_help_one: "1 vendég még nem választott menüt.",
     meals_pending_help_other: "{count} vendég még nem választott menüt.",
     meals_no_yes_yet:
-      "Még nincs „igen” válasz — itt később az étkezési és étrendi összesítő jelenik meg.",
+      "Még nincs „igen” válasz, itt később az étkezési és étrendi összesítő jelenik meg.",
     meals_copy_text: "Másolás összesítőként",
     meals_copy_success: "Az összesítő a vágólapra került.",
     meals_download_text: "CSV letöltése",
@@ -2823,12 +2823,12 @@ const hu: LocaleMessages = {
     household_add_member: "Tag hozzáadása",
     household_remove_confirm_title: "Háztartás törlése?",
     household_remove_confirm_body:
-      "Először tedd át máshová a tagjait — csak üres háztartást törlünk.",
+      "Először tedd át máshová a tagjait, csak üres háztartást törlünk.",
     household_remove: "Háztartás törlése",
     household_expand: "Háztartás kibontása",
     household_collapse: "Háztartás összecsukása",
-    household_accommodation_on: "Szállás-kérés kérdés bekapcsolva — kattints a kikapcsoláshoz",
-    household_accommodation_off: "Szállás-kérés kérdés kikapcsolva — kattints a bekapcsoláshoz",
+    household_accommodation_on: "Szállás-kérés kérdés bekapcsolva, kattints a kikapcsoláshoz",
+    household_accommodation_off: "Szállás-kérés kérdés kikapcsolva, kattints a bekapcsoláshoz",
     household_section_title: "Háztartások",
     household_section_help:
       "Csoportosítsd egy háztartásba azokat, akik együtt válaszolnak (pár, család). A check-in oldalon egymást is látják.",
@@ -2837,7 +2837,7 @@ const hu: LocaleMessages = {
       "A vendégek ezt írják be a /rsvp oldalon a 8 karakteres kódjuk mellé. Csak betűk és számok.",
     couple_slug_save: "Mentés",
     couple_slug_invalid: "Csak betűk és számok (3–24 karakter).",
-    couple_slug_taken: "Ez az azonosító már foglalt — válassz másikat.",
+    couple_slug_taken: "Ez az azonosító már foglalt, válassz másikat.",
     checkin_pill_lead: "Check-in",
     checkin_pill_suffix: "+ 8 karakteres kód háztartásonként",
     checkin_pill_show: "Részletek",
@@ -2851,7 +2851,7 @@ const hu: LocaleMessages = {
     checkin_copy_link: "Link másolása",
     checkin_link_copied: "Link a vágólapra másolva.",
     couple_slug_help_locked:
-      "Az azonosító a meghívókra és a check-in oldalra is rákerül — zárolva, hogy a kiosztott linkek továbbra is működjenek.",
+      "Az azonosító a meghívókra és a check-in oldalra is rákerül, zárolva, hogy a kiosztott linkek továbbra is működjenek.",
     invited_check_label: "Megjelölve meghívottnak",
     invited_short: "meghívva",
     invited_progress_help: "Meghívottnak jelölt tagok / összes tag.",
@@ -2860,7 +2860,7 @@ const hu: LocaleMessages = {
     invite_state_not_invited: "Még nem hívtátok meg",
     invite_state_invited: "Meghívva",
     invite_state_delivered: "Meghívó átadva",
-    invite_state_not_invited_short: "—",
+    invite_state_not_invited_short: "-",
     invite_state_cycle_to_invited: "Kattints a meghívottá jelöléshez",
     invite_state_cycle_to_delivered: "Kattints, ha átadtátok a meghívót",
     invite_state_cycle_to_clear: "Kattints a visszavonáshoz",
@@ -2900,7 +2900,7 @@ const hu: LocaleMessages = {
     rsvp_filled_at: "Kitöltve: {date}",
     plus_one_label: "Kísérő (+1)",
     plus_one_help:
-      "Töltsd ki helyette a kísérőjét — vendégként hozzáadjuk ugyanabba a háztartásba.",
+      "Töltsd ki helyette a kísérőjét, vendégként hozzáadjuk ugyanabba a háztartásba.",
     plus_one_placeholder: "Kísérő neve",
     partner_role_bride: "Menyasszony",
     partner_role_groom: "Vőlegény",
@@ -2914,7 +2914,7 @@ const hu: LocaleMessages = {
   },
   budget: {
     title: "Költségvetés",
-    sub: "Húzd át a számokat — a végösszeg és vendégenkénti költség élőben frissül.",
+    sub: "Húzd át a számokat, a végösszeg és vendégenkénti költség élőben frissül.",
     category: "Kategória",
     label: "Tétel",
     planned: "Tervezett",
@@ -2955,7 +2955,7 @@ const hu: LocaleMessages = {
     save_snapshot: "Pillanatkép mentése",
     snapshot_name_prompt: 'Pillanatkép neve (pl. "120 vendég variáció")',
     snapshot_name_label: "Pillanatkép neve",
-    snapshot_name_help: 'Pl. "120 vendég variáció" — később ezzel ismered fel.',
+    snapshot_name_help: 'Pl. "120 vendég variáció", később ezzel ismered fel.',
     snapshot_save_failed: "A pillanatkép mentése nem sikerült.",
     save_failed_retry: "A sor mentése nem sikerült. Próbáld újra.",
     save_conflict: "Ezt a sort valaki más is szerkesztette. Töltsd újra.",
@@ -2981,14 +2981,14 @@ const hu: LocaleMessages = {
     cost_planning_count_unlock_aria: "Vendégszám feloldása",
     payments_due_title: "Esedékes kifizetések",
     payments_due_sub:
-      "A szolgáltatóknál felvitt fizetési ütemezések összesítése — mikorra mennyi kell.",
+      "A szolgáltatóknál felvitt fizetési ütemezések összesítése, mikorra mennyi kell.",
     payments_paid: "Eddig kifizetve",
     payments_outstanding: "Hátralék",
     payments_due_30: "30 napon belül",
     payments_next: "Következő",
     payments_none_dated: "Nincs dátumozott részlet",
     lines_title: "Költségsorok",
-    lines_sub: "Szerkeszd a sorokat — a fenti összegek és sávok élőben frissülnek.",
+    lines_sub: "Szerkeszd a sorokat, a fenti összegek és sávok élőben frissülnek.",
     lines_empty: "Még nincs költségsor. Adj hozzá egyet, hogy elindulhass.",
     lines_totals_label: "Összesen",
     honeymoon_breakdown_hint: "Lebontás a Nászút oldalon",
@@ -3077,7 +3077,7 @@ const hu: LocaleMessages = {
   },
   income: {
     title: "Befolyt pénz",
-    sub: "Nászajándékok és hozzájárulások — a végén látod, mennyi térült meg a kiadásokból.",
+    sub: "Nászajándékok és hozzájárulások, a végén látod, mennyi térült meg a kiadásokból.",
     received: "Összesen befolyt",
     spent: "Elköltött",
     net_cost: "A nap nettó költsége",
@@ -3092,7 +3092,7 @@ const hu: LocaleMessages = {
     benchmark_strip:
       "{count} főnél az átlagos HU költségvetés {min} – {max} Ft. Ti most {userTotal}-on álltok.",
     benchmark_methodology:
-      "Tájékoztató jellegű becslés HU 2026-ra, publikus szállítói árakból (tradergroup.hu, eskuvo.com). Nem szakvélemény — saját ajánlatok mindig pontosabbak.",
+      "Tájékoztató jellegű becslés HU 2026-ra, publikus szállítói árakból (tradergroup.hu, eskuvo.com). Nem szakvélemény, saját ajánlatok mindig pontosabbak.",
     benchmark_source_hint: "Honnan jönnek ezek a számok?",
     overcap_medium_label: "{amount}-tal a keret fölött",
     per_guest_planned: "Tervezett · {amount}/fő × {count} vendég",
@@ -3156,9 +3156,9 @@ const hu: LocaleMessages = {
     tap_mode_on: "Érintéses mód",
     tap_mode_off: "Érintéses mód kikapcsolása",
     tap_select_help: "Koppints egy vendégre a kijelöléshez, majd egy kártyára a beosztáshoz.",
-    tap_place_hint: "{guest} kijelölve — koppints egy kártyára a beosztáshoz.",
+    tap_place_hint: "{guest} kijelölve, koppints egy kártyára a beosztáshoz.",
     tap_unassign_hint: "Koppints az X-re a vendég felszabadításához.",
-    full_blocked: "„{name}” megtelt — szabadíts fel egy helyet előbb.",
+    full_blocked: "„{name}” megtelt, szabadíts fel egy helyet előbb.",
     partial_placed: "{placed}/{total} vendég bekerült „{name}” mellé.",
     bride_label: "Menyasszony",
     groom_label: "Vőlegény",
@@ -3205,7 +3205,7 @@ const hu: LocaleMessages = {
     add_first_table: "Adj hozzá egyet a kezdéshez.",
     empty_cta_add_table: "Első asztal hozzáadása",
     empty_body_no_guests:
-      "Az ültetésrendet a vendéglistára építjük rá — kezdj a vendégekkel, utána tudunk asztalokat tenni mellé.",
+      "Az ültetésrendet a vendéglistára építjük rá, kezdj a vendégekkel, utána tudunk asztalokat tenni mellé.",
     empty_cta_add_guests: "Vendégek hozzáadása",
     empty_cta_fallback_table: "Mégis asztallal kezdek",
     drag_help: "Húzd a vendégeket az ülőhelyekre.",
@@ -3214,9 +3214,9 @@ const hu: LocaleMessages = {
     household_relink: "Visszakapcsolás a háztartáshoz",
     household_placed_all: "{n} vendég leültetve · {table}",
     household_placed_partial:
-      "{n}/{m} vendég leültetve — a többiek a nem ültetettek között maradtak.",
+      "{n}/{m} vendég leültetve, a többiek a nem ültetettek között maradtak.",
     household_no_room:
-      "Nincs szabad hely ezen az asztalon — szabadíts fel székeket vagy válassz másik asztalt.",
+      "Nincs szabad hely ezen az asztalon, szabadíts fel székeket vagy válassz másik asztalt.",
     conflicts_title: "Konfliktusok",
     no_conflicts: "Nincs jelölt konfliktus.",
     conflict_split: "ne kerüljenek egymás mellé",
@@ -3243,7 +3243,7 @@ const hu: LocaleMessages = {
     remove_seat: "Hely eltávolítása",
     preview_title: "Előnézet és letöltés",
     preview_help:
-      "Nézd meg, mielőtt mentenéd — a nagy formátumú nyomatok könnyen rossz tálcára kerülnek.",
+      "Nézd meg, mielőtt mentenéd, a nagy formátumú nyomatok könnyen rossz tálcára kerülnek.",
     confirm_download: "Letöltés",
     drop_to_unassign: "Húzz ide egy vendéget az ülőhely felszabadításához.",
     drop_to_unassign_active: "Engedd el a leültetés visszavonásához",
@@ -3253,11 +3253,11 @@ const hu: LocaleMessages = {
     position_label_full: "Pozíció: {x} m balról, {y} m fentről",
     assignments_section_title: "Vendégek elhelyezése",
     assignments_section_hint:
-      "Húzd vagy érintsd meg a vendégeket a táblázatban — a térképen csak a teremrend látszik.",
+      "Húzd vagy érintsd meg a vendégeket a táblázatban, a térképen csak a teremrend látszik.",
     tap_mode_on: "Érintéses mód",
     tap_mode_off: "Érintéses mód kikapcsolása",
     tap_select_help: "Koppints egy vendégre a kijelöléshez, majd egy ülőhelyre az elhelyezéshez.",
-    tap_place_hint: "{guest} kijelölve — koppints egy ülőhelyre az elhelyezéshez.",
+    tap_place_hint: "{guest} kijelölve, koppints egy ülőhelyre az elhelyezéshez.",
     undo_action: "Visszavonás",
     undo_label: "Visszaállít",
     undo_failed: "A visszavonás nem sikerült.",
@@ -3271,7 +3271,7 @@ const hu: LocaleMessages = {
     toast_resized: "{table} átméretezve",
     toast_arranged: "Asztalok szimmetrikusan elrendezve",
     toast_arranged_crowded:
-      "A terem szűk az asztalok számához — egyes asztalok között nincs 80 cm közlekedési hely. Növeld a termet vagy csökkentsd az asztalok számát.",
+      "A terem szűk az asztalok számához, egyes asztalok között nincs 80 cm közlekedési hely. Növeld a termet vagy csökkentsd az asztalok számát.",
     arrange_button_label: "Asztalok szimmetrikus elrendezése",
     swap_seats_title: "Ez az ülőhely már foglalt",
     swap_seats_body:
@@ -3289,8 +3289,8 @@ const hu: LocaleMessages = {
     table_aria_label: "{name}, {seats} hely",
     save_failed: "A módosítás nem mentődött el. Az ültetés frissítve van.",
     save_conflict: "Ezt az asztalt időközben más is módosította. Frissítjük.",
-    table_too_small: "Túl kicsi lenne az asztal — szabadíts fel egy ülőhelyet előbb.",
-    seats_at_cap: "Az asztal megtelt — növeld a méretét, hogy elférjen még egy szék.",
+    table_too_small: "Túl kicsi lenne az asztal, szabadíts fel egy ülőhelyet előbb.",
+    seats_at_cap: "Az asztal megtelt, növeld a méretét, hogy elférjen még egy szék.",
     seats_at_cap_hint: "Növeld az asztal méretét, hogy elférjen még egy szék.",
     pdf_failed: "Nem sikerült elkészíteni a PDF-et. Próbáld újra.",
     pdf_cancel: "Megszakítás",
@@ -3299,17 +3299,17 @@ const hu: LocaleMessages = {
     keyboard_cleared_selection: "Kijelölés törölve.",
     tap_mode_announce_on: "Koppintós mód bekapcsolva.",
     tap_mode_announce_off: "Koppintós mód kikapcsolva.",
-    seat_aria_label: "{table} — {seat}. szék",
+    seat_aria_label: "{table}, {seat}. szék",
     kids_table_label: "Gyerekasztal",
     kids_table_help:
-      "Megjelöli az asztalt — a nyomtatott ültetési rendben és a szolgáltatói egyeztetésnél hasznos.",
+      "Megjelöli az asztalt, a nyomtatott ültetési rendben és a szolgáltatói egyeztetésnél hasznos.",
     kids_table_badge: "Gyerek",
     mode_edit_tab: "Terem szerkesztése",
     mode_seat_tab: "Vendégek elhelyezése",
     seat_mode_panel_title: "Nincs helye",
     seat_mode_help:
       "Húzd a vendégeket a listából a székekre, vagy koppints egy székre a kijelöléshez.",
-    seat_tap_place: "{guest} kijelölve — koppints egy székre az elhelyezéshez.",
+    seat_tap_place: "{guest} kijelölve, koppints egy székre az elhelyezéshez.",
     seat_unassign_selected: "Eltávolítás",
     table_panel_filled: "{filled}/{total} foglalt",
     table_panel_seat_n: "{n}. szék",
@@ -3327,9 +3327,9 @@ const hu: LocaleMessages = {
     no_email: "Nincs megadva email-cím",
     filter_all: "Mind",
     show_all_in_category: "Összes mutatása: {category}",
-    chain_help: "Foglalás logikus sorrendben — a helyszíntől az utolsó részletekig.",
+    chain_help: "Foglalás logikus sorrendben, a helyszíntől az utolsó részletekig.",
     community_pill: "Közösségi",
-    community_pill_tooltip: "Egy Weddly-t használó pár ajánlotta — közvetlen tapasztalat alapján.",
+    community_pill_tooltip: "Egy Weddly-t használó pár ajánlotta, közvetlen tapasztalat alapján.",
     self_pill: "Szolgáltató",
     self_pill_tooltip: "A szolgáltató maga jelentkezett be a Weddly közösségbe.",
     drop_your_own: "Tipp leadása",
@@ -3338,7 +3338,7 @@ const hu: LocaleMessages = {
       open_aria: "Süti és ital kalkulátor megnyitása",
       title: "Süti & ital kalkulátor",
       intro:
-        "Add meg a vendégszámot és a saját áraitokat — a szükséges mennyiségeket és a becsült költséget automatikusan kiszámoljuk.",
+        "Add meg a vendégszámot és a saját áraitokat, a szükséges mennyiségeket és a becsült költséget automatikusan kiszámoljuk.",
       item_toggle_hint: "Kihúzás (a tétel végösszege 0 lesz)",
       guests_label: "Vendégszám (fő)",
       sweets_buffer_label: "Ráhagyás süteményre (%)",
@@ -3380,7 +3380,7 @@ const hu: LocaleMessages = {
     diy_button_short: "Csinálom magam",
     diy_modal_title: "Saját szervezés",
     diy_modal_intro:
-      "Ha valakit a családból vagy ismeretségi körből kérsz fel — vagy magatok intézitek — rögzítsd itt. Csak ti látjátok, máshova nem kerül.",
+      "Ha valakit a családból vagy ismeretségi körből kérsz fel, vagy magatok intézitek, rögzítsd itt. Csak ti látjátok, máshova nem kerül.",
     diy_modal_name_label: "Mi vagy ki?",
     diy_modal_name_placeholder: "Pl. Anyukám főz, Béla bácsi zenél…",
     diy_modal_category_label: "Kategória",
@@ -3435,7 +3435,7 @@ const hu: LocaleMessages = {
       "{town} közelében: szolgáltatók kb. {radius} km-en belül, a legközelebbiek elöl.",
     accommodation_external_title: "Szállás partnerek vendégeknek",
     accommodation_external_subtitle:
-      "A vendégeknek küldött szálláslinkekhez ezeket az oldalakat ajánljuk — mindegyik új lapon nyílik.",
+      "A vendégeknek küldött szálláslinkekhez ezeket az oldalakat ajánljuk, mindegyik új lapon nyílik.",
     accommodation_external_booking_blurb: "Hotelek és apartmanok világszerte",
     accommodation_external_airbnb_blurb: "Apartmanok, házak, egyedi szállások",
     accommodation_external_szallas_hu_blurb: "Magyar szállásfoglaló portál",
@@ -3447,7 +3447,7 @@ const hu: LocaleMessages = {
     pick_aria: "Választott szolgáltató",
     unpick_aria: "Választás visszavonása",
     picked_filter_idle: "Csak a választottak ({n})",
-    picked_filter_active: "Csak a választottak látszanak — koppints a feloldáshoz ({n})",
+    picked_filter_active: "Csak a választottak látszanak, koppints a feloldáshoz ({n})",
     picked_pill: "Választott",
     chain_progress_aria: "Lefoglalt alkategóriák: {done} / {total}",
     cost_planned_label: "Tervezett",
@@ -3468,8 +3468,8 @@ const hu: LocaleMessages = {
     guests_filter_help: "Csak olyan helyszínek, ahol elférnek",
     guests_filter_clear: "Törlés",
     guests_filter_edit_in_budget: "Vendégszám szerkesztése a költségvetésnél",
-    vote_up_aria: "Tetszik — szavazz fel",
-    vote_down_aria: "Nem tetszik — szavazz le",
+    vote_up_aria: "Tetszik, szavazz fel",
+    vote_down_aria: "Nem tetszik, szavazz le",
     sort_label: "Rendezés",
     sort_top: "Népszerűség",
     sort_alpha: "Név (A–Z)",
@@ -3482,7 +3482,7 @@ const hu: LocaleMessages = {
     map_missing_count: "{n} helyszín nincs még a térképre helyezve.",
     submit: {
       title: "Tipp leadása",
-      intro: "Pár adat — és más párok is könnyebben rátalálnak.",
+      intro: "Pár adat, és más párok is könnyebben rátalálnak.",
       trust_review: "Csapatunk átnézi mielőtt megjelenik a párok listáján",
       trust_email_private: "Az e-mail címed nem lesz nyilvános",
       next_steps_title: "Megerősítő linket küldtünk!",
@@ -3499,18 +3499,18 @@ const hu: LocaleMessages = {
       city_placeholder: "Budapest",
       address_label: "Pontos cím vagy Google Maps link",
       address_placeholder: "Király u. 12",
-      address_help: "Ragassz be egy Google Maps linket — kibontjuk neked.",
+      address_help: "Ragassz be egy Google Maps linket, kibontjuk neked.",
       address_resolving: "Maps link feloldása…",
-      address_resolved: "Megvan — az üres mezőket feltöltöttük.",
+      address_resolved: "Megvan, az üres mezőket feltöltöttük.",
       address_resolved_partial: "A linket feldolgoztuk, de OSM-ben nem volt minden adat.",
-      address_resolve_failed: "Nem tudtuk feloldani a linket — kézzel írd be a címet.",
+      address_resolve_failed: "Nem tudtuk feloldani a linket, kézzel írd be a címet.",
       website_label: "Weboldal",
       email_label: "E-mail",
       email_placeholder: "udv@anna.hu",
       phone_label: "Telefon",
       phone_optional: "(nem kötelező)",
       blurb_label: "Rövid leírás",
-      blurb_help: "Egy-két mondat — mit nyújt, miben jó.",
+      blurb_help: "Egy-két mondat, mit nyújt, miben jó.",
       price_label: "Ár sáv",
       price_help: "Saccold meg: $ olcsó, $$$$$ ultra-prémium.",
       submit_button: "Hozzáadás",
@@ -3523,10 +3523,10 @@ const hu: LocaleMessages = {
       err_invalid_url: "Érvényes weboldal-cím szükséges (https://…).",
       err_invalid_email: "Érvényes e-mail cím szükséges.",
       err_too_long: "Túl hosszú.",
-      err_rate_limited: "Sok küldés érkezett — próbáld pár perc múlva.",
+      err_rate_limited: "Sok küldés érkezett, próbáld pár perc múlva.",
       err_duplicate_email: "Ezzel az e-mail címmel már regisztráltak, és várólistára kerültek.",
       magic_title: "Van Google Maps linked?",
-      magic_help: "Illeszd be — kibontjuk a címet, nevet, weboldalt és telefont helyetted.",
+      magic_help: "Illeszd be, kibontjuk a címet, nevet, weboldalt és telefont helyetted.",
       magic_placeholder: "https://maps.app.goo.gl/…",
       magic_or_manual: "vagy töltsd ki kézzel",
       magic_resolve: "Kibontás",
@@ -3534,7 +3534,7 @@ const hu: LocaleMessages = {
       section_who: "Kicsoda",
       is_self_label: "Én vagyok a szolgáltató",
       is_self_help:
-        "Pipáld be, ha a saját vállalkozásodat ajánlod be — a kártyán „Szolgáltató” jelzés kerül.",
+        "Pipáld be, ha a saját vállalkozásodat ajánlod be, a kártyán „Szolgáltató” jelzés kerül.",
       section_where: "Hol található",
       section_contact: "Hogyan érhető el",
       section_pitch: "Miért fogják imádni",
@@ -3565,10 +3565,10 @@ const hu: LocaleMessages = {
       submit: "Jelentés elküldése",
       submitting: "Küldés…",
       thanks_toast: "Köszönjük, megkaptuk. A csapat átnézi.",
-      duplicate_toast: "Ezt a hirdetést már jelentetted — nincs szükség újabb jelzésre.",
+      duplicate_toast: "Ezt a hirdetést már jelentetted, nincs szükség újabb jelzésre.",
       auto_hidden_toast:
-        "Köszönjük — a hirdetést a többi jelentéssel együtt automatikusan elrejtettük, amíg moderátor át nem nézi.",
-      err_rate_limited: "Túl sok jelentés rövid idő alatt — próbáld pár perc múlva.",
+        "Köszönjük, a hirdetést a többi jelentéssel együtt automatikusan elrejtettük, amíg moderátor át nem nézi.",
+      err_rate_limited: "Túl sok jelentés rövid idő alatt, próbáld pár perc múlva.",
       reason: {
         spam: {
           label: "Spam vagy reklám",
@@ -3584,11 +3584,11 @@ const hu: LocaleMessages = {
         },
         wrong_info: {
           label: "Hibás adatok",
-          desc: "Rossz cím, telefonszám vagy weboldal — érdemes javítani.",
+          desc: "Rossz cím, telefonszám vagy weboldal, érdemes javítani.",
         },
         other: {
           label: "Egyéb",
-          desc: "Más okból szeretnéd, ha átnéznénk — a részleteket írd alá.",
+          desc: "Más okból szeretnéd, ha átnéznénk, a részleteket írd alá.",
         },
       },
     },
@@ -3645,7 +3645,7 @@ const hu: LocaleMessages = {
       floating_min_hint: "Legalább 2 szolgáltatót válassz az összehasonlításhoz.",
       dialog_title: "Szolgáltatók összehasonlítása",
       dialog_intro:
-        "A számok a ti adataitokra szabva — vendégszám, budget — így rögtön látszik, hol éri meg többet fizetni.",
+        "A számok a ti adataitokra szabva, vendégszám, budget, így rögtön látszik, hol éri meg többet fizetni.",
       dialog_close_aria: "Bezárás",
       row_quote: "Ti ajánlatotok",
       row_price_band: "Árszint",
@@ -3660,7 +3660,7 @@ const hu: LocaleMessages = {
       rating_none: "Még nincs értékelés",
       rating_count: "{n} értékelés",
       distance_no_origin: "Add meg a helyszíneteket a távolsághoz",
-      distance_unknown: "—",
+      distance_unknown: "-",
       distance_km: "{km} km-re",
       available_ask: "Egyeztetés szükséges",
       quote_none: "Nincs ajánlat rögzítve",
@@ -3725,7 +3725,7 @@ const hu: LocaleMessages = {
         alreadyReviewed: "Erre a szolgáltatóra már írtatok értékelést.",
         deleted: "Értékelés törölve",
         deleteConfirmTitle: "Törlöd ezt az értékelést?",
-        deleteConfirmBody: "Soft delete — a sor megmarad, csak elrejtjük.",
+        deleteConfirmBody: "Soft delete, a sor megmarad, csak elrejtjük.",
       },
       comments: {
         title: "Kérdések és válaszok",
@@ -3734,7 +3734,7 @@ const hu: LocaleMessages = {
         submitted: "Komment elmentve",
         empty: "Még nincs kérdés.",
         deleteConfirmTitle: "Törlöd ezt a kommentet?",
-        deleteConfirmBody: "Soft delete — a thread megmarad, csak elrejtjük.",
+        deleteConfirmBody: "Soft delete, a thread megmarad, csak elrejtjük.",
         visibility: {
           admin_internal: "Belső (csak admin)",
           public: "Publikus",
@@ -3916,8 +3916,8 @@ const hu: LocaleMessages = {
     taxonomy_hide: "Elrejtés",
     taxonomy_unhide: "Megjelenítés",
     taxonomy_hidden_badge: "Rejtett",
-    taxonomy_hide_success: "Elrejtve — a párok már nem látják.",
-    taxonomy_unhide_success: "Megjelenítve — a párok újra látják.",
+    taxonomy_hide_success: "Elrejtve, a párok már nem látják.",
+    taxonomy_unhide_success: "Megjelenítve, a párok újra látják.",
     taxonomy_delete_group_confirm_title: "Csoport törlése",
     taxonomy_delete_group_confirm_body:
       "Csak akkor törölhető, ha nincs alá rendelt kategória. Ez nem vonható vissza.",
@@ -3926,9 +3926,9 @@ const hu: LocaleMessages = {
     taxonomy_delete_category_confirm_body:
       "Csak akkor törölhető, ha nincs hozzá tartozó szolgáltató. Ez nem vonható vissza.",
     taxonomy_delete_category_blocked:
-      "Vannak még közösségi szolgáltatók ezzel a kategóriával — sorold át vagy rejtsd el őket.",
+      "Vannak még közösségi szolgáltatók ezzel a kategóriával, sorold át vagy rejtsd el őket.",
     taxonomy_slug_help:
-      "Csak kisbetű, szám és aláhúzás. Nem változtatható meg könnyen — gondold meg.",
+      "Csak kisbetű, szám és aláhúzás. Nem változtatható meg könnyen, gondold meg.",
     taxonomy_new_group_title: "Új csoport",
     taxonomy_new_category_title: "Új kategória",
     taxonomy_edit_group_title: "Csoport szerkesztése",
@@ -3939,7 +3939,7 @@ const hu: LocaleMessages = {
     waitlist_filter_under_review: "Átnézés alatt",
     waitlist_filter_accepted: "Elfogadva",
     waitlist_filter_rejected: "Elutasítva",
-    waitlist_empty_new: "Minden jelentkezésre válaszoltál — a várólista üres.",
+    waitlist_empty_new: "Minden jelentkezésre válaszoltál, a várólista üres.",
     waitlist_empty_under_review: "Nincs átnézés alatt lévő jelentkezés.",
     waitlist_empty_accepted: "Még nem fogadtál el szolgáltatót.",
     waitlist_empty_rejected: "Még nem utasítottál el jelentkezést.",
@@ -3974,7 +3974,7 @@ const hu: LocaleMessages = {
     waitlist_modal_subject_label: "Tárgy",
     waitlist_modal_body_label: "Üzenet",
     waitlist_modal_notes_label: "Belső jegyzet",
-    waitlist_modal_notes_helper: "Csak nektek látszik — a szolgáltató nem kapja meg.",
+    waitlist_modal_notes_helper: "Csak nektek látszik, a szolgáltató nem kapja meg.",
     waitlist_modal_send: "Küldés",
     waitlist_modal_sending: "Küldés…",
     waitlist_modal_cancel: "Mégse",
@@ -4042,14 +4042,14 @@ const hu: LocaleMessages = {
     table_admin_actions: "Műveletek",
     new_section: "Új regisztrációk",
     new_section_help:
-      "Amióta utoljára megnyitottad ezt az oldalt — minden új pár és egyedüli felhasználó egy helyen, kategória nélkül. Lejjebb a saját szekciójában is megjelennek.",
+      "Amióta utoljára megnyitottad ezt az oldalt, minden új pár és egyedüli felhasználó egy helyen, kategória nélkül. Lejjebb a saját szekciójában is megjelennek.",
     new_count_one: "{n} új",
     new_count_other: "{n} új",
     workspaces_section: "Páros munkaterületek",
     workspaces_count_one: "{n} munkaterület",
     workspaces_count_other: "{n} munkaterület",
     solo_section: "Egyedüli felhasználók",
-    solo_help: "Egytagú munkaterületek — a párt még nem hívták meg, vagy nem csatlakozott.",
+    solo_help: "Egytagú munkaterületek, a párt még nem hívták meg, vagy nem csatlakozott.",
     solo_count_one: "{n} egyedüli",
     solo_count_other: "{n} egyedüli",
     solo_empty: "Nincs egyedüli felhasználó.",
@@ -4059,7 +4059,7 @@ const hu: LocaleMessages = {
     demo_workspaces_count_one: "{n} demo",
     demo_workspaces_count_other: "{n} demo",
     demo_workspaces_help:
-      "A nyitóoldali „Shrek & Fiona” demóból érkező munkaterületek. Külön gyűjtve, hogy a valós párok listája tiszta maradjon — a háttérben futó sweep 4 óránként kitakarítja őket, a használati adat viszont megmarad az analytics felületen.",
+      "A nyitóoldali „Shrek & Fiona” demóból érkező munkaterületek. Külön gyűjtve, hogy a valós párok listája tiszta maradjon, a háttérben futó sweep 4 óránként kitakarítja őket, a használati adat viszont megmarad az analytics felületen.",
     demo_badge: "Demo",
     demo_events_label_one: "{n} esemény",
     demo_events_label_other: "{n} esemény",
@@ -4075,7 +4075,7 @@ const hu: LocaleMessages = {
     table_workspace_wedding_date: "Esküvő",
     table_workspace_created: "Létrehozva",
     table_workspace_last_active: "Utoljára aktív",
-    last_active_never: "—",
+    last_active_never: "-",
     last_active_now: "most",
     last_active_minutes: "{n} perce",
     last_active_hours: "{n} órája",
@@ -4137,7 +4137,7 @@ const hu: LocaleMessages = {
       "Úgy tűnik, hogy a fiókhoz tartozó adatok nem valósak (pl. szolgáltatói tippek, e-mail cím vagy név). Kérjük, igazold a fiókod hitelességét, különben 7 napon belül törlésre kerül.",
     flag_tpl_duplicate_label: "Duplikált fiók",
     flag_tpl_duplicate_body:
-      "A rendszerünk szerint már van egy másik aktív fiókod ugyanezen az e-mail címen vagy hasonló adatokkal. Kérjük, jelezd, melyiket szeretnéd megtartani — különben 7 napon belül a duplikátumot töröljük.",
+      "A rendszerünk szerint már van egy másik aktív fiókod ugyanezen az e-mail címen vagy hasonló adatokkal. Kérjük, jelezd, melyiket szeretnéd megtartani, különben 7 napon belül a duplikátumot töröljük.",
     flag_tpl_vendor_abuse_label: "Visszaélés a /vendors űrlappal",
     flag_tpl_vendor_abuse_body:
       "Visszaélést észleltünk a szolgáltatói űrlap használata során (ismétlődő beküldések, nem-valós szolgáltatások, vagy szabálytalan tartalom). Kérjük, magyarázd el, különben 7 napon belül töröljük a fiókodat.",
@@ -4146,7 +4146,7 @@ const hu: LocaleMessages = {
       "A fiókodhoz tartozó tartalom (név, profil, beküldött szolgáltatói tipp vagy visszajelzés) sértő vagy nem felel meg a közösségi normáknak. Kérjük, írj nekünk, különben 7 napon belül töröljük a fiókodat.",
     flag_tpl_reported_label: "Mások jelentették",
     flag_tpl_reported_body:
-      "Más felhasználók jelentést tettek a fiókod tevékenységével kapcsolatban. A részletek tisztázása érdekében válaszolj erre az e-mailre — különben 7 napon belül töröljük a fiókodat.",
+      "Más felhasználók jelentést tettek a fiókod tevékenységével kapcsolatban. A részletek tisztázása érdekében válaszolj erre az e-mailre, különben 7 napon belül töröljük a fiókodat.",
     resend_flag_email_button: "Megjelölés emailjének ujraküldése",
     resend_flag_email_success: "Email ujraküldve.",
     email_log_button: "Email-elozmények",
@@ -4155,7 +4155,7 @@ const hu: LocaleMessages = {
     unflag_user_button: "Megjelölés feloldása",
     unflag_user_title: "Megjelölés feloldása",
     unflag_user_label: "Megjegyzés (opcionális)",
-    unflag_user_placeholder: "Pl. „a felhasználó válaszolt — rendben van”",
+    unflag_user_placeholder: "Pl. „a felhasználó válaszolt, rendben van”",
     unflag_user_help: "A megjegyzés az audit naplóba kerül.",
     unflag_user_clear: "Megjelölés feloldása",
     unflag_user_success: "Megjelölés feloldva.",
@@ -4194,8 +4194,8 @@ const hu: LocaleMessages = {
     filter_status_active: "Jóváhagyott",
     filter_status_hidden: "Elrejtett",
     approve: "Jóváhagyás",
-    approve_success: "Szolgáltató jóváhagyva — már látszik a listán.",
-    approve_direct_hint: "Nincs megadott e-mail — közvetlenül publikálható.",
+    approve_success: "Szolgáltató jóváhagyva, már látszik a listán.",
+    approve_direct_hint: "Nincs megadott e-mail, közvetlenül publikálható.",
     send_verify: "Visszaigazolás küldése",
     send_verify_hint:
       "Csak ezután megy ki a hirdetésnek a visszaigazoló e-mail. Submit önmagában nem küld.",
@@ -4221,7 +4221,7 @@ const hu: LocaleMessages = {
     hide_reason_label: "Indok",
     hide_reason_optional: "(opcionális)",
     hide_reason_placeholder: "Pl. nem létezik a cím, spam…",
-    hide_reason_help: "Üresen is hagyható — csak a saját naplódhoz.",
+    hide_reason_help: "Üresen is hagyható, csak a saját naplódhoz.",
     confirm_hide_title: "Tipp elrejtése",
     confirm_hide_body: "A felhasználók nem fogják látni. Bármikor visszahozhatod.",
     confirm_delete_title: "Tipp törlése",
@@ -4260,7 +4260,7 @@ const hu: LocaleMessages = {
     suppliers_card_field_notes_saved: "Mentve",
     suppliers_card_field_notes_dirty: "Nincs mentve",
     suppliers_card_notes_save_success: "Jegyzet mentve.",
-    suppliers_card_empty_value: "—",
+    suppliers_card_empty_value: "-",
     delete_action: "Töröl",
     bulk_delete_action: "Töröl",
     source_curated_sr: "Curated listázás",
@@ -4290,8 +4290,8 @@ const hu: LocaleMessages = {
     directory_filter_search_label: "Keresés",
     directory_filter_search_placeholder: "Név, weboldal…",
     directory_filter_min_views_label: "Min. megtekintés",
-    directory_filter_from_label: "Felvétel — tól",
-    directory_filter_to_label: "Felvétel — ig",
+    directory_filter_from_label: "Felvétel, tól",
+    directory_filter_to_label: "Felvétel, ig",
     directory_col_name: "Név",
     directory_col_source: "Forrás",
     directory_col_status: "Állapot",
@@ -4345,7 +4345,7 @@ const hu: LocaleMessages = {
       "A nyilvános visszajelzés űrlap a /visszajelzes oldalon érhető el; az appon belül a Visszajelzés gombbal nyitható.",
     feedback_load_error_title: "Nem sikerült betölteni a visszajelzéseket.",
     feedback_load_error_body:
-      "Hálózati vagy szerverhiba. Próbáld újra — ha újra elhasal, nézz rá a Railway logokra.",
+      "Hálózati vagy szerverhiba. Próbáld újra, ha újra elhasal, nézz rá a Railway logokra.",
     feedback_retry: "Újra",
     feedback_status_reviewed: "Átnézve",
     feedback_status_planned: "Tervezett",
@@ -4445,7 +4445,7 @@ const hu: LocaleMessages = {
     analytics_section_honeymoon: "Nászút",
     analytics_honeymoon_empty: "Még egy pár sem adott meg nászúti célt.",
     analytics_honeymoon_insufficient:
-      "Csak {n} pár adott meg nászúti adatot — túl kevés a következtetéshez. A diagramok 10 pártól jelennek meg.",
+      "Csak {n} pár adott meg nászúti adatot, túl kevés a következtetéshez. A diagramok 10 pártól jelennek meg.",
     analytics_honeymoon_with_destination: "Cél megadva",
     analytics_honeymoon_adoption: "a párok {pct}%-a",
     analytics_honeymoon_top_destination: "Legnépszerűbb cél",
@@ -4580,7 +4580,7 @@ const hu: LocaleMessages = {
     analytics_engagement_sessions_total_short: "Session összesen",
     analytics_engagement_d7_retention: "D+7 megtartás",
     analytics_engagement_top_feature_kpi: "Top funkció",
-    analytics_engagement_top_feature_none: "—",
+    analytics_engagement_top_feature_none: "-",
     analytics_demo_kpi_total: "Élő demók",
     analytics_demo_kpi_served: "Összes kiszolgált",
     analytics_demo_kpi_active: "Aktív (24 ó)",
@@ -4693,7 +4693,7 @@ const hu: LocaleMessages = {
     analytics_engagement_dow_long_fri: "Péntek",
     analytics_engagement_dow_long_sat: "Szombat",
     analytics_engagement_dow_long_sun: "Vasárnap",
-    analytics_engagement_heatmap_tooltip: "{day} {hour}:00 — {count} esemény",
+    analytics_engagement_heatmap_tooltip: "{day} {hour}:00, {count} esemény",
     analytics_engagement_top_features: "Legtöbbet használt funkciók",
     analytics_engagement_top_features_empty: "Még nincs funkcióhasználati adat.",
     analytics_engagement_users: "{count} felhasználó",
@@ -4724,7 +4724,7 @@ const hu: LocaleMessages = {
     analytics_demo_avg_lifetime: "Átlag élettartam",
     analytics_demo_top_features_title: "Mit próbáltak ki",
     analytics_demo_top_features_sub:
-      "A demo munkaterületeken használt funkciók — élő és kitakarított snapshotok összesen.",
+      "A demo munkaterületeken használt funkciók, élő és kitakarított snapshotok összesen.",
     analytics_demo_top_features_empty: "Még nem használtak semmilyen funkciót a demókban.",
     analytics_demo_feature_demos_one: "{n} demo",
     analytics_demo_feature_demos_other: "{n} demo",
@@ -4750,7 +4750,7 @@ const hu: LocaleMessages = {
   },
   rsvp: {
     title: "Esküvői visszajelzés",
-    sub: "Töltsd ki, mikor tudtok dönteni — bármikor frissíthetjük.",
+    sub: "Töltsd ki, mikor tudtok dönteni, bármikor frissíthetjük.",
     not_found: "Ezt a meghívót nem találjuk. Ellenőrizd a kapott linket.",
     will_attend: "Tudtok jönni?",
     pick_yes: "Igen, ott leszünk",
@@ -4769,9 +4769,9 @@ const hu: LocaleMessages = {
     submit: "Küldés",
     submitted: "Köszönjük!",
     thanks_title: "Megkaptuk!",
-    thanks_body: "A pár látja a választást — bármikor visszajöhetsz módosítani.",
+    thanks_body: "A pár látja a választást, bármikor visszajöhetsz módosítani.",
     thanks_email_hint:
-      "Egy megerősítő email is érkezni fog — ha pár percen belül nem látod, nézd meg a spam mappát is.",
+      "Egy megerősítő email is érkezni fog, ha pár percen belül nem látod, nézd meg a spam mappát is.",
     thanks_open_site: "Esküvői oldal megnyitása →",
     thanks_plan_your_own: "Ti is most terveztek? Próbáljátok ki a Weddlyt ingyen →",
     redirect_hint: "Az esküvői oldal megnyílik {n} mp múlva…",
@@ -4791,7 +4791,7 @@ const hu: LocaleMessages = {
       "Ezt a kombinációt nem találjuk. Ellenőrizd a jegyes pár nevét és a kódot.",
     checkin_lookup_couple_unknown: "Ezt a jegyes párt nem találjuk. Ellenőrizd a meghívódat.",
     checkin_lookup_code_unknown: "A 8 karakteres kód nem stimmel ehhez a jegyes párhoz.",
-    checkin_lookup_missing: "Mindkét mezőt töltsd ki — jegyes pár neve és 8 karakteres kód.",
+    checkin_lookup_missing: "Mindkét mezőt töltsd ki, jegyes pár neve és 8 karakteres kód.",
     checkin_contact_hosts: "Vedd fel a kapcsolatot a házigazdákkal",
     checkin_contact_hosts_email: "mailto:support@weddly.hu",
     checkin_household_for: "Visszajelzés ide:",
@@ -4805,10 +4805,10 @@ const hu: LocaleMessages = {
     checkin_next_guest: "Következő vendég",
     checkin_done_title: "Sikeres check-in",
     pick_pending: "Még gondolkodik",
-    status_for_name: "RSVP-státusz — {name}",
+    status_for_name: "RSVP-státusz, {name}",
     decline_keep_data_title: "Visszavonod a részvételt?",
     decline_keep_data_body:
-      "Az étrend és a dal-kérés adatok megmaradnak — ha mégis jönni tudtok, csak váltsd vissza a választ.",
+      "Az étrend és a dal-kérés adatok megmaradnak, ha mégis jönni tudtok, csak váltsd vissza a választ.",
     decline_keep_data_confirm: "Igen, módosítom",
     checkin_kicker: "Meghívó",
     checkin_ref_label: "Az.",
@@ -4847,10 +4847,10 @@ const hu: LocaleMessages = {
     confirm_submit_yes: "Igen, beküldöm",
     offline_pending_one: "1 visszajelzés vár elküldésre",
     offline_pending_other: "{n} visszajelzés vár elküldésre",
-    offline_saved: "Mentve — elküldjük, amint van internet.",
+    offline_saved: "Mentve, elküldjük, amint van internet.",
     offline_drained_one: "1 visszajelzés sikeresen elküldve.",
     offline_drained_other: "{n} visszajelzés sikeresen elküldve.",
-    kiosk_banner: "Üdvözlő pult mód — érintsd és tartsd lenyomva a sarokban a kilépéshez.",
+    kiosk_banner: "Üdvözlő pult mód, érintsd és tartsd lenyomva a sarokban a kilépéshez.",
     kiosk_exit_hold: "Tartsd lenyomva a kilépéshez (Shift+K is működik)",
     kiosk_exit_confirmed: "Üdvözlő pult mód kikapcsolva.",
   },
@@ -4907,11 +4907,11 @@ const hu: LocaleMessages = {
     account_locale_save_success: "Nyelv frissítve.",
     verify_title: "Erősítsd meg az e-mail címed",
     verify_body:
-      "A megerősítés azért fontos, hogy a jelszó-visszaállítás működjön — különben, ha elfelejted a jelszót, elveszhet az egész munkaterületed.",
+      "A megerősítés azért fontos, hogy a jelszó-visszaállítás működjön, különben, ha elfelejted a jelszót, elveszhet az egész munkaterületed.",
     verify_email_intro: "A megerősítő linket erre a címre küldtük:",
     verify_resend: "Megerősítő link küldése",
     verify_resending: "Küldés…",
-    verify_resent: "Elküldve — nézd meg a postafiókod (a spam mappát is).",
+    verify_resent: "Elküldve, nézd meg a postafiókod (a spam mappát is).",
     verify_already_verified: "Ez a cím már meg van erősítve.",
     partner_title: "A párod",
     partner_body:
@@ -5006,7 +5006,7 @@ const hu: LocaleMessages = {
     activity_toggle_collapse: "Bezárás",
     activity_action_generic: "változtatott a munkaterületen",
     activity_date_tbd: "még nincs kitűzve",
-    activity_value_empty: "—",
+    activity_value_empty: "-",
     activity_names_separator: " & ",
     budget_title: "Költségvetés",
     budget_body:
@@ -5029,7 +5029,7 @@ const hu: LocaleMessages = {
     budget_currency_usd: "Dollár ($)",
     budget_currency_confirm_title: "Pénznem váltása",
     budget_currency_confirm_body:
-      "Biztos, hogy más pénznemben szeretnéd a továbbiakban vezetni a költségeket? Ez csak a megjelenítést váltja — a már bevitt összegeket nem számoljuk át árfolyam szerint, ugyanazok a számok jelennek meg az új szimbólummal.",
+      "Biztos, hogy más pénznemben szeretnéd a továbbiakban vezetni a költségeket? Ez csak a megjelenítést váltja, a már bevitt összegeket nem számoljuk át árfolyam szerint, ugyanazok a számok jelennek meg az új szimbólummal.",
     budget_currency_confirm_yes: "Igen, váltsunk",
     country_label: "Ország",
     country_helper:
@@ -5039,14 +5039,14 @@ const hu: LocaleMessages = {
     workspaces_body:
       "Több esemény (polgári, lakodalom, másnapi brunch)? Külön munkaterület mindegyiknek. Vendéglista és háztartások átvehetők az aktív munkaterületről.",
     workspaces_add: "Új esemény",
-    workspaces_cap_reached: "Maximum három munkaterület — törölj egyet, vagy archiváld.",
+    workspaces_cap_reached: "Maximum három munkaterület, törölj egyet, vagy archiváld.",
     workspaces_empty: "Még nincs munkaterületed.",
     workspaces_switch: "Megnyitás",
     workspaces_role_owner: "Tulajdonos",
     workspaces_role_partner: "Partner",
     workspaces_create_title: "Új esemény",
     workspaces_create_body:
-      "Minden eseménynek saját vendéglistája, költségvetése és ülésrendje van — a vőlegény és menyasszony neve a jelenlegi munkaterületről öröklődik. Tetszés szerint átmásolhatod a vendégeket a jelenleg aktív eseményből; új RSVP kódot kapnak, a válaszok pedig alapértelmezetten függőre állnak.",
+      "Minden eseménynek saját vendéglistája, költségvetése és ülésrendje van, a vőlegény és menyasszony neve a jelenlegi munkaterületről öröklődik. Tetszés szerint átmásolhatod a vendégeket a jelenleg aktív eseményből; új RSVP kódot kapnak, a válaszok pedig alapértelmezetten függőre állnak.",
     workspaces_create_event_label: "Esemény neve",
     workspaces_create_event_placeholder:
       "Pl. Polgári szertartás, Családi vacsora, Baráti afterparty",
@@ -5061,7 +5061,7 @@ const hu: LocaleMessages = {
     workspaces_create_names_required: "Adj nevet a párnak.",
     workspaces_create_seed_toggle: "Vendéglista átvétele",
     workspaces_create_seed_hint:
-      "Másold át az aktív munkaterület vendégeit és háztartásait — kipipálhatod, kit hívsz erre az eseményre.",
+      "Másold át az aktív munkaterület vendégeit és háztartásait, kipipálhatod, kit hívsz erre az eseményre.",
     workspaces_create_seed_summary: "{selected} / {total} vendég kiválasztva",
     workspaces_create_seed_select_all: "Mindet",
     workspaces_create_seed_unselect_all: "Egyiket sem",
@@ -5083,7 +5083,7 @@ const hu: LocaleMessages = {
     workspaces_delete_confirm_mismatch: "Egyezzen a beírt szöveg pontosan: {name}",
     welcome_desk_title: "Üdvözlő pult",
     welcome_desk_body:
-      "Új lapon megnyitja az RSVP oldalt kiosk-zárral — add át a tabletet a fogadásnál. A vendégek nem férnek hozzá a kapcsolóhoz, csak innen indítható.",
+      "Új lapon megnyitja az RSVP oldalt kiosk-zárral, add át a tabletet a fogadásnál. A vendégek nem férnek hozzá a kapcsolóhoz, csak innen indítható.",
     welcome_desk_button: "Kiosk oldal megnyitása",
     welcome_desk_no_slug:
       "Az üdvözlő pulthoz előbb adj egy URL-azonosítót a párnak az Onboarding/Profil beállításokban.",
@@ -5117,7 +5117,7 @@ const hu: LocaleMessages = {
     security_email_heading: "E-mail cím módosítása",
     security_email_title: "E-mail cím módosítása",
     security_email_body:
-      "Adj meg új e-mail címet — küldünk oda egy megerősítő linket, a régi címedre pedig figyelmeztetést. A váltás csak akkor lép életbe, ha az új címen rákattintasz a linkre.",
+      "Adj meg új e-mail címet, küldünk oda egy megerősítő linket, a régi címedre pedig figyelmeztetést. A váltás csak akkor lép életbe, ha az új címen rákattintasz a linkre.",
     security_email_new: "Új e-mail cím",
     security_email_password: "Jelenlegi jelszó",
     security_email_submit: "Megerősítő link küldése",
@@ -5126,13 +5126,13 @@ const hu: LocaleMessages = {
     security_email_invalid: "Adj meg egy érvényes e-mail címet.",
     export_title: "Adataid exportálása",
     export_body:
-      "Egyetlen JSON fájlban töltheted le a teljes workspace tartalmát — pár, vendégek, költségvetés, ültetés, auditnapló. A PDF-eket (ültetési rend, ültetőkártyák) az Ültetés oldalról töltheted le.",
+      "Egyetlen JSON fájlban töltheted le a teljes workspace tartalmát, pár, vendégek, költségvetés, ültetés, auditnapló. A PDF-eket (ültetési rend, ültetőkártyák) az Ültetés oldalról töltheted le.",
     export_button: "JSON letöltése",
     export_guest_csv_button: "Vendéglista letöltése (CSV)",
     export_downloading: "Előkészítés…",
     archive_title: "Letöltött dokumentumok",
     archive_body:
-      "Minden letöltésről snapshot készül — a legutóbbi 10 verziót megőrizzük, így bármikor leszedheted egy régebbi változatot.",
+      "Minden letöltésről snapshot készül, a legutóbbi 10 verziót megőrizzük, így bármikor leszedheted egy régebbi változatot.",
     archive_empty: "Még nincs mentett dokumentum. A letöltések itt fognak megjelenni.",
     archive_redownload: "Letöltés",
     archive_delete: "Törlés",
@@ -5177,7 +5177,7 @@ const hu: LocaleMessages = {
     leave_couple_body_partner_b:
       "Ha kilépsz, a párod továbbra is használhatja a munkaterületet, de te a saját fiókoddal többé nem fogod látni. Új meghívóval bármikor visszacsatlakozhatsz.",
     leave_couple_body_owner:
-      "Te hoztad létre a munkaterületet — a tulajdonos nem tud kilépni. Ha véget akarsz vetni a közös munkának, helyette indítsd a Szüneteltetés + 30 nap utáni törlést.",
+      "Te hoztad létre a munkaterületet, a tulajdonos nem tud kilépni. Ha véget akarsz vetni a közös munkának, helyette indítsd a Szüneteltetés + 30 nap utáni törlést.",
     leave_couple_button: "Kilépés",
     leave_couple_leaving: "Kilépés…",
     leave_couple_confirm_title: "Biztosan kilépsz?",
@@ -5189,7 +5189,7 @@ const hu: LocaleMessages = {
   },
   error_boundary: {
     title: "Ez most nem jött össze",
-    body: "Megpróbáltuk újratölteni az oldalt, de még mindig akadozik. Egy pillanat és újra próbáljuk — az adataidnak nincs baja.",
+    body: "Megpróbáltuk újratölteni az oldalt, de még mindig akadozik. Egy pillanat és újra próbáljuk, az adataidnak nincs baja.",
     try_again: "Frissítés",
     try_again_pending: "Frissítjük…",
     go_home: "Vissza a kezdőlapra",
@@ -5202,13 +5202,13 @@ const hu: LocaleMessages = {
     continuing_suffix: ".",
   },
   legal: {
-    draft_banner_label: "Nyílt béta — még nincs jogi átvilágítás",
+    draft_banner_label: "Nyílt béta, még nincs jogi átvilágítás",
     draft_banner_body:
       "Ez a szöveg őszintén leírja, mit csinál ma a Weddly, de még nem fésülte át ügyvéd. Az 1.0 indulása előtt magyar jogász átnézi és véglegesíti.",
     version_label: "Verzió",
   },
   privacy: {
-    seo_title: "Adatvédelmi szabályzat — Wēddly",
+    seo_title: "Adatvédelmi szabályzat · Wēddly",
     seo_description:
       "Hogyan kezeli a Wēddly az adataitokat: gyűjtött kategóriák, megőrzés, GDPR jogok, sütik és külső szolgáltatók.",
     page_title: "Adatvédelmi szabályzat",
@@ -5218,100 +5218,100 @@ const hu: LocaleMessages = {
       "Ez az adatkezelési tájékoztató célja, hogy a Wēddly weboldal és alkalmazás látogatói, regisztrált felhasználói, hírlevél-feliratkozói, valamint a megjelenő szolgáltatók részletes, átlátható tájékoztatást kapjanak személyes adataik kezeléséről. Az adatkezelés során az Adatkezelő az alábbi jogszabályokat alkalmazza: az Európai Parlament és a Tanács 2016/679/EU rendeletét (GDPR); az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvényt (Infotv.); az elektronikus kereskedelmi szolgáltatásokról szóló 2001. évi CVIII. törvényt (Ektv.); és a gazdasági reklámtevékenység alapvető feltételeiről szóló 2008. évi XLVIII. törvényt (Grtv.).",
     controller_title: "Az adataitok kezelője",
     controller_body:
-      "Az adatkezelő Csíkász Andor (magánszemély, Magyarország) — a Wēddly üzemeltetője. A teljes operátori adatok az Impresszum oldalon olvashatóak. Adatkezeléssel kapcsolatos kérdésekkel közvetlenül az andor.csikasz@gmail.com címen vagy a hello@tryweddly.com címen tudtok jelentkezni, és hét napon belül választ kaptok. Az adatkezelés a GDPR (EU 2016/679) és a vonatkozó magyar jogszabályok (Infotv. — 2011. évi CXII. tv., Ektv. — 2001. évi CVIII. tv., Grtv. — 2008. évi XLVIII. tv.) szerint történik.",
+      "Az adatkezelő Csíkász Andor (magánszemély, Magyarország), a Wēddly üzemeltetője. A teljes operátori adatok az Impresszum oldalon olvashatóak. Adatkezeléssel kapcsolatos kérdésekkel közvetlenül az andor.csikasz@gmail.com címen vagy a hello@tryweddly.com címen tudtok jelentkezni, és hét napon belül választ kaptok. Az adatkezelés a GDPR (EU 2016/679) és a vonatkozó magyar jogszabályok (Infotv., 2011. évi CXII. tv., Ektv., 2001. évi CVIII. tv., Grtv., 2008. évi XLVIII. tv.) szerint történik.",
     data_categories_title: "Mit gyűjtünk",
     data_categories_intro:
       "Csak azokat az adatokat gyűjtjük, amelyek a workspace-etek működtetéséhez kellenek. Ma ez öt kategória:",
     data_categories_auth:
-      "Hitelesítés — az e-mail-címetek és a jelszavatok Argon2id hash-e. Magát a jelszót sosem látjuk.",
+      "Hitelesítés, az e-mail-címetek és a jelszavatok Argon2id hash-e. Magát a jelszót sosem látjuk.",
     data_categories_profile:
-      "Profil — a teljes nevetek, (opcionálisan) a partneretek neve és a nyelvi beállításotok, ha váltottatok.",
+      "Profil, a teljes nevetek, (opcionálisan) a partneretek neve és a nyelvi beállításotok, ha váltottatok.",
     data_categories_workspace:
-      "Esküvői workspace — a dátumok, költségvetési kategóriák, vendéglista, RSVP-k, ültetési rend és szolgáltatói jegyzetek, amiket hozzáadtok. Minden változás bekerül egy csak-hozzáfűzhető auditnaplóba, így bármikor láthatjátok, ki mit módosított.",
+      "Esküvői workspace, a dátumok, költségvetési kategóriák, vendéglista, RSVP-k, ültetési rend és szolgáltatói jegyzetek, amiket hozzáadtok. Minden változás bekerül egy csak-hozzáfűzhető auditnaplóba, így bármikor láthatjátok, ki mit módosított.",
     data_categories_analytics:
-      "Analitika és attribúció — a regisztrációkor, kizárólag a szerveroldalon, három származtatott adatot rögzítünk a fiókodhoz, hogy lássuk, honnan érkeznek a felhasználóink: az ország kódját (az IP-címedből számoljuk ki a regisztráció pillanatában, majd az IP-címet azonnal eldobjuk — nem tároljuk), a hozzánk vezető kampányparamétereket (UTM), és az eszköz típusát (mobil / tablet / asztali). Ezt jogos érdek alapján (GDPR 6. cikk (1) f) tesszük, és bármikor tiltakozhatsz ellene a hello@tryweddly.com címen. Külső analitikai script nem fut, követő sütit nem állítunk be.",
+      "Analitika és attribúció, a regisztrációkor, kizárólag a szerveroldalon, három származtatott adatot rögzítünk a fiókodhoz, hogy lássuk, honnan érkeznek a felhasználóink: az ország kódját (az IP-címedből számoljuk ki a regisztráció pillanatában, majd az IP-címet azonnal eldobjuk, nem tároljuk), a hozzánk vezető kampányparamétereket (UTM), és az eszköz típusát (mobil / tablet / asztali). Ezt jogos érdek alapján (GDPR 6. cikk (1) f) tesszük, és bármikor tiltakozhatsz ellene a hello@tryweddly.com címen. Külső analitikai script nem fut, követő sütit nem állítunk be.",
     legal_bases_title: "Az adatkezelés jogalapja (GDPR 6. cikk)",
     legal_bases_intro:
       "Minden adatkezelésünk egy konkrét jogalapra épül a GDPR 6. cikkének (1) bekezdéséből. A felhasznált jogalapok:",
     legal_bases_contract:
-      "Szerződés teljesítése (6. cikk (1) b) — a fiókotok létrehozása, fenntartása, az általatok megadott esküvői adatok tárolása és megjelenítése, a tranzakciós e-mailek (megerősítés, jelszóvisszaállítás, meghívók) kiküldése. Ezek nélkül a szolgáltatás nem működne.",
+      "Szerződés teljesítése (6. cikk (1) b), a fiókotok létrehozása, fenntartása, az általatok megadott esküvői adatok tárolása és megjelenítése, a tranzakciós e-mailek (megerősítés, jelszóvisszaállítás, meghívók) kiküldése. Ezek nélkül a szolgáltatás nem működne.",
     legal_bases_consent:
-      "Hozzájárulás (6. cikk (1) a) — minden olyan eset, amikor kifejezetten rákattintotok egy „elfogadom” jelölőnégyzetre. Ma kettő ilyen van: a regisztrációkor az adatvédelmi szabályzat elfogadása, és a szolgáltatói várólistára való jelentkezéskor az adatvédelem + jövőbeli díjazási modell tudomásulvétele. A hozzájárulást bármikor visszavonhatjátok ugyanazon az e-mail címen, ahol megadtátok.",
+      "Hozzájárulás (6. cikk (1) a), minden olyan eset, amikor kifejezetten rákattintotok egy „elfogadom” jelölőnégyzetre. Ma kettő ilyen van: a regisztrációkor az adatvédelmi szabályzat elfogadása, és a szolgáltatói várólistára való jelentkezéskor az adatvédelem + jövőbeli díjazási modell tudomásulvétele. A hozzájárulást bármikor visszavonhatjátok ugyanazon az e-mail címen, ahol megadtátok.",
     legal_bases_legitimate_interest:
-      "Jogos érdek (6. cikk (1) f) — a visszaélések és spam elleni védelmi mechanizmusok (IP-alapú rate limit, audit napló), valamint a szolgáltatáshoz közvetlenül kapcsolódó életciklus-üzenetek (pl. „közeleg az esküvő dátuma”), amelyekről bármikor le tudtok iratkozni. A jogos érdeket minden esetben kiegyensúlyozzuk az érintett alapvető jogaival.",
+      "Jogos érdek (6. cikk (1) f), a visszaélések és spam elleni védelmi mechanizmusok (IP-alapú rate limit, audit napló), valamint a szolgáltatáshoz közvetlenül kapcsolódó életciklus-üzenetek (pl. „közeleg az esküvő dátuma”), amelyekről bármikor le tudtok iratkozni. A jogos érdeket minden esetben kiegyensúlyozzuk az érintett alapvető jogaival.",
     legal_bases_legal_obligation:
-      "Jogi kötelezettség teljesítése (6. cikk (1) c) — az auditnaplót és a hatóság felé történő esetleges adatszolgáltatást jogszabály írhatja elő (pl. büntetőeljárás során). A béta lezárása után, ha számlázunk, a számviteli megőrzési kötelezettség (Számv. tv. 169. §) is ide tartozik majd (8 év).",
+      "Jogi kötelezettség teljesítése (6. cikk (1) c), az auditnaplót és a hatóság felé történő esetleges adatszolgáltatást jogszabály írhatja elő (pl. büntetőeljárás során). A béta lezárása után, ha számlázunk, a számviteli megőrzési kötelezettség (Számv. tv. 169. §) is ide tartozik majd (8 év).",
     guest_data_title: "Vendégek és más harmadik felek adatai (GDPR 14. cikk)",
     guest_data_body:
-      "Ha vendégként kerültél a Wēddly-be (mert az esküvőre meghívó pár felvitte a neved a vendéglistára), a 14. cikk értelmében értesítünk arról, honnan származnak az adataid. A nevedet, e-mail-címedet, telefonszámodat és esetleges étrendi információdat az a pár adta meg, amelyik az esküvőre meghívott — ezeket az adatokat ők kezelik önálló adatkezelőként, a Wēddly pedig a számukra ezt a tárhelyet adatfeldolgozóként biztosítja. Ha szeretnéd, hogy az adataidat töröljük vagy javítsuk: vagy közvetlenül a meghívó párnak szólj, vagy írj a hello@tryweddly.com címre, és kapcsolatba lépünk velük helyetted.",
+      "Ha vendégként kerültél a Wēddly-be (mert az esküvőre meghívó pár felvitte a neved a vendéglistára), a 14. cikk értelmében értesítünk arról, honnan származnak az adataid. A nevedet, e-mail-címedet, telefonszámodat és esetleges étrendi információdat az a pár adta meg, amelyik az esküvőre meghívott, ezeket az adatokat ők kezelik önálló adatkezelőként, a Wēddly pedig a számukra ezt a tárhelyet adatfeldolgozóként biztosítja. Ha szeretnéd, hogy az adataidat töröljük vagy javítsuk: vagy közvetlenül a meghívó párnak szólj, vagy írj a hello@tryweddly.com címre, és kapcsolatba lépünk velük helyetted.",
     retention_title: "Meddig őrizzük az adataitokat",
     retention_body:
-      "Az aktív workspace-eket addig őrizzük, ameddig csak szeretnétek. Ha a Profil oldalról szüneteltetitek a workspace-et, 30 napig megőrizzük az adatokat — ha meggondoljátok magatokat —, utána véglegesen törlünk mindent. A 30 napon belül bármikor visszavonhatjátok a szüneteltetést.",
+      "Az aktív workspace-eket addig őrizzük, ameddig csak szeretnétek. Ha a Profil oldalról szüneteltetitek a workspace-et, 30 napig megőrizzük az adatokat, ha meggondoljátok magatokat, utána véglegesen törlünk mindent. A 30 napon belül bármikor visszavonhatjátok a szüneteltetést.",
     rights_title: "A ti jogaitok (GDPR)",
     rights_intro:
       "Ha az EU/EGT területén éltek, a GDPR alapján az alábbi jogok illetnek meg titeket. Ezeket a Wēddly-nél mindenkinek biztosítjuk, nem csak az európai felhasználóknak.",
     rights_access:
-      "Hozzáférés (15. cikk) — a Profil oldalról egy kattintással letölthetitek JSON-ban mindazt, amit rólatok tárolunk.",
+      "Hozzáférés (15. cikk), a Profil oldalról egy kattintással letölthetitek JSON-ban mindazt, amit rólatok tárolunk.",
     rights_rectification:
-      "Helyesbítés (16. cikk) — a profilon és minden alkalmazás-felületen közvetlenül szerkeszthetitek a saját adataitokat. Ha valami nem szerkeszthető, írjatok a hello@tryweddly.com címre, és kézzel javítjuk.",
+      "Helyesbítés (16. cikk), a profilon és minden alkalmazás-felületen közvetlenül szerkeszthetitek a saját adataitokat. Ha valami nem szerkeszthető, írjatok a hello@tryweddly.com címre, és kézzel javítjuk.",
     rights_deletion:
-      "Törlés (17. cikk) — a Profil oldalról törölhetitek a fiókotokat. Egy 30 napos türelmi idő ad lehetőséget a meggondolásra; utána a workspace véglegesen törlődik.",
+      "Törlés (17. cikk), a Profil oldalról törölhetitek a fiókotokat. Egy 30 napos türelmi idő ad lehetőséget a meggondolásra; utána a workspace véglegesen törlődik.",
     rights_portability:
-      "Hordozhatóság (20. cikk) — ugyanaz a JSON export úgy van felépítve, hogy máshová is be tudjátok importálni. A vendéglista CSV-be is exportálható.",
+      "Hordozhatóság (20. cikk), ugyanaz a JSON export úgy van felépítve, hogy máshová is be tudjátok importálni. A vendéglista CSV-be is exportálható.",
     rights_objection:
-      "Tiltakozás (21. cikk) — ha úgy érzed, valamelyik jogos érdeken alapuló adatkezelésünk a te helyzetedet sérti, írj a hello@tryweddly.com címre, és felülvizsgáljuk az adott folyamatot.",
+      "Tiltakozás (21. cikk), ha úgy érzed, valamelyik jogos érdeken alapuló adatkezelésünk a te helyzetedet sérti, írj a hello@tryweddly.com címre, és felülvizsgáljuk az adott folyamatot.",
     rights_restriction:
-      "Korlátozás (18. cikk) — bizonyos esetekben kérheted, hogy az adatok kezelését felfüggesszük, amíg vita van folyamatban (pl. pontatlanság miatt).",
+      "Korlátozás (18. cikk), bizonyos esetekben kérheted, hogy az adatok kezelését felfüggesszük, amíg vita van folyamatban (pl. pontatlanság miatt).",
     rights_withdrawal:
-      "Hozzájárulás visszavonása (7. cikk (3)) — ahol kifejezett hozzájárulásra építünk (lásd a jogalapokat fent), bármikor visszavonhatod. A visszavonás nem érinti a visszavonás előtti, hozzájáruláson alapuló adatkezelés jogszerűségét.",
+      "Hozzájárulás visszavonása (7. cikk (3)), ahol kifejezett hozzájárulásra építünk (lásd a jogalapokat fent), bármikor visszavonhatod. A visszavonás nem érinti a visszavonás előtti, hozzájáruláson alapuló adatkezelés jogszerűségét.",
     rights_contact:
-      "Egyéb kérés vagy panasz — írjatok a hello@tryweddly.com vagy az andor.csikasz@gmail.com címre, és hét napon belül kézzel kezeljük.",
+      "Egyéb kérés vagy panasz, írjatok a hello@tryweddly.com vagy az andor.csikasz@gmail.com címre, és hét napon belül kézzel kezeljük.",
     security_title: "Adatbiztonság (GDPR 32. cikk)",
     security_body:
-      "A jelszavakat soha nem látjuk: Argon2id algoritmussal hashelve tároljuk őket, így még adatszivárgás esetén sem fejthetők vissza. A munkamenet-azonosítók véletlen, aláírt opak tokenek (nem JWT) — szerveroldalon visszavonhatóak, és HMAC-SHA256 ellenőrzéssel hitelesítjük őket. A hálózati forgalom végig TLS alatt megy (a Railway végződteti a TLS-t a határon). Az adatbázis SQLite, kötetre csatlakoztatva — a tárhelyszolgáltató felelős a kötet fizikai biztonságáért. Auditnaplót vezetünk minden lényeges műveletről (csak hozzáfűzhető, soha nem módosítjuk vagy töröljük).",
+      "A jelszavakat soha nem látjuk: Argon2id algoritmussal hashelve tároljuk őket, így még adatszivárgás esetén sem fejthetők vissza. A munkamenet-azonosítók véletlen, aláírt opak tokenek (nem JWT), szerveroldalon visszavonhatóak, és HMAC-SHA256 ellenőrzéssel hitelesítjük őket. A hálózati forgalom végig TLS alatt megy (a Railway végződteti a TLS-t a határon). Az adatbázis SQLite, kötetre csatlakoztatva, a tárhelyszolgáltató felelős a kötet fizikai biztonságáért. Auditnaplót vezetünk minden lényeges műveletről (csak hozzáfűzhető, soha nem módosítjuk vagy töröljük).",
     children_title: "Gyermekek adatai (GDPR 8. cikk)",
     children_body:
       "A Wēddly nem 16 év alatti felhasználóknak készül; közvetlenül nem regisztrálhatnak hozzánk. Ha az esküvőre meghívó pár gyerekeket is felvesz a vendéglistára, az ő adataikat a 14. cikk szerint kezeljük (ld. a „Vendégek adatai” pontot), és ugyanúgy ki kell tudni törölni, javítani őket, mint bármely más vendégadatot. Ha úgy gondolod, hogy egy 16 év alatti személy adatait jogalap nélkül kezeljük, írj a hello@tryweddly.com címre, és haladéktalanul intézkedünk.",
     transfers_title: "Adattovábbítás az EGT-n kívülre (GDPR V. fejezet)",
     transfers_body:
-      "A szolgáltatás infrastruktúráját a Railway Corp. (Egyesült Államok) biztosítja, így az adataitok egy része az Egyesült Államok területén kerül tárolásra. A Schrems II ítéletet (C-311/18) követően az EU–USA adattovábbítást az EU–USA adatvédelmi keretrendszer (EU-US Data Privacy Framework, 2023. évi végrehajtási határozat) és — kiegészítő garanciaként — az általános szerződési feltételek (Standard Contractual Clauses, 2021/914) alapján biztosítjuk. A Railway szerepel a DPF tanúsított szervezeteinek listáján. Tranzakciós e-mailek esetén a Resend (Egyesült Államok) szintén DPF/SCC alapján kapja meg a címzett e-mail-címét és az üzenet tartalmát.",
+      "A szolgáltatás infrastruktúráját a Railway Corp. (Egyesült Államok) biztosítja, így az adataitok egy része az Egyesült Államok területén kerül tárolásra. A Schrems II ítéletet (C-311/18) követően az EU–USA adattovábbítást az EU–USA adatvédelmi keretrendszer (EU-US Data Privacy Framework, 2023. évi végrehajtási határozat) és, kiegészítő garanciaként, az általános szerződési feltételek (Standard Contractual Clauses, 2021/914) alapján biztosítjuk. A Railway szerepel a DPF tanúsított szervezeteinek listáján. Tranzakciós e-mailek esetén a Resend (Egyesült Államok) szintén DPF/SCC alapján kapja meg a címzett e-mail-címét és az üzenet tartalmát.",
     subprocessors_title: "Adatfeldolgozók (GDPR 28. cikk)",
     subprocessors_intro:
       "Az adatkezelési műveletekhez az alábbi adatfeldolgozókat vesszük igénybe. Mindegyikkel írásos adatfeldolgozói megállapodás van érvényben, és kizárólag a Wēddly utasításai szerint kezelhetik az adatokat.",
     subprocessors_railway:
-      "Railway Corp. (USA) — alkalmazás-hosztolás, az SQLite adatbázis és a feltöltött fájlok tárolása. DPF/SCC adattovábbítás.",
+      "Railway Corp. (USA), alkalmazás-hosztolás, az SQLite adatbázis és a feltöltött fájlok tárolása. DPF/SCC adattovábbítás.",
     subprocessors_resend:
-      "Resend Inc. (USA) — tranzakciós e-mailek (regisztráció, jelszóvisszaállítás, partnermeghívó, RSVP-megerősítés) kézbesítése. DPF/SCC adattovábbítás.",
+      "Resend Inc. (USA), tranzakciós e-mailek (regisztráció, jelszóvisszaállítás, partnermeghívó, RSVP-megerősítés) kézbesítése. DPF/SCC adattovábbítás.",
     subprocessors_serpapi:
-      "SerpApi (USA) — Google Flights ajánlatok lekérdezése a nászút-tervező widgethez. Csak az általatok megadott útvonalat és dátumot kapja meg, semmilyen személyes adatot nem.",
+      "SerpApi (USA), Google Flights ajánlatok lekérdezése a nászút-tervező widgethez. Csak az általatok megadott útvonalat és dátumot kapja meg, semmilyen személyes adatot nem.",
     subprocessors_osm:
-      "OpenStreetMap Foundation (Egyesült Királyság) — a Nominatim szolgáltatás a helységnév-keresőt szolgálja ki. Csak a beírt keresőkifejezést és a tipikus webszerver-naplókat látja (IP, User-Agent).",
+      "OpenStreetMap Foundation (Egyesült Királyság), a Nominatim szolgáltatás a helységnév-keresőt szolgálja ki. Csak a beírt keresőkifejezést és a tipikus webszerver-naplókat látja (IP, User-Agent).",
     subprocessors_pinterest:
-      "Pinterest (USA) — a hangulattábla widget egy nyilvános Pinterest board RSS-feedjét olvassa be a szerveroldalon. Csak az általatok megadott Pinterest-URL-t kapja meg.",
+      "Pinterest (USA), a hangulattábla widget egy nyilvános Pinterest board RSS-feedjét olvassa be a szerveroldalon. Csak az általatok megadott Pinterest-URL-t kapja meg.",
     subprocessors_sentry:
-      "Sentry (USA) — alkalmazáshiba-jelentések rögzítése. Ma még nincs bekapcsolva éles üzemben; ha aktiváljuk, frissítjük ezt az oldalt. Pszeudonim hibanyomokat küldene, közvetlen azonosító nélkül.",
+      "Sentry (USA), alkalmazáshiba-jelentések rögzítése. Ma még nincs bekapcsolva éles üzemben; ha aktiváljuk, frissítjük ezt az oldalt. Pszeudonim hibanyomokat küldene, közvetlen azonosító nélkül.",
     cookies_title: "Sütik és localStorage",
     cookies_intro:
       "A Wēddly nem állít be követő sütit. A böngészőben tárolt adatok mind a localStorage-ban élnek a ti eszközötökön, így sosem kerülnek külső félhez:",
     cookies_locale:
-      "weddly.locale — megjegyzi, hogy a magyar vagy az angol felületet preferáljátok.",
+      "weddly.locale, megjegyzi, hogy a magyar vagy az angol felületet preferáljátok.",
     cookies_verify_dismiss:
-      "weddly.verify_email_dismissed_until — 24 órára elhalkítja az e-mail-megerősítő bannert, miután bezártátok.",
+      "weddly.verify_email_dismissed_until, 24 órára elhalkítja az e-mail-megerősítő bannert, miután bezártátok.",
     cookies_session:
-      "Munkamenet token — egy aláírt véletlen azonosító (nem JWT), ami bejelentkezve tart. localStorage-ban tároljuk; kijelentkezéskor töröljük.",
+      "Munkamenet token, egy aláírt véletlen azonosító (nem JWT), ami bejelentkezve tart. localStorage-ban tároljuk; kijelentkezéskor töröljük.",
     cookies_saved_suppliers:
-      "weddly.suppliers.saved — a csillagozott szolgáltatóitok listája, csak a ti eszközötökön.",
+      "weddly.suppliers.saved, a csillagozott szolgáltatóitok listája, csak a ti eszközötökön.",
     cookies_onboarding_draft:
-      "weddly.onboarding_draft — elmenti az onboarding válaszaitokat a lépések között, hogy egy frissítés ne dobja el őket.",
+      "weddly.onboarding_draft, elmenti az onboarding válaszaitokat a lépések között, hogy egy frissítés ne dobja el őket.",
     third_parties_title: "Külső szolgáltatók, akikkel adatot osztunk meg",
     third_parties_body:
-      "A teljes lista a fenti „Adatfeldolgozók” pontban olvasható. Más harmadik féllel — különösen reklámozóval, adatbrókerrel, közösségi platformmal — nem osztjuk meg az adataitokat.",
+      "A teljes lista a fenti „Adatfeldolgozók” pontban olvasható. Más harmadik féllel, különösen reklámozóval, adatbrókerrel, közösségi platformmal, nem osztjuk meg az adataitokat.",
     email_compliance_title: "E-mailes kommunikáció (Grtv. §6, ePrivacy)",
     email_compliance_body:
-      "Két fajta e-mailt küldünk. (1) Tranzakciós: regisztráció-megerősítés, jelszóvisszaállítás, partnermeghívó, e-mailcím-csere, RSVP-megerősítés a vendégeknek, határidős előretolt értesítések a pár saját esküvőjével kapcsolatban — ezeket a szerződés teljesítése (GDPR 6. cikk (1) b) jogalapon küldjük, és nem lehet rólunk teljesen leiratkozni, amíg a fiókod aktív. (2) Életciklus / termék-hírlevél: a béta alatt jelenleg ilyet nem küldünk. Ha a jövőben bevezetjük (pl. új funkciókról, tippekről), kizárólag a magyar Grtv. 6. §-ának megfelelően, előzetes opt-in hozzájárulással küldjük majd, és minden ilyen levél tartalmaz egy egy-kattintásos leiratkozási linket. A küldő minden esetben azonosítható (üzemeltető neve + impresszum-link a láblécben).",
+      "Két fajta e-mailt küldünk. (1) Tranzakciós: regisztráció-megerősítés, jelszóvisszaállítás, partnermeghívó, e-mailcím-csere, RSVP-megerősítés a vendégeknek, határidős előretolt értesítések a pár saját esküvőjével kapcsolatban, ezeket a szerződés teljesítése (GDPR 6. cikk (1) b) jogalapon küldjük, és nem lehet rólunk teljesen leiratkozni, amíg a fiókod aktív. (2) Életciklus / termék-hírlevél: a béta alatt jelenleg ilyet nem küldünk. Ha a jövőben bevezetjük (pl. új funkciókról, tippekről), kizárólag a magyar Grtv. 6. §-ának megfelelően, előzetes opt-in hozzájárulással küldjük majd, és minden ilyen levél tartalmaz egy egy-kattintásos leiratkozási linket. A küldő minden esetben azonosítható (üzemeltető neve + impresszum-link a láblécben).",
     automated_decisions_title: "Automatizált döntéshozatal (GDPR 22. cikk)",
     automated_decisions_body:
-      "A Wēddly nem hoz olyan, kizárólag automatizált feldolgozáson alapuló döntést, amely rátok nézve joghatással bírna vagy hasonlóan jelentős mértékben érintene titeket. A szolgáltatói rangsor, a costplanning becslő, az ülésrend-segédlet — mind algoritmusok ugyan, de mindegyik egy javaslat, amit ti hagytok jóvá vagy módosítotok.",
+      "A Wēddly nem hoz olyan, kizárólag automatizált feldolgozáson alapuló döntést, amely rátok nézve joghatással bírna vagy hasonlóan jelentős mértékben érintene titeket. A szolgáltatói rangsor, a costplanning becslő, az ülésrend-segédlet, mind algoritmusok ugyan, de mindegyik egy javaslat, amit ti hagytok jóvá vagy módosítotok.",
     complaint_authority_title: "Felügyeleti hatósághoz fordulás (GDPR 77. cikk)",
     complaint_authority_body:
       "Ha úgy érzed, hogy az adataidat jogellenesen kezeljük, és a velünk való egyeztetés nem vezetett eredményre, panaszt nyújthatsz be a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH): 1055 Budapest, Falk Miksa utca 9-11.; ugyfelszolgalat@naih.hu; naih.hu. Bírósági jogorvoslattal is élhetsz a lakóhelyed vagy a tartózkodási helyed szerinti illetékes törvényszéken.",
@@ -5328,7 +5328,7 @@ const hu: LocaleMessages = {
     def_data_subject:
       "Érintett: az a természetes személy, akinek személyes adatait az Adatkezelő kezeli.",
     def_processing:
-      "Adatkezelés: a személyes adatokon végzett bármely művelet — gyűjtés, rögzítés, rendszerezés, tárolás, felhasználás, továbbítás, törlés vagy megsemmisítés.",
+      "Adatkezelés: a személyes adatokon végzett bármely művelet, gyűjtés, rögzítés, rendszerezés, tárolás, felhasználás, továbbítás, törlés vagy megsemmisítés.",
     def_processor:
       "Adatfeldolgozó: az a természetes vagy jogi személy, aki az Adatkezelő nevében, annak utasításai alapján személyes adatokat kezel.",
     def_consent:
@@ -5338,14 +5338,14 @@ const hu: LocaleMessages = {
       "Az Adatkezelő az alábbi elveket érvényesíti minden adatkezelési tevékenységben:",
     principles_lawfulness: "Jogszerűség, tisztességes eljárás és átláthatóság",
     principles_purpose:
-      "Célhoz kötöttség — az adatokat csak az itt meghatározott célokra használjuk",
-    principles_minimisation: "Adattakarékosság — csak a célhoz szükséges adatokat gyűjtjük",
-    principles_accuracy: "Pontosság — az adatokat szükség esetén naprakészen tartjuk",
-    principles_storage: "Korlátozott tárolhatóság — nem tartjuk tovább, mint szükséges",
+      "Célhoz kötöttség, az adatokat csak az itt meghatározott célokra használjuk",
+    principles_minimisation: "Adattakarékosság, csak a célhoz szükséges adatokat gyűjtjük",
+    principles_accuracy: "Pontosság, az adatokat szükség esetén naprakészen tartjuk",
+    principles_storage: "Korlátozott tárolhatóság, nem tartjuk tovább, mint szükséges",
     principles_integrity:
-      "Integritás és bizalmas jelleg — megfelelő technikai és szervezési védelem",
+      "Integritás és bizalmas jelleg, megfelelő technikai és szervezési védelem",
     principles_accountability:
-      "Elszámoltathatóság — az Adatkezelő felelős a megfelelőségért és bizonyítani is tudja azt",
+      "Elszámoltathatóság, az Adatkezelő felelős a megfelelőségért és bizonyítani is tudja azt",
     proc_activities_title: "Egyes adatkezelési tevékenységek",
     proc_tech_title: "Weboldal-látogatással kapcsolatos technikai adatkezelés",
     proc_tech_data:
@@ -5353,7 +5353,7 @@ const hu: LocaleMessages = {
     proc_tech_purpose:
       "Cél: a weboldal és alkalmazás biztonságos, rendeltetésszerű működtetése, hibakeresés, visszaélések megelőzése.",
     proc_tech_basis:
-      "Jogalap: GDPR 6. cikk (1) bekezdés f) pont — az Adatkezelő jogos érdeke a weboldal biztonságos és visszaélésektől mentes üzemeltetése.",
+      "Jogalap: GDPR 6. cikk (1) bekezdés f) pont, az Adatkezelő jogos érdeke a weboldal biztonságos és visszaélésektől mentes üzemeltetése.",
     proc_tech_retention:
       "Megőrzési idő: a technikai naplóadatokat 30 napig tároljuk; biztonsági incidens vagy jogvita esetén az eljárás lezárásáig.",
     proc_contact_title: "Kapcsolatfelvétel és általános megkeresések",
@@ -5362,43 +5362,43 @@ const hu: LocaleMessages = {
     proc_contact_purpose:
       "Cél: megkeresések megválaszolása, kapcsolattartás, panaszok és kérdések kezelése.",
     proc_contact_basis:
-      "Jogalap: GDPR 6. cikk (1) b) (szerződés előkészítése), f) (jogos ügyviteli érdek) vagy a) (hozzájárulás) — az adott megkeresés jellegétől függően.",
+      "Jogalap: GDPR 6. cikk (1) b) (szerződés előkészítése), f) (jogos ügyviteli érdek) vagy a) (hozzájárulás), az adott megkeresés jellegétől függően.",
     proc_contact_retention:
       "Megőrzési idő: a megkeresés lezárásától számított 12 hónap; szerződéses vagy jogi igény esetén az elévülési idő végéig.",
     proc_account_title: "Felhasználói fiók létrehozása és kezelése",
     proc_account_data:
-      "Kezelt adatok: e-mail-cím, jelszó (Argon2id hash — az eredeti jelszót sosem tároljuk), teljes név, (opcionálisan) a partner neve, nyelvi beállítás, regisztráció dátuma, fiókállapot.",
+      "Kezelt adatok: e-mail-cím, jelszó (Argon2id hash, az eredeti jelszót sosem tároljuk), teljes név, (opcionálisan) a partner neve, nyelvi beállítás, regisztráció dátuma, fiókállapot.",
     proc_account_purpose:
       "Cél: felhasználói azonosítás biztosítása, bejelentkezés kezelése, a fiókhoz tartozó funkciók nyújtása.",
     proc_account_basis:
-      "Jogalap: GDPR 6. cikk (1) b) — a felhasználói szolgáltatás nyújtására irányuló szerződés teljesítése.",
+      "Jogalap: GDPR 6. cikk (1) b), a felhasználói szolgáltatás nyújtására irányuló szerződés teljesítése.",
     proc_account_retention:
       "Megőrzési idő: a fiók aktív fennállásáig; törlés esetén 30 napos türelmi idő, utána végleges és visszafordíthatatlan törlés.",
-    proc_workspace_title: "Esküvői workspace — tervező és szervező adatok",
+    proc_workspace_title: "Esküvői workspace, tervező és szervező adatok",
     proc_workspace_data:
-      "Kezelt adatok: esküvő dátuma, helyszín, vendéglista (nevek, e-mail-cím, telefonszám, étrendi igény), ültetési rend, költségvetés, feladatlista, feltöltött dokumentumok, szolgáltatói jegyzetek — minden általatok rögzített tartalom.",
+      "Kezelt adatok: esküvő dátuma, helyszín, vendéglista (nevek, e-mail-cím, telefonszám, étrendi igény), ültetési rend, költségvetés, feladatlista, feltöltött dokumentumok, szolgáltatói jegyzetek, minden általatok rögzített tartalom.",
     proc_workspace_purpose:
       "Cél: az esküvőtervező alkalmazás funkcióinak biztosítása; az adatokat kizárólag az adott workspace keretein belül kezeljük.",
-    proc_workspace_basis: "Jogalap: GDPR 6. cikk (1) b) — a felhasználói szerződés teljesítése.",
+    proc_workspace_basis: "Jogalap: GDPR 6. cikk (1) b), a felhasználói szerződés teljesítése.",
     proc_workspace_retention:
       "Megőrzési idő: a workspace aktív fennállásáig; szüneteltetés esetén 30 nap, utána végleges törlés.",
     proc_newsletter_title: "Hírlevél és életciklus-megkeresések",
     proc_newsletter_data:
       "Kezelt adatok: e-mail-cím, feliratkozás időpontja, hozzájárulás ténye és időpontja.",
     proc_newsletter_purpose:
-      "Cél: termékhírek, fejlesztési frissítések, esküvői inspirációk és promóciók küldése — kizárólag kifejezett hozzájárulás alapján.",
+      "Cél: termékhírek, fejlesztési frissítések, esküvői inspirációk és promóciók küldése, kizárólag kifejezett hozzájárulás alapján.",
     proc_newsletter_basis:
-      "Jogalap: GDPR 6. cikk (1) a) — az érintett önkéntes és visszavonható hozzájárulása.",
+      "Jogalap: GDPR 6. cikk (1) a), az érintett önkéntes és visszavonható hozzájárulása.",
     proc_newsletter_retention: "Megőrzési idő: a leiratkozásig (a hozzájárulás visszavonásáig).",
     proc_newsletter_unsubscribe:
       "Leiratkozás: bármikor, indokolás nélkül, a hírlevélben található leiratkozási linkre kattintva vagy a hello@tryweddly.com e-mailre küldött kéréssel. A visszavonás nem érinti a korábbi hozzájáruláson alapuló adatkezelés jogszerűségét.",
     proc_billing_title: "Számlázás és előfizetések",
     proc_billing_data:
-      "Kezelt adatok: e-mail-cím, előfizetés típusa és állapota, fizetési időpontok, Stripe-ügyfél-azonosító. A kártyaadatokat kizárólag a Stripe, Inc. kezeli — a Wēddly semmilyen fizetési adathoz nem fér hozzá.",
+      "Kezelt adatok: e-mail-cím, előfizetés típusa és állapota, fizetési időpontok, Stripe-ügyfél-azonosító. A kártyaadatokat kizárólag a Stripe, Inc. kezeli, a Wēddly semmilyen fizetési adathoz nem fér hozzá.",
     proc_billing_purpose:
       "Cél: előfizetés kezelése, számla kiállítása, fizetési és számviteli kötelezettségek teljesítése.",
     proc_billing_basis:
-      "Jogalap: GDPR 6. cikk (1) b) (szerződés teljesítése) és c) (jogi kötelezettség — számviteli megőrzés a Számv. tv. 169. § alapján).",
+      "Jogalap: GDPR 6. cikk (1) b) (szerződés teljesítése) és c) (jogi kötelezettség, számviteli megőrzés a Számv. tv. 169. § alapján).",
     proc_billing_retention:
       "Megőrzési idő: az előfizetés megszűnésétől számított 8 év (számviteli megőrzési kötelezettség).",
     proc_supplier_title: "Szolgáltatói (vendor) profilok",
@@ -5407,31 +5407,31 @@ const hu: LocaleMessages = {
     proc_supplier_purpose:
       "Cél: a szolgáltatói profil megjelenítése a könyvtárban, ajánlatkérési kapcsolat létesítésének lehetővé tétele, partneri együttműködés teljesítése.",
     proc_supplier_basis:
-      "Jogalap: GDPR 6. cikk (1) b) (szerződés teljesítése), c) (jogi kötelezettség teljesítése, különösen számlázás), f) (jogos érdek — üzleti kapcsolattartás és nyilvántartás).",
+      "Jogalap: GDPR 6. cikk (1) b) (szerződés teljesítése), c) (jogi kötelezettség teljesítése, különösen számlázás), f) (jogos érdek, üzleti kapcsolattartás és nyilvántartás).",
     proc_supplier_retention:
       "Megőrzési idő: a partneri jogviszony fennállásáig, majd a vonatkozó számviteli megőrzési idő végéig.",
     vendor_transfer_title: "Adattovábbítás esküvői szolgáltatóknak",
     vendor_transfer_body:
-      "Ha a szolgáltatói könyvtárból egy konkrét partnerrel kívántok kapcsolatba lépni (pl. ajánlatkérést küldtök), az Adatkezelő az általatok megadott elérhetőségi adatokat (nevet, e-mail-címet, telefonszámot) átadja az érintett partnernek az ajánlatkérés teljesítése céljából. Az adattovábbítás jogalapja GDPR 6. cikk (1) b) — szerződés előkészítése az érintett kérésére. Az Adatkezelő kizárólag a teljesítéshez elengedhetetlenül szükséges adatokat továbbítja.",
+      "Ha a szolgáltatói könyvtárból egy konkrét partnerrel kívántok kapcsolatba lépni (pl. ajánlatkérést küldtök), az Adatkezelő az általatok megadott elérhetőségi adatokat (nevet, e-mail-címet, telefonszámot) átadja az érintett partnernek az ajánlatkérés teljesítése céljából. Az adattovábbítás jogalapja GDPR 6. cikk (1) b), szerződés előkészítése az érintett kérésére. Az Adatkezelő kizárólag a teljesítéshez elengedhetetlenül szükséges adatokat továbbítja.",
     cookies_necessary_label: "Szükséges tárolók (mindig aktívak)",
     cookies_functional_label: "Funkcionális tárolók (beállítások memorizálása)",
     en_section_label: "English",
   },
   terms: {
-    seo_title: "Felhasználási feltételek — Wēddly",
+    seo_title: "Felhasználási feltételek · Wēddly",
     seo_description:
       "A Wēddly rövid, nyílt bétás felhasználási feltételei: ingyenes használat, nincs SLA, magyar jog vonatkozik rá.",
     page_title: "Felhasználási feltételek",
     last_updated_label: "Utolsó frissítés",
     last_updated_date: "2026-05-18",
     intro:
-      "A Wēddly nyílt béta. Ezeket a feltételeket szándékosan rövidre fogtuk — amint elhagyjuk a bétát, bővebb verziót publikálunk, és előtte mindenkinek küldünk e-mailt.",
+      "A Wēddly nyílt béta. Ezeket a feltételeket szándékosan rövidre fogtuk, amint elhagyjuk a bétát, bővebb verziót publikálunk, és előtte mindenkinek küldünk e-mailt.",
     beta_title: "Nyílt béta",
     beta_body:
-      "A Wēddly a nyílt béta alatt ingyenesen használható. Nem ígérünk konkrét rendelkezésre állást, válaszidőt vagy funkciós stabilitást — a fejlesztés közben dolgok változhatnak, elromolhatnak vagy átmenetileg eltűnhetnek. Igyekszünk minden lényeges változásra előre figyelmeztetni.",
+      "A Wēddly a nyílt béta alatt ingyenesen használható. Nem ígérünk konkrét rendelkezésre állást, válaszidőt vagy funkciós stabilitást, a fejlesztés közben dolgok változhatnak, elromolhatnak vagy átmenetileg eltűnhetnek. Igyekszünk minden lényeges változásra előre figyelmeztetni.",
     accuracy_title: "Az adataitokért ti feleltek",
     accuracy_body:
-      "Ti feleltek a beírt adatok pontosságáért — vendégnevek, elérhetőségek, költségvetési számok, RSVP válaszok. Nem ellenőrizzük és nem szűrjük, amit írtok, és nem vállalunk felelősséget azokért a döntésekért, amik elgépelés vagy elavult adat alapján születnek.",
+      "Ti feleltek a beírt adatok pontosságáért, vendégnevek, elérhetőségek, költségvetési számok, RSVP válaszok. Nem ellenőrizzük és nem szűrjük, amit írtok, és nem vállalunk felelősséget azokért a döntésekért, amik elgépelés vagy elavult adat alapján születnek.",
     acceptable_use_title: "Mire nem használható a Wēddly",
     acceptable_use_intro:
       "A szolgáltatás esküvőtervezésre készült. A következőket NEM teheted a Wēddly-vel:",
@@ -5451,21 +5451,21 @@ const hu: LocaleMessages = {
       "Szavatolod, hogy minden általad beküldött tartalom (a) a sajátod, vagy van jogod azt közzétenni, (b) nem sérti harmadik fél jogát (szerzői jog, védjegy, személyiségi jog, magántitok), és (c) megfelel a fenti elfogadható felhasználási szabályoknak. Ha kiderül, hogy nem teljesülnek, eltávolíthatjuk a tartalmat, és súlyos vagy ismétlődő esetben a fiókodat is felfüggeszthetjük vagy törölhetjük.",
     dsa_title: "Bejelentés és intézkedés (EU Digital Services Act)",
     dsa_body:
-      "A 2022/2065/EU rendelet (DSA) értelmében minden tárhelyszolgáltatónak könnyen elérhető bejelentési mechanizmust kell biztosítania jogszabálysértő tartalmakkal kapcsolatban. Ha úgy gondolod, hogy a Wēddly-n közzétett tartalom (pl. egy közösségi szolgáltatói bejegyzés) jogszabályt sért, küldj e-mailt a dsa@weddly.xyz címre — vagy ha az még nem aktív, a hello@tryweddly.com / andor.csikasz@gmail.com címre — az alábbi adatokkal: (1) a kifogásolt tartalom URL-je vagy egyértelmű azonosítója; (2) annak indoklása, miért tartod jogellenesnek; (3) a kapcsolattartó neve és e-mail-címe; (4) nyilatkozat arról, hogy a bejelentés jóhiszemű és pontos. A bejelentést indokolatlan késedelem nélkül megvizsgáljuk, és — ha indokolt — eltávolítjuk vagy hozzáférhetetlenné tesszük a tartalmat, a bejelentőt és a feltöltőt is értesítjük a döntésünkről és annak indokáról. A panasszal kapcsolatos belső jogorvoslatra ugyanezen az e-mail címen kerülhet sor.",
+      "A 2022/2065/EU rendelet (DSA) értelmében minden tárhelyszolgáltatónak könnyen elérhető bejelentési mechanizmust kell biztosítania jogszabálysértő tartalmakkal kapcsolatban. Ha úgy gondolod, hogy a Wēddly-n közzétett tartalom (pl. egy közösségi szolgáltatói bejegyzés) jogszabályt sért, küldj e-mailt a dsa@weddly.xyz címre, vagy ha az még nem aktív, a hello@tryweddly.com / andor.csikasz@gmail.com címre, az alábbi adatokkal: (1) a kifogásolt tartalom URL-je vagy egyértelmű azonosítója; (2) annak indoklása, miért tartod jogellenesnek; (3) a kapcsolattartó neve és e-mail-címe; (4) nyilatkozat arról, hogy a bejelentés jóhiszemű és pontos. A bejelentést indokolatlan késedelem nélkül megvizsgáljuk, és, ha indokolt, eltávolítjuk vagy hozzáférhetetlenné tesszük a tartalmat, a bejelentőt és a feltöltőt is értesítjük a döntésünkről és annak indokáról. A panasszal kapcsolatos belső jogorvoslatra ugyanezen az e-mail címen kerülhet sor.",
     dsa_contact:
-      "A DSA 11. és 12. cikke szerinti egyedüli kapcsolattartó (Single Point of Contact) hatóságok és felhasználók részére: Csíkász Andor — andor.csikasz@gmail.com. Kommunikációs nyelv: magyar és angol.",
+      "A DSA 11. és 12. cikke szerinti egyedüli kapcsolattartó (Single Point of Contact) hatóságok és felhasználók részére: Csíkász Andor, andor.csikasz@gmail.com. Kommunikációs nyelv: magyar és angol.",
     directory_title: "Szolgáltatói katalógus",
     directory_body:
-      "A szolgáltatói katalógus a nyílt béta alatt böngészésre ingyenes. Nem lehet leszedni (scraping), eladni vagy újraközölni — a katalógus szerkesztett gyűjtemény, és szerzői jogi védelem alatt áll. A béta lezárása után díjköteles modellt vezetünk be a szolgáltatók részére (előfizetés és/vagy kiemelt megjelenés), amelynek részleteit a Szolgáltatói előfizetési feltételek (ÁSZF) tartalmazzák — ez ma még tervezetként érhető el, és a végleges feltételek kihirdetése előtt minden, várólistán lévő szolgáltatónak külön e-mailt küldünk.",
+      "A szolgáltatói katalógus a nyílt béta alatt böngészésre ingyenes. Nem lehet leszedni (scraping), eladni vagy újraközölni, a katalógus szerkesztett gyűjtemény, és szerzői jogi védelem alatt áll. A béta lezárása után díjköteles modellt vezetünk be a szolgáltatók részére (előfizetés és/vagy kiemelt megjelenés), amelynek részleteit a Szolgáltatói előfizetési feltételek (ÁSZF) tartalmazzák, ez ma még tervezetként érhető el, és a végleges feltételek kihirdetése előtt minden, várólistán lévő szolgáltatónak külön e-mailt küldünk.",
     liability_title: "Felelősség korlátozása",
     liability_body:
-      "A Wēddly-t a béta alatt „ahogy van” („as is”) alapon biztosítjuk, ingyenesen, semmiféle kifejezett vagy hallgatólagos jótállás nélkül (különösen: meghatározott célra való alkalmasság, megszakításmentes működés, hibamentesség). A magyar jog által nem kizárható felelősségünket (szándékos károkozás, súlyos gondatlanság, élet, testi épség, egészség sérelméből eredő károk) nem korlátozzuk. Minden más kárfajta tekintetében — beleértve a közvetett, következményes, elmaradt haszon jellegű károkat — a felelősségünk a magyar jog által megengedett legszűkebb mértékre korlátozott. Fogyasztói minőségedben fennálló jogaidat (pl. szavatosság) ez a korlátozás nem érinti.",
+      "A Wēddly-t a béta alatt „ahogy van” („as is”) alapon biztosítjuk, ingyenesen, semmiféle kifejezett vagy hallgatólagos jótállás nélkül (különösen: meghatározott célra való alkalmasság, megszakításmentes működés, hibamentesség). A magyar jog által nem kizárható felelősségünket (szándékos károkozás, súlyos gondatlanság, élet, testi épség, egészség sérelméből eredő károk) nem korlátozzuk. Minden más kárfajta tekintetében, beleértve a közvetett, következményes, elmaradt haszon jellegű károkat, a felelősségünk a magyar jog által megengedett legszűkebb mértékre korlátozott. Fogyasztói minőségedben fennálló jogaidat (pl. szavatosság) ez a korlátozás nem érinti.",
     termination_title: "A jogviszony megszűnése",
     termination_body:
-      "A fiókodat bármikor törölheted a Profil oldalról; a teljes munkaterület 30 napos türelmi idő után véglegesen törlődik (ld. Adatvédelmi szabályzat). Mi pedig fenntartjuk a jogot, hogy a fenti elfogadható felhasználási szabályok lényeges megsértése, a szolgáltatás jogellenes vagy más felhasználókat veszélyeztető használata esetén a fiókot előzetes értesítéssel vagy — sürgős kockázat esetén — anélkül felfüggesszük vagy töröljük. A felfüggesztés indokát e-mailben közöljük, és — kivéve, ha jogszabály vagy hatósági kötelezés ezt megtiltja — méltányos időt biztosítunk az adatok kimentésére.",
+      "A fiókodat bármikor törölheted a Profil oldalról; a teljes munkaterület 30 napos türelmi idő után véglegesen törlődik (ld. Adatvédelmi szabályzat). Mi pedig fenntartjuk a jogot, hogy a fenti elfogadható felhasználási szabályok lényeges megsértése, a szolgáltatás jogellenes vagy más felhasználókat veszélyeztető használata esetén a fiókot előzetes értesítéssel vagy, sürgős kockázat esetén, anélkül felfüggesszük vagy töröljük. A felfüggesztés indokát e-mailben közöljük, és, kivéve, ha jogszabály vagy hatósági kötelezés ezt megtiltja, méltányos időt biztosítunk az adatok kimentésére.",
     changes_title: "A feltételek módosítása",
     changes_body:
-      "Ezeket a feltételeket időről időre frissítjük. A kisebb, formai javításokat csendben átvezetjük. Lényeges változások (pl. új díj, új feldolgozó, a felelősségi körök szűkítése) esetén legalább 14 nappal a hatálybalépés előtt e-mailben értesítünk, és a regisztrációs felületen újra el kell fogadnod a frissített feltételeket — anélkül a szolgáltatás bizonyos részei nem maradnak elérhetők. A béta lezárásával együtt érkező átfogó újraírásról minden béta-felhasználónak külön levelet küldünk.",
+      "Ezeket a feltételeket időről időre frissítjük. A kisebb, formai javításokat csendben átvezetjük. Lényeges változások (pl. új díj, új feldolgozó, a felelősségi körök szűkítése) esetén legalább 14 nappal a hatálybalépés előtt e-mailben értesítünk, és a regisztrációs felületen újra el kell fogadnod a frissített feltételeket, anélkül a szolgáltatás bizonyos részei nem maradnak elérhetők. A béta lezárásával együtt érkező átfogó újraírásról minden béta-felhasználónak külön levelet küldünk.",
     law_title: "Irányadó jog",
     law_body:
       "Ezekre a feltételekre a magyar jog vonatkozik, az EU adatvédelmi és fogyasztóvédelmi rendeleteivel (különösen GDPR, DSA, EU 524/2013) együtt. Vita esetén először e-mailben próbáljuk meg rendezni a kérdést. Ha ez nem vezet eredményre, a Magyarország területén illetékes bíróság jár el; fogyasztói minőségedben fennálló joghatóság-választási jogodat ez a rendelkezés nem korlátozza.",
@@ -5572,7 +5572,7 @@ const hu: LocaleMessages = {
     en_section_label: "English",
   },
   imprint: {
-    seo_title: "Impresszum — Wēddly",
+    seo_title: "Impresszum · Wēddly",
     seo_description:
       "Az elektronikus kereskedelmi szolgáltatásokról szóló 2001. évi CVIII. törvény (Ektv.) 4. §-a szerinti kötelező tájékoztatás a Wēddly üzemeltetőjéről.",
     page_title: "Impresszum",
@@ -5595,15 +5595,15 @@ const hu: LocaleMessages = {
       "Az általános adatvédelmi rendelet (GDPR) értelmében vett adatkezelő az üzemeltető, azaz Csíkász Andor. Az adatkezelés részleteit az Adatvédelmi szabályzat tartalmazza.",
     hosting_title: "Tárhelyszolgáltató",
     hosting_body:
-      "A szolgáltatást a Railway Corp. (548 Market St PMB 78118, San Francisco, CA 94104, USA — railway.com) szervereire telepítjük. A tárhelyszolgáltató az általunk feltöltött adatokat továbbítja, de nem fér hozzá a felhasználói tartalmakhoz a saját rendszerén kívüli célokra.",
+      "A szolgáltatást a Railway Corp. (548 Market St PMB 78118, San Francisco, CA 94104, USA, railway.com) szervereire telepítjük. A tárhelyszolgáltató az általunk feltöltött adatokat továbbítja, de nem fér hozzá a felhasználói tartalmakhoz a saját rendszerén kívüli célokra.",
     complaints_title: "Panasz és jogorvoslat",
     complaints_body:
-      "Panasszal vagy adatvédelmi kéréssel első körben fordulj hozzánk a fenti e-mail címen — emberek olvassák, igyekszünk gyorsan válaszolni. Ha úgy érzed, hogy az adataid kezelése jogszabálysértő, panaszt tehetsz a Nemzeti Adatvédelmi és Információszabadság Hatóságnál (NAIH — 1055 Budapest, Falk Miksa utca 9-11.; ugyfelszolgalat@naih.hu; naih.hu), vagy bírósághoz fordulhatsz.",
+      "Panasszal vagy adatvédelmi kéréssel első körben fordulj hozzánk a fenti e-mail címen, emberek olvassák, igyekszünk gyorsan válaszolni. Ha úgy érzed, hogy az adataid kezelése jogszabálysértő, panaszt tehetsz a Nemzeti Adatvédelmi és Információszabadság Hatóságnál (NAIH, 1055 Budapest, Falk Miksa utca 9-11.; ugyfelszolgalat@naih.hu; naih.hu), vagy bírósághoz fordulhatsz.",
   },
   about: {
-    seo_title: "Rólunk — Wēddly",
+    seo_title: "Rólunk · Wēddly",
     seo_description:
-      "A Wēddly egy kis, budapesti műhelyben készülő eszköz, ami a pároknak segít együtt megtervezni az esküvőt — nyugodtan, egy helyen.",
+      "A Wēddly egy kis, budapesti műhelyben készülő eszköz, ami a pároknak segít együtt megtervezni az esküvőt, nyugodtan, egy helyen.",
     page_title: "Rólunk",
     last_updated_label: "Utolsó frissítés",
     last_updated_date: "2026-05-18",
@@ -5729,10 +5729,10 @@ const hu: LocaleMessages = {
     or_divider: "vagy",
     continue_with_google: "Folytatás Google-fiókkal",
     wrong_account:
-      "Másik fiókkal jelentkeztél be — térj vissza az eredeti fiókkal, vagy jelentkezz ki.",
+      "Másik fiókkal jelentkeztél be, térj vissza az eredeti fiókkal, vagy jelentkezz ki.",
   },
   network: {
-    offline_banner: "Nincs internet — a változtatások mentésre várnak.",
+    offline_banner: "Nincs internet, a változtatások mentésre várnak.",
     request_failed: "A kérés nem ment át. Ellenőrizd a kapcsolatot és próbáld újra.",
     request_timeout: "Túl sokáig tartott. Próbáld újra.",
     retry: "Újra",
@@ -5780,7 +5780,7 @@ const hu: LocaleMessages = {
       "A felső kártya visszaszámlál az esküvő napjáig, és mutatja az RSVP-összesítőt: visszaigazolt, visszautasított, várakozó.",
     dashboard_p2_title: "Költségvetési pillanatkép",
     dashboard_p2_body:
-      "Tervezett és tényleges kiadás egymás mellett — ha a kereten túl csúszol, azonnal jelzi.",
+      "Tervezett és tényleges kiadás egymás mellett, ha a kereten túl csúszol, azonnal jelzi.",
     dashboard_p3_title: "Nyitott feladatok",
     dashboard_p3_body:
       "A közelgő határidők és nyitott feladatok minden szekcióból ide gyűlnek össze, hogy semmi ne csússzon el.",
@@ -5789,13 +5789,13 @@ const hu: LocaleMessages = {
       "Vendéglista háztartásokkal, RSVP-kódokkal, étkezési igényekkel és tömeges CSV-importtal.",
     guests_p1_title: "Vendéglista és háztartások",
     guests_p1_body:
-      "Adj hozzá vendégeket egyenként, vagy importálj százakat CSV-ből. Mindenki háztartáshoz van rendelve — így az RSVP-válasz az egész família nevében érkezik.",
+      "Adj hozzá vendégeket egyenként, vagy importálj százakat CSV-ből. Mindenki háztartáshoz van rendelve, így az RSVP-válasz az egész família nevében érkezik.",
     guests_p2_title: "RSVP-kódok",
     guests_p2_body:
       "Minden háztartás egyedi kódot kap. A vendégek ezt beírva erősítik meg a részvételüket az esküvői oldalon, regisztráció nélkül.",
     guests_p3_title: "Étkezési igények",
     guests_p3_body:
-      "Állítsd be a kínált menülehetőségeket — a vendégek RSVP-kor választanak. Diétás szűrőkkel pillanatok alatt összeállítod a catering-listát.",
+      "Állítsd be a kínált menülehetőségeket, a vendégek RSVP-kor választanak. Diétás szűrőkkel pillanatok alatt összeállítod a catering-listát.",
     guests_p4_title: "Szűrők és exportálás",
     guests_p4_body:
       "Szűrj RSVP-státusz, asztal vagy menü szerint, majd töltsd le a szűrt listát CSV-ben a cateringesnek vagy a koordinátornak.",
@@ -5806,7 +5806,7 @@ const hu: LocaleMessages = {
       "Rögzítsd a tervezett keretet kategóriánként, majd naplózd a tényleges kifizetéseket. A különbség azonnal frissül.",
     budget_p2_title: "Kategóriák",
     budget_p2_body:
-      "Helyszín, catering, fotó — minden tétel kategóriához van rendelve. Használd a beépítetteket, vagy add hozzá a sajátjaidat.",
+      "Helyszín, catering, fotó, minden tétel kategóriához van rendelve. Használd a beépítetteket, vagy add hozzá a sajátjaidat.",
     budget_p3_title: "Vendégenkénti költség",
     budget_p3_body:
       "A vendégenkénti összeg automatikusan számolódik a tényleges kiadásból és a visszaigazolt vendégszámból.",
@@ -5818,7 +5818,7 @@ const hu: LocaleMessages = {
       "Böngészd az ellenőrzött szállítókat kategória és város szerint. Mentsd a kedvenceket jelölőlistára, és hasonlítsd össze őket.",
     vendors_p2_title: "Szerződések és kapcsolattartók",
     vendors_p2_body:
-      "Rögzítsd az aláírt szerződést, a kapcsolattartót és a megjegyzéseket minden lefoglalt szállítóhoz — minden egy helyen.",
+      "Rögzítsd az aláírt szerződést, a kapcsolattartót és a megjegyzéseket minden lefoglalt szállítóhoz, minden egy helyen.",
     vendors_p3_title: "Fizetési ütemező",
     vendors_p3_body:
       "Kövesd az előlegeket és végösszegeket határidőkkel, szállítónként. A költségvetés automatikusan összesíti ezeket.",
@@ -5829,21 +5829,21 @@ const hu: LocaleMessages = {
       "Adj hozzá feladatokat határidőkkel, rendeld hozzájuk magad vagy a partnered. Szűrj státusz szerint, hogy lásd, mi van még hátra.",
     planning_p2_title: "Döntések",
     planning_p2_body:
-      "131 válogatott esküvői döntéspont — helyszínstílus, fogadalomírás, tortavágás — kártyacsomag formájában, hogy semmi ne maradjon ki.",
+      "131 válogatott esküvői döntéspont, helyszínstílus, fogadalomírás, tortavágás, kártyacsomag formájában, hogy semmi ne maradjon ki.",
     planning_p3_title: "Ötletek",
     planning_p3_body:
       "Szabad formátumú noteszlap inspirációhoz, linkekhez és minden egyébhez. Mindkét partner valós időben látja.",
     schedule_title: "Program",
-    schedule_body: "Az esküvői nap forgatókönyve — töltsd le PDF-ben egyetlen kattintással.",
+    schedule_body: "Az esküvői nap forgatókönyve, töltsd le PDF-ben egyetlen kattintással.",
     schedule_p1_title: "Napi forgatókönyv",
     schedule_p1_body:
-      "Építs percre pontos ütemtervet az esküvői napra — szertartás, koktélóra, vacsora, első tánc — minden blokkhoz megjegyzéssel.",
+      "Építs percre pontos ütemtervet az esküvői napra, szertartás, koktélóra, vacsora, első tánc, minden blokkhoz megjegyzéssel.",
     schedule_p2_title: "Szolgáltatói elérhetőségek",
     schedule_p2_body:
       "Rendelj kapcsolattartót minden időblokkhoz, hogy a koordinátor pontosan tudja, kit kell hívni az adott pillanatban.",
     schedule_p3_title: "PDF letöltés",
     schedule_p3_body:
-      "Töltsd le a teljes forgatókönyvet egyetlen kattintással — egyet a helyszínnek, egyet a koordinátornak, egyet magatoknak.",
+      "Töltsd le a teljes forgatókönyvet egyetlen kattintással, egyet a helyszínnek, egyet a koordinátornak, egyet magatoknak.",
     seating_title: "Ülésrend",
     seating_body:
       "Húzd az asztalokat és székeket a vászonra, majd töltsd le A4/A3 PDF-et és ültetőkártyákat.",
@@ -5852,7 +5852,7 @@ const hu: LocaleMessages = {
       "Húzd az asztalokat a szabad vászonra, és rendezd el őket pontosan úgy, ahogy a terem kinéz majd. Nagyíts és gördíts érintőpaddel vagy érintőképernyővel.",
     seating_p2_title: "Asztalfajták",
     seating_p2_body:
-      "Kerek és téglalap alakú asztalok tetszőleges méretben. Állítsd be a férőhelyszámot — az ülésrend azonnal frissül.",
+      "Kerek és téglalap alakú asztalok tetszőleges méretben. Állítsd be a férőhelyszámot, az ülésrend azonnal frissül.",
     seating_p3_title: "Vendégelhelyezés",
     seating_p3_body:
       "Húzd a vendégeket az oldalsávból bármelyik székre. A még nem elhelyezett vendégek kiemelve jelennek meg.",
@@ -5866,32 +5866,32 @@ const hu: LocaleMessages = {
       "Válaszd ki az esküvői betűtípust, a színpalettát és a papíráru-mintázatot. Minden letöltött PDF automatikusan átveszi a beállításokat.",
     design_p2_title: "Nyomtatható sablonok",
     design_p2_body:
-      "Nyomtatásra kész ültetőkártyák, asztalnévkártyák és menükártyák a stíluskészletedben — egy kattintással letölthetők.",
+      "Nyomtatásra kész ültetőkártyák, asztalnévkártyák és menükártyák a stíluskészletedben, egy kattintással letölthetők.",
     design_p3_title: "Tematikus PDF-ek",
     design_p3_body:
-      "Az ültetési tervek és kártyák automatikusan veszik át a stíluskészletet — külön szerkesztés nélkül.",
+      "Az ültetési tervek és kártyák automatikusan veszik át a stíluskészletet, külön szerkesztés nélkül.",
     timeline_title: "Idővonal",
-    timeline_body: "Fejlesztés alatt — a Gantt-nézetes foglalási idővonal hamarosan érkezik.",
+    timeline_body: "Fejlesztés alatt, a Gantt-nézetes foglalási idővonal hamarosan érkezik.",
     logistics_title: "Logisztika",
     logistics_body:
-      "Fejlesztés alatt — szállás- és transzferszervezés vendégekhez hamarosan elérhető.",
+      "Fejlesztés alatt, szállás- és transzferszervezés vendégekhez hamarosan elérhető.",
     moodboard_title: "Moodboard",
-    moodboard_body: "Fejlesztés alatt — vizuális inspirációs tábla hamarosan elérhető.",
+    moodboard_body: "Fejlesztés alatt, vizuális inspirációs tábla hamarosan elérhető.",
     honeymoon_title: "Nászút",
-    honeymoon_body: "Fejlesztés alatt — nászút-tervező eszközök hamarosan érkeznek.",
+    honeymoon_body: "Fejlesztés alatt, nászút-tervező eszközök hamarosan érkeznek.",
     media_title: "Fotók",
-    media_body: "Fejlesztés alatt — megosztott fotógaléria az esküvő után hamarosan elérhető.",
+    media_body: "Fejlesztés alatt, megosztott fotógaléria az esküvő után hamarosan elérhető.",
     wishlist_title: "Kívánságlista",
-    wishlist_body: "Fejlesztés alatt — ajándék-kívánságlista vendégeknek hamarosan elérhető.",
+    wishlist_body: "Fejlesztés alatt, ajándék-kívánságlista vendégeknek hamarosan elérhető.",
     guest_page_title: "Vendégoldal",
     guest_page_body:
-      "A nyilvános esküvői oldalad: dátum, helyszín, RSVP-link — oszd meg mindenkivel.",
+      "A nyilvános esküvői oldalad: dátum, helyszín, RSVP-link, oszd meg mindenkivel.",
     guest_page_p1_title: "Nyilvános esküvői oldal",
     guest_page_p1_body:
       "Egy megosztható URL nevekkel, dátummal, helyszínnel és borítófotóval. Adj hozzá bemutatkozó szöveget és RSVP-határidőt.",
     guest_page_p2_title: "RSVP-folyamat",
     guest_page_p2_body:
-      "A vendégek megadják az egyedi kódjukat és visszaigazolják a részvételt, menüt és diétás igényt — regisztráció nélkül.",
+      "A vendégek megadják az egyedi kódjukat és visszaigazolják a részvételt, menüt és diétás igényt, regisztráció nélkül.",
     guest_page_p3_title: "RSVP utáni portál",
     guest_page_p3_body:
       "A visszaigazolás után a vendégek megnyitnak egy privát oldalt a programmal, szállásinformációkkal és a kívánságlistával.",
@@ -5910,7 +5910,7 @@ const hu: LocaleMessages = {
     banner_dismiss_aria: "Bezárás",
     // ── Conversion popup ─ minimalist: title + one-line body + one
     //    primary CTA + a trust microcopy under it. The "happily ever
-    //    after" movie reference is the only fairytale beat — everything
+    //    after" movie reference is the only fairytale beat, everything
     //    else is short, single-language Hungarian. ─────────────────────
     popup_title: "Ideje elkezdeni a saját tündérmesétek.",
     popup_body: "Lehet, hogy a herceg nem fehér lovon jön, de az örökkön örökké most kezdődik.",
@@ -5922,22 +5922,22 @@ const hu: LocaleMessages = {
       page_eyebrow: "Eszközök · Költségvetés-kalkulátor",
       page_h1: "Esküvő költségvetés kalkulátor",
       page_intro:
-        "Mennyibe kerül egy esküvő Magyarországon 2026-ban? Húzd a vendégszámot és a tervezett keretet — kategóriánként élőben számolódik, mire mennyit szán a Wēddly egy átlagos magyar esküvőnél. Regisztráció és e-mail-cím nem kell hozzá; ha tetszik az eredmény, egy kattintással elindíthatjátok vele a saját költségvetéseteket.",
+        "Mennyibe kerül egy esküvő Magyarországon 2026-ban? Húzd a vendégszámot és a tervezett keretet, kategóriánként élőben számolódik, mire mennyit szán a Wēddly egy átlagos magyar esküvőnél. Regisztráció és e-mail-cím nem kell hozzá; ha tetszik az eredmény, egy kattintással elindíthatjátok vele a saját költségvetéseteket.",
       averages_h2: "Mennyibe kerül egy esküvő Magyarországon 2026-ban?",
       averages_body:
         "Egy 80–100 fős magyar esküvő mediánja jelenleg 5–8 millió forint között mozog: a catering és italok teszik ki a teljes keret nagyjából harmadát, a helyszín 15–20%-át, fotó-videó 10–15%-át, dekor és virág 8–10%-át, a többi kategória (öltözet, zene, ceremónia, papírárú) együttesen 20–25%-át. A budapesti és balatoni helyszínek 15–25%-kal drágábbak a vidéki átlagnál; a téli és kora őszi időpontok 5–10%-kal olcsóbbak a júniusi–szeptemberi csúcsidőszakhoz képest.",
       averages_source_note:
-        "Forrás: 2025–2026-os magyar esküvős szolgáltatói árlapok és pár-interjúk összesítése. A kalkulátor a saját számaitokkal megy — az átlagok csak orientációs pont, nem ígéret.",
+        "Forrás: 2025–2026-os magyar esküvős szolgáltatói árlapok és pár-interjúk összesítése. A kalkulátor a saját számaitokkal megy, az átlagok csak orientációs pont, nem ígéret.",
       ratios_h2: "Mire mennyit szánjunk?",
       ratios_body:
         "A klasszikus magyar esküvős bontás: vendégeknek szóló költés (catering + ital + helyszín) ≈ 55%, vizuális élmény (fotó-videó, dekor, virág, papírárú) ≈ 25%, párra szóló költés (ruha, frizura, smink, gyűrűk) ≈ 8%, zene és program ≈ 7%, ceremónia és szertartás ≈ 5%. A maradék 3% biztonsági tartalék: ha utolsó pillanatban változik a vendégszám vagy a menü, ebből pótolható.",
       tips_h2: "Mire figyelj a számoknál",
       tips_li_1:
-        "Az átlagok nem ígéretek. A saját számotok az, ami a Wēddly-be kerül — kategóriánként szerkeszthető, és minden módosítás auditnaplóba kerül, hogy bármikor visszanézhessétek, ki, mit és miért változtatott.",
+        "Az átlagok nem ígéretek. A saját számotok az, ami a Wēddly-be kerül, kategóriánként szerkeszthető, és minden módosítás auditnaplóba kerül, hogy bármikor visszanézhessétek, ki, mit és miért változtatott.",
       tips_li_2:
         "A vendégszám az egyetlen szám, ami minden mást elmozdít. Plusz 20 fő ~12–15%-kal emeli a catering + helyszín + dekor sort együtt. Ezért a kalkulátorban a vendégszám csúszka újraosztja az egész keretet.",
       tips_li_3:
-        "A 3% biztonsági tartalék nem luxus. Magyar esküvők 70%-án az utolsó hat hétben még legalább egy jelentős tételnek el kell mozdulnia — ezt a kerettartalékkal lefedve nem kell hideg-rideg kompromisszumokat hozni.",
+        "A 3% biztonsági tartalék nem luxus. Magyar esküvők 70%-án az utolsó hat hétben még legalább egy jelentős tételnek el kell mozdulnia, ezt a kerettartalékkal lefedve nem kell hideg-rideg kompromisszumokat hozni.",
       cta_h2: "Folytasd a Wēddly-ben",
       cta_body:
         "A kalkulátor számai bekerülnek a saját workspace-etekbe: ott már kategóriánként szerkesztheted őket, valós időben hozzáférhetsz a partnereddel, és minden változás bekerül az auditnaplóba. A nyílt béta alatt ingyen használhatjátok.",
@@ -5970,7 +5970,7 @@ const hu: LocaleMessages = {
       breakdown_months: "hónap",
       breakdown_weeks: "hét",
       breakdown_days: "nap",
-      milestones_h2: "Mit érdemes intézni — mérföldkövek szerint",
+      milestones_h2: "Mit érdemes intézni, mérföldkövek szerint",
       milestone_12m:
         "12 hónappal előtte: helyszín lefoglalása, dátum kijelölése, vendégszám első becslése, a teljes keret felállítása.",
       milestone_9m:
@@ -5990,7 +5990,7 @@ const hu: LocaleMessages = {
       faq_h2: "Gyakori kérdések",
       faq_q1: "Mikor érdemes kezdeni az esküvőtervezést?",
       faq_a1:
-        "Magyar átlag: 12–18 hónappal az esküvő előtt. A helyszín és a fotós a két leghamarabb foglalandó tétel — népszerű időpontokra 18 hónappal előtte már nehéz lehet jó helyszínt találni.",
+        "Magyar átlag: 12–18 hónappal az esküvő előtt. A helyszín és a fotós a két leghamarabb foglalandó tétel, népszerű időpontokra 18 hónappal előtte már nehéz lehet jó helyszínt találni.",
       faq_q2: "Hány nappal előtte küldjük ki a meghívókat?",
       faq_a2:
         "Klasszikusan 8–12 héttel az esküvő előtt érdemes a meghívókat kiküldeni, RSVP-határidővel ~4 héttel az esküvő előtt. Külföldről érkező vendégeknek érdemes 4–6 héttel hamarabb save-the-date-et küldeni.",
@@ -6015,17 +6015,17 @@ const hu: LocaleMessages = {
       col_status: "RSVP-státusz",
       download_h2: "Töltsd le a sablont",
       download_body:
-        "Egy CSV-fájl, UTF-8 kódolásban, vesszővel elválasztva. Megnyitható Excel-ben, Google Sheets-ben, Numbersben — vagy egy kattintással beimportálható a Wēddly-be a regisztráció után.",
+        "Egy CSV-fájl, UTF-8 kódolásban, vesszővel elválasztva. Megnyitható Excel-ben, Google Sheets-ben, Numbersben, vagy egy kattintással beimportálható a Wēddly-be a regisztráció után.",
       download_csv_btn: "Vendéglista CSV letöltése",
       download_csv_hint:
-        "8 példasort tartalmaz, hogy lásd a formátumot — a saját adataid bekerülésekor cseréld le őket.",
+        "8 példasort tartalmaz, hogy lásd a formátumot, a saját adataid bekerülésekor cseréld le őket.",
       organization_h2: "Hogyan szervezd a listát",
       organization_li_1:
-        "Háztartásonként csoportosíts, ne egyénenként. Egy meghívó egy háztartásnak megy ki, és a háztartás együtt válaszol — sokkal kevesebb RSVP-káosz.",
+        "Háztartásonként csoportosíts, ne egyénenként. Egy meghívó egy háztartásnak megy ki, és a háztartás együtt válaszol, sokkal kevesebb RSVP-káosz.",
       organization_li_2:
         "Az étrendet külön oszlopban tartsd (vegán/vegetariánus/gluténmentes/laktóz-mentes/egyéb). Catering-egyeztetésnél ez a leggyakrabban kért adat.",
       organization_li_3:
-        "A „kísérő” oszlopba csak akkor írj nevet, ha biztosan tudjátok ki lesz az — különben „TBA”-ot. A bizonytalan kísérők catering-tervezésnél fejfájást okoznak.",
+        "A „kísérő” oszlopba csak akkor írj nevet, ha biztosan tudjátok ki lesz az, különben „TBA”-ot. A bizonytalan kísérők catering-tervezésnél fejfájást okoznak.",
       cta_h2: "Importáld a Wēddly-be",
       cta_body:
         "A Wēddly importálja a CSV-t, automatikusan háztartásokat épít belőle, és minden vendégnek egyedi RSVP linket generál. A vendégek telefonon válaszolnak, ti egy listán látjátok az állapotot.",
@@ -6033,7 +6033,7 @@ const hu: LocaleMessages = {
       faq_h2: "Gyakori kérdések a vendéglistáról",
       faq_q1: "Hány vendéget hívjunk az esküvőre?",
       faq_a1:
-        "Magyar átlag: 80–120 fő. A létszám közvetlenül befolyásolja a helyszínt, cateringet és a teljes keret 55%-át — érdemes a vendégszámot előbb tisztázni, mint a keretet. A Wēddly költségvetés-kalkulátora élőben mutatja a hatást.",
+        "Magyar átlag: 80–120 fő. A létszám közvetlenül befolyásolja a helyszínt, cateringet és a teljes keret 55%-át, érdemes a vendégszámot előbb tisztázni, mint a keretet. A Wēddly költségvetés-kalkulátora élőben mutatja a hatást.",
       faq_q2: "Kiket NEM kell hívni az esküvőre?",
       faq_a2:
         "Nincs kötelező mező. Egy érvényes elv: ha az utolsó találkozás óta több mint 2 év telt el, vagy nem érdekel hogy ott legyenek-e a nagy napon, akkor inkább ne. A „kötelességből” meghívott vendégek a leggyakoribb feszültségforrás.",
@@ -6048,33 +6048,33 @@ const hu: LocaleMessages = {
         "Egy vászon, asztalok, vendégek; húzd a vendégeket az asztalokra, és a Wēddly egy kattintással nyomtatható ültetési rendet készít A4, A6 (ültetőkártya) és A3 (a nagy tábla a bejárathoz) méretben. Egyenesen a nyomdába vihető, pontos mm méretben. A nyílt béta alatt ingyenes.",
       what_h2: "Mit kapsz",
       what_body:
-        "Egy interaktív vásznat, ahol asztalokat (kerek, szögletes, főasztal) helyezel el, és a vendéglistádról húzod őket a helyükre. A vászon konfliktusokat is jelez — ha két vendég ki nem állhatja egymást, vagy ha egy asztal kerek méretarány-szabálysértést szenved.",
+        "Egy interaktív vásznat, ahol asztalokat (kerek, szögletes, főasztal) helyezel el, és a vendéglistádról húzod őket a helyükre. A vászon konfliktusokat is jelez, ha két vendég ki nem állhatja egymást, vagy ha egy asztal kerek méretarány-szabálysértést szenved.",
       print_h2: "Nyomtatási méretek",
       print_body:
-        "Minden ültetési rend három méretben exportálódik PDF-be, pontos mm-rel — a nyomda gond nélkül feldolgozza:",
+        "Minden ültetési rend három méretben exportálódik PDF-be, pontos mm-rel, a nyomda gond nélkül feldolgozza:",
       print_li_a4:
-        "A4 (210 × 297 mm) — kompakt áttekintés, a párnak és a koordinátornak. Egyetlen lapra fér el a teljes terem.",
+        "A4 (210 × 297 mm), kompakt áttekintés, a párnak és a koordinátornak. Egyetlen lapra fér el a teljes terem.",
       print_li_a6:
-        "A6 (105 × 148 mm) — ültetőkártyák. Vendégenként egy lap a vezetéknévvel és az asztal-számmal.",
+        "A6 (105 × 148 mm), ültetőkártyák. Vendégenként egy lap a vezetéknévvel és az asztal-számmal.",
       print_li_a3:
-        "A3 (297 × 420 mm) — a bejáratnál kifüggesztett nagy tábla. A vendégek itt nézik meg, hogy melyik asztalhoz mennek.",
-      etiquette_h2: "Ültetési etikett — magyar esküvő alapok",
+        "A3 (297 × 420 mm), a bejáratnál kifüggesztett nagy tábla. A vendégek itt nézik meg, hogy melyik asztalhoz mennek.",
+      etiquette_h2: "Ültetési etikett, magyar esküvő alapok",
       etiquette_li_1:
         "Főasztal: a pár középen, mellettük a tanúk és a szülők. Klasszikusan 6–10 fő. A főasztalt a terem hosszabb tengelyén szokás elhelyezni, hogy minden vendég jól lássa.",
       etiquette_li_2:
         "Korosztály-elv: az idősebb generációt a táncparkettől távolabb, közel a kijárathoz/öltözőhöz. A fiatalokat közelebb a zenéhez. Ez nem szabály, de meleg figyelmesség.",
       etiquette_li_3:
-        "Konfliktus-kezelés: ha tudsz egy vendégpárról, akik nem férnek meg egy asztalnál (válás, családi feszültség), ne tegyél úgy mintha nem létezne. Külön asztalra menjenek — a Wēddly konfliktus-jelzése pont ezt segíti.",
+        "Konfliktus-kezelés: ha tudsz egy vendégpárról, akik nem férnek meg egy asztalnál (válás, családi feszültség), ne tegyél úgy mintha nem létezne. Külön asztalra menjenek, a Wēddly konfliktus-jelzése pont ezt segíti.",
       etiquette_li_4:
         "Gyerekek: 8 év alatt érdemes a szülőkkel egy asztalnál ülniük; 8 év felett külön gyerek-asztal játékkal és külön cateringgel sokszor sikeresebb. Magyar esküvőkön ritka a teljesen gyerekmentes esküvő.",
       cta_h2: "Próbáld ki a vásznat",
       cta_body:
-        "A teljes ültetési vászon a workspace-etekben él. Regisztráció után pár kattintással behúzhatod a vendéglistádat és kezdődhet az ültetés-tervezés — mindkettőtök ugyanazt a vásznat látja, valós időben.",
+        "A teljes ültetési vászon a workspace-etekben él. Regisztráció után pár kattintással behúzhatod a vendéglistádat és kezdődhet az ültetés-tervezés, mindkettőtök ugyanazt a vásznat látja, valós időben.",
       cta_button: "Workspace indítása",
       faq_h2: "Gyakori kérdések az ültetési rendről",
       faq_q1: "Hányan üljenek egy asztalnál?",
       faq_a1:
-        "Kerek asztal: 8–10 fő ideális, max 12. Szögletes (banketts): 6–8 fő egy oldalon, vagyis 12–16 egy asztalon. 10 fő felett a beszélgetés szétfeslik, vendégek nem hallják egymást — a Wēddly figyelmeztet, ha túl sokat raksz egy asztalra.",
+        "Kerek asztal: 8–10 fő ideális, max 12. Szögletes (banketts): 6–8 fő egy oldalon, vagyis 12–16 egy asztalon. 10 fő felett a beszélgetés szétfeslik, vendégek nem hallják egymást, a Wēddly figyelmeztet, ha túl sokat raksz egy asztalra.",
       faq_q2: "Mikor készítsem el az ültetési rendet?",
       faq_a2:
         "Az RSVP-határidő (~4 héttel az esküvő előtt) után érdemes kezdeni. A végleges létszámmal lehet pontosan tervezni; addig vázlat-szinten elég. A Wēddly-ben kétféle nézet van: tervezett és végleges, így átmehetsz vázlat-módból véglegesbe.",
@@ -6084,7 +6084,7 @@ const hu: LocaleMessages = {
     },
     rsvp_generator: {
       page_eyebrow: "Eszközök · RSVP szöveg generátor",
-      page_h1: "RSVP minta szöveg — esküvői meghívóhoz",
+      page_h1: "RSVP minta szöveg, esküvői meghívóhoz",
       page_intro:
         "Töltsd ki a párotok nevét, a dátumot, a helyszínt és az RSVP-határidőt, és három stílusban generálunk neked kész szöveget: klasszikus, hétköznapi és költői. Másolj egyetlen kattintással, és pakold a meghívóba vagy a Wēddly RSVP-oldalra.",
       form_h2: "Az adataitok",
@@ -6105,15 +6105,15 @@ const hu: LocaleMessages = {
       output_copied: "Másolva!",
       cta_h2: "Adj saját RSVP linket minden vendégnek",
       cta_body:
-        "A statikus RSVP-szöveg jó kezdés — de a Wēddly minden vendégnek saját RSVP-linket generál (név előre kitöltve, étrend, kísérő, allergia). A vendégek telefonon válaszolnak egy perc alatt; ti egy listán látjátok az állapotot.",
+        "A statikus RSVP-szöveg jó kezdés, de a Wēddly minden vendégnek saját RSVP-linket generál (név előre kitöltve, étrend, kísérő, allergia). A vendégek telefonon válaszolnak egy perc alatt; ti egy listán látjátok az állapotot.",
       cta_button: "Workspace indítása",
       faq_h2: "Gyakori kérdések az RSVP-ről",
       faq_q1: "Mit jelent az RSVP?",
       faq_a1:
-        "Az RSVP a francia „Répondez s'il vous plaît” rövidítése — „kérjük, válaszoljon”. Esküvős kontextusban annyit jelent: kérjük, jelezze, hogy jön-e az esküvőre. A magyar esküvőkön klasszikusan 3–4 héttel az esküvő előtt szokás összegyűjteni.",
+        "Az RSVP a francia „Répondez s'il vous plaît” rövidítése, „kérjük, válaszoljon”. Esküvős kontextusban annyit jelent: kérjük, jelezze, hogy jön-e az esküvőre. A magyar esküvőkön klasszikusan 3–4 héttel az esküvő előtt szokás összegyűjteni.",
       faq_q2: "Mikor küldjem ki az RSVP-kérést?",
       faq_a2:
-        "Az RSVP-kérés a meghívóval együtt megy — magyar átlag: 8–12 héttel az esküvő előtt. RSVP-határidő: ~4 héttel az esküvő előtt, hogy a catering-nek és helyszínnek időben tudjátok jelezni a végleges létszámot.",
+        "Az RSVP-kérés a meghívóval együtt megy, magyar átlag: 8–12 héttel az esküvő előtt. RSVP-határidő: ~4 héttel az esküvő előtt, hogy a catering-nek és helyszínnek időben tudjátok jelezni a végleges létszámot.",
       faq_q3: "Mit írjak az RSVP-szövegbe?",
       faq_a3:
         "Minimum: párotok neve, az esküvő dátuma, helyszín, RSVP-határidő és egy elérhetőség (e-mail vagy telefon, vagy egy link). Hasznos extra: étrend kérdés, kísérő-mező, allergia. A Wēddly RSVP-oldala ezeket egy linken keresztül oldja meg.",
@@ -6308,13 +6308,13 @@ const hu: LocaleMessages = {
     success_explore: "Fedezd fel a Weddlyt",
     benefit_1_title: "Láthatóság a tervező pároknak",
     benefit_1_body:
-      "A párok közvetlenül a tervező felületükön találnak rád — nem kell hirdetésekre költeni.",
+      "A párok közvetlenül a tervező felületükön találnak rád, nem kell hirdetésekre költeni.",
     benefit_2_title: "Saját szervező munkaterület",
     benefit_2_body:
-      "Egy felület több ügyfélnek: teendők, vendéglista, ültetés, dokumentumok — mindig rendezett.",
+      "Egy felület több ügyfélnek: teendők, vendéglista, ültetés, dokumentumok, mindig rendezett.",
     benefit_3_title: "Határidők és teendők",
     benefit_3_body:
-      "Minden párodat külön tartod, de egy nézetből kezeled a tennivalókat — sosem csúszik el határidő.",
+      "Minden párodat külön tartod, de egy nézetből kezeled a tennivalókat, sosem csúszik el határidő.",
     err_full_name: "Add meg a neved.",
     err_email: "Adj meg egy érvényes e-mail címet.",
     err_phone: "Add meg a telefonszámodat.",
@@ -6329,7 +6329,7 @@ const hu: LocaleMessages = {
     feature_tasks_name: "Feladatok és határidők",
     feature_tasks_desc: "Páronként kezelt feladatlista.",
     feature_docs_name: "Dokumentumok",
-    feature_docs_desc: "Szerződések, ajánlatok, run sheet-ek — egy helyen.",
+    feature_docs_desc: "Szerződések, ajánlatok, run sheet-ek, egy helyen.",
     beta_badge: "25 férőhely",
     beta_eyebrow: "Béta program",
     beta_title: "Csatlakozz az első 25 szervező közé",
@@ -6474,7 +6474,7 @@ const hu: LocaleMessages = {
     topbar_back_to_landing: "Vissza a weboldalra",
     topbar_feedback: "Visszajelzés küldése",
     rail_today_title: "Ma",
-    rail_today_empty: "Ma nincs feladat — szép nap lesz.",
+    rail_today_empty: "Ma nincs feladat, szép nap lesz.",
     rail_urgent_title: "Figyelem",
     rail_all_good: "Minden rendben",
     rail_more_overdue: "...és {{n}} további lejárt",
@@ -6516,7 +6516,7 @@ const hu: LocaleMessages = {
     step_label_package: "Csomag",
     step_label_client: "Ügyfél",
     step1_title: "Üdvözlünk, {{name}}!",
-    step1_body: "Állítsd be a profilodat néhány lépésben — kevesebb mint 2 perc, és kezdheted is.",
+    step1_body: "Állítsd be a profilodat néhány lépésben, kevesebb mint 2 perc, és kezdheted is.",
     step1_cta: "Kezdjük el",
     step2_title: "Hozd létre a profilodat",
     step2_body: "Ezeket az adatokat az ügyfeleid láthatják a profilodon.",

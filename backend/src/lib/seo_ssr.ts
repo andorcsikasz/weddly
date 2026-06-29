@@ -1,14 +1,14 @@
 // Single-domain SEO rendering.
 //
-// Up to May 2026 we ran two TLDs in parallel — weddly.hu = HU canonical,
-// weddly.xyz = EN canonical — with cross-host hreflang. The .xyz project was
+// Up to May 2026 we ran two TLDs in parallel, weddly.hu = HU canonical,
+// weddly.xyz = EN canonical, with cross-host hreflang. The .xyz project was
 // retired (one DB, one canonical) and weddly.xyz now 301-redirects to
 // weddly.hu, so search engines following the old hreflang chains would just
 // de-index the EN alternate.
 //
 // Today: weddly.hu is the only canonical. The locale of the SSR'd HTML
 // (which is what Googlebot indexes pre-JS) branches on the request's
-// `Accept-Language` header — HU-preferring clients see the HU landing +
+// `Accept-Language` header, HU-preferring clients see the HU landing +
 // HU meta; everyone else (the strategic international audience + most
 // crawlers, which advertise `en-US`) sees the EN variant. Clients still
 // flip locale at runtime via localStorage + the language switcher, so an
@@ -24,7 +24,7 @@ import { normalizeSlugInput } from "../domain/slug";
 
 // Canonical apex moved from weddly.hu to tryweddly.com in the June 2026 domain
 // cutover. weddly.hu / weddly.xyz now 301-redirect here (see server.ts
-// LEGACY_HOSTS), so every public URL — canonical, og:url, sitemap, JSON-LD —
+// LEGACY_HOSTS), so every public URL, canonical, og:url, sitemap, JSON-LD —
 // resolves to tryweddly.com. The constant name keeps its history.
 export const HU_HOST = "tryweddly.com";
 /** Canonical host for every public URL in SEO output. */
@@ -47,7 +47,7 @@ interface SitemapPath {
  *  frontend/src/App.tsx public routes. */
 const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/", priority: "1.0", changefreq: "weekly" },
-  // Tool pages — high SEO value (each targets a long-tail HU query the
+  // Tool pages, high SEO value (each targets a long-tail HU query the
   // landing can't rank for on its own) so they get a higher priority than
   // the auth flows. Same path on both hosts; the locale switch happens via
   // Host header just like the landing.
@@ -83,7 +83,7 @@ function publishedBlogPostRows(): { slug: string; en_slug: string | null }[] {
 
 /** `/blog/:slug` SSR meta lookup. Returns null for non-blog paths and for
  *  any slug that doesn't resolve (or whose post is a draft). The shared
- *  `lookupRouteSeo` no longer knows about blog posts — keeping the DB read
+ *  `lookupRouteSeo` no longer knows about blog posts, keeping the DB read
  *  here means admin edits land in the SSR'd <head> on the next request
  *  without a backend redeploy. */
 function lookupBlogPostSeo(pathname: string): RouteSeo | null {
@@ -326,7 +326,7 @@ const META: Record<SeoLocale, LocaleMeta> = {
     description:
       "Tervezzétek együtt az esküvőtöket egy közös felületen: költségvetés, vendéglista, RSVP, ültetési rend és nyomtatható kártyák. Mindketten ugyanazt látjátok.",
     twDescription: "Közös felület mindkettőtöknek, egy helyen.",
-    ogImageAlt: "Wēddly — közösen tervezzétek az esküvőtöket, nyugodtan.",
+    ogImageAlt: "Wēddly · közösen tervezzétek az esküvőtöket, nyugodtan.",
     brandName: "Wēddly",
     brandDescription:
       "Magyar esküvőtervező webalkalmazás pároknak: költségvetés, vendéglista, RSVP, ültetési rend és nyomtatható kártyák egy közös felületen.",
@@ -340,7 +340,7 @@ const META: Record<SeoLocale, LocaleMeta> = {
     description:
       "Plan your wedding together in one shared workspace: budget, guest list, RSVP, seating and printable cards. Both of you see the same live picture.",
     twDescription: "One shared workspace for both of you, in real time.",
-    ogImageAlt: "Weddly — plan your wedding together, calmly.",
+    ogImageAlt: "Weddly · plan your wedding together, calmly.",
     brandName: "Weddly",
     brandDescription:
       "Wedding planning web app for couples: budget, guest list, RSVP, seating chart and printable cards in one shared workspace.",
@@ -385,7 +385,7 @@ function gtmContainerIdEnv(): string {
 }
 
 /** The exact inline bootstrap from GTM's canonical snippet. It pushes the
- *  `gtm.js` event onto the dataLayer BEFORE gtm.js loads — that event is what
+ *  `gtm.js` event onto the dataLayer BEFORE gtm.js loads, that event is what
  *  fires the Page View ("All Pages") trigger. Without it gtm.js only ever
  *  emits `gtm.dom` + `gtm.load`, so every tag bound to the standard Page View
  *  trigger silently never fires (the symptom we shipped with for months). The
@@ -411,7 +411,7 @@ export const GTM_INLINE_CSP_HASH = `'sha256-${new Bun.CryptoHasher("sha256")
  *  anything odd in the env out of the page source.
  *  The gtm.js loader is tagged data-cookieconsent="statistics" so Cookiebot
  *  auto-blocking holds it until the visitor consents. The dataLayer bootstrap
- *  runs immediately (harmless — no cookies, no network) so any pre-consent
+ *  runs immediately (harmless, no cookies, no network) so any pre-consent
  *  dataLayer.push() calls queue correctly. */
 function gtmScriptTag(): string {
   const id = gtmContainerIdEnv();
@@ -424,7 +424,7 @@ function gtmScriptTag(): string {
 
 // ── Direct GA4 (bypass GTM) ───────────────────────────────────────────────────
 // Activated by GA4_MEASUREMENT_ID env var (e.g. "G-XXXXXXXXXX"). Loads
-// unconditionally — no Cookiebot consent gate. Remove this var if a GA4
+// unconditionally, no Cookiebot consent gate. Remove this var if a GA4
 // Configuration tag is later added inside GTM to avoid double-counting.
 
 function ga4MeasurementIdEnv(): string {
@@ -470,7 +470,7 @@ function prefersHungarian(acceptLanguage: string | null | undefined): boolean {
   return first === "hu" || first.startsWith("hu-");
 }
 
-/** SEO locale for a request. EN is the default everywhere — the product
+/** SEO locale for a request. EN is the default everywhere, the product
  *  is positioned as international-first, so when production server.ts
  *  passes `null` for acceptLanguage (its new behaviour) the render is
  *  always EN. The Accept-Language branch is kept so callers (mostly
@@ -490,7 +490,7 @@ export function localeForHost(
 /** Canonical hostname for SEO link rels. When `EN_CANONICAL_HOST` is set
  *  in the environment, EN renders point to that host (e.g. `weddly.com`)
  *  so the `hreflang` pair can advertise distinct URLs across locales.
- *  When unset, both locales return the HU apex — the single-host
+ *  When unset, both locales return the HU apex, the single-host
  *  fallback that keeps existing tests + deploys working unchanged. */
 export function canonicalHostFor(locale: SeoLocale): string {
   if (locale === "en") {
@@ -581,7 +581,7 @@ function buildJsonLd(opts: {
       operatingSystem: "Web",
       url: origin,
       // `priceCurrency` follows the SSR locale so the EN landing's structured
-      // data quotes EUR instead of HUF — a London or Berlin visitor reading
+      // data quotes EUR instead of HUF, a London or Berlin visitor reading
       // the rich-result snippet shouldn't see a Hungarian-forint price tag,
       // even though every Weddly plan is currently free during open beta.
       offers: { "@type": "Offer", price: "0", priceCurrency },
@@ -666,11 +666,11 @@ function buildJsonLd(opts: {
 }
 
 /** Build the SEO `<head>` block (everything between the sentinels) for the
- *  given host + path. Returns just the inner block — the caller splices it
+ *  given host + path. Returns just the inner block, the caller splices it
  *  into the template between the sentinels.
  *
  *  Per-route title/description override (from shared/seo_routes.ts) is what
- *  stops every public URL from re-using the landing's meta — Googlebot's
+ *  stops every public URL from re-using the landing's meta, Googlebot's
  *  HTML-only crawl then sees a distinct title + description per indexed
  *  page instead of "the same page repeated nine times". */
 /** Slug-to-meta lookup for the public wedding website (`/w/:slug`). Returns
@@ -727,7 +727,7 @@ function buildHeadBlock(opts: {
   /** Couple-specific overrides for the `/w/:slug` route. When present, the
    *  `<title>` + meta description + OG/Twitter title+description switch
    *  to a personalised string and `cover_image_url` (if set) replaces
-   *  the brand og.png. The whole viral loop hinges on this — the share
+   *  the brand og.png. The whole viral loop hinges on this, the share
    *  card on FB / WhatsApp / iMessage must say "Mia & Lucas · 12 Sept 2026"
    *  and show their cover image, not "Plan your wedding together". */
   weddingMeta?: WeddingSiteMeta | null;
@@ -775,7 +775,7 @@ function buildHeadBlock(opts: {
   // Canonical follows the locale of the current render: HU render → HU URL
   // with HU slug; EN render (only meaningful when multi-host is active) →
   // EN URL with EN slug. Falls back to the path-on-canonical-host shape
-  // for non-paired routes — `huPathFor`/`enPathFor` return `path` itself
+  // for non-paired routes, `huPathFor`/`enPathFor` return `path` itself
   // for anything outside `SLUG_PAIRS`, so /about, /signup, /vendors etc.
   // keep their historical canonical exactly.
   const canonicalUrl = blogPair
@@ -799,7 +799,7 @@ function buildHeadBlock(opts: {
     : null;
   let ogImage: string;
   let ogImageAlt: string;
-  // Brand images are the known 1200×630 PNGs we ship — only those get the
+  // Brand images are the known 1200×630 PNGs we ship, only those get the
   // exact dimension/type hints below. Custom covers (couple- or admin-pasted)
   // have unknown size/format, so we skip the hints and let scrapers measure.
   let isBrandOgImage: boolean;
@@ -825,7 +825,7 @@ function buildHeadBlock(opts: {
   // defaults so each public path ships a unique <title> / description in
   // the initial HTML. Twitter description, og image, locales etc. stay
   // from the landing META (those are brand-level, not page-level).
-  // The wedding-site override is highest priority — couple-personalised
+  // The wedding-site override is highest priority, couple-personalised
   // share cards beat both route SEO and brand defaults.
   let title: string;
   let description: string;
@@ -835,13 +835,13 @@ function buildHeadBlock(opts: {
     const dateBlock = wm.wedding_date ?? "";
     const venueBlock = wm.venue_name ? ` · ${wm.venue_name}` : "";
     title = `${wm.display_name}${dateBlock ? ` · ${dateBlock}` : ""}${venueBlock}`;
-    // Localised description sentence — same shape for HU + EN, just the
+    // Localised description sentence, same shape for HU + EN, just the
     // connector word changes. Keeps the share-card body warm without
     // having to drop the names into a long brand pitch.
     description =
       locale === "hu"
-        ? `${wm.display_name} esküvői oldala — programterv, helyszín, RSVP.`
-        : `${wm.display_name} — schedule, venue and RSVP in one place.`;
+        ? `${wm.display_name} esküvői oldala, programterv, helyszín, RSVP.`
+        : `${wm.display_name}, schedule, venue and RSVP in one place.`;
     twDescription = description;
   } else {
     const routeSeo = resolveRouteSeo(path);
@@ -887,7 +887,7 @@ function buildHeadBlock(opts: {
 }
 
 /** Build a tiny route-specific SSR body (h1 + intro + footer nav). Returns
- *  null for the landing and unknown paths — those keep whatever body the
+ *  null for the landing and unknown paths, those keep whatever body the
  *  prerender script baked into the template. Used by renderIndexHtml below
  *  to give Googlebot a distinct <h1> + paragraph on each public URL
  *  instead of nine copies of the landing's hero. */
@@ -896,7 +896,7 @@ function renderRouteBody(pathname: string, locale: SeoLocale): string | null {
   if (!routeSeo) return null;
   const entry = routeSeo[locale];
   // Footer link target for the imprint route depends on locale (HU mounts at
-  // /impresszum, EN at /imprint — both reach the same React page).
+  // /impresszum, EN at /imprint, both reach the same React page).
   const imprintHref = locale === "hu" ? "/impresszum" : "/imprint";
   const labels =
     locale === "hu"
@@ -965,7 +965,7 @@ export function renderIndexHtml(
     host: string | null;
     pathname: string;
     isRsvp: boolean;
-    /** Raw `Accept-Language` request header. Optional — when omitted, locale
+    /** Raw `Accept-Language` request header. Optional, when omitted, locale
      *  resolution falls back to the historical HU default. Production
      *  callers in server.ts forward the real header so the SSR'd HTML
      *  advertises the right lang/og:locale per request. */
@@ -973,7 +973,7 @@ export function renderIndexHtml(
   },
 ): string {
   const locale = localeForHost(opts.host, opts.acceptLanguage ?? null);
-  // Look up the couple meta once at the boundary — `buildHeadBlock` is a
+  // Look up the couple meta once at the boundary, `buildHeadBlock` is a
   // pure string-builder so we keep the DB read here.
   const weddingMeta = lookupWeddingSiteMeta(opts.pathname);
   const head = buildHeadBlock({ ...opts, weddingMeta });
@@ -994,7 +994,7 @@ export function renderIndexHtml(
 
   // Splice the route-specific body if this is a known non-landing public
   // route. For "/" and unknown paths we keep whatever body the prerender
-  // script baked into the template — that's already the rich landing body
+  // script baked into the template, that's already the rich landing body
   // on landing files, and the same body is harmless as a fallback for
   // unknown paths.
   const routeBody = renderRouteBody(opts.pathname || "/", locale);
@@ -1026,7 +1026,7 @@ export function renderRobotsTxt(_host: string | null): string {
   ].join("\n");
 }
 
-/** /llms.txt — the proposed standard that points LLMs/AI search engines at a
+/** /llms.txt, the proposed standard that points LLMs/AI search engines at a
  *  site's most useful, citable content. Generated (not hand-maintained) from
  *  the same tool route table + blog_posts query that feed the sitemap, so it
  *  never drifts out of sync. English-primary because the international
@@ -1041,7 +1041,7 @@ export function renderLlmsTxt(_host: string | null): string {
     "",
   ];
 
-  // Free tools — the strongest citable assets (each answers a high-intent
+  // Free tools, the strongest citable assets (each answers a high-intent
   // wedding query). List the EN canonical slug with the EN title/description.
   const toolPaths = STATIC_PUBLIC_PATHS.filter((p) => isToolPath(p.path));
   if (toolPaths.length > 0) {

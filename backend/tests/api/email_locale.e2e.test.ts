@@ -82,7 +82,7 @@ describe("renderEmail: recipient locale branching", () => {
     });
     expect(r.text).toContain("Szia Anna!");
     expect(r.text).toContain("Hi Anna,");
-    expect(r.text).toContain("— — —");
+    expect(r.text).toContain("· · ·");
     // Bilingual footer carries both languages.
     expect(r.text).toContain("Ezt a fiókoddal kapcsolatban kaptad.");
     expect(r.text).toContain("You're getting this");

@@ -1579,7 +1579,7 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
           {t("guests.checkin_pill_lead")}
         </span>
         <span className="font-mono text-base uppercase tracking-[0.3em] text-ink-900 dark:text-paper-50">
-          {couple.slug ?? "—"}
+          {couple.slug ?? "-"}
         </span>
         <span className="text-sm text-ink-600 hidden sm:inline dark:text-umber-200">
           {t("guests.checkin_pill_suffix")}
@@ -1641,7 +1641,7 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
               {t("guests.couple_slug_help_locked")}
             </p>
             <div className="mt-3 font-mono text-2xl uppercase tracking-[0.3em] text-ink-900 dark:text-paper-50">
-              {couple.slug ?? "—"}
+              {couple.slug ?? "-"}
             </div>
           </div>
 
@@ -1752,11 +1752,11 @@ function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
       <button
         type="button"
         onClick={onCycle}
-        title={`${label} — ${nextHint}`}
+        title={`${label}: ${nextHint}`}
         aria-label={`${label}. ${nextHint}`}
         aria-pressed={state !== "not_invited"}
         /* Single small dot at every viewport — the prior `h-8 min-w-[3.5rem]`
-         *  chip with the "Meghívva" / "Átadva" / "—" text was a full-width
+         *  chip with the "Meghívva" / "Átadva" / "-" text was a full-width
          *  pill on mobile that ate the row before the name even rendered.
          *  The header already carries the "0/2 meghívva" tally so the per-
          *  member text was redundant; cycling tap target stays at the
@@ -3780,7 +3780,7 @@ function MealLegendRow({
             )}
           </div>
           <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-ink-500 dark:text-umber-300">
-            {dim ? "—" : `${pct}%`}
+            {dim ? "-" : `${pct}%`}
           </span>
         </div>
       </div>
@@ -3873,7 +3873,7 @@ function AllergenRow({
         {count}
       </span>
       <span className="mr-3 hidden w-12 shrink-0 text-right text-[11px] tabular-nums text-ink-500 sm:inline dark:text-umber-300">
-        {dim ? "—" : `${sharePct}%`}
+        {dim ? "-" : `${sharePct}%`}
       </span>
     </li>
   );

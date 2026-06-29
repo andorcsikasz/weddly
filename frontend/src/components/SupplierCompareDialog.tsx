@@ -217,7 +217,7 @@ function VerdictIcon({ kind }: { kind: "ok" | "warn" | "info" | "none" }) {
 }
 
 function PriceBandRow({ band }: { band: number | null }) {
-  if (band === null) return <span className="text-ink-400 dark:text-umber-400">—</span>;
+  if (band === null) return <span className="text-ink-400 dark:text-umber-400">-</span>;
   return (
     <span className="font-mono text-ink-700 dark:text-paper-100">
       {"$".repeat(Math.max(0, Math.min(5, band)))}
@@ -491,7 +491,7 @@ export function SupplierCompareDialog({
             })}
 
             {/* Row: distance from the couple's venue pin. Falls back to a
-                "set your venue" hint when the couple has no pin, or "—" when a
+                "set your venue" hint when the couple has no pin, or "-" when a
                 supplier lacks coordinates. */}
             <RowLabel
               icon={<Navigation size={14} aria-hidden />}
@@ -508,7 +508,7 @@ export function SupplierCompareDialog({
                       {t("suppliers.compare.distance_no_origin")}
                     </span>
                   ) : km === null ? (
-                    <span className="text-ink-400 dark:text-umber-400">—</span>
+                    <span className="text-ink-400 dark:text-umber-400">-</span>
                   ) : (
                     <span
                       className={

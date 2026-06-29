@@ -911,7 +911,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
                 </form>
               ) : (
                 <p className="mt-1 text-lg font-medium tabular-nums tracking-tight text-ink-900 dark:text-paper-50">
-                  {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }, currency) : "—"}
+                  {couple ? formatBudgetGoal(couple.budget_goal, { t, locale }, currency) : "-"}
                 </p>
               )}
             </li>

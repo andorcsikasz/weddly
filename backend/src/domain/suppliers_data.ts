@@ -1,4 +1,4 @@
-// Curated suppliers directory. v1 is read-only — outbound contact only, no
+// Curated suppliers directory. v1 is read-only, outbound contact only, no
 // booking/messaging. Real entries only: name, address, website, capacity, and
 // price band must correspond to a real business. Empty categories (catering,
 // photo_video, music_dj, …) will be filled by community submissions via the
@@ -6,7 +6,7 @@
 //
 // Capacity is the published seated-dinner / "esküvőre" range where the venue
 // makes one public. Couples should still confirm exact figures with the venue
-// — numbers shift between seated dinner / standing reception / ceremony layouts.
+//, numbers shift between seated dinner / standing reception / ceremony layouts.
 
 export type { DirectorySupplierBase, SupplierCategory, VenueStyle } from "@shared/suppliers";
 import type { DirectorySupplierBase, VenueStyle } from "@shared/suppliers";
@@ -23,7 +23,7 @@ const noContact = {
 /** Approximate WGS-84 coords keyed by directory id. Sourced from the
  *  Hungarian postcode of the venue's address (Budapest postcodes are
  *  4-digit district centroids; rural venues use the town centre). Good
- *  enough for "here's where it is on a map" — couples click through to
+ *  enough for "here's where it is on a map", couples click through to
  *  the venue website for precise navigation. */
 const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "normafa-rendezvenyhaz": { lat: 47.5048, lng: 18.9667 },
@@ -95,7 +95,7 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "tarsa-pagony": { lat: 47.812, lng: 19.298 },
   "pikant-pajta": { lat: 47.651, lng: 18.328 },
   "pajta-oriszentpeter": { lat: 46.842, lng: 16.428 },
-  // Regional venue expansion (June 2026) — town-centroid coords (river-dock
+  // Regional venue expansion (June 2026), town-centroid coords (river-dock
   // approximations for the Budapest boats, area centroid for the Szigetköz
   // csárda). Precise enough for the map pin; couples click through for routing.
   "achilles-park-gyor": { lat: 47.6875, lng: 17.6504 },
@@ -136,7 +136,7 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "rozsa-etterem-mezokovesd": { lat: 47.8136, lng: 20.5697 },
   "le-til-kuria-biri": { lat: 47.928, lng: 21.857 },
   "csodaszarvas-tajpark-rabahidveg": { lat: 47.083, lng: 16.7 },
-  // International (Slovakia) — 2026-06 curated batch, complete-data rows only
+  // International (Slovakia), 2026-06 curated batch, complete-data rows only
   // (name + address + capacity + phone-or-mobile + email + website all real).
   "sobasny-palac-bytca": { lat: 49.222, lng: 18.554 },
   "ponton-bubbles-restaurant": { lat: 48.14, lng: 17.114 },
@@ -156,7 +156,7 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "demanova-rezort": { lat: 49.04, lng: 19.583 },
   "greta-resort-liptovska-sielnica": { lat: 49.15, lng: 19.481 },
   "hotel-pri-mlyne-lozorno": { lat: 48.345, lng: 17.067 },
-  // International (Austria) — 2026-06 katjasimon.com / peachperfectweddings.com
+  // International (Austria), 2026-06 katjasimon.com / peachperfectweddings.com
   // batch. Every entry verified against the venue's own website; only the
   // ones with at least a public phone, email, or full street address landed
   // in the directory (the rest got dropped on the floor per the "kontakt
@@ -177,7 +177,7 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "ski-museum-restaurant-st-anton": { lat: 47.128, lng: 10.265 },
   "hohe-mut-alm-obergurgl": { lat: 46.876, lng: 11.043 },
   "villa-maund-schoppernau": { lat: 47.314, lng: 9.971 },
-  // International venue expansion (June 2026) — Croatian, Romanian, Slovenian wedding venues.
+  // International venue expansion (June 2026), Croatian, Romanian, Slovenian wedding venues.
   // Town/venue centroids; couples click through for precise routing.
   "villa-lav-bale": { lat: 45.0594, lng: 13.7556 },
   "meneghetti-wine-hotel-bale": { lat: 45.0547, lng: 13.7639 },
@@ -226,11 +226,11 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "gredic-castle": { lat: 46.0017, lng: 13.5356 },
 };
 
-// `submitter_type` is layered on by the DIRECTORY map below — curated entries
+// `submitter_type` is layered on by the DIRECTORY map below, curated entries
 // never have a submitter, so it's always null. Keeping it off the literals
 // here keeps the 100+ entries terse.
 // `venue_style` is optional in the literals (most pre-international entries
-// predate it and stay null) — the DIRECTORY map below defaults the absent ones
+// predate it and stay null), the DIRECTORY map below defaults the absent ones
 // to null. New venue entries set it from their "jelleg" tag.
 const RAW_DIRECTORY: (Omit<
   DirectorySupplierBase,
@@ -843,7 +843,7 @@ const RAW_DIRECTORY: (Omit<
   // makeup / bridal salon / DJ / florist / live band / hair / photo booth /
   // content creator / officiant / cake. Phone/email kept when published on
   // the vendor's site; otherwise the website is the contact path. Gundel
-  // skipped here — already listed above as `gundel-etterem`. "Budapest
+  // skipped here, already listed above as `gundel-etterem`. "Budapest
   // Wedding" deduplicated to a single planner entry (was duplicated under
   // Content Creator + Officiant in the source sheet).
 
@@ -1037,7 +1037,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "orsegi-5erzek-pajta",
-    name: "Őrségi 5érzék Házak — Rendezvény Pajta",
+    name: "Őrségi 5érzék Házak, Rendezvény Pajta",
     category: "venue",
     city: "Őrimagyarósd",
     address: null,
@@ -1387,12 +1387,12 @@ const RAW_DIRECTORY: (Omit<
     price_band: 4,
   },
 
-  // ─── Venues: Slovakia — June 2026 international batch ───────────────────
+  // ─── Venues: Slovakia, June 2026 international batch ───────────────────
   // Only "complete-data" rows from the Svadobný vyhľadávač / svadobnyvyhladavac.sk
   // source: name + address + capacity + phone-or-mobile + email + website all
   // present. Rows with "ellenőrizendő" capacity, inquiry-form-only websites,
   // or missing public phone/email were skipped. Austrian rows from EventInc /
-  // hochzeits-location.info were also skipped — their listings don't expose
+  // hochzeits-location.info were also skipped, their listings don't expose
   // the vendor's own phone / email / website beyond the directory page itself,
   // so they don't meet the complete-data bar.
   {
@@ -1415,7 +1415,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "ponton-bubbles-restaurant",
-    name: "Ponton — Bubbles Restaurant",
+    name: "Ponton, Bubbles Restaurant",
     category: "venue",
     city: "Bratislava",
     address: "Tyršovo nábrežie, 851 01 Bratislava-Petržalka, Slovensko",
@@ -1720,7 +1720,7 @@ const RAW_DIRECTORY: (Omit<
     price_band: 3,
   },
 
-  // ─── Venues: Austria — June 2026 international batch ────────────────────
+  // ─── Venues: Austria, June 2026 international batch ────────────────────
   // Sourced from katjasimon.com / peachperfectweddings.com (names + websites)
   // and verified one-by-one against each venue's own site. Every row has at
   // least a public phone, email, or full street address (per the kontakt-
@@ -2114,7 +2114,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "gyula-co",
-    name: "GYULA CO — Zacsfalvi Gyula",
+    name: "GYULA CO, Zacsfalvi Gyula",
     category: "photo_video",
     city: "Budapest",
     address: null,
@@ -2255,7 +2255,7 @@ const RAW_DIRECTORY: (Omit<
     price_band: 3,
   },
 
-  // Planners (mapped to "entertainment" — closest existing category)
+  // Planners (mapped to "entertainment", closest existing category)
   {
     id: "budapest-wedding",
     name: "Budapest Wedding",
@@ -2408,7 +2408,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "bridal-beauty-makeup",
-    name: "Bridal Beauty — Smink",
+    name: "Bridal Beauty, Smink",
     category: "hair_makeup",
     city: "Budapest",
     address: null,
@@ -2808,7 +2808,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "bridal-beauty-hair",
-    name: "Bridal Beauty — Haj",
+    name: "Bridal Beauty, Haj",
     category: "hair_makeup",
     city: "Budapest",
     address: null,
@@ -2953,7 +2953,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "upwork-content-creators-budapest",
-    name: "Upwork Content Creators — Budapest",
+    name: "Upwork Content Creators, Budapest",
     category: "photo_video",
     city: "Budapest",
     address: null,
@@ -3033,7 +3033,7 @@ const RAW_DIRECTORY: (Omit<
   // Cake / dessert
   {
     id: "peace-of-cake",
-    name: "Peace of Cake — Pinczel Orsi",
+    name: "Peace of Cake, Pinczel Orsi",
     category: "cake_dessert",
     city: "Budapest",
     address: "1136 Budapest, Hegedűs Gyula utca 20.",
@@ -3182,7 +3182,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "sls-rendezvenytechnika-tent",
-    name: "SLS Rendezvénytechnika Kft. — sátor",
+    name: "SLS Rendezvénytechnika Kft., sátor",
     category: "tent_pavilion",
     city: "Szentes",
     address: "6600 Szentes, Vásárhelyi út 114.",
@@ -3235,7 +3235,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "budapestevent-tent",
-    name: "BudapestEvent Rendezvényszolgáltató — sátor",
+    name: "BudapestEvent Rendezvényszolgáltató, sátor",
     category: "tent_pavilion",
     city: "Budapest",
     address: "1015 Budapest, Széna tér 7. I/9.",
@@ -3252,7 +3252,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "cambium-rendezveny-tent",
-    name: "Cambium Rendezvényszervező — stretch sátor",
+    name: "Cambium Rendezvényszervező, stretch sátor",
     category: "tent_pavilion",
     city: "Budapest",
     address: "1077 Budapest, Kis Diófa utca 11. 3/3.",
@@ -3355,7 +3355,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "sls-rendezvenytechnika-sound",
-    name: "SLS Rendezvénytechnika Kft. — hang",
+    name: "SLS Rendezvénytechnika Kft., hang",
     category: "sound_tech",
     city: "Szentes",
     address: "6600 Szentes, Vásárhelyi út 114.",
@@ -3404,7 +3404,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "budapestevent-sound",
-    name: "BudapestEvent Rendezvényszolgáltató — hang",
+    name: "BudapestEvent Rendezvényszolgáltató, hang",
     category: "sound_tech",
     city: "Budapest",
     address: "1015 Budapest, Széna tér 7. I/9.",
@@ -3422,7 +3422,7 @@ const RAW_DIRECTORY: (Omit<
   },
   {
     id: "cambium-rendezveny-sound",
-    name: "Cambium Rendezvényszervező — hangtechnika",
+    name: "Cambium Rendezvényszervező, hangtechnika",
     category: "sound_tech",
     city: "Budapest",
     address: "1077 Budapest, Kis Diófa utca 11. 3/3.",
@@ -4743,7 +4743,7 @@ const RAW_DIRECTORY: (Omit<
     price_band: null,
     venue_style: "nature_park",
   },
-  // ── International venues — Croatia (June 2026) ──────────────────────────
+  // ── International venues, Croatia (June 2026) ──────────────────────────
   {
     id: "villa-lav-bale",
     name: "Villa Lav",
@@ -5133,7 +5133,7 @@ const RAW_DIRECTORY: (Omit<
       "https://multimedia.valamar.com/mediagallery-dxp-production/Objekti_Porec_ValamarIsabellaResort_V4_gallery_isabella-island-resort-miramare-restaurant-airview.jpg",
     ],
   },
-  // ── International venues — Romania (June 2026) ──────────────────────────
+  // ── International venues, Romania (June 2026) ──────────────────────────
   {
     id: "iris-orangerie-ciolpani",
     name: "Iris Orangerie",
@@ -5421,7 +5421,7 @@ const RAW_DIRECTORY: (Omit<
     price_band: 3,
     venue_style: "manor",
   },
-  // ── International venues — Slovenia (June 2026) ──────────────────────────
+  // ── International venues, Slovenia (June 2026) ──────────────────────────
   {
     id: "vila-vipolze",
     name: "Vila Vipolže",
@@ -5717,7 +5717,7 @@ export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
   // public-list handler in routes/suppliers.ts overlays the real value
   // from the `listings` table (where claimed entries live) before responding.
   // `hero_image_url` likewise overlays from the listings table once the
-  // vendor uploads one — curated entries don't ship with images today.
+  // vendor uploads one, curated entries don't ship with images today.
   return {
     ...withCoords,
     venue_style: s.venue_style ?? null,

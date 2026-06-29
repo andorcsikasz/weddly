@@ -1258,7 +1258,7 @@ export default function DashboardPage() {
             <KpiTile
               label={t("dashboard.kpi_total_spend_label")}
               icon={<Coins size={16} aria-hidden="true" />}
-              value={totalActual > 0 ? formatMoney(totalActual, currency, locale) : "—"}
+              value={totalActual > 0 ? formatMoney(totalActual, currency, locale) : "-"}
               unit={
                 totalActual > 0
                   ? t("dashboard.kpi_total_spend_unit")
@@ -1276,7 +1276,7 @@ export default function DashboardPage() {
               value={
                 roiPlanned !== null
                   ? `${formatHufCompact(roiPlanned, locale)} ${currencySymbol(currency, locale)}`
-                  : "—"
+                  : "-"
               }
               unit={t("dashboard.kpi_roi_unit_planned", {
                 n: formatNumber(effectivePlanningCount, locale),
@@ -1814,7 +1814,7 @@ function DaysToGoTile({
               </div>
               <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
                 {formatNumber(daysElapsed, locale)} nap eltelt ·{" "}
-                {days !== null ? formatNumber(days, locale) : "—"} hátra
+                {days !== null ? formatNumber(days, locale) : "-"} hátra
               </div>
             </div>
           </div>
@@ -1828,7 +1828,7 @@ function DaysToGoTile({
             className="-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
           >
             <div className="stat-num text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
-              {days !== null ? formatNumber(days, locale) : "—"}
+              {days !== null ? formatNumber(days, locale) : "-"}
             </div>
             <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
               {days !== null && goal.exact_date

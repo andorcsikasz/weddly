@@ -282,7 +282,7 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
                 type="button"
                 onClick={() => setEditingRow(isEditing ? null : r.key)}
                 aria-expanded={isEditing}
-                aria-label={`${itemLabel} — ${t("suppliers.calc.qty_edit_hint")}`}
+                aria-label={`${itemLabel}: ${t("suppliers.calc.qty_edit_hint")}`}
                 title={t("suppliers.calc.qty_edit_hint")}
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 tabular-nums text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700/60"
               >
@@ -302,7 +302,7 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
                   inputMode="numeric"
                   min={0}
                   step={100}
-                  aria-label={`${itemLabel} — ${t("suppliers.calc.col_unit_price")}`}
+                  aria-label={`${itemLabel}: ${t("suppliers.calc.col_unit_price")}`}
                   className="input !py-1 w-24 text-right text-sm"
                   value={fields[r.priceField]}
                   onChange={(e) => set(r.priceField, e.target.value)}

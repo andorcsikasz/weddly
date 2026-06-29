@@ -1,4 +1,4 @@
-// Branded locale-aware email template. Email-client safe — table layout,
+// Branded locale-aware email template. Email-client safe, table layout,
 // inline styles, hex colors with web-safe fallbacks. Width capped at 560px so
 // it reads well on mobile and in the Gmail/Outlook/Apple Mail preview pane.
 //
@@ -9,7 +9,7 @@
 //     EN secondary below). Used for guests + pre-feature users whose
 //     `users.locale` was never captured.
 //
-// IMPORTANT: do not pull in CSS variables or media queries — most email
+// IMPORTANT: do not pull in CSS variables or media queries, most email
 // clients strip <style> blocks. Keep everything inline.
 
 import { CONFIG } from "../../config";
@@ -22,11 +22,11 @@ export interface LocaleBlock {
   /** Optional preheader (the gray inbox-preview text). Renders hidden in HTML. */
   preheader?: string;
   greeting: string;
-  /** Body paragraphs. Each becomes a <p>. Plain text — escaped before render. */
+  /** Body paragraphs. Each becomes a <p>. Plain text, escaped before render. */
   paragraphs: string[];
   cta: string;
   /** Plain (non-italic) line rendered directly under the CTA button. Use for
-   *  load-bearing info that's part of the action — link expiry, single-use
+   *  load-bearing info that's part of the action, link expiry, single-use
    *  warning, time-sensitive caveats. Reserves the `footnote` slot for truly
    *  tertiary reassurance ("if you didn't ask for this, ignore it"). */
   ctaSubtext?: string;
@@ -36,7 +36,7 @@ export interface LocaleBlock {
   /** Low-stakes investigation links rendered as a row underneath the primary
    *  CTA. Gives a skeptical recipient (especially on outreach mail) a path
    *  to verify the sender without committing to the action. Only honoured
-   *  on the primary card — secondary cards already have a link-style CTA. */
+   *  on the primary card, secondary cards already have a link-style CTA. */
   secondaryLinks?: Array<{ label: string; url: string }>;
 }
 
@@ -51,17 +51,17 @@ export interface RenderInput {
    *  one-click. The route is /unsubscribe/:token on the frontend. */
   unsubscribeToken?: string;
   /** Pick a single-language render when known. `null`/omitted falls back to
-   *  the historical bilingual HU+EN layout — used for guests (we don't have
+   *  the historical bilingual HU+EN layout, used for guests (we don't have
    *  per-guest locale yet) and users whose `users.locale` predates the
    *  feature. */
   recipientLocale?: RecipientLocale;
   /** Surface the named language on TOP of the bilingual stack. Only used
-   *  when `recipientLocale` is null — when we don't know the recipient's
+   *  when `recipientLocale` is null, when we don't know the recipient's
    *  language but DO know the submitter's, lead with the submitter's
    *  language and keep the other as a safety net below. */
   primaryLocaleHint?: "hu" | "en";
   /** When set, a 1×1 transparent tracking pixel is appended to the HTML body.
-   *  Only used for guest_invite emails — see routes/email_track.ts. */
+   *  Only used for guest_invite emails, see routes/email_track.ts. */
   trackingPixelUrl?: string;
 }
 
@@ -72,27 +72,27 @@ export interface RenderedEmail {
   fallbackSubject: string;
 }
 
-// Soft-Modern palette — matches the landing page tokens. Hex literals here
+// Soft-Modern palette, matches the landing page tokens. Hex literals here
 // (not Tailwind tokens) because email clients can't reach Tailwind. Keep this
 // list in sync with `frontend/tailwind.config.js` whenever the brand shifts.
-// Light "specialty-coffee" palette — minimalist-precision structure (Stripe /
+// Light "specialty-coffee" palette, minimalist-precision structure (Stripe /
 // Linear / Vercel discipline) in the warm umber/oat brand tones. A white card
 // floats on a warm oat-paper canvas, lifted by a 1px warm border (no shadow —
 // shadows render as grey boxes in Outlook). One chroma only: walnut, on links.
 // The dark espresso button is the single high-contrast element. The logo PNG is
 // a dark square with a white dove, so on the white card it reads as a dark
-// rounded tile for free — no compositing needed.
+// rounded tile for free, no compositing needed.
 const COLOR = {
-  bg: "#f4efe7", // warm oat-paper canvas — the envelope the card sits on
+  bg: "#f4efe7", // warm oat-paper canvas, the envelope the card sits on
   card: "#ffffff", // true white card, lifts cleanly off the oat field
-  ink: "#1c1714", // warm near-black — headline + wordmark (never pure #000)
-  muted: "#7a7065", // warm taupe — footer, asides, the "why am I getting this" line
+  ink: "#1c1714", // warm near-black, headline + wordmark (never pure #000)
+  muted: "#7a7065", // warm taupe, footer, asides, the "why am I getting this" line
   divider: "#ece7e0", // warm hairline rule
-  accent: "#7c5a3e", // walnut — links + secondary CTAs (the only chroma in the email)
+  accent: "#7c5a3e", // walnut, links + secondary CTAs (the only chroma in the email)
   accentInk: "#ffffff", // text that sits ON the dark button
   enInk: "#3d352e", // body ink, a shade softer than the near-black headline
   cta: "#1c1714", // dark espresso button fill (the requested dark button)
-  cardBorder: "#eae4dc", // 1px warm card border — replaces the drop shadow
+  cardBorder: "#eae4dc", // 1px warm card border, replaces the drop shadow
 } as const;
 
 // Social channels surfaced in the footer. Icons are 48×48 monochrome PNGs
@@ -112,7 +112,7 @@ interface PickedBlock {
 
 /** Choose which language blocks render, in display order. `null` recipient
  *  locale → bilingual fallback. `primaryLocaleHint` orders the bilingual
- *  stack — when the caller knows what language the *submitter* uses (e.g.
+ *  stack, when the caller knows what language the *submitter* uses (e.g.
  *  the couple-of-record's `users.locale` for a community-listing verify
  *  mail), surface that block on top. The opposite-language block still
  *  renders below as a safety net since the recipient's actual locale is
@@ -140,7 +140,7 @@ function pickBlocks(
 export function renderEmail(input: RenderInput): RenderedEmail {
   const { hu, en, recipientLocale, primaryLocaleHint } = input;
   const blocks = pickBlocks(hu, en, recipientLocale ?? null, primaryLocaleHint);
-  // Subject fallback follows the primary block — for an EN-only render, the
+  // Subject fallback follows the primary block, for an EN-only render, the
   // EN first paragraph stands in if the kind builder returned an empty
   // subject; for bilingual (null locale) we keep the historical HU fallback
   // so legacy callers see no behaviour change.
@@ -163,7 +163,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     lines.push("");
     blocks.forEach(({ block }, i) => {
       if (i > 0) {
-        lines.push("— — —");
+        lines.push("· · ·");
         lines.push("");
       }
       lines.push(block.greeting);
@@ -212,7 +212,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     );
     // First block always renders as the "primary" card (big bold greeting,
     // filled CTA button). Subsequent blocks render as "secondary" cards
-    // (smaller, muted, link-style CTA, with the locale label above) — this
+    // (smaller, muted, link-style CTA, with the locale label above), this
     // is what historic bilingual rendering looked like, and we preserve it
     // for the back-compat null-locale path.
     const cards = blocks
@@ -239,7 +239,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     <meta name="supported-color-schemes" content="light" />
     <title>Weddly</title>
     <style>
-      /* General Sans — self-hosted at the Weddly CDN. Supported by Apple Mail,
+      /* General Sans, self-hosted at the Weddly CDN. Supported by Apple Mail,
          Outlook.com, Samsung Mail, and Thunderbird; Gmail web strips <style>
          entirely so the system-font stack in the inline font-family is the
          Gmail fallback. woff2 only: every client that honours @font-face also
@@ -262,7 +262,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         font-weight: 600;
         src: url('${CONFIG.frontendBaseUrl}/fonts/general-sans-600.woff2') format('woff2');
       }
-      /* Mobile overrides — Apple Mail + Gmail iOS app respect <style>; Gmail
+      /* Mobile overrides, Apple Mail + Gmail iOS app respect <style>; Gmail
          web strips it, but the inline styles still apply as the fallback.
          Tighter inner padding gains ~24px of horizontal room on a 360–375px
          viewport; the larger CTA + 1.2 line-height gives a comfortable
@@ -286,7 +286,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       <tr>
         <td align="center" style="padding:32px 16px;">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:${COLOR.card};border:1px solid ${COLOR.cardBorder};border-radius:14px;">
-            <!-- Brand header — top-left lockup. The logo PNG is a dark square
+            <!-- Brand header, top-left lockup. The logo PNG is a dark square
                  with a white dove, so on the white card it reads as a dark
                  rounded tile for free. A hairline rule separates the masthead
                  from the letter. Wordmark in General Sans (the landing font). -->
@@ -330,7 +330,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         ? `<p style="margin:18px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
         : "";
       // Left-aligned letter inside the white card: the greeting is a confident
-      // General Sans headline, then body, then one dark espresso CTA — the
+      // General Sans headline, then body, then one dark espresso CTA, the
       // minimalist-precision "one statement, one action" rhythm. The dark
       // button is the single high-contrast element on the warm-white field.
       return `<tr>
@@ -357,7 +357,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
               </td>
             </tr>`;
     }
-    // Secondary card — historic EN-below-HU bilingual fallback. The locale
+    // Secondary card, historic EN-below-HU bilingual fallback. The locale
     // label sits above the greeting so the reader knows what they're looking
     // at when the primary above was a different language. The `lang` attribute
     // on the wrapper td matters for screen readers: without it, VoiceOver
@@ -424,7 +424,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
             </a>
           </p>`
         : "";
-    // Footer body copy is bumped to 13px (from the previous 11/12px) — that
+    // Footer body copy is bumped to 13px (from the previous 11/12px), that
     // was below the 14px legibility floor for the median wedding-vendor
     // demographic (40-55 y/o on a phone, presbyopic, no Dynamic Type for HTML
     // email). 13px is the standard floor where pixel-fitted hinting still
@@ -487,7 +487,7 @@ function escapeAttr(s: string): string {
   return escapeHtml(s);
 }
 
-// Load-bearing copy directly under the CTA — link expiry, single-use
+// Load-bearing copy directly under the CTA, link expiry, single-use
 // warnings. Same colour + size as the other shell text, no italics so the
 // reader doesn't mistake it for an aside.
 function renderCtaSubtext(text: string | undefined): string {
@@ -510,26 +510,26 @@ function renderSecondaryLinks(links: Array<{ label: string; url: string }> | und
   return `<p style="margin:14px 0 0 0;">${rows}</p>`;
 }
 
-// Cold recipients don't necessarily know what Weddly is — the body dives
+// Cold recipients don't necessarily know what Weddly is, the body dives
 // straight into "someone added you to our directory" without context.
 // Inject a one-line "what is Weddly" orientation between the greeting and
 // the first paragraph so the recipient has an anchor before the action ask.
-// Only renders for outreach category — transactional/lifecycle recipients
+// Only renders for outreach category, transactional/lifecycle recipients
 // already have an account and don't need the intro.
 function renderOutreachOrientation(category: EmailCategory, locale: "hu" | "en"): string {
   if (category !== "outreach") return "";
   const copy =
     locale === "hu"
-      ? "A Weddly egy esküvőtervező eszköz pároknak — vendéglista, ülésrend, költségvetés, RSVP egy helyen."
-      : "Weddly is a wedding-planning app for couples — guest list, seating, budget, RSVP in one place.";
+      ? "A Weddly egy esküvőtervező eszköz pároknak, vendéglista, ülésrend, költségvetés, RSVP egy helyen."
+      : "Weddly is a wedding-planning app for couples, guest list, seating, budget, RSVP in one place.";
   return `<p style="margin:0 0 18px 0;color:${COLOR.muted};font-size:14px;line-height:1.5;font-style:italic;">${escapeHtml(copy)}</p>`;
 }
 
 // For unsolicited mail (outreach category), the CTA button hides its
-// destination — a textbook phishing shape. Render the URL in plain text
+// destination, a textbook phishing shape. Render the URL in plain text
 // underneath so a skeptical recipient can verify the domain before clicking.
 // Transactional + lifecycle mails (recipient has a Weddly account) skip this
-// — the extra line is noise when there's no trust gap to bridge.
+//, the extra line is noise when there's no trust gap to bridge.
 function renderPlainUrlNote(ctaUrl: string, category: EmailCategory, locale: "hu" | "en"): string {
   if (category !== "outreach") return "";
   const label =
@@ -543,7 +543,7 @@ function renderPlainUrlNote(ctaUrl: string, category: EmailCategory, locale: "hu
 // Preheader is the gray "inbox preview" text. Gmail iOS truncates around 90
 // chars and Apple Mail around 140; cap at 90 so the preview is consistent
 // across clients and we never spill into the visible body (which leaks the
-// preheader trick — looks broken). One-line cap, no ellipsis: clients add
+// preheader trick, looks broken). One-line cap, no ellipsis: clients add
 // their own "…" when they truncate further.
 function capPreheader(s: string): string {
   const trimmed = s.trim().replace(/\s+/g, " ");
@@ -569,15 +569,15 @@ const WHY_LINE_TEXT: Record<EmailCategory, { hu: string; en: string; bilingual: 
       "Ezt a fiókoddal kapcsolatban kaptad. / You're getting this because it's about your Weddly account.",
   },
   outreach: {
-    hu: "Ezt a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk — ha figyelmen kívül hagyod, nem történik semmi.",
-    en: "You're getting this from Weddly, a wedding-planning app. You don't have an account with us — if you ignore this, nothing happens.",
+    hu: "Ezt a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk, ha figyelmen kívül hagyod, nem történik semmi.",
+    en: "You're getting this from Weddly, a wedding-planning app. You don't have an account with us, if you ignore this, nothing happens.",
     bilingual:
-      "Ezt a Weddly esküvőtervezőtől kaptad — nincs fiókod nálunk. / You're getting this from Weddly, a wedding-planning app — you don't have an account with us.",
+      "Ezt a Weddly esküvőtervezőtől kaptad, nincs fiókod nálunk. / You're getting this from Weddly, a wedding-planning app, you don't have an account with us.",
   },
 };
 
 // Same map, slightly longer HU copy for the HTML footer (the previous code
-// had separate strings for text and html footers — keep that split here).
+// had separate strings for text and html footers, keep that split here).
 const WHY_LINE_HTML: Record<EmailCategory, { hu: string; en: string; bilingual: string }> = {
   lifecycle: {
     hu: "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk.",
@@ -592,8 +592,8 @@ const WHY_LINE_HTML: Record<EmailCategory, { hu: string; en: string; bilingual: 
       "Ezt a levelet a fiókoddal kapcsolatban kaptad. / You got this email because it concerns your Weddly account.",
   },
   outreach: {
-    hu: "Ezt a levelet a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk — ha figyelmen kívül hagyod, nem történik semmi.",
-    en: "You're receiving this from Weddly, a wedding-planning app. You don't have an account with us — if you ignore this, nothing happens.",
+    hu: "Ezt a levelet a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk, ha figyelmen kívül hagyod, nem történik semmi.",
+    en: "You're receiving this from Weddly, a wedding-planning app. You don't have an account with us, if you ignore this, nothing happens.",
     bilingual:
       "Ezt a levelet a Weddly-től kaptad, és nincs fiókod nálunk. / You're receiving this from Weddly and you don't have an account with us.",
   },

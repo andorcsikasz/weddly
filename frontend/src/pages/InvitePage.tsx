@@ -89,7 +89,7 @@ export default function InvitePage() {
           return;
         }
         if (code === "already_in_this_couple") {
-          setError(t("invite.own_invite_body", { email: "—" }));
+          setError(t("invite.own_invite_body", { email: "-" }));
           setAccepting(false);
           return;
         }
@@ -179,7 +179,7 @@ export default function InvitePage() {
               <h1 className="break-words hyphens-auto">{t("invite.title")}</h1>
               <p className="mt-3 text-sm text-ink-700 break-words hyphens-auto">
                 {t("invite.merge_from_invite_body", {
-                  couple: invite.couple_display_name ?? "—",
+                  couple: invite.couple_display_name ?? "-",
                 })}
               </p>
               <button
@@ -195,7 +195,7 @@ export default function InvitePage() {
             <>
               <h1 className="break-words hyphens-auto">{t("invite.title")}</h1>
               <p className="mt-2 text-sm text-ink-600 break-words hyphens-auto">
-                {t("invite.intro", { partner: invite.couple_display_name ?? "—" })}
+                {t("invite.intro", { partner: invite.couple_display_name ?? "-" })}
               </p>
               {user ? (
                 <button

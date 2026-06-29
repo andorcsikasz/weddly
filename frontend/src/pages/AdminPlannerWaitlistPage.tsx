@@ -86,7 +86,7 @@ function DecideModal({ entry, onClose, onSaved }: DecideModalProps) {
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
       <div className="w-full max-w-md rounded-t-2xl bg-paper-50 p-6 shadow-xl dark:bg-umber-900 sm:rounded-2xl">
         <h2 className="mb-4 text-base font-semibold text-umber-900 dark:text-paper-50">
-          Döntés — {entry.full_name}
+          Döntés: {entry.full_name}
         </h2>
 
         <div className="mb-4">

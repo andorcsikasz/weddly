@@ -87,7 +87,7 @@ function formatWeddingDateSide(side: Record<string, unknown>, locale: Locale, t:
 function formatNamesSide(side: Record<string, unknown>, t: T): string {
   const bride = asString(side.bride_name) ?? "";
   const groom = asString(side.groom_name) ?? "";
-  if (!bride && !groom) return "—";
+  if (!bride && !groom) return "-";
   const sep = t("profile.activity_names_separator");
   return `${bride}${sep}${groom}`.trim();
 }

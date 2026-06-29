@@ -109,7 +109,7 @@ function StepIndicator({
                 ? {
                     type: "button" as const,
                     onClick: () => onStepSelect?.(s),
-                    "aria-label": `${t(STEP_LABELS[s]!)} — ${t("common.back")}`,
+                    "aria-label": `${t(STEP_LABELS[s]!)}: ${t("common.back")}`,
                   }
                 : {})}
               className={`flex flex-col items-center gap-1 ${done ? "cursor-pointer" : ""}`}

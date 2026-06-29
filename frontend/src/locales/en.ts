@@ -30,74 +30,74 @@ const en: LocaleMessages = {
     tagline: "Plan your wedding together, in one calm place.",
   },
   seo: {
-    home_title: "Weddly — your whole wedding in one shared workspace",
+    home_title: "Weddly · your whole wedding in one shared workspace",
     home_description:
       "Budget, guest list, RSVP links, visual seating and printable cards live together in one shared workspace. Set up in minutes and spend the time you save on each other. Free throughout the open beta.",
-    login_title: "Sign in — Weddly",
+    login_title: "Sign in · Weddly",
     login_description: "Sign in to your Weddly couple workspace.",
-    register_title: "Create your couple workspace — Weddly",
+    register_title: "Create your couple workspace · Weddly",
     register_description:
       "Open one shared workspace for both of you and start planning in minutes. Free throughout the open beta.",
-    invite_title: "Join your couple workspace — Weddly",
+    invite_title: "Join your couple workspace · Weddly",
     invite_description: "Your partner invited you to plan the wedding together.",
-    dashboard_title: "Dashboard — Weddly",
+    dashboard_title: "Dashboard · Weddly",
     dashboard_description:
-      "Countdown, RSVPs, spend and to-dos in a single view — pick up where you left off.",
-    profile_title: "Profile — Weddly",
+      "Countdown, RSVPs, spend and to-dos in a single view, pick up where you left off.",
+    profile_title: "Profile · Weddly",
     profile_description: "Account, security, exports and workspace settings in one quiet place.",
-    guests_title: "Guests — Weddly",
+    guests_title: "Guests · Weddly",
     guests_description:
-      "Households, RSVP codes, meal picks and CSV imports — every guest detail in one tidy list.",
-    suppliers_title: "Suppliers — Weddly",
+      "Households, RSVP codes, meal picks and CSV imports, every guest detail in one tidy list.",
+    suppliers_title: "Suppliers · Weddly",
     suppliers_description: "Wedding suppliers filtered by category, city and community feedback.",
-    budget_title: "Budget — Weddly",
+    budget_title: "Budget · Weddly",
     budget_description:
       "Planned vs actual spend by category, with snapshots and per-guest breakdowns.",
-    seating_title: "Seating — Weddly",
+    seating_title: "Seating · Weddly",
     seating_description:
       "Drag tables and chairs onto a canvas, then export A4/A3 PDFs and place cards in one click.",
-    logistics_title: "Logistics — Weddly",
+    logistics_title: "Logistics · Weddly",
     logistics_description:
       "Drag-and-drop accommodation + transfer assignment for every wedding guest.",
-    planning_title: "Planning — Weddly",
+    planning_title: "Planning · Weddly",
     planning_description:
-      "Tasks, ideas, and your wedding-day timeline in one place — quick to capture, easy to reorder.",
-    admin_suppliers_title: "Admin · Suppliers — Weddly",
+      "Tasks, ideas, and your wedding-day timeline in one place, quick to capture, easy to reorder.",
+    admin_suppliers_title: "Admin · Suppliers · Weddly",
     admin_suppliers_description:
-      "Moderate community submissions — approve, hide or delete from the Weddly admin console.",
-    admin_feedback_title: "Admin · Feedback — Weddly",
+      "Moderate community submissions, approve, hide or delete from the Weddly admin console.",
+    admin_feedback_title: "Admin · Feedback · Weddly",
     admin_feedback_description:
       "Triage Feedback dialog submissions from the landing page and in-app surfaces.",
-    admin_analytics_title: "Admin · Analytics — Weddly",
+    admin_analytics_title: "Admin · Analytics · Weddly",
     admin_analytics_description:
       "Aggregate money, activity, and supplier-pick views from the Weddly admin console.",
-    notfound_title: "Page not found — Weddly",
+    notfound_title: "Page not found · Weddly",
     notfound_description: "This link no longer exists, or there was a typo.",
-    onboarding_title: "Get started — Weddly",
+    onboarding_title: "Get started · Weddly",
     onboarding_description:
       "A few minutes of setup: names, date, headcount, budget. Enough to start planning together.",
-    rsvp_checkin_title: "RSVP check-in — Weddly",
+    rsvp_checkin_title: "RSVP check-in · Weddly",
     rsvp_checkin_description:
       "Type the couple code and the 8-character code from your invite, then review your household RSVP.",
-    rsvp_legacy_title: "RSVP — Weddly",
+    rsvp_legacy_title: "RSVP · Weddly",
     rsvp_legacy_description: "Reply to your wedding invitation using the code on it.",
-    reset_password_title: "Set a new password — Weddly",
+    reset_password_title: "Set a new password · Weddly",
     reset_password_description:
       "Choose a new password and you'll be back into your couple workspace.",
-    forgot_password_title: "Reset your password — Weddly",
+    forgot_password_title: "Reset your password · Weddly",
     forgot_password_description: "We'll send a reset link to the email you used to register.",
-    schedule_title: "Schedule — Weddly",
+    schedule_title: "Schedule · Weddly",
     schedule_description:
-      "Your wedding-day run of show: arrival, ceremony, dinner, first dance — printable in one click.",
-    guest_portal_title: "Wedding info — Weddly",
+      "Your wedding-day run of show: arrival, ceremony, dinner, first dance, printable in one click.",
+    guest_portal_title: "Wedding info · Weddly",
     guest_portal_description:
-      "Your invitation in one place: the date, the venue and the run-of-show — open it any time.",
-    guest_page_title: "Guest page — Weddly",
+      "Your invitation in one place: the date, the venue and the run-of-show, open it any time.",
+    guest_page_title: "Guest page · Weddly",
     guest_page_description:
-      "The one page you share with guests — public info up top, more details unlock once they RSVP yes.",
-    wedding_site_title: "Wedding website — Weddly",
+      "The one page you share with guests, public info up top, more details unlock once they RSVP yes.",
+    wedding_site_title: "Wedding website · Weddly",
     wedding_site_description:
-      "The couple's public wedding page — date, venue, schedule and RSVP in one place.",
+      "The couple's public wedding page, date, venue, schedule and RSVP in one place.",
   },
   a11y: {
     close: "Close",
@@ -116,7 +116,7 @@ const en: LocaleMessages = {
     bad_credentials: "Invalid email or password.",
     duplicate_email: "That email is already registered.",
     short_password: "Password must be at least 8 characters.",
-    rate_limited: "Too many attempts — wait a few minutes.",
+    rate_limited: "Too many attempts, wait a few minutes.",
     verify_required_title: "Confirm your email",
     verify_required_body:
       "Before you can sign in, confirm your email address. We just sent a fresh confirmation link to {email}. Check your spam folder too.",
@@ -158,7 +158,7 @@ const en: LocaleMessages = {
       "We sent a link to your inbox. Confirming keeps password recovery working if you ever lose access.",
     banner_resend: "Resend link",
     banner_resending: "Sending…",
-    banner_resent: "Sent — check your inbox.",
+    banner_resent: "Sent, check your inbox.",
     banner_dismiss: "Dismiss",
     page_title: "Email verification",
     page_loading: "Confirming…",
@@ -177,9 +177,9 @@ const en: LocaleMessages = {
     gate_email_intro: "We sent a link to:",
     gate_resend: "Resend the link",
     gate_resending: "Sending…",
-    gate_resent: "Sent — check your inbox.",
-    gate_already_verified: "You're verified — continue.",
-    gate_refresh: "I've confirmed — continue",
+    gate_resent: "Sent, check your inbox.",
+    gate_already_verified: "You're verified, continue.",
+    gate_refresh: "I've confirmed, continue",
     gate_logout: "Sign out",
     gate_continue_limited: "Continue with limited access →",
     gate_open_inbox: "Open {provider}",
@@ -243,7 +243,7 @@ const en: LocaleMessages = {
     back_home: "Back to the home page",
     eyebrow: "Wedding · Weddly",
     date_tbd: "Date to be confirmed",
-    venue_approx: "Venue — exact address on your invitation",
+    venue_approx: "Venue, exact address on your invitation",
     location_eyebrow: "Location",
     schedule_eyebrow: "Here's a sneak peek of",
     schedule_title: "Schedule",
@@ -253,7 +253,7 @@ const en: LocaleMessages = {
     rsvp_cta: "RSVP →",
     invited_eyebrow: "Your invitation",
     rsvp_personal_title: "We're counting on you",
-    rsvp_personal_body: "Reply in a couple of taps — we've pre-filled your household code for you.",
+    rsvp_personal_body: "Reply in a couple of taps, we've pre-filled your household code for you.",
     rsvp_personal_cta: "Reply →",
     rsvp_manage_cta: "Update your RSVP",
     confirmed_title: "For confirmed guests",
@@ -296,7 +296,7 @@ const en: LocaleMessages = {
     publish_body_off:
       "Flip this on once you're ready to share. While on, the link is reachable by anyone you share it with.",
     publish_body_on:
-      "Your page is live — the /w/… address is reachable by anyone you share it with.",
+      "Your page is live, the /w/… address is reachable by anyone you share it with.",
     publish_label_off: "Your page is private",
     publish_label_on: "Your page is published",
     publish_confirm_on_title: "Publish your page?",
@@ -315,7 +315,7 @@ const en: LocaleMessages = {
     cover_image_label: "Cover image",
     cover_image_placeholder: "https://…",
     cover_image_hint: "Upload a file, or paste an http(s) link to a publicly hosted image.",
-    cover_image_invalid: "Must be an http(s) URL — other schemes aren't accepted.",
+    cover_image_invalid: "Must be an http(s) URL, other schemes aren't accepted.",
     cover_upload_button: "Upload image",
     cover_upload_uploading: "Uploading…",
     cover_upload_replace: "Replace image",
@@ -336,14 +336,14 @@ const en: LocaleMessages = {
     page_body: "Confirm that you'd like your business listed in the Weddly community directory.",
     page_loading: "Confirming…",
     page_success:
-      "Thanks — your listing is now visible to couples in the Weddly directory. If anything in it needs changing, get in touch.",
-    page_already: "This link has already been used — your listing is live. No need to click again.",
+      "Thanks, your listing is now visible to couples in the Weddly directory. If anything in it needs changing, get in touch.",
+    page_already: "This link has already been used, your listing is live. No need to click again.",
     page_invalid:
-      "We don't recognise this link. It may be mistyped or from an old email — ask the Weddly team for a fresh one.",
+      "We don't recognise this link. It may be mistyped or from an old email, ask the Weddly team for a fresh one.",
     page_expired:
-      "This link has expired. Reply to the email and we'll send a fresh one — your listing stays hidden until then.",
+      "This link has expired. Reply to the email and we'll send a fresh one, your listing stays hidden until then.",
     page_missing:
-      "That listing no longer exists — it may have been deleted or the submission has expired.",
+      "That listing no longer exists, it may have been deleted or the submission has expired.",
     page_home: "Back to Weddly",
   },
   vendor_claim: {
@@ -352,7 +352,7 @@ const en: LocaleMessages = {
     page_body: "Confirm you own this Weddly directory listing.",
     page_invalid: "We don't recognise this link. It may be mistyped or from an old email.",
     page_expired: "This link has expired. Start the claim again from the Weddly directory.",
-    page_cancelled: "This claim has been cancelled — start fresh from the directory.",
+    page_cancelled: "This claim has been cancelled, start fresh from the directory.",
     page_already_verified:
       "This listing has already been claimed. If that was you, sign in with the vendor email.",
     page_home: "Back to the Weddly directory",
@@ -360,20 +360,20 @@ const en: LocaleMessages = {
     modal_body_intro:
       "Want to claim ownership of {name}? We'll email a verification link to the address on file for this listing.",
     modal_body_email_hidden:
-      "We don't show the full address for privacy — once you confirm, you'll manage the listing yourself.",
+      "We don't show the full address for privacy, once you confirm, you'll manage the listing yourself.",
     modal_email_label: "Your email",
     modal_email_help: "Our admin team uses this to see who started the claim.",
     modal_email_invalid: "Enter a valid email address.",
     modal_submit: "Send verification email",
     modal_submitting: "Sending…",
     modal_close: "Got it",
-    modal_sent_body: "Email sent to {email}. Click the link to confirm — it's valid for 7 days.",
+    modal_sent_body: "Email sent to {email}. Click the link to confirm, it's valid for 7 days.",
     modal_sent_hint: "If nothing arrives in a few minutes, check spam, or try again later.",
     modal_err_already_claimed: "This listing has already been claimed.",
     modal_err_no_email:
       "This listing has no contact email on file, so we can't verify your ownership.",
     modal_err_not_found: "We can't find this listing.",
-    modal_err_rate_limited: "Too many requests — please wait a few minutes before trying again.",
+    modal_err_rate_limited: "Too many requests, please wait a few minutes before trying again.",
     form_title: "Create your vendor account",
     form_intro:
       "You've confirmed ownership of {name} via {email}. Set a password to start managing the listing.",
@@ -418,7 +418,7 @@ const en: LocaleMessages = {
     page_body: "Edit the listing couples see in the Weddly directory.",
     welcome: "Welcome, {name}!",
     intro:
-      "You've successfully claimed your listing. The fields below are what couples see — keep them sharp.",
+      "You've successfully claimed your listing. The fields below are what couples see, keep them sharp.",
     billing_founding:
       "Founding member · free until {date}. No card needed, we'll remind you first.",
     billing_trial: "Trial · your listing is visible through {date}.",
@@ -442,29 +442,29 @@ const en: LocaleMessages = {
     label_capacity_max: "Capacity (max)",
     section_hero: "Hero image",
     hero_intro:
-      "Couples meet your business on the directory card first. Upload one photo that shows your style — JPG, PNG or WebP, up to 4 MB.",
+      "Couples meet your business on the directory card first. Upload one photo that shows your style, JPG, PNG or WebP, up to 4 MB.",
     hero_upload: "Upload photo",
     hero_replace: "Replace photo",
     hero_delete: "Remove photo",
     hero_uploading: "Uploading…",
     hero_upload_success: "Hero image updated.",
-    hero_upload_failed: "Couldn't upload — JPG, PNG or WebP, max 4 MB.",
+    hero_upload_failed: "Couldn't upload, JPG, PNG or WebP, max 4 MB.",
     hero_delete_success: "Hero image removed.",
-    hero_delete_failed: "Couldn't remove — please try again.",
-    hero_placeholder_alt: "No hero image yet — upload one to stand out.",
+    hero_delete_failed: "Couldn't remove, please try again.",
+    hero_placeholder_alt: "No hero image yet, upload one to stand out.",
     hero_current_alt: "Current hero image on your listing.",
     save: "Save changes",
     saving: "Saving…",
     save_success: "Listing updated.",
-    save_failed: "Couldn't save — please try again.",
-    name_locked: "Brand name is locked — open a support ticket to change it.",
+    save_failed: "Couldn't save, please try again.",
+    name_locked: "Brand name is locked, open a support ticket to change it.",
     back_to_directory: "Back to the directory",
     section_availability: "Availability",
     availability_intro:
       "Mark the days you're already booked. Couples see these on your calendar, and your next free date updates automatically.",
     availability_add_label: "Block a date",
     availability_add: "Add",
-    availability_empty: "No blocked days yet — your calendar shows you as fully available.",
+    availability_empty: "No blocked days yet, your calendar shows you as fully available.",
     availability_remove: "Unblock {date}",
     availability_next_free: "Next free date: {date}",
     availability_none_free: "No free days in the next 12 months.",
@@ -473,7 +473,7 @@ const en: LocaleMessages = {
     availability_unblocked: "Date unblocked.",
     availability_unblock_failed: "Couldn't unblock that date. Try again.",
     error_load:
-      "We couldn't load your listing. Try refreshing — if it sticks, open a support ticket.",
+      "We couldn't load your listing. Try refreshing, if it sticks, open a support ticket.",
     error_no_account:
       "No vendor account is linked to this sign-in. If you just claimed a listing, log out and back in.",
     preview_panel_title: "Live preview",
@@ -587,13 +587,13 @@ const en: LocaleMessages = {
       save: "Save changes",
       saving: "Saving…",
       saved: "Client updated.",
-      save_failed: "Couldn't save — please try again.",
+      save_failed: "Couldn't save, please try again.",
       load_failed: "We couldn't load this client.",
     },
     payments: {
       title: "Payment schedule",
       intro:
-        "Track installments for this client. Nothing is charged — this is for your records only.",
+        "Track installments for this client. Nothing is charged, this is for your records only.",
       add: "Add installment",
       label_field: "Label",
       label_placeholder: "e.g. Final balance",
@@ -670,7 +670,7 @@ const en: LocaleMessages = {
       save: "Save",
       saving: "Saving…",
       saved: "Settings saved.",
-      save_failed: "Couldn't save — please try again.",
+      save_failed: "Couldn't save, please try again.",
     },
     plan: {
       free_label: "Free",
@@ -696,7 +696,7 @@ const en: LocaleMessages = {
       "Replies land in your own inbox today (Reply-To is your email). The in-app thread arrives in the next iteration.",
     empty_title: "No campaigns yet",
     empty_body:
-      "Pick a few vendors from the directory and write them all the same intro — sent via Weddly with your email as the Reply-To.",
+      "Pick a few vendors from the directory and write them all the same intro, sent via Weddly with your email as the Reply-To.",
     recipient_count: "{n} recipients",
     recipients_header: "Recipients",
     detail_loading: "Loading the details…",
@@ -724,7 +724,7 @@ const en: LocaleMessages = {
     tpl_placeholder_date: "[date]",
     tpl_placeholder_guests: "[guest count]",
     tpl_quote: "Quote",
-    tpl_quote_subject: "Quote request — wedding on {date}",
+    tpl_quote_subject: "Quote request, wedding on {date}",
     tpl_quote_body:
       "Hi!\n\nWe're planning our wedding for {date} with {guests} guests. Could you send a quote and your packages, plus anything you think we should know?\n\nThanks in advance, looking forward to your reply!",
     tpl_availability: "Availability",
@@ -732,11 +732,11 @@ const en: LocaleMessages = {
     tpl_availability_body:
       "Hi!\n\nWe're planning our wedding for {date}. Could you confirm whether you're available that day?\n\nThanks!",
     tpl_details: "Details",
-    tpl_details_subject: "Wedding details — {date}",
+    tpl_details_subject: "Wedding details, {date}",
     tpl_details_body:
-      "Hi!\n\nWe're planning our wedding for {date} with {guests} guests. We'd love to learn more about you — could you share a short intro, your packages and how you work?\n\nThanks!",
+      "Hi!\n\nWe're planning our wedding for {date} with {guests} guests. We'd love to learn more about you, could you share a short intro, your packages and how you work?\n\nThanks!",
     tpl_intro: "Intro",
-    tpl_intro_subject: "Portfolio request — wedding on {date}",
+    tpl_intro_subject: "Portfolio request, wedding on {date}",
     tpl_intro_body:
       "Hi!\n\nWe're looking for the right vendors for our wedding on {date} ({guests} guests). Could you send a short intro and a few references or your portfolio?\n\nThanks!",
     err_no_suppliers: "Add at least one vendor.",
@@ -744,20 +744,20 @@ const en: LocaleMessages = {
     err_rate_limited: "Too frequent: max 3 campaigns per 7 days.",
     err_supplier_not_found: "One or more IDs aren't in the directory.",
     err_supplier_no_email: "One or more vendors have no public email.",
-    err_generic: "Couldn't send — please try again.",
+    err_generic: "Couldn't send, please try again.",
   },
   change_email: {
     page_title: "Confirm your new email",
     page_loading: "Confirming…",
     page_success:
-      "Done — {email} is now your sign-in address. We signed you out of every session; please log back in.",
+      "Done, {email} is now your sign-in address. We signed you out of every session; please log back in.",
     page_invalid:
       "This link is invalid or has expired. Try again from your Profile page, or get in touch.",
   },
   onboarding: {
     welcome: "Welcome to {name}!",
     intro:
-      "A few quick questions and your workspace is ready. Everything stays editable — these are just gentle starting points so you can focus on the wedding itself.",
+      "A few quick questions and your workspace is ready. Everything stays editable, these are just gentle starting points so you can focus on the wedding itself.",
     step1_title: "Who's getting married?",
     step1_help: 'Your names show up across the workspace, e.g. "Allie & Noah".',
     step1_short: "Couple",
@@ -776,13 +776,13 @@ const en: LocaleMessages = {
     target_guest_count_label: "Target guest count",
     step4_title: "What's the budget ceiling?",
     budget_label: "Budget ceiling (Ft)",
-    budget_help: "We'll seed category splits — you can fine-tune each line later.",
+    budget_help: "We'll seed category splits, you can fine-tune each line later.",
     step5_title: "Which country will the wedding be in?",
     country_label: "Country",
     country_helper: "We'll use this so we don't suggest suppliers who can't work in your country.",
     country_placeholder: "Start typing…",
     country_required: "Pick a country.",
-    style_help: "Pick as many as you like. Style is just a tag on the profile — nothing locks in.",
+    style_help: "Pick as many as you like. Style is just a tag on the profile, nothing locks in.",
     style_classic: "Classic",
     style_modern: "Modern",
     style_rustic: "Rustic",
@@ -793,7 +793,7 @@ const en: LocaleMessages = {
     style_destination: "Destination",
     finish: "Let's go!",
     saving: "Saving…",
-    submit_failed: "Couldn't save just now. Your answers are safe — try again.",
+    submit_failed: "Couldn't save just now. Your answers are safe, try again.",
     submit_retry: "Try again",
     all_set_title: "All set!",
     all_set_body: "Your workspace is ready. This is where the planning begins.",
@@ -808,7 +808,7 @@ const en: LocaleMessages = {
     date_month_label: "Target month",
     date_season_label: "Target season",
     date_kind_help_tbd:
-      "No problem — you can lock anything in later. We'll keep planning around 'someday'.",
+      "No problem, you can lock anything in later. We'll keep planning around 'someday'.",
     guest_kind_question: "How sure are you about guest count?",
     guest_kind_exact: "A specific number",
     guest_kind_range: "A range",
@@ -832,7 +832,7 @@ const en: LocaleMessages = {
     ceremony_kind_both: "Both",
     ceremony_kind_skip: "Skip for now",
     ceremony_kind_help:
-      "You can set this later in your profile — helps when requesting quotes from suppliers.",
+      "You can set this later in your profile, helps when requesting quotes from suppliers.",
     welcome_existing_eyebrow: "Welcome back",
     welcome_existing_title: "{names}",
     welcome_existing_body:
@@ -896,7 +896,7 @@ const en: LocaleMessages = {
     invite_email_placeholder: "e.g. partner@example.com",
     invite_email_help: "Leave empty to just generate a shareable link.",
     invite_email_invalid: "Enter a valid email address.",
-    invite_email_own: "You can't invite your own email — the workspace already has you in it.",
+    invite_email_own: "You can't invite your own email, the workspace already has you in it.",
     invite_send: "Send invite",
     invite_sending: "Sending…",
     invite_sent: "Sent to {email}",
@@ -998,7 +998,7 @@ const en: LocaleMessages = {
     date_changed_body:
       "Your wedding date has changed. Want to email everyone so they know the old date is no longer valid?",
     date_changed_button: "Notify guests",
-    date_changed_dismiss_aria: "Dismiss — no notification needed",
+    date_changed_dismiss_aria: "Dismiss, no notification needed",
     date_changed_sending: "Sending…",
     date_changed_confirm_title: "Send date-change notification",
     date_changed_confirm_body:
@@ -1018,27 +1018,27 @@ const en: LocaleMessages = {
     day_of_tomorrow_label: "Tomorrow",
     day_of_checkin_title: "Guest check-in",
     day_of_checkin_intro:
-      "Show this link to guests — they punch in the 8-character code on their invite.",
+      "Show this link to guests, they punch in the 8-character code on their invite.",
     day_of_checkin_copy: "Copy link",
     day_of_checkin_copied: "Copied!",
     day_of_checkin_no_slug:
-      "No couple identifier yet — set one on the Guests page so check-in works.",
-    day_of_qr_todo: "(QR code coming in v2 — for now just share the link above)",
+      "No couple identifier yet, set one on the Guests page so check-in works.",
+    day_of_qr_todo: "(QR code coming in v2, for now just share the link above)",
     welcome_desk_open: "Open welcome-desk tablet",
-    welcome_desk_help: "Opens in a new tab in welcome-desk mode — hand the tablet to your greeter.",
+    welcome_desk_help: "Opens in a new tab in welcome-desk mode, hand the tablet to your greeter.",
     day_of_stats_yes: "Guests confirmed",
     day_of_stats_checked_in: "Checked in today",
     day_of_dietary_title: "Dietary at a glance",
     day_of_dietary_empty: "No RSVPs in yet.",
     day_of_schedule_title: "Coming up next",
-    day_of_schedule_empty: "No schedule yet — add events on the Schedule page.",
+    day_of_schedule_empty: "No schedule yet, add events on the Schedule page.",
     day_of_schedule_open: "Open the full schedule",
     day_of_print_title: "Print",
     day_of_print_place_cards: "Place cards (confirmed guests)",
     day_of_print_seating: "Seating chart (A4 PDF)",
     // ── Caterer summary tile (planning-mode, ≤7 days) ─────────────────
     caterer_title: "Caterer summary",
-    caterer_sub: "Bring this to your caterer — or paste it into an email.",
+    caterer_sub: "Bring this to your caterer, or paste it into an email.",
     caterer_copy: "Copy text",
     caterer_copied: "Copied to clipboard.",
     caterer_total: "{n} guests counted",
@@ -1063,31 +1063,31 @@ const en: LocaleMessages = {
     expired: "This invite has expired or already been used.",
     accept: "Join",
     accepting: "Joining…",
-    need_account: "Sign up first — we'll bring you straight back.",
+    need_account: "Sign up first, we'll bring you straight back.",
     own_invite_title: "This is your own invite link",
     own_invite_body:
-      "You're already in this workspace as the inviter. Send the link below to {email} — once they open it on a different account, they'll join you.",
+      "You're already in this workspace as the inviter. Send the link below to {email}, once they open it on a different account, they'll join you.",
     own_invite_share_label: "Share this link",
     own_invite_copy: "Copy link",
     own_invite_copied: "Link copied!",
     already_in_other_couple:
       "You're already part of another workspace. Sign out and use a different account to accept this invite.",
     merge_from_invite_body:
-      "You already have a workspace. Joining {couple} will permanently delete your current workspace — guests, budget, seating, everything. This can't be undone.",
+      "You already have a workspace. Joining {couple} will permanently delete your current workspace, guests, budget, seating, everything. This can't be undone.",
     couple_full: "This workspace already has two people. Ask the inviter to cancel and resend.",
     couple_gone: "This workspace no longer exists.",
     merge_banner_body:
       "{inviter} already started the {couple} wedding workspace and invited you in. Want to join?",
     merge_banner_warning:
-      "Joining permanently deletes your current workspace — guests, budget, seating, everything. This can't be undone.",
+      "Joining permanently deletes your current workspace, guests, budget, seating, everything. This can't be undone.",
     merge_banner_cta: "Join & delete my current workspace",
     merge_confirm_title: "Confirm workspace merge",
     merge_confirm_label: "Type MERGE to confirm",
     merge_confirm_help: "Type the word MERGE in capitals to confirm.",
     merge_confirm_button: "Join",
-    merge_confirm_mismatch: "Doesn't match — type MERGE.",
+    merge_confirm_mismatch: "Doesn't match, type MERGE.",
     merge_running: "Merging…",
-    merge_success: "You're in — welcome to the new workspace.",
+    merge_success: "You're in, welcome to the new workspace.",
   },
   landing: {
     hero_title: "Your whole\nwedding,\nin one place.",
@@ -1224,7 +1224,7 @@ const en: LocaleMessages = {
     couple_cards_title: "100 questions before you marry",
     // ── Round 2: stats strip + product features + testimonials ────────
     stats_eyebrow: "Open beta",
-    // Honest beta label — the previous "200+ couples on the waitlist"
+    // Honest beta label, the previous "200+ couples on the waitlist"
     // number was fabricated. The marquee stat now reads as a status
     // statement rather than a fake metric.
     stats_a_value: "Open beta",
@@ -1281,11 +1281,11 @@ const en: LocaleMessages = {
     testimonials_eyebrow: "From the beta",
     testimonials_title: "Couples who've used Weddly to plan",
     t1_quote:
-      "Everything lives in one place — budget, guests, seating. We both see the same view, and we always know what's next.",
+      "Everything lives in one place, budget, guests, seating. We both see the same view, and we always know what's next.",
     t1_name: "Allie & Noah",
     t1_meta: "Budapest · composite from beta interviews",
     t2_quote:
-      "We didn't have to figure out the order of things — Weddly walked us through the process.",
+      "We didn't have to figure out the order of things · Weddly walked us through the process.",
     t2_name: "Eszter & Dani",
     t2_meta: "Debrecen · composite from beta interviews",
     t3_quote: "It just works. We don't need another tool.",
@@ -1341,7 +1341,7 @@ const en: LocaleMessages = {
     mockup_vendor_category: "Floral design · Vienna, AT",
     mockup_vendor_reviews: "4.9 · 23 reviews",
     mockup_vendor_cta: "View profile",
-    // ── Landing "try the demo" card — small tilted sticker on the right
+    // ── Landing "try the demo" card, small tilted sticker on the right
     //    of the hero. Eyebrow + italic title + one button. The fairytale
     //    identity is the reveal once the visitor lands in /app. ─────────
     demo_card_eyebrow: "no signup",
@@ -1351,7 +1351,7 @@ const en: LocaleMessages = {
     demo_card_error: "Didn't start. Try again.",
   },
   vendors: {
-    seo_title: "For vendors — Weddly",
+    seo_title: "For vendors · Weddly",
     seo_description:
       "Join Weddly's curated supplier directory and reach couples planning their wedding right now.",
     pill: "Early access",
@@ -1364,10 +1364,10 @@ const en: LocaleMessages = {
       "We cap listings per category, so couples meet a focused shortlist of suppliers who genuinely fit their plans.",
     benefit_2_title: "Local expertise, not lead spam",
     benefit_2_body:
-      "Built around how weddings actually run in your market — language, regions, rhythms. Couples meet vendors who fit, not a paginated mass.",
+      "Built around how weddings actually run in your market, language, regions, rhythms. Couples meet vendors who fit, not a paginated mass.",
     benefit_3_title: "Direct contact today",
     benefit_3_body:
-      "Couples reach you directly — phone, email, Instagram. Bookings, messaging and reviews join later, and we'll tell you when.",
+      "Couples reach you directly, phone, email, Instagram. Bookings, messaging and reviews join later, and we'll tell you when.",
     form_title: "Join the waitlist",
     form_business_label: "Business name",
     form_email_label: "Email",
@@ -1383,22 +1383,22 @@ const en: LocaleMessages = {
     form_submitting: "Sending…",
     form_success_title: "You're on the waitlist.",
     form_success_body:
-      "We aren't onboarding vendors yet — we've sent a confirmation to the email you provided, and we'll write again once we open in your category.",
+      "We aren't onboarding vendors yet, we've sent a confirmation to the email you provided, and we'll write again once we open in your category.",
     form_message_label: "Message",
     form_message_placeholder: "A line or two about what you do.",
     form_err_required: "Please fill in the business name.",
     form_err_email: "Please enter a valid email.",
     form_err_category: "Pick a category.",
-    form_err_rate_limited: "Too many submissions — try again in a few minutes.",
+    form_err_rate_limited: "Too many submissions, try again in a few minutes.",
     step_1_title: "Tell us about yourself",
     step_1_short: "Intro",
     step_1_sub: "Which category are you in, and what's your business called?",
     step_2_title: "Contact details",
     step_2_short: "Contact",
-    step_2_sub: "We'll send the confirmation here — no spam, just one email.",
+    step_2_sub: "We'll send the confirmation here, no spam, just one email.",
     step_3_title: "Show your work",
     step_3_short: "Portfolio",
-    step_3_sub: "Completely optional — but a portfolio link goes a long way.",
+    step_3_sub: "Completely optional, but a portfolio link goes a long way.",
     step_4_title: "Verify your business",
     step_4_short: "Details",
     step_4_sub: "Optional for now. Required before your listing goes live.",
@@ -1416,9 +1416,9 @@ const en: LocaleMessages = {
     contact_cta: "Join the waitlist",
     contact_subject: "Vendor waitlist",
     back_to_landing: "Back to homepage",
-    beta_notice_title: "Free during beta — no hidden costs",
+    beta_notice_title: "Free during beta, no hidden costs",
     beta_notice_body:
-      "Free during beta. If we introduce pricing later, we'll give 30 days' notice — no surprises, no spam.",
+      "Free during beta. If we introduce pricing later, we'll give 30 days' notice, no surprises, no spam.",
     beta_notice_terms_link: "Vendor subscription terms",
     privacy_consent_prefix: "I have read and accept the ",
     privacy_consent_link: "privacy policy",
@@ -1431,7 +1431,7 @@ const en: LocaleMessages = {
     section_contact_sub: "How to reach you and where you work.",
     section_portfolio_title: "Portfolio",
     section_portfolio_sub:
-      "Show us your work — it's what we use to decide. Optional, but highly recommended.",
+      "Show us your work, it's what we use to decide. Optional, but highly recommended.",
     section_optional_label: "optional",
     portfolio_links_label: "Portfolio links",
     portfolio_links_placeholder: "https://…",
@@ -1439,23 +1439,23 @@ const en: LocaleMessages = {
     portfolio_add_link: "Add link",
     portfolio_count_hint: "1–3 links is plenty.",
     portfolio_hint_default:
-      "Gallery, website, Instagram post, Drive folder — anything you'd share.",
+      "Gallery, website, Instagram post, Drive folder, anything you'd share.",
     portfolio_hint_venue_stay:
       "Venue photos, walkthrough video, Google Maps panorama, or your own website gallery.",
     portfolio_hint_food_drink:
       "Menu PDF / link, tasting photos, past-event gallery, or a social post.",
     portfolio_hint_atmosphere:
-      "Instagram posts, web galleries — 3–6 examples are plenty to convey your style.",
+      "Instagram posts, web galleries, 3–6 examples are plenty to convey your style.",
     portfolio_hint_experience:
       "YouTube / Vimeo / Mixcloud / Spotify link, past-wedding gallery, demo set.",
     portfolio_hint_style:
-      "Lookbook, Instagram gallery, website — we want a quick read on your style.",
+      "Lookbook, Instagram gallery, website, we want a quick read on your style.",
     portfolio_hint_details:
-      "Website, online catalogue, past-work gallery — whatever you'd like to share.",
+      "Website, online catalogue, past-work gallery, whatever you'd like to share.",
     instagram_label: "Instagram",
     instagram_placeholder: "florastudio_bp",
     form_err_portfolio_link:
-      "One of the portfolio links isn't a valid URL — try starting with https://",
+      "One of the portfolio links isn't a valid URL, try starting with https://",
     form_err_travel_radius: "Travel distance must be 0 or more.",
     form_err_instagram_handle:
       "Instagram handle can only contain letters, digits, dots and underscores (max 30 chars).",
@@ -1467,10 +1467,10 @@ const en: LocaleMessages = {
     signup_cta: "List your business",
     have_account_cta: "Already have an account? Log in",
     cta_title: "Ready to reach more couples?",
-    cta_body: "Create your vendor profile in two minutes — no card needed.",
+    cta_body: "Create your vendor profile in two minutes, no card needed.",
   },
   vendor_register: {
-    seo_title: "Become a vendor — Weddly",
+    seo_title: "Become a vendor · Weddly",
     seo_description:
       "Create your Weddly vendor profile and reach couples planning their wedding right now.",
     title: "Create your vendor account",
@@ -1503,7 +1503,7 @@ const en: LocaleMessages = {
     blurb_label: "Short intro",
     blurb_placeholder: "A line or two about what you do and what makes you a great fit.",
     price_band_label: "Price range",
-    price_band_hint: "Roughly how you're priced — from budget to premium.",
+    price_band_hint: "Roughly how you're priced, from budget to premium.",
     hero_label: "Cover photo",
     hero_cta: "Upload a cover photo",
     hero_replace: "Replace photo",
@@ -1546,7 +1546,7 @@ const en: LocaleMessages = {
     switch_to_hu: "Magyar",
     switch_to_dark: "Dark mode",
     switch_to_light: "Light mode",
-    // Bottom-nav short variants — kept short for the 11px label.
+    // Bottom-nav short variants, kept short for the 11px label.
     tab_dashboard: "Home",
     tab_guests: "Guests",
     tab_budget: "Budget",
@@ -1606,17 +1606,17 @@ const en: LocaleMessages = {
     delete_confirm_title: "Delete this item?",
     delete_confirm_body: "This action cannot be undone.",
     empty_task: "No tasks yet. Add one to keep track of what's left to do.",
-    empty_idea: "No ideas yet. Jot anything down — you'll narrow it down later.",
+    empty_idea: "No ideas yet. Jot anything down, you'll narrow it down later.",
     empty_schedule: "No schedule yet. Start with the ceremony time and build the day from there.",
     template_button: "Generate template",
-    template_button_hint: "Typical wedding-day flow in one click — anchored to your ceremony time.",
+    template_button_hint: "Typical wedding-day flow in one click, anchored to your ceremony time.",
     template_dialog_title: "Schedule template",
     template_dialog_body:
       "When does the ceremony start? We'll line up the rest of the day around it.",
     template_ceremony_label: "Ceremony start",
     template_confirm: "Generate",
     template_warning_existing:
-      "You already have schedule items. The new ones will be added alongside — feel free to delete duplicates afterwards.",
+      "You already have schedule items. The new ones will be added alongside, feel free to delete duplicates afterwards.",
     template_preview_label: "Preview",
     template_done_one: "{count} event added",
     template_done_other: "{count} events added",
@@ -1625,7 +1625,7 @@ const en: LocaleMessages = {
     assignee_placeholder: "Owner",
     assignee_add: "Owner",
     assignee_edit_hint: "Click to change the owner",
-    idea_suggested_by: "— suggested by {name}",
+    idea_suggested_by: "suggested by {name}",
     timeline_link: "Timeline",
     timeline_link_hint: "Open the Gantt view of your tasks",
     task_group_wedding: "Wedding",
@@ -1641,10 +1641,10 @@ const en: LocaleMessages = {
     // Safe-timeline generator button + dialog on the Tasks tab.
     timeline_gen_button: "Build my timeline",
     timeline_gen_button_hint:
-      "The safe wedding timeline — every to-do with its deadline, worked out from your wedding date.",
+      "The safe wedding timeline, every to-do with its deadline, worked out from your wedding date.",
     timeline_gen_dialog_title: "Build my timeline",
     timeline_gen_dialog_body:
-      "These to-dos lay out a proven wedding runway, each with its ideal deadline. Review them, tweak the dates, and drop anything you don't need — you can change it all later.",
+      "These to-dos lay out a proven wedding runway, each with its ideal deadline. Review them, tweak the dates, and drop anything you don't need, you can change it all later.",
     timeline_gen_no_date:
       "You haven't set an exact wedding date yet, so the deadlines are blank. You can add the to-dos now and date them later.",
     timeline_gen_already: "Already on your list",
@@ -1658,7 +1658,7 @@ const en: LocaleMessages = {
     // Task tab wand + dialog.
     task_template_button: "Task template",
     task_template_button_hint:
-      "12 classic wedding to-dos — optionally assign a single owner to all of them.",
+      "12 classic wedding to-dos, optionally assign a single owner to all of them.",
     task_template_dialog_title: "Task template",
     task_template_dialog_body:
       "If one person owns all 12, set them as the default here. Otherwise leave blank and assign individually later.",
@@ -1683,7 +1683,7 @@ const en: LocaleMessages = {
     template_ideas_done_other: "{count} ideas added",
     // Dice (🎲) randomiser on the Idea tab.
     dice_button: "Roll 3 ideas",
-    dice_button_hint: "Random creative ideas — pick the ones that resonate.",
+    dice_button_hint: "Random creative ideas, pick the ones that resonate.",
     dice_dialog_title: "Creative idea roll",
     dice_dialog_body:
       "Three random picks from our creative pool. Add the ones you love, re-roll if none stick.",
@@ -1779,7 +1779,7 @@ const en: LocaleMessages = {
     title: "Timeline",
     sub: "See when your tasks run, and who to call when something needs to move.",
     poc_title: "Points of contact",
-    poc_empty: "No suppliers picked yet — choose them on the Suppliers page.",
+    poc_empty: "No suppliers picked yet, choose them on the Suppliers page.",
     chart_title: "Task timeline",
     no_dates_title: "Tasks without dates",
     no_dates_empty: "Every task has dates.",
@@ -1806,14 +1806,14 @@ const en: LocaleMessages = {
     wedding_marker: "Wedding day",
     window_empty: "No tasks in this range",
     empty_gutter_title: "Your tasks will land here",
-    empty_gutter_sub: "Generate a few — your full wedding plan is a click away.",
+    empty_gutter_sub: "Generate a few, your full wedding plan is a click away.",
     empty_gutter_cta: "Generate tasks",
     empty_add_task: "Add a task",
     outside_before_one: "{count} earlier",
     outside_before_other: "{count} earlier",
     outside_after_one: "{count} later",
     outside_after_other: "{count} later",
-    seo_title: "Timeline — Weddly",
+    seo_title: "Timeline · Weddly",
     seo_description: "Your wedding tasks as a Gantt chart with quick supplier contacts.",
     all_day_label: "All-day",
     now_label: "Now",
@@ -1831,10 +1831,10 @@ const en: LocaleMessages = {
   },
   honeymoon: {
     title: "Honeymoon",
-    sub: "Plan the trip — destination, dates, costs — without leaving the workspace.",
-    before_wedding_title: "Wait — is this right?",
+    sub: "Plan the trip, destination, dates, costs, without leaving the workspace.",
+    before_wedding_title: "Wait, is this right?",
     before_wedding_body:
-      "Your honeymoon starts on {honeymoon}, but the wedding is on {wedding}. Most couples leave after the wedding — double-check the dates.",
+      "Your honeymoon starts on {honeymoon}, but the wedding is on {wedding}. Most couples leave after the wedding, double-check the dates.",
     countdown_future_one: "{count} day to go",
     countdown_future_other: "{count} days to go",
     countdown_today: "Starts today!",
@@ -1868,7 +1868,7 @@ const en: LocaleMessages = {
     flight_estimate_view_on_google: "Open in Google Flights",
     flight_expand_aria: "Expand flight estimate",
     flight_collapse_aria: "Collapse flight estimate",
-    flight_price_disclaimer: "Prices change constantly — a saved fare is only valid for today.",
+    flight_price_disclaimer: "Prices change constantly, a saved fare is only valid for today.",
     flight_price_disclaimer_dated:
       "Prices change constantly, so this fare is only valid today ({date}).",
     flight_save_cta: "We'll take this",
@@ -1879,14 +1879,14 @@ const en: LocaleMessages = {
     flight_save_confirm_cta: "Save to plan",
     flight_save_todo_title: "Buy the flight ticket",
     flight_save_todo_note:
-      "{carrier} · ~{price}. Prices change — this fare was only valid on {date}. Book here:",
+      "{carrier} · ~{price}. Prices change, this fare was only valid on {date}. Book here:",
     flight_save_done: "Added the flight to your budget and to-dos.",
     todo_title: "Honeymoon to-dos",
     todo_sub_count: "{done} of {total} done",
     todo_sub_empty: "No honeymoon tasks yet",
     todo_manage_link: "Manage in Planning →",
     todo_empty_body:
-      "Open the planning wand and drop the Honeymoon group — passports, flights, insurance, packing — onto your list.",
+      "Open the planning wand and drop the Honeymoon group, passports, flights, insurance, packing, onto your list.",
     todo_empty_cta: "Open Planning",
     todo_check_aria: "Mark as done",
     todo_uncheck_aria: "Mark as not done",
@@ -1924,7 +1924,7 @@ const en: LocaleMessages = {
     costs_sub: "Add lines for your planned spend. Changes appear in the Budget too.",
     costs_empty_title: "No costs yet",
     costs_empty_body:
-      "Start with a category — travel, accommodation, food, activities. You can edit the planned amount any time.",
+      "Start with a category, travel, accommodation, food, activities. You can edit the planned amount any time.",
     costs_empty_short: "Start with a category:",
     cost_actual_inline: "Spent: {actual}",
     slider_aria: "{label} planned amount",
@@ -2219,7 +2219,7 @@ const en: LocaleMessages = {
     print_preview: {
       sample_name: "Guest name",
       sample_table: "Table 1",
-      caption: "Live preview — the downloaded PDF follows this look.",
+      caption: "Live preview, the downloaded PDF follows this look.",
       template_label: "Card type",
       tpl: {
         place_card: "Place card",
@@ -2293,11 +2293,11 @@ const en: LocaleMessages = {
     open_in_pinterest: "Open on Pinterest",
     error_title: "Couldn't load this board",
     error_not_found:
-      "We can't find this Pinterest board. Double-check the link — make sure the username and board name are exact.",
+      "We can't find this Pinterest board. Double-check the link, make sure the username and board name are exact.",
     error_private:
       "This board is secret or not public. Make it public on Pinterest (Board settings → turn off “Secret”), then try again.",
     error_empty:
-      "This board is empty — no pins yet. Pin a few images on Pinterest, then come back here.",
+      "This board is empty, no pins yet. Pin a few images on Pinterest, then come back here.",
     error_fetch: "We couldn't reach Pinterest just now. Please try again in a few minutes.",
     preset_badge: "Suggested",
     replace_title: "Make it yours",
@@ -2314,7 +2314,7 @@ const en: LocaleMessages = {
     back_to_preset: "Back to the suggested board",
   },
   guest_portal: {
-    date_tbd: "Wedding date — to be confirmed",
+    date_tbd: "Wedding date, to be confirmed",
     edit_section_hint: "Click to edit",
     countdown_title: "Countdown",
     countdown_add_date: "Add your wedding date",
@@ -2353,7 +2353,7 @@ const en: LocaleMessages = {
     wishlist_pledge_contributors_funded: "This gift is fully funded! 🎉",
     wishlist_pledge_error_generic: "Something went wrong. Please try again.",
     schedule_title: "Run of show",
-    schedule_empty: "The couple hasn't published a timeline yet — check back closer to the day.",
+    schedule_empty: "The couple hasn't published a timeline yet, check back closer to the day.",
     schedule_next_day: "next day",
     location_title: "Venue",
     location_open_map: "Open in Maps",
@@ -2370,7 +2370,7 @@ const en: LocaleMessages = {
       no: "Not coming",
       pending: "Pending",
     },
-    household_title: "Your party — {label}",
+    household_title: "Your party, {label}",
     gate_title: "RSVP first",
     gate_body:
       "This page opens up once at least one of you has confirmed they're coming. Reply on the RSVP page first.",
@@ -2405,11 +2405,11 @@ const en: LocaleMessages = {
     preview_live_hint_not_published: "Your page is still private. Publish it so guests can see it",
     section_share_title: "Share with guests",
     section_share_body:
-      "This is the link you send. Paste it into WhatsApp, an email, or a save-the-date — anyone who opens it lands on your wedding page.",
+      "This is the link you send. Paste it into WhatsApp, an email, or a save-the-date, anyone who opens it lands on your wedding page.",
     section_public_eyebrow: "Visible to anyone with the link",
     section_public_title: "Public content",
     section_public_hint:
-      "Edit the venue name and cover image that show on the public landing. Keep the exact street address off this — it belongs on the post-RSVP block below.",
+      "Edit the venue name and cover image that show on the public landing. Keep the exact street address off this, it belongs on the post-RSVP block below.",
     section_unlocked_eyebrow: "Unlocks after RSVP yes",
     section_unlocked_title: "What confirmed guests see",
     section_unlocked_hint:
@@ -2418,7 +2418,7 @@ const en: LocaleMessages = {
     section_unlocked_link_profile: "Edit venue location",
     intro_label: "Welcome note (everyone sees this)",
     intro_placeholder:
-      'A short paragraph for your guests — e.g. "Thanks for being part of our day. You\'ll find every detail you need here as we get closer."',
+      'A short paragraph for your guests, e.g. "Thanks for being part of our day. You\'ll find every detail you need here as we get closer."',
     intro_hint:
       "Visible to anyone with the link. Leave blank if you don't want a public welcome note.",
     intro_suggestions_heading: "Need a starting point? Pick a note, then make it yours:",
@@ -2429,7 +2429,7 @@ const en: LocaleMessages = {
     intro_suggestion_4:
       "We're grateful that your presence makes our wedding day even more beautiful.",
     intro_suggestion_5: "Thank you for being part of our day with your love and your presence.",
-    intro_suggestion_applied: "Suggestion applied — you can edit it in the text area below.",
+    intro_suggestion_applied: "Suggestion applied, you can edit it in the text area below.",
     useful_info_label: "Good to know",
     useful_info_placeholder: "Parking: ...\nGetting there: ...\nAccommodation: ...",
     useful_info_hint:
@@ -2473,10 +2473,10 @@ const en: LocaleMessages = {
       "What a guest sees right now. Save your edits above to refresh the date, schedule and location pin shown here.",
     share_per_household_title: "Personal guest links",
     share_per_household_subtitle:
-      "Each household has its own link. Sending the personal link auto-fills their household on the RSVP form — no codes to type.",
+      "Each household has its own link. Sending the personal link auto-fills their household on the RSVP form, no codes to type.",
     share_per_household_summary: "Show personal links per household",
     share_per_household_empty:
-      "Add a household on the Guests page first — personal links appear here once you have at least one party set up.",
+      "Add a household on the Guests page first, personal links appear here once you have at least one party set up.",
     share_per_household_member_count_one: "1 guest",
     share_per_household_member_count_other: "{count} guests",
     share_per_household_copy_link: "Copy link",
@@ -2495,7 +2495,7 @@ const en: LocaleMessages = {
     share_per_household_copy_all_aria: "Copy a tab-separated list of every household's link",
     share_per_household_copy_all_success: "Copied all personal links to your clipboard.",
     whatsapp_message_template:
-      "Hi {guest_name}! Here's your personal link to our wedding page — open it to see the details and RSVP: {link}",
+      "Hi {guest_name}! Here's your personal link to our wedding page, open it to see the details and RSVP: {link}",
   },
   guest_preview: {
     title: "Guest page preview",
@@ -2510,14 +2510,14 @@ const en: LocaleMessages = {
     share_copy_slug_aria: "Copy couple code",
     share_copy_link_aria: "Copy RSVP page link",
     share_copied: "Copied",
-    share_copy_failed: "Couldn't copy — copy it manually.",
+    share_copy_failed: "Couldn't copy, copy it manually.",
     share_no_slug: "Your couple code will appear once your workspace finishes onboarding.",
   },
   wishlist_editor: {
     title: "Wishlist",
     dev_badge: "Under development",
     subtitle:
-      "A gentle list of things you'd love — a bigger gift to coordinate on, smaller gifts, or a personal gesture. Confirmed guests see it on your guest page. Nothing is paid through Weddly.",
+      "A gentle list of things you'd love, a bigger gift to coordinate on, smaller gifts, or a personal gesture. Confirmed guests see it on your guest page. Nothing is paid through Weddly.",
     add_item: "Add a wish",
     empty_state: "No wishes yet. Add the first thing you'd love.",
     title_label: "Title",
@@ -2541,7 +2541,7 @@ const en: LocaleMessages = {
     description_label: "Description",
     description_placeholder: "A line about why this means something to you (optional)",
     target_amount_label: "Rough amount",
-    target_amount_hint: "Just a wish, not an invoice — gives guests a sense of scale.",
+    target_amount_hint: "Just a wish, not an invoice, gives guests a sense of scale.",
     currency_aria: "Currency for this wish",
     url_label: "Link",
     url_placeholder: "https://…",
@@ -2585,7 +2585,7 @@ const en: LocaleMessages = {
   },
   schedule: {
     title: "Run of show",
-    sub: "Your wedding-day timeline — arrival, ceremony, dinner, first dance. Prints on one A4 page to hand to your suppliers.",
+    sub: "Your wedding-day timeline, arrival, ceremony, dinner, first dance. Prints on one A4 page to hand to your suppliers.",
     add_event: "New event",
     edit_event: "Edit event",
     delete_event: "Delete event",
@@ -2612,22 +2612,22 @@ const en: LocaleMessages = {
     label_required: "Add a label for the event.",
     time_required: "Enter a valid time.",
     save_failed: "Couldn't save. Try again.",
-    save_conflict: "Another editor changed this event — we refreshed the data.",
+    save_conflict: "Another editor changed this event, we refreshed the data.",
     empty_title: "No schedule yet",
     empty_body: "Add events, or generate a proposal based on your start and end times.",
     wand_button: "Suggest timeline",
     wand_button_hint: "Generate a timeline from start and end times",
     wand_dialog_title: "Suggest a timeline",
     wand_dialog_body:
-      "Tell us when the day starts and ends — we'll lay the main milestones across that window.",
+      "Tell us when the day starts and ends, we'll lay the main milestones across that window.",
     wand_start_label: "Starts at",
     wand_end_label: "Ends at",
     wand_overnight_hint:
-      "End is past midnight — late-night events will be scheduled for the following day.",
+      "End is past midnight, late-night events will be scheduled for the following day.",
     wand_window_error: "Start and end can't be the same time.",
     field_next_day: "Next day (after midnight)",
     day_two_badge: "day 2",
-    wand_warning_existing: "You already have events — these will be added alongside them.",
+    wand_warning_existing: "You already have events, these will be added alongside them.",
     wand_select_label: "{count} of {total} selected",
     wand_select_all: "Select all",
     wand_select_none: "Clear",
@@ -2635,7 +2635,7 @@ const en: LocaleMessages = {
     wand_apply_done: "Added {count} events.",
     duration_unit: "{n} min",
     open_ended: "Open-ended",
-    time_conflict: "Already booked by “{label}” — pick a different time.",
+    time_conflict: "Already booked by “{label}”, pick a different time.",
     wand_item_conflict: "Conflicts with existing event",
     view_proportional: "Proportional",
     view_timeline: "Timeline",
@@ -2692,7 +2692,7 @@ const en: LocaleMessages = {
     meal: "Meal",
     orphans_title: "A few guests aren't in a household yet",
     orphans_body:
-      "Everyone needs a household before you can send check-in links. We can create a one-person household for each — pair them up later if needed.",
+      "Everyone needs a household before you can send check-in links. We can create a one-person household for each, pair them up later if needed.",
     orphans_assign_button: "Place these guests into households",
     orphans_assigning: "Placing…",
     orphans_support_link: "Contact support",
@@ -2733,7 +2733,7 @@ const en: LocaleMessages = {
     group_other: "Other",
     empty_title: "No guests yet",
     empty_body:
-      "Add your first guest or import the whole list from CSV — the template keeps the format right.",
+      "Add your first guest or import the whole list from CSV, the template keeps the format right.",
     empty_cta_add: "Add your first guest",
     saving: "Saving…",
     import_done_one: "Imported {count} guest",
@@ -2766,7 +2766,7 @@ const en: LocaleMessages = {
     meals_pending_help_one: "1 guest hasn't picked a meal yet.",
     meals_pending_help_other: "{count} guests haven't picked a meal yet.",
     meals_no_yes_yet:
-      "No yes responses yet — the meal and dietary roll-up will show up here once guests accept.",
+      "No yes responses yet, the meal and dietary roll-up will show up here once guests accept.",
     meals_copy_text: "Copy summary",
     meals_copy_success: "Summary copied to clipboard.",
     meals_download_text: "Download CSV",
@@ -2793,12 +2793,12 @@ const en: LocaleMessages = {
     household_add_member: "Add a member",
     household_remove_confirm_title: "Delete this household?",
     household_remove_confirm_body:
-      "Move the members elsewhere first — this only deletes empty households.",
+      "Move the members elsewhere first, this only deletes empty households.",
     household_remove: "Delete household",
     household_expand: "Expand household",
     household_collapse: "Collapse household",
-    household_accommodation_on: "Accommodation question on — click to turn off",
-    household_accommodation_off: "Accommodation question off — click to turn on",
+    household_accommodation_on: "Accommodation question on, click to turn off",
+    household_accommodation_off: "Accommodation question off, click to turn on",
     household_section_title: "Households",
     household_section_help:
       "Group people who RSVP together (a couple, a family). They'll see each other on the check-in page.",
@@ -2807,7 +2807,7 @@ const en: LocaleMessages = {
       "Guests type this on the /rsvp page along with their 8-character code. Letters and digits only.",
     couple_slug_save: "Save",
     couple_slug_invalid: "Use only letters and digits (3–24 chars).",
-    couple_slug_taken: "That identifier is already taken — try another.",
+    couple_slug_taken: "That identifier is already taken, try another.",
     checkin_pill_lead: "Check-in",
     checkin_pill_suffix: "+ 8-character code per household",
     checkin_pill_show: "Show check-in details",
@@ -2821,7 +2821,7 @@ const en: LocaleMessages = {
     checkin_copy_link: "Copy link",
     checkin_link_copied: "Link copied to clipboard.",
     couple_slug_help_locked:
-      "Pre-printed on invites and the public check-in page — locked so links you've already shared keep working.",
+      "Pre-printed on invites and the public check-in page, locked so links you've already shared keep working.",
     invited_check_label: "Mark as invited",
     invited_short: "invited",
     invited_progress_help: "Members marked as invited / total members.",
@@ -2830,7 +2830,7 @@ const en: LocaleMessages = {
     invite_state_not_invited: "Not invited yet",
     invite_state_invited: "Invited",
     invite_state_delivered: "Invitation delivered",
-    invite_state_not_invited_short: "—",
+    invite_state_not_invited_short: "-",
     invite_state_cycle_to_invited: "Click to mark as invited",
     invite_state_cycle_to_delivered: "Click once the invitation is handed over",
     invite_state_cycle_to_clear: "Click to clear",
@@ -2869,7 +2869,7 @@ const en: LocaleMessages = {
     plus_one_assign_required: "Choose who this +1 belongs to.",
     rsvp_filled_at: "Filled {date}",
     plus_one_label: "Plus-one (+1)",
-    plus_one_help: "Fill in their +1 for them — we'll add it as a guest in the same household.",
+    plus_one_help: "Fill in their +1 for them, we'll add it as a guest in the same household.",
     plus_one_placeholder: "Plus-one's name",
     partner_role_bride: "Bride",
     partner_role_groom: "Groom",
@@ -2883,7 +2883,7 @@ const en: LocaleMessages = {
   },
   budget: {
     title: "Budget",
-    sub: "Edit numbers inline — totals and per-guest cost update live.",
+    sub: "Edit numbers inline, totals and per-guest cost update live.",
     category: "Category",
     label: "Item",
     planned: "Planned",
@@ -2924,7 +2924,7 @@ const en: LocaleMessages = {
     save_snapshot: "Save snapshot",
     snapshot_name_prompt: 'Snapshot name (e.g. "120-guest scenario")',
     snapshot_name_label: "Snapshot name",
-    snapshot_name_help: 'e.g. "120-guest scenario" — so you recognise it later.',
+    snapshot_name_help: 'e.g. "120-guest scenario", so you recognise it later.',
     snapshot_save_failed: "Couldn't save the snapshot.",
     save_failed_retry: "Couldn't save that line. Try again.",
     save_conflict: "Someone else just edited this line. Reload?",
@@ -2949,14 +2949,14 @@ const en: LocaleMessages = {
     cost_planning_count_unlock_aria: "Unpin the headcount",
     payments_due_title: "Payments due",
     payments_due_sub:
-      "A roll-up of the payment schedules you set on suppliers — what's owed by when.",
+      "A roll-up of the payment schedules you set on suppliers, what's owed by when.",
     payments_paid: "Paid so far",
     payments_outstanding: "Outstanding",
     payments_due_30: "Within 30 days",
     payments_next: "Next due",
     payments_none_dated: "No dated installments",
     lines_title: "Budget lines",
-    lines_sub: "Edit each line — totals above and bars update live.",
+    lines_sub: "Edit each line, totals above and bars update live.",
     lines_empty: "No budget lines yet. Add one to start planning.",
     lines_totals_label: "Total",
     honeymoon_breakdown_hint: "Breakdown on the Honeymoon page",
@@ -3045,7 +3045,7 @@ const en: LocaleMessages = {
   },
   income: {
     title: "Gifts received",
-    sub: "Cash gifts and contributions — at the end you'll see how much of the spend came back.",
+    sub: "Cash gifts and contributions, at the end you'll see how much of the spend came back.",
     received: "Total received",
     spent: "Spent",
     net_cost: "Net cost of the day",
@@ -3060,7 +3060,7 @@ const en: LocaleMessages = {
     benchmark_strip:
       "For {count} guests, typical HU budgets run {min} – {max} Ft. You're currently at {userTotal}.",
     benchmark_methodology:
-      "Illustrative estimate for HU 2026 derived from publicly-visible vendor pricing (tradergroup.hu, eskuvo.com). Not professional advice — your own quotes will be more accurate.",
+      "Illustrative estimate for HU 2026 derived from publicly-visible vendor pricing (tradergroup.hu, eskuvo.com). Not professional advice, your own quotes will be more accurate.",
     benchmark_source_hint: "Where do these numbers come from?",
     overcap_medium_label: "Over by {amount}",
     per_guest_planned: "Planned · {amount}/guest × {count} guests",
@@ -3122,9 +3122,9 @@ const en: LocaleMessages = {
     tap_mode_on: "Tap mode",
     tap_mode_off: "Turn off tap mode",
     tap_select_help: "Tap a guest to select them, then tap a card to assign.",
-    tap_place_hint: "{guest} selected — tap a card to assign.",
+    tap_place_hint: "{guest} selected, tap a card to assign.",
     tap_unassign_hint: "Tap the × on a guest chip to unassign.",
-    full_blocked: "“{name}” is full — free a slot first.",
+    full_blocked: "“{name}” is full, free a slot first.",
     partial_placed: "Placed {placed}/{total} guests with “{name}”.",
     bride_label: "Bride",
     groom_label: "Groom",
@@ -3171,7 +3171,7 @@ const en: LocaleMessages = {
     add_first_table: "Add one to get started.",
     empty_cta_add_table: "Add your first table",
     empty_body_no_guests:
-      "Seating is built around your guest list — start with guests, then we'll arrange tables around them.",
+      "Seating is built around your guest list, start with guests, then we'll arrange tables around them.",
     empty_cta_add_guests: "Add guests",
     empty_cta_fallback_table: "I'll start with tables anyway",
     drag_help: "Drag guests onto seats.",
@@ -3179,8 +3179,8 @@ const en: LocaleMessages = {
     household_unlink: "Separate household",
     household_relink: "Re-link to household",
     household_placed_all: "Seated {n} guests · {table}",
-    household_placed_partial: "Seated {n} of {m} — the rest stayed unassigned.",
-    household_no_room: "No free seats on this table — clear seats or pick another table.",
+    household_placed_partial: "Seated {n} of {m}, the rest stayed unassigned.",
+    household_no_room: "No free seats on this table, clear seats or pick another table.",
     conflicts_title: "Conflicts",
     no_conflicts: "No conflicts flagged.",
     conflict_split: "should not sit together",
@@ -3205,7 +3205,7 @@ const en: LocaleMessages = {
     add_seat: "Add seat",
     remove_seat: "Remove seat",
     preview_title: "Preview & download",
-    preview_help: "Take a look before saving — large prints are easy to send to the wrong tray.",
+    preview_help: "Take a look before saving, large prints are easy to send to the wrong tray.",
     confirm_download: "Download",
     drop_to_unassign: "Drop a guest here to unassign them.",
     drop_to_unassign_active: "Release to remove from seat",
@@ -3215,11 +3215,11 @@ const en: LocaleMessages = {
     position_label_full: "Position: {x} m from the left, {y} m from the top",
     assignments_section_title: "Seat your guests",
     assignments_section_hint:
-      "Drag or tap guests in the cards below — the map only shows the room layout.",
+      "Drag or tap guests in the cards below, the map only shows the room layout.",
     tap_mode_on: "Tap mode",
     tap_mode_off: "Exit tap mode",
     tap_select_help: "Tap a guest to select, then tap a seat to place them.",
-    tap_place_hint: "{guest} selected — tap a seat to place them.",
+    tap_place_hint: "{guest} selected, tap a seat to place them.",
     undo_action: "Undo",
     undo_label: "Restore",
     undo_failed: "Couldn't undo that.",
@@ -3233,7 +3233,7 @@ const en: LocaleMessages = {
     toast_resized: "{table} resized",
     toast_arranged: "Tables arranged symmetrically",
     toast_arranged_crowded:
-      "Room is tight for this many tables — some pairs lack 80 cm of walking space. Increase the room size or remove tables.",
+      "Room is tight for this many tables, some pairs lack 80 cm of walking space. Increase the room size or remove tables.",
     arrange_button_label: "Arrange tables symmetrically",
     swap_seats_title: "This seat is already taken",
     swap_seats_body: "{occupant} is currently sitting here. Swap with {guest}, replace, or cancel?",
@@ -3249,9 +3249,9 @@ const en: LocaleMessages = {
     shortcut_undo: "Undo the last change",
     table_aria_label: "{name}, {seats} seats",
     save_failed: "Couldn't save that change. The seating chart was refreshed.",
-    save_conflict: "Someone else just edited this table — refreshing.",
-    table_too_small: "Table would be too small — empty a seat first.",
-    seats_at_cap: "The table is full — make it bigger to add another seat.",
+    save_conflict: "Someone else just edited this table, refreshing.",
+    table_too_small: "Table would be too small, empty a seat first.",
+    seats_at_cap: "The table is full, make it bigger to add another seat.",
     seats_at_cap_hint: "Make the table bigger to add another seat.",
     pdf_failed: "Couldn't generate the PDF. Try again.",
     pdf_cancel: "Cancel",
@@ -3260,16 +3260,16 @@ const en: LocaleMessages = {
     keyboard_cleared_selection: "Selection cleared.",
     tap_mode_announce_on: "Tap-to-place mode on.",
     tap_mode_announce_off: "Tap-to-place mode off.",
-    seat_aria_label: "{table} — seat {seat}",
+    seat_aria_label: "{table}, seat {seat}",
     kids_table_label: "Kids table",
     kids_table_help:
-      "Flags this table — handy on the printed chart and when briefing your venue / caterer.",
+      "Flags this table, handy on the printed chart and when briefing your venue / caterer.",
     kids_table_badge: "Kids",
     mode_edit_tab: "Edit floor plan",
     mode_seat_tab: "Seat guests",
     seat_mode_panel_title: "Unassigned",
     seat_mode_help: "Drag guests from the list onto seats, or tap a chair to select and place.",
-    seat_tap_place: "{guest} selected — tap a seat to place them.",
+    seat_tap_place: "{guest} selected, tap a seat to place them.",
     seat_unassign_selected: "Unassign",
     table_panel_filled: "{filled}/{total} filled",
     table_panel_seat_n: "Seat {n}",
@@ -3287,9 +3287,9 @@ const en: LocaleMessages = {
     no_email: "No email on file",
     filter_all: "All",
     show_all_in_category: "Show all {category}",
-    chain_help: "Book in a logical order — from venue down to the final details.",
+    chain_help: "Book in a logical order, from venue down to the final details.",
     community_pill: "Community",
-    community_pill_tooltip: "Recommended by a Weddly couple — from first-hand experience.",
+    community_pill_tooltip: "Recommended by a Weddly couple, from first-hand experience.",
     self_pill: "Supplier",
     self_pill_tooltip: "The supplier joined the Weddly community themselves.",
     drop_your_own: "Drop your own",
@@ -3298,7 +3298,7 @@ const en: LocaleMessages = {
       open_aria: "Open the cake & drinks calculator",
       title: "Cake & drinks calculator",
       intro:
-        "Enter your guest count and your own prices — we work out the quantities you need and the estimated cost automatically.",
+        "Enter your guest count and your own prices, we work out the quantities you need and the estimated cost automatically.",
       item_toggle_hint: "Strike out (this item's total becomes 0)",
       guests_label: "Guest count",
       sweets_buffer_label: "Pastry buffer (%)",
@@ -3340,7 +3340,7 @@ const en: LocaleMessages = {
     diy_button_short: "Do it myself",
     diy_modal_title: "Your own plan",
     diy_modal_intro:
-      "Got someone from family or a friend helping out — or doing it yourselves? Track it here. Only you see it; nothing leaves your workspace.",
+      "Got someone from family or a friend helping out, or doing it yourselves? Track it here. Only you see it; nothing leaves your workspace.",
     diy_modal_name_label: "What or who?",
     diy_modal_name_placeholder: "e.g. Mum's cooking, Uncle Béla on music…",
     diy_modal_category_label: "Category",
@@ -3394,7 +3394,7 @@ const en: LocaleMessages = {
     nearby_banner: "Near {town}: suppliers within ~{radius} km, closest first.",
     accommodation_external_title: "Lodging partners for your guests",
     accommodation_external_subtitle:
-      "Share these trusted sites when you send accommodation links to guests — each opens in a new tab.",
+      "Share these trusted sites when you send accommodation links to guests, each opens in a new tab.",
     accommodation_external_booking_blurb: "Hotels and apartments worldwide",
     accommodation_external_airbnb_blurb: "Apartments, homes, unique stays",
     accommodation_external_szallas_hu_blurb: "Hungarian lodging marketplace",
@@ -3406,7 +3406,7 @@ const en: LocaleMessages = {
     pick_aria: "Pick this one",
     unpick_aria: "Remove our pick",
     picked_filter_idle: "Show only your picks ({n})",
-    picked_filter_active: "Showing only your picks — tap to clear ({n})",
+    picked_filter_active: "Showing only your picks, tap to clear ({n})",
     picked_pill: "Our pick",
     chain_progress_aria: "Sub-categories locked in: {done} / {total}",
     cost_planned_label: "Planned",
@@ -3427,8 +3427,8 @@ const en: LocaleMessages = {
     guests_filter_help: "Only show venues that fit",
     guests_filter_clear: "Clear",
     guests_filter_edit_in_budget: "Edit guest count in budget",
-    vote_up_aria: "Upvote — useful for couples",
-    vote_down_aria: "Downvote — not useful",
+    vote_up_aria: "Upvote, useful for couples",
+    vote_down_aria: "Downvote, not useful",
     sort_label: "Sort",
     sort_top: "Top voted",
     sort_alpha: "Name (A–Z)",
@@ -3441,13 +3441,13 @@ const en: LocaleMessages = {
     map_missing_count: "{n} entries aren't placed on the map yet.",
     submit: {
       title: "Drop your own",
-      intro: "A few details is all it takes — other couples will find them faster.",
+      intro: "A few details is all it takes, other couples will find them faster.",
       trust_review: "Our team reviews it before it shows in the directory",
       trust_email_private: "Your email stays private",
       next_steps_title: "Check your inbox!",
       next_steps_body:
         "We sent a confirmation link to the email above. Click it and the listing will appear in the directory.",
-      next_steps_review_title: "Thanks — got it!",
+      next_steps_review_title: "Thanks, got it!",
       next_steps_review_body:
         "Our team will review the entry and it'll appear in the couples' directory shortly.",
       category_label: "Category",
@@ -3460,16 +3460,16 @@ const en: LocaleMessages = {
       address_placeholder: "Király u. 12",
       address_help: "Paste a Google Maps link and we'll expand it for you.",
       address_resolving: "Resolving Maps link…",
-      address_resolved: "Got it — we filled in the empty fields.",
+      address_resolved: "Got it, we filled in the empty fields.",
       address_resolved_partial: "We parsed the link, but OSM didn't have every detail.",
-      address_resolve_failed: "Couldn't resolve the link — type the address by hand.",
+      address_resolve_failed: "Couldn't resolve the link, type the address by hand.",
       website_label: "Website",
       email_label: "Email",
       email_placeholder: "hello@anna.hu",
       phone_label: "Phone",
       phone_optional: "(optional)",
       blurb_label: "Short description",
-      blurb_help: "A line or two — what they do, what makes them good.",
+      blurb_help: "A line or two, what they do, what makes them good.",
       price_label: "Price band",
       price_help: "Best guess: $ budget, $$$$$ ultra-luxury.",
       submit_button: "Add to directory",
@@ -3481,10 +3481,10 @@ const en: LocaleMessages = {
       err_invalid_url: "Needs a valid URL (https://…).",
       err_invalid_email: "Needs a valid email.",
       err_too_long: "Too long.",
-      err_rate_limited: "Too many submissions — try again in a minute.",
+      err_rate_limited: "Too many submissions, try again in a minute.",
       err_duplicate_email: "Someone already registered with this email, you're on the waitlist.",
       magic_title: "Got a Google Maps link?",
-      magic_help: "Paste it — we'll fill in the address, name, website and phone for you.",
+      magic_help: "Paste it, we'll fill in the address, name, website and phone for you.",
       magic_placeholder: "https://maps.app.goo.gl/…",
       magic_or_manual: "or fill in by hand",
       magic_resolve: "Fill from link",
@@ -3492,7 +3492,7 @@ const en: LocaleMessages = {
       section_who: "Who they are",
       is_self_label: "I am the supplier",
       is_self_help:
-        "Tick this if you're submitting your own business — the card will wear a „Supplier” badge.",
+        "Tick this if you're submitting your own business, the card will wear a „Supplier” badge.",
       section_where: "Where to find them",
       section_contact: "How to reach them",
       section_pitch: "Why couples will love them",
@@ -3522,11 +3522,11 @@ const en: LocaleMessages = {
       note_placeholder: "e.g. the website doesn’t exist, fake photos, duplicate of …",
       submit: "Send report",
       submitting: "Sending…",
-      thanks_toast: "Thanks — we got it. The team will take a look.",
-      duplicate_toast: "You’ve already reported this one — no need to send twice.",
+      thanks_toast: "Thanks, we got it. The team will take a look.",
+      duplicate_toast: "You’ve already reported this one, no need to send twice.",
       auto_hidden_toast:
-        "Thanks — with the existing reports we’ve auto-hidden this listing until a moderator reviews it.",
-      err_rate_limited: "Too many reports in a short time — try again in a minute.",
+        "Thanks, with the existing reports we’ve auto-hidden this listing until a moderator reviews it.",
+      err_rate_limited: "Too many reports in a short time, try again in a minute.",
       reason: {
         spam: {
           label: "Spam or promo",
@@ -3542,11 +3542,11 @@ const en: LocaleMessages = {
         },
         wrong_info: {
           label: "Wrong info",
-          desc: "Bad address, phone, or website — worth fixing.",
+          desc: "Bad address, phone, or website, worth fixing.",
         },
         other: {
           label: "Other",
-          desc: "Something else — add the detail below.",
+          desc: "Something else, add the detail below.",
         },
       },
     },
@@ -3603,7 +3603,7 @@ const en: LocaleMessages = {
       floating_min_hint: "Pick at least 2 suppliers to compare.",
       dialog_title: "Compare suppliers",
       dialog_intro:
-        "Numbers are dialled in to your data — guest count, budget — so the trade-offs are obvious at a glance.",
+        "Numbers are dialled in to your data, guest count, budget, so the trade-offs are obvious at a glance.",
       dialog_close_aria: "Close",
       row_quote: "Your quote",
       row_price_band: "Price level",
@@ -3618,7 +3618,7 @@ const en: LocaleMessages = {
       rating_none: "No ratings yet",
       rating_count: "{n} reviews",
       distance_no_origin: "Set your venue to see distance",
-      distance_unknown: "—",
+      distance_unknown: "-",
       distance_km: "{km} km away",
       available_ask: "Ask to confirm",
       quote_none: "No quote saved",
@@ -3683,7 +3683,7 @@ const en: LocaleMessages = {
         alreadyReviewed: "Your couple already reviewed this supplier.",
         deleted: "Review deleted",
         deleteConfirmTitle: "Delete this review?",
-        deleteConfirmBody: "Soft delete — the row stays, just hidden.",
+        deleteConfirmBody: "Soft delete, the row stays, just hidden.",
       },
       comments: {
         title: "Questions & answers",
@@ -3692,7 +3692,7 @@ const en: LocaleMessages = {
         submitted: "Comment saved",
         empty: "No questions yet.",
         deleteConfirmTitle: "Delete this comment?",
-        deleteConfirmBody: "Soft delete — the thread stays, just hidden.",
+        deleteConfirmBody: "Soft delete, the thread stays, just hidden.",
         visibility: {
           admin_internal: "Internal (admin only)",
           public: "Public",
@@ -3873,8 +3873,8 @@ const en: LocaleMessages = {
     taxonomy_hide: "Hide",
     taxonomy_unhide: "Unhide",
     taxonomy_hidden_badge: "Hidden",
-    taxonomy_hide_success: "Hidden — couples no longer see it.",
-    taxonomy_unhide_success: "Visible — couples see it again.",
+    taxonomy_hide_success: "Hidden, couples no longer see it.",
+    taxonomy_unhide_success: "Visible, couples see it again.",
     taxonomy_delete_group_confirm_title: "Delete group",
     taxonomy_delete_group_confirm_body:
       "Only allowed when the group has no categories. This can't be undone.",
@@ -3883,9 +3883,9 @@ const en: LocaleMessages = {
     taxonomy_delete_category_confirm_body:
       "Only allowed when no supplier references this category. This can't be undone.",
     taxonomy_delete_category_blocked:
-      "Community suppliers still reference this category — reassign or hide them first.",
+      "Community suppliers still reference this category, reassign or hide them first.",
     taxonomy_slug_help:
-      "Lowercase letters, digits, underscores only. Hard to rename later — think it through.",
+      "Lowercase letters, digits, underscores only. Hard to rename later, think it through.",
     taxonomy_new_group_title: "New group",
     taxonomy_new_category_title: "New category",
     taxonomy_edit_group_title: "Edit group",
@@ -3896,7 +3896,7 @@ const en: LocaleMessages = {
     waitlist_filter_under_review: "Under review",
     waitlist_filter_accepted: "Accepted",
     waitlist_filter_rejected: "Rejected",
-    waitlist_empty_new: "You've replied to every submission — inbox empty.",
+    waitlist_empty_new: "You've replied to every submission, inbox empty.",
     waitlist_empty_under_review: "Nothing is currently under review.",
     waitlist_empty_accepted: "You haven't accepted anyone yet.",
     waitlist_empty_rejected: "You haven't rejected anyone yet.",
@@ -3931,7 +3931,7 @@ const en: LocaleMessages = {
     waitlist_modal_subject_label: "Subject",
     waitlist_modal_body_label: "Message",
     waitlist_modal_notes_label: "Internal notes",
-    waitlist_modal_notes_helper: "Only you see this — the supplier doesn't.",
+    waitlist_modal_notes_helper: "Only you see this, the supplier doesn't.",
     waitlist_modal_send: "Send",
     waitlist_modal_sending: "Sending…",
     waitlist_modal_cancel: "Cancel",
@@ -3999,14 +3999,14 @@ const en: LocaleMessages = {
     table_admin_actions: "Actions",
     new_section: "New sign-ups",
     new_section_help:
-      "Everything new since you last opened this page — couples and solo users together, no categories. They also appear in their own sections below.",
+      "Everything new since you last opened this page, couples and solo users together, no categories. They also appear in their own sections below.",
     new_count_one: "{n} new",
     new_count_other: "{n} new",
     workspaces_section: "Couple workspaces",
     workspaces_count_one: "{n} workspace",
     workspaces_count_other: "{n} workspaces",
     solo_section: "Solo users",
-    solo_help: "Single-member workspaces — the partner was never invited or hasn't joined.",
+    solo_help: "Single-member workspaces, the partner was never invited or hasn't joined.",
     solo_count_one: "{n} solo",
     solo_count_other: "{n} solo",
     solo_empty: "No solo users.",
@@ -4016,7 +4016,7 @@ const en: LocaleMessages = {
     demo_workspaces_count_one: "{n} demo",
     demo_workspaces_count_other: "{n} demo",
     demo_workspaces_help:
-      "Shrek & Fiona workspaces seeded by the landing-page demo. Kept separate so the real-couple list stays clean — the background sweep reaps these every 4h, but usage data is retained in the analytics surface.",
+      "Shrek & Fiona workspaces seeded by the landing-page demo. Kept separate so the real-couple list stays clean, the background sweep reaps these every 4h, but usage data is retained in the analytics surface.",
     demo_badge: "Demo",
     demo_events_label_one: "{n} event",
     demo_events_label_other: "{n} events",
@@ -4032,7 +4032,7 @@ const en: LocaleMessages = {
     table_workspace_wedding_date: "Wedding",
     table_workspace_created: "Created",
     table_workspace_last_active: "Last active",
-    last_active_never: "—",
+    last_active_never: "-",
     last_active_now: "just now",
     last_active_minutes: "{n}m ago",
     last_active_hours: "{n}h ago",
@@ -4093,7 +4093,7 @@ const en: LocaleMessages = {
       "The account looks like it contains non-genuine data (supplier tips, email, or name). Please confirm your account is real, or it will be deleted in 7 days.",
     flag_tpl_duplicate_label: "Duplicate account",
     flag_tpl_duplicate_body:
-      "Our system shows you already have another active account with the same email or similar details. Please let us know which one to keep — otherwise the duplicate will be deleted in 7 days.",
+      "Our system shows you already have another active account with the same email or similar details. Please let us know which one to keep, otherwise the duplicate will be deleted in 7 days.",
     flag_tpl_vendor_abuse_label: "/vendors form abuse",
     flag_tpl_vendor_abuse_body:
       "We've noticed abuse of the supplier-submission form on your account (repeated submissions, non-real businesses, or off-topic content). Please explain, or your account will be deleted in 7 days.",
@@ -4102,7 +4102,7 @@ const en: LocaleMessages = {
       "Content on your account (name, profile, submitted tip or feedback) is offensive or violates our community norms. Please reply with context, or your account will be deleted in 7 days.",
     flag_tpl_reported_label: "Reported by others",
     flag_tpl_reported_body:
-      "Other users have reported activity on your account. Please reply to this email so we can sort it out — otherwise the account will be deleted in 7 days.",
+      "Other users have reported activity on your account. Please reply to this email so we can sort it out, otherwise the account will be deleted in 7 days.",
     resend_flag_email_button: "Resend flag email",
     resend_flag_email_success: "Flag email resent.",
     email_log_button: "Email history",
@@ -4111,7 +4111,7 @@ const en: LocaleMessages = {
     unflag_user_button: "Clear flag",
     unflag_user_title: "Clear flag",
     unflag_user_label: "Note (optional)",
-    unflag_user_placeholder: 'e.g. "user replied — concern addressed"',
+    unflag_user_placeholder: 'e.g. "user replied, concern addressed"',
     unflag_user_help: "The note is recorded in the audit log.",
     unflag_user_clear: "Clear flag",
     unflag_user_success: "Flag cleared.",
@@ -4150,8 +4150,8 @@ const en: LocaleMessages = {
     filter_status_active: "Approved",
     filter_status_hidden: "Hidden",
     approve: "Approve",
-    approve_success: "Approved — supplier is now in the public directory.",
-    approve_direct_hint: "No contact email — publish directly.",
+    approve_success: "Approved, supplier is now in the public directory.",
+    approve_direct_hint: "No contact email, publish directly.",
     send_verify: "Send verify email",
     send_verify_hint:
       "Releases the verification mail to the supplier. Submission alone does not send it.",
@@ -4181,7 +4181,7 @@ const en: LocaleMessages = {
     confirm_hide_title: "Hide this supplier",
     confirm_hide_body: "Couples won't see it. You can bring it back any time.",
     confirm_delete_title: "Delete this supplier",
-    confirm_delete_body: "This is permanent — no undo.",
+    confirm_delete_body: "This is permanent, no undo.",
     suppliers_card_expand: "Show details",
     suppliers_card_collapse: "Hide details",
     suppliers_card_section_contact: "Contact",
@@ -4208,13 +4208,13 @@ const en: LocaleMessages = {
     suppliers_card_field_id: "ID",
     suppliers_card_field_admin_notes: "Admin note",
     suppliers_card_field_admin_notes_placeholder: "e.g. reached out, awaiting reply…",
-    suppliers_card_field_admin_notes_help: "Admin-only — never shown to the submitter.",
+    suppliers_card_field_admin_notes_help: "Admin-only, never shown to the submitter.",
     suppliers_card_field_notes_save: "Save note",
     suppliers_card_field_notes_saving: "Saving…",
     suppliers_card_field_notes_saved: "Saved",
     suppliers_card_field_notes_dirty: "Unsaved",
     suppliers_card_notes_save_success: "Note saved.",
-    suppliers_card_empty_value: "—",
+    suppliers_card_empty_value: "-",
     delete_action: "Delete",
     bulk_delete_action: "Delete",
     source_curated_sr: "Curated listing",
@@ -4287,7 +4287,7 @@ const en: LocaleMessages = {
     feedback_reopen: "Re-open",
     feedback_delete: "Delete",
     feedback_delete_confirm_title: "Delete this feedback",
-    feedback_delete_confirm_body: "Permanent — the audit log keeps the trace.",
+    feedback_delete_confirm_body: "Permanent, the audit log keeps the trace.",
     feedback_anon: "Anonymous",
     feedback_no_message: "(no message)",
     feedback_filter_new: "New",
@@ -4299,7 +4299,7 @@ const en: LocaleMessages = {
       "The public feedback form lives at /visszajelzes; in-app it's the Feedback button in the shell.",
     feedback_load_error_title: "Couldn't load feedback.",
     feedback_load_error_body:
-      "Network or server hiccup. Retry — if it fails again, check the Railway logs.",
+      "Network or server hiccup. Retry, if it fails again, check the Railway logs.",
     feedback_retry: "Retry",
     feedback_status_reviewed: "Reviewed",
     feedback_status_planned: "Planned",
@@ -4397,7 +4397,7 @@ const en: LocaleMessages = {
     analytics_section_honeymoon: "Honeymoon",
     analytics_honeymoon_empty: "No couple has set a honeymoon destination yet.",
     analytics_honeymoon_insufficient:
-      "Only {n} couples have entered honeymoon data — too few to read into. Charts unlock at 10.",
+      "Only {n} couples have entered honeymoon data, too few to read into. Charts unlock at 10.",
     analytics_honeymoon_with_destination: "Destination set",
     analytics_honeymoon_adoption: "{pct}% of couples",
     analytics_honeymoon_top_destination: "Top destination",
@@ -4532,7 +4532,7 @@ const en: LocaleMessages = {
     analytics_engagement_sessions_total_short: "Total sessions",
     analytics_engagement_d7_retention: "D+7 retention",
     analytics_engagement_top_feature_kpi: "Top feature",
-    analytics_engagement_top_feature_none: "—",
+    analytics_engagement_top_feature_none: "-",
     analytics_demo_kpi_total: "Live demos",
     analytics_demo_kpi_served: "Total served",
     analytics_demo_kpi_active: "Active (24h)",
@@ -4644,7 +4644,7 @@ const en: LocaleMessages = {
     analytics_engagement_dow_long_fri: "Friday",
     analytics_engagement_dow_long_sat: "Saturday",
     analytics_engagement_dow_long_sun: "Sunday",
-    analytics_engagement_heatmap_tooltip: "{day} {hour}:00 — {count} events",
+    analytics_engagement_heatmap_tooltip: "{day} {hour}:00, {count} events",
     analytics_engagement_top_features: "Top features",
     analytics_engagement_top_features_empty: "No feature usage data yet.",
     analytics_engagement_users: "{count} users",
@@ -4675,7 +4675,7 @@ const en: LocaleMessages = {
     analytics_demo_avg_lifetime: "Avg lifetime",
     analytics_demo_top_features_title: "What visitors tried",
     analytics_demo_top_features_sub:
-      "Features touched across demo workspaces — live + historic snapshots.",
+      "Features touched across demo workspaces, live + historic snapshots.",
     analytics_demo_top_features_empty: "No features have been used in demos yet.",
     analytics_demo_feature_demos_one: "{n} demo",
     analytics_demo_feature_demos_other: "{n} demos",
@@ -4701,7 +4701,7 @@ const en: LocaleMessages = {
   },
   rsvp: {
     title: "Wedding RSVP",
-    sub: "Fill in when you know — you can update any time.",
+    sub: "Fill in when you know, you can update any time.",
     not_found: "We can't find this invite. Double-check the link you got.",
     will_attend: "Can you make it?",
     pick_yes: "Yes, count us in",
@@ -4720,9 +4720,9 @@ const en: LocaleMessages = {
     submit: "Submit",
     submitted: "Got it!",
     thanks_title: "Thank you!",
-    thanks_body: "The couple sees your response — come back any time to update.",
+    thanks_body: "The couple sees your response, come back any time to update.",
     thanks_email_hint:
-      "A confirmation email is on its way — if it doesn't arrive in a few minutes, check spam too.",
+      "A confirmation email is on its way, if it doesn't arrive in a few minutes, check spam too.",
     thanks_open_site: "Open the wedding page →",
     thanks_plan_your_own: "Planning your own wedding? Try Weddly free →",
     redirect_hint: "Opening the wedding page in {n}s…",
@@ -4739,9 +4739,9 @@ const en: LocaleMessages = {
     checkin_code_help: "8 characters from your invite",
     checkin_submit: "Check in",
     checkin_lookup_failed: "We can't find that combination. Double-check the couple and the code.",
-    checkin_lookup_couple_unknown: "We don't recognise that couple name — check your invite.",
+    checkin_lookup_couple_unknown: "We don't recognise that couple name, check your invite.",
     checkin_lookup_code_unknown: "That 8-character code doesn't match this couple.",
-    checkin_lookup_missing: "Fill both fields — the couple name and the 8-character code.",
+    checkin_lookup_missing: "Fill both fields, the couple name and the 8-character code.",
     checkin_contact_hosts: "Contact your hosts",
     checkin_contact_hosts_email: "mailto:support@weddly.hu",
     checkin_household_for: "Checking in for",
@@ -4755,10 +4755,10 @@ const en: LocaleMessages = {
     checkin_next_guest: "Next guest",
     checkin_done_title: "Checked in",
     pick_pending: "Still deciding",
-    status_for_name: "RSVP status — {name}",
+    status_for_name: "RSVP status, {name}",
     decline_keep_data_title: "Cancel attendance?",
     decline_keep_data_body:
-      "Your meal and song picks are kept either way — if plans change again, just toggle the answer back.",
+      "Your meal and song picks are kept either way, if plans change again, just toggle the answer back.",
     decline_keep_data_confirm: "Yes, change my answer",
     checkin_kicker: "Invitation",
     checkin_ref_label: "Ref",
@@ -4797,10 +4797,10 @@ const en: LocaleMessages = {
     confirm_submit_yes: "Yes, send it",
     offline_pending_one: "1 response waiting to send",
     offline_pending_other: "{n} responses waiting to send",
-    offline_saved: "Saved — we'll send it as soon as we're back online.",
+    offline_saved: "Saved, we'll send it as soon as we're back online.",
     offline_drained_one: "1 response delivered.",
     offline_drained_other: "{n} responses delivered.",
-    kiosk_banner: "Welcome-desk mode — tap and hold the corner to exit.",
+    kiosk_banner: "Welcome-desk mode, tap and hold the corner to exit.",
     kiosk_exit_hold: "Hold to exit welcome-desk (Shift+K also works)",
     kiosk_exit_confirmed: "Welcome-desk mode off.",
   },
@@ -4829,7 +4829,7 @@ const en: LocaleMessages = {
     zone_account: "Account & data",
     hero_days_until: "{n} days until your wedding",
     hero_days_one: "One day until your wedding",
-    hero_days_today: "Your wedding day — today",
+    hero_days_today: "Your wedding day, today",
     hero_days_past: "{n} days married",
     hero_date_tbd: "Wedding date to be decided",
     hero_days_caption_short: "Days until your wedding",
@@ -4856,11 +4856,11 @@ const en: LocaleMessages = {
     account_locale_save_success: "Language updated.",
     verify_title: "Confirm your email",
     verify_body:
-      "Confirming keeps password recovery working — if you ever lose your password without a verified email, the whole workspace can be lost.",
+      "Confirming keeps password recovery working, if you ever lose your password without a verified email, the whole workspace can be lost.",
     verify_email_intro: "We sent the verification link to:",
     verify_resend: "Send verification link",
     verify_resending: "Sending…",
-    verify_resent: "Sent — check your inbox (and the spam folder).",
+    verify_resent: "Sent, check your inbox (and the spam folder).",
     verify_already_verified: "This email is already verified.",
     partner_title: "Your partner",
     partner_body:
@@ -4879,7 +4879,7 @@ const en: LocaleMessages = {
     partner_invite_cancelling: "Cancelling…",
     activity_title: "What's been happening",
     activity_body:
-      "Edits, uploads, deletes and RSVPs across the workspace — last 14 days. Older entries disappear from this view automatically.",
+      "Edits, uploads, deletes and RSVPs across the workspace, last 14 days. Older entries disappear from this view automatically.",
     activity_empty: "Nothing logged yet. Saves, uploads and RSVPs will appear here.",
     activity_actor_you: "You",
     activity_actor_unknown: "Someone",
@@ -4952,7 +4952,7 @@ const en: LocaleMessages = {
     activity_toggle_collapse: "Close",
     activity_action_generic: "made a change",
     activity_date_tbd: "to be decided",
-    activity_value_empty: "—",
+    activity_value_empty: "-",
     activity_names_separator: " & ",
     budget_title: "Budget",
     budget_body:
@@ -4974,7 +4974,7 @@ const en: LocaleMessages = {
     budget_currency_usd: "Dollar ($)",
     budget_currency_confirm_title: "Switch currency",
     budget_currency_confirm_body:
-      "Sure you want to track costs in a different currency going forward? This only switches the symbol — existing amounts are NOT converted by FX rate, the same numbers will display under the new symbol.",
+      "Sure you want to track costs in a different currency going forward? This only switches the symbol, existing amounts are NOT converted by FX rate, the same numbers will display under the new symbol.",
     budget_currency_confirm_yes: "Yes, switch",
     country_label: "Country",
     country_helper:
@@ -4985,14 +4985,14 @@ const en: LocaleMessages = {
       "Hosting multiple events (civil, reception, day-after brunch)? Spin up a separate workspace per event. Guests + households can carry over from your active workspace.",
     workspaces_add: "New event",
     workspaces_cap_reached:
-      "Maximum of three workspaces — delete or archive one to free up a slot.",
+      "Maximum of three workspaces, delete or archive one to free up a slot.",
     workspaces_empty: "No workspaces yet.",
     workspaces_switch: "Open",
     workspaces_role_owner: "Owner",
     workspaces_role_partner: "Partner",
     workspaces_create_title: "New event",
     workspaces_create_body:
-      "Each event has its own independent guest list, budget, and seating — the bride and groom names are inherited from your current workspace. Optionally copy guests from the workspace you're in; they come over with fresh RSVP codes and the answers reset to pending.",
+      "Each event has its own independent guest list, budget, and seating, the bride and groom names are inherited from your current workspace. Optionally copy guests from the workspace you're in; they come over with fresh RSVP codes and the answers reset to pending.",
     workspaces_create_event_label: "Event name",
     workspaces_create_event_placeholder: "e.g. Religious ceremony, Family dinner, Afterparty",
     workspaces_create_event_required: "Please enter an event name",
@@ -5006,7 +5006,7 @@ const en: LocaleMessages = {
     workspaces_create_names_required: "Give the couple a name.",
     workspaces_create_seed_toggle: "Copy guests from current workspace",
     workspaces_create_seed_hint:
-      "Imports guests and their households from the workspace you're in — tick which ones are invited to this event.",
+      "Imports guests and their households from the workspace you're in, tick which ones are invited to this event.",
     workspaces_create_seed_summary: "{selected} of {total} selected",
     workspaces_create_seed_select_all: "All",
     workspaces_create_seed_unselect_all: "None",
@@ -5028,7 +5028,7 @@ const en: LocaleMessages = {
     workspaces_delete_confirm_mismatch: "It must match exactly: {name}",
     welcome_desk_title: "Welcome desk",
     welcome_desk_body:
-      "Opens the RSVP page in a new tab locked into kiosk mode — hand the tablet to your greeter. Guests can't flip the switch themselves; it only starts from here.",
+      "Opens the RSVP page in a new tab locked into kiosk mode, hand the tablet to your greeter. Guests can't flip the switch themselves; it only starts from here.",
     welcome_desk_button: "Open kiosk page",
     welcome_desk_no_slug:
       "Give your couple a URL slug in Onboarding / Profile first so the welcome-desk link has somewhere to point.",
@@ -5061,22 +5061,22 @@ const en: LocaleMessages = {
     security_email_heading: "Change email address",
     security_email_title: "Change email address",
     security_email_body:
-      "Enter a new email — we'll send a confirmation link to that inbox and a heads-up to your current one. The change only takes effect when you click the link from the new inbox.",
+      "Enter a new email, we'll send a confirmation link to that inbox and a heads-up to your current one. The change only takes effect when you click the link from the new inbox.",
     security_email_new: "New email address",
     security_email_password: "Current password",
     security_email_submit: "Send confirmation link",
     security_email_submitting: "Sending…",
-    security_email_sent: "We've sent the link to your new address — check there.",
+    security_email_sent: "We've sent the link to your new address, check there.",
     security_email_invalid: "Please enter a valid email address.",
     export_title: "Export your data",
     export_body:
-      "Download everything in your workspace — couple, guests, budget, seating, audit log — as a single JSON file. PDFs (seating chart, place cards) are downloadable from the Seating page.",
+      "Download everything in your workspace, couple, guests, budget, seating, audit log, as a single JSON file. PDFs (seating chart, place cards) are downloadable from the Seating page.",
     export_button: "Download JSON",
     export_guest_csv_button: "Download guest list (CSV)",
     export_downloading: "Preparing…",
     archive_title: "Saved downloads",
     archive_body:
-      "Every download is snapshotted here — the most recent 10 versions are kept so you can always grab an older copy.",
+      "Every download is snapshotted here, the most recent 10 versions are kept so you can always grab an older copy.",
     archive_empty: "Nothing saved yet. Your downloads will appear here.",
     archive_redownload: "Download",
     archive_delete: "Delete",
@@ -5121,7 +5121,7 @@ const en: LocaleMessages = {
     leave_couple_body_partner_b:
       "Leaving removes your access. Your partner keeps the workspace; you can rejoin any time with a new invite.",
     leave_couple_body_owner:
-      "You created this workspace — owners can't leave. To wind it down, start the pause & 30-day deletion instead.",
+      "You created this workspace, owners can't leave. To wind it down, start the pause & 30-day deletion instead.",
     leave_couple_button: "Leave",
     leave_couple_leaving: "Leaving…",
     leave_couple_confirm_title: "Leave this workspace?",
@@ -5133,7 +5133,7 @@ const en: LocaleMessages = {
   },
   error_boundary: {
     title: "That didn't work",
-    body: "We tried reloading but it's still stuck. Hang on a moment and we'll try again — your data is safe.",
+    body: "We tried reloading but it's still stuck. Hang on a moment and we'll try again, your data is safe.",
     try_again: "Refresh",
     try_again_pending: "Refreshing…",
     go_home: "Back to home",
@@ -5146,13 +5146,13 @@ const en: LocaleMessages = {
     continuing_suffix: ".",
   },
   legal: {
-    draft_banner_label: "Open beta — pending legal review",
+    draft_banner_label: "Open beta, pending legal review",
     draft_banner_body:
       "This text honestly describes what Weddly does today, but it hasn't been reviewed by a lawyer yet. A Hungarian lawyer will review and finalise it before the 1.0 launch.",
     version_label: "Version",
   },
   privacy: {
-    seo_title: "Privacy policy — Weddly",
+    seo_title: "Privacy policy · Weddly",
     seo_description:
       "How Weddly handles your data: categories collected, retention, GDPR rights, cookies and third-party services.",
     page_title: "Privacy policy",
@@ -5162,32 +5162,32 @@ const en: LocaleMessages = {
       "This Privacy Policy provides detailed, transparent information to visitors, registered users, newsletter subscribers, and listed service providers about how their personal data is processed by Weddly. The following laws apply: EU Regulation 2016/679 (GDPR); the Hungarian Information Self-Determination and Freedom of Information Act (Infotv., Act CXII of 2011); the Electronic Commerce Act (Ektv., Act CVIII of 2001); and the Commercial Advertising Act (Grtv., Act XLVIII of 2008).",
     controller_title: "Who controls your data",
     controller_body:
-      "The data controller is Andor Csíkász (a natural person, Hungary) — the operator of Weddly. Full operator details are on the Imprint page. For any data-related question, write to andor.csikasz@gmail.com or hello@tryweddly.com; we respond within seven days. Processing is governed by the GDPR (EU 2016/679) and applicable Hungarian law (Infotv. — Act CXII of 2011, Ektv. — Act CVIII of 2001, Grtv. — Act XLVIII of 2008).",
+      "The data controller is Andor Csíkász (a natural person, Hungary), the operator of Weddly. Full operator details are on the Imprint page. For any data-related question, write to andor.csikasz@gmail.com or hello@tryweddly.com; we respond within seven days. Processing is governed by the GDPR (EU 2016/679) and applicable Hungarian law (Infotv., Act CXII of 2011, Ektv., Act CVIII of 2001, Grtv., Act XLVIII of 2008).",
     data_categories_title: "What we collect",
     data_categories_intro:
       "We only collect the data we need to run your wedding workspace. Today that's five buckets:",
     data_categories_auth:
-      "Authentication — your email address and an Argon2id hash of your password. We never see the password itself.",
+      "Authentication, your email address and an Argon2id hash of your password. We never see the password itself.",
     data_categories_profile:
-      "Profile — your full name and (optionally) your partner's name, plus your locale preference if you switch it.",
+      "Profile, your full name and (optionally) your partner's name, plus your locale preference if you switch it.",
     data_categories_workspace:
-      "Wedding workspace — the dates, budget categories, guest list, RSVPs, seating layout and supplier notes you add. Each change is recorded in an append-only audit log so you can see who edited what.",
+      "Wedding workspace, the dates, budget categories, guest list, RSVPs, seating layout and supplier notes you add. Each change is recorded in an append-only audit log so you can see who edited what.",
     data_categories_analytics:
-      "Analytics and attribution — at sign-up, server-side only, we record three derived data points on your account so we can see where our users come from: a country code (computed from your IP at the moment of registration, after which the IP is immediately discarded and never stored), the campaign parameters that brought you here (UTM), and your device type (mobile / tablet / desktop). We do this under legitimate interest (GDPR Art. 6(1)(f)) and you can object at any time at hello@tryweddly.com. No third-party analytics script loads and we set no tracking cookies.",
+      "Analytics and attribution, at sign-up, server-side only, we record three derived data points on your account so we can see where our users come from: a country code (computed from your IP at the moment of registration, after which the IP is immediately discarded and never stored), the campaign parameters that brought you here (UTM), and your device type (mobile / tablet / desktop). We do this under legitimate interest (GDPR Art. 6(1)(f)) and you can object at any time at hello@tryweddly.com. No third-party analytics script loads and we set no tracking cookies.",
     legal_bases_title: "Legal bases for processing (GDPR Art. 6)",
     legal_bases_intro:
       "Every processing activity we run is based on one of the legal grounds in Art. 6(1) GDPR. The ones we rely on are:",
     legal_bases_contract:
-      "Performance of a contract (Art. 6(1)(b)) — creating and maintaining your account, storing the wedding data you enter, and sending transactional emails (verification, password reset, invites). Without these the service can't function.",
+      "Performance of a contract (Art. 6(1)(b)), creating and maintaining your account, storing the wedding data you enter, and sending transactional emails (verification, password reset, invites). Without these the service can't function.",
     legal_bases_consent:
-      'Consent (Art. 6(1)(a)) — any time you tick an explicit "I accept" checkbox. Two cases today: accepting the privacy policy at registration, and acknowledging the privacy + future-pricing notice when joining the vendor waitlist. You can withdraw consent at any time using the same email address you registered with.',
+      'Consent (Art. 6(1)(a)), any time you tick an explicit "I accept" checkbox. Two cases today: accepting the privacy policy at registration, and acknowledging the privacy + future-pricing notice when joining the vendor waitlist. You can withdraw consent at any time using the same email address you registered with.',
     legal_bases_legitimate_interest:
-      'Legitimate interest (Art. 6(1)(f)) — anti-abuse and anti-spam measures (IP-based rate limiting, the audit log), and service-related lifecycle messages (e.g. "your wedding is in 30 days") which you can opt out of at any time. Our interest is always balanced against your fundamental rights.',
+      'Legitimate interest (Art. 6(1)(f)), anti-abuse and anti-spam measures (IP-based rate limiting, the audit log), and service-related lifecycle messages (e.g. "your wedding is in 30 days") which you can opt out of at any time. Our interest is always balanced against your fundamental rights.',
     legal_bases_legal_obligation:
-      "Legal obligation (Art. 6(1)(c)) — the audit log and any disclosure to authorities may be required by law (e.g. criminal procedure). Once we leave beta and start invoicing, the Hungarian Accounting Act's retention obligation (§169) will also fall under this basis (8 years).",
+      "Legal obligation (Art. 6(1)(c)), the audit log and any disclosure to authorities may be required by law (e.g. criminal procedure). Once we leave beta and start invoicing, the Hungarian Accounting Act's retention obligation (§169) will also fall under this basis (8 years).",
     guest_data_title: "Guest and third-party data (GDPR Art. 14)",
     guest_data_body:
-      "If you arrived on Weddly as a guest (because a couple inviting you to their wedding added you to their guest list), Art. 14 requires us to tell you where your data came from. Your name, email, phone number and any dietary information were entered by the couple inviting you — they are the data controller for that information, and Weddly acts as a processor on their behalf for hosting it. If you want your data deleted or corrected, either ask the couple directly, or email hello@tryweddly.com and we'll relay the request on your behalf.",
+      "If you arrived on Weddly as a guest (because a couple inviting you to their wedding added you to their guest list), Art. 14 requires us to tell you where your data came from. Your name, email, phone number and any dietary information were entered by the couple inviting you, they are the data controller for that information, and Weddly acts as a processor on their behalf for hosting it. If you want your data deleted or corrected, either ask the couple directly, or email hello@tryweddly.com and we'll relay the request on your behalf.",
     retention_title: "How long we keep your data",
     retention_body:
       "Active workspaces are kept for as long as you want them. If you pause your workspace from the Profile page, we keep everything for 30 days in case you change your mind, then permanently delete it. You can cancel the pause any time before the 30 days are up.",
@@ -5195,24 +5195,24 @@ const en: LocaleMessages = {
     rights_intro:
       "If you are in the EU/EEA, you have the following rights under the GDPR. We honour all four for users everywhere, not just Europe.",
     rights_access:
-      "Access (Art. 15) — export everything we store about you from the Profile page (one click, JSON file).",
+      "Access (Art. 15), export everything we store about you from the Profile page (one click, JSON file).",
     rights_rectification:
-      "Rectification (Art. 16) — you can edit your own data directly from the Profile page and every in-app surface. If something isn't editable, email hello@tryweddly.com and we'll correct it manually.",
+      "Rectification (Art. 16), you can edit your own data directly from the Profile page and every in-app surface. If something isn't editable, email hello@tryweddly.com and we'll correct it manually.",
     rights_deletion:
-      "Erasure (Art. 17) — delete your account from the Profile page. A 30-day grace period gives you a way out; after that, we permanently wipe the workspace.",
+      "Erasure (Art. 17), delete your account from the Profile page. A 30-day grace period gives you a way out; after that, we permanently wipe the workspace.",
     rights_portability:
-      "Portability (Art. 20) — the same JSON export is structured so you can re-import the data elsewhere. Guest lists also export to CSV.",
+      "Portability (Art. 20), the same JSON export is structured so you can re-import the data elsewhere. Guest lists also export to CSV.",
     rights_objection:
-      "Objection (Art. 21) — if you believe a legitimate-interest processing activity affects your particular situation unfairly, email hello@tryweddly.com and we'll review that activity.",
+      "Objection (Art. 21), if you believe a legitimate-interest processing activity affects your particular situation unfairly, email hello@tryweddly.com and we'll review that activity.",
     rights_restriction:
-      "Restriction (Art. 18) — in certain cases (e.g. while accuracy is contested) you can ask us to suspend processing of the relevant data.",
+      "Restriction (Art. 18), in certain cases (e.g. while accuracy is contested) you can ask us to suspend processing of the relevant data.",
     rights_withdrawal:
-      "Withdrawing consent (Art. 7(3)) — where we rely on consent (see the legal bases above), you can withdraw it at any time. Withdrawal does not affect the lawfulness of processing already carried out on the basis of consent.",
+      "Withdrawing consent (Art. 7(3)), where we rely on consent (see the legal bases above), you can withdraw it at any time. Withdrawal does not affect the lawfulness of processing already carried out on the basis of consent.",
     rights_contact:
-      "Any other request or complaint — email hello@tryweddly.com or andor.csikasz@gmail.com and we'll handle it manually within seven days.",
+      "Any other request or complaint, email hello@tryweddly.com or andor.csikasz@gmail.com and we'll handle it manually within seven days.",
     security_title: "Data security (GDPR Art. 32)",
     security_body:
-      "We never see your password: it's hashed with Argon2id before storage, so even a database breach wouldn't expose it. Session identifiers are random, signed opaque tokens (not JWTs) — they can be revoked server-side and are verified with HMAC-SHA256. All network traffic is TLS-encrypted (terminated at the Railway edge). The database is SQLite mounted on a persistent volume; the hosting provider is responsible for the physical security of that volume. We keep an append-only audit log of all significant operations (never updated or deleted).",
+      "We never see your password: it's hashed with Argon2id before storage, so even a database breach wouldn't expose it. Session identifiers are random, signed opaque tokens (not JWTs), they can be revoked server-side and are verified with HMAC-SHA256. All network traffic is TLS-encrypted (terminated at the Railway edge). The database is SQLite mounted on a persistent volume; the hosting provider is responsible for the physical security of that volume. We keep an append-only audit log of all significant operations (never updated or deleted).",
     children_title: "Children's data (GDPR Art. 8)",
     children_body:
       'Weddly is not aimed at users under 16; minors cannot register with us directly. If a couple adds children to their guest list, their data is handled under Art. 14 (see "Guest data" above), with the same deletion and rectification rights. If you believe we are processing the data of someone under 16 without a lawful basis, email hello@tryweddly.com and we will act without delay.',
@@ -5223,41 +5223,41 @@ const en: LocaleMessages = {
     subprocessors_intro:
       "We use the following subprocessors. A written data-processing agreement is in place with each, and they may only process the data on Weddly's instructions.",
     subprocessors_railway:
-      "Railway Corp. (USA) — application hosting; storage of the SQLite database and uploaded files. DPF/SCC for the transfer.",
+      "Railway Corp. (USA), application hosting; storage of the SQLite database and uploaded files. DPF/SCC for the transfer.",
     subprocessors_resend:
-      "Resend Inc. (USA) — delivery of transactional email (registration, password reset, partner invite, RSVP receipts). DPF/SCC for the transfer.",
+      "Resend Inc. (USA), delivery of transactional email (registration, password reset, partner invite, RSVP receipts). DPF/SCC for the transfer.",
     subprocessors_serpapi:
-      "SerpApi (USA) — Google Flights queries for the honeymoon planner widget. Receives only the route and date you enter; no personal data.",
+      "SerpApi (USA), Google Flights queries for the honeymoon planner widget. Receives only the route and date you enter; no personal data.",
     subprocessors_osm:
-      "OpenStreetMap Foundation (United Kingdom) — the Nominatim service powers location autocomplete. Sees only the typed query and the usual web-server logs (IP, User-Agent).",
+      "OpenStreetMap Foundation (United Kingdom), the Nominatim service powers location autocomplete. Sees only the typed query and the usual web-server logs (IP, User-Agent).",
     subprocessors_pinterest:
-      "Pinterest (USA) — the moodboard widget reads a public Pinterest board's RSS feed server-side. Receives only the Pinterest URL you provide.",
+      "Pinterest (USA), the moodboard widget reads a public Pinterest board's RSS feed server-side. Receives only the Pinterest URL you provide.",
     subprocessors_sentry:
-      "Sentry (USA) — application error reporting. Not yet enabled in production; if we turn it on, we'll update this page. It would receive pseudonymised error traces without direct identifiers.",
+      "Sentry (USA), application error reporting. Not yet enabled in production; if we turn it on, we'll update this page. It would receive pseudonymised error traces without direct identifiers.",
     cookies_title: "Cookies and local storage",
     cookies_intro:
       "Weddly does not set any tracking cookies. The only browser storage we use lives in localStorage on your device, so it never reaches a third party:",
-    cookies_locale: "weddly.locale — remembers whether you prefer the Hungarian or English UI.",
+    cookies_locale: "weddly.locale, remembers whether you prefer the Hungarian or English UI.",
     cookies_verify_dismiss:
-      "weddly.verify_email_dismissed_until — silences the verify-your-email banner for 24 hours after you dismiss it.",
+      "weddly.verify_email_dismissed_until, silences the verify-your-email banner for 24 hours after you dismiss it.",
     cookies_session:
-      "Session token — a signed random id (no JWT) that keeps you logged in. Stored in localStorage; cleared when you sign out.",
+      "Session token, a signed random id (no JWT) that keeps you logged in. Stored in localStorage; cleared when you sign out.",
     cookies_saved_suppliers:
-      "weddly.suppliers.saved — local-only list of suppliers you starred in the directory.",
+      "weddly.suppliers.saved, local-only list of suppliers you starred in the directory.",
     cookies_onboarding_draft:
-      "weddly.onboarding_draft — saves your onboarding answers between steps so a refresh doesn't lose them.",
+      "weddly.onboarding_draft, saves your onboarding answers between steps so a refresh doesn't lose them.",
     third_parties_title: "Third parties we share data with",
     third_parties_body:
       'The full list is in the "Subprocessors" section above. We do not share your data with advertisers, data brokers or social platforms.',
     email_compliance_title: "Email communications (Hungarian Grtv. §6, ePrivacy)",
     email_compliance_body:
-      "We send two kinds of email. (1) Transactional: account verification, password reset, partner invite, email-change confirmation, RSVP receipts to guests, and reminders about your own upcoming wedding — sent under the contract-performance basis (Art. 6(1)(b) GDPR) and not unsubscribable while your account is active. (2) Lifecycle / product newsletter: currently none during the beta. If we introduce them later (e.g. feature announcements, tips), they will only go to recipients who explicitly opt in, in compliance with §6 of the Hungarian Grtv. Every such email will carry a one-click unsubscribe link. The sender is always identifiable (operator name + link to the imprint in the footer).",
+      "We send two kinds of email. (1) Transactional: account verification, password reset, partner invite, email-change confirmation, RSVP receipts to guests, and reminders about your own upcoming wedding, sent under the contract-performance basis (Art. 6(1)(b) GDPR) and not unsubscribable while your account is active. (2) Lifecycle / product newsletter: currently none during the beta. If we introduce them later (e.g. feature announcements, tips), they will only go to recipients who explicitly opt in, in compliance with §6 of the Hungarian Grtv. Every such email will carry a one-click unsubscribe link. The sender is always identifiable (operator name + link to the imprint in the footer).",
     automated_decisions_title: "Automated decision-making (GDPR Art. 22)",
     automated_decisions_body:
-      "Weddly does not take decisions based solely on automated processing that would produce legal effects on you or similarly significantly affect you. The supplier ranking, the cost-planning estimator, the seating helper — they're all algorithms, but each is a suggestion you accept or override.",
+      "Weddly does not take decisions based solely on automated processing that would produce legal effects on you or similarly significantly affect you. The supplier ranking, the cost-planning estimator, the seating helper, they're all algorithms, but each is a suggestion you accept or override.",
     complaint_authority_title: "Lodging a complaint with a supervisory authority (GDPR Art. 77)",
     complaint_authority_body:
-      "If you believe we are processing your data unlawfully and contacting us hasn't resolved the issue, you can lodge a complaint with the Hungarian Data Protection Authority (NAIH — Falk Miksa utca 9-11., 1055 Budapest; ugyfelszolgalat@naih.hu; naih.hu). You may also seek a judicial remedy at the court of your habitual residence.",
+      "If you believe we are processing your data unlawfully and contacting us hasn't resolved the issue, you can lodge a complaint with the Hungarian Data Protection Authority (NAIH, Falk Miksa utca 9-11., 1055 Budapest; ugyfelszolgalat@naih.hu; naih.hu). You may also seek a judicial remedy at the court of your habitual residence.",
     changes_title: "Changes to this policy",
     changes_body:
       "If we materially change how we handle your data, we'll email you and update the date at the top of this page. Minor wording fixes are made silently.",
@@ -5270,7 +5270,7 @@ const en: LocaleMessages = {
     def_data_subject:
       "Data subject: the natural person whose personal data the Controller processes.",
     def_processing:
-      "Processing: any operation performed on personal data — collection, recording, organisation, storage, use, disclosure, erasure or destruction.",
+      "Processing: any operation performed on personal data, collection, recording, organisation, storage, use, disclosure, erasure or destruction.",
     def_processor:
       "Processor: a natural or legal person that processes personal data on behalf of the Controller, acting only on the Controller's instructions.",
     def_consent:
@@ -5279,14 +5279,14 @@ const en: LocaleMessages = {
     principles_intro:
       "The Controller applies the following principles to every processing activity:",
     principles_lawfulness: "Lawfulness, fairness and transparency",
-    principles_purpose: "Purpose limitation — data is used only for the purposes stated here",
-    principles_minimisation: "Data minimisation — only data necessary for the purpose is collected",
-    principles_accuracy: "Accuracy — data is kept up to date where necessary",
-    principles_storage: "Storage limitation — data is not kept longer than necessary",
+    principles_purpose: "Purpose limitation, data is used only for the purposes stated here",
+    principles_minimisation: "Data minimisation, only data necessary for the purpose is collected",
+    principles_accuracy: "Accuracy, data is kept up to date where necessary",
+    principles_storage: "Storage limitation, data is not kept longer than necessary",
     principles_integrity:
-      "Integrity and confidentiality — appropriate technical and organisational safeguards",
+      "Integrity and confidentiality, appropriate technical and organisational safeguards",
     principles_accountability:
-      "Accountability — the Controller is responsible for, and able to demonstrate, compliance",
+      "Accountability, the Controller is responsible for, and able to demonstrate, compliance",
     proc_activities_title: "Processing activities",
     proc_tech_title: "Technical data from website visits",
     proc_tech_data:
@@ -5294,7 +5294,7 @@ const en: LocaleMessages = {
     proc_tech_purpose:
       "Purpose: secure and proper operation of the website and application; troubleshooting; prevention of abuse.",
     proc_tech_basis:
-      "Legal basis: GDPR Art. 6(1)(f) — the Controller's legitimate interest in operating the service securely and free of abuse.",
+      "Legal basis: GDPR Art. 6(1)(f), the Controller's legitimate interest in operating the service securely and free of abuse.",
     proc_tech_retention:
       "Retention: server logs are kept for 30 days; in the event of a security incident or legal dispute, until the matter is resolved.",
     proc_contact_title: "Contact and enquiries",
@@ -5303,44 +5303,44 @@ const en: LocaleMessages = {
     proc_contact_purpose:
       "Purpose: responding to enquiries; customer support; handling complaints and questions.",
     proc_contact_basis:
-      "Legal basis: GDPR Art. 6(1)(b) (contract preparation), (f) (legitimate interest) or (a) (consent) — depending on the nature of the enquiry.",
+      "Legal basis: GDPR Art. 6(1)(b) (contract preparation), (f) (legitimate interest) or (a) (consent), depending on the nature of the enquiry.",
     proc_contact_retention:
       "Retention: 12 months after the enquiry is closed; for legal claims, until the limitation period expires.",
     proc_account_title: "User account registration and management",
     proc_account_data:
-      "Data collected: email address, password (Argon2id hash — the original password is never stored), full name, (optionally) partner's name, locale preference, registration date, account status.",
+      "Data collected: email address, password (Argon2id hash, the original password is never stored), full name, (optionally) partner's name, locale preference, registration date, account status.",
     proc_account_purpose:
       "Purpose: user authentication, login management, and delivery of account-linked features.",
     proc_account_basis:
-      "Legal basis: GDPR Art. 6(1)(b) — performance of the user service contract.",
+      "Legal basis: GDPR Art. 6(1)(b), performance of the user service contract.",
     proc_account_retention:
       "Retention: while the account is active; upon deletion a 30-day grace period applies, after which data is permanently and irreversibly erased.",
-    proc_workspace_title: "Wedding workspace — planning and organising data",
+    proc_workspace_title: "Wedding workspace, planning and organising data",
     proc_workspace_data:
-      "Data collected: wedding date, venue, guest list (names, email, phone, dietary requirements), seating layout, budget, task list, uploaded documents, supplier notes — all content you enter.",
+      "Data collected: wedding date, venue, guest list (names, email, phone, dietary requirements), seating layout, budget, task list, uploaded documents, supplier notes, all content you enter.",
     proc_workspace_purpose:
       "Purpose: delivery of the wedding-planner application; data is processed exclusively within the relevant workspace.",
     proc_workspace_basis:
-      "Legal basis: GDPR Art. 6(1)(b) — performance of the user service contract.",
+      "Legal basis: GDPR Art. 6(1)(b), performance of the user service contract.",
     proc_workspace_retention:
       "Retention: while the workspace is active; upon suspension a 30-day grace period applies, after which data is permanently erased.",
     proc_newsletter_title: "Newsletter and lifecycle communications",
     proc_newsletter_data:
       "Data collected: email address, subscription timestamp, record of consent (when and how given).",
     proc_newsletter_purpose:
-      "Purpose: sending product news, development updates, wedding inspiration and promotions — only on the basis of explicit consent.",
+      "Purpose: sending product news, development updates, wedding inspiration and promotions, only on the basis of explicit consent.",
     proc_newsletter_basis:
-      "Legal basis: GDPR Art. 6(1)(a) — the data subject's freely given and withdrawable consent.",
+      "Legal basis: GDPR Art. 6(1)(a), the data subject's freely given and withdrawable consent.",
     proc_newsletter_retention: "Retention: until unsubscription (i.e. withdrawal of consent).",
     proc_newsletter_unsubscribe:
       "Unsubscribing: at any time, without giving a reason, via the unsubscribe link in the email or by writing to hello@tryweddly.com. Withdrawal does not affect the lawfulness of processing carried out before the withdrawal.",
     proc_billing_title: "Billing and subscriptions",
     proc_billing_data:
-      "Data collected: email address, subscription type and status, payment timestamps, Stripe customer ID. Card data is processed exclusively by Stripe, Inc. — Weddly never accesses card details.",
+      "Data collected: email address, subscription type and status, payment timestamps, Stripe customer ID. Card data is processed exclusively by Stripe, Inc. · Weddly never accesses card details.",
     proc_billing_purpose:
       "Purpose: subscription management, invoice issuance, fulfilment of payment and accounting obligations.",
     proc_billing_basis:
-      "Legal basis: GDPR Art. 6(1)(b) (contract performance) and Art. 6(1)(c) (legal obligation — accounting retention under the Hungarian Accounting Act §169).",
+      "Legal basis: GDPR Art. 6(1)(b) (contract performance) and Art. 6(1)(c) (legal obligation, accounting retention under the Hungarian Accounting Act §169).",
     proc_billing_retention:
       "Retention: 8 years from the end of the subscription (statutory accounting obligation).",
     proc_supplier_title: "Service provider (vendor) profiles",
@@ -5349,31 +5349,31 @@ const en: LocaleMessages = {
     proc_supplier_purpose:
       "Purpose: displaying the supplier profile in the directory, enabling enquiry connections, fulfilling the partner agreement.",
     proc_supplier_basis:
-      "Legal basis: GDPR Art. 6(1)(b) (contract performance), Art. 6(1)(c) (legal obligation, particularly invoicing), Art. 6(1)(f) (legitimate interest — business contact management and records).",
+      "Legal basis: GDPR Art. 6(1)(b) (contract performance), Art. 6(1)(c) (legal obligation, particularly invoicing), Art. 6(1)(f) (legitimate interest, business contact management and records).",
     proc_supplier_retention:
       "Retention: while the partner relationship is active; thereafter until the applicable statutory accounting period expires.",
     vendor_transfer_title: "Data transfer to wedding service providers",
     vendor_transfer_body:
-      "If you initiate contact with a specific partner from the supplier directory (e.g. send a quote request), the Controller may share the contact details you provided (name, email address, phone number) with that partner for the purpose of fulfilling your request. The legal basis is GDPR Art. 6(1)(b) — preparation of a contract at the data subject's request. Only the minimum data necessary for fulfilment is transferred.",
+      "If you initiate contact with a specific partner from the supplier directory (e.g. send a quote request), the Controller may share the contact details you provided (name, email address, phone number) with that partner for the purpose of fulfilling your request. The legal basis is GDPR Art. 6(1)(b), preparation of a contract at the data subject's request. Only the minimum data necessary for fulfilment is transferred.",
     cookies_necessary_label: "Necessary storage (always active)",
     cookies_functional_label: "Functional storage (remembering preferences)",
     en_section_label: "English",
   },
   terms: {
-    seo_title: "Terms of service — Weddly",
+    seo_title: "Terms of service · Weddly",
     seo_description:
       "The short open-beta terms of service for Weddly: free to use, no SLA, hosted in Hungary.",
     page_title: "Terms of service",
     last_updated_label: "Last updated",
     last_updated_date: "2026-05-18",
     intro:
-      "Weddly is an open beta. These terms are deliberately short — once we leave beta we'll publish a fuller version and email everyone first.",
+      "Weddly is an open beta. These terms are deliberately short, once we leave beta we'll publish a fuller version and email everyone first.",
     beta_title: "Open beta",
     beta_body:
-      "Weddly is free to use during the open beta. We don't promise any specific uptime, response time or feature stability — things may change, break, or temporarily disappear while we iterate. We'll do our best to give notice when something material changes.",
+      "Weddly is free to use during the open beta. We don't promise any specific uptime, response time or feature stability, things may change, break, or temporarily disappear while we iterate. We'll do our best to give notice when something material changes.",
     accuracy_title: "Your data, your responsibility",
     accuracy_body:
-      "You are responsible for the accuracy of the data you enter — guest names, contact details, budget figures, RSVP responses. We don't review or vet what you write, and we won't be liable for decisions made on the basis of typos or stale information.",
+      "You are responsible for the accuracy of the data you enter, guest names, contact details, budget figures, RSVP responses. We don't review or vet what you write, and we won't be liable for decisions made on the basis of typos or stale information.",
     acceptable_use_title: "What you may not do",
     acceptable_use_intro:
       "Weddly is built for wedding planning. The following uses are NOT permitted:",
@@ -5393,21 +5393,21 @@ const en: LocaleMessages = {
       "You warrant that everything you submit (a) is yours or you have permission to publish it, (b) does not infringe any third-party right (copyright, trademark, privacy, confidentiality), and (c) complies with the acceptable-use rules above. If any of those turn out not to hold, we may remove the content and, for serious or repeated violations, suspend or delete your account.",
     dsa_title: "Notice and action (EU Digital Services Act)",
     dsa_body:
-      "Regulation (EU) 2022/2065 (DSA) requires every hosting provider to operate an easy-to-use notice mechanism for illegal content. If you believe content published on Weddly (e.g. a community supplier listing) is unlawful, email dsa@weddly.xyz — or, if that address isn't live yet, hello@tryweddly.com / andor.csikasz@gmail.com — including: (1) the URL or other unambiguous locator of the content; (2) why you believe it is illegal; (3) the notifier's name and email; (4) a good-faith statement that the notice is accurate. We review every notice without undue delay and, where warranted, remove or disable access to the content; we notify both the notifier and the uploader of the decision and the reasons. Internal complaints about our decisions can be sent to the same address.",
+      "Regulation (EU) 2022/2065 (DSA) requires every hosting provider to operate an easy-to-use notice mechanism for illegal content. If you believe content published on Weddly (e.g. a community supplier listing) is unlawful, email dsa@weddly.xyz, or, if that address isn't live yet, hello@tryweddly.com / andor.csikasz@gmail.com, including: (1) the URL or other unambiguous locator of the content; (2) why you believe it is illegal; (3) the notifier's name and email; (4) a good-faith statement that the notice is accurate. We review every notice without undue delay and, where warranted, remove or disable access to the content; we notify both the notifier and the uploader of the decision and the reasons. Internal complaints about our decisions can be sent to the same address.",
     dsa_contact:
-      "Single Point of Contact for authorities and users under DSA Art. 11 and 12: Andor Csíkász — andor.csikasz@gmail.com. Languages: Hungarian and English.",
+      "Single Point of Contact for authorities and users under DSA Art. 11 and 12: Andor Csíkász, andor.csikasz@gmail.com. Languages: Hungarian and English.",
     directory_title: "Supplier directory",
     directory_body:
-      "The supplier directory is free to browse during the open beta. You may not scrape, resell or republish it — it is a curated collection protected by copyright. After the beta ends we will introduce a paid model for suppliers (subscription and/or featured placement); the detailed terms are set out in the Vendor Subscription Terms (ÁSZF), which are currently published as a draft. Before any fees take effect, every waitlisted supplier will receive a dedicated email with the final terms.",
+      "The supplier directory is free to browse during the open beta. You may not scrape, resell or republish it, it is a curated collection protected by copyright. After the beta ends we will introduce a paid model for suppliers (subscription and/or featured placement); the detailed terms are set out in the Vendor Subscription Terms (ÁSZF), which are currently published as a draft. Before any fees take effect, every waitlisted supplier will receive a dedicated email with the final terms.",
     liability_title: "Limitation of liability",
     liability_body:
-      'Weddly is provided during the beta on an "as is" basis, free of charge, without any express or implied warranty (in particular: fitness for a particular purpose, uninterrupted operation, error-free behaviour). We do not limit liability that cannot be excluded under Hungarian law (intentional acts, gross negligence, harm to life, bodily integrity or health). For every other type of damage — including indirect, consequential and loss-of-profit damages — our liability is limited to the narrowest extent permitted by Hungarian law. Your statutory rights as a consumer (e.g. warranty rights) are not affected by this limitation.',
+      'Weddly is provided during the beta on an "as is" basis, free of charge, without any express or implied warranty (in particular: fitness for a particular purpose, uninterrupted operation, error-free behaviour). We do not limit liability that cannot be excluded under Hungarian law (intentional acts, gross negligence, harm to life, bodily integrity or health). For every other type of damage, including indirect, consequential and loss-of-profit damages, our liability is limited to the narrowest extent permitted by Hungarian law. Your statutory rights as a consumer (e.g. warranty rights) are not affected by this limitation.',
     termination_title: "Ending the relationship",
     termination_body:
-      "You can delete your account at any time from the Profile page; the workspace is permanently deleted after a 30-day grace period (see the Privacy Policy). We may suspend or terminate an account if it materially breaches the acceptable-use rules above, or is used unlawfully or in a way that endangers other users. We tell you the reason by email and — unless a legal or regulatory obligation prevents it — give you reasonable time to export your data.",
+      "You can delete your account at any time from the Profile page; the workspace is permanently deleted after a 30-day grace period (see the Privacy Policy). We may suspend or terminate an account if it materially breaches the acceptable-use rules above, or is used unlawfully or in a way that endangers other users. We tell you the reason by email and, unless a legal or regulatory obligation prevents it, give you reasonable time to export your data.",
     changes_title: "Changes to these terms",
     changes_body:
-      "We update these terms from time to time. Minor wording fixes are made silently. For material changes (a new fee, a new processor, narrowing our obligations) we email you at least 14 days before the change takes effect and require you to accept the updated terms in-app — without acceptance, parts of the service won't remain accessible. When the open beta ends, every beta user will receive a separate email about the comprehensive rewrite.",
+      "We update these terms from time to time. Minor wording fixes are made silently. For material changes (a new fee, a new processor, narrowing our obligations) we email you at least 14 days before the change takes effect and require you to accept the updated terms in-app, without acceptance, parts of the service won't remain accessible. When the open beta ends, every beta user will receive a separate email about the comprehensive rewrite.",
     law_title: "Governing law",
     law_body:
       "These terms are governed by Hungarian law, together with EU data-protection and consumer-protection regulations (notably the GDPR, the DSA and EU 524/2013). We try to resolve any dispute by email first. If that fails, the court of competent jurisdiction in Hungary applies; your right to choose a forum under consumer-protection law is unaffected.",
@@ -5514,7 +5514,7 @@ const en: LocaleMessages = {
     en_section_label: "English",
   },
   imprint: {
-    seo_title: "Imprint — Weddly",
+    seo_title: "Imprint · Weddly",
     seo_description:
       "Mandatory operator disclosure for Weddly under §4 of the Hungarian Ektv. (Act CVIII of 2001 on Electronic Commerce).",
     page_title: "Imprint",
@@ -5534,18 +5534,18 @@ const en: LocaleMessages = {
     operator_email_value: "hello@tryweddly.com",
     controller_title: "Data controller",
     controller_body:
-      "The data controller within the meaning of the GDPR is the operator above — Andor Csíkász. Details of the processing activities are set out in the Privacy Policy.",
+      "The data controller within the meaning of the GDPR is the operator above, Andor Csíkász. Details of the processing activities are set out in the Privacy Policy.",
     hosting_title: "Hosting provider",
     hosting_body:
-      "The service is deployed on infrastructure provided by Railway Corp. (548 Market St PMB 78118, San Francisco, CA 94104, USA — railway.com). The hosting provider transmits the data we upload but does not access user content for its own purposes outside its platform.",
+      "The service is deployed on infrastructure provided by Railway Corp. (548 Market St PMB 78118, San Francisco, CA 94104, USA, railway.com). The hosting provider transmits the data we upload but does not access user content for its own purposes outside its platform.",
     complaints_title: "Complaints and remedies",
     complaints_body:
-      "Please contact us first at the email above — real people read it and we try to respond quickly. If you believe your personal data is being processed unlawfully, you may lodge a complaint with the Hungarian Data Protection Authority (NAIH — Falk Miksa utca 9-11., 1055 Budapest; ugyfelszolgalat@naih.hu; naih.hu) or seek a judicial remedy.",
+      "Please contact us first at the email above, real people read it and we try to respond quickly. If you believe your personal data is being processed unlawfully, you may lodge a complaint with the Hungarian Data Protection Authority (NAIH, Falk Miksa utca 9-11., 1055 Budapest; ugyfelszolgalat@naih.hu; naih.hu) or seek a judicial remedy.",
   },
   about: {
     seo_title: "About Weddly",
     seo_description:
-      "Weddly is a small Budapest-built tool to help couples plan their wedding together — calmly, in one place.",
+      "Weddly is a small Budapest-built tool to help couples plan their wedding together, calmly, in one place.",
     page_title: "About Weddly",
     last_updated_label: "Last updated",
     last_updated_date: "2026-05-18",
@@ -5670,10 +5670,10 @@ const en: LocaleMessages = {
     or_divider: "or",
     continue_with_google: "Continue with Google",
     wrong_account:
-      "You signed in with a different account — switch back to the original account, or sign out.",
+      "You signed in with a different account, switch back to the original account, or sign out.",
   },
   network: {
-    offline_banner: "You're offline — changes will save once you're back online.",
+    offline_banner: "You're offline, changes will save once you're back online.",
     request_failed: "The request didn't go through. Check your connection and try again.",
     request_timeout: "That took too long. Try again.",
     retry: "Retry",
@@ -5717,10 +5717,10 @@ const en: LocaleMessages = {
   tour: {
     dashboard_title: "Dashboard",
     dashboard_body:
-      "Your wedding at a glance — countdown, RSVP summary, budget snapshot and pending tasks, all in real time.",
+      "Your wedding at a glance, countdown, RSVP summary, budget snapshot and pending tasks, all in real time.",
     dashboard_p1_title: "Countdown & RSVP",
     dashboard_p1_body:
-      "The top card counts down to your wedding day and shows a live RSVP snapshot — confirmed, declined and still waiting.",
+      "The top card counts down to your wedding day and shows a live RSVP snapshot, confirmed, declined and still waiting.",
     dashboard_p2_title: "Budget snapshot",
     dashboard_p2_body:
       "Planned vs. actual spend at a glance, with a warning when you are trending over budget.",
@@ -5735,7 +5735,7 @@ const en: LocaleMessages = {
       "Add guests one by one or import hundreds from a CSV. Each guest belongs to a household for cleaner RSVP tracking.",
     guests_p2_title: "RSVP codes",
     guests_p2_body:
-      "Every household gets a unique code. Guests enter it on your wedding page to confirm — no account needed.",
+      "Every household gets a unique code. Guests enter it on your wedding page to confirm, no account needed.",
     guests_p3_title: "Meal preferences",
     guests_p3_body:
       "Set available meal options and let guests choose during RSVP. Filter by dietary tag when preparing the catering order.",
@@ -5749,10 +5749,10 @@ const en: LocaleMessages = {
       "Enter a planned amount per category and log actual payments as they arrive. The gap updates live so overspending is caught early.",
     budget_p2_title: "Categories",
     budget_p2_body:
-      "Venue, catering, photography — every spend is tagged to a category. Use the defaults or add your own.",
+      "Venue, catering, photography, every spend is tagged to a category. Use the defaults or add your own.",
     budget_p3_title: "Per-guest cost",
     budget_p3_body:
-      "Cost per guest is calculated automatically from actual spend and confirmed guest count — useful for setting the final budget ceiling.",
+      "Cost per guest is calculated automatically from actual spend and confirmed guest count, useful for setting the final budget ceiling.",
     vendors_title: "Suppliers",
     vendors_body:
       "Find vendors by category and city, manage contracts, payment schedules and contacts.",
@@ -5761,7 +5761,7 @@ const en: LocaleMessages = {
       "Browse vetted suppliers by category and city. Save favourites to your shortlist and compare them side by side.",
     vendors_p2_title: "Contracts & contacts",
     vendors_p2_body:
-      "Log the signed contract, contact name and notes for each booked vendor — everything in one place.",
+      "Log the signed contract, contact name and notes for each booked vendor, everything in one place.",
     vendors_p3_title: "Payment schedule",
     vendors_p3_body:
       "Track deposits and final payments with due dates per vendor. The budget section pulls these totals automatically.",
@@ -5773,7 +5773,7 @@ const en: LocaleMessages = {
       "Add tasks with due dates and assign them to you or your partner. Filter by status to see what is still open.",
     planning_p2_title: "Decisions",
     planning_p2_body:
-      "131 curated wedding decisions — venue style, vow writing, cake cutting — served as a guided deck so nothing slips through.",
+      "131 curated wedding decisions, venue style, vow writing, cake cutting, served as a guided deck so nothing slips through.",
     planning_p3_title: "Ideas",
     planning_p3_body:
       "A free-form notes pad for inspiration, links and anything that does not fit a task. Synced between both partners in real time.",
@@ -5782,13 +5782,13 @@ const en: LocaleMessages = {
       "Build your wedding-day run of show, then export it as a printable PDF in one click.",
     schedule_p1_title: "Run of show",
     schedule_p1_body:
-      "Build a minute-by-minute timeline for your wedding day — ceremony, cocktail hour, dinner, first dance — with notes for each block.",
+      "Build a minute-by-minute timeline for your wedding day, ceremony, cocktail hour, dinner, first dance, with notes for each block.",
     schedule_p2_title: "Vendor contacts",
     schedule_p2_body:
       "Attach a vendor contact to each time block so the coordinator can reach the right person without scrambling.",
     schedule_p3_title: "PDF export",
     schedule_p3_body:
-      "Export the full run of show as a clean PDF — one copy for the venue, one for the coordinator, one for yourselves.",
+      "Export the full run of show as a clean PDF, one copy for the venue, one for the coordinator, one for yourselves.",
     seating_title: "Seating",
     seating_body:
       "Drag tables and chairs onto a canvas, then export A4/A3 charts and place cards instantly.",
@@ -5806,7 +5806,7 @@ const en: LocaleMessages = {
       "Export the chart as A4 or A3 PDF in one click, plus individual place cards for every seated guest.",
     design_title: "Design",
     design_body:
-      "Curate your visual identity — fonts, colours, patterns and printable stationery templates.",
+      "Curate your visual identity, fonts, colours, patterns and printable stationery templates.",
     design_p1_title: "Style kit",
     design_p1_body:
       "Pick your wedding fonts, colour palette and stationery patterns. Every export inherits the kit automatically.",
@@ -5815,29 +5815,29 @@ const en: LocaleMessages = {
       "Ready-to-print invitations, thank-you cards and table numbers, styled to your kit. Download as print-ready PDF.",
     design_p3_title: "Design-aware PDFs",
     design_p3_body:
-      "Seating charts and place cards from the seating page pick up your style kit — no manual formatting needed.",
+      "Seating charts and place cards from the seating page pick up your style kit, no manual formatting needed.",
     timeline_title: "Timeline",
-    timeline_body: "Work in progress — a Gantt-style booking timeline is on its way.",
+    timeline_body: "Work in progress, a Gantt-style booking timeline is on its way.",
     logistics_title: "Logistics",
     logistics_body:
-      "Work in progress — accommodation and transfer assignment for your guests is coming soon.",
+      "Work in progress, accommodation and transfer assignment for your guests is coming soon.",
     moodboard_title: "Moodboard",
-    moodboard_body: "Work in progress — a visual inspiration board is on its way.",
+    moodboard_body: "Work in progress, a visual inspiration board is on its way.",
     honeymoon_title: "Honeymoon",
-    honeymoon_body: "Work in progress — honeymoon planning tools are coming soon.",
+    honeymoon_body: "Work in progress, honeymoon planning tools are coming soon.",
     media_title: "Photos",
-    media_body: "Work in progress — a shared photo gallery for after the big day is on its way.",
+    media_body: "Work in progress, a shared photo gallery for after the big day is on its way.",
     wishlist_title: "Wishlist",
-    wishlist_body: "Work in progress — a curated gift wishlist for your guests is coming soon.",
+    wishlist_body: "Work in progress, a curated gift wishlist for your guests is coming soon.",
     guest_page_title: "Guest page",
     guest_page_body:
-      "Your public wedding page with the date, venue and RSVP link — share it with everyone.",
+      "Your public wedding page with the date, venue and RSVP link, share it with everyone.",
     guest_page_p1_title: "Public wedding page",
     guest_page_p1_body:
       "A single shareable URL with your names, date, venue and a hero photo. Add a custom intro message and RSVP deadline.",
     guest_page_p2_title: "RSVP flow",
     guest_page_p2_body:
-      "Guests enter their unique code and confirm attendance, meal choice and dietary needs — all without creating an account.",
+      "Guests enter their unique code and confirm attendance, meal choice and dietary needs, all without creating an account.",
     guest_page_p3_title: "Post-RSVP portal",
     guest_page_p3_body:
       "After confirming, guests unlock a private page with the schedule, accommodation options and your curated wishlist.",
@@ -5867,33 +5867,33 @@ const en: LocaleMessages = {
       page_eyebrow: "Tools · Budget calculator",
       page_h1: "Wedding budget calculator",
       page_intro:
-        "How much does a wedding cost? Drag the guest count and the planned budget — every category recalculates live against Weddly's defaults for an 80–100 guest wedding. No signup, no email; if you like what you see, one click carries the numbers into your own workspace.",
+        "How much does a wedding cost? Drag the guest count and the planned budget, every category recalculates live against Weddly's defaults for an 80–100 guest wedding. No signup, no email; if you like what you see, one click carries the numbers into your own workspace.",
       averages_h2: "How much does a wedding cost?",
       averages_body:
         "An 80–100 guest wedding typically spreads its spend the same way regardless of country: catering and drinks take roughly a third of the total, the venue 15–20%, photography and video 10–15%, decor and flowers 8–10%, with the remaining 20–25% split between attire, music, ceremony and stationery. Major-city venues run 15–25% above the regional average; winter and early-autumn weddings come in 5–10% under the June-to-September peak.",
       averages_source_note:
-        "Source: 2025–2026 wedding supplier rate cards and couple interviews. The calculator runs on your own numbers — the averages are a starting point, not a promise.",
+        "Source: 2025–2026 wedding supplier rate cards and couple interviews. The calculator runs on your own numbers, the averages are a starting point, not a promise.",
       ratios_h2: "How much to put where",
       ratios_body:
         "The classic split: guest-facing spend (catering + drinks + venue) ≈ 55%, visual record (photo, video, decor, flowers, stationery) ≈ 25%, couple-facing spend (attire, hair, makeup, rings) ≈ 8%, music and programme ≈ 7%, ceremony and officiating ≈ 5%. The remaining 3% is a contingency: it covers late guest-count changes or menu swaps without forcing painful trade-offs.",
       tips_h2: "Reading the numbers",
       tips_li_1:
-        "Averages aren't promises. Your numbers are the ones that land in Weddly — every category is editable, and every change goes into an audit log so you can always see who changed what and why.",
+        "Averages aren't promises. Your numbers are the ones that land in Weddly · every category is editable, and every change goes into an audit log so you can always see who changed what and why.",
       tips_li_2:
         "Guest count is the one lever that moves everything else. An extra 20 guests bumps catering + venue + decor together by ~12–15%. That's why the calculator's guest slider re-cooks the whole budget on every drag.",
       tips_li_3:
-        "The 3% contingency isn't luxury. About 70% of weddings have at least one major line item move in the last six weeks — keeping a buffer means you don't make those decisions under pressure.",
+        "The 3% contingency isn't luxury. About 70% of weddings have at least one major line item move in the last six weeks, keeping a buffer means you don't make those decisions under pressure.",
       cta_h2: "Continue in Weddly",
       cta_body:
-        "The calculator's numbers carry into your workspace — per-category editing, real-time sync with your partner, full audit log of every change. Free throughout the open beta.",
+        "The calculator's numbers carry into your workspace, per-category editing, real-time sync with your partner, full audit log of every change. Free throughout the open beta.",
       cta_button: "Open your workspace",
       faq_h2: "Calculator questions",
       faq_q1: "How much does an average wedding cost?",
       faq_a1:
-        "An 80–100 guest wedding follows the same proportional split regardless of country — catering and venue dominate, with 20–25% of the remaining budget covering attire, music, ceremony and stationery. The calculator lets you see how the budget splits for any guest count + total in your own currency.",
+        "An 80–100 guest wedding follows the same proportional split regardless of country, catering and venue dominate, with 20–25% of the remaining budget covering attire, music, ceremony and stationery. The calculator lets you see how the budget splits for any guest count + total in your own currency.",
       faq_q2: "How much per guest?",
       faq_a2:
-        "Catering, drinks, decor and the guest-share of the venue typically run together as the largest per-guest cost. The calculator computes the exact per-guest figure for the total you set — work backwards from the per-guest you can afford if that frames the budget better for you.",
+        "Catering, drinks, decor and the guest-share of the venue typically run together as the largest per-guest cost. The calculator computes the exact per-guest figure for the total you set, work backwards from the per-guest you can afford if that frames the budget better for you.",
       faq_q3: "How is a wedding budget broken down by category?",
       faq_a3:
         "Hungarian-typical split: ~35% catering and drinks, ~18% venue, ~13% photo / video, ~9% decor and flowers, ~8% attire and beauty, ~7% music / DJ, ~5% ceremony, ~2% stationery, ~3% contingency. The calculator visualises this live against your numbers.",
@@ -5905,7 +5905,7 @@ const en: LocaleMessages = {
       page_eyebrow: "Tools · Wedding countdown",
       page_h1: "Wedding countdown",
       page_intro:
-        "How many days until your wedding? Pick a date and see months, weeks and days remaining — live. Milestones included: what to plan 12, 9, 6, 3, 1 month and 1 week out.",
+        "How many days until your wedding? Pick a date and see months, weeks and days remaining, live. Milestones included: what to plan 12, 9, 6, 3, 1 month and 1 week out.",
       input_label: "Wedding date",
       result_days_unit: "days",
       result_days_unit_one: "day",
@@ -5915,7 +5915,7 @@ const en: LocaleMessages = {
       breakdown_months: "months",
       breakdown_weeks: "weeks",
       breakdown_days: "days",
-      milestones_h2: "Milestones — what to plan when",
+      milestones_h2: "Milestones, what to plan when",
       milestone_12m:
         "12 months out: book the venue, lock the date, draft a first guest count, set the overall budget ceiling.",
       milestone_9m:
@@ -5935,7 +5935,7 @@ const en: LocaleMessages = {
       faq_h2: "Common questions",
       faq_q1: "How early should we start wedding planning?",
       faq_a1:
-        "Typical: 12–18 months out. Venue and photographer book earliest — for popular dates, 18 months is already tight in Hungary.",
+        "Typical: 12–18 months out. Venue and photographer book earliest, for popular dates, 18 months is already tight in Hungary.",
       faq_q2: "How long before the wedding should invitations go out?",
       faq_a2:
         "Classic: 8–12 weeks before the wedding, with an RSVP deadline ~4 weeks out. For out-of-town guests, send save-the-dates 4–6 weeks earlier.",
@@ -5947,7 +5947,7 @@ const en: LocaleMessages = {
       page_eyebrow: "Tools · Guest list template",
       page_h1: "Wedding guest list template",
       page_intro:
-        "A downloadable guest-list CSV template: first name, last name, email, phone, household, dietary needs, plus-one, RSVP status. Fill it in Excel or Google Sheets — or import directly into Weddly so both of you see the same list, live.",
+        "A downloadable guest-list CSV template: first name, last name, email, phone, household, dietary needs, plus-one, RSVP status. Fill it in Excel or Google Sheets, or import directly into Weddly so both of you see the same list, live.",
       preview_h2: "What's in the template",
       preview_caption: "Wedding-tuned columns, ready to import into Weddly.",
       col_first_name: "First name",
@@ -5960,17 +5960,17 @@ const en: LocaleMessages = {
       col_status: "RSVP status",
       download_h2: "Download the template",
       download_body:
-        "A CSV file, UTF-8, comma-separated. Opens in Excel, Google Sheets or Numbers — or import it straight into Weddly after signup.",
+        "A CSV file, UTF-8, comma-separated. Opens in Excel, Google Sheets or Numbers, or import it straight into Weddly after signup.",
       download_csv_btn: "Download guest-list CSV",
       download_csv_hint:
-        "Includes 8 example rows so you can see the format — replace them with your own data.",
+        "Includes 8 example rows so you can see the format, replace them with your own data.",
       organization_h2: "How to organize the list",
       organization_li_1:
-        "Group by household, not by individual. One invitation goes to one household, and the household RSVPs together — way less chaos.",
+        "Group by household, not by individual. One invitation goes to one household, and the household RSVPs together, way less chaos.",
       organization_li_2:
         "Keep dietary info in its own column (vegan / vegetarian / gluten-free / lactose-free / other). It's the field caterers ask for most often.",
       organization_li_3:
-        "Only put a name in the plus-one column if you know who it is — otherwise leave it as “TBA”. Floating plus-ones cause catering headaches.",
+        "Only put a name in the plus-one column if you know who it is, otherwise leave it as “TBA”. Floating plus-ones cause catering headaches.",
       cta_h2: "Import into Weddly",
       cta_body:
         "Weddly imports the CSV, auto-builds households out of it, and gives every guest a unique RSVP link. Guests answer on their phone; you watch the status list update.",
@@ -5978,7 +5978,7 @@ const en: LocaleMessages = {
       faq_h2: "Guest list questions",
       faq_q1: "How many guests should we invite?",
       faq_a1:
-        "Hungarian typical: 80–120 guests. Headcount drives venue, catering and ~55% of the total budget — pin the guest count before pinning the budget. The Weddly budget calculator shows the impact live.",
+        "Hungarian typical: 80–120 guests. Headcount drives venue, catering and ~55% of the total budget, pin the guest count before pinning the budget. The Weddly budget calculator shows the impact live.",
       faq_q2: "Who NOT to invite?",
       faq_a2:
         "No mandatory column. A simple rule: if you haven't seen them in 2+ years and don't actively want them on the big day, skip. Obligation invites are the most common source of stress.",
@@ -5990,31 +5990,31 @@ const en: LocaleMessages = {
       page_eyebrow: "Tools · Seating chart maker",
       page_h1: "Wedding seating chart maker",
       page_intro:
-        "A canvas, tables, guests — drag guests onto tables and Weddly exports a printable seating chart at A4, A6 (place cards) and A3 (entrance display) sizes. Goes straight to the printer at exact mm. Free during the open beta.",
+        "A canvas, tables, guests, drag guests onto tables and Weddly exports a printable seating chart at A4, A6 (place cards) and A3 (entrance display) sizes. Goes straight to the printer at exact mm. Free during the open beta.",
       what_h2: "What you get",
       what_body:
-        "An interactive canvas where you place tables (round, rectangular, head table) and drag guests from your list to seats. The canvas flags conflicts — if two guests can't stand each other, or if a round table is exceeding sensible capacity.",
+        "An interactive canvas where you place tables (round, rectangular, head table) and drag guests from your list to seats. The canvas flags conflicts, if two guests can't stand each other, or if a round table is exceeding sensible capacity.",
       print_h2: "Print sizes",
       print_body:
-        "Every chart exports to PDF in three sizes at exact mm — your print shop can run it without retouching:",
+        "Every chart exports to PDF in three sizes at exact mm, your print shop can run it without retouching:",
       print_li_a4:
-        "A4 (210 × 297 mm) — compact overview for the couple and the coordinator. Fits the whole room on one page.",
+        "A4 (210 × 297 mm), compact overview for the couple and the coordinator. Fits the whole room on one page.",
       print_li_a6:
-        "A6 (105 × 148 mm) — place cards. One card per guest, with surname and table number.",
+        "A6 (105 × 148 mm), place cards. One card per guest, with surname and table number.",
       print_li_a3:
-        "A3 (297 × 420 mm) — the entrance display. The big board guests check on arrival to find their table.",
-      etiquette_h2: "Seating etiquette — the basics",
+        "A3 (297 × 420 mm), the entrance display. The big board guests check on arrival to find their table.",
+      etiquette_h2: "Seating etiquette, the basics",
       etiquette_li_1:
         "Head table: couple in the middle, witnesses and parents next to them. Classic size: 6–10 people. Place it along the long axis of the room so everyone has a clear sightline.",
       etiquette_li_2:
         "Generations: older guests further from the dance floor, closer to the exits. Younger guests closer to the music. Not a rule, just kind.",
       etiquette_li_3:
-        "Conflicts: if you know two guests genuinely don't get along (divorce, family rift), don't pretend otherwise. Different tables — Weddly's conflict flag is built for this.",
+        "Conflicts: if you know two guests genuinely don't get along (divorce, family rift), don't pretend otherwise. Different tables · Weddly's conflict flag is built for this.",
       etiquette_li_4:
-        "Kids: under 8, with parents. 8+, often a separate kids' table with activities and a tailored menu — much more relaxed than mixed adult tables.",
+        "Kids: under 8, with parents. 8+, often a separate kids' table with activities and a tailored menu, much more relaxed than mixed adult tables.",
       cta_h2: "Try the canvas",
       cta_body:
-        "The full seating canvas lives in your workspace. After signup you can import your guest list with a click and start planning — both of you see the same canvas, in real time.",
+        "The full seating canvas lives in your workspace. After signup you can import your guest list with a click and start planning, both of you see the same canvas, in real time.",
       cta_button: "Open your workspace",
       faq_h2: "Seating chart questions",
       faq_q1: "How many guests per table?",
@@ -6029,7 +6029,7 @@ const en: LocaleMessages = {
     },
     rsvp_generator: {
       page_eyebrow: "Tools · RSVP wording generator",
-      page_h1: "Wedding RSVP wording — generator",
+      page_h1: "Wedding RSVP wording, generator",
       page_intro:
         "Fill in your names, date, venue and RSVP deadline; we generate ready-to-use wording in three styles: formal, casual and poetic. Copy with one click and paste into your invitation or your Weddly RSVP page.",
       form_h2: "Your details",
@@ -6050,15 +6050,15 @@ const en: LocaleMessages = {
       output_copied: "Copied!",
       cta_h2: "Give every guest their own RSVP link",
       cta_body:
-        "Static wording is a good start — but Weddly gives every guest their own RSVP link with name pre-filled, dietary options, plus-one and allergy fields. Guests reply on their phone in a minute; you watch the list fill in.",
+        "Static wording is a good start, but Weddly gives every guest their own RSVP link with name pre-filled, dietary options, plus-one and allergy fields. Guests reply on their phone in a minute; you watch the list fill in.",
       cta_button: "Open your workspace",
       faq_h2: "RSVP questions",
       faq_q1: "What does RSVP mean?",
       faq_a1:
-        "RSVP comes from the French “Répondez s'il vous plaît” — “please respond”. In a wedding context: please let us know whether you can attend. Classic: collect RSVPs 3–4 weeks before the wedding.",
+        "RSVP comes from the French “Répondez s'il vous plaît”, “please respond”. In a wedding context: please let us know whether you can attend. Classic: collect RSVPs 3–4 weeks before the wedding.",
       faq_q2: "When should we send the RSVP request?",
       faq_a2:
-        "The RSVP request goes with the invitation — typically 8–12 weeks out. RSVP deadline: ~4 weeks before the wedding so you can lock final headcount with the venue and caterer.",
+        "The RSVP request goes with the invitation, typically 8–12 weeks out. RSVP deadline: ~4 weeks before the wedding so you can lock final headcount with the venue and caterer.",
       faq_q3: "What should the RSVP wording include?",
       faq_a3:
         "Minimum: your names, the wedding date, venue, RSVP deadline, and one contact channel (email / phone / link). Helpful extras: a dietary question, a plus-one field, an allergy line. Weddly's RSVP page covers all of these via a single link.",
@@ -6257,13 +6257,13 @@ const en: LocaleMessages = {
     success_explore: "Explore Weddly",
     benefit_1_title: "Visibility with planning couples",
     benefit_1_body:
-      "Couples find you directly inside their planning workspace — no ad spend needed.",
+      "Couples find you directly inside their planning workspace, no ad spend needed.",
     benefit_2_title: "Your own planner workspace",
     benefit_2_body:
-      "One surface for multiple clients: tasks, guest list, seating, documents — always organised.",
+      "One surface for multiple clients: tasks, guest list, seating, documents, always organised.",
     benefit_3_title: "Deadlines and tasks",
     benefit_3_body:
-      "Each couple stays separate, but you manage all tasks from one view — no deadline slips through.",
+      "Each couple stays separate, but you manage all tasks from one view, no deadline slips through.",
     err_full_name: "Please enter your name.",
     err_email: "Please enter a valid email address.",
     err_phone: "Please enter your phone number.",
@@ -6278,7 +6278,7 @@ const en: LocaleMessages = {
     feature_tasks_name: "Tasks & deadlines",
     feature_tasks_desc: "Per-couple task boards.",
     feature_docs_name: "Documents",
-    feature_docs_desc: "Contracts, proposals, run sheets — in one place.",
+    feature_docs_desc: "Contracts, proposals, run sheets, in one place.",
     beta_badge: "25 spots",
     beta_eyebrow: "Beta programme",
     beta_title: "Join the first 25 planners",
@@ -6423,7 +6423,7 @@ const en: LocaleMessages = {
     topbar_back_to_landing: "Back to website",
     topbar_feedback: "Send feedback",
     rail_today_title: "Today",
-    rail_today_empty: "Nothing due today — enjoy it.",
+    rail_today_empty: "Nothing due today, enjoy it.",
     rail_urgent_title: "Attention",
     rail_all_good: "All clear",
     rail_more_overdue: "...and {{n}} more overdue",
@@ -6465,7 +6465,7 @@ const en: LocaleMessages = {
     step_label_package: "Package",
     step_label_client: "Client",
     step1_title: "Welcome, {{name}}!",
-    step1_body: "Set up your profile in a few steps — under 2 minutes and you're ready.",
+    step1_body: "Set up your profile in a few steps, under 2 minutes and you're ready.",
     step1_cta: "Get started",
     step2_title: "Create your profile",
     step2_body: "This information will be visible to your clients.",

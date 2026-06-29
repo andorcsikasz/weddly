@@ -187,10 +187,10 @@ export default function AdminEmailListPage() {
                       <Pill tone={pill.tone}>{t(pill.labelKey)}</Pill>
                     </td>
                     <td className="px-4 py-3 text-neutral-700 dark:text-umber-200">
-                      {entry.name ?? <span className="text-neutral-400">—</span>}
+                      {entry.name ?? <span className="text-neutral-400">-</span>}
                     </td>
                     <td className="px-4 py-3 text-neutral-500 dark:text-umber-400">
-                      {entry.meta ?? <span className="text-neutral-300">—</span>}
+                      {entry.meta ?? <span className="text-neutral-300">-</span>}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-neutral-500 dark:text-umber-400">
                       {formatDate(entry.added_at, locale)}

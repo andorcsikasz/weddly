@@ -99,7 +99,7 @@ export const TASK_TEMPLATE_GROUPS: {
   },
 ];
 
-/** Backwards-compatible flat task list — the wand modal still indexes its
+/** Backwards-compatible flat task list, the wand modal still indexes its
  *  selection state into this array, so the index order must stay stable
  *  (wedding first, then honeymoon). New items get appended to the end of
  *  their group to keep prior indices pointing to the same task. */
@@ -169,7 +169,7 @@ export const HONEYMOON_EXTRA_TASKS: { title: LocaleText }[] = [
   },
 ];
 
-/** Light starter set of "what to consider adding" ideas — the obvious-but-
+/** Light starter set of "what to consider adding" ideas, the obvious-but-
  *  easy-to-forget options. The Wand button drops these in as starting points
  *  the couple can dismiss or refine. */
 export const IDEA_TEMPLATE: { title: LocaleText; body?: LocaleText }[] = [
@@ -205,8 +205,8 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
   {
     title: { hu: "Saját esküt írni és felolvasni", en: "Write and read your own vows" },
     body: {
-      hu: "A standard polgári szöveg után pár saját mondat — a vendégek mindenki sírni fog.",
-      en: "A few personal lines on top of the standard registrar text — guaranteed tears.",
+      hu: "A standard polgári szöveg után pár saját mondat, a vendégek mindenki sírni fog.",
+      en: "A few personal lines on top of the standard registrar text, guaranteed tears.",
     },
   },
   {
@@ -219,15 +219,15 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
   {
     title: { hu: "Élő festő dokumentál benneteket", en: "Live painter captures the wedding" },
     body: {
-      hu: "Valós időben fest egy festményt a koktélóra alatt — egyedi „fotó” a falra.",
-      en: "Paints the scene in real time during cocktail hour — a one-of-a-kind keepsake.",
+      hu: "Valós időben fest egy festményt a koktélóra alatt, egyedi „fotó” a falra.",
+      en: "Paints the scene in real time during cocktail hour, a one-of-a-kind keepsake.",
     },
   },
   {
     title: { hu: "Kérjetek fel egy barátot meglepetés-beszédre", en: "Secret friend speech" },
     body: {
-      hu: "A párod nem tud róla — felkéred a legjobb barátját, hogy mondjon róla egy beszédet.",
-      en: "Your partner doesn't know — recruit their best friend to give a surprise toast.",
+      hu: "A párod nem tud róla, felkéred a legjobb barátját, hogy mondjon róla egy beszédet.",
+      en: "Your partner doesn't know, recruit their best friend to give a surprise toast.",
     },
   },
   {
@@ -261,8 +261,8 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
   {
     title: { hu: "Karikatúra-rajzoló a koktélórán", en: "Caricature artist at cocktails" },
     body: {
-      hu: "Mindenki visz haza egy mosolyos rajzot magáról — ajándék vendégkönyv helyett.",
-      en: "Every guest takes home a smiling sketch — better than a polite guestbook signature.",
+      hu: "Mindenki visz haza egy mosolyos rajzot magáról, ajándék vendégkönyv helyett.",
+      en: "Every guest takes home a smiling sketch, better than a polite guestbook signature.",
     },
   },
   {
@@ -271,22 +271,22 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Silk ribbon wands for the send-off",
     },
     body: {
-      hu: "A vendégek lobogó szalagokkal kísérnek ki — fotózás közben sokkal szebb a rizsnél.",
-      en: "Guests wave streaming ribbons as you leave — way more photogenic than rice.",
+      hu: "A vendégek lobogó szalagokkal kísérnek ki, fotózás közben sokkal szebb a rizsnél.",
+      en: "Guests wave streaming ribbons as you leave, way more photogenic than rice.",
     },
   },
   {
     title: { hu: "Élő népdalének a szertartáson", en: "Live folk song at the ceremony" },
     body: {
-      hu: "Egy közeli barát vagy népdalénekes a polgári után — meghittebb, mint a CD.",
-      en: "A friend or folk singer right after the registrar — beats canned music every time.",
+      hu: "Egy közeli barát vagy népdalénekes a polgári után, meghittebb, mint a CD.",
+      en: "A friend or folk singer right after the registrar, beats canned music every time.",
     },
   },
   {
     title: { hu: "Csak ti ketten, 10 perc a vacsora előtt", en: "Ten minutes alone before dinner" },
     body: {
-      hu: "Tudatosan kiszöktök egy szobába, leültök egy tányér ételhez — csak ti ketten.",
-      en: "Steal a private room with a plate of food before the toasts — just the two of you.",
+      hu: "Tudatosan kiszöktök egy szobába, leültök egy tányér ételhez, csak ti ketten.",
+      en: "Steal a private room with a plate of food before the toasts, just the two of you.",
     },
   },
   {
@@ -302,22 +302,22 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Childhood photos projected during dinner",
     },
     body: {
-      hu: "Néma slideshow a falon — a vendégek nézhetik miközben esznek, beszélgetnek.",
-      en: "Silent slideshow on a wall — guests watch as they eat and chat.",
+      hu: "Néma slideshow a falon, a vendégek nézhetik miközben esznek, beszélgetnek.",
+      en: "Silent slideshow on a wall, guests watch as they eat and chat.",
     },
   },
   {
     title: { hu: "Vendégek által ajánlott DJ-szám", en: "Guest-curated DJ requests" },
     body: {
-      hu: "RSVP-vel együtt mindenki beír egy számot — a DJ a saját listája mellett ezeket is játssza.",
+      hu: "RSVP-vel együtt mindenki beír egy számot, a DJ a saját listája mellett ezeket is játssza.",
       en: "Guests submit one song with their RSVP; the DJ weaves them through the night.",
     },
   },
   {
     title: { hu: "Egy fát ültettek a vendégekkel", en: "Plant a tree with your guests" },
     body: {
-      hu: "Mindenki hoz egy maréknyi földet a saját kertjéből — közös szimbolikus mozdulat.",
-      en: "Each guest brings a handful of soil from their own garden — symbolic and grounding.",
+      hu: "Mindenki hoz egy maréknyi földet a saját kertjéből, közös szimbolikus mozdulat.",
+      en: "Each guest brings a handful of soil from their own garden, symbolic and grounding.",
     },
   },
   {
@@ -333,15 +333,15 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Polaroid name-tags for guests",
     },
     body: {
-      hu: "Mindenkit lefotóztok a recepción + ráírja a kezét — keverednek a felek családjai.",
-      en: "Snap each guest at check-in + they write their name — breaks the two-family ice.",
+      hu: "Mindenkit lefotóztok a recepción + ráírja a kezét, keverednek a felek családjai.",
+      en: "Snap each guest at check-in + they write their name, breaks the two-family ice.",
     },
   },
   {
     title: { hu: "Élő hegedűszó a kiállás közben", en: "Live violin during the recessional" },
     body: {
-      hu: "Egy hegedűs kísér ki titeket a szertartásról — filmes pillanat lesz.",
-      en: "A solo violinist walks you out of the ceremony — instant cinematic moment.",
+      hu: "Egy hegedűs kísér ki titeket a szertartásról, filmes pillanat lesz.",
+      en: "A solo violinist walks you out of the ceremony, instant cinematic moment.",
     },
   },
   {
@@ -361,8 +361,8 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
   {
     title: { hu: "Vendégek üzenőfala időskálával", en: "Wish wall by milestone" },
     body: {
-      hu: "Cetlik a falon: 1 év, 5 év, 10 év — a vendégek odaírják, mit kívánnak akkorra.",
-      en: "Sticky notes on a wall: year 1, year 5, year 10 — each guest writes a wish for that date.",
+      hu: "Cetlik a falon: 1 év, 5 év, 10 év, a vendégek odaírják, mit kívánnak akkorra.",
+      en: "Sticky notes on a wall: year 1, year 5, year 10, each guest writes a wish for that date.",
     },
   },
   {
@@ -371,36 +371,36 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Custom monogram on glassware, napkins",
     },
     body: {
-      hu: "Egy közös motívum végigvonul mindenen — komolyabbnak hat, fele annyiba kerül, mint hisztek.",
-      en: "One motif on everything ties the day together — looks pricier than it actually is.",
+      hu: "Egy közös motívum végigvonul mindenen, komolyabbnak hat, fele annyiba kerül, mint hisztek.",
+      en: "One motif on everything ties the day together, looks pricier than it actually is.",
     },
   },
   {
     title: { hu: "Vendégek földajándékai egy bonsaihoz", en: "Bonsai built from guest gifts" },
     body: {
-      hu: "Egy közeli barát visszaadja a bonsait évek múlva — élő emlék, nem fal-dekoráció.",
-      en: "A close friend grows the bonsai for years and gifts it back — a living, breathing memory.",
+      hu: "Egy közeli barát visszaadja a bonsait évek múlva, élő emlék, nem fal-dekoráció.",
+      en: "A close friend grows the bonsai for years and gifts it back, a living, breathing memory.",
     },
   },
   {
     title: { hu: "Karaoke duett a szülőkkel", en: "Karaoke duet with the parents" },
     body: {
-      hu: "Az anyukáddal egy szám, az apósoddal egy másik — fél órán át mindenki sír és nevet.",
-      en: "One song with your mum, another with your father-in-law — half an hour of joyful tears.",
+      hu: "Az anyukáddal egy szám, az apósoddal egy másik, fél órán át mindenki sír és nevet.",
+      en: "One song with your mum, another with your father-in-law, half an hour of joyful tears.",
     },
   },
   {
     title: { hu: "Vacsoraasztal saját családi recepttel", en: "Family-recipe dish at the dinner" },
     body: {
-      hu: "Egy fogás a párod nagymamájának receptje alapján — a séf nevével rátok hangolva.",
-      en: "One course made from your partner's grandmother's recipe — printed on the menu in her name.",
+      hu: "Egy fogás a párod nagymamájának receptje alapján, a séf nevével rátok hangolva.",
+      en: "One course made from your partner's grandmother's recipe, printed on the menu in her name.",
     },
   },
   {
     title: { hu: "Saját pálinka a vacsora utáni koccintáshoz", en: "Custom pálinka for the toast" },
     body: {
-      hu: "Címkével együtt — a vendégek hazaviszik mint nászajándékot.",
-      en: "Label included — guests take it home as a wedding favour.",
+      hu: "Címkével együtt, a vendégek hazaviszik mint nászajándékot.",
+      en: "Label included, guests take it home as a wedding favour.",
     },
   },
   {
@@ -409,8 +409,8 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Live illustrator draws the guest book",
     },
     body: {
-      hu: "Egy művész egy hatalmas papírlapra felrajzol mindenkit — keret + fal otthon.",
-      en: "An artist sketches every guest onto one big sheet — frame it for your wall later.",
+      hu: "Egy művész egy hatalmas papírlapra felrajzol mindenkit, keret + fal otthon.",
+      en: "An artist sketches every guest onto one big sheet, frame it for your wall later.",
     },
   },
   {
@@ -423,8 +423,8 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
   {
     title: { hu: "Köszönő-videó másnap a vendégeknek", en: "Thank-you video the next day" },
     body: {
-      hu: "Reggel egy gyors videó tőletek — a fáradt, boldog ti — minden vendégnek elküldve.",
-      en: "A quick morning-after video — tired but glowing — sent out to every guest.",
+      hu: "Reggel egy gyors videó tőletek, a fáradt, boldog ti, minden vendégnek elküldve.",
+      en: "A quick morning-after video, tired but glowing, sent out to every guest.",
     },
   },
   {
@@ -433,64 +433,64 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Butterfly or dove release",
     },
     body: {
-      hu: "Kétperces kép — minden fotós imádja, és minden vendég emlékezni fog rá.",
-      en: "Two minutes of pure spectacle — photographers adore it, guests never forget it.",
+      hu: "Kétperces kép, minden fotós imádja, és minden vendég emlékezni fog rá.",
+      en: "Two minutes of pure spectacle, photographers adore it, guests never forget it.",
     },
   },
   {
     title: { hu: "Néma diszkó éjféltől", en: "Silent disco from midnight" },
     body: {
-      hu: "Fejhallgatós party három csatornával — a vendégek külön zenét hallgatnak, kívülről néma a tánc.",
-      en: "Headphones-only party with three channels — guests dance to different music while the room stays silent.",
+      hu: "Fejhallgatós party három csatornával, a vendégek külön zenét hallgatnak, kívülről néma a tánc.",
+      en: "Headphones-only party with three channels, guests dance to different music while the room stays silent.",
     },
   },
   {
     title: { hu: "Recept-vendégkönyv", en: "Recipe guest book" },
     body: {
-      hu: "Minden vendég beírja a saját kedvenc receptjét — házassági szakácskönyvként hazaviszitek.",
-      en: "Each guest writes in a favourite recipe — you take home a marriage cookbook.",
+      hu: "Minden vendég beírja a saját kedvenc receptjét, házassági szakácskönyvként hazaviszitek.",
+      en: "Each guest writes in a favourite recipe, you take home a marriage cookbook.",
     },
   },
   {
     title: { hu: "Vendégek visznek haza palántát", en: "Take-home plant favours" },
     body: {
-      hu: "Apró cserepes palánta névkártyával — nő veletek párhuzamosan, sokkal jobb mint a műanyag emléktárgy.",
-      en: "A small potted seedling with a name card — grows alongside you, beats plastic favours.",
+      hu: "Apró cserepes palánta névkártyával, nő veletek párhuzamosan, sokkal jobb mint a műanyag emléktárgy.",
+      en: "A small potted seedling with a name card, grows alongside you, beats plastic favours.",
     },
   },
   {
     title: { hu: "Reggeli hangüzenet a párodtól", en: "Morning-of voice note from your partner" },
     body: {
-      hu: "A párod előző este felvesz egy 30 másodperces üzenetet — készülődés közben hallgatod meg, sírni fogsz.",
-      en: "Your partner records a 30-second message the night before — play it while you get ready, expect tears.",
+      hu: "A párod előző este felvesz egy 30 másodperces üzenetet, készülődés közben hallgatod meg, sírni fogsz.",
+      en: "Your partner records a 30-second message the night before, play it while you get ready, expect tears.",
     },
   },
   {
     title: { hu: "Saját esküvői újság a vendégasztalon", en: "Your own wedding newspaper" },
     body: {
-      hu: "Nyolcoldalas újság a tervezésetekről, közös fotókról, az aznapi programról — minden asztalra kettő.",
-      en: "An eight-page paper covering your story, photos, and the day's schedule — two on every table.",
+      hu: "Nyolcoldalas újság a tervezésetekről, közös fotókról, az aznapi programról, minden asztalra kettő.",
+      en: "An eight-page paper covering your story, photos, and the day's schedule, two on every table.",
     },
   },
   {
     title: { hu: "Esküvő-bingó kártyák a vendégeknek", en: "Wedding bingo cards for guests" },
     body: {
-      hu: "Tipikus pillanatok (nagybácsi sír, mikrofon visszahangzik, valaki a tortába dől) — aki kitölti, kap egy pálinkát.",
-      en: "Classic moments (uncle cries, mic feedback, someone falls into the cake) — first to fill a row wins a shot.",
+      hu: "Tipikus pillanatok (nagybácsi sír, mikrofon visszahangzik, valaki a tortába dől), aki kitölti, kap egy pálinkát.",
+      en: "Classic moments (uncle cries, mic feedback, someone falls into the cake), first to fill a row wins a shot.",
     },
   },
   {
     title: { hu: "Lufi-engedés napnyugtakor", en: "Sunset balloon release" },
     body: {
-      hu: "Lebomló latex-lufi, mindegyiken egy vendég üzenete — napnyugta pillanatában mindenki egyszerre engedi el.",
-      en: "Biodegradable balloons with messages from each guest — released together as the sun drops.",
+      hu: "Lebomló latex-lufi, mindegyiken egy vendég üzenete, napnyugta pillanatában mindenki egyszerre engedi el.",
+      en: "Biodegradable balloons with messages from each guest, released together as the sun drops.",
     },
   },
   {
     title: { hu: "Tanúk rögtönzött rapje a vacsoránál", en: "Witnesses' freestyle rap at dinner" },
     body: {
-      hu: "A tanúk egy hete megírják, vacsoránál előadják — sokkal viccesebb mint a klasszikus tanúbeszéd.",
-      en: "Witnesses write it a week ahead and perform at dinner — funnier than any conventional speech.",
+      hu: "A tanúk egy hete megírják, vacsoránál előadják, sokkal viccesebb mint a klasszikus tanúbeszéd.",
+      en: "Witnesses write it a week ahead and perform at dinner, funnier than any conventional speech.",
     },
   },
   {
@@ -503,8 +503,8 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
   {
     title: { hu: "Pizsamás brunch a vendégekkel másnap", en: "Pyjama brunch the next morning" },
     body: {
-      hu: "A maradék vendégeknek tojás, bacon, mimóza-koktél pizsamában — a fáradt nevetés a legjobb fotó.",
-      en: "Eggs, bacon, mimosas in pyjamas for whoever stayed — the tired laughter makes the best photo.",
+      hu: "A maradék vendégeknek tojás, bacon, mimóza-koktél pizsamában, a fáradt nevetés a legjobb fotó.",
+      en: "Eggs, bacon, mimosas in pyjamas for whoever stayed, the tired laughter makes the best photo.",
     },
   },
   {
@@ -513,15 +513,15 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Live fire show before the first dance",
     },
     body: {
-      hu: "5 perces profi tüzes performansz a kerten vagy teraszon — közvetlenül a nyitótánc előtt.",
-      en: "Five-minute professional fire performance in the garden — right before the first dance.",
+      hu: "5 perces profi tüzes performansz a kerten vagy teraszon, közvetlenül a nyitótánc előtt.",
+      en: "Five-minute professional fire performance in the garden, right before the first dance.",
     },
   },
   {
     title: { hu: "Páros-keresős ültetés", en: "Pair-matching seat hunt" },
     body: {
-      hu: "Mindenki egy páros tárgy egyik felét kapja — meg kell keresnie a vendéget a teremben, akkor talál helyet.",
-      en: "Each guest gets half of a pair — find the matching guest to find your seat.",
+      hu: "Mindenki egy páros tárgy egyik felét kapja, meg kell keresnie a vendéget a teremben, akkor talál helyet.",
+      en: "Each guest gets half of a pair, find the matching guest to find your seat.",
     },
   },
   {
@@ -530,8 +530,8 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Grandparents' wedding photos on display",
     },
     body: {
-      hu: "Mindkét család nagyszüleinek esküvői fotói nagyméretben a bejáratnál — generációk a teremben.",
-      en: "Large prints of both families' grandparents' wedding photos by the entrance — generations in the room.",
+      hu: "Mindkét család nagyszüleinek esküvői fotói nagyméretben a bejáratnál, generációk a teremben.",
+      en: "Large prints of both families' grandparents' wedding photos by the entrance, generations in the room.",
     },
   },
   {
@@ -540,15 +540,15 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Hangover survival kit in hotel rooms",
     },
     body: {
-      hu: "Víz, fájdalomcsillapító, fogkefe, csoki, papír zsebkendő — minden vidéki vendég áldani fog érte.",
-      en: "Water, painkillers, toothbrush, chocolate, tissues — every out-of-town guest will thank you.",
+      hu: "Víz, fájdalomcsillapító, fogkefe, csoki, papír zsebkendő, minden vidéki vendég áldani fog érte.",
+      en: "Water, painkillers, toothbrush, chocolate, tissues, every out-of-town guest will thank you.",
     },
   },
   {
     title: { hu: "Csak gyertyafényes első fogás", en: "Candlelight-only first course" },
     body: {
-      hu: "Az első fogásra lekapcsoljátok a villanyt, csak gyertyaláng marad — egy pillanat, ami megmarad mindenkinek.",
-      en: "Lights off for the opening course — only candles. One frozen moment everyone remembers.",
+      hu: "Az első fogásra lekapcsoljátok a villanyt, csak gyertyaláng marad, egy pillanat, ami megmarad mindenkinek.",
+      en: "Lights off for the opening course, only candles. One frozen moment everyone remembers.",
     },
   },
   {
@@ -557,22 +557,22 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Money dance funding a shared experience",
     },
     body: {
-      hu: "A hagyomány marad, de a pénz egy közös élményre megy — pl. egy nászúti hétvégére, élőben jelezve a térképen.",
-      en: "Tradition stays, but the pot funds a shared experience — a honeymoon weekend tracked live on a map.",
+      hu: "A hagyomány marad, de a pénz egy közös élményre megy, pl. egy nászúti hétvégére, élőben jelezve a térképen.",
+      en: "Tradition stays, but the pot funds a shared experience, a honeymoon weekend tracked live on a map.",
     },
   },
   {
     title: { hu: "Diavetítés a vendégekről, nem rólatok", en: "Slideshow of your guests, not you" },
     body: {
-      hu: "Egy közeli barát szervezi titokban — fotó minden vendégről, mosolyok a falon vacsora közben.",
-      en: "A close friend collects photos in secret — every guest's face on the wall during dinner.",
+      hu: "Egy közeli barát szervezi titokban, fotó minden vendégről, mosolyok a falon vacsora közben.",
+      en: "A close friend collects photos in secret, every guest's face on the wall during dinner.",
     },
   },
   {
     title: { hu: "Kahoot-kvíz rólatok a vacsoránál", en: "Couple-quiz Kahoot at dinner" },
     body: {
-      hu: "Mobilon játszott kvíz a kapcsolatotokról — a közönség szavazza meg, melyikőtök hazudik nagyobbat.",
-      en: "A phone-based quiz about your relationship — the room votes on who's bluffing harder.",
+      hu: "Mobilon játszott kvíz a kapcsolatotokról, a közönség szavazza meg, melyikőtök hazudik nagyobbat.",
+      en: "A phone-based quiz about your relationship, the room votes on who's bluffing harder.",
     },
   },
   {
@@ -581,8 +581,8 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Voicemail guest book on an old phone",
     },
     body: {
-      hu: "Régi telefonkagyló mikrofonja — a vendégek üzenetet hagynak, 1 év múlva újrahallgatjátok.",
-      en: "An old phone receiver as a mic — guests leave voicemails you replay on year one.",
+      hu: "Régi telefonkagyló mikrofonja, a vendégek üzenetet hagynak, 1 év múlva újrahallgatjátok.",
+      en: "An old phone receiver as a mic, guests leave voicemails you replay on year one.",
     },
   },
   {
@@ -591,22 +591,22 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Custom scent blending in the ceremony",
     },
     body: {
-      hu: "Két illóolajat összekevertek a polgári részeként — a végén lesz egy saját parfümötök, ami a napotokat idézi.",
-      en: "Blend two essential oils together during the registrar — you walk out with your own signature scent of the day.",
+      hu: "Két illóolajat összekevertek a polgári részeként, a végén lesz egy saját parfümötök, ami a napotokat idézi.",
+      en: "Blend two essential oils together during the registrar, you walk out with your own signature scent of the day.",
     },
   },
   {
     title: { hu: "Gyertyaláng-átadás a vendégeknek", en: "Candle-passing ceremony" },
     body: {
-      hu: "A pár meggyújtja a saját gyertyáját, a fény szétterjed a teremben — pillanatra mindenki tart fényt.",
-      en: "You light your candle first; the flame travels through the room — for a beat, everyone holds light.",
+      hu: "A pár meggyújtja a saját gyertyáját, a fény szétterjed a teremben, pillanatra mindenki tart fényt.",
+      en: "You light your candle first; the flame travels through the room, for a beat, everyone holds light.",
     },
   },
   {
     title: { hu: "Saját limonádé-bár különleges ízekkel", en: "Signature lemonade bar" },
     body: {
-      hu: "4-5 különleges íz (levendula, áfonya, kakukkfű) saját címkével — a gyerekek és a nem-iszók is ünnepelnek.",
-      en: "Four or five unusual flavours (lavender, blueberry, thyme) with your label — kids and non-drinkers get to celebrate too.",
+      hu: "4-5 különleges íz (levendula, áfonya, kakukkfű) saját címkével, a gyerekek és a nem-iszók is ünnepelnek.",
+      en: "Four or five unusual flavours (lavender, blueberry, thyme) with your label, kids and non-drinkers get to celebrate too.",
     },
   },
 ];

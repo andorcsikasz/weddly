@@ -809,7 +809,7 @@ export default function MediaPage() {
               </div>
               <div className="flex flex-col items-center gap-1 border-x border-paper-200 py-5 text-center">
                 <span className="font-grotesk text-[28px] font-bold leading-none tabular-nums text-umber-900">
-                  {filmExpired ? "—" : (countdownStr ?? "--")}
+                  {filmExpired ? "-" : (countdownStr ?? "--")}
                 </span>
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-umber-400">
                   {filmExpired ? t("media.film_stat_closed") : t("media.film_stat_left")}

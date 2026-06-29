@@ -76,7 +76,7 @@ export default function AdminCategoriesPage() {
   async function onDeleteGroup(g: AdminSupplierGroup) {
     const ok = await confirm({
       title: t("admin.taxonomy_delete_group_confirm_title"),
-      body: `${g.label_hu} / ${g.label_en} — ${t("admin.taxonomy_delete_group_confirm_body")}`,
+      body: `${g.label_hu} / ${g.label_en}: ${t("admin.taxonomy_delete_group_confirm_body")}`,
       confirmLabel: t("admin.taxonomy_delete"),
       cancelLabel: t("admin.taxonomy_cancel"),
       destructive: true,
@@ -98,7 +98,7 @@ export default function AdminCategoriesPage() {
   async function onDeleteCategory(c: AdminSupplierCategory) {
     const ok = await confirm({
       title: t("admin.taxonomy_delete_category_confirm_title"),
-      body: `${c.label_hu} / ${c.label_en} — ${t("admin.taxonomy_delete_category_confirm_body")}`,
+      body: `${c.label_hu} / ${c.label_en}: ${t("admin.taxonomy_delete_category_confirm_body")}`,
       confirmLabel: t("admin.taxonomy_delete"),
       cancelLabel: t("admin.taxonomy_cancel"),
       destructive: true,

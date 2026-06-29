@@ -293,11 +293,11 @@ export default function VendorClientDetailPage() {
         />
         <SummaryItem
           label={t("vendor.clients.contract_value")}
-          value={detail.contract_value === null ? "—" : fmt(detail.contract_value)}
+          value={detail.contract_value === null ? "-" : fmt(detail.contract_value)}
         />
         <SummaryItem
           label={t("vendor.clients.balance")}
-          value={detail.balance === null ? "—" : fmt(detail.balance)}
+          value={detail.balance === null ? "-" : fmt(detail.balance)}
         />
       </section>
 
@@ -359,7 +359,7 @@ export default function VendorClientDetailPage() {
           <div className="flex items-baseline justify-between rounded-xl bg-paper-100 px-4 py-3 dark:bg-umber-900">
             <span className="field-label mb-0">{t("vendor.clients.balance")}</span>
             <span className="text-lg font-semibold text-ink-900 dark:text-paper-50">
-              {liveBalance === null ? "—" : fmt(liveBalance)}
+              {liveBalance === null ? "-" : fmt(liveBalance)}
             </span>
           </div>
 

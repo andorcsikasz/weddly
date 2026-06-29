@@ -534,9 +534,9 @@ const GUEST_ROWS: {
 }[] = [
   { name: "Anna Tóth", status: "yes", meal: "Veg", tone: 1 },
   { name: "Bence Kovács", status: "yes", meal: "Beef", tone: 2 },
-  { name: "Dóra Nagy", status: "pending", meal: "—", tone: 3 },
+  { name: "Dóra Nagy", status: "pending", meal: "-", tone: 3 },
   { name: "Marci Szabó", status: "yes", meal: "Beef", tone: 4 },
-  { name: "Réka Horváth", status: "no", meal: "—", tone: 5 },
+  { name: "Réka Horváth", status: "no", meal: "-", tone: 5 },
 ];
 
 const MEAL_LABELS_HU: Record<string, string> = { Beef: "Marha", Veg: "Vegetáriánus" };

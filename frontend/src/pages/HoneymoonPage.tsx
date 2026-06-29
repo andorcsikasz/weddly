@@ -591,7 +591,7 @@ export default function HoneymoonPage() {
       // dated price caveat + the Google Flights deeplink.
       const noteParts = [
         t("honeymoon.flight_save_todo_note", {
-          carrier: offer.carrier || "—",
+          carrier: offer.carrier || "-",
           price: priceLabel,
           date: dateLabel,
         }),
@@ -974,7 +974,7 @@ function DaysTile({
           ) : loaded ? (
             // No dates yet: keep the slot at the same visual size as a filled
             // number by making the CTA the prominent serif line (responsive,
-            // matching the budget tile) instead of a thin "—" + small caption.
+            // matching the budget tile) instead of a thin "-" + small caption.
             <span className="font-grotesk text-lg font-semibold leading-none text-paper-50 sm:text-2xl md:text-3xl">
               {t("honeymoon.set_dates_cta")}
             </span>
@@ -2126,7 +2126,7 @@ function FlightOfferRow({
         >
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
             <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
-              {offer.carrier || "—"}
+              {offer.carrier || "-"}
             </span>
             <span className="text-ink-800 tabular-nums dark:text-paper-100">
               {formatOfferTime(offer.depart_iso, locale)} →{" "}
@@ -2178,7 +2178,7 @@ function FlightOfferRow({
               <li key={`${seg.flight_number}-${seg.depart_iso}-${i}`}>
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="rounded bg-ink-900/5 px-1.5 py-0.5 text-[11px] font-semibold tracking-wider text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
-                    {seg.flight_number || seg.carrier || "—"}
+                    {seg.flight_number || seg.carrier || "-"}
                   </span>
                   <span className="text-ink-800 tabular-nums dark:text-paper-100">
                     {formatOfferTime(seg.depart_iso, locale)} {seg.depart_iata}{" "}
@@ -2397,9 +2397,9 @@ function formatOfferPrice(offer: FlightOffer, locale: "hu" | "en"): string {
 }
 
 function formatOfferTime(iso: string, locale: "hu" | "en"): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     weekday: "short",
     hour: "2-digit",

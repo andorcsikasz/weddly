@@ -168,7 +168,7 @@ export function FeedbackDialog({
             </div>
             <p className="mt-1.5 flex justify-between text-xs text-ink-500 dark:text-umber-300">
               <span>
-                {t("landing.feedback_rating_low")} — {t("landing.feedback_rating_hint")}
+                {t("landing.feedback_rating_low")}, {t("landing.feedback_rating_hint")}
               </span>
             </p>
           </div>

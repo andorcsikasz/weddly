@@ -319,7 +319,7 @@ export default function WeekView({
                   key={item.id}
                   type="button"
                   onClick={() => onOpenTask(item)}
-                  title={supplier ? `${item.title} — ${supplier.name}` : item.title}
+                  title={supplier ? `${item.title} · ${supplier.name}` : item.title}
                   className={`flex h-5 items-center truncate rounded-md px-2 text-xs ring-1 ring-transparent transition-all hover:ring-blush-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:hover:ring-blush-400/40 dark:focus-visible:ring-paper-100 ${barClasses}`}
                   style={{
                     gridColumnStart: startCol + 1,

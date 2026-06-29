@@ -1154,7 +1154,7 @@ export default function SuppliersPage() {
             {t("suppliers.guests_filter_label")}
           </span>
           <span className="min-w-[2ch] text-center text-[11px] font-semibold tabular-nums text-ink-800 dark:text-paper-100">
-            {guestsFilter ?? "—"}
+            {guestsFilter ?? "-"}
           </span>
           <ArrowUpRight
             size={13}

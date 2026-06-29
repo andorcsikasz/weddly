@@ -212,10 +212,10 @@ export function SectionLabel({
   orientation = "horizontal",
   className = "",
 }: SectionLabelProps) {
-  // `num === "—"` is the convention for "no real number, decorative only".
+  // `num === "-"` is the convention for "no real number, decorative only".
   // In that case the italic em-dash glyph adds visual noise next to the
   // hairline rule — drop it and let the rule alone lead into the label.
-  const showNumeral = num !== "—";
+  const showNumeral = num !== "-";
   if (orientation === "vertical") {
     return (
       <span className={`inline-flex flex-col items-center gap-3 ${className}`}>

@@ -1692,10 +1692,10 @@ function TransferTable({
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-ink-900 dark:text-paper-50">{tr.label}</p>
                 <p className="mt-0.5 text-xs text-ink-600 dark:text-umber-200">
-                  {tr.direction ?? "—"}
+                  {tr.direction ?? "-"}
                 </p>
                 <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
-                  {tr.depart_at ? formatDepartAt(tr.depart_at) : "—"}
+                  {tr.depart_at ? formatDepartAt(tr.depart_at) : "-"}
                 </p>
               </div>
               <span
@@ -1795,10 +1795,10 @@ function TransferTable({
                 >
                   <td className="px-3 py-2 align-top font-medium">{tr.label}</td>
                   <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
-                    {tr.direction ?? "—"}
+                    {tr.direction ?? "-"}
                   </td>
                   <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
-                    {tr.depart_at ? formatDepartAt(tr.depart_at) : "—"}
+                    {tr.depart_at ? formatDepartAt(tr.depart_at) : "-"}
                   </td>
                   <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
                     <span
@@ -1994,7 +1994,7 @@ function AccommodationDialog({
                 className="input pl-9"
                 value={priceHuf}
                 onChange={(e) => setPriceHuf(e.target.value)}
-                placeholder="—"
+                placeholder="-"
                 inputMode="numeric"
               />
             </div>
@@ -2277,7 +2277,7 @@ function TransferDialog({
               className="input"
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
-              placeholder="—"
+              placeholder="-"
             />
           </Field>
         </div>

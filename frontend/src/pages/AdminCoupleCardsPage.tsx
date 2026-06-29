@@ -137,8 +137,8 @@ export default function AdminCoupleCardsPage() {
   return (
     <div className="space-y-6 px-4 sm:px-6 lg:px-8 xl:px-10">
       <AdminPageHeader
-        title="100 kérdés — visszajelzések"
-        subtitle="Visitor-kattintások a kártya alatti X / ✓ / ✓✓ ikonokra. Súlyozott rangsor (X: -2, ✓: +1, ✓✓: +2) — a legrosszabb értékelésű kérdések kerülnek felülre, ezek a következő copy-iteráció kandidánsai."
+        title="100 kérdés: visszajelzések"
+        subtitle="Visitor-kattintások a kártya alatti X / ✓ / ✓✓ ikonokra. Súlyozott rangsor (X: -2, ✓: +1, ✓✓: +2), a legrosszabb értékelésű kérdések kerülnek felülre, ezek a következő copy-iteráció kandidánsai."
       />
 
       <div className="flex flex-wrap items-center gap-2">
@@ -317,7 +317,7 @@ function formatSuggestionDate(epoch: number): string {
   // Stored as seconds-since-epoch in the backend (via `now()`); JS wants ms.
   const ms = epoch < 1e12 ? epoch * 1000 : epoch;
   const d = new Date(ms);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleString("hu-HU", {
     year: "numeric",
     month: "2-digit",

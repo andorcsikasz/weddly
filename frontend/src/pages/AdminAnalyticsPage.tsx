@@ -1517,7 +1517,7 @@ function acqKeyLabel(key: string | null, t: ReturnType<typeof useT>["t"]): strin
 }
 
 function pct(part: number, whole: number): string {
-  if (whole <= 0) return "—";
+  if (whole <= 0) return "-";
   return `${Math.round((part / whole) * 100)}%`;
 }
 
@@ -1889,7 +1889,7 @@ function AcquisitionSection({
         />
         <KpiTile
           label={t("admin.analytics_acq_top_channel")}
-          value={topChannel ? acqKeyLabel(topChannel.key, t) : "—"}
+          value={topChannel ? acqKeyLabel(topChannel.key, t) : "-"}
           sub={topChannel ? formatNumber(topChannel.signups, locale) : undefined}
         />
         <KpiTile
@@ -2145,7 +2145,7 @@ function WeddingsSection({
           value={
             seasonRows.reduce(
               (best, r) => (r.count > best.count ? r : best),
-              seasonRows[0] ?? { label: "—", count: 0 },
+              seasonRows[0] ?? { label: "-", count: 0 },
             ).label
           }
         />
@@ -2270,7 +2270,7 @@ function HoneymoonSection({
             />
             <KpiTile
               label={t("admin.analytics_honeymoon_top_destination")}
-              value={destRows[0]?.label ?? "—"}
+              value={destRows[0]?.label ?? "-"}
               sub={
                 destRows[0]
                   ? t("admin.analytics_honeymoon_couples", {
@@ -2784,7 +2784,7 @@ function RetentionCard({
               {t("admin.analytics_engagement_retention_day", { n: c.day })}
             </div>
             <div className="stat-num text-lg font-semibold text-neutral-800 dark:text-paper-50">
-              {c.value === null ? "—" : `${Math.round(c.value * 100)}%`}
+              {c.value === null ? "-" : `${Math.round(c.value * 100)}%`}
             </div>
             {c.day === 60 && (
               <div className="text-[10px] text-neutral-500 dark:text-umber-300">
@@ -2845,7 +2845,7 @@ function EngagementSection({
         />
         <KpiTile
           label={t("admin.analytics_engagement_d7_retention")}
-          value={d7Pct === null ? "—" : `${d7Pct}%`}
+          value={d7Pct === null ? "-" : `${d7Pct}%`}
           sub={t("admin.analytics_engagement_retention_cohort", {
             n: formatNumber(e.retention.cohort_size, locale),
           })}
@@ -3262,7 +3262,7 @@ function DemoSection({
 }
 
 function formatLifetime(seconds: number, locale: "hu" | "en"): string {
-  if (!Number.isFinite(seconds) || seconds <= 0) return "—";
+  if (!Number.isFinite(seconds) || seconds <= 0) return "-";
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);

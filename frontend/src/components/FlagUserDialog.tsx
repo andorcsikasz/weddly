@@ -87,7 +87,7 @@ export function FlagUserDialog({ open, targetEmail, pending, onClose, onConfirm 
   return (
     <Dialog
       open={open}
-      title={`${t("admin.flag_user_title")} — ${targetEmail}`}
+      title={`${t("admin.flag_user_title")}: ${targetEmail}`}
       onClose={onClose}
       role="dialog"
       footer={

@@ -439,7 +439,7 @@ export default function AdminFeedbackPage() {
                             {e.feature_area}
                           </span>
                         ) : (
-                          <span className="text-neutral-300 dark:text-umber-300">—</span>
+                          <span className="text-neutral-300 dark:text-umber-300">-</span>
                         )}
                       </td>
                       <td className="hidden py-3 pr-4 lg:table-cell">
@@ -448,7 +448,7 @@ export default function AdminFeedbackPage() {
                             {t(`admin.feedback_priority_${e.priority}`)}
                           </Pill>
                         ) : (
-                          <span className="text-neutral-300 dark:text-umber-300">—</span>
+                          <span className="text-neutral-300 dark:text-umber-300">-</span>
                         )}
                       </td>
                       <td className="hidden py-3 pr-4 text-xs text-neutral-500 dark:text-umber-300 md:table-cell">
@@ -670,12 +670,12 @@ function TriagePanel({
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-600 dark:text-umber-200">
             <span className="inline-flex items-center gap-1">
               {deviceIcon(entry.device)}
-              {entry.device ?? "—"}
+              {entry.device ?? "-"}
             </span>
             {techRows.slice(1).map((r) => (
               <span key={r.label}>
                 <span className="text-neutral-400 dark:text-umber-400">{r.label}:</span>{" "}
-                {r.value ?? "—"}
+                {r.value ?? "-"}
               </span>
             ))}
             <span>

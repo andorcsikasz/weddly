@@ -59,7 +59,7 @@ function enTemplate(style: Style, f: Fields): string {
     return `${a} & ${b}\n\nare delighted to invite you to celebrate their wedding on ${date}.\nVenue: ${venue}.\n\nKindly respond by ${deadline}.\n\nWith love.`;
   }
   if (style === "casual") {
-    return `Hi!\n\nWe — ${a} and ${b} — are getting married on ${date}, and we'd love for you to be there.\n\nVenue: ${venue}.\nPlease let us know by ${deadline} whether you can make it.\n\nHugs,\n${a} & ${b}`;
+    return `Hi!\n\nWe, ${a} and ${b}, are getting married on ${date}, and we'd love for you to be there.\n\nVenue: ${venue}.\nPlease let us know by ${deadline} whether you can make it.\n\nHugs,\n${a} & ${b}`;
   }
   return `Two lives, one day, one beginning.\n\n${a} and ${b} will be married on ${date}\nin the company of ${venue}.\n\nShare the day with us — please reply by ${deadline}.\n\n${a} & ${b}`;
 }

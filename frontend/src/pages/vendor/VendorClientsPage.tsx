@@ -309,7 +309,7 @@ export default function VendorClientsPage() {
                     </span>
                     <span className="text-sm text-ink-600 dark:text-paper-300">
                       <ProCell locked={!isPro}>
-                        {c.stage ? c.stage : <span className="text-ink-400">—</span>}
+                        {c.stage ? c.stage : <span className="text-ink-400">-</span>}
                       </ProCell>
                     </span>
                     <span className="text-sm tabular-nums text-ink-700 sm:text-right dark:text-paper-200">
@@ -317,7 +317,7 @@ export default function VendorClientsPage() {
                         {c.balance !== null ? (
                           formatMoney(c.balance, currency, locale)
                         ) : (
-                          <span className="text-ink-400">—</span>
+                          <span className="text-ink-400">-</span>
                         )}
                       </ProCell>
                     </span>

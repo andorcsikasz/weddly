@@ -244,7 +244,7 @@ export default function AdminVendorWaitlistPage() {
     // rejected), so we cast it to the narrower union here.
     const priorOutcome = entry.status as VendorWaitlistOutcome;
     const outcomeLabel = t(OUTCOME_LABEL_KEY[priorOutcome]);
-    const decidedLabel = entry.outcome_at ? fmtDate(entry.outcome_at) : "—";
+    const decidedLabel = entry.outcome_at ? fmtDate(entry.outcome_at) : "-";
     const ok = await confirm({
       title: t("admin.waitlist_reopen_confirm_title"),
       body: t("admin.waitlist_reopen_confirm_body", {
@@ -688,7 +688,7 @@ function RespondDialog({
   return (
     <Dialog
       open
-      title={`${t("admin.waitlist_modal_title")} — ${entry.business_name}`}
+      title={`${t("admin.waitlist_modal_title")}: ${entry.business_name}`}
       role="dialog"
       onClose={onClose}
       size="lg"
