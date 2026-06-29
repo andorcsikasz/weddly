@@ -1438,8 +1438,7 @@ const en: LocaleMessages = {
     portfolio_link_remove: "Remove link",
     portfolio_add_link: "Add link",
     portfolio_count_hint: "1–3 links is plenty.",
-    portfolio_hint_default:
-      "Gallery, website, Instagram post, Drive folder, anything you'd share.",
+    portfolio_hint_default: "Gallery, website, Instagram post, Drive folder, anything you'd share.",
     portfolio_hint_venue_stay:
       "Venue photos, walkthrough video, Google Maps panorama, or your own website gallery.",
     portfolio_hint_food_drink:
@@ -3278,6 +3277,11 @@ const en: LocaleMessages = {
     table_panel_empty_seat: "empty",
     table_panel_unassign: "Remove",
     table_panel_close: "Back to list",
+    progress_label: "{seated} / {total} guests seated",
+    progress_remaining: "{n} to seat",
+    progress_done: "Everyone seated",
+    name_table_hint: "Give this table a name (Family, Friends, Work…) so it's clear at a glance.",
+    table_name_placeholder: "Name this table",
   },
   suppliers: {
     title: "Suppliers",
@@ -4986,8 +4990,7 @@ const en: LocaleMessages = {
     workspaces_body:
       "Hosting multiple events (civil, reception, day-after brunch)? Spin up a separate workspace per event. Guests + households can carry over from your active workspace.",
     workspaces_add: "New event",
-    workspaces_cap_reached:
-      "Maximum of three workspaces, delete or archive one to free up a slot.",
+    workspaces_cap_reached: "Maximum of three workspaces, delete or archive one to free up a slot.",
     workspaces_empty: "No workspaces yet.",
     workspaces_switch: "Open",
     workspaces_role_owner: "Owner",
@@ -5313,8 +5316,7 @@ const en: LocaleMessages = {
       "Data collected: email address, password (Argon2id hash, the original password is never stored), full name, (optionally) partner's name, locale preference, registration date, account status.",
     proc_account_purpose:
       "Purpose: user authentication, login management, and delivery of account-linked features.",
-    proc_account_basis:
-      "Legal basis: GDPR Art. 6(1)(b), performance of the user service contract.",
+    proc_account_basis: "Legal basis: GDPR Art. 6(1)(b), performance of the user service contract.",
     proc_account_retention:
       "Retention: while the account is active; upon deletion a 30-day grace period applies, after which data is permanently and irreversibly erased.",
     proc_workspace_title: "Wedding workspace, planning and organising data",

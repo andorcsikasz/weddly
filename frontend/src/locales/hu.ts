@@ -2650,8 +2650,7 @@ const hu: LocaleMessages = {
       "Add meg, mikor kezdődik és mikor zárul a nap, a fontosabb programpontokat ennek megfelelően osztjuk el.",
     wand_start_label: "Kezdés",
     wand_end_label: "Zárás",
-    wand_overnight_hint:
-      "A zárás éjfél után van, az éjszakai programpontokat másnapra osztjuk be.",
+    wand_overnight_hint: "A zárás éjfél után van, az éjszakai programpontokat másnapra osztjuk be.",
     wand_window_error: "A kezdés és a zárás nem lehet ugyanaz az időpont.",
     field_next_day: "Másnap (éjfél után)",
     day_two_badge: "másnap",
@@ -2899,8 +2898,7 @@ const hu: LocaleMessages = {
     plus_one_assign_required: "Válaszd ki, kihez tartozik a +1.",
     rsvp_filled_at: "Kitöltve: {date}",
     plus_one_label: "Kísérő (+1)",
-    plus_one_help:
-      "Töltsd ki helyette a kísérőjét, vendégként hozzáadjuk ugyanabba a háztartásba.",
+    plus_one_help: "Töltsd ki helyette a kísérőjét, vendégként hozzáadjuk ugyanabba a háztartásba.",
     plus_one_placeholder: "Kísérő neve",
     partner_role_bride: "Menyasszony",
     partner_role_groom: "Vőlegény",
@@ -3318,6 +3316,12 @@ const hu: LocaleMessages = {
     table_panel_empty_seat: "üres",
     table_panel_unassign: "Eltávolít",
     table_panel_close: "Vissza a listához",
+    progress_label: "{seated} / {total} vendég elhelyezve",
+    progress_remaining: "még {n} vendég",
+    progress_done: "Mindenki elhelyezve",
+    name_table_hint:
+      "Nevezd el az asztalt (Család, Barátok, Munka…), hogy első ránézésre is egyértelmű legyen.",
+    table_name_placeholder: "Nevezd el az asztalt",
   },
   suppliers: {
     title: "Szolgáltatók",

@@ -1361,7 +1361,12 @@ function TableShape({
                 />
               </g>
             )}
-            {/* In edit mode: seat number. In seat mode: guest first name. */}
+            {/* In edit mode: seat number. In seat mode: guest first name, or a
+                bold seat number on empty chairs. Empty seat numbers get the
+                full chair-height type size (matching edit mode) and a dark
+                ink fill so they stay legible at real planning zoom — the old
+                0.26-width / ink-400 number was nearly invisible on the canvas
+                (audit finding). */}
             {!isDisabled && !isBaby && (
               <text
                 x={px}
@@ -1369,9 +1374,21 @@ function TableShape({
                 transform={`rotate(${-rotation} ${px} ${py})`}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize={seatMode ? chairWidthMm * 0.26 : chairHeightMm * 0.6}
+                fontSize={
+                  seatMode
+                    ? guestLabel
+                      ? chairWidthMm * 0.26
+                      : chairHeightMm * 0.62
+                    : chairHeightMm * 0.6
+                }
                 fontWeight={600}
-                className={`font-grotesk ${isDraggingOut ? "fill-ink-500 dark:fill-umber-400" : isOccupied ? "fill-paper-50" : seatMode ? "fill-ink-400" : "fill-ink-700"}`}
+                className={`font-grotesk ${
+                  isDraggingOut
+                    ? "fill-ink-500 dark:fill-umber-400"
+                    : isOccupied
+                      ? "fill-paper-50"
+                      : "fill-ink-700"
+                }`}
                 style={{ pointerEvents: "none", userSelect: "none" }}
               >
                 {seatMode ? (guestLabel ?? String(i + 1)) : i + 1}

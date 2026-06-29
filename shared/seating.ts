@@ -60,6 +60,40 @@ export function maxSeatsForTable(shape: TableShape, width_mm: number, length_mm:
   return Math.max(1, Math.floor((2 * length_mm + 2 * width_mm) / CHAIR_PITCH_MM));
 }
 
+/** Seat-assignment progress snapshot for the seat-mode summary bar. Computed
+ *  from the guest count and how many of them currently hold a seat. Kept pure
+ *  (no DOM, no locale) so it can be unit-tested and reused by the PDF/export
+ *  paths later. */
+export interface SeatingProgress {
+  /** Guests currently assigned to a seat (clamped to [0, total]). */
+  seated: number;
+  /** Total guests in the workspace. */
+  total: number;
+  /** Guests still without a seat. */
+  remaining: number;
+  /** Integer 0–100 percent seated. 0 when there are no guests (avoids NaN). */
+  pct: number;
+  /** True once everyone has a seat (and there is at least one guest). */
+  complete: boolean;
+}
+
+export function seatingProgress(totalGuests: number, seatedCount: number): SeatingProgress {
+  const total = Math.max(0, Math.floor(totalGuests));
+  const seated = Math.max(0, Math.min(total, Math.floor(seatedCount)));
+  const remaining = total - seated;
+  const pct = total === 0 ? 0 : Math.round((seated / total) * 100);
+  return { seated, total, remaining, pct, complete: total > 0 && remaining === 0 };
+}
+
+/** True when a table label is still an auto-generated default like "Table 4"
+ *  / "Asztal 7" — i.e. "<defaultPrefix> <number>". Drives the gentle
+ *  "name this table" nudge in the editor so generic tables get meaningful
+ *  names. `defaultPrefix` is the localised `seating.table_default_label`. */
+export function isDefaultTableLabel(label: string, defaultPrefix: string): boolean {
+  const escaped = defaultPrefix.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${escaped}\\s+\\d+$`, "i").test(label.trim());
+}
+
 export interface ChairOffset {
   /** Offset from the table centre to the chair centre. */
   dx: number;

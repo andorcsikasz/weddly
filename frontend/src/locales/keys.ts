@@ -3661,6 +3661,13 @@ export interface LocaleMessages {
     table_panel_empty_seat: string;
     table_panel_unassign: string;
     table_panel_close: string;
+    /** Seat-mode progress summary bar (top of page). */
+    progress_label: string;
+    progress_remaining: string;
+    progress_done: string;
+    /** Nudge + placeholder to name auto-default ("Table 4") tables. */
+    name_table_hint: string;
+    table_name_placeholder: string;
   };
   suppliers: {
     title: string;

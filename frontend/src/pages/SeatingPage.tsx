@@ -7,7 +7,12 @@
 // and that's what the PDF export consumes.
 
 import type { Couple, Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
-import { defaultDimsForShape, maxSeatsForTable } from "@shared/seating";
+import {
+  defaultDimsForShape,
+  isDefaultTableLabel,
+  maxSeatsForTable,
+  seatingProgress,
+} from "@shared/seating";
 import {
   Armchair,
   Baby,
@@ -1353,7 +1358,11 @@ export default function SeatingPage() {
         // Full-height map + compact unassigned panel on the right. TableCard
         // grid appears below (scroll down) for the classic per-table view.
         <>
-          <div className="flex h-[calc(100vh-196px)] gap-4">
+          {/* Seating progress — Uber-style "you're 3 of 22 done" summary so the
+              user always knows total / seated / remaining at a glance, even
+              when a table is selected (which hides the unassigned panel). */}
+          <SeatingProgressBar progress={seatingProgress(guests.length, seatedIds.size)} t={t} />
+          <div className="flex h-[calc(100vh-248px)] gap-4">
             {/* Map: flex-1 so it takes all remaining width, h-full so the
               SeatingMap card stretches vertically. */}
             <div data-tour-target="seating-canvas" className="min-w-0 flex-1">
@@ -1693,6 +1702,70 @@ export default function SeatingPage() {
   );
 }
 
+// Top-of-page seating progress. A slim track that fills as guests are seated,
+// with the live count on the left and what's left (or a done state) on the
+// right. Computed from the pure `seatingProgress` helper so the numbers stay
+// honest and unit-testable.
+function SeatingProgressBar({
+  progress,
+  t,
+}: {
+  progress: ReturnType<typeof seatingProgress>;
+  t: ReturnType<typeof useT>["t"];
+}) {
+  // Nothing to seat yet — skip the bar entirely so an empty workspace doesn't
+  // show a confusing "0 / 0".
+  if (progress.total === 0) return null;
+  return (
+    <div
+      className="mb-3 flex items-center gap-3 rounded-xl border border-paper-200 bg-paper-50 px-4 py-2.5 dark:border-umber-700 dark:bg-umber-900"
+      role="group"
+      aria-label={t("seating.progress_label")
+        .replace("{seated}", String(progress.seated))
+        .replace("{total}", String(progress.total))}
+    >
+      <p className="shrink-0 text-sm text-ink-600 dark:text-umber-200">
+        <span className="text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+          {progress.seated}
+        </span>
+        <span className="mx-1 tabular-nums text-ink-400 dark:text-umber-300">
+          / {progress.total}
+        </span>
+        {t("seating.progress_label")
+          .replace("{seated}", "")
+          .replace("{total}", "")
+          .replace(/^[\s/]+/, "")
+          .trim()}
+      </p>
+      <div
+        className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800"
+        role="progressbar"
+        aria-valuenow={progress.pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ease-out ${
+            progress.complete ? "bg-sage-500 dark:bg-sage-400" : "bg-ink-900 dark:bg-paper-50"
+          }`}
+          style={{ width: `${Math.max(progress.pct, progress.seated > 0 ? 4 : 0)}%` }}
+        />
+      </div>
+      <span
+        className={`shrink-0 text-sm font-medium tabular-nums ${
+          progress.complete
+            ? "text-sage-600 dark:text-sage-300"
+            : "text-ink-500 dark:text-umber-300"
+        }`}
+      >
+        {progress.complete
+          ? t("seating.progress_done")
+          : t("seating.progress_remaining").replace("{n}", String(progress.remaining))}
+      </span>
+    </div>
+  );
+}
+
 function ShortcutRow({ keys, label }: { keys: string[]; label: string }) {
   return (
     <li className="flex items-center justify-between gap-3">
@@ -1754,7 +1827,22 @@ function TableEditor({
           String(table.seats),
         )}`}
         editAriaLabel={t("seating.table_label_prompt")}
+        placeholder={t("seating.table_name_placeholder")}
       />
+
+      {/* Naming nudge — generic "Table 4" labels are a planning smell. While
+          the label is still an auto-default we coax the user toward a
+          meaningful name; the hint disappears the moment they rename it. */}
+      {isDefaultTableLabel(table.label, t("seating.table_default_label")) && (
+        <p className="-mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-ink-500 dark:text-umber-300">
+          <Pencil
+            size={12}
+            aria-hidden
+            className="mt-0.5 shrink-0 text-ink-400 dark:text-umber-400"
+          />
+          <span>{t("seating.name_table_hint")}</span>
+        </p>
+      )}
 
       <Section label={t("seating.shape_label")}>
         <ShapePicker
@@ -2147,11 +2235,13 @@ function EditableHeading({
   onCommit,
   subtitle,
   editAriaLabel,
+  placeholder,
 }: {
   value: string;
   onCommit: (next: string) => void;
   subtitle: string;
   editAriaLabel: string;
+  placeholder?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -2174,6 +2264,7 @@ function EditableHeading({
         <input
           autoFocus
           aria-label={editAriaLabel}
+          placeholder={placeholder}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
@@ -2533,7 +2624,7 @@ function TableSeatPanel({
                   </button>
                 </>
               ) : (
-                <span className="flex-1 text-[11px] italic text-ink-400 dark:text-umber-500">
+                <span className="flex-1 text-xs text-ink-500 dark:text-umber-300">
                   {t("seating.table_panel_empty_seat")}
                 </span>
               )}
