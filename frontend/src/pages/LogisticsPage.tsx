@@ -17,6 +17,7 @@
 //     Tap a guest to arm, then tap a card / row to assign — capacity is
 //     enforced the same way as drag drops.
 
+import type { ScheduleEvent } from "@shared/schedule";
 import type {
   Accommodation,
   AccommodationRoom,
@@ -58,6 +59,7 @@ import {
   accommodationRoomApi,
   coupleApi,
   guestApi,
+  scheduleApi,
   transferApi,
 } from "../lib/endpoints";
 import { currencySymbol, formatHuf } from "../lib/format";
@@ -86,6 +88,10 @@ export default function LogisticsPage() {
   const [rooms, setRooms] = useState<AccommodationRoom[]>([]);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
+  // Day-of program ("Menetrend") beats — used only to suggest a sensible
+  // departure time for a new transfer (outbound before the first beat, return
+  // after the last). Never mutated here.
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   // The couple — fetched alongside so we can pin the host pair at the top of
   // the unassigned sidebar (matched by `partner_role`, mirroring SeatingPage).
   const [couple, setCouple] = useState<Couple | null>(null);
@@ -126,18 +132,20 @@ export default function LogisticsPage() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const [acc, rm, tr, gs, c] = await Promise.all([
+    const [acc, rm, tr, gs, c, sch] = await Promise.all([
       accommodationApi.list(),
       accommodationRoomApi.list(),
       transferApi.list(),
       guestApi.list(),
       coupleApi.current(),
+      scheduleApi.list(),
     ]);
     setAccommodations(acc.accommodations);
     setRooms(rm.rooms);
     setTransfers(tr.transfers);
     setGuests(gs.guests);
     setCouple(c.couple);
+    setScheduleEvents(sch.events);
   }, []);
 
   useEffect(() => {
@@ -910,6 +918,8 @@ export default function LogisticsPage() {
       {editingTransfer !== null && (
         <TransferDialog
           initial={editingTransfer === "new" ? null : editingTransfer}
+          weddingDate={couple?.wedding_date ?? null}
+          scheduleEvents={scheduleEvents}
           onClose={() => setEditingTransfer(null)}
           onSaved={async () => {
             setEditingTransfer(null);
@@ -947,6 +957,33 @@ function TabButton({
       }`}
     >
       {icon}
+      {label}
+    </button>
+  );
+}
+
+/** Segmented "oda / vissza" toggle inside the transfer dialog — mirrors the
+ *  TabButton pill styling so the control reads as a single switch. */
+function DirectionButton({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`flex flex-1 items-center justify-center rounded-md px-3 py-1.5 text-sm transition-colors ${
+        active
+          ? "bg-white text-ink-900 shadow-sm dark:bg-umber-700 dark:text-paper-100"
+          : "text-ink-600 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-100"
+      }`}
+    >
       {label}
     </button>
   );
@@ -1692,7 +1729,7 @@ function TransferTable({
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-ink-900 dark:text-paper-50">{tr.label}</p>
                 <p className="mt-0.5 text-xs text-ink-600 dark:text-umber-200">
-                  {tr.direction ?? "-"}
+                  {directionLabel(t, tr.direction)}
                 </p>
                 <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
                   {tr.depart_at ? formatDepartAt(tr.depart_at) : "-"}
@@ -1795,7 +1832,7 @@ function TransferTable({
                 >
                   <td className="px-3 py-2 align-top font-medium">{tr.label}</td>
                   <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
-                    {tr.direction ?? "-"}
+                    {directionLabel(t, tr.direction)}
                   </td>
                   <td className="px-3 py-2 align-top text-ink-600 dark:text-umber-200">
                     {tr.depart_at ? formatDepartAt(tr.depart_at) : "-"}
@@ -1867,6 +1904,71 @@ function TransferTable({
 function formatDepartAt(value: string): string {
   // "YYYY-MM-DDTHH:MM" → "YYYY-MM-DD HH:MM" for display.
   return value.replace("T", " ");
+}
+
+/** Canonical transfer directions. Stored verbatim in `Transfer.direction`.
+ *  Legacy free-text values (anything that isn't one of these or the HU words
+ *  "oda"/"vissza") are left untouched and just render as-is. */
+type TransferDirection = "outbound" | "return";
+
+/** Buffer the suggested departure leaves before the first program beat
+ *  (outbound) or after the last one ends (return). */
+const TRANSFER_BUFFER_MINUTES = 60;
+
+/** Fallbacks when the couple hasn't filled in the day-of program yet — a
+ *  midday outbound and a late-evening return on the wedding day itself. */
+const FALLBACK_OUTBOUND_MINUTES = 12 * 60; // 12:00
+const FALLBACK_RETURN_MINUTES = 22 * 60; // 22:00
+
+/** Map any stored direction (canonical or legacy HU) onto the toggle's two
+ *  states. Unknown free text defaults to "outbound". */
+function normalizeDirection(raw: string | null): TransferDirection {
+  const v = (raw ?? "").trim().toLowerCase();
+  return v === "return" || v === "vissza" ? "return" : "outbound";
+}
+
+/** Localized label for a stored direction. Canonical and legacy HU values map
+ *  to the translated word; any other free text renders verbatim. */
+function directionLabel(t: (k: string) => string, raw: string | null): string {
+  const v = (raw ?? "").trim().toLowerCase();
+  if (v === "outbound" || v === "oda") return t("logistics.transfer_direction_outbound");
+  if (v === "return" || v === "vissza") return t("logistics.transfer_direction_return");
+  return raw?.trim() || "-";
+}
+
+/** Combine the wedding day (calendar) with a minutes-from-midnight offset into
+ *  the local "YYYY-MM-DDTHH:MM" string the `depart_at` field expects. Date
+ *  arithmetic absorbs day rollover (program beats past midnight) and any
+ *  negative offset from the buffer. */
+function minutesToDepartLocal(weddingDate: string, totalMinutes: number): string {
+  const [y, m, d] = weddingDate.split("-").map(Number);
+  if (!y || !m || !d) return "";
+  const at = new Date(y, m - 1, d, 0, totalMinutes, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}T${pad(at.getHours())}:${pad(at.getMinutes())}`;
+}
+
+/** Suggested departure for a direction: the wedding day as the base, then
+ *  outbound = a buffer before the first program beat, return = a buffer after
+ *  the last beat ends. Returns "" when there's no wedding date to anchor to. */
+function suggestDepartAt(
+  direction: TransferDirection,
+  weddingDate: string | null,
+  events: ScheduleEvent[],
+): string {
+  if (!weddingDate) return "";
+  const sorted = [...events].sort((a, b) => a.starts_at_minutes - b.starts_at_minutes);
+  let minutes: number;
+  if (direction === "outbound") {
+    const first = sorted[0];
+    minutes = first ? first.starts_at_minutes - TRANSFER_BUFFER_MINUTES : FALLBACK_OUTBOUND_MINUTES;
+  } else {
+    const last = sorted[sorted.length - 1];
+    minutes = last
+      ? last.starts_at_minutes + (last.duration_minutes ?? 0) + TRANSFER_BUFFER_MINUTES
+      : FALLBACK_RETURN_MINUTES;
+  }
+  return minutesToDepartLocal(weddingDate, minutes);
 }
 
 // ── Dialogs ───────────────────────────────────────────────────────────────
@@ -2174,23 +2276,41 @@ function RoomDialog({
 
 function TransferDialog({
   initial,
+  weddingDate,
+  scheduleEvents,
   onClose,
   onSaved,
 }: {
   initial: Transfer | null;
+  weddingDate: string | null;
+  scheduleEvents: ScheduleEvent[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
   const { t } = useT();
   const toast = useToast();
   const [label, setLabel] = useState(initial?.label ?? "");
-  const [direction, setDirection] = useState(initial?.direction ?? "");
-  const [departAt, setDepartAt] = useState(initial?.depart_at ?? "");
+  const [direction, setDirection] = useState<TransferDirection>(
+    normalizeDirection(initial?.direction ?? null),
+  );
+  // Suggest a departure derived from the program (outbound before the first
+  // beat, return after the last). For a new transfer we prefill the suggestion;
+  // editing keeps the saved value. The suggestion follows the direction toggle
+  // until the planner types their own time (`departTouched`).
+  const [departAt, setDepartAt] = useState(
+    initial?.depart_at ?? suggestDepartAt(normalizeDirection(null), weddingDate, scheduleEvents),
+  );
+  const [departTouched, setDepartTouched] = useState(initial != null);
   const [capacity, setCapacity] = useState<string>(
     initial?.capacity != null ? String(initial.capacity) : "",
   );
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [submitting, setSubmitting] = useState(false);
+
+  function chooseDirection(next: TransferDirection) {
+    setDirection(next);
+    if (!departTouched) setDepartAt(suggestDepartAt(next, weddingDate, scheduleEvents));
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -2206,7 +2326,7 @@ function TransferDialog({
     }
     const body: UpsertTransferInput = {
       label: trimmed,
-      direction: direction.trim() || null,
+      direction,
       depart_at: departAt.trim() || null,
       capacity: cap,
       notes: notes.trim() || null,
@@ -2252,13 +2372,18 @@ function TransferDialog({
           />
         </Field>
         <Field label={t("logistics.transfer_direction")}>
-          <input
-            type="text"
-            className="input"
-            value={direction}
-            onChange={(e) => setDirection(e.target.value)}
-            placeholder={t("logistics.transfer_direction_placeholder")}
-          />
+          <div className="flex rounded-lg border border-paper-400 bg-paper-100 p-0.5 dark:border-umber-600 dark:bg-umber-900">
+            <DirectionButton
+              active={direction === "outbound"}
+              onClick={() => chooseDirection("outbound")}
+              label={t("logistics.transfer_direction_outbound")}
+            />
+            <DirectionButton
+              active={direction === "return"}
+              onClick={() => chooseDirection("return")}
+              label={t("logistics.transfer_direction_return")}
+            />
+          </div>
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("logistics.transfer_depart_at")}>
@@ -2266,7 +2391,10 @@ function TransferDialog({
               type="datetime-local"
               className="input"
               value={departAt}
-              onChange={(e) => setDepartAt(e.target.value)}
+              onChange={(e) => {
+                setDepartAt(e.target.value);
+                setDepartTouched(true);
+              }}
             />
           </Field>
           <Field label={t("logistics.transfer_capacity")}>

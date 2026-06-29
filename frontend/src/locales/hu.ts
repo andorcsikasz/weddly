@@ -3150,6 +3150,8 @@ const hu: LocaleMessages = {
     transfer_label_placeholder: "Pl. Reptéri transzfer",
     transfer_direction: "Irány",
     transfer_direction_placeholder: "Pl. oda / vissza",
+    transfer_direction_outbound: "Oda",
+    transfer_direction_return: "Vissza",
     transfer_depart_at: "Indulás",
     transfer_capacity: "Férőhely",
     transfer_assigned: "Vendégek",

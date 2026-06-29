@@ -3116,6 +3116,8 @@ const en: LocaleMessages = {
     transfer_label_placeholder: "e.g. Airport pickup",
     transfer_direction: "Direction",
     transfer_direction_placeholder: "e.g. inbound / outbound",
+    transfer_direction_outbound: "Outbound",
+    transfer_direction_return: "Return",
     transfer_depart_at: "Departs",
     transfer_capacity: "Seats",
     transfer_assigned: "Guests",

@@ -3465,6 +3465,8 @@ export interface LocaleMessages {
     transfer_label_placeholder: string;
     transfer_direction: string;
     transfer_direction_placeholder: string;
+    transfer_direction_outbound: string;
+    transfer_direction_return: string;
     transfer_depart_at: string;
     transfer_capacity: string;
     transfer_assigned: string;
