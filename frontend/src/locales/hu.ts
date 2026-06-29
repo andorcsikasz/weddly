@@ -5531,9 +5531,9 @@ const hu: LocaleMessages = {
     last_updated_label: "Utolsó frissítés",
     last_updated_date: "2026-05-18",
     paragraph_made_in:
-      "Abba a korba léptem, hogy egyre több barátomnak aktuális az esküvőszervezés — és kicsit nekem is kezd az lenni. Úgy voltam vele, hogy ezt lehet jobban is csinálni, mintsem hogy egy végtelen Excel, Google Form és rajzolgatás háromszögében ragadjon az ember.",
+      "Abba a korba léptem, amikor egyre több barátom szervezi az esküvőjét, és lassan én is. Végignéztem, ahogy a legszebb hónapjaik egy végtelen Excel, Google Form és kézzel rajzolt ülésrend káoszába fulladnak. Úgy döntöttem, hogy ennél sokkal jobbat építek.",
     paragraph_why:
-      "Hiszek abban, hogy az esküvő — az, hogy két ember összeköti egymással az életét — az egyik legnagyobb és legfontosabb dolog, ami egy ember életében történik. Szeretném, hogy ez tudjon szem előtt maradni.",
+      "Hiszem, hogy az esküvő, az a nap, amikor két ember összeköti az életét, az egyik legnagyobb dolog, ami egy emberrel történhet. Azt akarom, hogy a szervezés zaja közben se sikkadjon el ez az érzés, hanem végig a középpontban maradjon.",
     paragraph_contact_label: "Írjatok nekünk",
     paragraph_contact_email: "hello@tryweddly.com",
     paragraph_contact_cta: "Üzenet írása",

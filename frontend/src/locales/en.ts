@@ -5474,9 +5474,9 @@ const en: LocaleMessages = {
     last_updated_label: "Last updated",
     last_updated_date: "2026-05-18",
     paragraph_made_in:
-      "I've reached the age where more and more of my friends are planning weddings — and slowly so am I. It struck me that this could be done better than getting stuck in an endless triangle of Excel, Google Forms, and back-of-the-napkin sketches.",
+      "I've reached the age where more and more of my friends are planning weddings, and slowly so am I. I watched their best months get swallowed by an endless triangle of spreadsheets, Google Forms, and seating charts sketched on napkins. So I set out to build something far better.",
     paragraph_why:
-      "I believe a wedding — two people joining their lives together — is one of the biggest and most important things that happens in a person's life. I want that to stay in focus.",
+      "I believe a wedding, the day two people join their lives together, is one of the biggest things that can happen to a person. I want that to stay at the center, never lost in the noise of planning.",
     paragraph_contact_label: "Get in touch",
     paragraph_contact_email: "hello@tryweddly.com",
     paragraph_contact_cta: "Write a message",
