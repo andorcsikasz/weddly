@@ -3921,6 +3921,11 @@ const en: LocaleMessages = {
     table_partner_none: "Solo member",
     table_partner_orphan: "No workspace",
     table_admin_actions: "Actions",
+    new_section: "New sign-ups",
+    new_section_help:
+      "Everything new since you last opened this page — couples and solo users together, no categories. They also appear in their own sections below.",
+    new_count_one: "{n} new",
+    new_count_other: "{n} new",
     workspaces_section: "Couple workspaces",
     workspaces_count_one: "{n} workspace",
     workspaces_count_other: "{n} workspaces",

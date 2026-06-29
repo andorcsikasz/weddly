@@ -284,6 +284,28 @@ export default function AdminUsersPage() {
     return demoCouples.filter((c) => c.last_seen_at != null && c.last_seen_at >= cutoff).length;
   }, [demoCouples]);
 
+  // "Not yet seen" bucket — every real signup created since the admin's last
+  // visit (the localStorage watermark read into `newThreshold` at mount). These
+  // rows ALSO live in their own sections below; this is just a category-free
+  // digest pinned to the top so a returning admin sees what's new at a glance.
+  // Demo + beta are excluded (realCouples already drops them) so the digest
+  // reflects actual signups. Newest first.
+  const unseenCouples = useMemo(
+    () =>
+      realCouples
+        .filter((c) => c.created_at > newThreshold)
+        .sort((a, b) => b.created_at - a.created_at),
+    [realCouples, newThreshold],
+  );
+  const unseenOrphans = useMemo(
+    () =>
+      orphans
+        .filter((u) => u.created_at > newThreshold)
+        .sort((a, b) => b.created_at - a.created_at),
+    [orphans, newThreshold],
+  );
+  const unseenCount = unseenCouples.length + unseenOrphans.length;
+
   // Display codes are positional, not the raw DB id: real signups get a
   // gap-free 5-digit sequence ("00001"…) while demo workspaces get a separate
   // D-prefixed 4-digit one ("D0001"…). Seeding a demo (or any non-signup row)
@@ -1001,6 +1023,24 @@ export default function AdminUsersPage() {
     );
   }
 
+  /** One orphan (no-workspace) user as a card — used by the "new sign-ups"
+   *  digest so couples and solo users render as a single uniform card list
+   *  there. The orphans section further down keeps its own table layout. */
+  function renderOrphanCard(u: AdminUserView) {
+    return (
+      <li
+        key={`new-orphan-${u.id}`}
+        className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(u.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">{renderUserInfo(u, { showLastActive: true })}</div>
+          {renderUserActions(u)}
+        </div>
+        {renderEmailLogPanel(u.id)}
+      </li>
+    );
+  }
+
   /** Inline email delivery log for a single user. Shown when the admin
    *  clicks the History icon on a user row. Lets them verify whether
    *  account_flagged / welcome_verify / etc. actually reached the inbox. */
@@ -1294,6 +1334,28 @@ export default function AdminUsersPage() {
             />
           ) : (
             <>
+              {/* ── New sign-ups — everything created since the admin's last
+               *  visit, couples + solo users together, no sub-categories.
+               *  Pinned to the very top so a returning admin triages what's new
+               *  first; the same rows still appear in their own sections below.
+               *  Hidden when empty or while searching (search drives the lists
+               *  below). ─────────────────────────────────────────────────── */}
+              {!isSearching && unseenCount > 0 && (
+                <section id="admin-section-new" className="mb-6 scroll-mt-20">
+                  <AdminSectionHeader
+                    title={t("admin.new_section")}
+                    count={t(unseenCount === 1 ? "admin.new_count_one" : "admin.new_count_other", {
+                      n: unseenCount,
+                    })}
+                    description={t("admin.new_section_help")}
+                  />
+                  <ul className="space-y-1.5">
+                    {unseenCouples.map(renderCoupleCard)}
+                    {unseenOrphans.map(renderOrphanCard)}
+                  </ul>
+                </section>
+              )}
+
               {/* ── Paired couples — both partners present, one card each ── */}
               <section id="admin-section-couples" className="mb-6 scroll-mt-20">
                 <AdminSectionHeader

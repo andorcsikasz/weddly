@@ -4399,6 +4399,13 @@ export interface LocaleMessages {
     table_partner_none: string;
     table_partner_orphan: string;
     table_admin_actions: string;
+    /** "Not yet seen" bucket at the very top of the admin users page: every
+     *  real signup (couple workspace or orphan user) created since the admin
+     *  last opened this page. Category-free flat list, newest first. */
+    new_section: string;
+    new_section_help: string;
+    new_count_one: string;
+    new_count_other: string;
     /** New v1.2 layout: one row per workspace (couple), with both partners
      *  collapsed inside it. */
     workspaces_section: string;

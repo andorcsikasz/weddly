@@ -3963,6 +3963,11 @@ const hu: LocaleMessages = {
     table_partner_none: "Egyedüli tag",
     table_partner_orphan: "Nincs munkaterület",
     table_admin_actions: "Műveletek",
+    new_section: "Új regisztrációk",
+    new_section_help:
+      "Amióta utoljára megnyitottad ezt az oldalt — minden új pár és egyedüli felhasználó egy helyen, kategória nélkül. Lejjebb a saját szekciójában is megjelennek.",
+    new_count_one: "{n} új",
+    new_count_other: "{n} új",
     workspaces_section: "Páros munkaterületek",
     workspaces_count_one: "{n} munkaterület",
     workspaces_count_other: "{n} munkaterület",
