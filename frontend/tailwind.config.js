@@ -125,6 +125,23 @@ export default {
           800: "#184944",
           900: "#143c38",
         },
+        // Steel - the cool slate-blue accent for the VENDOR portal, per user
+        // direction 2026-06-29. Anchored on the two requested colours:
+        // steel-100 = #C0D6DF (light powder-blue fills, hover, badges) and
+        // steel-600 = #4F6D7A (dark accent for text, icon outlines, active nav,
+        // links). The rest of the ramp is interpolated for borders + dark mode.
+        steel: {
+          50: "#eef3f5",
+          100: "#C0D6DF",
+          200: "#a6c3cf",
+          300: "#8aafbe",
+          400: "#6e94a4",
+          500: "#5c8090",
+          600: "#4F6D7A",
+          700: "#415a65",
+          800: "#344850",
+          900: "#28373d",
+        },
         // WNRS-red — the saturated true red used on the couple-cards tool
         // surface (white-on-red cover card, red-on-white question card).
         // Kept out of the `blush` palette on purpose: blush is the warm

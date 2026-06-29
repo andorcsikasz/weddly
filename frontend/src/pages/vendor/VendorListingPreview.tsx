@@ -28,7 +28,7 @@ function PriceGlyphs({ level }: { level: number }) {
           key={n}
           className={
             n <= level
-              ? "text-sm font-semibold text-umber-700 dark:text-umber-200"
+              ? "text-sm font-semibold text-steel-600 dark:text-steel-300"
               : "text-sm font-semibold text-paper-300 dark:text-umber-700"
           }
         >
@@ -95,7 +95,7 @@ export default function VendorListingPreview({
         )}
 
         {capacityLabel && (
-          <p className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2.5 py-1 text-xs text-ink-600 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-200 dark:ring-umber-700">
+          <p className="inline-flex items-center gap-1 rounded-full bg-steel-50 px-2.5 py-1 text-xs text-steel-700 ring-1 ring-steel-200 dark:bg-steel-600/15 dark:text-steel-200 dark:ring-steel-600/40">
             <span aria-hidden="true">{"\u{1F465}"}</span>
             {t("vendor_home.preview_capacity_guests", { range: capacityLabel })}
           </p>

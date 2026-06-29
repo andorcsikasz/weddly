@@ -106,17 +106,12 @@ export function VendorShell({ children }: { children: ReactNode }) {
     <div className="min-h-full overflow-x-clip">
       <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/vendor"
-              className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
-            >
-              <Wordmark size="sm" />
-            </Link>
-            <span className="hidden truncate text-sm font-medium text-ink-600 sm:inline dark:text-paper-300">
-              {displayName}
-            </span>
-          </div>
+          <Link
+            to="/vendor"
+            className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+          >
+            <Wordmark size="sm" />
+          </Link>
           <button
             type="button"
             onClick={onLogout}
@@ -137,7 +132,36 @@ export function VendorShell({ children }: { children: ReactNode }) {
             collapsed ? "lg:w-16" : "lg:w-56"
           }`}
         >
-          <nav className="flex gap-1 overflow-x-auto lg:sticky lg:top-20 lg:flex-col lg:overflow-visible">
+          <nav className="flex gap-0.5 overflow-x-auto lg:sticky lg:top-20 lg:flex-col lg:overflow-visible">
+            {/* Collapse toggle at the TOP of the rail - desktop only. */}
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-expanded={!collapsed}
+              aria-label={
+                collapsed ? t("vendor.nav.expand_sidebar") : t("vendor.nav.collapse_sidebar")
+              }
+              title={collapsed ? t("vendor.nav.expand_sidebar") : t("vendor.nav.collapse_sidebar")}
+              className={`mb-1 hidden shrink-0 items-center gap-3 rounded-xl py-2 text-sm text-ink-600 transition-colors hover:bg-steel-50 lg:flex dark:text-paper-300 dark:hover:bg-steel-600/15 ${
+                collapsed ? "justify-center px-0" : "px-3"
+              }`}
+            >
+              {collapsed ? (
+                <PanelLeftOpen
+                  size={18}
+                  aria-hidden="true"
+                  className="text-steel-700 dark:text-steel-300"
+                />
+              ) : (
+                <PanelLeftClose
+                  size={18}
+                  aria-hidden="true"
+                  className="text-steel-700 dark:text-steel-300"
+                />
+              )}
+              <span className={collapsed ? "hidden" : ""}>{t("vendor.nav.collapse_sidebar")}</span>
+            </button>
+
             {VENDOR_ITEMS.map((item) => {
               const label = t(item.labelKey);
               return (
@@ -151,8 +175,8 @@ export function VendorShell({ children }: { children: ReactNode }) {
                       collapsed ? "lg:justify-center lg:px-0 px-3" : "px-3"
                     } ${
                       isActive
-                        ? "stationery-coffee text-paper-50 dark:text-paper-50"
-                        : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
+                        ? "bg-steel-600 text-white [&_svg]:text-white"
+                        : "text-ink-700 hover:bg-steel-50 dark:text-paper-200 dark:hover:bg-steel-600/15 [&_svg]:text-steel-700 dark:[&_svg]:text-steel-300"
                     }`
                   }
                 >
@@ -162,40 +186,20 @@ export function VendorShell({ children }: { children: ReactNode }) {
               );
             })}
 
-            {/* Profile chip + collapse toggle - desktop only. */}
-            <div className="mt-2 hidden flex-col gap-1 border-t border-paper-300 pt-2 lg:flex dark:border-umber-700">
+            {/* Profile chip - desktop only. */}
+            <div className="mt-1 hidden border-t border-paper-300 pt-1 lg:block dark:border-umber-700">
               <Link
                 to="/vendor/settings"
                 title={collapsed ? displayName : undefined}
-                className={`flex shrink-0 items-center gap-3 rounded-xl py-2 text-sm text-ink-700 transition-colors hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800 ${
+                className={`flex shrink-0 items-center gap-3 rounded-xl py-2 text-sm text-ink-700 transition-colors hover:bg-steel-50 dark:text-paper-200 dark:hover:bg-steel-600/15 ${
                   collapsed ? "justify-center px-0" : "px-3"
                 }`}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full stationery-coffee text-xs font-semibold text-paper-50 dark:text-paper-50">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-steel-100 text-xs font-semibold text-steel-700">
                   {initialsOf(displayName)}
                 </span>
                 <span className={`truncate ${collapsed ? "hidden" : ""}`}>{displayName}</span>
               </Link>
-              <button
-                type="button"
-                onClick={toggleCollapsed}
-                aria-expanded={!collapsed}
-                aria-label={
-                  collapsed ? t("vendor.nav.expand_sidebar") : t("vendor.nav.collapse_sidebar")
-                }
-                className={`flex shrink-0 items-center gap-3 rounded-xl py-2 text-sm text-ink-600 transition-colors hover:bg-paper-200 dark:text-paper-300 dark:hover:bg-umber-800 ${
-                  collapsed ? "justify-center px-0" : "px-3"
-                }`}
-              >
-                {collapsed ? (
-                  <PanelLeftOpen size={18} aria-hidden="true" />
-                ) : (
-                  <PanelLeftClose size={18} aria-hidden="true" />
-                )}
-                <span className={collapsed ? "hidden" : ""}>
-                  {t("vendor.nav.collapse_sidebar")}
-                </span>
-              </button>
             </div>
           </nav>
         </aside>

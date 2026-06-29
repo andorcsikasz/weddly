@@ -22,6 +22,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { Check, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import type {
   VendorAvailabilityView,
@@ -104,7 +105,7 @@ function BillingBanner({
 
   const cls = warn
     ? "border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
-    : "border-paper-300 bg-paper-100/70 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-100";
+    : "border-steel-200 bg-steel-50 text-ink-700 dark:border-steel-600/40 dark:bg-steel-600/15 dark:text-steel-100";
   return (
     <div className={`mb-4 rounded-xl border px-4 py-3 text-sm ${cls}`} role="status">
       {text}
@@ -399,9 +400,9 @@ export default function VendorListingPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-4">
+      <div className="mb-3">
         <h1 className="font-grotesk text-3xl">{t("vendor_home.page_title")}</h1>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+        <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">
           {t("vendor_home.page_body")}
         </p>
       </div>
@@ -415,7 +416,7 @@ export default function VendorListingPage() {
       {view?.billing && <BillingBanner billing={view.billing} locale={locale} t={t} />}
 
       {form && view && (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
           {/* Live couple's-eye preview: stacked above the form on small
               screens, sticky right column from lg up. */}
           <aside className="order-1 space-y-2 lg:sticky lg:top-6 lg:order-2">
@@ -435,29 +436,29 @@ export default function VendorListingPage() {
             />
           </aside>
 
-          <form onSubmit={onSubmit} className="order-2 space-y-4 lg:order-1">
+          <form onSubmit={onSubmit} className="order-2 space-y-3 lg:order-1">
             {/* Autosave status: live region near the top of the editor. */}
             <div className="flex items-center justify-end" aria-live="polite">
               {autosaveStatus === "saving" && (
                 <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
                   <span
                     aria-hidden="true"
-                    className="h-1.5 w-1.5 animate-pulse rounded-full bg-umber-500 dark:bg-umber-300"
+                    className="h-1.5 w-1.5 animate-pulse rounded-full bg-steel-500 dark:bg-steel-300"
                   />
                   {t("vendor_home.autosave_saving")}
                 </span>
               )}
               {autosaveStatus === "saved" && (
                 <span className="inline-flex items-center gap-1.5 text-xs text-sage-700 dark:text-sage-300">
-                  <span aria-hidden="true">✓</span>
+                  <Check aria-hidden="true" size={14} strokeWidth={2.4} />
                   {t("vendor_home.autosave_saved")}
                 </span>
               )}
               {autosaveStatus === "unsaved" && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-umber-600 dark:text-umber-300">
+                <span className="inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-300">
                   <span
                     aria-hidden="true"
-                    className="h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-400"
+                    className="h-1.5 w-1.5 rounded-full bg-steel-400 dark:bg-steel-400"
                   />
                   {t("vendor_home.autosave_unsaved")}
                 </span>
@@ -466,21 +467,12 @@ export default function VendorListingPage() {
 
             {/* Brand lock info card: the listing name is admin-moderated. */}
             <div className="card flex items-start gap-3">
-              <span
+              <Lock
                 aria-hidden="true"
-                className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-500 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-200 dark:ring-umber-700"
-              >
-                <svg
-                  viewBox="0 0 20 20"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                >
-                  <rect x="4" y="9" width="12" height="8" rx="1.5" />
-                  <path d="M7 9V6.5a3 3 0 0 1 6 0V9" />
-                </svg>
-              </span>
+                size={20}
+                strokeWidth={1.75}
+                className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
+              />
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-100">
                   {view.listing.name}
@@ -493,7 +485,7 @@ export default function VendorListingPage() {
                 </p>
                 <a
                   href={`mailto:${supportEmail}`}
-                  className="mt-2 inline-flex text-sm font-medium text-umber-700 underline decoration-paper-300 underline-offset-2 hover:text-umber-900 dark:text-umber-200 dark:hover:text-paper-100"
+                  className="mt-2 inline-flex text-sm font-medium text-steel-600 underline decoration-steel-200 underline-offset-2 hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
                 >
                   {t("vendor_home.brand_locked_contact_cta")}
                 </a>
@@ -533,10 +525,10 @@ export default function VendorListingPage() {
                 }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={onHeroDrop}
-                className={`relative flex min-h-[12rem] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
+                className={`relative flex min-h-[11rem] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
                   dragOver
-                    ? "border-umber-500 bg-paper-100 dark:border-umber-400 dark:bg-umber-800"
-                    : "border-paper-300 bg-paper-50 hover:border-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-500"
+                    ? "border-steel-400 bg-steel-50 dark:border-steel-500 dark:bg-steel-600/15"
+                    : "border-paper-300 bg-paper-50 hover:border-steel-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-steel-500"
                 }`}
               >
                 {view.listing.hero_image_url ? (
@@ -568,7 +560,7 @@ export default function VendorListingPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  className="btn-primary"
+                  className="btn bg-steel-600 text-white hover:bg-steel-700"
                   onClick={() => heroInputRef.current?.click()}
                   disabled={heroBusy}
                 >
@@ -664,7 +656,7 @@ export default function VendorListingPage() {
               />
             </fieldset>
 
-            <fieldset className="card space-y-4" disabled={saving}>
+            <fieldset className="card space-y-3" disabled={saving}>
               <legend className="font-semibold">{t("vendor_home.section_pricing")}</legend>
 
               <div>
@@ -687,8 +679,8 @@ export default function VendorListingPage() {
                         onClick={() => setPriceBand(lvl)}
                         className={`flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition ${
                           active
-                            ? "border-umber-500 bg-paper-100 ring-1 ring-umber-500 dark:border-umber-400 dark:bg-umber-800 dark:ring-umber-400"
-                            : "border-paper-300 bg-paper-50 hover:border-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-umber-500"
+                            ? "border-steel-600 bg-steel-600 text-white"
+                            : "border-steel-200 bg-paper-50 text-ink-600 hover:border-steel-400 dark:border-steel-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-steel-500"
                         }`}
                       >
                         <span className="inline-flex items-center gap-0.5" aria-hidden="true">
@@ -697,18 +689,30 @@ export default function VendorListingPage() {
                               key={g}
                               className={
                                 g <= lvl
-                                  ? "text-xs font-semibold text-umber-700 dark:text-umber-200"
-                                  : "text-xs font-semibold text-paper-300 dark:text-umber-700"
+                                  ? active
+                                    ? "text-xs font-semibold text-white"
+                                    : "text-xs font-semibold text-steel-600 dark:text-steel-300"
+                                  : active
+                                    ? "text-xs font-semibold text-white/40"
+                                    : "text-xs font-semibold text-paper-300 dark:text-umber-700"
                               }
                             >
                               €
                             </span>
                           ))}
                         </span>
-                        <span className="text-sm font-medium text-ink-800 dark:text-paper-100">
+                        <span
+                          className={`text-sm font-medium ${
+                            active ? "text-white" : "text-ink-800 dark:text-paper-100"
+                          }`}
+                        >
                           {t(`vendor_home.price_band_level_${lvl}_name`)}
                         </span>
-                        <span className="text-[11px] leading-snug text-ink-500 dark:text-umber-300">
+                        <span
+                          className={`text-[11px] leading-snug ${
+                            active ? "text-white/80" : "text-ink-500 dark:text-umber-300"
+                          }`}
+                        >
                           {t(`vendor_home.price_band_level_${lvl}_desc`)}
                         </span>
                       </button>
@@ -748,7 +752,7 @@ export default function VendorListingPage() {
                       className={`h-full rounded-full ${
                         track.invalid
                           ? "bg-blush-400 dark:bg-blush-400"
-                          : "bg-umber-400 dark:bg-umber-500"
+                          : "bg-steel-400 dark:bg-steel-500"
                       }`}
                       style={{
                         marginLeft: `${track.left}%`,
@@ -769,7 +773,11 @@ export default function VendorListingPage() {
               <Link to="/vendors" className="btn-ghost">
                 {t("vendor_home.back_to_directory")}
               </Link>
-              <button type="submit" className="btn-accent" disabled={saving}>
+              <button
+                type="submit"
+                className="btn bg-steel-600 text-white hover:bg-steel-700"
+                disabled={saving}
+              >
                 {saving ? t("vendor_home.saving") : t("vendor_home.save")}
               </button>
             </div>
@@ -778,7 +786,7 @@ export default function VendorListingPage() {
       )}
 
       {availability && (
-        <section className="card mt-4 space-y-3">
+        <section className="card mt-3 space-y-3">
           <div>
             <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
             <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
@@ -801,7 +809,7 @@ export default function VendorListingPage() {
             </label>
             <button
               type="submit"
-              className="btn-accent"
+              className="btn bg-steel-600 text-white hover:bg-steel-700"
               disabled={availBusy || newDate.trim().length === 0}
             >
               {t("vendor_home.availability_add")}
@@ -809,7 +817,7 @@ export default function VendorListingPage() {
           </form>
 
           {availability.blocked_dates.length === 0 ? (
-            <p className="text-sm italic text-ink-500 dark:text-umber-300">
+            <p className="text-sm text-ink-500 dark:text-umber-300">
               {t("vendor_home.availability_empty")}
             </p>
           ) : (

@@ -72,7 +72,7 @@ function ProCell({ locked, children }: { locked: boolean; children: React.ReactN
 function UpgradeNudge() {
   const { t } = useT();
   return (
-    <div className="mb-5 flex flex-col gap-3 rounded-xl border border-paper-300 bg-paper-100 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-umber-700 dark:bg-umber-900">
+    <div className="mb-4 flex flex-col gap-3 rounded-xl border border-steel-200 bg-steel-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-steel-600/30 dark:bg-steel-600/15">
       <div className="min-w-0">
         <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
           {t("vendor.upgrade.title")}
@@ -81,7 +81,10 @@ function UpgradeNudge() {
           {t("vendor.upgrade.body")}
         </p>
       </div>
-      <Link to="/vendor/billing" className="btn-primary btn-sm shrink-0 self-start sm:self-auto">
+      <Link
+        to="/vendor/billing"
+        className="btn btn-sm shrink-0 self-start bg-steel-600 text-white hover:bg-steel-700 sm:self-auto"
+      >
         {t("vendor.upgrade.cta")}
       </Link>
     </div>
@@ -148,9 +151,11 @@ function EmptyClients() {
             className="flex items-center gap-3 sm:flex-1 sm:flex-col sm:gap-2 sm:text-center"
           >
             <div className="flex flex-col items-center gap-2 sm:contents">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-umber-700 dark:bg-umber-800 dark:text-eucalyptus-300">
-                <Icon size={18} aria-hidden="true" />
-              </span>
+              <Icon
+                size={20}
+                aria-hidden="true"
+                className="shrink-0 text-steel-700 dark:text-steel-300"
+              />
               <span className="text-sm text-ink-700 sm:max-w-[10rem] dark:text-paper-200">
                 {label}
               </span>
@@ -168,7 +173,7 @@ function EmptyClients() {
 
       <Link
         to="/vendor/listing"
-        className="btn-primary btn-sm mt-7 inline-flex items-center gap-1.5"
+        className="btn btn-sm mt-6 inline-flex items-center gap-1.5 bg-steel-600 text-white hover:bg-steel-700"
       >
         {t("vendor.clients.empty_cta_listing")}
         <ArrowRight size={15} aria-hidden="true" />
@@ -226,14 +231,14 @@ export default function VendorClientsPage() {
   const pillBase =
     "rounded-full border border-paper-300 px-3 py-1 text-xs transition-colors dark:border-umber-700";
   const pillActive =
-    "bg-ink-900 text-paper-50 border-ink-900 dark:bg-paper-100 dark:text-umber-900 dark:border-paper-100";
+    "bg-steel-600 text-white border-steel-600 hover:bg-steel-700 dark:border-steel-600";
   const pillInactive =
     "text-ink-700 hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800";
 
   return (
     <div>
-      <header className="mb-5">
-        <h1 className="font-serif text-2xl italic text-ink-900 dark:text-paper-50">
+      <header className="mb-4">
+        <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
           {t("vendor.clients.page_title")}
         </h1>
         <p className="mt-1 text-sm text-ink-600 dark:text-paper-300">

@@ -100,50 +100,39 @@ export default function VendorBillingPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="font-serif text-2xl italic text-ink-900 sm:text-3xl dark:text-paper-50">
+        <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
           {t("vendor.billing.page_title")}
         </h1>
         <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.billing.page_body")}</p>
       </header>
 
-      {/* Current plan + subscription status */}
-      <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
-              {t("vendor.billing.current_plan")}
-            </span>
-            <span className="text-2xl font-semibold text-ink-900 dark:text-paper-50">
-              {t(isPro ? "vendor.plan.pro_label" : "vendor.plan.free_label")}
-            </span>
-          </div>
-          <PlanBadge
-            isPro={isPro}
-            label={t(isPro ? "vendor.plan.pro_badge" : "vendor.plan.free_badge")}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2 border-t border-paper-200 pt-4 dark:border-umber-700">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
-              {t("vendor.billing.status_label")}
-            </span>
-            <span className="text-sm font-medium text-ink-900 dark:text-paper-50">
-              {t(billing.entitled ? "vendor.billing.entitled_yes" : "vendor.billing.entitled_no")}
-            </span>
-          </div>
+      {/* Current plan badge + entitlement window. The plan NAME lives on the
+          pricing cards below (badge + "you are here"), so this row stays compact
+          and only carries the badge plus the entitlement / free-until line. */}
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
+            {t("vendor.billing.current_plan")}
+          </span>
+          <span className="text-sm font-medium text-ink-900 dark:text-paper-50">
+            {t(billing.entitled ? "vendor.billing.entitled_yes" : "vendor.billing.entitled_no")}
+          </span>
           {statusDateLine && (
             <p className="text-sm text-ink-600 dark:text-paper-300">{statusDateLine}</p>
           )}
         </div>
+        <PlanBadge
+          isPro={isPro}
+          label={t(isPro ? "vendor.plan.pro_badge" : "vendor.plan.free_badge")}
+        />
       </section>
 
       {/* Pricing - feature-by-feature Free vs Pro with the Pro monthly price and
           a "you are here" marker on the vendor's active plan. */}
       <section className="flex flex-col gap-4">
-        <h2 className="font-serif text-lg italic text-ink-900 dark:text-paper-50">
+        <h2 className="font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
           {t("vendor.billing.compare_title")}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -177,10 +166,12 @@ export default function VendorBillingPage() {
 
       {/* Payment milestone - calm, non-alarming pill. Online checkout is not
           wired; this sets the expectation without faking a portal. */}
-      <div className="flex items-start gap-2.5 rounded-2xl border border-eucalyptus-200 bg-eucalyptus-50 p-4 dark:border-eucalyptus-400/30 dark:bg-eucalyptus-400/10">
-        <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-eucalyptus-100 text-sage-700 dark:bg-eucalyptus-400/20 dark:text-sage-200">
-          <Mail size={15} aria-hidden="true" />
-        </span>
+      <div className="flex items-start gap-2.5 rounded-2xl border border-steel-200 bg-steel-50 p-4 dark:border-steel-600/30 dark:bg-steel-600/15">
+        <Mail
+          size={18}
+          aria-hidden="true"
+          className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
+        />
         <p className="text-sm text-ink-700 dark:text-paper-200">
           {t("vendor.billing.payment_portal_note")}
         </p>
@@ -199,11 +190,13 @@ export default function VendorBillingPage() {
           </p>
         </section>
       ) : (
-        <section className="flex flex-col gap-4 rounded-2xl border border-blush-200 bg-blush-50 p-5 dark:border-blush-400/30 dark:bg-blush-400/10">
+        <section className="flex flex-col gap-4 rounded-2xl border border-steel-200 bg-steel-50 p-5 dark:border-steel-600/30 dark:bg-steel-600/15">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-200 text-ink-900 dark:bg-blush-400/20 dark:text-paper-50">
-              <Sparkles size={18} aria-hidden="true" />
-            </span>
+            <Sparkles
+              size={20}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
+            />
             <div className="flex flex-col gap-0.5">
               <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
                 {t("vendor.upgrade.title")}
@@ -221,7 +214,7 @@ export default function VendorBillingPage() {
               type="button"
               disabled
               aria-disabled="true"
-              className="btn-primary inline-flex w-fit items-center gap-2 opacity-60"
+              className="btn w-fit bg-steel-600 text-white hover:bg-steel-700 opacity-60"
             >
               <Crown size={16} aria-hidden="true" />
               <span>{t("vendor.billing.upgrade_cta")}</span>
@@ -278,7 +271,7 @@ function PlanBadge({ isPro, label }: { isPro: boolean; label: string }) {
     <span
       className={
         isPro
-          ? "inline-flex items-center gap-1.5 rounded-full bg-blush-200 px-3 py-1 text-xs font-semibold text-ink-900 dark:bg-blush-400/20 dark:text-paper-50"
+          ? "inline-flex items-center gap-1.5 rounded-full bg-steel-600 px-3 py-1 text-xs font-semibold text-white dark:bg-steel-600"
           : "inline-flex items-center gap-1.5 rounded-full bg-paper-200 px-3 py-1 text-xs font-semibold text-ink-700 dark:bg-umber-800 dark:text-paper-200"
       }
     >
@@ -309,7 +302,7 @@ function PlanColumn({
     <div
       className={
         accent
-          ? "flex flex-col gap-3 rounded-2xl border border-blush-200 bg-paper-50 p-5 dark:border-blush-400/30 dark:bg-umber-900"
+          ? "flex flex-col gap-3 rounded-2xl border border-steel-200 bg-paper-50 p-5 dark:border-steel-600/40 dark:bg-umber-900"
           : "flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900"
       }
     >
@@ -321,7 +314,7 @@ function PlanColumn({
           </span>
         </div>
         {active && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700 dark:bg-sage-400/20 dark:text-sage-200">
+          <span className="inline-flex items-center gap-1 rounded-full bg-steel-600 px-2.5 py-1 text-xs font-semibold text-white">
             <Check size={12} aria-hidden="true" />
             <span>{youAreHere}</span>
           </span>
@@ -339,7 +332,7 @@ function FeatureRow({ label, unlocked }: { label: string; unlocked: boolean }) {
   return (
     <li className="flex items-center gap-2.5 text-sm">
       {unlocked ? (
-        <Check size={16} aria-hidden="true" className="shrink-0 text-blush-500" />
+        <Check size={16} aria-hidden="true" className="shrink-0 text-sage-600 dark:text-sage-300" />
       ) : (
         <Lock size={16} aria-hidden="true" className="shrink-0 text-ink-400 dark:text-paper-500" />
       )}
@@ -356,8 +349,8 @@ function FeatureRow({ label, unlocked }: { label: string; unlocked: boolean }) {
 
 function BillingSkeleton({ title }: { title: string }) {
   return (
-    <div className="flex flex-col gap-6" aria-busy="true">
-      <h1 className="font-serif text-2xl italic text-ink-900 sm:text-3xl dark:text-paper-50">
+    <div className="flex flex-col gap-5" aria-busy="true">
+      <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
         {title}
       </h1>
       <Skeleton height={128} rounded="2xl" />

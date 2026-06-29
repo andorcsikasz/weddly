@@ -101,9 +101,9 @@ export default function VendorStatsPage() {
   const inquiryMax = Math.max(stats.inquiries_total, stats.inquiries_30d, 1);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="font-serif text-2xl italic text-ink-900 sm:text-3xl dark:text-paper-50">
+        <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
           {t("vendor.stats.page_title")}
         </h1>
         <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.stats.page_body")}</p>
@@ -206,12 +206,16 @@ export default function VendorStatsPage() {
           <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-700 dark:bg-umber-900">
             <div className="flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
-                <CalendarClock size={18} aria-hidden="true" />
+                <CalendarClock
+                  size={18}
+                  aria-hidden="true"
+                  className="text-steel-700 dark:text-steel-300"
+                />
                 <span>{t("vendor.stats.upcoming")}</span>
               </h2>
               <Link
                 to="/vendor/clients"
-                className="text-sm font-medium text-ink-700 transition-colors hover:text-ink-900 dark:text-paper-200 dark:hover:text-blush-300"
+                className="text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
               >
                 {t("vendor.dashboard.view_clients")}
               </Link>
@@ -267,9 +271,9 @@ function StatCard({
   help?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
+    <div className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-3.5 dark:border-umber-700 dark:bg-umber-900">
       <div className="flex items-center gap-2 text-ink-500 dark:text-paper-400">
-        {icon}
+        <span className="text-steel-700 dark:text-steel-300">{icon}</span>
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
         {help ? (
           <span
@@ -375,7 +379,7 @@ function BarRow({
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800">
         <div
-          className="h-full rounded-full bg-blush-400 transition-all"
+          className="h-full rounded-full bg-steel-600 transition-all dark:bg-steel-400"
           style={{ width: `${Math.max(pct, count > 0 ? 4 : 0)}%` }}
         />
       </div>
@@ -395,10 +399,12 @@ function UpgradeAnalyticsCard({
   cta: string;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-dashed border-blush-200 bg-blush-50 p-6 dark:border-blush-400/30 dark:bg-blush-400/10">
-      <div className="flex items-center gap-2 text-ink-700 dark:text-paper-200">
-        <Lock size={18} aria-hidden="true" />
-        <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">{title}</h2>
+    <section className="flex flex-col gap-3 rounded-2xl border border-dashed border-steel-200 bg-steel-50 p-5 dark:border-steel-600/30 dark:bg-steel-600/15">
+      <div className="flex items-center gap-2 text-ink-900 dark:text-paper-50">
+        <Lock size={18} aria-hidden="true" className="text-steel-700 dark:text-steel-300" />
+        <h2 className="font-grotesk text-lg font-semibold text-ink-900 dark:text-paper-50">
+          {title}
+        </h2>
       </div>
       <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
         {locked}
@@ -415,8 +421,8 @@ function UpgradeAnalyticsCard({
 
 function StatsSkeleton({ title }: { title: string }) {
   return (
-    <div className="flex flex-col gap-6" aria-busy="true">
-      <h1 className="font-serif text-2xl italic text-ink-900 sm:text-3xl dark:text-paper-50">
+    <div className="flex flex-col gap-5" aria-busy="true">
+      <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
         {title}
       </h1>
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

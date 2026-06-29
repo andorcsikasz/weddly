@@ -7,7 +7,6 @@
 
 import {
   ArrowRight,
-  BarChart3,
   CalendarClock,
   CalendarOff,
   CheckCircle2,
@@ -150,16 +149,7 @@ export default function VendorDashboardPage() {
       icon: <ImageIcon size={18} aria-hidden="true" />,
       title: t("vendor.dashboard.action_cover_title"),
       body: t("vendor.dashboard.action_cover_body"),
-      tone: "lemonade",
-    });
-  }
-  if (!completenessDone) {
-    actions.push({
-      to: "/vendor/listing",
-      icon: <BarChart3 size={18} aria-hidden="true" />,
-      title: t("vendor.dashboard.action_finish_title", { pct: String(pct) }),
-      body: t("vendor.dashboard.action_finish_body"),
-      tone: "lemonade",
+      tone: "steel",
     });
   }
   if (stats.upcoming.length > 0) {
@@ -168,7 +158,7 @@ export default function VendorDashboardPage() {
       icon: <CalendarClock size={18} aria-hidden="true" />,
       title: t("vendor.dashboard.action_upcoming_title", { count: String(stats.upcoming.length) }),
       body: t("vendor.dashboard.action_upcoming_body"),
-      tone: "sage",
+      tone: "steel",
     });
   }
   if (actions.length === 0) {
@@ -182,14 +172,16 @@ export default function VendorDashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {/* Completeness alert strip - only while the listing is incomplete and the
           vendor hasn't dismissed this exact percent. */}
       {showCompletenessAlert && (
-        <div className="flex items-start gap-3 rounded-2xl border border-lemonade-yellow/40 bg-lemonade-yellow/10 p-4 dark:border-lemonade-yellow/30 dark:bg-lemonade-yellow/10">
-          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lemonade-yellow/30 text-ink-900 dark:bg-lemonade-yellow/20 dark:text-paper-50">
-            <Sparkles size={18} aria-hidden="true" />
-          </span>
+        <div className="flex items-start gap-3 rounded-2xl border border-steel-200 bg-steel-50 p-4 dark:border-steel-600/30 dark:bg-steel-600/15">
+          <Sparkles
+            size={18}
+            aria-hidden="true"
+            className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
+          />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
               {t("vendor.dashboard.completeness_alert", { pct: String(pct) })}
@@ -199,7 +191,7 @@ export default function VendorDashboardPage() {
             </p>
             <Link
               to="/vendor/listing"
-              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-lemonade-yellowInk transition-colors hover:text-umber-900 dark:text-lemonade-yellow dark:hover:text-lemonade-yellow/80"
+              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
             >
               <span>{t("vendor.dashboard.complete_now")}</span>
               <ArrowRight size={15} aria-hidden="true" />
@@ -209,7 +201,7 @@ export default function VendorDashboardPage() {
             type="button"
             onClick={() => dismissCompleteness(pct)}
             aria-label={t("vendor.dashboard.dismiss")}
-            className="-m-1 shrink-0 rounded-lg p-1 text-ink-500 transition-colors hover:bg-lemonade-yellow/20 hover:text-ink-900 dark:text-paper-400 dark:hover:bg-lemonade-yellow/20 dark:hover:text-paper-50"
+            className="-m-1 shrink-0 rounded-lg p-1 text-ink-500 transition-colors hover:bg-steel-100 hover:text-ink-900 dark:text-paper-400 dark:hover:bg-steel-600/20 dark:hover:text-paper-50"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -217,22 +209,21 @@ export default function VendorDashboardPage() {
       )}
 
       {/* Greeting */}
-      <header className="flex flex-col gap-1">
-        <h1 className="font-serif text-2xl italic text-ink-900 sm:text-3xl dark:text-paper-50">
+      <header>
+        <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
           {t("vendor.dashboard.welcome", { name: greetingName })}
         </h1>
-        <p className="text-sm text-ink-600 dark:text-paper-300">
-          {t("vendor.dashboard.page_body")}
-        </p>
       </header>
 
       {/* Upgrade banner — only on the FREE tier. */}
       {isFree && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-blush-200 bg-blush-50 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-blush-400/30 dark:bg-blush-400/10">
+        <div className="flex flex-col gap-3 rounded-2xl border border-steel-200 bg-steel-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-steel-600/30 dark:bg-steel-600/15">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-200 text-ink-900 dark:bg-blush-400/20 dark:text-paper-50">
-              <Sparkles size={18} aria-hidden="true" />
-            </span>
+            <Sparkles
+              size={18}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
+            />
             <div className="flex flex-col gap-0.5">
               <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
                 {t("vendor.upgrade.title")}
@@ -240,20 +231,23 @@ export default function VendorDashboardPage() {
               <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.upgrade.body")}</p>
             </div>
           </div>
-          <Link to="/vendor/billing" className="btn-primary shrink-0 self-start sm:self-auto">
+          <Link
+            to="/vendor/billing"
+            className="shrink-0 self-start rounded-xl bg-steel-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-steel-700 sm:self-auto"
+          >
             {t("vendor.upgrade.cta")}
           </Link>
         </div>
       )}
 
       {/* HERO metric - last 30 days of inquiries, the number that matters most. */}
-      <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6 dark:border-umber-700 dark:bg-umber-900">
+      <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 dark:border-umber-700 dark:bg-umber-900">
         <div className="flex flex-col gap-1">
-          <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
+          <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-steel-600 dark:text-steel-300">
             <TrendingUp size={16} aria-hidden="true" />
             {t("vendor.dashboard.hero_label")}
           </span>
-          <span className="font-serif text-5xl leading-none text-ink-900 sm:text-6xl dark:text-paper-50">
+          <span className="font-grotesk text-5xl font-semibold leading-none tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {stats.inquiries_30d}
           </span>
           <span className="text-sm text-ink-600 dark:text-paper-300">
@@ -270,7 +264,7 @@ export default function VendorDashboardPage() {
       </section>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         <KpiCard
           icon={<Inbox size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.inquiries_total")}
@@ -287,25 +281,23 @@ export default function VendorDashboardPage() {
           label={t("vendor.dashboard.blocked_dates")}
           value={String(stats.blocked_dates_count)}
         />
-        <KpiCard
-          icon={<BarChart3 size={18} aria-hidden="true" />}
-          label={t("vendor.stats.completeness")}
-          value={`${pct}%`}
-          tone={completenessDone ? "sage" : "lemonade"}
-        />
       </div>
 
       {/* Upcoming events preview + smart action cards */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <section className="lg:col-span-2 flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+        <section className="lg:col-span-2 flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
-              <CalendarClock size={18} aria-hidden="true" />
+              <CalendarClock
+                size={18}
+                aria-hidden="true"
+                className="text-steel-600 dark:text-steel-300"
+              />
               <span>{t("vendor.dashboard.upcoming_title")}</span>
             </h2>
             <Link
               to="/vendor/clients"
-              className="inline-flex items-center gap-1 text-sm font-medium text-ink-700 transition-colors hover:text-ink-900 dark:text-paper-200 dark:hover:text-blush-300"
+              className="inline-flex items-center gap-1 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
             >
               <span>{t("vendor.dashboard.view_clients")}</span>
               <ArrowRight size={15} aria-hidden="true" />
@@ -355,7 +347,7 @@ export default function VendorDashboardPage() {
   );
 }
 
-type KpiTone = "sage" | "lemonade";
+type KpiTone = "sage";
 
 function KpiCard({
   icon,
@@ -371,17 +363,9 @@ function KpiCard({
   tone?: KpiTone;
 }) {
   const iconTone =
-    tone === "sage"
-      ? "text-sage-600 dark:text-sage-300"
-      : tone === "lemonade"
-        ? "text-lemonade-yellowInk dark:text-lemonade-yellow"
-        : "text-ink-500 dark:text-paper-400";
+    tone === "sage" ? "text-sage-600 dark:text-sage-300" : "text-steel-600 dark:text-steel-300";
   const valueTone =
-    tone === "sage"
-      ? "text-sage-700 dark:text-sage-300"
-      : tone === "lemonade"
-        ? "text-lemonade-yellowInk dark:text-lemonade-yellow"
-        : "text-ink-900 dark:text-paper-50";
+    tone === "sage" ? "text-sage-700 dark:text-sage-300" : "text-ink-900 dark:text-paper-50";
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
       <div className={`flex items-center gap-2 ${iconTone}`}>
@@ -394,7 +378,7 @@ function KpiCard({
   );
 }
 
-type ActionTone = "sage" | "lemonade";
+type ActionTone = "sage" | "steel";
 
 type ActionCardProps = {
   to: string;
@@ -406,19 +390,13 @@ type ActionCardProps = {
 
 function ActionCard({ to, icon, title, body, tone }: ActionCardProps) {
   const accent =
-    tone === "sage"
-      ? "bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300"
-      : "bg-lemonade-yellow/20 text-lemonade-yellowInk dark:bg-lemonade-yellow/15 dark:text-lemonade-yellow";
+    tone === "sage" ? "text-sage-600 dark:text-sage-300" : "text-steel-700 dark:text-steel-300";
   return (
     <Link
       to={to}
       className="group flex items-start gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:hover:bg-umber-800"
     >
-      <span
-        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${accent}`}
-      >
-        {icon}
-      </span>
+      <span className={`mt-0.5 shrink-0 ${accent}`}>{icon}</span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-center gap-1 text-sm font-medium text-ink-900 dark:text-paper-50">
           <span className="truncate">{title}</span>
@@ -436,8 +414,8 @@ function ActionCard({ to, icon, title, body, tone }: ActionCardProps) {
 
 function DashboardSkeleton({ title }: { title: string }) {
   return (
-    <div className="flex flex-col gap-6" aria-busy="true">
-      <h1 className="font-serif text-2xl italic text-ink-900 sm:text-3xl dark:text-paper-50">
+    <div className="flex flex-col gap-5" aria-busy="true">
+      <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
         {title}
       </h1>
       {/* Hero metric */}
