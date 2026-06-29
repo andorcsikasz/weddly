@@ -537,8 +537,9 @@ function buildJsonLd(opts: {
     logo: `${origin}/logo.png`,
     sameAs: [
       `https://${CANONICAL_HOST}`,
-      "https://www.instagram.com/weddly.hu",
+      "https://www.instagram.com/tryweddly",
       "https://www.facebook.com/tryweddly",
+      "https://www.tiktok.com/@tryweddly.com",
     ],
   };
   const blocks: object[] = [

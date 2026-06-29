@@ -91,7 +91,7 @@ const COLOR = {
 // in Gmail/Outlook/Apple Mail without inline SVG (which Gmail strips). Rendered
 // at 24×24. `${CONFIG.frontendBaseUrl}` keeps dev/prod hosts in sync.
 const SOCIAL: ReadonlyArray<{ name: string; href: string; icon: string }> = [
-  { name: "Instagram", href: "https://www.instagram.com/weddly.hu", icon: "instagram.png" },
+  { name: "Instagram", href: "https://www.instagram.com/tryweddly", icon: "instagram.png" },
   { name: "Facebook", href: "https://www.facebook.com/tryweddly", icon: "facebook.png" },
   { name: "TikTok", href: "https://www.tiktok.com/@tryweddly.com", icon: "tiktok.png" },
 ];
