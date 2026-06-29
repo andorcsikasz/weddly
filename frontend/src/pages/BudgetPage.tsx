@@ -6,6 +6,7 @@ import {
   type BudgetCategory,
   type BudgetDocument,
   type BudgetLine,
+  type BudgetPayment,
   type BudgetSnapshot,
   type Couple,
   type Currency,
@@ -53,8 +54,14 @@ import {
   subscribeCostPlanningCount,
   writeCostPlanningCount,
 } from "../lib/cost_planning";
-import { budgetApi, budgetDocApi, coupleApi, coupleSupplierApi } from "../lib/endpoints";
-import { currencySymbol, formatMoney, formatNumber, todayIso } from "../lib/format";
+import {
+  budgetApi,
+  budgetDocApi,
+  budgetPaymentApi,
+  coupleApi,
+  coupleSupplierApi,
+} from "../lib/endpoints";
+import { currencySymbol, formatDateMs, formatMoney, formatNumber, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
@@ -134,6 +141,10 @@ export default function BudgetPage() {
   // Uploaded invoices / receipts, keyed by scope below. Loaded alongside the
   // lines so the bill icon can show its count badge without a per-row fetch.
   const [documents, setDocuments] = useState<BudgetDocument[]>([]);
+  // Timestamped payment ledger behind the PAID column, keyed by scope below.
+  // Loaded alongside the lines so the record-payment dialog can show history
+  // without a per-row fetch.
+  const [budgetPayments, setBudgetPayments] = useState<BudgetPayment[]>([]);
   const [couple, setCouple] = useState<Couple | null>(null);
   // DIY/booked suppliers — only their payment schedules matter here, for the
   // "Payments due" roll-up band above the budget table.
@@ -145,18 +156,20 @@ export default function BudgetPage() {
    *  the affected card and shows an inline spinner. Null when idle. */
   const [restoringId, setRestoringId] = useState<number | null>(null);
   async function refresh() {
-    const [linesR, snapsR, coupleR, suppliersR, docsR] = await Promise.all([
+    const [linesR, snapsR, coupleR, suppliersR, docsR, paymentsR] = await Promise.all([
       budgetApi.listLines(),
       budgetApi.listSnapshots(),
       coupleApi.current(),
       coupleSupplierApi.list(),
       budgetDocApi.list(),
+      budgetPaymentApi.list(),
     ]);
     setLines(linesR.lines);
     setSnapshots(snapsR.snapshots);
     setCouple(coupleR.couple);
     setCoupleSuppliers(suppliersR.suppliers ?? []);
     setDocuments(docsR.documents);
+    setBudgetPayments(paymentsR.payments);
     // Seed the slider with the shared cost-planning count if /app/suppliers
     // or a prior session has one stored. Otherwise stay at `null` so the
     // slider defaults to the couple's onboarding target. Hydration moved
@@ -191,6 +204,29 @@ export default function BudgetPage() {
     }
     return map;
   }, [documents]);
+
+  // Re-pull just the payment ledger after a record / edit / delete — cheaper
+  // than a full refresh and keeps in-flight amount edits untouched.
+  const reloadPayments = useCallback(async () => {
+    try {
+      const r = await budgetPaymentApi.list();
+      setBudgetPayments(r.payments);
+    } catch {
+      // Non-fatal — the next full refresh will reconcile.
+    }
+  }, []);
+
+  // Group payments by scope ('cat:<category>' | 'line:<id>') so each PaidCell
+  // can hand its dialog the matching history in O(1).
+  const paymentsByScope = useMemo(() => {
+    const map = new Map<string, BudgetPayment[]>();
+    for (const p of budgetPayments) {
+      const list = map.get(p.scope);
+      if (list) list.push(p);
+      else map.set(p.scope, [p]);
+    }
+    return map;
+  }, [budgetPayments]);
 
   useEffect(() => {
     refresh();
@@ -982,10 +1018,12 @@ export default function BudgetPage() {
                 canDelete={canDelete}
                 scope={`cat:${cat}`}
                 documents={docsByScope.get(`cat:${cat}`) ?? []}
+                payments={paymentsByScope.get(`cat:${cat}`) ?? []}
                 onPlannedCommit={(v) => setAggregatedPlanned(cat, v)}
                 onActualCommit={(v) => setAggregatedActual(cat, v)}
                 onPaidCommit={(v) => setAggregatedPaid(cat, v)}
                 onDocsChanged={reloadDocuments}
+                onPaymentsChanged={reloadPayments}
                 onDelete={() => removeAllInCategory(cat)}
               />
             );
@@ -1000,10 +1038,12 @@ export default function BudgetPage() {
                 locale={locale}
                 scope={`line:${line.id}`}
                 documents={docsByScope.get(`line:${line.id}`) ?? []}
+                payments={paymentsByScope.get(`line:${line.id}`) ?? []}
                 onPlannedCommit={(v) => save(line, "planned_huf", v)}
                 onActualCommit={(v) => save(line, "actual_huf", v)}
                 onPaidCommit={(v) => save(line, "paid_huf", v)}
                 onDocsChanged={reloadDocuments}
+                onPaymentsChanged={reloadPayments}
                 onDelete={() => removeLine(line.id)}
               />
             ))}
@@ -1094,10 +1134,12 @@ export default function BudgetPage() {
                         readOnly={!editable}
                         scope={`cat:${cat}`}
                         documents={docsByScope.get(`cat:${cat}`) ?? []}
+                        payments={paymentsByScope.get(`cat:${cat}`) ?? []}
                         currency={currency}
                         locale={locale}
                         onCommitAmount={(v) => setAggregatedPaid(cat, v)}
                         onDocsChanged={reloadDocuments}
+                        onPaymentsChanged={reloadPayments}
                       />
                     </td>
                     <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
@@ -1167,10 +1209,12 @@ export default function BudgetPage() {
                           readOnly={false}
                           scope={`line:${line.id}`}
                           documents={docsByScope.get(`line:${line.id}`) ?? []}
+                          payments={paymentsByScope.get(`line:${line.id}`) ?? []}
                           currency={currency}
                           locale={locale}
                           onCommitAmount={(v) => save(line, "paid_huf", v)}
                           onDocsChanged={reloadDocuments}
+                          onPaymentsChanged={reloadPayments}
                         />
                       </td>
                       <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
@@ -1592,29 +1636,36 @@ function PercentRing({ pct, state }: { pct: number; state: PaidState }) {
 }
 
 /** Paid cell: two icons, no inline number. The percentage check opens a dialog
- *  to record how much of the row is settled (enter a % or an exact amount and
- *  flip between the two); thereafter the check fills to that fraction. The bill
- *  icon attaches invoices / receipts and shows a count badge. */
+ *  to record payments over time (each entry is one payment with a date); the
+ *  ring fills to the cumulative fraction. The bill icon attaches invoices /
+ *  receipts and shows a count badge. `align` centres the pair under the
+ *  centred column header on desktop, or keeps it left-aligned in mobile cards. */
 function PaidCell({
   paid,
   actual,
   readOnly,
+  align = "center",
   scope,
   documents,
+  payments,
   currency,
   locale,
   onCommitAmount,
   onDocsChanged,
+  onPaymentsChanged,
 }: {
   paid: number;
   actual: number;
   readOnly: boolean;
+  align?: "center" | "start";
   scope: string;
   documents: BudgetDocument[];
+  payments: BudgetPayment[];
   currency: Currency;
   locale: "hu" | "en";
   onCommitAmount: (v: number) => void;
   onDocsChanged: () => void;
+  onPaymentsChanged: () => void;
 }) {
   const { t } = useT();
   const [entryOpen, setEntryOpen] = useState(false);
@@ -1622,14 +1673,25 @@ function PaidCell({
   const pct = actual > 0 ? Math.round((Math.min(paid, actual) / actual) * 100) : 0;
   const state: PaidState = actual > 0 && paid >= actual ? "paid" : paid > 0 ? "partial" : "unpaid";
   const docCount = documents.length;
+  // "20% + 80%" breakdown for the hover tooltip when there's a recorded history.
+  const breakdown =
+    actual > 0 && payments.length > 0
+      ? payments.map((p) => `${Math.round((p.amount_huf / actual) * 100)}%`).join(" + ")
+      : null;
+  const ringTitle =
+    actual === 0
+      ? t("budget.paid_needs_actual")
+      : breakdown
+        ? `${t("budget.paid")}: ${breakdown} = ${pct}%`
+        : `${t("budget.paid")}: ${pct}%`;
   return (
-    <div className="flex items-center gap-1">
+    <div className={`flex items-center gap-1 ${align === "center" ? "justify-center" : ""}`}>
       <button
         type="button"
         disabled={readOnly || actual === 0}
         onClick={() => setEntryOpen(true)}
         aria-label={t("budget.paid_record")}
-        title={actual === 0 ? t("budget.paid_needs_actual") : `${t("budget.paid")}: ${pct}%`}
+        title={ringTitle}
         className="inline-flex items-center gap-1 rounded-md px-1 py-1 transition hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-umber-700"
       >
         <PercentRing pct={pct} state={state} />
@@ -1659,12 +1721,12 @@ function PaidCell({
           onClose={() => setEntryOpen(false)}
           paid={paid}
           actual={actual}
+          scope={scope}
+          payments={payments}
           currency={currency}
           locale={locale}
-          onCommit={(v) => {
-            onCommitAmount(v);
-            setEntryOpen(false);
-          }}
+          onCommitTotal={onCommitAmount}
+          onPaymentsChanged={onPaymentsChanged}
         />
       )}
       {docsOpen && (
@@ -1681,41 +1743,106 @@ function PaidCell({
   );
 }
 
-/** Modal that records how much of a budget row is paid. Enter a percentage or
- *  an exact amount and flip between the two — the opposite value updates live.
- *  Commits an integer-Forint `paid` clamped to [0, actual]. */
+/** Convert a `YYYY-MM-DD` date-input value to epoch ms, anchored at local noon
+ *  so a timezone shift can never roll the stored day backwards. */
+function dateInputToMs(iso: string): number {
+  return new Date(`${iso}T12:00:00`).getTime();
+}
+
+/** Modal that records payments against a budget row over time. Each entry is one
+ *  payment with its own date ("20% paid today"); the list shows the running
+ *  breakdown (e.g. 20% + 80% = 100%). The cumulative total is committed back to
+ *  the row's `paid_huf` through `onCommitTotal`, so the ring and all budget
+ *  maths stay driven by that single value. A read-only "opening balance" row
+ *  reconciles any pre-existing paid amount that has no ledger entry. */
 function PaidEntryDialog({
   open,
   onClose,
   paid,
   actual,
+  scope,
+  payments,
   currency,
   locale,
-  onCommit,
+  onCommitTotal,
+  onPaymentsChanged,
 }: {
   open: boolean;
   onClose: () => void;
   paid: number;
   actual: number;
+  scope: string;
+  payments: BudgetPayment[];
   currency: Currency;
   locale: "hu" | "en";
-  onCommit: (paidHuf: number) => void;
+  onCommitTotal: (paidHuf: number) => void;
+  onPaymentsChanged: () => Promise<void> | void;
 }) {
   const { t } = useT();
-  const startPct = actual > 0 ? Math.round((Math.min(paid, actual) / actual) * 100) : 0;
+  const toast = useToast();
   const [mode, setMode] = useState<"pct" | "amount">("pct");
-  const [draft, setDraft] = useState<string>(String(startPct));
+  const [draft, setDraft] = useState<string>("");
+  const [date, setDate] = useState<string>(() => todayIso());
+  const [busy, setBusy] = useState(false);
+
+  const ledgerSum = payments.reduce((s, p) => s + p.amount_huf, 0);
+  // Captured once at mount: any paid amount that predates the ledger (legacy
+  // data, or a value set elsewhere) shows as a read-only opening balance so the
+  // history always reconciles to the ring.
+  const [opening] = useState(() =>
+    Math.max(0, paid - payments.reduce((s, p) => s + p.amount_huf, 0)),
+  );
+  const total = opening + ledgerSum;
+  const share = (amt: number) => (actual > 0 ? Math.round((amt / actual) * 100) : 0);
+  const totalPct = actual > 0 ? Math.round((Math.min(total, actual) / actual) * 100) : 0;
+  const remaining = Math.max(0, actual - total);
+
   const num = Number(draft.replace(/[^\d]/g, ""));
   const safeNum = Number.isFinite(num) ? num : 0;
-  const paidHuf =
-    mode === "pct"
-      ? Math.round((Math.min(100, Math.max(0, safeNum)) / 100) * actual)
-      : Math.min(actual, Math.max(0, safeNum));
-  const pct = actual > 0 ? Math.round((paidHuf / actual) * 100) : 0;
+  // The entered value is a NEW payment to add, expressed as a % of the row's
+  // actual or as a plain amount.
+  const increment =
+    mode === "pct" ? Math.round((Math.max(0, safeNum) / 100) * actual) : Math.max(0, safeNum);
+  const incrementPct = actual > 0 ? Math.round((increment / actual) * 100) : 0;
   const sym = currencySymbol(currency, locale);
-  // Group the entered digits in thousands for display (space in HU, comma in
-  // EN) — the value stays digits-only internally; onChange strips the grouping.
-  const groupedDraft = draft.replace(/\B(?=(\d{3})+(?!\d))/g, locale === "hu" ? " " : ",");
+
+  const breakdown = payments.map((p) => `${share(p.amount_huf)}%`);
+  if (opening > 0) breakdown.unshift(`${share(opening)}%`);
+
+  async function addPayment() {
+    if (busy) return;
+    if (increment <= 0) {
+      toast.error(t("budget.payment_amount_required"));
+      return;
+    }
+    setBusy(true);
+    try {
+      await budgetPaymentApi.create({ scope, amount_huf: increment, paid_at: dateInputToMs(date) });
+      onCommitTotal(total + increment);
+      await onPaymentsChanged();
+      setDraft("");
+      toast.success(t("budget.payment_added"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deletePayment(p: BudgetPayment) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await budgetPaymentApi.remove(p.id);
+      onCommitTotal(Math.max(0, total - p.amount_huf));
+      await onPaymentsChanged();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+  const groupedDraft = draft.replace(/\B(?=(\d{3})+(?!\d))/g, locale === "hu" ? " " : ",");
   return (
     <Dialog
       open={open}
@@ -1724,69 +1851,163 @@ function PaidEntryDialog({
       title={t("budget.paid_record")}
       onClose={onClose}
       footer={
-        <>
-          <button type="button" className="btn-ghost" onClick={onClose}>
-            {t("common.cancel")}
-          </button>
-          <button type="button" className="btn-primary" onClick={() => onCommit(paidHuf)}>
-            {t("common.save")}
-          </button>
-        </>
+        <button type="button" className="btn-primary" onClick={onClose}>
+          {t("common.done")}
+        </button>
       }
     >
-      {/* Uber-style centred amount entry: everything stacks down the middle —
-          the unit toggle, one large focal number, its conversion, then the
-          quick presets. */}
-      <div className="space-y-4 text-center">
-        <p className="mx-auto max-w-xs text-sm text-ink-600 dark:text-umber-200">
-          {t("budget.paid_record_help")}
-        </p>
-        <div className="flex justify-center">
-          <SegmentedControl
-            ariaLabel={t("budget.paid_unit")}
-            value={mode}
-            onChange={(m) => {
-              // Carry the current value across the flip so the number stays
-              // meaningful (50% becomes the matching amount, and vice versa).
-              if (m === "amount" && mode === "pct") setDraft(String(paidHuf));
-              else if (m === "pct" && mode === "amount") setDraft(String(pct));
-              setMode(m);
-            }}
-            options={[
-              { value: "pct", label: "%" },
-              { value: "amount", label: sym },
-            ]}
-          />
+      <div className="space-y-5">
+        {/* Running total: the "20% + 80% = 100%" the user asked for. */}
+        <div className="rounded-xl border border-paper-200 bg-paper-50 px-4 py-3 text-center dark:border-umber-700 dark:bg-umber-800/50">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.payment_total")}
+          </p>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+            {formatMoney(total, currency, locale)}
+            <span className="ml-2 text-sm font-medium text-amber-600 dark:text-amber-400">
+              {totalPct}%
+            </span>
+          </p>
+          {breakdown.length > 1 && (
+            <p className="mt-0.5 text-xs tabular-nums text-ink-500 dark:text-umber-300">
+              {breakdown.join(" + ")} = {totalPct}%
+            </p>
+          )}
         </div>
-        <div>
-          {/* biome-ignore lint/a11y/noAutofocus: focusing the only input in a deliberately-opened entry dialog is expected. */}
+
+        {/* Payment history */}
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("budget.payment_history")}
+          </p>
+          {opening === 0 && payments.length === 0 ? (
+            <p className="py-2 text-center text-sm text-ink-400 dark:text-umber-400">
+              {t("budget.payment_empty")}
+            </p>
+          ) : (
+            <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+              {opening > 0 && (
+                <li className="flex items-center justify-between gap-2 py-1.5 text-sm">
+                  <span className="flex items-center gap-2 text-ink-700 dark:text-paper-200">
+                    <span className="inline-flex h-6 min-w-[2.75rem] items-center justify-center rounded-full bg-ink-100 px-2 text-xs font-semibold tabular-nums text-ink-600 dark:bg-umber-700 dark:text-umber-100">
+                      {share(opening)}%
+                    </span>
+                    <span className="tabular-nums">{formatMoney(opening, currency, locale)}</span>
+                  </span>
+                  <span className="text-xs text-ink-400 dark:text-umber-400">
+                    {t("budget.payment_opening")}
+                  </span>
+                </li>
+              )}
+              {payments.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
+                  <span className="flex min-w-0 items-center gap-2 text-ink-700 dark:text-paper-200">
+                    <span className="inline-flex h-6 min-w-[2.75rem] items-center justify-center rounded-full bg-amber-100 px-2 text-xs font-semibold tabular-nums text-amber-700 dark:bg-amber-400/15 dark:text-amber-300">
+                      {share(p.amount_huf)}%
+                    </span>
+                    <span className="tabular-nums">
+                      {formatMoney(p.amount_huf, currency, locale)}
+                    </span>
+                    <span className="truncate text-xs text-ink-400 dark:text-umber-400">
+                      {formatDateMs(p.paid_at, locale)}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => deletePayment(p)}
+                    aria-label={t("budget.payment_delete")}
+                    title={t("budget.payment_delete")}
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+                  >
+                    <Trash2 size={14} aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Add a payment: enter a % or amount, pick a date, append it. */}
+        <div className="space-y-3 rounded-xl border border-paper-200 p-3 dark:border-umber-700">
+          <div className="flex items-center justify-between gap-3">
+            <SegmentedControl
+              ariaLabel={t("budget.paid_unit")}
+              value={mode}
+              onChange={(m) => {
+                if (m === "amount" && mode === "pct")
+                  setDraft(increment > 0 ? String(increment) : "");
+                else if (m === "pct" && mode === "amount")
+                  setDraft(incrementPct > 0 ? String(incrementPct) : "");
+                setMode(m);
+              }}
+              options={[
+                { value: "pct", label: "%" },
+                { value: "amount", label: sym },
+              ]}
+            />
+            <label className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+              {t("budget.payment_date")}
+              <input
+                type="date"
+                value={date}
+                max={todayIso()}
+                onChange={(e) => setDate(e.target.value)}
+                className="rounded-lg border border-paper-300 bg-white px-2 py-1 text-sm tabular-nums text-ink-900 outline-none focus:border-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
+                aria-label={t("budget.payment_date")}
+              />
+            </label>
+          </div>
           <input
             type="text"
             inputMode="numeric"
-            autoFocus
             value={groupedDraft}
+            placeholder="0"
             onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
-            className="w-full rounded-xl border border-paper-300 bg-white px-3 py-3 text-center text-4xl font-semibold tabular-nums text-ink-900 outline-none focus:border-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:focus:border-umber-300"
+            className="w-full rounded-xl border border-paper-300 bg-white px-3 py-3 text-center text-3xl font-semibold tabular-nums text-ink-900 outline-none focus:border-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:focus:border-umber-300"
             aria-label={mode === "pct" ? t("budget.paid_unit_pct") : t("budget.paid_unit_amount")}
           />
-          <p className="mt-2 text-sm text-ink-500 dark:text-umber-300">
-            {mode === "pct" ? `= ${formatMoney(paidHuf, currency, locale)}` : `= ${pct}%`}
+          <p className="text-center text-sm text-ink-500 dark:text-umber-300">
+            {mode === "pct"
+              ? `= ${formatMoney(increment, currency, locale)}`
+              : `= ${incrementPct}%`}
           </p>
-        </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          {[0, 25, 50, 75, 100].map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => {
-                setMode("pct");
-                setDraft(String(p));
-              }}
-              className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-umber-400 hover:text-umber-800 dark:border-umber-600 dark:text-umber-200 dark:hover:border-umber-400 dark:hover:text-paper-50"
-            >
-              {p}%
-            </button>
-          ))}
+          <div className="flex flex-wrap justify-center gap-2">
+            {[25, 50, 75, 100].map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => {
+                  setMode("pct");
+                  setDraft(String(p));
+                }}
+                className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-umber-400 hover:text-umber-800 dark:border-umber-600 dark:text-umber-200 dark:hover:border-umber-400 dark:hover:text-paper-50"
+              >
+                {p}%
+              </button>
+            ))}
+            {remaining > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("amount");
+                  setDraft(String(remaining));
+                }}
+                className="rounded-full border border-umber-300 bg-umber-50 px-3 py-1.5 text-xs font-medium text-umber-800 transition hover:border-umber-400 dark:border-umber-500 dark:bg-umber-700/40 dark:text-umber-100"
+              >
+                {t("budget.payment_remaining")}
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            className="btn-primary w-full justify-center"
+            disabled={busy || increment <= 0}
+            onClick={addPayment}
+          >
+            <Plus size={16} aria-hidden />
+            {t("budget.payment_add")}
+          </button>
         </div>
       </div>
     </Dialog>
@@ -2056,10 +2277,12 @@ function BudgetMobileCard({
   canDelete,
   scope,
   documents,
+  payments,
   onPlannedCommit,
   onActualCommit,
   onPaidCommit,
   onDocsChanged,
+  onPaymentsChanged,
   onDelete,
 }: {
   id: string;
@@ -2074,10 +2297,12 @@ function BudgetMobileCard({
   canDelete: boolean;
   scope: string;
   documents: BudgetDocument[];
+  payments: BudgetPayment[];
   onPlannedCommit: (v: number) => void | Promise<void>;
   onActualCommit: (v: number) => void | Promise<void>;
   onPaidCommit: (v: number) => void | Promise<void>;
   onDocsChanged: () => void;
+  onPaymentsChanged: () => void;
   onDelete: () => void;
 }) {
   const { t } = useT();
@@ -2147,12 +2372,15 @@ function BudgetMobileCard({
               paid={paid}
               actual={actual}
               readOnly={readOnlyActual}
+              align="start"
               scope={scope}
               documents={documents}
+              payments={payments}
               currency={currency}
               locale={locale}
               onCommitAmount={onPaidCommit}
               onDocsChanged={onDocsChanged}
+              onPaymentsChanged={onPaymentsChanged}
             />
           </dd>
         </div>
@@ -2169,10 +2397,12 @@ function BudgetMobileCustomCard({
   locale,
   scope,
   documents,
+  payments,
   onPlannedCommit,
   onActualCommit,
   onPaidCommit,
   onDocsChanged,
+  onPaymentsChanged,
   onDelete,
 }: {
   line: BudgetLine;
@@ -2180,10 +2410,12 @@ function BudgetMobileCustomCard({
   locale: "hu" | "en";
   scope: string;
   documents: BudgetDocument[];
+  payments: BudgetPayment[];
   onPlannedCommit: (v: number) => void | Promise<void>;
   onActualCommit: (v: number) => void | Promise<void>;
   onPaidCommit: (v: number) => void | Promise<void>;
   onDocsChanged: () => void;
+  onPaymentsChanged: () => void;
   onDelete: () => void;
 }) {
   const { t } = useT();
@@ -2244,12 +2476,15 @@ function BudgetMobileCustomCard({
               paid={line.paid_huf}
               actual={line.actual_huf}
               readOnly={false}
+              align="start"
               scope={scope}
               documents={documents}
+              payments={payments}
               currency={currency}
               locale={locale}
               onCommitAmount={onPaidCommit}
               onDocsChanged={onDocsChanged}
+              onPaymentsChanged={onPaymentsChanged}
             />
           </dd>
         </div>

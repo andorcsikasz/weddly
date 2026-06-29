@@ -14,6 +14,7 @@ import type {
   BudgetDocument,
   BudgetGoal,
   BudgetLine,
+  BudgetPayment,
   BudgetSnapshot,
   CoupleIncome,
   CreateCoupleIncomeInput,
@@ -1045,6 +1046,19 @@ export const budgetDocApi = {
     if (!res.ok) throw new Error(`Document fetch failed: ${res.status}`);
     return res.blob();
   },
+};
+
+/** Timestamped payment ledger behind the PAID column. Each row records one
+ *  payment ("20% paid today"), anchored by the same scope as the documents /
+ *  paid cell ('cat:<category>' | 'line:<id>'). The cumulative paid amount stays
+ *  on the budget line — these are the additive history. */
+export const budgetPaymentApi = {
+  list: () => apiFetch<{ payments: BudgetPayment[] }>("GET", "/api/budget/payments"),
+  create: (body: { scope: string; amount_huf: number; paid_at?: number; note?: string | null }) =>
+    apiFetch<{ payment: BudgetPayment }>("POST", "/api/budget/payments", body),
+  update: (id: number, body: { amount_huf?: number; paid_at?: number; note?: string | null }) =>
+    apiFetch<{ payment: BudgetPayment }>("PATCH", `/api/budget/payments/${id}`, body),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/budget/payments/${id}`),
 };
 
 export const incomeApi = {

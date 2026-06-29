@@ -3102,6 +3102,16 @@ export interface LocaleMessages {
     paid_unit: string;
     paid_unit_pct: string;
     paid_unit_amount: string;
+    payment_total: string;
+    payment_history: string;
+    payment_opening: string;
+    payment_empty: string;
+    payment_add: string;
+    payment_date: string;
+    payment_delete: string;
+    payment_remaining: string;
+    payment_added: string;
+    payment_amount_required: string;
     docs_title: string;
     docs_empty: string;
     docs_upload: string;

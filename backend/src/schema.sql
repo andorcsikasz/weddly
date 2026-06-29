@@ -96,6 +96,21 @@ CREATE TABLE IF NOT EXISTS budget_documents (
 );
 CREATE INDEX IF NOT EXISTS idx_budget_documents_couple_scope ON budget_documents(couple_id, scope);
 
+-- Timestamped payment ledger for a budget row. Each row is one payment the
+-- couple recorded ("20% paid today"), anchored by the same `scope` as the PAID
+-- column ('cat:<category>' | 'line:<id>'). The cumulative total stays on
+-- budget_lines.paid_huf — this table is the additive history behind it.
+CREATE TABLE IF NOT EXISTS budget_payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  scope TEXT NOT NULL,                                         -- 'cat:venue' | 'line:123'
+  amount_huf INTEGER NOT NULL,                                 -- integer minor units, couple currency
+  paid_at INTEGER NOT NULL,                                    -- epoch ms (editable, defaults to now)
+  note TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_budget_payments_couple_scope ON budget_payments(couple_id, scope);
+
 -- Money that came IN (cash gifts, contributions). A standalone ledger — not
 -- tied to suppliers or budget lines. Powers the post-wedding "how much did we
 -- recover vs spend" report. amount_huf is integer minor units of the couple's
