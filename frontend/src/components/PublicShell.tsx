@@ -487,7 +487,7 @@ function PublicFooter() {
           </p>
           <div className="mt-3 flex items-center gap-2 sm:mt-4">
             <a
-              href="https://www.tiktok.com/@tryweddly"
+              href="https://www.tiktok.com/@tryweddly.com"
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t("landing.footer_social_tiktok")}

@@ -93,7 +93,7 @@ const COLOR = {
 const SOCIAL: ReadonlyArray<{ name: string; href: string; icon: string }> = [
   { name: "Instagram", href: "https://www.instagram.com/weddly.hu", icon: "instagram.png" },
   { name: "Facebook", href: "https://www.facebook.com/tryweddly", icon: "facebook.png" },
-  { name: "TikTok", href: "https://www.tiktok.com/@tryweddly", icon: "tiktok.png" },
+  { name: "TikTok", href: "https://www.tiktok.com/@tryweddly.com", icon: "tiktok.png" },
 ];
 
 interface PickedBlock {
