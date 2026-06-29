@@ -36,7 +36,7 @@ if (IS_PROD && process.env.RESEND_API_KEY && (process.env.EMAIL_FROM ?? "") === 
   console.error(
     "[config] FATAL: RESEND_API_KEY is set but EMAIL_FROM is missing. " +
       "Verify a domain in Resend and set EMAIL_FROM to a sender on that domain " +
-      "(e.g. `Weddly <hello@weddly.hu>`).",
+      "(e.g. `Weddly <hello@tryweddly.com>`).",
   );
   process.exit(1);
 }
@@ -64,10 +64,10 @@ export const CONFIG = {
   emailFrom: process.env.EMAIL_FROM ?? DEFAULT_EMAIL_FROM,
   /** Reply-to + footer "questions?" address. Recipients hitting Reply on any
    *  outgoing mail land here; the footer also surfaces it as a visible link
-   *  ("Kérdés? hello@weddly.hu"). Defaults to the same mailbox as EMAIL_FROM
+   *  ("Kérdés? hello@tryweddly.com"). Defaults to the same mailbox as EMAIL_FROM
    *  so a single misconfiguration doesn't strand replies on a non-existent
    *  inbox. */
-  supportEmail: process.env.SUPPORT_EMAIL ?? "hello@weddly.hu",
+  supportEmail: process.env.SUPPORT_EMAIL ?? "hello@tryweddly.com",
   /** Comma-separated email allowlist. Members get `is_admin: true` on the User
    *  DTO and access to /app/admin/* routes. Reversible via env edit. */
   adminEmails: (process.env.ADMIN_EMAILS ?? "andor.csikasz@gmail.com,saraazawiasa@gmail.com")

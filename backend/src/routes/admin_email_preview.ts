@@ -15,7 +15,7 @@ import { type Ctx, HttpError, json, type Router } from "../lib/http";
 // One per kind. Data is intentionally illustrative ("Mia & Lucas", etc.) so
 // the rendered output reads like a real email rather than "[name]" slots.
 
-const BASE_URL = "https://weddly.app";
+const BASE_URL = "https://tryweddly.com";
 
 const STUBS: KindPayload = {
   welcome_verify: { verifyUrl: `${BASE_URL}/verify?token=preview-token` },

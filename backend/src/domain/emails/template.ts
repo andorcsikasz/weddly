@@ -86,6 +86,16 @@ const COLOR = {
   enInk: "#5a5550",
 } as const;
 
+// Social channels surfaced in the footer. Icons are 48×48 monochrome PNGs
+// (muted #6e6863) served from the frontend's static `/email/` dir so they load
+// in Gmail/Outlook/Apple Mail without inline SVG (which Gmail strips). Rendered
+// at 24×24. `${CONFIG.frontendBaseUrl}` keeps dev/prod hosts in sync.
+const SOCIAL: ReadonlyArray<{ name: string; href: string; icon: string }> = [
+  { name: "Instagram", href: "https://www.instagram.com/weddly.hu", icon: "instagram.png" },
+  { name: "Facebook", href: "https://www.facebook.com/tryweddly", icon: "facebook.png" },
+  { name: "TikTok", href: "https://www.tiktok.com/@tryweddly", icon: "tiktok.png" },
+];
+
 interface PickedBlock {
   locale: "hu" | "en";
   block: LocaleBlock;
@@ -179,7 +189,8 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     if (category === "lifecycle" && unsubscribeToken) {
       out.push(`${unsubLabel}: ${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`);
     }
-    out.push("Weddly · weddly.hu");
+    out.push("Weddly · tryweddly.com");
+    out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
     return out.join("\n");
   }
 
@@ -412,8 +423,19 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       <p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
         ${helpLabel} <a href="mailto:${escapeAttr(CONFIG.supportEmail)}" style="color:${COLOR.muted};text-decoration:underline;">${escapeHtml(CONFIG.supportEmail)}</a>
       </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 0 0;">
+        <tr>
+          ${SOCIAL.map(
+            (s) => `<td style="padding-right:14px;">
+            <a href="${escapeAttr(s.href)}" style="text-decoration:none;" aria-label="${escapeAttr(s.name)}">
+              <img src="${escapeAttr(`${CONFIG.frontendBaseUrl}/email/${s.icon}`)}" width="24" height="24" alt="${escapeAttr(s.name)}" style="display:block;border:0;outline:none;width:24px;height:24px;" />
+            </a>
+          </td>`,
+          ).join("")}
+        </tr>
+      </table>
       <p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;letter-spacing:0.04em;">
-        <span style="font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:0.24em;">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">weddly.hu</a>
+        <span style="font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:0.24em;">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">tryweddly.com</a>
       </p>
     `;
   }
