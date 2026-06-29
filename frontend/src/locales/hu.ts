@@ -6424,6 +6424,16 @@ const hu: LocaleMessages = {
     later: "Később",
     first_client_hint:
       "A pár e-mailben kap egy hozzáférési kérést. A munkaterületüket csak a jóváhagyásuk után látod.",
+    prefill_banner_title: "Ezt a jelentkezésedből töltöttük ki",
+    prefill_banner_body: "Nézd át, és írd át, ha valami változott. Utána már csak hagyd jóvá.",
+    prefill_review_title: "Nézd át az adataidat",
+    prefill_review_body: "Ezeket látják majd az ügyfeleid. Bármelyik mezőt átírhatod.",
+    prefill_confirm_cta: "Jóváhagyom és tovább",
+    prefill_summary_title: "A jelentkezésedből",
+    summary_weddings: "Esküvő / év",
+    summary_radius: "Vállalt körzet",
+    summary_km_unit: "km",
+    summary_styles: "Stílusok",
   },
   planner_messages: {
     heading: "Üzenetek",

@@ -6863,6 +6863,16 @@ export interface LocaleMessages {
     meta_description: string;
     later: string;
     first_client_hint: string;
+    prefill_banner_title: string;
+    prefill_banner_body: string;
+    prefill_review_title: string;
+    prefill_review_body: string;
+    prefill_confirm_cta: string;
+    prefill_summary_title: string;
+    summary_weddings: string;
+    summary_radius: string;
+    summary_km_unit: string;
+    summary_styles: string;
   };
   planner_messages: {
     heading: string;

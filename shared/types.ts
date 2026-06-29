@@ -119,6 +119,13 @@ export interface PlannerWaitlistPrefill {
   company_name: string | null;
   city: string | null;
   website: string | null;
+  weddings_per_year: number | null;
+  km_radius: number | null;
+  styles: string[];
+  reference_links: string | null;
+  bio: string | null; // from the waitlist free-text message
+  selected_plan: "basic" | "pro" | "unlimited" | null;
+  mapped_plan: PlannerPlan; // selected_plan resolved to the planner-account enum
 }
 
 export interface PlannerProfile {
@@ -129,6 +136,10 @@ export interface PlannerProfile {
   planner_city: string | null;
   planner_website: string | null;
   planner_phone: string | null;
+  planner_weddings_per_year: number | null;
+  planner_km_radius: number | null;
+  planner_styles: string[] | null;
+  planner_plan: PlannerPlan;
   waitlist_prefill: PlannerWaitlistPrefill | null;
 }
 
@@ -789,6 +800,23 @@ export interface BudgetDocument {
   file_name: string;
   mime: string;
   size_bytes: number;
+  created_at: UnixMs;
+}
+
+/** One recorded payment against a budget row, with a timestamp. The cumulative
+ *  total lives on `budget_lines.paid_huf`; these rows are the additive history
+ *  behind it, anchored by the same `scope` as the PAID column. */
+export interface BudgetPayment {
+  id: number;
+  couple_id: number;
+  /** `cat:<BudgetCategory>` or `line:<budget_line_id>`. */
+  scope: string;
+  /** Integer minor units in the couple's currency. */
+  amount_huf: number;
+  /** When the payment was made — defaults to now, editable by the user. */
+  paid_at: UnixMs;
+  /** Optional free-text note. */
+  note: string | null;
   created_at: UnixMs;
 }
 

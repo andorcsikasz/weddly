@@ -336,3 +336,126 @@ describe("planner consent flow (planner-initiated request)", () => {
     expect(enterOk.status).toBe(200);
   });
 });
+
+describe("planner onboarding prefill from waitlist", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  function seedWaitlist(email: string, selectedPlan: string): void {
+    db.prepare(
+      `INSERT INTO planner_waitlist
+         (full_name, email, phone, company_name, city, message, selected_plan, website,
+          weddings_per_year, km_radius, wedding_style_1, wedding_style_2, other_style,
+          reference_links, early_bird, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      "Eszter Nagy",
+      email,
+      "+36301234567",
+      "Nagy Eszter Events",
+      "Budapest",
+      "We run 20 weddings a year and need one workspace for all of them.",
+      selectedPlan,
+      "https://nagyeszter.hu",
+      20,
+      80,
+      "elegant",
+      "rustic",
+      "industrial",
+      "https://instagram.com/nagyeszter",
+      1,
+      Math.floor(Date.now() / 1000),
+    );
+  }
+
+  test("GET /api/planner/profile — surfaces the full waitlist application as prefill", async () => {
+    const email = "prefill@weddly.test";
+    seedWaitlist(email, "unlimited");
+    const { token } = await bootstrapPlanner(email);
+
+    const r = await req<{
+      planner_plan: string;
+      waitlist_prefill: {
+        company_name: string | null;
+        city: string | null;
+        phone: string | null;
+        website: string | null;
+        bio: string | null;
+        weddings_per_year: number | null;
+        km_radius: number | null;
+        styles: string[];
+        reference_links: string | null;
+        selected_plan: string | null;
+        mapped_plan: string;
+      } | null;
+    }>("GET", "/api/planner/profile", undefined, { token });
+
+    expect(r.status).toBe(200);
+    const wl = r.data.waitlist_prefill;
+    expect(wl).not.toBeNull();
+    expect(wl?.company_name).toBe("Nagy Eszter Events");
+    expect(wl?.city).toBe("Budapest");
+    expect(wl?.phone).toBe("+36301234567");
+    expect(wl?.website).toBe("https://nagyeszter.hu");
+    expect(wl?.bio).toContain("20 weddings");
+    expect(wl?.weddings_per_year).toBe(20);
+    expect(wl?.km_radius).toBe(80);
+    // wedding_style_1/2 + other_style collapse into one clean array.
+    expect(wl?.styles).toEqual(["elegant", "rustic", "industrial"]);
+    expect(wl?.reference_links).toBe("https://instagram.com/nagyeszter");
+    expect(wl?.selected_plan).toBe("unlimited");
+    expect(wl?.mapped_plan).toBe("premium"); // unlimited → premium
+    // The account plan itself is still the default until the planner confirms.
+    expect(r.data.planner_plan).toBe("starter");
+  });
+
+  test("PATCH /api/planner/profile — confirm persists the chosen plan, cap, and CRM extras", async () => {
+    const email = "confirm@weddly.test";
+    seedWaitlist(email, "unlimited");
+    const { token } = await bootstrapPlanner(email);
+
+    const patch = await req<{
+      planner_plan: string;
+      planner_km_radius: number | null;
+      planner_weddings_per_year: number | null;
+      planner_styles: string[] | null;
+      planner_bio: string | null;
+    }>(
+      "PATCH",
+      "/api/planner/profile",
+      {
+        business_name: "Nagy Eszter Events",
+        planner_city: "Budapest",
+        planner_bio: "We run 20 weddings a year.",
+        planner_weddings_per_year: 20,
+        planner_km_radius: 80,
+        planner_styles: ["elegant", "rustic"],
+        planner_plan: "premium",
+      },
+      { token },
+    );
+
+    expect(patch.status).toBe(200);
+    expect(patch.data.planner_plan).toBe("premium");
+    expect(patch.data.planner_km_radius).toBe(80);
+    expect(patch.data.planner_weddings_per_year).toBe(20);
+    expect(patch.data.planner_styles).toEqual(["elegant", "rustic"]);
+
+    // max_clients moves in lockstep with the plan (premium → 10).
+    const stats = await req<{ stats: { plan: string; max_clients: number } }>(
+      "GET",
+      "/api/planner/stats",
+      undefined,
+      { token },
+    );
+    expect(stats.data.stats.plan).toBe("premium");
+    expect(stats.data.stats.max_clients).toBe(10);
+  });
+
+  test("PATCH /api/planner/profile — rejects an invalid plan", async () => {
+    const { token } = await bootstrapPlanner("badplan@weddly.test");
+    const r = await req("PATCH", "/api/planner/profile", { planner_plan: "enterprise" }, { token });
+    expect(r.status).toBe(400);
+  });
+});

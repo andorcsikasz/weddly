@@ -1293,6 +1293,11 @@ addColumnIfMissing("users", "planner_phone", "planner_phone TEXT");
 addColumnIfMissing("users", "planner_max_clients", "planner_max_clients INTEGER DEFAULT 4");
 addColumnIfMissing("users", "planner_plan", "planner_plan TEXT DEFAULT 'starter'");
 addColumnIfMissing("users", "planner_onboarding_done", "planner_onboarding_done INTEGER DEFAULT 0");
+// Business attributes carried over from the public planner waitlist — useful
+// CRM/directory data, all nullable. planner_styles holds a JSON string[].
+addColumnIfMissing("users", "planner_weddings_per_year", "planner_weddings_per_year INTEGER");
+addColumnIfMissing("users", "planner_km_radius", "planner_km_radius INTEGER");
+addColumnIfMissing("users", "planner_styles", "planner_styles TEXT");
 
 // Public reference codes for the two principal parties — organisers (couples)
 // get "O" + 5 digits, vendors get "V" + 5 digits. New rows are assigned a code

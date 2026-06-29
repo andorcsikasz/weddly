@@ -3,7 +3,8 @@ import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { getCoupleById, toCouple } from "../domain/couples";
 import { sendKind } from "../domain/emails/send";
-import type { PlannerPlan } from "@shared/types";
+import { isPlannerPlan, plannerPlanMaxClients, waitlistPlanToPlannerPlan } from "../domain/planner";
+import type { PlannerPlan, PlannerProfile, PlannerWaitlistPrefill } from "@shared/types";
 
 function requirePlannerAuth(ctx: Ctx): number {
   const userId = requireAuth(ctx);
@@ -521,28 +522,71 @@ async function handleSendMessage(ctx: Ctx): Promise<Response> {
 
 // ─── M3: Planner profile ──────────────────────────────────────────────────────
 
+interface PlannerUserRow {
+  full_name: string;
+  email: string;
+  business_name: string | null;
+  planner_bio: string | null;
+  planner_city: string | null;
+  planner_website: string | null;
+  planner_phone: string | null;
+  planner_weddings_per_year: number | null;
+  planner_km_radius: number | null;
+  planner_styles: string | null;
+  planner_plan: string | null;
+}
+
+const PLANNER_PROFILE_COLUMNS =
+  "full_name, email, business_name, planner_bio, planner_city, planner_website, planner_phone, " +
+  "planner_weddings_per_year, planner_km_radius, planner_styles, planner_plan";
+
+/** Parse a planner_styles JSON column into a clean string[] (or null). */
+function parseStyles(raw: string | null): string[] | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const styles = parsed.filter((s): s is string => typeof s === "string" && s.length > 0);
+      return styles.length ? styles : null;
+    }
+  } catch {
+    /* legacy/garbage value — treat as empty */
+  }
+  return null;
+}
+
+function toPlannerProfileBase(row: PlannerUserRow): Omit<PlannerProfile, "waitlist_prefill"> {
+  return {
+    full_name: row.full_name,
+    email: row.email,
+    business_name: row.business_name,
+    planner_bio: row.planner_bio,
+    planner_city: row.planner_city,
+    planner_website: row.planner_website,
+    planner_phone: row.planner_phone,
+    planner_weddings_per_year: row.planner_weddings_per_year,
+    planner_km_radius: row.planner_km_radius,
+    planner_styles: parseStyles(row.planner_styles),
+    planner_plan: (row.planner_plan as PlannerPlan | null) ?? "starter",
+  };
+}
+
 async function handleGetProfile(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
-  const row = db
-    .prepare(
-      "SELECT full_name, email, business_name, planner_bio, planner_city, planner_website, planner_phone FROM users WHERE id = ?",
-    )
-    .get(userId) as
-    | {
-        full_name: string;
-        email: string;
-        business_name: string | null;
-        planner_bio: string | null;
-        planner_city: string | null;
-        planner_website: string | null;
-        planner_phone: string | null;
-      }
+  const row = db.prepare(`SELECT ${PLANNER_PROFILE_COLUMNS} FROM users WHERE id = ?`).get(userId) as
+    | PlannerUserRow
     | undefined;
   if (!row) throw new HttpError(404, "planner not found");
 
   const waitlistRow = db
     .prepare(
-      "SELECT full_name, phone, company_name, city, website FROM planner_waitlist WHERE LOWER(email) = LOWER(?) ORDER BY id DESC LIMIT 1",
+      `SELECT full_name, phone, company_name, city, website,
+              weddings_per_year, km_radius,
+              wedding_style_1, wedding_style_2, wedding_style_3, other_style,
+              reference_links, message, selected_plan
+         FROM planner_waitlist
+        WHERE LOWER(email) = LOWER(?)
+        ORDER BY id DESC LIMIT 1`,
     )
     .get(row.email) as
     | {
@@ -551,13 +595,46 @@ async function handleGetProfile(ctx: Ctx): Promise<Response> {
         company_name: string | null;
         city: string | null;
         website: string | null;
+        weddings_per_year: number | null;
+        km_radius: number | null;
+        wedding_style_1: string | null;
+        wedding_style_2: string | null;
+        wedding_style_3: string | null;
+        other_style: string | null;
+        reference_links: string | null;
+        message: string | null;
+        selected_plan: string | null;
       }
     | undefined;
 
-  return json({
-    ...row,
-    waitlist_prefill: waitlistRow ?? null,
-  });
+  const prefill: PlannerWaitlistPrefill | null = waitlistRow
+    ? {
+        full_name: waitlistRow.full_name,
+        phone: waitlistRow.phone,
+        company_name: waitlistRow.company_name,
+        city: waitlistRow.city,
+        website: waitlistRow.website,
+        weddings_per_year: waitlistRow.weddings_per_year,
+        km_radius: waitlistRow.km_radius,
+        styles: [
+          waitlistRow.wedding_style_1,
+          waitlistRow.wedding_style_2,
+          waitlistRow.wedding_style_3,
+          waitlistRow.other_style,
+        ].filter((s): s is string => !!s && s.trim().length > 0),
+        reference_links: waitlistRow.reference_links,
+        bio: waitlistRow.message,
+        selected_plan:
+          waitlistRow.selected_plan === "basic" ||
+          waitlistRow.selected_plan === "pro" ||
+          waitlistRow.selected_plan === "unlimited"
+            ? waitlistRow.selected_plan
+            : null,
+        mapped_plan: waitlistPlanToPlannerPlan(waitlistRow.selected_plan),
+      }
+    : null;
+
+  return json({ ...toPlannerProfileBase(row), waitlist_prefill: prefill });
 }
 
 async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
@@ -569,12 +646,22 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
     planner_city?: unknown;
     planner_website?: unknown;
     planner_phone?: unknown;
+    planner_weddings_per_year?: unknown;
+    planner_km_radius?: unknown;
+    planner_styles?: unknown;
+    planner_plan?: unknown;
   }>(ctx.req);
 
   const fields: string[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const vals: any[] = [];
   const str = (v: unknown) => (typeof v === "string" ? v.trim() || null : undefined);
+  // Integer or null (when explicitly cleared); undefined = leave untouched.
+  const intOrNull = (v: unknown) => {
+    if (v === null) return null;
+    if (typeof v === "number" && Number.isFinite(v)) return Math.round(v);
+    return undefined;
+  };
 
   const fn = str(body.full_name);
   if (fn !== undefined) {
@@ -606,6 +693,31 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
     fields.push("planner_phone = ?");
     vals.push(phone);
   }
+  const wpy = intOrNull(body.planner_weddings_per_year);
+  if (wpy !== undefined) {
+    fields.push("planner_weddings_per_year = ?");
+    vals.push(wpy);
+  }
+  const km = intOrNull(body.planner_km_radius);
+  if (km !== undefined) {
+    fields.push("planner_km_radius = ?");
+    vals.push(km);
+  }
+  if (Array.isArray(body.planner_styles)) {
+    const styles = (body.planner_styles as unknown[]).filter(
+      (s): s is string => typeof s === "string" && s.trim().length > 0,
+    );
+    fields.push("planner_styles = ?");
+    vals.push(styles.length ? JSON.stringify(styles) : null);
+  }
+  // Plan confirm: keep planner_max_clients in lockstep with the chosen plan.
+  if (body.planner_plan !== undefined) {
+    if (!isPlannerPlan(body.planner_plan)) throw new HttpError(400, "invalid planner_plan");
+    fields.push("planner_plan = ?");
+    vals.push(body.planner_plan);
+    fields.push("planner_max_clients = ?");
+    vals.push(plannerPlanMaxClients(body.planner_plan));
+  }
 
   if (fields.length > 0) {
     db.prepare(`UPDATE users SET ${fields.join(", ")}, updated_at = ? WHERE id = ?`).run(
@@ -616,11 +728,9 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
   }
 
   const updated = db
-    .prepare(
-      "SELECT full_name, email, business_name, planner_bio, planner_city, planner_website, planner_phone FROM users WHERE id = ?",
-    )
-    .get(userId);
-  return json(updated);
+    .prepare(`SELECT ${PLANNER_PROFILE_COLUMNS} FROM users WHERE id = ?`)
+    .get(userId) as PlannerUserRow;
+  return json(toPlannerProfileBase(updated));
 }
 
 // ─── M1: Planner invite accept/decline ───────────────────────────────────────

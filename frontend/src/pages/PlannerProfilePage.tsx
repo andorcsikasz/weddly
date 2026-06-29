@@ -19,6 +19,10 @@ export default function PlannerProfilePage() {
     planner_city: null,
     planner_website: null,
     planner_phone: null,
+    planner_weddings_per_year: null,
+    planner_km_radius: null,
+    planner_styles: null,
+    planner_plan: "starter",
     waitlist_prefill: null,
   });
   const [loading, setLoading] = useState(true);

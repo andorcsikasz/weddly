@@ -1,6 +1,7 @@
 import { Fragment, type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
+import type { PlannerPlan } from "@shared/types";
 import { Wordmark } from "../components/Wordmark";
 import { useAuth } from "../lib/auth";
 import { plannerApi } from "../lib/endpoints";
@@ -22,7 +23,11 @@ export default function PlannerOnboardingPage() {
   useDocumentMeta("planner_onboarding.meta_title", "planner_onboarding.meta_description");
 
   const [step, setStep] = useState(0);
-  const [activePlan, setActivePlan] = useState<string>("starter");
+  const [activePlan, setActivePlan] = useState<PlannerPlan>("starter");
+  // True once we know the planner has data on file (waitlist application or a
+  // partially-saved profile). Drives the "review & confirm" path vs the blank
+  // multi-step form.
+  const [hasPrefill, setHasPrefill] = useState(false);
 
   const [fullName, setFullName] = useState(user?.full_name ?? "");
   const [businessName, setBusinessName] = useState("");
@@ -30,6 +35,11 @@ export default function PlannerOnboardingPage() {
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
   const [bio, setBio] = useState("");
+  // Read-only application extras carried from the waitlist (no edit surface in
+  // onboarding yet; persisted on confirm so they are not lost).
+  const [weddingsPerYear, setWeddingsPerYear] = useState<number | null>(null);
+  const [kmRadius, setKmRadius] = useState<number | null>(null);
+  const [styles, setStyles] = useState<string[]>([]);
 
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -39,11 +49,6 @@ export default function PlannerOnboardingPage() {
   const [clientError, setClientError] = useState("");
 
   useEffect(() => {
-    plannerApi
-      .stats()
-      .then((s) => setActivePlan(s.stats.plan))
-      .catch(() => {});
-
     plannerApi
       .getProfile()
       .then((profile) => {
@@ -59,6 +64,29 @@ export default function PlannerOnboardingPage() {
         if (profile.planner_website) setWebsite(profile.planner_website);
         else if (wl?.website) setWebsite(wl.website);
         if (profile.planner_bio) setBio(profile.planner_bio);
+        else if (wl?.bio) setBio(wl.bio);
+
+        setWeddingsPerYear(profile.planner_weddings_per_year ?? wl?.weddings_per_year ?? null);
+        setKmRadius(profile.planner_km_radius ?? wl?.km_radius ?? null);
+        setStyles(profile.planner_styles ?? wl?.styles ?? []);
+
+        // Keep an explicitly-set account plan; otherwise honour the waitlist choice.
+        setActivePlan(
+          profile.planner_plan && profile.planner_plan !== "starter"
+            ? profile.planner_plan
+            : (wl?.mapped_plan ?? profile.planner_plan ?? "starter"),
+        );
+
+        setHasPrefill(
+          !!wl ||
+            !!(
+              profile.business_name ||
+              profile.planner_city ||
+              profile.planner_phone ||
+              profile.planner_website ||
+              profile.planner_bio
+            ),
+        );
       })
       .catch(() => {});
   }, []);
@@ -90,6 +118,41 @@ export default function PlannerOnboardingPage() {
         planner_bio: bio.trim() || undefined,
       } as Parameters<typeof plannerApi.updateProfile>[0]);
       setStep(2);
+    } catch {
+      setProfileError(t("planner_onboarding.save_error"));
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
+  // Single-tap confirm for planners arriving with waitlist/profile data: persist
+  // everything (including the carried CRM extras + the plan they chose on the
+  // waitlist) and jump straight to the optional first-client step.
+  async function handleConfirm() {
+    if (!businessName.trim()) {
+      setProfileError(t("planner_onboarding.business_name_required"));
+      return;
+    }
+    if (!city.trim()) {
+      setProfileError(t("planner_onboarding.city_required"));
+      return;
+    }
+    setProfileError(null);
+    setProfileSaving(true);
+    try {
+      await plannerApi.updateProfile({
+        full_name: fullName.trim() || undefined,
+        business_name: businessName.trim(),
+        planner_city: city.trim(),
+        planner_phone: phone.trim() || undefined,
+        planner_website: website.trim() || undefined,
+        planner_bio: bio.trim() || undefined,
+        planner_weddings_per_year: weddingsPerYear,
+        planner_km_radius: kmRadius,
+        planner_styles: styles,
+        planner_plan: activePlan,
+      } as Parameters<typeof plannerApi.updateProfile>[0]);
+      setStep(3);
     } catch {
       setProfileError(t("planner_onboarding.save_error"));
     } finally {
@@ -145,7 +208,7 @@ export default function PlannerOnboardingPage() {
       </header>
 
       <main className="mx-auto max-w-xl px-4 py-10 sm:px-6">
-        {step > 0 && step < TOTAL_STEPS - 1 && (
+        {step > 0 && step < TOTAL_STEPS - 1 && !(step === 1 && hasPrefill) && (
           <div className="mb-8 flex items-start">
             {([1, 2, 3] as const).map((s, i) => {
               const active = step === s;
@@ -211,14 +274,40 @@ export default function PlannerOnboardingPage() {
           </div>
         )}
 
-        {/* ── Step 1: Profile ── */}
+        {/* ── Step 1: Profile (or review & confirm when prefilled) ── */}
         {step === 1 && (
           <div className="card animate-fade-in-up">
+            {hasPrefill && (
+              <div className="mb-5 flex items-start gap-3 rounded-xl bg-sage-50 p-4 dark:bg-sage-900/30">
+                <Sparkles
+                  size={18}
+                  className="mt-0.5 shrink-0 text-sage-600 dark:text-sage-400"
+                  aria-hidden="true"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-umber-900 dark:text-paper-50">
+                    {t("planner_onboarding.prefill_banner_title")}
+                  </p>
+                  <p className="mt-0.5 text-xs text-umber-600 dark:text-umber-300">
+                    {t("planner_onboarding.prefill_banner_body")}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-              {t("planner_onboarding.step2_title")}
+              {t(
+                hasPrefill
+                  ? "planner_onboarding.prefill_review_title"
+                  : "planner_onboarding.step2_title",
+              )}
             </h2>
             <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
-              {t("planner_onboarding.step2_body")}
+              {t(
+                hasPrefill
+                  ? "planner_onboarding.prefill_review_body"
+                  : "planner_onboarding.step2_body",
+              )}
             </p>
 
             <div className="mt-6 flex flex-col gap-4">
@@ -308,6 +397,47 @@ export default function PlannerOnboardingPage() {
                 </p>
               </div>
 
+              {hasPrefill &&
+                (weddingsPerYear !== null || kmRadius !== null || styles.length > 0) && (
+                  <div className="rounded-xl border border-paper-200 p-4 dark:border-umber-700">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
+                      {t("planner_onboarding.prefill_summary_title")}
+                    </p>
+                    <dl className="mt-3 space-y-2 text-sm">
+                      {weddingsPerYear !== null && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-umber-500 dark:text-umber-400">
+                            {t("planner_onboarding.summary_weddings")}
+                          </dt>
+                          <dd className="font-medium text-umber-900 dark:text-paper-100">
+                            {weddingsPerYear}
+                          </dd>
+                        </div>
+                      )}
+                      {kmRadius !== null && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-umber-500 dark:text-umber-400">
+                            {t("planner_onboarding.summary_radius")}
+                          </dt>
+                          <dd className="font-medium text-umber-900 dark:text-paper-100">
+                            {kmRadius} {t("planner_onboarding.summary_km_unit")}
+                          </dd>
+                        </div>
+                      )}
+                      {styles.length > 0 && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="shrink-0 text-umber-500 dark:text-umber-400">
+                            {t("planner_onboarding.summary_styles")}
+                          </dt>
+                          <dd className="text-right font-medium text-umber-900 dark:text-paper-100">
+                            {styles.join(", ")}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                )}
+
               {profileError && (
                 <p className="text-sm text-blush-700 dark:text-blush-300" role="alert">
                   {profileError}
@@ -315,19 +445,32 @@ export default function PlannerOnboardingPage() {
               )}
             </div>
 
-            <div className="mt-8 flex items-center justify-between">
-              <button type="button" className="btn-ghost" onClick={() => setStep(0)}>
-                {t("common.back")}
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={profileSaving}
-                onClick={() => void handleProfileNext()}
-              >
-                {profileSaving ? t("common.saving") : t("common.next")}
-              </button>
-            </div>
+            {hasPrefill ? (
+              <div className="mt-8">
+                <button
+                  type="button"
+                  className="btn-primary btn-lg w-full"
+                  disabled={profileSaving}
+                  onClick={() => void handleConfirm()}
+                >
+                  {profileSaving ? t("common.saving") : t("planner_onboarding.prefill_confirm_cta")}
+                </button>
+              </div>
+            ) : (
+              <div className="mt-8 flex items-center justify-between">
+                <button type="button" className="btn-ghost" onClick={() => setStep(0)}>
+                  {t("common.back")}
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={profileSaving}
+                  onClick={() => void handleProfileNext()}
+                >
+                  {profileSaving ? t("common.saving") : t("common.next")}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

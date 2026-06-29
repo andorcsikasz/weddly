@@ -6374,6 +6374,16 @@ const en: LocaleMessages = {
     later: "Later",
     first_client_hint:
       "The couple gets an access request by email. You'll see their workspace only after they approve.",
+    prefill_banner_title: "We pulled this from your application",
+    prefill_banner_body: "Check it over and tweak anything that changed, then just confirm.",
+    prefill_review_title: "Review your details",
+    prefill_review_body: "This is what your clients will see. Edit any field if needed.",
+    prefill_confirm_cta: "Confirm & continue",
+    prefill_summary_title: "From your application",
+    summary_weddings: "Weddings / year",
+    summary_radius: "Service radius",
+    summary_km_unit: "km",
+    summary_styles: "Styles",
   },
   planner_messages: {
     heading: "Messages",
