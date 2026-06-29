@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { NavLink, Outlet } from "react-router-dom";
 import type { PlannerProfile } from "@shared/types";
-import { Wordmark } from "../../components/Wordmark";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 import { useDocumentMeta } from "../../lib/seo";
@@ -44,23 +42,8 @@ export default function PlannerSettingsLayout() {
   const initials = profile ? getInitials(profile.full_name, profile.email) : "?";
 
   return (
-    <div className="min-h-screen bg-paper-50 dark:bg-umber-950">
-      <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link to="/app/planner">
-            <Wordmark size="sm" />
-          </Link>
-          <Link
-            to="/app/planner"
-            className="inline-flex items-center gap-1.5 text-sm text-ink-700 hover:text-ink-900 dark:text-paper-200 dark:hover:text-paper-50"
-          >
-            <ArrowLeft size={15} />
-            {t("planner_home.back_label")}
-          </Link>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-2xl px-4 pt-10 sm:px-6">
+    <div className="mx-auto max-w-2xl py-2">
+      <div>
         {/* Hero */}
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-umber-900 font-grotesk text-xl font-semibold text-paper-50 dark:bg-umber-700">

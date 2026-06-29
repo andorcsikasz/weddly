@@ -96,7 +96,12 @@ const VendorSettingsPage = lazy(() => import("./pages/vendor/VendorSettingsPage"
 const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
 const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
 const WishlistEditorPage = lazy(() => import("./pages/WishlistEditorPage"));
+const PlannerShellLayout = lazy(() =>
+  import("./components/PlannerShell").then((m) => ({ default: m.PlannerShellLayout })),
+);
 const PlannerHomePage = lazy(() => import("./pages/PlannerHomePage"));
+const PlannerClientsPage = lazy(() => import("./pages/planner/PlannerClientsPage"));
+const PlannerCalendarPage = lazy(() => import("./pages/planner/PlannerCalendarPage"));
 const PlannerOnboardingPage = lazy(() => import("./pages/PlannerOnboardingPage"));
 const PlannerMessagesPage = lazy(() => import("./pages/PlannerMessagesPage"));
 const PlannerProfilePage = lazy(() => import("./pages/PlannerProfilePage"));
@@ -1001,16 +1006,7 @@ export default function App() {
             RequireCoupleAuth is not used here because planners ARE the
             intended audience. The shell and features are a stub for Phase 1;
             deeper planner-specific navigation lands in Phase 2. */}
-        <Route
-          path="/app/planner"
-          element={
-            <RequireAuth>
-              <Page>
-                <PlannerHomePage />
-              </Page>
-            </RequireAuth>
-          }
-        />
+        {/* Planner onboarding wizard — OUTSIDE the shell (full-screen, no nav). */}
         <Route
           path="/app/planner/onboarding"
           element={
@@ -1021,54 +1017,81 @@ export default function App() {
             </RequireAuth>
           }
         />
+        {/* Planner workspace — one mounted PlannerShellLayout keeps the header +
+            left nav alive across planner navigation; child pages are content-only. */}
         <Route
-          path="/app/planner/messages"
+          path="/app/planner"
           element={
             <RequireAuth>
-              <PlannerMessagesPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/app/planner/messages/:coupleId"
-          element={
-            <RequireAuth>
-              <PlannerMessagesPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/app/planner/billing"
-          element={
-            <RequireAuth>
-              <PlannerBillingPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/app/planner/profile"
-          element={<Navigate to="/app/planner/settings/account" replace />}
-        />
-        <Route
-          path="/app/planner/clients/:coupleId"
-          element={
-            <RequireAuth>
-              <PlannerClientPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/app/planner/settings"
-          element={
-            <RequireAuth>
-              <PlannerSettingsLayout />
+              <Suspense fallback={<FullScreenLoader />}>
+                <PlannerShellLayout />
+              </Suspense>
             </RequireAuth>
           }
         >
-          <Route index element={<Navigate to="account" replace />} />
-          <Route path="account" element={<PlannerSettingsAccount />} />
-          <Route path="subscription" element={<PlannerSettingsSubscription />} />
-          <Route path="data" element={<PlannerSettingsData />} />
+          <Route
+            index
+            element={
+              <Page>
+                <PlannerHomePage />
+              </Page>
+            }
+          />
+          <Route
+            path="clients"
+            element={
+              <Page>
+                <PlannerClientsPage />
+              </Page>
+            }
+          />
+          <Route
+            path="clients/:coupleId"
+            element={
+              <Page>
+                <PlannerClientPage />
+              </Page>
+            }
+          />
+          <Route
+            path="calendar"
+            element={
+              <Page>
+                <PlannerCalendarPage />
+              </Page>
+            }
+          />
+          <Route
+            path="messages"
+            element={
+              <Page>
+                <PlannerMessagesPage />
+              </Page>
+            }
+          />
+          <Route
+            path="messages/:coupleId"
+            element={
+              <Page>
+                <PlannerMessagesPage />
+              </Page>
+            }
+          />
+          <Route
+            path="billing"
+            element={
+              <Page>
+                <PlannerBillingPage />
+              </Page>
+            }
+          />
+          <Route path="profile" element={<Navigate to="/app/planner/settings/account" replace />} />
+          <Route path="settings" element={<PlannerSettingsLayout />}>
+            <Route index element={<Navigate to="account" replace />} />
+            <Route path="account" element={<PlannerSettingsAccount />} />
+            <Route path="subscription" element={<PlannerSettingsSubscription />} />
+            <Route path="data" element={<PlannerSettingsData />} />
+          </Route>
         </Route>
         <Route
           path="*"

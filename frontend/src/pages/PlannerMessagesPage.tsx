@@ -1,4 +1,4 @@
-import { ArrowLeft, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type { PlannerClientView, PlannerMessage, PlannerThreadPreview } from "@shared/types";
@@ -34,14 +34,7 @@ function ThreadSidebar({
   return (
     <aside className="flex h-full flex-col border-r border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
       <div className="border-b border-paper-200 px-4 py-3 dark:border-umber-800">
-        <Link
-          to="/app/planner"
-          className="flex items-center gap-1.5 text-xs text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
-        >
-          <ArrowLeft size={13} />
-          {t("planner_messages.back")}
-        </Link>
-        <h2 className="mt-2 font-grotesk text-base font-semibold text-umber-900 dark:text-paper-50">
+        <h2 className="font-grotesk text-base font-semibold text-umber-900 dark:text-paper-50">
           {t("planner_messages.heading")}
         </h2>
       </div>
@@ -294,14 +287,14 @@ export default function PlannerMessagesPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center text-umber-400">
+      <div className="flex h-[60vh] items-center justify-center text-umber-400">
         {t("common.loading")}
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-paper-50 dark:bg-umber-950">
+    <div className="flex h-[calc(100vh-8rem)] overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
       {/* Sidebar — 280px on desktop, full-width on mobile when no thread selected */}
       <div
         className={`${

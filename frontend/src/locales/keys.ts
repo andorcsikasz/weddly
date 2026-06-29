@@ -6790,8 +6790,50 @@ export interface LocaleMessages {
     form_title: string;
     step1_cta: string;
   };
+  planner_nav: {
+    greeting: string;
+    dashboard: string;
+    clients: string;
+    calendar: string;
+    messages: string;
+    settings: string;
+    logout: string;
+    collapse_sidebar: string;
+    expand_sidebar: string;
+  };
+  planner_calendar: {
+    meta_title: string;
+    meta_description: string;
+    title: string;
+    subtitle: string;
+    today: string;
+    prev_month: string;
+    next_month: string;
+    legend_weddings: string;
+    legend_tasks: string;
+    wedding_label: string;
+    day_empty: string;
+    upcoming_title: string;
+    no_weddings: string;
+    tasks_due: string;
+  };
+  planner_clients_page: {
+    meta_title: string;
+    meta_description: string;
+    title: string;
+    subtitle: string;
+  };
   planner_home: {
     title: string;
+    checklist_title: string;
+    checklist_progress: string;
+    checklist_dismiss: string;
+    checklist_step_profile: string;
+    checklist_step_client: string;
+    checklist_step_message: string;
+    checklist_cta_profile: string;
+    checklist_cta_client: string;
+    checklist_cta_message: string;
     welcome: string;
     subtitle: string;
     clients_heading: string;

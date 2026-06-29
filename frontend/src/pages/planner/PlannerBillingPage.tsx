@@ -41,26 +41,24 @@ export default function PlannerBillingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-paper-50 dark:bg-umber-950">
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <Link
-          to="/app/planner"
-          className="inline-flex items-center gap-1.5 text-xs text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
-        >
-          <ArrowLeft size={13} />
-          {t("planner_home.back_to_planner")}
-        </Link>
+    <div className="mx-auto max-w-4xl py-2">
+      <Link
+        to="/app/planner/settings/subscription"
+        className="inline-flex items-center gap-1.5 text-xs text-umber-500 hover:text-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
+      >
+        <ArrowLeft size={13} />
+        {t("planner_nav.settings")}
+      </Link>
 
-        <h1 className="mt-3 font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
-          {t("planner_profile.subscription_heading")}
-        </h1>
+      <h1 className="mt-3 font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
+        {t("planner_profile.subscription_heading")}
+      </h1>
 
-        {!stats ? (
-          <div className="mt-8 h-48 animate-pulse rounded-2xl bg-paper-100 dark:bg-umber-800" />
-        ) : (
-          <BillingBody stats={stats} />
-        )}
-      </main>
+      {!stats ? (
+        <div className="mt-8 h-48 animate-pulse rounded-2xl bg-paper-100 dark:bg-umber-800" />
+      ) : (
+        <BillingBody stats={stats} />
+      )}
     </div>
   );
 }
