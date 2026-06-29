@@ -780,8 +780,8 @@ export default function MediaPage() {
                 </p>
                 <div className="group flex items-center gap-2">
                   <h1
-                    className="font-serif text-2xl italic leading-snug text-paper-50"
-                    style={{ textShadow: "0 2px 10px rgba(0,0,0,0.65)" }}
+                    className="font-serif text-2xl font-medium leading-snug !text-paper-50"
+                    style={{ textShadow: "0 2px 10px rgba(0,0,0,0.7)" }}
                   >
                     {couple?.display_name || album.title || t("media.film_settings_unnamed")}
                   </h1>
