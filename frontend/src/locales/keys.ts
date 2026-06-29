@@ -6795,11 +6795,30 @@ export interface LocaleMessages {
     dashboard: string;
     clients: string;
     calendar: string;
+    stats: string;
     messages: string;
     settings: string;
     logout: string;
     collapse_sidebar: string;
     expand_sidebar: string;
+  };
+  planner_stats: {
+    meta_title: string;
+    meta_description: string;
+    title: string;
+    subtitle: string;
+    kpi_active_clients: string;
+    kpi_upcoming: string;
+    kpi_completion: string;
+    kpi_overdue: string;
+    completion_title: string;
+    plan_title: string;
+    plan_usage: string;
+    pending_title: string;
+    pending_none: string;
+    empty: string;
+    tasks_total: string;
+    view_client: string;
   };
   planner_calendar: {
     meta_title: string;

@@ -7,6 +7,7 @@
 
 import {
   AlertTriangle,
+  BarChart3,
   Bell,
   CalendarDays,
   LayoutDashboard,
@@ -42,6 +43,7 @@ const PLANNER_ITEMS: PlannerNavItem[] = [
     labelKey: "planner_nav.calendar",
     icon: <CalendarDays size={18} />,
   },
+  { to: "/app/planner/stats", labelKey: "planner_nav.stats", icon: <BarChart3 size={18} /> },
   {
     to: "/app/planner/messages",
     labelKey: "planner_nav.messages",
@@ -51,14 +53,6 @@ const PLANNER_ITEMS: PlannerNavItem[] = [
 ];
 
 const NAV_COLLAPSED_KEY = "weddly.planner_nav_collapsed";
-
-function initialsOf(name: string, email: string): string {
-  const source = name.trim() || email;
-  const words = source.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "?";
-  if (words.length === 1) return (words[0] ?? "").slice(0, 2).toUpperCase();
-  return ((words[0]?.[0] ?? "") + (words[words.length - 1]?.[0] ?? "")).toUpperCase();
-}
 
 function NotificationBell({
   overdue,
@@ -220,14 +214,15 @@ export function PlannerShell({ children }: { children: ReactNode }) {
 
           <div className="flex items-center gap-2.5">
             {stats && (
-              <span
-                className="hidden items-center gap-1.5 rounded-full border border-umber-200 px-3 py-1 text-xs capitalize text-umber-600 sm:inline-flex dark:border-umber-600 dark:text-paper-200"
+              <Link
+                to="/app/planner/stats"
+                className="hidden items-center gap-1.5 rounded-full border border-moss-200 bg-moss-50 px-3 py-1 text-xs capitalize text-moss-800 transition-colors hover:bg-moss-100 sm:inline-flex dark:border-moss-900 dark:bg-moss-900/30 dark:text-moss-100 dark:hover:bg-moss-900/50"
                 title={t("planner_home.topbar_clients_aria")}
                 aria-label={`${t("planner_home.topbar_clients_aria")}: ${stats.active_clients}/${stats.max_clients}`}
               >
-                <Users size={13} aria-hidden="true" className="text-umber-400" />
+                <Users size={13} aria-hidden="true" className="text-moss-600 dark:text-moss-300" />
                 {`${stats.plan} · ${stats.active_clients}/${stats.max_clients}`}
-              </span>
+              </Link>
             )}
 
             <NotificationBell overdue={stats?.overdue_tasks ?? 0} pendingInvites={invites.length} />
@@ -251,31 +246,8 @@ export function PlannerShell({ children }: { children: ReactNode }) {
           }`}
         >
           <nav className="flex gap-1 overflow-x-auto lg:sticky lg:top-20 lg:flex-col lg:overflow-visible">
-            {PLANNER_ITEMS.map((item) => {
-              const label = t(item.labelKey);
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  title={collapsed ? label : undefined}
-                  className={({ isActive }) =>
-                    `flex shrink-0 items-center gap-3 rounded-xl py-2 text-sm transition-colors ${
-                      collapsed ? "lg:justify-center lg:px-0 px-3" : "px-3"
-                    } ${
-                      isActive
-                        ? "stationery-coffee text-paper-50 dark:text-paper-50"
-                        : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
-                    }`
-                  }
-                >
-                  {item.icon}
-                  <span className={collapsed ? "lg:hidden" : ""}>{label}</span>
-                </NavLink>
-              );
-            })}
-
-            <div className="mt-2 hidden flex-col gap-1 border-t border-paper-300 pt-2 lg:flex dark:border-umber-700">
+            {/* Collapse toggle — top of the rail, desktop only. */}
+            <div className="mb-1 hidden border-b border-paper-300 pb-1 lg:block dark:border-umber-700">
               <button
                 type="button"
                 onClick={toggleCollapsed}
@@ -283,7 +255,7 @@ export function PlannerShell({ children }: { children: ReactNode }) {
                 aria-label={
                   collapsed ? t("planner_nav.expand_sidebar") : t("planner_nav.collapse_sidebar")
                 }
-                className={`flex shrink-0 items-center gap-3 rounded-xl py-2 text-sm text-ink-600 transition-colors hover:bg-paper-200 dark:text-paper-300 dark:hover:bg-umber-800 ${
+                className={`flex w-full shrink-0 items-center gap-3 rounded-xl py-2 text-sm text-ink-600 transition-colors hover:bg-moss-50 dark:text-paper-300 dark:hover:bg-umber-800 ${
                   collapsed ? "justify-center px-0" : "px-3"
                 }`}
               >
@@ -297,6 +269,30 @@ export function PlannerShell({ children }: { children: ReactNode }) {
                 </span>
               </button>
             </div>
+
+            {PLANNER_ITEMS.map((item) => {
+              const label = t(item.labelKey);
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  title={collapsed ? label : undefined}
+                  className={({ isActive }) =>
+                    `flex shrink-0 items-center gap-3 rounded-xl py-2 text-sm transition-colors ${
+                      collapsed ? "lg:justify-center lg:px-0 px-3" : "px-3"
+                    } ${
+                      isActive
+                        ? "bg-moss-100 font-medium text-moss-900 dark:bg-moss-900/40 dark:text-moss-100"
+                        : "text-ink-700 hover:bg-moss-50 dark:text-paper-200 dark:hover:bg-umber-800"
+                    }`
+                  }
+                >
+                  {item.icon}
+                  <span className={collapsed ? "lg:hidden" : ""}>{label}</span>
+                </NavLink>
+              );
+            })}
           </nav>
         </aside>
         <main id="main-content" className="min-w-0 flex-1 focus:outline-none">

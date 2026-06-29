@@ -142,6 +142,25 @@ export default {
           800: "#344850",
           900: "#28373d",
         },
+        // Moss — the warm olive-green accent for the PLANNER portal, per user
+        // direction 2026-06-29. Anchored on the three requested colours:
+        // moss-100 = #DBF4AD (light fills, active-nav background, badges),
+        // moss-600 = #7D8334 (mid accent for icons, links, KPI accents) and
+        // moss-900 = #535723 (deep olive for active-nav text + dark-mode fills).
+        // The rest of the ramp is interpolated for borders + dark mode.
+        moss: {
+          50: "#f4f9e7",
+          100: "#DBF4AD",
+          200: "#c7e588",
+          300: "#aecb66",
+          400: "#9bb451",
+          500: "#8a9e42",
+          600: "#7D8334",
+          700: "#69702e",
+          800: "#5d6229",
+          900: "#535723",
+          950: "#363a16",
+        },
         // WNRS-red — the saturated true red used on the couple-cards tool
         // surface (white-on-red cover card, red-on-white question card).
         // Kept out of the `blush` palette on purpose: blush is the warm

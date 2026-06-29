@@ -50,7 +50,7 @@ function ConsentBadge({ status }: { status: string }) {
     <span
       className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
         isActive
-          ? "bg-eucalyptus-100 text-eucalyptus-800 dark:bg-eucalyptus-900/30 dark:text-eucalyptus-300"
+          ? "bg-moss-100 text-moss-900 dark:bg-moss-900/40 dark:text-moss-100"
           : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
       }`}
     >
@@ -61,7 +61,7 @@ function ConsentBadge({ status }: { status: string }) {
 
 function HealthIcon({ overdue }: { overdue: number }) {
   if (overdue === 0)
-    return <CheckCircle2 size={14} className="shrink-0 text-eucalyptus-500" aria-hidden="true" />;
+    return <CheckCircle2 size={14} className="shrink-0 text-moss-600" aria-hidden="true" />;
   if (overdue < 3)
     return <AlertTriangle size={14} className="shrink-0 text-amber-500" aria-hidden="true" />;
   return <AlertTriangle size={14} className="shrink-0 text-red-500" aria-hidden="true" />;
@@ -207,7 +207,7 @@ function ClientCard({ client }: { client: PlannerClientView }) {
         <div className="mt-3">
           <div className="h-1.5 rounded-full bg-paper-200 dark:bg-umber-700 overflow-hidden">
             <div
-              className="h-full rounded-full bg-eucalyptus-500 transition-all"
+              className="h-full rounded-full bg-moss-500 transition-all"
               style={{ width: barWidth }}
             />
           </div>

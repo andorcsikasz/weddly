@@ -24,18 +24,20 @@ function KpiTile({
   unit,
   progress,
   accent,
+  to,
 }: {
   label: string;
   value: string | number;
   unit: string;
   progress?: { done: number; total: number } | null;
   accent?: "red" | "amber" | "green";
+  to?: string;
 }) {
   const isRed = accent === "red" && Number(value) > 0;
   const isAmber = accent === "amber" && Number(value) > 0;
   const isGreen = accent === "green";
-  return (
-    <div className="card p-4">
+  const inner = (
+    <>
       <div className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
         {label}
       </div>
@@ -47,7 +49,7 @@ function KpiTile({
               : isAmber
                 ? "text-amber-500 dark:text-amber-400"
                 : isGreen
-                  ? "text-sage-600 dark:text-sage-400"
+                  ? "text-moss-700 dark:text-moss-300"
                   : "text-ink-900 dark:text-paper-50"
           }`}
         >
@@ -57,7 +59,7 @@ function KpiTile({
         {progress && progress.total > 0 && (
           <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
             <div
-              className="h-full rounded-full bg-ink-700 transition-all dark:bg-paper-100"
+              className="h-full rounded-full bg-moss-500 transition-all dark:bg-moss-400"
               style={{
                 width: `${Math.max(2, Math.round((progress.done / progress.total) * 100))}%`,
               }}
@@ -65,8 +67,19 @@ function KpiTile({
           </div>
         )}
       </div>
-    </div>
+    </>
   );
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="card block p-4 transition-colors hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20"
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className="card p-4">{inner}</div>;
 }
 
 // ─── Task overview chart ──────────────────────────────────────────────────────
@@ -478,7 +491,7 @@ function GettingStartedChecklist({
         {steps.map((step) => (
           <li key={step.key} className="flex items-center gap-3 rounded-lg px-1 py-2">
             {step.done ? (
-              <CheckCircle2 size={18} className="shrink-0 text-sage-600 dark:text-sage-400" />
+              <CheckCircle2 size={18} className="shrink-0 text-moss-600 dark:text-moss-400" />
             ) : (
               <Circle size={18} className="shrink-0 text-umber-300 dark:text-umber-600" />
             )}
@@ -669,12 +682,14 @@ export default function PlannerHomePage() {
               value={stats.overdue_tasks}
               unit={t("planner_home.kpi_overdue_unit")}
               accent={stats.overdue_tasks > 0 ? "red" : undefined}
+              to="/app/planner/stats"
             />
             <KpiTile
               label={t("planner_home.kpi_due_this_week")}
               value={stats.due_this_week}
               unit={t("planner_home.kpi_due_week_unit")}
               accent={stats.due_this_week > 0 ? "amber" : undefined}
+              to="/app/planner/calendar"
             />
             <KpiTile
               label={t("planner_home.kpi_total_tasks")}
@@ -684,6 +699,7 @@ export default function PlannerHomePage() {
               progress={
                 stats.total_tasks > 0 ? { done: stats.done_tasks, total: stats.total_tasks } : null
               }
+              to="/app/planner/stats"
             />
             <KpiTile
               label={t("planner_home.kpi_active_clients")}
@@ -694,6 +710,7 @@ export default function PlannerHomePage() {
                   ? { done: stats.active_clients, total: stats.max_clients }
                   : null
               }
+              to="/app/planner/clients"
             />
           </div>
         )}

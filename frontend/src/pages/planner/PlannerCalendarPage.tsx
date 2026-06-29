@@ -193,7 +193,7 @@ export default function PlannerCalendarPage() {
                   <span
                     className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
                       isToday
-                        ? "bg-umber-800 font-semibold text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                        ? "bg-moss-600 font-semibold text-paper-50 dark:bg-moss-400 dark:text-umber-900"
                         : inMonth
                           ? "text-umber-700 dark:text-paper-200"
                           : "text-umber-300 dark:text-umber-600"
@@ -286,7 +286,7 @@ export default function PlannerCalendarPage() {
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         days <= 30
-                          ? "bg-blush-100 text-blush-700 dark:bg-blush-900/30 dark:text-blush-300"
+                          ? "bg-moss-100 text-moss-800 dark:bg-moss-900/40 dark:text-moss-200"
                           : "bg-paper-200 text-umber-600 dark:bg-umber-700 dark:text-umber-200"
                       }`}
                     >

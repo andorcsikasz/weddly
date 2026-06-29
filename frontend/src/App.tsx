@@ -102,6 +102,7 @@ const PlannerShellLayout = lazy(() =>
 const PlannerHomePage = lazy(() => import("./pages/PlannerHomePage"));
 const PlannerClientsPage = lazy(() => import("./pages/planner/PlannerClientsPage"));
 const PlannerCalendarPage = lazy(() => import("./pages/planner/PlannerCalendarPage"));
+const PlannerStatsPage = lazy(() => import("./pages/planner/PlannerStatsPage"));
 const PlannerOnboardingPage = lazy(() => import("./pages/PlannerOnboardingPage"));
 const PlannerMessagesPage = lazy(() => import("./pages/PlannerMessagesPage"));
 const PlannerProfilePage = lazy(() => import("./pages/PlannerProfilePage"));
@@ -1058,6 +1059,14 @@ export default function App() {
             element={
               <Page>
                 <PlannerCalendarPage />
+              </Page>
+            }
+          />
+          <Route
+            path="stats"
+            element={
+              <Page>
+                <PlannerStatsPage />
               </Page>
             }
           />
