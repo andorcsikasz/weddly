@@ -667,7 +667,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-label={t(sidebarCollapsed ? "nav.sidebar_expand" : "nav.sidebar_collapse")}
                 title={t(sidebarCollapsed ? "nav.sidebar_expand" : "nav.sidebar_collapse")}
                 aria-expanded={!sidebarCollapsed}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-paper-300/80 bg-paper-50/90 text-blush-500 shadow-sm backdrop-blur-sm transition-colors hover:border-blush-500 hover:bg-blush-500 hover:text-paper-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-2 dark:border-umber-600 dark:bg-umber-800/90 dark:text-blush-300 dark:hover:border-blush-400 dark:hover:bg-blush-400 dark:hover:text-umber-900 dark:focus-visible:ring-blush-300"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-umber-900 bg-paper-50/90 text-umber-900 shadow-sm backdrop-blur-sm transition-colors hover:border-umber-900 hover:bg-umber-900 hover:text-paper-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-700 focus-visible:ring-offset-2 dark:border-paper-200 dark:bg-umber-800/90 dark:text-paper-100 dark:hover:border-paper-100 dark:hover:bg-paper-100 dark:hover:text-umber-900 dark:focus-visible:ring-paper-300"
               >
                 {sidebarCollapsed ? (
                   <ChevronsRight size={16} aria-hidden="true" />
