@@ -1774,7 +1774,7 @@ export default function SuppliersPage() {
                   }}
                   tabIndex={0}
                   className={`card !p-0 relative flex h-full flex-col cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${
-                    isPicked ? "border-sage-400 dark:border-sage-400/40" : ""
+                    isPicked ? "border-2 border-sage-500 dark:border-sage-400/60" : ""
                   } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                 >
                   {/* Hero image — the card's focal point. Pick + save float
