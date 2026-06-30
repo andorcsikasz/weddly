@@ -1157,8 +1157,8 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
       font: heroFont,
       color: colors.text,
     });
-    // Pack ornament + a small "TABLE" eyebrow under the number (centred packs).
-    if (pack.cardLayout !== "asymmetric") {
+    // Pack ornament divider under the number (centred packs), gated by toggle.
+    if (input.design.print.ornament && pack.cardLayout !== "asymmetric") {
       drawOrnament(page, pack.ornament, cxPt, mm(H * 0.3), 36, colors.accent);
     }
   }
@@ -1221,8 +1221,10 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     });
   }
 
-  // Pack ornament divider under the name/date.
-  drawOrnament(page, pack.ornament, cxPt, mm(H - 57), 40, colors.accent);
+  // Pack ornament divider under the name/date, gated by the Ornament toggle.
+  if (input.design.print.ornament) {
+    drawOrnament(page, pack.ornament, cxPt, mm(H - 57), 40, colors.accent);
+  }
 
   // "Menu" heading.
   const heading = headingText("Menu", input.design);
@@ -1338,15 +1340,17 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
     color: colors.text,
   });
 
-  // Ornament divider under the names.
-  drawOrnament(
-    page,
-    pack.ornament,
-    isAsym ? mm(leftXmm + 20) : cxPt,
-    mm(H - 67),
-    44,
-    colors.accent,
-  );
+  // Ornament divider under the names, gated by the Ornament toggle.
+  if (input.design.print.ornament) {
+    drawOrnament(
+      page,
+      pack.ornament,
+      isAsym ? mm(leftXmm + 20) : cxPt,
+      mm(H - 67),
+      44,
+      colors.accent,
+    );
+  }
 
   // Invite line.
   await drawLine("invite you to celebrate", 12, H - 82, "body", colors.text);
@@ -1428,15 +1432,17 @@ export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Arra
     color: colors.text,
   });
 
-  // Ornament divider.
-  drawOrnament(
-    page,
-    pack.ornament,
-    isAsym ? mm(leftXmm + 20) : cxPt,
-    mm(H - 60),
-    40,
-    colors.accent,
-  );
+  // Ornament divider, gated by the Ornament toggle.
+  if (input.design.print.ornament) {
+    drawOrnament(
+      page,
+      pack.ornament,
+      isAsym ? mm(leftXmm + 20) : cxPt,
+      mm(H - 60),
+      40,
+      colors.accent,
+    );
+  }
 
   // "for celebrating with us" line.
   await drawLine("for celebrating with us", 10.5, H - 74, "body", colors.text);

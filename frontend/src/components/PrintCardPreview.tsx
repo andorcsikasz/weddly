@@ -59,6 +59,12 @@ export function PrintCardPreview({
     ? "items-start justify-center text-left"
     : "items-center justify-center text-center";
 
+  // The Ornament print toggle gates the pack's divider motif, so flipping it has
+  // an immediate, visible effect: ornament ON = the pack's sprig / diamond / dot
+  // rule between heading and body, OFF = a cleaner card. The structural frame
+  // (oval / deco corners) stays as the pack's layout identity. Mirrors pdf.ts.
+  const showOrnament = design.print.ornament;
+
   // Card-frame overlay (absolute inset, no layout impact). Blush draws its oval
   // hairline; Midnight drops art-deco corner marks. Garden / Monochrome carry
   // their identity in the divider, so no frame.
@@ -71,194 +77,221 @@ export function PrintCardPreview({
 
   // The pack's divider motif, coloured from the accent. Sits between the
   // heading and the body on every template; size overridable via className.
-  const divider = (className?: string) => (
-    <OrnamentDivider slug={d.ornament} className={className} style={{ color: d.accent }} />
+  const divider = (className?: string) =>
+    showOrnament ? (
+      <OrnamentDivider slug={d.ornament} className={className} style={{ color: d.accent }} />
+    ) : null;
+
+  const cardBorder = getBorderCss(design.borderStyle, d.accent);
+  // Two offset "ghost" cards behind the live one so the preview reads as a
+  // physical STACK of printed stationery rather than a single floating
+  // rectangle (audit #8). Same stock + frame, dimmed, nudged down-right.
+  const ghost = (offset: number, opacity: number) => (
+    <div
+      aria-hidden
+      className="absolute inset-0"
+      style={{
+        backgroundColor: d.background,
+        border: cardBorder,
+        borderRadius: 6,
+        opacity,
+        transform: `translate(${offset}px, ${offset}px)`,
+        boxShadow: "0 1px 2px rgba(16,24,48,0.06)",
+      }}
+    />
   );
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div
-        className={`relative flex ${aspect} w-full max-w-[26rem] flex-col ${alignCls} px-7 py-6 shadow-soft`}
-        style={{
-          backgroundColor: d.background,
-          color: d.text,
-          fontFamily: d.body_font,
-          border: getBorderCss(design.borderStyle, d.accent),
-          borderRadius: 6,
-        }}
-      >
-        {frame}
+      <div className={`relative ${aspect} w-full max-w-[26rem]`}>
+        {ghost(10, 0.45)}
+        {ghost(5, 0.7)}
+        <div
+          className={`absolute inset-0 flex flex-col ${alignCls} px-7 py-6 shadow-soft`}
+          style={{
+            backgroundColor: d.background,
+            color: d.text,
+            fontFamily: d.body_font,
+            border: cardBorder,
+            borderRadius: 6,
+          }}
+        >
+          {frame}
 
-        {template === "place_card" && (
-          <>
-            {/* Monochrome's asymmetric tell: a small seat index pinned top-right,
+          {template === "place_card" && (
+            <>
+              {/* Monochrome's asymmetric tell: a small seat index pinned top-right,
                 tabular figures, no centre axis. */}
-            {isLeft && (
-              <span
-                className="absolute right-5 top-5 text-sm tabular-nums"
-                style={{ color: d.accent_text }}
-                aria-hidden
-              >
-                01
-              </span>
-            )}
-            <span
-              className={`${isLeft ? "text-3xl" : "text-2xl"} mt-1 leading-tight`}
-              style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
-            >
-              {brideName?.trim() || t("design.print_preview.sample_name")}
-            </span>
-            {divider("my-3")}
-            <span className="text-[11px] uppercase tracking-[0.18em]" style={{ color: labelColor }}>
-              {t("design.print_preview.sample_table")}
-            </span>
-          </>
-        )}
-
-        {template === "table_number" && (
-          <>
-            {/* The number is the hero — much larger than the label, styled per
-                pack (small-caps/italic/uppercase are harmless on digits). */}
-            <span
-              className="text-7xl leading-none tabular-nums"
-              style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
-            >
-              12
-            </span>
-            {divider("my-2")}
-            <span
-              className="text-[11px] uppercase tracking-[0.18em]"
-              style={{ color: d.accent_text }}
-            >
-              {t("design.print_preview.table_label")}
-            </span>
-          </>
-        )}
-
-        {template === "menu" && (
-          <>
-            <span
-              className="mt-1 text-xl tracking-[0.12em]"
-              style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
-            >
-              {t("design.print_preview.menu_title")}
-            </span>
-            {divider("my-3")}
-            <div
-              className={`flex flex-col gap-2 text-sm ${isLeft ? "items-start" : "items-center"}`}
-              style={{ color: d.text }}
-            >
-              {(["menu_starter", "menu_main", "menu_dessert"] as const).map((key) => (
-                <span key={key}>{t(`design.print_preview.${key}`)}</span>
-              ))}
-            </div>
-          </>
-        )}
-
-        {template === "schedule" && (
-          <>
-            <span
-              className="mt-1 text-xl tracking-[0.12em]"
-              style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
-            >
-              {t("design.print_preview.tpl.schedule")}
-            </span>
-            {divider("my-3")}
-            <div
-              className={`flex flex-col gap-2.5 text-sm ${isLeft ? "items-start" : "items-center"}`}
-              style={{ color: d.text }}
-            >
-              {(
-                [
-                  { time: "15:00", key: "ceremony" },
-                  { time: "18:00", key: "dinner" },
-                  { time: "21:00", key: "party" },
-                ] as const
-              ).map((row) => (
+              {isLeft && (
                 <span
-                  key={row.key}
-                  className={`flex items-baseline gap-2 ${isLeft ? "justify-start" : "justify-center"}`}
+                  className="absolute right-5 top-5 text-sm tabular-nums"
+                  style={{ color: d.accent_text }}
+                  aria-hidden
                 >
-                  <span className="tabular-nums" style={{ color: d.accent_text }}>
-                    {row.time}
-                  </span>
-                  <span>{t(`design.print_preview.sample_program.${row.key}`)}</span>
+                  01
                 </span>
-              ))}
-            </div>
-          </>
-        )}
-
-        {template === "invitation" && (
-          <>
-            <span
-              className="text-[11px] uppercase tracking-[0.18em]"
-              style={{ color: d.accent_text }}
-            >
-              {t("design.print_preview.invitation_eyebrow")}
-            </span>
-            <span
-              className="mt-2 text-2xl leading-tight"
-              style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
-            >
-              {t("design.print_preview.sample_couple")}
-            </span>
-            {divider("my-3")}
-            <span className="text-sm" style={{ color: d.text }}>
-              {t("design.print_preview.invitation_line")}
-            </span>
-            <span
-              className="mt-2 text-sm tracking-[0.12em]"
-              style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
-            >
-              {t("design.print_preview.sample_date")}
-            </span>
-            <span className="mt-1 text-xs" style={{ color: labelColor }}>
-              {t("design.print_preview.invitation_venue")}
-            </span>
-          </>
-        )}
-
-        {template === "thank_you" && (
-          <>
-            <span
-              className="mt-1 text-3xl leading-tight"
-              style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
-            >
-              {t("design.print_preview.thank_you_title")}
-            </span>
-            {divider("my-3")}
-            <span className="text-sm" style={{ color: d.text }}>
-              {t("design.print_preview.thank_you_line")}
-            </span>
-            <span
-              className="mt-2 text-base tracking-[0.12em]"
-              style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
-            >
-              {t("design.print_preview.sample_couple")}
-            </span>
-            <span className="mt-1 text-xs" style={{ color: labelColor }}>
-              {t("design.print_preview.sample_date")}
-            </span>
-          </>
-        )}
-
-        {/* QR placeholder when the toggle is on (place cards only support it). */}
-        {design.print.qr && template === "place_card" && (
-          <span
-            className="absolute bottom-2 right-2 grid h-7 w-7 grid-cols-3 grid-rows-3 gap-px rounded-sm p-0.5"
-            style={{ backgroundColor: d.accent }}
-            aria-hidden
-          >
-            {Array.from({ length: 9 }).map((_, i) => (
+              )}
               <span
-                // biome-ignore lint/suspicious/noArrayIndexKey: static decorative grid
-                key={i}
-                style={{ backgroundColor: i % 2 === 0 ? d.text : "transparent" }}
-              />
-            ))}
-          </span>
-        )}
+                className={`${isLeft ? "text-3xl" : "text-2xl"} mt-1 leading-tight`}
+                style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
+              >
+                {brideName?.trim() || t("design.print_preview.sample_name")}
+              </span>
+              {divider("my-3")}
+              <span
+                className="text-[11px] uppercase tracking-[0.18em]"
+                style={{ color: labelColor }}
+              >
+                {t("design.print_preview.sample_table")}
+              </span>
+            </>
+          )}
+
+          {template === "table_number" && (
+            <>
+              {/* The number is the hero — much larger than the label, styled per
+                pack (small-caps/italic/uppercase are harmless on digits). */}
+              <span
+                className="text-7xl leading-none tabular-nums"
+                style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
+              >
+                12
+              </span>
+              {divider("my-2")}
+              <span
+                className="text-[11px] uppercase tracking-[0.18em]"
+                style={{ color: d.accent_text }}
+              >
+                {t("design.print_preview.table_label")}
+              </span>
+            </>
+          )}
+
+          {template === "menu" && (
+            <>
+              <span
+                className="mt-1 text-xl tracking-[0.12em]"
+                style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
+              >
+                {t("design.print_preview.menu_title")}
+              </span>
+              {divider("my-3")}
+              <div
+                className={`flex flex-col gap-2 text-sm ${isLeft ? "items-start" : "items-center"}`}
+                style={{ color: d.text }}
+              >
+                {(["menu_starter", "menu_main", "menu_dessert"] as const).map((key) => (
+                  <span key={key}>{t(`design.print_preview.${key}`)}</span>
+                ))}
+              </div>
+            </>
+          )}
+
+          {template === "schedule" && (
+            <>
+              <span
+                className="mt-1 text-xl tracking-[0.12em]"
+                style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
+              >
+                {t("design.print_preview.tpl.schedule")}
+              </span>
+              {divider("my-3")}
+              <div
+                className={`flex flex-col gap-2.5 text-sm ${isLeft ? "items-start" : "items-center"}`}
+                style={{ color: d.text }}
+              >
+                {(
+                  [
+                    { time: "15:00", key: "ceremony" },
+                    { time: "18:00", key: "dinner" },
+                    { time: "21:00", key: "party" },
+                  ] as const
+                ).map((row) => (
+                  <span
+                    key={row.key}
+                    className={`flex items-baseline gap-2 ${isLeft ? "justify-start" : "justify-center"}`}
+                  >
+                    <span className="tabular-nums" style={{ color: d.accent_text }}>
+                      {row.time}
+                    </span>
+                    <span>{t(`design.print_preview.sample_program.${row.key}`)}</span>
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+
+          {template === "invitation" && (
+            <>
+              <span
+                className="text-[11px] uppercase tracking-[0.18em]"
+                style={{ color: d.accent_text }}
+              >
+                {t("design.print_preview.invitation_eyebrow")}
+              </span>
+              <span
+                className="mt-2 text-2xl leading-tight"
+                style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
+              >
+                {t("design.print_preview.sample_couple")}
+              </span>
+              {divider("my-3")}
+              <span className="text-sm" style={{ color: d.text }}>
+                {t("design.print_preview.invitation_line")}
+              </span>
+              <span
+                className="mt-2 text-sm tracking-[0.12em]"
+                style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
+              >
+                {t("design.print_preview.sample_date")}
+              </span>
+              <span className="mt-1 text-xs" style={{ color: labelColor }}>
+                {t("design.print_preview.invitation_venue")}
+              </span>
+            </>
+          )}
+
+          {template === "thank_you" && (
+            <>
+              <span
+                className="mt-1 text-3xl leading-tight"
+                style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
+              >
+                {t("design.print_preview.thank_you_title")}
+              </span>
+              {divider("my-3")}
+              <span className="text-sm" style={{ color: d.text }}>
+                {t("design.print_preview.thank_you_line")}
+              </span>
+              <span
+                className="mt-2 text-base tracking-[0.12em]"
+                style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
+              >
+                {t("design.print_preview.sample_couple")}
+              </span>
+              <span className="mt-1 text-xs" style={{ color: labelColor }}>
+                {t("design.print_preview.sample_date")}
+              </span>
+            </>
+          )}
+
+          {/* QR placeholder when the toggle is on (place cards only support it). */}
+          {design.print.qr && template === "place_card" && (
+            <span
+              className="absolute bottom-2 right-2 grid h-7 w-7 grid-cols-3 grid-rows-3 gap-px rounded-sm p-0.5"
+              style={{ backgroundColor: d.accent }}
+              aria-hidden
+            >
+              {Array.from({ length: 9 }).map((_, i) => (
+                <span
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static decorative grid
+                  key={i}
+                  style={{ backgroundColor: i % 2 === 0 ? d.text : "transparent" }}
+                />
+              ))}
+            </span>
+          )}
+        </div>
       </div>
 
       <p className="text-center text-[11px] text-ink-500 dark:text-umber-300">
