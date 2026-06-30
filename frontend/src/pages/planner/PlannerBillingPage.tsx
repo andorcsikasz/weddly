@@ -1,9 +1,11 @@
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, BellRing, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { PLANNER_PLAN_LIMITS, type PlannerPlan, type PlannerStats } from "@shared/types";
+import { useToast } from "../../components/ui";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
+import { useDocumentMeta } from "../../lib/seo";
 
 // Plans in upgrade order. Client limits come from the shared source of truth
 // (PLANNER_PLAN_LIMITS) so the page never drifts from the backend gate.
@@ -11,26 +13,44 @@ const PLAN_ORDER: PlannerPlan[] = ["starter", "pro", "premium"];
 
 // Maps each plan to its existing onboarding i18n keys, so this page reuses the
 // planner.* namespace rather than introducing new strings.
-const PLAN_KEYS: Record<PlannerPlan, { name: string; clients: string; tagline: string }> = {
+const PLAN_KEYS: Record<PlannerPlan, { name: string; tagline: string }> = {
   starter: {
     name: "planner_onboarding.plan_starter_name",
-    clients: "planner_onboarding.plan_starter_clients",
     tagline: "planner_onboarding.plan_starter_tagline",
   },
   pro: {
     name: "planner_onboarding.plan_pro_name",
-    clients: "planner_onboarding.plan_pro_clients",
     tagline: "planner_onboarding.plan_pro_tagline",
   },
   premium: {
     name: "planner_onboarding.plan_premium_name",
-    clients: "planner_onboarding.plan_premium_clients",
     tagline: "planner_onboarding.plan_premium_tagline",
   },
 };
 
+// Truthful feature list per plan, additive up the tiers. Each entry is an i18n
+// key under planner_billing.feat_*; the client-count line is rendered
+// separately so it can interpolate PLANNER_PLAN_LIMITS.
+const PLAN_FEATURES: Record<PlannerPlan, string[]> = {
+  starter: ["planner_billing.feat_messaging", "planner_billing.feat_references"],
+  pro: [
+    "planner_billing.feat_messaging",
+    "planner_billing.feat_calendar",
+    "planner_billing.feat_references",
+    "planner_billing.feat_stats",
+  ],
+  premium: [
+    "planner_billing.feat_messaging",
+    "planner_billing.feat_calendar",
+    "planner_billing.feat_references",
+    "planner_billing.feat_stats",
+    "planner_billing.feat_priority_support",
+  ],
+};
+
 export default function PlannerBillingPage() {
   const { t } = useT();
+  useDocumentMeta("planner_billing.meta_title", "planner_billing.meta_description");
   const [stats, setStats] = useState<PlannerStats | null>(null);
 
   useEffect(() => {
@@ -127,37 +147,83 @@ function BillingBody({ stats }: { stats: PlannerStats }) {
                 {t(PLAN_KEYS[plan].tagline)}
               </p>
 
+              {/* Price - paid plans aren't wired yet, so this is coming-soon. */}
+              <div className="mt-4 border-t border-paper-200 pt-4 dark:border-umber-800">
+                <p className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
+                  {t("planner_billing.price_soon")}
+                </p>
+                <p className="mt-0.5 text-[11px] text-umber-400 dark:text-umber-500">
+                  {t("planner_billing.price_note")}
+                </p>
+              </div>
+
               <ul className="mt-4 space-y-2 text-sm text-umber-700 dark:text-umber-300">
                 <li className="flex items-start gap-2">
                   <Check size={15} className="mt-0.5 shrink-0 text-eucalyptus-500" />
-                  <span>{t(PLAN_KEYS[plan].clients)}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check size={15} className="mt-0.5 shrink-0 text-eucalyptus-500" />
                   <span>
-                    {t("planner_home.kpi_active_clients")}: {PLANNER_PLAN_LIMITS[plan]}
+                    {t("planner_billing.feat_clients", { count: PLANNER_PLAN_LIMITS[plan] })}
                   </span>
                 </li>
+                {PLAN_FEATURES[plan].map((featKey) => (
+                  <li key={featKey} className="flex items-start gap-2">
+                    <Check size={15} className="mt-0.5 shrink-0 text-eucalyptus-500" />
+                    <span>{t(featKey)}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           );
         })}
       </div>
 
-      {/* Upgrade CTA — paid plans not wired yet, so this surfaces intent only. */}
-      {stats.plan !== "premium" && (
-        <div className="card text-center">
-          <button
-            type="button"
-            disabled
-            className="btn-primary w-full cursor-not-allowed opacity-60"
-          >
-            {t("planner_profile.subscription_upgrade_cta")}
-          </button>
-          <p className="mt-3 text-xs text-umber-500 dark:text-umber-400">
-            {t("planner_onboarding.plan_coming_soon")}
-          </p>
-        </div>
+      {/* Upgrade CTA - paid plans not wired yet, so this gathers notify intent. */}
+      {stats.plan !== "premium" && <NotifyCta />}
+    </div>
+  );
+}
+
+// Shared coming-soon + notify-me block. Lets a planner opt in to be told when
+// paid plans launch (plannerApi.notifyPlans is idempotent), with a confirmed
+// state so the button doesn't invite repeat taps.
+export function NotifyCta() {
+  const { t } = useT();
+  const toast = useToast();
+  const [notified, setNotified] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  async function handleNotify() {
+    setPending(true);
+    try {
+      await plannerApi.notifyPlans();
+      setNotified(true);
+      toast.success(t("planner_billing.notify_toast"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="card text-center">
+      <p className="text-sm text-umber-600 dark:text-umber-300">
+        {t("planner_onboarding.plan_coming_soon")}
+      </p>
+      {notified ? (
+        <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-moss-50 px-4 py-2 text-sm font-medium text-moss-800 dark:bg-moss-900/30 dark:text-moss-200">
+          <Check size={15} aria-hidden="true" />
+          {t("planner_billing.notify_done")}
+        </p>
+      ) : (
+        <button
+          type="button"
+          onClick={() => void handleNotify()}
+          disabled={pending}
+          className="btn-primary mt-4 inline-flex items-center gap-1.5 disabled:opacity-60"
+        >
+          <BellRing size={15} aria-hidden="true" />
+          {t("planner_billing.notify_cta")}
+        </button>
       )}
     </div>
   );

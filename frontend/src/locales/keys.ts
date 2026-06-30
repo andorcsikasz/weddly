@@ -347,6 +347,10 @@ export interface LocaleMessages {
     solo_banner_title: string;
     solo_banner_body: string;
     solo_banner_cta: string;
+    /** Planner-managed couple in viewer mode: the planner edits, the couple
+     *  watches. No subscribe CTA here. */
+    planner_managed_banner_title: string;
+    planner_managed_banner_body: string;
     referral_title: string;
     referral_couple_title: string;
     referral_couple_body: string;
@@ -2817,6 +2821,12 @@ export interface LocaleMessages {
     coming_soon_body: string;
     title: string;
     subtitle: string;
+    /** Planner-managed viewer unlock card: buy back guest-page editing at 70% off. */
+    addon_unlock_title: string;
+    addon_unlock_body: string;
+    addon_unlock_cta: string;
+    addon_opening: string;
+    addon_error: string;
     /** Publish-state badge beside the page title. */
     status_published: string;
     status_draft: string;
@@ -7073,6 +7083,10 @@ export interface LocaleMessages {
     collapse_sidebar: string;
     expand_sidebar: string;
   };
+  planner_shell: {
+    menu_label: string;
+    menu_account: string;
+  };
   planner_stats: {
     meta_title: string;
     meta_description: string;
@@ -7090,6 +7104,11 @@ export interface LocaleMessages {
     empty: string;
     tasks_total: string;
     view_client: string;
+    completion_help: string;
+    next_wedding: string;
+    no_upcoming: string;
+    upgrade_cta: string;
+    pending_help: string;
   };
   planner_calendar: {
     meta_title: string;
@@ -7120,6 +7139,29 @@ export interface LocaleMessages {
     schedule_empty: string;
     nav_prev: string;
     nav_next: string;
+    add_event: string;
+    event_new_title: string;
+    event_edit_title: string;
+    field_title: string;
+    field_date: string;
+    field_time: string;
+    field_client: string;
+    field_client_none: string;
+    field_notes: string;
+    field_required: string;
+    event_delete: string;
+    event_saved: string;
+    event_deleted: string;
+    event_error: string;
+    event_delete_confirm_title: string;
+    event_delete_confirm_body: string;
+    tasks_period_label: string;
+    tasks_period_week: string;
+    tasks_period_30: string;
+    tasks_period_all: string;
+    tasks_period_empty: string;
+    tasks_count: string;
+    legend_events: string;
   };
   planner_clients_page: {
     meta_title: string;
@@ -7254,6 +7296,10 @@ export interface LocaleMessages {
     notif_messages_link: string;
     rail_all_good_body: string;
     add_client_hint: string;
+    checklist_step_done: string;
+    kpi_caption: string;
+    upcoming_empty_encouraging: string;
+    upcoming_empty_filtered: string;
   };
   planner_onboarding: {
     step_indicator: string;
@@ -7340,6 +7386,7 @@ export interface LocaleMessages {
     meta_description: string;
     empty_no_clients: string;
     empty_back_cta: string;
+    first_message_cta: string;
   };
   planner_client: {
     back_label: string;
@@ -7368,6 +7415,29 @@ export interface LocaleMessages {
     stage_completed: string;
     stage_archived: string;
     no_phone: string;
+    /** Guest-page (vendégoldal) editing control: the planner switches the
+     *  couple's own guest-page editing on once they've prepaid the add-on. */
+    guest_page_heading: string;
+    guest_page_desc: string;
+    guest_page_locked: string;
+    guest_page_toggle_aria: string;
+    guest_page_on: string;
+    guest_page_off: string;
+    guest_page_enable_success: string;
+    guest_page_disable_success: string;
+    guest_page_not_prepaid: string;
+    guest_page_error: string;
+    tasks_heading: string;
+    tasks_empty: string;
+    danger_heading: string;
+    remove_explain: string;
+    remove_button: string;
+    remove_confirm_title: string;
+    remove_confirm_body: string;
+    remove_success: string;
+  };
+  planner_clients: {
+    wedding_label: string;
   };
   planner_profile: {
     heading: string;
@@ -7413,6 +7483,29 @@ export interface LocaleMessages {
     reference_adding: string;
     reference_delete: string;
     reference_need_text: string;
+  };
+  planner_billing: {
+    meta_title: string;
+    meta_description: string;
+    price_soon: string;
+    price_note: string;
+    notify_cta: string;
+    notify_done: string;
+    notify_toast: string;
+    feat_clients: string;
+    feat_messaging: string;
+    feat_calendar: string;
+    feat_stats: string;
+    feat_references: string;
+    feat_priority_support: string;
+  };
+  planner_settings: {
+    reference_add_toggle: string;
+    reference_form_close: string;
+    data_export_heading: string;
+    data_export_desc: string;
+    data_export_soon: string;
+    data_delete_desc: string;
   };
   couple_planners: {
     heading: string;

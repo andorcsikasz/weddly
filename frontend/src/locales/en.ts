@@ -224,6 +224,9 @@ const en: LocaleMessages = {
     solo_banner_body:
       "The first 200 couples use Weddly free until their wedding day. Invite your partner so you can keep planning together, free.",
     solo_banner_cta: "Invite partner",
+    planner_managed_banner_title: "Your planner is managing the wedding",
+    planner_managed_banner_body:
+      "You're in view-only mode, so you can still see everything while your planner makes the edits.",
     referral_title: "Refer a friend",
     referral_couple_title: "Refer a couple",
     referral_couple_body: "When both partners join, you get 1 month free.",
@@ -2576,6 +2579,12 @@ const en: LocaleMessages = {
     title: "Guest page",
     subtitle:
       "The one page you share with guests. Anyone with the link sees the public block; the rest unlocks for guests who RSVP yes.",
+    addon_unlock_title: "Unlock guest-page editing",
+    addon_unlock_body:
+      "Your planner is managing the wedding, so your workspace is view-only. You can still edit your own guest page with the 70% off add-on.",
+    addon_unlock_cta: "Unlock guest-page editing (70% off)",
+    addon_opening: "Opening…",
+    addon_error: "We couldn't start checkout. Please try again.",
     preview_live_label: "Live preview",
     preview_live_aria: "Open the live guest page in a new tab",
     preview_live_hint_ready: "Opens your public page in a new tab",
@@ -6533,6 +6542,10 @@ const en: LocaleMessages = {
     collapse_sidebar: "Collapse sidebar",
     expand_sidebar: "Expand sidebar",
   },
+  planner_shell: {
+    menu_label: "Account menu",
+    menu_account: "Settings",
+  },
   planner_stats: {
     meta_title: "Statistics · Weddly",
     meta_description: "An overview of your clients, tasks and deadlines.",
@@ -6550,6 +6563,12 @@ const en: LocaleMessages = {
     empty: "Add a client to see your statistics.",
     tasks_total: "{{n}} tasks",
     view_client: "Open client",
+    completion_help:
+      "The share of your clients' checklist tasks marked done, not a measure of your own effort.",
+    next_wedding: "Next wedding: in {days} days",
+    no_upcoming: "No weddings coming up in the next 30 days.",
+    upgrade_cta: "Upgrade plan",
+    pending_help: "Client invites awaiting the couple's acceptance.",
   },
   planner_calendar: {
     meta_title: "Calendar · Weddly",
@@ -6580,6 +6599,29 @@ const en: LocaleMessages = {
     schedule_empty: "Nothing coming up.",
     nav_prev: "Previous",
     nav_next: "Next",
+    add_event: "Event",
+    event_new_title: "New event",
+    event_edit_title: "Edit event",
+    field_title: "Title",
+    field_date: "Date",
+    field_time: "Time (optional)",
+    field_client: "Client (optional)",
+    field_client_none: "None (standalone event)",
+    field_notes: "Notes (optional)",
+    field_required: "Required",
+    event_delete: "Delete",
+    event_saved: "Event saved",
+    event_deleted: "Event deleted",
+    event_error: "Could not save the event.",
+    event_delete_confirm_title: "Delete event",
+    event_delete_confirm_body: "Delete this event? This cannot be undone.",
+    tasks_period_label: "Period",
+    tasks_period_week: "This week",
+    tasks_period_30: "Next 30 days",
+    tasks_period_all: "All",
+    tasks_period_empty: "No tasks in this period.",
+    tasks_count: "{count} tasks",
+    legend_events: "Event",
   },
   planner_clients_page: {
     meta_title: "Clients · Weddly",
@@ -6716,6 +6758,11 @@ const en: LocaleMessages = {
     rail_all_good_body: "No overdue tasks across any client.",
     add_client_hint:
       "The couple gets an access request by email. You'll see their workspace only after they approve.",
+    checklist_step_done: "Done",
+    kpi_caption: "Summed from your clients' tasks",
+    upcoming_empty_encouraging:
+      "No deadline tasks yet. Add due dates to your clients' tasks and they will show up here.",
+    upcoming_empty_filtered: "No tasks match this filter.",
   },
   planner_onboarding: {
     step_indicator: "{{current}} / {{total}}",
@@ -6804,6 +6851,7 @@ const en: LocaleMessages = {
     meta_description: "Message your clients.",
     empty_no_clients: "No clients yet. Add one from the dashboard to start messaging.",
     empty_back_cta: "Back to dashboard",
+    first_message_cta: "Send first message",
   },
   planner_client: {
     back_label: "Dashboard",
@@ -6832,6 +6880,31 @@ const en: LocaleMessages = {
     stage_completed: "Completed",
     stage_archived: "Archived",
     no_phone: "Add a phone number to enable calling & WhatsApp",
+    guest_page_heading: "Guest-page editing",
+    guest_page_desc:
+      "Let this couple edit their own guest page even while you manage the rest of the wedding.",
+    guest_page_locked:
+      "The couple needs to purchase the guest-page add-on (70% off) before you can switch their editing on.",
+    guest_page_toggle_aria: "Toggle guest-page editing",
+    guest_page_on: "On",
+    guest_page_off: "Off",
+    guest_page_enable_success: "Guest-page editing turned on",
+    guest_page_disable_success: "Guest-page editing turned off",
+    guest_page_not_prepaid: "The couple must purchase the guest-page add-on first.",
+    guest_page_error: "Couldn't update guest-page editing. Please try again.",
+    tasks_heading: "Tasks",
+    tasks_empty: "No tasks for this client yet.",
+    danger_heading: "Danger zone",
+    remove_explain:
+      "Removing this client only severs the link between you. The couple's account and all their data remain untouched.",
+    remove_button: "Remove client",
+    remove_confirm_title: "Remove client",
+    remove_confirm_body:
+      "This only removes the link between you and the couple. Their workspace and all their data stay intact.",
+    remove_success: "Client removed.",
+  },
+  planner_clients: {
+    wedding_label: "Wedding:",
   },
   planner_profile: {
     heading: "Profile",
@@ -6878,6 +6951,31 @@ const en: LocaleMessages = {
     reference_adding: "Adding…",
     reference_delete: "Delete",
     reference_need_text: "Add a title, description or photo.",
+  },
+  planner_billing: {
+    meta_title: "Subscription · Weddly",
+    meta_description: "Manage your planner subscription and plan.",
+    price_soon: "Coming soon",
+    price_note: "Pricing is on the way.",
+    notify_cta: "Notify me when available",
+    notify_done: "Thanks, we'll notify you!",
+    notify_toast: "Thanks! We'll let you know when paid plans go live.",
+    feat_clients: "Manage up to {count} clients",
+    feat_messaging: "Client messaging",
+    feat_calendar: "Wedding calendar and deadlines",
+    feat_stats: "Statistics and overview",
+    feat_references: "Public reference profile",
+    feat_priority_support: "Priority support",
+  },
+  planner_settings: {
+    reference_add_toggle: "Add a reference",
+    reference_form_close: "Cancel",
+    data_export_heading: "Export my data",
+    data_export_desc:
+      "Request a copy of the data tied to your account and client links.",
+    data_export_soon: "Coming soon",
+    data_delete_desc:
+      "Permanently deletes your planner account and all client links. Your clients' workspaces and data are kept.",
   },
   couple_planners: {
     heading: "Planner",

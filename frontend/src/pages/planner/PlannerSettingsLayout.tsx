@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import type { PlannerProfile } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -26,7 +26,14 @@ function getInitials(fullName: string, email: string): string {
 
 export default function PlannerSettingsLayout() {
   const { t } = useT();
-  useDocumentMeta("planner_profile.meta_title", "planner_profile.meta_description");
+  // The subscription tab gets its own browser-tab title; account/data keep the
+  // generic settings title.
+  const { pathname } = useLocation();
+  const onSubscription = pathname.endsWith("/subscription");
+  useDocumentMeta(
+    onSubscription ? "planner_billing.meta_title" : "planner_profile.meta_title",
+    onSubscription ? "planner_billing.meta_description" : "planner_profile.meta_description",
+  );
   const [profile, setProfile] = useState<PlannerProfile | null>(null);
   const [loadError, setLoadError] = useState(false);
 

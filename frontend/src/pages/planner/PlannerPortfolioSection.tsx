@@ -2,7 +2,7 @@
 // showcases on their profile. Each entry is a title + description and an
 // optional uploaded photo (JPEG/PNG/WebP up to 5 MB). Add / delete inline.
 
-import { ImagePlus, Trash2, X } from "lucide-react";
+import { ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import type { PlannerProfile } from "@shared/types";
 import { useToast } from "../../components/ui";
@@ -24,8 +24,18 @@ export function PlannerPortfolioSection({
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [adding, setAdding] = useState(false);
+  // Form is collapsed by default so the existing references read as a clean
+  // gallery; the planner opens the form deliberately.
+  const [formOpen, setFormOpen] = useState(false);
 
   const items = profile.portfolio;
+
+  function closeForm() {
+    setFormOpen(false);
+    setTitle("");
+    setDescription("");
+    setFile(null);
+  }
 
   async function handleAdd() {
     if (!title.trim() && !description.trim() && !file) {
@@ -36,9 +46,7 @@ export function PlannerPortfolioSection({
     try {
       const res = await plannerApi.addPortfolio(title.trim(), description.trim(), file);
       setProfile({ ...profile, portfolio: res.portfolio });
-      setTitle("");
-      setDescription("");
-      setFile(null);
+      closeForm();
     } catch {
       toast.error(t("planner_profile.avatar_error"));
     } finally {
@@ -110,68 +118,97 @@ export function PlannerPortfolioSection({
         </p>
       )}
 
-      {/* Add form */}
-      <div className="mt-6 rounded-xl border border-dashed border-paper-300 p-4 dark:border-umber-700">
-        <input
-          type="text"
-          className="input w-full"
-          value={title}
-          maxLength={120}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t("planner_profile.reference_title_ph")}
-        />
-        <textarea
-          rows={3}
-          maxLength={2000}
-          className="input mt-3 w-full resize-none"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder={t("planner_profile.reference_desc_ph")}
-        />
-
-        <div className="mt-3 flex flex-wrap items-center gap-3">
+      {/* Divider between the existing gallery and the add-new affordance. */}
+      <div className="mt-8 border-t border-paper-200 pt-6 dark:border-umber-700">
+        {!formOpen ? (
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
-            className="btn-outline btn-sm inline-flex items-center gap-1.5"
+            onClick={() => setFormOpen(true)}
+            className="btn-outline inline-flex items-center gap-1.5"
           >
-            <ImagePlus size={14} aria-hidden="true" />
-            {t("planner_profile.reference_image")}
+            <Plus size={15} aria-hidden="true" />
+            {t("planner_settings.reference_add_toggle")}
           </button>
-          {file && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-moss-50 px-2.5 py-1 text-xs text-moss-800 dark:bg-moss-900/30 dark:text-moss-200">
-              {file.name.length > 28 ? `${file.name.slice(0, 28)}…` : file.name}
+        ) : (
+          <div className="rounded-xl border border-dashed border-paper-300 p-4 dark:border-umber-700">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
+                {t("planner_settings.reference_add_toggle")}
+              </p>
               <button
                 type="button"
-                onClick={() => setFile(null)}
-                aria-label={t("common.remove")}
-                className="text-moss-600 hover:text-moss-900 dark:text-moss-300"
+                onClick={closeForm}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-umber-500 transition-colors hover:bg-paper-100 hover:text-umber-800 dark:text-umber-300 dark:hover:bg-umber-800"
+                aria-label={t("planner_settings.reference_form_close")}
+                title={t("planner_settings.reference_form_close")}
               >
-                <X size={12} aria-hidden="true" />
+                <X size={15} aria-hidden="true" />
               </button>
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => void handleAdd()}
-            disabled={adding}
-            className="btn-primary btn-sm ml-auto"
-          >
-            {adding ? t("planner_profile.reference_adding") : t("planner_profile.reference_add")}
-          </button>
-        </div>
+            </div>
+            <input
+              type="text"
+              className="input w-full"
+              value={title}
+              maxLength={120}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("planner_profile.reference_title_ph")}
+            />
+            <textarea
+              rows={3}
+              maxLength={2000}
+              className="input mt-3 w-full resize-none"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t("planner_profile.reference_desc_ph")}
+            />
 
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const picked = e.target.files?.[0] ?? null;
-            e.target.value = "";
-            setFile(picked);
-          }}
-        />
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="btn-outline btn-sm inline-flex items-center gap-1.5"
+              >
+                <ImagePlus size={14} aria-hidden="true" />
+                {t("planner_profile.reference_image")}
+              </button>
+              {file && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-moss-50 px-2.5 py-1 text-xs text-moss-800 dark:bg-moss-900/30 dark:text-moss-200">
+                  {file.name.length > 28 ? `${file.name.slice(0, 28)}…` : file.name}
+                  <button
+                    type="button"
+                    onClick={() => setFile(null)}
+                    aria-label={t("common.remove")}
+                    className="text-moss-600 hover:text-moss-900 dark:text-moss-300"
+                  >
+                    <X size={12} aria-hidden="true" />
+                  </button>
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => void handleAdd()}
+                disabled={adding}
+                className="btn-primary btn-sm ml-auto"
+              >
+                {adding
+                  ? t("planner_profile.reference_adding")
+                  : t("planner_profile.reference_add")}
+              </button>
+            </div>
+
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const picked = e.target.files?.[0] ?? null;
+                e.target.value = "";
+                setFile(picked);
+              }}
+            />
+          </div>
+        )}
       </div>
     </section>
   );

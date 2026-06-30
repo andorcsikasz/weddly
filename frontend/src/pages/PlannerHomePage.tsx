@@ -108,11 +108,14 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
             if (total === 0) {
               return (
                 <div key={c.couple_id} className="flex items-center gap-3">
-                  <span className="w-32 shrink-0 truncate text-xs text-umber-500 dark:text-umber-400">
+                  <span
+                    className="w-20 min-w-0 shrink truncate text-xs text-umber-500 dark:text-umber-400 sm:w-32"
+                    title={c.display_name}
+                  >
                     {c.display_name}
                   </span>
                   <div className="flex-1" />
-                  <span className="w-16 shrink-0 text-right text-xs text-umber-400 dark:text-umber-500">
+                  <span className="shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-umber-400 dark:text-umber-500">
                     0
                   </span>
                 </div>
@@ -126,7 +129,7 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
             return (
               <div key={c.couple_id} className="flex items-center gap-3">
                 <span
-                  className="w-32 shrink-0 truncate text-xs font-medium text-ink-700 dark:text-paper-100"
+                  className="w-20 min-w-0 shrink truncate text-xs font-medium text-ink-700 dark:text-paper-100 sm:w-32"
                   title={c.display_name}
                 >
                   {c.display_name}
@@ -161,7 +164,7 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
                     />
                   )}
                 </div>
-                <span className="w-16 shrink-0 text-right text-xs tabular-nums text-umber-500 dark:text-umber-400">
+                <span className="shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-umber-500 dark:text-umber-400">
                   {c.task_done}/{total}
                 </span>
               </div>
@@ -406,9 +409,12 @@ function UpcomingTasks({
   };
 
   if (filtered.length === 0) {
+    const hasAnyTasks = tasks.length > 0;
     return (
-      <p className="text-sm text-umber-400 dark:text-umber-500">
-        {t("planner_home.upcoming_empty")}
+      <p className="text-sm text-umber-500 dark:text-umber-400">
+        {hasAnyTasks
+          ? t("planner_home.upcoming_empty_filtered")
+          : t("planner_home.upcoming_empty_encouraging")}
       </p>
     );
   }
@@ -498,26 +504,25 @@ function GettingStartedChecklist({
             <span
               className={`flex-1 text-sm ${
                 step.done
-                  ? "text-umber-400 line-through dark:text-umber-500"
-                  : "text-umber-800 dark:text-paper-100"
+                  ? "text-umber-400 dark:text-umber-500"
+                  : "font-medium text-umber-800 dark:text-paper-100"
               }`}
             >
               {step.label}
             </span>
-            {!step.done &&
-              (step.to ? (
-                <Link to={step.to} className="btn-outline btn-sm shrink-0">
-                  {step.cta}
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={step.onClick}
-                  className="btn-outline btn-sm shrink-0"
-                >
-                  {step.cta}
-                </button>
-              ))}
+            {step.done ? (
+              <span className="shrink-0 text-xs font-medium text-moss-600 dark:text-moss-400">
+                {t("planner_home.checklist_step_done")}
+              </span>
+            ) : step.to ? (
+              <Link to={step.to} className="btn-outline btn-sm shrink-0">
+                {step.cta}
+              </Link>
+            ) : (
+              <button type="button" onClick={step.onClick} className="btn-outline btn-sm shrink-0">
+                {step.cta}
+              </button>
+            )}
           </li>
         ))}
       </ul>
@@ -676,8 +681,9 @@ export default function PlannerHomePage() {
 
         {/* KPI strip */}
         {stats && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <KpiTile
+          <div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <KpiTile
               label={t("planner_home.kpi_overdue")}
               value={stats.overdue_tasks}
               unit={t("planner_home.kpi_overdue_unit")}
@@ -712,6 +718,10 @@ export default function PlannerHomePage() {
               }
               to="/app/planner/clients"
             />
+            </div>
+            <p className="mt-2 text-xs text-umber-500 dark:text-umber-400">
+              {t("planner_home.kpi_caption")}
+            </p>
           </div>
         )}
 
@@ -784,15 +794,17 @@ export default function PlannerHomePage() {
               <h2 className="font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
                 {t("planner_home.upcoming_heading")}
               </h2>
-              <button
-                type="button"
-                className="btn-outline btn-sm"
-                onClick={() => setShowTaskFilters((v) => !v)}
-              >
-                {t("planner_home.filter_all_clients")}
-              </button>
+              {tasks.length > 0 && (
+                <button
+                  type="button"
+                  className="btn-outline btn-sm"
+                  onClick={() => setShowTaskFilters((v) => !v)}
+                >
+                  {t("planner_home.filter_all_clients")}
+                </button>
+              )}
             </div>
-            {showTaskFilters && (
+            {tasks.length > 0 && showTaskFilters && (
               <TaskFilterPanel clients={clients} filters={taskFilters} onChange={setTaskFilters} />
             )}
             <div className="rounded-xl border border-paper-200 bg-white px-5 py-5 dark:border-umber-800 dark:bg-umber-900">

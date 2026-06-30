@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import type { PlannerClientView } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
+import { clientColor, titleCaseName } from "../../lib/planner_display";
 
 // Client avatar colors — warm, muted palette aligned with the design system.
 // Uses eucalyptus + blush + umber-adjacent tones instead of raw Tailwind colors.
@@ -134,6 +135,7 @@ function ClientCard({ client }: { client: PlannerClientView }) {
 
   const colorClass = CLIENT_COLORS[client.couple_id % 8] ?? CLIENT_COLORS[0];
   const avatarInitials = initials(client.display_name);
+  const accent = clientColor(client.couple_id);
   const { total, done, overdue } = client.task_summary;
   const barWidth = `${Math.round((done / Math.max(total, 1)) * 100)}%`;
 
@@ -163,13 +165,20 @@ function ClientCard({ client }: { client: PlannerClientView }) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-grotesk font-semibold text-base text-umber-900 dark:text-paper-50 truncate">
-            {client.display_name}
+          <p className="flex items-center gap-1.5 font-grotesk font-semibold text-base text-umber-900 dark:text-paper-50">
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${accent.dot}`}
+              aria-hidden="true"
+            />
+            <span className="truncate">{titleCaseName(client.display_name)}</span>
           </p>
           {client.wedding_date && (
             <div className="mt-0.5 flex items-center gap-1">
               <Clock size={11} className="shrink-0 text-umber-400" aria-hidden="true" />
               <p className="text-xs text-umber-500 dark:text-umber-400">
+                <span className="text-umber-400 dark:text-umber-500">
+                  {t("planner_clients.wedding_label")}{" "}
+                </span>
                 {formatWeddingDate(client.wedding_date)}
               </p>
             </div>
@@ -312,7 +321,11 @@ export function PlannerDashPipeline({ clients, onAddClientClick, inviteCount }: 
           </button>
         </div>
       ) : (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+        <div
+          className={`grid gap-4 ${
+            clients.length <= 2 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+          }`}
+        >
           {clients.map((client) => (
             <ClientCard key={client.couple_id} client={client} />
           ))}

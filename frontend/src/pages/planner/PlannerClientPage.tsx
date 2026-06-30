@@ -1,18 +1,24 @@
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   Clock,
+  ListChecks,
+  Lock,
   Mail,
   MessageCircle,
   Phone,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type { PlannerClientCrm } from "@shared/types";
-import { useToast } from "../../components/ui";
+import { useConfirm, useToast } from "../../components/ui";
+import { ApiError } from "../../lib/api";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
+import { titleCaseName } from "../../lib/planner_display";
 
 const CLIENT_COLORS = [
   "bg-blush-100 text-blush-800",
@@ -66,12 +72,14 @@ export default function PlannerClientPage() {
   const { coupleId } = useParams<{ coupleId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const id = Number(coupleId);
   const [crm, setCrm] = useState<PlannerClientCrm | null>(null);
   const [form, setForm] = useState<Partial<PlannerClientCrm>>({});
   const [saving, setSaving] = useState(false);
   const [entering, setEntering] = useState(false);
+  const [guestPageBusy, setGuestPageBusy] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -115,6 +123,35 @@ export default function PlannerClientPage() {
     await plannerApi.updateClientCrm(id, { stage }).catch(() => {});
   }
 
+  // Switch the couple's own guest-page (vendégoldal) editing on/off. The server
+  // only permits "enable" once the couple has prepaid their 30% share (402
+  // guest_page_not_prepaid otherwise) - which is why the toggle is locked until
+  // crm.guest_page_prepaid is true.
+  async function handleToggleGuestPage() {
+    if (!crm || guestPageBusy) return;
+    const next = !crm.guest_page_addon;
+    setGuestPageBusy(true);
+    try {
+      const r = await plannerApi.setGuestPageAccess(id, next);
+      setCrm((prev) => (prev ? { ...prev, guest_page_addon: r.guest_page_addon } : prev));
+      toast.success(
+        next
+          ? t("planner_client.guest_page_enable_success")
+          : t("planner_client.guest_page_disable_success"),
+      );
+    } catch (err) {
+      const code =
+        err instanceof ApiError ? (err.detail as { code?: string } | null)?.code : undefined;
+      toast.error(
+        code === "guest_page_not_prepaid"
+          ? t("planner_client.guest_page_not_prepaid")
+          : t("planner_client.guest_page_error"),
+      );
+    } finally {
+      setGuestPageBusy(false);
+    }
+  }
+
   async function handleEnter() {
     setEntering(true);
     try {
@@ -122,6 +159,24 @@ export default function PlannerClientPage() {
       navigate("/app", { replace: true });
     } catch {
       setEntering(false);
+    }
+  }
+
+  async function handleRemove() {
+    const ok = await confirm({
+      title: t("planner_client.remove_confirm_title"),
+      body: t("planner_client.remove_confirm_body"),
+      confirmLabel: t("planner_client.remove_button"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await plannerApi.removeClient(id);
+      toast.success(t("planner_client.remove_success"));
+      navigate("/app/planner/clients", { replace: true });
+    } catch {
+      toast.error(t("common.error_generic"));
     }
   }
 
@@ -169,7 +224,7 @@ export default function PlannerClientPage() {
 
           <div className="flex-1 min-w-0">
             <h1 className="font-grotesk text-2xl font-semibold leading-tight tracking-tight text-umber-900 dark:text-paper-50">
-              {crm.display_name}
+              {titleCaseName(crm.display_name)}
             </h1>
             {crm.wedding_date && (
               <div className="mt-0.5 flex items-center gap-1.5 text-sm text-umber-500 dark:text-umber-300">
@@ -265,6 +320,116 @@ export default function PlannerClientPage() {
               <Mail size={14} aria-hidden="true" />
               {t("planner_client.quick_email")}
             </a>
+          )}
+        </div>
+
+        {/* Primary CTA - entering the couple's workspace is the highest-value
+            action on this page, so it gets a prominent moss-filled button. */}
+        <button
+          type="button"
+          disabled={entering}
+          onClick={() => void handleEnter()}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-moss-600 px-4 py-3 font-grotesk text-sm font-semibold text-white shadow-sm transition-colors hover:bg-moss-700 disabled:opacity-60 dark:bg-moss-500 dark:hover:bg-moss-600"
+        >
+          {entering ? "..." : t("planner_client.enter_workspace")}
+          <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      </div>
+
+      {/* Tasks summary */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between">
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
+            <ListChecks size={13} aria-hidden="true" />
+            {t("planner_client.tasks_heading")}
+          </p>
+          <button
+            type="button"
+            onClick={() => void handleEnter()}
+            className="inline-flex items-center gap-1 text-xs font-medium text-moss-600 hover:text-moss-700 dark:text-moss-400 dark:hover:text-moss-300"
+          >
+            {t("planner_client.enter_workspace")}
+            <ArrowRight size={12} aria-hidden="true" />
+          </button>
+        </div>
+        {crm.task_summary.total > 0 ? (
+          <div className="mt-3">
+            <div className="flex items-baseline justify-between">
+              <span className="font-grotesk text-sm font-medium text-umber-800 dark:text-paper-200">
+                {t("planner_home.pipeline_tasks_done")
+                  .replace("{{done}}", String(crm.task_summary.done))
+                  .replace("{{total}}", String(crm.task_summary.total))}
+              </span>
+              {crm.task_summary.overdue > 0 && (
+                <span className="text-xs font-medium text-red-500 dark:text-red-400">
+                  {t("planner_home.pipeline_tasks_overdue").replace(
+                    "{{n}}",
+                    String(crm.task_summary.overdue),
+                  )}
+                </span>
+              )}
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+              <div
+                className="h-full rounded-full bg-moss-500 transition-all"
+                style={{
+                  width: `${Math.round(
+                    (crm.task_summary.done / Math.max(crm.task_summary.total, 1)) * 100,
+                  )}%`,
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-umber-400 italic">{t("planner_client.tasks_empty")}</p>
+        )}
+      </div>
+
+      {/* Guest-page editing - the couple buys back editing of their own
+          guest page (70% off), then the planner switches it on here. Locked
+          until the couple has prepaid their share. */}
+      <div className="card p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
+          {t("planner_client.guest_page_heading")}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="min-w-[14rem] flex-1 text-sm text-umber-600 dark:text-umber-300">
+            {crm.guest_page_prepaid
+              ? t("planner_client.guest_page_desc")
+              : t("planner_client.guest_page_locked")}
+          </p>
+          {crm.guest_page_prepaid ? (
+            <label className="inline-flex shrink-0 cursor-pointer items-center gap-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={crm.guest_page_addon}
+                aria-label={t("planner_client.guest_page_toggle_aria")}
+                disabled={guestPageBusy}
+                onClick={() => void handleToggleGuestPage()}
+                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${
+                  crm.guest_page_addon
+                    ? "bg-moss-500 dark:bg-moss-400"
+                    : "bg-paper-300 dark:bg-umber-700"
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    crm.guest_page_addon ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="text-sm font-medium text-umber-800 dark:text-paper-100">
+                {crm.guest_page_addon
+                  ? t("planner_client.guest_page_on")
+                  : t("planner_client.guest_page_off")}
+              </span>
+            </label>
+          ) : (
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-paper-200 px-3 py-1 text-xs font-medium text-umber-500 dark:bg-umber-800 dark:text-umber-300">
+              <Lock size={12} aria-hidden="true" />
+              {t("planner_client.guest_page_off")}
+            </span>
           )}
         </div>
       </div>
@@ -385,15 +550,24 @@ export default function PlannerClientPage() {
         </button>
       </form>
 
-      {/* Enter workspace CTA */}
-      <button
-        type="button"
-        disabled={entering}
-        onClick={() => void handleEnter()}
-        className="btn-primary w-full"
-      >
-        {entering ? "..." : t("planner_client.enter_workspace") + " →"}
-      </button>
+      {/* Danger zone - unlink only removes the planner↔couple link; the couple
+          keeps their workspace and all data. */}
+      <div className="card border-red-200 p-5 dark:border-red-900/40">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-red-500 dark:text-red-400">
+          {t("planner_client.danger_heading")}
+        </p>
+        <p className="mt-2 text-sm text-umber-600 dark:text-umber-300">
+          {t("planner_client.remove_explain")}
+        </p>
+        <button
+          type="button"
+          onClick={() => void handleRemove()}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
+        >
+          <Trash2 size={14} aria-hidden="true" />
+          {t("planner_client.remove_button")}
+        </button>
+      </div>
     </div>
   );
 }

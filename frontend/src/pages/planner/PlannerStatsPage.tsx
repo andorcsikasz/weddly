@@ -1,12 +1,20 @@
-// Planner statistics — an at-a-glance command view of the whole book of
+// Planner statistics - an at-a-glance command view of the whole book of
 // business: KPIs, plan usage, and per-client task completion. Derived from the
 // existing stats endpoint. Moss-accented, and everything that points at a
 // client or another surface is clickable.
 
-import { AlertTriangle, CalendarDays, CheckCircle2, MailQuestion, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarDays,
+  CheckCircle2,
+  MailQuestion,
+  Users,
+} from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { PlannerStats } from "@shared/types";
+import { InfoHint } from "../../components/InfoHint";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 import { useDocumentMeta } from "../../lib/seo";
@@ -18,6 +26,8 @@ function StatTile({
   unit,
   to,
   accent,
+  help,
+  caption,
 }: {
   icon: ReactNode;
   label: string;
@@ -25,6 +35,10 @@ function StatTile({
   unit?: string;
   to?: string;
   accent?: "moss" | "red";
+  /** Optional clarifying tooltip tucked behind an "i" next to the label. */
+  help?: string;
+  /** Optional supplementary line shown under the value (e.g. context for a 0). */
+  caption?: ReactNode;
 }) {
   const valueClass =
     accent === "red"
@@ -37,6 +51,19 @@ function StatTile({
       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-umber-500 dark:text-umber-400">
         <span className="text-moss-600 dark:text-moss-400">{icon}</span>
         {label}
+        {help && (
+          // Prevent the tooltip toggle from triggering an enclosing card link.
+          // biome-ignore lint/a11y/useKeyWithClickEvents: wrapper only cancels link nav; InfoHint owns focus/keys
+          <span
+            className="inline-flex"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <InfoHint text={help} className="-my-1 normal-case" />
+          </span>
+        )}
       </div>
       <div className="mt-2 flex items-baseline gap-1.5">
         <span className={`text-3xl font-bold leading-none tabular-nums ${valueClass}`}>
@@ -44,6 +71,11 @@ function StatTile({
         </span>
         {unit && <span className="text-xs text-umber-400 dark:text-umber-500">{unit}</span>}
       </div>
+      {caption && (
+        <p className="mt-1.5 text-[11px] leading-snug text-umber-400 dark:text-umber-500">
+          {caption}
+        </p>
+      )}
     </>
   );
   const base = "card p-4";
@@ -84,7 +116,33 @@ export default function PlannerStatsPage() {
     stats.total_tasks > 0 ? Math.round((stats.done_tasks / stats.total_tasks) * 100) : 0;
   const planPct =
     stats.max_clients > 0 ? Math.round((stats.active_clients / stats.max_clients) * 100) : 0;
+  const planNearCap = planPct >= 75;
+  const planBarClass =
+    planPct >= 100
+      ? "bg-red-500 dark:bg-red-400"
+      : planNearCap
+        ? "bg-amber-500 dark:bg-amber-400"
+        : "bg-moss-500 dark:bg-moss-400";
   const clientsWithTasks = stats.per_client.filter((c) => c.task_total > 0);
+
+  // Soonest future client wedding, used to give the "30 days" KPI context when
+  // the count is 0 (derived from the existing payload - no extra fetch).
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const nextWeddingTs = stats.per_client
+    .map((c) => (c.wedding_date ? new Date(c.wedding_date).getTime() : Number.NaN))
+    .filter((ts) => !Number.isNaN(ts) && ts >= today.getTime())
+    .sort((a, b) => a - b)[0];
+  const nextWeddingDays =
+    nextWeddingTs === undefined
+      ? null
+      : Math.round((nextWeddingTs - today.getTime()) / 86_400_000);
+  const upcomingCaption =
+    stats.upcoming_weddings_30d > 0
+      ? undefined
+      : nextWeddingDays != null
+        ? t("planner_stats.next_wedding", { days: nextWeddingDays })
+        : t("planner_stats.no_upcoming");
 
   return (
     <div className="py-2">
@@ -111,12 +169,14 @@ export default function PlannerStatsPage() {
           label={t("planner_stats.kpi_upcoming")}
           value={stats.upcoming_weddings_30d}
           to="/app/planner/calendar"
+          caption={upcomingCaption}
         />
         <StatTile
           icon={<CheckCircle2 size={14} aria-hidden="true" />}
           label={t("planner_stats.kpi_completion")}
           value={`${completionPct}%`}
           accent="moss"
+          help={t("planner_stats.completion_help")}
         />
         <StatTile
           icon={<AlertTriangle size={14} aria-hidden="true" />}
@@ -144,10 +204,19 @@ export default function PlannerStatsPage() {
           </div>
           <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
             <div
-              className="h-full rounded-full bg-moss-500 transition-all dark:bg-moss-400"
+              className={`h-full rounded-full transition-all ${planBarClass}`}
               style={{ width: `${planPct}%` }}
             />
           </div>
+          {planNearCap && (
+            <Link
+              to="/app/planner/billing"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-moss-700 transition-colors hover:text-moss-800 dark:text-moss-300 dark:hover:text-moss-200"
+            >
+              {t("planner_stats.upgrade_cta")}
+              <ArrowRight size={13} aria-hidden="true" />
+            </Link>
+          )}
         </div>
 
         <Link
@@ -161,6 +230,17 @@ export default function PlannerStatsPage() {
               aria-hidden="true"
             />
             {t("planner_stats.pending_title")}
+            {/* Prevent the tooltip toggle from following the card link. */}
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: wrapper only cancels link nav; InfoHint owns focus/keys */}
+            <span
+              className="inline-flex"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <InfoHint text={t("planner_stats.pending_help")} className="-my-1 normal-case" />
+            </span>
           </div>
           <span className="mt-2 text-3xl font-bold tabular-nums text-umber-900 dark:text-paper-50">
             {stats.pending_invites}

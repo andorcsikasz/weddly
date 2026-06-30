@@ -90,10 +90,12 @@ function ComposeForm({
   coupleId,
   defaultTo,
   onSent,
+  focusRef,
 }: {
   coupleId: number;
   defaultTo: string;
   onSent: (msg: PlannerMessage) => void;
+  focusRef?: React.RefObject<HTMLInputElement | null>;
 }) {
   const { t } = useT();
   const [to, setTo] = useState(defaultTo);
@@ -146,6 +148,7 @@ function ComposeForm({
           {t("planner_messages.field_subject")}
         </label>
         <input
+          ref={focusRef}
           type="text"
           required
           value={subject}
@@ -195,6 +198,7 @@ function ThreadPanel({
   const [messages, setMessages] = useState<PlannerMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLInputElement>(null);
 
   const client = clients.find((c) => c.couple_id === coupleId) ?? null;
   const defaultTo = client?.primary_email ?? "";
@@ -231,9 +235,19 @@ function ThreadPanel({
           </p>
         )}
         {!loading && messages.length === 0 && (
-          <p className="text-center text-sm text-umber-400 dark:text-umber-500">
-            {t("planner_messages.no_messages")}
-          </p>
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <p className="text-sm text-ink-400 dark:text-ink-300">
+              {t("planner_messages.no_messages")}
+            </p>
+            <button
+              type="button"
+              onClick={() => composerRef.current?.focus()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-moss-600 px-4 py-2 text-sm font-medium text-white hover:bg-moss-700"
+            >
+              <Send size={14} />
+              {t("planner_messages.first_message_cta")}
+            </button>
+          </div>
         )}
         {messages.map((msg) => (
           <div
@@ -259,7 +273,12 @@ function ThreadPanel({
       </div>
 
       <div className="px-6 pb-6">
-        <ComposeForm coupleId={coupleId} defaultTo={defaultTo} onSent={handleSent} />
+        <ComposeForm
+          coupleId={coupleId}
+          defaultTo={defaultTo}
+          onSent={handleSent}
+          focusRef={composerRef}
+        />
       </div>
     </div>
   );
@@ -267,6 +286,7 @@ function ThreadPanel({
 
 export default function PlannerMessagesPage() {
   const { t } = useT();
+  const navigate = useNavigate();
   useDocumentMeta("planner_messages.meta_title", "planner_messages.meta_description");
   const { coupleId: coupleIdParam } = useParams<{ coupleId?: string }>();
   const activeCoupleId = coupleIdParam ? Number(coupleIdParam) : null;
@@ -284,6 +304,18 @@ export default function PlannerMessagesPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Auto-open the only client's thread when nothing is selected, so a single-
+  // client planner lands directly in the conversation. Guarded on count === 1
+  // and no active selection to avoid redirect loops.
+  useEffect(() => {
+    if (loading || activeCoupleId) return;
+    const threadedIds = new Set(threads.map((th) => th.couple_id));
+    const unthreaded = clients.filter((c) => !threadedIds.has(c.couple_id));
+    if (threads.length + unthreaded.length !== 1) return;
+    const onlyId = threads[0]?.couple_id ?? unthreaded[0]?.couple_id;
+    if (onlyId != null) navigate(`/app/planner/messages/${onlyId}`, { replace: true });
+  }, [loading, activeCoupleId, threads, clients, navigate]);
 
   if (loading) {
     return (

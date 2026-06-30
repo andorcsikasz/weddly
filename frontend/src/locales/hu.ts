@@ -226,6 +226,9 @@ const hu: LocaleMessages = {
     solo_banner_body:
       "Az első 200 pár az esküvője napjáig ingyen használhatja a Weddly-t. Hívd meg a párod, hogy együtt, ingyen tervezzetek tovább.",
     solo_banner_cta: "Pár meghívása",
+    planner_managed_banner_title: "Az esküvőtöket a tervező kezeli",
+    planner_managed_banner_body:
+      "Csak olvasható módban vagytok, így mindent láttok, miközben a tervező végzi a szerkesztést.",
     referral_title: "Ajánlj ismerősöket",
     referral_couple_title: "Ajánlj egy párt",
     referral_couple_body: "Ha mindkét partner regisztrál, 1 hónapot kapsz ingyen.",
@@ -2601,6 +2604,12 @@ const hu: LocaleMessages = {
     title: "Vendégoldal",
     subtitle:
       "Ez az az oldal, amit megosztasz a vendégeitekkel. Akinek van a linked, az látja a nyilvános részt; az alsóbb információk csak az igennel visszajelölt vendégeknek nyílnak meg.",
+    addon_unlock_title: "Vendégoldal szerkesztés feloldása",
+    addon_unlock_body:
+      "Az esküvőtöket a tervező kezeli, ezért a munkaterületetek csak olvasható. A saját vendégoldalatokat azonban a 70% kedvezményes kiegészítővel szerkeszthetitek.",
+    addon_unlock_cta: "Vendégoldal szerkesztés feloldása (70% kedvezmény)",
+    addon_opening: "Megnyitás…",
+    addon_error: "Nem sikerült elindítani a fizetést. Próbáljátok újra.",
     preview_live_label: "Élő előnézet",
     preview_live_aria: "Élő vendégoldal megnyitása új lapon",
     preview_live_hint_ready: "Megnyitja a publikus oldalt új lapon",
@@ -6587,6 +6596,10 @@ const hu: LocaleMessages = {
     collapse_sidebar: "Oldalsáv összecsukása",
     expand_sidebar: "Oldalsáv kibontása",
   },
+  planner_shell: {
+    menu_label: "Fiók menü",
+    menu_account: "Beállítások",
+  },
   planner_stats: {
     meta_title: "Statisztika · Weddly",
     meta_description: "Ügyfeleid, feladataid és határidőid áttekintése.",
@@ -6604,6 +6617,12 @@ const hu: LocaleMessages = {
     empty: "Adj hozzá egy ügyfelet, hogy lásd a statisztikáidat.",
     tasks_total: "{{n}} feladat",
     view_client: "Ügyfél megnyitása",
+    completion_help:
+      "Az ügyfeleid feladatlistáinak elvégzett aránya, nem a te munkád mértéke.",
+    next_wedding: "Következő esküvő: {days} nap múlva",
+    no_upcoming: "Nincs közelgő esküvő a következő 30 napban.",
+    upgrade_cta: "Csomag bővítése",
+    pending_help: "Ügyfél-meghívók, amelyek a pár elfogadására várnak.",
   },
   planner_calendar: {
     meta_title: "Naptár · Weddly",
@@ -6634,6 +6653,29 @@ const hu: LocaleMessages = {
     schedule_empty: "Nincs közelgő esemény.",
     nav_prev: "Előző",
     nav_next: "Következő",
+    add_event: "Esemény",
+    event_new_title: "Új esemény",
+    event_edit_title: "Esemény szerkesztése",
+    field_title: "Cím",
+    field_date: "Dátum",
+    field_time: "Időpont (opcionális)",
+    field_client: "Ügyfél (opcionális)",
+    field_client_none: "Nincs (önálló esemény)",
+    field_notes: "Jegyzet (opcionális)",
+    field_required: "Kötelező mező",
+    event_delete: "Törlés",
+    event_saved: "Esemény mentve",
+    event_deleted: "Esemény törölve",
+    event_error: "Nem sikerült menteni az eseményt.",
+    event_delete_confirm_title: "Esemény törlése",
+    event_delete_confirm_body: "Biztosan törlöd ezt az eseményt? A művelet nem vonható vissza.",
+    tasks_period_label: "Időszak",
+    tasks_period_week: "Ezen a héten",
+    tasks_period_30: "Következő 30 nap",
+    tasks_period_all: "Mind",
+    tasks_period_empty: "Nincs feladat ebben az időszakban.",
+    tasks_count: "{count} feladat",
+    legend_events: "Egyéni esemény",
   },
   planner_clients_page: {
     meta_title: "Ügyfelek · Weddly",
@@ -6770,6 +6812,11 @@ const hu: LocaleMessages = {
     rail_all_good_body: "Nincs lejárt feladat egyetlen ügyfélnél sem.",
     add_client_hint:
       "A pár e-mailben kap egy hozzáférési kérést. A munkaterületüket csak a jóváhagyásuk után látod.",
+    checklist_step_done: "Kész",
+    kpi_caption: "Ügyfeleid feladataiból összesítve",
+    upcoming_empty_encouraging:
+      "Még nincs határidős feladat. Adj határidőket az ügyfeleid feladataihoz, és itt megjelennek.",
+    upcoming_empty_filtered: "Nincs a szűrőnek megfelelő feladat.",
   },
   planner_onboarding: {
     step_indicator: "{{current}} / {{total}}",
@@ -6859,6 +6906,7 @@ const hu: LocaleMessages = {
     empty_no_clients:
       "Még nincs ügyfeled. Adj hozzá egyet az irányítópulton, hogy üzenetet válthass.",
     empty_back_cta: "Vissza az irányítópultra",
+    first_message_cta: "Első üzenet küldése",
   },
   planner_client: {
     back_label: "Irányítópult",
@@ -6887,6 +6935,31 @@ const hu: LocaleMessages = {
     stage_completed: "Befejezett",
     stage_archived: "Archivált",
     no_phone: "Adj meg telefonszámot a hívás és WhatsApp funkciókhoz",
+    guest_page_heading: "Vendégoldal szerkesztés",
+    guest_page_desc:
+      "Engedd, hogy ez a pár szerkeszthesse a saját vendégoldalát, miközben te kezeled az esküvő többi részét.",
+    guest_page_locked:
+      "A párnak előbb meg kell vásárolnia a vendégoldal kiegészítőt (70% kedvezmény), mielőtt bekapcsolhatnád náluk a szerkesztést.",
+    guest_page_toggle_aria: "Vendégoldal szerkesztés be- és kikapcsolása",
+    guest_page_on: "Be",
+    guest_page_off: "Ki",
+    guest_page_enable_success: "Vendégoldal szerkesztés bekapcsolva",
+    guest_page_disable_success: "Vendégoldal szerkesztés kikapcsolva",
+    guest_page_not_prepaid: "A párnak előbb meg kell vásárolnia a vendégoldal kiegészítőt.",
+    guest_page_error: "Nem sikerült módosítani a vendégoldal szerkesztést. Próbáld újra.",
+    tasks_heading: "Feladatok",
+    tasks_empty: "Még nincs feladat ennél az ügyfélnél.",
+    danger_heading: "Veszélyzóna",
+    remove_explain:
+      "Az ügyfél eltávolítása csak a köztetek lévő kapcsolatot szünteti meg. A pár fiókja és minden adatuk érintetlen marad.",
+    remove_button: "Ügyfél eltávolítása",
+    remove_confirm_title: "Ügyfél eltávolítása",
+    remove_confirm_body:
+      "Ezzel csak a kapcsolat szűnik meg közted és a pár között. A pár munkaterülete és minden adatuk megmarad.",
+    remove_success: "Ügyfél eltávolítva.",
+  },
+  planner_clients: {
+    wedding_label: "Esküvő:",
   },
   planner_profile: {
     heading: "Profil",
@@ -6934,6 +7007,31 @@ const hu: LocaleMessages = {
     reference_adding: "Hozzáadás…",
     reference_delete: "Törlés",
     reference_need_text: "Adj meg egy címet, leírást vagy képet.",
+  },
+  planner_billing: {
+    meta_title: "Előfizetés · Weddly",
+    meta_description: "Kezeld a tervezői előfizetésedet és a csomagodat.",
+    price_soon: "Hamarosan",
+    price_note: "Az árazás hamarosan érkezik.",
+    notify_cta: "Értesítést kérek, ha elérhető",
+    notify_done: "Köszönjük, értesítünk!",
+    notify_toast: "Köszönjük! Értesítünk, amint elérhetők a fizetős csomagok.",
+    feat_clients: "{count} ügyfél kezelése",
+    feat_messaging: "Üzenetküldés ügyfelekkel",
+    feat_calendar: "Esküvő naptár és határidők",
+    feat_stats: "Statisztikák és áttekintés",
+    feat_references: "Nyilvános referencia profil",
+    feat_priority_support: "Prioritásos ügyfélszolgálat",
+  },
+  planner_settings: {
+    reference_add_toggle: "Új referencia hozzáadása",
+    reference_form_close: "Mégse",
+    data_export_heading: "Adataim exportálása",
+    data_export_desc:
+      "Kérd le a fiókodhoz és az ügyfélkapcsolataidhoz tartozó adatok másolatát.",
+    data_export_soon: "Hamarosan",
+    data_delete_desc:
+      "Véglegesen törli a tervezői fiókodat és minden ügyfélkapcsolatot. Az ügyfelek munkaterülete és adatai megmaradnak.",
   },
   couple_planners: {
     heading: "Tervező",

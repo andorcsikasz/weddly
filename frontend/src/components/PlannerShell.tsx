@@ -1,4 +1,4 @@
-// Planner workspace shell — the authenticated layout for user_type='planner'
+// Planner workspace shell - the authenticated layout for user_type='planner'
 // at /app/planner/*. Mirrors VendorShell's structure (sticky header + collapsible
 // left nav rail) so the planner workspace reads as a professional command center
 // rather than a single screen. The header also carries the greeting, plan chip
@@ -10,6 +10,7 @@ import {
   BarChart3,
   Bell,
   CalendarDays,
+  ChevronDown,
   LayoutDashboard,
   LogOut,
   MailQuestion,
@@ -18,11 +19,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  UserRound,
   Users,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import type { PlannerInviteView, PlannerStats } from "@shared/types";
+import type { PlannerInviteView, PlannerProfile, PlannerStats, User } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { plannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -140,6 +142,127 @@ function NotificationBell({
   );
 }
 
+function getInitials(fullName: string, email: string): string {
+  const source = (fullName ?? "").trim() || email || "";
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    const first = parts[0]?.[0] ?? "";
+    const last = parts[parts.length - 1]?.[0] ?? "";
+    return (first + last).toUpperCase();
+  }
+  const single = parts[0] ?? "";
+  return single.slice(0, 2).toUpperCase() || "?";
+}
+
+/** Right-aligned identity control for the planner header. An avatar (planner
+ *  photo when set, else initials) plus the planner's name opens a lightweight
+ *  dropdown - account settings + sign out - mirroring the couple /app
+ *  ProfileMenu pattern so the two shells read consistently. */
+function PlannerProfileMenu({
+  user,
+  avatarUrl,
+  onLogout,
+}: {
+  user: User;
+  avatarUrl: string | null;
+  onLogout: () => void;
+}) {
+  const { t } = useT();
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // Auto-close on navigation.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: close on path change
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  const initials = getInitials(user.full_name, user.email);
+  const firstName = (user.full_name ?? "").split(" ")[0] ?? "";
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t("planner_shell.menu_label")}
+        onClick={() => setOpen((v) => !v)}
+        className="group inline-flex h-9 items-center gap-2 rounded-full pl-1 pr-2 text-ink-700 transition-colors hover:bg-moss-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-moss-500 focus-visible:ring-offset-2 dark:text-paper-100 dark:hover:bg-umber-800 dark:focus-visible:ring-moss-300"
+      >
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-moss-200 dark:ring-umber-700"
+          />
+        ) : (
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-moss-100 text-xs font-semibold uppercase text-moss-800 dark:bg-moss-900/40 dark:text-moss-100">
+            {initials}
+          </span>
+        )}
+        <span className="hidden max-w-[10rem] truncate text-sm font-medium sm:inline">
+          {firstName || user.email}
+        </span>
+        <ChevronDown size={15} aria-hidden="true" className="text-umber-500 dark:text-umber-300" />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-50 mt-2 w-60 max-w-[calc(100vw-1rem)] origin-top-right rounded-2xl border border-paper-300 bg-white p-2 font-grotesk shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          <div className="px-3 py-2">
+            <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+              {user.full_name || user.email}
+            </p>
+            <p className="truncate text-xs text-ink-500 dark:text-umber-300">{user.email}</p>
+          </div>
+          <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
+          <Link
+            to="/app/planner/settings/account"
+            role="menuitem"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <UserRound size={16} aria-hidden="true" />
+            <span>{t("planner_shell.menu_account")}</span>
+          </Link>
+          <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <LogOut size={16} aria-hidden="true" />
+            <span>{t("common.sign_out")}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PlannerShell({ children }: { children: ReactNode }) {
   const { t } = useT();
   const { user, logout } = useAuth();
@@ -148,6 +271,9 @@ export function PlannerShell({ children }: { children: ReactNode }) {
 
   const [stats, setStats] = useState<PlannerStats | null>(null);
   const [invites, setInvites] = useState<PlannerInviteView[]>([]);
+  // Planner photo for the header avatar. Fetched once (not per-navigation) -
+  // it rarely changes, and the menu falls back to initials until it lands.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -158,13 +284,28 @@ export function PlannerShell({ children }: { children: ReactNode }) {
         setInvites(i.invites);
       })
       .catch(() => {
-        /* fresh planner / network — header just shows the brand + zero state */
+        /* fresh planner / network - header just shows the brand + zero state */
       });
     return () => {
       cancelled = true;
     };
     // Re-pull on navigation so counts stay roughly fresh as the planner works.
   }, [location.pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+    plannerApi
+      .getProfile()
+      .then((p: PlannerProfile) => {
+        if (!cancelled) setAvatarUrl(p.planner_avatar_url);
+      })
+      .catch(() => {
+        /* no profile yet / network - the menu just shows initials */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
@@ -191,11 +332,6 @@ export function PlannerShell({ children }: { children: ReactNode }) {
     navigate("/login", { replace: true });
   }
 
-  const firstName = (user?.full_name ?? "").split(" ")[0] ?? "";
-  const greeting = firstName
-    ? t("planner_nav.greeting").replace("{{name}}", firstName)
-    : t("planner_home.title");
-
   return (
     <div className="min-h-full overflow-x-clip bg-paper-50 dark:bg-umber-950">
       <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
@@ -207,9 +343,6 @@ export function PlannerShell({ children }: { children: ReactNode }) {
             >
               <Wordmark size="sm" />
             </Link>
-            <span className="hidden truncate text-sm text-umber-600 sm:inline dark:text-paper-300">
-              {greeting}
-            </span>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -227,14 +360,13 @@ export function PlannerShell({ children }: { children: ReactNode }) {
 
             <NotificationBell overdue={stats?.overdue_tasks ?? 0} pendingInvites={invites.length} />
 
-            <button
-              type="button"
-              onClick={() => void onLogout()}
-              className="inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-            >
-              <LogOut size={18} aria-hidden="true" />
-              <span className="hidden sm:inline">{t("planner_nav.logout")}</span>
-            </button>
+            {user && (
+              <PlannerProfileMenu
+                user={user}
+                avatarUrl={avatarUrl}
+                onLogout={() => void onLogout()}
+              />
+            )}
           </div>
         </div>
       </header>
@@ -246,7 +378,7 @@ export function PlannerShell({ children }: { children: ReactNode }) {
           }`}
         >
           <nav className="flex gap-1 overflow-x-auto lg:sticky lg:top-20 lg:flex-col lg:overflow-visible">
-            {/* Collapse toggle — top of the rail, desktop only. */}
+            {/* Collapse toggle - top of the rail, desktop only. */}
             <div className="mb-1 hidden border-b border-paper-300 pb-1 lg:block dark:border-umber-700">
               <button
                 type="button"
