@@ -2543,6 +2543,11 @@ export interface LocaleMessages {
       text: string;
       reset: string;
       low_contrast: string;
+      /** Prefix in front of the active palette name in the colours header,
+       *  e.g. "Base: Garden" — tells the couple which theme they're tweaking. */
+      base_label: string;
+      /** Tooltip on the small swatch showing a role's original palette hex. */
+      original: string;
     };
     /** Tabs: the Style Kit vs the Cards & printables hub. */
     tab: {
@@ -2810,6 +2815,9 @@ export interface LocaleMessages {
     coming_soon_body: string;
     title: string;
     subtitle: string;
+    /** Publish-state badge beside the page title. */
+    status_published: string;
+    status_draft: string;
     /** Eye button in the header that opens the live public /w/:slug page. */
     preview_live_label: string;
     preview_live_aria: string;

@@ -412,6 +412,66 @@ function InlineText({
   );
 }
 
+// Sample a cover image's perceived brightness so overlaid hero text can flip
+// light/dark and stay legible — a dark photo must not get dark text. Draws the
+// image to a tiny offscreen canvas and averages luminance, weighting the
+// vertical centre band where the names + date actually sit. Same-origin
+// `/uploads/*` and blob: previews read cleanly; a cross-origin/taint failure
+// falls back to null, which the hero treats as "assume dark" (light text + a
+// scrim) so the worst case is still readable.
+function useCoverTone(url: string | null | undefined): "light" | "dark" | null {
+  const [tone, setTone] = useState<"light" | "dark" | null>(null);
+  useEffect(() => {
+    if (!url) {
+      setTone(null);
+      return;
+    }
+    let cancelled = false;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const w = 32;
+        const h = 32;
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, w, h);
+        const { data } = ctx.getImageData(0, 0, w, h);
+        let total = 0;
+        let count = 0;
+        for (let y = 0; y < h; y++) {
+          // Weight the centre rows (where the overlaid text lands) more heavily.
+          const weight = y >= h * 0.25 && y < h * 0.75 ? 2 : 1;
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            const r = data[i] ?? 0;
+            const g = data[i + 1] ?? 0;
+            const b = data[i + 2] ?? 0;
+            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            total += lum * weight;
+            count += weight;
+          }
+        }
+        const avg = total / count; // 0–255
+        if (!cancelled) setTone(avg < 140 ? "dark" : "light");
+      } catch {
+        if (!cancelled) setTone(null);
+      }
+    };
+    img.onerror = () => {
+      if (!cancelled) setTone(null);
+    };
+    img.src = url;
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+  return tone;
+}
+
 export function WeddingSiteView({
   view,
   household,
@@ -473,9 +533,31 @@ export function WeddingSiteView({
         ? "btn-primary"
         : "btn-primary btn-lifted";
 
-  // Black-and-white editorial treatment for cover/venue imagery.
+  // Black-and-white editorial treatment for cover/venue imagery. Always a
+  // concrete grayscale value (0 or 1) rather than undefined so toggling the
+  // treatment in the design preview cross-fades between colour and B&W instead
+  // of snapping (the `transition` lives on the <img>). For guests the value
+  // never changes, so the transition is inert.
   const imgFilter =
-    view.design.website_image_treatment === "grayscale" ? "grayscale(1)" : undefined;
+    view.design.website_image_treatment === "grayscale" ? "grayscale(1)" : "grayscale(0)";
+
+  // When the hero has a cover photo the names + date sit DIRECTLY on it, so the
+  // text colour must follow the photo, not the palette: a dark photo gets light
+  // text, a light photo keeps the dark theme text. `null` (sampling failed)
+  // defaults to the dark-photo branch, which always pairs with a scrim below.
+  const coverTone = useCoverTone(view.cover_image_url);
+  const heroOnPhoto = Boolean(view.cover_image_url);
+  const heroTextColor = !heroOnPhoto
+    ? "var(--wt-text)"
+    : coverTone === "light"
+      ? "var(--wt-text)"
+      : "#ffffff";
+  // A soft shadow lifts the text off busy photos without a heavy full scrim.
+  const heroTextShadow = !heroOnPhoto
+    ? undefined
+    : coverTone === "light"
+      ? "0 1px 18px rgba(255,255,255,0.55)"
+      : "0 1px 22px rgba(0,0,0,0.45)";
 
   // Visual identity from the couple's Design selection, fed in as CSS custom
   // properties on the `.wedding-theme` wrapper (consumed by index.css, unlayered
@@ -521,105 +603,189 @@ export function WeddingSiteView({
   return (
     <div className="wedding-theme w-full" style={themeStyle}>
       {/* ── Hero ────────────────────────────────────────────────────────────
-          Couple names, the date set BIG + letter-spaced as the signature
-          element, then a full-width cover photo the date overlaps. */}
+          With a cover photo, the names + date sit DIRECTLY on a full-bleed
+          image that reaches the very top of the page; the text colour follows
+          the photo's brightness so it stays legible. Without a photo we keep
+          the names + date on the palette background. */}
       <section className="w-full">
-        <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
-          <h1
-            className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
-            // `color: inherit` so the name takes the theme `--wt-text` (set on
-            // the page root) instead of the global base `h1 { color: ink.900 }`
-            // — without it a dark-background style (Black Tie) renders the
-            // names dark-on-dark and invisible.
-            style={{ fontFamily: "var(--wt-heading-font)", color: "inherit", ...headingTreatment }}
-          >
-            {view.couple_display_name}
-          </h1>
-
-          {/* Signature date — big + letter-spaced. Click-to-edit in preview;
-              a missing date is a dashed ghost button. */}
-          {heroDateBig ? (
-            isPreview && e.onEditDate ? (
-              <button
-                type="button"
-                onClick={e.onEditDate}
-                title={editHint}
-                className="relative z-10 mx-auto mt-7 block rounded-md px-2 py-1 text-5xl tracking-[0.18em] transition hover:opacity-80 sm:text-7xl"
-                style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
-              >
-                {heroDateBig}
-              </button>
-            ) : (
-              <p
-                className="relative z-10 mx-auto mt-7 text-5xl tracking-[0.18em] sm:text-7xl"
-                style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
-                aria-label={dateLine}
-              >
-                <span aria-hidden>{heroDateBig}</span>
-              </p>
-            )
-          ) : isPreview ? (
-            <button
-              type="button"
-              onClick={e.onEditDate}
-              disabled={!e.onEditDate}
-              title={editHint}
-              className="mx-auto mt-7 inline-flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm transition hover:opacity-80 disabled:cursor-default"
-              style={{ borderColor: "var(--wt-accent)", opacity: 0.7 }}
-            >
-              <Calendar size={14} aria-hidden />
-              {t("wedding_site.ghost.date_cta")}
-              <Plus size={12} aria-hidden />
-            </button>
-          ) : null}
-        </div>
-
-        {/* Cover photo — full-width, pulled up under the date so the big
-            numerals overlap its top edge. Dashed ghost when still empty. */}
         {view.cover_image_url ? (
-          <div
-            className={`${heroDateBig ? "-mt-4 w-full sm:-mt-6" : "mt-8 w-full"}${
-              isPreview && e.onEditCover ? " cursor-pointer transition hover:opacity-95" : ""
-            }`}
-            {...(isPreview ? editAffordance(e.onEditCover, editHint) : {})}
-          >
-            <img
-              src={view.cover_image_url}
-              alt=""
-              loading="lazy"
-              className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
-              // Honour the couple's chosen focal point (CoverPositioner writes
-              // cover_position_x/y, 0–100, default centre). Without this the
-              // public page always centre-crops and ignores the positioner.
-              style={{
-                objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
-                ...(imgFilter ? { filter: imgFilter } : {}),
-              }}
-            />
-          </div>
-        ) : isPreview ? (
-          <div className="mx-auto mt-8 max-w-4xl px-6 sm:px-8">
+          // Full-bleed cover photo, names + date overlaid. The image (+ scrim)
+          // is the cover-edit target; the text overlay is a sibling so the
+          // date's own click-to-edit isn't swallowed by the cover affordance.
+          <div className="relative w-full">
             <div
-              className={`flex aspect-[16/6] min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center${
-                e.onEditCover ? " cursor-pointer transition hover:opacity-80" : ""
-              }`}
-              style={{ borderColor: "var(--wt-accent)" }}
-              {...editAffordance(e.onEditCover, editHint)}
+              className={
+                isPreview && e.onEditCover
+                  ? "cursor-pointer transition hover:opacity-95"
+                  : undefined
+              }
+              {...(isPreview ? editAffordance(e.onEditCover, editHint) : {})}
             >
-              <Camera size={28} aria-hidden style={{ opacity: 0.5 }} />
-              <p
-                className="text-lg tracking-tight"
-                style={{ fontFamily: "var(--wt-heading-font)", opacity: 0.7 }}
+              <img
+                src={view.cover_image_url}
+                alt=""
+                className="aspect-[3/4] max-h-[88vh] w-full object-cover sm:aspect-[21/9]"
+                // Honour the couple's chosen focal point (CoverPositioner writes
+                // cover_position_x/y, 0–100, default centre). Without this the
+                // public page always centre-crops and ignores the positioner.
+                style={{
+                  objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
+                  filter: imgFilter,
+                  transition: "filter 400ms ease",
+                }}
+              />
+              {/* Legibility scrim — only when the text is light (dark/unknown
+                  photo). A light photo keeps dark text and needs no veil. */}
+              {coverTone !== "light" && (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.30) 100%)",
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Overlaid names + date. pointer-events-none lets photo clicks fall
+                through to the cover-edit target; the date button re-enables them. */}
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center sm:px-8">
+              <h1
+                className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
+                style={{
+                  fontFamily: "var(--wt-heading-font)",
+                  color: heroTextColor,
+                  textShadow: heroTextShadow,
+                  ...headingTreatment,
+                }}
               >
-                {t("wedding_site.ghost.cover_title")}
-              </p>
-              <p className="inline-flex items-center gap-1 text-xs" style={{ opacity: 0.6 }}>
-                <Plus size={12} aria-hidden />
-                {t("wedding_site.ghost.cover_cta")}
-              </p>
+                {view.couple_display_name}
+              </h1>
+
+              {heroDateBig ? (
+                isPreview && e.onEditDate ? (
+                  <button
+                    type="button"
+                    onClick={e.onEditDate}
+                    title={editHint}
+                    className="pointer-events-auto mx-auto mt-7 block rounded-md px-2 py-1 text-5xl tracking-[0.18em] transition hover:opacity-80 sm:text-7xl"
+                    style={{
+                      fontFamily: "var(--wt-heading-font)",
+                      color: heroTextColor,
+                      textShadow: heroTextShadow,
+                    }}
+                  >
+                    {heroDateBig}
+                  </button>
+                ) : (
+                  <p
+                    className="mx-auto mt-7 text-5xl tracking-[0.18em] sm:text-7xl"
+                    style={{
+                      fontFamily: "var(--wt-heading-font)",
+                      color: heroTextColor,
+                      textShadow: heroTextShadow,
+                    }}
+                    aria-label={dateLine}
+                  >
+                    <span aria-hidden>{heroDateBig}</span>
+                  </p>
+                )
+              ) : isPreview ? (
+                <button
+                  type="button"
+                  onClick={e.onEditDate}
+                  disabled={!e.onEditDate}
+                  title={editHint}
+                  className="pointer-events-auto mx-auto mt-7 inline-flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm transition hover:opacity-80 disabled:cursor-default"
+                  style={{ borderColor: heroTextColor, color: heroTextColor, opacity: 0.85 }}
+                >
+                  <Calendar size={14} aria-hidden />
+                  {t("wedding_site.ghost.date_cta")}
+                  <Plus size={12} aria-hidden />
+                </button>
+              ) : null}
             </div>
           </div>
-        ) : null}
+        ) : (
+          // No cover photo — names + date on the palette background.
+          <>
+            <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
+              <h1
+                className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
+                // `color: inherit` so the name takes the theme `--wt-text` (set
+                // on the page root) instead of the global base h1 colour — without
+                // it a dark-background style (Black Tie) renders dark-on-dark.
+                style={{
+                  fontFamily: "var(--wt-heading-font)",
+                  color: "inherit",
+                  ...headingTreatment,
+                }}
+              >
+                {view.couple_display_name}
+              </h1>
+
+              {heroDateBig ? (
+                isPreview && e.onEditDate ? (
+                  <button
+                    type="button"
+                    onClick={e.onEditDate}
+                    title={editHint}
+                    className="relative z-10 mx-auto mt-7 block rounded-md px-2 py-1 text-5xl tracking-[0.18em] transition hover:opacity-80 sm:text-7xl"
+                    style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
+                  >
+                    {heroDateBig}
+                  </button>
+                ) : (
+                  <p
+                    className="relative z-10 mx-auto mt-7 text-5xl tracking-[0.18em] sm:text-7xl"
+                    style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
+                    aria-label={dateLine}
+                  >
+                    <span aria-hidden>{heroDateBig}</span>
+                  </p>
+                )
+              ) : isPreview ? (
+                <button
+                  type="button"
+                  onClick={e.onEditDate}
+                  disabled={!e.onEditDate}
+                  title={editHint}
+                  className="mx-auto mt-7 inline-flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm transition hover:opacity-80 disabled:cursor-default"
+                  style={{ borderColor: "var(--wt-accent)", opacity: 0.7 }}
+                >
+                  <Calendar size={14} aria-hidden />
+                  {t("wedding_site.ghost.date_cta")}
+                  <Plus size={12} aria-hidden />
+                </button>
+              ) : null}
+            </div>
+
+            {isPreview ? (
+              <div className="mx-auto mt-8 max-w-4xl px-6 sm:px-8">
+                <div
+                  className={`flex aspect-[16/6] min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center${
+                    e.onEditCover ? " cursor-pointer transition hover:opacity-80" : ""
+                  }`}
+                  style={{ borderColor: "var(--wt-accent)" }}
+                  {...editAffordance(e.onEditCover, editHint)}
+                >
+                  <Camera size={28} aria-hidden style={{ opacity: 0.5 }} />
+                  <p
+                    className="text-lg tracking-tight"
+                    style={{ fontFamily: "var(--wt-heading-font)", opacity: 0.7 }}
+                  >
+                    {t("wedding_site.ghost.cover_title")}
+                  </p>
+                  <p className="inline-flex items-center gap-1 text-xs" style={{ opacity: 0.6 }}>
+                    <Plus size={12} aria-hidden />
+                    {t("wedding_site.ghost.cover_cta")}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
       </section>
 
       {/* Pack ornament under the hero date — the first beat of the pack's

@@ -2360,6 +2360,8 @@ const hu: LocaleMessages = {
       text: "Szöveg",
       reset: "Visszaállítás",
       low_contrast: "Alacsony kontraszt: a szöveg nehezen olvasható lehet a háttéren.",
+      base_label: "Alap:",
+      original: "Eredeti",
     },
     tab: {
       style_kit: "Stíluscsomag",
@@ -2591,6 +2593,8 @@ const hu: LocaleMessages = {
   guest_page_editor: {
     coming_soon_title: "Hamarosan elérhető",
     coming_soon_body: "A vendégoldal szerkesztő fejlesztés alatt áll.",
+    status_published: "Közzétéve",
+    status_draft: "Vázlat",
     title: "Vendégoldal",
     subtitle:
       "Ez az az oldal, amit megosztasz a vendégeitekkel. Akinek van a linked, az látja a nyilvános részt; az alsóbb információk csak az igennel visszajelölt vendégeknek nyílnak meg.",
@@ -2666,7 +2670,7 @@ const hu: LocaleMessages = {
     editor_divider_label: "Oldal szerkesztése",
     preview_title: "Élő előnézet",
     preview_subtitle:
-      "Ezt látja most a vendég. Mentsd el a fenti módosításokat, hogy itt is frissüljön a dátum, a menetrend és a térkép.",
+      "Ezt látja most a vendég. A módosítások automatikusan mentődnek, és itt azonnal frissül a dátum, a menetrend és a térkép.",
     share_per_household_title: "Személyes linkek háztartásonként",
     share_per_household_subtitle:
       "Minden háztartásnak saját linkje van. Aki a saját linkjén keresztül érkezik, annak automatikusan a háztartása töltődik be az RSVP űrlapon, nem kell kódot beírni.",

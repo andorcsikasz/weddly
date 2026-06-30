@@ -215,22 +215,20 @@ function FontChip({
       aria-pressed={active}
       aria-label={label}
       title={label}
-      className={`flex w-full flex-col items-center gap-1 rounded-xl border px-2 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+      className={`flex w-full items-center justify-center rounded-xl border px-1.5 py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
         active
           ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
           : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
       }`}
     >
-      {/* "Aa" in the actual typeface, with the family name labelled below so the
-          couple can identify the font without trial-and-error (audit #12). */}
+      {/* "Aa" in the actual typeface IS the preview. The family name would only
+          truncate to noise at this six-up width, so it lives in the tooltip +
+          aria-label (the button already carries `label` for screen readers). */}
       <span
         className="flex h-7 items-center text-xl leading-none"
         style={fontFamily ? { fontFamily } : undefined}
       >
         Aa
-      </span>
-      <span className="w-full truncate text-center text-[9px] leading-tight opacity-70">
-        {label}
       </span>
     </button>
   );
@@ -787,11 +785,21 @@ export default function DesignPage() {
                 seeded from the resolved colour (override or palette); Reset
                 clears the override back to the palette. */}
                 <section>
-                  <div className="mb-2 flex items-center gap-2">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
                     <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                       {t("design.colors.title")}
                     </h2>
                     <InfoHint text={t("design.colors.hint")} />
+                    {/* Name the palette these swatches are based on so the
+                        couple knows which theme they're tweaking (audit 4b). */}
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: activePalette.accent.hex }}
+                        aria-hidden
+                      />
+                      {t("design.colors.base_label")} {t(activePalette.nameKey)}
+                    </span>
                   </div>
                   <div className="mx-auto w-fit max-w-full">
                     {/* Swatch row: each role is a colour block with a pencil badge;
@@ -823,13 +831,24 @@ export default function DesignPage() {
                               {t(`design.colors.${role}`)}
                             </span>
                             {overridden ? (
-                              <button
-                                type="button"
-                                onClick={() => clearColor(role)}
-                                className="text-[10px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
-                              >
-                                {t("design.colors.reset")}
-                              </button>
+                              // Show the palette's original hex as a small swatch
+                              // beside Reset so the couple sees what they changed
+                              // away from, and what Reset restores (audit 4b).
+                              <span className="flex items-center gap-1">
+                                <span
+                                  className="h-3 w-3 rounded-full border border-paper-300 dark:border-umber-700"
+                                  style={{ backgroundColor: activePalette[role].hex }}
+                                  title={`${t("design.colors.original")}: ${activePalette[role].hex}`}
+                                  aria-hidden
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => clearColor(role)}
+                                  className="text-[10px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+                                >
+                                  {t("design.colors.reset")}
+                                </button>
+                              </span>
                             ) : (
                               <span className="h-[14px]" aria-hidden />
                             )}
@@ -902,7 +921,12 @@ export default function DesignPage() {
                           <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
                             {t(`design.font.${which}_label`)}
                           </span>
-                          <div className="grid grid-cols-3 gap-2">
+                          {/* Six-up so all twelve families fit in two rows per
+                              category (heading + body), cutting the picker's
+                              height roughly in half — the "Aa" itself is the
+                              preview; the full family name lives in the tooltip
+                              + aria-label since it would truncate at this width. */}
+                          <div className="grid grid-cols-6 gap-1.5">
                             {FONT_FAMILIES.map((fam) => (
                               <FontChip
                                 key={fam.slug}
@@ -1250,7 +1274,7 @@ export default function DesignPage() {
           toggle. Escape (bound above) or the close button dismiss it. */}
       {fullPreview && previewView && (
         <div
-          className="fixed inset-0 z-[60] flex flex-col bg-black/70"
+          className="fixed inset-0 z-[60] flex flex-col bg-black/95 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-label={t("design.full_preview")}

@@ -14,12 +14,14 @@ import type { PublicWeddingScheduleEntry, PublicWeddingWebsiteView } from "@shar
 import type { ScheduleEvent } from "@shared/schedule";
 import type { WishlistEntry } from "@shared/wishlist";
 import {
+  Check,
   ChevronRight,
   Clipboard,
   Copy,
   ExternalLink,
   Eye,
   Globe,
+  Loader2,
   MessageCircle,
   Move,
   Palette,
@@ -940,18 +942,42 @@ export default function GuestPageEditorPage() {
           couple always sees "saved" without hunting for it, plus "view live"
           (the public URL) one reach away. */}
       <header className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-grotesk font-semibold tracking-tight">
             {t("guest_page_editor.title")}
           </h1>
           <InfoHint text={t("guest_page_editor.subtitle")} />
+          {/* Publish state badge next to the title so the couple always knows,
+              at a glance, whether guests can see the page (audit 5c). */}
           <span
-            className="hidden text-xs text-ink-500 sm:inline dark:text-umber-300"
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              isPublic
+                ? "bg-sage-100 text-sage-700 dark:bg-sage-500/20 dark:text-sage-300"
+                : "bg-paper-200 text-ink-500 dark:bg-umber-800 dark:text-umber-200"
+            }`}
+          >
+            {isPublic ? <Check size={12} strokeWidth={3} aria-hidden /> : null}
+            {isPublic
+              ? t("guest_page_editor.status_published")
+              : t("guest_page_editor.status_draft")}
+          </span>
+          {/* Auto-save indicator — the page saves on its own ~900ms after the
+              last edit, so this reassures rather than prompts a manual save. */}
+          <span
+            className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300"
             aria-live="polite"
           >
-            {saving || dirty
-              ? t("wedding_site_editor.save_saving")
-              : t("wedding_site_editor.save_success")}
+            {saving || dirty ? (
+              <>
+                <Loader2 size={12} className="animate-spin" aria-hidden />
+                {t("wedding_site_editor.save_saving")}
+              </>
+            ) : (
+              <>
+                <Check size={12} strokeWidth={3} aria-hidden />
+                {t("wedding_site_editor.save_success")}
+              </>
+            )}
           </span>
         </div>
         <div className="flex items-center gap-2">

@@ -2338,6 +2338,8 @@ const en: LocaleMessages = {
       text: "Text",
       reset: "Reset",
       low_contrast: "Low contrast: text may be hard to read on the background.",
+      base_label: "Base:",
+      original: "Original",
     },
     tab: {
       style_kit: "Style kit",
@@ -2566,6 +2568,8 @@ const en: LocaleMessages = {
   guest_page_editor: {
     coming_soon_title: "Coming soon",
     coming_soon_body: "The guest page editor is under development.",
+    status_published: "Published",
+    status_draft: "Draft",
     title: "Guest page",
     subtitle:
       "The one page you share with guests. Anyone with the link sees the public block; the rest unlocks for guests who RSVP yes.",
@@ -2641,7 +2645,7 @@ const en: LocaleMessages = {
     editor_divider_label: "Edit your page",
     preview_title: "Live preview",
     preview_subtitle:
-      "What a guest sees right now. Save your edits above to refresh the date, schedule and location pin shown here.",
+      "What a guest sees right now. Edits save automatically and the date, schedule and location pin shown here update instantly.",
     share_per_household_title: "Personal guest links",
     share_per_household_subtitle:
       "Each household has its own link. Sending the personal link auto-fills their household on the RSVP form, no codes to type.",
