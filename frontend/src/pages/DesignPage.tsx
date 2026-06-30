@@ -34,7 +34,17 @@ import {
 import { getContrastRatio } from "@shared/wcag";
 import type { Couple } from "@shared/types";
 import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
-import { Check, Download, Eye, Loader2, Pencil } from "lucide-react";
+import {
+  Check,
+  Download,
+  Eye,
+  Loader2,
+  Maximize2,
+  Monitor,
+  Pencil,
+  Smartphone,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ComingSoon } from "../components/ComingSoon";
 import { InfoHint } from "../components/InfoHint";
@@ -253,6 +263,10 @@ export default function DesignPage() {
   const [pdfPreviewBusy, setPdfPreviewBusy] = useState(false);
   // Per-tile download-in-flight flag, keyed by the printable's slug.
   const [downloading, setDownloading] = useState<string | null>(null);
+  // Full-page guest-page preview overlay (Website tab). Open state + which
+  // device frame width the preview is shown at (mobile ~390px vs desktop 100%).
+  const [fullPreview, setFullPreview] = useState(false);
+  const [previewViewport, setPreviewViewport] = useState<"mobile" | "desktop">("desktop");
 
   useEffect(() => {
     let cancelled = false;
@@ -303,6 +317,16 @@ export default function DesignPage() {
     }, 900);
     return () => clearTimeout(id);
   }, [couple, dirty, saving, readOnly, design, toast, t]);
+
+  // Escape closes the full-page preview overlay (only bound while it's open).
+  useEffect(() => {
+    if (!fullPreview) return;
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") setFullPreview(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fullPreview]);
 
   // Picking a style pre-selects its palette + fonts, but the couple can still
   // override either independently afterwards (the catalog defaults are a
@@ -553,6 +577,21 @@ export default function DesignPage() {
           <InfoHint text={t("design.hint")} />
         </div>
       </header>
+
+      {/* Publish bridge — once the couple has a guest-page slug but hasn't made
+          it public yet, nudge them across to the guest-page publish toggle.
+          Hidden when already public or no slug exists. */}
+      {couple?.slug && couple.is_public === false ? (
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-paper-300 bg-white p-4 sm:flex-row sm:items-center sm:justify-between dark:border-umber-700 dark:bg-umber-800">
+          <p className="text-sm text-ink-700 dark:text-paper-100">{t("design.publish_cta_text")}</p>
+          <Link
+            to="/app/guest-page"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
+          >
+            {t("design.publish_cta_button")}
+          </Link>
+        </div>
+      ) : null}
 
       {loading ? (
         <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
@@ -1059,9 +1098,21 @@ export default function DesignPage() {
               </div>
             ) : (
               <>
-                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200">
-                  {t("design.preview_label")}
-                </p>
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200">
+                    {t("design.preview_label")}
+                  </p>
+                  {previewView && (
+                    <button
+                      type="button"
+                      onClick={() => setFullPreview(true)}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
+                    >
+                      <Maximize2 size={14} aria-hidden />
+                      {t("design.full_preview")}
+                    </button>
+                  )}
+                </div>
                 {previewView && (
                   <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
                     {/* Full guest page, edge-to-edge so the editorial light/dark
@@ -1083,6 +1134,64 @@ export default function DesignPage() {
               </>
             )}
           </aside>
+        </div>
+      )}
+
+      {/* Full-page guest-page preview overlay — the SAME previewView through
+          <WeddingSiteView>, framed at a mobile or desktop width via the header
+          toggle. Escape (bound above) or the close button dismiss it. */}
+      {fullPreview && previewView && (
+        <div
+          className="fixed inset-0 z-[60] flex flex-col bg-black/70"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("design.full_preview")}
+        >
+          <header className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1">
+              {(["mobile", "desktop"] as const).map((vp) => {
+                const active = previewViewport === vp;
+                const Icon = vp === "mobile" ? Smartphone : Monitor;
+                return (
+                  <button
+                    key={vp}
+                    type="button"
+                    onClick={() => setPreviewViewport(vp)}
+                    aria-pressed={active}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${
+                      active ? "bg-white text-ink-900" : "text-white/80 hover:text-white"
+                    }`}
+                  >
+                    <Icon size={14} aria-hidden />
+                    {t(vp === "mobile" ? "design.preview_mobile" : "design.preview_desktop")}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => setFullPreview(false)}
+              aria-label={t("design.preview_close")}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            >
+              <X size={18} aria-hidden />
+            </button>
+          </header>
+          <div className="flex-1 overflow-y-auto px-2 pb-6 sm:px-4">
+            <div
+              className="mx-auto overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl transition-[max-width] dark:border-umber-700"
+              style={{ maxWidth: previewViewport === "mobile" ? 390 : "100%" }}
+            >
+              <WeddingSiteView
+                view={previewView}
+                household={null}
+                tier="public"
+                locale={locale}
+                isPreview={false}
+                showFooter={false}
+              />
+            </div>
+          </div>
         </div>
       )}
     </>

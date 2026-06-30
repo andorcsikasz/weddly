@@ -385,6 +385,8 @@ export interface LocaleMessages {
      *  Read only when at least one household member has RSVP'd yes. */
     confirmed_title: string;
     confirmed_open_map: string;
+    /** Accessible label for the embedded venue map thumbnail. */
+    venue_map_label: string;
     /** Per-member RSVP-status labels (pending / yes / no / maybe).
      *  Used by the household member list in invited/confirmed tier. */
     rsvp_status_pending: string;
@@ -2438,6 +2440,16 @@ export interface LocaleMessages {
     };
     /** Live-preview column label. */
     preview_label: string;
+    /** Full-page guest-page preview overlay: open button, viewport toggles and
+     *  close control. */
+    full_preview: string;
+    preview_mobile: string;
+    preview_desktop: string;
+    preview_close: string;
+    /** Publish bridge banner: nudges the couple to publish their guest page
+     *  once a slug exists but the page is still private. */
+    publish_cta_text: string;
+    publish_cta_button: string;
     /** Body sample line shown under the heading sample in a font tile. */
     font_sample_body: string;
     /** Toast copy. */

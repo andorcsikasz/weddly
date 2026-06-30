@@ -31,7 +31,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
 import { pickKeyMoments } from "@shared/schedule";
@@ -46,6 +46,33 @@ import type {
   PublicWeddingTier,
   PublicWeddingWebsiteView,
 } from "@shared/wedding_website";
+
+// The embedded venue map is lazy-imported so the ~150KB leaflet bundle only
+// ships to (and only executes in) a real browser. Under happy-dom in the test
+// suite the Suspense fallback (null) is what renders, so Leaflet never runs.
+const VenueMap = lazy(() => import("./VenueMap"));
+
+/** Per-style-pack CSS filter for the venue map tiles, derived 1:1 from the
+ *  design ornament language so the map's mood matches the pack:
+ *    botanical (Garden) → warm sepia
+ *    none (Monochrome)  → full grayscale
+ *    oval (Blush)       → gently saturated
+ *    deco (Midnight)    → desaturated + dimmed (near-night)
+ *  Anything else falls back to no filter. */
+function venueMapFilter(ornament: string): string | undefined {
+  switch (ornament) {
+    case "botanical":
+      return "sepia(0.25)";
+    case "none":
+      return "grayscale(1)";
+    case "oval":
+      return "saturate(1.15)";
+    case "deco":
+      return "grayscale(0.5) brightness(0.9)";
+    default:
+      return undefined;
+  }
+}
 
 /** Click-to-edit shortcuts for the editor preview. Each jumps to (scrolls +
  *  focuses) the matching field in the editor below. All optional — passing
@@ -794,18 +821,34 @@ export function WeddingSiteView({
           })()}
           <div className="mt-4 flex justify-center">{hairline}</div>
           {view.location_lat !== null && view.location_lng !== null ? (
-            <p className="mt-5">
-              <a
-                className="btn-outline inline-flex items-center gap-2"
-                href={`https://www.openstreetmap.org/?mlat=${view.location_lat}&mlon=${view.location_lng}#map=17/${view.location_lat}/${view.location_lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(ev) => ev.stopPropagation()}
-              >
-                <MapPin size={15} aria-hidden />
-                {t("wedding_site.confirmed_open_map")}
-              </a>
-            </p>
+            <>
+              {/* Embedded venue map — lazy + Suspense so Leaflet only loads in
+                  a real browser (null fallback under happy-dom). The outbound
+                  link below stays as the "open full map" caption. */}
+              <div className="mt-5">
+                <Suspense fallback={null}>
+                  <VenueMap
+                    lat={view.location_lat}
+                    lng={view.location_lng}
+                    accent="var(--wt-accent)"
+                    filter={venueMapFilter(view.design.ornament)}
+                    label={t("wedding_site.venue_map_label")}
+                  />
+                </Suspense>
+              </div>
+              <p className="mt-4">
+                <a
+                  className="btn-outline inline-flex items-center gap-2"
+                  href={`https://www.openstreetmap.org/?mlat=${view.location_lat}&mlon=${view.location_lng}#map=17/${view.location_lat}/${view.location_lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(ev) => ev.stopPropagation()}
+                >
+                  <MapPin size={15} aria-hidden />
+                  {t("wedding_site.confirmed_open_map")}
+                </a>
+              </p>
+            </>
           ) : null}
         </Band>
       ) : isPreview ? (
