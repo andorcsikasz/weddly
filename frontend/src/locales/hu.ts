@@ -116,6 +116,9 @@ const hu: LocaleMessages = {
     have_account: "Már van fiókod?",
     bad_credentials: "Hibás e-mail vagy jelszó.",
     duplicate_email: "Ez az e-mail már regisztrálva van.",
+    planner_invite_banner: "{{planner}} meghívott, hogy a Weddlyn tervezd az esküvőtöket.",
+    planner_invite_banner_hint:
+      "Hozd létre a fiókod a kezdéshez. A tervezőt később jóváhagyhatod a beállításokban.",
     short_password: "A jelszó legalább 8 karakter legyen.",
     rate_limited: "Túl sok próbálkozás. Próbáld néhány perc múlva.",
     verify_required_title: "Erősítsd meg az e-mail címed",
@@ -6637,6 +6640,22 @@ const hu: LocaleMessages = {
     meta_description: "Minden ügyfeled egy helyen.",
     title: "Ügyfeleim",
     subtitle: "Minden párod, az állapotuk és a határidőik egy helyen.",
+    invite_section_title: "Ügyfél meghívása e-mailben",
+    invite_section_hint:
+      "E-mailben hívjuk meg őket a Weddlyre. Szerkesztési hozzáférést akkor kapsz, ha jóváhagynak.",
+    invite_placeholder: "nev@email.hu",
+    invite_button: "Meghívó küldése",
+    invite_sent: "Meghívó elküldve",
+    invite_request_sent: "Hozzáférési kérés elküldve",
+    invite_error_duplicate: "Ezt az e-mailt már meghívtad.",
+    invite_error_limit: "Elérted az ügyfélkereted felső határát.",
+    invite_error_generic: "A meghívó küldése nem sikerült. Próbáld újra.",
+    invite_revoked: "Meghívó visszavonva",
+    status_pending: "Függőben",
+    status_accepted: "Csatlakozott",
+    revoke_button: "Visszavonás",
+    revoke_confirm_title: "Visszavonod a meghívót?",
+    revoke_confirm_body: "{{email}} a továbbiakban nem tudja használni ezt a meghívót.",
   },
   planner_home: {
     title: "Szervező munkaterület",
@@ -6932,6 +6951,10 @@ const hu: LocaleMessages = {
     decline_button: "Elutasít",
     revoke_button: "Eltávolít",
     revoke_confirm: "Biztosan eltávolítod ezt a tervezőt?",
+    approval_banner_title: "Egy tervező a jóváhagyásodra vár",
+    approval_banner_body:
+      "{{planner}} meghívott, hogy együtt tervezzetek. Hagyd jóvá, hogy szerkesztési hozzáférést kapjon a felületedhez.",
+    approval_banner_cta: "Megnézem",
   },
   guest_invites: {
     back_to_guests: "Vissza a vendégekhez",

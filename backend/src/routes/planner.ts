@@ -289,6 +289,50 @@ async function requestCoupleAccess(
   }
 }
 
+/** Planner switches guest-page (vendégoldal) editing on/off for a client. The
+ *  couple is viewer-only by default once their free window lapses (the planner
+ *  edits); this hands back edit access to their own guest page as an extra. The
+ *  planner can only switch it ON once the couple has prepaid their 30% share
+ *  (`guest_page_prepaid`) via the 70%-off add-on checkout. */
+async function handleSetGuestPageAccess(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  const link = db
+    .prepare(
+      "SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ? AND status = 'active'",
+    )
+    .get(userId, coupleId);
+  if (!link) throw new HttpError(403, "Not linked to this workspace");
+
+  const body = await readJson<{ enabled?: unknown }>(ctx.req);
+  const enabled = body.enabled === true;
+
+  const couple = getCoupleById(coupleId);
+  if (!couple) throw new HttpError(404, "Couple not found");
+  if (enabled && !couple.guest_page_prepaid) {
+    throw new HttpError(402, "The couple must purchase the guest-page add-on first", {
+      code: "guest_page_not_prepaid",
+    });
+  }
+
+  db.prepare("UPDATE couples SET guest_page_addon = ?, updated_at = ? WHERE id = ?").run(
+    enabled ? 1 : 0,
+    now(),
+    coupleId,
+  );
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "planner.guest_page_addon",
+    target_kind: "couple",
+    target_id: coupleId,
+    after: { enabled },
+  });
+  return json({ ok: true, guest_page_addon: enabled });
+}
+
 // ─── Planner email invitations (invite a stranger by email) ──────────────────
 
 /** Count the planner's outstanding clients against their plan cap: active +
@@ -1709,6 +1753,7 @@ export function registerPlannerRoutes(router: Router) {
   router.patch("/api/planner/clients/:coupleId/notes", handleUpdateNotes, true);
   router.get("/api/planner/clients/:coupleId/crm", handleGetClientCrm, true);
   router.patch("/api/planner/clients/:coupleId/crm", handleUpdateClientCrm, true);
+  router.post("/api/planner/clients/:coupleId/guest-page-access", handleSetGuestPageAccess, true);
   router.post("/api/planner/clients/:coupleId/enter", handleEnterClient, true);
   router.delete("/api/planner/clients/:coupleId", handleRemoveClient, true);
   router.post("/api/planner/exit", handleExit, true);

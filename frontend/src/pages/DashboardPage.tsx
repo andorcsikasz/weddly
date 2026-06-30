@@ -51,6 +51,7 @@ import {
 } from "../components/CostPlanningCard";
 import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
+import { PlannerApprovalBanner } from "../components/PlannerApprovalBanner";
 import { TimelineStatusCard } from "../components/TimelineStatusCard";
 import { UpcomingTasksCard } from "../components/UpcomingTasksCard";
 import { CalendarPicker, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
@@ -811,6 +812,10 @@ export default function DashboardPage() {
        *  there's a pending partner-invite addressed to this user's email;
        *  joining purges the user's solo workspace (typed-phrase confirm). */}
       {!couple.partner_b_id && <PartnerMergeBanner onAccepted={() => window.location.reload()} />}
+      {/* Surfaces when a planner invited this couple by email and the consent
+       *  request is still pending — links to settings/workspace to approve.
+       *  Hidden when there's no pending planner-initiated request. */}
+      <PlannerApprovalBanner />
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-grotesk text-3xl sm:text-4xl break-words hyphens-auto">

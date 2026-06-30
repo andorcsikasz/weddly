@@ -1,5 +1,5 @@
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
-import type { AuthSession } from "@shared/types";
+import type { AuthSession, PlannerInvitePublic } from "@shared/types";
 import { Mail } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -10,7 +10,7 @@ import { Button, PasswordField, useToast } from "../components/ui";
 import { ApiError, apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { clearDemoSessionFlag } from "../lib/demoSession";
-import { authApi } from "../lib/endpoints";
+import { authApi, plannerInviteApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -35,6 +35,13 @@ export default function RegisterPage() {
   const nameRef = useRef<HTMLInputElement | null>(null);
   const errorId = useId();
   const [searchParams] = useSearchParams();
+  // Set when the signup was reached via a planner email invitation
+  // (`?planner_invite=<token>`). Drives the "X invited you" banner + email
+  // prefill, and the token is forwarded to /api/auth/register so the backend
+  // can link the new couple to the planner (consent-gated; the couple still
+  // approves later).
+  const plannerInviteToken = searchParams.get("planner_invite");
+  const [plannerInvite, setPlannerInvite] = useState<PlannerInvitePublic | null>(null);
 
   useEffect(() => {
     // Persist the referral code for the onboarding wizard, which runs after
@@ -55,6 +62,25 @@ export default function RegisterPage() {
       nameRef.current?.focus();
     }
   }, []);
+
+  useEffect(() => {
+    if (!plannerInviteToken) return;
+    let cancelled = false;
+    plannerInviteApi
+      .lookup(plannerInviteToken)
+      .then((info) => {
+        if (cancelled) return;
+        setPlannerInvite(info);
+        // Prefill the invited address so the invitee doesn't have to retype it.
+        setEmail(info.email);
+      })
+      .catch(() => {
+        // Expired / unknown token — fall back to a plain signup, no banner.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [plannerInviteToken]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -83,6 +109,12 @@ export default function RegisterPage() {
       // UTM campaign params the LandingPage stashed this session. Spread into
       // the register body; the backend coerces + length-caps each field.
       const utm = readUtm();
+      // Forward the planner-invite token (if any) so the backend links the
+      // brand-new couple to the inviting planner. Spread in so the register
+      // body type doesn't need to enumerate it; apiFetch sends the whole
+      // object as JSON. (See report: endpoints.ts can add `planner_invite?:
+      // string` to the register signature to type this explicitly.)
+      const plannerInviteField = plannerInviteToken ? { planner_invite: plannerInviteToken } : {};
       const session = await authApi.register({
         email: email.trim(),
         password,
@@ -95,6 +127,7 @@ export default function RegisterPage() {
         locale,
         referrer,
         ...utm,
+        ...plannerInviteField,
       });
       // Clear after a successful register so a re-signup attempt on the
       // same tab doesn't double-attribute. Failures keep the value so the
@@ -197,6 +230,16 @@ export default function RegisterPage() {
     <Shell>
       <div className="mx-auto max-w-md">
         <div className="card">
+          {plannerInvite && (
+            <div className="mb-5 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-500/10">
+              <p className="text-sm font-medium text-amber-950 break-words hyphens-auto dark:text-amber-100">
+                {t("auth.planner_invite_banner", { planner: plannerInvite.planner_label })}
+              </p>
+              <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-200/80">
+                {t("auth.planner_invite_banner_hint")}
+              </p>
+            </div>
+          )}
           <h1 className="font-grotesk text-2xl text-umber-900 dark:text-paper-50">
             {t("auth.register_title")}
           </h1>

@@ -275,6 +275,17 @@ export function applySubscriptionState(
   ).run(mapped, opts.subscriptionId, opts.currentPeriodEnd, now(), coupleId);
 }
 
+// ── Guest-page add-on (planner-managed couples) ─────────────────────────────
+/** Mark the couple's 30% share as paid (the 70%-off add-on checkout completed).
+ *  This is the precondition the planner needs before switching guest-page
+ *  editing back on for the couple — it does NOT grant edit access by itself. */
+export function markGuestPagePrepaid(coupleId: number, nowMs: number = now()): void {
+  db.prepare("UPDATE couples SET guest_page_prepaid = 1, updated_at = ? WHERE id = ?").run(
+    nowMs,
+    coupleId,
+  );
+}
+
 // ── Entitlement guard ───────────────────────────────────────────────────────
 /** Throw 402 when the couple may not edit (trial/founding lapsed, no sub). Use
  *  on write endpoints that should be read-only once billing lapses. Returns the
@@ -321,10 +332,44 @@ const EDIT_PREFIXES: readonly string[] = [
 ];
 const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+// The subset of edit surfaces the guest-page (vendégoldal) add-on unlocks for a
+// couple member of a planner-managed couple. The couple record carries all the
+// guest-page / website config (intro, cover, publish toggle, venue, wishlist
+// publish), edited through PATCH /api/couples/current (+ the cover upload under
+// it), so unlocking that prefix is exactly "the couple can edit their own site".
+const GUEST_PAGE_ADDON_PREFIXES: readonly string[] = ["/api/couples/current"];
+
+function onAnyPrefix(pathname: string, prefixes: readonly string[]): boolean {
+  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/** True when `userId` is a planner actively managing `coupleId` (an active
+ *  planner_clients link). A managing planner is the editing party for a
+ *  planner-managed couple, so their edits are never billing-blocked. */
+export function isManagingPlanner(userId: number, coupleId: number): boolean {
+  return (
+    db
+      .prepare(
+        `SELECT 1 FROM users u
+            JOIN planner_clients pc
+              ON pc.planner_user_id = u.id AND pc.couple_id = ? AND pc.status = 'active'
+           WHERE u.id = ? AND u.user_type = 'planner'
+           LIMIT 1`,
+      )
+      .get(coupleId, userId) != null
+  );
+}
+
 /** Central read-only gate, called from the request pipeline. Returns the
- *  blocking billing reason when a lapsed couple tries to edit a workspace
- *  surface, or null when the request should proceed. Demo couples and couples
- *  still in trial/founding/active always proceed. */
+ *  blocking billing reason when an edit should be refused, or null to proceed.
+ *
+ *  Planner-managed couples layer on top of the plain subscription gate:
+ *   - The managing PLANNER always edits (their access rides the planner
+ *     relationship, not the couple's consumer subscription).
+ *   - A COUPLE MEMBER whose own free window has lapsed becomes viewer-only on a
+ *     planner-managed couple — the planner does the editing — EXCEPT their own
+ *     guest page once the 70%-off add-on is switched on.
+ *  Demo couples and couples still in trial/founding/active proceed as before. */
 export function entitlementBlock(
   method: string,
   pathname: string,
@@ -335,6 +380,19 @@ export function entitlementBlock(
   if (!onEditSurface) return null;
   const couple = getCoupleForUser(userId);
   if (!couple) return null; // no workspace yet → nothing to gate
+
+  // The managing planner is never blocked — they edit on the couple's behalf.
+  if (isManagingPlanner(userId, couple.id)) return null;
+
   const billing = toCoupleBilling(couple);
-  return billing.entitled ? null : billing.reason;
+  if (billing.entitled) return null;
+
+  // Couple member, own free window lapsed. On a planner-managed couple this is
+  // viewer mode: blocked everywhere except the guest page when the add-on is on.
+  if (billing.planner_managed) {
+    if (billing.guest_page_addon && onAnyPrefix(pathname, GUEST_PAGE_ADDON_PREFIXES)) return null;
+    return "planner_managed_viewer";
+  }
+
+  return billing.reason;
 }

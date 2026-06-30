@@ -88,6 +88,7 @@ process.env.STRIPE_SECRET_KEY = "";
 process.env.STRIPE_WEBHOOK_SECRET = "";
 process.env.STRIPE_PRICE_EUR = "";
 process.env.STRIPE_PRICE_HUF = "";
+process.env.STRIPE_GUEST_PAGE_ADDON_PRICE = "";
 
 // Cloudflare R2 object storage stays disabled in tests so the storage layer
 // uses the local-disk backend (UPLOADS_DIR above) — pin every R2 field empty

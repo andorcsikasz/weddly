@@ -242,6 +242,8 @@ export interface LocaleMessages {
     have_account: string;
     bad_credentials: string;
     duplicate_email: string;
+    planner_invite_banner: string;
+    planner_invite_banner_hint: string;
     short_password: string;
     rate_limited: string;
     verify_required_title: string;
@@ -7124,6 +7126,21 @@ export interface LocaleMessages {
     meta_description: string;
     title: string;
     subtitle: string;
+    invite_section_title: string;
+    invite_section_hint: string;
+    invite_placeholder: string;
+    invite_button: string;
+    invite_sent: string;
+    invite_request_sent: string;
+    invite_error_duplicate: string;
+    invite_error_limit: string;
+    invite_error_generic: string;
+    invite_revoked: string;
+    status_pending: string;
+    status_accepted: string;
+    revoke_button: string;
+    revoke_confirm_title: string;
+    revoke_confirm_body: string;
   };
   planner_home: {
     title: string;
@@ -7413,6 +7430,9 @@ export interface LocaleMessages {
     decline_button: string;
     revoke_button: string;
     revoke_confirm: string;
+    approval_banner_title: string;
+    approval_banner_body: string;
+    approval_banner_cta: string;
   };
   guest_invites: {
     back_to_guests: string;

@@ -993,6 +993,15 @@ addColumnIfMissing(
 addColumnIfMissing("couples", "stripe_customer_id", "stripe_customer_id TEXT");
 addColumnIfMissing("couples", "stripe_subscription_id", "stripe_subscription_id TEXT");
 addColumnIfMissing("couples", "current_period_end", "current_period_end INTEGER");
+// Planner-managed billing extra (the "vendégoldal" guest-page edit add-on).
+// A planner-managed couple is viewer-only by default once their own free
+// window lapses; the planner edits. `guest_page_prepaid` = the couple paid
+// their 30% share (the 70%-off add-on checkout completed) — the precondition
+// the planner needs before they can switch on guest-page editing for the
+// couple. `guest_page_addon` = the add-on is switched on, so couple members
+// regain edit access to their own guest page / website. See domain/billing.ts.
+addColumnIfMissing("couples", "guest_page_prepaid", "guest_page_prepaid INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("couples", "guest_page_addon", "guest_page_addon INTEGER NOT NULL DEFAULT 0");
 // Index AFTER the column adds (see the May-2026 ordering rule): a column added
 // via addColumnIfMissing can't carry an inline index in schema.sql.
 db.exec(
@@ -1336,6 +1345,11 @@ addColumnIfMissing(
   "initiated_by TEXT NOT NULL DEFAULT 'couple'",
 );
 
+// planner_events index (same ordering rule; table created in schema.sql).
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_planner_events_user ON planner_events(planner_user_id, event_date)",
+);
+
 // Planner profile fields — additive, all nullable (planners fill in later).
 addColumnIfMissing("users", "business_name", "business_name TEXT");
 addColumnIfMissing("users", "planner_bio", "planner_bio TEXT");
@@ -1352,6 +1366,8 @@ addColumnIfMissing("users", "planner_km_radius", "planner_km_radius INTEGER");
 addColumnIfMissing("users", "planner_styles", "planner_styles TEXT");
 // Planner profile photo — an uploaded avatar served from /uploads/planners/...
 addColumnIfMissing("users", "planner_avatar_url", "planner_avatar_url TEXT");
+// Planner opted in to be notified when paid plans launch (1 = notify me).
+addColumnIfMissing("users", "planner_plan_notify", "planner_plan_notify INTEGER DEFAULT 0");
 
 // Public reference codes for the two principal parties — organisers (couples)
 // get "O" + 5 digits, vendors get "V" + 5 digits. New rows are assigned a code

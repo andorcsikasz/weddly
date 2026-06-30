@@ -115,6 +115,12 @@ export const CONFIG = {
    *  them in the Stripe dashboard (or via scripts/stripe_setup.ts). */
   stripePriceEur: process.env.STRIPE_PRICE_EUR ?? "",
   stripePriceHuf: process.env.STRIPE_PRICE_HUF ?? "",
+  /** Price id for the planner-managed couple's guest-page (vendégoldal) edit
+   *  add-on, sold at the 70%-off rate (the couple pays ~30%). One price covers
+   *  both currencies for now. When unset the add-on checkout returns 503, so it
+   *  never blocks boot. Create it in the Stripe dashboard at the discounted
+   *  amount. See docs / CLAUDE.md billing notes. */
+  stripeGuestPageAddonPrice: process.env.STRIPE_GUEST_PAGE_ADDON_PRICE ?? "",
   /** Path to the MaxMind GeoLite2-Country `.mmdb` on disk. Lives on the `/data`
    *  persistent volume in prod so it survives redeploys. The file is NEVER
    *  committed (MaxMind's EULA forbids redistribution + it would bloat the

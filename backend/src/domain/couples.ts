@@ -76,6 +76,19 @@ function coupleHasAdminMember(coupleId: number): boolean {
   return rows.some((r) => isAdminEmail(r.email));
 }
 
+/** True when an active planner is managing this couple. A planner-managed
+ *  couple is viewer-only by default once its own free window lapses; the
+ *  planner does the editing. Drives the viewer-mode billing snapshot. */
+export function coupleHasActivePlanner(coupleId: number): boolean {
+  return (
+    db
+      .prepare(
+        "SELECT 1 FROM planner_clients WHERE couple_id = ? AND status = 'active' LIMIT 1",
+      )
+      .get(coupleId) != null
+  );
+}
+
 /** Build the billing snapshot for a couple row, computing live entitlement.
  *  Demo couples are always entitled — billing never touches the throwaway
  *  demo workspaces. Exported so route guards can reuse the same verdict. */
@@ -115,6 +128,9 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
     current_period_end: row.current_period_end,
     entitled,
     reason: verdict.reason,
+    planner_managed: row.is_demo ? false : coupleHasActivePlanner(row.id),
+    guest_page_prepaid: Boolean(row.guest_page_prepaid),
+    guest_page_addon: Boolean(row.guest_page_addon),
   };
 }
 
@@ -239,6 +255,9 @@ export interface CoupleRow {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   current_period_end: number | null;
+  /** Planner-managed guest-page edit add-on (see domain/billing.ts). */
+  guest_page_prepaid: number;
+  guest_page_addon: number;
 }
 
 const CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);

@@ -84,10 +84,22 @@ export interface CoupleBilling {
   /** Epoch ms — paid period end from Stripe. Null when not a paying sub. */
   current_period_end: UnixMs | null;
   /** Computed: does the couple currently have edit access? When false the
-   *  workspace is read-only and edits return 402. */
+   *  workspace is read-only and edits return 402. NOTE: for a planner-managed
+   *  couple this reflects the COUPLE MEMBER's access — the managing planner
+   *  always edits regardless (see domain/billing.ts entitlementBlock). */
   entitled: boolean;
   /** Computed reason the couple is (not) entitled — drives the UI banner. */
   reason: BillingReason;
+  /** An active planner is managing this couple. When true and the couple's own
+   *  free window has lapsed, couple members are viewer-only and the planner
+   *  edits; the couple can buy back guest-page editing via the add-on. */
+  planner_managed: boolean;
+  /** The couple paid their 30% share (the 70%-off guest-page add-on checkout
+   *  completed). Precondition for the planner to switch on `guest_page_addon`. */
+  guest_page_prepaid: boolean;
+  /** The guest-page (vendégoldal) edit add-on is switched on, so couple members
+   *  can edit their own guest page / website even while viewer-only elsewhere. */
+  guest_page_addon: boolean;
 }
 
 /** Response of GET /api/billing/status — everything the billing page needs. */
@@ -114,7 +126,10 @@ export type BillingReason =
   | "trial_expired"
   | "founding_expired"
   | "canceled"
-  | "none";
+  | "none"
+  /** Planner-managed couple, viewer mode: the couple member may not edit (the
+   *  planner does), except their own guest page when the add-on is on. */
+  | "planner_managed_viewer";
 
 /** Single source of truth for "can this couple edit right now?". Pure +
  *  time-based so it can run on the server (gate writes) and the client

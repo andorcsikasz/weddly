@@ -451,6 +451,10 @@ export const billingApi = {
   status: () => apiFetch<BillingStatusResponse>("GET", "/api/billing/status"),
   /** Start a Stripe-hosted Checkout — returns the redirect URL. */
   checkout: () => apiFetch<{ url: string }>("POST", "/api/billing/checkout", {}),
+  /** Buy the 70%-off guest-page (vendégoldal) edit add-on for a planner-managed
+   *  couple — returns the Stripe Checkout redirect URL. */
+  guestPageAddonCheckout: () =>
+    apiFetch<{ url: string }>("POST", "/api/billing/guest-page-addon/checkout", {}),
   /** Open the Stripe Billing Portal — returns the redirect URL. */
   portal: () => apiFetch<{ url: string }>("POST", "/api/billing/portal", {}),
 };
@@ -2565,6 +2569,14 @@ export const plannerApi = {
     >("POST", "/api/planner/invitations", { email }),
   revokeInvitation: (id: number) =>
     apiFetch<{ ok: boolean }>("DELETE", `/api/planner/invitations/${id}`),
+  /** Switch guest-page (vendégoldal) editing on/off for a client. Only succeeds
+   *  (enable) once the couple has prepaid their 30% share (402 otherwise). */
+  setGuestPageAccess: (coupleId: number, enabled: boolean) =>
+    apiFetch<{ ok: boolean; guest_page_addon: boolean }>(
+      "POST",
+      `/api/planner/clients/${coupleId}/guest-page-access`,
+      { enabled },
+    ),
   stats: () => apiFetch<{ stats: PlannerStats }>("GET", "/api/planner/stats"),
   completeOnboarding: () =>
     apiFetch<{ ok: boolean }>("POST", "/api/planner/complete-onboarding", {}),

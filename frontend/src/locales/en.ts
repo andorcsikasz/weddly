@@ -115,6 +115,9 @@ const en: LocaleMessages = {
     have_account: "Already have an account?",
     bad_credentials: "Invalid email or password.",
     duplicate_email: "That email is already registered.",
+    planner_invite_banner: "{{planner}} invited you to plan your wedding on Weddly.",
+    planner_invite_banner_hint:
+      "Create your account to get started. You can approve your planner later from your settings.",
     short_password: "Password must be at least 8 characters.",
     rate_limited: "Too many attempts, wait a few minutes.",
     verify_required_title: "Confirm your email",
@@ -6583,6 +6586,22 @@ const en: LocaleMessages = {
     meta_description: "All your clients in one place.",
     title: "My clients",
     subtitle: "Every couple, their status and deadlines in one place.",
+    invite_section_title: "Invite a client by email",
+    invite_section_hint:
+      "We'll email them to join Weddly. You get edit access once they approve you.",
+    invite_placeholder: "name@email.com",
+    invite_button: "Send invitation",
+    invite_sent: "Invitation sent",
+    invite_request_sent: "Access request sent",
+    invite_error_duplicate: "You've already invited this email.",
+    invite_error_limit: "You've reached your client limit.",
+    invite_error_generic: "Could not send the invitation. Try again.",
+    invite_revoked: "Invitation revoked",
+    status_pending: "Pending",
+    status_accepted: "Joined",
+    revoke_button: "Revoke",
+    revoke_confirm_title: "Revoke invitation?",
+    revoke_confirm_body: "{{email}} will no longer be able to use this invitation.",
   },
   planner_home: {
     title: "Planner workspace",
@@ -6876,6 +6895,10 @@ const en: LocaleMessages = {
     decline_button: "Decline",
     revoke_button: "Remove",
     revoke_confirm: "Are you sure you want to remove this planner?",
+    approval_banner_title: "A planner is waiting for your approval",
+    approval_banner_body:
+      "{{planner}} invited you to plan together. Approve them to give edit access to your workspace.",
+    approval_banner_cta: "Review",
   },
   guest_invites: {
     back_to_guests: "Back to guests",

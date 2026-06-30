@@ -10,6 +10,7 @@ import { useT } from "../../lib/i18n";
 import { useDocumentMeta } from "../../lib/seo";
 import { formatDate } from "../../lib/format";
 import { AddClientCard } from "./AddClientCard";
+import { InviteClientsCard } from "./InviteClientsCard";
 import { PlannerDashPipeline } from "./PlannerDashPipeline";
 
 export default function PlannerClientsPage() {
@@ -113,6 +114,10 @@ export default function PlannerClientsPage() {
           }}
         />
       )}
+
+      {/* Invite anyone by email (even if they don't have an account yet) and
+          track the sent invitations + their status. */}
+      <InviteClientsCard />
 
       <PlannerDashPipeline
         clients={clients}

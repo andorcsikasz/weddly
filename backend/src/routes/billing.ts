@@ -13,6 +13,7 @@ import {
   claimStripeEvent,
   foundingSlotsUsed,
   getCoupleByStripeCustomer,
+  markGuestPagePrepaid,
   priceIdForCurrency,
   setStripeCustomerId,
   stripe,
@@ -105,6 +106,43 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
   return json({ url: session.url });
 }
 
+// ── POST /api/billing/guest-page-addon/checkout ─────────────────────────────
+/** One-time 70%-off checkout for a planner-managed couple to buy back editing
+ *  of their own guest page (vendégoldal). On success the webhook marks the
+ *  couple `guest_page_prepaid`; the planner then switches the add-on on. */
+async function handleGuestPageAddonCheckout(ctx: Ctx): Promise<Response> {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const priceId = CONFIG.stripeGuestPageAddonPrice;
+  if (!priceId) {
+    throw new HttpError(503, "Guest-page add-on is not configured", {
+      code: "addon_price_missing",
+    });
+  }
+  const user = getUserById(userId);
+  let customerId = couple.stripe_customer_id;
+  if (!customerId) {
+    const customer = await stripe().customers.create({
+      email: user?.email ?? undefined,
+      name: couple.display_name,
+      metadata: { couple_id: String(couple.id) },
+    });
+    customerId = customer.id;
+    setStripeCustomerId(couple.id, customerId);
+  }
+  const session = await stripe().checkout.sessions.create({
+    mode: "payment",
+    customer: customerId,
+    line_items: [{ price: priceId, quantity: 1 }],
+    client_reference_id: String(couple.id),
+    metadata: { type: "guest_page_addon", couple_id: String(couple.id) },
+    success_url: `${CONFIG.frontendBaseUrl}/app/guest-page?addon=success`,
+    cancel_url: `${CONFIG.frontendBaseUrl}/app/guest-page?addon=cancel`,
+  });
+  return json({ url: session.url });
+}
+
 // ── POST /api/billing/portal ────────────────────────────────────────────────
 async function handlePortal(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
@@ -159,6 +197,15 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
     case "checkout.session.completed": {
       const s = event.data.object as Stripe.Checkout.Session;
 
+      // Guest-page add-on one-time payment (planner-managed couple buys back
+      // editing of their own guest page). Marks the 30% prepayment so the
+      // planner can switch the add-on on.
+      if (s.metadata?.type === "guest_page_addon") {
+        const coupleId = Number(s.metadata.couple_id ?? s.client_reference_id);
+        if (Number.isInteger(coupleId) && coupleId > 0) markGuestPagePrepaid(coupleId);
+        break;
+      }
+
       // Film one-time payment — separate path from the subscription flow.
       if (s.metadata?.type === "film") {
         const albumId = Number(s.metadata.album_id);
@@ -208,6 +255,7 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
 export function registerBillingRoutes(router: Router) {
   router.get("/api/billing/status", handleStatus, true);
   router.post("/api/billing/checkout", handleCheckout, true);
+  router.post("/api/billing/guest-page-addon/checkout", handleGuestPageAddonCheckout, true);
   router.post("/api/billing/portal", handlePortal, true);
   // Public: authenticated by the Stripe signature, not a session bearer.
   router.post("/api/billing/webhook", handleWebhook, false);

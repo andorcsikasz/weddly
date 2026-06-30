@@ -253,6 +253,11 @@ const STUBS: KindPayload = {
     coupleName: "Mia & Lucas",
     replyToEmail: "mia@example.com",
   },
+  planner_email_invite: {
+    plannerLabel: "Eventful Studio",
+    inviteUrl: "https://tryweddly.com/register?planner_invite=sample-token",
+    replyToEmail: "hello@eventful.studio",
+  },
 };
 
 const ALL_KINDS = Object.keys(KIND_CATEGORY) as EmailKind[];
