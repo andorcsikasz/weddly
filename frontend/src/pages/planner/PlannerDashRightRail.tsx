@@ -55,8 +55,11 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
 
   return (
     <div className="flex flex-col gap-4">
-      {/* SECTION A: TODAY'S AGENDA */}
-      <div className="card p-4 space-y-3">
+      {/* SECTION A: TODAY'S AGENDA — opens the calendar */}
+      <Link
+        to="/app/planner/calendar"
+        className="card block space-y-3 p-4 transition-colors hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20"
+      >
         <div>
           <SectionHeader icon={Clock} label={t("planner_home.rail_today_title")} />
           <p className="text-xs text-umber-400 -mt-1 ml-5">{todayLabel}</p>
@@ -85,19 +88,20 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
         )}
 
         {extraToday > 0 && (
-          <p className="text-xs text-blush-600 cursor-default">
+          <p className="text-xs text-blush-600">
             {t("planner_home.rail_more_today").replace("{{n}}", String(extraToday))}
           </p>
         )}
-      </div>
+      </Link>
 
-      {/* SECTION B: URGENT ALERTS */}
-      <div
-        className={
+      {/* SECTION B: URGENT ALERTS — opens the tasks list */}
+      <Link
+        to="/app/planner/calendar?mode=tasks"
+        className={`block transition-colors ${
           visibleOverdue.length === 0
-            ? "card p-4"
-            : "rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40"
-        }
+            ? "card p-4 hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20"
+            : "rounded-2xl border border-amber-200 bg-amber-50 p-4 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:hover:bg-amber-950/60"
+        }`}
       >
         <SectionHeader
           icon={visibleOverdue.length === 0 ? Sparkles : AlertTriangle}
@@ -143,7 +147,7 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
             )}
           </>
         )}
-      </div>
+      </Link>
 
       {/* SECTION C: QUICK ACTIONS */}
       <div className="card p-4 space-y-2">

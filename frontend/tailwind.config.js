@@ -149,17 +149,23 @@ export default {
         // moss-900 = #535723 (deep olive for active-nav text + dark-mode fills).
         // The rest of the ramp is interpolated for borders + dark mode.
         moss: {
-          50: "#f4f9e7",
-          100: "#DBF4AD",
-          200: "#c7e588",
-          300: "#aecb66",
-          400: "#9bb451",
-          500: "#8a9e42",
-          600: "#7D8334",
-          700: "#69702e",
-          800: "#5d6229",
-          900: "#535723",
-          950: "#363a16",
+          // Deep forest-olive — the PLANNER accent identity, per user direction
+          // 2026-06-30. Anchored on the four requested darks: moss-600 = #4A5D23
+          // (primary accent), moss-700 = #4D5A49 (muted sibling), moss-800 =
+          // #384A1C (deep accent / hover), moss-950 = #222C11 (darkest). The
+          // light tints (50-500) are interpolated for fills, active-nav pills
+          // and dark-mode surfaces — kept light so dark text stays legible.
+          50: "#f1f4ea",
+          100: "#dde6c9",
+          200: "#c2d2a1",
+          300: "#a3b878",
+          400: "#859c53",
+          500: "#69803d",
+          600: "#4A5D23",
+          700: "#4D5A49",
+          800: "#384A1C",
+          900: "#2b3815",
+          950: "#222C11",
         },
         // WNRS-red — the saturated true red used on the couple-cards tool
         // surface (white-on-red cover card, red-on-white question card).

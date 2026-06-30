@@ -14,7 +14,7 @@ import {
   ListChecks,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { PlannerClientView, PlannerTaskRow } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -547,6 +547,7 @@ export default function PlannerCalendarPage() {
   const [cursor, setCursor] = useState(() => new Date());
   const [view, setView] = useState<CalView>("month");
   const [mode, setMode] = useState<Mode>("calendar");
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     try {
@@ -557,6 +558,10 @@ export default function PlannerCalendarPage() {
     } catch {
       /* localStorage unavailable */
     }
+    // A `?mode=tasks` deep link (e.g. from the dashboard's overdue card) wins.
+    const qmode = searchParams.get("mode");
+    if (qmode === "tasks" || qmode === "calendar") setMode(qmode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   function changeView(v: CalView) {
     setView(v);
