@@ -2358,6 +2358,7 @@ const en: LocaleMessages = {
     },
     print_preview: {
       sample_name: "Guest name",
+      sample_couple: "Anna & Bence",
       sample_table: "Table 1",
       caption: "Live preview, the downloaded PDF follows this look.",
       template_label: "Card type",

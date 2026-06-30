@@ -2381,6 +2381,7 @@ const hu: LocaleMessages = {
     },
     print_preview: {
       sample_name: "Vendég neve",
+      sample_couple: "Anna & Bence",
       sample_table: "1. asztal",
       caption: "Élő előnézet, a letöltött PDF ezt az arculatot követi.",
       template_label: "Kártyatípus",

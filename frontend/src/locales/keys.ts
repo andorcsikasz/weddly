@@ -2557,6 +2557,7 @@ export interface LocaleMessages {
     /** Instant print-card preview (right column on the Print tab). */
     print_preview: {
       sample_name: string;
+      sample_couple: string;
       sample_table: string;
       caption: string;
       /** Card-type picker heading + per-card sample copy. */

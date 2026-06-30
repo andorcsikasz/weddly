@@ -38,6 +38,7 @@ import { Check, Download, Eye, Loader2, Pencil } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ComingSoon } from "../components/ComingSoon";
 import { InfoHint } from "../components/InfoHint";
+import { headingTreatmentCss, OrnamentDivider, OrnamentFrame } from "../components/ornaments";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { Link, useLocation } from "react-router-dom";
@@ -108,41 +109,72 @@ function PresetTile({
   );
 }
 
-/** A whole STYLE previewed as a mini invitation: the palette's colours and the
- *  preset's heading + body fonts, so the couple chooses by feel (a botanical
- *  world vs an editorial one) rather than by a name over four colour bars.
+/** A whole STYLE PACK previewed as a true mini-card: the pack's palette, its
+ *  heading + body fonts WITH the pack's heading treatment (italic / uppercase /
+ *  small caps), its ornament language and its card LAYOUT direction — so the
+ *  four tiles read as four different worlds at a glance, not four colour swatches.
+ *  Mirrors the print-card layouts (centered / asymmetric / framed / corners).
  *  Rendered entirely from the catalog — no authored hex. */
-function StyleMoodCard({ preset }: { preset: StylePreset }) {
+function StyleMoodCard({
+  preset,
+  sampleName,
+  sampleDate,
+}: {
+  preset: StylePreset;
+  sampleName: string;
+  sampleDate: string;
+}) {
   const palette = getPalette(preset.defaultPalette);
   const fonts = getFontPreset(preset.defaultFonts);
+  const bg = palette.background.hex;
+  const text = palette.text.hex;
+  const accent = palette.accent.hex;
+  const headingCss: React.CSSProperties = {
+    fontFamily: fonts.headingStack,
+    color: text,
+    ...headingTreatmentCss(preset.headingStyle),
+  };
+  const dateCss: React.CSSProperties = { fontFamily: fonts.bodyStack, color: accent };
+
   return (
     <span
-      className="flex flex-col items-center gap-1.5 rounded-lg border border-black/5 px-3 py-4 text-center dark:border-white/10"
-      style={{ backgroundColor: palette.background.hex, color: palette.text.hex }}
+      className="relative flex aspect-[4/5] w-full flex-col overflow-hidden rounded-lg border border-black/5 dark:border-white/10"
+      style={{ backgroundColor: bg }}
       aria-hidden
     >
-      {/* Name-free heading-font specimen: a lone ampersand reads as a wedding
-       *  monogram and previews the heading typeface without putting any
-       *  couple's name on every style tile. */}
-      <span className="text-2xl leading-none" style={{ fontFamily: fonts.headingStack }}>
-        &amp;
+      {/* Frame overlays (oval for Blush, deco corners for Midnight). */}
+      <span style={{ color: accent }}>
+        <OrnamentFrame slug={preset.ornament} />
       </span>
-      <span className="block h-2" aria-hidden />
-      <span
-        className="text-[10px] uppercase tracking-[0.18em]"
-        style={{ fontFamily: fonts.bodyStack }}
-      >
-        2027.06.04.
-      </span>
-      <span className="mt-1 flex gap-1">
-        {[palette.primary, palette.accent, palette.text].map((c) => (
-          <span
-            key={c.hex}
-            className="h-2.5 w-2.5 rounded-full ring-1 ring-black/10"
-            style={{ backgroundColor: c.hex }}
-          />
-        ))}
-      </span>
+
+      {preset.cardLayout === "asymmetric" ? (
+        // Monochrome: left-aligned bold uppercase name + a tabular number top-right.
+        <span className="flex h-full flex-col justify-between p-3">
+          <span className="self-end text-[11px] tabular-nums" style={{ color: text }}>
+            12
+          </span>
+          <span className="flex flex-col gap-1.5">
+            <span className="text-left text-lg leading-none" style={headingCss}>
+              {sampleName}
+            </span>
+            <OrnamentDivider slug={preset.ornament} className="h-2 w-10" style={{ color: text }} />
+            <span className="text-left text-[10px] tracking-[0.12em]" style={dateCss}>
+              {sampleDate}
+            </span>
+          </span>
+        </span>
+      ) : (
+        // Garden / Blush / Midnight: centred, ornament between name + date.
+        <span className="flex h-full flex-col items-center justify-center gap-1.5 px-3 py-4 text-center">
+          <span className="text-xl leading-tight" style={headingCss}>
+            {sampleName}
+          </span>
+          <OrnamentDivider slug={preset.ornament} className="h-3 w-16" style={{ color: accent }} />
+          <span className="text-[10px] uppercase tracking-[0.18em]" style={dateCss}>
+            {sampleDate}
+          </span>
+        </span>
+      )}
     </span>
   );
 }
@@ -172,14 +204,18 @@ function FontChip({
       aria-pressed={active}
       aria-label={label}
       title={label}
-      style={fontFamily ? { fontFamily } : undefined}
-      className={`inline-flex h-11 min-w-[3rem] items-center justify-center rounded-xl border px-3 text-xl leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+      className={`inline-flex min-w-[3.5rem] flex-col items-center gap-0.5 rounded-xl border px-2 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
         active
           ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
           : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
       }`}
     >
-      Aa
+      {/* "Aa" in the actual typeface, with the family name labelled below so the
+          couple can identify the font without trial-and-error (audit #12). */}
+      <span className="text-xl leading-none" style={fontFamily ? { fontFamily } : undefined}>
+        Aa
+      </span>
+      <span className="max-w-[5rem] truncate text-[9px] leading-tight opacity-70">{label}</span>
     </button>
   );
 }
@@ -421,6 +457,12 @@ export default function DesignPage() {
   // The date a date-format tile previews: the couple's real date when set,
   // else a representative sample so the tiles always read meaningfully.
   const sampleDateIso = couple?.wedding_date ?? "2027-06-20";
+  // The couple's names (or a sample) shown on the style-pack mini-cards, so each
+  // pack previews its typography on a real-feeling invitation rather than a glyph.
+  const sampleName =
+    couple?.bride_name && couple?.groom_name
+      ? `${couple.bride_name} & ${couple.groom_name}`
+      : t("design.print_preview.sample_couple");
 
   // The printables hub: one tile per PDF template. Each downloads via the
   // shared `fetchPdfBlob` blob pattern.
@@ -591,8 +633,19 @@ export default function DesignPage() {
                     active={design.style === s.slug}
                     onSelect={() => chooseStyle(s.slug)}
                     ariaLabel={t(s.nameKey)}
+                    label={t(s.nameKey)}
                   >
-                    <StyleMoodCard preset={s} />
+                    {/* Each tile previews its OWN date format (Roman for
+                        Midnight, numeric for Monochrome) so the format reads as
+                        part of the pack, not a separate choice. */}
+                    <StyleMoodCard
+                      preset={s}
+                      sampleName={sampleName}
+                      sampleDate={formatWeddingDate(sampleDateIso, s.defaultDateFormat, locale)}
+                    />
+                    <span className="text-[11px] leading-tight text-ink-500 dark:text-umber-300">
+                      {t(`design.style_desc.${s.slug}` as Parameters<typeof t>[0])}
+                    </span>
                   </PresetTile>
                 ))}
               </div>
