@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import "../setup";
+import type { PlannerClientView, PlannerEvent, PlannerStats } from "@shared/types";
 import { db } from "../../src/db";
 import { bootstrapCouple, latestCredentialToken, req, wipeAll } from "../helpers";
 
@@ -457,6 +458,344 @@ describe("planner onboarding prefill from waitlist", () => {
     const { token } = await bootstrapPlanner("badplan@weddly.test");
     const r = await req("PATCH", "/api/planner/profile", { planner_plan: "enterprise" }, { token });
     expect(r.status).toBe(400);
+  });
+});
+
+/** Insert a planning task straight into a couple's workspace. */
+function insertTask(
+  coupleId: number,
+  opts: { done?: boolean; dueDate?: string | null } = {},
+): void {
+  const ts = Date.now();
+  db.prepare(
+    "INSERT INTO planning_items (couple_id, kind, title, done, due_date, position, created_at, updated_at) VALUES (?, 'task', 'T', ?, ?, 0, ?, ?)",
+  ).run(coupleId, opts.done ? 1 : 0, opts.dueDate ?? null, ts, ts);
+}
+
+/** Insert a planner↔couple link row directly with a chosen status. */
+function linkClient(
+  plannerUserId: number,
+  coupleId: number,
+  status: "active" | "pending",
+): void {
+  db.prepare(
+    "INSERT INTO planner_clients (planner_user_id, couple_id, status, initiated_by, created_at) VALUES (?, ?, ?, 'planner', ?)",
+  ).run(plannerUserId, coupleId, status, Date.now());
+}
+
+describe("planner stats KPI consistency", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("dashboard total_tasks == sum of per_client totals across active + pending links", async () => {
+    const { token, userId } = await bootstrapPlanner("kpi-planner@weddly.test");
+    const { coupleId: activeCouple } = await bootstrapCouple("kpi-active@weddly.test");
+    const { coupleId: pendingCouple } = await bootstrapCouple("kpi-pending@weddly.test");
+
+    linkClient(userId, activeCouple, "active");
+    linkClient(userId, pendingCouple, "pending");
+
+    // 3 tasks for the active client, 2 for the pending one.
+    insertTask(activeCouple, { done: true });
+    insertTask(activeCouple, { done: false, dueDate: "2020-01-01" }); // overdue
+    insertTask(activeCouple, { done: false });
+    insertTask(pendingCouple, { done: false });
+    insertTask(pendingCouple, { done: true });
+
+    const r = await req<{ stats: PlannerStats }>("GET", "/api/planner/stats", undefined, { token });
+    expect(r.status).toBe(200);
+    const { stats } = r.data;
+
+    // Both linked clients appear in the per_client breakdown.
+    expect(stats.per_client.length).toBe(2);
+    const sumTotal = stats.per_client.reduce((acc, c) => acc + c.task_total, 0);
+    const sumDone = stats.per_client.reduce((acc, c) => acc + c.task_done, 0);
+    const sumOverdue = stats.per_client.reduce((acc, c) => acc + c.task_overdue, 0);
+
+    // The invariant: aggregate KPIs reconcile with the per-client breakdown.
+    expect(stats.total_tasks).toBe(5);
+    expect(stats.total_tasks).toBe(sumTotal);
+    expect(stats.done_tasks).toBe(sumDone);
+    expect(stats.overdue_tasks).toBe(sumOverdue);
+
+    // Client cards (handleListClients) count the same set, they reconcile too.
+    const clients = await req<{ clients: PlannerClientView[] }>(
+      "GET",
+      "/api/planner/clients",
+      undefined,
+      { token },
+    );
+    const cardTotal = clients.data.clients.reduce((acc, c) => acc + c.task_summary.total, 0);
+    expect(cardTotal).toBe(stats.total_tasks);
+  });
+});
+
+describe("planner calendar events", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("requires a planner account", async () => {
+    const { token } = await bootstrapCouple("ev-couple@weddly.test");
+    const r = await req("GET", "/api/planner/events?from=2026-01-01&to=2026-12-31", undefined, {
+      token,
+    });
+    expect(r.status).toBe(403);
+  });
+
+  test("create, list-in-range, update, delete", async () => {
+    const { token } = await bootstrapPlanner("ev-planner@weddly.test");
+
+    const created = await req<PlannerEvent>(
+      "POST",
+      "/api/planner/events",
+      { title: "Venue scouting", event_date: "2026-07-15", start_time: "10:30", notes: "Bring camera" },
+      { token },
+    );
+    expect(created.status).toBe(200);
+    expect(created.data.id).toBeGreaterThan(0);
+    expect(created.data.title).toBe("Venue scouting");
+    expect(created.data.start_time).toBe("10:30");
+    expect(created.data.couple_id).toBeNull();
+    const eventId = created.data.id;
+
+    // An out-of-range event must NOT appear in the July window.
+    await req<PlannerEvent>(
+      "POST",
+      "/api/planner/events",
+      { title: "Far future", event_date: "2027-01-01" },
+      { token },
+    );
+
+    const inRange = await req<{ events: PlannerEvent[] }>(
+      "GET",
+      "/api/planner/events?from=2026-07-01&to=2026-07-31",
+      undefined,
+      { token },
+    );
+    expect(inRange.status).toBe(200);
+    expect(inRange.data.events.length).toBe(1);
+    expect(inRange.data.events[0]!.id).toBe(eventId);
+
+    const updated = await req<PlannerEvent>(
+      "PATCH",
+      `/api/planner/events/${eventId}`,
+      { title: "Venue scouting (rescheduled)", start_time: null },
+      { token },
+    );
+    expect(updated.status).toBe(200);
+    expect(updated.data.title).toBe("Venue scouting (rescheduled)");
+    expect(updated.data.start_time).toBeNull();
+
+    const del = await req<{ ok: boolean }>(
+      "DELETE",
+      `/api/planner/events/${eventId}`,
+      undefined,
+      { token },
+    );
+    expect(del.status).toBe(200);
+    expect(del.data.ok).toBe(true);
+
+    const after = await req<{ events: PlannerEvent[] }>(
+      "GET",
+      "/api/planner/events?from=2026-07-01&to=2026-07-31",
+      undefined,
+      { token },
+    );
+    expect(after.data.events.length).toBe(0);
+  });
+
+  test("rejects a bad date and a bad time", async () => {
+    const { token } = await bootstrapPlanner("ev-bad@weddly.test");
+    const badDate = await req("POST", "/api/planner/events", { title: "x", event_date: "2026-13-40" }, {
+      token,
+    });
+    expect(badDate.status).toBe(400);
+    const badTime = await req(
+      "POST",
+      "/api/planner/events",
+      { title: "x", event_date: "2026-07-15", start_time: "25:99" },
+      { token },
+    );
+    expect(badTime.status).toBe(400);
+  });
+
+  test("couple_id must belong to one of the planner's linked clients", async () => {
+    const { token, userId } = await bootstrapPlanner("ev-link@weddly.test");
+    const { coupleId: linked } = await bootstrapCouple("ev-linked@weddly.test");
+    const { coupleId: stranger } = await bootstrapCouple("ev-stranger@weddly.test");
+    linkClient(userId, linked, "active");
+
+    // Linked couple → allowed.
+    const ok = await req<PlannerEvent>(
+      "POST",
+      "/api/planner/events",
+      { title: "Tasting", event_date: "2026-08-01", couple_id: linked },
+      { token },
+    );
+    expect(ok.status).toBe(200);
+    expect(ok.data.couple_id).toBe(linked);
+
+    // Unlinked couple → 400.
+    const bad = await req(
+      "POST",
+      "/api/planner/events",
+      { title: "Tasting", event_date: "2026-08-01", couple_id: stranger },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  test("cross-planner isolation: B cannot see, update, or delete A's event", async () => {
+    const { token: tokenA } = await bootstrapPlanner("ev-a@weddly.test");
+    const { token: tokenB } = await bootstrapPlanner("ev-b@weddly.test");
+
+    const created = await req<PlannerEvent>(
+      "POST",
+      "/api/planner/events",
+      { title: "A's event", event_date: "2026-09-09" },
+      { token: tokenA },
+    );
+    const eventId = created.data.id;
+
+    // B's range list does not include A's event.
+    const bList = await req<{ events: PlannerEvent[] }>(
+      "GET",
+      "/api/planner/events?from=2026-01-01&to=2026-12-31",
+      undefined,
+      { token: tokenB },
+    );
+    expect(bList.data.events.length).toBe(0);
+
+    const bPatch = await req("PATCH", `/api/planner/events/${eventId}`, { title: "hijack" }, {
+      token: tokenB,
+    });
+    expect(bPatch.status).toBe(404);
+
+    const bDelete = await req("DELETE", `/api/planner/events/${eventId}`, undefined, {
+      token: tokenB,
+    });
+    expect(bDelete.status).toBe(404);
+
+    // A's event is untouched.
+    const aList = await req<{ events: PlannerEvent[] }>(
+      "GET",
+      "/api/planner/events?from=2026-01-01&to=2026-12-31",
+      undefined,
+      { token: tokenA },
+    );
+    expect(aList.data.events.length).toBe(1);
+    expect(aList.data.events[0]!.title).toBe("A's event");
+  });
+});
+
+describe("planner notify-plans", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("requires a planner account", async () => {
+    const { token } = await bootstrapCouple("np-couple@weddly.test");
+    const r = await req("POST", "/api/planner/notify-plans", {}, { token });
+    expect(r.status).toBe(403);
+  });
+
+  test("sets planner_plan_notify and is idempotent", async () => {
+    const { token, userId } = await bootstrapPlanner("np-planner@weddly.test");
+
+    const first = await req<{ ok: boolean }>("POST", "/api/planner/notify-plans", {}, { token });
+    expect(first.status).toBe(200);
+    expect(first.data.ok).toBe(true);
+    let flag = (
+      db.prepare("SELECT planner_plan_notify AS f FROM users WHERE id = ?").get(userId) as {
+        f: number;
+      }
+    ).f;
+    expect(flag).toBe(1);
+
+    // Repeat call stays idempotent (still 1, still 200).
+    const second = await req<{ ok: boolean }>("POST", "/api/planner/notify-plans", {}, { token });
+    expect(second.status).toBe(200);
+    flag = (
+      db.prepare("SELECT planner_plan_notify AS f FROM users WHERE id = ?").get(userId) as {
+        f: number;
+      }
+    ).f;
+    expect(flag).toBe(1);
+  });
+});
+
+describe("planner hard client unlink", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("removes only this planner's link, leaving the couple intact", async () => {
+    const { token, userId } = await bootstrapPlanner("unlink-planner@weddly.test");
+    const { coupleId } = await bootstrapCouple("unlink-couple@weddly.test");
+    linkClient(userId, coupleId, "active");
+    insertTask(coupleId, { done: false });
+
+    const del = await req<{ ok: boolean }>(
+      "DELETE",
+      `/api/planner/clients/${coupleId}`,
+      undefined,
+      { token },
+    );
+    expect(del.status).toBe(200);
+    expect(del.data.ok).toBe(true);
+
+    // Link gone.
+    const link = db
+      .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+      .get(userId, coupleId);
+    expect(link).toBeNull();
+
+    // Couple + their tasks untouched.
+    const couple = db.prepare("SELECT id FROM couples WHERE id = ?").get(coupleId);
+    expect(couple).not.toBeNull();
+    const taskCount = (
+      db.prepare("SELECT COUNT(*) AS c FROM planning_items WHERE couple_id = ?").get(coupleId) as {
+        c: number;
+      }
+    ).c;
+    expect(taskCount).toBe(1);
+  });
+
+  test("404 when the planner has no such link", async () => {
+    const { token } = await bootstrapPlanner("unlink-none@weddly.test");
+    const { coupleId } = await bootstrapCouple("unlink-none-couple@weddly.test");
+    const r = await req("DELETE", `/api/planner/clients/${coupleId}`, undefined, { token });
+    expect(r.status).toBe(404);
+  });
+
+  test("cross-planner isolation: B cannot unlink A's client", async () => {
+    const { token: tokenA, userId: idA } = await bootstrapPlanner("unlink-a@weddly.test");
+    const { token: tokenB } = await bootstrapPlanner("unlink-b@weddly.test");
+    const { coupleId } = await bootstrapCouple("unlink-shared@weddly.test");
+    linkClient(idA, coupleId, "active");
+
+    // B tries to unlink A's client → 404 (no link owned by B).
+    const bDel = await req("DELETE", `/api/planner/clients/${coupleId}`, undefined, {
+      token: tokenB,
+    });
+    expect(bDel.status).toBe(404);
+
+    // A's link survives.
+    const link = db
+      .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+      .get(idA, coupleId);
+    expect(link).not.toBeNull();
+
+    // A can still unlink their own.
+    const aDel = await req<{ ok: boolean }>(
+      "DELETE",
+      `/api/planner/clients/${coupleId}`,
+      undefined,
+      { token: tokenA },
+    );
+    expect(aDel.status).toBe(200);
   });
 });
 

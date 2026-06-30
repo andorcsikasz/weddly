@@ -541,6 +541,7 @@ async function handleGetClientCrm(ctx: Ctx): Promise<Response> {
     .prepare(
       `SELECT pc.couple_id, pc.notes, pc.client_phone, pc.client_alt_email, pc.lead_source,
               pc.contract_value, pc.deposit_paid, pc.stage,
+              c.guest_page_prepaid, c.guest_page_addon,
               c.bride_name, c.groom_name, c.display_name, c.wedding_date,
               (SELECT u.email FROM users u WHERE u.couple_id = c.id LIMIT 1) AS primary_email,
               (SELECT COUNT(*) FROM guests g WHERE g.couple_id = c.id AND g.rsvp_status = 'yes') AS confirmed_guests,
@@ -561,6 +562,8 @@ async function handleGetClientCrm(ctx: Ctx): Promise<Response> {
         contract_value: number | null;
         deposit_paid: number | null;
         stage: string | null;
+        guest_page_prepaid: number;
+        guest_page_addon: number;
         bride_name: string;
         groom_name: string;
         display_name: string | null;
@@ -591,6 +594,8 @@ async function handleGetClientCrm(ctx: Ctx): Promise<Response> {
     contract_value: row.contract_value,
     deposit_paid: row.deposit_paid,
     stage: row.stage ?? "active",
+    guest_page_prepaid: Boolean(row.guest_page_prepaid),
+    guest_page_addon: Boolean(row.guest_page_addon),
   });
 }
 
