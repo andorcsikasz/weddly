@@ -2339,6 +2339,21 @@ export interface LocaleMessages {
     early_close_hint: string;
     early_close_reopen: string;
     kamera_preview_banner: string;
+    slug_label: string;
+    slug_hint: string;
+    slug_placeholder: string;
+    slug_taken: string;
+    slug_invalid: string;
+    slug_saved: string;
+    slug_cleared: string;
+    participant_remove: string;
+    participant_removed: string;
+    participant_remove_title: string;
+    participant_remove_body: string;
+    participant_remove_with_photos: string;
+    participant_remove_confirm: string;
+    gallery_link_note: string;
+    shared_gallery_teaser: string;
   };
   /** /photos/:token — public guest upload page. */
   photos: {
@@ -2387,6 +2402,7 @@ export interface LocaleMessages {
     developing_hint: string;
     guest_subtitle: string;
     guest_subtitle_plain: string;
+    preview_banner: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   /** /app/design — the curated wedding visual-identity editor. */
@@ -6939,6 +6955,20 @@ export interface LocaleMessages {
     upcoming_title: string;
     no_weddings: string;
     tasks_due: string;
+    view_day: string;
+    view_4day: string;
+    view_week: string;
+    view_month: string;
+    view_year: string;
+    view_schedule: string;
+    mode_calendar: string;
+    mode_tasks: string;
+    tasks_title: string;
+    tasks_empty: string;
+    all_day: string;
+    schedule_empty: string;
+    nav_prev: string;
+    nav_next: string;
   };
   planner_clients_page: {
     meta_title: string;
