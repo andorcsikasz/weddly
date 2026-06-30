@@ -72,6 +72,7 @@ type PageState =
   | { kind: "not_found" }
   | { kind: "disabled" }
   | { kind: "name_capture"; album: PhotoAlbumPublic }
+  | { kind: "returning_welcome"; album: PhotoAlbumPublic; guestName: string; shotCount: number }
   | { kind: "viewfinder"; album: PhotoAlbumPublic; guestName: string | null; shotCount: number }
   | { kind: "developing"; album: PhotoAlbumPublic }
   | { kind: "gallery"; album: PhotoAlbumPublic; uploads: unknown[] }
@@ -93,6 +94,25 @@ function formatFilmCountdown(ms: number): string {
   return `${m}m`;
 }
 
+type TFn = (path: string, vars?: Record<string, string | number>) => string;
+
+function formatRevealDate(value: string | number): string {
+  return new Date(value).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+// Date-based subtitle shown to guests instead of the couple's internal album
+// title (which can leak working names like "Test").
+function guestSubtitle(album: PhotoAlbumPublic, t: TFn): string {
+  if (album.weddingDate) {
+    return t("photos.guest_subtitle").replace("{{date}}", formatRevealDate(album.weddingDate));
+  }
+  return t("photos.guest_subtitle_plain");
+}
+
 // ─── sub-components ──────────────────────────────────────────────────────────
 
 function FilmShell({ children, dark }: { children: React.ReactNode; dark?: boolean }) {
@@ -108,10 +128,11 @@ function FilmShell({ children, dark }: { children: React.ReactNode; dark?: boole
 }
 
 function FilmHeading({ album }: { album: PhotoAlbumPublic }) {
+  const { t } = useT();
   return (
     <div className="text-center mb-6">
       <p className="font-serif text-2xl text-ink-900">{album.displayName}</p>
-      {album.title && <p className="mt-0.5 text-sm text-ink-500">{album.title}</p>}
+      <p className="mt-0.5 text-sm text-ink-500">{guestSubtitle(album, t)}</p>
     </div>
   );
 }
@@ -257,6 +278,10 @@ function Viewfinder({
   const [flash, setFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
+  // Thank-you screen shown after a successful upload (does not auto-dismiss).
+  const [sent, setSent] = useState(false);
+  const [sentCount, setSentCount] = useState(0);
+  const [done, setDone] = useState(false);
   const deviceId = getDeviceId(token);
 
   async function shoot(file: File) {
@@ -277,6 +302,9 @@ function Viewfinder({
         onLimitReached();
       } else {
         onShotTaken(result.shotCount);
+        setSentCount(result.shotCount);
+        setDone(false);
+        setSent(true);
       }
     } catch (err: unknown) {
       const detail = (err as { detail?: unknown })?.detail;
@@ -315,6 +343,12 @@ function Viewfinder({
 
   const cssFilter = filterStyle(album.filmAesthetic);
   const max = album.shotsPerGuest ?? 0;
+
+  const sentSub = album.revealAt
+    ? t("photos.sent_sub_reveal")
+        .replace("{{names}}", album.displayName)
+        .replace("{{date}}", formatRevealDate(album.revealAt))
+    : t("photos.sent_sub_now").replace("{{names}}", album.displayName);
 
   // Desktop with live viewfinder
   const showLiveViewfinder = !mobile && hasStream === true;
@@ -432,6 +466,52 @@ function Viewfinder({
         </div>
       </div>
 
+      {/* Thank-you / sent screen — overlays the live viewfinder, never auto-dismisses */}
+      {sent && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-ink-900 px-6 py-10 text-center text-paper-50">
+          <div className="w-full max-w-sm">
+            <CheckCircle className="mx-auto mb-5 h-12 w-12 text-sage-400" aria-hidden="true" />
+            <p className="font-serif text-3xl text-paper-50">{album.displayName}</p>
+            <h1 className="mt-4 font-grotesk text-xl font-semibold text-paper-50">
+              {t("photos.sent_heading")}
+            </h1>
+            <p className="mt-2 text-sm text-paper-400">{sentSub}</p>
+            <p className="mt-3 text-xs text-paper-500">
+              {t("photos.sent_count").replace("{{n}}", String(sentCount))}
+            </p>
+            {!done && (
+              <div className="mt-8 flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDone(false);
+                    setSent(false);
+                  }}
+                  className="w-full rounded-2xl bg-paper-50 py-3.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-white"
+                >
+                  {t("photos.sent_add_more")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDone(true)}
+                  className="w-full rounded-2xl border border-ink-600 py-3.5 text-sm font-medium text-paper-300 transition-colors hover:bg-ink-700/60"
+                >
+                  {t("photos.sent_done")}
+                </button>
+              </div>
+            )}
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(window.location.href)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 inline-block text-xs text-paper-500 underline transition-colors hover:text-paper-300"
+            >
+              {t("photos.sent_invite")}
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -543,6 +623,10 @@ export default function GuestPhotoPage() {
         }
         if (storedName === null) {
           setState({ kind: "name_capture", album });
+        } else if (shotCount > 0) {
+          // Returning guest who already shared at least one shot: warm welcome
+          // back before dropping them into the live viewfinder.
+          setState({ kind: "returning_welcome", album, guestName: storedName, shotCount });
         } else {
           setState({ kind: "viewfinder", album, guestName: storedName, shotCount });
         }
@@ -554,11 +638,10 @@ export default function GuestPhotoPage() {
       });
   }, [token]);
 
-  function handleNameSubmit(name: string | null) {
+  function handleNameSubmit(name: string) {
     if (state.kind !== "name_capture") return;
     const { album } = state;
-    if (name) storeName(token, name);
-    else storeName(token, "");
+    storeName(token, name);
     setState({ kind: "viewfinder", album, guestName: name, shotCount: 0 });
   }
 
@@ -600,23 +683,36 @@ export default function GuestPhotoPage() {
   }
 
   if (state.kind === "name_capture") {
+    const canSubmit = nameInput.trim().length > 0;
     return (
       <FilmShell dark>
         <div className="mb-8 text-center">
-          <p className="font-serif text-3xl text-paper-50">{state.album.displayName}</p>
-          {state.album.title && (
-            <p className="mt-1.5 text-sm text-paper-500">{state.album.title}</p>
-          )}
+          <p className="font-grotesk text-xs uppercase tracking-[0.2em] text-paper-500">
+            {t("photos.welcome_kicker")}
+          </p>
+          <p className="mt-2 font-serif text-3xl text-paper-50">{state.album.displayName}</p>
+          <p className="mt-1.5 text-sm text-paper-500">{guestSubtitle(state.album, t)}</p>
         </div>
         <div className="rounded-3xl border border-ink-700/70 bg-ink-800 p-6 shadow-xl">
-          <h1 className="mb-1.5 font-grotesk text-xl font-semibold text-paper-50">
+          {/* 2-step indicator — step 1 (Name) active */}
+          <div className="mb-5 flex items-center justify-center gap-2">
+            <span className="rounded-full bg-paper-50 px-3 py-1 text-xs font-semibold text-ink-900">
+              {t("photos.step_name")}
+            </span>
+            <span className="h-px w-4 bg-ink-600" aria-hidden="true" />
+            <span className="rounded-full border border-ink-600 px-3 py-1 text-xs font-medium text-paper-500">
+              {t("photos.step_photo")}
+            </span>
+          </div>
+          <h1 className="mb-1.5 text-center font-grotesk text-xl font-semibold text-paper-50">
             {t("photos.name_heading")}
           </h1>
-          <p className="mb-5 text-sm text-paper-400">{t("photos.name_sub")}</p>
+          <p className="mb-5 text-center text-sm text-paper-400">{t("photos.name_sub")}</p>
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleNameSubmit(nameInput.trim() || null);
+              const trimmed = nameInput.trim();
+              if (trimmed) handleNameSubmit(trimmed);
             }}
           >
             <input
@@ -625,24 +721,49 @@ export default function GuestPhotoPage() {
               onChange={(e) => setNameInput(e.target.value)}
               placeholder={t("photos.name_placeholder")}
               autoFocus
-              className="mb-3 w-full rounded-2xl border border-ink-600 bg-ink-900 px-4 py-3.5 text-base text-paper-50 placeholder-paper-500 transition-colors focus:border-paper-300 focus:outline-none"
+              className="w-full rounded-2xl border border-ink-600 bg-ink-900 px-4 py-3.5 text-base text-paper-50 placeholder-paper-500 transition-colors focus:border-paper-300 focus:outline-none"
             />
-            <div className="flex gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleNameSubmit(null)}
-                className="flex-1 rounded-2xl border border-ink-600 py-3.5 text-sm font-medium text-paper-300 transition-colors hover:bg-ink-700/60"
-              >
-                {t("photos.name_skip")}
-              </button>
-              <button
-                type="submit"
-                className="flex-1 rounded-2xl bg-paper-50 py-3.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-white"
-              >
-                {t("photos.name_continue")}
-              </button>
-            </div>
+            <p className="mt-2 mb-4 text-center text-xs text-paper-500">
+              {t("photos.name_required")}
+            </p>
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full rounded-2xl bg-paper-50 py-3.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-white disabled:opacity-40"
+            >
+              {t("photos.name_continue")}
+            </button>
           </form>
+          <p className="mt-4 text-center text-xs text-paper-500">{t("photos.steps_hint")}</p>
+        </div>
+      </FilmShell>
+    );
+  }
+
+  if (state.kind === "returning_welcome") {
+    const { album, guestName, shotCount } = state;
+    const sub =
+      shotCount === 1
+        ? t("photos.welcome_back_sub_one")
+        : t("photos.welcome_back_sub_many").replace("{{n}}", String(shotCount));
+    return (
+      <FilmShell dark>
+        <div className="mb-8 text-center">
+          <p className="font-serif text-3xl text-paper-50">{album.displayName}</p>
+          <p className="mt-1.5 text-sm text-paper-500">{guestSubtitle(album, t)}</p>
+        </div>
+        <div className="rounded-3xl border border-ink-700/70 bg-ink-800 p-6 text-center shadow-xl">
+          <h1 className="mb-1.5 font-grotesk text-xl font-semibold text-paper-50">
+            {t("photos.welcome_back_heading").replace("{{name}}", guestName)}
+          </h1>
+          <p className="mb-6 text-sm text-paper-400">{sub}</p>
+          <button
+            type="button"
+            onClick={() => setState({ kind: "viewfinder", album, guestName, shotCount })}
+            className="w-full rounded-2xl bg-paper-50 py-3.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-white"
+          >
+            {t("photos.welcome_back_cta")}
+          </button>
         </div>
       </FilmShell>
     );
@@ -652,10 +773,21 @@ export default function GuestPhotoPage() {
     return (
       <FilmShell dark>
         <FilmHeading album={state.album} />
-        <p className="text-center text-sm text-umber-300 mb-8">Your photos are developing…</p>
+        <h1 className="mb-2 text-center font-grotesk text-xl font-semibold text-paper-50">
+          {t("photos.developing_heading")}
+        </h1>
+        <p className="mb-8 text-center text-sm text-umber-300">
+          {t("photos.developing_sub")
+            .replace("{{names}}", state.album.displayName)
+            .replace(
+              "{{date}}",
+              state.album.revealAt ? formatRevealDate(state.album.revealAt) : "",
+            )}
+        </p>
         {state.album.revealAt && (
           <Countdown revealsAt={state.album.revealAt} onRevealed={handleRevealed} />
         )}
+        <p className="mt-6 text-center text-xs text-paper-500">{t("photos.developing_hint")}</p>
       </FilmShell>
     );
   }

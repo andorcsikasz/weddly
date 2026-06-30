@@ -1830,6 +1830,13 @@ export interface LocaleMessages {
       promoted_toast: string;
       show_dismissed: string;
       hide_dismissed: string;
+      /** Overall decision progress line above the personalization strip. */
+      progress_label: string;
+      /** Personalization "setup strip": kicker + answered-count chip. */
+      setup_start_here: string;
+      setup_answered: string;
+      /** Decision-log: add a one-line resolution note to a decided item. */
+      action_add_note: string;
     };
     /** Quick-add form CTA. */
     add: string;
@@ -2308,6 +2315,25 @@ export interface LocaleMessages {
     film_expired_action: string;
     film_per_person: string;
     film_no_participants: string;
+    reveal_explainer_title: string;
+    reveal_explainer_body: string;
+    reveal_explainer_unset: string;
+    placeholder_warn_title: string;
+    placeholder_warn_body: string;
+    share_sheet_title: string;
+    share_whatsapp: string;
+    share_sms: string;
+    share_email: string;
+    share_copy_link: string;
+    share_copy_msg: string;
+    share_message_long: string;
+    share_message_sms: string;
+    share_email_subject: string;
+    share_email_body: string;
+    early_close: string;
+    early_close_hint: string;
+    early_close_reopen: string;
+    kamera_preview_banner: string;
   };
   /** /photos/:token — public guest upload page. */
   photos: {
@@ -2316,11 +2342,16 @@ export interface LocaleMessages {
     not_found_sub: string;
     uploads_disabled: string;
     uploads_disabled_sub: string;
+    welcome_kicker: string;
     name_heading: string;
     name_sub: string;
     name_placeholder: string;
-    name_skip: string;
     name_continue: string;
+    name_required: string;
+    step_name: string;
+    step_photo: string;
+    steps_hint: string;
+    shots_left: string;
     ready_heading: string;
     ready_sub: string;
     ready_sub_limit: string;
@@ -2335,6 +2366,22 @@ export interface LocaleMessages {
     error_bad_type: string;
     error_generic: string;
     shot_count: string;
+    sent_heading: string;
+    sent_sub_reveal: string;
+    sent_sub_now: string;
+    sent_count: string;
+    sent_add_more: string;
+    sent_done: string;
+    sent_invite: string;
+    welcome_back_heading: string;
+    welcome_back_sub_one: string;
+    welcome_back_sub_many: string;
+    welcome_back_cta: string;
+    developing_heading: string;
+    developing_sub: string;
+    developing_hint: string;
+    guest_subtitle: string;
+    guest_subtitle_plain: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   /** /app/design — the curated wedding visual-identity editor. */

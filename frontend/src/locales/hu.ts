@@ -1611,6 +1611,10 @@ const hu: LocaleMessages = {
       promoted_toast: "Áthelyezve a Feladatokhoz",
       show_dismissed: "Elvetett kérdések mutatása ({n})",
       hide_dismissed: "Elvetett kérdések elrejtése",
+      progress_label: "{made} / {total} döntés meghozva",
+      setup_start_here: "Kezdjétek itt",
+      setup_answered: "{n}/{total} megválaszolva",
+      action_add_note: "Jegyzet hozzáadása",
     },
     add: "Hozzáadás",
     task_placeholder: "Új feladat… pl. virágokat egyeztetni",
@@ -2167,8 +2171,7 @@ const hu: LocaleMessages = {
     share_email_body:
       "Kedves Vendégünk!\n\n{{names}} vagyunk, és szeretnénk a te szemeddel is látni a napunkat. Nyisd meg ezt a linket a telefonodon, készíts pár képet, és kész, app és regisztráció nélkül:\n\n{{url}}\n\nMinden fotó a feltáráskor, egyszerre kerül elő. Köszönjük, hogy részese vagy! 🎞️",
     early_close: "Feltöltés lezárása",
-    early_close_hint:
-      "A vendégek azonnal nem tölthetnek fel több képet. Bármikor újranyithatod.",
+    early_close_hint: "A vendégek azonnal nem tölthetnek fel több képet. Bármikor újranyithatod.",
     early_close_reopen: "Feltöltés újranyitása",
     kamera_preview_banner: "Ezt látják a vendégeid",
   },

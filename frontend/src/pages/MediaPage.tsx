@@ -14,6 +14,9 @@ import {
   GalleryHorizontalEnd,
   Link2,
   Lock,
+  Mail,
+  MessageCircle,
+  MessageSquare,
   Pencil,
   QrCode,
   Share2,
@@ -146,65 +149,100 @@ function Countdown({ targetMs, label }: { targetMs: number; label: string }) {
   );
 }
 
-// --- QR modal ---------------------------------------------------------------
+// --- placeholder film-name heuristic ----------------------------------------
 
-function QrModal({
+function isPlaceholderTitle(raw: string): boolean {
+  const v = raw.trim().toLowerCase();
+  if (!v) return false;
+  const flagged = ["test", "teszt", "asdf", "xxx", "x"];
+  if (flagged.includes(v)) return true;
+  // single short token (no whitespace, length <= 3) reads as throwaway
+  if (!/\s/.test(v) && v.length <= 3) return true;
+  return false;
+}
+
+// --- share sheet ------------------------------------------------------------
+
+function ShareSheet({
   open,
-  uploadToken,
-  uploadUrl,
+  names,
+  url,
   onClose,
 }: {
   open: boolean;
-  uploadToken: string;
-  uploadUrl: string;
+  names: string;
+  url: string;
   onClose: () => void;
 }) {
   const { t } = useT();
   const [copied, setCopied] = useState(false);
 
+  const longMsg = t("media.share_message_long").replace("{{names}}", names).replace("{{url}}", url);
+  const smsMsg = t("media.share_message_sms").replace("{{names}}", names).replace("{{url}}", url);
+  const emailBody = t("media.share_email_body").replace("{{names}}", names).replace("{{url}}", url);
+
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(longMsg)}`;
+  const smsHref = `sms:?&body=${encodeURIComponent(smsMsg)}`;
+  const mailHref = `mailto:?subject=${encodeURIComponent(
+    t("media.share_email_subject"),
+  )}&body=${encodeURIComponent(emailBody)}`;
+
   function handleCopy() {
-    navigator.clipboard.writeText(uploadUrl).catch(() => {});
+    navigator.clipboard.writeText(longMsg).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
+  const channelClass =
+    "group flex flex-col items-center gap-2 rounded-2xl border border-paper-200 px-3 py-4 text-center transition-colors hover:bg-paper-50";
+  const circleClass =
+    "flex h-12 w-12 items-center justify-center rounded-full bg-paper-100 text-umber-900 transition-colors group-hover:bg-paper-200";
+  const channelLabel = "text-xs font-medium text-umber-700";
+
   return (
     <Dialog
       open={open}
-      title={t("media.film_qr_title")}
+      title={t("media.share_sheet_title")}
       role="dialog"
       closeOnBackdrop
       onClose={onClose}
       footer={
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn-primary btn-sm" onClick={handleCopy}>
-            <Copy size={14} aria-hidden="true" />
-            {copied ? t("media.from_guests_copied") : t("media.from_guests_copy")}
-          </button>
-          <a
-            href={photoAlbumApi.qrUrl(uploadToken)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-outline btn-sm inline-flex items-center gap-1.5"
-          >
-            <QrCode size={14} aria-hidden="true" />
-            Print QR
-          </a>
-          <button type="button" className="btn-ghost btn-sm ml-auto" onClick={onClose}>
-            {t("a11y.close")}
-          </button>
-        </div>
+        <button type="button" className="btn-ghost btn-sm ml-auto" onClick={onClose}>
+          {t("a11y.close")}
+        </button>
       }
     >
-      <div className="flex flex-col items-center gap-4">
-        <img
-          src={photoAlbumApi.qrUrl(uploadToken)}
-          alt="Guest camera QR code"
-          className="h-48 w-48 rounded-xl border border-paper-200 dark:border-umber-700"
-        />
-        <p className="w-full truncate rounded-lg border border-paper-200 bg-paper-50 px-3 py-2 text-center font-mono text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200">
-          {uploadUrl.replace(/^https?:\/\//, "")}
-        </p>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={channelClass}>
+          <span className={circleClass}>
+            <MessageCircle size={20} aria-hidden="true" />
+          </span>
+          <span className={channelLabel}>{t("media.share_whatsapp")}</span>
+        </a>
+        <a href={smsHref} className={channelClass}>
+          <span className={circleClass}>
+            <MessageSquare size={20} aria-hidden="true" />
+          </span>
+          <span className={channelLabel}>{t("media.share_sms")}</span>
+        </a>
+        <a href={mailHref} className={channelClass}>
+          <span className={circleClass}>
+            <Mail size={20} aria-hidden="true" />
+          </span>
+          <span className={channelLabel}>{t("media.share_email")}</span>
+        </a>
+        <button type="button" onClick={handleCopy} className={channelClass}>
+          <span className={circleClass}>
+            {copied ? (
+              <Check size={20} aria-hidden="true" />
+            ) : (
+              <Copy size={20} aria-hidden="true" />
+            )}
+          </span>
+          <span className={channelLabel}>
+            {copied ? t("media.share_copy_msg") : t("media.share_copy_link")}
+          </span>
+        </button>
       </div>
     </Dialog>
   );
@@ -434,6 +472,23 @@ function FilmModal({
             placeholder="e.g. Anna & Bence, Summer 2026"
             className="input w-full text-sm"
           />
+          {isPlaceholderTitle(title) && (
+            <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+              <AlertTriangle
+                size={14}
+                className="mt-0.5 shrink-0 text-amber-600"
+                aria-hidden="true"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-amber-800">
+                  {t("media.placeholder_warn_title")}
+                </p>
+                <p className="mt-0.5 text-xs leading-snug text-amber-700">
+                  {t("media.placeholder_warn_body").replace("{{title}}", title.trim())}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Megjelenés + Fotókorlát on one row */}
@@ -546,9 +601,10 @@ export default function MediaPage() {
   const [album, setAlbum] = useState<PhotoAlbum | null>(null);
   const [filmAccess, setFilmAccess] = useState<FilmAccessCheck | null>(null);
   const [showFilmModal, setShowFilmModal] = useState(false);
-  const [showQr, setShowQr] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [togglingUpload, setTogglingUpload] = useState(false);
   const [loading, setLoading] = useState(true);
   const [coupleUploading, setCoupleUploading] = useState(false);
   const [coupleUploadProgress, setCoupleUploadProgress] = useState<{
@@ -682,16 +738,16 @@ export default function MediaPage() {
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [editing]);
 
-  function handleShare() {
-    if (!uploadUrl) return;
-    if (navigator.share) {
-      navigator.share({ url: uploadUrl }).catch(() => {
-        navigator.clipboard.writeText(uploadUrl).catch(() => {});
-      });
-    } else {
-      navigator.clipboard.writeText(uploadUrl).catch(() => {});
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
+  async function handleToggleUpload(next: boolean) {
+    setTogglingUpload(true);
+    try {
+      const { album: updated } = await photoAlbumApi.update({ isUploadEnabled: next });
+      setAlbum(updated);
+      toast.success(next ? t("media.early_close_reopen") : t("media.early_close"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setTogglingUpload(false);
     }
   }
 
@@ -779,12 +835,19 @@ export default function MediaPage() {
                   {t("media.film_title")}
                 </p>
                 <div className="group flex items-center gap-2">
-                  <h1
-                    className="font-serif text-2xl font-medium leading-snug !text-paper-50"
-                    style={{ textShadow: "0 2px 10px rgba(0,0,0,0.7)" }}
+                  <button
+                    type="button"
+                    onClick={() => setShowFilmModal(true)}
+                    className="text-left"
+                    aria-label={t("media.film_settings_title")}
                   >
-                    {couple?.display_name || album.title || t("media.film_settings_unnamed")}
-                  </h1>
+                    <h1
+                      className="font-serif text-2xl font-medium leading-snug !text-paper-50"
+                      style={{ textShadow: "0 2px 10px rgba(0,0,0,0.7)" }}
+                    >
+                      {couple?.display_name || album.title || t("media.film_settings_unnamed")}
+                    </h1>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setShowFilmModal(true)}
@@ -814,6 +877,11 @@ export default function MediaPage() {
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-umber-400">
                   {filmExpired ? t("media.film_stat_closed") : t("media.film_stat_left")}
                 </span>
+                {album.eventEndsAt && !filmExpired && (
+                  <span className="mt-0.5 text-[9px] leading-tight text-umber-400">
+                    {formatRevealDate(album.eventEndsAt)}
+                  </span>
+                )}
               </div>
               <button
                 type="button"
@@ -861,7 +929,7 @@ export default function MediaPage() {
                   </a>
                   <button
                     type="button"
-                    onClick={() => setShowQr(true)}
+                    onClick={() => setShowShare(true)}
                     className="group flex flex-1 flex-col items-center gap-2"
                   >
                     <span className="flex h-14 w-14 items-center justify-center rounded-full bg-paper-100 text-umber-900 transition-colors group-hover:bg-paper-200">
@@ -885,10 +953,24 @@ export default function MediaPage() {
                     </span>
                   </a>
                 </div>
-                {/* Privacy notice — slim inline */}
-                <div className="flex items-center justify-center gap-1.5 px-4 py-2.5">
-                  <Lock size={11} className="shrink-0 text-umber-400" aria-hidden="true" />
-                  <span className="text-xs text-umber-400">{t("media.film_privacy_notice")}</span>
+                {/* Reveal explainer — couple-facing time-capsule card */}
+                <div className="mx-4 mb-2 mt-3 flex items-start gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 py-3">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-umber-900">
+                    <Lock size={14} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-umber-900">
+                      {t("media.reveal_explainer_title")}
+                    </p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-umber-500">
+                      {album.revealAt
+                        ? t("media.reveal_explainer_body").replace(
+                            "{{date}}",
+                            formatRevealDate(album.revealAt),
+                          )
+                        : t("media.reveal_explainer_unset")}
+                    </p>
+                  </div>
                 </div>
               </>
             )}
@@ -982,9 +1064,19 @@ export default function MediaPage() {
 
             {/* ── Settings list (Uber-style rows) ───────────────────── */}
             <div className="border-t border-paper-200">
-              <p className="px-5 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-400">
-                {t("media.film_settings_title")}
-              </p>
+              <div className="flex items-center justify-between px-5 pb-1 pt-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-400">
+                  {t("media.film_settings_title")}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowFilmModal(true)}
+                  aria-label={t("media.film_settings_title")}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-umber-400 transition-colors hover:bg-paper-100 hover:text-umber-700"
+                >
+                  <Pencil size={13} aria-hidden="true" />
+                </button>
+              </div>
               <div className="divide-y divide-paper-200 border-t border-paper-200">
                 {settingsRows.map((row) => {
                   const editable = row.editable !== false;
@@ -999,13 +1091,6 @@ export default function MediaPage() {
                       <span className="shrink truncate text-right text-sm text-umber-500">
                         {row.value}
                       </span>
-                      {editable && (
-                        <ChevronRight
-                          size={18}
-                          aria-hidden="true"
-                          className="shrink-0 text-umber-300 transition-colors group-hover:text-umber-500"
-                        />
-                      )}
                     </>
                   );
                   return editable ? (
@@ -1026,6 +1111,31 @@ export default function MediaPage() {
                     </div>
                   );
                 })}
+              </div>
+              {/* Early-close upload toggle */}
+              <div className="flex items-start justify-between gap-3 border-t border-paper-200 px-5 py-3.5">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-umber-900">
+                    {album.isUploadEnabled ? t("media.early_close") : t("media.early_close_reopen")}
+                  </p>
+                  {album.isUploadEnabled && (
+                    <p className="mt-0.5 text-xs leading-snug text-umber-500">
+                      {t("media.early_close_hint")}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={togglingUpload}
+                  onClick={() => handleToggleUpload(!album.isUploadEnabled)}
+                  className={`shrink-0 rounded-xl px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-60 ${
+                    album.isUploadEnabled
+                      ? "border border-paper-300 text-umber-700 hover:bg-paper-100"
+                      : "bg-umber-900 text-paper-50 hover:bg-umber-800"
+                  }`}
+                >
+                  {album.isUploadEnabled ? t("media.early_close") : t("media.early_close_reopen")}
+                </button>
               </div>
             </div>
 
@@ -1221,11 +1331,11 @@ export default function MediaPage() {
         onSaved={(a) => setAlbum(a)}
       />
       {album && uploadUrl && (
-        <QrModal
-          open={showQr}
-          uploadToken={album.uploadToken}
-          uploadUrl={uploadUrl}
-          onClose={() => setShowQr(false)}
+        <ShareSheet
+          open={showShare}
+          names={couple?.display_name ?? ""}
+          url={uploadUrl}
+          onClose={() => setShowShare(false)}
         />
       )}
     </div>
