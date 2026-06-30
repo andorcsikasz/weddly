@@ -371,6 +371,10 @@ export function createVendorListing(input: {
   name: string;
   city: string;
   contactEmail: string | null;
+  /** Optional seed from the vendor's earlier submission (e.g. the waitlist
+   *  application). Carried onto the fresh listing so the vendor doesn't
+   *  re-type details they already gave us. */
+  website?: string | null;
 }): Listing {
   const ts = now();
   const id = `v${input.vendorAccountId}`;
@@ -382,7 +386,7 @@ export function createVendorListing(input: {
     $name: input.name,
     $city: input.city,
     $address: null,
-    $website: null,
+    $website: input.website ?? null,
     $contact_email: input.contactEmail,
     $contact_phone: null,
     $blurb_hu: null,

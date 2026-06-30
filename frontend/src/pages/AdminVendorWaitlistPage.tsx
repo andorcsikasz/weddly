@@ -736,6 +736,12 @@ function RespondDialog({
               activeTint="bg-neutral-800 border-neutral-800 text-paper-100 dark:bg-paper-50 dark:border-paper-50 dark:text-umber-900"
             />
           </div>
+          {outcome === "accepted" && (
+            <p className="mt-2 flex items-start gap-1.5 rounded-md border border-sage-200 bg-sage-50 px-3 py-2 text-xs text-sage-800 dark:border-sage-400/30 dark:bg-sage-400/10 dark:text-sage-200">
+              <Sparkles size={13} aria-hidden className="mt-0.5 shrink-0" />
+              <span>{t("admin.waitlist_modal_accept_invite_note")}</span>
+            </p>
+          )}
         </div>
 
         <div>

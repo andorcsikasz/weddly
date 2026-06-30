@@ -3270,6 +3270,14 @@ export interface LocaleMessages {
     meals_total_yes: string;
     meals_section_meals: string;
     meals_section_meals_help: string;
+    /** Editable meal-menu (custom labels + offered flags). */
+    meals_edit_menu: string;
+    meals_menu_save: string;
+    meals_menu_reset: string;
+    meals_menu_saved: string;
+    meals_menu_edit_help: string;
+    meals_menu_offered: string;
+    meals_menu_custom_badge: string;
     meals_section_dietary: string;
     meals_section_dietary_help: string;
     meals_pending_label: string;
@@ -3867,6 +3875,12 @@ export interface LocaleMessages {
       note: string;
       reset: string;
       close: string;
+      onb_drinks_q: string;
+      onb_sweets_q: string;
+      onb_hint: string;
+      onb_next: string;
+      onb_back: string;
+      onb_done: string;
     };
     /** "Csinálom magam" / DIY flow — couple-private supplier entries. */
     diy_pill: string;
@@ -4543,6 +4557,7 @@ export interface LocaleMessages {
     waitlist_modal_outcome_accepted: string;
     waitlist_modal_outcome_under_review: string;
     waitlist_modal_outcome_rejected: string;
+    waitlist_modal_accept_invite_note: string;
     waitlist_modal_subject_label: string;
     waitlist_modal_body_label: string;
     waitlist_modal_notes_label: string;
@@ -7291,5 +7306,89 @@ export interface LocaleMessages {
     decline_button: string;
     revoke_button: string;
     revoke_confirm: string;
+  };
+  guest_invites: {
+    back_to_guests: string;
+    title: string;
+    subtitle: string;
+    monitoring_title: string;
+    stat_total: string;
+    stat_adults: string;
+    stat_children: string;
+    stat_babies: string;
+    channel_section_title: string;
+    invited_online: string;
+    invited_physical: string;
+    invited_both: string;
+    not_invited: string;
+    rsvp_title: string;
+    rsvp_yes: string;
+    rsvp_no: string;
+    rsvp_maybe: string;
+    rsvp_pending: string;
+    col_name: string;
+    col_channel: string;
+    col_rsvp: string;
+    col_responded: string;
+    table_empty: string;
+    channel_online: string;
+    channel_physical: string;
+    responded_never: string;
+    comm_title: string;
+    comm_subtitle: string;
+    audience_label: string;
+    audience_all: string;
+    audience_pending: string;
+    audience_confirmed: string;
+    send_mode_label: string;
+    send_mode_now: string;
+    send_mode_schedule: string;
+    schedule_label: string;
+    send_now_button: string;
+    schedule_button: string;
+    sending: string;
+    send_success: string;
+    send_error: string;
+    subject_required: string;
+    body_required: string;
+    subject_label: string;
+    subject_placeholder: string;
+    body_label: string;
+    body_placeholder: string;
+    template_invite: string;
+    template_major_update: string;
+    template_pre_wedding_info: string;
+    invite_desc: string;
+    major_update_desc: string;
+    pre_wedding_desc: string;
+    envelope_tip_title: string;
+    envelope_tip_desc: string;
+    envelope_tip_include: string;
+    envelope_tip_mode_label: string;
+    envelope_tip_auto: string;
+    envelope_tip_manual: string;
+    envelope_tip_amount_label: string;
+    /** Per-head amount line. `{amount}` = formatted money. */
+    envelope_tip_per_head: string;
+    envelope_tip_none: string;
+    envelope_tip_saved: string;
+    envelope_tip_save_error: string;
+    broadcasts_title: string;
+    broadcasts_empty: string;
+    /** `{count}` = recipient count. */
+    recipients: string;
+    /** `{date}` = formatted timestamp. */
+    scheduled_for: string;
+    /** `{date}` = formatted timestamp. */
+    sent_on: string;
+    status_scheduled: string;
+    status_sending: string;
+    status_sent: string;
+    status_failed: string;
+    cancel_button: string;
+    cancel_confirm_title: string;
+    cancel_confirm_body: string;
+    cancel_confirm_yes: string;
+    cancel_success: string;
   };
 }

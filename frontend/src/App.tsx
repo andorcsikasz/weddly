@@ -57,6 +57,7 @@ const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const DesignPage = lazy(() => import("./pages/DesignPage"));
 const GuestPageEditorPage = lazy(() => import("./pages/GuestPageEditorPage"));
 const GuestsPage = lazy(() => import("./pages/GuestsPage"));
+const GuestInvitesPage = lazy(() => import("./pages/GuestInvitesPage"));
 const HoneymoonPage = lazy(() => import("./pages/HoneymoonPage"));
 const InvitePage = lazy(() => import("./pages/InvitePage"));
 const LogisticsPage = lazy(() => import("./pages/LogisticsPage"));
@@ -78,6 +79,7 @@ const SupplierDetailPage = lazy(() => import("./pages/SupplierDetailPage"));
 const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazy(() => import("./pages/VendorClaimVerifyPage"));
+const VendorActivatePage = lazy(() => import("./pages/VendorActivatePage"));
 const VendorRegisterPage = lazy(() => import("./pages/VendorRegisterPage"));
 const VendorOnboardingPage = lazy(() => import("./pages/vendor/VendorOnboardingPage"));
 // VendorHomePage (pages/VendorHomePage.tsx) is the legacy standalone listing
@@ -529,10 +531,19 @@ export default function App() {
             </Page>
           }
         />
-        {/* Legacy waitlist activation link — the token flow is retired in
-            favour of self-serve signup. Any old accept-email link lands on the
-            new signup page instead of a dead route. */}
-        <Route path="/vendor/activate/:token" element={<Navigate to="/vendors/signup" replace />} />
+        {/* Accepted-waitlist invite link. The admin "accept" decision mints a
+            single-use onboarding token and emails this URL; the page reads the
+            token (verify) to prefill the vendor's submitted details, then
+            completes into a live vendor account + session. Public + outside the
+            vendor shell (the vendor has no account yet). */}
+        <Route
+          path="/vendor/activate/:token"
+          element={
+            <Page>
+              <VendorActivatePage />
+            </Page>
+          }
+        />
         {/* Post-signup onboarding wizard — outside the VendorShell, role-only
             gate (no verify gate) so a fresh vendor can finish it immediately. */}
         <Route
@@ -687,6 +698,20 @@ export default function App() {
                 <OnboardingWizard />
               </RequireAuth>
             </Page>
+          }
+        />
+        {/* Guest invitations + communication center. Declared as a SIBLING of
+         *  /app (higher route specificity than the /app parent) so it renders
+         *  full-screen WITHOUT the AppShell sidebar — same shape as
+         *  /app/planner/onboarding. Not in AppShell ITEMS, so no nav entry. */}
+        <Route
+          path="/app/invites"
+          element={
+            <RequireCoupleAuth>
+              <Page>
+                <GuestInvitesPage />
+              </Page>
+            </RequireCoupleAuth>
           }
         />
         {/* All /app/* routes share one mounted AppShellLayout — the parent

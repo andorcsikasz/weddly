@@ -155,6 +155,9 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
       name: row.business_name,
       city: seedCity,
       contactEmail: row.email,
+      // Carry the website from the waitlist application so the vendor lands on
+      // a listing already populated with what they gave us.
+      website: waitlist?.website ?? null,
     });
 
     markOnboardingCompleted(row.id, newVendorAccountId);
