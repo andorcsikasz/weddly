@@ -444,6 +444,31 @@ describe("design: design-aware print templates", () => {
     await expectPdf("/api/print/menu", token);
     await expectPdf("/api/print/place-cards", token);
   });
+
+  test("every style pack embeds its fonts and renders valid card PDFs", async () => {
+    wipeAll();
+    const token = await registerVerified("design-packs-print@weddly.test");
+    await onboard(token);
+    // Move off the default pack (Garden) so the first loop iteration is a real
+    // change rather than a no-op PATCH (which the handler 400s).
+    await req("PATCH", "/api/couples/current", { design: { style: "midnight_luxe" } }, { token });
+    // Each pack pulls in a different bundled display face (Cormorant italic /
+    // DM Sans / Bodoni + Crimson / Cormorant SC + EB Garamond) plus its own
+    // date format (Roman for Midnight) — so this catches a bad font embed or a
+    // formatter crash on any single pack.
+    for (const style of [
+      "garden_romance",
+      "modern_monochrome",
+      "blush_romantic",
+      "midnight_luxe",
+    ] as const) {
+      const r = await req("PATCH", "/api/couples/current", { design: { style } }, { token });
+      expect(r.status).toBe(200);
+      await expectPdf("/api/print/menu", token);
+      await expectPdf("/api/print/table-numbers", token);
+      await expectPdf("/api/print/place-cards", token);
+    }
+  });
 });
 
 describe("design: website-only `web` sub-object", () => {

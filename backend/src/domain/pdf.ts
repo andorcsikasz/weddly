@@ -16,7 +16,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { type PDFFont, type PDFPage, PDFDocument, degrees, rgb } from "pdf-lib";
-import { type CoupleDesign, formatWeddingDate, getPalette } from "@shared/design";
+import {
+  type CoupleDesign,
+  type FontPresetSlug,
+  formatWeddingDate,
+  getPalette,
+  getStylePreset,
+} from "@shared/design";
 import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets } from "@shared/seating";
 import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";
@@ -25,6 +31,44 @@ const FONT_DIR = join(import.meta.dir, "pdf_fonts");
 const NOTO_REGULAR = readFileSync(join(FONT_DIR, "NotoSans-Regular.ttf"));
 const NOTO_BOLD = readFileSync(join(FONT_DIR, "NotoSans-Bold.ttf"));
 const NOTO_SC = readFileSync(join(FONT_DIR, "NotoSansSC-Regular.otf"));
+
+// Style-pack display fonts (the same families self-hosted on the web). Each new
+// pack carries its own heading + body face so the printed card matches the
+// guest page. Read once at module load; embedded per-document on demand. These
+// cover Latin + Latin-Extended (Hungarian); CJK / other scripts still route
+// through the Noto fallback via `pickFontAsync`.
+const readFont = (f: string) => readFileSync(join(FONT_DIR, f));
+const PACK_FONT_FILES: Partial<Record<FontPresetSlug, { heading: Buffer; body: Buffer }>> = {
+  garden_serif: {
+    heading: readFont("CormorantGaramond-Italic.ttf"),
+    body: readFont("Jost-Light.ttf"),
+  },
+  mono_sans: { heading: readFont("DMSans-Bold.ttf"), body: readFont("DMSans-Regular.ttf") },
+  blush_bodoni: {
+    heading: readFont("BodoniModa-SemiBold.ttf"),
+    body: readFont("CrimsonText-Regular.ttf"),
+  },
+  noir_smallcaps: {
+    heading: readFont("CormorantSC-SemiBold.ttf"),
+    body: readFont("EBGaramond-Regular.ttf"),
+  },
+};
+
+/** True when every codepoint is inside the Latin / Latin-Extended blocks the
+ *  pack fonts cover (Basic Latin, Latin-1, Latin Ext-A/B, punctuation). A name
+ *  with any other script must fall back to Noto so it doesn't render as tofu. */
+function isLatinSafe(text: string): boolean {
+  for (const ch of text) {
+    const cp = ch.codePointAt(0) ?? 0;
+    const ok =
+      cp <= 0x024f || // Basic Latin + Latin-1 + Latin Ext-A/B
+      (cp >= 0x2000 && cp <= 0x206f) || // General Punctuation (en/em dash, quotes, ·)
+      cp === 0x20ac || // €
+      (cp >= 0x2c60 && cp <= 0x2c7f); // Latin Extended-C
+    if (!ok) return false;
+  }
+  return true;
+}
 
 /** True when the codepoint is in the Simplified-Chinese (or shared CJK)
  *  Unicode blocks, i.e. a glyph the Noto Sans SC fallback covers. */
@@ -95,6 +139,11 @@ interface FontPair {
    *  document when an input string actually contains CJK glyphs — otherwise
    *  the full 8 MB face would bloat every Latin-only PDF. */
   getCjk: () => Promise<PDFFont>;
+  /** The active style pack's heading + body display faces, embedded when the
+   *  pack bundles them (the four new packs). Null on legacy presets, where the
+   *  card falls back to Noto so it still renders cleanly. */
+  packHeading?: PDFFont;
+  packBody?: PDFFont;
 }
 
 async function pickFontAsync(
@@ -104,6 +153,22 @@ async function pickFontAsync(
 ): Promise<PDFFont> {
   if (containsCjk(text)) return pair.getCjk();
   return prefer === "bold" ? pair.bold : pair.regular;
+}
+
+/** Pick the pack's DISPLAY face (heading or body) for text that carries the
+ *  card's typographic identity — couple name, table number, menu title, dates.
+ *  Falls back to the robust Noto/CJK path when the pack ships no display face
+ *  (legacy presets) or the text leaves the Latin range the pack covers. */
+async function pickDisplayAsync(
+  pair: FontPair,
+  text: string,
+  role: "heading" | "body",
+): Promise<PDFFont> {
+  if (containsCjk(text)) return pair.getCjk();
+  const face = role === "heading" ? pair.packHeading : pair.packBody;
+  if (face && isLatinSafe(text)) return face;
+  // No pack face (or non-Latin text): headings read as bold Noto, body regular.
+  return role === "heading" ? pair.bold : pair.regular;
 }
 
 async function fitText(
@@ -703,22 +768,11 @@ interface PlaceCardInput {
  *  carried — name + table label only. */
 export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
-  pdf.registerFontkit(fontkit);
-  const helv = await pdf.embedFont(NOTO_REGULAR, { subset: true });
-  const helvBold = await pdf.embedFont(NOTO_BOLD, { subset: true });
-  // Lazy CJK fallback — see comment in renderSeatingChartPdf.
-  let cjkFont: PDFFont | null = null;
-  const fontPair: FontPair = {
-    regular: helv,
-    bold: helvBold,
-    getCjk: async () => {
-      if (cjkFont) return cjkFont;
-      cjkFont = await pdf.embedFont(NOTO_SC);
-      return cjkFont;
-    },
-  };
-  // Resolved visual identity - palette colours, border.
+  const fontPair = await buildFontPair(pdf, input.design);
+  const { regular: helv } = fontPair;
+  // Resolved visual identity - palette colours, border, pack ornament + layout.
   const colors = designColors(input.design);
+  const pack = getStylePreset(input.design.style);
 
   const cardW = FORMATS.place_card.width_mm;
   const cardH = FORMATS.place_card.height_mm;
@@ -754,70 +808,291 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       const row = Math.floor(slot / COLS);
       const x_mm0 = col * cellW + (cellW - cardW) / 2;
       const y_mm0_top = sheetH - (row + 1) * cellH + (cellH - cardH) / 2;
+      const box = { x: x_mm0, y: y_mm0_top, w: cardW, h: cardH };
       const cxPt = mm(x_mm0 + cardW / 2);
 
-      // Card background in the palette background tone. The hairline frame is
-      // honoured per design.print.border.
-      page.drawRectangle({
-        x: mm(x_mm0),
-        y: mm(y_mm0_top),
-        width: mm(cardW),
-        height: mm(cardH),
-        borderWidth: input.design.print.border ? 0.5 : 0,
-        borderColor: colors.accent,
-        color: colors.background,
-      });
+      // Card background + frame per the borderStyle enum, then the pack's frame
+      // ornament (oval for Blush, deco corners for Midnight).
+      drawCardFrame(page, box, input.design, colors);
+      if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
+      if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
 
-      const name = safe(g.full_name);
-      const nameSize = name.length > 22 ? 14 : 18;
-      const nameFont = await pickFontAsync(fontPair, name, "bold");
+      const name = headingText(safe(g.full_name), input.design);
+      const nameSize = name.length > 22 ? 13 : 17;
+      const nameFont = await pickDisplayAsync(fontPair, name, "heading");
       const nameW = nameFont.widthOfTextAtSize(name, nameSize);
       const tableLabel = input.tablesByGuestId?.get(g.id);
-      // Centre the name vertically when there's no table label; nudge it up
-      // a bit when a label is present so the two lines sit visually centred.
-      const nameY_mm = tableLabel ? y_mm0_top + cardH * 0.5 : y_mm0_top + cardH / 2 - 3;
-      page.drawText(name, {
-        x: cxPt - nameW / 2,
-        y: mm(nameY_mm),
-        size: nameSize,
-        font: nameFont,
-        color: colors.text,
-      });
 
-      if (tableLabel) {
-        const t = safe(tableLabel);
-        const tFont = await pickFontAsync(fontPair, t, "regular");
-        const tw = tFont.widthOfTextAtSize(t, 10);
-        page.drawText(t, {
-          x: cxPt - tw / 2,
-          y: mm(y_mm0_top + cardH * 0.2),
-          size: 10,
-          font: tFont,
-          color: colors.primary,
+      if (pack.cardLayout === "asymmetric") {
+        // Monochrome: name left-rag, table label pinned top-right. No centre axis.
+        page.drawText(name, {
+          x: mm(x_mm0 + 8),
+          y: mm(y_mm0_top + cardH * 0.4),
+          size: nameSize,
+          font: nameFont,
+          color: colors.text,
         });
+        if (tableLabel) {
+          const t = safe(tableLabel);
+          const tFont = await pickDisplayAsync(fontPair, t, "body");
+          const tw = tFont.widthOfTextAtSize(t, 9);
+          page.drawText(t, {
+            x: mm(x_mm0 + cardW - 8) - tw,
+            y: mm(y_mm0_top + cardH - 12),
+            size: 9,
+            font: tFont,
+            color: colors.primary,
+          });
+        }
+      } else {
+        // Garden / Blush / Midnight: centred name, ornament, label below.
+        const nameY_mm = tableLabel ? y_mm0_top + cardH * 0.52 : y_mm0_top + cardH / 2 - 3;
+        page.drawText(name, {
+          x: cxPt - nameW / 2,
+          y: mm(nameY_mm),
+          size: nameSize,
+          font: nameFont,
+          color: colors.text,
+        });
+        // Garden's botanical sprig sits between the name and the table label.
+        if (input.design.print.ornament && pack.cardLayout === "centered") {
+          drawOrnament(page, pack.ornament, cxPt, mm(y_mm0_top + cardH * 0.42), 28, colors.accent);
+        }
+        if (tableLabel) {
+          const t = safe(tableLabel);
+          const tFont = await pickDisplayAsync(fontPair, t, "body");
+          const tw = tFont.widthOfTextAtSize(t, 9.5);
+          page.drawText(t, {
+            x: cxPt - tw / 2,
+            y: mm(y_mm0_top + cardH * 0.2),
+            size: 9.5,
+            font: tFont,
+            color: colors.primary,
+          });
+        }
       }
     }
   }
   return pdf.save();
 }
 
-/** Shared font-pair builder for the single-card A5/A6 design templates. Embeds
- *  the Noto Sans subset + a lazy CJK fallback, exactly like the other
- *  renderers. */
-async function buildFontPair(pdf: PDFDocument): Promise<FontPair> {
+/** Shared font-pair builder for the single-card design templates. Embeds the
+ *  Noto Sans subset + a lazy CJK fallback, plus — when `design` selects one of
+ *  the four packs — that pack's heading + body display faces, so the printed
+ *  card speaks the same typographic language as the guest page. */
+async function buildFontPair(pdf: PDFDocument, design?: CoupleDesign): Promise<FontPair> {
   pdf.registerFontkit(fontkit);
   const regular = await pdf.embedFont(NOTO_REGULAR, { subset: true });
   const bold = await pdf.embedFont(NOTO_BOLD, { subset: true });
   let cjkFont: PDFFont | null = null;
+  const pack = design ? PACK_FONT_FILES[design.fonts] : undefined;
+  const packHeading = pack ? await pdf.embedFont(pack.heading, { subset: true }) : undefined;
+  const packBody = pack ? await pdf.embedFont(pack.body, { subset: true }) : undefined;
   return {
     regular,
     bold,
+    packHeading,
+    packBody,
     getCjk: async () => {
       if (cjkFont) return cjkFont;
       cjkFont = await pdf.embedFont(NOTO_SC);
       return cjkFont;
     },
   };
+}
+
+/** Apply a pack's heading treatment to a string before it's drawn: uppercase
+ *  for the Monochrome grotesk (the italic + small-caps treatments are baked
+ *  into the Garden / Midnight display faces themselves). */
+function headingText(text: string, design: CoupleDesign): string {
+  return getStylePreset(design.style).headingStyle === "uppercase" ? text.toUpperCase() : text;
+}
+
+/** Draw the card frame honouring the borderStyle enum (none / hairline / double
+ *  / thick). The background always paints; the frame is an inset stroke (or two
+ *  for "double"). Mirrors `getBorderCss` on the web so the two surfaces agree. */
+function drawCardFrame(
+  page: PDFPage,
+  box: { x: number; y: number; w: number; h: number },
+  design: CoupleDesign,
+  colors: { background: ReturnType<typeof rgb>; accent: ReturnType<typeof rgb> },
+): void {
+  page.drawRectangle({
+    x: mm(box.x),
+    y: mm(box.y),
+    width: mm(box.w),
+    height: mm(box.h),
+    color: colors.background,
+  });
+  const widths: Record<CoupleDesign["borderStyle"], number> = {
+    none: 0,
+    hairline: 0.5,
+    double: 0.5,
+    thick: 1.4,
+  };
+  const w = widths[design.borderStyle];
+  if (w <= 0) return;
+  page.drawRectangle({
+    x: mm(box.x),
+    y: mm(box.y),
+    width: mm(box.w),
+    height: mm(box.h),
+    borderWidth: w,
+    borderColor: colors.accent,
+    color: undefined,
+  });
+  if (design.borderStyle === "double") {
+    const inset = 1.4;
+    page.drawRectangle({
+      x: mm(box.x + inset),
+      y: mm(box.y + inset),
+      width: mm(box.w - 2 * inset),
+      height: mm(box.h - 2 * inset),
+      borderWidth: 0.5,
+      borderColor: colors.accent,
+      color: undefined,
+    });
+  }
+}
+
+/** Draw the pack's ornament motif, centred horizontally on `cxPt`, baseline at
+ *  `yPt`, spanning roughly `widthMm`. The four ornament languages mirror the
+ *  web `OrnamentDivider` so the card and the guest page read as one identity. */
+function drawOrnament(
+  page: PDFPage,
+  ornament: ReturnType<typeof getStylePreset>["ornament"],
+  cxPt: number,
+  yPt: number,
+  widthMm: number,
+  color: ReturnType<typeof rgb>,
+): void {
+  const half = mm(widthMm / 2);
+  if (ornament === "none") {
+    page.drawLine({
+      start: { x: cxPt - mm(8), y: yPt },
+      end: { x: cxPt + mm(8), y: yPt },
+      thickness: 1.4,
+      color,
+    });
+    return;
+  }
+  if (ornament === "oval") {
+    for (const dx of [-mm(5), 0, mm(5)]) {
+      page.drawCircle({ x: cxPt + dx, y: yPt, size: 0.9, color });
+    }
+    return;
+  }
+  if (ornament === "deco") {
+    // thin rule each side of a small open diamond
+    page.drawLine({
+      start: { x: cxPt - half, y: yPt },
+      end: { x: cxPt - mm(4), y: yPt },
+      thickness: 0.5,
+      color,
+    });
+    page.drawLine({
+      start: { x: cxPt + mm(4), y: yPt },
+      end: { x: cxPt + half, y: yPt },
+      thickness: 0.5,
+      color,
+    });
+    const d = mm(1.8);
+    page.drawLine({
+      start: { x: cxPt, y: yPt + d },
+      end: { x: cxPt + d, y: yPt },
+      thickness: 0.6,
+      color,
+    });
+    page.drawLine({
+      start: { x: cxPt + d, y: yPt },
+      end: { x: cxPt, y: yPt - d },
+      thickness: 0.6,
+      color,
+    });
+    page.drawLine({
+      start: { x: cxPt, y: yPt - d },
+      end: { x: cxPt - d, y: yPt },
+      thickness: 0.6,
+      color,
+    });
+    page.drawLine({
+      start: { x: cxPt - d, y: yPt },
+      end: { x: cxPt, y: yPt + d },
+      thickness: 0.6,
+      color,
+    });
+    return;
+  }
+  // botanical: a thin line with a few small leaves either side of centre.
+  page.drawLine({
+    start: { x: cxPt - half, y: yPt },
+    end: { x: cxPt + half, y: yPt },
+    thickness: 0.5,
+    color,
+  });
+  for (const dx of [-mm(6), -mm(3.5), mm(3.5), mm(6)]) {
+    page.drawEllipse({
+      x: cxPt + dx,
+      y: yPt + (dx < 0 ? mm(1) : -mm(1)),
+      xScale: mm(1.8),
+      yScale: mm(0.7),
+      rotate: degrees(dx < 0 ? 28 : -28),
+      color,
+    });
+  }
+}
+
+/** Four art-deco L-corner marks just inside the card box (the Midnight pack's
+ *  "corners" layout). Each corner is two short strokes meeting at right-angle. */
+function drawDecoCorners(
+  page: PDFPage,
+  box: { x: number; y: number; w: number; h: number },
+  color: ReturnType<typeof rgb>,
+): void {
+  const inset = 4;
+  const len = 6;
+  const x0 = box.x + inset;
+  const x1 = box.x + box.w - inset;
+  const y0 = box.y + inset;
+  const y1 = box.y + box.h - inset;
+  const L = (ax: number, ay: number, bx: number, by: number) =>
+    page.drawLine({
+      start: { x: mm(ax), y: mm(ay) },
+      end: { x: mm(bx), y: mm(by) },
+      thickness: 0.7,
+      color,
+    });
+  // top-left
+  L(x0, y1, x0 + len, y1);
+  L(x0, y1, x0, y1 - len);
+  // top-right
+  L(x1, y1, x1 - len, y1);
+  L(x1, y1, x1, y1 - len);
+  // bottom-left
+  L(x0, y0, x0 + len, y0);
+  L(x0, y0, x0, y0 + len);
+  // bottom-right
+  L(x1, y0, x1 - len, y0);
+  L(x1, y0, x1, y0 + len);
+}
+
+/** Oval hairline frame inscribed in the card box (the Blush pack's "framed"
+ *  layout). pdf-lib has no ellipse-stroke primitive that fits a rect exactly,
+ *  so we draw a thin-stroked ellipse sized to the box with a small margin. */
+function drawOvalFrame(
+  page: PDFPage,
+  box: { x: number; y: number; w: number; h: number },
+  color: ReturnType<typeof rgb>,
+): void {
+  page.drawEllipse({
+    x: mm(box.x + box.w / 2),
+    y: mm(box.y + box.h / 2),
+    xScale: mm(box.w / 2 - 5),
+    yScale: mm(box.h / 2 - 4),
+    borderWidth: 0.5,
+    borderColor: color,
+    color: undefined,
+  });
 }
 
 interface TableNumbersInput {
@@ -832,9 +1107,10 @@ interface TableNumbersInput {
  *  the two sit together as a set. One card per A6 page. */
 export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
-  const fontPair = await buildFontPair(pdf);
+  const fontPair = await buildFontPair(pdf, input.design);
   const { regular: helv } = fontPair;
   const colors = designColors(input.design);
+  const pack = getStylePreset(input.design.style);
 
   // A6 = 105x148mm - half of A5, the matching set size for the place cards.
   const W = 105;
@@ -852,30 +1128,39 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
     return pdf.save();
   }
 
+  const box = { x: 6, y: 6, w: W - 12, h: H - 12 };
   for (const t of input.tables) {
     const page = pdf.addPage([mm(W), mm(H)]);
     const cxPt = mm(W / 2);
 
-    // Background + optional hairline frame, identical idiom to the place card.
-    page.drawRectangle({
-      x: mm(6),
-      y: mm(6),
-      width: mm(W - 12),
-      height: mm(H - 12),
-      borderWidth: input.design.print.border ? 0.6 : 0,
-      borderColor: colors.accent,
-      color: colors.background,
-    });
-    // Big centred table label, fitted to the card width.
-    const labelFit = await fitText(fontPair, t.label, 44, mm(W - 24), "bold");
-    const labelW = labelFit.font.widthOfTextAtSize(labelFit.text, 44);
-    page.drawText(labelFit.text, {
-      x: cxPt - labelW / 2,
-      y: mm(H / 2 - 8),
-      size: 44,
-      font: labelFit.font,
+    // Background + frame per borderStyle, then the pack's frame ornament.
+    drawCardFrame(page, box, input.design, colors);
+    if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
+    if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
+
+    // The number is the hero — fitted big to the card width, in the pack face.
+    const label = headingText(t.label, input.design);
+    const usePack = isLatinSafe(label) && fontPair.packHeading;
+    const fitted = usePack ? null : await fitText(fontPair, t.label, 64, mm(W - 24), "bold");
+    const heroFont = usePack
+      ? (fontPair.packHeading as PDFFont)
+      : (fitted as { font: PDFFont }).font;
+    const drawn = usePack ? safe(label) : (fitted as { text: string }).text;
+    // Shrink to fit the card width (the number can be multi-digit).
+    let heroSize = 64;
+    while (heroSize > 24 && heroFont.widthOfTextAtSize(drawn, heroSize) > mm(W - 24)) heroSize -= 2;
+    const heroW = heroFont.widthOfTextAtSize(drawn, heroSize);
+    page.drawText(drawn, {
+      x: cxPt - heroW / 2,
+      y: mm(H / 2 - heroSize * 0.18),
+      size: heroSize,
+      font: heroFont,
       color: colors.text,
     });
+    // Pack ornament + a small "TABLE" eyebrow under the number (centred packs).
+    if (pack.cardLayout !== "asymmetric") {
+      drawOrnament(page, pack.ornament, cxPt, mm(H * 0.3), 36, colors.accent);
+    }
   }
 
   return pdf.save();
@@ -896,27 +1181,23 @@ interface MenuInput {
 export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
   const { width_mm: W, height_mm: H } = FORMATS.a5;
   const pdf = await PDFDocument.create();
-  const fontPair = await buildFontPair(pdf);
-  const { regular: helv } = fontPair;
+  const fontPair = await buildFontPair(pdf, input.design);
   const colors = designColors(input.design);
+  const pack = getStylePreset(input.design.style);
   const dateText = formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
 
   const page = pdf.addPage([mm(W), mm(H)]);
   const cxPt = mm(W / 2);
+  const box = { x: 8, y: 8, w: W - 16, h: H - 16 };
 
-  // Background + optional hairline frame.
-  page.drawRectangle({
-    x: mm(8),
-    y: mm(8),
-    width: mm(W - 16),
-    height: mm(H - 16),
-    borderWidth: input.design.print.border ? 0.6 : 0,
-    borderColor: colors.accent,
-    color: colors.background,
-  });
-  // Couple display name.
-  const nameSafe = safe(input.couple_display_name);
-  const nameFont = await pickFontAsync(fontPair, nameSafe, "bold");
+  // Background + frame per borderStyle, then the pack's frame ornament.
+  drawCardFrame(page, box, input.design, colors);
+  if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
+  if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
+
+  // Couple display name in the pack heading face.
+  const nameSafe = headingText(safe(input.couple_display_name), input.design);
+  const nameFont = await pickDisplayAsync(fontPair, nameSafe, "heading");
   const nameW = nameFont.widthOfTextAtSize(nameSafe, 22);
   page.drawText(nameSafe, {
     x: cxPt - nameW / 2,
@@ -926,10 +1207,10 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     color: colors.text,
   });
 
-  // Date, when present.
+  // Date, when present, in the pack body face.
   if (dateText) {
     const dSafe = safe(dateText);
-    const dFont = await pickFontAsync(fontPair, dSafe, "regular");
+    const dFont = await pickDisplayAsync(fontPair, dSafe, "body");
     const dw = dFont.widthOfTextAtSize(dSafe, 11);
     page.drawText(dSafe, {
       x: cxPt - dw / 2,
@@ -940,13 +1221,16 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     });
   }
 
+  // Pack ornament divider under the name/date.
+  drawOrnament(page, pack.ornament, cxPt, mm(H - 57), 40, colors.accent);
+
   // "Menu" heading.
-  const heading = "Menu";
-  const hFont = await pickFontAsync(fontPair, heading, "bold");
+  const heading = headingText("Menu", input.design);
+  const hFont = await pickDisplayAsync(fontPair, heading, "heading");
   const hw = hFont.widthOfTextAtSize(heading, 13);
   page.drawText(heading, {
     x: cxPt - hw / 2,
-    y: mm(H - 64),
+    y: mm(H - 68),
     size: 13,
     font: hFont,
     color: colors.primary,
@@ -955,11 +1239,11 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
   // Course sections - generic labels only, each over a blank writing rule the
   // couple fills in by hand. No invented dishes.
   const courses = ["Starter", "Main", "Dessert"];
-  let yMm = H - 84;
+  let yMm = H - 88;
   const ruleHalf = mm((W - 40) / 2);
   for (const course of courses) {
-    const cFont = await pickFontAsync(fontPair, course, "bold");
-    const cSafe = safe(course);
+    const cSafe = headingText(safe(course), input.design);
+    const cFont = await pickDisplayAsync(fontPair, cSafe, "heading");
     const cw = cFont.widthOfTextAtSize(cSafe, 11);
     page.drawText(cSafe, {
       x: cxPt - cw / 2,
