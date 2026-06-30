@@ -1173,10 +1173,20 @@ export interface LocaleMessages {
       planned_label: string;
       paid_label: string;
       remaining_label: string;
+      over_label: string;
       distribution_title: string;
       distribution_empty: string;
       other: string;
       of_total: string;
+      details_title: string;
+      flip_to_details: string;
+      flip_to_chart: string;
+      lines_count: string;
+      settled_count: string;
+      over_lines: string;
+      avg_per_line: string;
+      largest_line: string;
+      over_hint: string;
     };
     set_date_dialog_title: string;
     set_date_dialog_body: string;
@@ -2403,6 +2413,7 @@ export interface LocaleMessages {
     guest_subtitle: string;
     guest_subtitle_plain: string;
     preview_banner: string;
+    from_couple: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   /** /app/design — the curated wedding visual-identity editor. */
