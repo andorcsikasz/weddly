@@ -217,7 +217,7 @@ function FontChip({
       aria-pressed={active}
       aria-label={label}
       title={label}
-      className={`inline-flex min-w-[3.5rem] flex-col items-center gap-0.5 rounded-xl border px-2 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+      className={`flex w-full flex-col items-center gap-1 rounded-xl border px-2 py-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
         active
           ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
           : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
@@ -225,10 +225,15 @@ function FontChip({
     >
       {/* "Aa" in the actual typeface, with the family name labelled below so the
           couple can identify the font without trial-and-error (audit #12). */}
-      <span className="text-xl leading-none" style={fontFamily ? { fontFamily } : undefined}>
+      <span
+        className="flex h-7 items-center text-xl leading-none"
+        style={fontFamily ? { fontFamily } : undefined}
+      >
         Aa
       </span>
-      <span className="max-w-[5rem] truncate text-[9px] leading-tight opacity-70">{label}</span>
+      <span className="w-full truncate text-center text-[9px] leading-tight opacity-70">
+        {label}
+      </span>
     </button>
   );
 }
@@ -542,6 +547,13 @@ export default function DesignPage() {
     couple?.bride_name && couple?.groom_name
       ? `${couple.bride_name} & ${couple.groom_name}`
       : t("design.print_preview.sample_couple");
+  // Compact "A & B" used by the font-preset tiles — the full names wrap to two
+  // lines and crowd the grid, while the initials still show off the typeface
+  // (cap, ampersand) on a single tidy row.
+  const sampleInitials =
+    couple?.bride_name && couple?.groom_name
+      ? `${[...couple.bride_name][0] ?? ""} & ${[...couple.groom_name][0] ?? ""}`
+      : "A & B";
 
   // The printables hub: one tile per PDF template. Each downloads via the
   // shared `fetchPdfBlob` blob pattern.
@@ -834,7 +846,7 @@ export default function DesignPage() {
                   <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                     {t("design.section.fonts")}
                   </h2>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {FONT_PRESETS.map((f) => (
                       <PresetTile
                         key={f.slug}
@@ -843,11 +855,11 @@ export default function DesignPage() {
                         ariaLabel={t(f.nameKey)}
                       >
                         <span
-                          className="block text-xl leading-tight text-ink-900 dark:text-paper-50"
+                          className="block truncate text-2xl leading-tight text-ink-900 dark:text-paper-50"
                           style={{ fontFamily: f.headingStack }}
                           aria-hidden
                         >
-                          Anna & Bence
+                          {sampleInitials}
                         </span>
                       </PresetTile>
                     ))}
@@ -886,7 +898,7 @@ export default function DesignPage() {
                           <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
                             {t(`design.font.${which}_label`)}
                           </span>
-                          <div className="flex flex-wrap justify-center gap-2">
+                          <div className="grid grid-cols-3 gap-2">
                             {FONT_FAMILIES.map((fam) => (
                               <FontChip
                                 key={fam.slug}
