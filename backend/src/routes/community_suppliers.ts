@@ -21,6 +21,7 @@ import {
 import { sendKind } from "../domain/emails/send";
 import { isGoogleMapsUrl, resolveGoogleMapsUrl } from "../domain/maps_resolver";
 import { enrichSupplier } from "../domain/supplier_enrich";
+import { fetchAndStoreListingHero } from "../domain/listing_image_backfill";
 import { log } from "../lib/logger";
 import { addAuditLog } from "../lib/audit";
 import { getUserById } from "../domain/users";
@@ -252,6 +253,15 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     void enrichSupplier(id).catch((e) =>
       log.warn("supplier.enrich.failed", { supplierId: id, error: String(e) }),
     );
+    // Alongside the text enrichment, try to pull a hero image from the venue's
+    // own website (og:image). The mirrored `c<id>` listing row already exists
+    // (insertCommunitySupplier synced it); the hero column is independent of the
+    // enrich re-sync, so the two background jobs don't clobber each other.
+    if (row.website) {
+      void fetchAndStoreListingHero(`c${id}`, row.website).catch((e) =>
+        log.warn("supplier.hero_fetch.failed", { supplierId: id, error: String(e) }),
+      );
+    }
   }
 
   // Submission lands silently in 'pending' for admin triage — no outbound

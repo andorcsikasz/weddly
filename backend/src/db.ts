@@ -910,6 +910,16 @@ addColumnIfMissing(
 // — couples / curated entries see read-only.
 addColumnIfMissing("listings", "hero_image_url", "hero_image_url TEXT");
 
+// `hero_checked_at` records the last attempt to AUTO-fetch a hero image from the
+// listing's own `website` (domain/listing_image_backfill) — the og:image of the
+// venue's homepage, downloaded and stored under `listings/<id>/hero.<ext>`. NULL
+// means "never attempted": the marker the boot sweep uses to find curated /
+// community rows that have a website but no vendor-uploaded hero. Stamped on
+// every attempt (hit or miss) so a site without a usable image is tried exactly
+// once and never re-hammered on the next deploy. A vendor upload via
+// vendor_listing.ts always wins (the sweep skips rows with a vendor_account_id).
+addColumnIfMissing("listings", "hero_checked_at", "hero_checked_at INTEGER");
+
 // `venue_style` characterises a venue (castle, boat, restaurant…) beyond its
 // always-"venue" category. Sourced from the curated directory's "jelleg" tag.
 // Null on non-venue + unclassified listings. See @shared/suppliers VenueStyle.

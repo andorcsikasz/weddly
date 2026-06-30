@@ -31,6 +31,7 @@ import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { startBackupWorker } from "./domain/backup";
 import { startWishlistImageBackfill } from "./domain/wishlist_image_backfill";
+import { startListingImageBackfill } from "./domain/listing_image_backfill";
 import { registerAccommodationRoutes } from "./routes/accommodations";
 import { registerAdminAnalyticsRoutes } from "./routes/admin_analytics";
 import { registerAdminEmailListRoutes } from "./routes/admin_email_list";
@@ -683,6 +684,11 @@ if (process.env.NODE_ENV !== "test") {
   // link but no image (created before link-preview shipped). Non-blocking and
   // self-limiting — each row is attempted exactly once. See the module header.
   startWishlistImageBackfill();
+  // One-time sweep: auto-fill supplier listing heroes from each venue's own
+  // website (og:image). Curated venues ship without a photo; this gives their
+  // card a real image instead of the icon placeholder. Non-blocking and
+  // self-limiting — each row is attempted exactly once. See the module header.
+  startListingImageBackfill();
   // Boot-time guard against re-introducing the legacy `sendEmail` direct-call
   // pattern. The May 2026 "phishy email" bug lived for months because nothing
   // flagged it; this scan emits a `mailer.integrity.violation` warning at boot
