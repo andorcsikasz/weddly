@@ -24,6 +24,7 @@ import {
   formatWeddingDate,
   getFontPreset,
   getPalette,
+  getStylePreset,
   IMAGE_TREATMENTS,
   type ImageTreatmentSlug,
   resolveDesign,
@@ -229,6 +230,56 @@ function FontChip({
       </span>
       <span className="max-w-[5rem] truncate text-[9px] leading-tight opacity-70">{label}</span>
     </button>
+  );
+}
+
+/** Read-only recap of the shared visual identity, shown on the PRINT tab in
+ *  place of the full style/colour/font editors. The identity is edited once on
+ *  the Guest-site tab and inherited everywhere, so re-showing every control
+ *  here only invited "where do I actually change this?" confusion. */
+function InheritedSummary({ design }: { design: CoupleDesign }) {
+  const { t } = useT();
+  const palette = getPalette(design.palette);
+  const fonts = getFontPreset(design.fonts);
+  const styleName = t(getStylePreset(design.style).nameKey);
+  const headingFamily = design.headingFont ?? fonts.headingFamily;
+  const bodyFamily = design.bodyFont ?? fonts.bodyFamily;
+  const familyName = (slug: FontFamilySlug) =>
+    t(FONT_FAMILIES.find((f) => f.slug === slug)?.nameKey ?? "design.family.cormorant");
+  return (
+    <section className="rounded-2xl border border-paper-300 bg-white p-4 dark:border-umber-700 dark:bg-umber-800">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("design.print_preview.inherited_title")}
+          </h2>
+          <p className="mt-0.5 text-base font-medium text-ink-900 dark:text-paper-50">
+            {styleName}
+          </p>
+        </div>
+        <Link
+          to="/app/design/website"
+          className="shrink-0 text-xs font-medium text-ink-600 underline-offset-2 hover:text-ink-900 hover:underline dark:text-umber-200 dark:hover:text-paper-50"
+        >
+          {t("design.print_preview.inherited_change")}
+        </Link>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-4">
+        <div className="flex gap-1.5">
+          {COLOR_ROLES.map((role) => (
+            <span
+              key={role}
+              className="h-6 w-6 rounded-md ring-1 ring-black/10 dark:ring-white/10"
+              style={{ backgroundColor: design.colors[role] ?? palette[role].hex }}
+              title={t(`design.colors.${role}`)}
+            />
+          ))}
+        </div>
+        <p className="text-xs text-ink-500 dark:text-umber-300">
+          {familyName(headingFamily)} · {familyName(bodyFamily)}
+        </p>
+      </div>
+    </section>
   );
 }
 
@@ -682,129 +733,130 @@ export default function DesignPage() {
             {/* Shared identity — the common look that drives BOTH surfaces. In
                 print mode we label it so the hierarchy (card type → shared
                 identity → card specifics) is obvious. */}
-            {tab === "print" && (
-              <h2 className="-mb-2 border-t border-paper-200 pt-5 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:text-umber-300">
-                {t("design.print_preview.common_identity")}
-              </h2>
-            )}
-            {/* Wedding style */}
-            <section data-tour-target="design-style">
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("design.section.style")}
-              </h2>
-              <div className="grid grid-cols-2 gap-3">
-                {STYLE_PRESETS.map((s) => (
-                  <PresetTile
-                    key={s.slug}
-                    active={design.style === s.slug}
-                    onSelect={() => chooseStyle(s.slug)}
-                    ariaLabel={t(s.nameKey)}
-                    label={t(s.nameKey)}
-                  >
-                    {/* Each tile previews its OWN date format (Roman for
+            {/* Print tab: the shared identity is edited on the Guest-site tab,
+                so here it collapses to a read-only summary with a jump link
+                (audit #13) instead of repeating every editing control. */}
+            {tab === "print" ? <InheritedSummary design={design} /> : null}
+            {tab === "website" && (
+              <>
+                {/* Wedding style */}
+                <section data-tour-target="design-style">
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.section.style")}
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {STYLE_PRESETS.map((s) => (
+                      <PresetTile
+                        key={s.slug}
+                        active={design.style === s.slug}
+                        onSelect={() => chooseStyle(s.slug)}
+                        ariaLabel={t(s.nameKey)}
+                        label={t(s.nameKey)}
+                      >
+                        {/* Each tile previews its OWN date format (Roman for
                         Midnight, numeric for Monochrome) so the format reads as
                         part of the pack, not a separate choice. */}
-                    <StyleMoodCard
-                      preset={s}
-                      sampleName={sampleName}
-                      sampleDate={formatWeddingDate(sampleDateIso, s.defaultDateFormat, locale)}
-                    />
-                    <span className="text-[11px] leading-tight text-ink-500 dark:text-umber-300">
-                      {t(`design.style_desc.${s.slug}` as Parameters<typeof t>[0])}
-                    </span>
-                  </PresetTile>
-                ))}
-              </div>
-            </section>
+                        <StyleMoodCard
+                          preset={s}
+                          sampleName={sampleName}
+                          sampleDate={formatWeddingDate(sampleDateIso, s.defaultDateFormat, locale)}
+                        />
+                        <span className="text-[11px] leading-tight text-ink-500 dark:text-umber-300">
+                          {t(`design.style_desc.${s.slug}` as Parameters<typeof t>[0])}
+                        </span>
+                      </PresetTile>
+                    ))}
+                  </div>
+                </section>
 
-            {/* Colours — the base palette comes from the chosen Wedding Style;
+                {/* Colours — the base palette comes from the chosen Wedding Style;
                 here the couple fine-tunes any role on top of it. Each input is
                 seeded from the resolved colour (override or palette); Reset
                 clears the override back to the palette. */}
-            <section>
-              <div className="mb-2 flex items-center gap-2">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                  {t("design.colors.title")}
-                </h2>
-                <InfoHint text={t("design.colors.hint")} />
-              </div>
-              <div className="mx-auto w-fit max-w-full">
-                {/* Swatch row: each role is a colour block with a pencil badge;
+                <section>
+                  <div className="mb-2 flex items-center gap-2">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.colors.title")}
+                    </h2>
+                    <InfoHint text={t("design.colors.hint")} />
+                  </div>
+                  <div className="mx-auto w-fit max-w-full">
+                    {/* Swatch row: each role is a colour block with a pencil badge;
                     clicking it opens the native colour editor (the swatch IS the
                     input label). Reset clears the override back to the palette. */}
-                <div className="flex flex-wrap justify-center gap-4">
-                  {COLOR_ROLES.map((role) => {
-                    const resolved = design.colors[role] ?? activePalette[role].hex;
-                    const overridden = design.colors[role] !== undefined;
-                    return (
-                      <div key={role} className="flex flex-col items-center gap-1">
-                        <label
-                          className="relative block h-12 w-12 cursor-pointer rounded-xl border border-paper-300 shadow-soft dark:border-umber-700"
-                          style={{ backgroundColor: resolved }}
-                          title={t(`design.colors.${role}`)}
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {COLOR_ROLES.map((role) => {
+                        const resolved = design.colors[role] ?? activePalette[role].hex;
+                        const overridden = design.colors[role] !== undefined;
+                        return (
+                          <div key={role} className="flex flex-col items-center gap-1">
+                            <label
+                              className="relative block h-12 w-12 cursor-pointer rounded-xl border border-paper-300 shadow-soft dark:border-umber-700"
+                              style={{ backgroundColor: resolved }}
+                              title={t(`design.colors.${role}`)}
+                            >
+                              <input
+                                type="color"
+                                value={resolved}
+                                onChange={(ev) => chooseColor(role, ev.target.value)}
+                                aria-label={t(`design.colors.${role}`)}
+                                className="sr-only"
+                              />
+                              <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
+                                <Pencil size={11} aria-hidden />
+                              </span>
+                            </label>
+                            <span className="text-[11px] text-ink-600 dark:text-umber-200">
+                              {t(`design.colors.${role}`)}
+                            </span>
+                            {overridden ? (
+                              <button
+                                type="button"
+                                onClick={() => clearColor(role)}
+                                className="text-[10px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+                              >
+                                {t("design.colors.reset")}
+                              </button>
+                            ) : (
+                              <span className="h-[14px]" aria-hidden />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {lowContrast && (
+                      <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-400">
+                        {t("design.colors.low_contrast")}
+                      </p>
+                    )}
+                  </div>
+                </section>
+
+                {/* Fonts */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.section.fonts")}
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {FONT_PRESETS.map((f) => (
+                      <PresetTile
+                        key={f.slug}
+                        active={design.fonts === f.slug}
+                        onSelect={() => chooseFonts(f.slug)}
+                        ariaLabel={t(f.nameKey)}
+                      >
+                        <span
+                          className="block text-xl leading-tight text-ink-900 dark:text-paper-50"
+                          style={{ fontFamily: f.headingStack }}
+                          aria-hidden
                         >
-                          <input
-                            type="color"
-                            value={resolved}
-                            onChange={(ev) => chooseColor(role, ev.target.value)}
-                            aria-label={t(`design.colors.${role}`)}
-                            className="sr-only"
-                          />
-                          <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
-                            <Pencil size={11} aria-hidden />
-                          </span>
-                        </label>
-                        <span className="text-[11px] text-ink-600 dark:text-umber-200">
-                          {t(`design.colors.${role}`)}
+                          Anna & Bence
                         </span>
-                        {overridden ? (
-                          <button
-                            type="button"
-                            onClick={() => clearColor(role)}
-                            className="text-[10px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
-                          >
-                            {t("design.colors.reset")}
-                          </button>
-                        ) : (
-                          <span className="h-[14px]" aria-hidden />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {lowContrast && (
-                  <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-400">
-                    {t("design.colors.low_contrast")}
-                  </p>
-                )}
-              </div>
-            </section>
+                      </PresetTile>
+                    ))}
+                  </div>
 
-            {/* Fonts */}
-            <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("design.section.fonts")}
-              </h2>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {FONT_PRESETS.map((f) => (
-                  <PresetTile
-                    key={f.slug}
-                    active={design.fonts === f.slug}
-                    onSelect={() => chooseFonts(f.slug)}
-                    ariaLabel={t(f.nameKey)}
-                  >
-                    <span
-                      className="block text-xl leading-tight text-ink-900 dark:text-paper-50"
-                      style={{ fontFamily: f.headingStack }}
-                      aria-hidden
-                    >
-                      Anna & Bence
-                    </span>
-                  </PresetTile>
-                ))}
-              </div>
-
-              {/* Independent heading / body family overrides on top of the
+                  {/* Independent heading / body family overrides on top of the
                   preset, united in one card (a thin divider between the two
                   rows) so the typeface controls read as a single block. Each
                   chip renders its own name in its actual font; only bundled
@@ -814,72 +866,74 @@ export default function DesignPage() {
                   preset above always re-highlights the right family here.
                   Picking the preset's own family re-links to it (null override),
                   so a later preset change keeps following. */}
-              <div className="mt-3 divide-y divide-paper-200 rounded-2xl border border-paper-300 bg-white p-3 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
-                {(
-                  [
-                    [
-                      "heading",
-                      design.headingFont,
-                      chooseHeadingFont,
-                      getFontPreset(design.fonts).headingFamily,
-                    ] as const,
-                    [
-                      "body",
-                      design.bodyFont,
-                      chooseBodyFont,
-                      getFontPreset(design.fonts).bodyFamily,
-                    ] as const,
-                  ] as const
-                ).map(([which, current, setter, presetFamily]) => {
-                  const effective = current ?? presetFamily;
-                  return (
-                    <div key={which} className="py-2 first:pt-0 last:pb-0">
-                      <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
-                        {t(`design.font.${which}_label`)}
-                      </span>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {FONT_FAMILIES.map((fam) => (
-                          <FontChip
-                            key={fam.slug}
-                            active={effective === fam.slug}
-                            // Re-selecting the preset's family clears the override
-                            // (null) so it keeps tracking later preset changes.
-                            onClick={() => setter(fam.slug === presetFamily ? null : fam.slug)}
-                            fontFamily={fam.stack}
-                            label={t(fam.nameKey)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+                  <div className="mt-3 divide-y divide-paper-200 rounded-2xl border border-paper-300 bg-white p-3 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
+                    {(
+                      [
+                        [
+                          "heading",
+                          design.headingFont,
+                          chooseHeadingFont,
+                          getFontPreset(design.fonts).headingFamily,
+                        ] as const,
+                        [
+                          "body",
+                          design.bodyFont,
+                          chooseBodyFont,
+                          getFontPreset(design.fonts).bodyFamily,
+                        ] as const,
+                      ] as const
+                    ).map(([which, current, setter, presetFamily]) => {
+                      const effective = current ?? presetFamily;
+                      return (
+                        <div key={which} className="py-2 first:pt-0 last:pb-0">
+                          <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
+                            {t(`design.font.${which}_label`)}
+                          </span>
+                          <div className="flex flex-wrap justify-center gap-2">
+                            {FONT_FAMILIES.map((fam) => (
+                              <FontChip
+                                key={fam.slug}
+                                active={effective === fam.slug}
+                                // Re-selecting the preset's family clears the override
+                                // (null) so it keeps tracking later preset changes.
+                                onClick={() => setter(fam.slug === presetFamily ? null : fam.slug)}
+                                fontFamily={fam.stack}
+                                label={t(fam.nameKey)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
 
-            {/* Date format */}
-            <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("design.section.date")}
-              </h2>
-              <div className="grid grid-cols-3 gap-2">
-                {DATE_FORMATS.map((df) => (
-                  <PresetTile
-                    key={df.slug}
-                    active={design.dateFormat === df.slug}
-                    onSelect={() => chooseDateFormat(df.slug)}
-                    ariaLabel={t(df.nameKey)}
-                    compact
-                  >
-                    <span
-                      className="flex min-h-[2rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-sm italic leading-tight tracking-tight text-ink-900 dark:text-paper-50"
-                      aria-hidden
-                    >
-                      {formatWeddingDate(sampleDateIso, df.slug, locale)}
-                    </span>
-                  </PresetTile>
-                ))}
-              </div>
-            </section>
+                {/* Date format */}
+                <section>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                    {t("design.section.date")}
+                  </h2>
+                  <div className="grid grid-cols-3 gap-2">
+                    {DATE_FORMATS.map((df) => (
+                      <PresetTile
+                        key={df.slug}
+                        active={design.dateFormat === df.slug}
+                        onSelect={() => chooseDateFormat(df.slug)}
+                        ariaLabel={t(df.nameKey)}
+                        compact
+                      >
+                        <span
+                          className="flex min-h-[2rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-sm italic leading-tight tracking-tight text-ink-900 dark:text-paper-50"
+                          aria-hidden
+                        >
+                          {formatWeddingDate(sampleDateIso, df.slug, locale)}
+                        </span>
+                      </PresetTile>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
 
             {tab === "website" ? (
               <div className="space-y-6">
@@ -1049,6 +1103,19 @@ export default function DesignPage() {
                     })}
                   </div>
                 </section>
+
+                {/* Print tips: a collapsible note so a couple can hand the PDF
+                    to a printer without guessing bleed / size / stock (audit #15). */}
+                <details className="rounded-2xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
+                  <summary className="cursor-pointer text-sm font-medium text-ink-700 dark:text-paper-100">
+                    {t("design.cards.print_tips_title")}
+                  </summary>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-500 dark:text-umber-300">
+                    <li>{t("design.cards.print_tips_bleed")}</li>
+                    <li>{t("design.cards.print_tips_size")}</li>
+                    <li>{t("design.cards.print_tips_stock")}</li>
+                  </ul>
+                </details>
               </div>
             )}
           </div>

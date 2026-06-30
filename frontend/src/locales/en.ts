@@ -2381,6 +2381,8 @@ const en: LocaleMessages = {
       editing_helper:
         "Starts from your shared identity. Customize this card here and see the result live on the right.",
       common_identity: "Shared identity",
+      inherited_title: "Design inherited from Guest site",
+      inherited_change: "Change in Guest site →",
       table_label: "table",
       menu_title: "Menu",
       menu_starter: "Starter",
@@ -2410,6 +2412,10 @@ const en: LocaleMessages = {
     cards: {
       subtitle: "Create matching printed materials using your wedding style kit.",
       downloads_heading: "Downloadable PDFs",
+      print_tips_title: "Print tips",
+      print_tips_bleed: "Each PDF is set up with a 3mm bleed, ready for a print shop.",
+      print_tips_size: "Designed for A4 or US Letter paper.",
+      print_tips_stock: "Recommended on 300gsm silk or uncoated stock.",
       using_style: "Using your Wedding Style Kit",
       using_style_sub: "Colours, fonts and details are applied from your style kit.",
       edit_style_kit: "Edit style kit",

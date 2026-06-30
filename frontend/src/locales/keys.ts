@@ -2587,6 +2587,9 @@ export interface LocaleMessages {
       editing_title: string;
       editing_helper: string;
       common_identity: string;
+      /** Print-tab read-only inherited-identity summary (audit #13). */
+      inherited_title: string;
+      inherited_change: string;
       table_label: string;
       menu_title: string;
       menu_starter: string;
@@ -2623,6 +2626,11 @@ export interface LocaleMessages {
       subtitle: string;
       /** Heading above the on-demand PDF download tiles on the Print tab. */
       downloads_heading: string;
+      /** Collapsible print-tips block in the downloads area (audit #15). */
+      print_tips_title: string;
+      print_tips_bleed: string;
+      print_tips_size: string;
+      print_tips_stock: string;
       /** "Using your Wedding Style Kit" notice + link. */
       using_style: string;
       using_style_sub: string;

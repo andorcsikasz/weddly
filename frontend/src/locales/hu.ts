@@ -2404,6 +2404,8 @@ const hu: LocaleMessages = {
       editing_helper:
         "A közös arculatból indul. Itt testreszabod ezt a kártyát, jobbra azonnal látod az eredményt.",
       common_identity: "Közös arculat",
+      inherited_title: "Arculat a vendégoldalról örökölve",
+      inherited_change: "Módosítás a vendégoldalon →",
       table_label: "asztal",
       menu_title: "Menü",
       menu_starter: "Előétel",
@@ -2433,6 +2435,10 @@ const hu: LocaleMessages = {
     cards: {
       subtitle: "Készítsetek összehangolt nyomtatványokat a stíluscsomagotok alapján.",
       downloads_heading: "Letölthető PDF-ek",
+      print_tips_title: "Nyomtatási tippek",
+      print_tips_bleed: "Minden PDF 3 mm-es kifutóval készül, nyomdakész.",
+      print_tips_size: "A4 vagy US Letter papírmérethez tervezve.",
+      print_tips_stock: "Ajánlott 300 g/m² selyem vagy matt papírra.",
       using_style: "A stíluscsomagotok alapján",
       using_style_sub: "A színek, betűtípusok és részletek a stíluscsomagból származnak.",
       edit_style_kit: "Stíluscsomag szerkesztése",
