@@ -4227,10 +4227,9 @@ function GuestFilterBar({
             onChange={(e) => onQueryChange(e.target.value)}
           />
         </div>
-        <label className="flex items-center gap-1.5 text-sm text-ink-500 dark:text-umber-300">
-          <span className="hidden sm:inline">{t("guests.sort_label")}</span>
+        <div className="relative">
           <select
-            className="input w-auto"
+            className="h-9 w-auto appearance-none rounded-full border border-paper-300 bg-paper-50 pl-4 pr-9 text-sm font-medium text-ink-700 transition-colors hover:border-paper-400 focus:border-umber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
             value={sortKey}
             onChange={(e) => onSetSort(e.target.value as SortKey)}
             aria-label={t("guests.sort_label")}
@@ -4241,7 +4240,12 @@ function GuestFilterBar({
               </option>
             ))}
           </select>
-        </label>
+          <ChevronDown
+            size={14}
+            aria-hidden
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+          />
+        </div>
         <button
           type="button"
           className="btn-outline"
@@ -4450,7 +4454,7 @@ function GuestStat({
   const tooltip = (
     <span
       aria-hidden
-      className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-umber-900 px-2.5 py-1.5 text-xs font-normal normal-case leading-none tracking-normal text-paper-50 opacity-0 shadow-pop transition-opacity duration-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
+      className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-umber-900 px-2.5 py-1.5 text-xs font-normal normal-case leading-none tracking-normal text-paper-50 opacity-0 shadow-pop transition-opacity duration-100 peer-hover:opacity-100 peer-focus-visible:opacity-100 dark:bg-umber-950"
     >
       {tip}
     </span>
@@ -4463,9 +4467,9 @@ function GuestStat({
           onClick={onClick}
           aria-label={tip}
           aria-pressed={active}
-          className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 ${cls} ${
+          className={`peer -mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 ${cls} ${
             active
-              ? "text-blush-600 ring-1 ring-blush-300 dark:text-blush-300 dark:ring-blush-400/50"
+              ? "text-blush-600 dark:text-blush-300"
               : "hover:text-blush-600 dark:hover:text-blush-300"
           } ${dimmed ? "opacity-35 hover:opacity-100" : ""}`}
         >
