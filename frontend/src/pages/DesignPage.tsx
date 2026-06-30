@@ -761,9 +761,6 @@ export default function DesignPage() {
                           sampleName={sampleName}
                           sampleDate={formatWeddingDate(sampleDateIso, s.defaultDateFormat, locale)}
                         />
-                        <span className="text-[11px] leading-tight text-ink-500 dark:text-umber-300">
-                          {t(`design.style_desc.${s.slug}` as Parameters<typeof t>[0])}
-                        </span>
                       </PresetTile>
                     ))}
                   </div>
