@@ -22,6 +22,16 @@
 import { getContrastRatio } from "./wcag";
 
 export type StylePresetSlug =
+  // ── Active "style pack" identities (the four curated worlds). ──
+  | "garden_romance"
+  | "modern_monochrome"
+  | "blush_romantic"
+  | "midnight_luxe"
+  // ── Legacy slugs kept for back-compat: a couple who picked one of these
+  //    before the pack redesign keeps validating? No — they're NOT in
+  //    STYLE_PRESETS, so their stored style degrades to the default while
+  //    their palette/fonts still render (see resolveDesign + the note above
+  //    STYLE_PRESETS). They stay in the union only so old blobs type-check. ──
   | "classic_elegant"
   | "botanical_green"
   | "modern_minimal"
@@ -33,6 +43,12 @@ export type StylePresetSlug =
   | "blue_porcelain";
 
 export type PaletteSlug =
+  // ── Style-pack palettes (the four curated worlds). ──
+  | "garden"
+  | "mono_ink"
+  | "blush_rose"
+  | "noir"
+  // ── Legacy palettes (kept renderable for back-compat). ──
   | "botanical_green"
   | "espresso"
   | "blush"
@@ -45,7 +61,16 @@ export type PaletteSlug =
   | "noir_ivory"
   | "midnight";
 
-export type FontPresetSlug = "classic_serif" | "modern_clean" | "soft_romantic";
+export type FontPresetSlug =
+  // ── Style-pack pairings. ──
+  | "garden_serif"
+  | "mono_sans"
+  | "blush_bodoni"
+  | "noir_smallcaps"
+  // ── Legacy presets (kept for back-compat). ──
+  | "classic_serif"
+  | "modern_clean"
+  | "soft_romantic";
 
 /** A single bundled font family the couple can assign to the heading or body
  *  independently (the editable layer on top of the font PRESETS). The list is
@@ -56,7 +81,15 @@ export type FontFamilySlug =
   | "inter"
   | "general_sans"
   | "system_serif"
-  | "system_sans";
+  | "system_sans"
+  // ── Style-pack families (self-hosted woff2; see index.css). ──
+  | "cormorant_italic"
+  | "dm_sans"
+  | "jost"
+  | "bodoni_moda"
+  | "crimson_text"
+  | "cormorant_sc"
+  | "eb_garamond";
 
 /** The four colour roles a couple can override individually on top of a chosen
  *  palette. An override is a `#RRGGBB` string; absence means "use the palette". */
@@ -72,7 +105,23 @@ export type MonogramSeparatorSlug = "amp" | "plus" | "slash" | "and";
 
 /** How the wedding date is rendered across the guest page + printables. The
  *  concrete formatting is locale-aware - see {@link formatWeddingDate}. */
-export type DateFormatSlug = "numeric_dot" | "long" | "slash";
+export type DateFormatSlug = "numeric_dot" | "long" | "slash" | "roman";
+
+/** The ornament "language" a style pack speaks - drives the divider / frame /
+ *  corner marks rendered on both the guest page and the printed cards. The
+ *  concrete vector is resolved per slug by the renderers (web SVG + PDF ops),
+ *  so the two surfaces stay in lock-step. */
+export type OrnamentSlug = "botanical" | "none" | "oval" | "deco";
+
+/** The layout DIRECTION a style pack's cards take - the structural personality
+ *  (centered-formal vs asymmetric-editorial vs framed vs dark-corner-marked).
+ *  Read by {@link PrintCardPreview} and the PDF renderer to branch the layout. */
+export type CardLayoutSlug = "centered" | "asymmetric" | "framed" | "corners";
+
+/** Optional typographic treatment a pack applies to its HEADINGS on top of the
+ *  font stack (italic for Garden, uppercase for the Monochrome grotesk, small
+ *  caps for Midnight). Absent = render the heading as-is. */
+export type HeadingStyleSlug = "italic" | "uppercase" | "small_caps";
 
 /** Minimal per-template print options. Each printable template honours the
  *  subset that makes sense for it (a table number has no QR block). */
@@ -170,6 +219,20 @@ export interface StylePreset {
    *  override either independently afterwards. */
   defaultPalette: PaletteSlug;
   defaultFonts: FontPresetSlug;
+  /** The pack's ornament language - botanical sprig / none / oval frame / art
+   *  deco corners. Drives the guest-page dividers + the printed-card ornaments. */
+  ornament: OrnamentSlug;
+  /** The pack's card layout direction (centered / asymmetric / framed /
+   *  corners). Drives {@link PrintCardPreview} + the PDF card renderers. */
+  cardLayout: CardLayoutSlug;
+  /** Optional heading treatment the pack applies on top of its heading font. */
+  headingStyle?: HeadingStyleSlug;
+  /** Date format the pack seeds when picked (Roman numerals for Midnight Luxe,
+   *  numeric for Monochrome, long for the romantic packs). */
+  defaultDateFormat: DateFormatSlug;
+  /** Card frame the pack seeds when picked - most packs carry their identity in
+   *  the ornament, not a rectangular border, so this is usually "none". */
+  defaultBorderStyle: BorderStyleSlug;
   /** Optional website-chrome defaults a style seeds when picked (e.g. the
    *  editorial style turns on grayscale photos + sharp, shadowless, outline
    *  chrome). Omitted on styles that keep today's web defaults. */
@@ -196,6 +259,45 @@ function pair(hex: string): ColorPair {
 // the guest page's bands flip automatically (a dark palette's "dark" band
 // renders light, preserving the alternating rhythm).
 export const PALETTES: readonly Palette[] = [
+  // ── The four style-pack palettes (deliberately far apart: warm-ivory garden
+  //    green, pure-white monochrome, blush rose, dark champagne-on-noir). ──
+  {
+    // Garden Romance: warm ivory, deep garden green, antique gold.
+    slug: "garden",
+    nameKey: "design.palette.garden",
+    primary: pair("#2C3E2D"),
+    background: pair("#F5F0E8"),
+    accent: pair("#A8906A"),
+    text: pair("#2C3E2D"),
+  },
+  {
+    // Modern Monochrome: pure white, ink black, cool silver-grey hairline.
+    slug: "mono_ink",
+    nameKey: "design.palette.mono_ink",
+    primary: pair("#0A0A0A"),
+    background: pair("#FFFFFF"),
+    accent: pair("#D4D4D4"),
+    text: pair("#0A0A0A"),
+  },
+  {
+    // Blush Romantic: powder pink-white, burgundy rose, soft blush.
+    slug: "blush_rose",
+    nameKey: "design.palette.blush_rose",
+    primary: pair("#7B3B52"),
+    background: pair("#FEF1F1"),
+    accent: pair("#E8B4C0"),
+    text: pair("#4A2030"),
+  },
+  {
+    // Midnight Luxe: the dark pack - champagne gold on warm near-black, antique
+    // gold hairlines, cream text. The guest page flips its bands automatically.
+    slug: "noir",
+    nameKey: "design.palette.noir",
+    primary: pair("#E2C97E"),
+    background: pair("#18120E"),
+    accent: pair("#C5A44F"),
+    text: pair("#F2E8D5"),
+  },
   {
     slug: "botanical_green",
     nameKey: "design.palette.botanical_green",
@@ -304,6 +406,43 @@ export const PALETTES: readonly Palette[] = [
 ];
 
 export const FONT_PRESETS: readonly FontPreset[] = [
+  // ── Style-pack pairings (each pack's defining typography). ──
+  {
+    // Garden: libegő italic Cormorant heading over airy Jost Light body.
+    slug: "garden_serif",
+    nameKey: "design.font.garden_serif",
+    headingStack: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+    bodyStack: '"Jost", "Century Gothic", "Futura", system-ui, sans-serif',
+    headingFamily: "cormorant_italic",
+    bodyFamily: "jost",
+  },
+  {
+    // Monochrome: one strong grotesk for heading + body (heading goes bold/caps).
+    slug: "mono_sans",
+    nameKey: "design.font.mono_sans",
+    headingStack: '"DM Sans", "Helvetica Neue", Inter, system-ui, sans-serif',
+    bodyStack: '"DM Sans", "Helvetica Neue", Inter, system-ui, sans-serif',
+    headingFamily: "dm_sans",
+    bodyFamily: "dm_sans",
+  },
+  {
+    // Blush: high-contrast Bodoni heading over a warm Crimson Text book body.
+    slug: "blush_bodoni",
+    nameKey: "design.font.blush_bodoni",
+    headingStack: '"Bodoni Moda", "Didot", "Bodoni MT", Georgia, serif',
+    bodyStack: '"Crimson Text", Georgia, "Times New Roman", serif',
+    headingFamily: "bodoni_moda",
+    bodyFamily: "crimson_text",
+  },
+  {
+    // Midnight: gold small-caps Cormorant SC heading over classic Garamond body.
+    slug: "noir_smallcaps",
+    nameKey: "design.font.noir_smallcaps",
+    headingStack: '"Cormorant SC", "Cormorant Garamond", Georgia, serif',
+    bodyStack: '"EB Garamond", Garamond, Georgia, "Times New Roman", serif',
+    headingFamily: "cormorant_sc",
+    bodyFamily: "eb_garamond",
+  },
   {
     slug: "classic_serif",
     nameKey: "design.font.classic_serif",
@@ -359,6 +498,44 @@ export const FONT_FAMILIES: readonly { slug: FontFamilySlug; nameKey: string; st
     nameKey: "design.family.system_sans",
     stack: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
   },
+  // ── Style-pack families (self-hosted woff2; @font-face in index.css). ──
+  {
+    // Garden heading - rendered italic via the pack's headingStyle.
+    slug: "cormorant_italic",
+    nameKey: "design.family.cormorant_italic",
+    stack: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+  },
+  {
+    slug: "dm_sans",
+    nameKey: "design.family.dm_sans",
+    stack: '"DM Sans", "Helvetica Neue", Inter, system-ui, sans-serif',
+  },
+  {
+    slug: "jost",
+    nameKey: "design.family.jost",
+    stack: '"Jost", "Century Gothic", "Futura", system-ui, sans-serif',
+  },
+  {
+    slug: "bodoni_moda",
+    nameKey: "design.family.bodoni_moda",
+    stack: '"Bodoni Moda", "Didot", "Bodoni MT", Georgia, serif',
+  },
+  {
+    slug: "crimson_text",
+    nameKey: "design.family.crimson_text",
+    stack: '"Crimson Text", Georgia, "Times New Roman", serif',
+  },
+  {
+    // Noir heading - the SC face renders small caps natively.
+    slug: "cormorant_sc",
+    nameKey: "design.family.cormorant_sc",
+    stack: '"Cormorant SC", "Cormorant Garamond", Georgia, serif',
+  },
+  {
+    slug: "eb_garamond",
+    nameKey: "design.family.eb_garamond",
+    stack: '"EB Garamond", Garamond, Georgia, "Times New Roman", serif',
+  },
 ];
 
 /** Resolve a font-family slug to its CSS stack; falls back to Cormorant. */
@@ -366,41 +543,77 @@ export function getFontFamilyStack(slug: FontFamilySlug): string {
   return FONT_FAMILIES.find((f) => f.slug === slug)?.stack ?? FONT_FAMILIES[0]!.stack;
 }
 
-// Four deliberately distinct styles so the choice is a real one, spanning light
-// AND dark: warm champagne-gold classic, cool stone minimal, blush romantic, and
-// a dark "Black Tie" (warm ivory + gold on near-black). Removed/renamed slugs
-// stay in StylePresetSlug for backward-compat (a legacy couple's stored style
-// just degrades to the default selection; their palette/fonts render unchanged
-// since rendering reads those fields directly — e.g. the old light "editorial"
-// pick still resolves its ink_gold palette).
+// The four "style packs" - deliberately distinct WORLDS, not tints of one look.
+// Each bundles its own palette, typography, ornament language, card layout, date
+// format and button style so the choice reads as a real personality switch at a
+// glance (garden organic / monochrome editorial / blush romantic / midnight
+// gala). Removed/renamed slugs stay in StylePresetSlug for backward-compat: a
+// legacy couple's stored style just degrades to the default selection while
+// their palette/fonts render unchanged (rendering reads those fields directly).
 export const STYLE_PRESETS: readonly StylePreset[] = [
   {
-    slug: "classic_elegant",
-    nameKey: "design.style.classic_elegant",
-    defaultPalette: "champagne",
-    defaultFonts: "classic_serif",
+    // Garden Romance - late-afternoon kertiparti: organic, italic serif, gold.
+    slug: "garden_romance",
+    nameKey: "design.style.garden_romance",
+    defaultPalette: "garden",
+    defaultFonts: "garden_serif",
+    ornament: "botanical",
+    cardLayout: "centered",
+    headingStyle: "italic",
+    defaultDateFormat: "long",
+    defaultBorderStyle: "none",
+    defaultWeb: { buttonStyle: "outline", cardRadius: "soft", shadow: "soft" },
   },
   {
-    slug: "modern_minimal",
-    nameKey: "design.style.modern_minimal",
-    defaultPalette: "stone_minimal",
-    defaultFonts: "modern_clean",
+    // Modern Monochrome - gallery wedding: pure white, bold grotesk, asymmetric.
+    slug: "modern_monochrome",
+    nameKey: "design.style.modern_monochrome",
+    defaultPalette: "mono_ink",
+    defaultFonts: "mono_sans",
+    ornament: "none",
+    cardLayout: "asymmetric",
+    headingStyle: "uppercase",
+    defaultDateFormat: "numeric_dot",
+    defaultBorderStyle: "none",
+    defaultWeb: {
+      buttonStyle: "flat",
+      cardRadius: "sharp",
+      shadow: "none",
+      imageTreatment: "grayscale",
+    },
   },
   {
-    slug: "romantic_soft",
-    nameKey: "design.style.romantic_soft",
-    defaultPalette: "blush",
-    defaultFonts: "soft_romantic",
+    // Blush Romantic - candlelit peonies: blush pink, Bodoni, oval frame.
+    slug: "blush_romantic",
+    nameKey: "design.style.blush_romantic",
+    defaultPalette: "blush_rose",
+    defaultFonts: "blush_bodoni",
+    ornament: "oval",
+    cardLayout: "framed",
+    defaultDateFormat: "long",
+    defaultBorderStyle: "none",
+    defaultWeb: { buttonStyle: "lifted", cardRadius: "full", shadow: "soft" },
   },
   {
-    // Dark style: warm ivory + antique gold on a near-black background. The
-    // serif heading keeps it formal-elegant rather than stark.
-    slug: "black_tie_editorial",
-    nameKey: "design.style.black_tie_editorial",
-    defaultPalette: "midnight",
-    defaultFonts: "classic_serif",
+    // Midnight Luxe - black-tie gala: gold on near-black, small caps, deco corners.
+    slug: "midnight_luxe",
+    nameKey: "design.style.midnight_luxe",
+    defaultPalette: "noir",
+    defaultFonts: "noir_smallcaps",
+    ornament: "deco",
+    cardLayout: "corners",
+    headingStyle: "small_caps",
+    defaultDateFormat: "roman",
+    defaultBorderStyle: "none",
+    defaultWeb: { buttonStyle: "outline", cardRadius: "sharp", shadow: "none" },
   },
 ];
+
+/** Look up a style preset by slug; never throws - an unknown/legacy slug falls
+ *  back to the first pack so a stale style can't blank out the per-pack render. */
+export function getStylePreset(slug: StylePresetSlug): StylePreset {
+  return STYLE_PRESETS.find((s) => s.slug === slug) ?? STYLE_PRESETS[0]!;
+}
 
 /** Monogram separators. The glyph for `and` is locale-aware, so it carries no
  *  static glyph here - {@link monogramSeparatorGlyph} resolves it. */
@@ -415,7 +628,16 @@ export const DATE_FORMATS: readonly { slug: DateFormatSlug; nameKey: string }[] 
   { slug: "numeric_dot", nameKey: "design.date.numeric_dot" },
   { slug: "long", nameKey: "design.date.long" },
   { slug: "slash", nameKey: "design.date.slash" },
+  { slug: "roman", nameKey: "design.date.roman" },
 ];
+
+export const ORNAMENTS: readonly { slug: OrnamentSlug }[] = [
+  { slug: "botanical" },
+  { slug: "none" },
+  { slug: "oval" },
+  { slug: "deco" },
+];
+export const VALID_ORNAMENTS: ReadonlySet<OrnamentSlug> = new Set(ORNAMENTS.map((o) => o.slug));
 
 export const VALID_STYLES: ReadonlySet<StylePresetSlug> = new Set(STYLE_PRESETS.map((s) => s.slug));
 export const VALID_PALETTES: ReadonlySet<PaletteSlug> = new Set(PALETTES.map((p) => p.slug));
@@ -554,22 +776,23 @@ export function getShadowCss(slug: ShadowSlug): string {
  *  serif). NULL / legacy `design_json` rows resolve to this; it drives only the
  *  guest page + wired print templates, NOT the app-shell accent. */
 export const DEFAULT_DESIGN: CoupleDesign = {
-  style: "classic_elegant",
-  palette: "champagne",
-  fonts: "classic_serif",
+  style: "garden_romance",
+  palette: "garden",
+  fonts: "garden_serif",
   colors: {},
   headingFont: null,
   bodyFont: null,
   monogram: { enabled: true, separator: "amp" },
   dateFormat: "long",
-  borderStyle: "hairline",
-  print: { border: true, ornament: false, qr: false },
-  // Defaults reproduce today's hardcoded guest-page look, so a legacy blob
-  // (no `web` key) restyles to nothing.
+  borderStyle: "none",
+  print: { border: false, ornament: true, qr: false },
+  // Garden Romance is the broad-appeal default: a NULL/legacy `design_json`
+  // resolves to this coherent pack (outline buttons, soft cards, botanical
+  // ornament). Legacy couples who stored a palette/fonts still render those.
   web: {
     cardRadius: "soft",
     shadow: "soft",
-    buttonStyle: "lifted",
+    buttonStyle: "outline",
     hiddenSections: [],
     imageTreatment: "none",
   },
@@ -679,6 +902,13 @@ export interface PublicDesign {
   monogram_enabled: boolean;
   monogram_separator: MonogramSeparatorSlug;
   date_format: DateFormatSlug;
+  /** The active style pack's ornament language + card layout + heading
+   *  treatment, resolved from the chosen style. Both the guest page and the
+   *  print preview branch on these so the pack's personality reads on every
+   *  surface (a custom palette/font override never changes the pack's bones). */
+  ornament: OrnamentSlug;
+  card_layout: CardLayoutSlug;
+  heading_style: HeadingStyleSlug | null;
   /** Website-only chrome, resolved to concrete CSS the guest page drops into
    *  `--wt-*` custom properties. Never read by the PDF renderer. */
   website_card_radius: string;
@@ -695,6 +925,7 @@ export interface PublicDesign {
 export function toPublicDesign(design: CoupleDesign): PublicDesign {
   const palette = getPalette(design.palette);
   const fonts = getFontPreset(design.fonts);
+  const style = getStylePreset(design.style);
   // Per-role custom override falls back to the palette hex.
   const primary = design.colors.primary ?? palette.primary.hex;
   const background = design.colors.background ?? palette.background.hex;
@@ -719,6 +950,9 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
     monogram_enabled: design.monogram.enabled,
     monogram_separator: design.monogram.separator,
     date_format: design.dateFormat,
+    ornament: style.ornament,
+    card_layout: style.cardLayout,
+    heading_style: style.headingStyle ?? null,
     website_card_radius: getCardRadiusCss(design.web.cardRadius),
     website_shadow: getShadowCss(design.web.shadow),
     website_button_style: design.web.buttonStyle,
@@ -755,6 +989,36 @@ export function buildMonogram(
   return [a, glyph, b].filter(Boolean).join(" ");
 }
 
+/** Classic additive Roman numerals for 1..3999 (covers any month + any wedding
+ *  year). Out-of-range input returns the arabic number unchanged. Pure + total. */
+export function toRomanNumeral(n: number): string {
+  if (!Number.isInteger(n) || n <= 0 || n >= 4000) return String(n);
+  const table: readonly [number, string][] = [
+    [1000, "M"],
+    [900, "CM"],
+    [500, "D"],
+    [400, "CD"],
+    [100, "C"],
+    [90, "XC"],
+    [50, "L"],
+    [40, "XL"],
+    [10, "X"],
+    [9, "IX"],
+    [5, "V"],
+    [4, "IV"],
+    [1, "I"],
+  ];
+  let rest = n;
+  let out = "";
+  for (const [value, symbol] of table) {
+    while (rest >= value) {
+      out += symbol;
+      rest -= value;
+    }
+  }
+  return out;
+}
+
 /** Format a wedding date (`YYYY-MM-DD` ISO, or anything `Date` can parse)
  *  per the chosen {@link DateFormatSlug} and locale. Invalid input returns the
  *  raw string unchanged, mirroring the guest page's permissive date handling. */
@@ -776,6 +1040,11 @@ export function formatWeddingDate(
   }
   if (slug === "slash") {
     return locale === "hu" ? `${year}/${mo}/${d}` : `${mo}/${d}/${year}`;
+  }
+  if (slug === "roman") {
+    // Locale-neutral black-tie format: arabic day · roman month · roman year
+    // (e.g. 10 · VI · MMXXVII). The Midnight Luxe pack's signature.
+    return `${day} · ${toRomanNumeral(month)} · ${toRomanNumeral(year)}`;
   }
   // "long" - month name spelled out, locale word order.
   const monthsHu = [

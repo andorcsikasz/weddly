@@ -12,3 +12,18 @@ with Hungarian / Cyrillic / Greek / Simplified-Chinese glyphs render
 correctly. Other scripts (Arabic, Devanagari, Hangul, Hiragana/Katakana,
 Traditional Chinese) still fall back to '?' — embedding those subsets is
 tracked as a follow-up so the image stays a manageable size.
+
+---
+
+Design / stationery font masters (full TTFs, for PDF embedding):
+  DMSans-Regular.ttf, DMSans-Bold.ttf            DM Sans
+  Jost-Light.ttf                                  Jost
+  BodoniModa-Regular.ttf, BodoniModa-SemiBold.ttf Bodoni Moda
+  CrimsonText-Regular.ttf                         Crimson Text
+  CormorantSC-Regular.ttf, CormorantSC-SemiBold.ttf Cormorant SC
+  EBGaramond-Regular.ttf                          EB Garamond
+  CormorantGaramond-Italic.ttf                    Cormorant Garamond
+
+All of the above are SIL Open Font License v1.1 (sourced from Google Fonts,
+https://fonts.google.com). https://scripts.sil.org/OFL
+Self-hosted / vendored: we never hot-link the Google Fonts CDN.

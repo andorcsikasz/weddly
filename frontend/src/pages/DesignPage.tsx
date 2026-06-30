@@ -284,6 +284,11 @@ export default function DesignPage() {
       colors: {},
       headingFont: null,
       bodyFont: null,
+      // Each pack also seeds its signature date format + frame (Roman numerals
+      // for Midnight Luxe, numeric for Monochrome) so the pack reads coherently
+      // the instant it's picked. Still freely overridable afterwards.
+      dateFormat: preset.defaultDateFormat,
+      borderStyle: preset.defaultBorderStyle,
       web: { ...d.web, ...(preset.defaultWeb ?? {}) },
     }));
   }

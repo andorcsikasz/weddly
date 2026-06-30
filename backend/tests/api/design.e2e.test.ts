@@ -8,7 +8,18 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { FONT_FAMILIES, FONT_PRESETS, getFontFamilyStack } from "@shared/design";
+import {
+  DATE_FORMATS,
+  FONT_FAMILIES,
+  FONT_PRESETS,
+  formatWeddingDate,
+  getFontFamilyStack,
+  getStylePreset,
+  resolveDesign,
+  STYLE_PRESETS,
+  toPublicDesign,
+  toRomanNumeral,
+} from "@shared/design";
 import { db } from "../../src/db";
 import { req, verifyUserEmail, wipeAll } from "../helpers";
 
@@ -82,8 +93,59 @@ describe("design: font preset → family mapping", () => {
   });
 });
 
+describe("design: style packs + roman date (M0)", () => {
+  test("the four active packs each carry an ornament, layout, and seeded date", () => {
+    const slugs = STYLE_PRESETS.map((s) => s.slug);
+    expect(slugs).toEqual([
+      "garden_romance",
+      "modern_monochrome",
+      "blush_romantic",
+      "midnight_luxe",
+    ]);
+    for (const p of STYLE_PRESETS) {
+      expect(["botanical", "none", "oval", "deco"]).toContain(p.ornament);
+      expect(["centered", "asymmetric", "framed", "corners"]).toContain(p.cardLayout);
+      expect(DATE_FORMATS.some((d) => d.slug === p.defaultDateFormat)).toBe(true);
+    }
+    // Midnight Luxe is the Roman-numeral, small-caps, deco-corner pack.
+    const noir = getStylePreset("midnight_luxe");
+    expect(noir.defaultDateFormat).toBe("roman");
+    expect(noir.ornament).toBe("deco");
+    expect(noir.headingStyle).toBe("small_caps");
+  });
+
+  test("toPublicDesign exposes the active pack's ornament + layout + heading style", () => {
+    const pub = toPublicDesign(resolveDesign({ style: "midnight_luxe" }));
+    expect(pub.ornament).toBe("deco");
+    expect(pub.card_layout).toBe("corners");
+    expect(pub.heading_style).toBe("small_caps");
+    // A pack with no heading treatment exposes null, not undefined.
+    expect(toPublicDesign(resolveDesign({ style: "blush_romantic" })).heading_style).toBeNull();
+  });
+
+  test("a legacy style slug degrades to the default pack but keeps its palette", () => {
+    const d = resolveDesign({ style: "black_tie_editorial", palette: "midnight" });
+    // The retired style slug is no longer in STYLE_PRESETS → degrades to default.
+    expect(d.style).toBe("garden_romance");
+    // ...but the stored palette is still valid and renders unchanged.
+    expect(d.palette).toBe("midnight");
+  });
+
+  test("roman date format renders arabic day · roman month · roman year", () => {
+    expect(formatWeddingDate("2027-06-10", "roman", "en")).toBe("10 · VI · MMXXVII");
+    expect(formatWeddingDate("2027-06-10", "roman", "hu")).toBe("10 · VI · MMXXVII");
+    expect(toRomanNumeral(2027)).toBe("MMXXVII");
+    expect(toRomanNumeral(6)).toBe("VI");
+    expect(toRomanNumeral(4)).toBe("IV");
+    expect(toRomanNumeral(1944)).toBe("MCMXLIV");
+    // Out-of-range stays arabic rather than throwing.
+    expect(toRomanNumeral(0)).toBe("0");
+    expect(toRomanNumeral(4000)).toBe("4000");
+  });
+});
+
 describe("design: default resolution", () => {
-  test("a fresh couple (NULL design_json) reads back as Classic Elegant", async () => {
+  test("a fresh couple (NULL design_json) reads back as Garden Romance", async () => {
     wipeAll();
     const token = await registerVerified("design-default@weddly.test");
     const { couple } = await onboard(token);
@@ -93,20 +155,20 @@ describe("design: default resolution", () => {
     };
     expect(stored.design_json).toBeNull();
     expect(couple.design).toEqual({
-      style: "classic_elegant",
-      palette: "champagne",
-      fonts: "classic_serif",
+      style: "garden_romance",
+      palette: "garden",
+      fonts: "garden_serif",
       colors: {},
       headingFont: null,
       bodyFont: null,
       monogram: { enabled: true, separator: "amp" },
       dateFormat: "long",
-      borderStyle: "hairline",
-      print: { border: true, ornament: false, qr: false },
+      borderStyle: "none",
+      print: { border: false, ornament: true, qr: false },
       web: {
         cardRadius: "soft",
         shadow: "soft",
-        buttonStyle: "lifted",
+        buttonStyle: "outline",
         hiddenSections: [],
         imageTreatment: "none",
       },
@@ -122,11 +184,11 @@ describe("design: PATCH /api/couples/current", () => {
     const r = await req<{ couple: { design: CoupleDesign } }>(
       "PATCH",
       "/api/couples/current",
-      { design: { style: "modern_minimal", palette: "espresso", fonts: "modern_clean" } },
+      { design: { style: "modern_monochrome", palette: "espresso", fonts: "modern_clean" } },
       { token },
     );
     expect(r.status).toBe(200);
-    expect(r.data.couple.design.style).toBe("modern_minimal");
+    expect(r.data.couple.design.style).toBe("modern_monochrome");
     expect(r.data.couple.design.palette).toBe("espresso");
     expect(r.data.couple.design.fonts).toBe("modern_clean");
 
@@ -153,7 +215,7 @@ describe("design: PATCH /api/couples/current", () => {
     await req(
       "PATCH",
       "/api/couples/current",
-      { design: { style: "romantic_soft", palette: "blush", fonts: "soft_romantic" } },
+      { design: { style: "blush_romantic", palette: "blush", fonts: "soft_romantic" } },
       { token },
     );
     // Then change only the palette — style + fonts must survive.
@@ -164,7 +226,7 @@ describe("design: PATCH /api/couples/current", () => {
       { token },
     );
     expect(r.status).toBe(200);
-    expect(r.data.couple.design.style).toBe("romantic_soft");
+    expect(r.data.couple.design.style).toBe("blush_romantic");
     expect(r.data.couple.design.fonts).toBe("soft_romantic");
     expect(r.data.couple.design.palette).toBe("sage_cream");
     expect(r.data.couple.design.print.border).toBe(false);
@@ -406,7 +468,7 @@ describe("design: website-only `web` sub-object", () => {
     expect(me.data.couple.design.web).toEqual({
       cardRadius: "soft",
       shadow: "soft",
-      buttonStyle: "lifted",
+      buttonStyle: "outline",
       hiddenSections: [],
       imageTreatment: "none",
     });
@@ -520,16 +582,16 @@ describe("design: website-only `web` sub-object", () => {
       "/api/couples/current",
       {
         design: {
-          style: "black_tie_editorial",
-          palette: "midnight",
+          style: "midnight_luxe",
+          palette: "noir",
           web: { imageTreatment: "grayscale", buttonStyle: "outline" },
         },
       },
       { token },
     );
     expect(r.status).toBe(200);
-    expect(r.data.couple.design.style).toBe("black_tie_editorial");
-    expect(r.data.couple.design.palette).toBe("midnight");
+    expect(r.data.couple.design.style).toBe("midnight_luxe");
+    expect(r.data.couple.design.palette).toBe("noir");
     expect(r.data.couple.design.web.imageTreatment).toBe("grayscale");
   });
 

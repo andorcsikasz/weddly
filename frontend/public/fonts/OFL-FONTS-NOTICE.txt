@@ -1,0 +1,24 @@
+Self-hosted Google Fonts (web woff2 subsets: latin + latin-ext)
+
+  DM Sans              dm-sans-{400,500,700}[-ext].woff2
+  Jost                 jost-{300,400}[-ext].woff2
+  Bodoni Moda          bodoni-moda-{400,600,700}[-ext].woff2
+  Crimson Text         crimson-text-{400,600}[-ext].woff2
+  Cormorant SC         cormorant-sc-{400,600}[-ext].woff2
+  EB Garamond          eb-garamond-{400,500}[-ext].woff2
+  Cormorant Garamond   cormorant-garamond-{400,500}-italic[-ext].woff2,
+                       cormorant-garamond-600[-ext].woff2
+
+Source:  https://fonts.google.com
+License: SIL Open Font License v1.1 (all families above)
+         https://scripts.sil.org/OFL
+
+The `-ext` files carry the latin-ext subset (Hungarian o-double-acute / u-double-acute and
+friends); the @font-face rules in frontend/src/index.css gate them with the
+matching unicode-range so the browser only fetches latin-ext when needed.
+
+These woff2 files are vendored and served from this app's own origin. We
+deliberately do NOT add a Google Fonts <link> or hot-link the gstatic CDN:
+self-hosting keeps every visitor request first-party so no IP addresses leak
+to a third party (same privacy stance as General Sans, see
+GENERAL-SANS-LICENSE.txt).

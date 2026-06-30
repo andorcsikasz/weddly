@@ -2446,6 +2446,12 @@ export interface LocaleMessages {
     save_error: string;
     /** Wedding-style preset names. */
     style: {
+      /** The four active style packs. */
+      garden_romance: string;
+      modern_monochrome: string;
+      blush_romantic: string;
+      midnight_luxe: string;
+      /** Legacy slugs (kept for back-compat translations). */
       classic_elegant: string;
       botanical_green: string;
       modern_minimal: string;
@@ -2456,8 +2462,20 @@ export interface LocaleMessages {
       blue_porcelain: string;
       black_tie_editorial: string;
     };
+    /** Optional one-line mood descriptions shown under each style-pack tile. */
+    style_desc: {
+      garden_romance: string;
+      modern_monochrome: string;
+      blush_romantic: string;
+      midnight_luxe: string;
+    };
     /** Colour-palette names. */
     palette: {
+      /** Style-pack palettes. */
+      garden: string;
+      mono_ink: string;
+      blush_rose: string;
+      noir: string;
       botanical_green: string;
       espresso: string;
       blush: string;
@@ -2472,6 +2490,11 @@ export interface LocaleMessages {
     };
     /** Font-preset names. */
     font: {
+      /** Style-pack pairings. */
+      garden_serif: string;
+      mono_sans: string;
+      blush_bodoni: string;
+      noir_smallcaps: string;
       classic_serif: string;
       modern_clean: string;
       soft_romantic: string;
@@ -2487,6 +2510,13 @@ export interface LocaleMessages {
       general_sans: string;
       system_serif: string;
       system_sans: string;
+      cormorant_italic: string;
+      dm_sans: string;
+      jost: string;
+      bodoni_moda: string;
+      crimson_text: string;
+      cormorant_sc: string;
+      eb_garamond: string;
     };
     /** Custom per-role colour overrides on top of the palette. */
     colors: {
@@ -2557,6 +2587,7 @@ export interface LocaleMessages {
       numeric_dot: string;
       long: string;
       slash: string;
+      roman: string;
     };
     /** Cards & printables hub. */
     cards: {
