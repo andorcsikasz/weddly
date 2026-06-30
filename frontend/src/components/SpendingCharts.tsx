@@ -27,6 +27,10 @@ interface Segment {
   key: string;
   value: number;
   colorClass: string;
+  /** When set, the slice is hoverable: hovering it swaps the donut centre to
+   *  this label + `valueLabel` so you can read which category an arc is. */
+  label?: string;
+  valueLabel?: string;
 }
 
 /** Generic SVG donut. Draws a muted track, then one arc per segment laid out
@@ -53,11 +57,14 @@ function Donut({
   overflow?: { value: number; colorClass: string };
   children?: ReactNode;
 }) {
+  const [hovered, setHovered] = useState<string | null>(null);
   const r = (100 - thickness) / 2;
   const circumference = 2 * Math.PI * r;
   const denom = total ?? segments.reduce((s, x) => s + Math.max(0, x.value), 0);
   // The base ring never draws past a full lap; the overage rides on top instead.
   const cap = total ?? Number.POSITIVE_INFINITY;
+  // The slice currently under the cursor (only labelled slices are hoverable).
+  const hoveredSeg = segments.find((s) => s.key === hovered && s.label);
   let offset = 0;
   const overLen =
     overflow && denom > 0
@@ -89,8 +96,18 @@ function Donut({
                 strokeLinecap={rounded ? "round" : "butt"}
                 strokeDasharray={`${len} ${circumference - len}`}
                 strokeDashoffset={-offset}
-                className={seg.colorClass}
-              />
+                className={`${seg.colorClass} ${
+                  seg.label
+                    ? `cursor-pointer transition-opacity ${
+                        hovered && hovered !== seg.key ? "opacity-40" : "opacity-100"
+                      }`
+                    : ""
+                }`}
+                onMouseEnter={seg.label ? () => setHovered(seg.key) : undefined}
+                onMouseLeave={seg.label ? () => setHovered(null) : undefined}
+              >
+                {seg.label ? <title>{seg.label}</title> : null}
+              </circle>
             );
             offset += len;
             return el;
@@ -109,9 +126,22 @@ function Donut({
           />
         ) : null}
       </svg>
-      {children ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          {children}
+      {hoveredSeg || children ? (
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+          {hoveredSeg ? (
+            <>
+              <span className="text-sm font-semibold leading-tight text-ink-900 dark:text-paper-50">
+                {hoveredSeg.label}
+              </span>
+              {hoveredSeg.valueLabel ? (
+                <span className="mt-0.5 text-[11px] tabular-nums text-ink-500 dark:text-umber-300">
+                  {hoveredSeg.valueLabel}
+                </span>
+              ) : null}
+            </>
+          ) : (
+            children
+          )}
         </div>
       ) : null}
     </div>
@@ -553,49 +583,53 @@ export function SpendingCharts({
               {t("dashboard.charts.distribution_empty")}
             </p>
           ) : (
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
-              <Donut
-                segments={slices.map((s) => ({
-                  key: s.key,
-                  value: s.amount,
-                  colorClass: s.stroke,
-                }))}
-              >
-                <span className="text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
-                  {formatHufCompact(total, locale)}
-                </span>
-                <span className="text-[11px] text-ink-500 dark:text-umber-300">
-                  {t("dashboard.charts.planned_label")}
-                </span>
-              </Donut>
-              <ul className="w-full min-w-0 space-y-1.5 sm:flex-1">
-                {(() => {
-                  const pcts = percentagesTo100(
-                    slices.map((s) => s.amount),
-                    total,
-                  );
-                  return slices.map((s, i) => {
-                    const pct = pcts[i] ?? 0;
-                    const Icon = CATEGORY_ICONS[s.key as BudgetCategory] ?? CATEGORY_ICONS.other;
-                    return (
-                      <li key={s.key} className="flex items-center gap-2 text-xs">
-                        <span
-                          aria-hidden
-                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`}
-                        />
-                        <LegendLabel label={s.label} Icon={Icon} />
-                        <span className="shrink-0 tabular-nums text-ink-500 dark:text-umber-300">
-                          {pct}%
-                        </span>
-                        <span className="w-20 shrink-0 text-right tabular-nums font-medium text-ink-800 dark:text-paper-100">
-                          {formatHufCompact(s.amount, locale)}
-                        </span>
-                      </li>
-                    );
-                  });
-                })()}
-              </ul>
-            </div>
+            (() => {
+              const pcts = percentagesTo100(
+                slices.map((s) => s.amount),
+                total,
+              );
+              return (
+                <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
+                  <Donut
+                    segments={slices.map((s, i) => ({
+                      key: s.key,
+                      value: s.amount,
+                      colorClass: s.stroke,
+                      label: s.label,
+                      valueLabel: `${pcts[i] ?? 0}% · ${formatHufCompact(s.amount, locale)}`,
+                    }))}
+                  >
+                    <span className="text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                      {formatHufCompact(total, locale)}
+                    </span>
+                    <span className="text-[11px] text-ink-500 dark:text-umber-300">
+                      {t("dashboard.charts.planned_label")}
+                    </span>
+                  </Donut>
+                  <ul className="w-full min-w-0 space-y-1.5 sm:flex-1">
+                    {slices.map((s, i) => {
+                      const pct = pcts[i] ?? 0;
+                      const Icon = CATEGORY_ICONS[s.key as BudgetCategory] ?? CATEGORY_ICONS.other;
+                      return (
+                        <li key={s.key} className="flex items-center gap-2 text-xs">
+                          <span
+                            aria-hidden
+                            className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`}
+                          />
+                          <LegendLabel label={s.label} Icon={Icon} />
+                          <span className="shrink-0 tabular-nums text-ink-500 dark:text-umber-300">
+                            {pct}%
+                          </span>
+                          <span className="w-20 shrink-0 text-right tabular-nums font-medium text-ink-800 dark:text-paper-100">
+                            {formatHufCompact(s.amount, locale)}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })()
           )}
         </Card>
       </div>
