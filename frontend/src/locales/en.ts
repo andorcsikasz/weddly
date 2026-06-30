@@ -3244,6 +3244,7 @@ const en: LocaleMessages = {
     field_label_placeholder: "e.g. the Kovács family",
     field_amount: "Amount",
     col_note: "Note",
+    private_badge: "Private to you",
   },
   cost_planning: {
     benchmark_strip:

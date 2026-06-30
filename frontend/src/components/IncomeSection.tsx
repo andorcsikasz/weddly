@@ -10,13 +10,12 @@
 // no date field.
 
 import type { Currency, Guest, Household } from "@shared/types";
-import { Trash2 } from "lucide-react";
+import { Lock, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { guestApi, householdApi, incomeApi } from "../lib/endpoints";
 import { formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
-import { InfoHint } from "./InfoHint";
 import { useToast } from "./ui";
 
 const MAX_LABEL_LEN = 120;
@@ -203,10 +202,16 @@ export function IncomeSection({
 
   return (
     <section className="mt-8">
-      <div className="mb-3 flex items-center gap-2">
-        <h2 className="font-grotesk">{t("income.title")}</h2>
-        <InfoHint text={t("income.sub")} />
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">
+          {t("income.title")}
+        </h2>
+        <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+          <Lock size={14} aria-hidden />
+          {t("income.private_badge")}
+        </span>
       </div>
+      <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">{t("income.sub")}</p>
 
       {/* Summary - one warm number, no leaderboard. */}
       <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl border border-paper-300 bg-paper-50 px-4 py-3 dark:border-umber-700 dark:bg-ink-800 sm:grid-cols-3">

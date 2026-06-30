@@ -3601,6 +3601,7 @@ export interface LocaleMessages {
     field_label_placeholder: string;
     field_amount: string;
     col_note: string;
+    private_badge: string;
   };
   /** Cost-planning panel surfaces that don't belong to the budget *table*:
    *  HU benchmark strip, tiered over-cap warnings, page-level cost-per-guest

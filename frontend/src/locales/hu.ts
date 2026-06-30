@@ -3276,6 +3276,7 @@ const hu: LocaleMessages = {
     field_label_placeholder: "pl. Kovács család",
     field_amount: "Összeg",
     col_note: "Megjegyzés",
+    private_badge: "Csak nektek",
   },
   cost_planning: {
     benchmark_strip:
