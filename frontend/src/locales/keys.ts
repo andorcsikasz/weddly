@@ -1832,9 +1832,12 @@ export interface LocaleMessages {
       hide_dismissed: string;
       /** Overall decision progress line above the personalization strip. */
       progress_label: string;
-      /** Personalization "setup strip": kicker + answered-count chip. */
+      /** Personalization "setup strip": kicker + answered-count chip + collapse bar. */
       setup_start_here: string;
       setup_answered: string;
+      setup_label: string;
+      setup_done: string;
+      setup_continue: string;
       /** Decision-log: add a one-line resolution note to a decided item. */
       action_add_note: string;
     };

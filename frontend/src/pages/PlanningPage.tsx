@@ -51,7 +51,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
-import { DecisionsPanel, computeIntakeTotal } from "./DecisionsPanel";
+import { DecisionsPanel } from "./DecisionsPanel";
 import { ApiError } from "../lib/api";
 import {
   type PlanningPromptTags,
@@ -172,6 +172,21 @@ const IDEA_STATUS_META: Record<
   },
 };
 const IDEA_STATUS_ORDER: IdeaStatus[] = ["doing", "maybe", "skip"];
+
+/** localStorage key for the Decisions-tab personalization strip collapse state
+ *  ("1" = collapsed, "0" = open). Absent means "no explicit preference yet", so
+ *  the strip auto-collapses once the couple has already answered something. */
+const INTAKE_COLLAPSE_KEY = "weddly.planning.intakeCollapsed";
+function readIntakeCollapsePref(): boolean | null {
+  try {
+    const v = localStorage.getItem(INTAKE_COLLAPSE_KEY);
+    if (v === "1") return false;
+    if (v === "0") return true;
+  } catch {
+    // localStorage unavailable (private mode / SSR) - fall back to default.
+  }
+  return null;
+}
 
 /** Lookup table mapping every TASK_TEMPLATE title (HU + EN) to the group it
  *  came from. Lets us render a divider between Esküvő and Nászút tasks in
@@ -308,24 +323,44 @@ export default function PlanningPage() {
   // to the pills while the answer grid renders below. Answers tune which
   // conditional decision prompts surface.
   const [intakeTags, setIntakeTags] = useState<PlanningPromptTags>({});
-  const [intakeOpen, setIntakeOpen] = useState(true);
+  const [intakeOpen, setIntakeOpen] = useState<boolean>(() => readIntakeCollapsePref() ?? true);
+  const intakeAutoSet = useRef(false);
   useEffect(() => {
     let alive = true;
     void planningApi
       .getPromptProfile()
       .then((res) => {
-        if (alive) setIntakeTags(res.tags ?? {});
+        if (!alive) return;
+        const tags = res.tags ?? {};
+        setIntakeTags(tags);
+        // No saved preference yet: collapse the setup strip the first time we
+        // see the couple has already answered something; keep it open otherwise.
+        if (readIntakeCollapsePref() === null && !intakeAutoSet.current) {
+          intakeAutoSet.current = true;
+          const answered = INTAKE_DIMENSIONS.filter((d) => tags[d.tag] != null).length;
+          setIntakeOpen(answered === 0);
+        }
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
   }, []);
-  const intakeTotal = useMemo(() => computeIntakeTotal(items, intakeTags), [items, intakeTags]);
-  const visibleIntakeCount = useMemo(
-    () => INTAKE_DIMENSIONS.filter((d) => intakeTags[d.tag] !== "no").length,
+  const intakeAnswered = useMemo(
+    () => INTAKE_DIMENSIONS.filter((d) => intakeTags[d.tag] != null).length,
     [intakeTags],
   );
+  function toggleIntake() {
+    setIntakeOpen((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem(INTAKE_COLLAPSE_KEY, next ? "0" : "1");
+      } catch {
+        // best-effort persistence only
+      }
+      return next;
+    });
+  }
   async function handleSetTag(tag: ConditionTag, value: "yes" | "no") {
     const next: PlanningPromptTags = { ...intakeTags };
     if (next[tag] === value) delete next[tag];
@@ -888,25 +923,27 @@ export default function PlanningPage() {
           {activeKind === "decision" && (
             <button
               type="button"
-              onClick={() => setIntakeOpen((v) => !v)}
+              onClick={toggleIntake}
               aria-expanded={intakeOpen}
               className="flex w-full items-center gap-3 rounded-2xl border border-ink-900 bg-paper-100/40 px-4 py-2 text-left transition-colors hover:bg-paper-200/40 dark:border-umber-700 dark:bg-umber-800/40 dark:hover:bg-umber-700/40 sm:ml-auto sm:flex-1"
             >
               <span className="flex-1 truncate font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                {t("planning.decisions.intake_title")}
+                {t("planning.decisions.setup_label")}
               </span>
               <span className="shrink-0 rounded-full bg-paper-200 px-2.5 py-1 text-[11px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-100">
-                {t("planning.decisions.total_count", { n: String(intakeTotal) })}
+                {t("planning.decisions.setup_answered", {
+                  n: String(intakeAnswered),
+                  total: String(INTAKE_DIMENSIONS.length),
+                })}
               </span>
-              {visibleIntakeCount > 0 && (
+              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-blush-500 dark:text-blush-300">
+                {t(intakeOpen ? "planning.decisions.setup_done" : "planning.decisions.setup_continue")}
                 <ChevronDown
-                  size={18}
+                  size={16}
                   aria-hidden="true"
-                  className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${
-                    intakeOpen ? "rotate-180" : ""
-                  }`}
+                  className={`transition-transform ${intakeOpen ? "rotate-180" : ""}`}
                 />
-              )}
+              </span>
             </button>
           )}
 
