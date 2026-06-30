@@ -967,6 +967,7 @@ const en: LocaleMessages = {
     upcoming_empty_none_cta: "Start planning",
     upcoming_empty_clear: "Nothing urgent. Everything's on track.",
     upcoming_next_step_lock_date: "Next step: Lock the wedding date",
+    upcoming_undated_hint: "Add due dates to your to-dos so they show up here.",
     upcoming_settings_topic: "What to show?",
     upcoming_settings_topic_wedding: "Wedding tasks",
     upcoming_settings_topic_honeymoon: "Honeymoon tasks",

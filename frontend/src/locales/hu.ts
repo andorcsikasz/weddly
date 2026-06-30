@@ -978,6 +978,7 @@ const hu: LocaleMessages = {
     upcoming_empty_none_cta: "Tervezés indítása",
     upcoming_empty_clear: "Nincs sürgős teendő. Minden a tervek szerint halad.",
     upcoming_next_step_lock_date: "Következő lépés: rögzítsétek az esküvő dátumát",
+    upcoming_undated_hint: "Rendelj dátumot a teendőkhöz, hogy itt is megjelenjenek.",
     upcoming_settings_topic: "Mit mutasson?",
     upcoming_settings_topic_wedding: "Esküvői feladatok",
     upcoming_settings_topic_honeymoon: "Nászúti feladatok",

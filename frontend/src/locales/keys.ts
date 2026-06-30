@@ -1157,6 +1157,8 @@ export interface LocaleMessages {
     /** Empty state when tasks exist but none are dated/pending — reassurance. */
     upcoming_empty_clear: string;
     upcoming_next_step_lock_date: string;
+    /** Soft hint shown above the recently-added-tasks fallback list (no dates yet). */
+    upcoming_undated_hint: string;
     upcoming_settings_topic: string;
     upcoming_settings_topic_wedding: string;
     upcoming_settings_topic_honeymoon: string;

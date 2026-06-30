@@ -135,11 +135,32 @@ describe("<UpcomingTasksCard>", () => {
     expect(screen.getByText("Start planning")).toBeInTheDocument();
   });
 
-  it("reassures when tasks exist but none are dated/pending", async () => {
+  it("falls back to recent undated tasks with a hint instead of an empty card", async () => {
     listResponse = {
       items: [
         task({ id: 1, title: "Someday", due_date: null }),
         task({ id: 2, title: "Already done", due_date: isoFromToday(2), done: true }),
+      ],
+    };
+    render(
+      <Providers>
+        <UpcomingTasksCard weddingDate={null} />
+      </Providers>,
+    );
+    await flush();
+    expect(
+      screen.getByText("Add due dates to your to-dos so they show up here."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Someday")).toBeInTheDocument();
+    expect(screen.queryByText("Already done")).not.toBeInTheDocument();
+    expect(screen.queryByText("Start planning")).not.toBeInTheDocument();
+  });
+
+  it("reassures when every task is already done", async () => {
+    listResponse = {
+      items: [
+        task({ id: 1, title: "Wrapped up", due_date: isoFromToday(2), done: true }),
+        task({ id: 2, title: "Also done", due_date: null, done: true }),
       ],
     };
     render(

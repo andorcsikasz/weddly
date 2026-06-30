@@ -82,6 +82,28 @@ function selectUpcoming(items: PlanningItem[], settings: UpcomingSettings): Plan
     .slice(0, settings.count);
 }
 
+/** When nothing is dated yet, fall back to the most recently added undone tasks
+ *  so the card never reads empty while open work exists. Rendered without due
+ *  chips, under a soft "add due dates" hint. */
+function selectFallback(
+  items: PlanningItem[],
+  settings: UpcomingSettings,
+  max = 3,
+): PlanningItem[] {
+  return items
+    .filter((it) => {
+      if (it.kind !== "task" || it.done) return false;
+      if (settings.topic === "wedding") return it.topic !== "honeymoon";
+      if (settings.topic === "honeymoon") return it.topic === "honeymoon";
+      return true;
+    })
+    .sort((a, b) => {
+      if (b.created_at !== a.created_at) return b.created_at - a.created_at;
+      return b.id - a.id;
+    })
+    .slice(0, max);
+}
+
 export function UpcomingTasksCard({
   weddingDate,
   nudges,
@@ -138,6 +160,10 @@ export function UpcomingTasksCard({
 
   const today = todayIso();
   const upcoming = selectUpcoming(items, settings);
+  // Nothing dated yet but open work exists: show recent undone tasks instead of
+  // an empty card, with a nudge to add due dates.
+  const fallback = upcoming.length === 0 ? selectFallback(items, settings) : [];
+  const showFallback = fallback.length > 0;
   const hasAnyTask = items.some((it) => it.kind === "task");
   const totalUpcoming = items.filter(
     (it) =>
@@ -310,7 +336,7 @@ export function UpcomingTasksCard({
       </div>
 
       <div className="px-4 pb-4 md:px-6 md:pb-6">
-        {upcoming.length === 0 && !hasNudges ? (
+        {upcoming.length === 0 && !showFallback && !hasNudges ? (
           hasAnyTask ? (
             <div className="py-2">
               <p className="text-sm text-umber-500 dark:text-umber-300">
@@ -388,6 +414,52 @@ export function UpcomingTasksCard({
                       </li>
                     );
                   })}
+                </ul>
+                <Link
+                  to="/app/planning"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blush-700 hover:underline dark:text-blush-300"
+                >
+                  <span>{t("dashboard.upcoming_view_all")}</span>
+                  <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+              </>
+            )}
+            {showFallback && (
+              <>
+                {hasNudges && <hr className="my-2 border-paper-200 dark:border-umber-700" />}
+                <p className="mb-1.5 text-xs text-umber-500 dark:text-umber-300">
+                  {t("dashboard.upcoming_undated_hint")}
+                </p>
+                <ul className="grid gap-1">
+                  {fallback.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-umber-900 transition hover:bg-paper-100 dark:text-paper-50 dark:hover:bg-umber-700"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleDone(item)}
+                        aria-label={t("common.done")}
+                        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-paper-400 bg-white transition hover:border-blush-500 dark:border-umber-600 dark:bg-umber-800"
+                      />
+                      <Link to="/app/planning" className="flex min-w-0 flex-1 items-center gap-2">
+                        <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                        {item.priority === 2 && (
+                          <span
+                            className="shrink-0 font-bold text-blush-700 dark:text-blush-300"
+                            aria-hidden="true"
+                          >
+                            !!
+                          </span>
+                        )}
+                        {item.assignee && (
+                          <span className="shrink-0 truncate text-xs text-umber-500 dark:text-umber-300">
+                            {item.assignee}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
                 <Link
                   to="/app/planning"
