@@ -3138,6 +3138,22 @@ export interface LocaleMessages {
     invited_filter_label: string;
     household_filter_label: string;
     household_filter_empty: string;
+    filters_button: string;
+    filters_clear_all: string;
+    filter_group_rsvp: string;
+    filter_group_side: string;
+    filter_group_more: string;
+    filter_invited_chip: string;
+    filter_accommodation_chip: string;
+    filtered_results_one: string;
+    filtered_results_other: string;
+    filtered_results_empty: string;
+    sort_label: string;
+    sort_default: string;
+    sort_name: string;
+    sort_added: string;
+    sort_rsvp: string;
+    sort_group: string;
     /** Adult / child / baby kind selector. */
     kind_label: string;
     kind_help: string;

@@ -1,5 +1,5 @@
 import type { Couple, FilmAccessCheck, FilmAesthetic, FilmDevice, PhotoAlbum } from "@shared/types";
-import { FILM_AESTHETICS } from "@shared/types";
+import { FILM_AESTHETICS, FILM_FILTERS } from "@shared/types";
 import {
   AlertTriangle,
   CalendarDays,
@@ -20,13 +20,14 @@ import {
   Pencil,
   QrCode,
   Share2,
+  Trash2,
   Upload,
   Users,
 } from "lucide-react";
-import React, { type FormEvent, useEffect, useRef, useState } from "react";
+import React, { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ComingSoon } from "../components/ComingSoon";
-import { Dialog, useToast } from "../components/ui";
+import { Dialog, useConfirm, useToast } from "../components/ui";
 import { useAuth } from "../lib/auth";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -40,6 +41,18 @@ function isHttpUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** Pull the stable backend `detail.code` off a rejected API error, if present. */
+function errDetailCode(err: unknown): string | undefined {
+  if (err && typeof err === "object" && "detail" in err) {
+    const detail = (err as { detail?: unknown }).detail;
+    if (detail && typeof detail === "object" && "code" in detail) {
+      const code = (detail as { code?: unknown }).code;
+      if (typeof code === "string") return code;
+    }
+  }
+  return undefined;
 }
 
 type FilmStatus = "live" | "developing" | "revealed";
@@ -101,14 +114,6 @@ const AESTHETIC_LABELS: Record<FilmAesthetic, string> = {
   bw: "B&W",
   cinematic: "Cinematic",
   warm: "Warm",
-};
-
-const AESTHETIC_PREVIEW: Record<FilmAesthetic, string> = {
-  natural: "bg-gradient-to-br from-sky-100 to-blue-200",
-  vintage: "bg-gradient-to-br from-amber-100 to-orange-200",
-  bw: "bg-gradient-to-br from-gray-200 to-gray-400",
-  cinematic: "bg-gradient-to-br from-slate-300 to-indigo-200",
-  warm: "bg-gradient-to-br from-orange-100 to-yellow-200",
 };
 
 // --- ambient film grain -----------------------------------------------------
@@ -258,8 +263,18 @@ function ParticipantDashboard({
   fallbackCount: number;
 }) {
   const { t } = useT();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [devices, setDevices] = useState<FilmDevice[]>([]);
   const [expanded, setExpanded] = useState(true);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const refresh = useCallback(() => {
+    return photoAlbumApi
+      .listDevices()
+      .then((r) => setDevices(r.devices))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -278,6 +293,29 @@ function ParticipantDashboard({
       clearInterval(id);
     };
   }, [albumToken]);
+
+  async function handleRemove(device: FilmDevice) {
+    if (removingId) return;
+    const name = device.guestName ?? "Anonymous";
+    const ok = await confirm({
+      title: t("media.participant_remove_title"),
+      body: t("media.participant_remove_body").replace("{{name}}", name),
+      confirmLabel: t("media.participant_remove_confirm"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setRemovingId(device.deviceId);
+    try {
+      await photoAlbumApi.removeDevice(device.deviceId);
+      await refresh();
+      toast.success(t("media.participant_removed"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setRemovingId(null);
+    }
+  }
 
   const displayCount = devices.length > 0 ? devices.length : fallbackCount;
 
@@ -300,12 +338,22 @@ function ParticipantDashboard({
             devices.map((d) => (
               <li
                 key={d.deviceId}
-                className="flex items-center justify-between text-xs text-umber-500"
+                className="group flex items-center justify-between gap-2 text-xs text-umber-500"
               >
                 <span className="truncate">{d.guestName ?? "Anonymous"}</span>
-                <span className="ml-2 shrink-0 tabular-nums text-umber-500">
+                <span className="ml-auto shrink-0 tabular-nums text-umber-500">
                   {d.shotCount} shot{d.shotCount !== 1 ? "s" : ""}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => handleRemove(d)}
+                  disabled={removingId !== null}
+                  aria-label={t("media.participant_remove_title")}
+                  title={t("media.participant_remove_title")}
+                  className="shrink-0 rounded-full p-1 text-umber-400 transition-colors hover:bg-paper-100 hover:text-umber-900 disabled:opacity-50"
+                >
+                  <Trash2 size={12} aria-hidden="true" />
+                </button>
               </li>
             ))
           ) : (
@@ -510,7 +558,13 @@ function FilmModal({
                       : "border-transparent hover:border-paper-300 dark:hover:border-umber-600"
                   }`}
                 >
-                  <div className={`h-8 w-8 rounded-md ${AESTHETIC_PREVIEW[a]}`} />
+                  <img
+                    src={DEMO_STRIP[0]}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-8 w-8 rounded-md object-cover"
+                    style={{ filter: FILM_FILTERS[a] }}
+                  />
                   <span className="text-[9px] leading-tight text-ink-500 dark:text-umber-300">
                     {AESTHETIC_LABELS[a]}
                   </span>
@@ -604,6 +658,10 @@ export default function MediaPage() {
   const [showShare, setShowShare] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [editingSlug, setEditingSlug] = useState(false);
+  const [slugDraft, setSlugDraft] = useState("");
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [savingSlug, setSavingSlug] = useState(false);
   const [togglingUpload, setTogglingUpload] = useState(false);
   const [loading, setLoading] = useState(true);
   const [coupleUploading, setCoupleUploading] = useState(false);
@@ -678,6 +736,34 @@ export default function MediaPage() {
   const photographerUrl = couple?.media_links?.photographer ?? null;
   const albumStatus = album ? getFilmStatus(album) : null;
   const uploadUrl = album ? `${window.location.origin}/photos/${album.uploadToken}` : null;
+  // #17: prefer the prettier custom slug for display + copy/share; QR stays on the token.
+  const guestLinkUrl =
+    album && album.slug ? `${window.location.origin}/photos/${album.slug}` : uploadUrl;
+
+  function openSlugEditor() {
+    setSlugDraft(album?.slug ?? "");
+    setSlugError(null);
+    setEditingSlug((v) => !v);
+  }
+
+  async function saveSlug() {
+    const value = slugDraft.trim();
+    setSavingSlug(true);
+    setSlugError(null);
+    try {
+      const { album: updated } = await photoAlbumApi.update({ slug: value || null });
+      setAlbum(updated);
+      setEditingSlug(false);
+      toast.success(value ? t("media.slug_saved") : t("media.slug_cleared"));
+    } catch (err) {
+      const code = errDetailCode(err);
+      if (code === "slug_taken") setSlugError(t("media.slug_taken"));
+      else if (code === "slug_invalid") setSlugError(t("media.slug_invalid"));
+      else setSlugError(t("common.error_generic"));
+    } finally {
+      setSavingSlug(false);
+    }
+  }
   const totalCapacity =
     album !== null && album.shotsPerGuest != null ? album.shotsPerGuest * album.guestCap : null;
   const nearGuestLimit = album !== null && album.participantCount >= album.guestCap - 2;
@@ -940,7 +1026,7 @@ export default function MediaPage() {
                     </span>
                   </button>
                   <a
-                    href={uploadUrl}
+                    href={`${uploadUrl}?preview=1`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group flex flex-1 flex-col items-center gap-2"
@@ -1140,19 +1226,29 @@ export default function MediaPage() {
             </div>
 
             {/* ── Guest link ────────────────────────────────────────── */}
-            {uploadUrl && (
+            {uploadUrl && guestLinkUrl && (
               <div className="border-t border-paper-200 px-5 py-4">
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-400">
-                  {t("media.film_guest_link")}
-                </p>
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-400">
+                    {t("media.film_guest_link")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openSlugEditor}
+                    className="flex items-center gap-1 text-[11px] font-medium text-umber-500 transition-colors hover:text-umber-900"
+                  >
+                    <Pencil size={11} aria-hidden="true" />
+                    {t("media.slug_label")}
+                  </button>
+                </div>
                 <div className="flex items-center gap-2 rounded-2xl bg-paper-100 py-1.5 pl-4 pr-1.5">
                   <span className="flex-1 truncate font-mono text-sm text-umber-600">
-                    {uploadUrl.replace(/^https?:\/\//, "")}
+                    {guestLinkUrl.replace(/^https?:\/\//, "")}
                   </span>
                   <button
                     type="button"
                     onClick={() => {
-                      navigator.clipboard.writeText(uploadUrl).catch(() => {});
+                      navigator.clipboard.writeText(guestLinkUrl).catch(() => {});
                       setLinkCopied(true);
                       setTimeout(() => setLinkCopied(false), 2000);
                     }}
@@ -1161,6 +1257,45 @@ export default function MediaPage() {
                     {linkCopied ? t("media.from_guests_copied") : t("media.film_copy")}
                   </button>
                 </div>
+                {editingSlug && (
+                  <form
+                    className="mt-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void saveSlug();
+                    }}
+                    noValidate
+                  >
+                    <div className="flex items-center gap-2 rounded-2xl border border-paper-300 bg-white py-1.5 pl-3 pr-1.5">
+                      <span className="shrink-0 font-mono text-xs text-umber-400">…/photos/</span>
+                      <input
+                        type="text"
+                        value={slugDraft}
+                        onChange={(e) => setSlugDraft(e.target.value)}
+                        placeholder={t("media.slug_placeholder")}
+                        aria-label={t("media.slug_label")}
+                        className="min-w-0 flex-1 bg-transparent font-mono text-sm text-umber-900 placeholder-umber-400 outline-none"
+                        // biome-ignore lint/a11y/noAutofocus: open-to-type UX.
+                        autoFocus
+                      />
+                      <button
+                        type="submit"
+                        disabled={savingSlug}
+                        className="shrink-0 rounded-xl bg-umber-900 px-3 py-1.5 text-xs font-semibold text-paper-50 transition-colors hover:bg-umber-800 disabled:opacity-50"
+                      >
+                        {savingSlug ? t("common.saving") : t("common.save")}
+                      </button>
+                    </div>
+                    <p className="mt-1 text-[11px] leading-snug text-umber-400">
+                      {t("media.slug_hint")}
+                    </p>
+                    {slugError && (
+                      <p className="mt-1 text-xs text-red-400" role="alert">
+                        {slugError}
+                      </p>
+                    )}
+                  </form>
+                )}
               </div>
             )}
           </>
@@ -1269,8 +1404,11 @@ export default function MediaPage() {
               </span>
               {photographerUrl ? (
                 <>
-                  <span className="flex-1 truncate text-sm text-umber-700">
-                    {photographerUrl.replace(/^https?:\/\//, "").split("/")[0]}
+                  <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-umber-700">
+                    <Link2 size={13} aria-hidden="true" className="shrink-0 text-umber-400" />
+                    <span className="truncate">
+                      {photographerUrl.replace(/^https?:\/\//, "").split("/")[0]}
+                    </span>
                   </span>
                   <a
                     href={photographerUrl}
@@ -1306,6 +1444,9 @@ export default function MediaPage() {
               )}
             </div>
           )}
+          <p className="px-5 pb-3.5 text-[11px] leading-snug text-umber-400">
+            {t("media.gallery_link_note")}
+          </p>
         </div>
 
         {/* ── Reveal gallery teaser (coming soon) ───────────────────── */}
@@ -1313,10 +1454,13 @@ export default function MediaPage() {
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
             <Share2 size={17} aria-hidden="true" />
           </span>
-          <span className="flex-1 text-sm font-medium text-umber-900">
-            {t("media.to_guests_title")}
-          </span>
-          <span className="rounded-full border border-paper-300 px-2.5 py-0.5 text-[10px] font-medium text-umber-500">
+          <div className="min-w-0 flex-1">
+            <span className="text-sm font-medium text-umber-900">{t("media.to_guests_title")}</span>
+            <p className="mt-0.5 text-xs leading-snug text-umber-500">
+              {t("media.shared_gallery_teaser")}
+            </p>
+          </div>
+          <span className="shrink-0 self-start rounded-full border border-paper-300 px-2.5 py-0.5 text-[10px] font-medium text-umber-500">
             {t("media.coming_soon_title")}
           </span>
         </div>
@@ -1330,11 +1474,11 @@ export default function MediaPage() {
         onClose={() => setShowFilmModal(false)}
         onSaved={(a) => setAlbum(a)}
       />
-      {album && uploadUrl && (
+      {album && guestLinkUrl && (
         <ShareSheet
           open={showShare}
           names={couple?.display_name ?? ""}
-          url={uploadUrl}
+          url={guestLinkUrl}
           onClose={() => setShowShare(false)}
         />
       )}
