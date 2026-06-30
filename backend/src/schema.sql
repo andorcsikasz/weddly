@@ -1539,3 +1539,27 @@ CREATE TABLE IF NOT EXISTS planner_portfolio (
 );
 CREATE INDEX IF NOT EXISTS idx_planner_portfolio_user
   ON planner_portfolio(planner_user_id, sort_order);
+
+-- Guest broadcasts composed on /app/invites. One row per send (immediate or
+-- scheduled) of one of the three templates: 'invite' | 'major_update' |
+-- 'pre_wedding_info'. Immediate sends are written straight as 'sent';
+-- 'scheduled' rows wait for the hourly email worker to fire them once
+-- scheduled_at passes. envelope_amount/include_envelope_tip snapshot the
+-- per-head tip baked into a pre_wedding_info message at send time. Indexes live
+-- in db.ts per the additive-ordering rule.
+CREATE TABLE IF NOT EXISTS guest_messages (
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id            INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  template             TEXT    NOT NULL,                       -- 'invite' | 'major_update' | 'pre_wedding_info'
+  subject              TEXT,
+  body                 TEXT,
+  include_envelope_tip INTEGER NOT NULL DEFAULT 0,
+  envelope_amount      INTEGER,
+  audience             TEXT    NOT NULL DEFAULT 'all',         -- 'all' | 'pending' | 'confirmed'
+  status               TEXT    NOT NULL DEFAULT 'scheduled',   -- 'scheduled' | 'sending' | 'sent' | 'failed'
+  scheduled_at         INTEGER,                                -- null = sent immediately
+  sent_at              INTEGER,
+  recipient_count      INTEGER NOT NULL DEFAULT 0,
+  created_at           INTEGER NOT NULL,
+  updated_at           INTEGER NOT NULL
+);

@@ -105,6 +105,24 @@ const STUBS: KindPayload = {
     weddingDate: "2026-09-12",
     rsvpUrl: `${BASE_URL}/rsvp/preview-code`,
   },
+  guest_major_update: {
+    coupleDisplayName: "Mia & Lucas",
+    guestName: "Anna Kovács",
+    weddingDate: "2026-09-12",
+    infoUrl: `${BASE_URL}/w/mia-lucas/preview-code`,
+    subject: null,
+    bodyParagraphs: ["A ceremónia helyszíne megváltozott, kérjük olvasd el a részleteket."],
+  },
+  guest_pre_wedding_info: {
+    coupleDisplayName: "Mia & Lucas",
+    guestName: "Anna Kovács",
+    weddingDate: "2026-09-12",
+    infoUrl: `${BASE_URL}/w/mia-lucas/preview-code`,
+    subject: null,
+    bodyParagraphs: ["Parkolás a helyszín mögött, a ceremónia 16:00-kor kezdődik."],
+    envelopeTip:
+      "Tipp a Weddlytől: egy vendég nálunk nagyjából 25 000 Ft. Jó kiindulópont a borítékba.",
+  },
   onboarding_nudge: { onboardingUrl: `${BASE_URL}/onboarding` },
   onboarding_nudge_week: { onboardingUrl: `${BASE_URL}/onboarding` },
   milestone_t90: {

@@ -148,6 +148,15 @@ addColumnIfMissing("guests", "invitation_delivered_at", "invitation_delivered_at
 // loads. Requires invited_at to be set (can't open an invite you haven't received).
 addColumnIfMissing("guests", "invitation_opened_at", "invitation_opened_at INTEGER");
 
+// Explicit invite-channel stamps for the /app/invites monitoring page. The
+// legacy invited_at / invitation_delivered_at columns are overloaded (a single
+// "invited" chip), so we track the two channels separately: online (emailed /
+// digital) and physical (handed over in person). Either, both, or neither can
+// be set; the derived channel is none/online/physical/both. Sends keep the
+// legacy columns in sync so the existing guest-list chip keeps working.
+addColumnIfMissing("guests", "invited_online_at", "invited_online_at INTEGER");
+addColumnIfMissing("guests", "invited_physical_at", "invited_physical_at INTEGER");
+
 // Planning items: tasks carry an optional free-text `assignee` (e.g. "Anna",
 // "Apa", "Tanú1"). Ideas carry `suggested_by_user_id` — stamped at create time
 // from the current session — so the UI can render "— Anna javasolta". Both
@@ -630,6 +639,12 @@ addColumnIfMissing(
   "rsvp_collects_meal",
   "rsvp_collects_meal INTEGER NOT NULL DEFAULT 0",
 );
+
+// Per-couple meal-menu customisation (custom labels + offered flags for the six
+// fixed slots). JSON array of {choice,label,enabled}; null/empty means the
+// all-default menu. Cosmetic on top of the stable `meal_choice` enum — see
+// shared/meals.ts.
+addColumnIfMissing("couples", "meal_menu", "meal_menu TEXT");
 
 // Household-level group tag — one source of truth for the whole party (his
 // family, her friends, work, etc.) so the household card can render the
@@ -1362,6 +1377,31 @@ addColumnIfMissing("supplier_bookings", "vendor_notes", "vendor_notes TEXT");
 // is scoped by booking, so the booking_id lookup is the hot path.
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_vendor_client_payments_booking ON vendor_client_payments(booking_id)",
+);
+
+// Envelope-tip settings for the pre-wedding info message (the "what to put in
+// the envelope, the wedding costs ~X per head" block). enabled defaults on; the
+// override is a manual per-head amount (couple currency, minor units) that wins
+// over the budget-derived auto value when set.
+addColumnIfMissing(
+  "couples",
+  "envelope_tip_enabled",
+  "envelope_tip_enabled INTEGER NOT NULL DEFAULT 1",
+);
+addColumnIfMissing(
+  "couples",
+  "envelope_tip_amount_override",
+  "envelope_tip_amount_override INTEGER",
+);
+
+// Scheduled-send lookup for the guest broadcast worker. Table lives in
+// schema.sql; the index is created here AFTER the table exists, per the May 2026
+// additive-ordering rule. The worker scans (status='scheduled', scheduled_at<=now).
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_guest_messages_couple ON guest_messages(couple_id, created_at DESC)",
+);
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_guest_messages_due ON guest_messages(status, scheduled_at)",
 );
 
 backfillReferenceCodes();

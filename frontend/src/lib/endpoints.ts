@@ -33,10 +33,15 @@ import type {
   GuestCountGoal,
   Guest,
   GuestGroupTag,
+  GuestMessage,
+  GuestMessageAudience,
+  GuestMessageTemplate,
+  EnvelopeTip,
   Household,
   FilmAccessCheck,
   FilmAesthetic,
   FilmDevice,
+  MealMenu,
   MediaLinks,
   PhotoAlbum,
   PhotoAlbumPublic,
@@ -517,6 +522,9 @@ export const coupleApi = {
     country?: string;
     rsvp_offers_accommodation?: boolean;
     rsvp_collects_meal?: boolean;
+    /** Per-couple meal menu (custom labels + offered flags for the six
+     *  fixed slots). Normalised + validated server-side. */
+    meal_menu?: MealMenu;
     /** Proactive-timeline email escalation trigger. */
     timeline_email_escalation?: import("@shared/notifications").TimelineEmailEscalation;
     /** Email digest frequency. */
@@ -668,6 +676,13 @@ export interface GuestUpsert extends Partial<Guest> {
    *  silently ignored otherwise. Implies `invited=true` on the resulting
    *  row. */
   send_invite?: boolean;
+  /** Explicit "online invite sent" channel mark (invites page). `true` stamps
+   *  `invited_online_at` (and `invited_at` if unset), `false` clears it. */
+  invited_online?: boolean;
+  /** Explicit "physically handed over / in person" channel mark. `true` stamps
+   *  `invited_physical_at` (and `invitation_delivered_at` + `invited_at`),
+   *  `false` clears it. */
+  invited_physical?: boolean;
 }
 
 export const guestApi = {
@@ -1007,6 +1022,27 @@ export const householdApi = {
         email: string | null;
       }>;
     }>("POST", "/api/households/invite-batch", body),
+};
+
+/** Guest communication center (`/app/invites`): broadcasts (invite / major
+ *  update / pre-wedding info) plus the envelope-tip per-head settings. */
+export const guestMessageApi = {
+  list: () => apiFetch<{ messages: GuestMessage[] }>("GET", "/api/guest-messages"),
+  /** Create a broadcast. Omit `scheduled_at` (or pass a past time) to send
+   *  immediately; pass a future epoch-ms to schedule it for the email worker. */
+  send: (body: {
+    template: GuestMessageTemplate;
+    audience: GuestMessageAudience;
+    subject?: string | null;
+    body?: string | null;
+    include_envelope_tip?: boolean;
+    scheduled_at?: number | null;
+  }) => apiFetch<{ message: GuestMessage }>("POST", "/api/guest-messages", body),
+  /** Cancel a not-yet-sent (scheduled) broadcast. */
+  cancel: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/guest-messages/${id}`),
+  getEnvelopeTip: () => apiFetch<EnvelopeTip>("GET", "/api/guest-messages/envelope-tip"),
+  updateEnvelopeTip: (body: { enabled?: boolean; override?: number | null }) =>
+    apiFetch<EnvelopeTip>("PATCH", "/api/guest-messages/envelope-tip", body),
 };
 
 export const budgetApi = {

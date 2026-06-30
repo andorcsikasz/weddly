@@ -26,6 +26,8 @@ export type EmailKind =
   | "rsvp_received_household_for_couple" // aggregated notification: whole party RSVP'd in one go
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
   | "guest_invite" // sent to a guest with a one-click /rsvp/{code} link
+  | "guest_major_update" // couple-composed "something important changed" broadcast to opted-in guests
+  | "guest_pre_wedding_info" // couple-composed final info summary, optional per-head envelope cost tip
   | "onboarding_nudge" // 24h after signup if they haven't onboarded a couple
   | "onboarding_nudge_week" // 7 days after signup, still no workspace, second, warmer nudge
   | "milestone_t90" // 90 days before the wedding
@@ -116,6 +118,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Transactional: the couple explicitly clicked "send invite" for this
   // guest in /app/guests, the recipient is waiting on the link.
   guest_invite: "transactional",
+  // Transactional: guests opted into the wedding (RSVP / invite); a couple-sent
+  // important update or pre-wedding info summary is account-critical for them,
+  // same framing as wedding_date_changed.
+  guest_major_update: "transactional",
+  guest_pre_wedding_info: "transactional",
   onboarding_nudge: "lifecycle",
   onboarding_nudge_week: "lifecycle",
   milestone_t90: "lifecycle",

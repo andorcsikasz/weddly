@@ -116,6 +116,8 @@ function makeGuest(name: string, overrides: Partial<Guest> = {}): Guest {
     notes: null,
     rsvp_responded_at: null,
     invited_at: null,
+    invited_online_at: null,
+    invited_physical_at: null,
     invitation_delivered_at: null,
     invitation_opened_at: null,
     accommodation_id: null,

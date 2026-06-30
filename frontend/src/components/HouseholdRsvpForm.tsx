@@ -4,11 +4,13 @@
 // fires once the guest accepts the double-confirm dialog. Shared by both
 // the /rsvp check-in page and the legacy /rsvp/:code resolver.
 
+import { MEAL_ORDER } from "@shared/meals";
 import type {
   CheckinAddedMember,
   CheckinMemberSubmit,
   HouseholdMember,
   MealChoice,
+  MealMenu,
   PublicCheckinView,
   RsvpStatus,
 } from "@shared/types";
@@ -39,8 +41,6 @@ import { formatDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { drain, enqueue, makeKey, peekAll } from "../lib/rsvp_offline";
 
-const MEALS: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
-
 /** Icon per meal choice — used by the icon-button selector that replaced
  *  the old dropdown so guests pick by glance instead of reading a list. */
 const MEAL_ICONS: Record<MealChoice, typeof Beef> = {
@@ -51,6 +51,33 @@ const MEAL_ICONS: Record<MealChoice, typeof Beef> = {
   child: Cookie,
   none: Ban,
 };
+
+interface MealOption {
+  choice: MealChoice;
+  /** Resolved label: the couple's custom override, or the localised default. */
+  label: string;
+}
+
+/** The meal slots to offer this member: the couple's enabled slots (with their
+ *  custom labels), plus the member's currently-selected slot even if the couple
+ *  has since hidden it — so an existing answer never silently disappears.
+ *  Falls back to all six defaults when the couple hasn't customised anything. */
+function resolveMealOptions(
+  menu: MealMenu | undefined,
+  t: (key: string) => string,
+  current: MealChoice | null,
+): MealOption[] {
+  const items =
+    menu && menu.length > 0
+      ? menu
+      : MEAL_ORDER.map((c) => ({ choice: c, label: null, enabled: true }));
+  const out: MealOption[] = [];
+  for (const it of items) {
+    if (!it.enabled && it.choice !== current) continue;
+    out.push({ choice: it.choice, label: it.label?.trim() || t(`guests.meal_${it.choice}`) });
+  }
+  return out;
+}
 // "pending" is intentionally excluded — submission requires a definite answer.
 // (The default state is still "pending" for un-engaged members; submit
 // validation forces them to commit before the server is called.)
@@ -833,20 +860,21 @@ export function HouseholdRsvpForm({
                           aria-label={t("rsvp.meal")}
                           className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
                         >
-                          {MEALS.map((m) => {
-                            const Icon = MEAL_ICONS[m];
-                            const active = d.meal_choice === m;
-                            const label = t(`guests.meal_${m}`);
+                          {resolveMealOptions(view.meal_menu, t, d.meal_choice).map((opt) => {
+                            const Icon = MEAL_ICONS[opt.choice];
+                            const active = d.meal_choice === opt.choice;
                             return (
                               <button
-                                key={m}
+                                key={opt.choice}
                                 type="button"
                                 role="radio"
                                 aria-checked={active}
-                                aria-label={label}
-                                title={label}
+                                aria-label={opt.label}
+                                title={opt.label}
                                 onClick={() =>
-                                  updateMember(d.id, { meal_choice: active ? null : m })
+                                  updateMember(d.id, {
+                                    meal_choice: active ? null : opt.choice,
+                                  })
                                 }
                                 className={
                                   active
@@ -855,8 +883,8 @@ export function HouseholdRsvpForm({
                                 }
                               >
                                 <Icon size={18} aria-hidden />
-                                <span className="w-full text-center text-[10px] font-medium leading-tight">
-                                  {label}
+                                <span className="line-clamp-2 w-full text-center text-[10px] font-medium leading-tight">
+                                  {opt.label}
                                 </span>
                               </button>
                             );
@@ -967,6 +995,7 @@ export function HouseholdRsvpForm({
                             />
                             <AttachedDietary
                               member={d.plus_one}
+                              mealMenu={view.meal_menu}
                               onMealChange={(meal) =>
                                 patchAttached(d.id, "plus_one", { meal_choice: meal })
                               }
@@ -1299,11 +1328,13 @@ function AttachedNameField({
  */
 function AttachedDietary({
   member,
+  mealMenu,
   onMealChange,
   onToggleTag,
   showMeal = true,
 }: {
   member: AttachedDraft;
+  mealMenu?: MealMenu;
   onMealChange: (m: MealChoice | null) => void;
   onToggleTag: (tag: DietaryTag) => void;
   showMeal?: boolean;
@@ -1317,19 +1348,18 @@ function AttachedDietary({
           aria-label={t("rsvp.meal")}
           className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
         >
-          {MEALS.map((m) => {
-            const Icon = MEAL_ICONS[m];
-            const active = member.meal_choice === m;
-            const label = t(`guests.meal_${m}`);
+          {resolveMealOptions(mealMenu, t, member.meal_choice).map((opt) => {
+            const Icon = MEAL_ICONS[opt.choice];
+            const active = member.meal_choice === opt.choice;
             return (
               <button
-                key={m}
+                key={opt.choice}
                 type="button"
                 role="radio"
                 aria-checked={active}
-                aria-label={label}
-                title={label}
-                onClick={() => onMealChange(active ? null : m)}
+                aria-label={opt.label}
+                title={opt.label}
+                onClick={() => onMealChange(active ? null : opt.choice)}
                 className={
                   active
                     ? "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-ink-700 bg-ink-700 px-1 text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
@@ -1337,7 +1367,9 @@ function AttachedDietary({
                 }
               >
                 <Icon size={20} aria-hidden />
-                <span className="text-[11px] font-medium leading-tight">{label}</span>
+                <span className="line-clamp-2 text-[11px] font-medium leading-tight">
+                  {opt.label}
+                </span>
               </button>
             );
           })}

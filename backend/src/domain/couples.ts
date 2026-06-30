@@ -7,6 +7,7 @@ import {
   SUBSCRIPTION_STATUSES,
 } from "@shared/billing";
 import { type CoupleDesign, type CoupleDesignInput, resolveDesign } from "@shared/design";
+import { parseMealMenu } from "@shared/meals";
 import {
   type NotifEmailCadence,
   type TimelineEmailEscalation,
@@ -161,6 +162,7 @@ export interface CoupleRow {
   currency: string | null;
   rsvp_offers_accommodation: number;
   rsvp_collects_meal: number;
+  meal_menu: string | null;
   timeline_email_escalation: string | null;
   notif_email_cadence: string | null;
   notif_focus: string | null;
@@ -204,6 +206,12 @@ export interface CoupleRow {
    *  `confirmed` (valid household code + at least one RSVP yes). Null
    *  when unset. */
   post_rsvp_content: string | null;
+  /** Envelope-tip toggle for the pre-wedding info message. 1/0; null on legacy
+   *  rows reads back as enabled. */
+  envelope_tip_enabled: number | null;
+  /** Manual per-head amount (couple currency, minor units) overriding the
+   *  budget-derived auto value. Null = auto. */
+  envelope_tip_amount_override: number | null;
   /** JSON blob `{ guests, photographer, other }` of photo-share URLs for the
    *  Photos page. NULL / malformed parses to all-null. */
   media_links_json: string | null;
@@ -409,6 +417,7 @@ export function toCouple(row: CoupleRow): Couple {
     currency: rowToCurrency(row.currency),
     rsvp_offers_accommodation: Boolean(row.rsvp_offers_accommodation),
     rsvp_collects_meal: Boolean(row.rsvp_collects_meal),
+    meal_menu: parseMealMenu(row.meal_menu),
     timeline_email_escalation: isTimelineEmailEscalation(row.timeline_email_escalation ?? "")
       ? (row.timeline_email_escalation as TimelineEmailEscalation)
       : "overdue",
@@ -428,6 +437,9 @@ export function toCouple(row: CoupleRow): Couple {
     guest_page_intro: row.guest_page_intro,
     useful_info: row.useful_info,
     post_rsvp_content: row.post_rsvp_content,
+    envelope_tip_enabled:
+      row.envelope_tip_enabled == null ? true : Boolean(row.envelope_tip_enabled),
+    envelope_tip_amount_override: row.envelope_tip_amount_override ?? null,
     media_links: parseMediaLinksJson(row.media_links_json),
     design: parseDesignJson(row.design_json),
     created_at: row.created_at,

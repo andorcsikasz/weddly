@@ -69,6 +69,14 @@ interface UpsertBody {
    *  invited_at is also set, since delivered implies invited); `false` clears
    *  only the delivered timestamp. Omitted = leave as-is. */
   delivered?: unknown;
+  /** Boolean — per-channel invite tracking. `true` stamps `invited_online_at`
+   *  (and `invited_at` if unset, to keep the legacy chip in sync); `false`
+   *  clears `invited_online_at`. Omitted = leave as-is. */
+  invited_online?: unknown;
+  /** Boolean — per-channel invite tracking. `true` stamps `invited_physical_at`
+   *  (plus `invitation_delivered_at`, and `invited_at` if unset); `false` clears
+   *  `invited_physical_at`. Omitted = leave as-is. */
+  invited_physical?: unknown;
   /** Boolean — `true` and `email` present: fire a `guest_invite` email with a
    *  one-click /rsvp/{invite_code} link. Also stamps `invited_at` so the
    *  guest row's status badge moves to "invited" in the UI. Silently ignored
@@ -618,13 +626,35 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     nextOpenedAt = null;
   }
 
+  // Per-channel invite tracking (online link vs physical card). These mirror
+  // the legacy invited/delivered flags but record WHICH channel was used so the
+  // composer can show none/online/physical/both. Stamping a channel keeps the
+  // legacy chips in sync: online implies invited; physical implies delivered
+  // (and therefore invited).
+  let nextOnlineAt = existing.invited_online_at;
+  if (body.invited_online === true) {
+    nextOnlineAt = ts;
+    if (nextInvitedAt === null) nextInvitedAt = ts;
+  } else if (body.invited_online === false) {
+    nextOnlineAt = null;
+  }
+  let nextPhysicalAt = existing.invited_physical_at;
+  if (body.invited_physical === true) {
+    nextPhysicalAt = ts;
+    if (nextDeliveredAt === null) nextDeliveredAt = ts;
+    if (nextInvitedAt === null) nextInvitedAt = ts;
+  } else if (body.invited_physical === false) {
+    nextPhysicalAt = null;
+  }
+
   db.prepare(
     `UPDATE guests SET
         full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, is_supplier = ?,
         is_plus_one = ?, plus_one_of = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
         accommodation_needed = ?, song_request = ?, notes = ?, rsvp_responded_at = ?, household_id = ?,
-        invited_at = ?, invitation_delivered_at = ?, invitation_opened_at = ?, updated_at = ?
+        invited_at = ?, invitation_delivered_at = ?, invitation_opened_at = ?,
+        invited_online_at = ?, invited_physical_at = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.full_name,
@@ -648,6 +678,8 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     nextInvitedAt,
     nextDeliveredAt,
     nextOpenedAt,
+    nextOnlineAt,
+    nextPhysicalAt,
     ts,
     id,
     couple.id,

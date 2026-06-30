@@ -77,6 +77,7 @@ function makeView(overrides: Partial<PublicCheckinView> = {}): PublicCheckinView
     ],
     rsvp_offers_accommodation: true,
     rsvp_collects_meal: true,
+    meal_menu: [],
     wedding_site_published: false,
     ...overrides,
   };

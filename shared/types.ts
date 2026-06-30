@@ -597,6 +597,11 @@ export interface Couple {
    *  the public form. Per-member `meal_choice` values are preserved server
    *  side, so flipping it back on re-surfaces them. */
   rsvp_collects_meal: boolean;
+  /** Per-couple customisation of the six meal slots: a custom label and an
+   *  offered/hidden flag each, the slot keys staying the `MealChoice` enum.
+   *  Always six items in `MEAL_ORDER`; defaults to all-enabled, no overrides.
+   *  Lets couples show their real dishes ("Marhasült") on the RSVP form. */
+  meal_menu: MealMenu;
   /** Per-couple trigger for the proactive-timeline EMAIL escalation. The in-app
    *  bell is always on; this only governs the email push. Defaults to 'overdue'
    *  (push only when a task is genuinely late). See `TimelineEmailEscalation`. */
@@ -646,6 +651,14 @@ export interface Couple {
   /** Post-RSVP unlocked block. Server omits from the public-wedding
    *  endpoint unless the caller's tier is `confirmed`. Null when unset. */
   post_rsvp_content: string | null;
+  /** Whether the "what to put in the envelope" per-head cost tip is included in
+   *  the pre-wedding info message. Couple-controllable on the invites page.
+   *  Defaults to true. */
+  envelope_tip_enabled: boolean;
+  /** Manual per-head amount (integer minor units, couple currency) the couple
+   *  pinned for the envelope tip. `null` = derive automatically from the budget
+   *  total ÷ confirmed guest count. */
+  envelope_tip_amount_override: number | null;
   /** Couple-pasted photo-share links for the Photos page — one Google Drive
    *  (or any http(s)) URL per source. Always present; each slot is null until
    *  the couple pastes a link. Shared across both partners. */
@@ -895,6 +908,20 @@ export type GuestGroupTag =
 
 export type MealChoice = "meat" | "fish" | "vegetarian" | "vegan" | "child" | "none";
 
+/** Per-couple customisation of one fixed meal slot. The `choice` key stays the
+ *  canonical `MealChoice` enum (so stats / place cards / allergen logic never
+ *  change); the couple only overrides the visible `label` and whether the slot
+ *  is `enabled` (offered) on the public RSVP form. `label: null` means "use the
+ *  localised default". See `shared/meals.ts` for the resolve/validate helpers. */
+export interface MealMenuItem {
+  choice: MealChoice;
+  label: string | null;
+  enabled: boolean;
+}
+
+/** A couple's full meal menu: always the six slots in `MEAL_ORDER`. */
+export type MealMenu = MealMenuItem[];
+
 /** Guest "kind" — orthogonal to `meal_choice`. Drives high-chair / kid-meal
  *  affordances on the seating + catering side and lets the public check-in
  *  form show the right icon/copy for babies vs. children vs. adults. */
@@ -957,6 +984,15 @@ export interface Guest {
    *  fetched the pixel image). Best-effort: Apple MPP and image-blocking clients
    *  may never fire it. `null` = not yet opened or pixel blocked. */
   invitation_opened_at: UnixMs | null;
+  /** Explicit "online invite sent" stamp — set when the couple emails the
+   *  invitation (or marks the online channel on the invites page). Independent
+   *  of `invited_physical_at`; the derived channel is none/online/physical/both.
+   *  Sending also stamps the legacy `invited_at` so the guest-list chip stays in
+   *  sync. `null` = no online invite. */
+  invited_online_at: UnixMs | null;
+  /** Explicit "physically handed over / in person" stamp. Kept in sync with the
+   *  legacy `invitation_delivered_at`. `null` = not handed over in person. */
+  invited_physical_at: UnixMs | null;
   /** Logistics: lodging this guest is assigned to. Null = not yet assigned.
    *  Edited via the /app/logistics drag-and-drop board. When the guest is
    *  dropped onto a specific room, this stays in sync with the room's parent
@@ -1020,6 +1056,63 @@ export interface Household {
   updated_at: UnixMs;
 }
 
+// ─── Guest communication (invites page) ──────────────────────────────────────
+
+/** Which of the three reusable templates a broadcast uses.
+ *  - `invite`           — the invitation + RSVP link (the `guest_invite` email).
+ *  - `major_update`     — free-form "something important changed" announcement.
+ *  - `pre_wedding_info` — the final info summary (schedule / logistics) with the
+ *    optional "what to put in the envelope" per-head cost tip. */
+export type GuestMessageTemplate = "invite" | "major_update" | "pre_wedding_info";
+
+/** Who a broadcast targets. `all` = every non-supplier guest with an email;
+ *  `pending` = guests who haven't RSVP'd yet; `confirmed` = guests who replied yes. */
+export type GuestMessageAudience = "all" | "pending" | "confirmed";
+
+/** Lifecycle of a broadcast. `scheduled` rows are picked up by the hourly email
+ *  worker once `scheduled_at` passes; immediate sends jump straight to `sent`. */
+export type GuestMessageStatus = "scheduled" | "sending" | "sent" | "failed";
+
+/** One guest-facing broadcast the couple composed on the invites page. */
+export interface GuestMessage {
+  id: number;
+  couple_id: number;
+  template: GuestMessageTemplate;
+  /** Couple-authored subject. `null` falls back to the template default. */
+  subject: string | null;
+  /** Couple-authored body (markdown-ish, same `**bold**` support as emails).
+   *  `null`/empty for the plain invite template. */
+  body: string | null;
+  /** Snapshot of whether the envelope tip was included (pre_wedding_info only). */
+  include_envelope_tip: boolean;
+  /** Snapshot of the per-head amount (couple currency, minor units) baked into
+   *  the message at send time. `null` when the tip was off. */
+  envelope_amount: number | null;
+  audience: GuestMessageAudience;
+  status: GuestMessageStatus;
+  /** `null` = sent immediately; otherwise the future send time (Unix-ms). */
+  scheduled_at: UnixMs | null;
+  sent_at: UnixMs | null;
+  /** How many guests the broadcast went (or will go) to. */
+  recipient_count: number;
+  created_at: UnixMs;
+  updated_at: UnixMs;
+}
+
+/** The computed "what to put in the envelope" per-head figure shown in the
+ *  composer. `effective` is what a send would use: `override ?? auto`. */
+export interface EnvelopeTip {
+  /** Auto value = budget total ÷ confirmed guest count (couple currency, minor
+   *  units). `null` when there's no budget or no confirmed guests yet. */
+  auto: number | null;
+  /** Couple's pinned manual amount, or `null` to use `auto`. */
+  override: number | null;
+  /** `override ?? auto` — the amount a send would actually use (may be `null`). */
+  effective: number | null;
+  /** Whether the tip block is turned on for the pre-wedding info template. */
+  enabled: boolean;
+}
+
 /** Per-member subset shown on the public check-in page (no notes / no group_tag). */
 export interface HouseholdMember {
   id: number;
@@ -1058,6 +1151,11 @@ export interface PublicCheckinView {
    *  household — useful for buffet weddings or households whose menu is
    *  fixed. Dietary chips below stay visible either way. */
   rsvp_collects_meal: boolean;
+  /** The couple's six meal slots with their custom labels + offered flags
+   *  (couple-level, same for every household). The form renders only the
+   *  `enabled` ones and uses each `label` (falling back to its own localised
+   *  default when null). */
+  meal_menu: MealMenu;
   /** Mirrors `couples.is_public`. Lets the success card hide the
    *  "Open wedding page" CTA when the /w/:slug page would 404 — clicking
    *  through to a "not found" page after a successful RSVP read as broken

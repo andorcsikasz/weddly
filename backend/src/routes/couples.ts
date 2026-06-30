@@ -60,6 +60,7 @@ import {
   VALID_WEBSITE_SECTIONS,
   type WebsiteSectionSlug,
 } from "@shared/design";
+import { normalizeMealMenuInput, parseMealMenu } from "@shared/meals";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
@@ -182,6 +183,10 @@ interface OnboardBody {
    *  meal-icon row (meat/fish/veg/vegan/child/none). When false the row is
    *  hidden — buffet weddings or couples who collect menu choices offline. */
   rsvp_collects_meal?: unknown;
+  /** Per-couple meal menu: array of {choice,label,enabled} customising the six
+   *  fixed slots. Validated + normalised server-side via normalizeMealMenuInput
+   *  (tolerant of partials; guarantees at least one slot stays offered). */
+  meal_menu?: unknown;
   /** Publish toggle for the public wedding website at `/w/:slug`.
    *  Default off — couples opt in explicitly from the wedding-site editor. */
   is_public?: unknown;
@@ -1836,6 +1841,22 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.rsvp_collects_meal_update",
         before: { rsvp_collects_meal: prev },
         after: { rsvp_collects_meal: next },
+      });
+    }
+  }
+
+  if (body.meal_menu !== undefined) {
+    // Normalise (tolerant of partials, guarantees one offered slot) and store
+    // canonically. Compare the serialised forms so a no-op PATCH is skipped.
+    const nextMenu = normalizeMealMenuInput(body.meal_menu);
+    const nextJson = JSON.stringify(nextMenu);
+    const prevJson = JSON.stringify(parseMealMenu(couple.meal_menu));
+    if (nextJson !== prevJson) {
+      updates.push({ col: "meal_menu", val: nextJson });
+      auditEntries.push({
+        action: "couple.meal_menu_update",
+        before: { meal_menu: prevJson },
+        after: { meal_menu: nextJson },
       });
     }
   }

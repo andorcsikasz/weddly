@@ -101,6 +101,7 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
     honeymoon_end_date: null,
     rsvp_offers_accommodation: false,
     rsvp_collects_meal: true,
+    meal_menu: [],
     is_demo: false,
     created_at: 0,
     onboarded_at: null,

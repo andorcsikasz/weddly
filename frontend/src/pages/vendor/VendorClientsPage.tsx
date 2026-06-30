@@ -149,11 +149,7 @@ function EmptyClients() {
           <Fragment key={label}>
             <div className="flex items-center gap-3 sm:w-32 sm:flex-col sm:gap-2 sm:text-center">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-                <Icon
-                  size={20}
-                  aria-hidden="true"
-                  className="text-steel-700 dark:text-steel-300"
-                />
+                <Icon size={20} aria-hidden="true" className="text-steel-700 dark:text-steel-300" />
               </span>
               <span className="text-sm text-ink-700 dark:text-paper-200">{label}</span>
             </div>

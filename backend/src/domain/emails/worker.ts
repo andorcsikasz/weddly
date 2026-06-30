@@ -13,6 +13,8 @@ import { CONFIG } from "../../config";
 import { db, now } from "../../db";
 import { log } from "../../lib/logger";
 import { reportError } from "../../lib/observability";
+import { getCoupleById } from "../couples";
+import { resolveRecipients, sendGuestMessage } from "../guest_messages";
 import { insertCoupleNotification, listActionableTimelineTasks } from "../notifications";
 import type { EmailKind } from "./kinds";
 import { markDispatched, sendKind } from "./send";
@@ -63,6 +65,7 @@ export function runEmailSweep(): {
   adminDigests: number;
   rsvpDigests: number;
   timelineEscalations: number;
+  scheduledGuestMessages: number;
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
@@ -76,6 +79,7 @@ export function runEmailSweep(): {
   const adminDigests = sweepAdminModerationDigest(ts);
   const rsvpDigests = sweepRsvpWeeklyDigest(ts);
   const timelineEscalations = sweepTimelineEscalation(ts);
+  const scheduledGuestMessages = sweepScheduledGuestMessages(ts);
   return {
     nudges,
     nudgesWeek,
@@ -88,7 +92,78 @@ export function runEmailSweep(): {
     adminDigests,
     rsvpDigests,
     timelineEscalations,
+    scheduledGuestMessages,
   };
+}
+
+interface ScheduledGuestMessageRow {
+  id: number;
+  couple_id: number;
+  template: string;
+  subject: string | null;
+  body: string | null;
+  include_envelope_tip: number;
+  audience: string;
+}
+
+function sweepScheduledGuestMessages(ts: number): number {
+  // Couple-composed broadcasts queued for a future send. Each row is picked up
+  // once its scheduled_at passes, re-resolves its recipients (so a list that
+  // changed since scheduling still hits the right people), and flips to sent.
+  // A throw on any single message marks just that row failed and moves on.
+  const rows = db
+    .prepare(
+      `SELECT id, couple_id, template, subject, body, include_envelope_tip, audience
+         FROM guest_messages
+        WHERE status = 'scheduled' AND scheduled_at <= ?
+        ORDER BY scheduled_at ASC
+        LIMIT ?`,
+    )
+    .all(ts, SENDS_PER_SWEEP_CAP) as ScheduledGuestMessageRow[];
+
+  let count = 0;
+  for (const m of rows) {
+    try {
+      const couple = getCoupleById(m.couple_id);
+      if (!couple) {
+        db.prepare("UPDATE guest_messages SET status = 'failed', updated_at = ? WHERE id = ?").run(
+          ts,
+          m.id,
+        );
+        count++;
+        continue;
+      }
+      const recipients = resolveRecipients(
+        m.couple_id,
+        m.audience as "all" | "pending" | "confirmed",
+      );
+      const { sent, envelopeAmount } = sendGuestMessage(
+        couple,
+        {
+          template: m.template as "invite" | "major_update" | "pre_wedding_info",
+          subject: m.subject,
+          body: m.body,
+          include_envelope_tip: Boolean(m.include_envelope_tip),
+        },
+        recipients,
+        null,
+      );
+      db.prepare(
+        `UPDATE guest_messages
+            SET status = 'sent', sent_at = ?, recipient_count = ?, envelope_amount = ?, updated_at = ?
+          WHERE id = ?`,
+      ).run(ts, sent, envelopeAmount, ts, m.id);
+      count++;
+    } catch (e) {
+      reportError("emails.scheduled_guest_message_failed", e, { guest_message_id: m.id });
+      db.prepare("UPDATE guest_messages SET status = 'failed', updated_at = ? WHERE id = ?").run(
+        ts,
+        m.id,
+      );
+      count++;
+    }
+  }
+  return count;
 }
 
 function sweepOnboardingNudges(ts: number): number {
@@ -769,7 +844,8 @@ export function startEmailWorker(): void {
         r.mealFollowups +
         r.adminDigests +
         r.rsvpDigests +
-        r.timelineEscalations >
+        r.timelineEscalations +
+        r.scheduledGuestMessages >
       0
     ) {
       log.info("emails.boot_sweep", r);
@@ -791,7 +867,8 @@ export function startEmailWorker(): void {
             r.mealFollowups +
             r.adminDigests +
             r.rsvpDigests +
-            r.timelineEscalations >
+            r.timelineEscalations +
+            r.scheduledGuestMessages >
           0
         ) {
           log.info("emails.hourly_sweep", r);

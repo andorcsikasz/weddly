@@ -530,7 +530,12 @@ describe("planner avatar + portfolio uploads", () => {
     const res = await postForm("/api/planner/profile/portfolio", token, form);
     expect(res.status).toBe(200);
     const { portfolio } = (await res.json()) as {
-      portfolio: Array<{ id: number; title: string; description: string; image_url: string | null }>;
+      portfolio: Array<{
+        id: number;
+        title: string;
+        description: string;
+        image_url: string | null;
+      }>;
     };
     expect(portfolio.length).toBe(1);
     const item = portfolio[0]!;

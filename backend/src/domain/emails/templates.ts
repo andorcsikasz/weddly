@@ -197,6 +197,42 @@ export interface GuestInvitePayload {
    *  on /rsvp/{code} with the form pre-populated and just confirms. */
   rsvpUrl: string;
 }
+export interface GuestMajorUpdatePayload {
+  /** "Mia & Lucas", used in the subject + body so the guest knows whose
+   *  wedding this update is about. */
+  coupleDisplayName: string;
+  /** Recipient's display name as it sits in the guest row. Greeting uses the
+   *  first name; falls back gracefully when empty. */
+  guestName: string;
+  /** Pre-formatted wedding date ("2026-09-12") or null if no date is pinned. */
+  weddingDate: string | null;
+  /** Where the guest can re-check details / update their RSVP. */
+  infoUrl: string;
+  /** Subject line the couple typed. When empty/null, a sensible default is used. */
+  subject?: string | null;
+  /** Couple-authored paragraphs, rendered one <p> each. Falls back to a
+   *  default sentence when empty. */
+  bodyParagraphs: string[];
+}
+export interface GuestPreWeddingInfoPayload {
+  /** "Mia & Lucas", used in the subject + body. */
+  coupleDisplayName: string;
+  /** Recipient's display name as it sits in the guest row. */
+  guestName: string;
+  /** Pre-formatted wedding date ("2026-09-12") or null if no date is pinned. */
+  weddingDate: string | null;
+  /** Where the guest can re-check details / update their RSVP. */
+  infoUrl: string;
+  /** Subject line the couple typed. When empty/null, a sensible default is used. */
+  subject?: string | null;
+  /** Couple-authored paragraphs, rendered one <p> each. Falls back to a
+   *  default sentence when empty. */
+  bodyParagraphs: string[];
+  /** Pre-formatted, localized "what to put in the envelope" per-head cost tip
+   *  the route already built (currency-specific, not translated here). When a
+   *  non-empty string, rendered verbatim as a final paragraph in both blocks. */
+  envelopeTip?: string | null;
+}
 export interface OnboardingNudgePayload {
   onboardingUrl: string;
 }
@@ -454,6 +490,8 @@ export type KindPayload = {
   rsvp_received_household_for_couple: RsvpReceivedHouseholdForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
   guest_invite: GuestInvitePayload;
+  guest_major_update: GuestMajorUpdatePayload;
+  guest_pre_wedding_info: GuestPreWeddingInfoPayload;
   onboarding_nudge: OnboardingNudgePayload;
   onboarding_nudge_week: OnboardingNudgePayload;
   milestone_t90: MilestonePayload;
@@ -1146,6 +1184,85 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ],
         cta: "RSVP now",
         footnote: "Got this by mistake? Ignore it, nothing happens.",
+      },
+    };
+  },
+
+  guest_major_update: (p) => {
+    const dateHu = p.weddingDate ? ` (${p.weddingDate})` : "";
+    const dateEn = p.weddingDate ? ` (${p.weddingDate})` : "";
+    const greetingName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
+    const bodyHu =
+      p.bodyParagraphs.length > 0
+        ? p.bodyParagraphs
+        : [
+            `${p.coupleDisplayName} fontos frissítést szeretne megosztani veled az esküvővel${dateHu} kapcsolatban.`,
+          ];
+    const bodyEn =
+      p.bodyParagraphs.length > 0
+        ? p.bodyParagraphs
+        : [
+            `${p.coupleDisplayName} has an important update to share with you about their wedding${dateEn}.`,
+          ];
+    const subject =
+      p.subject && p.subject.trim()
+        ? p.subject.trim()
+        : `${p.coupleDisplayName} - fontos frissítés / an important update`;
+    return {
+      subject,
+      ctaUrl: p.infoUrl,
+      hu: {
+        preheader: `${p.coupleDisplayName} fontos frissítést küldött.`,
+        greeting: `Szia${greetingName}!`,
+        paragraphs: bodyHu,
+        cta: "Részletek",
+        footnote: "Ha kérdésed van, válaszolj erre az e-mailre.",
+      },
+      en: {
+        greeting: `Hi${greetingName},`,
+        paragraphs: bodyEn,
+        cta: "View details",
+        footnote: "Reply to this email if anything's unclear.",
+      },
+    };
+  },
+
+  guest_pre_wedding_info: (p) => {
+    const dateHu = p.weddingDate ? ` (${p.weddingDate})` : "";
+    const dateEn = p.weddingDate ? ` (${p.weddingDate})` : "";
+    const greetingName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
+    const tip = p.envelopeTip && p.envelopeTip.trim() ? [p.envelopeTip.trim()] : [];
+    const bodyHu =
+      p.bodyParagraphs.length > 0
+        ? p.bodyParagraphs
+        : [
+            `Közeleg a nagy nap${dateHu}, ${p.coupleDisplayName} összeszedett pár hasznos tudnivalót az esküvő előtt.`,
+          ];
+    const bodyEn =
+      p.bodyParagraphs.length > 0
+        ? p.bodyParagraphs
+        : [
+            `The big day is coming up${dateEn}, and ${p.coupleDisplayName} put together some helpful info before the wedding.`,
+          ];
+    const subject =
+      p.subject && p.subject.trim()
+        ? p.subject.trim()
+        : `${p.coupleDisplayName} - hasznos tudnivalók az esküvő előtt / helpful info before the wedding`;
+    return {
+      subject,
+      ctaUrl: p.infoUrl,
+      hu: {
+        preheader: `${p.coupleDisplayName} hasznos tudnivalókat küldött az esküvő előtt.`,
+        greeting: `Szia${greetingName}!`,
+        paragraphs: [...bodyHu, ...tip],
+        cta: "Részletek",
+        footnote: "Ha kérdésed van, válaszolj erre az e-mailre.",
+      },
+      en: {
+        greeting: `Hi${greetingName},`,
+        paragraphs: [...bodyEn, ...tip],
+        cta: "View details",
+        footnote: "Reply to this email if anything's unclear.",
       },
     };
   },

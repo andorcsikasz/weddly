@@ -262,11 +262,7 @@ describe("participant soft-remove (#6)", () => {
     ({ token } = await bootstrapCouple("remove@weddly.test"));
     albumToken = await createAlbum(token);
     for (const d of ["dev-a", "dev-b"]) {
-      await req(
-        "POST",
-        `/api/photo-albums/${albumToken}/devices`,
-        { device_id: d, guest_name: d },
-      );
+      await req("POST", `/api/photo-albums/${albumToken}/devices`, { device_id: d, guest_name: d });
     }
   });
 

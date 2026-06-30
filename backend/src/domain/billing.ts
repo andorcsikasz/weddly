@@ -302,6 +302,7 @@ export function requireEntitledCouple(ctx: Ctx): CoupleRow {
 const EDIT_PREFIXES: readonly string[] = [
   "/api/budget",
   "/api/guests",
+  "/api/guest-messages",
   "/api/households",
   "/api/seating",
   "/api/schedule",

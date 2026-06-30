@@ -326,7 +326,10 @@ const IDEA_WITNESS_STANDUP: Idea = {
   tag: "program",
 };
 const IDEA_MIDNIGHT_SNACK: Idea = {
-  title: { hu: "Éjféli hot dog vagy lángos meglepetés", en: "A midnight hot dog or lángos surprise" },
+  title: {
+    hu: "Éjféli hot dog vagy lángos meglepetés",
+    en: "A midnight hot dog or lángos surprise",
+  },
   body: {
     hu: "A vendégek bent maradnak és meglepődnek, amikor előkerül a meleg étel.",
     en: "Guests stay on and light up when warm food suddenly arrives.",
@@ -363,7 +366,10 @@ const IDEA_WEDDING_NEWSPAPER: Idea = {
   tag: "decor",
 };
 const IDEA_SCENT_CANDLE: Idea = {
-  title: { hu: "Saját illatgyertya esküvői illattal", en: "A signature scent candle from the wedding" },
+  title: {
+    hu: "Saját illatgyertya esküvői illattal",
+    en: "A signature scent candle from the wedding",
+  },
   body: {
     hu: "Kis üvegbe töltve, köszönő-ajándékként, a vendégek hazaviszik az esküvő illatát.",
     en: "Poured into a little jar as a thank-you favour, guests take home the scent of the day.",
@@ -443,7 +449,10 @@ const IDEA_VIDEO_TIME_CAPSULE: Idea = {
   tag: "keepsake",
 };
 const IDEA_KIDS_CORNER: Idea = {
-  title: { hu: "Gyerek-sarok rajzolással és mesével", en: "A kids' corner with drawing and stories" },
+  title: {
+    hu: "Gyerek-sarok rajzolással és mesével",
+    en: "A kids' corner with drawing and stories",
+  },
   body: {
     hu: "Rajzolás, meséskönyv, matrica-album, a szülők nyugodtan ünnepelhetnek.",
     en: "Drawing, picture books, sticker albums, so the parents can actually celebrate.",

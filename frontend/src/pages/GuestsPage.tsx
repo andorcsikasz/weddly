@@ -10,8 +10,15 @@ import type {
   GuestKind,
   Household,
   MealChoice,
+  MealMenu,
   RsvpStatus,
 } from "@shared/types";
+import {
+  MEAL_LABEL_MAX,
+  MEAL_ORDER,
+  isCustomMealMenu,
+  normalizeMealMenuInput,
+} from "@shared/meals";
 import {
   Atom,
   Baby,
@@ -43,6 +50,7 @@ import {
   Pencil,
   Plus,
   Printer,
+  RotateCcw,
   Search,
   Send,
   Shell,
@@ -57,7 +65,15 @@ import {
   Wheat,
   X,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -184,7 +200,6 @@ export default function GuestsPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [mealsOpen, setMealsOpen] = useState(false);
   const [orphanFixing, setOrphanFixing] = useState(false);
-  const [sendingInvites, setSendingInvites] = useState(false);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   // ── Search state ────────────────────────────────────────────────────
   // `query` is the raw text in the input; `debouncedQuery` is what we
@@ -348,57 +363,6 @@ export default function GuestsPage() {
     }
     return { eligible, eligibleContacts, alreadyInvited, noEmail };
   }, [households, guests]);
-
-  async function onMassInvite() {
-    const { eligible, eligibleContacts, alreadyInvited, noEmail } = inviteBreakdown;
-    if (eligible.length === 0) {
-      toast.info(t("guests.invite_none_eligible"));
-      return;
-    }
-    const ok = await confirm({
-      title: t("guests.invite_confirm_title"),
-      body: (
-        <div className="space-y-3 text-sm">
-          <ul className="max-h-48 divide-y divide-paper-100 overflow-y-auto rounded-lg border border-paper-200 dark:divide-umber-700 dark:border-umber-700">
-            {eligibleContacts.map((contact) => (
-              <li key={contact.id} className="flex min-w-0 items-center gap-2 px-3 py-2">
-                <span className="min-w-0 flex-1 truncate font-medium text-ink-900 dark:text-paper-50">
-                  {contact.full_name}
-                </span>
-                <span className="shrink-0 truncate text-xs text-ink-400 dark:text-umber-400">
-                  {contact.email}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <ul className="space-y-1 text-ink-600 dark:text-umber-200">
-            {alreadyInvited.length > 0 && (
-              <li>{t("guests.invite_confirm_already", { count: alreadyInvited.length })}</li>
-            )}
-            {noEmail.length > 0 && (
-              <li className="text-blush-700 dark:text-blush-300">
-                {t("guests.invite_confirm_no_email", { count: noEmail.length })}
-              </li>
-            )}
-          </ul>
-        </div>
-      ),
-      confirmLabel: t("guests.invite_confirm_send", { count: eligible.length }),
-      cancelLabel: t("common.cancel"),
-    });
-    if (!ok) return;
-    setSendingInvites(true);
-    try {
-      const res = await householdApi.inviteBatch({ household_ids: eligible.map((h) => h.id) });
-      toast.success(t("guests.invite_sent_toast", { count: res.sent }));
-      if (res.failed > 0) toast.error(t("guests.invite_failed_toast", { count: res.failed }));
-      refresh();
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-    } finally {
-      setSendingInvites(false);
-    }
-  }
 
   async function onRenameHousehold(id: number, label: string) {
     const trimmed = label.trim();
@@ -851,8 +815,7 @@ export default function GuestsPage() {
             <button
               type="button"
               className={GUEST_TOOL_BTN}
-              onClick={onMassInvite}
-              disabled={sendingInvites || inviteBreakdown.eligible.length === 0}
+              onClick={() => navigate("/app/invites")}
               title={t("guests.invite_send_hint")}
               aria-label={t("guests.invite_send")}
             >
@@ -1113,6 +1076,8 @@ export default function GuestsPage() {
         <MealsDialog
           guests={guests}
           households={households}
+          couple={couple}
+          onCoupleUpdate={setCouple}
           onBulkRsvpToggle={onBulkRsvpToggle}
           onClose={() => setMealsOpen(false)}
         />
@@ -3339,17 +3304,26 @@ function SongRequestList({
  *  couple can hand the caterer one clean tally instead of scrolling the
  *  list. "Copy as text" exports a plain summary suitable for email/Slack.
  *  Babies (`kind === "baby"`) are excluded from the meal pending count —
- *  they don't get a wedding-menu plate. */
-const MEAL_ORDER: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
+ *  they don't get a wedding-menu plate. `MEAL_ORDER` is imported from
+ *  shared/meals so the dialog, the RSVP form and the backend agree on the
+ *  slot set + order. */
 
 function MealsDialog({
   guests,
   households,
+  couple,
+  onCoupleUpdate,
   onBulkRsvpToggle,
   onClose,
 }: {
   guests: Guest[];
   households: Household[];
+  /** The active couple — carries the editable `meal_menu` (custom labels +
+   *  offered flags). Null only during the initial load. */
+  couple: Couple | null;
+  /** Bubble the saved couple back up so the page state (and the RSVP form's
+   *  view) pick up the new menu without a refetch. */
+  onCoupleUpdate: (next: Couple) => void;
   /** Flips the meal-collection flag on every household in one fan-out.
    *  `mealOn` reflects "ALL households have this on?" — mixed state renders
    *  as off, since toggling once will pull every household into a consistent
@@ -3361,6 +3335,57 @@ function MealsDialog({
   const { t } = useT();
   const toast = useToast();
   const mealOn = households.length > 0 && households.every((h) => h.rsvp_collects_meal);
+
+  // Editable menu state. We seed a local draft from the couple and only PATCH
+  // on Save, so typing a custom label never spams the API. `menu` is always the
+  // canonical six slots in MEAL_ORDER (the couple mapper guarantees it).
+  const savedMenu = couple?.meal_menu;
+  const [editing, setEditing] = useState(false);
+  const [draftMenu, setDraftMenu] = useState<MealMenu>(() =>
+    savedMenu ? savedMenu.map((m) => ({ ...m })) : [],
+  );
+  const [savingMenu, setSavingMenu] = useState(false);
+  // Re-seed the draft whenever the saved menu changes (e.g. a cross-tab edit)
+  // and we're not mid-edit, so the view always reflects server truth.
+  useEffect(() => {
+    if (!editing && savedMenu) setDraftMenu(savedMenu.map((m) => ({ ...m })));
+  }, [savedMenu, editing]);
+  // The menu the read-only stats + labels resolve against: the live draft while
+  // editing, otherwise the saved menu.
+  const activeMenu: MealMenu = editing ? draftMenu : (savedMenu ?? draftMenu);
+  const mealLabel = useCallback(
+    (m: MealChoice): string =>
+      activeMenu.find((x) => x.choice === m)?.label?.trim() || t(`guests.meal_${m}`),
+    [activeMenu, t],
+  );
+
+  function patchSlot(
+    choice: MealChoice,
+    patch: Partial<{ label: string | null; enabled: boolean }>,
+  ) {
+    setDraftMenu((prev) => prev.map((m) => (m.choice === choice ? { ...m, ...patch } : m)));
+  }
+
+  async function saveMenu() {
+    setSavingMenu(true);
+    try {
+      const normalized = normalizeMealMenuInput(draftMenu);
+      const res = await coupleApi.update({ meal_menu: normalized });
+      onCoupleUpdate(res.couple);
+      setDraftMenu(res.couple.meal_menu.map((m) => ({ ...m })));
+      setEditing(false);
+      toast.success(t("guests.meals_menu_saved"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setSavingMenu(false);
+    }
+  }
+
+  function cancelEdit() {
+    if (savedMenu) setDraftMenu(savedMenu.map((m) => ({ ...m })));
+    setEditing(false);
+  }
 
   const stats = useMemo(() => {
     const mealCounts: Record<MealChoice, number> = {
@@ -3419,7 +3444,7 @@ function MealsDialog({
     lines.push("");
     lines.push(`${t("guests.meals_section_meals")}:`);
     for (const m of MEAL_ORDER) {
-      lines.push(`  ${t(`guests.meal_${m}`)}: ${stats.mealCounts[m]}`);
+      lines.push(`  ${mealLabel(m)}: ${stats.mealCounts[m]}`);
     }
     if (stats.pending > 0) {
       lines.push(`  ${t("guests.meals_pending_label")}: ${stats.pending}`);
@@ -3454,7 +3479,7 @@ function MealsDialog({
     );
     const mealCat = t("guests.meals_csv_cat_meal");
     for (const m of MEAL_ORDER) {
-      rows.push([mealCat, t(`guests.meal_${m}`), stats.mealCounts[m]].map(cell).join(","));
+      rows.push([mealCat, mealLabel(m), stats.mealCounts[m]].map(cell).join(","));
     }
     if (stats.pending > 0) {
       rows.push([mealCat, t("guests.meals_pending_label"), stats.pending].map(cell).join(","));
@@ -3486,67 +3511,92 @@ function MealsDialog({
       size="xl"
       closeOnBackdrop
       footer={
-        <div className="flex w-full flex-wrap items-center justify-end gap-2">
-          <button
-            type="button"
-            className="btn-outline"
-            onClick={copySummary}
-            disabled={stats.totalYes === 0}
-          >
-            <ClipboardCopy size={16} aria-hidden /> {t("guests.meals_copy_text")}
-          </button>
-          <button
-            type="button"
-            className="btn-outline"
-            onClick={downloadCsv}
-            disabled={stats.totalYes === 0}
-          >
-            <Download size={16} aria-hidden /> {t("guests.meals_download_text")}
-          </button>
-          <button type="button" className="btn-primary" onClick={onClose}>
-            {t("guests.meals_close")}
-          </button>
-        </div>
+        editing ? (
+          // Edit mode: reset on the left, cancel / save on the right.
+          <div className="flex w-full items-center justify-between gap-2">
+            <button
+              type="button"
+              className="btn-ghost btn-sm text-ink-500 dark:text-umber-300"
+              onClick={() =>
+                setDraftMenu(MEAL_ORDER.map((c) => ({ choice: c, label: null, enabled: true })))
+              }
+              disabled={savingMenu}
+            >
+              <RotateCcw size={14} aria-hidden /> {t("guests.meals_menu_reset")}
+            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={cancelEdit}
+                disabled={savingMenu}
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={saveMenu}
+                disabled={savingMenu}
+              >
+                <Check size={16} aria-hidden />{" "}
+                {savingMenu ? t("common.saving") : t("guests.meals_menu_save")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex w-full flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={copySummary}
+              disabled={stats.totalYes === 0}
+            >
+              <ClipboardCopy size={16} aria-hidden /> {t("guests.meals_copy_text")}
+            </button>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={downloadCsv}
+              disabled={stats.totalYes === 0}
+            >
+              <Download size={16} aria-hidden /> {t("guests.meals_download_text")}
+            </button>
+            <button type="button" className="btn-primary" onClick={onClose}>
+              {t("guests.meals_close")}
+            </button>
+          </div>
+        )
       }
     >
       {/* font-grotesk (General Sans) across the whole dialog so the meals
-          summary speaks in the same voice as the landing page, not the
-          default Inter body stack. */}
-      <div className="space-y-6 font-grotesk">
-        {/* Bulk RSVP-form settings — lifted out of the per-household card
-            so couples set "do we ask for meals / accommodation?" once for
-            the whole guest list. Disabled when there are no households
-            yet (nothing to PATCH) so the toggles can't desync. */}
-        <section className="rounded-2xl border border-paper-200 bg-paper-50/70 px-4 py-2.5 dark:border-umber-700 dark:bg-umber-800/40">
-          <div className="flex items-start gap-2.5">
+          summary speaks in the same voice as the landing page. Tightened to a
+          single no-scroll view: a compact control bar, the meal panel (which
+          flips between live stats and an inline editor), and a dense allergen
+          grid. */}
+      <div className="space-y-4 font-grotesk">
+        {/* Compact control bar: the bulk "ask for meals on the RSVP" toggle on
+            one line, plus the live summary chips on the right. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-paper-200 bg-paper-50/70 px-3.5 py-2 dark:border-umber-700 dark:bg-umber-800/40">
+          <div
+            className={`flex min-w-0 items-center gap-2.5 ${
+              households.length === 0 ? "opacity-60" : ""
+            }`}
+          >
             <span
               aria-hidden
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-paper-200/70 text-ink-600 dark:bg-umber-700 dark:text-paper-100"
             >
               <Utensils size={16} />
             </span>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-grotesk text-sm font-semibold tracking-tight text-ink-800 dark:text-paper-100">
-                {t("guests.rsvp_settings_title")}
-              </h3>
-              <p className="text-xs text-ink-500 dark:text-umber-300">
-                {t("guests.rsvp_settings_help")}
+            <div className="min-w-0">
+              <p className="text-sm font-medium leading-tight text-ink-800 dark:text-paper-100">
+                {t("guests.rsvp_collects_meal_label")}
+              </p>
+              <p className="truncate text-[11px] text-ink-500 dark:text-umber-300">
+                {t("guests.rsvp_collects_meal_help")}
               </p>
             </div>
-          </div>
-          <div
-            className={`mt-2 flex items-center justify-between gap-4 rounded-xl border border-paper-200 bg-paper-50 px-3 py-1.5 dark:border-umber-700 dark:bg-umber-800/60 ${
-              households.length === 0 ? "opacity-60" : ""
-            }`}
-          >
-            <span className="min-w-0">
-              <span className="block text-sm font-medium text-ink-800 dark:text-paper-100">
-                {t("guests.rsvp_collects_meal_label")}
-              </span>
-              <span className="mt-0.5 block text-xs text-ink-500 dark:text-umber-300">
-                {t("guests.rsvp_collects_meal_help")}
-              </span>
-            </span>
             <button
               type="button"
               role="switch"
@@ -3554,61 +3604,93 @@ function MealsDialog({
               aria-label={t("guests.rsvp_collects_meal_label")}
               disabled={households.length === 0}
               onClick={() => void onBulkRsvpToggle("rsvp_collects_meal", !mealOn)}
-              className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed ${
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed ${
                 mealOn ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
               }`}
             >
               <span
-                className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
                   mealOn ? "translate-x-6" : "translate-x-1"
                 }`}
               />
             </button>
           </div>
-        </section>
-
-        {stats.totalYes === 0 ? (
-          <p className="text-sm text-ink-600 dark:text-umber-200">{t("guests.meals_no_yes_yet")}</p>
-        ) : (
-          <>
-            {/* Header summary: total + baby callout. Replaces the old in-line
-                "X yes-válasz" pill on the right with a richer chip row that
-                also surfaces the baby count (caterer needs to know).  */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-200">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-umber-900">
-                  <Check size={11} strokeWidth={3} aria-hidden />
+          {!editing && stats.totalYes > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-200">
+                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-umber-900">
+                  <Check size={9} strokeWidth={3} aria-hidden />
                 </span>
                 {t("guests.meals_total_yes", { count: stats.totalYes })}
               </span>
               {stats.pending > 0 && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
-                  <span className="inline-block h-2 w-2 rounded-full bg-amber-500 dark:bg-amber-400" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
                   {t("guests.meals_pending_chip", { count: stats.pending })}
                 </span>
               )}
               {babyYes > 0 && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
-                  <Baby size={14} aria-hidden />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
+                  <Baby size={13} aria-hidden />
                   {t("guests.meals_baby_count", { count: babyYes })}
                 </span>
               )}
             </div>
+          )}
+        </div>
 
-            {/* MEALS — one shared horizontal bar split by share. Meals are
-                mutually exclusive (one choice per guest) so a single
-                stacked bar reads more honestly than six independent
-                heights. The legend below shows icon + count + share per
-                meal, color-keyed to its bar segment. */}
-            <section className="space-y-3">
-              <header className="flex items-baseline justify-between gap-2">
+        {/* MEALS — the panel flips between live stats and the inline editor.
+            View: a single stacked share-bar + a dense legend (custom labels,
+            counts, share). Edit: each slot becomes a label field + an
+            offered/hidden switch so couples publish their real menu. */}
+        <section className="space-y-3">
+          <header className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
                 <h3 className="font-grotesk text-base font-semibold tracking-tight text-ink-800 dark:text-paper-100">
                   {t("guests.meals_section_meals")}
                 </h3>
-                <span className="text-xs text-ink-500 dark:text-umber-300">
-                  {t("guests.meals_section_meals_help")}
-                </span>
-              </header>
+                {!editing && isCustomMealMenu(activeMenu) && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blush-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blush-600 dark:bg-blush-400/15 dark:text-blush-300">
+                    {t("guests.meals_menu_custom_badge")}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-ink-500 dark:text-umber-300">
+                {editing ? t("guests.meals_menu_edit_help") : t("guests.meals_section_meals_help")}
+              </span>
+            </div>
+            {!editing && couple && (
+              <button
+                type="button"
+                className="btn-outline btn-sm shrink-0"
+                onClick={() => setEditing(true)}
+              >
+                <Pencil size={14} aria-hidden /> {t("guests.meals_edit_menu")}
+              </button>
+            )}
+          </header>
+
+          {editing ? (
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {MEAL_ORDER.map((m) => {
+                const item = draftMenu.find((x) => x.choice === m);
+                return (
+                  <MealEditRow
+                    key={m}
+                    meal={m}
+                    value={item?.label ?? ""}
+                    enabled={item?.enabled ?? true}
+                    placeholder={t(`guests.meal_${m}`)}
+                    offeredLabel={t("guests.meals_menu_offered")}
+                    onLabel={(label) => patchSlot(m, { label })}
+                    onToggle={() => patchSlot(m, { enabled: !(item?.enabled ?? true) })}
+                  />
+                );
+              })}
+            </ul>
+          ) : stats.totalYes > 0 ? (
+            <>
               <MealsStackedBar
                 mealCounts={stats.mealCounts}
                 pending={stats.pending}
@@ -3619,43 +3701,62 @@ function MealsDialog({
                   <MealLegendRow
                     key={m}
                     meal={m}
-                    label={t(`guests.meal_${m}`)}
+                    label={mealLabel(m)}
                     count={stats.mealCounts[m]}
                     total={mealsDenominator}
                   />
                 ))}
               </ul>
-            </section>
-
-            {/* ALLERGENS — independent counts, so vertical list of bars
-                each tinted with the allergen's own semantic palette
-                (dairy=sky, wheat=amber, nut=orange, egg=yellow,
-                seafood=cyan). The horizontal layout + tinted rails make
-                this section unmistakeably different from the meal section
-                above so a glance is enough to know which is which. */}
-            <section className="space-y-3 rounded-2xl border border-paper-200 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-700/30">
-              <header className="flex items-baseline justify-between gap-2">
-                <h3 className="font-grotesk text-base font-semibold tracking-tight text-ink-800 dark:text-paper-100">
-                  {t("guests.meals_section_dietary")}
-                </h3>
-                <span className="text-xs text-ink-500 dark:text-umber-300">
-                  {t("guests.meals_section_dietary_help")}
-                </span>
-              </header>
-              <ul className="space-y-1.5">
-                {DIETARY_TAG_KEYS.map((tag) => (
-                  <AllergenRow
-                    key={tag}
-                    tag={tag}
-                    label={t(`rsvp.tag_${tag}`)}
-                    count={stats.dietaryCounts[tag]}
-                    max={dietaryMax}
-                    totalYes={stats.totalYes}
-                  />
+            </>
+          ) : (
+            // No responses yet — show the menu as read-only chips so couples
+            // still see what they'll offer, with a nudge to personalise it.
+            <div className="rounded-xl border border-dashed border-paper-300 bg-paper-50/60 px-3 py-3 dark:border-umber-700 dark:bg-umber-800/30">
+              <ul className="flex flex-wrap gap-1.5">
+                {MEAL_ORDER.filter(
+                  (m) => activeMenu.find((x) => x.choice === m)?.enabled ?? true,
+                ).map((m) => (
+                  <li
+                    key={m}
+                    className={`inline-flex items-center gap-1.5 rounded-full border border-paper-200 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 ${MEAL_TONE_TEXT[m]}`}
+                  >
+                    <MealIcon meal={m} />
+                    <span className="text-ink-700 dark:text-paper-100">{mealLabel(m)}</span>
+                  </li>
                 ))}
               </ul>
-            </section>
-          </>
+              <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
+                {t("guests.meals_no_yes_yet")}
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* ALLERGENS — dense two-column grid of tinted bars, hidden while
+            editing the menu so the editor owns the whole view. */}
+        {!editing && stats.totalYes > 0 && (
+          <section className="space-y-2 rounded-2xl border border-paper-200 bg-paper-100/40 p-3.5 dark:border-umber-700 dark:bg-umber-700/30">
+            <header className="flex items-baseline justify-between gap-2">
+              <h3 className="font-grotesk text-base font-semibold tracking-tight text-ink-800 dark:text-paper-100">
+                {t("guests.meals_section_dietary")}
+              </h3>
+              <span className="text-xs text-ink-500 dark:text-umber-300">
+                {t("guests.meals_section_dietary_help")}
+              </span>
+            </header>
+            <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {DIETARY_TAG_KEYS.map((tag) => (
+                <AllergenRow
+                  key={tag}
+                  tag={tag}
+                  label={t(`rsvp.tag_${tag}`)}
+                  count={stats.dietaryCounts[tag]}
+                  max={dietaryMax}
+                  totalYes={stats.totalYes}
+                />
+              ))}
+            </ul>
+          </section>
         )}
       </div>
     </Dialog>
@@ -3813,6 +3914,72 @@ function MealLegendRow({
           </span>
         </div>
       </div>
+    </li>
+  );
+}
+
+/** Inline editor row for one meal slot: the slot's icon, a label field
+ *  (placeholder = the localised default, so an empty field still "works"),
+ *  and an offered/hidden switch. The choice key never changes — only the
+ *  couple-facing label + whether it appears on the RSVP form. */
+function MealEditRow({
+  meal,
+  value,
+  enabled,
+  placeholder,
+  offeredLabel,
+  onLabel,
+  onToggle,
+}: {
+  meal: MealChoice;
+  value: string;
+  enabled: boolean;
+  placeholder: string;
+  offeredLabel: string;
+  onLabel: (label: string) => void;
+  onToggle: () => void;
+}) {
+  return (
+    <li
+      className={`flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-opacity ${
+        enabled
+          ? "border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
+          : "border-paper-200 bg-paper-50/50 opacity-70 dark:border-umber-700/60 dark:bg-umber-800/30"
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${MEAL_TONE_SOFT[meal]} ${MEAL_TONE_TEXT[meal]}`}
+      >
+        <MealIcon meal={meal} />
+      </span>
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        maxLength={MEAL_LABEL_MAX}
+        disabled={!enabled}
+        aria-label={placeholder}
+        onChange={(e) => onLabel(e.target.value)}
+        className="min-w-0 flex-1 rounded-lg border border-paper-200 bg-paper-50 px-2.5 py-1.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-ink-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-50 dark:placeholder:text-umber-400"
+      />
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        aria-label={offeredLabel}
+        title={offeredLabel}
+        onClick={onToggle}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+          enabled ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+            enabled ? "translate-x-6" : "translate-x-1"
+          }`}
+        />
+      </button>
     </li>
   );
 }

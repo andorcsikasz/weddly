@@ -908,13 +908,16 @@ export default function PlanningPage() {
                   </span>
                   {/* Instant styled tooltip (same visual language as the guest
                    *  header stat tooltips). aria-hidden since the tab already
-                   *  carries a visible accessible name. */}
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 w-max max-w-[15rem] -translate-x-1/2 whitespace-normal rounded-lg bg-umber-900 px-2.5 py-1.5 text-center text-xs font-normal leading-snug text-paper-50 opacity-0 shadow-pop transition-opacity duration-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
-                  >
-                    {t(tab.tipKey)}
-                  </span>
+                   *  carries a visible accessible name. Suppressed on the active
+                   *  tab so the just-clicked tab doesn't keep showing it. */}
+                  {!active && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 w-max max-w-[15rem] -translate-x-1/2 whitespace-normal rounded-lg bg-umber-900 px-2.5 py-1.5 text-center text-xs font-normal leading-snug text-paper-50 opacity-0 shadow-pop transition-opacity duration-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
+                    >
+                      {t(tab.tipKey)}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -936,8 +939,12 @@ export default function PlanningPage() {
                   total: String(INTAKE_DIMENSIONS.length),
                 })}
               </span>
-              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-blush-500 dark:text-blush-300">
-                {t(intakeOpen ? "planning.decisions.setup_done" : "planning.decisions.setup_continue")}
+              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-sage-600 dark:text-sage-300">
+                {t(
+                  intakeOpen
+                    ? "planning.decisions.setup_done"
+                    : "planning.decisions.setup_continue",
+                )}
                 <ChevronDown
                   size={16}
                   aria-hidden="true"
@@ -2334,9 +2341,7 @@ function PlanningRow({
                   />
                   <IdeaTagPicker
                     tag={item.idea_tag}
-                    onSelect={(next) =>
-                      onPatch({ idea_tag: item.idea_tag === next ? null : next })
-                    }
+                    onSelect={(next) => onPatch({ idea_tag: item.idea_tag === next ? null : next })}
                   />
                 </div>
                 {item.idea_status === "doing" && !bridgeDismissed && (

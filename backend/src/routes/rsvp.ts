@@ -14,6 +14,7 @@ import type {
   PublicCheckinView,
   RsvpStatus,
 } from "@shared/types";
+import { parseMealMenu } from "@shared/meals";
 import { CONFIG } from "../config";
 import { db } from "../db";
 import { type CoupleRow, getCoupleById } from "../domain/couples";
@@ -153,6 +154,9 @@ function buildView(couple: CoupleRow, household: HouseholdRow): PublicCheckinVie
     // longer flow into the public view.
     rsvp_offers_accommodation: household.rsvp_offers_accommodation === 1,
     rsvp_collects_meal: household.rsvp_collects_meal === 1,
+    // Couple-level custom menu (labels + offered flags) so the public form
+    // shows the couple's real dishes and only the slots they actually offer.
+    meal_menu: parseMealMenu(couple.meal_menu),
     wedding_site_published: couple.is_public === 1,
   };
 }
