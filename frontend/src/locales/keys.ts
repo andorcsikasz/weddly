@@ -4608,6 +4608,9 @@ export interface LocaleMessages {
     waitlist_card_price_list_label: string;
     waitlist_card_message_label: string;
     waitlist_card_notes_label: string;
+    waitlist_card_verification_label: string;
+    waitlist_card_tax_label: string;
+    waitlist_card_reg_label: string;
     /** "More" summary label on the collapsed-by-default detail section
      *  of the compressed vendor-waitlist card. */
     waitlist_card_more_label: string;
@@ -4623,6 +4626,7 @@ export interface LocaleMessages {
     waitlist_card_channel_visit: string;
     waitlist_card_channel_none: string;
     waitlist_action_respond: string;
+    waitlist_action_review: string;
     waitlist_action_reopen: string;
     waitlist_modal_title: string;
     waitlist_modal_outcome_label: string;

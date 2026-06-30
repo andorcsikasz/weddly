@@ -16,7 +16,7 @@ import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
-import { Skeleton, useToast } from "../components/ui";
+import { Button, Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { vendorOnboardingApi } from "../lib/endpoints";
@@ -124,103 +124,143 @@ export default function VendorActivatePage() {
   const view = state.kind === "form" || state.kind === "completing" ? state.view : null;
   const hasFoundingSpots = view != null && view.founding_spots_left > 0;
 
+  const completing = state.kind === "completing";
+
+  if (state.kind === "loading") {
+    return (
+      <Shell>
+        <div className="mx-auto max-w-md">
+          <div className="card">
+            <Skeleton variant="circle" width={40} />
+            <Skeleton variant="block" height={28} rounded="md" className="mt-4 w-3/5" />
+            <div className="mt-4 flex flex-col gap-2">
+              <Skeleton variant="line" height={12} width="85%" />
+              <Skeleton variant="line" height={12} width="55%" />
+            </div>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (view == null) {
+    return (
+      <Shell>
+        <div className="mx-auto max-w-md">
+          <div className="card">
+            <h1 className="text-2xl">{t("vendor_activate.page_title")}</h1>
+            <p className="mt-4 text-sm text-ink-700 dark:text-paper-100">
+              {state.kind === "invalid" && t("vendor_activate.page_invalid")}
+              {state.kind === "expired" && t("vendor_activate.page_expired")}
+              {state.kind === "completed" && t("vendor_activate.page_completed")}
+            </p>
+            <p className="mt-6">
+              <Link to="/" className="btn-ghost">
+                {t("vendor_activate.page_home")}
+              </Link>
+            </p>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
   return (
     <Shell>
+      {/* Uber-style activation: a koromfekete header band with the business
+       *  name as the hero, a bold "spots left" figure in the grotesk face,
+       *  and a single full-width primary CTA. High contrast, large tap
+       *  targets, no chrome competing with the one action. */}
       <div className="mx-auto max-w-md">
-        <div className="card">
-          {state.kind === "loading" ? (
-            <>
-              <Skeleton variant="circle" width={40} />
-              <Skeleton variant="block" height={28} rounded="md" className="mt-4 w-3/5" />
-              <div className="mt-4 flex flex-col gap-2">
-                <Skeleton variant="line" height={12} width="85%" />
-                <Skeleton variant="line" height={12} width="55%" />
+        <div className="card overflow-hidden p-0 shadow-pop">
+          <div className="bg-neutral-900 px-6 py-7 dark:bg-paper-100">
+            {hasFoundingSpots ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-paper-50 dark:bg-umber-900/10 dark:text-umber-900">
+                <Sparkles size={13} aria-hidden />
+                {t("vendor_activate.founding_badge", {
+                  left: view.founding_spots_left,
+                  cap: view.founding_cap,
+                })}
+              </span>
+            ) : null}
+            <h1 className="mt-3 font-grotesk text-2xl font-semibold leading-tight text-paper-50 dark:text-umber-900">
+              {t("vendor_activate.form_title", { name: view.business_name })}
+            </h1>
+          </div>
+
+          <div className="p-6">
+            {hasFoundingSpots ? (
+              <div className="mb-5 rounded-2xl bg-sage-50 p-4 ring-1 ring-sage-100 dark:bg-sage-400/10 dark:ring-sage-400/20">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-grotesk text-4xl font-semibold leading-none tabular-nums text-sage-700 dark:text-sage-300">
+                    {view.founding_spots_left}
+                  </span>
+                  <span className="font-grotesk text-lg font-medium tabular-nums text-sage-600/70 dark:text-sage-300/70">
+                    / {view.founding_cap}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
+                  {t("vendor_activate.founding_note")}
+                </p>
               </div>
-            </>
-          ) : view != null ? (
-            <>
-              {hasFoundingSpots ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-3 py-1 text-xs font-medium text-blush-700 dark:border-blush-400/30 dark:bg-blush-400/15 dark:text-blush-200">
-                  <Sparkles size={13} aria-hidden />
-                  {t("vendor_activate.founding_badge", {
-                    left: view.founding_spots_left,
-                    cap: view.founding_cap,
-                  })}
-                </span>
-              ) : null}
-              <h1 className="mt-3 text-2xl">
-                {t("vendor_activate.form_title", { name: view.business_name })}
-              </h1>
-              <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
-                {t("vendor_activate.form_intro")}
+            ) : (
+              <p className="mb-5 rounded-2xl bg-paper-100 p-4 text-sm text-ink-600 ring-1 ring-ink-100 dark:bg-umber-900 dark:text-umber-200 dark:ring-umber-700">
+                {t("vendor_activate.cohort_full_note")}
               </p>
-              <p className="mt-2 text-sm text-ink-500 dark:text-umber-300">
-                {hasFoundingSpots
-                  ? t("vendor_activate.founding_note")
-                  : t("vendor_activate.cohort_full_note")}
-              </p>
-              <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-                <div>
-                  <label className="field-label" htmlFor="activate-full-name">
-                    {t("vendor_activate.form_name_label")}
-                  </label>
-                  <input
-                    id="activate-full-name"
-                    className="input"
-                    type="text"
-                    autoComplete="name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    disabled={state.kind === "completing"}
-                    maxLength={200}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="field-label" htmlFor="activate-password">
-                    {t("vendor_activate.form_password_label")}
-                  </label>
-                  <input
-                    id="activate-password"
-                    className="input"
-                    type="password"
-                    autoComplete="new-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={state.kind === "completing"}
-                    minLength={8}
-                    required
-                  />
-                  <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-                    {t("vendor_activate.form_password_hint")}
-                  </p>
-                </div>
-                <button
-                  type="submit"
-                  className="btn-primary w-full"
-                  disabled={state.kind === "completing"}
-                >
-                  {state.kind === "completing"
-                    ? t("vendor_activate.form_submitting")
-                    : t("vendor_activate.form_submit")}
-                </button>
-              </form>
-            </>
-          ) : (
-            <>
-              <h1 className="text-2xl">{t("vendor_activate.page_title")}</h1>
-              <p className="mt-4 text-sm text-ink-700 dark:text-paper-100">
-                {state.kind === "invalid" && t("vendor_activate.page_invalid")}
-                {state.kind === "expired" && t("vendor_activate.page_expired")}
-                {state.kind === "completed" && t("vendor_activate.page_completed")}
-              </p>
-              <p className="mt-6">
-                <Link to="/" className="btn-ghost">
-                  {t("vendor_activate.page_home")}
-                </Link>
-              </p>
-            </>
-          )}
+            )}
+
+            <p className="text-sm text-ink-700 dark:text-paper-100">
+              {t("vendor_activate.form_intro")}
+            </p>
+
+            <form className="mt-5 space-y-4" onSubmit={onSubmit}>
+              <div>
+                <label className="field-label" htmlFor="activate-full-name">
+                  {t("vendor_activate.form_name_label")}
+                </label>
+                <input
+                  id="activate-full-name"
+                  className="input"
+                  type="text"
+                  autoComplete="name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  disabled={completing}
+                  maxLength={200}
+                  required
+                />
+              </div>
+              <div>
+                <label className="field-label" htmlFor="activate-password">
+                  {t("vendor_activate.form_password_label")}
+                </label>
+                <input
+                  id="activate-password"
+                  className="input"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={completing}
+                  minLength={8}
+                  required
+                />
+                <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                  {t("vendor_activate.form_password_hint")}
+                </p>
+              </div>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                loading={completing}
+                loadingLabel={t("vendor_activate.form_submitting")}
+              >
+                {t("vendor_activate.form_submit")}
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
     </Shell>

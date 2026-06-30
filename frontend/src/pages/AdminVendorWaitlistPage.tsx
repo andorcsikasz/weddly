@@ -1,14 +1,16 @@
 // Admin triage for vendor waitlist submissions from /vendors.
 //
-// UX: a filter pill row at the top (Beérkezett / Átnézés alatt / Elfogadva /
-// Elutasítva) drives which cards are visible below. Each card renders on the
-// same .admin-card chrome — status colour lives only on the <Pill> in the
-// header, not on the card border, so a list of mixed-status rows reads as
-// one rhythm instead of a Trello board. Decided cards expose two actions:
-// "Megválaszolom" (the safe primary path, edits the existing reply) keeps
-// its outline weight, and the destructive "Újranyitás" drops to ghost +
-// gates behind a useConfirm() dialog that spells out which prior decision
-// is about to be cleared.
+// UX (Uber-style): a bold segmented stat bar at the top (Beérkezett / Átnézés
+// alatt / Elfogadva / Elutasítva) shows each status count as a big tabular
+// figure and doubles as the filter — the active segment flips to a koromfekete
+// fill. Below it, each row is a clean .admin-card: name + status <Pill> +
+// glanceable social-channel icons, with one bold primary that opens the
+// respond sheet. The sheet (a bottom-sheet on mobile, sticky action footer)
+// is the single detail surface: it recaps everything the vendor submitted
+// (<SubmittedDetails>) above the outcome picker + email + notes, so vetting
+// and replying happen in one place. Decided rows also expose the destructive
+// "Újranyitás" as a low-weight ghost, gated behind a useConfirm() dialog that
+// spells out which prior decision is about to be cleared.
 
 import type {
   VendorWaitlistAdminView,
@@ -18,6 +20,7 @@ import type {
 import { buildEmailDraft } from "@shared/vendor_waitlist";
 import {
   Check,
+  ChevronRight,
   Clock,
   Facebook,
   FileText,
@@ -26,14 +29,13 @@ import {
   Link2,
   Loader2,
   Mail,
-  MessageSquare,
   RotateCcw,
   Sparkles,
   X,
   Youtube,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
+import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
 import type { PillTone } from "../components/admin";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -277,16 +279,45 @@ export default function AdminVendorWaitlistPage() {
     <>
       <AdminPageHeader title={t("admin.waitlist_title")} subtitle={t("admin.waitlist_sub")} />
 
-      <div className="mb-3 flex flex-wrap gap-2">
+      {/* Uber-style segmented stat bar: the count is the headline (bold
+       *  tabular figure in the grotesk face), the status label sits under it,
+       *  and the whole tile is the filter control. Active tile flips to a
+       *  koromfekete fill so the current segment reads at a glance on either
+       *  theme. Doubles as the page's KPI strip — no separate chip row. */}
+      <div
+        role="tablist"
+        aria-label={t("admin.waitlist_title")}
+        className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4"
+      >
         {FILTERS.map((f) => {
           const count = entries.filter((e) => e.status === f).length;
+          const active = filter === f;
           return (
-            <AdminFilterChip
+            <button
               key={f}
-              label={`${t(FILTER_KEY[f])}${count > 0 ? ` · ${count}` : ""}`}
-              active={filter === f}
+              type="button"
+              role="tab"
+              aria-selected={active}
               onClick={() => setFilter(f)}
-            />
+              className={`flex min-h-tap flex-col items-start justify-center gap-0.5 rounded-2xl px-4 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 ${
+                active
+                  ? "bg-neutral-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                  : "bg-paper-50 text-neutral-900 ring-1 ring-ink-100 hover:bg-paper-100 dark:bg-umber-900 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-800"
+              }`}
+            >
+              <span className="font-grotesk text-2xl font-semibold leading-none tabular-nums">
+                {count}
+              </span>
+              <span
+                className={`text-[11px] font-medium uppercase tracking-[0.08em] ${
+                  active
+                    ? "text-paper-200 dark:text-umber-700"
+                    : "text-neutral-500 dark:text-umber-300"
+                }`}
+              >
+                {t(FILTER_KEY[f])}
+              </span>
+            </button>
           );
         })}
       </div>
@@ -367,45 +398,44 @@ function EntryCard({
   onReopen: () => void;
   pending: boolean;
 }) {
-  // The four big-social channels move to a fixed icon row on the resting
-  // card (always-visible glanceable signal); their freeform siblings —
-  // Pinterest, Behance, Drive folders, etc. — stay collapsed inside
-  // <details> as `channels.others`. Detection runs once per render via
-  // useMemo so the host-parse cost doesn't repeat as filter chips toggle.
+  // The four big-social channels render as a fixed glanceable icon row on the
+  // resting card. Everything else the vendor submitted (portfolio links,
+  // price list, message, tax/reg, prior reply, notes) now lives in the
+  // respond sheet (<SubmittedDetails>) so the list itself stays clean.
+  // Detection runs once per render via useMemo so the host-parse cost doesn't
+  // repeat as the stat-bar segments toggle.
   const channels = useMemo(() => detectChannels(entry), [entry]);
   const hasChannelRow =
     !!channels.website || !!channels.instagram || !!channels.youtube || !!channels.facebook;
-  const hasDetail =
-    channels.others.length > 0 ||
-    !!entry.price_list_url ||
-    !!entry.message ||
-    !!entry.tax_number ||
-    !!entry.registration_number ||
-    !!entry.sent_subject ||
-    !!entry.notes;
   const statusMeta = STATUS_PILL[entry.status];
   const StatusIcon = statusMeta.Icon;
+  const primaryLabel =
+    entry.status === "new" ? t("admin.waitlist_action_respond") : t("admin.waitlist_action_review");
   return (
-    <article className="admin-card">
-      {/* Header row: name + meta on the left, status + action button on
-       *  the right. Everything stays on one line at desktop widths and
-       *  flows to two on narrow viewports. */}
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+    <article className="admin-card transition-shadow duration-150 hover:shadow-pop">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <h2 className="m-0 text-sm font-semibold text-neutral-900 dark:text-paper-50">
+          <div className="flex items-center gap-2">
+            <h2 className="m-0 truncate text-[15px] font-semibold text-neutral-900 dark:text-paper-50">
               {entry.business_name}
             </h2>
-            <a
-              href={`mailto:${entry.email}`}
-              className="inline-flex items-center gap-1 text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
+            <Pill
+              tone={statusMeta.tone}
+              icon={<StatusIcon size={11} />}
+              srLabel={`${t("admin.waitlist_status_sr_label")}: `}
             >
-              <Mail size={11} aria-hidden /> {entry.email}
-            </a>
+              {t(STATUS_KEY[entry.status])}
+            </Pill>
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-neutral-600 dark:text-umber-200">
+          <a
+            href={`mailto:${entry.email}`}
+            className="mt-1 inline-flex items-center gap-1 text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
+          >
+            <Mail size={11} aria-hidden /> {entry.email}
+          </a>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-neutral-600 dark:text-umber-200">
             <span>{fmtDate(entry.created_at)}</span>
-            <span className="rounded-full bg-paper-100 dark:bg-umber-800 px-1.5 py-0.5">
+            <span className="rounded-full bg-paper-100 px-1.5 py-0.5 dark:bg-umber-800">
               {t(`suppliers.cat.${entry.category}`)}
             </span>
             {entry.location && <span className="truncate">{entry.location}</span>}
@@ -417,130 +447,135 @@ function EntryCard({
           </div>
           {hasChannelRow && <ChannelRow channels={channels} t={t} />}
         </div>
+        {/* Action column: one bold primary that opens the respond sheet
+         *  (where details + the approve action live together). Decided rows
+         *  also expose the destructive reopen as a low-weight ghost. */}
         <div className="flex shrink-0 items-center gap-2">
-          <Pill
-            tone={statusMeta.tone}
-            icon={<StatusIcon size={11} />}
-            srLabel={`${t("admin.waitlist_status_sr_label")}: `}
-          >
-            {t(STATUS_KEY[entry.status])}
-          </Pill>
-          {entry.status === "new" ? (
+          {entry.status !== "new" && (
             <Button
               type="button"
-              variant="primary"
+              variant="ghost"
               size="sm"
-              onClick={onRespond}
-              disabled={pending}
+              onClick={onReopen}
+              loading={pending}
+              aria-label={t("admin.waitlist_action_reopen")}
             >
-              <MessageSquare size={14} aria-hidden /> {t("admin.waitlist_action_respond")}
+              <RotateCcw size={14} aria-hidden /> {t("admin.waitlist_action_reopen")}
             </Button>
-          ) : (
-            // Decided rows: "Megválaszolom" is the safe primary path
-            // (edits the existing reply), so it keeps outline weight.
-            // "Újranyitás" wipes the decision — drop to ghost and gate
-            // behind a confirm() in the parent. Same visual weight ≠
-            // same blast radius; the chrome should reflect that.
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onRespond}
-                disabled={pending}
-              >
-                <MessageSquare size={14} aria-hidden /> {t("admin.waitlist_action_respond")}
-              </Button>
-              <Button type="button" variant="accent" size="sm" onClick={onReopen} loading={pending}>
-                <RotateCcw size={14} aria-hidden /> {t("admin.waitlist_action_reopen")}
-              </Button>
-            </>
           )}
+          <Button
+            type="button"
+            variant={entry.status === "new" ? "primary" : "outline"}
+            size="sm"
+            onClick={onRespond}
+            disabled={pending}
+            rightIcon={<ChevronRight size={15} aria-hidden />}
+          >
+            {primaryLabel}
+          </Button>
         </div>
       </div>
+    </article>
+  );
+}
 
-      {hasDetail && (
-        <details className="mt-2 text-xs text-neutral-700 dark:text-paper-100">
-          <summary className="cursor-pointer eyebrow">
-            {t("admin.waitlist_card_more_label")}
-          </summary>
-          <div className="mt-2 flex flex-col gap-2">
-            {channels.others.length > 0 && (
-              <div className="admin-tile">
-                <p className="eyebrow">{t("admin.waitlist_card_portfolio_other_label")}</p>
-                <ul className="mt-1 grid gap-0.5">
-                  {channels.others.map((url) => (
-                    <li key={url}>
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex max-w-full items-center gap-1 truncate text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
-                      >
-                        <Link2 size={12} aria-hidden className="shrink-0" />
-                        <span className="truncate">{url}</span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {entry.price_list_url && (
-              <div className="admin-tile">
-                <p className="eyebrow">{t("admin.waitlist_card_price_list_label")}</p>
+/** Read-only recap of everything the vendor submitted, rendered at the top of
+ *  the respond sheet so the admin can vet the application and reply in one
+ *  surface. Pulled out of the card to keep the list clean (Uber-style: the
+ *  row is a glance, the sheet is the detail). */
+function SubmittedDetails({
+  entry,
+  channels,
+  t,
+}: {
+  entry: VendorWaitlistAdminView;
+  channels: ChannelDetection;
+  t: (k: string, vars?: Record<string, string>) => string;
+}) {
+  const hasDetail =
+    channels.others.length > 0 ||
+    !!entry.price_list_url ||
+    !!entry.message ||
+    !!entry.tax_number ||
+    !!entry.registration_number ||
+    !!entry.sent_subject ||
+    !!entry.notes;
+  if (!hasDetail) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      {channels.others.length > 0 && (
+        <div className="admin-tile">
+          <p className="eyebrow">{t("admin.waitlist_card_portfolio_other_label")}</p>
+          <ul className="mt-1 grid gap-0.5">
+            {channels.others.map((url) => (
+              <li key={url}>
                 <a
-                  href={entry.price_list_url}
+                  href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1.5 text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
+                  className="inline-flex max-w-full items-center gap-1 truncate text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
                 >
-                  <FileText size={13} aria-hidden className="shrink-0" />
-                  <span>{entry.price_list_url.split("/").pop()}</span>
+                  <Link2 size={12} aria-hidden className="shrink-0" />
+                  <span className="truncate">{url}</span>
                 </a>
-              </div>
-            )}
-            {(entry.tax_number || entry.registration_number) && (
-              <div className="admin-tile">
-                <p className="eyebrow">Business verification</p>
-                {entry.tax_number && (
-                  <p className="mt-0.5 font-mono text-xs text-neutral-800 dark:text-paper-100">
-                    Tax: {entry.tax_number}
-                  </p>
-                )}
-                {entry.registration_number && (
-                  <p className="mt-0.5 font-mono text-xs text-neutral-800 dark:text-paper-100">
-                    Reg: {entry.registration_number}
-                  </p>
-                )}
-              </div>
-            )}
-            {entry.message && (
-              <div className="admin-tile">
-                <p className="eyebrow">{t("admin.waitlist_card_message_label")}</p>
-                <p className="mt-1 text-sm text-neutral-700 dark:text-paper-100">{entry.message}</p>
-              </div>
-            )}
-            {entry.sent_subject && (
-              <details className="admin-tile">
-                <summary className="cursor-pointer text-xs font-medium text-neutral-800 dark:text-paper-50">
-                  <span className="eyebrow">{t("admin.waitlist_card_sent_label")}</span> ·{" "}
-                  {entry.sent_subject}
-                </summary>
-                <pre className="mt-2 whitespace-pre-wrap font-sans text-xs leading-relaxed text-neutral-700 dark:text-paper-100">
-                  {entry.sent_body ?? ""}
-                </pre>
-              </details>
-            )}
-            {entry.notes && (
-              <div className="admin-tile">
-                <p className="eyebrow">{t("admin.waitlist_card_notes_label")}</p>
-                <p className="mt-1 text-xs text-neutral-700 dark:text-paper-100">{entry.notes}</p>
-              </div>
-            )}
-          </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {entry.price_list_url && (
+        <div className="admin-tile">
+          <p className="eyebrow">{t("admin.waitlist_card_price_list_label")}</p>
+          <a
+            href={entry.price_list_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-flex items-center gap-1.5 text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
+          >
+            <FileText size={13} aria-hidden className="shrink-0" />
+            <span>{entry.price_list_url.split("/").pop()}</span>
+          </a>
+        </div>
+      )}
+      {(entry.tax_number || entry.registration_number) && (
+        <div className="admin-tile">
+          <p className="eyebrow">{t("admin.waitlist_card_verification_label")}</p>
+          {entry.tax_number && (
+            <p className="mt-0.5 font-mono text-xs text-neutral-800 dark:text-paper-100">
+              {t("admin.waitlist_card_tax_label")}: {entry.tax_number}
+            </p>
+          )}
+          {entry.registration_number && (
+            <p className="mt-0.5 font-mono text-xs text-neutral-800 dark:text-paper-100">
+              {t("admin.waitlist_card_reg_label")}: {entry.registration_number}
+            </p>
+          )}
+        </div>
+      )}
+      {entry.message && (
+        <div className="admin-tile">
+          <p className="eyebrow">{t("admin.waitlist_card_message_label")}</p>
+          <p className="mt-1 text-sm text-neutral-700 dark:text-paper-100">{entry.message}</p>
+        </div>
+      )}
+      {entry.sent_subject && (
+        <details className="admin-tile">
+          <summary className="cursor-pointer text-xs font-medium text-neutral-800 dark:text-paper-50">
+            <span className="eyebrow">{t("admin.waitlist_card_sent_label")}</span> ·{" "}
+            {entry.sent_subject}
+          </summary>
+          <pre className="mt-2 whitespace-pre-wrap font-sans text-xs leading-relaxed text-neutral-700 dark:text-paper-100">
+            {entry.sent_body ?? ""}
+          </pre>
         </details>
       )}
-    </article>
+      {entry.notes && (
+        <div className="admin-tile">
+          <p className="eyebrow">{t("admin.waitlist_card_notes_label")}</p>
+          <p className="mt-1 text-xs text-neutral-700 dark:text-paper-100">{entry.notes}</p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -634,6 +669,8 @@ function RespondDialog({
     [initialOutcome, entry.business_name, entry.category, t],
   );
 
+  const channels = useMemo(() => detectChannels(entry), [entry]);
+
   const [outcome, setOutcome] = useState<VendorWaitlistOutcome>(initialOutcome);
   // Seed subject/body from a prior send if there is one — lets the admin
   // re-decide with the same wording. Otherwise use the pristine draft.
@@ -705,6 +742,24 @@ function RespondDialog({
       }
     >
       <div className="grid gap-4">
+        {/* Application recap — the submitted details live here in the sheet
+         *  so the admin vets and replies without leaving the surface. */}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-600 dark:text-umber-200">
+            <a
+              href={`mailto:${entry.email}`}
+              className="inline-flex items-center gap-1 text-neutral-800 hover:text-neutral-950 dark:text-paper-100 dark:hover:text-paper-50"
+            >
+              <Mail size={12} aria-hidden /> {entry.email}
+            </a>
+            <span className="rounded-full bg-paper-100 px-1.5 py-0.5 dark:bg-umber-800">
+              {t(`suppliers.cat.${entry.category}`)}
+            </span>
+            {entry.location && <span>{entry.location}</span>}
+          </div>
+          <SubmittedDetails entry={entry} channels={channels} t={t} />
+        </div>
+
         <div>
           <p className="field-label">{t("admin.waitlist_modal_outcome_label")}</p>
           <div role="radiogroup" className="mt-1 flex flex-wrap gap-2">
