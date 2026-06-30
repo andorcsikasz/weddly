@@ -19,7 +19,13 @@ import { useT } from "../lib/i18n";
 import { OrnamentDivider, OrnamentFrame, headingTreatmentCss } from "./ornaments";
 
 /** Which printable the preview renders. */
-export type PrintTemplate = "place_card" | "table_number" | "menu" | "schedule";
+export type PrintTemplate =
+  | "place_card"
+  | "table_number"
+  | "menu"
+  | "schedule"
+  | "invitation"
+  | "thank_you";
 
 export function PrintCardPreview({
   design,
@@ -33,9 +39,14 @@ export function PrintCardPreview({
   const { t } = useT();
   const d = toPublicDesign(design);
 
-  // Menu + schedule cards are taller (portrait); place cards + table numbers
-  // are landscape.
-  const aspect = template === "menu" || template === "schedule" ? "aspect-[3/4]" : "aspect-[3/2]";
+  // Menu / schedule / invitation / thank-you cards are taller (portrait); place
+  // cards + table numbers are landscape.
+  const portrait =
+    template === "menu" ||
+    template === "schedule" ||
+    template === "invitation" ||
+    template === "thank_you";
+  const aspect = portrait ? "aspect-[3/4]" : "aspect-[3/2]";
 
   // The pack's personality, resolved once and reused by every template body.
   const hCss = headingTreatmentCss(d.heading_style); // name/heading treatment
@@ -175,6 +186,60 @@ export function PrintCardPreview({
                 </span>
               ))}
             </div>
+          </>
+        )}
+
+        {template === "invitation" && (
+          <>
+            <span
+              className="text-[11px] uppercase tracking-[0.18em]"
+              style={{ color: d.accent_text }}
+            >
+              {t("design.print_preview.invitation_eyebrow")}
+            </span>
+            <span
+              className="mt-2 text-2xl leading-tight"
+              style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
+            >
+              {t("design.print_preview.sample_couple")}
+            </span>
+            {divider("my-3")}
+            <span className="text-sm" style={{ color: d.text }}>
+              {t("design.print_preview.invitation_line")}
+            </span>
+            <span
+              className="mt-2 text-sm tracking-[0.12em]"
+              style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
+            >
+              {t("design.print_preview.sample_date")}
+            </span>
+            <span className="mt-1 text-xs" style={{ color: labelColor }}>
+              {t("design.print_preview.invitation_venue")}
+            </span>
+          </>
+        )}
+
+        {template === "thank_you" && (
+          <>
+            <span
+              className="mt-1 text-3xl leading-tight"
+              style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
+            >
+              {t("design.print_preview.thank_you_title")}
+            </span>
+            {divider("my-3")}
+            <span className="text-sm" style={{ color: d.text }}>
+              {t("design.print_preview.thank_you_line")}
+            </span>
+            <span
+              className="mt-2 text-base tracking-[0.12em]"
+              style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
+            >
+              {t("design.print_preview.sample_couple")}
+            </span>
+            <span className="mt-1 text-xs" style={{ color: labelColor }}>
+              {t("design.print_preview.sample_date")}
+            </span>
           </>
         )}
 

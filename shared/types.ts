@@ -1322,6 +1322,8 @@ export type ExportKind =
   | "place_cards_pdf"
   | "table_numbers_pdf"
   | "menu_pdf"
+  | "invitation_pdf"
+  | "thank_you_pdf"
   | "schedule_pdf"
   | "guest_csv";
 

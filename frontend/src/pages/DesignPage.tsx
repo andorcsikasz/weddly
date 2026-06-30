@@ -48,10 +48,12 @@ import { useAuth } from "../lib/auth";
 import {
   coupleApi,
   fetchPdfBlob,
+  invitationPdfUrl,
   menuPdfUrl,
   placeCardsUrl,
   schedulePdfUrl,
   tableNumbersPdfUrl,
+  thankYouPdfUrl,
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
@@ -394,6 +396,8 @@ export default function DesignPage() {
     place_card: placeCardsUrl(),
     table_number: "/api/print/table-numbers",
     menu: "/api/print/menu",
+    invitation: invitationPdfUrl,
+    thank_you: thankYouPdfUrl,
     schedule: schedulePdfUrl,
   };
 
@@ -495,6 +499,20 @@ export default function DesignPage() {
       filename: "weddly-menu.pdf",
     },
     {
+      slug: "invitation",
+      name: t("design.cards.invitation_name"),
+      desc: t("design.cards.invitation_desc"),
+      path: invitationPdfUrl,
+      filename: "weddly-invitation.pdf",
+    },
+    {
+      slug: "thank_you",
+      name: t("design.cards.thank_you_name"),
+      desc: t("design.cards.thank_you_desc"),
+      path: thankYouPdfUrl,
+      filename: "weddly-thank-you.pdf",
+    },
+    {
       slug: "seating_chart",
       name: t("design.cards.seating_chart_name"),
       desc: t("design.cards.seating_chart_desc"),
@@ -584,7 +602,16 @@ export default function DesignPage() {
                   {t("design.print_preview.template_label")}
                 </h2>
                 <div className="grid grid-cols-2 gap-2">
-                  {(["place_card", "table_number", "menu", "schedule"] as const).map((tpl) => {
+                  {(
+                    [
+                      "place_card",
+                      "table_number",
+                      "menu",
+                      "invitation",
+                      "thank_you",
+                      "schedule",
+                    ] as const
+                  ).map((tpl) => {
                     const active = printTemplate === tpl;
                     return (
                       <button

@@ -2562,7 +2562,14 @@ export interface LocaleMessages {
       caption: string;
       /** Card-type picker heading + per-card sample copy. */
       template_label: string;
-      tpl: { place_card: string; table_number: string; menu: string; schedule: string };
+      tpl: {
+        place_card: string;
+        table_number: string;
+        menu: string;
+        invitation: string;
+        thank_you: string;
+        schedule: string;
+      };
       /** Print-editor framing: dynamic "{name} design" title, helper line, and
        *  the "shared identity" group label that wraps the common controls. */
       editing_title: string;
@@ -2575,6 +2582,15 @@ export interface LocaleMessages {
       menu_dessert: string;
       sample_program: { ceremony: string; dinner: string; party: string };
       preview_exact_pdf: string;
+      /** Sample date shown on the invitation + thank-you previews. */
+      sample_date: string;
+      /** Invitation card preview copy. */
+      invitation_eyebrow: string;
+      invitation_line: string;
+      invitation_venue: string;
+      /** Thank-you card preview copy. */
+      thank_you_title: string;
+      thank_you_line: string;
     };
     /** Style-kit subtitle under the tab. */
     subtitle: string;
@@ -2611,6 +2627,10 @@ export interface LocaleMessages {
       table_numbers_desc: string;
       menu_name: string;
       menu_desc: string;
+      invitation_name: string;
+      invitation_desc: string;
+      thank_you_name: string;
+      thank_you_desc: string;
       seating_chart_name: string;
       seating_chart_desc: string;
       schedule_name: string;

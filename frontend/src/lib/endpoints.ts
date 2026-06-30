@@ -2247,6 +2247,12 @@ export const tableNumbersPdfUrl = "/api/print/table-numbers";
 /** A5 menu cards in the couple's wedding style. Download via `fetchPdfBlob`. */
 export const menuPdfUrl = "/api/print/menu";
 
+/** A5 portrait invitation in the couple's wedding style. Download via `fetchPdfBlob`. */
+export const invitationPdfUrl = "/api/print/invitation";
+
+/** A6 thank-you cards in the couple's wedding style. Download via `fetchPdfBlob`. */
+export const thankYouPdfUrl = "/api/print/thank-you";
+
 // ─── Wedding Film / Photo album ───────────────────────────────────────────────
 
 async function publicFilmFetch<T>(path: string, init?: RequestInit): Promise<T> {

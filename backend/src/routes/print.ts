@@ -7,11 +7,13 @@ import { recordExport } from "../domain/exports";
 import { type Ctx, HttpError, requireAuth, type Router } from "../lib/http";
 import { listByCoupleId as listCoupleSuppliers } from "../domain/couple_suppliers";
 import {
+  renderInvitationPdf,
   renderMenuPdf,
   renderPlaceCardsPdf,
   renderSchedulePdf,
   renderSeatingChartPdf,
   renderTableNumbersPdf,
+  renderThankYouPdf,
 } from "../domain/pdf";
 import { listScheduleEvents } from "../domain/schedule";
 import { listGuestsByCouple, toGuest } from "../domain/guests";
@@ -312,6 +314,74 @@ async function handleMenu(ctx: Ctx): Promise<Response> {
   return pdfResponse(filename, pdf);
 }
 
+async function handleInvitation(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const pdf = await renderInvitationPdf({
+    couple_display_name: couple.display_name,
+    wedding_date: couple.wedding_date,
+    bride_name: couple.bride_name,
+    groom_name: couple.groom_name,
+    design: parseDesignJson(couple.design_json),
+    venue_name: couple.venue_name,
+    venue_city: couple.venue_city,
+  });
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "print.invitation",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: {},
+  });
+  const filename = "invitation-a5.pdf";
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "invitation_pdf",
+    format: null,
+    filename,
+    contentType: "application/pdf",
+    body: pdf,
+  });
+  return pdfResponse(filename, pdf);
+}
+
+async function handleThankYou(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const pdf = await renderThankYouPdf({
+    couple_display_name: couple.display_name,
+    wedding_date: couple.wedding_date,
+    bride_name: couple.bride_name,
+    groom_name: couple.groom_name,
+    design: parseDesignJson(couple.design_json),
+  });
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "print.thank_you",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: {},
+  });
+  const filename = "thank-you-a6.pdf";
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "thank_you_pdf",
+    format: null,
+    filename,
+    contentType: "application/pdf",
+    body: pdf,
+  });
+  return pdfResponse(filename, pdf);
+}
+
 async function handleSchedule(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -353,5 +423,7 @@ export function registerPrintRoutes(router: Router) {
   router.get("/api/print/place-cards", handlePlaceCards, true);
   router.get("/api/print/table-numbers", handleTableNumbers, true);
   router.get("/api/print/menu", handleMenu, true);
+  router.get("/api/print/invitation", handleInvitation, true);
+  router.get("/api/print/thank-you", handleThankYou, true);
   router.get("/api/print/schedule", handleSchedule, true);
 }

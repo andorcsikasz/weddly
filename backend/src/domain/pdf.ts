@@ -1265,6 +1265,191 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
   return pdf.save();
 }
 
+interface InvitationInput {
+  couple_display_name: string;
+  wedding_date: string | null;
+  bride_name: string;
+  groom_name: string;
+  design: CoupleDesign;
+  /** Venue lines — only rendered when present (no invented placeholder data). */
+  venue_name: string | null;
+  venue_city: string | null;
+}
+
+/** A5 portrait invitation in the wedding style — the pack's frame + ornament,
+ *  a small eyebrow, the couple names as the hero, an ornament divider, an
+ *  "invite you" line, the date and the venue. Following the menu renderer's
+ *  precedent, the fixed labels are short English strings; the date + venue
+ *  lines only draw when the value is present (project rule: no fake data). */
+export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8Array> {
+  const { width_mm: W, height_mm: H } = FORMATS.a5;
+  const pdf = await PDFDocument.create();
+  const fontPair = await buildFontPair(pdf, input.design);
+  const colors = designColors(input.design);
+  const pack = getStylePreset(input.design.style);
+  const dateText = formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
+
+  const page = pdf.addPage([mm(W), mm(H)]);
+  const cxPt = mm(W / 2);
+  const box = { x: 8, y: 8, w: W - 16, h: H - 16 };
+  // Monochrome (asymmetric) drops the centre axis and left-rags the lines.
+  const isAsym = pack.cardLayout === "asymmetric";
+  const leftXmm = 18;
+
+  drawCardFrame(page, box, input.design, colors);
+  if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
+  if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
+
+  // Draw one centred (or left-ragged for Monochrome) line in the pack face.
+  const drawLine = async (
+    text: string,
+    sizePt: number,
+    yMm: number,
+    role: "heading" | "body",
+    color: ReturnType<typeof rgb>,
+  ): Promise<void> => {
+    const s = role === "heading" ? headingText(safe(text), input.design) : safe(text);
+    const font = await pickDisplayAsync(fontPair, s, role);
+    const w = font.widthOfTextAtSize(s, sizePt);
+    page.drawText(s, {
+      x: isAsym ? mm(leftXmm) : cxPt - w / 2,
+      y: mm(yMm),
+      size: sizePt,
+      font,
+      color,
+    });
+  };
+
+  // Eyebrow.
+  await drawLine("Together with their families", 9.5, H - 36, "body", colors.primary);
+
+  // Couple names — the hero. Shrink to fit the card width (long names happen).
+  const nameSafe = headingText(safe(input.couple_display_name), input.design);
+  const nameFont = await pickDisplayAsync(fontPair, nameSafe, "heading");
+  let nameSize = 26;
+  while (nameSize > 14 && nameFont.widthOfTextAtSize(nameSafe, nameSize) > mm(W - 24))
+    nameSize -= 1;
+  const nameW = nameFont.widthOfTextAtSize(nameSafe, nameSize);
+  page.drawText(nameSafe, {
+    x: isAsym ? mm(leftXmm) : cxPt - nameW / 2,
+    y: mm(H - 58),
+    size: nameSize,
+    font: nameFont,
+    color: colors.text,
+  });
+
+  // Ornament divider under the names.
+  drawOrnament(
+    page,
+    pack.ornament,
+    isAsym ? mm(leftXmm + 20) : cxPt,
+    mm(H - 67),
+    44,
+    colors.accent,
+  );
+
+  // Invite line.
+  await drawLine("invite you to celebrate", 12, H - 82, "body", colors.text);
+
+  // Date — only when present.
+  if (dateText) await drawLine(dateText, 14, H - 98, "heading", colors.primary);
+
+  // Venue name + city — each only when present.
+  if (input.venue_name) await drawLine(input.venue_name, 12, H - 114, "body", colors.text);
+  if (input.venue_city) await drawLine(input.venue_city, 10.5, H - 124, "body", colors.primary);
+
+  // RSVP eyebrow pinned near the foot of the card.
+  await drawLine("RSVP", 9.5, 24, "body", colors.primary);
+
+  return pdf.save();
+}
+
+interface ThankYouInput {
+  couple_display_name: string;
+  wedding_date: string | null;
+  bride_name: string;
+  groom_name: string;
+  design: CoupleDesign;
+}
+
+/** A6 thank-you card matching the place-card / table-number set — a fixed
+ *  "Thank you" heading, an ornament divider, a "for celebrating with us" line,
+ *  the couple names and the date. One card per A6 page. */
+export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Array> {
+  const W = 105;
+  const H = 148;
+  const pdf = await PDFDocument.create();
+  const fontPair = await buildFontPair(pdf, input.design);
+  const colors = designColors(input.design);
+  const pack = getStylePreset(input.design.style);
+  const dateText = formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
+
+  const page = pdf.addPage([mm(W), mm(H)]);
+  const cxPt = mm(W / 2);
+  const box = { x: 6, y: 6, w: W - 12, h: H - 12 };
+  const isAsym = pack.cardLayout === "asymmetric";
+  const leftXmm = 14;
+
+  drawCardFrame(page, box, input.design, colors);
+  if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
+  if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
+
+  const drawLine = async (
+    text: string,
+    sizePt: number,
+    yMm: number,
+    role: "heading" | "body",
+    color: ReturnType<typeof rgb>,
+  ): Promise<void> => {
+    const s = role === "heading" ? headingText(safe(text), input.design) : safe(text);
+    const font = await pickDisplayAsync(fontPair, s, role);
+    const w = font.widthOfTextAtSize(s, sizePt);
+    page.drawText(s, {
+      x: isAsym ? mm(leftXmm) : cxPt - w / 2,
+      y: mm(yMm),
+      size: sizePt,
+      font,
+      color,
+    });
+  };
+
+  // "Thank you" — the hero. Shrink to fit the narrow A6 width.
+  const thanksSafe = headingText(safe("Thank you"), input.design);
+  const thanksFont = await pickDisplayAsync(fontPair, thanksSafe, "heading");
+  let thanksSize = 30;
+  while (thanksSize > 16 && thanksFont.widthOfTextAtSize(thanksSafe, thanksSize) > mm(W - 20))
+    thanksSize -= 1;
+  const thanksW = thanksFont.widthOfTextAtSize(thanksSafe, thanksSize);
+  page.drawText(thanksSafe, {
+    x: isAsym ? mm(leftXmm) : cxPt - thanksW / 2,
+    y: mm(H - 48),
+    size: thanksSize,
+    font: thanksFont,
+    color: colors.text,
+  });
+
+  // Ornament divider.
+  drawOrnament(
+    page,
+    pack.ornament,
+    isAsym ? mm(leftXmm + 20) : cxPt,
+    mm(H - 60),
+    40,
+    colors.accent,
+  );
+
+  // "for celebrating with us" line.
+  await drawLine("for celebrating with us", 10.5, H - 74, "body", colors.text);
+
+  // Couple names.
+  await drawLine(input.couple_display_name, 16, H - 92, "heading", colors.primary);
+
+  // Date — only when present.
+  if (dateText) await drawLine(dateText, 11, H - 104, "body", colors.primary);
+
+  return pdf.save();
+}
+
 interface ScheduleInput {
   couple_display_name: string;
   wedding_date: string | null;

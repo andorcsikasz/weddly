@@ -443,6 +443,8 @@ describe("design: design-aware print templates", () => {
     await expectPdf("/api/print/table-numbers", token);
     await expectPdf("/api/print/menu", token);
     await expectPdf("/api/print/place-cards", token);
+    await expectPdf("/api/print/invitation", token);
+    await expectPdf("/api/print/thank-you", token);
   });
 
   test("every style pack embeds its fonts and renders valid card PDFs", async () => {
@@ -467,6 +469,8 @@ describe("design: design-aware print templates", () => {
       await expectPdf("/api/print/menu", token);
       await expectPdf("/api/print/table-numbers", token);
       await expectPdf("/api/print/place-cards", token);
+      await expectPdf("/api/print/invitation", token);
+      await expectPdf("/api/print/thank-you", token);
     }
   });
 });
