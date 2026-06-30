@@ -3075,6 +3075,8 @@ const hu: LocaleMessages = {
     sort_added: "Legutóbb hozzáadott",
     sort_rsvp: "Visszajelzés szerint",
     sort_group: "Oldal és csoport",
+    reorder_drag: "Húzd a háztartás átrendezéséhez",
+    reorder_failed: "Nem sikerült menteni a sorrendet. Próbáld újra.",
     kind_label: "Típus",
     kind_help: "Babához kisszék kell; gyerek kapja a gyerekmenüt.",
     supplier_label: "Szolgáltató",

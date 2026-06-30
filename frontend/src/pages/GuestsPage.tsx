@@ -38,6 +38,7 @@ import {
   Filter,
   Fish,
   Gem,
+  GripVertical,
   Heart,
   Home,
   Leaf,
@@ -194,6 +195,13 @@ export default function GuestsPage() {
   const [couple, setCouple] = useState<Couple | null>(null);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [households, setHouseholds] = useState<Household[]>([]);
+  // Drag-to-reorder state for the default household list. `armedId` gates
+  // native draggability to a press on the grip handle (so the inline rename
+  // input and action buttons stay interactive); `dragId`/`dragOverId` drive
+  // the lifted-card + drop-target affordances.
+  const [armedId, setArmedId] = useState<number | null>(null);
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [importing, setImporting] = useState(false);
@@ -326,6 +334,31 @@ export default function GuestsPage() {
     if (!ok) return;
     await householdApi.remove(hh.id);
     refresh();
+  }
+
+  // Drag-to-reorder: move `fromId` to sit where `toId` currently is, within
+  // the visible (host-excluded) default list. Optimistically reshuffle local
+  // state — host households stay pinned on top since the server orders them
+  // first — then persist and reconcile against the canonical response.
+  async function onReorderHouseholds(fromId: number, toId: number) {
+    if (fromId === toId) return;
+    const vis = sortedListableHouseholds;
+    const from = vis.findIndex((h) => h.id === fromId);
+    const to = vis.findIndex((h) => h.id === toId);
+    if (from < 0 || to < 0) return;
+    const next = [...vis];
+    const [moved] = next.splice(from, 1);
+    if (!moved) return;
+    next.splice(to, 0, moved);
+    const coupleHH = households.filter((h) => h.is_couple_household);
+    setHouseholds([...coupleHH, ...next]);
+    try {
+      const r = await householdApi.reorder(next.map((h) => h.id));
+      setHouseholds(r.households);
+    } catch {
+      toast.error(t("guests.reorder_failed"));
+      refresh();
+    }
   }
 
   // Mass invite send breakdown, computed from the loaded data so the confirm
@@ -991,14 +1024,51 @@ export default function GuestsPage() {
               // Native fallback when unsupported (older Safari) — the card
               // just renders normally. Saves render churn on N>60 lists
               // flagged by the a11y/perf-critic agent.
+              // Drag-to-reorder is only meaningful in the default sort (the
+              // other axes are computed orders, not a stored sequence), so the
+              // grip + native draggability are gated on `sortKey === "default"`.
               <div
                 key={hh.id}
+                draggable={sortKey === "default" && armedId === hh.id}
+                onDragStart={(e) => {
+                  setDragId(hh.id);
+                  e.dataTransfer.effectAllowed = "move";
+                  // Firefox refuses to start a drag without data on the transfer.
+                  try {
+                    e.dataTransfer.setData("text/plain", String(hh.id));
+                  } catch {}
+                }}
+                onDragOver={(e) => {
+                  if (dragId == null) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dragOverId !== hh.id) setDragOverId(hh.id);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragId != null) void onReorderHouseholds(dragId, hh.id);
+                  setDragId(null);
+                  setDragOverId(null);
+                  setArmedId(null);
+                }}
+                onDragEnd={() => {
+                  setDragId(null);
+                  setDragOverId(null);
+                  setArmedId(null);
+                }}
                 style={{ contentVisibility: "auto", containIntrinsicSize: "0 220px" }}
+                className={`rounded-2xl transition-all ${dragId === hh.id ? "opacity-50" : ""} ${
+                  dragOverId === hh.id && dragId !== hh.id
+                    ? "ring-2 ring-sage-400 ring-offset-2 ring-offset-paper-50 dark:ring-offset-umber-900"
+                    : ""
+                }`}
               >
                 <HouseholdCard
                   household={hh}
                   members={guestsByHousehold.get(hh.id) ?? []}
                   coupleSlug={couple?.slug ?? null}
+                  reorderable={sortKey === "default"}
+                  onGripPointerDown={() => setArmedId(hh.id)}
                   onCopyShare={() => {
                     void copyShare(couple?.slug ?? null, hh.code);
                   }}
@@ -1264,6 +1334,8 @@ function HouseholdCard({
   household,
   members,
   coupleSlug,
+  reorderable = false,
+  onGripPointerDown,
   onCopyShare,
   onAddMember,
   onEditGuest,
@@ -1278,6 +1350,12 @@ function HouseholdCard({
   household: Household;
   members: Guest[];
   coupleSlug: string | null;
+  /** When true the card shows a drag handle and the parent wrapper handles the
+   *  native drag-to-reorder lifecycle (default household sort only). */
+  reorderable?: boolean;
+  /** Arms the parent wrapper's `draggable` on grip press so the rest of the
+   *  card (rename input, action buttons) stays interactive. */
+  onGripPointerDown?: () => void;
   onCopyShare: () => void;
   onAddMember: () => void;
   onEditGuest: (g: Guest) => void;
@@ -1334,6 +1412,21 @@ function HouseholdCard({
          *  below the metadata, which is exactly what the user flagged. */
         className={`flex flex-nowrap items-start justify-between gap-2 md:items-center md:gap-3 ${isHosts ? "!bg-umber-800 text-paper-50 dark:!bg-umber-950" : "bg-paper-100/60 dark:bg-umber-700/60"} px-3 py-1.5 md:px-4 md:py-3 ${collapsed ? "" : "border-b border-paper-200 dark:border-umber-700"}`}
       >
+        {/* Drag handle — pressing it arms the parent wrapper's native
+            draggability so the couple can reorder the list (default sort
+            only). `touch-none` keeps a touch-drag from scrolling the page
+            instead of grabbing the card. */}
+        {reorderable && (
+          <button
+            type="button"
+            onPointerDown={onGripPointerDown}
+            className="-ml-1 flex shrink-0 cursor-grab touch-none items-center self-stretch rounded text-ink-300 transition-colors hover:text-ink-600 active:cursor-grabbing dark:text-umber-400 dark:hover:text-paper-100"
+            title={t("guests.reorder_drag")}
+            aria-label={t("guests.reorder_drag")}
+          >
+            <GripVertical size={16} aria-hidden />
+          </button>
+        )}
         {/* Metadata columns: label · group chip · slug · code · invited
             (+ delivered). Fixed-width tracks with `md:col-start-*` force
             every field to the same x across cards so the eye scans down
@@ -1600,7 +1693,7 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
             // One focused card: the shareable link is the whole point here.
             // The identifier rides along as a locked chip (its rationale on
             // hover) instead of a second, redundant block.
-            <div className="rounded-xl border border-paper-200 bg-paper-50 p-3.5 dark:border-umber-700 dark:bg-umber-800">
+            <div className="rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
                   {t("guests.checkin_open_title")}
@@ -1612,22 +1705,37 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
                   <Lock size={11} aria-hidden /> {couple.slug ?? "-"}
                 </span>
               </div>
-              <p className="mt-2.5 break-all font-mono text-sm text-ink-900 dark:text-paper-50">
-                {generalUrl.replace(/^https?:\/\//, "")}
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+
+              {/* The link reads as a real input field: a bordered well with an
+                  inline copy affordance on the right, the way every "share
+                  link" surface does it. On desktop the whole control collapses
+                  to a single row so it stays compact; it stacks only on mobile. */}
+              <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                <div className="flex min-w-0 flex-1 items-center rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 dark:border-umber-600 dark:bg-umber-700/50">
+                  <span className="truncate font-mono text-sm text-ink-900 dark:text-paper-50">
+                    {generalUrl.replace(/^https?:\/\//, "")}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyGeneralLink}
+                  aria-label={t("guests.checkin_copy_link")}
+                  title={t("guests.checkin_copy_link")}
+                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-paper-300 px-3 text-sm text-ink-600 transition-colors hover:bg-paper-100 dark:border-umber-600 dark:text-umber-200 dark:hover:bg-umber-700 sm:h-auto sm:w-9 sm:px-0"
+                >
+                  <ClipboardCopy size={15} aria-hidden="true" />
+                  <span className="sm:hidden">{t("guests.checkin_copy_link")}</span>
+                </button>
                 <a
                   href={generalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-outline btn-sm"
+                  className="btn-outline btn-sm shrink-0 justify-center sm:w-auto"
                 >
                   <Link2 size={14} aria-hidden="true" /> {t("guests.checkin_open_rsvp")}
                 </a>
-                <button type="button" className="btn-ghost btn-sm" onClick={copyGeneralLink}>
-                  <ClipboardCopy size={14} aria-hidden="true" /> {t("guests.checkin_copy_link")}
-                </button>
               </div>
+
               <p className="mt-2.5 text-xs text-ink-500 dark:text-umber-300">
                 {t("guests.checkin_open_help")}
               </p>

@@ -765,6 +765,12 @@ addColumnIfMissing(
 // retry re-sends. Mapped to `Household.invited_at` in `toHousehold`.
 addColumnIfMissing("households", "invited_at", "invited_at INTEGER");
 
+// Manual display order for the /app/guests household list. Default 0 so the
+// existing partner-first → created_at ordering is fully preserved until a
+// couple actually drags a card; `listHouseholdsByCouple` tie-breaks an equal
+// sort_index by created_at. Written by PATCH /api/households/reorder.
+addColumnIfMissing("households", "sort_index", "sort_index INTEGER NOT NULL DEFAULT 0");
+
 // Multi-workspace membership: a user can belong to several couple
 // workspaces (Alpha / Bravo / Charlie for a wedding with multiple events).
 // `users.couple_id` continues to mean "the workspace this user is currently

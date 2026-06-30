@@ -992,6 +992,14 @@ export const householdApi = {
     },
   ) => apiFetch<{ household: Household }>("PATCH", `/api/households/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/households/${id}`),
+  /** Persist the couple's manual household order (drag-to-reorder on
+   *  /app/guests). `orderedIds` is the desired top-to-bottom sequence of
+   *  non-host households; the host household is pinned server-side. Returns
+   *  the freshly ordered list so the client can reconcile. */
+  reorder: (orderedIds: number[]) =>
+    apiFetch<{ households: Household[] }>("PATCH", "/api/households/reorder", {
+      ordered_ids: orderedIds,
+    }),
   regenerateCode: (id: number) =>
     apiFetch<{ household: Household }>("POST", `/api/households/${id}/regenerate-code`, {}),
   /** Rotate the household's share code (Phase 3 guest-page share UI). Same

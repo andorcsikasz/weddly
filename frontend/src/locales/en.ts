@@ -3044,6 +3044,8 @@ const en: LocaleMessages = {
     sort_added: "Recently added",
     sort_rsvp: "RSVP status",
     sort_group: "Side & group",
+    reorder_drag: "Drag to reorder household",
+    reorder_failed: "Couldn't save the new order. Please try again.",
     kind_label: "Type",
     kind_help: "A baby needs a high chair; a child gets the kids' meal.",
     supplier_label: "Supplier",

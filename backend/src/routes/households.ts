@@ -17,6 +17,7 @@ import {
   listMembers,
   markHouseholdInvited,
   regenerateHouseholdCode,
+  reorderHouseholds,
   setHouseholdGroupTag,
   toHousehold,
 } from "../domain/households";
@@ -131,6 +132,56 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     after: { label, code: row.code, group_tag: row.group_tag },
   });
   return json({ household: viewOf(row, couple) }, { status: 201 });
+}
+
+interface ReorderBody {
+  /** Desired top-to-bottom order of household ids (the host household can be
+   *  omitted — it's pinned on top server-side regardless). */
+  ordered_ids?: unknown;
+}
+
+/** PATCH /api/households/reorder — persist the couple's manual drag order for
+ *  the /app/guests household list. Unknown ids are dropped silently (a stale
+ *  client list shouldn't 404 the whole reorder); the response returns the
+ *  freshly ordered list so the client can reconcile against the canonical
+ *  order. Registered BEFORE the `:id` PATCH so "reorder" isn't swallowed as
+ *  an id param. */
+async function handleReorder(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const body = await readJson<ReorderBody>(ctx.req);
+  if (!Array.isArray(body.ordered_ids)) {
+    throw new HttpError(400, "ordered_ids must be an array");
+  }
+  if (body.ordered_ids.length > 2000) throw new HttpError(400, "Too many households");
+  if (!body.ordered_ids.every((v) => typeof v === "number" && Number.isFinite(v))) {
+    throw new HttpError(400, "ordered_ids must be numbers");
+  }
+  // Keep only ids the couple actually owns — guards against cross-tenant ids
+  // and stale entries that have since been deleted.
+  const owned = (body.ordered_ids as number[]).filter(
+    (id) => getHouseholdById(id, couple.id) !== null,
+  );
+  reorderHouseholds(couple.id, owned);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "household.reorder",
+    target_kind: "household",
+    target_id: owned[0] ?? 0,
+    after: { ordered_ids: owned },
+  });
+
+  const rows = listHouseholdsByCouple(couple.id);
+  const items: Household[] = rows.map((r) =>
+    toHousehold(r, listMembers(r.id), {
+      brideName: couple.bride_name,
+      groomName: couple.groom_name,
+    }),
+  );
+  return json({ households: items });
 }
 
 async function handleUpdate(ctx: Ctx): Promise<Response> {
@@ -455,6 +506,8 @@ export function registerHouseholdRoutes(router: Router) {
   router.get("/api/households", handleList, true);
   router.post("/api/households", handleCreate, true);
   router.post("/api/households/invite-batch", handleInviteBatch, true);
+  // Literal route registered before the `:id` PATCH so it isn't matched as id="reorder".
+  router.patch("/api/households/reorder", handleReorder, true);
   router.patch("/api/households/:id", handleUpdate, true);
   router.delete("/api/households/:id", handleDelete, true);
   router.post("/api/households/:id/regenerate-code", handleRegenCode, true);

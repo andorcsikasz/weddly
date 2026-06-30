@@ -39,6 +39,10 @@ export interface HouseholdRow {
   /** Unix ms the household's first digital invite was sent, or null. The
    *  mass-send dedup key — see the column comment in db.ts. */
   invited_at: number | null;
+  /** Manual display order on /app/guests. Default 0 for every never-dragged
+   *  household; `listHouseholdsByCouple` orders by it (ties → created_at) so a
+   *  fresh workspace keeps the historic creation order. Set by reorderHouseholds. */
+  sort_index: number;
   created_at: number;
   updated_at: number;
 }
@@ -68,8 +72,10 @@ export function listHouseholdsByCouple(
   opts: { excludeAutoSingletons?: boolean } = {},
 ): HouseholdRow[] {
   // Host household (the bride + groom's own dedicated 2-person home) always
-  // sorts to the top of /app/guests. Everything else falls back to creation
-  // order so existing arrangements stay stable.
+  // sorts to the top of /app/guests. Everything else honors the couple's
+  // manual drag order (`sort_index`), falling back to creation order for
+  // never-dragged rows (all share the default 0) so existing arrangements stay
+  // stable until a card is actually moved.
   //
   // `excludeAutoSingletons` hides households that were spawned implicitly
   // (`auto_created = 1`) and still contain a single member — the typical
@@ -93,9 +99,26 @@ export function listHouseholdsByCouple(
             SELECT 1 FROM guests g
              WHERE g.household_id = h.id AND g.partner_role IS NOT NULL
           ) THEN 0 ELSE 1 END
-        ) ASC, h.created_at ASC`,
+        ) ASC, h.sort_index ASC, h.created_at ASC`,
     )
     .all(coupleId) as HouseholdRow[];
+}
+
+/** Persist the couple's manual household order. `orderedIds` is the desired
+ *  top-to-bottom sequence; each gets its array position as `sort_index` so the
+ *  next `listHouseholdsByCouple` returns them in that order (host household
+ *  stays pinned on top via the partner-role CASE, regardless of its index).
+ *  Ids not belonging to the couple are ignored by the WHERE clause. Runs in a
+ *  single transaction so a partial write can't leave a scrambled order. */
+export function reorderHouseholds(coupleId: number, orderedIds: number[]): void {
+  const ts = now();
+  const stmt = db.prepare(
+    "UPDATE households SET sort_index = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+  );
+  const tx = db.transaction((ids: number[]) => {
+    ids.forEach((id, i) => stmt.run(i, ts, id, coupleId));
+  });
+  tx(orderedIds);
 }
 
 export function listMembers(householdId: number): GuestRow[] {

@@ -3238,6 +3238,10 @@ export interface LocaleMessages {
     sort_added: string;
     sort_rsvp: string;
     sort_group: string;
+    /** Drag-handle tooltip / aria-label for reordering households. */
+    reorder_drag: string;
+    /** Toast when persisting the manual household order fails. */
+    reorder_failed: string;
     /** Adult / child / baby kind selector. */
     kind_label: string;
     kind_help: string;
