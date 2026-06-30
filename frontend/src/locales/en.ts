@@ -1835,6 +1835,8 @@ const en: LocaleMessages = {
     no_dates_empty: "Every task has dates.",
     no_dates_empty_all: "No tasks yet. Add them on the Planning page.",
     set_dates: "Set dates",
+    no_dates_show_all: "Show all ({count})",
+    no_dates_show_less: "Show less",
     edit_title: "Schedule task",
     field_start_date: "Starts",
     field_due_date: "Ends",
@@ -2380,6 +2382,8 @@ const en: LocaleMessages = {
       editing_title: "{name} design",
       editing_helper:
         "Starts from your shared identity. Customize this card here and see the result live on the right.",
+      content_hint: "Card text (names, date, schedule) comes from your guest page content.",
+      content_change: "Edit text on Guest site →",
       common_identity: "Shared identity",
       inherited_title: "Design inherited from Guest site",
       inherited_change: "Change in Guest site →",

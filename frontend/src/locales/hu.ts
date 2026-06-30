@@ -1854,6 +1854,8 @@ const hu: LocaleMessages = {
     no_dates_empty: "Minden feladatnak van dátuma.",
     no_dates_empty_all: "Még nincs feladat. A /app/planning oldalon adhatsz hozzá.",
     set_dates: "Dátumot megadni",
+    no_dates_show_all: "Összes mutatása ({count})",
+    no_dates_show_less: "Kevesebb mutatása",
     edit_title: "Feladat időzítése",
     field_start_date: "Kezdés",
     field_due_date: "Befejezés",
@@ -2403,6 +2405,8 @@ const hu: LocaleMessages = {
       editing_title: "{name} tervezése",
       editing_helper:
         "A közös arculatból indul. Itt testreszabod ezt a kártyát, jobbra azonnal látod az eredményt.",
+      content_hint: "A kártya szövege (nevek, dátum, program) a vendégoldal tartalmából származik.",
+      content_change: "Szövegek szerkesztése a vendégoldalon →",
       common_identity: "Közös arculat",
       inherited_title: "Arculat a vendégoldalról örökölve",
       inherited_change: "Módosítás a vendégoldalon →",

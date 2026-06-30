@@ -16,8 +16,10 @@ import {
   Cake,
   Camera,
   ChefHat,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   CheckCircle2,
   Circle,
   ClipboardList,
@@ -92,6 +94,9 @@ interface ResolvedSupplier {
   phone: string | null;
   email: string | null;
   website: string | null;
+  // Directory entries (curated + community) have a `/app/suppliers/:id` detail
+  // page; DIY entries don't surface there, so their name stays non-clickable.
+  linkable: boolean;
 }
 
 function fromDirectory(s: DirectorySupplierBase): ResolvedSupplier {
@@ -102,6 +107,7 @@ function fromDirectory(s: DirectorySupplierBase): ResolvedSupplier {
     phone: s.contact_phone,
     email: s.contact_email,
     website: s.website || null,
+    linkable: true,
   };
 }
 
@@ -113,6 +119,7 @@ function fromDiy(s: CoupleSupplier): ResolvedSupplier {
     phone: null,
     email: null,
     website: null,
+    linkable: false,
   };
 }
 
@@ -519,9 +526,18 @@ function PocRow({
       </span>
       <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-4">
         <div className="min-w-0 sm:flex sm:min-w-0 sm:flex-1 sm:items-baseline sm:gap-3">
-          <p className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
-            {displayName}
-          </p>
+          {supplier?.linkable ? (
+            <Link
+              to={`/app/suppliers/${encodeURIComponent(supplier.id)}`}
+              className="truncate text-sm font-semibold text-ink-900 transition-colors hover:text-blush-700 hover:underline focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-paper-50 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
+            >
+              {displayName}
+            </Link>
+          ) : (
+            <p className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
+              {displayName}
+            </p>
+          )}
           <p className="mt-0.5 shrink-0 text-[11px] uppercase tracking-wider text-ink-500 sm:mt-0 dark:text-umber-300">
             {t(`suppliers.cat.${category}`)}
           </p>
@@ -919,6 +935,13 @@ function UndatedCard({
 }) {
   const { t } = useT();
 
+  // Long backlogs (100+ undated decisions are common) would push the chart off
+  // screen, so we show the first PREVIEW_LIMIT and let couples expand the rest.
+  const PREVIEW_LIMIT = 15;
+  const [expanded, setExpanded] = useState(false);
+  const canCollapse = tasks.length > PREVIEW_LIMIT;
+  const visibleTasks = expanded ? tasks : tasks.slice(0, PREVIEW_LIMIT);
+
   // When there are zero tasks of any kind the page reads as a fresh-install
   // empty state; otherwise the "every task is dated" line stays italic + quiet
   // so it doesn't shout at couples who finished the job.
@@ -958,7 +981,7 @@ function UndatedCard({
         )
       ) : (
         <ul className="divide-y divide-paper-200 dark:divide-umber-700">
-          {tasks.map((item) => {
+          {visibleTasks.map((item) => {
             const supplier = item.supplier_id ? (supplierById.get(item.supplier_id) ?? null) : null;
             return (
               <li key={item.id}>
@@ -1004,6 +1027,27 @@ function UndatedCard({
               </li>
             );
           })}
+          {canCollapse && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                className="flex w-full items-center justify-center gap-1.5 px-5 py-3 text-xs font-semibold text-ink-600 transition-colors hover:bg-paper-100/50 focus:outline-none focus-visible:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
+              >
+                {expanded ? (
+                  <>
+                    <span>{t("timeline.no_dates_show_less")}</span>
+                    <ChevronUp size={14} aria-hidden="true" />
+                  </>
+                ) : (
+                  <>
+                    <span>{t("timeline.no_dates_show_all", { count: tasks.length })}</span>
+                    <ChevronDown size={14} aria-hidden="true" />
+                  </>
+                )}
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </section>

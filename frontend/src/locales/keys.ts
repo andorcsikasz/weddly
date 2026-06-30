@@ -159,6 +159,9 @@ export interface LocaleMessages {
     no_dates_empty: string;
     no_dates_empty_all: string;
     set_dates: string;
+    /** Preview-cap toggle for the dateless list (default 15, expand to all). */
+    no_dates_show_all: string;
+    no_dates_show_less: string;
     /** Edit drawer. */
     edit_title: string;
     field_start_date: string;
@@ -2586,6 +2589,8 @@ export interface LocaleMessages {
        *  the "shared identity" group label that wraps the common controls. */
       editing_title: string;
       editing_helper: string;
+      content_hint: string;
+      content_change: string;
       common_identity: string;
       /** Print-tab read-only inherited-identity summary (audit #13). */
       inherited_title: string;
