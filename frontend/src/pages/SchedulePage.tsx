@@ -114,7 +114,7 @@ function findConflictingEvent(
 /** Height in pixels for a proportional gap spacer. 1.5 px per minute,
  *  clamped to [12, 80] so tiny gaps stay visible and huge ones stay compact. */
 function gapPx(minutes: number): number {
-  return Math.min(80, Math.max(12, Math.round(minutes * 1.5)));
+  return Math.min(64, Math.max(20, Math.round(minutes * 1.5)));
 }
 
 /** Height in pixels for a timed event row in proportional view.
@@ -414,9 +414,10 @@ export default function SchedulePage() {
                     <li
                       aria-hidden="true"
                       style={{ height: `${gapPx(gapMinutes)}px` }}
-                      className="flex items-center border-y border-dashed border-paper-300 bg-paper-100/50 px-4 dark:border-umber-600 dark:bg-umber-800/40"
+                      className="relative flex items-center justify-center"
                     >
-                      <span className="select-none pl-[calc(4.5rem+1rem)] text-[10px] tabular-nums text-ink-400 dark:text-umber-400">
+                      <span className="absolute inset-x-4 top-1/2 h-px -translate-y-1/2 bg-paper-200 dark:bg-umber-700" />
+                      <span className="relative select-none rounded-full bg-paper-100 px-2.5 py-0.5 text-[10px] font-medium tabular-nums text-ink-400 dark:bg-umber-700 dark:text-umber-300">
                         {t("schedule.gap_label", { n: gapMinutes })}
                       </span>
                     </li>
@@ -583,66 +584,67 @@ function ScheduleTimelineView({
   onEdit: (event: ScheduleEvent) => void;
 }) {
   return (
-    <div className="card p-6">
-      <div data-tour-target="schedule-events" className="relative mx-auto max-w-md">
-        {/* Dashed center line */}
-        <div
-          aria-hidden="true"
-          className="absolute top-7 bottom-14 left-1/2 w-0 -translate-x-px border-l-2 border-dashed border-paper-300 dark:border-umber-600"
-        />
-
+    <div className="card p-5 sm:p-8">
+      <ol data-tour-target="schedule-events" className="relative mx-auto max-w-xl">
         {events.map((event, i) => {
-          const isLeft = i % 2 === 0;
+          const isLast = i === events.length - 1;
           const end =
             event.duration_minutes !== null && event.duration_minutes > 0
               ? formatHHMM(event.starts_at_minutes + event.duration_minutes)
               : null;
           const timeLabel = end
             ? `${formatHHMM(event.starts_at_minutes)} – ${end}`
-            : `${formatHHMM(event.starts_at_minutes)} –`;
+            : formatHHMM(event.starts_at_minutes);
           const day2 = isDayTwo(event.starts_at_minutes);
 
-          const content = (
-            <button
-              type="button"
-              onClick={() => onEdit(event)}
-              className={`group/btn relative block w-full rounded-lg p-2 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:hover:bg-umber-700 ${isLeft ? "text-right" : "text-left"}`}
-            >
-              <Pencil
-                size={11}
-                aria-hidden="true"
-                className={`absolute top-2 opacity-0 transition-opacity group-hover/btn:opacity-40 ${isLeft ? "left-2" : "right-2"}`}
-              />
-              <div className="text-sm font-bold text-ink-900 dark:text-paper-50">
-                {localizeKnownLabel(event.label, locale)}
-              </div>
-              <span className="mt-1 inline-block rounded-full border border-paper-200 bg-paper-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-700 dark:border-umber-600 dark:bg-umber-700 dark:text-paper-100">
-                {timeLabel}
-                {day2 && <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>}
-              </span>
-              {event.location && (
-                <div
-                  className={`mt-0.5 flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300 ${isLeft ? "justify-end" : ""}`}
-                >
-                  <MapPin size={11} aria-hidden="true" />
-                  {event.location}
-                </div>
-              )}
-            </button>
-          );
-
           return (
-            <div key={event.id} className="grid grid-cols-[1fr_2.5rem_1fr] items-start">
-              <div className="py-3 pr-4">{isLeft ? content : null}</div>
-              {/* Dot on the center line */}
-              <div className="relative z-10 flex justify-center pt-[1.4rem]">
-                <div className="h-3 w-3 rounded-full bg-umber-700 dark:bg-umber-400" />
+            <li key={event.id} className="grid grid-cols-[1.25rem_1fr] gap-4 pb-7 last:pb-0">
+              {/* Rail: continuous hairline with a node at each beat. */}
+              <div className="relative flex justify-center">
+                {!isLast && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-2 -bottom-7 left-1/2 w-px -translate-x-1/2 bg-paper-300 dark:bg-umber-600"
+                  />
+                )}
+                <span
+                  aria-hidden="true"
+                  className="relative z-10 mt-2 h-2.5 w-2.5 rounded-full bg-ink-900 ring-4 ring-white dark:bg-paper-100 dark:ring-umber-800"
+                />
               </div>
-              <div className="py-3 pl-4">{!isLeft ? content : null}</div>
-            </div>
+
+              <button
+                type="button"
+                onClick={() => onEdit(event)}
+                className="group/btn -mt-1 block w-full rounded-xl px-3 py-2 text-left transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:hover:bg-umber-700"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-semibold text-ink-900 dark:text-paper-50">
+                    {localizeKnownLabel(event.label, locale)}
+                  </span>
+                  <Pencil
+                    size={12}
+                    aria-hidden="true"
+                    className="shrink-0 opacity-0 transition-opacity group-hover/btn:opacity-40"
+                  />
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="inline-flex items-center rounded-full bg-paper-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-600 dark:bg-umber-700 dark:text-paper-100">
+                    {timeLabel}
+                    {day2 && <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>}
+                  </span>
+                  {event.location && (
+                    <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+                      <MapPin size={11} aria-hidden="true" />
+                      {event.location}
+                    </span>
+                  )}
+                </div>
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ol>
     </div>
   );
 }
