@@ -30,6 +30,27 @@ const MAX_ROWS = 2000;
 // handful in flight keeps the sweep quick without a thundering herd.
 const CONCURRENCY = 4;
 
+// Quality gate. A homepage og:image is often a tiny logo or a skinny
+// promo-banner, neither of which makes a good card hero. We reject what we can
+// measure as too small or too elongated; when the dimensions are unknown
+// (unparseable header) we DON'T block, so a good image is never dropped just
+// because we couldn't read its size. og:image best practice is 1200x630, so
+// these thresholds clear every real photo while filtering the obvious junk.
+const MIN_SHORT_EDGE = 200;
+const MIN_LONG_EDGE = 400;
+const MAX_ASPECT_RATIO = 4;
+
+/** True when an image is good enough to use as a card hero. Unmeasured images
+ *  (width/height null) pass — the gate only rejects what it can prove is junk. */
+export function isAcceptableHero(width: number | null, height: number | null): boolean {
+  if (!width || !height) return true; // unknown size — don't block
+  const short = Math.min(width, height);
+  const long = Math.max(width, height);
+  if (short < MIN_SHORT_EDGE || long < MIN_LONG_EDGE) return false;
+  if (long / short > MAX_ASPECT_RATIO) return false;
+  return true;
+}
+
 const markCheckedStmt = db.prepare("UPDATE listings SET hero_checked_at = ? WHERE id = ?");
 // Note: deliberately does NOT bump `updated_at` — a hero backfill isn't a
 // content edit, and listings.updated_at feeds the content-hash sync.
@@ -67,14 +88,32 @@ export function listListingsNeedingHeroBackfill(limit: number): BackfillRow[] {
  *  image was actually stored. Never throws.
  *
  *  Also the per-row entry point reused at community-submission time so a freshly
- *  submitted supplier gets a hero alongside its text enrichment. */
-export async function fetchAndStoreListingHero(id: string, website: string): Promise<boolean> {
+ *  submitted supplier gets a hero alongside its text enrichment.
+ *
+ *  `skipQualityGate` lets an admin manual re-fetch accept an image the size gate
+ *  would otherwise reject (their explicit override beats the heuristic). */
+export async function fetchAndStoreListingHero(
+  id: string,
+  website: string,
+  opts: { skipQualityGate?: boolean } = {},
+): Promise<boolean> {
   let img: Awaited<ReturnType<typeof fetchRemoteImage>> = null;
   try {
     const preview = await fetchLinkPreview(website);
     img = preview.image_url ? await fetchRemoteImage(preview.image_url) : null;
   } catch {
     // fetchLinkPreview / fetchRemoteImage are soft by contract; belt-and-braces.
+    img = null;
+  }
+
+  if (img && !opts.skipQualityGate && !isAcceptableHero(img.width, img.height)) {
+    // Measurably too small / too elongated to be a real hero (likely a logo or
+    // banner). Stamp it checked so the sweep doesn't retry the same junk.
+    log.info("listing.hero_backfill.rejected_quality", {
+      id,
+      width: img.width,
+      height: img.height,
+    });
     img = null;
   }
 

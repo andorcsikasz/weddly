@@ -140,6 +140,7 @@ export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierD
       status: "active",
       submitter_email: null,
       created_at: null,
+      hero_image_url: null, // overlaid from `listings` below
       analytics: analytics.get(s.id) ?? emptyAnalytics(),
     });
   }
@@ -168,8 +169,24 @@ export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierD
       status: (c.status as SupplierDirectoryAdminRow["status"]) ?? "active",
       submitter_email: c.submitter_email,
       created_at: c.created_at,
+      hero_image_url: null, // overlaid from `listings` below
       analytics: analytics.get(publicId) ?? emptyAnalytics(),
     });
+  }
+
+  // Overlay the current hero from the unified `listings` table (vendor upload or
+  // website auto-fill) so the admin table can show which cards have an image.
+  // One IN(...) hop, same pattern as the public list in routes/suppliers.ts.
+  if (rows.length > 0) {
+    const placeholders = rows.map(() => "?").join(",");
+    const heroRows = db
+      .prepare(`SELECT id, hero_image_url FROM listings WHERE id IN (${placeholders})`)
+      .all(...rows.map((r) => r.id)) as Array<{ id: string; hero_image_url: string | null }>;
+    const heroById = new Map(heroRows.map((r) => [r.id, r.hero_image_url] as const));
+    for (const row of rows) {
+      const hero = heroById.get(row.id);
+      if (hero !== undefined) row.hero_image_url = hero;
+    }
   }
 
   return rows.filter((row) => matches(row, filters));

@@ -9,6 +9,7 @@
 
 import { assertSafeFetchUrl } from "./ssrf";
 import { sniffImageMime } from "./image_sniff";
+import { imageDimensions } from "./image_dims";
 
 const FETCH_TIMEOUT_MS = 6000;
 const MAX_REDIRECTS = 4;
@@ -28,6 +29,10 @@ export interface FetchedImage {
   bytes: Uint8Array;
   /** Storage extension derived from the sniffed magic bytes, not the URL. */
   ext: "jpg" | "png" | "webp";
+  /** Pixel dimensions from the header, or null when unmeasurable — callers
+   *  apply quality gates but treat null as "don't block". */
+  width: number | null;
+  height: number | null;
 }
 
 /** Read at most MAX_IMAGE_BYTES of the response body. Returns null if the stream
@@ -95,7 +100,8 @@ export async function fetchRemoteImage(rawUrl: string): Promise<FetchedImage | n
       const mime = sniffImageMime(bytes);
       const ext = mime ? EXT_BY_MIME[mime] : undefined;
       if (!ext) return null;
-      return { bytes, ext };
+      const dims = imageDimensions(bytes);
+      return { bytes, ext, width: dims?.width ?? null, height: dims?.height ?? null };
     }
     return null; // too many redirects
   } catch {

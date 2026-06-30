@@ -5037,6 +5037,12 @@ export interface LocaleMessages {
     directory_col_status: string;
     directory_col_category: string;
     directory_col_city: string;
+    directory_col_hero: string;
+    /** Hero re-fetch button + result toasts. */
+    directory_refetch_hero: string;
+    directory_refetch_hero_done: string;
+    directory_refetch_hero_none: string;
+    directory_refetch_hero_failed: string;
     directory_col_views_total: string;
     directory_col_views_30d: string;
     directory_col_views_7d: string;

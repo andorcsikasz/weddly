@@ -7,12 +7,26 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { wipeAll } from "../helpers";
+import { req, verifyUserEmail, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import {
   fetchAndStoreListingHero,
+  isAcceptableHero,
   listListingsNeedingHeroBackfill,
 } from "../../src/domain/listing_image_backfill";
+import { imageDimensions } from "../../src/lib/image_dims";
+
+/** Register + verify the ADMIN_EMAILS allowlist address (admin@test.test, pinned
+ *  in setup.ts) and return its bearer. Caller wipes first. */
+async function bootstrapAdmin(): Promise<string> {
+  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    email: "admin@test.test",
+    password: "supersafe123",
+    full_name: "Admin",
+  });
+  await verifyUserEmail("admin@test.test");
+  return reg.data.token;
+}
 
 function rowOf(id: string): { hero_image_url: string | null; hero_checked_at: number | null } {
   return db
@@ -97,5 +111,91 @@ describe("listing hero backfill fetch", () => {
     // listListingsNeedingHeroBackfill is what runListingImageBackfill draws from,
     // so dropping out of it means the boot sweep won't attempt the row again.
     expect(idsIn(500)).not.toContain("c-hero-once");
+  });
+});
+
+describe("hero image dimension parsing + quality gate", () => {
+  test("reads PNG dimensions from the IHDR header", () => {
+    // 8-byte signature, IHDR length+type, then width(1200) height(630) BE u32.
+    const png = new Uint8Array([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, // signature
+      0x00, 0x00, 0x00, 0x0d, // IHDR length = 13
+      0x49, 0x48, 0x44, 0x52, // "IHDR"
+      0x00, 0x00, 0x04, 0xb0, // width = 1200
+      0x00, 0x00, 0x02, 0x76, // height = 630
+    ]);
+    expect(imageDimensions(png)).toEqual({ width: 1200, height: 630 });
+  });
+
+  test("returns null for non-image bytes", () => {
+    expect(imageDimensions(new Uint8Array([1, 2, 3, 4]))).toBeNull();
+  });
+
+  test("quality gate accepts real heroes, rejects tiny/skinny, passes unknown", () => {
+    expect(isAcceptableHero(1200, 630)).toBe(true); // standard og:image
+    expect(isAcceptableHero(600, 400)).toBe(true);
+    expect(isAcceptableHero(100, 100)).toBe(false); // tiny logo
+    expect(isAcceptableHero(300, 200)).toBe(false); // long edge below 400
+    expect(isAcceptableHero(1500, 200)).toBe(false); // 7.5:1 banner strip
+    expect(isAcceptableHero(null, null)).toBe(true); // unmeasured — don't block
+  });
+});
+
+describe("admin re-fetch hero endpoint", () => {
+  test("admin force-refetch on a blocked website returns ok:false and stamps the row", async () => {
+    wipeAll();
+    const token = await bootstrapAdmin();
+    insertListing("c-admin-hero");
+
+    const res = await req<{ ok: boolean; hero_image_url: string | null }>(
+      "POST",
+      "/api/admin/suppliers/c-admin-hero/refetch-hero",
+      {},
+      { token },
+    );
+    expect(res.status).toBe(200);
+    expect(res.data.ok).toBe(false);
+    expect(res.data.hero_image_url).toBeNull();
+    expect(rowOf("c-admin-hero").hero_checked_at).not.toBeNull();
+  });
+
+  test("409 when the listing has no website, 404 for an unknown id", async () => {
+    wipeAll();
+    const token = await bootstrapAdmin();
+    insertListing("c-admin-no-site", { website: null });
+
+    const noSite = await req(
+      "POST",
+      "/api/admin/suppliers/c-admin-no-site/refetch-hero",
+      {},
+      { token },
+    );
+    expect(noSite.status).toBe(409);
+
+    const missing = await req(
+      "POST",
+      "/api/admin/suppliers/does-not-exist/refetch-hero",
+      {},
+      { token },
+    );
+    expect(missing.status).toBe(404);
+  });
+
+  test("a non-admin caller is forbidden", async () => {
+    wipeAll();
+    const token = await bootstrapAdmin();
+    insertListing("c-admin-guard");
+
+    // No token at all — the route requires auth.
+    const anon = await req("POST", "/api/admin/suppliers/c-admin-guard/refetch-hero", {});
+    expect(anon.status).toBe(401);
+    // Sanity: the admin token still works on the same row.
+    const ok = await req(
+      "POST",
+      "/api/admin/suppliers/c-admin-guard/refetch-hero",
+      {},
+      { token },
+    );
+    expect(ok.status).toBe(200);
   });
 });

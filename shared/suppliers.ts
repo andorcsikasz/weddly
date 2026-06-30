@@ -220,6 +220,9 @@ export interface SupplierDirectoryAdminRow {
   status: "active" | "pending" | "awaiting_review" | "hidden";
   submitter_email: string | null;
   created_at: number | null;
+  /** Current card hero (vendor upload or website auto-fill), overlaid from the
+   *  `listings` table. Null = the card falls back to the category-icon avatar. */
+  hero_image_url: string | null;
   analytics: SupplierAnalytics;
 }
 

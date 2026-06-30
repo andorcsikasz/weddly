@@ -3,7 +3,7 @@ import type {
   SupplierCategory,
   SupplierDirectoryAdminRow,
 } from "@shared/suppliers";
-import { Download, ExternalLink, RotateCcw, Search } from "lucide-react";
+import { Download, ExternalLink, ImageDown, RotateCcw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "../ui";
 import { ApiError } from "../../lib/api";
@@ -99,6 +99,9 @@ export function SupplierDirectoryView() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [sort, setSort] = useState<SortState>({ key: "views_total", dir: "desc" });
+  // Which row's hero is currently being re-fetched, so we can disable just that
+  // row's button and show a spinner without blocking the rest of the table.
+  const [heroBusyId, setHeroBusyId] = useState<string | null>(null);
 
   // Re-fetch whenever the filter object changes. The payload is small (one row
   // per supplier) so a debounce isn't worth the complexity here — most filter
@@ -159,6 +162,22 @@ export function SupplierDirectoryView() {
     setSort((cur) =>
       cur.key === key ? { key, dir: cur.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" },
     );
+  }
+
+  async function onRefetchHero(row: SupplierDirectoryAdminRow) {
+    setHeroBusyId(row.id);
+    try {
+      const res = await adminSupplierApi.refetchHero(row.id);
+      setRows((cur) =>
+        cur.map((r) => (r.id === row.id ? { ...r, hero_image_url: res.hero_image_url } : r)),
+      );
+      if (res.ok) toast.success(t("admin.directory_refetch_hero_done"));
+      else toast.info(t("admin.directory_refetch_hero_none"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("admin.directory_refetch_hero_failed"));
+    } finally {
+      setHeroBusyId(null);
+    }
   }
 
   async function onExport() {
@@ -320,6 +339,9 @@ export function SupplierDirectoryView() {
                   dir={sort.dir}
                   onClick={() => toggleSort("city")}
                 />
+                <th scope="col" className="px-3 py-2">
+                  {t("admin.directory_col_hero")}
+                </th>
                 <SortableTh
                   label={t("admin.directory_col_views_total")}
                   active={sort.key === "views_total"}
@@ -397,6 +419,36 @@ export function SupplierDirectoryView() {
                     {t(`suppliers.cat.${row.category}`)}
                   </td>
                   <td className="px-3 py-2 text-neutral-700 dark:text-paper-100">{row.city}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      {row.hero_image_url ? (
+                        <img
+                          src={row.hero_image_url}
+                          alt=""
+                          className="h-8 w-12 rounded border border-paper-300 object-cover dark:border-umber-700"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span className="inline-flex h-8 w-12 items-center justify-center rounded border border-dashed border-paper-300 text-[10px] text-neutral-400 dark:border-umber-700 dark:text-umber-300">
+                          —
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        className="btn-ghost btn-sm"
+                        onClick={() => onRefetchHero(row)}
+                        disabled={heroBusyId === row.id || !row.website}
+                        title={t("admin.directory_refetch_hero")}
+                        aria-label={t("admin.directory_refetch_hero")}
+                      >
+                        <ImageDown
+                          size={14}
+                          className={heroBusyId === row.id ? "animate-spin" : undefined}
+                          aria-hidden
+                        />
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-3 py-2 text-right stat-num text-neutral-900 dark:text-paper-50">
                     {row.analytics.views_total}
                   </td>

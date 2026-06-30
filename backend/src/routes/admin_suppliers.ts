@@ -18,6 +18,8 @@ import {
 import { CONFIG } from "../config";
 import { sendKind } from "../domain/emails";
 import { enrichSupplier } from "../domain/supplier_enrich";
+import { fetchAndStoreListingHero } from "../domain/listing_image_backfill";
+import { getListingById } from "../domain/listings";
 import { listDirectoryForAdmin, parseDirectoryFilters } from "../domain/supplier_views";
 import { requireAdmin } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
@@ -138,6 +140,40 @@ async function handleEnrich(ctx: Ctx): Promise<Response> {
   if (!after) throw new HttpError(500, "Failed to read updated supplier");
   const counts = openReportCountsForAll();
   return json({ supplier: toAdminView(after, counts.get(id) ?? 0), fields_filled: filled });
+}
+
+async function handleRefetchHero(ctx: Ctx): Promise<Response> {
+  // Manual override for the hero auto-fill (domain/listing_image_backfill): pull
+  // the og:image from the listing's own website again, NOW. Accepts any listing
+  // id (curated slug, `c<id>`, `v<id>`) — not just numeric community ids — so
+  // moderators can fix a curated venue whose card shows a junk image or none.
+  // skipQualityGate: the admin explicitly asked, so accept even a small image.
+  const admin = requireAdmin(ctx);
+  const id = ctx.params.id?.trim();
+  if (!id) throw new HttpError(400, "Invalid id");
+
+  const listing = getListingById(id);
+  if (!listing) throw new HttpError(404, "Listing not found");
+  if (!listing.website || !listing.website.trim()) {
+    throw new HttpError(409, "Listing has no website to fetch a hero from", {
+      code: "no_website",
+    });
+  }
+
+  const stored = await fetchAndStoreListingHero(id, listing.website, { skipQualityGate: true });
+  const after = getListingById(id);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.listing.refetch_hero",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: id, hero_image_url: listing.hero_image_url },
+    after: { stored, hero_image_url: after?.hero_image_url ?? null },
+  });
+
+  return json({ ok: stored, hero_image_url: after?.hero_image_url ?? null });
 }
 
 function handleApprove(ctx: Ctx): Response {
@@ -444,6 +480,7 @@ export function registerAdminSupplierRoutes(router: Router) {
   router.post("/api/admin/suppliers/:id/approve", handleApprove, true);
   router.post("/api/admin/suppliers/:id/send-verify", handleSendVerify, true);
   router.post("/api/admin/suppliers/:id/enrich", handleEnrich, true);
+  router.post("/api/admin/suppliers/:id/refetch-hero", handleRefetchHero, true);
   router.post("/api/admin/suppliers/:id/hide", handleHide, true);
   router.post("/api/admin/suppliers/:id/unhide", handleUnhide, true);
   router.post("/api/admin/suppliers/:id/reports/dismiss", handleDismissReports, true);
