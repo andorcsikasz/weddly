@@ -2311,6 +2311,8 @@ export const photoAlbumApi = {
     revealAt?: number | null;
     eventEndsAt?: number | null;
     coverImageUrl?: string | null;
+    /** Custom guest-link slug (#17); null clears it. */
+    slug?: string | null;
   }): Promise<{ album: PhotoAlbum }> {
     const body: Record<string, unknown> = {};
     if ("isUploadEnabled" in patch) body.is_upload_enabled = patch.isUploadEnabled;
@@ -2320,6 +2322,7 @@ export const photoAlbumApi = {
     if ("revealAt" in patch) body.reveal_at = patch.revealAt ?? null;
     if ("eventEndsAt" in patch) body.event_ends_at = patch.eventEndsAt ?? null;
     if ("coverImageUrl" in patch) body.cover_image_url = patch.coverImageUrl ?? null;
+    if ("slug" in patch) body.slug = patch.slug ?? null;
     return apiFetch<{ album: PhotoAlbum }>("PATCH", "/api/photo-albums/current", body);
   },
 
@@ -2330,6 +2333,18 @@ export const photoAlbumApi = {
   /** Host-only: participant list. */
   listDevices: (): Promise<{ devices: FilmDevice[]; total: number }> =>
     apiFetch("GET", "/api/photo-albums/current/devices"),
+
+  /** Host-only: soft-remove a participant (#6). `purgePhotos` also hides their shots. */
+  removeDevice: (
+    deviceId: string,
+    opts?: { purgePhotos?: boolean },
+  ): Promise<{ removed: boolean; purgedCount: number }> => {
+    const qs = opts?.purgePhotos ? "?purgePhotos=true" : "";
+    return apiFetch(
+      "DELETE",
+      `/api/photo-albums/current/devices/${encodeURIComponent(deviceId)}${qs}`,
+    );
+  },
 
   // ── Public (no auth) ───────────────────────────────────────────────────────
 

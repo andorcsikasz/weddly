@@ -31,9 +31,11 @@ import type {
 import { FILM_AESTHETICS, FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import { storage } from "../lib/storage";
+import { addAuditLog } from "../lib/audit";
 import { db, now } from "../db";
 import { stripe } from "../domain/billing";
 import { activateFilmAlbum } from "../domain/film";
+import { validateFilmSlug } from "../domain/film_slug";
 import { getCoupleForUser } from "../domain/couples";
 import { HttpError, json, requireAuth, type Ctx, type Router } from "../lib/http";
 import { sniffUploadedImage } from "../lib/image_sniff";
@@ -58,6 +60,7 @@ interface AlbumRow {
   id: number;
   couple_id: number;
   upload_token: string;
+  slug: string | null;
   title: string | null;
   shots_per_guest: number | null;
   is_upload_enabled: number;
@@ -81,16 +84,22 @@ function safeAesthetic(raw: string | null): FilmAesthetic {
 }
 
 function countPhotos(albumId: number): number {
+  // Hidden (purged) uploads (#6) are excluded from every visible count.
   return (
-    db.prepare("SELECT COUNT(*) AS c FROM photo_uploads WHERE album_id = ?").get(albumId) as {
+    db
+      .prepare("SELECT COUNT(*) AS c FROM photo_uploads WHERE album_id = ? AND hidden_at IS NULL")
+      .get(albumId) as {
       c: number;
     }
   ).c;
 }
 
 function countParticipants(albumId: number): number {
+  // Soft-removed devices (#6) no longer count toward the participant total/cap.
   return (
-    db.prepare("SELECT COUNT(*) AS c FROM film_devices WHERE album_id = ?").get(albumId) as {
+    db
+      .prepare("SELECT COUNT(*) AS c FROM film_devices WHERE album_id = ? AND removed_at IS NULL")
+      .get(albumId) as {
       c: number;
     }
   ).c;
@@ -106,6 +115,7 @@ function toAlbum(row: AlbumRow): PhotoAlbum {
   return {
     id: row.id,
     uploadToken: row.upload_token,
+    slug: row.slug,
     title: row.title,
     shotsPerGuest: row.shots_per_guest,
     revealAt: row.reveal_at,
@@ -361,6 +371,23 @@ async function handleUpdateAlbum(ctx: Ctx): Promise<Response> {
     updates.push("cover_image_url = ?");
     params.push((v as string | null) ?? null);
   }
+  if ("slug" in body) {
+    // Custom guest-link slug (#17). null clears it; never touches upload_token.
+    const v = body.slug;
+    if (v === null) {
+      updates.push("slug = ?");
+      params.push(null);
+    } else {
+      if (typeof v !== "string") throw new HttpError(400, "slug must be a string or null");
+      const slug = validateFilmSlug(v);
+      const taken = db
+        .prepare("SELECT id FROM photo_albums WHERE slug = ? AND id <> ?")
+        .get(slug, row.id) as { id: number } | undefined;
+      if (taken) throw new HttpError(409, "That link is already taken", { code: "slug_taken" });
+      updates.push("slug = ?");
+      params.push(slug);
+    }
+  }
 
   if (updates.length === 0) throw new HttpError(400, "No fields to update");
 
@@ -390,8 +417,10 @@ async function handleListPhotos(ctx: Ctx): Promise<Response> {
     .prepare(
       `SELECT id, guest_name AS guestName, file_path AS fileUrl,
               mime_type AS mimeType, file_size AS fileSize,
-              filter_applied AS filterApplied, uploaded_at AS uploadedAt
-         FROM photo_uploads WHERE album_id = ? ORDER BY id DESC`,
+              filter_applied AS filterApplied, uploaded_at AS uploadedAt,
+              source
+         FROM photo_uploads
+        WHERE album_id = ? AND hidden_at IS NULL ORDER BY id DESC`,
     )
     .all(row.id);
 
@@ -412,16 +441,73 @@ async function handleListDevices(ctx: Ctx): Promise<Response> {
   const devices = db
     .prepare(
       `SELECT fd.device_id AS deviceId, fd.guest_name AS guestName, fd.joined_at AS joinedAt,
+              fd.removed_at AS removedAt,
               COUNT(pu.id) AS shotCount
          FROM film_devices fd
-         LEFT JOIN photo_uploads pu ON pu.album_id = fd.album_id AND pu.device_id = fd.device_id
-        WHERE fd.album_id = ?
+         LEFT JOIN photo_uploads pu
+           ON pu.album_id = fd.album_id AND pu.device_id = fd.device_id
+          AND pu.hidden_at IS NULL
+        WHERE fd.album_id = ? AND fd.removed_at IS NULL
         GROUP BY fd.device_id
         ORDER BY fd.joined_at ASC`,
     )
     .all(row.id) as FilmDevice[];
 
   return json({ devices, total: devices.length });
+}
+
+/** DELETE /api/photo-albums/current/devices/:deviceId — soft-remove a participant.
+ *  Never hard-deletes (data-loss ban). `?purgePhotos=true` also hides their shots. */
+async function handleRemoveDevice(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple found");
+
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
+  if (!row) throw new HttpError(404, "No album found");
+
+  const deviceId = ctx.params.deviceId ?? "";
+  if (!deviceId) throw new HttpError(400, "device_id required");
+
+  const device = db
+    .prepare("SELECT 1 AS ok FROM film_devices WHERE album_id = ? AND device_id = ?")
+    .get(row.id, deviceId) as { ok: 1 } | undefined;
+  if (!device) throw new HttpError(404, "Participant not found");
+
+  // purgePhotos accepted via query (?purgePhotos=true) or JSON body.
+  let purgePhotos = ctx.url.searchParams.get("purgePhotos") === "true";
+  if (!purgePhotos) {
+    const body = (await ctx.req.json().catch(() => ({}))) as Record<string, unknown>;
+    purgePhotos = body.purgePhotos === true;
+  }
+
+  const ts = now();
+  db.prepare("UPDATE film_devices SET removed_at = ? WHERE album_id = ? AND device_id = ?").run(
+    ts,
+    row.id,
+    deviceId,
+  );
+  let purgedCount = 0;
+  if (purgePhotos) {
+    purgedCount = db
+      .prepare(
+        "UPDATE photo_uploads SET hidden_at = ? WHERE album_id = ? AND device_id = ? AND hidden_at IS NULL",
+      )
+      .run(ts, row.id, deviceId).changes;
+  }
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "film.device.remove",
+    target_kind: "film_device",
+    target_id: row.id,
+    after: { deviceId, purgePhotos, purgedCount },
+  });
+
+  return json({ removed: true, purgedCount });
 }
 
 // ─── public handlers ──────────────────────────────────────────────────────────
@@ -431,15 +517,18 @@ interface AlbumWithCouple extends AlbumRow {
   wedding_date: string | null;
 }
 
-function albumWithCoupleQuery(token: string): AlbumWithCouple | undefined {
+// Resolve a public path param as the upload token first, then fall back to the
+// custom slug (#17). Token (hex) and slug namespaces never overlap, so OR is
+// unambiguous; the canonical upload_token always keeps working.
+function albumWithCoupleQuery(tokenOrSlug: string): AlbumWithCouple | undefined {
   return db
     .prepare(
       `SELECT pa.*, c.display_name, c.wedding_date
          FROM photo_albums pa
          JOIN couples c ON c.id = pa.couple_id
-        WHERE pa.upload_token = ?`,
+        WHERE pa.upload_token = ? OR pa.slug = ?`,
     )
-    .get(token) as AlbumWithCouple | undefined;
+    .get(tokenOrSlug, tokenOrSlug) as AlbumWithCouple | undefined;
 }
 
 /** POST /api/photo-albums/:token/devices — guest registers device before any upload. */
@@ -462,11 +551,15 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
       : null;
 
   // Enforce guest cap — only count new devices, not re-registrations.
-  const alreadyRegistered = db
-    .prepare("SELECT 1 AS ok FROM film_devices WHERE album_id = ? AND device_id = ?")
-    .get(row.id, deviceId);
+  const existingDevice = db
+    .prepare("SELECT removed_at FROM film_devices WHERE album_id = ? AND device_id = ?")
+    .get(row.id, deviceId) as { removed_at: number | null } | undefined;
 
-  if (!alreadyRegistered) {
+  // A soft-removed device (#6) cannot rejoin the film.
+  if (existingDevice && existingDevice.removed_at !== null)
+    throw new HttpError(403, "This device was removed from the film", { code: "device_removed" });
+
+  if (!existingDevice) {
     const participantCount = countParticipants(row.id);
     if (participantCount >= row.guest_cap) {
       throw new HttpError(429, "Guest cap reached for this film", { code: "guest_cap_reached" });
@@ -483,6 +576,7 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
   const publicAlbum: PhotoAlbumPublic = {
     displayName: row.display_name,
     weddingDate: row.wedding_date,
+    slug: row.slug,
     title: row.title,
     shotsPerGuest: row.shots_per_guest,
     isUploadEnabled: row.is_upload_enabled === 1,
@@ -512,6 +606,7 @@ async function handleGetPublicAlbum(ctx: Ctx): Promise<Response> {
   const album: PhotoAlbumPublic = {
     displayName: row.display_name,
     weddingDate: row.wedding_date,
+    slug: row.slug,
     title: row.title,
     shotsPerGuest: row.shots_per_guest,
     isUploadEnabled: row.is_upload_enabled === 1,
@@ -530,8 +625,8 @@ async function handleGetPublicPhotos(ctx: Ctx): Promise<Response> {
 
   const token = ctx.params.token ?? "";
   const row = db
-    .prepare("SELECT id, reveal_at FROM photo_albums WHERE upload_token = ?")
-    .get(token) as { id: number; reveal_at: number | null } | undefined;
+    .prepare("SELECT id, reveal_at FROM photo_albums WHERE upload_token = ? OR slug = ?")
+    .get(token, token) as { id: number; reveal_at: number | null } | undefined;
 
   if (!row) throw new HttpError(404, "Album not found");
 
@@ -541,12 +636,14 @@ async function handleGetPublicPhotos(ctx: Ctx): Promise<Response> {
     return json({ locked: true, revealsAt: row.reveal_at, photoCount });
   }
 
+  // Hidden (purged) uploads (#6) never surface at reveal.
   const uploads = db
     .prepare(
       `SELECT id, guest_name AS guestName, file_path AS fileUrl,
               mime_type AS mimeType, filter_applied AS filterApplied,
-              uploaded_at AS uploadedAt
-         FROM photo_uploads WHERE album_id = ? ORDER BY id ASC`,
+              uploaded_at AS uploadedAt, source
+         FROM photo_uploads
+        WHERE album_id = ? AND hidden_at IS NULL ORDER BY id ASC`,
     )
     .all(row.id);
 
@@ -556,9 +653,9 @@ async function handleGetPublicPhotos(ctx: Ctx): Promise<Response> {
 /** GET /api/photo-albums/:token/qr — printable QR code SVG. */
 async function handleGetQr(ctx: Ctx): Promise<Response> {
   const token = ctx.params.token ?? "";
-  const row = db.prepare("SELECT 1 AS ok FROM photo_albums WHERE upload_token = ?").get(token) as
-    | { ok: 1 }
-    | undefined;
+  const row = db
+    .prepare("SELECT 1 AS ok FROM photo_albums WHERE upload_token = ? OR slug = ?")
+    .get(token, token) as { ok: 1 } | undefined;
   if (!row) throw new HttpError(404, "Album not found");
 
   const url = `${CONFIG.frontendBaseUrl}/photos/${token}`;
@@ -581,9 +678,9 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
       `SELECT pa.*, c.id AS couple_id_val
          FROM photo_albums pa
          JOIN couples c ON c.id = pa.couple_id
-        WHERE pa.upload_token = ?`,
+        WHERE pa.upload_token = ? OR pa.slug = ?`,
     )
-    .get(token) as (AlbumRow & { couple_id_val: number }) | undefined;
+    .get(token, token) as (AlbumRow & { couple_id_val: number }) | undefined;
 
   if (!row) throw new HttpError(404, "Album not found");
   if (!row.is_upload_enabled) throw new HttpError(403, "Film is closed");
@@ -605,10 +702,13 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   rateLimit(`photo:upload:${deviceId}`, "photo:upload", UPLOAD_BUCKET);
 
   // Guest must have registered (cap is enforced at register time).
-  const isRegistered = db
-    .prepare("SELECT 1 AS ok FROM film_devices WHERE album_id = ? AND device_id = ?")
-    .get(row.id, deviceId);
-  if (!isRegistered) throw new HttpError(403, "Device not registered — call /devices first");
+  const registered = db
+    .prepare("SELECT removed_at FROM film_devices WHERE album_id = ? AND device_id = ?")
+    .get(row.id, deviceId) as { removed_at: number | null } | undefined;
+  if (!registered) throw new HttpError(403, "Device not registered — call /devices first");
+  // A soft-removed device (#6) can no longer upload.
+  if (registered.removed_at !== null)
+    throw new HttpError(403, "This device was removed from the film", { code: "device_removed" });
 
   // Shot limit check.
   if (row.shots_per_guest !== null) {
@@ -650,8 +750,8 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
     .prepare(
       `INSERT INTO photo_uploads
          (album_id, device_id, guest_name, file_path, mime_type, file_size,
-          filter_applied, uploaded_at)
-       VALUES (?, ?, ?, '', ?, ?, ?, ?)
+          filter_applied, uploaded_at, source)
+       VALUES (?, ?, ?, '', ?, ?, ?, ?, 'guest')
        RETURNING id`,
     )
     .get(row.id, deviceId, guestName, sniffed, raw.size, filter, ts) as { id: number };
@@ -708,8 +808,8 @@ async function handleCoupleUpload(ctx: Ctx): Promise<Response> {
     .prepare(
       `INSERT INTO photo_uploads
          (album_id, device_id, guest_name, file_path, mime_type, file_size,
-          filter_applied, uploaded_at)
-       VALUES (?, ?, ?, '', ?, ?, ?, ?)
+          filter_applied, uploaded_at, source)
+       VALUES (?, ?, ?, '', ?, ?, ?, ?, 'couple')
        RETURNING id`,
     )
     .get(row.id, "couple", null, sniffed, raw.size, filter, ts) as { id: number };
@@ -743,6 +843,7 @@ export function registerPhotoRoutes(router: Router): void {
   router.post("/api/photo-albums/current/photos", handleCoupleUpload, true);
   router.get("/api/photo-albums/current/photos", handleListPhotos, true);
   router.get("/api/photo-albums/current/devices", handleListDevices, true);
+  router.delete("/api/photo-albums/current/devices/:deviceId", handleRemoveDevice, true);
 
   // Public endpoints.
   router.post("/api/photo-albums/:token/devices", handleRegisterDevice);

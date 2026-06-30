@@ -447,6 +447,8 @@ export const FILM_TIER_PRICE_EUR_CENTS: Record<FilmStripeTier, number> = {
 export interface PhotoAlbum {
   id: number;
   uploadToken: string;
+  /** Custom guest-link slug (#17); null = link uses the upload token only. */
+  slug: string | null;
   title: string | null;
   shotsPerGuest: number | null;
   revealAt: number | null;
@@ -468,6 +470,8 @@ export interface PhotoAlbum {
 export interface PhotoAlbumPublic {
   displayName: string;
   weddingDate: string | null;
+  /** Custom guest-link slug (#17); null = link uses the upload token only. */
+  slug: string | null;
   title: string | null;
   shotsPerGuest: number | null;
   isUploadEnabled: boolean;
@@ -482,6 +486,21 @@ export interface FilmDevice {
   guestName: string | null;
   joinedAt: number;
   shotCount: number;
+  /** Soft-remove timestamp (#6); null = active participant. */
+  removedAt: number | null;
+}
+
+/** A single guest/couple photo as returned to the gallery. */
+export interface FilmUpload {
+  id: number;
+  guestName: string | null;
+  fileUrl: string;
+  mimeType: string;
+  fileSize?: number;
+  filterApplied: string | null;
+  uploadedAt: number;
+  /** Whether the couple or a guest contributed this shot (#11). */
+  source: "guest" | "couple";
 }
 
 export interface FilmAccessCheck {

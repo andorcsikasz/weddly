@@ -1239,6 +1239,20 @@ addColumnIfMissing("photo_albums", "paid_at", "paid_at INTEGER");
 db.exec("UPDATE photo_albums SET guest_cap = 15 WHERE guest_cap = 5 AND paid_at IS NULL");
 addColumnIfMissing("photo_uploads", "filter_applied", "filter_applied TEXT");
 addColumnIfMissing("photo_uploads", "thumbnail_path", "thumbnail_path TEXT");
+// Custom guest-link slug (#17). Partial unique index lives AFTER the column add
+// (May 2026 ordering rule); WHERE slug IS NOT NULL so NULLs never collide.
+addColumnIfMissing("photo_albums", "slug", "slug TEXT");
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_photo_albums_slug " +
+    "ON photo_albums(slug) WHERE slug IS NOT NULL",
+);
+// Participant soft-remove (#6) — never hard-delete (data-loss ban).
+addColumnIfMissing("film_devices", "removed_at", "removed_at INTEGER");
+addColumnIfMissing("photo_uploads", "hidden_at", "hidden_at INTEGER");
+// Couple-upload source tag (#11). Retro-tag pre-existing couple uploads — must
+// run AFTER the column add.
+addColumnIfMissing("photo_uploads", "source", "source TEXT NOT NULL DEFAULT 'guest'");
+db.exec("UPDATE photo_uploads SET source = 'couple' WHERE device_id = 'couple'");
 addColumnIfMissing("couples", "honeymoon_cover_path", "honeymoon_cover_path TEXT");
 addColumnIfMissing("planner_waitlist", "selected_plan", "selected_plan TEXT");
 addColumnIfMissing("planner_waitlist", "website", "website TEXT");

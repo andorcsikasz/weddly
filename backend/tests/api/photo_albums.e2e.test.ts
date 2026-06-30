@@ -165,3 +165,226 @@ describe("photo-albums API", () => {
     expect(svg.trimStart()).toStartWith("<svg");
   });
 });
+
+// ── helpers shared by the feature blocks ───────────────────────────────────────
+
+async function createAlbum(token: string): Promise<string> {
+  const r = await req<{ album: { uploadToken: string } }>(
+    "POST",
+    "/api/photo-albums",
+    { title: "Film", film_aesthetic: "natural" },
+    { token },
+  );
+  return r.data.album.uploadToken;
+}
+
+async function guestUpload(albumPath: string, deviceId: string): Promise<Response> {
+  const fd = new FormData();
+  fd.append("file", new File([FAKE_JPEG], "p.jpg", { type: "image/jpeg" }));
+  fd.append("device_id", deviceId);
+  return fetch(`${BASE}/api/photo-albums/${albumPath}/photos`, { method: "POST", body: fd });
+}
+
+// ── Feature A: custom guest-link slug (#17) ────────────────────────────────────
+
+describe("film slug (#17)", () => {
+  let token: string;
+  let albumToken: string;
+
+  beforeAll(async () => {
+    wipeFilm();
+    ({ token } = await bootstrapCouple("slug@weddly.test"));
+    albumToken = await createAlbum(token);
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("a valid slug resolves the same album as the token", async () => {
+    const patch = await req<{ album: { slug: string } }>(
+      "PATCH",
+      "/api/photo-albums/current",
+      { slug: "Our-Wedding!!" },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    // Normalized: lowercased, illegal chars collapsed to a single trailing hyphen, trimmed.
+    expect(patch.data.album.slug).toBe("our-wedding");
+
+    const bySlug = await req<{ album: { slug: string; displayName: string } }>(
+      "GET",
+      "/api/photo-albums/our-wedding",
+    );
+    const byToken = await req<{ album: { slug: string; displayName: string } }>(
+      "GET",
+      `/api/photo-albums/${albumToken}`,
+    );
+    expect(bySlug.status).toBe(200);
+    expect(byToken.status).toBe(200);
+    expect(bySlug.data.album.displayName).toBe(byToken.data.album.displayName);
+    expect(bySlug.data.album.slug).toBe("our-wedding");
+    // The canonical token must keep resolving after a slug is set.
+    expect(byToken.data.album.slug).toBe("our-wedding");
+  });
+
+  test("an invalid slug is rejected with 400", async () => {
+    const r = await req<{ detail?: { code?: string } }>(
+      "PATCH",
+      "/api/photo-albums/current",
+      { slug: "ab" },
+      { token },
+    );
+    expect(r.status).toBe(400);
+    expect(r.data.detail?.code).toBe("slug_invalid");
+  });
+
+  test("a second album taking the same slug is rejected with 409", async () => {
+    const { token: token2 } = await bootstrapCouple("slug2@weddly.test");
+    await createAlbum(token2);
+    const r = await req<{ detail?: { code?: string } }>(
+      "PATCH",
+      "/api/photo-albums/current",
+      { slug: "our-wedding" },
+      { token: token2 },
+    );
+    expect(r.status).toBe(409);
+    expect(r.data.detail?.code).toBe("slug_taken");
+  });
+});
+
+// ── Feature B: participant soft-remove (#6) ────────────────────────────────────
+
+describe("participant soft-remove (#6)", () => {
+  let token: string;
+  let albumToken: string;
+
+  beforeAll(async () => {
+    wipeFilm();
+    ({ token } = await bootstrapCouple("remove@weddly.test"));
+    albumToken = await createAlbum(token);
+    for (const d of ["dev-a", "dev-b"]) {
+      await req(
+        "POST",
+        `/api/photo-albums/${albumToken}/devices`,
+        { device_id: d, guest_name: d },
+      );
+    }
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("soft-remove drops the device from the list and the participant count", async () => {
+    let list = await req<{ devices: { deviceId: string }[]; total: number }>(
+      "GET",
+      "/api/photo-albums/current/devices",
+      undefined,
+      { token },
+    );
+    expect(list.data.total).toBe(2);
+
+    const del = await req<{ removed: boolean }>(
+      "DELETE",
+      "/api/photo-albums/current/devices/dev-a",
+      undefined,
+      { token },
+    );
+    expect(del.status).toBe(200);
+    expect(del.data.removed).toBe(true);
+
+    list = await req<{ devices: { deviceId: string }[]; total: number }>(
+      "GET",
+      "/api/photo-albums/current/devices",
+      undefined,
+      { token },
+    );
+    expect(list.data.total).toBe(1);
+    expect(list.data.devices.map((d) => d.deviceId)).not.toContain("dev-a");
+
+    const album = await req<{ album: { participantCount: number } }>(
+      "GET",
+      "/api/photo-albums/current",
+      undefined,
+      { token },
+    );
+    expect(album.data.album.participantCount).toBe(1);
+  });
+
+  test("a removed device cannot re-register or upload", async () => {
+    const reReg = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "dev-a" },
+    );
+    expect(reReg.status).toBe(403);
+    expect(reReg.data.detail?.code).toBe("device_removed");
+
+    const up = await guestUpload(albumToken, "dev-a");
+    expect(up.status).toBe(403);
+    const body = (await up.json()) as { detail?: { code?: string } };
+    expect(body.detail?.code).toBe("device_removed");
+  });
+
+  test("purgePhotos hides the removed device's photos from the public reveal", async () => {
+    // dev-b uploads, then gets removed with purge; its photo must vanish.
+    const upB = await guestUpload(albumToken, "dev-b");
+    expect(upB.status).toBe(201);
+
+    const del = await req<{ purgedCount: number }>(
+      "DELETE",
+      "/api/photo-albums/current/devices/dev-b?purgePhotos=true",
+      undefined,
+      { token },
+    );
+    expect(del.status).toBe(200);
+    expect(del.data.purgedCount).toBe(1);
+
+    // Unlock the reveal so the public photo list returns rows.
+    db.exec(`UPDATE photo_albums SET reveal_at = 1 WHERE upload_token = '${albumToken}'`);
+    const photos = await req<{ locked: boolean; total: number }>(
+      "GET",
+      `/api/photo-albums/${albumToken}/photos`,
+    );
+    expect(photos.data.locked).toBe(false);
+    expect(photos.data.total).toBe(0);
+  });
+});
+
+// ── Feature C: couple-upload source tag (#11) ──────────────────────────────────
+
+describe("couple-upload source tag (#11)", () => {
+  let token: string;
+  let albumToken: string;
+
+  beforeAll(async () => {
+    wipeFilm();
+    ({ token } = await bootstrapCouple("source@weddly.test"));
+    albumToken = await createAlbum(token);
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("couple uploads tag 'couple' and guest uploads tag 'guest'", async () => {
+    // Couple upload (authenticated multipart).
+    const fdCouple = new FormData();
+    fdCouple.append("file", new File([FAKE_JPEG], "c.jpg", { type: "image/jpeg" }));
+    const coupleRes = await fetch(`${BASE}/api/photo-albums/current/photos`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: fdCouple,
+    });
+    expect(coupleRes.status).toBe(201);
+
+    // Guest upload.
+    await req("POST", `/api/photo-albums/${albumToken}/devices`, { device_id: "g1" });
+    const guestRes = await guestUpload(albumToken, "g1");
+    expect(guestRes.status).toBe(201);
+
+    const list = await req<{ uploads: { source: string }[] }>(
+      "GET",
+      "/api/photo-albums/current/photos",
+      undefined,
+      { token },
+    );
+    const sources = list.data.uploads.map((u) => u.source).sort();
+    expect(sources).toEqual(["couple", "guest"]);
+  });
+});
