@@ -39,7 +39,7 @@ import {
 } from "../components/CostPlanningCard";
 import { IncomeSection } from "../components/IncomeSection";
 import { InfoHint } from "../components/InfoHint";
-import { Dialog, SegmentedControl, useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
   applyCategoryActual,
@@ -1800,11 +1800,33 @@ function PaidEntryDialog({
   const num = Number(draft.replace(/[^\d]/g, ""));
   const safeNum = Number.isFinite(num) ? num : 0;
   // The entered value is a NEW payment to add, expressed as a % of the row's
-  // actual or as a plain amount.
-  const increment =
+  // actual or as a plain amount. It is capped at the outstanding balance so a
+  // second payment can never push the row past 100% (e.g. 50% paid → at most
+  // another 50% on offer).
+  const rawIncrement =
     mode === "pct" ? Math.round((Math.max(0, safeNum) / 100) * actual) : Math.max(0, safeNum);
+  const increment = Math.min(rawIncrement, remaining);
   const incrementPct = actual > 0 ? Math.round((increment / actual) * 100) : 0;
+  // Largest whole-percent the user can still add — gates the quick-pick chips.
+  const remainingPct = actual > 0 ? Math.floor((remaining / actual) * 100) : 0;
   const sym = currencySymbol(currency, locale);
+
+  // Clamp typed input to the outstanding balance so the big number itself never
+  // shows an over-100% value (mirrors the increment cap above).
+  function setDraftClamped(raw: string) {
+    const n = Number(raw.replace(/[^\d]/g, "")) || 0;
+    const max = mode === "pct" ? remainingPct : remaining;
+    setDraft(String(Math.min(n, max)));
+  }
+
+  // Flip the active unit, carrying the current value across so the number stays
+  // meaningful (50% becomes the matching amount, and vice versa).
+  function switchMode(m: "pct" | "amount") {
+    if (m === mode) return;
+    if (m === "amount") setDraft(increment > 0 ? String(increment) : "");
+    else setDraft(incrementPct > 0 ? String(incrementPct) : "");
+    setMode(m);
+  }
 
   const breakdown = payments.map((p) => `${share(p.amount_huf)}%`);
   if (opening > 0) breakdown.unshift(`${share(opening)}%`);
@@ -1928,24 +1950,12 @@ function PaidEntryDialog({
           )}
         </div>
 
-        {/* Add a payment: enter a % or amount, pick a date, append it. */}
+        {/* Add a payment. One Uber-style cell holds both units side by side:
+            % on the left, the currency on the right. Tapping a side makes it the
+            active input — bigger and bolder — while the other shows the live
+            conversion. */}
         <div className="space-y-3 rounded-xl border border-paper-200 p-3 dark:border-umber-700">
-          <div className="flex items-center justify-between gap-3">
-            <SegmentedControl
-              ariaLabel={t("budget.paid_unit")}
-              value={mode}
-              onChange={(m) => {
-                if (m === "amount" && mode === "pct")
-                  setDraft(increment > 0 ? String(increment) : "");
-                else if (m === "pct" && mode === "amount")
-                  setDraft(incrementPct > 0 ? String(incrementPct) : "");
-                setMode(m);
-              }}
-              options={[
-                { value: "pct", label: "%" },
-                { value: "amount", label: sym },
-              ]}
-            />
+          <div className="flex items-center justify-end">
             <label className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
               {t("budget.payment_date")}
               <input
@@ -1958,35 +1968,92 @@ function PaidEntryDialog({
               />
             </label>
           </div>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={groupedDraft}
-            placeholder="0"
-            onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
-            className="w-full rounded-xl border border-paper-300 bg-white px-3 py-3 text-center text-3xl font-semibold tabular-nums text-ink-900 outline-none focus:border-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:focus:border-umber-300"
-            aria-label={mode === "pct" ? t("budget.paid_unit_pct") : t("budget.paid_unit_amount")}
-          />
-          <p className="text-center text-sm text-ink-500 dark:text-umber-300">
-            {mode === "pct"
-              ? `= ${formatMoney(increment, currency, locale)}`
-              : `= ${incrementPct}%`}
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {[25, 50, 75, 100].map((p) => (
+          <div className="flex items-stretch overflow-hidden rounded-xl border border-paper-300 dark:border-umber-600">
+            {/* Percent side (left) */}
+            {mode === "pct" ? (
+              <div className="flex flex-1 flex-col items-center justify-center bg-paper-50 px-3 py-3 dark:bg-umber-800/60">
+                {/* biome-ignore lint/a11y/noAutofocus: focusing the active unit in a deliberately-opened entry dialog is expected. */}
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoFocus
+                  value={groupedDraft}
+                  placeholder="0"
+                  onChange={(e) => setDraftClamped(e.target.value)}
+                  className="w-full bg-transparent text-center text-4xl font-bold tabular-nums text-ink-900 outline-none dark:text-paper-50"
+                  aria-label={t("budget.paid_unit_pct")}
+                />
+                <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-umber-600 dark:text-umber-300">
+                  %
+                </span>
+              </div>
+            ) : (
               <button
-                key={p}
                 type="button"
-                onClick={() => {
-                  setMode("pct");
-                  setDraft(String(p));
-                }}
-                className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-umber-400 hover:text-umber-800 dark:border-umber-600 dark:text-umber-200 dark:hover:border-umber-400 dark:hover:text-paper-50"
+                onClick={() => switchMode("pct")}
+                className="flex flex-1 flex-col items-center justify-center px-3 py-3 transition hover:bg-paper-50 dark:hover:bg-umber-800/40"
               >
-                {p}%
+                <span className="text-lg font-medium tabular-nums text-ink-400 dark:text-umber-400">
+                  {incrementPct}
+                </span>
+                <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-umber-400">
+                  %
+                </span>
               </button>
-            ))}
-            {remaining > 0 && (
+            )}
+            <div className="w-px bg-paper-200 dark:bg-umber-600" aria-hidden />
+            {/* Currency side (right) */}
+            {mode === "amount" ? (
+              <div className="flex flex-1 flex-col items-center justify-center bg-paper-50 px-3 py-3 dark:bg-umber-800/60">
+                {/* biome-ignore lint/a11y/noAutofocus: focusing the active unit in a deliberately-opened entry dialog is expected. */}
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoFocus
+                  value={groupedDraft}
+                  placeholder="0"
+                  onChange={(e) => setDraftClamped(e.target.value)}
+                  className="w-full bg-transparent text-center text-4xl font-bold tabular-nums text-ink-900 outline-none dark:text-paper-50"
+                  aria-label={t("budget.paid_unit_amount")}
+                />
+                <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-umber-600 dark:text-umber-300">
+                  {sym}
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => switchMode("amount")}
+                className="flex flex-1 flex-col items-center justify-center px-3 py-3 transition hover:bg-paper-50 dark:hover:bg-umber-800/40"
+              >
+                <span className="text-lg font-medium tabular-nums text-ink-400 dark:text-umber-400">
+                  {formatNumber(increment, locale)}
+                </span>
+                <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-umber-400">
+                  {sym}
+                </span>
+              </button>
+            )}
+          </div>
+          {remaining > 0 ? (
+            <div className="flex flex-wrap justify-center gap-2">
+              {[25, 50, 75, 100].map((p) => {
+                const over = p > remainingPct;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    disabled={over}
+                    onClick={() => {
+                      setMode("pct");
+                      setDraftClamped(String(p));
+                    }}
+                    className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-umber-400 hover:text-umber-800 disabled:cursor-not-allowed disabled:opacity-30 dark:border-umber-600 dark:text-umber-200 dark:hover:border-umber-400 dark:hover:text-paper-50"
+                  >
+                    {p}%
+                  </button>
+                );
+              })}
               <button
                 type="button"
                 onClick={() => {
@@ -1997,8 +2064,12 @@ function PaidEntryDialog({
               >
                 {t("budget.payment_remaining")}
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <p className="text-center text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              {t("budget.payment_settled")}
+            </p>
+          )}
           <button
             type="button"
             className="btn-primary w-full justify-center"

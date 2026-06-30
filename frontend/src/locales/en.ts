@@ -2901,6 +2901,7 @@ const en: LocaleMessages = {
     payment_date: "Date",
     payment_delete: "Delete",
     payment_remaining: "Remaining",
+    payment_settled: "Fully paid",
     payment_added: "Payment recorded.",
     payment_amount_required: "Enter an amount.",
     docs_title: "Invoices & receipts",

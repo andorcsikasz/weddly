@@ -2931,6 +2931,7 @@ const hu: LocaleMessages = {
     payment_date: "Dátum",
     payment_delete: "Törlés",
     payment_remaining: "Hátralék",
+    payment_settled: "Teljesen kifizetve",
     payment_added: "Kifizetés rögzítve.",
     payment_amount_required: "Adj meg egy összeget.",
     docs_title: "Számlák, nyugták",

@@ -3180,6 +3180,7 @@ export interface LocaleMessages {
     payment_date: string;
     payment_delete: string;
     payment_remaining: string;
+    payment_settled: string;
     payment_added: string;
     payment_amount_required: string;
     docs_title: string;
