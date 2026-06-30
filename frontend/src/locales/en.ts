@@ -2811,8 +2811,6 @@ const en: LocaleMessages = {
     checkin_pill_suffix: "+ 8-character code per household",
     checkin_pill_show: "Show check-in details",
     checkin_pill_hide: "Hide check-in details",
-    checkin_pill_url_hint:
-      "Guests visit weddly.hu/rsvp and enter your couple identifier + their 8-character code.",
     checkin_open_title: "General check-in link",
     checkin_open_help:
       "The couple identifier is pre-filled. Guests just add their own 8-character code.",

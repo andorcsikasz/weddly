@@ -2841,8 +2841,6 @@ const hu: LocaleMessages = {
     checkin_pill_suffix: "+ 8 karakteres kód háztartásonként",
     checkin_pill_show: "Részletek",
     checkin_pill_hide: "Bezárás",
-    checkin_pill_url_hint:
-      "A vendégek a weddly.hu/rsvp oldalon írják be a jegyes pár azonosítóját és a 8 karakteres kódjukat.",
     checkin_open_title: "Általános check-in link",
     checkin_open_help:
       "A jegyes pár azonosítója már kitöltve. A vendég csak a saját 8 karakteres kódját írja be.",

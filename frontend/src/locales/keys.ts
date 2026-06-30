@@ -2975,7 +2975,6 @@ export interface LocaleMessages {
     checkin_pill_suffix: string;
     checkin_pill_show: string;
     checkin_pill_hide: string;
-    checkin_pill_url_hint: string;
     /** General RSVP check-in link card (couple identifier pre-filled). */
     checkin_open_title: string;
     checkin_open_help: string;

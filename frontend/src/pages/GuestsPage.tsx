@@ -34,6 +34,7 @@ import {
   Home,
   Leaf,
   Link2,
+  Lock,
   Milk,
   MoreHorizontal,
   Music,
@@ -1596,23 +1597,25 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
       </button>
 
       {expanded && (
-        <div className="space-y-4 border-t border-paper-300 px-4 py-4 dark:border-umber-700">
-          <div>
-            <p className="text-sm text-ink-700 dark:text-paper-100">
-              {t("guests.checkin_pill_url_hint")}
-            </p>
-            <p className="mt-2 text-xs text-ink-500 sm:hidden dark:text-umber-300">
-              {t("guests.checkin_pill_suffix")}
-            </p>
-          </div>
-
-          {generalUrl && (
-            <div className="rounded-xl border border-paper-200 bg-paper-50 px-3 py-3 dark:border-umber-700 dark:bg-umber-800">
-              <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                {t("guests.checkin_open_title")}
-              </p>
-              <p className="mt-1 text-xs text-ink-600 dark:text-umber-200">
-                {t("guests.checkin_open_help")}
+        <div className="border-t border-paper-300 px-4 py-4 dark:border-umber-700">
+          {generalUrl ? (
+            // One focused card: the shareable link is the whole point here.
+            // The identifier rides along as a locked chip (its rationale on
+            // hover) instead of a second, redundant block.
+            <div className="rounded-xl border border-paper-200 bg-paper-50 p-3.5 dark:border-umber-700 dark:bg-umber-800">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                  {t("guests.checkin_open_title")}
+                </p>
+                <span
+                  title={t("guests.couple_slug_help_locked")}
+                  className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 font-mono text-xs uppercase tracking-[0.2em] text-ink-700 dark:bg-umber-700 dark:text-paper-100"
+                >
+                  <Lock size={11} aria-hidden /> {couple.slug ?? "-"}
+                </span>
+              </div>
+              <p className="mt-2.5 break-all font-mono text-sm text-ink-900 dark:text-paper-50">
+                {generalUrl.replace(/^https?:\/\//, "")}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <a
@@ -1627,26 +1630,19 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
                   <ClipboardCopy size={14} aria-hidden="true" /> {t("guests.checkin_copy_link")}
                 </button>
               </div>
-              <p className="mt-2 break-all font-mono text-xs text-ink-500 dark:text-umber-300">
-                {generalUrl.replace(/^https?:\/\//, "")}
+              <p className="mt-2.5 text-xs text-ink-500 dark:text-umber-300">
+                {t("guests.checkin_open_help")}
               </p>
             </div>
+          ) : (
+            <p className="text-xs text-ink-500 dark:text-umber-300">
+              {t("guests.couple_slug_help")}
+            </p>
           )}
 
-          <div className="rounded-xl border border-paper-200 bg-paper-50 px-3 py-3 dark:border-umber-700 dark:bg-umber-800">
-            <p className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-              {t("guests.couple_slug_title")}
-            </p>
-            <p className="mt-1 text-xs text-ink-600 dark:text-umber-200">
-              {t("guests.couple_slug_help_locked")}
-            </p>
-            <div className="mt-3 font-mono text-2xl uppercase tracking-[0.3em] text-ink-900 dark:text-paper-50">
-              {couple.slug ?? "-"}
-            </div>
-          </div>
-
-          <p className="text-xs text-ink-500 dark:text-umber-300">
-            {t("guests.household_section_help")}
+          <p className="mt-3 flex items-start gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+            <Users size={13} aria-hidden className="mt-0.5 shrink-0" />
+            <span>{t("guests.household_section_help")}</span>
           </p>
         </div>
       )}
