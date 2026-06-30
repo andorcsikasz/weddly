@@ -181,9 +181,7 @@ function FilmBar({ album, token }: { album: PhotoAlbumPublic; token: string }) {
   return (
     <div className="flex items-center gap-3 bg-black/80 px-4 py-3 backdrop-blur-sm">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-paper-50">
-          {album.title || album.displayName}
-        </p>
+        <p className="truncate text-sm font-semibold text-paper-50">{album.displayName}</p>
         {countdown && <p className="text-[11px] text-paper-400">{countdown} left</p>}
       </div>
       <a
