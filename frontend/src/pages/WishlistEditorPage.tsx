@@ -303,31 +303,44 @@ function WishlistRow({
   onMoveDown,
 }: ItemViewProps) {
   const cur = item.currency ?? currency;
+  const hasMeta = item.target_amount_minor !== null || item.url !== null;
   return (
-    <li className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700">
+    <li className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-paper-100/70 dark:hover:bg-umber-700/60">
       <button
         type="button"
         onClick={onEdit}
         aria-label={t("common.edit")}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
+        className="flex min-w-0 flex-1 items-center gap-3.5 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
       >
         <WishlistThumb
           imageUrl={item.image_url}
           Icon={item.kind === "request" ? requestIconFor(item.title) : Gift}
         />
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
+        {/* Two-line hierarchy: a prominent title, then quieter meta beneath
+            (rough price · external link). Reads cleaner than the old single
+            crammed line. */}
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
             {item.title}
           </span>
-          {item.target_amount_minor !== null && (
-            <span className="shrink-0 tabular-nums text-xs text-ink-500 dark:text-umber-300">
-              {formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)}
-            </span>
-          )}
-          {item.url && (
-            <span className="inline-flex shrink-0 items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-              <ExternalLink size={11} aria-hidden />
-              {t("guest_portal.wishlist_external_link_label")}
+          {hasMeta && (
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
+              {item.target_amount_minor !== null && (
+                <span className="shrink-0 tabular-nums">
+                  {formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)}
+                </span>
+              )}
+              {item.target_amount_minor !== null && item.url && (
+                <span className="text-ink-300 dark:text-umber-500" aria-hidden>
+                  ·
+                </span>
+              )}
+              {item.url && (
+                <span className="inline-flex shrink-0 items-center gap-1 text-ink-500 transition-colors group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100">
+                  <ExternalLink size={11} aria-hidden />
+                  {t("guest_portal.wishlist_external_link_label")}
+                </span>
+              )}
             </span>
           )}
         </span>
@@ -345,15 +358,19 @@ function WishlistRow({
           />
         </div>
       )}
-      <ItemActions
-        t={t}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        index={index}
-        totalCount={totalCount}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
-      />
+      {/* Actions stay out of the way on desktop — revealed on row hover or
+          keyboard focus — but remain always-visible on touch (no hover). */}
+      <div className="shrink-0 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <ItemActions
+          t={t}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          index={index}
+          totalCount={totalCount}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+        />
+      </div>
     </li>
   );
 }
