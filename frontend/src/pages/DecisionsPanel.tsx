@@ -137,6 +137,38 @@ export function DecisionsPanel({
     [tags],
   );
 
+  // Overall decision progress: "made" = rows resolved into a decision (decided)
+  // or graduated into a real task (promoted) — both read as "done with it". The
+  // denominator mirrors each group's own count: live open rows for generated
+  // groups, the intake-prefiltered preview for groups not yet opened. Dismissed
+  // ("not_relevant") rows drop out of both numerator and denominator — they're
+  // set aside, neither made nor still pending.
+  const decisionProgress = useMemo(() => {
+    let made = 0;
+    let remaining = 0;
+    for (const group of PROMPT_GROUPS) {
+      const rows = promptsByGroup.get(group.key) ?? [];
+      if (rows.length > 0) {
+        for (const r of rows) {
+          if (r.decision_status === "decided" || r.decision_status === "promoted") made += 1;
+          else if (r.decision_status === "open") remaining += 1;
+        }
+      } else {
+        remaining += visiblePromptsForGroup(group.key, previewContext).length;
+      }
+    }
+    const total = made + remaining;
+    return { made, total, pct: total > 0 ? Math.round((made / total) * 100) : 0 };
+  }, [promptsByGroup, previewContext]);
+
+  // Personalization "setup strip" progress: how many intake dimensions have an
+  // explicit answer (yes or no) out of the full set.
+  const intakeAnswered = useMemo(
+    () => INTAKE_DIMENSIONS.filter((d) => tags[d.tag] !== undefined).length,
+    [tags],
+  );
+  const intakeTotal = INTAKE_DIMENSIONS.length;
+
   async function toggleGroup(group: PromptGroup) {
     const isOpen = expanded.has(group);
     setExpanded((prev) => {
@@ -184,6 +216,28 @@ export function DecisionsPanel({
 
   return (
     <div className="mt-4">
+      {/* Overall decision progress — a single calm line + thin sage bar so the
+       *  couple can see how far through the long-tail they are. */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-grotesk text-xs font-medium text-ink-600 dark:text-umber-200">
+            {t("planning.decisions.progress_label", {
+              made: String(decisionProgress.made),
+              total: String(decisionProgress.total),
+            })}
+          </span>
+          <span className="shrink-0 text-xs tabular-nums text-ink-400 dark:text-umber-300">
+            {decisionProgress.pct}%
+          </span>
+        </div>
+        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800">
+          <div
+            className="h-full rounded-full bg-sage-400 transition-[width] duration-500 ease-out dark:bg-sage-500"
+            style={{ width: `${decisionProgress.pct}%` }}
+          />
+        </div>
+      </div>
+
       {/* Intake questions — non-blocking, persist answers that tune which
        *  conditional prompts surface. The collapsed toggle bar (title + count +
        *  chevron) lives up in the tab row (PlanningPage); this is just the
@@ -199,9 +253,20 @@ export function DecisionsPanel({
             const dismissedIntake = INTAKE_DIMENSIONS.filter((dim) => tags[dim.tag] === "no");
             if (visibleIntake.length === 0 && dismissedIntake.length === 0) return null;
             return (
-              <div className="mb-5">
+              <div className="mb-5 rounded-2xl border border-ink-900 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-800/40">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+                    {t("planning.decisions.setup_start_here")}
+                  </span>
+                  <span className="shrink-0 rounded-full bg-paper-200 px-2.5 py-1 text-[11px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-100">
+                    {t("planning.decisions.setup_answered", {
+                      n: String(intakeAnswered),
+                      total: String(intakeTotal),
+                    })}
+                  </span>
+                </div>
                 {visibleIntake.length > 0 && (
-                  <ul className="grid gap-2 rounded-2xl border border-ink-900 bg-paper-100/40 p-4 dark:border-umber-700 dark:bg-umber-800/40 sm:grid-cols-2">
+                  <ul className="grid gap-2 sm:grid-cols-2">
                     {visibleIntake.map((dim) => (
                       <li
                         key={dim.tag}
@@ -508,7 +573,9 @@ function DecisionCard({
       className={`rounded-xl border px-3 py-2.5 ${
         dismissedRow
           ? "border-paper-200 bg-paper-100/30 opacity-60 dark:border-umber-800 dark:bg-umber-900/30"
-          : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900/40"
+          : decided
+            ? "border-sage-200 bg-sage-50/70 dark:border-sage-800/60 dark:bg-sage-900/20"
+            : "border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900/40"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -535,6 +602,20 @@ function DecisionCard({
               </span>{" "}
               {item.resolution}
             </p>
+          )}
+          {/* Decided but no note yet: a quiet invitation to log the resolution. */}
+          {decided && !item.resolution && !editing && (
+            <button
+              type="button"
+              onClick={() => {
+                setDraft("");
+                setEditing(true);
+              }}
+              className="mt-1 inline-flex items-center gap-1 text-xs text-sage-700 underline-offset-2 hover:underline dark:text-sage-300"
+            >
+              <SquarePen size={12} aria-hidden="true" />
+              {t("planning.decisions.action_add_note")}
+            </button>
           )}
 
           {seed?.prompt_target === "supplier" && !decided && (
@@ -630,15 +711,19 @@ function DecisionCard({
           )}
           {decided && (
             <>
-              <IconAction
-                onClick={() => {
-                  setDraft(item.resolution ?? "");
-                  setEditing(true);
-                }}
-                disabled={busy}
-                label={t("planning.decisions.action_edit")}
-                icon={SquarePen}
-              />
+              {/* Edit pencil only when a note exists; the no-note case uses the
+               *  inline "Add a note" affordance above. */}
+              {item.resolution && (
+                <IconAction
+                  onClick={() => {
+                    setDraft(item.resolution ?? "");
+                    setEditing(true);
+                  }}
+                  disabled={busy}
+                  label={t("planning.decisions.action_edit")}
+                  icon={SquarePen}
+                />
+              )}
               <IconAction
                 onClick={() => onReopen(item)}
                 disabled={busy}
