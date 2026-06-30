@@ -47,7 +47,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ComingSoon } from "../components/ComingSoon";
 import { InfoHint } from "../components/InfoHint";
 import { headingTreatmentCss, OrnamentDivider, OrnamentFrame } from "../components/ornaments";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
@@ -55,7 +54,6 @@ import { WeddingSiteView } from "../components/WeddingSiteView";
 import { Link, useLocation } from "react-router-dom";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { useAuth } from "../lib/auth";
 import {
   coupleApi,
   fetchPdfBlob,
@@ -289,11 +287,8 @@ function InheritedSummary({ design }: { design: CoupleDesign }) {
 }
 
 export default function DesignPage() {
-  const { user } = useAuth();
   const { t, locale } = useT();
   const toast = useToast();
-
-  if (!user?.is_admin) return <ComingSoon />;
 
   const [couple, setCouple] = useState<Couple | null>(null);
   const [design, setDesign] = useState<CoupleDesign>(() => resolveDesign(null));
@@ -692,6 +687,15 @@ export default function DesignPage() {
                 <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
                   {t("design.print_preview.editing_helper")}
                 </p>
+                <p className="mt-2 text-sm text-ink-500 dark:text-umber-300">
+                  {t("design.print_preview.content_hint")}{" "}
+                  <Link
+                    to="/app/guest-page"
+                    className="font-medium text-ink-700 underline-offset-2 hover:text-ink-900 hover:underline dark:text-paper-100 dark:hover:text-paper-50"
+                  >
+                    {t("design.print_preview.content_change")}
+                  </Link>
+                </p>
               </div>
             ) : null}
 
@@ -917,28 +921,56 @@ export default function DesignPage() {
                   </div>
                 </section>
 
-                {/* Date format */}
+                {/* Date format — a 2×2 grid so every option gets equal weight
+                 *  (the old 3-up grid orphaned the 4th tile on its own row). Each
+                 *  tile leads with the formatted sample date and captions it with
+                 *  the format's name, so the choices read as one unified set. */}
                 <section>
                   <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                     {t("design.section.date")}
                   </h2>
-                  <div className="grid grid-cols-3 gap-2">
-                    {DATE_FORMATS.map((df) => (
-                      <PresetTile
-                        key={df.slug}
-                        active={design.dateFormat === df.slug}
-                        onSelect={() => chooseDateFormat(df.slug)}
-                        ariaLabel={t(df.nameKey)}
-                        compact
-                      >
-                        <span
-                          className="flex min-h-[2rem] w-full items-center justify-center whitespace-nowrap text-center font-serif text-sm italic leading-tight tracking-tight text-ink-900 dark:text-paper-50"
-                          aria-hidden
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {DATE_FORMATS.map((df) => {
+                      const active = design.dateFormat === df.slug;
+                      return (
+                        <button
+                          key={df.slug}
+                          type="button"
+                          onClick={() => chooseDateFormat(df.slug)}
+                          aria-pressed={active}
+                          aria-label={t(df.nameKey)}
+                          className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-white px-3 py-4 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
+                            active
+                              ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+                              : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+                          }`}
                         >
-                          {formatWeddingDate(sampleDateIso, df.slug, locale)}
-                        </span>
-                      </PresetTile>
-                    ))}
+                          {active && (
+                            <span
+                              className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                              aria-hidden
+                            >
+                              <Check size={10} strokeWidth={3} />
+                            </span>
+                          )}
+                          <span
+                            className="w-full whitespace-nowrap font-serif text-base italic leading-tight tracking-tight text-ink-900 dark:text-paper-50"
+                            aria-hidden
+                          >
+                            {formatWeddingDate(sampleDateIso, df.slug, locale)}
+                          </span>
+                          <span
+                            className={`text-[11px] font-medium uppercase tracking-[0.12em] ${
+                              active
+                                ? "text-ink-500 dark:text-umber-200"
+                                : "text-ink-400 dark:text-umber-300"
+                            }`}
+                          >
+                            {t(df.nameKey)}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </section>
               </>
