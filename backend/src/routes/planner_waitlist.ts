@@ -184,7 +184,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   // If the applicant is already signed in, grant the planner account right
   // away so they can head straight to onboarding. A logged-out applicant gets
   // promoted at register time (handleRegister joins the waitlist by email).
-  if (ctx.userId) grantPlannerAccount(ctx.userId, selected_plan);
+  if (ctx.userId) grantPlannerAccount(ctx.userId);
 
   return json(
     {

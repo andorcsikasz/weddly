@@ -83,6 +83,12 @@ export interface PlannerClientCrm {
   contract_value: number | null;
   deposit_paid: number | null;
   stage: string;
+  /** Guest-page (vendégoldal) add-on state for this client. `guest_page_prepaid`
+   *  = the couple paid their 30% share, so the planner may switch editing on;
+   *  `guest_page_addon` = it is switched on. Read-only here, toggled via
+   *  plannerApi.setGuestPageAccess. */
+  guest_page_prepaid: boolean;
+  guest_page_addon: boolean;
 }
 
 export interface PlannerTaskRow {

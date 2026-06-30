@@ -31,20 +31,16 @@ export function isPlannerPlan(v: unknown): v is PlannerPlan {
   return typeof v === "string" && PLANNER_PLANS.includes(v as PlannerPlan);
 }
 
-/** Self-serve planner grant. Flips a user to `user_type='planner'` and seeds
- *  their plan/client-cap from the (basic/pro/unlimited) plan they picked on the
- *  waitlist. Idempotent and non-destructive: the `user_type != 'planner'` guard
- *  means re-running never clobbers an existing planner's chosen plan. Replaces
- *  the old admin-review gate — applying to the waitlist now grants the account
- *  immediately (auto-accept). */
-export function grantPlannerAccount(
-  userId: number,
-  selectedPlan: string | null | undefined,
-): void {
-  const plan = waitlistPlanToPlannerPlan(selectedPlan);
+/** Self-serve planner grant. Flips a user to `user_type='planner'` so they can
+ *  enter the planner area immediately. Replaces the old admin-review gate:
+ *  applying to the waitlist now grants the account on the spot (auto-accept).
+ *  The plan/client-cap stay at their default (starter/4) until the planner
+ *  confirms a plan during onboarding — the waitlist only SUGGESTS one via the
+ *  prefill `mapped_plan` (see handleGetProfile). Idempotent: the
+ *  `user_type != 'planner'` guard means re-running never disturbs an existing
+ *  planner's chosen plan. */
+export function grantPlannerAccount(userId: number): void {
   db.prepare(
-    `UPDATE users
-        SET user_type = 'planner', planner_plan = ?, planner_max_clients = ?, updated_at = ?
-      WHERE id = ? AND user_type != 'planner'`,
-  ).run(plan, plannerPlanMaxClients(plan), now(), userId);
+    "UPDATE users SET user_type = 'planner', updated_at = ? WHERE id = ? AND user_type != 'planner'",
+  ).run(now(), userId);
 }

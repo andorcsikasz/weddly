@@ -1,6 +1,7 @@
 // Couple row → DTO mapper + the workspace helpers used by every protected route.
 
 import {
+  type BillingReason,
   type CoupleBilling,
   computeEntitlement,
   type SubscriptionStatus,
@@ -120,6 +121,12 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
       entitled = true;
     }
   }
+  const plannerManaged = row.is_demo ? false : coupleHasActivePlanner(row.id);
+  // When a planner-managed couple's own free window has lapsed (and no override
+  // grants it back), the couple member is a viewer, not locked out — surface
+  // that as the reason so the UI shows the "your planner is editing" banner
+  // instead of the generic "subscribe" wall. Mirrors entitlementBlock's return.
+  const reason: BillingReason = !entitled && plannerManaged ? "planner_managed_viewer" : verdict.reason;
   return {
     subscription_status: status,
     trial_ends_at: row.trial_ends_at,
@@ -127,8 +134,8 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
     is_founding_member: Boolean(row.is_founding_member),
     current_period_end: row.current_period_end,
     entitled,
-    reason: verdict.reason,
-    planner_managed: row.is_demo ? false : coupleHasActivePlanner(row.id),
+    reason,
+    planner_managed: plannerManaged,
     guest_page_prepaid: Boolean(row.guest_page_prepaid),
     guest_page_addon: Boolean(row.guest_page_addon),
   };

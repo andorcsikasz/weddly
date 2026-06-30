@@ -141,13 +141,13 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   const userId = Number(result.lastInsertRowid);
 
   // Auto-promote to planner if email is on the waitlist. The waitlist is
-  // auto-accept now, so any entry grants the account; we seed the plan/cap
-  // from the plan they picked when applying.
+  // auto-accept now, so any entry grants the account. The plan/cap stay at the
+  // default until the planner confirms one during onboarding (prefill).
   const inWaitlist = db
-    .prepare("SELECT selected_plan FROM planner_waitlist WHERE LOWER(email) = ?")
-    .get(email.toLowerCase()) as { selected_plan: string | null } | undefined;
+    .prepare("SELECT id FROM planner_waitlist WHERE LOWER(email) = ?")
+    .get(email.toLowerCase());
   if (inWaitlist) {
-    grantPlannerAccount(userId, inWaitlist.selected_plan);
+    grantPlannerAccount(userId);
   }
 
   // Re-bind a planner email-invitation to the address they actually registered

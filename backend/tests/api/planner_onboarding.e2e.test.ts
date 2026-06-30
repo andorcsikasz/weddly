@@ -61,7 +61,7 @@ describe("planner waitlist auto-accept", () => {
     expect(r.entryStatus).toBe("accepted");
   });
 
-  test("a logged-in submitter is promoted to a planner account immediately, plan seeded", async () => {
+  test("a logged-in submitter is promoted to a planner account immediately", async () => {
     const { token, email } = await registerVerified("soon-planner@weddly.test");
     expect(isPlanner(email)).toBe(false);
 
@@ -69,7 +69,8 @@ describe("planner waitlist auto-accept", () => {
     expect(r.status).toBe(201);
     expect(isPlanner(email)).toBe(true);
 
-    // Plan/cap seeded from the waitlist choice (pro → 7 clients).
+    // Plan/cap stay at the default until the planner confirms one in onboarding
+    // (the waitlist choice only SUGGESTS a plan via the profile prefill).
     const stats = await req<{ stats: { plan: string; max_clients: number } }>(
       "GET",
       "/api/planner/stats",
@@ -77,8 +78,8 @@ describe("planner waitlist auto-accept", () => {
       { token },
     );
     expect(stats.status).toBe(200);
-    expect(stats.data.stats.plan).toBe("pro");
-    expect(stats.data.stats.max_clients).toBe(7);
+    expect(stats.data.stats.plan).toBe("starter");
+    expect(stats.data.stats.max_clients).toBe(4);
   });
 
   test("a brand-new signup whose email is on the waitlist auto-promotes at register", async () => {
@@ -86,15 +87,14 @@ describe("planner waitlist auto-accept", () => {
     await submitWaitlist("future@weddly.test", { selected_plan: "unlimited" });
     const { token, email } = await registerVerified("future@weddly.test");
     expect(isPlanner(email)).toBe(true);
-    const stats = await req<{ stats: { plan: string; max_clients: number } }>(
+    const stats = await req<{ stats: { plan: string } }>(
       "GET",
       "/api/planner/stats",
       undefined,
       { token },
     );
-    // unlimited → premium → 10 clients.
-    expect(stats.data.stats.plan).toBe("premium");
-    expect(stats.data.stats.max_clients).toBe(10);
+    // Promoted to a planner; plan stays default until confirmed in onboarding.
+    expect(stats.data.stats.plan).toBe("starter");
   });
 });
 
@@ -260,16 +260,15 @@ describe("planner email invitations", () => {
   });
 
   test("pending invitations count against the plan cap", async () => {
-    // starter cap = 4; this planner gets pro (7) via the waitlist. Invite 7
-    // distinct strangers, then the 8th must 422.
+    // Default starter cap = 4. Invite 4 distinct strangers, then the 5th 422s.
     const planner = await bootstrapPlanner("agency4@weddly.test");
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 4; i++) {
       const r = await req("POST", "/api/planner/invitations", { email: `c${i}@weddly.test` }, {
         token: planner.token,
       });
       expect(r.status).toBe(200);
     }
-    const over = await req("POST", "/api/planner/invitations", { email: "c7@weddly.test" }, {
+    const over = await req("POST", "/api/planner/invitations", { email: "c4@weddly.test" }, {
       token: planner.token,
     });
     expect(over.status).toBe(422);

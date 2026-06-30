@@ -8,7 +8,7 @@
 // Renders nothing for paying couples, during onboarding (no couple yet), or
 // before billing data loads.
 
-import { Lock, Sparkles, UserPlus, X } from "lucide-react";
+import { Eye, Lock, Sparkles, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -21,7 +21,9 @@ const SOLO_DISMISS_KEY = "weddly.solo_invite_banner.dismissed";
 export function SubscriptionBanner() {
   const { user } = useAuth();
   const { t, locale } = useT();
-  const [mode, setMode] = useState<"none" | "lapsed" | "founding" | "solo">("none");
+  const [mode, setMode] = useState<
+    "none" | "lapsed" | "founding" | "solo" | "planner_viewer"
+  >("none");
   const [enabled, setEnabled] = useState(false);
   const [foundingUntil, setFoundingUntil] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,7 +53,12 @@ export function SubscriptionBanner() {
       .then((s) => {
         if (!alive) return;
         setEnabled(s.enabled);
-        if (!s.billing.entitled) setMode("lapsed");
+        if (!s.billing.entitled) {
+          // Planner-managed couples that have lapsed are VIEWER-ONLY (the planner
+          // edits), not "subscribe to unlock" — so they get an explanatory band
+          // with no subscribe CTA instead of the normal lapsed prompt.
+          setMode(s.billing.reason === "planner_managed_viewer" ? "planner_viewer" : "lapsed");
+        }
         else if (!s.has_partner) {
           // Every partner-less couple: nudge them to invite their partner so the
           // platform stays free until their wedding day. Takes priority over the
@@ -158,6 +165,25 @@ export function SubscriptionBanner() {
           >
             <X size={16} aria-hidden />
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "planner_viewer") {
+    // Planner-managed couple, viewer mode: the planner is editing on their
+    // behalf. Explanatory only - no subscribe CTA (they don't pay to unlock the
+    // whole workspace; they can buy back just the guest page on its own page).
+    return (
+      <div className="border-b border-umber-200 bg-umber-100 text-umber-900 dark:border-umber-700/60 dark:bg-umber-800/60 dark:text-umber-100">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2 text-sm sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+          <Eye size={16} className="shrink-0 text-umber-600 dark:text-umber-300" aria-hidden />
+          <p className="min-w-[14rem] flex-1">
+            <span className="font-semibold">{t("billing.planner_managed_banner_title")}</span>{" "}
+            <span className="text-umber-700 dark:text-umber-200">
+              {t("billing.planner_managed_banner_body")}
+            </span>
+          </p>
         </div>
       </div>
     );

@@ -227,6 +227,9 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
       current_period_end: null,
       entitled: true,
       reason: "founding",
+      planner_managed: false,
+      guest_page_prepaid: false,
+      guest_page_addon: false,
     },
     ...over,
   };

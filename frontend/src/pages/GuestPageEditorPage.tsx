@@ -5,6 +5,7 @@
 // thing they share with guests, with a public top section (anyone with the
 // link) and a deeper post-RSVP-yes block that unlocks for confirmed guests.
 
+import type { CoupleBilling } from "@shared/billing";
 import type { Couple, Household, PlaceSuggestion } from "@shared/types";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
@@ -22,6 +23,7 @@ import {
   Eye,
   Globe,
   Loader2,
+  Lock,
   MessageCircle,
   Move,
   Palette,
@@ -47,6 +49,7 @@ import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
+  billingApi,
   coupleApi,
   coupleSupplierApi,
   householdApi,
@@ -440,6 +443,12 @@ export default function GuestPageEditorPage() {
   const navigate = useNavigate();
 
   const [couple, setCouple] = useState<Couple | null>(null);
+  // Billing snapshot — drives the planner-managed "unlock guest-page editing"
+  // CTA. A planner-managed viewer without the add-on can buy back editing of
+  // just this page at 70% off; with the add-on on, the backend already permits
+  // /api/couples/current edits, so the editor behaves normally.
+  const [billing, setBilling] = useState<CoupleBilling | null>(null);
+  const [addonBusy, setAddonBusy] = useState(false);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [venueName, setVenueName] = useState("");
@@ -592,6 +601,40 @@ export default function GuestPageEditorPage() {
       cancelled = true;
     };
   }, []);
+
+  // Billing snapshot for the planner-managed unlock CTA. Best-effort: a failure
+  // just means no CTA (the page still works through the server's own gating).
+  useEffect(() => {
+    let cancelled = false;
+    billingApi
+      .status()
+      .then((s) => {
+        if (!cancelled) setBilling(s.billing);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // A planner-managed couple in viewer mode that hasn't switched on the add-on:
+  // show the 70%-off unlock CTA. Once `guest_page_addon` is on the backend
+  // permits the guest-page edits, so no CTA and no extra gating here.
+  const plannerViewerNoAddon = Boolean(
+    billing && billing.planner_managed && !billing.entitled && !billing.guest_page_addon,
+  );
+
+  async function onUnlockGuestPage() {
+    setAddonBusy(true);
+    try {
+      const { url } = await billingApi.guestPageAddonCheckout();
+      window.location.href = url;
+    } catch {
+      // 503 (price missing / billing disabled) or any failure → toast + recover.
+      toast.error(t("guest_page_editor.addon_error"));
+      setAddonBusy(false);
+    }
+  }
 
   const slug = couple?.slug ?? "";
   const publicUrl = slug ? `${window.location.origin}/w/${slug}` : null;
@@ -998,6 +1041,36 @@ export default function GuestPageEditorPage() {
           </button>
         </div>
       </header>
+
+      {/* Planner-managed viewer unlock — the couple is view-only while their
+          planner manages the wedding, but they can buy back editing of just
+          their own guest page at 70% off. Hidden once the add-on is on (then
+          the editor is fully usable). */}
+      {plannerViewerNoAddon && (
+        <section className="mb-6 rounded-2xl border border-blush-300 bg-blush-50 p-4 dark:border-blush-400/40 dark:bg-blush-950/30">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h2 className="flex items-center gap-2 font-grotesk text-base font-semibold tracking-tight text-blush-900 dark:text-blush-100">
+                <Lock size={16} aria-hidden />
+                {t("guest_page_editor.addon_unlock_title")}
+              </h2>
+              <p className="mt-1 text-sm text-blush-800 dark:text-blush-200">
+                {t("guest_page_editor.addon_unlock_body")}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary btn-sm shrink-0"
+              onClick={() => void onUnlockGuestPage()}
+              disabled={addonBusy}
+            >
+              {addonBusy
+                ? t("guest_page_editor.addon_opening")
+                : t("guest_page_editor.addon_unlock_cta")}
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* ── Guest-view preview (on top) ──────────────────────────────────
        *  The read-only "this is what your guest sees" view sits above the
