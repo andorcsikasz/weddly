@@ -333,11 +333,18 @@ const EDIT_PREFIXES: readonly string[] = [
 const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 // The subset of edit surfaces the guest-page (vendégoldal) add-on unlocks for a
-// couple member of a planner-managed couple. The couple record carries all the
-// guest-page / website config (intro, cover, publish toggle, venue, wishlist
-// publish), edited through PATCH /api/couples/current (+ the cover upload under
-// it), so unlocking that prefix is exactly "the couple can edit their own site".
-const GUEST_PAGE_ADDON_PREFIXES: readonly string[] = ["/api/couples/current"];
+// couple member of a planner-managed couple. The guest-page / website config
+// (intro, cover, publish toggle, venue, wishlist publish) is edited through
+// PATCH /api/couples/current and the cover upload at /api/couples/current/cover.
+// EXACT paths only — NOT a prefix — so sibling sub-routes like
+// /api/couples/current/archive (which starts the delete countdown) stay locked
+// for a viewer-only member. PATCH /api/couples/current is additionally
+// field-scoped to guest-page fields in handleUpdateCurrentCouple, so the add-on
+// cannot reach currency / dates / budget / names on the couple record.
+const GUEST_PAGE_ADDON_PATHS: ReadonlySet<string> = new Set([
+  "/api/couples/current",
+  "/api/couples/current/cover",
+]);
 
 function onAnyPrefix(pathname: string, prefixes: readonly string[]): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -376,8 +383,7 @@ export function entitlementBlock(
   userId: number | null,
 ): BillingReason | null {
   if (!userId || !MUTATING_METHODS.has(method)) return null;
-  const onEditSurface = EDIT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-  if (!onEditSurface) return null;
+  if (!onAnyPrefix(pathname, EDIT_PREFIXES)) return null;
   const couple = getCoupleForUser(userId);
   if (!couple) return null; // no workspace yet → nothing to gate
 
@@ -390,7 +396,7 @@ export function entitlementBlock(
   // Couple member, own free window lapsed. On a planner-managed couple this is
   // viewer mode: blocked everywhere except the guest page when the add-on is on.
   if (billing.planner_managed) {
-    if (billing.guest_page_addon && onAnyPrefix(pathname, GUEST_PAGE_ADDON_PREFIXES)) return null;
+    if (billing.guest_page_addon && GUEST_PAGE_ADDON_PATHS.has(pathname)) return null;
     return "planner_managed_viewer";
   }
 

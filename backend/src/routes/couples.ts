@@ -78,11 +78,13 @@ import {
   removeCoupleMember,
   seedCoupleFromCouple,
   toCouple,
+  toCoupleBilling,
 } from "../domain/couples";
 import { sendKind } from "../domain/emails";
 import {
   activatePartnerFreeWindow,
   initBillingAtOnboarding,
+  isManagingPlanner,
   refreshPartnerFreeWindow,
 } from "../domain/billing";
 import { lookupCoupleByRefCode, maybeGrantCoupleReferral } from "../domain/referrals";
@@ -1488,6 +1490,27 @@ function parsePlanningCount(raw: unknown): number | null {
  *  budget cap" in the activity feed. A multi-field PATCH writes multiple
  *  rows. We keep generic `couple.update` only as a fallback when none of the
  *  recognised clusters match — historical entries still render. */
+// Guest-page (vendégoldal) presentation fields a couple member may edit via the
+// 70%-off add-on while otherwise viewer-only on a planner-managed couple. Keep
+// in sync with the website-facing fields of UpdateCoupleBody — anything NOT
+// here (currency, wedding_date, budget, names, country, …) stays the planner's
+// to edit. A new guest-page field must be added here too, or the couple won't
+// be able to edit it through the add-on (fail-closed: safe by default).
+const GUEST_PAGE_ADDON_FIELDS: ReadonlySet<string> = new Set([
+  "is_public",
+  "wishlist_published",
+  "venue_name",
+  "venue_city",
+  "cover_image_url",
+  "cover_position_x",
+  "cover_position_y",
+  "guest_page_intro",
+  "useful_info",
+  "post_rsvp_content",
+  "media_links",
+  "design",
+]);
+
 async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -1510,6 +1533,30 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   }
 
   const body = await readJson<Partial<OnboardBody>>(ctx.req);
+
+  // Planner-managed viewer with the guest-page add-on: their ONLY write access
+  // to this endpoint is the add-on, which is scoped to guest-page presentation.
+  // Reject any attempt to also edit workspace-wide fields (currency, wedding
+  // date, budget, partner names, country, …) — those stay the planner's to edit.
+  // Fully entitled couples and the managing planner skip this guard. (When
+  // billing enforcement is off, billing.entitled is true for everyone, so this
+  // is inert pre-launch.)
+  const billing = toCoupleBilling(couple);
+  if (
+    !billing.entitled &&
+    billing.planner_managed &&
+    billing.guest_page_addon &&
+    !isManagingPlanner(userId, couple.id)
+  ) {
+    for (const key of Object.keys(body)) {
+      if (!GUEST_PAGE_ADDON_FIELDS.has(key)) {
+        throw new HttpError(402, "Only guest-page fields are editable with the add-on", {
+          code: "guest_page_addon_scope",
+        });
+      }
+    }
+  }
+
   const updates: { col: string; val: string | number | null }[] = [];
 
   // Each entry records WHICH per-field audit action to fire for the cluster,

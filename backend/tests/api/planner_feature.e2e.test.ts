@@ -488,7 +488,7 @@ describe("planner stats KPI consistency", () => {
     wipeAll();
   });
 
-  test("dashboard total_tasks == sum of per_client totals across active + pending links", async () => {
+  test("dashboard + roster count ONLY active (consented) clients, never pending links", async () => {
     const { token, userId } = await bootstrapPlanner("kpi-planner@weddly.test");
     const { coupleId: activeCouple } = await bootstrapCouple("kpi-active@weddly.test");
     const { coupleId: pendingCouple } = await bootstrapCouple("kpi-pending@weddly.test");
@@ -496,7 +496,9 @@ describe("planner stats KPI consistency", () => {
     linkClient(userId, activeCouple, "active");
     linkClient(userId, pendingCouple, "pending");
 
-    // 3 tasks for the active client, 2 for the pending one.
+    // 3 tasks for the active client, 2 for the pending one. A PENDING link is
+    // inert (consent invariant): the pending couple's data must never surface in
+    // the planner's stats or roster, so only the 3 active tasks count.
     insertTask(activeCouple, { done: true });
     insertTask(activeCouple, { done: false, dueDate: "2020-01-01" }); // overdue
     insertTask(activeCouple, { done: false });
@@ -507,25 +509,28 @@ describe("planner stats KPI consistency", () => {
     expect(r.status).toBe(200);
     const { stats } = r.data;
 
-    // Both linked clients appear in the per_client breakdown.
-    expect(stats.per_client.length).toBe(2);
+    // Only the active client appears — the pending couple is not leaked.
+    expect(stats.per_client.length).toBe(1);
+    expect(stats.per_client[0]?.couple_id).toBe(activeCouple);
     const sumTotal = stats.per_client.reduce((acc, c) => acc + c.task_total, 0);
     const sumDone = stats.per_client.reduce((acc, c) => acc + c.task_done, 0);
     const sumOverdue = stats.per_client.reduce((acc, c) => acc + c.task_overdue, 0);
 
-    // The invariant: aggregate KPIs reconcile with the per-client breakdown.
-    expect(stats.total_tasks).toBe(5);
+    // The invariant: aggregate KPIs reconcile with the per-client breakdown, and
+    // both exclude the pending couple's 2 tasks.
+    expect(stats.total_tasks).toBe(3);
     expect(stats.total_tasks).toBe(sumTotal);
     expect(stats.done_tasks).toBe(sumDone);
     expect(stats.overdue_tasks).toBe(sumOverdue);
 
-    // Client cards (handleListClients) count the same set, they reconcile too.
+    // Client cards (handleListClients) count the same active-only set.
     const clients = await req<{ clients: PlannerClientView[] }>(
       "GET",
       "/api/planner/clients",
       undefined,
       { token },
     );
+    expect(clients.data.clients.length).toBe(1);
     const cardTotal = clients.data.clients.reduce((acc, c) => acc + c.task_summary.total, 0);
     expect(cardTotal).toBe(stats.total_tasks);
   });

@@ -302,3 +302,66 @@ describe("planner email invitations", () => {
     expect(r.status).toBe(403);
   });
 });
+
+// A planner-initiated PENDING link must be inert: no read, CRM, task, or
+// messaging access to the couple's workspace until the couple approves. This
+// locks the f1f29d1b consent invariant against the planner read endpoints.
+describe("pending planner link leaks no couple data", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("a planner with only a pending link cannot read the couple's data", async () => {
+    const planner = await bootstrapPlanner("leak-planner@weddly.test");
+    const { coupleId } = await bootstrapCouple("leak-couple@weddly.test");
+
+    // Planner requests access (pending, initiated_by planner) — no consent yet.
+    const add = await req<{ status: string }>(
+      "POST",
+      "/api/planner/clients",
+      { email: "leak-couple@weddly.test" },
+      { token: planner.token },
+    );
+    expect(add.status).toBe(200);
+    expect(add.data.status).toBe("pending");
+
+    // Roster excludes the pending couple.
+    const clients = await req<{ clients: Array<{ couple_id: number }> }>(
+      "GET",
+      "/api/planner/clients",
+      undefined,
+      { token: planner.token },
+    );
+    expect(clients.data.clients.length).toBe(0);
+
+    // CRM is forbidden.
+    const crm = await req("GET", `/api/planner/clients/${coupleId}/crm`, undefined, {
+      token: planner.token,
+    });
+    expect(crm.status).toBe(403);
+
+    // Task feed shows nothing for the pending couple.
+    const tasks = await req<{ tasks: unknown[] }>("GET", "/api/planner/tasks", undefined, {
+      token: planner.token,
+    });
+    expect(tasks.data.tasks.length).toBe(0);
+
+    // Stats per-client breakdown is empty.
+    const stats = await req<{ stats: { per_client: unknown[] } }>(
+      "GET",
+      "/api/planner/stats",
+      undefined,
+      { token: planner.token },
+    );
+    expect(stats.data.stats.per_client.length).toBe(0);
+
+    // Cannot send mail through Weddly to the unconsented couple.
+    const msg = await req(
+      "POST",
+      `/api/planner/messages/${coupleId}`,
+      { subject: "Hi", body_text: "Hello", recipient_email: "leak-couple@weddly.test" },
+      { token: planner.token },
+    );
+    expect(msg.status).toBe(403);
+  });
+});

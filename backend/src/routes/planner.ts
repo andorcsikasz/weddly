@@ -11,6 +11,7 @@ import {
   createPlannerInvitation,
   getPlannerInvitationByToken,
   pendingInvitationCount,
+  type PlannerInvitationRow,
   toPlannerInvitation,
 } from "../domain/planner_invitations";
 import type {
@@ -122,6 +123,21 @@ function requirePlannerAuth(ctx: Ctx): number {
   return userId;
 }
 
+/** Assert the planner has an ACTIVE (couple-approved) link to this couple.
+ *  A pending link is inert (the f1f29d1b consent invariant): it must grant no
+ *  read, write, CRM, or messaging access until the couple approves. Every
+ *  couple-scoped planner endpoint gates on 'active', mirroring handleEnterClient
+ *  — otherwise a planner could create a unilateral pending link and read the
+ *  couple's data before consent. */
+function requireActiveClientLink(plannerUserId: number, coupleId: number): void {
+  const link = db
+    .prepare(
+      "SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ? AND status = 'active'",
+    )
+    .get(plannerUserId, coupleId);
+  if (!link) throw new HttpError(403, "Not linked to this workspace");
+}
+
 async function handleListClients(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
 
@@ -137,7 +153,7 @@ async function handleListClients(ctx: Ctx): Promise<Response> {
               (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task' AND pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date < date('now')) AS task_overdue
          FROM planner_clients pc
          JOIN couples c ON c.id = pc.couple_id
-        WHERE pc.planner_user_id = ?
+        WHERE pc.planner_user_id = ? AND pc.status = 'active'
         ORDER BY pc.created_at DESC`,
     )
     .all(userId) as Array<{
@@ -197,26 +213,11 @@ async function handleAddClient(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Workspace unavailable");
   }
 
-  const existing = db
-    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
-    .get(userId, target.couple_id);
-  if (existing) throw new HttpError(409, "This couple is already linked to your account");
-
-  const plannerRow = db.prepare("SELECT planner_max_clients FROM users WHERE id = ?").get(userId) as
-    | { planner_max_clients: number | null }
-    | undefined;
-  const maxClients = plannerRow?.planner_max_clients ?? 4;
-  // Count pending requests AND active clients against the cap. Pending grants
-  // no access, but bounding outstanding requests stops a planner from blasting
-  // a consent-request email at unlimited couples (each insert sends one).
-  const usedCount = (
-    db
-      .prepare(
-        "SELECT COUNT(*) AS cnt FROM planner_clients WHERE planner_user_id = ? AND status IN ('active', 'pending')",
-      )
-      .get(userId) as { cnt: number }
-  ).cnt;
-  if (usedCount >= maxClients) {
+  // One shared cap definition: active + pending links PLUS open email
+  // invitations (plannerSeatsUsed), so a planner can't overshoot their plan by
+  // mixing "Add client" and "Invite by email". requestCoupleAccess does the
+  // duplicate-link 409 check itself.
+  if (plannerSeatsUsed(userId) >= plannerMaxClients(userId)) {
     throw new HttpError(422, "Client limit reached for your plan");
   }
 
@@ -361,7 +362,7 @@ async function handleListInvitations(ctx: Ctx): Promise<Response> {
     .prepare(
       "SELECT * FROM planner_invitations WHERE planner_user_id = ? AND status != 'revoked' ORDER BY created_at DESC",
     )
-    .all(userId) as Parameters<typeof toPlannerInvitation>[0][];
+    .all(userId) as PlannerInvitationRow[];
   return json({ invitations: rows.map(toPlannerInvitation) });
 }
 
@@ -520,10 +521,7 @@ async function handleUpdateNotes(ctx: Ctx): Promise<Response> {
   const body = await readJson<{ notes?: unknown }>(ctx.req);
   const notes = typeof body.notes === "string" ? body.notes.trim() || null : null;
 
-  const link = db
-    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
-    .get(userId, coupleId);
-  if (!link) throw new HttpError(403, "Not linked to this workspace");
+  requireActiveClientLink(userId, coupleId);
 
   db.prepare(
     "UPDATE planner_clients SET notes = ? WHERE planner_user_id = ? AND couple_id = ?",
@@ -550,7 +548,7 @@ async function handleGetClientCrm(ctx: Ctx): Promise<Response> {
               (SELECT COUNT(*) FROM planning_items pi WHERE pi.couple_id = c.id AND pi.kind = 'task' AND pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date < date('now')) AS task_overdue
          FROM planner_clients pc
          JOIN couples c ON c.id = pc.couple_id
-        WHERE pc.planner_user_id = ? AND pc.couple_id = ?`,
+        WHERE pc.planner_user_id = ? AND pc.couple_id = ? AND pc.status = 'active'`,
     )
     .get(userId, coupleId) as
     | {
@@ -604,10 +602,7 @@ async function handleUpdateClientCrm(ctx: Ctx): Promise<Response> {
   const coupleId = Number(ctx.params?.coupleId);
   if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
 
-  const link = db
-    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
-    .get(userId, coupleId);
-  if (!link) throw new HttpError(403, "Not linked to this workspace");
+  requireActiveClientLink(userId, coupleId);
 
   const body = await readJson<Record<string, unknown>>(ctx.req);
 
@@ -645,7 +640,7 @@ async function handleListTasks(ctx: Ctx): Promise<Response> {
       `SELECT pi.id AS task_id, pi.couple_id, pi.title, pi.due_date, pi.priority, pi.done,
               COALESCE(c.display_name, c.bride_name || ' & ' || c.groom_name) AS display_name
          FROM planning_items pi
-         JOIN planner_clients pc ON pc.couple_id = pi.couple_id AND pc.planner_user_id = ?
+         JOIN planner_clients pc ON pc.couple_id = pi.couple_id AND pc.planner_user_id = ? AND pc.status = 'active'
          JOIN couples c ON c.id = pi.couple_id
         WHERE pi.kind = 'task'
           AND pi.done = 0
@@ -700,10 +695,7 @@ async function handleListThread(ctx: Ctx): Promise<Response> {
   const coupleId = Number(ctx.params?.coupleId);
   if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
 
-  const link = db
-    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
-    .get(userId, coupleId);
-  if (!link) throw new HttpError(403, "Not linked to this workspace");
+  requireActiveClientLink(userId, coupleId);
 
   const messages = db
     .prepare(
@@ -730,10 +722,7 @@ async function handleSendMessage(ctx: Ctx): Promise<Response> {
   const coupleId = Number(ctx.params?.coupleId);
   if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
 
-  const link = db
-    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
-    .get(userId, coupleId);
-  if (!link) throw new HttpError(403, "Not linked to this workspace");
+  requireActiveClientLink(userId, coupleId);
 
   const body = await readJson<{
     subject?: unknown;
@@ -1442,7 +1431,7 @@ async function handleGetStats(ctx: Ctx): Promise<Response> {
          SUM(CASE WHEN pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date < date('now') THEN 1 ELSE 0 END) AS overdue_tasks,
          SUM(CASE WHEN pi.done = 0 AND pi.due_date IS NOT NULL AND pi.due_date BETWEEN date('now') AND date('now', '+7 days') THEN 1 ELSE 0 END) AS due_this_week
        FROM planning_items pi
-       JOIN planner_clients pc ON pc.couple_id = pi.couple_id AND pc.planner_user_id = ?
+       JOIN planner_clients pc ON pc.couple_id = pi.couple_id AND pc.planner_user_id = ? AND pc.status = 'active'
       WHERE pi.kind = 'task'`,
     )
     .get(userId) as {
@@ -1457,7 +1446,7 @@ async function handleGetStats(ctx: Ctx): Promise<Response> {
       .prepare(
         `SELECT COUNT(*) AS cnt
            FROM couples c
-           JOIN planner_clients pc ON pc.couple_id = c.id AND pc.planner_user_id = ?
+           JOIN planner_clients pc ON pc.couple_id = c.id AND pc.planner_user_id = ? AND pc.status = 'active'
           WHERE c.wedding_date BETWEEN date('now') AND date('now', '+30 days')`,
       )
       .get(userId) as { cnt: number }
@@ -1475,7 +1464,7 @@ async function handleGetStats(ctx: Ctx): Promise<Response> {
          FROM planner_clients pc
          JOIN couples c ON c.id = pc.couple_id
          LEFT JOIN planning_items pi ON pi.couple_id = pc.couple_id AND pi.kind = 'task'
-        WHERE pc.planner_user_id = ?
+        WHERE pc.planner_user_id = ? AND pc.status = 'active'
         GROUP BY pc.couple_id
         ORDER BY c.wedding_date ASC`,
     )
