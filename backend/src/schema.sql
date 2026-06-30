@@ -1524,3 +1524,18 @@ CREATE TABLE IF NOT EXISTS planner_messages (
   status           TEXT    NOT NULL DEFAULT 'sent',
   created_at       INTEGER NOT NULL
 );
+
+-- Planner portfolio / references — past work the planner showcases on their
+-- profile. Each row is one reference entry: a title + free-text description and
+-- an optional uploaded image (served from /uploads/planners/<user>/portfolio/).
+CREATE TABLE IF NOT EXISTS planner_portfolio (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title            TEXT    NOT NULL DEFAULT '',
+  description      TEXT    NOT NULL DEFAULT '',
+  image_url        TEXT,
+  sort_order       INTEGER NOT NULL DEFAULT 0,
+  created_at       INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_planner_portfolio_user
+  ON planner_portfolio(planner_user_id, sort_order);

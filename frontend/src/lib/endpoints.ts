@@ -63,6 +63,7 @@ import type {
   PlannerThreadPreview,
   PlannerMessage,
   PlannerProfile,
+  PlannerPortfolioItem,
   LinkedPlannerView,
   PlannerInviteView,
   PlannerStats,
@@ -174,6 +175,38 @@ import type {
   OutreachCampaignDetail,
 } from "@shared/outreach";
 import { ApiError, apiFetch, getToken } from "./api";
+
+/** Multipart upload helper — JSON-shaped `apiFetch` can't send FormData, so we
+ *  call fetch directly with the same Bearer auth (the browser sets the
+ *  multipart Content-Type + boundary). Mirrors the per-endpoint upload blocks. */
+async function uploadMultipart<T>(
+  method: "POST" | "PATCH",
+  path: string,
+  form: FormData,
+): Promise<T> {
+  const token = getToken();
+  const res = await fetch(path, {
+    method,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let parsed: { code?: string; message?: string } | null = null;
+    try {
+      parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+    } catch {
+      parsed = null;
+    }
+    throw new ApiError(
+      res.status,
+      res.status >= 500 ? "server_error" : "client_error",
+      parsed?.message ?? text ?? "Upload failed",
+      parsed,
+    );
+  }
+  return JSON.parse(text) as T;
+}
 
 /** Public landing-page counters — real onboarded couples + guests who have
  *  submitted any RSVP (yes / no / maybe). Cached server-side for 60s. */
@@ -2400,6 +2433,34 @@ export const plannerApi = {
   getProfile: () => apiFetch<PlannerProfile>("GET", "/api/planner/profile"),
   updateProfile: (data: Partial<PlannerProfile>) =>
     apiFetch<PlannerProfile>("PATCH", "/api/planner/profile", data),
+  /** Multipart avatar upload — JSON `apiFetch` can't speak FormData, so we hit
+   *  fetch directly with the same Bearer header (mirrors vendor hero upload). */
+  uploadAvatar: async (file: File): Promise<PlannerProfile> => {
+    const form = new FormData();
+    form.append("file", file);
+    return uploadMultipart<PlannerProfile>("POST", "/api/planner/profile/avatar", form);
+  },
+  deleteAvatar: () => apiFetch<PlannerProfile>("DELETE", "/api/planner/profile/avatar"),
+  addPortfolio: async (
+    title: string,
+    description: string,
+    file: File | null,
+  ): Promise<{ portfolio: PlannerPortfolioItem[] }> => {
+    const form = new FormData();
+    form.append("title", title);
+    form.append("description", description);
+    if (file) form.append("file", file);
+    return uploadMultipart<{ portfolio: PlannerPortfolioItem[] }>(
+      "POST",
+      "/api/planner/profile/portfolio",
+      form,
+    );
+  },
+  deletePortfolio: (id: number) =>
+    apiFetch<{ portfolio: PlannerPortfolioItem[] }>(
+      "DELETE",
+      `/api/planner/profile/portfolio/${id}`,
+    ),
   listInvites: () => apiFetch<{ invites: PlannerInviteView[] }>("GET", "/api/planner/invites"),
   acceptInvite: (coupleId: number) =>
     apiFetch<{ ok: boolean }>("POST", `/api/planner/invites/${coupleId}/accept`, {}),

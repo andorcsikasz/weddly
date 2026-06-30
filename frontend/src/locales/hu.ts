@@ -6750,6 +6750,22 @@ const hu: LocaleMessages = {
     load_error:
       "Nem sikerült betölteni az adataidat. Frissítsd az oldalt, vagy jelentkezz be újra.",
     badge_planner: "Tervező",
+    avatar_change: "Profilkép módosítása",
+    avatar_remove: "Profilkép eltávolítása",
+    avatar_saved: "Profilkép frissítve",
+    avatar_error: "Nem sikerült feltölteni a képet.",
+    avatar_invalid: "Csak képfájlt tölthetsz fel (JPEG, PNG, WebP).",
+    references_title: "Referenciák",
+    references_subtitle:
+      "Mutasd be korábbi munkáidat: rövid leírás és egy kép minden referenciához.",
+    references_empty: "Még nincs referenciád. Add hozzá az elsőt alább.",
+    reference_title_ph: "Cím (pl. Anna és Bence esküvője)",
+    reference_desc_ph: "Rövid leírás a munkáról…",
+    reference_image: "Kép hozzáadása",
+    reference_add: "Hozzáadás",
+    reference_adding: "Hozzáadás…",
+    reference_delete: "Törlés",
+    reference_need_text: "Adj meg egy címet, leírást vagy képet.",
   },
   couple_planners: {
     heading: "Tervező",

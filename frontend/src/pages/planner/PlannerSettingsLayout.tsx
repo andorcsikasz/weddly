@@ -4,6 +4,7 @@ import type { PlannerProfile } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 import { useDocumentMeta } from "../../lib/seo";
+import { PlannerAvatarUpload } from "./PlannerAvatarUpload";
 
 const TABS = [
   { id: "account", path: "account", labelKey: "planner_profile.tab_account" },
@@ -46,9 +47,11 @@ export default function PlannerSettingsLayout() {
       <div>
         {/* Hero */}
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-umber-900 font-grotesk text-xl font-semibold text-paper-50 dark:bg-umber-700">
-            {initials}
-          </div>
+          <PlannerAvatarUpload
+            url={profile?.planner_avatar_url ?? null}
+            initials={initials}
+            onUpdated={setProfile}
+          />
           <div>
             <h1 className="font-grotesk text-2xl font-semibold leading-tight tracking-tight text-umber-900 dark:text-paper-50">
               {profile?.full_name ?? " "}

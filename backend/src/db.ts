@@ -1305,6 +1305,8 @@ addColumnIfMissing("users", "planner_onboarding_done", "planner_onboarding_done 
 addColumnIfMissing("users", "planner_weddings_per_year", "planner_weddings_per_year INTEGER");
 addColumnIfMissing("users", "planner_km_radius", "planner_km_radius INTEGER");
 addColumnIfMissing("users", "planner_styles", "planner_styles TEXT");
+// Planner profile photo — an uploaded avatar served from /uploads/planners/...
+addColumnIfMissing("users", "planner_avatar_url", "planner_avatar_url TEXT");
 
 // Public reference codes for the two principal parties — organisers (couples)
 // get "O" + 5 digits, vendors get "V" + 5 digits. New rows are assigned a code

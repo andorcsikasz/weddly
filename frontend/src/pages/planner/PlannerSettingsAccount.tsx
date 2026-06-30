@@ -4,6 +4,7 @@ import type { PlannerProfile } from "@shared/types";
 import { useToast } from "../../components/ui";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
+import { PlannerPortfolioSection } from "./PlannerPortfolioSection";
 
 interface OutletCtx {
   profile: PlannerProfile | null;
@@ -67,90 +68,94 @@ export default function PlannerSettingsAccount() {
   }
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="mt-8 space-y-5">
-      <div>
-        <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
-          {t("planner_profile.full_name_label")}
-        </label>
-        <input
-          type="text"
-          className="input w-full"
-          value={active.full_name}
-          onChange={(e) => set("full_name", e.target.value)}
-          required
-        />
-      </div>
+    <>
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-8 space-y-5">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+            {t("planner_profile.full_name_label")}
+          </label>
+          <input
+            type="text"
+            className="input w-full"
+            value={active.full_name}
+            onChange={(e) => set("full_name", e.target.value)}
+            required
+          />
+        </div>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
-          {t("planner_profile.business_name_label")}
-        </label>
-        <input
-          type="text"
-          className="input w-full"
-          value={active.business_name ?? ""}
-          onChange={(e) => set("business_name", e.target.value)}
-          placeholder="Nagy Eszter Wedding Planning"
-        />
-      </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+            {t("planner_profile.business_name_label")}
+          </label>
+          <input
+            type="text"
+            className="input w-full"
+            value={active.business_name ?? ""}
+            onChange={(e) => set("business_name", e.target.value)}
+            placeholder="Nagy Eszter Wedding Planning"
+          />
+        </div>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
-          {t("planner_profile.city_label")}
-        </label>
-        <input
-          type="text"
-          className="input w-full"
-          value={active.planner_city ?? ""}
-          onChange={(e) => set("planner_city", e.target.value)}
-        />
-      </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+            {t("planner_profile.city_label")}
+          </label>
+          <input
+            type="text"
+            className="input w-full"
+            value={active.planner_city ?? ""}
+            onChange={(e) => set("planner_city", e.target.value)}
+          />
+        </div>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
-          {t("planner_profile.phone_label")}
-        </label>
-        <input
-          type="tel"
-          className="input w-full"
-          value={active.planner_phone ?? ""}
-          onChange={(e) => set("planner_phone", e.target.value)}
-        />
-      </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+            {t("planner_profile.phone_label")}
+          </label>
+          <input
+            type="tel"
+            className="input w-full"
+            value={active.planner_phone ?? ""}
+            onChange={(e) => set("planner_phone", e.target.value)}
+          />
+        </div>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
-          {t("planner_profile.website_label")}
-        </label>
-        <input
-          type="url"
-          className="input w-full"
-          value={active.planner_website ?? ""}
-          onChange={(e) => set("planner_website", e.target.value)}
-          placeholder="https://"
-        />
-      </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+            {t("planner_profile.website_label")}
+          </label>
+          <input
+            type="url"
+            className="input w-full"
+            value={active.planner_website ?? ""}
+            onChange={(e) => set("planner_website", e.target.value)}
+            placeholder="https://"
+          />
+        </div>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
-          {t("planner_profile.bio_label")}
-        </label>
-        <textarea
-          rows={4}
-          maxLength={400}
-          className="input w-full resize-none"
-          value={active.planner_bio ?? ""}
-          onChange={(e) => set("planner_bio", e.target.value)}
-          placeholder={t("planner_profile.bio_placeholder")}
-        />
-        <p className="mt-1 text-right text-xs text-umber-400">
-          {(active.planner_bio ?? "").length}/400
-        </p>
-      </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+            {t("planner_profile.bio_label")}
+          </label>
+          <textarea
+            rows={4}
+            maxLength={400}
+            className="input w-full resize-none"
+            value={active.planner_bio ?? ""}
+            onChange={(e) => set("planner_bio", e.target.value)}
+            placeholder={t("planner_profile.bio_placeholder")}
+          />
+          <p className="mt-1 text-right text-xs text-umber-400">
+            {(active.planner_bio ?? "").length}/400
+          </p>
+        </div>
 
-      <button type="submit" disabled={saving} className="btn-primary w-full">
-        {saving ? "..." : t("planner_profile.save_button")}
-      </button>
-    </form>
+        <button type="submit" disabled={saving} className="btn-primary w-full">
+          {saving ? "..." : t("planner_profile.save_button")}
+        </button>
+      </form>
+
+      {profile && <PlannerPortfolioSection profile={profile} setProfile={setProfile} />}
+    </>
   );
 }

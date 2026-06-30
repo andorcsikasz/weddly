@@ -23,6 +23,8 @@ export default function PlannerProfilePage() {
     planner_km_radius: null,
     planner_styles: null,
     planner_plan: "starter",
+    planner_avatar_url: null,
+    portfolio: [],
     waitlist_prefill: null,
   });
   const [loading, setLoading] = useState(true);

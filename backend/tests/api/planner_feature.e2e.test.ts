@@ -459,3 +459,117 @@ describe("planner onboarding prefill from waitlist", () => {
     expect(r.status).toBe(400);
   });
 });
+
+describe("planner avatar + portfolio uploads", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
+  // 1x1 transparent PNG (valid magic bytes for the sniffer).
+  const PNG_BYTES = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPgPAAEDAQAIicLsAAAAAElFTkSuQmCC",
+    "base64",
+  );
+  function pngFile(name = "ref.png"): File {
+    return new File([PNG_BYTES], name, { type: "image/png" });
+  }
+  async function postForm(path: string, token: string, form: FormData): Promise<Response> {
+    return fetch(BASE + path, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "x-test-client-ip": "10.9.9.9" },
+      body: form,
+    });
+  }
+
+  test("POST /api/planner/profile/avatar — stores an uploaded photo on the profile", async () => {
+    const { token } = await bootstrapPlanner("avatar@weddly.test");
+
+    const before = await req<{ planner_avatar_url: string | null }>(
+      "GET",
+      "/api/planner/profile",
+      undefined,
+      { token },
+    );
+    expect(before.data.planner_avatar_url).toBeNull();
+
+    const form = new FormData();
+    form.append("file", pngFile("me.png"));
+    const res = await postForm("/api/planner/profile/avatar", token, form);
+    expect(res.status).toBe(200);
+    const profile = (await res.json()) as { planner_avatar_url: string | null };
+    expect(profile.planner_avatar_url).toContain("/uploads/planners/");
+    expect(profile.planner_avatar_url).toContain("/avatar.png");
+
+    // Delete clears it.
+    const del = await req<{ planner_avatar_url: string | null }>(
+      "DELETE",
+      "/api/planner/profile/avatar",
+      undefined,
+      { token },
+    );
+    expect(del.status).toBe(200);
+    expect(del.data.planner_avatar_url).toBeNull();
+  });
+
+  test("POST /api/planner/profile/avatar — rejects a non-image", async () => {
+    const { token } = await bootstrapPlanner("avatar-bad@weddly.test");
+    const form = new FormData();
+    form.append("file", new File([Buffer.from("not an image")], "x.png", { type: "image/png" }));
+    const res = await postForm("/api/planner/profile/avatar", token, form);
+    expect(res.status).toBe(415);
+  });
+
+  test("portfolio — add (with image + text) then delete", async () => {
+    const { token } = await bootstrapPlanner("portfolio@weddly.test");
+
+    const form = new FormData();
+    form.append("title", "Anna & Bence");
+    form.append("description", "A rustic barn wedding for 120 guests.");
+    form.append("file", pngFile());
+    const res = await postForm("/api/planner/profile/portfolio", token, form);
+    expect(res.status).toBe(200);
+    const { portfolio } = (await res.json()) as {
+      portfolio: Array<{ id: number; title: string; description: string; image_url: string | null }>;
+    };
+    expect(portfolio.length).toBe(1);
+    const item = portfolio[0]!;
+    expect(item.title).toBe("Anna & Bence");
+    expect(item.description).toContain("rustic barn");
+    expect(item.image_url).toContain("/uploads/planners/");
+
+    // It rides along on the profile DTO.
+    const prof = await req<{ portfolio: Array<{ id: number }> }>(
+      "GET",
+      "/api/planner/profile",
+      undefined,
+      { token },
+    );
+    expect(prof.data.portfolio.length).toBe(1);
+
+    // Delete removes it.
+    const del = await req<{ portfolio: unknown[] }>(
+      "DELETE",
+      `/api/planner/profile/portfolio/${item.id}`,
+      undefined,
+      { token },
+    );
+    expect(del.status).toBe(200);
+    expect(del.data.portfolio.length).toBe(0);
+  });
+
+  test("portfolio — text-only entry is allowed (no image)", async () => {
+    const { token } = await bootstrapPlanner("portfolio-text@weddly.test");
+    const form = new FormData();
+    form.append("title", "Reference without a photo");
+    form.append("description", "Just a written testimonial.");
+    const res = await postForm("/api/planner/profile/portfolio", token, form);
+    expect(res.status).toBe(200);
+    const { portfolio } = (await res.json()) as {
+      portfolio: Array<{ image_url: string | null; title: string }>;
+    };
+    expect(portfolio.length).toBe(1);
+    expect(portfolio[0]!.image_url).toBeNull();
+    expect(portfolio[0]!.title).toBe("Reference without a photo");
+  });
+});

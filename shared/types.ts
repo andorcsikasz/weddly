@@ -128,6 +128,15 @@ export interface PlannerWaitlistPrefill {
   mapped_plan: PlannerPlan; // selected_plan resolved to the planner-account enum
 }
 
+export interface PlannerPortfolioItem {
+  id: number;
+  title: string;
+  description: string;
+  image_url: string | null;
+  sort_order: number;
+  created_at: number;
+}
+
 export interface PlannerProfile {
   full_name: string;
   email: string;
@@ -140,6 +149,8 @@ export interface PlannerProfile {
   planner_km_radius: number | null;
   planner_styles: string[] | null;
   planner_plan: PlannerPlan;
+  planner_avatar_url: string | null;
+  portfolio: PlannerPortfolioItem[];
   waitlist_prefill: PlannerWaitlistPrefill | null;
 }
 

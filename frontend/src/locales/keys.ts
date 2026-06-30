@@ -7202,6 +7202,21 @@ export interface LocaleMessages {
     meta_description: string;
     load_error: string;
     badge_planner: string;
+    avatar_change: string;
+    avatar_remove: string;
+    avatar_saved: string;
+    avatar_error: string;
+    avatar_invalid: string;
+    references_title: string;
+    references_subtitle: string;
+    references_empty: string;
+    reference_title_ph: string;
+    reference_desc_ph: string;
+    reference_image: string;
+    reference_add: string;
+    reference_adding: string;
+    reference_delete: string;
+    reference_need_text: string;
   };
   couple_planners: {
     heading: string;

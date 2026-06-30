@@ -1,10 +1,73 @@
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { sniffUploadedImage } from "../lib/image_sniff";
+import { keyFromUploadUrl, storage } from "../lib/storage";
 import { getCoupleById, toCouple } from "../domain/couples";
 import { sendKind } from "../domain/emails/send";
 import { isPlannerPlan, plannerPlanMaxClients, waitlistPlanToPlannerPlan } from "../domain/planner";
-import type { PlannerPlan, PlannerProfile, PlannerWaitlistPrefill } from "@shared/types";
+import type {
+  PlannerPlan,
+  PlannerPortfolioItem,
+  PlannerProfile,
+  PlannerWaitlistPrefill,
+} from "@shared/types";
+
+// Avatar + portfolio image uploads — JPEG/PNG/WebP up to 5 MB, mirroring the
+// vendor listing hero upload (sniffed magic bytes, not the client content-type).
+const MAX_PLANNER_IMAGE_BYTES = 5 * 1024 * 1024;
+const SUPPORTED_IMAGE_MIMES: Record<string, "jpg" | "png" | "webp"> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+/** Read + validate a single uploaded image from a multipart `file` field and
+ *  return its raw File plus the sniffed extension. Shared by avatar + portfolio. */
+async function readUploadedImage(ctx: Ctx): Promise<{ file: File; ext: string }> {
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required");
+  });
+  const raw = form.get("file");
+  if (!(raw instanceof File)) throw new HttpError(400, "`file` field required");
+  if (raw.size <= 0) throw new HttpError(400, "Empty file");
+  if (raw.size > MAX_PLANNER_IMAGE_BYTES) {
+    throw new HttpError(413, `File too large (max ${MAX_PLANNER_IMAGE_BYTES / 1024 / 1024} MB)`);
+  }
+  const sniffed = await sniffUploadedImage(raw);
+  const ext = sniffed ? SUPPORTED_IMAGE_MIMES[sniffed] : undefined;
+  if (!ext) throw new HttpError(415, "File contents are not a valid image (JPEG, PNG or WebP)");
+  return { file: raw, ext };
+}
+
+interface PlannerPortfolioRow {
+  id: number;
+  title: string;
+  description: string;
+  image_url: string | null;
+  sort_order: number;
+  created_at: number;
+}
+
+function toPortfolioItem(r: PlannerPortfolioRow): PlannerPortfolioItem {
+  return {
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    image_url: r.image_url,
+    sort_order: r.sort_order,
+    created_at: r.created_at,
+  };
+}
+
+function listPortfolio(userId: number): PlannerPortfolioItem[] {
+  const rows = db
+    .prepare(
+      "SELECT id, title, description, image_url, sort_order, created_at FROM planner_portfolio WHERE planner_user_id = ? ORDER BY sort_order ASC, id ASC",
+    )
+    .all(userId) as PlannerPortfolioRow[];
+  return rows.map(toPortfolioItem);
+}
 
 function requirePlannerAuth(ctx: Ctx): number {
   const userId = requireAuth(ctx);
@@ -534,11 +597,12 @@ interface PlannerUserRow {
   planner_km_radius: number | null;
   planner_styles: string | null;
   planner_plan: string | null;
+  planner_avatar_url: string | null;
 }
 
 const PLANNER_PROFILE_COLUMNS =
   "full_name, email, business_name, planner_bio, planner_city, planner_website, planner_phone, " +
-  "planner_weddings_per_year, planner_km_radius, planner_styles, planner_plan";
+  "planner_weddings_per_year, planner_km_radius, planner_styles, planner_plan, planner_avatar_url";
 
 /** Parse a planner_styles JSON column into a clean string[] (or null). */
 function parseStyles(raw: string | null): string[] | null {
@@ -555,7 +619,10 @@ function parseStyles(raw: string | null): string[] | null {
   return null;
 }
 
-function toPlannerProfileBase(row: PlannerUserRow): Omit<PlannerProfile, "waitlist_prefill"> {
+function toPlannerProfileBase(
+  row: PlannerUserRow,
+  userId: number,
+): Omit<PlannerProfile, "waitlist_prefill"> {
   return {
     full_name: row.full_name,
     email: row.email,
@@ -568,6 +635,8 @@ function toPlannerProfileBase(row: PlannerUserRow): Omit<PlannerProfile, "waitli
     planner_km_radius: row.planner_km_radius,
     planner_styles: parseStyles(row.planner_styles),
     planner_plan: (row.planner_plan as PlannerPlan | null) ?? "starter",
+    planner_avatar_url: row.planner_avatar_url,
+    portfolio: listPortfolio(userId),
   };
 }
 
@@ -634,7 +703,7 @@ async function handleGetProfile(ctx: Ctx): Promise<Response> {
       }
     : null;
 
-  return json({ ...toPlannerProfileBase(row), waitlist_prefill: prefill });
+  return json({ ...toPlannerProfileBase(row, userId), waitlist_prefill: prefill });
 }
 
 async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
@@ -730,7 +799,118 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
   const updated = db
     .prepare(`SELECT ${PLANNER_PROFILE_COLUMNS} FROM users WHERE id = ?`)
     .get(userId) as PlannerUserRow;
-  return json(toPlannerProfileBase(updated));
+  return json(toPlannerProfileBase(updated, userId));
+}
+
+// ─── M4: Planner avatar + portfolio uploads ──────────────────────────────────
+
+function reloadPlannerProfile(userId: number): Omit<PlannerProfile, "waitlist_prefill"> {
+  const row = db
+    .prepare(`SELECT ${PLANNER_PROFILE_COLUMNS} FROM users WHERE id = ?`)
+    .get(userId) as PlannerUserRow;
+  return toPlannerProfileBase(row, userId);
+}
+
+async function handleUploadAvatar(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const { file, ext } = await readUploadedImage(ctx);
+
+  const key = `planners/${userId}/avatar.${ext}`;
+  // Remove a previous avatar of a different extension (storage.write overwrites
+  // same-name files in place, so this only matters on an ext transition).
+  const prev = db.prepare("SELECT planner_avatar_url FROM users WHERE id = ?").get(userId) as
+    | { planner_avatar_url: string | null }
+    | undefined;
+  const prevKey = prev?.planner_avatar_url ? keyFromUploadUrl(prev.planner_avatar_url) : null;
+  if (prevKey && prevKey !== key) await storage.delete(prevKey);
+
+  await storage.write(key, file);
+  const ts = now();
+  const publicUrl = `/uploads/${key}?v=${ts}`;
+  db.prepare("UPDATE users SET planner_avatar_url = ?, updated_at = ? WHERE id = ?").run(
+    publicUrl,
+    ts,
+    userId,
+  );
+  return json(reloadPlannerProfile(userId));
+}
+
+async function handleDeleteAvatar(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const prev = db.prepare("SELECT planner_avatar_url FROM users WHERE id = ?").get(userId) as
+    | { planner_avatar_url: string | null }
+    | undefined;
+  const key = prev?.planner_avatar_url ? keyFromUploadUrl(prev.planner_avatar_url) : null;
+  if (key) await storage.delete(key);
+  db.prepare("UPDATE users SET planner_avatar_url = NULL, updated_at = ? WHERE id = ?").run(
+    now(),
+    userId,
+  );
+  return json(reloadPlannerProfile(userId));
+}
+
+async function handleAddPortfolio(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required");
+  });
+  const title = (form.get("title") as string | null)?.trim().slice(0, 120) ?? "";
+  const description = (form.get("description") as string | null)?.trim().slice(0, 2000) ?? "";
+  const raw = form.get("file");
+
+  const ts = now();
+  const nextSort =
+    (
+      db
+        .prepare(
+          "SELECT COALESCE(MAX(sort_order), 0) + 1 AS n FROM planner_portfolio WHERE planner_user_id = ?",
+        )
+        .get(userId) as { n: number }
+    ).n ?? 1;
+
+  // Insert first to mint a collision-free id, then name the image by that id.
+  const inserted = db
+    .prepare(
+      "INSERT INTO planner_portfolio (planner_user_id, title, description, image_url, sort_order, created_at) VALUES (?, ?, ?, NULL, ?, ?) RETURNING id",
+    )
+    .get(userId, title, description, nextSort, ts) as { id: number };
+
+  if (raw instanceof File && raw.size > 0) {
+    if (raw.size > MAX_PLANNER_IMAGE_BYTES) {
+      db.prepare("DELETE FROM planner_portfolio WHERE id = ?").run(inserted.id);
+      throw new HttpError(413, `File too large (max ${MAX_PLANNER_IMAGE_BYTES / 1024 / 1024} MB)`);
+    }
+    const sniffed = await sniffUploadedImage(raw);
+    const ext = sniffed ? SUPPORTED_IMAGE_MIMES[sniffed] : undefined;
+    if (!ext) {
+      db.prepare("DELETE FROM planner_portfolio WHERE id = ?").run(inserted.id);
+      throw new HttpError(415, "File contents are not a valid image (JPEG, PNG or WebP)");
+    }
+    const key = `planners/${userId}/portfolio/${inserted.id}.${ext}`;
+    await storage.write(key, raw);
+    db.prepare("UPDATE planner_portfolio SET image_url = ? WHERE id = ?").run(
+      `/uploads/${key}?v=${ts}`,
+      inserted.id,
+    );
+  }
+
+  return json({ portfolio: listPortfolio(userId) });
+}
+
+async function handleDeletePortfolio(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const id = Number(ctx.params?.id);
+  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "id required");
+
+  const row = db
+    .prepare("SELECT image_url FROM planner_portfolio WHERE id = ? AND planner_user_id = ?")
+    .get(id, userId) as { image_url: string | null } | undefined;
+  if (!row) throw new HttpError(404, "Not found");
+
+  const key = row.image_url ? keyFromUploadUrl(row.image_url) : null;
+  if (key) await storage.delete(key);
+  db.prepare("DELETE FROM planner_portfolio WHERE id = ? AND planner_user_id = ?").run(id, userId);
+  return json({ portfolio: listPortfolio(userId) });
 }
 
 // ─── M1: Planner invite accept/decline ───────────────────────────────────────
@@ -1137,6 +1317,10 @@ export function registerPlannerRoutes(router: Router) {
   // Planner-side: profile (M3)
   router.get("/api/planner/profile", handleGetProfile, true);
   router.patch("/api/planner/profile", handleUpdateProfile, true);
+  router.post("/api/planner/profile/avatar", handleUploadAvatar, true);
+  router.delete("/api/planner/profile/avatar", handleDeleteAvatar, true);
+  router.post("/api/planner/profile/portfolio", handleAddPortfolio, true);
+  router.delete("/api/planner/profile/portfolio/:id", handleDeletePortfolio, true);
   // Planner-side: couple-initiated invites (M1)
   router.get("/api/planner/invites", handleListInvites, true);
   router.post("/api/planner/invites/:coupleId/accept", handleAcceptInvite, true);
