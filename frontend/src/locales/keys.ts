@@ -1796,6 +1796,14 @@ export interface LocaleMessages {
     tab_ideas: string;
     tab_decisions: string;
     tab_schedule: string;
+    /** Micro-labels + hover tooltips under each tab name, for instant
+     *  scannability of what each surface is for. */
+    tab_tasks_micro: string;
+    tab_tasks_tip: string;
+    tab_ideas_micro: string;
+    tab_ideas_tip: string;
+    tab_decisions_micro: string;
+    tab_decisions_tip: string;
     /** "Döntések" decision-prompt deck. */
     decisions: {
       intake_title: string;
@@ -1865,6 +1873,8 @@ export interface LocaleMessages {
     assignee_placeholder: string;
     assignee_add: string;
     assignee_edit_hint: string;
+    /** Inline "+ Who does this?" prompt on the quick-add task form. */
+    assignee_quick_placeholder: string;
     idea_suggested_by: string;
     /** Cross-link from the Tasks tab toolbar to the /app/timeline Gantt view. */
     timeline_link: string;
@@ -1874,6 +1884,8 @@ export interface LocaleMessages {
     task_group_wedding: string;
     task_group_honeymoon: string;
     task_group_other: string;
+    /** "{done}/{total} done" completion pill on each task group header. */
+    group_done_count: string;
     /** SOS / important flag button + filter pills above the task list. */
     priority_filter_aria: string;
     priority_filter_all: string;
@@ -1969,6 +1981,33 @@ export interface LocaleMessages {
     board_vendor_amount_label: string;
     board_vendor_save: string;
     board_vendor_delete_confirm: string;
+    /** "Recommended for you" curated idea section, computed from the
+     *  personalization intake answers. */
+    recommended_title: string;
+    recommended_sub: string;
+    recommended_added: string;
+    recommended_empty_nudge: string;
+    recommended_empty_cta: string;
+    /** Dice entry point surfaced on the Ideas empty state. */
+    dice_empty_cta: string;
+    /** Idea category tag labels (one per IdeaTag) + picker affordances. */
+    idea_tag_program: string;
+    idea_tag_decor: string;
+    idea_tag_surprise: string;
+    idea_tag_keepsake: string;
+    idea_tag_experience: string;
+    idea_tag_set: string;
+    idea_tag_none: string;
+    /** Idea triage status labels (one per IdeaStatus) + control aria. */
+    idea_status_doing: string;
+    idea_status_maybe: string;
+    idea_status_skip: string;
+    idea_status_aria: string;
+    /** Ideas -> Tasks bridge prompt shown on a "doing" idea. */
+    idea_to_task_prompt: string;
+    idea_to_task_confirm: string;
+    idea_to_task_dismiss: string;
+    idea_to_task_done: string;
   };
   /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */
   honeymoon: {

@@ -15,7 +15,7 @@ import {
 } from "@shared/planning_timeline";
 import { type ConditionTag, INTAKE_DIMENSIONS } from "@shared/planning_prompts";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
-import type { PlanningItem, PlanningKind } from "@shared/types";
+import type { IdeaStatus, IdeaTag, PlanningItem, PlanningKind } from "@shared/types";
 import {
   ArrowRight,
   Calendar,
@@ -33,6 +33,8 @@ import {
   ListChecks,
   Pencil,
   Plus,
+  Sparkles,
+  Tag,
   Trash2,
   User,
   Wand2,
@@ -62,11 +64,13 @@ import { type Locale, useT } from "../lib/i18n";
 import {
   DICE_CREATIVE_IDEAS,
   IDEA_TEMPLATE,
+  type Idea,
   type LocaleText,
   TASK_TEMPLATE,
   TASK_TEMPLATE_GROUPS,
   type TaskTemplateGroupId,
   localizeText,
+  recommendedIdeas,
   rollDice,
 } from "../lib/planning_templates";
 import { useDocumentMeta } from "../lib/seo";
@@ -77,10 +81,25 @@ type PlanningTabKind = Exclude<PlanningKind, "schedule">;
  *  so the tab key is its own union member, not a PlanningKind. */
 type PlanningTab = PlanningTabKind | "decision";
 
-const TABS: { kind: PlanningTab; labelKey: string }[] = [
-  { kind: "task", labelKey: "planning.tab_tasks" },
-  { kind: "idea", labelKey: "planning.tab_ideas" },
-  { kind: "decision", labelKey: "planning.tab_decisions" },
+const TABS: { kind: PlanningTab; labelKey: string; microKey: string; tipKey: string }[] = [
+  {
+    kind: "task",
+    labelKey: "planning.tab_tasks",
+    microKey: "planning.tab_tasks_micro",
+    tipKey: "planning.tab_tasks_tip",
+  },
+  {
+    kind: "idea",
+    labelKey: "planning.tab_ideas",
+    microKey: "planning.tab_ideas_micro",
+    tipKey: "planning.tab_ideas_tip",
+  },
+  {
+    kind: "decision",
+    labelKey: "planning.tab_decisions",
+    microKey: "planning.tab_decisions_micro",
+    tipKey: "planning.tab_decisions_tip",
+  },
 ];
 
 const TAB_ICON: Record<PlanningTab, typeof CheckCircle2> = {
@@ -88,6 +107,71 @@ const TAB_ICON: Record<PlanningTab, typeof CheckCircle2> = {
   idea: Lightbulb,
   decision: ListChecks,
 };
+
+/** Single source of truth for the Ideas-tab category tags. Maps each
+ *  `IdeaTag` to its i18n label key plus a token-based chip + dot colour
+ *  class (tailwind tokens only). Drives the tag chips, the tag picker, and
+ *  the recommended-section category badges so the visual language stays
+ *  consistent everywhere an idea tag appears. */
+const IDEA_TAG_META: Record<IdeaTag, { labelKey: string; chip: string; dot: string }> = {
+  program: {
+    labelKey: "planning.idea_tag_program",
+    chip: "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300",
+    dot: "bg-blush-500",
+  },
+  decor: {
+    labelKey: "planning.idea_tag_decor",
+    chip: "bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300",
+    dot: "bg-sage-500",
+  },
+  surprise: {
+    labelKey: "planning.idea_tag_surprise",
+    chip: "bg-umber-100 text-umber-700 dark:bg-umber-700/60 dark:text-umber-100",
+    dot: "bg-umber-400",
+  },
+  keepsake: {
+    labelKey: "planning.idea_tag_keepsake",
+    chip: "bg-paper-200 text-ink-600 dark:bg-umber-700 dark:text-umber-200",
+    dot: "bg-paper-500",
+  },
+  experience: {
+    labelKey: "planning.idea_tag_experience",
+    chip: "bg-eucalyptus-100 text-eucalyptus-700 dark:bg-eucalyptus-400/15 dark:text-eucalyptus-300",
+    dot: "bg-eucalyptus-500",
+  },
+};
+const IDEA_TAG_ORDER: IdeaTag[] = ["program", "decor", "surprise", "keepsake", "experience"];
+
+/** Single source of truth for the Ideas-tab triage status. Three light
+ *  states with token-based dot + active-pill colours: sage = doing,
+ *  warm umber = not-sure, muted paper = skip. */
+const IDEA_STATUS_META: Record<
+  IdeaStatus,
+  { labelKey: string; dot: string; activePill: string; cardTint: string }
+> = {
+  doing: {
+    labelKey: "planning.idea_status_doing",
+    dot: "bg-sage-500",
+    activePill:
+      "bg-sage-100 text-sage-700 ring-1 ring-sage-300 dark:bg-sage-400/15 dark:text-sage-300 dark:ring-sage-400/30",
+    cardTint: "border-l-2 border-l-sage-500 dark:border-l-sage-400",
+  },
+  maybe: {
+    labelKey: "planning.idea_status_maybe",
+    dot: "bg-umber-400",
+    activePill:
+      "bg-umber-100 text-umber-700 ring-1 ring-umber-300 dark:bg-umber-700/60 dark:text-umber-100 dark:ring-umber-600",
+    cardTint: "border-l-2 border-l-umber-400 dark:border-l-umber-300",
+  },
+  skip: {
+    labelKey: "planning.idea_status_skip",
+    dot: "bg-paper-500",
+    activePill:
+      "bg-paper-200 text-ink-500 ring-1 ring-paper-400 dark:bg-umber-700 dark:text-umber-300 dark:ring-umber-600",
+    cardTint: "border-l-2 border-l-paper-400 dark:border-l-umber-600",
+  },
+};
+const IDEA_STATUS_ORDER: IdeaStatus[] = ["doing", "maybe", "skip"];
 
 /** Lookup table mapping every TASK_TEMPLATE title (HU + EN) to the group it
  *  came from. Lets us render a divider between Esküvő and Nászút tasks in
@@ -360,6 +444,50 @@ export default function PlanningPage() {
     }
   }
 
+  // Intake tags answered "yes" — drives the "Nektek ajánljuk" recommender.
+  const yesTags = useMemo(
+    () =>
+      Object.entries(intakeTags)
+        .filter(([, v]) => v === "yes")
+        .map(([k]) => k),
+    [intakeTags],
+  );
+
+  /** Add a single curated/recommended idea (with its category tag) as an
+   *  idea row. Optimistic push + success toast. Returns whether it landed. */
+  async function onAddRecommendedIdea(idea: Idea): Promise<boolean> {
+    try {
+      const r = await planningApi.create({
+        kind: "idea",
+        title: localizeText(idea.title, locale),
+        body: localizeText(idea.body, locale),
+        idea_tag: idea.tag ?? null,
+      });
+      setItems((prev) => [...prev, r.item]);
+      toast.success(t("planning.recommended_added"));
+      return true;
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      return false;
+    }
+  }
+
+  /** Bridge: when an idea is committed to ("doing"), let the couple drop it
+   *  into the Tasks list as a real task carrying the same title + notes. */
+  async function onConvertIdeaToTask(item: PlanningItem) {
+    try {
+      const r = await planningApi.create({
+        kind: "task",
+        title: item.title,
+        body: item.body ?? null,
+      });
+      setItems((prev) => [...prev, r.item]);
+      toast.success(t("planning.idea_to_task_done"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
   // Datalist for the task "assignee" field: the two partners first (the common
   // owners), then every other assignee already used across existing tasks. The
   // partners lead so they're a one-click pick; the rest stay alphabetical.
@@ -497,6 +625,14 @@ export default function PlanningPage() {
     const set = new Set<string>();
     for (const i of items)
       if (i.kind === "task" && !i.seed_key) set.add(i.title.trim().toLowerCase());
+    return set;
+  }, [items]);
+
+  /** Lower-cased titles of existing ideas — lets the "Nektek ajánljuk"
+   *  recommender hide a card the couple has already added. */
+  const existingIdeaTitles = useMemo(() => {
+    const set = new Set<string>();
+    for (const i of items) if (i.kind === "idea") set.add(i.title.trim().toLowerCase());
     return set;
   }, [items]);
 
@@ -716,14 +852,34 @@ export default function PlanningPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setActiveKind(tab.kind)}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm transition-colors sm:flex-none ${
+                  className={`group relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-4 py-1.5 transition-colors sm:flex-none ${
                     active
                       ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-umber-900 dark:text-paper-50"
                       : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
                   }`}
                 >
-                  <Icon size={16} aria-hidden="true" />
-                  <span>{t(tab.labelKey)}</span>
+                  <span className="flex items-center gap-2 text-sm leading-none">
+                    <Icon size={16} aria-hidden="true" />
+                    <span>{t(tab.labelKey)}</span>
+                  </span>
+                  <span
+                    className={`text-[10px] font-normal leading-none ${
+                      active
+                        ? "text-paper-200 dark:text-umber-200"
+                        : "text-ink-400 dark:text-umber-300"
+                    }`}
+                  >
+                    {t(tab.microKey)}
+                  </span>
+                  {/* Instant styled tooltip (same visual language as the guest
+                   *  header stat tooltips). aria-hidden since the tab already
+                   *  carries a visible accessible name. */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 w-max max-w-[15rem] -translate-x-1/2 whitespace-normal rounded-lg bg-umber-900 px-2.5 py-1.5 text-center text-xs font-normal leading-snug text-paper-50 opacity-0 shadow-pop transition-opacity duration-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
+                  >
+                    {t(tab.tipKey)}
+                  </span>
                 </button>
               );
             })}
@@ -862,6 +1018,16 @@ export default function PlanningPage() {
               onCreate={onCreate}
             />
 
+            {activeKind === "idea" && (
+              <RecommendedIdeas
+                yesTags={yesTags}
+                locale={locale}
+                existingTitles={existingIdeaTitles}
+                onAdd={onAddRecommendedIdea}
+                onOpenDecisions={() => setActiveKind("decision")}
+              />
+            )}
+
             {activeKind === "task" && viewMode === "board" && (
               <div
                 role="radiogroup"
@@ -953,7 +1119,10 @@ export default function PlanningPage() {
             ) : loading ? (
               <PlanningListSkeleton kind={activeKind} />
             ) : scoped.length === 0 ? (
-              <EmptyState kind={activeKind} />
+              <EmptyState
+                kind={activeKind}
+                onRollDice={activeKind === "idea" ? () => setDiceOpen(true) : undefined}
+              />
             ) : (
               <div className="mt-4 space-y-6">
                 {taskSections.map((section) => {
@@ -961,11 +1130,18 @@ export default function PlanningPage() {
                   // at least two distinct groups visible — a single-group list
                   // doesn't need a label, that's just noise.
                   const showHeader = activeKind === "task" && taskSections.length > 1;
+                  const groupDone = section.items.filter((i) => i.done).length;
                   return (
                     <section key={section.group}>
                       {showHeader && (
-                        <h2 className="mb-2 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                          {t(TASK_GROUP_LABEL_KEY[section.group])}
+                        <h2 className="mb-2 flex items-center gap-2 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+                          <span>{t(TASK_GROUP_LABEL_KEY[section.group])}</span>
+                          <span className="rounded-full bg-paper-200 px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-ink-500 dark:bg-umber-700 dark:text-umber-200">
+                            {t("planning.group_done_count", {
+                              done: groupDone,
+                              total: section.items.length,
+                            })}
+                          </span>
                         </h2>
                       )}
                       <ul className="space-y-2">
@@ -981,6 +1157,7 @@ export default function PlanningPage() {
                             onCyclePriority={() => onCyclePriority(item)}
                             onMove={(direction) => onMove(item, direction)}
                             onDelete={() => onDelete(item)}
+                            onConvertToTask={() => onConvertIdeaToTask(item)}
                           />
                         ))}
                       </ul>
@@ -1778,9 +1955,9 @@ function QuickAddForm({
             value={assignee}
             onChange={(e) => setAssignee(e.target.value)}
             list={assigneeSuggestions.length > 0 ? assigneeListId : undefined}
-            placeholder={t("planning.assignee_placeholder")}
+            placeholder={t("planning.assignee_quick_placeholder")}
             aria-label={t("planning.assignee_label")}
-            className="w-32 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+            className="w-36 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
             maxLength={80}
           />
           {assigneeSuggestions.length > 0 && (
@@ -1830,6 +2007,7 @@ function PlanningRow({
   onCyclePriority,
   onMove,
   onDelete,
+  onConvertToTask,
 }: {
   item: PlanningItem;
   assigneeSuggestions: string[];
@@ -1844,9 +2022,14 @@ function PlanningRow({
   onCyclePriority: () => void;
   onMove: (direction: "up" | "down") => void;
   onDelete: () => void;
+  /** Ideas only — drop this idea into the Tasks list as a real task. */
+  onConvertToTask: () => void;
 }) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
+  // Bridge prompt is a one-time, dismissible nudge on a "doing" idea. Local
+  // state so it disappears after a convert or an explicit "not now".
+  const [bridgeDismissed, setBridgeDismissed] = useState(false);
   const [editingAssignee, setEditingAssignee] = useState(false);
   const [draftTitle, setDraftTitle] = useState(item.title);
   const [draftBody, setDraftBody] = useState(item.body ?? "");
@@ -1886,9 +2069,11 @@ function PlanningRow({
     setEditingAssignee(false);
   }
 
+  const ideaStatus = item.kind === "idea" ? item.idea_status : null;
+  const ideaCardTint = ideaStatus ? IDEA_STATUS_META[ideaStatus].cardTint : "";
   return (
     <li
-      className={`card flex items-center gap-3 p-3 transition-colors ${
+      className={`card flex items-center gap-3 p-3 transition-colors ${ideaCardTint} ${
         item.done ? "bg-paper-100/50 dark:bg-umber-700/60" : ""
       }`}
     >
@@ -2101,6 +2286,48 @@ function PlanningRow({
                 </p>
               </button>
             )}
+            {item.kind === "idea" && (
+              <>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <IdeaStatusControl
+                    status={item.idea_status}
+                    onSelect={(next) =>
+                      onPatch({ idea_status: item.idea_status === next ? null : next })
+                    }
+                  />
+                  <IdeaTagPicker
+                    tag={item.idea_tag}
+                    onSelect={(next) =>
+                      onPatch({ idea_tag: item.idea_tag === next ? null : next })
+                    }
+                  />
+                </div>
+                {item.idea_status === "doing" && !bridgeDismissed && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-sage-50 px-2.5 py-1.5 dark:bg-sage-400/10">
+                    <span className="text-[11px] text-ink-600 dark:text-umber-200">
+                      {t("planning.idea_to_task_prompt")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onConvertToTask();
+                        setBridgeDismissed(true);
+                      }}
+                      className="rounded-full bg-sage-600 px-2.5 py-0.5 text-[11px] font-medium text-paper-50 transition-colors hover:bg-sage-700"
+                    >
+                      {t("planning.idea_to_task_confirm")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBridgeDismissed(true)}
+                      className="text-[11px] text-ink-500 underline decoration-dotted underline-offset-2 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+                    >
+                      {t("planning.idea_to_task_dismiss")}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </>
         )}
       </div>
@@ -2170,13 +2397,264 @@ function PlanningListSkeleton({ kind }: { kind: PlanningTabKind }) {
   );
 }
 
-function EmptyState({ kind }: { kind: PlanningTabKind }) {
+function EmptyState({
+  kind,
+  onRollDice,
+}: {
+  kind: PlanningTabKind;
+  /** Ideas tab only: surfaces the dice roller right where the couple has run
+   *  dry, so the "out of ideas?" prompt is discoverable from the empty list. */
+  onRollDice?: () => void;
+}) {
   const { t } = useT();
   const Icon = kind === "task" ? CheckCircle2 : Lightbulb;
   return (
     <div className="mt-6 rounded-2xl border border-dashed border-paper-300 bg-paper-50 px-4 py-10 text-center dark:border-umber-700 dark:bg-umber-800">
       <Icon size={28} className="mx-auto text-ink-400 dark:text-umber-300" aria-hidden="true" />
       <p className="mt-3 text-sm text-ink-700 dark:text-paper-100">{t(`planning.empty_${kind}`)}</p>
+      {onRollDice && (
+        <button
+          type="button"
+          onClick={onRollDice}
+          className="btn-primary btn-sm mx-auto mt-4 inline-flex items-center gap-1.5"
+        >
+          <Dices size={14} aria-hidden="true" />
+          {t("planning.dice_empty_cta")}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** "Nektek ajánljuk" — a persistent (non-random) curated idea shelf computed
+ *  from the personalization intake "yes" answers via `recommendedIdeas`. Each
+ *  card carries its category chip and a one-tap add. With no yes-answers yet
+ *  it falls back to a calm nudge toward the Döntések tab rather than nagging. */
+function RecommendedIdeas({
+  yesTags,
+  locale,
+  existingTitles,
+  onAdd,
+  onOpenDecisions,
+}: {
+  yesTags: string[];
+  locale: Locale;
+  existingTitles: Set<string>;
+  onAdd: (idea: Idea) => Promise<boolean>;
+  onOpenDecisions: () => void;
+}) {
+  const { t } = useT();
+  const ideas = useMemo(() => recommendedIdeas(yesTags), [yesTags]);
+  const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
+
+  if (yesTags.length === 0 || ideas.length === 0) {
+    return (
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-paper-300 bg-paper-50 px-3 py-2.5 dark:border-umber-700 dark:bg-umber-800">
+        <Sparkles
+          size={14}
+          className="shrink-0 text-ink-400 dark:text-umber-300"
+          aria-hidden="true"
+        />
+        <span className="text-xs text-ink-600 dark:text-umber-200">
+          {t("planning.recommended_empty_nudge")}
+        </span>
+        <button
+          type="button"
+          onClick={onOpenDecisions}
+          className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-ink-700 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-paper-100"
+        >
+          {t("planning.recommended_empty_cta")}
+          <ArrowRight size={12} aria-hidden="true" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <section className="mt-4">
+      <div className="mb-2 flex items-baseline gap-2">
+        <h2 className="flex items-center gap-1.5 font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+          <Sparkles size={13} aria-hidden="true" />
+          {t("planning.recommended_title")}
+        </h2>
+        <span className="text-[11px] text-ink-400 dark:text-umber-400">
+          {t("planning.recommended_sub")}
+        </span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {ideas.map((idea) => {
+          const key = idea.title.en;
+          const added =
+            addedKeys.has(key) ||
+            existingTitles.has(localizeText(idea.title, locale).trim().toLowerCase());
+          const tagMeta = idea.tag ? IDEA_TAG_META[idea.tag] : null;
+          return (
+            <div
+              key={key}
+              className="flex flex-col gap-2 rounded-xl border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-800"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                  {localizeText(idea.title, locale)}
+                </p>
+                {tagMeta && (
+                  <span
+                    className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${tagMeta.chip}`}
+                  >
+                    {t(tagMeta.labelKey)}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-ink-600 dark:text-umber-200">
+                {localizeText(idea.body, locale)}
+              </p>
+              <button
+                type="button"
+                disabled={added}
+                onClick={async () => {
+                  const ok = await onAdd(idea);
+                  if (ok) setAddedKeys((prev) => new Set(prev).add(key));
+                }}
+                className={
+                  added
+                    ? "btn-ghost btn-sm self-start text-sage-700 dark:text-sage-300"
+                    : "btn-primary btn-sm self-start"
+                }
+              >
+                {added ? (
+                  <>
+                    <CheckCircle2 size={14} className="mr-1.5 inline" aria-hidden="true" />
+                    {t("planning.recommended_added")}
+                  </>
+                ) : (
+                  <>
+                    <Plus size={14} className="mr-1.5 inline" aria-hidden="true" />
+                    {t("planning.add")}
+                  </>
+                )}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/** Light 3-state triage control for an idea (doing / not-sure / skip). Active
+ *  state shows a token-coloured pill + filled dot; the others stay quiet. */
+function IdeaStatusControl({
+  status,
+  onSelect,
+}: {
+  status: IdeaStatus | null;
+  onSelect: (status: IdeaStatus) => void;
+}) {
+  const { t } = useT();
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t("planning.idea_status_aria")}
+      className="inline-flex flex-wrap items-center gap-1"
+    >
+      {IDEA_STATUS_ORDER.map((s) => {
+        const active = status === s;
+        const meta = IDEA_STATUS_META[s];
+        return (
+          <button
+            key={s}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onSelect(s)}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
+              active
+                ? meta.activePill
+                : "text-ink-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-700"
+            }`}
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${active ? meta.dot : "bg-ink-300 dark:bg-umber-500"}`}
+              aria-hidden="true"
+            />
+            {t(meta.labelKey)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Tag chip + picker for an idea's category. Closed state shows the current
+ *  tag chip (or a dashed "+ category" affordance when untagged); opening
+ *  reveals the five `IdeaTag` options. Selecting the active tag clears it. */
+function IdeaTagPicker({
+  tag,
+  onSelect,
+}: {
+  tag: IdeaTag | null;
+  onSelect: (tag: IdeaTag) => void;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const meta = tag ? IDEA_TAG_META[tag] : null;
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onBlur={(e) => {
+        if (ref.current && e.relatedTarget instanceof Node && ref.current.contains(e.relatedTarget))
+          return;
+        setOpen(false);
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title={t("planning.idea_tag_set")}
+        className={
+          meta
+            ? `inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${meta.chip}`
+            : "inline-flex items-center gap-1 rounded-full border border-dashed border-paper-400 px-2 py-0.5 text-[11px] text-ink-500 transition-colors hover:border-ink-300 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-500 dark:hover:text-paper-100"
+        }
+      >
+        <Tag size={11} aria-hidden="true" />
+        {meta ? t(meta.labelKey) : t("planning.idea_tag_none")}
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          className="absolute left-0 top-full z-20 mt-1 w-44 rounded-xl border border-paper-200 bg-paper-50 p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          {IDEA_TAG_ORDER.map((tg) => {
+            const m = IDEA_TAG_META[tg];
+            const active = tag === tg;
+            return (
+              <button
+                key={tg}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => {
+                  onSelect(tg);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors ${
+                  active
+                    ? "bg-paper-100 text-ink-900 dark:bg-umber-700/60 dark:text-paper-50"
+                    : "text-ink-600 hover:bg-paper-100 dark:text-umber-200 dark:hover:bg-umber-700"
+                }`}
+              >
+                <span className={`h-2.5 w-2.5 rounded-full ${m.dot}`} aria-hidden="true" />
+                {t(m.labelKey)}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
