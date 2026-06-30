@@ -306,11 +306,11 @@ function StatRow({
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-paper-200 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-800/50">
+    <section className="flex h-full flex-col rounded-2xl border border-paper-400 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50">
       <h3 className="mb-4 font-grotesk text-sm font-medium tracking-tight text-ink-700 dark:text-paper-100">
         {title}
       </h3>
-      {children}
+      <div className="flex flex-1 flex-col justify-center">{children}</div>
     </section>
   );
 }
@@ -347,10 +347,11 @@ function CardHeader({
   );
 }
 
-/** A two-faced card that flips between `front` and `back` on a 3-D rotateY.
- *  Both faces are stacked in the same grid cell so the card sizes to the taller
- *  face and never jumps mid-flip; `backface-visibility:hidden` keeps the hidden
- *  face from bleeding through. */
+/** A two-faced card whose corner toggle swaps `front` for `back` in place — no
+ *  3-D flip animation, just a content switch (per design: the spin was noise).
+ *  The shell is a full-height flex column so, when the grid stretches both cards
+ *  to equal height, the active face stays vertically centred instead of clumping
+ *  at the top. */
 function FlipCard({
   frontTitle,
   backTitle,
@@ -368,39 +369,15 @@ function FlipCard({
 }) {
   const [flipped, setFlipped] = useState(false);
   return (
-    <div className="[perspective:1400px]">
-      <div
-        className="relative grid transition-transform duration-500 ease-out [transform-style:preserve-3d]"
-        style={flipped ? { transform: "rotateY(180deg)" } : undefined}
-      >
-        {/* Front face. */}
-        <section
-          aria-hidden={flipped}
-          className="rounded-2xl border border-paper-200 bg-paper-50 p-5 [grid-area:1/1] [backface-visibility:hidden] dark:border-umber-700 dark:bg-umber-800/50"
-        >
-          <CardHeader
-            title={frontTitle}
-            flipped={flipped}
-            onFlip={() => setFlipped(true)}
-            flipLabel={toBackLabel}
-          />
-          {front}
-        </section>
-        {/* Back face — pre-rotated so it reads correctly once the card turns. */}
-        <section
-          aria-hidden={!flipped}
-          className="rounded-2xl border border-paper-200 bg-paper-50 p-5 [grid-area:1/1] [backface-visibility:hidden] [transform:rotateY(180deg)] dark:border-umber-700 dark:bg-umber-800/50"
-        >
-          <CardHeader
-            title={backTitle}
-            flipped={flipped}
-            onFlip={() => setFlipped(false)}
-            flipLabel={toFrontLabel}
-          />
-          {back}
-        </section>
-      </div>
-    </div>
+    <section className="flex h-full flex-col rounded-2xl border border-paper-400 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50">
+      <CardHeader
+        title={flipped ? backTitle : frontTitle}
+        flipped={flipped}
+        onFlip={() => setFlipped((v) => !v)}
+        flipLabel={flipped ? toFrontLabel : toBackLabel}
+      />
+      <div className="flex flex-1 flex-col justify-center">{flipped ? back : front}</div>
+    </section>
   );
 }
 
