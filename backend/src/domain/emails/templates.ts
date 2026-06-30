@@ -466,6 +466,16 @@ export interface PlannerClientInvitePayload {
   replyToEmail?: string;
 }
 
+export interface PlannerEmailInvitePayload {
+  /** Planner's display label (business name / full name / fallback), bold in
+   *  the opening line so the invitee knows who is inviting them. */
+  plannerLabel: string;
+  /** Signup link carrying the invitation token (?planner_invite=…). */
+  inviteUrl: string;
+  /** Planner's email. Lands in Reply-To so the invitee can ask questions. */
+  replyToEmail?: string;
+}
+
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
@@ -519,6 +529,7 @@ export type KindPayload = {
   planner_message: PlannerMessagePayload;
   planner_access_approved: PlannerAccessApprovedPayload;
   planner_client_invite: PlannerClientInvitePayload;
+  planner_email_invite: PlannerEmailInvitePayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -2040,6 +2051,33 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Open your Weddly planner dashboard to accept or decline.",
       ],
       cta: "Open invite",
+    },
+  }),
+
+  // A planner invited someone who has no Weddly account yet to become their
+  // client. The CTA carries the invitation token to the signup page. Once they
+  // sign up + set up their wedding, the planner gets a pending access request
+  // the couple still approves. Reply-To is the planner's email.
+  planner_email_invite: (p) => ({
+    subject: "Meghívó a Weddly-re / You're invited to Weddly · Weddly",
+    ctaUrl: p.inviteUrl,
+    replyTo: p.replyToEmail,
+    hu: {
+      preheader: `${p.plannerLabel} meghívott, hogy közösen tervezzétek az esküvőt a Weddly-n.`,
+      greeting: "Szia!",
+      paragraphs: [
+        `**${p.plannerLabel}** meghívott, hogy közösen tervezzétek meg az esküvőtöket a Weddly-n.`,
+        "Hozz létre egy fiókot, és állítsd be az esküvőtök munkaterületét. Ezután jóváhagyhatod, hogy a tervező hozzáférjen és segítsen a szervezésben.",
+      ],
+      cta: "Fiók létrehozása",
+    },
+    en: {
+      greeting: "Hi there,",
+      paragraphs: [
+        `**${p.plannerLabel}** invited you to plan your wedding together on Weddly.`,
+        "Create an account and set up your wedding workspace. You can then approve your planner so they can help organise everything.",
+      ],
+      cta: "Create your account",
     },
   }),
 };

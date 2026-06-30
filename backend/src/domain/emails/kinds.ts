@@ -54,7 +54,8 @@ export type EmailKind =
   | "planner_access_requested" // a planner asked a couple for workspace access, couple decides
   | "planner_message" // free-form planner → couple message (user-entered subject + body)
   | "planner_access_approved" // couple approved the planner's access request, heads-up to the planner
-  | "planner_client_invite"; // couple invited a planner to their workspace, heads-up to the planner
+  | "planner_client_invite" // couple invited a planner to their workspace, heads-up to the planner
+  | "planner_email_invite"; // planner invited a not-yet-registered person by email to become their client
 
 export type EmailCategory = "transactional" | "lifecycle" | "outreach";
 
@@ -197,4 +198,8 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Transactional: a couple invited this planner to their workspace; the
   // planner has a Weddly account and is being asked to accept/decline.
   planner_client_invite: "transactional",
+  // Transactional: a planner invited this person (no Weddly account yet) to
+  // become their client. The recipient explicitly receives a signup link they
+  // are expected to act on, so it is never opt-out suppressed.
+  planner_email_invite: "transactional",
 };

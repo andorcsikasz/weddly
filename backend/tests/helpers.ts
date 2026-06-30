@@ -233,6 +233,16 @@ export function wipeAll(): void {
     // extra groups/categories into later tests' baseline counts.
     "supplier_categories",
     "supplier_groups",
+    // Planner tables. planner_clients/planner_invitations cascade off users,
+    // but wipe explicitly for determinism; planner_waitlist is keyed by email
+    // (no FK) so it MUST be wiped here or accepted entries leak into the next
+    // test's auto-promote check.
+    "planner_invitations",
+    "planner_clients",
+    "planner_messages",
+    "planner_events",
+    "planner_portfolio",
+    "planner_waitlist",
     // users MUST come before couples — users.couple_id REFERENCES couples(id)
     // with no CASCADE, so deleting couples first FK-fails (silently swallowed
     // by the try/catch below) and leaves stale rows that bleed into the next

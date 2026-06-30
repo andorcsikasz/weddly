@@ -4,6 +4,7 @@
 import { PRIVACY_VERSION } from "@shared/legal";
 import type { PlannerWaitlistOutcome } from "@shared/planner_waitlist";
 import { db } from "../db";
+import { grantPlannerAccount } from "../domain/planner";
 import { requireAdmin } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
@@ -145,13 +146,16 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   const early_bird = body.early_bird === true ? 1 : 0;
 
   const now = Math.floor(Date.now() / 1000);
+  // Auto-accept: applying to the waitlist now grants the planner account
+  // immediately, no admin review gate. The admin triage list stays for
+  // visibility, but `status` lands as 'accepted' on submit.
   const row = db
     .prepare(
       `INSERT INTO planner_waitlist
          (full_name, email, phone, company_name, city, years_experience, message, selected_plan, website,
           weddings_per_year, usage, km_radius, wedding_style_1, wedding_style_2, wedding_style_3,
-          other_style, reference_links, early_bird, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          other_style, reference_links, early_bird, status, outcome_at, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'accepted', ?, ?)
        RETURNING *`,
     )
     .get(
@@ -174,7 +178,13 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
       reference_links,
       early_bird,
       now,
+      now,
     ) as PlannerWaitlistRow;
+
+  // If the applicant is already signed in, grant the planner account right
+  // away so they can head straight to onboarding. A logged-out applicant gets
+  // promoted at register time (handleRegister joins the waitlist by email).
+  if (ctx.userId) grantPlannerAccount(ctx.userId, selected_plan);
 
   return json(
     {

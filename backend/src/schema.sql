@@ -1509,6 +1509,26 @@ CREATE TABLE IF NOT EXISTS planner_clients (
   UNIQUE(planner_user_id, couple_id)
 );
 
+-- Planner email invitations — a planner invites a not-yet-onboarded person by
+-- email to become their client. The invitee signs up (or logs in) and builds a
+-- workspace; the onboarding hook then creates a PENDING planner_clients link
+-- (initiated_by='planner') which the new couple must still approve before the
+-- planner gains edit access (consent preserved end to end). `email` is matched
+-- case-insensitively at onboarding. status: pending | accepted | revoked.
+CREATE TABLE IF NOT EXISTS planner_invitations (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  email            TEXT    NOT NULL,
+  token            TEXT    NOT NULL UNIQUE,
+  status           TEXT    NOT NULL DEFAULT 'pending',
+  accepted_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  accepted_at      INTEGER,
+  expires_at       INTEGER,
+  created_at       INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_planner_invitations_email ON planner_invitations(email, status);
+CREATE INDEX IF NOT EXISTS idx_planner_invitations_planner ON planner_invitations(planner_user_id, status);
+
 -- Planner ↔ client couple message thread. Each row is one outbound email
 -- the planner composed + sent. direction='out' in v1 (planner→client);
 -- reserved for future inbound webhook. Reply-To is the planner's own email
@@ -1522,6 +1542,22 @@ CREATE TABLE IF NOT EXISTS planner_messages (
   body_text        TEXT    NOT NULL,
   recipient_email  TEXT    NOT NULL,
   status           TEXT    NOT NULL DEFAULT 'sent',
+  created_at       INTEGER NOT NULL
+);
+
+-- Planner-created calendar events. A planner can drop an event onto their
+-- calendar, either tied to a specific client workspace (couple_id set) or
+-- standalone (couple_id NULL, e.g. a personal scouting trip). Scoped to the
+-- owning planner_user_id; couple_id, when present, must reference a couple the
+-- planner is linked to (enforced at the route layer).
+CREATE TABLE IF NOT EXISTS planner_events (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  couple_id        INTEGER REFERENCES couples(id) ON DELETE CASCADE,
+  title            TEXT    NOT NULL,
+  event_date       TEXT    NOT NULL,                            -- ISO YYYY-MM-DD
+  start_time       TEXT,                                        -- HH:MM, nullable
+  notes            TEXT,
   created_at       INTEGER NOT NULL
 );
 

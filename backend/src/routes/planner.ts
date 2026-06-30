@@ -1,3 +1,4 @@
+import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
@@ -6,7 +7,14 @@ import { keyFromUploadUrl, storage } from "../lib/storage";
 import { getCoupleById, toCouple } from "../domain/couples";
 import { sendKind } from "../domain/emails/send";
 import { isPlannerPlan, plannerPlanMaxClients, waitlistPlanToPlannerPlan } from "../domain/planner";
+import {
+  createPlannerInvitation,
+  getPlannerInvitationByToken,
+  pendingInvitationCount,
+  toPlannerInvitation,
+} from "../domain/planner_invitations";
 import type {
+  PlannerEvent,
   PlannerPlan,
   PlannerPortfolioItem,
   PlannerProfile,
@@ -67,6 +75,40 @@ function listPortfolio(userId: number): PlannerPortfolioItem[] {
     )
     .all(userId) as PlannerPortfolioRow[];
   return rows.map(toPortfolioItem);
+}
+
+interface PlannerEventRow {
+  id: number;
+  couple_id: number | null;
+  title: string;
+  event_date: string;
+  start_time: string | null;
+  notes: string | null;
+  created_at: number;
+}
+
+function toPlannerEvent(r: PlannerEventRow): PlannerEvent {
+  return {
+    id: r.id,
+    couple_id: r.couple_id,
+    title: r.title,
+    event_date: r.event_date,
+    start_time: r.start_time,
+    notes: r.notes,
+    created_at: r.created_at,
+  };
+}
+
+/** YYYY-MM-DD with a real calendar check (rejects 2026-13-40). */
+function isIsoDate(v: unknown): v is string {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+}
+
+/** HH:MM 24-hour clock. */
+function isHhMm(v: unknown): v is string {
+  return typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
 }
 
 function requirePlannerAuth(ctx: Ctx): number {
@@ -180,47 +222,190 @@ async function handleAddClient(ctx: Ctx): Promise<Response> {
 
   // Consent-gated: the planner REQUESTS access (status='pending',
   // initiated_by='planner'); the couple must accept before the planner can
-  // enter the workspace. Previously this inserted 'active' directly, letting
-  // any approved planner read/write any couple's data knowing only their
-  // email — a cross-tenant exposure. handleEnterClient requires 'active', so a
-  // pending request grants nothing until the couple approves.
-  db.prepare(
-    "INSERT INTO planner_clients (planner_user_id, couple_id, status, initiated_by, created_at) VALUES (?, ?, 'pending', 'planner', ?)",
-  ).run(userId, target.couple_id, now());
-
-  addAuditLog({
-    actor_user_id: userId,
-    couple_id: target.couple_id,
-    action: "planner.request_client",
-    target_kind: "couple",
-    target_id: target.couple_id,
-    note: `access requested by planner ${userId}`,
-  });
-
-  // Notify the couple so they can approve (or ignore) the request. The target
-  // user is the workspace contact whose email the planner supplied.
-  const planner = db
-    .prepare("SELECT full_name, business_name, email FROM users WHERE id = ?")
-    .get(userId) as
-    | { full_name: string | null; business_name: string | null; email: string }
-    | undefined;
-  const plannerLabel =
-    planner?.business_name?.trim() || planner?.full_name?.trim() || "Egy tervező";
+  // enter the workspace. handleEnterClient requires 'active', so a pending
+  // request grants nothing until the couple approves.
   const targetUser = db.prepare("SELECT email, full_name FROM users WHERE id = ?").get(target.id) as
     | { email: string; full_name: string | null }
     | undefined;
-  if (targetUser?.email) {
+  await requestCoupleAccess(userId, target.couple_id, {
+    id: target.id,
+    email: targetUser?.email ?? "",
+    full_name: targetUser?.full_name ?? null,
+  });
+
+  return json({ ok: true, status: "pending", couple_id: target.couple_id });
+}
+
+/** Planner's outward label (business name → full name → fallback) plus their
+ *  email for Reply-To headers. */
+function plannerLabelAndEmail(plannerUserId: number): { label: string; email: string | undefined } {
+  const planner = db
+    .prepare("SELECT full_name, business_name, email FROM users WHERE id = ?")
+    .get(plannerUserId) as
+    | { full_name: string | null; business_name: string | null; email: string }
+    | undefined;
+  const label = planner?.business_name?.trim() || planner?.full_name?.trim() || "Egy tervező";
+  return { label, email: planner?.email };
+}
+
+/** Create a pending, planner-initiated access request against a couple that
+ *  already has a workspace, and email the couple to approve it. Shared by the
+ *  add-existing-couple path and the email-invitation path when the invitee
+ *  turns out to be already onboarded. The caller has enforced the client cap.
+ *  Throws 409 if a link already exists. */
+async function requestCoupleAccess(
+  plannerUserId: number,
+  coupleId: number,
+  targetUser: { id: number; email: string; full_name: string | null },
+): Promise<void> {
+  const existing = db
+    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+    .get(plannerUserId, coupleId);
+  if (existing) throw new HttpError(409, "This couple is already linked to your account");
+
+  db.prepare(
+    "INSERT INTO planner_clients (planner_user_id, couple_id, status, initiated_by, created_at) VALUES (?, ?, 'pending', 'planner', ?)",
+  ).run(plannerUserId, coupleId, now());
+
+  addAuditLog({
+    actor_user_id: plannerUserId,
+    couple_id: coupleId,
+    action: "planner.request_client",
+    target_kind: "couple",
+    target_id: coupleId,
+    note: `access requested by planner ${plannerUserId}`,
+  });
+
+  const { label, email: replyToEmail } = plannerLabelAndEmail(plannerUserId);
+  if (targetUser.email) {
     await sendKind(
       "planner_access_requested",
-      { plannerLabel, replyToEmail: planner?.email },
+      { plannerLabel: label, replyToEmail },
       {
-        user: { id: target.id, email: targetUser.email, full_name: targetUser.full_name ?? "" },
-        couple_id: target.couple_id,
+        user: { id: targetUser.id, email: targetUser.email, full_name: targetUser.full_name ?? "" },
+        couple_id: coupleId,
       },
     );
   }
+}
 
-  return json({ ok: true, status: "pending", couple_id: target.couple_id });
+// ─── Planner email invitations (invite a stranger by email) ──────────────────
+
+/** Count the planner's outstanding clients against their plan cap: active +
+ *  pending links plus still-open email invitations. */
+function plannerSeatsUsed(plannerUserId: number): number {
+  const links = (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS cnt FROM planner_clients WHERE planner_user_id = ? AND status IN ('active', 'pending')",
+      )
+      .get(plannerUserId) as { cnt: number }
+  ).cnt;
+  return links + pendingInvitationCount(plannerUserId);
+}
+
+function plannerMaxClients(plannerUserId: number): number {
+  const row = db.prepare("SELECT planner_max_clients FROM users WHERE id = ?").get(plannerUserId) as
+    | { planner_max_clients: number | null }
+    | undefined;
+  return row?.planner_max_clients ?? 4;
+}
+
+async function handleListInvitations(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const rows = db
+    .prepare(
+      "SELECT * FROM planner_invitations WHERE planner_user_id = ? AND status != 'revoked' ORDER BY created_at DESC",
+    )
+    .all(userId) as Parameters<typeof toPlannerInvitation>[0][];
+  return json({ invitations: rows.map(toPlannerInvitation) });
+}
+
+/** Invite anyone by email to become a client. If the email already belongs to a
+ *  user with a workspace, this falls through to the consent-request flow (same
+ *  as Add client). Otherwise it sends a signup invitation; when the invitee
+ *  later onboards, a pending access request is created for the couple to
+ *  approve. Either way the couple approves before the planner gains access. */
+async function handleCreateInvitation(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const body = await readJson<{ email?: unknown }>(ctx.req);
+  if (typeof body.email !== "string" || !body.email.includes("@") || !body.email.trim()) {
+    throw new HttpError(400, "valid email required");
+  }
+  const email = body.email.trim().toLowerCase();
+
+  if (plannerSeatsUsed(userId) >= plannerMaxClients(userId)) {
+    throw new HttpError(422, "Client limit reached for your plan");
+  }
+
+  // Already a Weddly user with a workspace → standard consent request.
+  const target = db.prepare("SELECT id, couple_id FROM users WHERE LOWER(email) = ?").get(email) as
+    | { id: number; couple_id: number | null }
+    | undefined;
+  if (target?.couple_id) {
+    const couple = getCoupleById(target.couple_id);
+    if (!couple || couple.status === "deleting") throw new HttpError(400, "Workspace unavailable");
+    const targetUser = db.prepare("SELECT email, full_name FROM users WHERE id = ?").get(target.id) as
+      | { email: string; full_name: string | null }
+      | undefined;
+    await requestCoupleAccess(userId, target.couple_id, {
+      id: target.id,
+      email: targetUser?.email ?? "",
+      full_name: targetUser?.full_name ?? null,
+    });
+    return json({ kind: "request", couple_id: target.couple_id });
+  }
+
+  // Otherwise: send an email invitation. Dedupe outstanding invites per email.
+  const dup = db
+    .prepare(
+      "SELECT id FROM planner_invitations WHERE planner_user_id = ? AND LOWER(email) = ? AND status = 'pending'",
+    )
+    .get(userId, email);
+  if (dup) throw new HttpError(409, "You've already invited this email");
+
+  const invite = createPlannerInvitation(userId, email);
+  const { label, email: replyToEmail } = plannerLabelAndEmail(userId);
+  const inviteUrl = `${CONFIG.frontendBaseUrl}/register?planner_invite=${invite.token}`;
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: null,
+    action: "planner.email_invite",
+    target_kind: "user",
+    target_id: userId,
+    note: `invited ${email}`,
+  });
+
+  await sendKind(
+    "planner_email_invite",
+    { plannerLabel: label, inviteUrl, replyToEmail },
+    { user: null, guest: { email, full_name: "" } },
+  );
+
+  return json({ kind: "invite", invitation: toPlannerInvitation(invite) });
+}
+
+async function handleRevokeInvitation(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const id = Number(ctx.params?.id);
+  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "id required");
+  db.prepare(
+    "UPDATE planner_invitations SET status = 'revoked' WHERE id = ? AND planner_user_id = ? AND status = 'pending'",
+  ).run(id, userId);
+  return json({ ok: true });
+}
+
+/** Public: surface who invited you on the signup page. */
+async function handleLookupInvitation(ctx: Ctx): Promise<Response> {
+  const token = String(ctx.params?.token ?? "");
+  const invite = getPlannerInvitationByToken(token);
+  if (!invite || invite.status !== "pending") throw new HttpError(404, "Invitation not found");
+  if (invite.expires_at != null && invite.expires_at < now()) {
+    throw new HttpError(410, "Invitation expired");
+  }
+  const { label } = plannerLabelAndEmail(invite.planner_user_id);
+  return json({ planner_label: label, email: invite.email });
 }
 
 async function handleEnterClient(ctx: Ctx): Promise<Response> {
@@ -1192,6 +1377,14 @@ async function handleGetStats(ctx: Ctx): Promise<Response> {
     )
     .get(userId) as { active_clients: number | null; pending_invites: number | null };
 
+  // KPI semantic (shared by the aggregate task counts below AND the per_client
+  // breakdown): both span EVERY linked client, active and pending alike,
+  // exactly the set the client-list cards (handleListClients) display. Declined
+  // links are deleted, not flagged, so "all rows for this planner" == "all
+  // clients the planner sees". This keeps the dashboard reconcilable: the
+  // aggregate total_tasks equals the sum of per_client.task_total. A pending
+  // link grants no workspace ENTRY (handleEnterClient gates on 'active'); these
+  // are read-only roll-up counts the planner already sees on the client card.
   const taskCounts = db
     .prepare(
       `SELECT
@@ -1233,7 +1426,7 @@ async function handleGetStats(ctx: Ctx): Promise<Response> {
          FROM planner_clients pc
          JOIN couples c ON c.id = pc.couple_id
          LEFT JOIN planning_items pi ON pi.couple_id = pc.couple_id AND pi.kind = 'task'
-        WHERE pc.planner_user_id = ? AND pc.status = 'active'
+        WHERE pc.planner_user_id = ?
         GROUP BY pc.couple_id
         ORDER BY c.wedding_date ASC`,
     )
@@ -1297,6 +1490,218 @@ async function handleCompleteOnboarding(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+// ─── Planner calendar events ─────────────────────────────────────────────────
+
+/** Assert a couple_id (when present) is linked to this planner; events may
+ *  only reference workspaces the planner is connected to (active or pending). */
+function assertCoupleLinked(plannerUserId: number, coupleId: number): void {
+  const link = db
+    .prepare("SELECT id FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+    .get(plannerUserId, coupleId);
+  if (!link) throw new HttpError(400, "couple_id is not one of your linked clients");
+}
+
+async function handleListEvents(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const url = new URL(ctx.req.url);
+  const from = url.searchParams.get("from");
+  const to = url.searchParams.get("to");
+  if (from !== null && !isIsoDate(from)) throw new HttpError(400, "from must be YYYY-MM-DD");
+  if (to !== null && !isIsoDate(to)) throw new HttpError(400, "to must be YYYY-MM-DD");
+
+  const clauses = ["planner_user_id = ?"];
+  const params: (string | number)[] = [userId];
+  if (from !== null) {
+    clauses.push("event_date >= ?");
+    params.push(from);
+  }
+  if (to !== null) {
+    clauses.push("event_date <= ?");
+    params.push(to);
+  }
+
+  const rows = db
+    .prepare(
+      `SELECT id, couple_id, title, event_date, start_time, notes, created_at
+         FROM planner_events
+        WHERE ${clauses.join(" AND ")}
+        ORDER BY event_date ASC, start_time ASC, id ASC`,
+    )
+    .all(...params) as PlannerEventRow[];
+
+  return json({ events: rows.map(toPlannerEvent) });
+}
+
+async function handleCreateEvent(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const body = await readJson<{
+    title?: unknown;
+    event_date?: unknown;
+    start_time?: unknown;
+    couple_id?: unknown;
+    notes?: unknown;
+  }>(ctx.req);
+
+  if (typeof body.title !== "string" || !body.title.trim()) {
+    throw new HttpError(400, "title required");
+  }
+  if (!isIsoDate(body.event_date)) throw new HttpError(400, "event_date must be YYYY-MM-DD");
+  const title = body.title.trim().slice(0, 200);
+
+  let startTime: string | null = null;
+  if (body.start_time !== undefined && body.start_time !== null && body.start_time !== "") {
+    if (!isHhMm(body.start_time)) throw new HttpError(400, "start_time must be HH:MM");
+    startTime = body.start_time;
+  }
+
+  let coupleId: number | null = null;
+  if (body.couple_id !== undefined && body.couple_id !== null) {
+    if (typeof body.couple_id !== "number" || !Number.isInteger(body.couple_id)) {
+      throw new HttpError(400, "couple_id must be an integer");
+    }
+    assertCoupleLinked(userId, body.couple_id);
+    coupleId = body.couple_id;
+  }
+
+  const notes = typeof body.notes === "string" ? body.notes.trim() || null : null;
+
+  const ts = now();
+  const row = db
+    .prepare(
+      `INSERT INTO planner_events (planner_user_id, couple_id, title, event_date, start_time, notes, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       RETURNING id, couple_id, title, event_date, start_time, notes, created_at`,
+    )
+    .get(userId, coupleId, title, body.event_date, startTime, notes, ts) as PlannerEventRow;
+
+  return json(toPlannerEvent(row));
+}
+
+async function handleUpdateEvent(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const id = Number(ctx.params?.id);
+  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "id required");
+
+  const existing = db
+    .prepare("SELECT id FROM planner_events WHERE id = ? AND planner_user_id = ?")
+    .get(id, userId);
+  if (!existing) throw new HttpError(404, "Event not found");
+
+  const body = await readJson<{
+    title?: unknown;
+    event_date?: unknown;
+    start_time?: unknown;
+    couple_id?: unknown;
+    notes?: unknown;
+  }>(ctx.req);
+
+  const fields: string[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const vals: any[] = [];
+
+  if (body.title !== undefined) {
+    if (typeof body.title !== "string" || !body.title.trim()) {
+      throw new HttpError(400, "title cannot be empty");
+    }
+    fields.push("title = ?");
+    vals.push(body.title.trim().slice(0, 200));
+  }
+  if (body.event_date !== undefined) {
+    if (!isIsoDate(body.event_date)) throw new HttpError(400, "event_date must be YYYY-MM-DD");
+    fields.push("event_date = ?");
+    vals.push(body.event_date);
+  }
+  if (body.start_time !== undefined) {
+    if (body.start_time === null || body.start_time === "") {
+      fields.push("start_time = ?");
+      vals.push(null);
+    } else {
+      if (!isHhMm(body.start_time)) throw new HttpError(400, "start_time must be HH:MM");
+      fields.push("start_time = ?");
+      vals.push(body.start_time);
+    }
+  }
+  if (body.couple_id !== undefined) {
+    if (body.couple_id === null) {
+      fields.push("couple_id = ?");
+      vals.push(null);
+    } else {
+      if (typeof body.couple_id !== "number" || !Number.isInteger(body.couple_id)) {
+        throw new HttpError(400, "couple_id must be an integer");
+      }
+      assertCoupleLinked(userId, body.couple_id);
+      fields.push("couple_id = ?");
+      vals.push(body.couple_id);
+    }
+  }
+  if ("notes" in body) {
+    fields.push("notes = ?");
+    vals.push(typeof body.notes === "string" ? body.notes.trim() || null : null);
+  }
+
+  if (fields.length > 0) {
+    db.prepare(
+      `UPDATE planner_events SET ${fields.join(", ")} WHERE id = ? AND planner_user_id = ?`,
+    ).run(...vals, id, userId);
+  }
+
+  const row = db
+    .prepare(
+      "SELECT id, couple_id, title, event_date, start_time, notes, created_at FROM planner_events WHERE id = ?",
+    )
+    .get(id) as PlannerEventRow;
+  return json(toPlannerEvent(row));
+}
+
+async function handleDeleteEvent(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const id = Number(ctx.params?.id);
+  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "id required");
+
+  const res = db
+    .prepare("DELETE FROM planner_events WHERE id = ? AND planner_user_id = ?")
+    .run(id, userId);
+  if (res.changes === 0) throw new HttpError(404, "Event not found");
+  return json({ ok: true });
+}
+
+// ─── Notify me when paid plans launch ────────────────────────────────────────
+
+async function handleNotifyPlans(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  // Idempotent opt-in: flips the flag on (a repeat call is a harmless no-op).
+  db.prepare("UPDATE users SET planner_plan_notify = 1, updated_at = ? WHERE id = ?").run(
+    now(),
+    userId,
+  );
+  return json({ ok: true });
+}
+
+// ─── Planner-side hard client unlink ─────────────────────────────────────────
+
+/** Hard-remove the planner↔couple link for THIS planner only. Deletes nothing
+ *  but the link row; the couple and all their workspace data are untouched. */
+async function handleRemoveClient(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  const res = db
+    .prepare("DELETE FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+    .run(userId, coupleId);
+  if (res.changes === 0) throw new HttpError(404, "Not linked to this workspace");
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "planner.remove_client",
+    target_kind: "couple",
+    target_id: coupleId,
+  });
+
+  return json({ ok: true });
+}
+
 export function registerPlannerRoutes(router: Router) {
   // Planner-side: client management
   router.get("/api/planner/clients", handleListClients, true);
@@ -1305,11 +1710,18 @@ export function registerPlannerRoutes(router: Router) {
   router.get("/api/planner/clients/:coupleId/crm", handleGetClientCrm, true);
   router.patch("/api/planner/clients/:coupleId/crm", handleUpdateClientCrm, true);
   router.post("/api/planner/clients/:coupleId/enter", handleEnterClient, true);
+  router.delete("/api/planner/clients/:coupleId", handleRemoveClient, true);
   router.post("/api/planner/exit", handleExit, true);
   router.get("/api/planner/tasks", handleListTasks, true);
+  // Planner-side: calendar events
+  router.get("/api/planner/events", handleListEvents, true);
+  router.post("/api/planner/events", handleCreateEvent, true);
+  router.patch("/api/planner/events/:id", handleUpdateEvent, true);
+  router.delete("/api/planner/events/:id", handleDeleteEvent, true);
   // Planner-side: stats + onboarding
   router.get("/api/planner/stats", handleGetStats, true);
   router.post("/api/planner/complete-onboarding", handleCompleteOnboarding, true);
+  router.post("/api/planner/notify-plans", handleNotifyPlans, true);
   // Planner-side: messages
   router.get("/api/planner/messages", handleListInbox, true);
   router.get("/api/planner/messages/:coupleId", handleListThread, true);
@@ -1325,6 +1737,13 @@ export function registerPlannerRoutes(router: Router) {
   router.get("/api/planner/invites", handleListInvites, true);
   router.post("/api/planner/invites/:coupleId/accept", handleAcceptInvite, true);
   router.post("/api/planner/invites/:coupleId/decline", handleDeclineInvite, true);
+
+  // Email invitations: a planner invites anyone by email to become a client.
+  router.get("/api/planner/invitations", handleListInvitations, true);
+  router.post("/api/planner/invitations", handleCreateInvitation, true);
+  router.delete("/api/planner/invitations/:id", handleRevokeInvitation, true);
+  // Public: signup page resolves the inviting planner from the token.
+  router.get("/api/planner-invites/:token", handleLookupInvitation);
   // Couple-side: planner panel (M7)
   router.get("/api/couples/planners", handleListLinkedPlanners, true);
   router.post("/api/couples/planner-invite", handleInvitePlanner, true);

@@ -71,7 +71,10 @@ import type {
   PlannerPortfolioItem,
   LinkedPlannerView,
   PlannerInviteView,
+  PlannerInvitation,
+  PlannerInvitePublic,
   PlannerStats,
+  PlannerEvent,
 } from "@shared/types";
 import type {
   AdminFinancialPlannerOverview,
@@ -327,6 +330,10 @@ export const authApi = {
     utm_campaign?: string;
     utm_content?: string;
     utm_term?: string;
+    /** Planner email-invitation token from `?planner_invite=…` on the signup
+     *  link. Re-binds the pending invitation to this account so the onboarding
+     *  hook links the couple to the inviting planner (pending their approval). */
+    planner_invite?: string;
   }) => apiFetch<AuthSession>("POST", "/api/auth/register", body),
   /** Sign in OR register with a Google Identity Services credential JWT.
    *  Both version stamps are required so the GDPR consent ledger lands when
@@ -2217,6 +2224,16 @@ export const adminSupplierApi = {
       { notes },
     ),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/suppliers/${id}`),
+  /** Re-pull the card hero from a listing's own website (og:image), bypassing
+   *  the size quality gate (manual override). Accepts any listing id — a curated
+   *  slug, `c<id>`, or `v<id>`. Returns whether an image was stored + the new
+   *  hero URL (null when the site had nothing usable). */
+  refetchHero: (listingId: string) =>
+    apiFetch<{ ok: boolean; hero_image_url: string | null }>(
+      "POST",
+      `/api/admin/suppliers/${encodeURIComponent(listingId)}/refetch-hero`,
+      {},
+    ),
   /** Full directory (curated + community) with per-supplier visit analytics.
    *  Filters narrow the row set; analytics counters always span total/30d/7d. */
   listDirectory: (filters: AdminDirectoryFilters) =>
@@ -2485,6 +2502,10 @@ export const plannerApi = {
   exit: () => apiFetch<{ ok: boolean }>("POST", "/api/planner/exit", {}),
   updateNotes: (coupleId: number, notes: string) =>
     apiFetch<{ ok: boolean }>("PATCH", `/api/planner/clients/${coupleId}/notes`, { notes }),
+  /** Hard-unlink a client: removes the planner↔couple link only, never the
+   *  couple or their workspace data. */
+  removeClient: (coupleId: number) =>
+    apiFetch<{ ok: boolean }>("DELETE", `/api/planner/clients/${coupleId}`),
   listTasks: () => apiFetch<{ tasks: PlannerTaskRow[] }>("GET", "/api/planner/tasks"),
   listInbox: () => apiFetch<{ threads: PlannerThreadPreview[] }>("GET", "/api/planner/messages"),
   listThread: (coupleId: number) =>
@@ -2531,9 +2552,49 @@ export const plannerApi = {
     apiFetch<{ ok: boolean }>("POST", `/api/planner/invites/${coupleId}/accept`, {}),
   declineInvite: (coupleId: number) =>
     apiFetch<{ ok: boolean }>("POST", `/api/planner/invites/${coupleId}/decline`, {}),
+  /** Email invitations the planner has sent to not-yet-onboarded clients. */
+  listInvitations: () =>
+    apiFetch<{ invitations: PlannerInvitation[] }>("GET", "/api/planner/invitations"),
+  /** Invite anyone by email. Returns kind:'request' when the email already had
+   *  a workspace (a consent request was sent), or kind:'invite' for a fresh
+   *  signup invitation. */
+  createInvitation: (email: string) =>
+    apiFetch<
+      | { kind: "request"; couple_id: number }
+      | { kind: "invite"; invitation: PlannerInvitation }
+    >("POST", "/api/planner/invitations", { email }),
+  revokeInvitation: (id: number) =>
+    apiFetch<{ ok: boolean }>("DELETE", `/api/planner/invitations/${id}`),
   stats: () => apiFetch<{ stats: PlannerStats }>("GET", "/api/planner/stats"),
   completeOnboarding: () =>
     apiFetch<{ ok: boolean }>("POST", "/api/planner/complete-onboarding", {}),
+  /** Opt in to be notified when paid planner plans launch. Idempotent. */
+  notifyPlans: () => apiFetch<{ ok: boolean }>("POST", "/api/planner/notify-plans", {}),
+  // Calendar events
+  listEvents: (from: string, to: string) =>
+    apiFetch<{ events: PlannerEvent[] }>(
+      "GET",
+      `/api/planner/events?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    ),
+  createEvent: (body: {
+    title: string;
+    event_date: string;
+    start_time?: string | null;
+    couple_id?: number | null;
+    notes?: string | null;
+  }) => apiFetch<PlannerEvent>("POST", "/api/planner/events", body),
+  updateEvent: (
+    id: number,
+    body: Partial<{
+      title: string;
+      event_date: string;
+      start_time: string | null;
+      couple_id: number | null;
+      notes: string | null;
+    }>,
+  ) => apiFetch<PlannerEvent>("PATCH", `/api/planner/events/${id}`, body),
+  deleteEvent: (id: number) =>
+    apiFetch<{ ok: boolean }>("DELETE", `/api/planner/events/${id}`),
   getClientCrm: (coupleId: number) =>
     apiFetch<PlannerClientCrm>("GET", `/api/planner/clients/${coupleId}/crm`),
   updateClientCrm: (coupleId: number, data: Partial<PlannerClientCrm>) =>
@@ -2550,4 +2611,11 @@ export const couplePlannerApi = {
     apiFetch<{ ok: boolean }>("POST", `/api/couples/planners/${plannerUserId}/accept`, {}),
   revokePlanner: (plannerUserId: number) =>
     apiFetch<{ ok: boolean }>("DELETE", `/api/couples/planners/${plannerUserId}`),
+};
+
+/** Public: resolve who invited you from a planner email-invitation token, so
+ *  the signup page can show "<Planner> invited you" before you register. */
+export const plannerInviteApi = {
+  lookup: (token: string) =>
+    apiFetch<PlannerInvitePublic>("GET", `/api/planner-invites/${encodeURIComponent(token)}`),
 };

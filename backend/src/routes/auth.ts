@@ -10,6 +10,8 @@ import { addAuditLog } from "../lib/audit";
 import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails";
 import { recordGrowthEvent } from "../domain/growth_events";
+import { grantPlannerAccount } from "../domain/planner";
+import { rebindInvitationEmail } from "../domain/planner_invitations";
 import { buildSignupAcquisition } from "../domain/signup_meta";
 import { deviceFingerprint, recordKnownDevice } from "../domain/known_devices";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
@@ -51,6 +53,10 @@ interface RegisterBody {
   utm_campaign?: unknown;
   utm_content?: unknown;
   utm_term?: unknown;
+  /** Planner email-invitation token from `?planner_invite=…` on the signup
+   *  link. Re-binds the pending invitation to whatever email they register
+   *  with so the onboarding hook still links them to the inviting planner. */
+  planner_invite?: unknown;
 }
 
 interface LoginBody {
@@ -134,12 +140,21 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     );
   const userId = Number(result.lastInsertRowid);
 
-  // Auto-promote to planner if email is on the waitlist.
+  // Auto-promote to planner if email is on the waitlist. The waitlist is
+  // auto-accept now, so any entry grants the account; we seed the plan/cap
+  // from the plan they picked when applying.
   const inWaitlist = db
-    .prepare("SELECT id FROM planner_waitlist WHERE LOWER(email) = ?")
-    .get(email.toLowerCase());
+    .prepare("SELECT selected_plan FROM planner_waitlist WHERE LOWER(email) = ?")
+    .get(email.toLowerCase()) as { selected_plan: string | null } | undefined;
   if (inWaitlist) {
-    db.prepare("UPDATE users SET user_type = 'planner' WHERE id = ?").run(userId);
+    grantPlannerAccount(userId, inWaitlist.selected_plan);
+  }
+
+  // Re-bind a planner email-invitation to the address they actually registered
+  // with, so the onboarding link-up matches even if the invitee signed up under
+  // a different email than the one the planner invited.
+  if (typeof body.planner_invite === "string" && body.planner_invite.trim()) {
+    rebindInvitationEmail(body.planner_invite.trim(), email);
   }
 
   const ip = ctx.clientIp;

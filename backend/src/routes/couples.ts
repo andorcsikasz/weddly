@@ -89,6 +89,7 @@ import { lookupCoupleByRefCode, maybeGrantCoupleReferral } from "../domain/refer
 import { recordExport } from "../domain/exports";
 import { recordGrowthEvent } from "../domain/growth_events";
 import { generateInviteToken } from "../domain/invite_codes";
+import { linkPlannerInvitationsForCouple } from "../domain/planner_invitations";
 import { ensurePartnerGuests, listGuestsByCouple, renamePartnerGuest } from "../domain/guests";
 import { renderSeatingChartPdf } from "../domain/pdf";
 import { purgeOneCouple } from "../domain/purge";
@@ -713,6 +714,11 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
     // remains "the active workspace"; couple_members tracks the full set so
     // the user can spin up a second event later (Alpha → Bravo / Charlie).
     addCoupleMember(newCoupleId, userId, "owner");
+
+    // If this user arrived via a planner's email invitation, create the pending
+    // planner access request now that they have a workspace. They still approve
+    // it (in the Planners panel) before the planner gains edit access.
+    linkPlannerInvitationsForCouple(userId, newCoupleId, onboardingUser?.email ?? "");
 
     // Range budgets seed lines off the midpoint; TBD seeds nothing.
     const seedHuf = representativeBudgetHuf(budgetGoal);

@@ -1728,6 +1728,40 @@ export const PLANNER_PLAN_LIMITS: Record<PlannerPlan, number> = {
   premium: 10,
 };
 
+/** An email invitation a planner sent to a not-yet-onboarded client. Once the
+ *  invitee signs up + onboards, a pending planner_clients link is created
+ *  (which the couple must still approve). status: pending until they onboard,
+ *  accepted once linked, revoked if the planner cancelled it. */
+export interface PlannerInvitation {
+  id: number;
+  email: string;
+  status: "pending" | "accepted" | "revoked";
+  accepted_at: UnixMs | null;
+  expires_at: UnixMs | null;
+  created_at: UnixMs;
+}
+
+/** Public lookup of a planner invitation by token — surfaced on the signup
+ *  page so the invitee sees who invited them before creating an account. */
+export interface PlannerInvitePublic {
+  planner_label: string;
+  email: string;
+}
+
+/** A planner-created calendar event. `couple_id` ties it to a specific client
+ *  workspace when set, or is null for a standalone (personal) event. */
+export interface PlannerEvent {
+  id: number;
+  couple_id: number | null;
+  title: string;
+  /** ISO YYYY-MM-DD. */
+  event_date: string;
+  /** HH:MM, or null for an all-day event. */
+  start_time: string | null;
+  notes: string | null;
+  created_at: UnixMs;
+}
+
 export interface PlannerStatsPerClient {
   couple_id: number;
   display_name: string;
