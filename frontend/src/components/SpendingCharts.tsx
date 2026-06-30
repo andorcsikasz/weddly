@@ -306,7 +306,7 @@ function StatRow({
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-paper-400 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50">
+    <section className="flex h-full flex-col rounded-2xl border border-umber-800 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50">
       <h3 className="mb-4 font-grotesk text-sm font-medium tracking-tight text-ink-700 dark:text-paper-100">
         {title}
       </h3>
@@ -369,7 +369,7 @@ function FlipCard({
 }) {
   const [flipped, setFlipped] = useState(false);
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-paper-400 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50">
+    <section className="flex h-full flex-col rounded-2xl border border-umber-800 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50">
       <CardHeader
         title={flipped ? backTitle : frontTitle}
         flipped={flipped}
