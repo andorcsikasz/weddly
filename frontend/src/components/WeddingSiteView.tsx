@@ -38,6 +38,7 @@ import { pickKeyMoments } from "@shared/schedule";
 import { formatDate, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { GuestWishlistCard } from "./GuestWishlistCard";
+import { OrnamentDivider, headingTreatmentCss } from "./ornaments";
 import { WeddingCountdown } from "./WeddingCountdown";
 import { Wordmark } from "./Wordmark";
 import type {
@@ -210,12 +211,23 @@ function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boole
 /** Section heading in the couple's heading font, inheriting the band colour.
  *  `color: inherit` is set inline so it beats the global base `h2 { color:
  *  ink.900 }` unconditionally — without it the heading on a dark band (e.g.
- *  the "A nap menete" schedule) rendered dark-on-dark and vanished. */
-function Heading({ children, className = "" }: { children: ReactNode; className?: string }) {
+ *  the "A nap menete" schedule) rendered dark-on-dark and vanished. The
+ *  `treatment` is the active pack's heading style (italic / uppercase /
+ *  small-caps); it spreads last so the pack personality wins, and is `{}` for
+ *  packs with no treatment. */
+function Heading({
+  children,
+  className = "",
+  treatment,
+}: {
+  children: ReactNode;
+  className?: string;
+  treatment?: CSSProperties;
+}) {
   return (
     <h2
       className={`text-3xl tracking-tight sm:text-4xl ${className}`}
-      style={{ fontFamily: "var(--wt-heading-font)", color: "inherit" }}
+      style={{ fontFamily: "var(--wt-heading-font)", color: "inherit", ...treatment }}
     >
       {children}
     </h2>
@@ -464,6 +476,21 @@ export function WeddingSiteView({
     />
   );
 
+  // The active style pack's typographic personality, driven by one helper so
+  // Garden reads italic, Monochrome uppercase, Midnight small-caps with no
+  // per-pack branching here. `{}` (no treatment) when `heading_style` is null.
+  const headingTreatment = headingTreatmentCss(view.design.heading_style);
+
+  // The pack's ornament language, drawn as a SUBTLE section divider at a couple
+  // of seams. Colour comes from the in-scope `--wt-accent` (contrast-aware, so
+  // the Midnight gold reads on the dark page too); "none" degrades to a minimal
+  // rule, keeping the motif a whisper on every pack. Reused at each seam below.
+  const ornamentSeam = (
+    <div aria-hidden className="flex w-full justify-center px-6 py-7 sm:px-8 sm:py-9">
+      <OrnamentDivider slug={view.design.ornament} style={{ color: "var(--wt-accent)" }} />
+    </div>
+  );
+
   return (
     <div className="wedding-theme w-full" style={themeStyle}>
       {/* ── Hero ────────────────────────────────────────────────────────────
@@ -477,7 +504,7 @@ export function WeddingSiteView({
             // the page root) instead of the global base `h1 { color: ink.900 }`
             // — without it a dark-background style (Black Tie) renders the
             // names dark-on-dark and invisible.
-            style={{ fontFamily: "var(--wt-heading-font)", color: "inherit" }}
+            style={{ fontFamily: "var(--wt-heading-font)", color: "inherit", ...headingTreatment }}
           >
             {view.couple_display_name}
           </h1>
@@ -568,6 +595,10 @@ export function WeddingSiteView({
         ) : null}
       </section>
 
+      {/* Pack ornament under the hero date — the first beat of the pack's
+          visual language before the welcome note. */}
+      {ornamentSeam}
+
       {/* ── Welcome / intro — same at every tier. ───────────────────────── */}
       {/* When inline editing is available (editor preview) an EMPTY intro stays
           in this branch as a click-to-edit placeholder — no scroll-to-form
@@ -630,7 +661,9 @@ export function WeddingSiteView({
       {!isPreview && showInvitedExtras && household && (
         <Band className="text-center">
           <Eyebrow>{t("wedding_site.invited_eyebrow")}</Eyebrow>
-          <Heading className="mt-2">{household.household_label}</Heading>
+          <Heading className="mt-2" treatment={headingTreatment}>
+            {household.household_label}
+          </Heading>
           {household.members.length > 0 && (
             <ul className="mx-auto mt-6 max-w-md space-y-1 text-sm" style={{ opacity: 0.85 }}>
               {household.members.map((m) => (
@@ -651,7 +684,9 @@ export function WeddingSiteView({
         <Band tone="dark" onEdit={isPreview ? e.onEditSchedule : undefined} hint={editHint}>
           <div className="text-center">
             <Eyebrow dark>{t("wedding_site.schedule_eyebrow")}</Eyebrow>
-            <Heading className="mt-2">{t("wedding_site.schedule_title")}</Heading>
+            <Heading className="mt-2" treatment={headingTreatment}>
+              {t("wedding_site.schedule_title")}
+            </Heading>
             {/* Only the day's headline beats (arrival / ceremony / dinner /
              *  first dance by default, or whatever the couple flagged), kept on
              *  a single row. `overflow-x-auto` lets the row scroll on a narrow
@@ -688,7 +723,9 @@ export function WeddingSiteView({
         <Band tone="dark" onEdit={e.onEditSchedule} hint={editHint}>
           <div className="text-center">
             <Eyebrow dark>{t("wedding_site.schedule_eyebrow")}</Eyebrow>
-            <Heading className="mt-2">{t("wedding_site.schedule_title")}</Heading>
+            <Heading className="mt-2" treatment={headingTreatment}>
+              {t("wedding_site.schedule_title")}
+            </Heading>
             <p className="mt-4 inline-flex items-center gap-1.5 text-sm" style={{ opacity: 0.7 }}>
               <Plus size={14} aria-hidden />
               {t("wedding_site.ghost.schedule_cta")}
@@ -696,6 +733,10 @@ export function WeddingSiteView({
           </div>
         </Band>
       ) : null}
+
+      {/* Pack ornament as a divider into the venue — a breath between the
+          schedule and the location band. */}
+      {ornamentSeam}
 
       {/* ── Location — venue name + (confirmed-tier) exact map link. ─────── */}
       {/* Inline editing available → an empty venue stays here as two click-to-
@@ -717,7 +758,7 @@ export function WeddingSiteView({
             if (venueInline && commitVenue) {
               return (
                 <>
-                  <Heading className="mt-2">
+                  <Heading className="mt-2" treatment={headingTreatment}>
                     <InlineText
                       value={venue.name ?? ""}
                       onCommit={(name) => commitVenue(name, venue.city ?? "")}
@@ -740,7 +781,9 @@ export function WeddingSiteView({
             }
             return (
               <>
-                <Heading className="mt-2">{venue.name}</Heading>
+                <Heading className="mt-2" treatment={headingTreatment}>
+                  {venue.name}
+                </Heading>
                 {venue.city ? (
                   <p className="mt-1.5 text-base tracking-wide" style={{ opacity: 0.7 }}>
                     {venue.city}
@@ -831,7 +874,7 @@ export function WeddingSiteView({
               <Lock size={12} aria-hidden /> {t("wedding_site.ghost.locked_eyebrow")}
             </p>
           )}
-          <Heading>
+          <Heading treatment={headingTreatment}>
             <span
               ref={confirmedHeadingRef}
               tabIndex={isPreview ? undefined : -1}
@@ -926,7 +969,7 @@ export function WeddingSiteView({
               style={{ color: "var(--wt-accent-text)" }}
               aria-hidden
             />
-            <Heading className="mt-4">
+            <Heading className="mt-4" treatment={headingTreatment}>
               {hasCode ? t("wedding_site.rsvp_personal_title") : t("wedding_site.rsvp_title")}
             </Heading>
             <p className="mx-auto mt-3 max-w-md text-sm" style={{ opacity: 0.8 }}>
