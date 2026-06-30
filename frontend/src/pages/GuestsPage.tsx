@@ -28,6 +28,7 @@ import {
   Download,
   Egg,
   Eye,
+  Filter,
   Fish,
   Gem,
   Heart,
@@ -82,6 +83,41 @@ const GROUPS: GuestGroupTag[] = [
 
 const MEALS: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
 
+// Guest-list sort axes. "default" preserves the server/household order (the
+// historic behavior); the rest are explicit user picks from the sort control.
+type SortKey = "default" | "name" | "added" | "rsvp" | "group";
+// RSVP sort surfaces the actionable states first (pending, maybe) ahead of the
+// settled ones (yes, no) so "who do I still need to chase" floats to the top.
+const RSVP_SORT_ORDER: Record<RsvpStatus, number> = { pending: 0, maybe: 1, yes: 2, no: 3 };
+function sortGuests(list: Guest[], sort: SortKey): Guest[] {
+  if (sort === "default") return list;
+  const arr = [...list];
+  if (sort === "name") arr.sort((a, b) => a.full_name.localeCompare(b.full_name));
+  else if (sort === "added") arr.sort((a, b) => b.id - a.id);
+  else if (sort === "rsvp")
+    arr.sort(
+      (a, b) =>
+        RSVP_SORT_ORDER[a.rsvp_status] - RSVP_SORT_ORDER[b.rsvp_status] ||
+        a.full_name.localeCompare(b.full_name),
+    );
+  else
+    arr.sort(
+      (a, b) =>
+        GROUPS.indexOf(a.group_tag) - GROUPS.indexOf(b.group_tag) ||
+        a.full_name.localeCompare(b.full_name),
+    );
+  return arr;
+}
+function sortHouseholds(list: Household[], sort: SortKey): Household[] {
+  if (sort === "name") return [...list].sort((a, b) => a.label.localeCompare(b.label));
+  if (sort === "added") return [...list].sort((a, b) => b.id - a.id);
+  if (sort === "group")
+    return [...list].sort((a, b) => GROUPS.indexOf(a.group_tag) - GROUPS.indexOf(b.group_tag));
+  // "default" and "rsvp" keep the natural household order. rsvp is a
+  // guest-level axis that doesn't map cleanly onto a whole household.
+  return list;
+}
+
 // Collapsed icon-tool group (Sablon / CSV / Étkezés / Meghívók). Each segment
 // shows only its icon until hovered, when its label slides open (max-width +
 // opacity) and the native `title` tooltip appears. Literal class strings so
@@ -107,27 +143,34 @@ export default function GuestsPage() {
   useDocumentMeta("seo.guests_title", "seo.guests_description");
   const confirm = useConfirm();
   const toast = useToast();
-  // ── RSVP filter ────────────────────────────────────────────────────
-  // Dashboard's RSVP breakdown links here with `?rsvp=yes|maybe|no|pending`.
-  // While active, we switch to the flat-list view filtered by status.
+  // ── Stackable guest filters (all URL-backed) ─────────────────────────
+  // Every filter axis lives in the query string so a filtered view is
+  // bookmarkable and shareable. `rsvp` and `group` are comma-separated
+  // multi-selects; `invited`/`accom` are flags; `q` mirrors the search box;
+  // `household=closed` is the grouped-household browse lens; `sort` orders the
+  // list. Nothing is mutually exclusive any more; every axis stacks (AND).
+  // Dashboard links still arrive as a single `?rsvp=yes` and parse cleanly as
+  // a one-element set.
   const [params, setParams] = useSearchParams();
-  const rsvpFilter = ((): RsvpStatus | null => {
-    const v = params.get("rsvp");
-    return v === "yes" || v === "no" || v === "maybe" || v === "pending" ? v : null;
-  })();
-  function clearRsvpFilter() {
-    const next = new URLSearchParams(params);
-    next.delete("rsvp");
-    setParams(next, { replace: true });
-  }
-  // The "invited" header stat filters the flat list to guests with an
-  // invitation logged (`?invited=1`), mirroring the rsvp-status filter above.
+  const rsvpSet = useMemo(() => {
+    const valid: readonly string[] = ["pending", "yes", "no", "maybe"];
+    const raw = params.get("rsvp");
+    return new Set((raw ? raw.split(",") : []).filter((v): v is RsvpStatus => valid.includes(v)));
+  }, [params]);
+  const groupSet = useMemo(() => {
+    const valid: readonly string[] = GROUPS;
+    const raw = params.get("group");
+    return new Set(
+      (raw ? raw.split(",") : []).filter((v): v is GuestGroupTag => valid.includes(v)),
+    );
+  }, [params]);
   const invitedFilter = params.get("invited") === "1";
-  // The "household" header stat filters to closed (multi-member) households
-  // (`?household=closed`). A second URL param `?group=<tag>` narrows further
-  // to a single group category within the household view.
+  const accommodationFilter = params.get("accom") === "1";
   const householdFilter = params.get("household") === "closed";
-  const groupFilter = params.get("group") as GuestGroupTag | null;
+  const sortKey: SortKey = ((): SortKey => {
+    const v = params.get("sort");
+    return v === "name" || v === "added" || v === "rsvp" || v === "group" ? v : "default";
+  })();
   const navigate = useNavigate();
   // Anchor for the "households" header stat — clicking it clears any filter and
   // smooth-scrolls down to the household list.
@@ -146,8 +189,8 @@ export default function GuestsPage() {
   // ── Search state ────────────────────────────────────────────────────
   // `query` is the raw text in the input; `debouncedQuery` is what we
   // actually search on (200ms after the user stops typing).
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [query, setQuery] = useState(() => params.get("q") ?? "");
+  const [debouncedQuery, setDebouncedQuery] = useState(() => (params.get("q") ?? "").trim());
   const [searchResults, setSearchResults] = useState<Guest[] | null>(null);
   const [searching, setSearching] = useState(false);
   // ── Virtualization knob ─────────────────────────────────────────────
@@ -166,6 +209,18 @@ export default function GuestsPage() {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
   }, [query]);
+
+  // Mirror the debounced query into the URL (`?q=`) so a search is
+  // bookmarkable and shareable. Intentionally keyed on `debouncedQuery` only:
+  // we read the latest params inside, and depending on `params` would loop.
+  useEffect(() => {
+    const cur = params.get("q") ?? "";
+    if (cur === debouncedQuery) return;
+    const next = new URLSearchParams(params);
+    if (debouncedQuery) next.set("q", debouncedQuery);
+    else next.delete("q");
+    setParams(next, { replace: true });
+  }, [debouncedQuery]);
 
   // Fire the server-side search whenever the debounced query changes.
   // Empty query → clear results and fall back to the grouped household view.
@@ -549,87 +604,121 @@ export default function GuestsPage() {
     [listableGuests],
   );
 
-  const rsvpFilteredGuests = useMemo(
-    () => (rsvpFilter ? listableGuests.filter((g) => g.rsvp_status === rsvpFilter) : []),
-    [listableGuests, rsvpFilter],
-  );
-  const invitedFilteredGuests = useMemo(
-    () => (invitedFilter ? listableGuests.filter((g) => g.invited_at != null) : []),
-    [listableGuests, invitedFilter],
-  );
+  // Flat filtered list: every active guest-level predicate ANDed together,
+  // over either the server search results (while searching) or the full guest
+  // list, then sorted. Powers the flat view whenever any filter or the search
+  // box is active.
+  const filteredFlatGuests = useMemo(() => {
+    const base = debouncedQuery ? (searchResults ?? []) : listableGuests;
+    const out = base.filter((g) => {
+      if (g.partner_role) return false;
+      if (rsvpSet.size > 0 && !rsvpSet.has(g.rsvp_status)) return false;
+      if (groupSet.size > 0 && !groupSet.has(g.group_tag)) return false;
+      if (invitedFilter && g.invited_at == null) return false;
+      if (accommodationFilter && !g.accommodation_needed) return false;
+      return true;
+    });
+    return sortGuests(out, sortKey);
+  }, [
+    debouncedQuery,
+    searchResults,
+    listableGuests,
+    rsvpSet,
+    groupSet,
+    invitedFilter,
+    accommodationFilter,
+    sortKey,
+  ]);
   // Closed households = multi-member households (explicitly grouped units).
   const closedHouseholds = useMemo(
     () => listableHouseholds.filter((hh) => hh.member_ids.length > 1),
     [listableHouseholds],
   );
-  const closedHouseholdIds = useMemo(
-    () => new Set(closedHouseholds.map((hh) => hh.id)),
-    [closedHouseholds],
-  );
   const activeGroupTags = useMemo(() => {
     const present = new Set(closedHouseholds.map((hh) => hh.group_tag));
     return GROUPS.filter((g) => present.has(g));
   }, [closedHouseholds]);
-  // Households shown in the household filter view, optionally narrowed by group.
+  // Households shown in the grouped browse lens, narrowed by the (multi)
+  // side/group selection.
   const filteredClosedHouseholds = useMemo(
     () =>
-      groupFilter
-        ? closedHouseholds.filter((hh) => hh.group_tag === groupFilter)
+      groupSet.size > 0
+        ? closedHouseholds.filter((hh) => groupSet.has(hh.group_tag))
         : closedHouseholds,
-    [closedHouseholds, groupFilter],
+    [closedHouseholds, groupSet],
+  );
+  // Default (unfiltered) household list, honoring the sort control.
+  const sortedListableHouseholds = useMemo(
+    () => sortHouseholds(listableHouseholds, sortKey),
+    [listableHouseholds, sortKey],
   );
 
-  // ── Header-stat clicks ───────────────────────────────────────────────
-  // Drop the search query immediately (not just the debounced copy) so the
-  // household view re-renders this tick and the scroll target exists.
-  function showAllGuests() {
+  // ── Filter writers ───────────────────────────────────────────────────
+  // All mutate the URL (replace, no history spam). Toggles add/remove a value
+  // from its axis; filters stack rather than replacing one another.
+  function patchParams(mut: (p: URLSearchParams) => void) {
     const next = new URLSearchParams(params);
-    next.delete("rsvp");
-    next.delete("invited");
+    mut(next);
     setParams(next, { replace: true });
+  }
+  function toggleSetParam(key: "rsvp" | "group", value: string) {
+    patchParams((p) => {
+      const cur = new Set((p.get(key) ?? "").split(",").filter(Boolean));
+      if (cur.has(value)) cur.delete(value);
+      else cur.add(value);
+      if (cur.size > 0) p.set(key, [...cur].join(","));
+      else p.delete(key);
+    });
+  }
+  const toggleRsvp = (s: RsvpStatus) => toggleSetParam("rsvp", s);
+  const toggleGroup = (g: GuestGroupTag) => toggleSetParam("group", g);
+  function toggleInvited() {
+    patchParams((p) => {
+      if (invitedFilter) p.delete("invited");
+      else p.set("invited", "1");
+    });
+  }
+  function toggleAccommodation() {
+    patchParams((p) => {
+      if (accommodationFilter) p.delete("accom");
+      else p.set("accom", "1");
+    });
+  }
+  function setSort(key: SortKey) {
+    patchParams((p) => {
+      if (key === "default") p.delete("sort");
+      else p.set("sort", key);
+    });
+  }
+  // Clear every filter axis (and the search box) in one shot.
+  function clearAllFilters() {
+    patchParams((p) => {
+      for (const k of ["rsvp", "group", "invited", "accom", "household", "q"]) p.delete(k);
+    });
     setQuery("");
     setDebouncedQuery("");
+  }
+  // Header-stat clicks. "All guests" is a full reset; "invited" toggles its
+  // axis; "households" toggles the grouped browse lens (and scrolls to it).
+  function showAllGuests() {
+    clearAllFilters();
   }
   function showInvitedOnly() {
-    const next = new URLSearchParams(params);
-    next.set("invited", "1");
-    next.delete("rsvp");
-    setParams(next, { replace: true });
+    toggleInvited();
+  }
+  function toggleHouseholdView() {
+    const turningOn = !householdFilter;
+    patchParams((p) => {
+      if (householdFilter) p.delete("household");
+      else p.set("household", "closed");
+    });
     setQuery("");
     setDebouncedQuery("");
-  }
-  function clearInvitedFilter() {
-    const next = new URLSearchParams(params);
-    next.delete("invited");
-    setParams(next, { replace: true });
-  }
-  function scrollToHouseholds() {
-    showAllGuests();
-    requestAnimationFrame(() =>
-      listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-    );
-  }
-  function showHouseholdFilter() {
-    const next = new URLSearchParams(params);
-    next.set("household", "closed");
-    next.delete("rsvp");
-    next.delete("invited");
-    next.delete("group");
-    setParams(next, { replace: true });
-    setQuery("");
-    setDebouncedQuery("");
-  }
-  function clearHouseholdFilter() {
-    const next = new URLSearchParams(params);
-    next.delete("household");
-    next.delete("group");
-    setParams(next, { replace: true });
-  }
-  function setGroupFilter(tag: GuestGroupTag | null) {
-    const next = new URLSearchParams(params);
-    if (tag) next.set("group", tag);
-    else next.delete("group");
-    setParams(next, { replace: true });
+    if (turningOn) {
+      requestAnimationFrame(() =>
+        listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
+    }
   }
 
   // Planned headcount shown alongside the live counts so couples see actual vs
@@ -643,16 +732,23 @@ export default function GuestsPage() {
       ? String(couple.planning_count ?? guestCountBaseline(couple, guests.length))
       : null;
 
-  // Which header stat is the live view, so the others can fade. Only the two
-  // filter states (all vs invited) own a persistent view; while an rsvp filter
-  // or a search is active none of these four applies, so nothing dims.
-  const activeStat: "total" | "invited" | "household" | null = householdFilter
-    ? "household"
-    : invitedFilter
-      ? "invited"
-      : rsvpFilter || debouncedQuery
-        ? null
-        : "total";
+  // ── View mode ────────────────────────────────────────────────────────
+  // A guest-level predicate (rsvp / invited / accommodation) or a search flips
+  // the page to the flat filtered list. A side/group selection does the same
+  // UNLESS the grouped-household browse lens is on, where it just narrows the
+  // sections. So every axis still composes; the only question is grouped-cards
+  // vs flat-list presentation.
+  const predicateActive = rsvpSet.size > 0 || invitedFilter || accommodationFilter;
+  const flatView = !!debouncedQuery || predicateActive || (groupSet.size > 0 && !householdFilter);
+  const activeFilterCount =
+    rsvpSet.size + groupSet.size + (invitedFilter ? 1 : 0) + (accommodationFilter ? 1 : 0);
+
+  // Per-stat highlight/dim. The stat that owns the current view reads bright;
+  // the rest fade so the live filter is obvious at a glance.
+  const totalActive = activeFilterCount === 0 && !debouncedQuery && !householdFilter;
+  const invitedActive = invitedFilter;
+  const householdActive = householdFilter && !flatView;
+  const anyStatActive = totalActive || invitedActive || householdActive;
 
   return (
     <>
@@ -668,7 +764,7 @@ export default function GuestsPage() {
                   icon={<Target size={18} aria-hidden />}
                   onClick={() => navigate("/app/budget")}
                   actionTitle={t("guests.stat_planned_action")}
-                  dimmed={activeStat !== null}
+                  dimmed={anyStatActive}
                 />
               )}
               <GuestStat
@@ -678,15 +774,17 @@ export default function GuestsPage() {
                 tone="primary"
                 onClick={showAllGuests}
                 actionTitle={t("guests.stat_total_action")}
-                dimmed={activeStat !== null && activeStat !== "total"}
+                active={totalActive}
+                dimmed={anyStatActive && !totalActive}
               />
               <GuestStat
                 value={closedHouseholds.length}
                 label={t("guests.total_summary_households_unit")}
                 icon={<Home size={18} aria-hidden />}
-                onClick={householdFilter ? clearHouseholdFilter : showHouseholdFilter}
+                onClick={toggleHouseholdView}
                 actionTitle={t("guests.stat_households_action")}
-                dimmed={activeStat !== null && activeStat !== "household"}
+                active={householdActive}
+                dimmed={anyStatActive && !householdActive}
               />
               <GuestStat
                 value={guests.filter((g) => g.invited_at != null).length}
@@ -694,7 +792,8 @@ export default function GuestsPage() {
                 icon={<Send size={18} aria-hidden />}
                 onClick={showInvitedOnly}
                 actionTitle={t("guests.stat_invited_action")}
-                dimmed={activeStat !== null && activeStat !== "invited"}
+                active={invitedActive}
+                dimmed={anyStatActive && !invitedActive}
               />
             </dl>
           ) : (
@@ -778,109 +877,30 @@ export default function GuestsPage() {
 
       {couple && <CheckinPill couple={couple} onSaved={(c) => setCouple(c)} />}
 
-      {/* ── Search ─────────────────────────────────────────────────────
-          Server-side full-text search. While active, we render a flat
-          list of matches instead of the grouped household view. */}
-      {(guests.length > 0 || query) && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          {/* `min-w-0` on mobile lets the search input shrink past 200px so
-           * the optional "Clear" pill stays on the same line; the desktop
-           * `sm:min-w-[200px]` floor protects laptop readability. */}
-          <div
-            data-tour-target="guests-search"
-            className="relative w-full min-w-0 flex-1 sm:w-auto sm:min-w-[200px]"
-          >
-            <Search
-              size={14}
-              aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-            />
-            <input
-              type="search"
-              className="input pl-9"
-              placeholder={t("guests.search_placeholder")}
-              aria-label={t("guests.search_label")}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-          {query && (
-            <button
-              type="button"
-              className="btn-ghost btn-sm"
-              onClick={() => setQuery("")}
-              aria-label={t("guests.search_clear")}
-            >
-              {t("guests.search_clear")}
-            </button>
-          )}
-        </div>
-      )}
-
-      {rsvpFilter && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full bg-paper-100 px-3 py-1 text-sm text-ink-700 ring-1 ring-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700">
-            <span className="text-ink-500 dark:text-umber-300">{t("guests.rsvp")}:</span>
-            <span className="font-medium">{t(`guests.rsvp_${rsvpFilter}`)}</span>
-            <button
-              type="button"
-              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-              onClick={clearRsvpFilter}
-              aria-label={t("guests.search_clear")}
-            >
-              <X size={12} />
-            </button>
-          </span>
-        </div>
-      )}
-
-      {invitedFilter && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full bg-paper-100 px-3 py-1 text-sm text-ink-700 ring-1 ring-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700">
-            <Send size={13} aria-hidden className="text-ink-500 dark:text-umber-300" />
-            <span className="font-medium">{t("guests.invited_filter_label")}</span>
-            <button
-              type="button"
-              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-              onClick={clearInvitedFilter}
-              aria-label={t("guests.search_clear")}
-            >
-              <X size={12} />
-            </button>
-          </span>
-        </div>
-      )}
-
-      {householdFilter && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full bg-paper-100 px-3 py-1 text-sm text-ink-700 ring-1 ring-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700">
-            <Home size={13} aria-hidden className="text-ink-500 dark:text-umber-300" />
-            <span className="font-medium">{t("guests.household_filter_label")}</span>
-            <button
-              type="button"
-              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-              onClick={clearHouseholdFilter}
-              aria-label={t("guests.search_clear")}
-            >
-              <X size={12} />
-            </button>
-          </span>
-          {activeGroupTags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => setGroupFilter(groupFilter === tag ? null : tag)}
-              className={[
-                "inline-flex items-center rounded-full px-3 py-1 text-sm transition-colors",
-                groupFilter === tag
-                  ? "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                  : "bg-paper-100 text-ink-700 ring-1 ring-paper-200 hover:bg-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-700",
-              ].join(" ")}
-            >
-              {t(`guests.group_${tag}`)}
-            </button>
-          ))}
-        </div>
+      {/* ── Search + stackable filters + sort ───────────────────────────
+          One toolbar drives search, the expandable filter panel (RSVP, side
+          /group, invited, accommodation), the sort control, and the active
+          filter chips with a single "Clear all". Every axis stacks (AND) and
+          is mirrored to the URL. */}
+      {(guests.length > 0 || query || activeFilterCount > 0) && (
+        <GuestFilterBar
+          query={query}
+          onQueryChange={setQuery}
+          rsvpSet={rsvpSet}
+          groupSet={groupSet}
+          invited={invitedFilter}
+          accommodation={accommodationFilter}
+          householdView={householdFilter}
+          sortKey={sortKey}
+          activeFilterCount={activeFilterCount}
+          onToggleRsvp={toggleRsvp}
+          onToggleGroup={toggleGroup}
+          onToggleInvited={toggleInvited}
+          onToggleAccommodation={toggleAccommodation}
+          onToggleHousehold={toggleHouseholdView}
+          onSetSort={setSort}
+          onClearAll={clearAllFilters}
+        />
       )}
 
       {loading ? (
@@ -925,64 +945,72 @@ export default function GuestsPage() {
             </button>
           </div>
         </div>
-      ) : debouncedQuery ? (
-        <SearchResults
-          loading={searching}
-          guests={(searchResults ?? []).filter((g) => !g.partner_role)}
-          onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
-          onPrintPlaceCard={onPrintPlaceCard}
-        />
-      ) : rsvpFilter ? (
-        <SearchResults
-          loading={false}
-          guests={rsvpFilteredGuests}
-          onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
-          onPrintPlaceCard={onPrintPlaceCard}
-        />
-      ) : invitedFilter ? (
-        <SearchResults
-          loading={false}
-          guests={invitedFilteredGuests}
-          onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
-          onPrintPlaceCard={onPrintPlaceCard}
-        />
+      ) : flatView ? (
+        // Flat filtered list: search and/or any stacked guest-level filter.
+        // A count line communicates the mode switch so leaving the grouped
+        // household view isn't silent (audit follow-up).
+        <div className="space-y-3">
+          {!(debouncedQuery && searching) && (
+            <p className="text-sm text-ink-500 dark:text-umber-300">
+              {filteredFlatGuests.length === 0
+                ? t("guests.filtered_results_empty")
+                : t(
+                    filteredFlatGuests.length === 1
+                      ? "guests.filtered_results_one"
+                      : "guests.filtered_results_other",
+                    { count: filteredFlatGuests.length },
+                  )}
+            </p>
+          )}
+          <SearchResults
+            loading={!!debouncedQuery && searching}
+            guests={filteredFlatGuests}
+            onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+            onPrintPlaceCard={onPrintPlaceCard}
+          />
+        </div>
       ) : householdFilter ? (
-        <div className="space-y-6">
-          {(groupFilter ? [groupFilter] : activeGroupTags).map((tag) => {
-            const tagHouseholds = filteredClosedHouseholds.filter((hh) => hh.group_tag === tag);
-            if (tagHouseholds.length === 0) return null;
-            return (
-              <div key={tag}>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-umber-500">
-                  {t(`guests.group_${tag}`)}
-                </h3>
-                <div className="space-y-3">
-                  {tagHouseholds.map((hh) => (
-                    <HouseholdCard
-                      key={hh.id}
-                      household={hh}
-                      members={guestsByHousehold.get(hh.id) ?? []}
-                      coupleSlug={couple?.slug ?? null}
-                      onCopyShare={() => {
-                        void copyShare(couple?.slug ?? null, hh.code);
-                      }}
-                      onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
-                      onEditGuest={(g) =>
-                        setEditing({ guest: g, defaultHouseholdId: g.household_id })
-                      }
-                      onDeleteGuest={onDeleteGuest}
-                      onDeleteHousehold={() => onDeleteHousehold(hh)}
-                      onRenameHousehold={onRenameHousehold}
-                      onChangeGroup={onChangeHouseholdGroup}
-                      onToggleAccommodation={onToggleHouseholdAccommodation}
-                      onCycleInviteState={onCycleInviteState}
-                      onPrintPlaceCard={onPrintPlaceCard}
-                    />
-                  ))}
+        <div ref={listRef} className="space-y-6">
+          {(groupSet.size > 0 ? GROUPS.filter((g) => groupSet.has(g)) : activeGroupTags).map(
+            (tag) => {
+              const tagHouseholds = sortHouseholds(
+                filteredClosedHouseholds.filter((hh) => hh.group_tag === tag),
+                sortKey,
+              );
+              if (tagHouseholds.length === 0) return null;
+              return (
+                <div key={tag}>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-umber-500">
+                    {t(`guests.group_${tag}`)}
+                  </h3>
+                  <div className="space-y-3">
+                    {tagHouseholds.map((hh) => (
+                      <HouseholdCard
+                        key={hh.id}
+                        household={hh}
+                        members={guestsByHousehold.get(hh.id) ?? []}
+                        coupleSlug={couple?.slug ?? null}
+                        onCopyShare={() => {
+                          void copyShare(couple?.slug ?? null, hh.code);
+                        }}
+                        onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
+                        onEditGuest={(g) =>
+                          setEditing({ guest: g, defaultHouseholdId: g.household_id })
+                        }
+                        onDeleteGuest={onDeleteGuest}
+                        onDeleteHousehold={() => onDeleteHousehold(hh)}
+                        onRenameHousehold={onRenameHousehold}
+                        onChangeGroup={onChangeHouseholdGroup}
+                        onToggleAccommodation={onToggleHouseholdAccommodation}
+                        onCycleInviteState={onCycleInviteState}
+                        onPrintPlaceCard={onPrintPlaceCard}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            },
+          )}
           {filteredClosedHouseholds.length === 0 && (
             <p className="text-sm text-neutral-500 dark:text-umber-400">
               {t("guests.household_filter_empty")}
@@ -991,34 +1019,39 @@ export default function GuestsPage() {
         </div>
       ) : (
         <div ref={listRef} className="space-y-4">
-          {(virtualReveal ? listableHouseholds : listableHouseholds.slice(0, 100)).map((hh) => (
-            // `content-visibility: auto` lets the browser skip layout +
-            // paint for offscreen household cards. `contain-intrinsic-size`
-            // gives it a placeholder height so the scrollbar still tracks
-            // total list length and the scroll-restore-on-back works.
-            // Native fallback when unsupported (older Safari) — the card
-            // just renders normally. Saves render churn on N>60 lists
-            // flagged by the a11y/perf-critic agent.
-            <div key={hh.id} style={{ contentVisibility: "auto", containIntrinsicSize: "0 220px" }}>
-              <HouseholdCard
-                household={hh}
-                members={guestsByHousehold.get(hh.id) ?? []}
-                coupleSlug={couple?.slug ?? null}
-                onCopyShare={() => {
-                  void copyShare(couple?.slug ?? null, hh.code);
-                }}
-                onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
-                onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
-                onDeleteGuest={onDeleteGuest}
-                onDeleteHousehold={() => onDeleteHousehold(hh)}
-                onRenameHousehold={onRenameHousehold}
-                onChangeGroup={onChangeHouseholdGroup}
-                onToggleAccommodation={onToggleHouseholdAccommodation}
-                onCycleInviteState={onCycleInviteState}
-                onPrintPlaceCard={onPrintPlaceCard}
-              />
-            </div>
-          ))}
+          {(virtualReveal ? sortedListableHouseholds : sortedListableHouseholds.slice(0, 100)).map(
+            (hh) => (
+              // `content-visibility: auto` lets the browser skip layout +
+              // paint for offscreen household cards. `contain-intrinsic-size`
+              // gives it a placeholder height so the scrollbar still tracks
+              // total list length and the scroll-restore-on-back works.
+              // Native fallback when unsupported (older Safari) — the card
+              // just renders normally. Saves render churn on N>60 lists
+              // flagged by the a11y/perf-critic agent.
+              <div
+                key={hh.id}
+                style={{ contentVisibility: "auto", containIntrinsicSize: "0 220px" }}
+              >
+                <HouseholdCard
+                  household={hh}
+                  members={guestsByHousehold.get(hh.id) ?? []}
+                  coupleSlug={couple?.slug ?? null}
+                  onCopyShare={() => {
+                    void copyShare(couple?.slug ?? null, hh.code);
+                  }}
+                  onAddMember={() => setEditing({ guest: null, defaultHouseholdId: hh.id })}
+                  onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+                  onDeleteGuest={onDeleteGuest}
+                  onDeleteHousehold={() => onDeleteHousehold(hh)}
+                  onRenameHousehold={onRenameHousehold}
+                  onChangeGroup={onChangeHouseholdGroup}
+                  onToggleAccommodation={onToggleHouseholdAccommodation}
+                  onCycleInviteState={onCycleInviteState}
+                  onPrintPlaceCard={onPrintPlaceCard}
+                />
+              </div>
+            ),
+          )}
           {!virtualReveal && households.length > 100 && (
             <p className="text-center text-xs text-ink-500 dark:text-umber-300">
               {t("guests.search_load_more")}
@@ -3951,6 +3984,256 @@ function CopyFallbackDialog({ url, onClose }: { url: string; onClose: () => void
 // Page-header stat block: a big tabular-nums number stacked over a small
 // uppercase caption. `primary` gives the headline metric a touch more weight
 // (heavier number colour) so guests-count still reads as the lead figure.
+// The guest-list filter toolbar: search box, sort control, an expandable
+// panel of stackable filter chips (RSVP / side & group / invited / needs-room
+// / grouped-households lens), and an active-filter summary row with per-chip ×
+// and a single "Clear all". All state is owned by the page (URL-backed); this
+// component is purely presentational.
+function GuestFilterBar({
+  query,
+  onQueryChange,
+  rsvpSet,
+  groupSet,
+  invited,
+  accommodation,
+  householdView,
+  sortKey,
+  activeFilterCount,
+  onToggleRsvp,
+  onToggleGroup,
+  onToggleInvited,
+  onToggleAccommodation,
+  onToggleHousehold,
+  onSetSort,
+  onClearAll,
+}: {
+  query: string;
+  onQueryChange: (v: string) => void;
+  rsvpSet: Set<RsvpStatus>;
+  groupSet: Set<GuestGroupTag>;
+  invited: boolean;
+  accommodation: boolean;
+  householdView: boolean;
+  sortKey: SortKey;
+  activeFilterCount: number;
+  onToggleRsvp: (s: RsvpStatus) => void;
+  onToggleGroup: (g: GuestGroupTag) => void;
+  onToggleInvited: () => void;
+  onToggleAccommodation: () => void;
+  onToggleHousehold: () => void;
+  onSetSort: (k: SortKey) => void;
+  onClearAll: () => void;
+}) {
+  const { t } = useT();
+  // Auto-open the panel when a filter is already applied (e.g. arriving via a
+  // shared URL) so the active selection is visible, not hidden behind a chip.
+  const [open, setOpen] = useState(activeFilterCount > 0);
+  const rsvpOptions: RsvpStatus[] = ["pending", "yes", "maybe", "no"];
+  const sortOptions: SortKey[] = ["default", "name", "added", "rsvp", "group"];
+  const chip = (on: boolean) =>
+    [
+      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm transition-colors",
+      on
+        ? "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+        : "bg-paper-100 text-ink-700 ring-1 ring-paper-200 hover:bg-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-700",
+    ].join(" ");
+  const hasActive = activeFilterCount > 0 || householdView;
+
+  return (
+    <div className="mb-4 space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <div
+          data-tour-target="guests-search"
+          className="relative w-full min-w-0 flex-1 sm:w-auto sm:min-w-[200px]"
+        >
+          <Search
+            size={14}
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+          />
+          <input
+            type="search"
+            className="input pl-9"
+            placeholder={t("guests.search_placeholder")}
+            aria-label={t("guests.search_label")}
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+          />
+        </div>
+        <label className="flex items-center gap-1.5 text-sm text-ink-500 dark:text-umber-300">
+          <span className="hidden sm:inline">{t("guests.sort_label")}</span>
+          <select
+            className="input w-auto"
+            value={sortKey}
+            onChange={(e) => onSetSort(e.target.value as SortKey)}
+            aria-label={t("guests.sort_label")}
+          >
+            {sortOptions.map((k) => (
+              <option key={k} value={k}>
+                {t(`guests.sort_${k}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          className="btn-outline"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+        >
+          <Filter size={14} aria-hidden /> {t("guests.filters_button")}
+          {activeFilterCount > 0 && (
+            <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-umber-900 px-1.5 text-xs text-paper-50 dark:bg-paper-100 dark:text-umber-900">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {open && (
+        <div className="space-y-3 rounded-xl border border-paper-200 bg-paper-50/60 p-3 dark:border-umber-700 dark:bg-umber-900/40">
+          <FilterGroup label={t("guests.filter_group_rsvp")}>
+            {rsvpOptions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={chip(rsvpSet.has(s))}
+                aria-pressed={rsvpSet.has(s)}
+                onClick={() => onToggleRsvp(s)}
+              >
+                {t(`guests.rsvp_${s}`)}
+              </button>
+            ))}
+          </FilterGroup>
+          <FilterGroup label={t("guests.filter_group_side")}>
+            {GROUPS.map((g) => (
+              <button
+                key={g}
+                type="button"
+                className={chip(groupSet.has(g))}
+                aria-pressed={groupSet.has(g)}
+                onClick={() => onToggleGroup(g)}
+              >
+                {t(`guests.group_${g}`)}
+              </button>
+            ))}
+          </FilterGroup>
+          <FilterGroup label={t("guests.filter_group_more")}>
+            <button
+              type="button"
+              className={chip(invited)}
+              aria-pressed={invited}
+              onClick={onToggleInvited}
+            >
+              <Send size={13} aria-hidden /> {t("guests.filter_invited_chip")}
+            </button>
+            <button
+              type="button"
+              className={chip(accommodation)}
+              aria-pressed={accommodation}
+              onClick={onToggleAccommodation}
+            >
+              <Bed size={13} aria-hidden /> {t("guests.filter_accommodation_chip")}
+            </button>
+            <button
+              type="button"
+              className={chip(householdView)}
+              aria-pressed={householdView}
+              onClick={onToggleHousehold}
+            >
+              <Home size={13} aria-hidden /> {t("guests.household_filter_label")}
+            </button>
+          </FilterGroup>
+        </div>
+      )}
+
+      {hasActive && (
+        <div className="flex flex-wrap items-center gap-2">
+          {[...rsvpSet].map((s) => (
+            <ActiveChip
+              key={`r-${s}`}
+              label={t(`guests.rsvp_${s}`)}
+              onRemove={() => onToggleRsvp(s)}
+            />
+          ))}
+          {[...groupSet].map((g) => (
+            <ActiveChip
+              key={`g-${g}`}
+              label={t(`guests.group_${g}`)}
+              onRemove={() => onToggleGroup(g)}
+            />
+          ))}
+          {invited && (
+            <ActiveChip
+              icon={<Send size={13} aria-hidden />}
+              label={t("guests.filter_invited_chip")}
+              onRemove={onToggleInvited}
+            />
+          )}
+          {accommodation && (
+            <ActiveChip
+              icon={<Bed size={13} aria-hidden />}
+              label={t("guests.filter_accommodation_chip")}
+              onRemove={onToggleAccommodation}
+            />
+          )}
+          {householdView && (
+            <ActiveChip
+              icon={<Home size={13} aria-hidden />}
+              label={t("guests.household_filter_label")}
+              onRemove={onToggleHousehold}
+            />
+          )}
+          <button
+            type="button"
+            className="text-sm text-ink-500 underline underline-offset-2 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+            onClick={onClearAll}
+          >
+            {t("guests.filters_clear_all")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="mr-1 text-xs font-semibold uppercase tracking-widest text-ink-400 dark:text-umber-500">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function ActiveChip({
+  icon,
+  label,
+  onRemove,
+}: {
+  icon?: ReactNode;
+  label: string;
+  onRemove: () => void;
+}) {
+  const { t } = useT();
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-sm text-ink-700 ring-1 ring-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700">
+      {icon && <span className="text-ink-500 dark:text-umber-300">{icon}</span>}
+      <span className="font-medium">{label}</span>
+      <button
+        type="button"
+        className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-500 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+        onClick={onRemove}
+        aria-label={t("guests.search_clear")}
+      >
+        <X size={12} />
+      </button>
+    </span>
+  );
+}
+
 function GuestStat({
   value,
   label,
@@ -3958,6 +4241,7 @@ function GuestStat({
   tone = "secondary",
   onClick,
   actionTitle,
+  active = false,
   dimmed = false,
 }: {
   value: number | string;
@@ -3969,6 +4253,8 @@ function GuestStat({
   onClick?: () => void;
   /** Tooltip + accessible name describing the click action (used with onClick). */
   actionTitle?: string;
+  /** This stat owns the current view: gets a highlight ring and stays bright. */
+  active?: boolean;
   /** Faded out because a sibling stat is the active view — number + icon both
    *  drop opacity so the active filter reads at a glance. */
   dimmed?: boolean;
@@ -4009,10 +4295,12 @@ function GuestStat({
           type="button"
           onClick={onClick}
           aria-label={tip}
-          aria-pressed={dimmed ? false : undefined}
-          className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:hover:text-blush-300 ${cls} ${
-            dimmed ? "opacity-35 hover:opacity-100" : ""
-          }`}
+          aria-pressed={active}
+          className={`-mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 ${cls} ${
+            active
+              ? "text-blush-600 ring-1 ring-blush-300 dark:text-blush-300 dark:ring-blush-400/50"
+              : "hover:text-blush-600 dark:hover:text-blush-300"
+          } ${dimmed ? "opacity-35 hover:opacity-100" : ""}`}
         >
           {inner}
         </button>

@@ -582,9 +582,10 @@ describe("<GuestsPage>", () => {
       </MemoryRouter>,
     );
     await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
-    // The filter pill shows "RSVP: Yes" — the label is the only place where
-    // "RSVP:" appears in the rendered UI.
-    expect(screen.getByText(/rsvp:/i)).toBeInTheDocument();
+    // A `?rsvp=yes` URL renders the flat filtered list with its match-count
+    // note and surfaces a "Clear all" affordance for the active filter.
+    expect(screen.getByText(/matches your filters/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /clear all/i })).toBeInTheDocument();
   });
 
   it("shows the Hungarian copy fallback dialog (Copy didn't work) only when clipboard fails — smoke that the share-link button is rendered", async () => {
