@@ -1358,11 +1358,7 @@ export default function SeatingPage() {
         // Full-height map + compact unassigned panel on the right. TableCard
         // grid appears below (scroll down) for the classic per-table view.
         <>
-          {/* Seating progress — Uber-style "you're 3 of 22 done" summary so the
-              user always knows total / seated / remaining at a glance, even
-              when a table is selected (which hides the unassigned panel). */}
-          <SeatingProgressBar progress={seatingProgress(guests.length, seatedIds.size)} t={t} />
-          <div className="flex h-[calc(100vh-248px)] gap-4">
+          <div className="flex h-[calc(100vh-200px)] gap-4">
             {/* Map: flex-1 so it takes all remaining width, h-full so the
               SeatingMap card stretches vertically. */}
             <div data-tour-target="seating-canvas" className="min-w-0 flex-1">
@@ -1465,6 +1461,10 @@ export default function SeatingPage() {
                         )
                       : t("seating.drag_help")}
                 </p>
+                <SeatPanelProgress
+                  progress={seatingProgress(guests.length, seatedIds.size)}
+                  t={t}
+                />
                 {guests.length > 0 && unassigned.length === 0 && partnerSlots.length === 0 ? (
                   <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
                     {t("seating.no_unassigned")}
@@ -1702,47 +1702,32 @@ export default function SeatingPage() {
   );
 }
 
-// Top-of-page seating progress. A slim track that fills as guests are seated,
-// with the live count on the left and what's left (or a done state) on the
-// right. Computed from the pure `seatingProgress` helper so the numbers stay
+// Seating progress, folded into the unassigned ("Nincs helye") panel so it
+// doesn't need its own row above the canvas — the panel's count badge already
+// carries the remaining number. A slim track + a compact "{seated} / {total}"
+// caption. Computed from the pure `seatingProgress` helper so the numbers stay
 // honest and unit-testable.
-function SeatingProgressBar({
+function SeatPanelProgress({
   progress,
   t,
 }: {
   progress: ReturnType<typeof seatingProgress>;
   t: ReturnType<typeof useT>["t"];
 }) {
-  // Nothing to seat yet — skip the bar entirely so an empty workspace doesn't
-  // show a confusing "0 / 0".
+  // Nothing to seat yet — skip entirely so an empty workspace doesn't show a
+  // confusing "0 / 0".
   if (progress.total === 0) return null;
   return (
-    <div
-      className="mb-3 flex items-center gap-3 rounded-xl border border-paper-200 bg-paper-50 px-4 py-2.5 dark:border-umber-700 dark:bg-umber-900"
-      role="group"
-      aria-label={t("seating.progress_label")
-        .replace("{seated}", String(progress.seated))
-        .replace("{total}", String(progress.total))}
-    >
-      <p className="shrink-0 text-sm text-ink-600 dark:text-umber-200">
-        <span className="text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
-          {progress.seated}
-        </span>
-        <span className="mx-1 tabular-nums text-ink-400 dark:text-umber-300">
-          / {progress.total}
-        </span>
-        {t("seating.progress_label")
-          .replace("{seated}", "")
-          .replace("{total}", "")
-          .replace(/^[\s/]+/, "")
-          .trim()}
-      </p>
+    <div className="mb-2.5">
       <div
-        className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800"
+        className="h-1.5 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800"
         role="progressbar"
         aria-valuenow={progress.pct}
         aria-valuemin={0}
         aria-valuemax={100}
+        aria-label={t("seating.progress_label")
+          .replace("{seated}", String(progress.seated))
+          .replace("{total}", String(progress.total))}
       >
         <div
           className={`h-full rounded-full transition-[width] duration-500 ease-out ${
@@ -1751,8 +1736,8 @@ function SeatingProgressBar({
           style={{ width: `${Math.max(progress.pct, progress.seated > 0 ? 4 : 0)}%` }}
         />
       </div>
-      <span
-        className={`shrink-0 text-sm font-medium tabular-nums ${
+      <p
+        className={`mt-1.5 text-[11px] tabular-nums ${
           progress.complete
             ? "text-sage-600 dark:text-sage-300"
             : "text-ink-500 dark:text-umber-300"
@@ -1760,8 +1745,10 @@ function SeatingProgressBar({
       >
         {progress.complete
           ? t("seating.progress_done")
-          : t("seating.progress_remaining").replace("{n}", String(progress.remaining))}
-      </span>
+          : t("seating.progress_label")
+              .replace("{seated}", String(progress.seated))
+              .replace("{total}", String(progress.total))}
+      </p>
     </div>
   );
 }
