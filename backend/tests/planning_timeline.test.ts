@@ -1,6 +1,7 @@
 import "./setup";
 import { describe, expect, test } from "bun:test";
 import {
+  TIMELINE_PHASES,
   WEDDING_TIMELINE,
   summarizeTimeline,
   timelineDatesFor,
@@ -48,6 +49,30 @@ describe("timelineDatesFor", () => {
   test("template keys are unique", () => {
     const keys = WEDDING_TIMELINE.map((i) => i.key);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  test("every item belongs to a known phase, and every phase has items", () => {
+    const phaseIds = new Set(TIMELINE_PHASES.map((p) => p.id));
+    for (const item of WEDDING_TIMELINE) {
+      expect(phaseIds.has(item.phase), item.key).toBe(true);
+    }
+    for (const phase of TIMELINE_PHASES) {
+      const count = WEDDING_TIMELINE.filter((i) => i.phase === phase.id).length;
+      expect(count, phase.id).toBeGreaterThan(0);
+    }
+  });
+
+  test("items are grouped by phase in runway order", () => {
+    // The array order must keep each phase's items contiguous so the generator
+    // can render grouped sections straight from WEDDING_TIMELINE.
+    const order = TIMELINE_PHASES.map((p) => p.id);
+    const seen: string[] = [];
+    for (const item of WEDDING_TIMELINE) {
+      if (seen[seen.length - 1] !== item.phase) seen.push(item.phase);
+    }
+    expect(seen).toEqual(order.filter((id) => seen.includes(id)));
+    // no phase appears in two separate runs
+    expect(new Set(seen).size).toBe(seen.length);
   });
 });
 

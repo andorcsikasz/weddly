@@ -6,6 +6,7 @@
 // rows are inline-editable on click.
 
 import {
+  TIMELINE_PHASES,
   type TimelineTemplateItem,
   WEDDING_TIMELINE,
   parseIsoDate,
@@ -1426,75 +1427,88 @@ function TimelineGeneratorDialog({
               {allSelected ? t("planning.template_select_none") : t("planning.template_select_all")}
             </button>
           </div>
-          <ul className="space-y-0.5">
-            {WEDDING_TIMELINE.map((item) => {
-              const have = alreadyHave.has(item.key);
-              const on = selected.has(item.key);
-              const title = localizeText(item.title, locale);
-              const hint = item.hint ? localizeText(item.hint, locale) : null;
+          <div className="space-y-3">
+            {TIMELINE_PHASES.map((phase) => {
+              const phaseItems = WEDDING_TIMELINE.filter((i) => i.phase === phase.id);
+              if (phaseItems.length === 0) return null;
               return (
-                <li
-                  key={item.key}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
-                >
-                  <button
-                    type="button"
-                    onClick={() => !have && toggle(item.key)}
-                    aria-pressed={on}
-                    disabled={have}
-                    className={`flex min-w-0 flex-1 items-start gap-2 text-left transition-colors ${
-                      have
-                        ? "cursor-default text-ink-300 dark:text-umber-400"
-                        : on
-                          ? "text-ink-900 dark:text-paper-50"
-                          : "text-ink-400 hover:text-ink-600 dark:text-umber-300 dark:hover:text-paper-100"
-                    }`}
-                  >
-                    {have ? (
-                      <CheckCircle2
-                        size={14}
-                        className="mt-0.5 shrink-0 text-sage-500 dark:text-sage-400"
-                        aria-hidden="true"
-                      />
-                    ) : on ? (
-                      <CheckCircle2
-                        size={14}
-                        className="mt-0.5 shrink-0 text-sage-700 dark:text-sage-300"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <Circle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-                    )}
-                    <span className="min-w-0">
-                      <span className="block truncate">{title}</span>
-                      {have ? (
-                        <span className="block text-[11px] italic text-ink-400 dark:text-umber-400">
-                          {t("planning.timeline_gen_already")}
-                        </span>
-                      ) : (
-                        hint && (
-                          <span className="block text-[11px] text-ink-400 dark:text-umber-400">
-                            {hint}
-                          </span>
-                        )
-                      )}
-                    </span>
-                  </button>
-                  {!have && (
-                    <input
-                      type="date"
-                      value={dueDates[item.key] ?? ""}
-                      onChange={(e) =>
-                        setDueDates((prev) => ({ ...prev, [item.key]: e.target.value }))
-                      }
-                      aria-label={t("planning.due_date_label")}
-                      className="shrink-0 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-xs text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                    />
-                  )}
-                </li>
+                <div key={phase.id}>
+                  <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                    {localizeText(phase.label, locale)}
+                  </p>
+                  <ul className="space-y-0.5">
+                    {phaseItems.map((item) => {
+                      const have = alreadyHave.has(item.key);
+                      const on = selected.has(item.key);
+                      const title = localizeText(item.title, locale);
+                      const hint = item.hint ? localizeText(item.hint, locale) : null;
+                      return (
+                        <li
+                          key={item.key}
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => !have && toggle(item.key)}
+                            aria-pressed={on}
+                            disabled={have}
+                            className={`flex min-w-0 flex-1 items-start gap-2 text-left transition-colors ${
+                              have
+                                ? "cursor-default text-ink-300 dark:text-umber-400"
+                                : on
+                                  ? "text-ink-900 dark:text-paper-50"
+                                  : "text-ink-400 hover:text-ink-600 dark:text-umber-300 dark:hover:text-paper-100"
+                            }`}
+                          >
+                            {have ? (
+                              <CheckCircle2
+                                size={14}
+                                className="mt-0.5 shrink-0 text-sage-500 dark:text-sage-400"
+                                aria-hidden="true"
+                              />
+                            ) : on ? (
+                              <CheckCircle2
+                                size={14}
+                                className="mt-0.5 shrink-0 text-sage-700 dark:text-sage-300"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Circle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                            )}
+                            <span className="min-w-0">
+                              <span className="block truncate">{title}</span>
+                              {have ? (
+                                <span className="block text-[11px] italic text-ink-400 dark:text-umber-400">
+                                  {t("planning.timeline_gen_already")}
+                                </span>
+                              ) : (
+                                hint && (
+                                  <span className="block text-[11px] text-ink-400 dark:text-umber-400">
+                                    {hint}
+                                  </span>
+                                )
+                              )}
+                            </span>
+                          </button>
+                          {!have && (
+                            <input
+                              type="date"
+                              value={dueDates[item.key] ?? ""}
+                              onChange={(e) =>
+                                setDueDates((prev) => ({ ...prev, [item.key]: e.target.value }))
+                              }
+                              aria-label={t("planning.due_date_label")}
+                              className="shrink-0 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-xs text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                            />
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               );
             })}
-          </ul>
+          </div>
         </div>
       </div>
     </Dialog>

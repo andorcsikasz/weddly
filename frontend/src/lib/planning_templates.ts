@@ -47,33 +47,46 @@ export const TASK_TEMPLATE_GROUPS: {
   {
     id: "wedding",
     label: { hu: "Esküvő", en: "Wedding" },
+    // Titles are kept verbatim-identical to the matching WEDDING_TIMELINE items
+    // in shared/planning_timeline.ts, so the wand and the "Build my timeline"
+    // generator de-dupe against each other on apply. deadline_days mirrors each
+    // item's lead time (months × ~30).
     items: [
-      { title: { hu: "Helyszínt foglalni", en: "Book the venue" }, deadline_days: -365 },
+      { title: { hu: "Helyszínt foglalni", en: "Book your venue" }, deadline_days: -365 },
       {
         title: { hu: "Anyakönyvvezetőt egyeztetni", en: "Confirm registrar" },
-        deadline_days: -365,
-      },
-      { title: { hu: "Meghívókat megrendelni", en: "Order invitations" }, deadline_days: -90 },
-      { title: { hu: "Fotóst lefoglalni", en: "Book photographer" }, deadline_days: -300 },
-      {
-        title: { hu: "Zenekart vagy DJ-t lefoglalni", en: "Book band or DJ" },
-        deadline_days: -270,
-      },
-      { title: { hu: "Virágost egyeztetni", en: "Confirm florist" }, deadline_days: -180 },
-      { title: { hu: "Tortát megrendelni", en: "Order wedding cake" }, deadline_days: -90 },
-      {
-        title: { hu: "Menyasszonyi ruhát kiválasztani", en: "Choose wedding dress" },
-        deadline_days: -270,
+        deadline_days: -330,
       },
       {
-        title: { hu: "Vőlegény öltönyt kiválasztani", en: "Choose groom's suit" },
-        deadline_days: -90,
+        title: { hu: "Fotós és videós lefoglalása", en: "Book photo and video" },
+        deadline_days: -300,
       },
-      { title: { hu: "Karikagyűrűket beszerezni", en: "Buy wedding rings" }, deadline_days: -60 },
-      { title: { hu: "Tanúkat felkérni", en: "Ask the witnesses" }, deadline_days: -180 },
+      { title: { hu: "Catering lefoglalása", en: "Book catering" }, deadline_days: -300 },
       {
-        title: { hu: "Esküvői próbát egyeztetni", en: "Schedule wedding rehearsal" },
-        deadline_days: -14,
+        title: { hu: "Menyasszonyi ruha keresése", en: "Start dress shopping" },
+        deadline_days: -330,
+      },
+      { title: { hu: "Zenekar vagy DJ lefoglalása", en: "Book music or DJ" }, deadline_days: -240 },
+      { title: { hu: "Virágkötő lefoglalása", en: "Book florist" }, deadline_days: -240 },
+      {
+        title: { hu: "Menyasszonyi ruha megrendelése", en: "Order your dress" },
+        deadline_days: -240,
+      },
+      {
+        title: { hu: "Esküvői torta megrendelése", en: "Order wedding cake" },
+        deadline_days: -180,
+      },
+      { title: { hu: "Karikagyűrűk beszerzése", en: "Buy rings" }, deadline_days: -150 },
+      { title: { hu: "Meghívók kiküldése", en: "Send invitations" }, deadline_days: -120 },
+      { title: { hu: "Tanúk felkérése", en: "Ask the witnesses" }, deadline_days: -120 },
+      { title: { hu: "Végleges létszám leadása", en: "Finalize guest count" }, deadline_days: -30 },
+      {
+        title: { hu: "Házassági papírok rendezése", en: "Sort the marriage paperwork" },
+        deadline_days: -30,
+      },
+      {
+        title: { hu: "Esküvői próba egyeztetése", en: "Schedule wedding rehearsal" },
+        deadline_days: -7,
       },
     ],
   },
