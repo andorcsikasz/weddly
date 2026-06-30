@@ -2319,17 +2319,26 @@ function SeatsStepper({
   /** Fires when the user clicks + at the cap. Parent surfaces a toast. */
   onIncDenied?: () => void;
   max: number;
-  /** Persistent inline hint shown below the stepper when value === max. */
+  /** Inline hint shown only after the user tries to grow past the cap. */
   atCapHint?: string;
 }) {
   const upper = Math.max(1, max);
   const atMax = value >= upper;
+  // The hint is an explanation for a blocked action, not an always-on label —
+  // show it only once the user actually clicks + at the cap, and clear it as
+  // soon as the count or capacity changes (decremented, table resized, or a
+  // different table selected).
+  const [showAtCapHint, setShowAtCapHint] = useState(false);
+  useEffect(() => {
+    setShowAtCapHint(false);
+  }, [value, upper]);
   const dec = () => onChange(Math.max(1, value - 1));
   // + stays clickable past the cap so the parent can fire a toast — a
   // disabled HTML button swallows the click, leaving the user with no
   // explanation. We mark the button aria-disabled instead.
   const inc = () => {
     if (atMax) {
+      setShowAtCapHint(true);
       onIncDenied?.();
       return;
     }
@@ -2368,7 +2377,7 @@ function SeatsStepper({
           /{upper}
         </span>
       </div>
-      {atMax && atCapHint && (
+      {atMax && showAtCapHint && atCapHint && (
         <p className="mt-1.5 text-[11px] text-blush-700 dark:text-blush-300" role="status">
           {atCapHint}
         </p>
