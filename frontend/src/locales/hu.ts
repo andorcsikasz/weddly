@@ -2841,6 +2841,9 @@ const hu: LocaleMessages = {
     view_timeline: "Idővonal",
     view_list: "Lista",
     gap_label: "{n} perc szünet",
+    summary_events: "{count} program",
+    summary_guests: "~{count} vendég",
+    guest_visible_badge: "Vendégeknek látható",
   },
   guests: {
     title: "Vendéglista",

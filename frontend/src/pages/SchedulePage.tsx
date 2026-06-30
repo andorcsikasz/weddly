@@ -5,6 +5,7 @@
 
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
+import type { Couple } from "@shared/types";
 import {
   MAX_KEY_MOMENTS,
   SCHEDULE_DAY_TWO_MINUTES,
@@ -18,24 +19,49 @@ import {
 import {
   AlignJustify,
   Briefcase,
+  Cake,
+  Camera,
   Clock,
+  DoorOpen,
   Download,
+  Gem,
   Infinity,
   MapPin,
   Milestone,
+  Moon,
+  Music2,
+  PartyPopper,
   Pencil,
   Plus,
   Star,
   Trash2,
   User,
+  Users,
+  UtensilsCrossed,
   Wand2,
+  Wine,
   X,
 } from "lucide-react";
-import { Fragment, type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  type ComponentType,
+  Fragment,
+  type FormEvent,
+  type ReactNode,
+  type SVGProps,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { coupleSupplierApi, fetchPdfBlob, scheduleApi, schedulePdfUrl } from "../lib/endpoints";
+import {
+  coupleApi,
+  coupleSupplierApi,
+  fetchPdfBlob,
+  scheduleApi,
+  schedulePdfUrl,
+} from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
 import {
   SCHEDULE_TEMPLATE,
@@ -63,6 +89,51 @@ function formatHHMM(minutes: number): string {
  *  2-day timeline. Used to decide when to render the day-2 badge. */
 function isDayTwo(minutes: number): boolean {
   return minutes >= SCHEDULE_DAY_TWO_MINUTES;
+}
+
+type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
+
+/** Accent-fold for the keyword match, mirroring `pickKeyMoments` in
+ *  shared/schedule.ts so "Szertartás" and "szertartas" both hit. */
+function foldBeatLabel(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+/** Keyword → icon for a wedding-day beat, most-specific bucket first. A
+ *  hand-edited label that matches nothing falls through to the neutral clock
+ *  node. HU + EN stems are both covered. Order matters: "dance" must beat
+ *  "end" so a "Záró tánc" (last dance) reads as music, not moon. */
+const BEAT_ICON_BUCKETS: readonly { kws: readonly string[]; Icon: IconCmp }[] = [
+  { kws: ["szertart", "ceremon", "vows", "esku", "gyuru", "ring"], Icon: Gem },
+  { kws: ["csoportkep", "foto", "photo", "kep", "picture", "portre"], Icon: Camera },
+  { kws: ["vacsor", "dinner", "feast", "supper", "etel", "menu", "food"], Icon: UtensilsCrossed },
+  { kws: ["torta", "cake", "dessert"], Icon: Cake },
+  { kws: ["tanc", "dance"], Icon: Music2 },
+  { kws: ["fogad", "koccint", "cocktail", "pezsgo", "aperitif", "welcome drink"], Icon: Wine },
+  { kws: ["erkez", "arriv", "gather", "gyulekez"], Icon: DoorOpen },
+  {
+    kws: ["meglepetes", "surprise", "ejfel", "midnight", "buli", "party", "tuzijatek", "firework"],
+    Icon: PartyPopper,
+  },
+  { kws: ["vege", "zaras", "zaro", "close", "bucsu", "farewell"], Icon: Moon },
+];
+
+function iconForBeat(label: string): IconCmp {
+  const folded = foldBeatLabel(label);
+  for (const bucket of BEAT_ICON_BUCKETS) {
+    if (bucket.kws.some((kw) => folded.includes(kw))) return bucket.Icon;
+  }
+  return Clock;
+}
+
+/** Parse a `YYYY-MM-DD` literal into a local-midnight Date, or null. Avoids
+ *  `new Date(str)` ISO quirks. */
+function parseISODate(s: string | null): Date | null {
+  if (!s) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return null;
+  const dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
 /** Parse a single `<input type="time">` value into wall-clock minutes
@@ -131,6 +202,7 @@ export default function SchedulePage() {
   const confirm = useConfirm();
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [suppliers, setSuppliers] = useState<CoupleSupplier[]>([]);
+  const [couple, setCouple] = useState<Couple | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -154,6 +226,14 @@ export default function SchedulePage() {
       setSuppliers(s.suppliers ?? []);
     } catch {
       // ignore — the select just stays empty
+    }
+    // Couple powers the day-summary header (names, date, venue, headcount).
+    // Best-effort — a failure just hides the summary, the schedule still loads.
+    try {
+      const c = await coupleApi.current();
+      setCouple(c.couple);
+    } catch {
+      // ignore — summary card stays hidden
     }
   }
 
@@ -361,6 +441,10 @@ export default function SchedulePage() {
         </div>
       </header>
 
+      {!loading && couple && sortedEvents.length > 0 && (
+        <ScheduleSummaryCard couple={couple} events={sortedEvents} locale={locale} />
+      )}
+
       {loading ? (
         <ScheduleListSkeleton />
       ) : sortedEvents.length === 0 ? (
@@ -382,6 +466,7 @@ export default function SchedulePage() {
         <ScheduleTimelineView
           events={sortedEvents}
           locale={locale}
+          supplierNameById={supplierNameById}
           onEdit={(event) => setEditing({ event })}
         />
       ) : (
@@ -577,12 +662,15 @@ export default function SchedulePage() {
 function ScheduleTimelineView({
   events,
   locale,
+  supplierNameById,
   onEdit,
 }: {
   events: ScheduleEvent[];
   locale: Locale;
+  supplierNameById: Map<string, string>;
   onEdit: (event: ScheduleEvent) => void;
 }) {
+  const { t } = useT();
   return (
     <div className="card p-5 sm:p-8">
       <ol data-tour-target="schedule-events" className="relative mx-auto max-w-xl">
@@ -596,27 +684,40 @@ function ScheduleTimelineView({
             ? `${formatHHMM(event.starts_at_minutes)} – ${end}`
             : formatHHMM(event.starts_at_minutes);
           const day2 = isDayTwo(event.starts_at_minutes);
+          const Icon = iconForBeat(event.label);
+          const supplierName = event.couple_supplier_id
+            ? (supplierNameById.get(event.couple_supplier_id) ?? null)
+            : null;
+          const hasMeta = Boolean(
+            event.location || event.responsible || supplierName || event.is_key_moment,
+          );
 
           return (
-            <li key={event.id} className="grid grid-cols-[1.25rem_1fr] gap-4 pb-7 last:pb-0">
-              {/* Rail: continuous hairline with a node at each beat. */}
+            <li key={event.id} className="grid grid-cols-[2rem_1fr] gap-4 pb-7 last:pb-0">
+              {/* Rail: continuous hairline with an icon node at each beat. */}
               <div className="relative flex justify-center">
                 {!isLast && (
                   <span
                     aria-hidden="true"
-                    className="absolute top-2 -bottom-7 left-1/2 w-px -translate-x-1/2 bg-paper-300 dark:bg-umber-600"
+                    className="absolute top-9 -bottom-7 left-1/2 w-px -translate-x-1/2 bg-paper-300 dark:bg-umber-600"
                   />
                 )}
                 <span
                   aria-hidden="true"
-                  className="relative z-10 mt-2 h-2.5 w-2.5 rounded-full bg-ink-900 ring-4 ring-white dark:bg-paper-100 dark:ring-umber-800"
-                />
+                  className={`relative z-10 mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-white dark:ring-umber-800 ${
+                    event.is_key_moment
+                      ? "bg-blush-100 text-blush-600 dark:bg-blush-400/20 dark:text-blush-300"
+                      : "bg-paper-100 text-ink-700 dark:bg-umber-700 dark:text-paper-100"
+                  }`}
+                >
+                  <Icon size={15} />
+                </span>
               </div>
 
               <button
                 type="button"
                 onClick={() => onEdit(event)}
-                className="group/btn -mt-1 block w-full rounded-xl px-3 py-2 text-left transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:hover:bg-umber-700"
+                className="group/btn block w-full rounded-xl px-3 py-2 text-left transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:hover:bg-umber-700"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-[15px] font-semibold text-ink-900 dark:text-paper-50">
@@ -633,19 +734,113 @@ function ScheduleTimelineView({
                     {timeLabel}
                     {day2 && <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>}
                   </span>
-                  {event.location && (
-                    <span className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-                      <MapPin size={11} aria-hidden="true" />
-                      {event.location}
+                  {!end && (
+                    <span className="inline-flex items-center gap-1 text-xs text-ink-400 dark:text-umber-400">
+                      <Infinity size={11} aria-hidden="true" />
+                      {t("schedule.open_ended")}
                     </span>
                   )}
                 </div>
+                {hasMeta && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                    {event.location && (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin size={11} aria-hidden="true" />
+                        {event.location}
+                      </span>
+                    )}
+                    {event.responsible && (
+                      <span className="inline-flex items-center gap-1">
+                        <User size={11} aria-hidden="true" />
+                        {event.responsible}
+                      </span>
+                    )}
+                    {supplierName && (
+                      <span className="inline-flex items-center gap-1 text-umber-600 dark:text-umber-300">
+                        <Briefcase size={11} aria-hidden="true" />
+                        {supplierName}
+                      </span>
+                    )}
+                    {event.is_key_moment && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blush-50 px-2 py-0.5 font-medium text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+                        <Star size={10} fill="currentColor" aria-hidden="true" />
+                        {t("schedule.guest_visible_badge")}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {event.notes && (
+                  <p className="mt-1.5 line-clamp-2 text-xs italic text-ink-400 dark:text-umber-400">
+                    {event.notes}
+                  </p>
+                )}
               </button>
             </li>
           );
         })}
       </ol>
     </div>
+  );
+}
+
+/** Day-of summary banner above the schedule views: couple name, date + venue,
+ *  and a stat strip (event count · day window · expected headcount). Pure
+ *  read-out over already-loaded couple + schedule data — no new fetch. */
+function ScheduleSummaryCard({
+  couple,
+  events,
+  locale,
+}: {
+  couple: Couple;
+  events: ScheduleEvent[];
+  locale: Locale;
+}) {
+  const { t } = useT();
+  const first = events[0];
+  if (!first) return null;
+
+  const lastEnd = events.reduce((max, e) => Math.max(max, eventEndMinutes(e)), 0);
+  const windowLabel = `${formatHHMM(first.starts_at_minutes)} – ${formatHHMM(lastEnd)}`;
+
+  const date = parseISODate(couple.wedding_date);
+  const dateLabel = date
+    ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(date)
+    : null;
+  const venue = [couple.venue_name, couple.venue_city].filter(Boolean).join(", ");
+  const subtitle = [dateLabel, venue].filter(Boolean).join(" · ");
+  const guests = couple.target_guest_count;
+
+  return (
+    <section className="card mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0">
+        {couple.display_name && (
+          <p className="truncate font-serif text-2xl italic text-ink-900 dark:text-paper-50">
+            {couple.display_name}
+          </p>
+        )}
+        {subtitle && <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">{subtitle}</p>}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs font-medium text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+          <Milestone size={13} aria-hidden="true" />
+          {t("schedule.summary_events", { count: events.length })}
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs font-medium tabular-nums text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+          <Clock size={13} aria-hidden="true" />
+          {windowLabel}
+        </span>
+        {guests !== null && guests > 0 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs font-medium text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+            <Users size={13} aria-hidden="true" />
+            {t("schedule.summary_guests", { count: guests })}
+          </span>
+        )}
+      </div>
+    </section>
   );
 }
 

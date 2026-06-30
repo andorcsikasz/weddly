@@ -2812,6 +2812,9 @@ const en: LocaleMessages = {
     view_timeline: "Timeline",
     view_list: "List",
     gap_label: "{n} min gap",
+    summary_events: "{count} events",
+    summary_guests: "~{count} guests",
+    guest_visible_badge: "Guests can see this",
   },
   guests: {
     title: "Guest list",

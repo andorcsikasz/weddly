@@ -3097,6 +3097,13 @@ export interface LocaleMessages {
     view_list: string;
     /** Receives `{n}` — gap in minutes between two consecutive events. */
     gap_label: string;
+    /** Day-summary card. Receives `{count}` — number of schedule events. */
+    summary_events: string;
+    /** Day-summary card. Receives `{count}` — expected guest headcount. */
+    summary_guests: string;
+    /** Timeline-row badge on key-moment beats — these surface on the public
+     *  wedding site, so the badge tells the couple "guests can see this". */
+    guest_visible_badge: string;
   };
   guests: {
     title: string;
