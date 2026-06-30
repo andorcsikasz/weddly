@@ -20,7 +20,9 @@ import {
   Bell,
   CalendarClock,
   ClipboardList,
+  Clock,
   Info,
+  ListChecks,
   Mail,
   MessageCircle,
   Send,
@@ -43,6 +45,8 @@ const KIND_ICON: Record<NotificationItem["kind"], IconCmp> = {
   timeline_email_sent: Send,
   admin_message: Info,
   feedback_survey: MessageCircle,
+  planning_stale_task: Clock,
+  planning_decisions_stale: ListChecks,
 };
 
 /** Compose the human label for a feed row from its kind + params. */
@@ -76,6 +80,10 @@ function useLabel() {
         return String(d.message ?? "");
       case "feedback_survey":
         return t("notifications.feedback_survey");
+      case "planning_stale_task":
+        return t("notifications.planning_stale_task", { task: String(d.taskTitle ?? "") });
+      case "planning_decisions_stale":
+        return t("notifications.planning_decisions_stale", { count: Number(d.count ?? 0) });
       default:
         return "";
     }

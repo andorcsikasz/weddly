@@ -11,6 +11,26 @@ export function localizeText(text: LocaleText, locale: Locale): string {
   return text[locale];
 }
 
+/** Category tag carried by a creative idea so the Ideas tab can render and
+ *  filter by type. Mirrors the same literal union the backend defines in
+ *  shared/types.ts, keep the string values in sync. */
+export type IdeaTag = "program" | "decor" | "surprise" | "keepsake" | "experience";
+
+/** A creative idea card. `tag` is optional for backward compatibility, older
+ *  pool entries simply render untagged. */
+export type Idea = { title: LocaleText; body: LocaleText; tag?: IdeaTag };
+
+/** Personalization intake "yes" answers the "Nektek ajánljuk" recommender
+ *  matches on. Canonical condition tags, kept in sync with the personalization
+ *  questions and the backend union. */
+export type ConditionTag =
+  | "evening_party"
+  | "pro_photo"
+  | "has_children"
+  | "guest_keepsakes"
+  | "printed_stationery"
+  | "religious";
+
 /** Task starter set, organised into two sections the wand renders as
  *  separate groups: the universally-applicable wedding bookings + decisions
  *  every Hungarian couple makes, followed by the honeymoon trip-prep set
@@ -197,11 +217,302 @@ export const IDEA_TEMPLATE: { title: LocaleText; body?: LocaleText }[] = [
   { title: { hu: "Vendégeknek apró asztali ajándék", en: "Small table favours for the guests" } },
 ];
 
+// --- Tagged, reusable idea objects -------------------------------------------
+// These power both the dice pool below and the "Nektek ajánljuk" recommender.
+// Defining each idea once keeps a single source of truth, so the same card
+// never appears twice with diverging copy. Ideas referenced by the recommender
+// live here; the rest stay inline in the pool array.
+
+// Ceremony
+const IDEA_UNITY_CANDLE: Idea = {
+  title: {
+    hu: "Közös gyertyagyújtás a szertartás végén",
+    en: "Unity candle at the close of the ceremony",
+  },
+  body: {
+    hu: "Szimbolikus, vizuálisan erős pillanat: két láng eggyé válik a szertartás végén.",
+    en: "A symbolic, visually striking moment: two flames become one as the ceremony ends.",
+  },
+  tag: "program",
+};
+const IDEA_LIVE_PROCESSIONAL: Idea = {
+  title: { hu: "Hangszeres élő zene a bevonuláshoz", en: "Live instruments for the processional" },
+  body: {
+    hu: "Vonós vagy akusztikus gitár a DJ helyett, a bevonulás sokkal meghittebb lesz.",
+    en: "Strings or an acoustic guitar instead of the DJ, the entrance turns far warmer.",
+  },
+  tag: "program",
+};
+const IDEA_UNPLUGGED: Idea = {
+  title: { hu: "Unplugged szertartás bejelentése", en: "Announce an unplugged ceremony" },
+  body: {
+    hu: "A fotós minden arcot megtart, nem a felemelt telefonok erdejét.",
+    en: "The photographer keeps every face, not a forest of raised phones.",
+  },
+  tag: "program",
+};
+const IDEA_RING_BEARER_BASKET: Idea = {
+  title: { hu: "Gyerek-gyűrűvivő kis kosárral", en: "Child ring-bearer with a little basket" },
+  body: {
+    hu: "Az egyik legjobban sikerülő, legaranyosabb pillanat a szertartáson.",
+    en: "One of the sweetest, most reliably charming moments of the whole ceremony.",
+  },
+  tag: "program",
+};
+
+// Guests & atmosphere
+const IDEA_TABLE_SIGN: Idea = {
+  title: {
+    hu: "Személyre szabott ültető-tábla minden asztalhoz",
+    en: "A personalised sign for every table",
+  },
+  body: {
+    hu: "Minden asztal kap egy témát, idézetet vagy közös emléket a párral.",
+    en: "Each table gets a theme, a quote, or a shared memory with the couple.",
+  },
+  tag: "decor",
+};
+const IDEA_POLAROID_WALL: Idea = {
+  title: { hu: "Polaroid-fal a vendégeknek", en: "A Polaroid wall for the guests" },
+  body: {
+    hu: "Mindenki ragaszt egy fotót az emléküzenete mellé, a fal estére megtelik.",
+    en: "Everyone pins a photo beside their note, and the wall fills up by evening.",
+  },
+  tag: "experience",
+};
+const IDEA_WELCOME_DRINK_NAMED: Idea = {
+  title: { hu: "Welcome drink különleges névvel", en: "A welcome drink with a name of its own" },
+  body: {
+    hu: "Pl. „Andor & Sári Spritz”, nem csak sima pezsgő a recepción.",
+    en: 'Say the "Andor & Sári Spritz", not just plain bubbles at check-in.',
+  },
+  tag: "experience",
+};
+const IDEA_INTERACTIVE_GUESTBOOK: Idea = {
+  title: { hu: "Interaktív vendégkönyv kérdésekkel", en: "An interactive guest book with prompts" },
+  body: {
+    hu: "Kérdések, mint „Legjobb tanács a párnak” vagy „Jóslat 10 évre”.",
+    en: 'Prompts like "Best advice for the couple" or "A prediction for ten years out".',
+  },
+  tag: "experience",
+};
+
+// Entertainment & surprises
+const IDEA_SECRET_SONG_SWITCH: Idea = {
+  title: { hu: "Titkos első tánc-dallam csere", en: "Secret first-dance song switch" },
+  body: {
+    hu: "A vendégek nem tudják, mi szól el az első pár másodperc után, óriási a hatás.",
+    en: "Guests have no idea what kicks in after the first few bars, the payoff is huge.",
+  },
+  tag: "surprise",
+};
+const IDEA_SPARKLER_EXIT: Idea = {
+  title: {
+    hu: "Sparkler-folyosó vagy tűzijáték a kivonulásnál",
+    en: "Sparkler corridor or fireworks at the send-off",
+  },
+  body: {
+    hu: "Három perc, de örökre emlékezetes, és minden fotós imádja.",
+    en: "Three minutes long, unforgettable forever, and every photographer loves it.",
+  },
+  tag: "surprise",
+};
+const IDEA_WITNESS_STANDUP: Idea = {
+  title: { hu: "Stand-up rész a tanúktól", en: "A stand-up bit from the witnesses" },
+  body: {
+    hu: "Öt perc, előre egyeztetve és időkorláttal, hogy ne fusson el.",
+    en: "Five minutes, agreed in advance and time-boxed so it never runs away.",
+  },
+  tag: "program",
+};
+const IDEA_MIDNIGHT_SNACK: Idea = {
+  title: { hu: "Éjféli hot dog vagy lángos meglepetés", en: "A midnight hot dog or lángos surprise" },
+  body: {
+    hu: "A vendégek bent maradnak és meglepődnek, amikor előkerül a meleg étel.",
+    en: "Guests stay on and light up when warm food suddenly arrives.",
+  },
+  tag: "surprise",
+};
+const IDEA_COUPLE_QUIZ: Idea = {
+  title: { hu: "Kahoot-kvíz rólatok a vacsoránál", en: "Couple-quiz Kahoot at dinner" },
+  body: {
+    hu: "Mobilon játszott kvíz a kapcsolatotokról, a közönség szavazza meg, melyikőtök hazudik nagyobbat.",
+    en: "A phone-based quiz about your relationship, the room votes on who's bluffing harder.",
+  },
+  tag: "experience",
+};
+
+// Details & keepsakes
+const IDEA_NAPKIN_RINGS: Idea = {
+  title: {
+    hu: "Személyre szabott szalvétagyűrűk a vendég nevével",
+    en: "Personalised napkin rings with each guest's name",
+  },
+  body: {
+    hu: "A vendégek hazaviszik őket emlékként, kettős szerepben: névkártya és ajándék.",
+    en: "Guests take them home as a keepsake, doubling as both a place card and a favour.",
+  },
+  tag: "keepsake",
+};
+const IDEA_WEDDING_NEWSPAPER: Idea = {
+  title: { hu: "Saját esküvői újság a vendégasztalon", en: "Your own wedding newspaper" },
+  body: {
+    hu: "Nyolcoldalas újság a tervezésetekről, közös fotókról, az aznapi programról, minden asztalra kettő.",
+    en: "An eight-page paper covering your story, photos, and the day's schedule, two on every table.",
+  },
+  tag: "decor",
+};
+const IDEA_SCENT_CANDLE: Idea = {
+  title: { hu: "Saját illatgyertya esküvői illattal", en: "A signature scent candle from the wedding" },
+  body: {
+    hu: "Kis üvegbe töltve, köszönő-ajándékként, a vendégek hazaviszik az esküvő illatát.",
+    en: "Poured into a little jar as a thank-you favour, guests take home the scent of the day.",
+  },
+  tag: "keepsake",
+};
+
+// Photography extras
+const IDEA_GUEST_SLIDESHOW: Idea = {
+  title: { hu: "Diavetítés a vendégekről, nem rólatok", en: "Slideshow of your guests, not you" },
+  body: {
+    hu: "Egy közeli barát szervezi titokban, fotó minden vendégről, mosolyok a falon vacsora közben.",
+    en: "A close friend collects photos in secret, every guest's face on the wall during dinner.",
+  },
+  tag: "surprise",
+};
+const IDEA_FIRST_LOOK_WITNESSES: Idea = {
+  title: { hu: "First look a két tanúval", en: "A first look with the two witnesses" },
+  body: {
+    hu: "Nem csak a párnak, a legjobb barátnők és barátok reakciója is megörökíthető.",
+    en: "Not just for the couple, you capture the best friends' reactions too.",
+  },
+  tag: "program",
+};
+const IDEA_QR_PHOTO_ALBUM: Idea = {
+  title: { hu: "Vendég-fotófüzet QR-kóddal", en: "A guest photo album behind a QR code" },
+  body: {
+    hu: "Mindenki feltölti a saját képeit, a pár megkapja a komplett albumot a nap végén.",
+    en: "Everyone uploads their own shots, and the couple gets the complete album by night's end.",
+  },
+  tag: "keepsake",
+};
+
+// Recommender-only ideas (curated for "Nektek ajánljuk", not in the dice pool)
+const IDEA_LED_DANCEFLOOR: Idea = {
+  title: {
+    hu: "LED-tánctér vagy fényshow a buli csúcspontján",
+    en: "An LED dance floor or light show at the peak",
+  },
+  body: {
+    hu: "A buli csúcspontján a tér életre kel, a fotók és a hangulat is felrobban.",
+    en: "At the peak of the party the room comes alive, photos and energy both spike.",
+  },
+  tag: "experience",
+};
+const IDEA_FIRST_LOOK_COUPLE: Idea = {
+  title: {
+    hu: "First look fotózás a szertartás előtt kettesben",
+    en: "A first-look photo session before the ceremony",
+  },
+  body: {
+    hu: "Egy meghitt pillanat csak kettőtöknek, mielőtt a nap igazán beindul.",
+    en: "A private moment for just the two of you before the day truly kicks off.",
+  },
+  tag: "program",
+};
+const IDEA_DRONE_GOLDEN_HOUR: Idea = {
+  title: {
+    hu: "Drónfelvétel a helyszínről napkeltekor vagy naplementekor",
+    en: "A drone shot of the venue at sunrise or sunset",
+  },
+  body: {
+    hu: "Aranyórában a helyszín és a násznép madártávlatból, filmes nyitókép.",
+    en: "The venue and the crowd from above in golden hour, a cinematic opening shot.",
+  },
+  tag: "program",
+};
+const IDEA_VIDEO_TIME_CAPSULE: Idea = {
+  title: {
+    hu: "Időkapszula videóüzenet a jövőnek",
+    en: "A video time-capsule message to the future",
+  },
+  body: {
+    hu: "A fotós rögzíti, ahogy üzentek a 10 év múlvai magatoknak, évfordulón nézitek vissza.",
+    en: "The videographer records your message to your future selves, replayed on an anniversary.",
+  },
+  tag: "keepsake",
+};
+const IDEA_KIDS_CORNER: Idea = {
+  title: { hu: "Gyerek-sarok rajzolással és mesével", en: "A kids' corner with drawing and stories" },
+  body: {
+    hu: "Rajzolás, meséskönyv, matrica-album, a szülők nyugodtan ünnepelhetnek.",
+    en: "Drawing, picture books, sticker albums, so the parents can actually celebrate.",
+  },
+  tag: "experience",
+};
+const IDEA_KIDS_FAVOUR: Idea = {
+  title: { hu: "Apró ajándék a gyerekeknek", en: "A small gift for the children" },
+  body: {
+    hu: "Buborékfújó vagy kis táska a névvel, a legkisebb vendégek is kapnak meglepetést.",
+    en: "Bubbles or a little name-tagged bag, the smallest guests get a surprise too.",
+  },
+  tag: "keepsake",
+};
+const IDEA_KIDS_MENU: Idea = {
+  title: { hu: "Külön gyerek-menü kreatív névvel", en: "A separate kids' menu with playful names" },
+  body: {
+    hu: "Saját, gyerekbarát fogások viccesen elnevezve, nem a felnőtt menü kicsinyítve.",
+    en: "Their own child-friendly dishes with fun names, not just the adult menu shrunk down.",
+  },
+  tag: "experience",
+};
+const IDEA_PLACE_CARD: Idea = {
+  title: {
+    hu: "Személyre szabott ültetőkártya vendégenként",
+    en: "A personalised place card for every guest",
+  },
+  body: {
+    hu: "Minden vendég a saját nevével és helyével, rendezett, igényes belépő a vacsorához.",
+    en: "Each guest with their own name and seat, a tidy, polished start to dinner.",
+  },
+  tag: "decor",
+};
+const IDEA_HANDWRITTEN_THANKYOU: Idea = {
+  title: { hu: "Személyes köszönőlap kézírással", en: "A handwritten thank-you note" },
+  body: {
+    hu: "Minden vendégnek pár saját mondat kézzel írva, a legszemélyesebb gesztus.",
+    en: "A few handwritten lines for every guest, the most personal gesture there is.",
+  },
+  tag: "keepsake",
+};
+const IDEA_SAND_CEREMONY: Idea = {
+  title: {
+    hu: "Homokszertartás a két szín összeöntésével",
+    en: "A sand ceremony blending two colours",
+  },
+  body: {
+    hu: "Két szín egy üvegbe öntve elválaszthatatlanná válik, szép szimbóluma a frigynek.",
+    en: "Two colours poured into one jar become inseparable, a lovely symbol of the union.",
+  },
+  tag: "program",
+};
+const IDEA_SHARED_BLESSING: Idea = {
+  title: {
+    hu: "Közös áldás vagy ima a vendégekkel",
+    en: "A shared blessing or prayer with the guests",
+  },
+  body: {
+    hu: "A vendégek is bekapcsolódnak egy közös áldásba, mély, összetartó pillanat.",
+    en: "Guests join in a collective blessing, a deep, unifying moment.",
+  },
+  tag: "program",
+};
+
 /** Creative-bold idea pool for the 🎲 randomizer. Mix of intimate, surprising,
  *  Hungarian-traditional-with-a-twist, sensory, and just plain delightful. The
  *  dialog picks 3 at random from this pool; the user accepts the ones that
  *  resonate. Keep the titles short (chips); body gives the why/how. */
-export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
+export const DICE_CREATIVE_IDEAS: Idea[] = [
   {
     title: { hu: "Saját esküt írni és felolvasni", en: "Write and read your own vows" },
     body: {
@@ -215,6 +526,7 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       hu: "Minden vendég ír egy levelet, közösen elzárjátok, és a 10. évfordulón felbontjátok.",
       en: "Every guest writes a letter, you seal it together, and open it on your 10th anniversary.",
     },
+    tag: "keepsake",
   },
   {
     title: { hu: "Élő festő dokumentál benneteket", en: "Live painter captures the wedding" },
@@ -465,13 +777,7 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Your partner records a 30-second message the night before, play it while you get ready, expect tears.",
     },
   },
-  {
-    title: { hu: "Saját esküvői újság a vendégasztalon", en: "Your own wedding newspaper" },
-    body: {
-      hu: "Nyolcoldalas újság a tervezésetekről, közös fotókról, az aznapi programról, minden asztalra kettő.",
-      en: "An eight-page paper covering your story, photos, and the day's schedule, two on every table.",
-    },
-  },
+  IDEA_WEDDING_NEWSPAPER,
   {
     title: { hu: "Esküvő-bingó kártyák a vendégeknek", en: "Wedding bingo cards for guests" },
     body: {
@@ -561,20 +867,8 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Tradition stays, but the pot funds a shared experience, a honeymoon weekend tracked live on a map.",
     },
   },
-  {
-    title: { hu: "Diavetítés a vendégekről, nem rólatok", en: "Slideshow of your guests, not you" },
-    body: {
-      hu: "Egy közeli barát szervezi titokban, fotó minden vendégről, mosolyok a falon vacsora közben.",
-      en: "A close friend collects photos in secret, every guest's face on the wall during dinner.",
-    },
-  },
-  {
-    title: { hu: "Kahoot-kvíz rólatok a vacsoránál", en: "Couple-quiz Kahoot at dinner" },
-    body: {
-      hu: "Mobilon játszott kvíz a kapcsolatotokról, a közönség szavazza meg, melyikőtök hazudik nagyobbat.",
-      en: "A phone-based quiz about your relationship, the room votes on who's bluffing harder.",
-    },
-  },
+  IDEA_GUEST_SLIDESHOW,
+  IDEA_COUPLE_QUIZ,
   {
     title: {
       hu: "Hangüzenetes vendégkönyv régi telefonnal",
@@ -609,7 +903,66 @@ export const DICE_CREATIVE_IDEAS: { title: LocaleText; body: LocaleText }[] = [
       en: "Four or five unusual flavours (lavender, blueberry, thyme) with your label, kids and non-drinkers get to celebrate too.",
     },
   },
+  // Tagged additions (see the named consts above).
+  IDEA_UNITY_CANDLE,
+  IDEA_LIVE_PROCESSIONAL,
+  IDEA_UNPLUGGED,
+  IDEA_RING_BEARER_BASKET,
+  IDEA_TABLE_SIGN,
+  IDEA_POLAROID_WALL,
+  IDEA_WELCOME_DRINK_NAMED,
+  IDEA_INTERACTIVE_GUESTBOOK,
+  IDEA_SECRET_SONG_SWITCH,
+  IDEA_SPARKLER_EXIT,
+  IDEA_WITNESS_STANDUP,
+  IDEA_MIDNIGHT_SNACK,
+  IDEA_NAPKIN_RINGS,
+  IDEA_SCENT_CANDLE,
+  IDEA_FIRST_LOOK_WITNESSES,
+  IDEA_QR_PHOTO_ALBUM,
 ];
+
+/** "Nektek ajánljuk" map: each personalization intake "yes" answer points at a
+ *  curated, stable (non-random) shortlist of ideas. Objects are reused from the
+ *  tagged consts above so a card stays consistent wherever it appears. */
+export const RECOMMENDED_BY_TAG: Record<ConditionTag, Idea[]> = {
+  evening_party: [
+    IDEA_SPARKLER_EXIT,
+    IDEA_SECRET_SONG_SWITCH,
+    IDEA_LED_DANCEFLOOR,
+    IDEA_MIDNIGHT_SNACK,
+    IDEA_COUPLE_QUIZ,
+  ],
+  pro_photo: [
+    IDEA_FIRST_LOOK_COUPLE,
+    IDEA_GUEST_SLIDESHOW,
+    IDEA_DRONE_GOLDEN_HOUR,
+    IDEA_VIDEO_TIME_CAPSULE,
+  ],
+  has_children: [IDEA_KIDS_CORNER, IDEA_KIDS_FAVOUR, IDEA_KIDS_MENU, IDEA_RING_BEARER_BASKET],
+  guest_keepsakes: [IDEA_INTERACTIVE_GUESTBOOK, IDEA_POLAROID_WALL, IDEA_QR_PHOTO_ALBUM],
+  printed_stationery: [IDEA_PLACE_CARD, IDEA_WEDDING_NEWSPAPER, IDEA_HANDWRITTEN_THANKYOU],
+  religious: [IDEA_UNITY_CANDLE, IDEA_SAND_CEREMONY, IDEA_SHARED_BLESSING],
+};
+
+/** Given the set of "yes" intake tags, produce a deduplicated (by HU title)
+ *  shortlist of recommended idea cards, capped at `max` (default 6). Unknown
+ *  tags are ignored. Order follows the input tag order, then the per-tag list. */
+export function recommendedIdeas(yesTags: string[], max = 6): Idea[] {
+  const seen = new Set<string>();
+  const out: Idea[] = [];
+  for (const tag of yesTags) {
+    const ideas = RECOMMENDED_BY_TAG[tag as ConditionTag] as Idea[] | undefined;
+    if (!ideas) continue;
+    for (const idea of ideas) {
+      if (out.length >= max) return out;
+      if (seen.has(idea.title.hu)) continue;
+      seen.add(idea.title.hu);
+      out.push(idea);
+    }
+  }
+  return out;
+}
 
 /** Pull `count` distinct items from a pool, uniformly at random. */
 export function rollDice<T>(pool: readonly T[], count: number): T[] {

@@ -1770,6 +1770,8 @@ const en: LocaleMessages = {
     settings_back: "Back",
     feedback_survey: "We'd love your feedback",
     feedback_survey_intro: "We're here to make your life easier and your wedding unforgettable.",
+    planning_stale_task: "Been waiting a while: {task}",
+    planning_decisions_stale: "{count} decisions are waiting for you",
     show_history: "Show previous",
     hide_history: "Hide previous",
     no_new: "No new notifications.",

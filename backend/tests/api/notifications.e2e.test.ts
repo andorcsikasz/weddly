@@ -1,10 +1,44 @@
 import "../setup";
 
-import { describe, expect, test } from "bun:test";
 import type { NotificationFeed } from "@shared/notifications";
+import { promptsForGroup } from "@shared/planning_prompts";
+import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
 import { runEmailSweep } from "../../src/domain/emails/worker";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+
+const DAY_MS = 86_400_000;
+
+/** Insert a planning task row directly with controlled timestamps so the
+ *  computed reminders (which key off created_at / updated_at age) are
+ *  deterministic without waiting real calendar days. */
+function insertTask(
+  coupleId: number,
+  fields: {
+    title: string;
+    done?: number;
+    due_date?: string | null;
+    seed_key?: string | null;
+    decision_status?: string | null;
+    created_at: number;
+    updated_at?: number;
+  },
+): void {
+  db.prepare(
+    `INSERT INTO planning_items
+       (couple_id, kind, title, done, due_date, seed_key, decision_status, position, created_at, updated_at)
+     VALUES (?, 'task', ?, ?, ?, ?, ?, 0, ?, ?)`,
+  ).run(
+    coupleId,
+    fields.title,
+    fields.done ?? 0,
+    fields.due_date ?? null,
+    fields.seed_key ?? null,
+    fields.decision_status ?? null,
+    fields.created_at,
+    fields.updated_at ?? fields.created_at,
+  );
+}
 
 const PAST_DUE = "2020-01-01"; // always overdue relative to "today"
 
@@ -149,6 +183,105 @@ describe("notifications: couple-vs-user isolation", () => {
     expect(aAfter.data.unread).toBe(0);
     // B's badge is untouched — the watermark is per user.
     expect(bAfter.data.unread).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("notifications: stale dateless to-do reminder", () => {
+  test("a dateless, not-done task parked 7+ days surfaces a gentle nudge", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("notif-stale@weddly.test");
+    insertTask(coupleId, { title: "Köszönőajándék ötlet", created_at: Date.now() - 8 * DAY_MS });
+
+    const r = await feed(token);
+    const stale = r.data.items.find((i) => i.kind === "planning_stale_task");
+    expect(stale).toBeDefined();
+    expect(stale?.data.taskTitle).toBe("Köszönőajándék ötlet");
+    expect(stale?.link).toBe("/app/planning");
+
+    // Computed — never written to couple_notifications.
+    const stored = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM couple_notifications WHERE couple_id = ? AND kind = 'planning_stale_task'",
+      )
+      .get(coupleId) as { n: number };
+    expect(stored.n).toBe(0);
+  });
+
+  test("does NOT fire for a fresh task, a done task, a dated task, or a decision prompt", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("notif-stale-neg@weddly.test");
+    const old = Date.now() - 30 * DAY_MS;
+    insertTask(coupleId, { title: "Friss feladat", created_at: Date.now() - 2 * DAY_MS }); // too fresh
+    insertTask(coupleId, { title: "Kész feladat", done: 1, created_at: old }); // done
+    insertTask(coupleId, { title: "Dátumos feladat", due_date: "2099-01-01", created_at: old }); // dated
+    insertTask(coupleId, {
+      title: "Döntés prompt",
+      seed_key: "x_seed",
+      decision_status: "open",
+      created_at: old,
+    }); // decision prompt, excluded
+
+    const r = await feed(token);
+    expect(r.data.items.some((i) => i.kind === "planning_stale_task")).toBe(false);
+  });
+
+  test("caps the stale nudges at 3 even when more qualify", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("notif-stale-cap@weddly.test");
+    const old = Date.now() - 10 * DAY_MS;
+    for (let i = 0; i < 6; i++) insertTask(coupleId, { title: `Ötlet ${i}`, created_at: old });
+
+    const r = await feed(token);
+    const stale = r.data.items.filter((i) => i.kind === "planning_stale_task");
+    expect(stale.length).toBe(3);
+  });
+});
+
+describe("notifications: stalled decisions category reminder", () => {
+  function seedOpenPrompts(coupleId: number, count: number, ageDays: number): void {
+    const seeds = promptsForGroup("guests").slice(0, count);
+    expect(seeds.length).toBe(count); // guard: the group has enough seeds
+    const ts = Date.now() - ageDays * DAY_MS;
+    for (const s of seeds) {
+      insertTask(coupleId, {
+        title: s.title.hu,
+        seed_key: s.seed_key,
+        decision_status: "open",
+        created_at: ts,
+        updated_at: ts,
+      });
+    }
+  }
+
+  test("10+ open prompts in a group untouched 14+ days fires one nudge with the count", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("notif-dec@weddly.test");
+    seedOpenPrompts(coupleId, 12, 20);
+
+    const r = await feed(token);
+    const dec = r.data.items.filter((i) => i.kind === "planning_decisions_stale");
+    expect(dec.length).toBe(1);
+    expect(dec[0]?.data.count).toBe(12);
+    expect(dec[0]?.data.group).toBe("guests");
+    expect(dec[0]?.link).toBe("/app/planning");
+  });
+
+  test("does NOT fire under the count threshold", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("notif-dec-few@weddly.test");
+    seedOpenPrompts(coupleId, 9, 20);
+
+    const r = await feed(token);
+    expect(r.data.items.some((i) => i.kind === "planning_decisions_stale")).toBe(false);
+  });
+
+  test("does NOT fire when the category was touched recently", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("notif-dec-fresh@weddly.test");
+    seedOpenPrompts(coupleId, 12, 3); // 3 days old < 14-day threshold
+
+    const r = await feed(token);
+    expect(r.data.items.some((i) => i.kind === "planning_decisions_stale")).toBe(false);
   });
 });
 

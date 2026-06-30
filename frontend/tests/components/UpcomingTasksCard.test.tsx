@@ -99,6 +99,8 @@ function task(over: Partial<PlanningItem> = {}): PlanningItem {
     seed_key: null,
     decision_status: null,
     resolution: null,
+    idea_status: null,
+    idea_tag: null,
     created_at: 0,
     updated_at: 0,
     ...over,

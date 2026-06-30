@@ -872,6 +872,8 @@ export interface PlanningItemCreate {
   supplier_id?: string | null;
   /** Tasks only — SOS / important flag. 0 = none, 1 = "!", 2 = "!!". */
   priority?: 0 | 1 | 2;
+  /** Ideas only — loose category tag for the ideas board. */
+  idea_tag?: import("@shared/types").IdeaTag | null;
   position?: number;
 }
 
@@ -880,6 +882,8 @@ export type PlanningItemPatch = Partial<Omit<PlanningItemCreate, "kind">> & {
   decision_status?: import("@shared/types").DecisionStatus | null;
   /** "Döntések" layer — the recorded decision / supplier answer. */
   resolution?: string | null;
+  /** Ideas only — triage state ("doing" | "maybe" | "skip"). */
+  idea_status?: import("@shared/types").IdeaStatus | null;
 };
 
 /** Manual intake answers for the decision-prompt conditional dimensions. */

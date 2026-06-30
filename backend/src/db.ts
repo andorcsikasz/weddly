@@ -202,6 +202,13 @@ addColumnIfMissing("planning_items", "resolution", "resolution TEXT");
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_planning_seed ON planning_items(couple_id, seed_key) WHERE seed_key IS NOT NULL",
 );
+// Idea triage on kind='idea' rows. `idea_status` is the maybe-pile sorting
+// ('doing' | 'maybe' | 'skip', see shared IdeaStatus); `idea_tag` is a loose
+// category ('program' | 'decor' | 'surprise' | 'keepsake' | 'experience').
+// Both nullable so existing ideas + non-idea kinds stay clean — validation
+// only checks the enum, it doesn't force ideas to carry them.
+addColumnIfMissing("planning_items", "idea_status", "idea_status TEXT");
+addColumnIfMissing("planning_items", "idea_tag", "idea_tag TEXT");
 // Lightweight intake for the decision layer: the couple's manual answers to the
 // 6 conditional dimensions (outdoor? pets? destination?...) that aren't already
 // derivable from couples.ceremony_kind / the guest list. Stored as a small JSON

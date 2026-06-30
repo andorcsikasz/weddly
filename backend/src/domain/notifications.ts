@@ -16,6 +16,7 @@ import {
   type NotificationItem,
   type NotificationKind,
 } from "@shared/notifications";
+import { PROMPTS_BY_KEY } from "@shared/planning_prompts";
 import {
   TIMELINE_DUE_SOON_DAYS,
   parseIsoDate,
@@ -25,6 +26,16 @@ import {
 } from "@shared/planning_timeline";
 import { db, now } from "../db";
 import { getCoupleForUser } from "./couples";
+
+const DAY_MS = 86_400_000;
+/** A dateless, not-done, non-prompt to-do nags once it's been parked this long. */
+const STALE_TASK_DAYS = 7;
+/** Surface at most this many stale-task nudges so a fresh idea dump can't flood the bell. */
+const STALE_TASK_MAX = 3;
+/** A decisions category piling up: at least this many still-open prompts… */
+const DECISIONS_STALE_MIN_OPEN = 10;
+/** …and untouched (no edit) for at least this long. */
+const DECISIONS_STALE_DAYS = 14;
 
 /** Most recent events surfaced in the bell. Older history isn't paged — the
  *  feed is a "what needs attention" surface, not an audit trail. */
@@ -37,6 +48,8 @@ interface TaskRow {
   title: string;
   due_date: string | null;
   done: number;
+  seed_key: string | null;
+  created_at: number;
 }
 
 interface EventRow {
@@ -105,7 +118,7 @@ function isoMinusDays(iso: string, days: number): string {
 function loadTasks(coupleId: number): TaskRow[] {
   return db
     .prepare(
-      "SELECT id, title, due_date, done FROM planning_items WHERE couple_id = ? AND kind = 'task'",
+      "SELECT id, title, due_date, done, seed_key, created_at FROM planning_items WHERE couple_id = ? AND kind = 'task'",
     )
     .all(coupleId) as TaskRow[];
 }
@@ -194,6 +207,62 @@ export function getNotificationFeed(userId: number): NotificationFeed {
         read: false,
       });
     }
+  }
+
+  // ── stale dateless to-dos (computed) ──
+  // A handful of not-done, undated, non-prompt tasks that have sat untouched
+  // for a week. Capped so an idea dump can't flood the bell. The nudge "exists"
+  // from the moment the task crossed the 7-day mark, so it orders + reads
+  // against the watermark like the timeline items do.
+  const nowTs = now();
+  let staleCount = 0;
+  for (const t of tasks) {
+    if (staleCount >= STALE_TASK_MAX) break;
+    if (t.done || t.due_date != null || t.seed_key != null) continue;
+    const crossed = t.created_at + STALE_TASK_DAYS * DAY_MS;
+    if (crossed > nowTs) continue;
+    staleCount++;
+    items.push({
+      id: `stale:${t.id}`,
+      kind: "planning_stale_task",
+      data: { taskTitle: t.title },
+      link: "/app/planning",
+      created_at: crossed,
+      read: seenAt != null && crossed <= seenAt,
+    });
+  }
+
+  // ── stalled decisions category (computed) ──
+  // A "Döntések" group that has piled up (≥10 still-open prompts) and hasn't
+  // been touched in 14+ days gets one gentle nudge per group.
+  const openPrompts = db
+    .prepare(
+      `SELECT seed_key, updated_at FROM planning_items
+         WHERE couple_id = ? AND kind = 'task'
+           AND seed_key IS NOT NULL AND decision_status = 'open'`,
+    )
+    .all(couple.id) as { seed_key: string; updated_at: number }[];
+  const byGroup = new Map<string, { count: number; lastTouched: number }>();
+  for (const p of openPrompts) {
+    const group = PROMPTS_BY_KEY.get(p.seed_key)?.group;
+    if (!group) continue;
+    const agg = byGroup.get(group) ?? { count: 0, lastTouched: 0 };
+    agg.count++;
+    if (p.updated_at > agg.lastTouched) agg.lastTouched = p.updated_at;
+    byGroup.set(group, agg);
+  }
+  for (const [group, agg] of byGroup) {
+    if (agg.count < DECISIONS_STALE_MIN_OPEN) continue;
+    const crossed = agg.lastTouched + DECISIONS_STALE_DAYS * DAY_MS;
+    if (crossed > nowTs) continue;
+    items.push({
+      id: `decstale:${group}`,
+      kind: "planning_decisions_stale",
+      data: { count: agg.count, group },
+      link: "/app/planning",
+      created_at: crossed,
+      read: seenAt != null && crossed <= seenAt,
+    });
   }
 
   items.sort((a, b) => b.created_at - a.created_at);

@@ -3,11 +3,26 @@
 // All queries take a coupleId; the caller is responsible for scoping to the
 // authenticated couple via getCoupleForUser.
 
-import type { DecisionStatus, PlanningItem, PlanningKind, PlanningTopic } from "@shared/types";
+import type {
+  DecisionStatus,
+  IdeaStatus,
+  IdeaTag,
+  PlanningItem,
+  PlanningKind,
+  PlanningTopic,
+} from "@shared/types";
 import { db } from "../db";
 
 const VALID_KINDS: ReadonlySet<PlanningKind> = new Set(["task", "idea", "schedule"]);
 const VALID_TOPICS: ReadonlySet<PlanningTopic> = new Set(["wedding", "honeymoon"]);
+const VALID_IDEA_STATUSES: ReadonlySet<IdeaStatus> = new Set(["doing", "maybe", "skip"]);
+const VALID_IDEA_TAGS: ReadonlySet<IdeaTag> = new Set([
+  "program",
+  "decor",
+  "surprise",
+  "keepsake",
+  "experience",
+]);
 
 export function isPlanningKind(s: string): s is PlanningKind {
   return VALID_KINDS.has(s as PlanningKind);
@@ -15,6 +30,14 @@ export function isPlanningKind(s: string): s is PlanningKind {
 
 export function isPlanningTopic(s: string): s is PlanningTopic {
   return VALID_TOPICS.has(s as PlanningTopic);
+}
+
+export function isIdeaStatus(s: string | null): s is IdeaStatus {
+  return s !== null && VALID_IDEA_STATUSES.has(s as IdeaStatus);
+}
+
+export function isIdeaTag(s: string | null): s is IdeaTag {
+  return s !== null && VALID_IDEA_TAGS.has(s as IdeaTag);
 }
 
 export interface PlanningItemRow {
@@ -42,6 +65,10 @@ export interface PlanningItemRow {
   decision_status: string | null;
   /** "Döntések" layer - resolved decision / supplier answer; NULL until decided. */
   resolution: string | null;
+  /** Ideas only - 'doing' | 'maybe' | 'skip'; NULL on non-idea / untriaged rows. */
+  idea_status: string | null;
+  /** Ideas only - category tag; NULL when untagged. */
+  idea_tag: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -75,6 +102,8 @@ export function toPlanningItem(row: PlanningItemJoinedRow): PlanningItem {
     seed_key: row.seed_key,
     decision_status: isDecisionStatus(row.decision_status) ? row.decision_status : null,
     resolution: row.resolution,
+    idea_status: isIdeaStatus(row.idea_status) ? row.idea_status : null,
+    idea_tag: isIdeaTag(row.idea_tag) ? row.idea_tag : null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

@@ -139,6 +139,10 @@ export interface LocaleMessages {
     /** One-time feedback survey prompt (120-action gate). */
     feedback_survey: string;
     feedback_survey_intro: string;
+    /** Planning reminder: a dateless task has been sitting 7+ days. */
+    planning_stale_task: string;
+    /** Planning reminder: a decisions category has 10+ open items untouched 14+ days. */
+    planning_decisions_stale: string;
     show_history: string;
     hide_history: string;
     no_new: string;

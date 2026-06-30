@@ -19,7 +19,12 @@ export type NotificationKind =
   | "partner_task_added"
   | "timeline_email_sent"
   | "admin_message"
-  | "feedback_survey";
+  | "feedback_survey"
+  // Computed (like the timeline_* pair): a dateless to-do that's been parked
+  // for a week, and a decisions category that's piled up untouched. Both are
+  // gentle, derived live from planning_items — never stored.
+  | "planning_stale_task"
+  | "planning_decisions_stale";
 
 /** One row in the bell / dashboard feed. `id` is a namespaced string ("tl:<taskId>"
  *  for computed timeline items, "evt:<rowId>" for stored events) so the two

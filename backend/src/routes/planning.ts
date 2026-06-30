@@ -9,7 +9,14 @@ import {
   PROMPT_GROUPS,
   visiblePromptsForGroup,
 } from "@shared/planning_prompts";
-import type { CeremonyKind, DecisionStatus, PlanningKind, PlanningTopic } from "@shared/types";
+import type {
+  CeremonyKind,
+  DecisionStatus,
+  IdeaStatus,
+  IdeaTag,
+  PlanningKind,
+  PlanningTopic,
+} from "@shared/types";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
@@ -18,6 +25,8 @@ import {
   getPlanningItemJoined,
   getPlanningItemScoped,
   isDecisionStatus,
+  isIdeaStatus,
+  isIdeaTag,
   isPlanningKind,
   isPlanningTopic,
   listPlanningItemsByCouple,
@@ -56,12 +65,30 @@ interface UpsertBody {
   position?: unknown;
   decision_status?: unknown;
   resolution?: unknown;
+  idea_status?: unknown;
+  idea_tag?: unknown;
 }
 
 function parseDecisionStatus(raw: unknown): DecisionStatus | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== "string" || !isDecisionStatus(raw)) {
     throw new HttpError(400, "decision_status must be open|decided|not_relevant|promoted");
+  }
+  return raw;
+}
+
+function parseIdeaStatus(raw: unknown): IdeaStatus | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string" || !isIdeaStatus(raw)) {
+    throw new HttpError(400, "idea_status must be doing|maybe|skip");
+  }
+  return raw;
+}
+
+function parseIdeaTag(raw: unknown): IdeaTag | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string" || !isIdeaTag(raw)) {
+    throw new HttpError(400, "idea_tag must be program|decor|surprise|keepsake|experience");
   }
   return raw;
 }
@@ -215,14 +242,17 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const suggestedBy = kind === "idea" ? userId : null;
   const position = parsePosition(body.position, 0);
   const topic = parseTopic(body.topic);
+  // Idea triage tag — validated enum, no kind-gating (per spec: don't
+  // over-enforce). A non-idea row simply never sends it.
+  const ideaTag = parseIdeaTag(body.idea_tag);
   const ts = now();
 
   const result = db
     .prepare(
       `INSERT INTO planning_items
         (couple_id, kind, topic, title, body, done, due_date, scheduled_time, assignee,
-         suggested_by_user_id, start_date, supplier_id, priority, position, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         suggested_by_user_id, start_date, supplier_id, priority, position, idea_tag, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -239,6 +269,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       supplierId,
       priority,
       position,
+      ideaTag,
       ts,
       ts,
     );
@@ -341,13 +372,18 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
       : isPrompt
         ? parseResolution(body.resolution)
         : null;
+  // Idea triage — validated enums, kept as-is when omitted. Not kind-gated
+  // (spec: validate the enum, don't over-enforce).
+  const ideaStatus =
+    body.idea_status === undefined ? existing.idea_status : parseIdeaStatus(body.idea_status);
+  const ideaTag = body.idea_tag === undefined ? existing.idea_tag : parseIdeaTag(body.idea_tag);
   const ts = now();
 
   db.prepare(
     `UPDATE planning_items SET
         title = ?, body = ?, done = ?, due_date = ?, scheduled_time = ?,
         assignee = ?, start_date = ?, supplier_id = ?, priority = ?, position = ?,
-        decision_status = ?, resolution = ?, updated_at = ?
+        decision_status = ?, resolution = ?, idea_status = ?, idea_tag = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
   ).run(
     title,
@@ -362,6 +398,8 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     position,
     decisionStatus,
     resolution,
+    ideaStatus,
+    ideaTag,
     ts,
     id,
     couple.id,

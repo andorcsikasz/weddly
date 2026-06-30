@@ -1429,6 +1429,19 @@ export type PlanningTopic = "wedding" | "honeymoon";
  *  `null` on every non-prompt row (normal tasks, ideas, schedule entries). */
 export type DecisionStatus = "open" | "decided" | "not_relevant" | "promoted";
 
+/** Triage state of an "ötlet" (idea) row. Orthogonal to `done` — an idea is
+ *  not a checklist item, it's a maybe-pile the couple sorts into:
+ *   - `doing` ("Megcsináljuk")     committed; keep it;
+ *   - `maybe` ("Még nem tudjuk")   undecided, parked;
+ *   - `skip`  ("Kihagyjuk")        dropped, kept for the record.
+ *  `null` on rows that pre-date the column or on non-idea kinds. */
+export type IdeaStatus = "doing" | "maybe" | "skip";
+
+/** Loose category tag on an idea, driving the colour chip / filter on the
+ *  ideas board: programme idea, decor, surprise, keepsake, guest experience.
+ *  `null` when untagged or on non-idea kinds. */
+export type IdeaTag = "program" | "decor" | "surprise" | "keepsake" | "experience";
+
 export interface PlanningItem {
   id: number;
   couple_id: number;
@@ -1480,6 +1493,11 @@ export interface PlanningItem {
   /** "Döntések" layer - the resolved decision / supplier answer, free text.
    *  `null` until the prompt is decided. */
   resolution: string | null;
+  /** Ideas only — triage state ("doing" | "maybe" | "skip"). See `IdeaStatus`.
+   *  `null` on non-idea rows and untriaged ideas. */
+  idea_status: IdeaStatus | null;
+  /** Ideas only — loose category tag. See `IdeaTag`. `null` when untagged. */
+  idea_tag: IdeaTag | null;
   created_at: UnixMs;
   updated_at: UnixMs;
 }

@@ -1789,6 +1789,8 @@ const hu: LocaleMessages = {
     feedback_survey: "Mit gondolsz rólunk?",
     feedback_survey_intro:
       "Azért vagyunk, hogy megkönnyítsük az életedet és feledhetetlenné tegyük az esküvődet.",
+    planning_stale_task: "Régóta vár: {task}",
+    planning_decisions_stale: "{count} eldöntésre váró kérdés gyűlt össze",
     show_history: "Korábbi értesítések",
     hide_history: "Korábbiak elrejtése",
     no_new: "Nincs új értesítés.",
