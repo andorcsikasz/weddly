@@ -286,7 +286,8 @@ export default function AdminVendorWaitlistPage() {
   // counts reflect "how many <category> are in each status" — the useful
   // triage view when a lot of submissions share one category (e.g. Fotós).
   const entriesInCategory = useMemo(
-    () => (categoryFilter === "all" ? entries : entries.filter((e) => e.category === categoryFilter)),
+    () =>
+      categoryFilter === "all" ? entries : entries.filter((e) => e.category === categoryFilter),
     [entries, categoryFilter],
   );
 

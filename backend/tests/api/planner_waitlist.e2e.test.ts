@@ -40,7 +40,8 @@ describe("planner waitlist decision email", () => {
     const id = await submitWaitlist("planner-decide@weddly.test");
 
     const subject = "Wēddly: jóváhagytuk a szervezői hozzáférésed";
-    const body = "Szia Anna!\n\nAktiváltuk a szervezői hozzáférésed. Lépj be és indítsd el az onboardingot.";
+    const body =
+      "Szia Anna!\n\nAktiváltuk a szervezői hozzáférésed. Lépj be és indítsd el az onboardingot.";
 
     const res = await req<{ entry: PlannerWaitlistAdminView | null }>(
       "POST",
@@ -112,11 +113,12 @@ describe("planner waitlist decision email", () => {
   test("decide requires an admin session", async () => {
     await bootstrapAdmin();
     const id = await submitWaitlist("planner-noauth@weddly.test");
-    const res = await req(
-      "POST",
-      `/api/admin/planner-waitlist/${id}/decide`,
-      { outcome: "accepted", subject: "x", body: "y", notes: "" },
-    );
+    const res = await req("POST", `/api/admin/planner-waitlist/${id}/decide`, {
+      outcome: "accepted",
+      subject: "x",
+      body: "y",
+      notes: "",
+    });
     expect(res.status).toBe(401);
   });
 });

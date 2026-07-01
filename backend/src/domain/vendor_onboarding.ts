@@ -117,9 +117,9 @@ export function listPendingOnboardings(): AdminVendorView[] {
  *  auto-cancels siblings sharing a waitlist_id, so an admin resend of a
  *  waitlist_id-less row needs this explicit step). No-op if already resolved. */
 export function cancelPendingOnboarding(id: number): void {
-  db.prepare("UPDATE vendor_onboarding SET status = 'cancelled' WHERE id = ? AND status = 'pending'").run(
-    id,
-  );
+  db.prepare(
+    "UPDATE vendor_onboarding SET status = 'cancelled' WHERE id = ? AND status = 'pending'",
+  ).run(id);
 }
 
 export function getOnboardingById(id: number): VendorOnboardingRow | null {

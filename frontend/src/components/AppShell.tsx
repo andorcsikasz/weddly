@@ -650,7 +650,7 @@ export function AppShell({ children }: { children: ReactNode }) {
          *     applies at lg+ — below that the rail is icon-only regardless.
          */}
         <aside
-          className={`hidden shrink-0 transition-[width] duration-200 md:flex md:w-14 ${
+          className={`hidden shrink-0 transition-[width] duration-300 ease-in-out md:flex md:w-14 ${
             sidebarCollapsed ? "lg:w-14" : "lg:w-56"
           }`}
         >
@@ -889,18 +889,25 @@ function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: b
     // parent nav uses `gap-0`). The fixed `h-6` keeps an icon landing on the
     // same row whether the rail is expanded or collapsed, and the tightened
     // rhythm lets all 15 links + 4 headers fit one desktop screen unscrolled.
-    <div className="mt-1 flex h-6 items-center px-2">
-      {/* Labelled header — fully-expanded laptop rail only. */}
-      {!collapsed && (
-        <div className="hidden w-full items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300">
-          <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-          <span>{label}</span>
-          <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-        </div>
-      )}
-      {/* Hairline — tablet (icon-only) always, and laptop when collapsed. */}
+    <div className="relative mt-1 flex h-6 items-center px-2">
+      {/* Labelled header — fully-expanded laptop rail only. Absolutely
+          overlaid on the hairline so the two crossfade (opacity) as the rail
+          toggles, in sync with the width tween, instead of swapping instantly. */}
       <div
-        className={`h-px w-full bg-paper-300 dark:bg-umber-700 ${collapsed ? "" : "lg:hidden"}`}
+        className={`pointer-events-none absolute inset-x-2 hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-ink-500 transition-opacity duration-300 ease-in-out lg:flex dark:text-umber-300 ${
+          collapsed ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+        <span>{label}</span>
+        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+      </div>
+      {/* Hairline — tablet (icon-only) always, and laptop when collapsed;
+          fades out at lg+ when the labelled header takes over. */}
+      <div
+        className={`h-px w-full bg-paper-300 transition-opacity duration-300 ease-in-out dark:bg-umber-700 ${
+          collapsed ? "" : "lg:opacity-0"
+        }`}
         aria-hidden
       />
     </div>
@@ -975,7 +982,7 @@ function SideLink({
   // SidebarGroupHeader below, which does the same for section breaks).
   const shape = collapsed
     ? "h-8 w-9 justify-center"
-    : "h-8 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
+    : "h-8 w-9 justify-center lg:w-auto lg:justify-start lg:px-3";
   return (
     <NavLink
       to={to}
@@ -993,8 +1000,18 @@ function SideLink({
       }}
     >
       {icon}
-      {/* Label is hidden at md (always icon-only) and at lg+ when collapsed. */}
-      {!collapsed && <span className="hidden lg:inline">{label}</span>}
+      {/* Label stays mounted at lg so a collapse toggle fades + slides it
+          out (opacity + max-width + margin) in sync with the rail's width
+          tween, instead of popping in/out. Hidden outright at md (the rail is
+          icon-only there). The `overflow-hidden` clips the text as it shrinks;
+          `whitespace-nowrap` keeps it on one line while it collapses. */}
+      <span
+        className={`hidden overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-in-out lg:inline-block ${
+          collapsed ? "lg:max-w-0 lg:opacity-0" : "lg:ml-3 lg:max-w-[10rem] lg:opacity-100"
+        }`}
+      >
+        {label}
+      </span>
       {/* Custom tooltip — visible on hover when the label is not shown.
           At lg+ expanded (!collapsed) the label itself is visible, so hide it. */}
       <span

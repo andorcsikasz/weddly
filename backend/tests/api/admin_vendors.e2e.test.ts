@@ -69,7 +69,12 @@ describe("admin vendor management", () => {
     const adminToken = await bootstrapAdmin();
     const { userId, accountId } = await seedActivatedVendor("vendor2@weddly.test", "Cake Co");
 
-    const suspend = await req("POST", `/api/admin/vendors/${accountId}/suspend`, {}, { token: adminToken });
+    const suspend = await req(
+      "POST",
+      `/api/admin/vendors/${accountId}/suspend`,
+      {},
+      { token: adminToken },
+    );
     expect(suspend.status).toBe(200);
     let row = db.prepare("SELECT status FROM users WHERE id = ?").get(userId) as { status: string };
     expect(row.status).toBe("suspended");
@@ -122,14 +127,12 @@ describe("admin vendor management", () => {
     expect(res.status).toBe(200);
 
     // Old token superseded (cancelled), a fresh pending row exists.
-    const old = db
-      .prepare("SELECT status FROM vendor_onboarding WHERE id = ?")
-      .get(first.id) as { status: string };
+    const old = db.prepare("SELECT status FROM vendor_onboarding WHERE id = ?").get(first.id) as {
+      status: string;
+    };
     expect(old.status).toBe("cancelled");
     const pendingCount = db
-      .prepare(
-        "SELECT COUNT(*) AS n FROM vendor_onboarding WHERE email = ? AND status = 'pending'",
-      )
+      .prepare("SELECT COUNT(*) AS n FROM vendor_onboarding WHERE email = ? AND status = 'pending'")
       .get("resend@weddly.test") as { n: number };
     expect(pendingCount.n).toBe(1);
   });

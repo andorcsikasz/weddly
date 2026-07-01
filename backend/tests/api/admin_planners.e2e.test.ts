@@ -55,9 +55,16 @@ describe("admin planner management", () => {
     const adminToken = await bootstrapAdmin();
     const plannerId = await seedPlanner("planner2@weddly.test");
 
-    const suspend = await req("POST", `/api/admin/planners/${plannerId}/suspend`, {}, { token: adminToken });
+    const suspend = await req(
+      "POST",
+      `/api/admin/planners/${plannerId}/suspend`,
+      {},
+      { token: adminToken },
+    );
     expect(suspend.status).toBe(200);
-    let row = db.prepare("SELECT status FROM users WHERE id = ?").get(plannerId) as { status: string };
+    let row = db.prepare("SELECT status FROM users WHERE id = ?").get(plannerId) as {
+      status: string;
+    };
     expect(row.status).toBe("suspended");
 
     const reactivate = await req(
@@ -118,9 +125,9 @@ describe("admin planner management", () => {
   test("targeting a non-planner user 404s", async () => {
     const adminToken = await bootstrapAdmin();
     const { coupleId } = await bootstrapCouple("regular@weddly.test");
-    const owner = db
-      .prepare("SELECT id FROM users WHERE couple_id = ? LIMIT 1")
-      .get(coupleId) as { id: number };
+    const owner = db.prepare("SELECT id FROM users WHERE couple_id = ? LIMIT 1").get(coupleId) as {
+      id: number;
+    };
     const res = await req(
       "PATCH",
       `/api/admin/planners/${owner.id}`,
