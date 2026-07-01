@@ -3,9 +3,19 @@ import type {
   SupplierCategory,
   SupplierDirectoryAdminRow,
 } from "@shared/suppliers";
-import { Download, ExternalLink, ImageDown, RotateCcw, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useToast } from "../ui";
+import {
+  Download,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  ImageDown,
+  RotateCcw,
+  Search,
+  Trash2,
+  UserX,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useConfirm, useEntryPrompt, useToast } from "../ui";
 import { ApiError } from "../../lib/api";
 import { adminSupplierApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -94,6 +104,8 @@ function formatTimestamp(unixMs: number | null, locale: string): string {
 export function SupplierDirectoryView() {
   const { t, locale } = useT();
   const toast = useToast();
+  const confirm = useConfirm();
+  const promptEntry = useEntryPrompt();
   const [filters, setFilters] = useState<AdminDirectoryFilters>(EMPTY_FILTERS);
   const [rows, setRows] = useState<SupplierDirectoryAdminRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +114,13 @@ export function SupplierDirectoryView() {
   // Which row's hero is currently being re-fetched, so we can disable just that
   // row's button and show a spinner without blocking the rest of the table.
   const [heroBusyId, setHeroBusyId] = useState<string | null>(null);
+  // Row currently running a moderation action (hide/delete/purge), so we can
+  // disable just that row's action buttons.
+  const [actionBusyId, setActionBusyId] = useState<string | null>(null);
+  // Bumped after every mutation to force the effect below to re-fetch. Cheaper
+  // than reconciling the two DTO shapes the moderation endpoints return.
+  const [reloadToken, setReloadToken] = useState(0);
+  const reload = useCallback(() => setReloadToken((n) => n + 1), []);
 
   // Re-fetch whenever the filter object changes. The payload is small (one row
   // per supplier) so a debounce isn't worth the complexity here — most filter
@@ -125,7 +144,99 @@ export function SupplierDirectoryView() {
     return () => {
       cancelled = true;
     };
-  }, [filters, toast, t]);
+  }, [filters, toast, t, reloadToken]);
+
+  // ── Moderation actions ───────────────────────────────────────────────────
+  // Curated rows are keyed by their string slug (row.id); community rows by
+  // their numeric community_id. Both branches refetch on success so the table
+  // reflects the new status without reconciling response shapes by hand.
+
+  async function onToggleHide(row: SupplierDirectoryAdminRow) {
+    if (row.status === "hidden") {
+      setActionBusyId(row.id);
+      try {
+        if (row.source === "curated") await adminSupplierApi.unhideCurated(row.id);
+        else if (row.community_id != null) await adminSupplierApi.unhide(row.community_id);
+        toast.success(t("admin.unhide"));
+        reload();
+      } catch (e) {
+        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      } finally {
+        setActionBusyId(null);
+      }
+      return;
+    }
+    const reason = await promptEntry({
+      title: t("admin.confirm_hide_title"),
+      label: `${t("admin.hide_reason_label")} ${t("admin.hide_reason_optional")}`,
+      placeholder: t("admin.hide_reason_placeholder"),
+      helperText: t("admin.hide_reason_help"),
+      confirmLabel: t("admin.hide"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (reason === null) return;
+    const trimmed = reason.trim();
+    setActionBusyId(row.id);
+    try {
+      if (row.source === "curated") {
+        await adminSupplierApi.hideCurated(row.id, trimmed.length > 0 ? trimmed : undefined);
+      } else if (row.community_id != null) {
+        await adminSupplierApi.hide(row.community_id, trimmed.length > 0 ? trimmed : undefined);
+      }
+      toast.success(t("admin.hide"));
+      reload();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function onDeleteEntry(row: SupplierDirectoryAdminRow) {
+    const ok = await confirm({
+      title: t("admin.confirm_delete_title"),
+      body: t("admin.confirm_delete_body"),
+      confirmLabel: t("admin.delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setActionBusyId(row.id);
+    try {
+      if (row.source === "curated") await adminSupplierApi.removeCurated(row.id);
+      else if (row.community_id != null) await adminSupplierApi.remove(row.community_id);
+      toast.success(t("admin.delete"));
+      reload();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function onDeleteAccount(row: SupplierDirectoryAdminRow) {
+    if (row.community_id == null) return;
+    const ok = await confirm({
+      title: t("admin.directory_purge_submitter_title"),
+      body: t("admin.directory_purge_submitter_body", {
+        email: row.submitter_email ?? row.name,
+      }),
+      confirmLabel: t("admin.directory_purge_submitter_confirm"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setActionBusyId(row.id);
+    try {
+      await adminSupplierApi.purgeSubmitter(row.community_id);
+      toast.success(t("admin.directory_purge_submitter_done"));
+      reload();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
 
   const sortedRows = useMemo(() => {
     const copy = [...rows];
@@ -389,6 +500,12 @@ export function SupplierDirectoryView() {
                   dir={sort.dir}
                   onClick={() => toggleSort("created_at")}
                 />
+                <th scope="col" className="px-3 py-2">
+                  {t("admin.directory_col_submitter_seen")}
+                </th>
+                <th scope="col" className="px-3 py-2 text-right">
+                  {t("admin.directory_col_actions")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-paper-200 bg-paper-50 dark:divide-umber-700 dark:bg-umber-800/40">
@@ -409,6 +526,9 @@ export function SupplierDirectoryView() {
                   </td>
                   <td className="px-3 py-2">
                     <SourcePill source={row.source} t={t} />
+                    <span className="mt-0.5 block text-[10px] text-neutral-500 dark:text-umber-300">
+                      {t(`admin.directory_submitter_${submitterKind(row)}`)}
+                    </span>
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-xs text-neutral-700 dark:text-paper-100">
@@ -472,6 +592,53 @@ export function SupplierDirectoryView() {
                   <td className="px-3 py-2 text-xs text-neutral-500 dark:text-umber-300">
                     {formatTimestamp(row.created_at, locale)}
                   </td>
+                  <td className="px-3 py-2 text-xs text-neutral-500 dark:text-umber-300">
+                    {row.source === "curated"
+                      ? "—"
+                      : row.submitter_last_seen_at
+                        ? formatTimestamp(row.submitter_last_seen_at, locale)
+                        : t("admin.directory_last_event_never")}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        className="btn-ghost btn-sm"
+                        onClick={() => onToggleHide(row)}
+                        disabled={actionBusyId === row.id}
+                        title={row.status === "hidden" ? t("admin.unhide") : t("admin.hide")}
+                        aria-label={row.status === "hidden" ? t("admin.unhide") : t("admin.hide")}
+                      >
+                        {row.status === "hidden" ? (
+                          <Eye size={14} aria-hidden />
+                        ) : (
+                          <EyeOff size={14} aria-hidden />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-ghost btn-sm text-rose-600 dark:text-rose-400"
+                        onClick={() => onDeleteEntry(row)}
+                        disabled={actionBusyId === row.id}
+                        title={t("admin.directory_delete_entry")}
+                        aria-label={t("admin.directory_delete_entry")}
+                      >
+                        <Trash2 size={14} aria-hidden />
+                      </button>
+                      {row.community_id != null && (
+                        <button
+                          type="button"
+                          className="btn-ghost btn-sm text-rose-600 dark:text-rose-400"
+                          onClick={() => onDeleteAccount(row)}
+                          disabled={actionBusyId === row.id}
+                          title={t("admin.directory_delete_account")}
+                          aria-label={t("admin.directory_delete_account")}
+                        >
+                          <UserX size={14} aria-hidden />
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -480,6 +647,13 @@ export function SupplierDirectoryView() {
       )}
     </section>
   );
+}
+
+/** Collapses source + submitter_type into a single "who put this here" label
+ *  key: admin (curated), self (vendor self-submitted), or user (couple rec). */
+function submitterKind(row: SupplierDirectoryAdminRow): "admin" | "self" | "user" {
+  if (row.source === "curated") return "admin";
+  return row.submitter_type === "self" ? "self" : "user";
 }
 
 function readSortValue(row: SupplierDirectoryAdminRow, key: SortKey): number | string | null {

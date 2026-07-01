@@ -1336,6 +1336,174 @@ describe("admin suppliers — list, approve, hide/unhide", () => {
   });
 });
 
+// ────────────────────────────────────────────────────────────────────────────
+// Catalog moderation: curated hide/unhide/delete (override table) + purge of
+// the entire submitter account behind a community supplier.
+// ────────────────────────────────────────────────────────────────────────────
+
+interface DirectoryRow {
+  id: string;
+  source: "curated" | "community";
+  status: string;
+  community_id: number | null;
+  submitter_type: "self" | "user" | null;
+  submitter_last_seen_at: number | null;
+}
+interface DirectoryResp {
+  suppliers: DirectoryRow[];
+}
+
+async function firstCuratedSlug(adminToken: string): Promise<string> {
+  const dir = await req<DirectoryResp>(
+    "GET",
+    "/api/admin/suppliers/directory?source=curated",
+    undefined,
+    { token: adminToken },
+  );
+  expect(dir.status).toBe(200);
+  const slug = dir.data.suppliers[0]?.id;
+  expect(slug).toBeTruthy();
+  return slug as string;
+}
+
+async function publicHasSupplier(id: string): Promise<boolean> {
+  const list = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
+  return list.data.suppliers.some((s) => s.id === id);
+}
+
+describe("admin suppliers — curated moderation", () => {
+  test("hide → curated drops off public list, shows hidden in admin, unhide restores", async () => {
+    const adminToken = await bootstrapAdmin();
+    const slug = await firstCuratedSlug(adminToken);
+    expect(await publicHasSupplier(slug)).toBe(true);
+
+    const hide = await req(
+      "POST",
+      `/api/admin/suppliers/curated/${slug}/hide`,
+      { reason: "outdated" },
+      { token: adminToken },
+    );
+    expect(hide.status).toBe(200);
+    expect(await publicHasSupplier(slug)).toBe(false);
+
+    // Still present in the admin catalog, now flagged hidden.
+    const dir = await req<DirectoryResp>("GET", "/api/admin/suppliers/directory", undefined, {
+      token: adminToken,
+    });
+    expect(dir.data.suppliers.find((s) => s.id === slug)?.status).toBe("hidden");
+
+    const unhide = await req(
+      "POST",
+      `/api/admin/suppliers/curated/${slug}/unhide`,
+      {},
+      { token: adminToken },
+    );
+    expect(unhide.status).toBe(200);
+    expect(await publicHasSupplier(slug)).toBe(true);
+  });
+
+  test("delete → curated gone from both public list and admin catalog", async () => {
+    const adminToken = await bootstrapAdmin();
+    const slug = await firstCuratedSlug(adminToken);
+
+    const del = await req("DELETE", `/api/admin/suppliers/curated/${slug}`, undefined, {
+      token: adminToken,
+    });
+    expect(del.status).toBe(200);
+    expect(await publicHasSupplier(slug)).toBe(false);
+
+    const dir = await req<DirectoryResp>("GET", "/api/admin/suppliers/directory", undefined, {
+      token: adminToken,
+    });
+    expect(dir.data.suppliers.find((s) => s.id === slug)).toBeUndefined();
+  });
+
+  test("hide — unknown curated slug → 404", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req(
+      "POST",
+      "/api/admin/suppliers/curated/not-a-real-slug/hide",
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(404);
+  });
+});
+
+describe("admin suppliers — purge submitter", () => {
+  test("purge-submitter deletes the submitter account and cascades the supplier", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token } = await bootstrapCouple("purge-victim@weddly.test");
+    const id = await insertSupplierAwaitingReview(token);
+
+    const submitterId = (
+      db.prepare("SELECT submitter_user_id AS u FROM community_suppliers WHERE id = ?").get(id) as {
+        u: number;
+      }
+    ).u;
+
+    const r = await req(
+      "POST",
+      `/api/admin/suppliers/${id}/purge-submitter`,
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+
+    // Supplier row cascaded away with the user.
+    const supplier = db.prepare("SELECT id FROM community_suppliers WHERE id = ?").get(id);
+    expect(supplier).toBeNull();
+    // Audit trail records the purge against the submitter user.
+    const audit = db
+      .prepare(
+        "SELECT action FROM audit_log WHERE action = 'supplier.community.purge_submitter' AND target_id = ?",
+      )
+      .get(submitterId) as { action: string } | undefined;
+    expect(audit).toBeDefined();
+  });
+
+  test("purge-submitter — refuses to purge the admin's own account → 409", async () => {
+    const adminToken = await bootstrapAdmin();
+    // Admin self-submits a community supplier, then tries to purge via it.
+    const sub = await req<SubmitVendorTipResult>(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        submitter_type: "self",
+        name: "Self Hall",
+        city: "Budapest",
+        address: "X",
+        website: "https://self-hall.test",
+        contact_email: null,
+        blurb: "x",
+        price_band: 2,
+      },
+      { token: adminToken },
+    );
+    expect(sub.status).toBe(201);
+    const id = Number(sub.data.supplier.id.slice(1));
+    const r = await req(
+      "POST",
+      `/api/admin/suppliers/${id}/purge-submitter`,
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(409);
+  });
+
+  test("purge-submitter — unknown id → 404", async () => {
+    const adminToken = await bootstrapAdmin();
+    const r = await req(
+      "POST",
+      "/api/admin/suppliers/99999/purge-submitter",
+      {},
+      { token: adminToken },
+    );
+    expect(r.status).toBe(404);
+  });
+});
+
 describe("admin suppliers — reports, notes, enrich", () => {
   test("reports list — empty by default, then surfaces a fresh report", async () => {
     const adminToken = await bootstrapAdmin();

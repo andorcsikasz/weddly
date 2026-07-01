@@ -226,6 +226,29 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "gredic-castle": { lat: 46.0017, lng: 13.5356 },
 };
 
+/** Town-centroid fallback. Any entry with a real address but no id-specific
+ *  `VENUE_COORDS` hit is still placed on the map at its town centre (see the
+ *  DIRECTORY map below). For most towns the centroid is derived automatically
+ *  from the coordinated venues already listed there, so the fallback grows for
+ *  free as the directory does. This table only supplies the towns that have no
+ *  coordinated venue to derive from yet (tent/pavilion + service suppliers in
+ *  towns we haven't placed a venue in). Same precision as VENUE_COORDS:
+ *  town-centre approximations, couples click through for exact routing. */
+const CITY_COORDS_MANUAL: Record<string, { lat: number; lng: number }> = {
+  Bag: { lat: 47.6847, lng: 19.4928 },
+  Kecskemét: { lat: 46.9074, lng: 19.6917 },
+  Levél: { lat: 47.9647, lng: 17.2331 },
+  Miskolc: { lat: 48.1039, lng: 20.7784 },
+  Mohács: { lat: 45.993, lng: 18.6836 },
+  Rábapaty: { lat: 47.2497, lng: 16.9331 },
+  Szeged: { lat: 46.253, lng: 20.1482 },
+  Szentes: { lat: 46.6543, lng: 20.2599 },
+  Szombathely: { lat: 47.2307, lng: 16.6218 },
+  Túrkeve: { lat: 47.1017, lng: 20.7456 },
+  Zsombó: { lat: 46.3272, lng: 19.9942 },
+  Érd: { lat: 47.3919, lng: 18.9136 },
+};
+
 // `submitter_type` is layered on by the DIRECTORY map below, curated entries
 // never have a submitter, so it's always null. Keeping it off the literals
 // here keeps the 100+ entries terse.
@@ -234,7 +257,12 @@ const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
 // to null. New venue entries set it from their "jelleg" tag.
 const RAW_DIRECTORY: (Omit<
   DirectorySupplierBase,
-  "submitter_type" | "vendor_account_id" | "hero_image_url" | "venue_style" | "gallery_urls"
+  | "submitter_type"
+  | "vendor_account_id"
+  | "hero_image_url"
+  | "venue_style"
+  | "gallery_urls"
+  | "country"
 > & { venue_style?: VenueStyle | null; gallery_urls?: string[] | null })[] = [
   {
     id: "normafa-rendezvenyhaz",
@@ -5710,8 +5738,84 @@ const RAW_DIRECTORY: (Omit<
   },
 ];
 
+// ── Country scoping ───────────────────────────────────────────────────────
+// A couple only sees venues in the country their wedding is in (see the
+// `country` scoping in routes/suppliers.ts). Most foreign batches carry a
+// ", XX" ISO suffix on `city` ("Bale, HR", "Otopeni, RO") which we read
+// directly. The two older international batches (Slovakia + Austria, June
+// 2026) predate that convention and use bare city names, so we anchor them by
+// id here. Everything else defaults to "HU" (the product launched HU-only).
+const SLOVAK_VENUE_IDS: ReadonlySet<string> = new Set([
+  "sobasny-palac-bytca",
+  "ponton-bubbles-restaurant",
+  "hotel-restaurant-barca-kosice",
+  "dom-michalska-brana",
+  "hotel-international-velka-lomnica",
+  "restauracia-fatima-trencin",
+  "ekorezort-vendelin",
+  "hotel-kochau-kovacova",
+  "skytina-restaurant",
+  "lod-harmonia",
+  "hotel-merkur-zemplinska-sirava",
+  "penzion-aqua-maria-velaty",
+  "hotel-kormoran-samorin",
+  "zamocek-mraznica",
+  "event-house-zilina",
+  "demanova-rezort",
+  "greta-resort-liptovska-sielnica",
+  "hotel-pri-mlyne-lozorno",
+]);
+const AUSTRIAN_VENUE_IDS: ReadonlySet<string> = new Set([
+  "palais-coburg-vienna",
+  "schloss-schoenbrunn",
+  "schloss-leopoldskron",
+  "hotel-schloss-monchstein",
+  "kavalierhaus-klessheim",
+  "hotel-kitzhof-kitzbuhel",
+  "ice-q-solden",
+  "weisses-roessl-wolfgangsee",
+  "schloss-hotel-mondsee",
+  "heritage-hotel-hallstatt",
+  "inselhotel-faakersee",
+  "hotel-leidingerhof-mondsee",
+  "burgruine-aggstein",
+  "ski-museum-restaurant-st-anton",
+  "hohe-mut-alm-obergurgl",
+  "villa-maund-schoppernau",
+]);
+
+/** Resolve a curated entry's ISO alpha-2 country. Reads a ", XX" suffix off
+ *  `city` first (the HR/RO/SI batches), then the id-anchored Slovak/Austrian
+ *  sets, else "HU". */
+function curatedCountry(id: string, city: string): string {
+  const suffix = city.match(/,\s*([A-Z]{2})$/);
+  if (suffix?.[1]) return suffix[1];
+  if (SLOVAK_VENUE_IDS.has(id)) return "SK";
+  if (AUSTRIAN_VENUE_IDS.has(id)) return "AT";
+  return "HU";
+}
+
+// City -> centroid, derived by averaging the coordinated venues in each town,
+// then overlaid with the manual table for towns that have no coordinated venue
+// to average. Used as the map fallback for entries without their own coord.
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = (() => {
+  const acc = new Map<string, { lat: number; lng: number; n: number }>();
+  for (const s of RAW_DIRECTORY) {
+    const c = VENUE_COORDS[s.id];
+    if (!c || !s.city) continue;
+    const prev = acc.get(s.city) ?? { lat: 0, lng: 0, n: 0 };
+    acc.set(s.city, { lat: prev.lat + c.lat, lng: prev.lng + c.lng, n: prev.n + 1 });
+  }
+  const out: Record<string, { lat: number; lng: number }> = {};
+  for (const [city, v] of acc) out[city] = { lat: v.lat / v.n, lng: v.lng / v.n };
+  // Manual entries win over derived ones for towns we've pinned by hand.
+  return { ...out, ...CITY_COORDS_MANUAL };
+})();
+
 export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
-  const c = VENUE_COORDS[s.id];
+  // Prefer the id-specific coord; otherwise fall back to the town centroid so
+  // every entry with a known city still lands on the map view.
+  const c = VENUE_COORDS[s.id] ?? (s.city ? CITY_COORDS[s.city] : undefined);
   const withCoords = c ? { ...s, lat: c.lat, lng: c.lng } : s;
   // `vendor_account_id` defaults to null at the code layer; the
   // public-list handler in routes/suppliers.ts overlays the real value
@@ -5720,6 +5824,7 @@ export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
   // vendor uploads one, curated entries don't ship with images today.
   return {
     ...withCoords,
+    country: curatedCountry(s.id, s.city),
     venue_style: s.venue_style ?? null,
     submitter_type: null,
     vendor_account_id: null,

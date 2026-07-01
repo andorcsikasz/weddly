@@ -190,6 +190,9 @@ export function wipeAll(): void {
     "community_supplier_reports",
     "community_supplier_verifications",
     "community_suppliers",
+    // Curated moderation overrides — a leaked tombstone would hide a curated
+    // slug from the public list in a later test.
+    "curated_supplier_overrides",
     "couple_suppliers",
     "couple_supplier_costs",
     "couple_picks",

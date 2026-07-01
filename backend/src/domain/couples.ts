@@ -83,9 +83,7 @@ function coupleHasAdminMember(coupleId: number): boolean {
 export function coupleHasActivePlanner(coupleId: number): boolean {
   return (
     db
-      .prepare(
-        "SELECT 1 FROM planner_clients WHERE couple_id = ? AND status = 'active' LIMIT 1",
-      )
+      .prepare("SELECT 1 FROM planner_clients WHERE couple_id = ? AND status = 'active' LIMIT 1")
       .get(coupleId) != null
   );
 }
@@ -126,7 +124,8 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
   // grants it back), the couple member is a viewer, not locked out — surface
   // that as the reason so the UI shows the "your planner is editing" banner
   // instead of the generic "subscribe" wall. Mirrors entitlementBlock's return.
-  const reason: BillingReason = !entitled && plannerManaged ? "planner_managed_viewer" : verdict.reason;
+  const reason: BillingReason =
+    !entitled && plannerManaged ? "planner_managed_viewer" : verdict.reason;
   return {
     subscription_status: status,
     trial_ends_at: row.trial_ends_at,

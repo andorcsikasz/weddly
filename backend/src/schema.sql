@@ -342,6 +342,22 @@ CREATE INDEX IF NOT EXISTS idx_community_suppliers_status_category
 CREATE INDEX IF NOT EXISTS idx_community_suppliers_submitter
   ON community_suppliers(submitter_user_id);
 
+-- Admin moderation overrides for CURATED suppliers. Curated entries live in
+-- code (domain/suppliers_data.ts), so there is no DB row to flip a status on.
+-- This table tombstones a curated slug: 'hidden' removes it from the public
+-- directory but keeps it visible (and restorable) in the admin catalog;
+-- 'deleted' removes it from both. The override persists across deploys so a
+-- re-shipped code entry stays suppressed until an admin restores it.
+CREATE TABLE IF NOT EXISTS curated_supplier_overrides (
+  supplier_id TEXT PRIMARY KEY,                                -- curated slug (DIRECTORY id)
+  status TEXT NOT NULL,                                        -- 'hidden' | 'deleted'
+  hide_reason TEXT,
+  hidden_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  hidden_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 -- Email-ownership verification tokens for community-submitted suppliers.
 -- A submission lands as status='pending'; the row only flips to 'active'
 -- after the contact email is verified via the token in this table. Single-

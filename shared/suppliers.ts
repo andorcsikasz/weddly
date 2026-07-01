@@ -120,6 +120,12 @@ export interface DirectorySupplierBase {
   name: string;
   category: SupplierCategory;
   city: string;
+  /** ISO 3166-1 alpha-2 country the supplier sits in (uppercase). Drives the
+   *  country scoping in `/api/suppliers`: a couple only sees listings in the
+   *  country their wedding is in (see `couples.country`). Curated venues derive
+   *  this from their city/section in `suppliers_data.ts`; community submissions
+   *  default to "HU" (no per-submission country capture yet). */
+  country: string;
   blurb_hu: string;
   blurb_en: string;
   website: string;
@@ -219,6 +225,13 @@ export interface SupplierDirectoryAdminRow {
   price_band: 1 | 2 | 3 | 4 | 5 | null;
   status: "active" | "pending" | "awaiting_review" | "hidden";
   submitter_email: string | null;
+  /** Who put this row here: `null` = curated (admin-maintained, code-resident),
+   *  `"self"` = a vendor submitted their own business, `"user"` = a couple
+   *  recommended it. Lets the admin catalog show "admin vs self-uploaded". */
+  submitter_type: "self" | "user" | null;
+  /** Last time the submitter's Weddly account was active. Null for curated
+   *  rows and for submitters never stamped yet. */
+  submitter_last_seen_at: number | null;
   created_at: number | null;
   /** Current card hero (vendor upload or website auto-fill), overlaid from the
    *  `listings` table. Null = the card falls back to the category-icon avatar. */

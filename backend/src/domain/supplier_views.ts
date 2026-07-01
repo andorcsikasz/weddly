@@ -17,6 +17,7 @@ import {
   listAllForAdmin,
   toDirectorySupplierBase,
 } from "./community_suppliers";
+import { curatedOverrideMap } from "./curated_overrides";
 import { DIRECTORY } from "./suppliers_data";
 
 const VALID_EVENT_TYPES: ReadonlySet<SupplierEventType> = new Set([
@@ -121,10 +122,15 @@ function emptyAnalytics(): SupplierAnalytics {
  *  consistently regardless of the row filter). */
 export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierDirectoryAdminRow[] {
   const analytics = aggregateAnalytics();
+  const overrides = curatedOverrideMap();
   const rows: SupplierDirectoryAdminRow[] = [];
 
-  // Curated half — code-resident, status is always 'active'.
+  // Curated half — code-resident. Status is 'active' unless an admin override
+  // hides it; 'deleted' overrides are skipped entirely so the tombstoned entry
+  // stays out of the catalog.
   for (const s of DIRECTORY) {
+    const ov = overrides.get(s.id);
+    if (ov?.status === "deleted") continue;
     rows.push({
       id: s.id,
       community_id: null,
@@ -137,8 +143,10 @@ export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierD
       contact_email: s.contact_email,
       contact_phone: s.contact_phone,
       price_band: s.price_band,
-      status: "active",
+      status: ov?.status === "hidden" ? "hidden" : "active",
       submitter_email: null,
+      submitter_type: null,
+      submitter_last_seen_at: null,
       created_at: null,
       hero_image_url: null, // overlaid from `listings` below
       analytics: analytics.get(s.id) ?? emptyAnalytics(),
@@ -168,6 +176,8 @@ export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierD
       price_band: base.price_band,
       status: (c.status as SupplierDirectoryAdminRow["status"]) ?? "active",
       submitter_email: c.submitter_email,
+      submitter_type: base.submitter_type,
+      submitter_last_seen_at: c.submitter_last_seen_at,
       created_at: c.created_at,
       hero_image_url: null, // overlaid from `listings` below
       analytics: analytics.get(publicId) ?? emptyAnalytics(),

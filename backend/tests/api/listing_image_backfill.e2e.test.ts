@@ -118,11 +118,30 @@ describe("hero image dimension parsing + quality gate", () => {
   test("reads PNG dimensions from the IHDR header", () => {
     // 8-byte signature, IHDR length+type, then width(1200) height(630) BE u32.
     const png = new Uint8Array([
-      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, // signature
-      0x00, 0x00, 0x00, 0x0d, // IHDR length = 13
-      0x49, 0x48, 0x44, 0x52, // "IHDR"
-      0x00, 0x00, 0x04, 0xb0, // width = 1200
-      0x00, 0x00, 0x02, 0x76, // height = 630
+      0x89,
+      0x50,
+      0x4e,
+      0x47,
+      0x0d,
+      0x0a,
+      0x1a,
+      0x0a, // signature
+      0x00,
+      0x00,
+      0x00,
+      0x0d, // IHDR length = 13
+      0x49,
+      0x48,
+      0x44,
+      0x52, // "IHDR"
+      0x00,
+      0x00,
+      0x04,
+      0xb0, // width = 1200
+      0x00,
+      0x00,
+      0x02,
+      0x76, // height = 630
     ]);
     expect(imageDimensions(png)).toEqual({ width: 1200, height: 630 });
   });
@@ -190,12 +209,7 @@ describe("admin re-fetch hero endpoint", () => {
     const anon = await req("POST", "/api/admin/suppliers/c-admin-guard/refetch-hero", {});
     expect(anon.status).toBe(401);
     // Sanity: the admin token still works on the same row.
-    const ok = await req(
-      "POST",
-      "/api/admin/suppliers/c-admin-guard/refetch-hero",
-      {},
-      { token },
-    );
+    const ok = await req("POST", "/api/admin/suppliers/c-admin-guard/refetch-hero", {}, { token });
     expect(ok.status).toBe(200);
   });
 });

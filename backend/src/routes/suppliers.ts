@@ -14,6 +14,7 @@ import {
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
 import { getCoupleForUser } from "../domain/couples";
+import { curatedOverrideMap, isCuratedPubliclyVisible } from "../domain/curated_overrides";
 import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
 import { recordSupplierEvents } from "../domain/supplier_views";
@@ -80,7 +81,17 @@ async function handleList(ctx: Ctx): Promise<Response> {
     Number.isFinite(radiusKm) &&
     radiusKm > 0;
 
-  const curated = cat ? DIRECTORY.filter((s) => s.category === cat) : DIRECTORY;
+  // Country scoping: a couple only sees curated venues in the country their
+  // wedding is in (set at onboarding, defaults "HU"). So a Hungarian couple
+  // never gets offered a Croatian/Austrian/etc. venue. Anonymous callers and
+  // users without a workspace see the full catalogue. Community submissions
+  // are left unscoped (all HU today) so a couple's own recs stay visible.
+  const couple = ctx.userId ? getCoupleForUser(ctx.userId) : null;
+  // Drop curated entries an admin has hidden or deleted (moderation overrides).
+  const overrides = curatedOverrideMap();
+  const visible = overrides.size > 0 ? DIRECTORY.filter((s) => !overrides.has(s.id)) : DIRECTORY;
+  const scoped = couple ? visible.filter((s) => s.country === couple.country) : visible;
+  const curated = cat ? scoped.filter((s) => s.category === cat) : scoped;
   const community = listActiveCommunitySuppliers((cat as SupplierCategory | null) ?? null);
   let allBase: DirectorySupplierBase[] = [...curated, ...community.map(toDirectorySupplierBase)];
 
@@ -95,7 +106,6 @@ async function handleList(ctx: Ctx): Promise<Response> {
   // user_vote is now per-couple — both partners see the same "+1" once either
   // casts it. Anonymous callers and signed-in users without a workspace get
   // `user_vote: 0` everywhere.
-  const couple = ctx.userId ? getCoupleForUser(ctx.userId) : null;
   const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
 
   // Overlay `vendor_account_id` + `hero_image_url` from the unified `listings`
@@ -151,7 +161,8 @@ async function handleVote(ctx: Ctx): Promise<Response> {
   // The id must reference something in the public list — either a curated slug
   // or an active community entry. Without this guard we'd accept votes for
   // garbage ids that no card ever shows.
-  const isCurated = DIRECTORY.some((s) => s.id === supplierId);
+  const isCurated =
+    DIRECTORY.some((s) => s.id === supplierId) && isCuratedPubliclyVisible(supplierId);
   if (!isCurated) {
     if (!supplierId.startsWith("c")) throw new HttpError(404, "Unknown supplier");
     const community = listActiveCommunitySuppliers();
@@ -220,7 +231,8 @@ async function handleRecordEvents(ctx: Ctx): Promise<Response> {
 
 function resolveSupplierBase(supplierId: string): DirectorySupplierBase | null {
   const curated = DIRECTORY.find((s) => s.id === supplierId);
-  if (curated) return curated;
+  // A hidden/deleted curated entry 404s on the public detail + redirect paths.
+  if (curated) return isCuratedPubliclyVisible(supplierId) ? curated : null;
   if (!supplierId.startsWith("c")) return null;
   const community = listActiveCommunitySuppliers().find((c) => `c${c.id}` === supplierId);
   return community ? toDirectorySupplierBase(community) : null;

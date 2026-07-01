@@ -57,6 +57,9 @@ function toSubmitterType(raw: string): CommunitySubmitterType {
 
 export interface CommunitySupplierRowWithEmail extends CommunitySupplierRow {
   submitter_email: string;
+  /** Last time the submitter's account was seen active (users.last_seen_at),
+   *  stamped throttled on session verify. Null if they've never been stamped. */
+  submitter_last_seen_at: number | null;
 }
 
 function clampPriceBand(v: number): PriceBand {
@@ -80,6 +83,9 @@ export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySup
     name: row.name,
     category: row.category as SupplierCategory,
     city: row.city,
+    // No per-submission country capture yet; community recs are HU today and
+    // stay visible regardless of the couple's country (see routes/suppliers.ts).
+    country: "HU",
     address: row.address,
     capacity_min: null,
     capacity_max: null,
@@ -165,7 +171,7 @@ export function listActiveCommunitySuppliers(
 export function listAllForAdmin(): CommunitySupplierRowWithEmail[] {
   return db
     .prepare(
-      `SELECT cs.*, u.email AS submitter_email
+      `SELECT cs.*, u.email AS submitter_email, u.last_seen_at AS submitter_last_seen_at
        FROM community_suppliers cs
        JOIN users u ON u.id = cs.submitter_user_id
        ORDER BY cs.created_at DESC`,
@@ -405,6 +411,19 @@ export function deleteCommunitySupplier(id: number): void {
   // dangling 'c{N}' card whose backing community row has just been wiped.
   deleteListingForCommunityId(id);
   db.prepare("DELETE FROM community_suppliers WHERE id = ?").run(id);
+}
+
+/** Delete every community supplier submitted by a user (plus each mirrored
+ *  listing). Used when purging the submitter's whole account — the account
+ *  purge scrubs the users row in place rather than DELETEing it, so the
+ *  ON DELETE CASCADE never fires and these rows would otherwise orphan.
+ *  Returns the number of suppliers removed. */
+export function deleteCommunitySuppliersBySubmitter(userId: number): number {
+  const rows = db
+    .prepare("SELECT id FROM community_suppliers WHERE submitter_user_id = ?")
+    .all(userId) as { id: number }[];
+  for (const r of rows) deleteCommunitySupplier(r.id);
+  return rows.length;
 }
 
 // ── Abuse reports ──────────────────────────────────────────────────────────

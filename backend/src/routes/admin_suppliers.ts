@@ -5,6 +5,7 @@ import {
   approveSupplier,
   createVerificationToken,
   deleteCommunitySupplier,
+  deleteCommunitySuppliersBySubmitter,
   dismissReportsForSupplier,
   getCommunitySupplierById,
   getCommunitySupplierWithEmail,
@@ -16,11 +17,14 @@ import {
   updateAdminNotes,
 } from "../domain/community_suppliers";
 import { CONFIG } from "../config";
+import { clearCuratedOverride, setCuratedOverride } from "../domain/curated_overrides";
 import { sendKind } from "../domain/emails";
+import { purgeOneUser } from "../domain/purge";
 import { enrichSupplier } from "../domain/supplier_enrich";
 import { fetchAndStoreListingHero } from "../domain/listing_image_backfill";
 import { getListingById } from "../domain/listings";
 import { listDirectoryForAdmin, parseDirectoryFilters } from "../domain/supplier_views";
+import { DIRECTORY } from "../domain/suppliers_data";
 import { requireAdmin } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -368,6 +372,116 @@ function handleDelete(ctx: Ctx): Response {
   return json({ ok: true });
 }
 
+/** Purge the ENTIRE submitter account behind a community supplier — the user
+ *  row + everything it owns (couple, guests, bookings…), via the same
+ *  admin-initiated purge the users admin uses. Far more destructive than
+ *  deleting the single listing (which `handleDelete` does); the community
+ *  supplier row itself vanishes with the cascade. */
+function handlePurgeSubmitter(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+
+  const before = getCommunitySupplierById(id);
+  if (!before) throw new HttpError(404, "Supplier not found");
+
+  const submitterId = before.submitter_user_id;
+  // Guard: never let an admin nuke their own account through this button.
+  if (submitterId === admin.id) {
+    throw new HttpError(409, "Refusing to purge your own account", { code: "cannot_purge_self" });
+  }
+
+  // The account purge scrubs the users row in place (no DELETE), so the
+  // community_suppliers ON DELETE CASCADE never fires — remove the submitter's
+  // listings explicitly first so nothing orphans.
+  const removedSuppliers = deleteCommunitySuppliersBySubmitter(submitterId);
+  purgeOneUser(submitterId, { adminInitiated: true });
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.community.purge_submitter",
+    target_kind: "user",
+    target_id: submitterId,
+    before: { supplier_id: id, supplier_name: before.name },
+    after: { removed_suppliers: removedSuppliers },
+  });
+
+  return json({ ok: true });
+}
+
+// ── Curated moderation: hide / restore / delete code-resident entries ──────
+
+/** Resolve + validate a curated slug from the path. 404 if it isn't a real
+ *  curated entry so we never write an override for a bogus id. */
+function parseCuratedSlug(ctx: Ctx): string {
+  const slug = ctx.params.slug?.trim();
+  if (!slug) throw new HttpError(400, "Invalid slug");
+  if (!DIRECTORY.some((s) => s.id === slug)) throw new HttpError(404, "Curated supplier not found");
+  return slug;
+}
+
+async function handleCuratedHide(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const slug = parseCuratedSlug(ctx);
+
+  const body = await readJson<HideBody>(ctx.req).catch(() => ({}) as HideBody);
+  const reason =
+    typeof body.reason === "string" && body.reason.trim() ? body.reason.trim().slice(0, 500) : null;
+
+  setCuratedOverride(slug, "hidden", admin.id, reason);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.curated.hide",
+    target_kind: "curated_supplier",
+    target_id: null,
+    after: { supplier_id: slug, hide_reason: reason },
+  });
+
+  return json({ ok: true, status: "hidden" });
+}
+
+function handleCuratedUnhide(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const slug = parseCuratedSlug(ctx);
+
+  clearCuratedOverride(slug);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.curated.unhide",
+    target_kind: "curated_supplier",
+    target_id: null,
+    after: { supplier_id: slug, status: "active" },
+  });
+
+  return json({ ok: true, status: "active" });
+}
+
+async function handleCuratedDelete(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const slug = parseCuratedSlug(ctx);
+
+  const body = await readJson<HideBody>(ctx.req).catch(() => ({}) as HideBody);
+  const reason =
+    typeof body.reason === "string" && body.reason.trim() ? body.reason.trim().slice(0, 500) : null;
+
+  setCuratedOverride(slug, "deleted", admin.id, reason);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.curated.delete",
+    target_kind: "curated_supplier",
+    target_id: null,
+    after: { supplier_id: slug, hide_reason: reason },
+  });
+
+  return json({ ok: true });
+}
+
 // ── Directory view: full curated + community list with visit analytics ─────
 
 function handleDirectory(ctx: Ctx): Response {
@@ -410,7 +524,9 @@ function handleDirectoryCsv(ctx: Ctx): Response {
     "contact_email",
     "contact_phone",
     "price_band",
+    "submitter_type",
     "submitter_email",
+    "submitter_last_seen_at",
     "created_at",
     "views_total",
     "views_30d",
@@ -435,7 +551,9 @@ function handleDirectoryCsv(ctx: Ctx): Response {
         csvCell(r.contact_email),
         csvCell(r.contact_phone),
         csvCell(r.price_band),
+        csvCell(r.submitter_type ?? (r.source === "curated" ? "admin" : "")),
         csvCell(r.submitter_email),
+        csvCell(isoDate(r.submitter_last_seen_at)),
         csvCell(isoDate(r.created_at)),
         csvCell(r.analytics.views_total),
         csvCell(r.analytics.views_30d),
@@ -476,6 +594,12 @@ export function registerAdminSupplierRoutes(router: Router) {
   router.get("/api/admin/suppliers", handleList, true);
   router.get("/api/admin/suppliers/directory", handleDirectory, true);
   router.get("/api/admin/suppliers/directory.csv", handleDirectoryCsv, true);
+  // Curated moderation (code-resident entries, keyed by slug). Registered
+  // before the numeric `:id` routes so the 3-segment `curated/:slug/...` paths
+  // are unambiguous.
+  router.post("/api/admin/suppliers/curated/:slug/hide", handleCuratedHide, true);
+  router.post("/api/admin/suppliers/curated/:slug/unhide", handleCuratedUnhide, true);
+  router.delete("/api/admin/suppliers/curated/:slug", handleCuratedDelete, true);
   router.get("/api/admin/suppliers/:id/reports", handleListReports, true);
   router.post("/api/admin/suppliers/:id/approve", handleApprove, true);
   router.post("/api/admin/suppliers/:id/send-verify", handleSendVerify, true);
@@ -485,5 +609,6 @@ export function registerAdminSupplierRoutes(router: Router) {
   router.post("/api/admin/suppliers/:id/unhide", handleUnhide, true);
   router.post("/api/admin/suppliers/:id/reports/dismiss", handleDismissReports, true);
   router.patch("/api/admin/suppliers/:id/notes", handleUpdateNotes, true);
+  router.post("/api/admin/suppliers/:id/purge-submitter", handlePurgeSubmitter, true);
   router.delete("/api/admin/suppliers/:id", handleDelete, true);
 }
