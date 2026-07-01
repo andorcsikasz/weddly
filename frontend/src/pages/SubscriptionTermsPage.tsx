@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { PublicShell } from "../components/PublicShell";
-import { useT } from "../lib/i18n";
 import en from "../locales/en";
 import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
-import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } from "./PrivacyPage";
+import { BackLink, H2, LegalHeader, LegalLanguageToggle, LegalSection } from "./PrivacyPage";
 
 /**
  * /terms/vendor-subscription: vendor ÁSZF v1.0 (effective 2026-06-15).
@@ -13,42 +12,24 @@ import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } fro
  * English is shown by default; the Hungarian text is available via a toggle.
  */
 export default function SubscriptionTermsPage() {
-  const { t, locale } = useT();
-  const isHu = locale === "hu";
-  const [showSecondary, setShowSecondary] = useState(false);
+  // English is shown first; the toggle swaps the whole document to the other language in place.
+  const [showEn, setShowEn] = useState(true);
+  const L = showEn ? en : hu;
   useDocumentMeta("subscription_terms.seo_title", "subscription_terms.seo_description");
 
   return (
     <PublicShell>
       <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-20">
         <LegalHeader
-          title={t("subscription_terms.page_title")}
-          updatedLabel={t("subscription_terms.last_updated_label")}
-          updatedDate={t("subscription_terms.last_updated_date")}
-          action={
-            <button
-              type="button"
-              onClick={() => setShowSecondary((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
-            >
-              {showSecondary ? (isHu ? "Hide EN" : "Hide HU") : isHu ? "EN" : "HU"}
-            </button>
-          }
+          title={L.subscription_terms.page_title}
+          updatedLabel={L.subscription_terms.last_updated_label}
+          updatedDate={L.subscription_terms.last_updated_date}
+          action={<LegalLanguageToggle showEn={showEn} onToggle={() => setShowEn((v) => !v)} />}
         />
         <SubscriptionBodyForLocale
-          strings={isHu ? hu.subscription_terms : en.subscription_terms}
-          sectionLocale={isHu ? "hu" : "en"}
+          strings={L.subscription_terms}
+          sectionLocale={showEn ? "en" : "hu"}
         />
-        {showSecondary && (
-          <>
-            <SecondaryLanguageDivider label={isHu ? "English" : "Magyar"} />
-            <SubscriptionBodyForLocale
-              strings={isHu ? en.subscription_terms : hu.subscription_terms}
-              sectionLocale={isHu ? "en" : "hu"}
-              secondary
-            />
-          </>
-        )}
         <BackLink />
       </article>
     </PublicShell>

@@ -1,51 +1,29 @@
 import { TERMS_VERSION } from "@shared/legal";
 import { useState } from "react";
 import { PublicShell } from "../components/PublicShell";
-import { useT } from "../lib/i18n";
 import en from "../locales/en";
 import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
-import { BackLink, H2, LegalHeader, LegalSection, SecondaryLanguageDivider } from "./PrivacyPage";
+import { BackLink, H2, LegalHeader, LegalLanguageToggle, LegalSection } from "./PrivacyPage";
 
 export default function TermsPage() {
-  const { t, locale } = useT();
-  const isHu = locale === "hu";
-  const [showSecondary, setShowSecondary] = useState(false);
+  // English is shown first; the toggle swaps the whole document to the other language in place.
+  const [showEn, setShowEn] = useState(true);
+  const L = showEn ? en : hu;
   useDocumentMeta("terms.seo_title", "terms.seo_description");
 
   return (
     <PublicShell>
       <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-20">
         <LegalHeader
-          title={t("terms.page_title")}
-          updatedLabel={t("terms.last_updated_label")}
-          updatedDate={t("terms.last_updated_date")}
+          title={L.terms.page_title}
+          updatedLabel={L.terms.last_updated_label}
+          updatedDate={L.terms.last_updated_date}
           version={TERMS_VERSION}
-          versionLabel={t("legal.version_label")}
-          action={
-            <button
-              type="button"
-              onClick={() => setShowSecondary((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
-            >
-              {showSecondary ? (isHu ? "Hide EN" : "Hide HU") : isHu ? "EN" : "HU"}
-            </button>
-          }
+          versionLabel={L.legal.version_label}
+          action={<LegalLanguageToggle showEn={showEn} onToggle={() => setShowEn((v) => !v)} />}
         />
-        <TermsBodyForLocale
-          strings={isHu ? hu.terms : en.terms}
-          sectionLocale={isHu ? "hu" : "en"}
-        />
-        {showSecondary && (
-          <>
-            <SecondaryLanguageDivider label={isHu ? "English" : "Magyar"} />
-            <TermsBodyForLocale
-              strings={isHu ? en.terms : hu.terms}
-              sectionLocale={isHu ? "en" : "hu"}
-              secondary
-            />
-          </>
-        )}
+        <TermsBodyForLocale strings={L.terms} sectionLocale={showEn ? "en" : "hu"} />
         <BackLink />
       </article>
     </PublicShell>

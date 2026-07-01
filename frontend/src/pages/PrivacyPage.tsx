@@ -10,47 +10,49 @@ import hu from "../locales/hu";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function PrivacyPage() {
-  const { t, locale } = useT();
-  const isHu = locale === "hu";
-  const [showSecondary, setShowSecondary] = useState(false);
+  // English is shown first; the toggle swaps the whole document to the other language in place.
+  const [showEn, setShowEn] = useState(true);
+  const L = showEn ? en : hu;
   useDocumentMeta("privacy.seo_title", "privacy.seo_description");
 
   return (
     <PublicShell>
       <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-20">
         <LegalHeader
-          title={t("privacy.page_title")}
-          updatedLabel={t("privacy.last_updated_label")}
-          updatedDate={t("privacy.last_updated_date")}
+          title={L.privacy.page_title}
+          updatedLabel={L.privacy.last_updated_label}
+          updatedDate={L.privacy.last_updated_date}
           version={PRIVACY_VERSION}
-          versionLabel={t("legal.version_label")}
-          action={
-            <button
-              type="button"
-              onClick={() => setShowSecondary((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
-            >
-              {showSecondary ? (isHu ? "Hide EN" : "Hide HU") : isHu ? "EN" : "HU"}
-            </button>
-          }
+          versionLabel={L.legal.version_label}
+          action={<LegalLanguageToggle showEn={showEn} onToggle={() => setShowEn((v) => !v)} />}
         />
-        <PrivacyBodyForLocale
-          strings={isHu ? hu.privacy : en.privacy}
-          sectionLocale={isHu ? "hu" : "en"}
-        />
-        {showSecondary && (
-          <>
-            <SecondaryLanguageDivider label={isHu ? "English" : "Magyar"} />
-            <PrivacyBodyForLocale
-              strings={isHu ? en.privacy : hu.privacy}
-              sectionLocale={isHu ? "en" : "hu"}
-              secondary
-            />
-          </>
-        )}
+        <PrivacyBodyForLocale strings={L.privacy} sectionLocale={showEn ? "en" : "hu"} />
         <BackLink />
       </article>
     </PublicShell>
+  );
+}
+
+/**
+ * Language switch on the legal pages. The label is the language you switch TO
+ * (showing English → "HU"), so it advertises the other language rather than
+ * the current one, and the swap happens in place.
+ */
+export function LegalLanguageToggle({
+  showEn,
+  onToggle,
+}: {
+  showEn: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="inline-flex items-center gap-2 rounded-full border border-paper-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-100"
+    >
+      {showEn ? "HU" : "EN"}
+    </button>
   );
 }
 
@@ -86,23 +88,6 @@ export function LegalHeader({
         {title}
       </h1>
     </header>
-  );
-}
-
-/**
- * Divider between the HU section and the EN mirror. Matches the
- * editorial spine of the landing page.
- */
-export function SecondaryLanguageDivider({ label }: { label: string }) {
-  return (
-    <div
-      role="separator"
-      className="my-12 flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.32em] text-ink-500 dark:text-umber-300"
-    >
-      <span aria-hidden className="h-px flex-1 bg-paper-300 dark:bg-umber-700" />
-      <span>{label}</span>
-      <span aria-hidden className="h-px flex-1 bg-paper-300 dark:bg-umber-700" />
-    </div>
   );
 }
 
