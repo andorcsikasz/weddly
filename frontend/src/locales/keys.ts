@@ -4137,6 +4137,13 @@ export interface LocaleMessages {
     /** Country picker on the directory filter bar + its "all countries" option. */
     country_filter_label: string;
     country_filter_all: string;
+    /** aria-label for the ✕ that resets the country picker to its default. */
+    country_filter_reset: string;
+    /** Empty state when the active country scope has no matching vendors, plus
+     *  the button that widens the scope to all countries. `{country}` is the
+     *  localised country name. */
+    empty_country: string;
+    empty_country_show_all: string;
     /** Up/downvote buttons + sort. */
     vote_up_aria: string;
     vote_down_aria: string;

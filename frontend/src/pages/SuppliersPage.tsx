@@ -6,6 +6,7 @@
 // filter (persisted in URL params so back-button works) plus a "saved" star on
 // each card backed by localStorage.
 
+import { countryName } from "@shared/country_list";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type {
   DirectorySupplier,
@@ -28,7 +29,6 @@ import {
   ArrowUpRight,
   Bookmark,
   BookmarkCheck,
-  ChevronDown,
   ChevronRight,
   LayoutGrid,
   List,
@@ -72,6 +72,7 @@ import { InfoHint } from "../components/InfoHint";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { OutreachInbox } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
+import { SupplierCountryFilter } from "../components/SupplierCountryFilter";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button, Skeleton, useToast } from "../components/ui";
 import {
@@ -215,17 +216,11 @@ export default function SuppliersPage() {
   // HU couple typing an ambiguous town gets the Hungarian match, not a foreign
   // namesake. Empty until the couple loads.
   const [coupleCountry, setCoupleCountry] = useState("");
-  // Country picker for the curated catalogue. `selectedCountry` is an ISO
-  // alpha-2 code, or "all" to drop the country scope. Empty until the couple
-  // loads, at which point it seeds from their onboarding country. Changing it
-  // re-fetches the directory scoped to the picked country. `availableCountries`
-  // is the set of countries the catalogue covers (with counts), from the list
-  // response, so the dropdown only offers countries that actually have vendors.
-  const [selectedCountry, setSelectedCountry] = useState("");
+  // The set of countries the curated catalogue covers (with counts), from the
+  // list response. Feeds the country picker's option list. The full catalogue
+  // is fetched once and the country filter is applied client-side (like price /
+  // city / guests), so switching country is instant and shareable via the URL.
   const [availableCountries, setAvailableCountries] = useState<SupplierCountryCount[]>([]);
-  // The country the current `items` were fetched for. Guards the re-fetch
-  // effect from re-requesting the data the initial load already returned.
-  const loadedCountryRef = useRef("");
   // The full HU settlement gazetteer is lazy-loaded (it's ~100 KB of data that
   // no other page needs). `gazetteerReady` flips once it's registered so the
   // town-resolving memos recompute and pick up every settlement. `geoResolved`
@@ -335,18 +330,21 @@ export default function SuppliersPage() {
     return Number.isInteger(n) && n > 0 ? n : null;
   })();
 
-  // Country picker options: every country the catalogue covers, biggest first.
-  // The couple's own country is folded in even when it has zero curated
-  // listings, so the selected value always maps to a visible option.
-  const countryOptions = useMemo<SupplierCountryCount[]>(() => {
-    const byCode = new Map(availableCountries.map((c) => [c.code, c.count]));
-    if (selectedCountry && selectedCountry !== "all" && !byCode.has(selectedCountry)) {
-      byCode.set(selectedCountry, 0);
-    }
-    return [...byCode.entries()]
-      .map(([code, count]) => ({ code, count }))
-      .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
-  }, [availableCountries, selectedCountry]);
+  // Country scope lives in the URL (`?country=`) so it survives refresh and is
+  // shareable, just like city / guests / view. Absent → the couple's own
+  // country (localised default); an ISO code scopes to it; "all" drops the
+  // scope. The couple's country is the "home" state, so selecting it clears the
+  // param to keep the URL tidy.
+  const countryParam = params.get("country");
+  const countrySelection = countryParam ?? (coupleCountry || "all");
+  const countryScope = countrySelection === "all" ? null : countrySelection;
+  function setCountryFilter(next: string) {
+    const home = coupleCountry || "all";
+    const p = new URLSearchParams(params);
+    if (next === home) p.delete("country");
+    else p.set("country", next);
+    setParams(p, { replace: true });
+  }
 
   function setQuery(next: string) {
     const p = new URLSearchParams(params);
@@ -516,19 +514,22 @@ export default function SuppliersPage() {
       );
     } catch {
       // Reload from server on failure so we don't carry stale optimistic state.
+      // Full catalogue (`country=all`) to match the client-side scoping model.
       supplierApi
-        .list()
+        .list(undefined, "all")
         .then((r) => setItems(r.suppliers))
         .catch(() => undefined);
     }
   }, []);
 
   useEffect(() => {
-    // Fetch the public directory, the couple's private DIY entries, and the
-    // couple. The Vendégszám default prefers the live cost-planning slider
-    // value from /app/budget (kept in localStorage) over the static
-    // onboarding target, so the two pages stay in sync without round-trips.
-    Promise.all([supplierApi.list(), coupleSupplierApi.list(), coupleApi.current()])
+    // Fetch the FULL catalogue (`country=all`) once and scope by country on the
+    // client, so switching the country picker is instant, keeps the chain
+    // counts + map in sync, and is shareable via `?country=`. The Vendégszám
+    // default prefers the live cost-planning slider value from /app/budget
+    // (kept in localStorage) over the static onboarding target, so the two
+    // pages stay in sync without round-trips.
+    Promise.all([supplierApi.list(undefined, "all"), coupleSupplierApi.list(), coupleApi.current()])
       .then(([dir, mine, couple]) => {
         setItems(dir.suppliers);
         setAvailableCountries(dir.countries);
@@ -539,12 +540,6 @@ export default function SuppliersPage() {
         if (couple.couple) {
           setCurrency(couple.couple.currency ?? "HUF");
           setCoupleCountry(couple.couple.country ?? "");
-          // Seed the picker from the onboarding country. The backend already
-          // scoped this first response to it, so record it as the loaded
-          // country to keep the re-fetch effect from firing a duplicate call.
-          const seed = couple.couple.country ?? "";
-          setSelectedCountry(seed);
-          loadedCountryRef.current = seed;
           setCoupleLocation({
             lat: couple.couple.location_lat,
             lng: couple.couple.location_lng,
@@ -559,12 +554,19 @@ export default function SuppliersPage() {
           setSavedState(readSavedStore(id));
         }
         // One-shot view ping per mount: tell the analytics ingest which
-        // directory cards this session actually loaded. The admin directory
-        // view aggregates these into total/30d/7d windows. We swallow errors
-        // — the page renders fine even if the ingest is down.
-        if (dir.suppliers.length > 0) {
+        // directory cards this session actually sees. Scope it to the country
+        // that's initially shown (the URL param if present, else the couple's
+        // own country) so a session isn't credited views for the whole EU when
+        // it only ever looked at one country. We swallow errors — the page
+        // renders fine even if the ingest is down.
+        const initialCountry = params.get("country") ?? couple.couple?.country ?? "";
+        const initialScope = initialCountry && initialCountry !== "all" ? initialCountry : null;
+        const shown = initialScope
+          ? dir.suppliers.filter((s) => s.country === initialScope)
+          : dir.suppliers;
+        if (shown.length > 0) {
           supplierApi
-            .recordEvents(dir.suppliers.map((s) => ({ supplier_id: s.id, type: "view" })))
+            .recordEvents(shown.map((s) => ({ supplier_id: s.id, type: "view" })))
             .catch(() => undefined);
         }
       })
@@ -580,29 +582,9 @@ export default function SuppliersPage() {
       .listLines()
       .then((r) => setBudgetLines(r.lines))
       .catch(() => undefined);
+    // params is read once at mount to pick the initial view-ping scope; we
+    // deliberately don't re-run the whole bootstrap when the URL changes.
   }, []);
-
-  // Re-fetch the directory when the user switches country in the picker. The
-  // initial mount already loaded the couple's own country (recorded in
-  // loadedCountryRef), so this only fires on a genuine change — switching to
-  // another country or "all". Community entries and the country list ride
-  // along unchanged.
-  useEffect(() => {
-    if (!selectedCountry || selectedCountry === loadedCountryRef.current) return;
-    loadedCountryRef.current = selectedCountry;
-    let cancelled = false;
-    supplierApi
-      .list(undefined, selectedCountry)
-      .then((dir) => {
-        if (cancelled) return;
-        setItems(dir.suppliers);
-        setAvailableCountries(dir.countries);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedCountry]);
 
   // Cross-tab pick sync — partner B picks a venue in another tab, we
   // reflect it here without a refresh.
@@ -682,12 +664,23 @@ export default function SuppliersPage() {
     [coupleId, saved, toast, t],
   );
 
-  // Cities derived from the loaded list. Sorted alphabetically by locale rules.
+  // Directory rows scoped to the picked country. Everything downstream — the
+  // result list, the chain/sub-category counts, the city autocomplete, and the
+  // search suggestions — reads from this so the country scope is applied once
+  // and consistently across grid + map. "Mind"/All leaves the full set through.
+  const scopedItems = useMemo(
+    () => (countryScope ? items.filter((s) => s.country === countryScope) : items),
+    [items, countryScope],
+  );
+
+  // Cities derived from the scoped list, so the town autocomplete only offers
+  // cities that belong to the selected country (no "Budapest" while browsing
+  // Romania). Sorted alphabetically by locale rules.
   const cities = useMemo(() => {
     const set = new Set<string>();
-    for (const s of items) if (s.city) set.add(s.city);
+    for (const s of scopedItems) if (s.city) set.add(s.city);
     return Array.from(set).sort((a, b) => a.localeCompare(b, locale === "hu" ? "hu" : "en"));
-  }, [items, locale]);
+  }, [scopedItems, locale]);
 
   // Google-style suggestions for the free-text bar: a short mixed list of
   // matching towns, categories, and supplier names. Selecting a row routes to
@@ -738,7 +731,7 @@ export default function SuppliersPage() {
 
     // Supplier names.
     let supCount = 0;
-    for (const s of items) {
+    for (const s of scopedItems) {
       if (supCount >= 3) break;
       if (normalize(s.name).includes(qn)) {
         out.push({
@@ -752,7 +745,7 @@ export default function SuppliersPage() {
     }
 
     return out.slice(0, 7);
-  }, [query, cities, items, t, gazetteerReady, geoResolved]);
+  }, [query, cities, scopedItems, t, gazetteerReady, geoResolved]);
 
   // Town suggestions for the city filter: supplier cities first, then the
   // wider dictionary so couples can pick a settlement with no listing of its
@@ -784,16 +777,16 @@ export default function SuppliersPage() {
   // up to 5 km) to the nearest in-radius result — shown as a "+N km" suffix.
   const cityNearbyKm = useMemo<number | null>(() => {
     if (!cityFilter) return null;
-    if (items.some((s) => s.city === cityFilter)) return null;
+    if (scopedItems.some((s) => s.city === cityFilter)) return null;
     const qn = normalize(cityFilter);
     let min = Number.POSITIVE_INFINITY;
-    for (const s of items) {
+    for (const s of scopedItems) {
       const km = distanceKmForQuery(qn, s.city, { lat: s.lat, lng: s.lng });
       if (km != null && km <= NEARBY_RADIUS_KM && km < min) min = km;
     }
     if (!Number.isFinite(min)) return null;
     return Math.max(5, Math.ceil(min / 5) * 5);
-  }, [cityFilter, items, gazetteerReady, geoResolved]);
+  }, [cityFilter, scopedItems, gazetteerReady, geoResolved]);
 
   // Items after all the non-category filters (city, saved, price, guests,
   // free-text). Used twice: as the base for the displayed list AND to compute
@@ -804,7 +797,7 @@ export default function SuppliersPage() {
   // City / saved / price-band / capacity filters do not apply to DIY entries
   // (they don't have those fields); the free-text search hits name + notes.
   const filteredBeforeCategory = useMemo<(DirectorySupplier | CoupleSupplier)[]>(() => {
-    let dir = items;
+    let dir = scopedItems;
     if (cityFilter) {
       // Exact-town match is the common case. When the typed settlement has no
       // supplier of its own but is a known town, widen to a radius match so
@@ -878,7 +871,7 @@ export default function SuppliersPage() {
     }
     return [...mine, ...dir];
   }, [
-    items,
+    scopedItems,
     coupleSuppliers,
     cityFilter,
     showSavedOnly,
@@ -1223,13 +1216,26 @@ export default function SuppliersPage() {
         </label>
       </div>
 
-      {/* Row 2: price-band picker (5 dollar-sign chips, one per exact 1..5) +
-          guest-count number filter, grouped inside a softened container so
-          they read as one control. Each chip represents one band —
+      {/* Row 2: catalogue scope (country) + price-band picker + guest-count,
+          grouped inside a softened container so they read as one control.
+          Country leads (it's the broadest scope), then Árszint, then the
+          user-context Vendégszám. Each price chip represents one band —
           clicking the $$$$ chip filters to band-4 suppliers only, not
           "up to 4". Click the same chip to clear. Suppliers with no
-          declared value pass through so non-venue cards are not dropped. */}
-      <div className="mb-3 flex flex-nowrap items-center justify-between gap-x-3 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1 sm:flex-wrap sm:justify-start sm:gap-x-6 sm:px-4 dark:border-umber-700 dark:bg-umber-700/40">
+          declared value pass through so non-venue cards are not dropped.
+          The row wraps on narrow screens so the extra country control never
+          pushes the guest count off the edge. */}
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1.5 sm:gap-x-5 sm:px-4 dark:border-umber-700 dark:bg-umber-700/40">
+        <SupplierCountryFilter
+          value={countrySelection}
+          homeCountry={coupleCountry}
+          countries={availableCountries}
+          onChange={setCountryFilter}
+        />
+        <div
+          className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
+          aria-hidden
+        />
         <div className="flex flex-nowrap items-center gap-2 shrink-0 sm:gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
             {t("suppliers.price_filter_label")}
@@ -1292,39 +1298,6 @@ export default function SuppliersPage() {
             className="text-ink-400 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100"
           />
         </Link>
-        <div
-          className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
-          aria-hidden
-        />
-        {/* Country picker. Seeds from the couple's onboarding country (e.g. a
-            HU wedding lands on HU) and lets them scope the catalogue to any
-            country we have vendors in, or "Mind"/"All" for the full set.
-            Switching re-fetches the directory server-side. */}
-        <label className="group inline-flex shrink-0 items-center gap-1">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-            {t("suppliers.country_filter_label")}
-          </span>
-          <span className="relative inline-flex items-center">
-            <select
-              value={selectedCountry === "" ? "all" : selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
-              aria-label={t("suppliers.country_filter_label")}
-              className="cursor-pointer appearance-none rounded-full bg-transparent py-0.5 pl-1.5 pr-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-800 transition hover:text-ink-900 focus:outline-none dark:text-paper-100"
-            >
-              <option value="all">{t("suppliers.country_filter_all")}</option>
-              {countryOptions.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.code}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              size={12}
-              aria-hidden
-              className="pointer-events-none absolute right-1 text-ink-400 dark:text-umber-300"
-            />
-          </span>
-        </label>
       </div>
 
       {/* Step chain. Sequence numbers dropped — the icons carry the meaning.
@@ -2054,9 +2027,28 @@ export default function SuppliersPage() {
               );
             })}
             {filtered.length === 0 && items.length > 0 && (
-              <p className="col-span-full py-8 text-center text-sm text-ink-500 dark:text-umber-300">
-                {t("suppliers.empty_filtered")}
-              </p>
+              <div className="col-span-full flex flex-col items-center gap-2 py-8 text-center">
+                <p className="text-sm text-ink-500 dark:text-umber-300">
+                  {countryScope
+                    ? t("suppliers.empty_country", {
+                        country: countryName(countryScope, locale),
+                      })
+                    : t("suppliers.empty_filtered")}
+                </p>
+                {/* When the emptiness is caused by the country scope, offer a
+                    one-tap widen to "Mind"/All rather than leaving the couple
+                    at a dead end (audit item 12). */}
+                {countryScope && (
+                  <button
+                    type="button"
+                    onClick={() => setCountryFilter("all")}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                  >
+                    <Globe size={13} aria-hidden />
+                    {t("suppliers.empty_country_show_all")}
+                  </button>
+                )}
+              </div>
             )}
           </div>
           {filtered.length > visibleCount && (
