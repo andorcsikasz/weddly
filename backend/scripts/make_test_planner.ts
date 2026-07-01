@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 
-const DB_PATH = process.env.DB_PATH ?? "./data/weddly.db";
+// The dev server runs from backend/, so its ./data/weddly.db lives here.
+const DB_PATH = process.env.DB_PATH ?? "./backend/data/weddly.db";
 const email = "planner@test.weddly";
 const password = "123456789";
 
