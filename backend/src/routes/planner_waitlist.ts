@@ -7,6 +7,7 @@ import type { PlannerWaitlistOutcome } from "@shared/planner_waitlist";
 import { db } from "../db";
 import { sendKind } from "../domain/emails/send";
 import { grantPlannerAccount } from "../domain/planner";
+import { initPlannerBilling } from "../domain/planner_billing";
 import { requireAdmin } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { log } from "../lib/logger";
@@ -191,7 +192,10 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   // If the applicant is already signed in, grant the planner account right
   // away so they can head straight to onboarding. A logged-out applicant gets
   // promoted at register time (handleRegister joins the waitlist by email).
-  if (ctx.userId) grantPlannerAccount(ctx.userId);
+  if (ctx.userId) {
+    grantPlannerAccount(ctx.userId);
+    initPlannerBilling(ctx.userId);
+  }
 
   return json(
     {

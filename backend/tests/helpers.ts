@@ -246,6 +246,10 @@ export function wipeAll(): void {
     "planner_events",
     "planner_portfolio",
     "planner_waitlist",
+    // Planner billing — subs cascade off users, but delete explicitly (and
+    // before users) so a leaked founding badge can't bleed the cohort count
+    // into the next test.
+    "planner_subscriptions",
     // users MUST come before couples — users.couple_id REFERENCES couples(id)
     // with no CASCADE, so deleting couples first FK-fails (silently swallowed
     // by the try/catch below) and leaves stale rows that bleed into the next

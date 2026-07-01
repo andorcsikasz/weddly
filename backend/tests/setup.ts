@@ -89,6 +89,13 @@ process.env.STRIPE_WEBHOOK_SECRET = "";
 process.env.STRIPE_PRICE_EUR = "";
 process.env.STRIPE_PRICE_HUF = "";
 process.env.STRIPE_GUEST_PAGE_ADDON_PRICE = "";
+process.env.STRIPE_PRICE_PLANNER_STARTER_EUR = "";
+process.env.STRIPE_PRICE_PLANNER_STARTER_HUF = "";
+process.env.STRIPE_PRICE_PLANNER_PRO_EUR = "";
+process.env.STRIPE_PRICE_PLANNER_PRO_HUF = "";
+process.env.STRIPE_PRICE_PLANNER_PREMIUM_EUR = "";
+process.env.STRIPE_PRICE_PLANNER_PREMIUM_HUF = "";
+process.env.STRIPE_PLANNER_WEBHOOK_SECRET = "";
 
 // Cloudflare R2 object storage stays disabled in tests so the storage layer
 // uses the local-disk backend (UPLOADS_DIR above) — pin every R2 field empty

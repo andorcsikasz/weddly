@@ -925,6 +925,33 @@ CREATE TABLE IF NOT EXISTS vendor_subscriptions (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_subs_customer ON vendor_subscriptions(stripe_customer_id) WHERE stripe_customer_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_vendor_subs_founding ON vendor_subscriptions(is_founding_member);
 
+-- Planner subscription / billing — a `users` row with user_type='planner', priced
+-- by TIER (starter/pro/premium). Its own table (1:1 with the planner user) rather
+-- than overloading either the couple billing columns or the vendor table. Reuses
+-- the couple side's PURE entitlement math (computeEntitlement). Founding offer =
+-- the first PLANNER_FOUNDING_CAP planners free for two years (no card), then a
+-- 3-day trial → paid. The tier itself is NOT stored here — users.planner_plan is
+-- the single source of truth (kept in lockstep with users.planner_max_clients by
+-- updatePlannerPlan); this row only tracks the subscription lifecycle. Entitlement
+-- (edit access) is COMPUTED from status + timestamps at read-time — never stored —
+-- so a lapsed planner goes read-only without a background job. stripe_* are filled
+-- by the planner billing webhook.
+CREATE TABLE IF NOT EXISTS planner_subscriptions (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  subscription_status TEXT NOT NULL DEFAULT 'none',   -- trialing|founding|active|past_due|canceled|none
+  trial_ends_at INTEGER,                              -- epoch ms; null unless trialing
+  founding_until INTEGER,                             -- epoch ms; end of the 2-year founding window
+  is_founding_member INTEGER NOT NULL DEFAULT 0,      -- first-25 badge; permanent (slot spent on grant)
+  current_period_end INTEGER,                         -- epoch ms from Stripe
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  currency TEXT NOT NULL,                             -- HUF | EUR, pinned at activation from user locale
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_planner_subs_customer ON planner_subscriptions(stripe_customer_id) WHERE stripe_customer_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_planner_subs_founding ON planner_subscriptions(is_founding_member);
+
 -- Vendor onboarding token — the bridge from an accepted waitlist entry to a
 -- real vendor account. When the admin accepts a waitlist row, a token is minted
 -- and the accept email carries /vendor/activate/:token. The vendor clicks, sets

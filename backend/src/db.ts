@@ -1062,6 +1062,38 @@ db.prepare(
   }
 }
 
+// One-time grandfather: every planner that existed BEFORE planner billing
+// launched is an early adopter, so give them a founding comp (free for two years
+// from boot, no card). Idempotent — only planners with no planner_subscriptions
+// row yet are touched, so after the first run (and for planners granted after
+// launch, who get a row at grant time via initPlannerBilling) this never repeats.
+// Currency is pinned from each planner's locale.
+{
+  const ungranted = db
+    .prepare(
+      `SELECT u.id, u.locale FROM users u
+        WHERE u.user_type = 'planner'
+          AND NOT EXISTS (SELECT 1 FROM planner_subscriptions ps WHERE ps.user_id = u.id)`,
+    )
+    .all() as Array<{ id: number; locale: string | null }>;
+  if (ungranted.length > 0) {
+    const nowMs = Date.now();
+    const foundingUntil = nowMs + 1000 * 60 * 60 * 24 * 365 * 2;
+    const insert = db.prepare(
+      `INSERT INTO planner_subscriptions
+         (user_id, subscription_status, trial_ends_at, founding_until,
+          is_founding_member, currency, created_at, updated_at)
+       VALUES (?, 'founding', NULL, ?, 1, ?, ?, ?)`,
+    );
+    db.transaction(() => {
+      for (const p of ungranted) {
+        const currency = p.locale === "hu" ? "HUF" : "EUR";
+        insert.run(p.id, foundingUntil, currency, nowMs, nowMs);
+      }
+    })();
+  }
+}
+
 // Billing kill-switch singleton. Default enforcement_on=0 means the read-only
 // paywall is DEFERRED — no couple is locked out until the founder flips it on
 // from the admin financial planner (after the 200-couple cohort fills). Lives

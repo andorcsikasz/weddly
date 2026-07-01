@@ -23,6 +23,7 @@ import { maybeCompress, negotiateEncoding } from "./lib/compression";
 import { log, makeLogger } from "./lib/logger";
 import { GA4_CSP_HASHES, GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } from "./lib/seo_ssr";
 import { entitlementBlock } from "./domain/billing";
+import { plannerEntitlementBlock } from "./domain/planner_billing";
 import { vendorEntitlementBlock } from "./domain/vendor_billing";
 import { ensureGeoDb } from "./lib/geoip";
 import { storage, keyFromUploadUrl } from "./lib/storage";
@@ -79,6 +80,7 @@ import { registerVendorListingRoutes } from "./routes/vendor_listing";
 import { registerVendorAvailabilityRoutes } from "./routes/vendor_availability";
 import { registerVendorClientsRoutes } from "./routes/vendor_clients";
 import { registerVendorStatsRoutes } from "./routes/vendor_stats";
+import { registerPlannerBillingRoutes } from "./routes/planner_billing";
 import { registerVendorBillingRoutes } from "./routes/vendor_billing";
 import { registerHealthRoutes } from "./routes/health";
 import { registerHoneymoonRoutes } from "./routes/honeymoon";
@@ -198,6 +200,7 @@ registerVendorAvailabilityRoutes(router);
 registerVendorClientsRoutes(router);
 registerVendorStatsRoutes(router);
 registerVendorBillingRoutes(router);
+registerPlannerBillingRoutes(router);
 registerSeoRoutes(router);
 registerDemoRoutes(router);
 
@@ -571,7 +574,8 @@ async function handleRequest(req: Request): Promise<Response> {
   // the frontend can show the "subscription needed" prompt.
   const blockReason =
     entitlementBlock(req.method, url.pathname, userId) ??
-    vendorEntitlementBlock(req.method, url.pathname, userId);
+    vendorEntitlementBlock(req.method, url.pathname, userId) ??
+    plannerEntitlementBlock(req.method, url.pathname, userId);
   if (blockReason) {
     const r = httpErr(402, "Subscription required", {
       code: "subscription_required",

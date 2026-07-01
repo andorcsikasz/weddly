@@ -121,6 +121,28 @@ export const CONFIG = {
    *  never blocks boot. Create it in the Stripe dashboard at the discounted
    *  amount. See docs / CLAUDE.md billing notes. */
   stripeGuestPageAddonPrice: process.env.STRIPE_GUEST_PAGE_ADDON_PRICE ?? "",
+  /** Recurring Price ids for the planner subscription, one per tier per currency.
+   *  A planner is sent to Checkout with the Price matching their chosen tier +
+   *  currency. Create them with backend/scripts/stripe_setup_planner.ts. When
+   *  unset, planner checkout returns 503 (billing never blocks boot). */
+  stripePricePlanner: {
+    starter: {
+      EUR: process.env.STRIPE_PRICE_PLANNER_STARTER_EUR ?? "",
+      HUF: process.env.STRIPE_PRICE_PLANNER_STARTER_HUF ?? "",
+    },
+    pro: {
+      EUR: process.env.STRIPE_PRICE_PLANNER_PRO_EUR ?? "",
+      HUF: process.env.STRIPE_PRICE_PLANNER_PRO_HUF ?? "",
+    },
+    premium: {
+      EUR: process.env.STRIPE_PRICE_PLANNER_PREMIUM_EUR ?? "",
+      HUF: process.env.STRIPE_PRICE_PLANNER_PREMIUM_HUF ?? "",
+    },
+  },
+  /** Signing secret for the SEPARATE planner Stripe webhook endpoint
+   *  (`whsec_…`). Distinct from the couple/vendor webhook so signatures never
+   *  collide — register it as its own endpoint in the Stripe dashboard. */
+  stripePlannerWebhookSecret: process.env.STRIPE_PLANNER_WEBHOOK_SECRET ?? "",
   /** Path to the MaxMind GeoLite2-Country `.mmdb` on disk. Lives on the `/data`
    *  persistent volume in prod so it survives redeploys. The file is NEVER
    *  committed (MaxMind's EULA forbids redistribution + it would bloat the

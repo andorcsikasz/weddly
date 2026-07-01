@@ -11,6 +11,7 @@ import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails";
 import { recordGrowthEvent } from "../domain/growth_events";
 import { grantPlannerAccount } from "../domain/planner";
+import { initPlannerBilling } from "../domain/planner_billing";
 import { rebindInvitationEmail } from "../domain/planner_invitations";
 import { buildSignupAcquisition } from "../domain/signup_meta";
 import { deviceFingerprint, recordKnownDevice } from "../domain/known_devices";
@@ -148,6 +149,9 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     .get(email.toLowerCase());
   if (inWaitlist) {
     grantPlannerAccount(userId);
+    // Open the planner's billing lifecycle (founding grant while slots remain,
+    // else a 3-day trial) the moment the account is granted.
+    initPlannerBilling(userId);
   }
 
   // Re-bind a planner email-invitation to the address they actually registered
