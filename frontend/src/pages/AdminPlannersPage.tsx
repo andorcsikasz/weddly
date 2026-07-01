@@ -17,7 +17,7 @@ type Filter = "all" | "active" | "suspended";
 const PLANS: PlannerPlan[] = ["starter", "pro", "premium"];
 
 // Uber-style tier chip: each tier gets a distinct fill so the plan reads at a
-// glance across a dense list. Double-clicking cycles starter → pro → premium.
+// glance across a dense list. Clicking cycles starter → pro → premium.
 const PLAN_STYLE: Record<PlannerPlan, string> = {
   starter: "bg-paper-200 text-neutral-700 dark:bg-umber-800 dark:text-umber-200",
   pro: "bg-neutral-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900",
@@ -178,25 +178,20 @@ function PlannerCard({
 
         {/* Plan + actions */}
         <div className="flex shrink-0 items-center gap-2">
-          <div className="flex flex-col items-center gap-1">
-            <button
-              type="button"
-              onClick={cyclePlan}
-              disabled={busy}
-              title={t("admin.planners.plan_cycle_hint")}
-              aria-label={`${t("admin.planners.plan")}: ${t(`admin.planners.plan_${planner.planner_plan}`)}. ${t("admin.planners.plan_cycle_hint")}`}
-              className={`inline-flex min-w-[76px] select-none items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide transition active:scale-95 disabled:opacity-60 ${PLAN_STYLE[planner.planner_plan]}`}
-            >
-              {busy ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : (
-                t(`admin.planners.plan_${planner.planner_plan}`)
-              )}
-            </button>
-            <span className="text-[10px] leading-none text-umber-400 dark:text-umber-500">
-              {t("admin.planners.plan_cycle_hint")}
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={cyclePlan}
+            disabled={busy}
+            title={t("admin.planners.plan_cycle_hint")}
+            aria-label={`${t("admin.planners.plan")}: ${t(`admin.planners.plan_${planner.planner_plan}`)}. ${t("admin.planners.plan_cycle_hint")}`}
+            className={`inline-flex min-w-[76px] select-none items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide transition active:scale-95 disabled:opacity-60 ${PLAN_STYLE[planner.planner_plan]}`}
+          >
+            {busy ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              t(`admin.planners.plan_${planner.planner_plan}`)
+            )}
+          </button>
 
           {suspended ? (
             <button
