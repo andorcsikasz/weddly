@@ -442,7 +442,13 @@ export default function SchedulePage() {
       </header>
 
       {!loading && couple && sortedEvents.length > 0 && (
-        <ScheduleSummaryCard couple={couple} events={sortedEvents} locale={locale} />
+        <ScheduleSummaryCard
+          couple={couple}
+          events={sortedEvents}
+          locale={locale}
+          onShowTimeline={() => setViewMode("timeline")}
+          timelineActive={viewMode === "timeline"}
+        />
       )}
 
       {loading ? (
@@ -673,9 +679,13 @@ function ScheduleTimelineView({
   const { t } = useT();
   return (
     <div className="card p-5 sm:p-8">
-      <ol data-tour-target="schedule-events" className="relative mx-auto max-w-xl">
+      <ol data-tour-target="schedule-events" className="relative mx-auto max-w-2xl">
         {events.map((event, i) => {
           const isLast = i === events.length - 1;
+          // On sm+ the rail becomes a centered spine and items zig-zag: even
+          // beats sit on the left (right-aligned toward the rail), odd on the
+          // right. On mobile everything stays in the single left-rail column.
+          const left = i % 2 === 0;
           const end =
             event.duration_minutes !== null && event.duration_minutes > 0
               ? formatHHMM(event.starts_at_minutes + event.duration_minutes)
@@ -693,9 +703,12 @@ function ScheduleTimelineView({
           );
 
           return (
-            <li key={event.id} className="grid grid-cols-[2rem_1fr] gap-4 pb-7 last:pb-0">
+            <li
+              key={event.id}
+              className="grid grid-cols-[2rem_1fr] gap-4 pb-7 last:pb-0 sm:grid-cols-[1fr_2rem_1fr]"
+            >
               {/* Rail: continuous hairline with an icon node at each beat. */}
-              <div className="relative flex justify-center">
+              <div className="relative col-start-1 row-start-1 flex justify-center sm:col-start-2">
                 {!isLast && (
                   <span
                     aria-hidden="true"
@@ -717,9 +730,13 @@ function ScheduleTimelineView({
               <button
                 type="button"
                 onClick={() => onEdit(event)}
-                className="group/btn block w-full rounded-xl px-3 py-2 text-left transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:hover:bg-umber-700"
+                className={`group/btn col-start-2 row-start-1 flex w-full flex-col items-start rounded-xl px-3 py-2 text-left transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:hover:bg-umber-700 ${
+                  left
+                    ? "sm:col-start-1 sm:items-end sm:text-right"
+                    : "sm:col-start-3 sm:items-start sm:text-left"
+                }`}
               >
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 ${left ? "sm:flex-row-reverse" : ""}`}>
                   <span className="text-[15px] font-semibold text-ink-900 dark:text-paper-50">
                     {localizeKnownLabel(event.label, locale)}
                   </span>
@@ -729,7 +746,9 @@ function ScheduleTimelineView({
                     className="shrink-0 opacity-0 transition-opacity group-hover/btn:opacity-40"
                   />
                 </div>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <div
+                  className={`mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 ${left ? "sm:justify-end" : ""}`}
+                >
                   <span className="inline-flex items-center rounded-full bg-paper-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-600 dark:bg-umber-700 dark:text-paper-100">
                     {timeLabel}
                     {day2 && <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>}
@@ -742,7 +761,9 @@ function ScheduleTimelineView({
                   )}
                 </div>
                 {hasMeta && (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                  <div
+                    className={`mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300 ${left ? "sm:justify-end" : ""}`}
+                  >
                     {event.location && (
                       <span className="inline-flex items-center gap-1">
                         <MapPin size={11} aria-hidden="true" />
@@ -790,10 +811,14 @@ function ScheduleSummaryCard({
   couple,
   events,
   locale,
+  onShowTimeline,
+  timelineActive,
 }: {
   couple: Couple;
   events: ScheduleEvent[];
   locale: Locale;
+  onShowTimeline: () => void;
+  timelineActive: boolean;
 }) {
   const { t } = useT();
   const first = events[0];
@@ -825,10 +850,20 @@ function ScheduleSummaryCard({
         {subtitle && <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">{subtitle}</p>}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs font-medium text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+        <button
+          type="button"
+          onClick={onShowTimeline}
+          aria-pressed={timelineActive}
+          title={t("schedule.view_timeline")}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 ${
+            timelineActive
+              ? "bg-umber-200 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
+              : "bg-paper-100 text-ink-700 hover:bg-umber-100 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-600"
+          }`}
+        >
           <Milestone size={13} aria-hidden="true" />
           {t("schedule.summary_events", { count: events.length })}
-        </span>
+        </button>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs font-medium tabular-nums text-ink-700 dark:bg-umber-700 dark:text-paper-100">
           <Clock size={13} aria-hidden="true" />
           {windowLabel}
