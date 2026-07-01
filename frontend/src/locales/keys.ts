@@ -7609,6 +7609,27 @@ export interface LocaleMessages {
     feat_stats: string;
     feat_references: string;
     feat_priority_support: string;
+    /** "{price}/mo" — price already currency-formatted by the component. */
+    price_per_month: string;
+    /** "{n} of 25 free founding spots left". */
+    founding_spots: string;
+    /** Status banner lines. `state_founding` takes {date}; `state_trial` {days}. */
+    state_founding: string;
+    state_trial: string;
+    state_active: string;
+    state_past_due: string;
+    state_readonly: string;
+    /** Short chip variants (no interpolation) for the settings status pill. */
+    state_trial_short: string;
+    state_readonly_short: string;
+    /** Plan-card CTAs. */
+    cta_subscribe: string;
+    cta_current: string;
+    cta_switch: string;
+    manage_cta: string;
+    /** Shown on the cards while Stripe billing isn't wired server-side yet. */
+    disabled_note: string;
+    checkout_error: string;
   };
   planner_settings: {
     reference_add_toggle: string;

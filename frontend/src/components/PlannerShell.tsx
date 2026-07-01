@@ -26,7 +26,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { PlannerInviteView, PlannerProfile, PlannerStats, User } from "@shared/types";
 import { useAuth } from "../lib/auth";
-import { plannerApi } from "../lib/endpoints";
+import { plannerApi, plannerBillingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { Wordmark } from "./Wordmark";
 
@@ -274,6 +274,9 @@ export function PlannerShell({ children }: { children: ReactNode }) {
   // Planner photo for the header avatar. Fetched once (not per-navigation) -
   // it rarely changes, and the menu falls back to initials until it lands.
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // Read-only when the planner's subscription has lapsed — surfaces a banner
+  // linking to billing so the 402 gate on mutations isn't a silent dead end.
+  const [readOnly, setReadOnly] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -290,6 +293,21 @@ export function PlannerShell({ children }: { children: ReactNode }) {
       cancelled = true;
     };
     // Re-pull on navigation so counts stay roughly fresh as the planner works.
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+    plannerBillingApi
+      .status()
+      .then((r) => {
+        if (!cancelled) setReadOnly(!r.billing.entitled);
+      })
+      .catch(() => {
+        /* fresh planner / network - assume entitled, the gate is server-side */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [location.pathname]);
 
   useEffect(() => {
@@ -428,6 +446,15 @@ export function PlannerShell({ children }: { children: ReactNode }) {
           </nav>
         </aside>
         <main id="main-content" className="min-w-0 flex-1 focus:outline-none">
+          {readOnly && (
+            <Link
+              to="/app/planner/billing"
+              className="mx-4 mt-4 flex items-center gap-2 rounded-xl border border-blush-200 bg-blush-50 px-4 py-2.5 text-sm text-blush-700 transition hover:border-blush-300 lg:mx-6 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300 dark:hover:border-blush-400/60"
+            >
+              <AlertTriangle size={15} className="shrink-0" />
+              <span>{t("planner_billing.state_readonly")}</span>
+            </Link>
+          )}
           {children}
         </main>
       </div>

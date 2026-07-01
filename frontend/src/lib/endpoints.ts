@@ -84,6 +84,7 @@ import type {
   StripeHealth,
 } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse } from "@shared/billing";
+import type { PlannerBillingStatus } from "@shared/planner_billing";
 import type { CoupleDesignInput } from "@shared/design";
 import type { BlogPost } from "@shared/blog_posts";
 import type { GuestPortalView } from "@shared/guest_portal";
@@ -461,6 +462,16 @@ export const billingApi = {
     apiFetch<{ url: string }>("POST", "/api/billing/guest-page-addon/checkout", {}),
   /** Open the Stripe Billing Portal — returns the redirect URL. */
   portal: () => apiFetch<{ url: string }>("POST", "/api/billing/portal", {}),
+};
+
+export const plannerBillingApi = {
+  /** Current planner subscription snapshot + per-tier prices + founding spots. */
+  status: () => apiFetch<PlannerBillingStatus>("GET", "/api/planner/billing"),
+  /** Start a Stripe-hosted Checkout for a tier — returns the redirect URL. */
+  checkout: (tier: PlannerPlan) =>
+    apiFetch<{ url: string }>("POST", "/api/planner/billing/checkout", { tier }),
+  /** Open the Stripe Billing Portal — returns the redirect URL. */
+  portal: () => apiFetch<{ url: string }>("POST", "/api/planner/billing/portal", {}),
 };
 
 export const coupleApi = {

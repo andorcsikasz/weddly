@@ -1,9 +1,10 @@
-import { ArrowLeft, BellRing, Check } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, CreditCard, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import type { PlannerBillingStatus } from "@shared/planner_billing";
 import { PLANNER_PLAN_LIMITS, type PlannerPlan, type PlannerStats } from "@shared/types";
 import { useToast } from "../../components/ui";
-import { plannerApi } from "../../lib/endpoints";
+import { plannerApi, plannerBillingApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 import { useDocumentMeta } from "../../lib/seo";
 
@@ -48,12 +49,27 @@ const PLAN_FEATURES: Record<PlannerPlan, string[]> = {
   ],
 };
 
+/** Currency-format a whole-unit monthly price (EUR 29 → "€29", HUF 6900 →
+ *  "6 900 Ft") following the couple/vendor display convention. */
+function formatPrice(amount: number, currency: string, locale: string): string {
+  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
 export default function PlannerBillingPage() {
   const { t } = useT();
   useDocumentMeta("planner_billing.meta_title", "planner_billing.meta_description");
+  const [billing, setBilling] = useState<PlannerBillingStatus | null>(null);
   const [stats, setStats] = useState<PlannerStats | null>(null);
 
   useEffect(() => {
+    plannerBillingApi
+      .status()
+      .then(setBilling)
+      .catch(() => {});
     plannerApi
       .stats()
       .then((r) => setStats(r.stats))
@@ -74,61 +90,120 @@ export default function PlannerBillingPage() {
         {t("planner_profile.subscription_heading")}
       </h1>
 
-      {!stats ? (
+      {!billing ? (
         <div className="mt-8 h-48 animate-pulse rounded-2xl bg-paper-100 dark:bg-umber-800" />
       ) : (
-        <BillingBody stats={stats} />
+        <BillingBody billing={billing} stats={stats} />
       )}
     </div>
   );
 }
 
-function BillingBody({ stats }: { stats: PlannerStats }) {
-  const { t } = useT();
+function BillingBody({
+  billing,
+  stats,
+}: {
+  billing: PlannerBillingStatus;
+  stats: PlannerStats | null;
+}) {
+  const { t, locale } = useT();
+  const toast = useToast();
+  const [pendingTier, setPendingTier] = useState<PlannerPlan | null>(null);
+  const [portalPending, setPortalPending] = useState(false);
+
+  const { billing: b, currency, prices, founding_spots_left } = billing;
+  const status = b.subscription_status;
+  const hasStripeSub = status === "active" || status === "past_due" || status === "canceled";
+
+  async function handleCheckout(tier: PlannerPlan) {
+    setPendingTier(tier);
+    try {
+      const { url } = await plannerBillingApi.checkout(tier);
+      if (url) window.location.href = url;
+    } catch {
+      toast.error(t("planner_billing.checkout_error"));
+      setPendingTier(null);
+    }
+  }
+
+  async function handlePortal() {
+    setPortalPending(true);
+    try {
+      const { url } = await plannerBillingApi.portal();
+      if (url) window.location.href = url;
+    } catch {
+      toast.error(t("planner_billing.checkout_error"));
+      setPortalPending(false);
+    }
+  }
 
   const usedPct =
-    stats.max_clients > 0
+    stats && stats.max_clients > 0
       ? Math.min(100, Math.round((stats.active_clients / stats.max_clients) * 100))
       : 0;
 
   return (
     <div className="mt-8 space-y-8">
+      {/* Status banner — reflects the live subscription state. */}
+      <StatusBanner billing={b} locale={locale} />
+
+      {founding_spots_left > 0 && (
+        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-eucalyptus-700 dark:text-eucalyptus-300">
+          <Sparkles size={13} className="shrink-0" />
+          {t("planner_billing.founding_spots", { n: founding_spots_left })}
+        </p>
+      )}
+
       {/* Current plan + usage */}
       <div className="card">
         <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
           {t("planner_profile.subscription_plan_label")}
         </p>
         <p className="mt-1 font-grotesk text-2xl font-semibold capitalize tracking-tight text-umber-900 dark:text-paper-50">
-          {t(PLAN_KEYS[stats.plan].name)}
+          {t(PLAN_KEYS[b.tier].name)}
         </p>
 
-        <div className="mt-6">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="text-umber-700 dark:text-umber-300">
-              {t("planner_profile.subscription_clients_label")}
-            </span>
-            <span className="font-medium text-umber-900 dark:text-paper-50">
-              {stats.active_clients} / {stats.max_clients}
-            </span>
+        {stats && (
+          <div className="mt-6">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="text-umber-700 dark:text-umber-300">
+                {t("planner_profile.subscription_clients_label")}
+              </span>
+              <span className="font-medium text-umber-900 dark:text-paper-50">
+                {stats.active_clients} / {stats.max_clients}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+              <div
+                className="h-full rounded-full bg-eucalyptus-500 transition-all dark:bg-eucalyptus-400"
+                style={{ width: `${usedPct}%` }}
+              />
+            </div>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-            <div
-              className="h-full rounded-full bg-eucalyptus-500 transition-all dark:bg-eucalyptus-400"
-              style={{ width: `${usedPct}%` }}
-            />
-          </div>
-        </div>
+        )}
+
+        {hasStripeSub && (
+          <button
+            type="button"
+            onClick={() => void handlePortal()}
+            disabled={portalPending}
+            className="btn-ghost mt-6 inline-flex items-center gap-1.5 disabled:opacity-60"
+          >
+            <CreditCard size={15} aria-hidden="true" />
+            {t("planner_billing.manage_cta")}
+          </button>
+        )}
       </div>
 
-      {/* Plan comparison */}
+      {/* Plan comparison + per-tier checkout */}
       <div className="grid gap-4 sm:grid-cols-3">
         {PLAN_ORDER.map((plan) => {
-          const isActive = stats.plan === plan;
+          const isCurrent = b.tier === plan && b.entitled;
           return (
             <div
               key={plan}
               className={`card flex flex-col ${
-                isActive
+                isCurrent
                   ? "border-2 border-eucalyptus-400 dark:border-eucalyptus-500"
                   : "border border-paper-200 dark:border-umber-800"
               }`}
@@ -137,7 +212,7 @@ function BillingBody({ stats }: { stats: PlannerStats }) {
                 <p className="font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
                   {t(PLAN_KEYS[plan].name)}
                 </p>
-                {isActive && (
+                {isCurrent && (
                   <span className="rounded-full bg-eucalyptus-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-eucalyptus-800 dark:bg-eucalyptus-900/30 dark:text-eucalyptus-300">
                     {t("planner_onboarding.plan_active_badge")}
                   </span>
@@ -147,13 +222,11 @@ function BillingBody({ stats }: { stats: PlannerStats }) {
                 {t(PLAN_KEYS[plan].tagline)}
               </p>
 
-              {/* Price - paid plans aren't wired yet, so this is coming-soon. */}
               <div className="mt-4 border-t border-paper-200 pt-4 dark:border-umber-800">
                 <p className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-                  {t("planner_billing.price_soon")}
-                </p>
-                <p className="mt-0.5 text-[11px] text-umber-400 dark:text-umber-500">
-                  {t("planner_billing.price_note")}
+                  {t("planner_billing.price_per_month", {
+                    price: formatPrice(prices[plan], currency, locale),
+                  })}
                 </p>
               </div>
 
@@ -171,60 +244,86 @@ function BillingBody({ stats }: { stats: PlannerStats }) {
                   </li>
                 ))}
               </ul>
+
+              {/* CTA */}
+              <div className="mt-5 pt-1">
+                {isCurrent ? (
+                  <button type="button" disabled className="btn-ghost w-full opacity-60">
+                    {t("planner_billing.cta_current")}
+                  </button>
+                ) : !billing.enabled ? (
+                  <p className="text-center text-[11px] text-umber-400 dark:text-umber-500">
+                    {t("planner_billing.disabled_note")}
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void handleCheckout(plan)}
+                    disabled={pendingTier !== null}
+                    className="btn-primary w-full disabled:opacity-60"
+                  >
+                    {t(
+                      hasStripeSub ? "planner_billing.cta_switch" : "planner_billing.cta_subscribe",
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
-
-      {/* Upgrade CTA - paid plans not wired yet, so this gathers notify intent. */}
-      {stats.plan !== "premium" && <NotifyCta />}
     </div>
   );
 }
 
-// Shared coming-soon + notify-me block. Lets a planner opt in to be told when
-// paid plans launch (plannerApi.notifyPlans is idempotent), with a confirmed
-// state so the button doesn't invite repeat taps.
-export function NotifyCta() {
+/** Live subscription-state banner: founding window, trial countdown, active,
+ *  payment issue, or a read-only warning once access lapses. */
+function StatusBanner({
+  billing,
+  locale,
+}: {
+  billing: PlannerBillingStatus["billing"];
+  locale: string;
+}) {
   const { t } = useT();
-  const toast = useToast();
-  const [notified, setNotified] = useState(false);
-  const [pending, setPending] = useState(false);
+  const status = billing.subscription_status;
 
-  async function handleNotify() {
-    setPending(true);
-    try {
-      await plannerApi.notifyPlans();
-      setNotified(true);
-      toast.success(t("planner_billing.notify_toast"));
-    } catch {
-      toast.error(t("common.error_generic"));
-    } finally {
-      setPending(false);
-    }
+  const fmtDate = (ms: number) =>
+    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(new Date(ms));
+
+  if (!billing.entitled) {
+    return (
+      <div className="flex items-start gap-2 rounded-2xl border border-blush-200 bg-blush-50 px-4 py-3 text-sm text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300">
+        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+        <span>{t("planner_billing.state_readonly")}</span>
+      </div>
+    );
+  }
+
+  let label: string;
+  if (status === "founding") {
+    label = t("planner_billing.state_founding", {
+      date: billing.founding_until ? fmtDate(billing.founding_until) : "—",
+    });
+  } else if (status === "trialing") {
+    const days = billing.trial_ends_at
+      ? Math.max(0, Math.ceil((billing.trial_ends_at - Date.now()) / (1000 * 60 * 60 * 24)))
+      : 0;
+    label = t("planner_billing.state_trial", { days });
+  } else if (status === "past_due") {
+    label = t("planner_billing.state_past_due");
+  } else {
+    label = t("planner_billing.state_active");
   }
 
   return (
-    <div className="card text-center">
-      <p className="text-sm text-umber-600 dark:text-umber-300">
-        {t("planner_onboarding.plan_coming_soon")}
-      </p>
-      {notified ? (
-        <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-moss-50 px-4 py-2 text-sm font-medium text-moss-800 dark:bg-moss-900/30 dark:text-moss-200">
-          <Check size={15} aria-hidden="true" />
-          {t("planner_billing.notify_done")}
-        </p>
-      ) : (
-        <button
-          type="button"
-          onClick={() => void handleNotify()}
-          disabled={pending}
-          className="btn-primary mt-4 inline-flex items-center gap-1.5 disabled:opacity-60"
-        >
-          <BellRing size={15} aria-hidden="true" />
-          {t("planner_billing.notify_cta")}
-        </button>
-      )}
+    <div className="flex items-start gap-2 rounded-2xl border border-eucalyptus-300 bg-eucalyptus-50 px-4 py-3 text-sm text-eucalyptus-900 dark:border-eucalyptus-500/40 dark:bg-eucalyptus-500/15 dark:text-eucalyptus-200">
+      <Sparkles size={16} className="mt-0.5 shrink-0" />
+      <span>{label}</span>
     </div>
   );
 }
