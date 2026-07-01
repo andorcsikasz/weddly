@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { Info, type LucideIcon } from "lucide-react";
 import { useId, useState } from "react";
 
 /** Small "i" affordance that tucks a page or section's instruction text into a
@@ -11,6 +11,7 @@ export function InfoHint({
   label,
   className = "",
   onClick,
+  icon: Icon = Info,
 }: {
   text: string;
   /** Accessible name for the button. Defaults to the hint text. */
@@ -20,6 +21,9 @@ export function InfoHint({
    *  instead of just toggling the tooltip. The tooltip text still reveals on
    *  hover / focus, so the icon can carry both a hint and an action. */
   onClick?: () => void;
+  /** Trigger glyph. Defaults to the "i" info icon; pass e.g. `Mail` to tuck a
+   *  channel-specific note behind a topical affordance. */
+  icon?: LucideIcon;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -34,7 +38,7 @@ export function InfoHint({
         onBlur={() => setOpen(false)}
         className="inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-700 transition-colors hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-ink-300 dark:hover:text-paper-50"
       >
-        <Info size={16} aria-hidden />
+        <Icon size={16} aria-hidden />
       </button>
       <span
         id={id}

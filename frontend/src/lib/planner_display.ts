@@ -48,13 +48,48 @@ export interface ClientColor {
 // One entry per chart hue. Order is stable so a given index always maps to
 // the same colour. Full literal class strings - see file header.
 const CLIENT_COLORS: ClientColor[] = [
-  { dot: "bg-chart-terracotta", soft: "bg-chart-terracotta/10", text: "text-chart-terracotta", border: "border-chart-terracotta" },
-  { dot: "bg-chart-sage", soft: "bg-chart-sage/10", text: "text-chart-sage", border: "border-chart-sage" },
-  { dot: "bg-chart-taupe", soft: "bg-chart-taupe/10", text: "text-chart-taupe", border: "border-chart-taupe" },
-  { dot: "bg-chart-rose", soft: "bg-chart-rose/10", text: "text-chart-rose", border: "border-chart-rose" },
-  { dot: "bg-chart-olive", soft: "bg-chart-olive/10", text: "text-chart-olive", border: "border-chart-olive" },
-  { dot: "bg-chart-ochre", soft: "bg-chart-ochre/10", text: "text-chart-ochre", border: "border-chart-ochre" },
-  { dot: "bg-chart-sand", soft: "bg-chart-sand/10", text: "text-chart-sand", border: "border-chart-sand" },
+  {
+    dot: "bg-chart-terracotta",
+    soft: "bg-chart-terracotta/10",
+    text: "text-chart-terracotta",
+    border: "border-chart-terracotta",
+  },
+  {
+    dot: "bg-chart-sage",
+    soft: "bg-chart-sage/10",
+    text: "text-chart-sage",
+    border: "border-chart-sage",
+  },
+  {
+    dot: "bg-chart-taupe",
+    soft: "bg-chart-taupe/10",
+    text: "text-chart-taupe",
+    border: "border-chart-taupe",
+  },
+  {
+    dot: "bg-chart-rose",
+    soft: "bg-chart-rose/10",
+    text: "text-chart-rose",
+    border: "border-chart-rose",
+  },
+  {
+    dot: "bg-chart-olive",
+    soft: "bg-chart-olive/10",
+    text: "text-chart-olive",
+    border: "border-chart-olive",
+  },
+  {
+    dot: "bg-chart-ochre",
+    soft: "bg-chart-ochre/10",
+    text: "text-chart-ochre",
+    border: "border-chart-ochre",
+  },
+  {
+    dot: "bg-chart-sand",
+    soft: "bg-chart-sand/10",
+    text: "text-chart-sand",
+    border: "border-chart-sand",
+  },
 ];
 
 /**
@@ -66,6 +101,8 @@ export function clientColor(coupleId: number | string): ClientColor {
     typeof coupleId === "number"
       ? coupleId
       : Array.from(String(coupleId)).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  const idx = ((Math.abs(Math.trunc(n)) % CLIENT_COLORS.length) + CLIENT_COLORS.length) % CLIENT_COLORS.length;
+  const idx =
+    ((Math.abs(Math.trunc(n)) % CLIENT_COLORS.length) + CLIENT_COLORS.length) %
+    CLIENT_COLORS.length;
   return CLIENT_COLORS[idx]!;
 }

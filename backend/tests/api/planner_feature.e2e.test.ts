@@ -473,11 +473,7 @@ function insertTask(
 }
 
 /** Insert a planner↔couple link row directly with a chosen status. */
-function linkClient(
-  plannerUserId: number,
-  coupleId: number,
-  status: "active" | "pending",
-): void {
+function linkClient(plannerUserId: number, coupleId: number, status: "active" | "pending"): void {
   db.prepare(
     "INSERT INTO planner_clients (planner_user_id, couple_id, status, initiated_by, created_at) VALUES (?, ?, ?, 'planner', ?)",
   ).run(plannerUserId, coupleId, status, Date.now());
@@ -555,7 +551,12 @@ describe("planner calendar events", () => {
     const created = await req<PlannerEvent>(
       "POST",
       "/api/planner/events",
-      { title: "Venue scouting", event_date: "2026-07-15", start_time: "10:30", notes: "Bring camera" },
+      {
+        title: "Venue scouting",
+        event_date: "2026-07-15",
+        start_time: "10:30",
+        notes: "Bring camera",
+      },
       { token },
     );
     expect(created.status).toBe(200);
@@ -593,12 +594,9 @@ describe("planner calendar events", () => {
     expect(updated.data.title).toBe("Venue scouting (rescheduled)");
     expect(updated.data.start_time).toBeNull();
 
-    const del = await req<{ ok: boolean }>(
-      "DELETE",
-      `/api/planner/events/${eventId}`,
-      undefined,
-      { token },
-    );
+    const del = await req<{ ok: boolean }>("DELETE", `/api/planner/events/${eventId}`, undefined, {
+      token,
+    });
     expect(del.status).toBe(200);
     expect(del.data.ok).toBe(true);
 
@@ -613,9 +611,14 @@ describe("planner calendar events", () => {
 
   test("rejects a bad date and a bad time", async () => {
     const { token } = await bootstrapPlanner("ev-bad@weddly.test");
-    const badDate = await req("POST", "/api/planner/events", { title: "x", event_date: "2026-13-40" }, {
-      token,
-    });
+    const badDate = await req(
+      "POST",
+      "/api/planner/events",
+      { title: "x", event_date: "2026-13-40" },
+      {
+        token,
+      },
+    );
     expect(badDate.status).toBe(400);
     const badTime = await req(
       "POST",
@@ -673,9 +676,14 @@ describe("planner calendar events", () => {
     );
     expect(bList.data.events.length).toBe(0);
 
-    const bPatch = await req("PATCH", `/api/planner/events/${eventId}`, { title: "hijack" }, {
-      token: tokenB,
-    });
+    const bPatch = await req(
+      "PATCH",
+      `/api/planner/events/${eventId}`,
+      { title: "hijack" },
+      {
+        token: tokenB,
+      },
+    );
     expect(bPatch.status).toBe(404);
 
     const bDelete = await req("DELETE", `/api/planner/events/${eventId}`, undefined, {

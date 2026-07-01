@@ -792,9 +792,7 @@ function EventModal({
       open={open}
       role="dialog"
       closeOnBackdrop
-      title={t(
-        editing ? "planner_calendar.event_edit_title" : "planner_calendar.event_new_title",
-      )}
+      title={t(editing ? "planner_calendar.event_edit_title" : "planner_calendar.event_new_title")}
       onClose={onClose}
       footer={
         <div className="flex w-full items-center gap-2">

@@ -77,9 +77,10 @@ export function pendingInvitationCount(plannerUserId: number): number {
  *  the onboarding email-match still links them even if they signed up under a
  *  different address than the one invited. No-op when the email is unchanged. */
 export function rebindInvitationEmail(token: string, email: string): void {
-  db.prepare(
-    "UPDATE planner_invitations SET email = ? WHERE token = ? AND status = 'pending'",
-  ).run(email.toLowerCase(), token);
+  db.prepare("UPDATE planner_invitations SET email = ? WHERE token = ? AND status = 'pending'").run(
+    email.toLowerCase(),
+    token,
+  );
 }
 
 /** Called at couple onboarding. For every pending, non-expired invitation whose

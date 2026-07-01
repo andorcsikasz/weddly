@@ -390,9 +390,9 @@ async function handleCreateInvitation(ctx: Ctx): Promise<Response> {
   if (target?.couple_id) {
     const couple = getCoupleById(target.couple_id);
     if (!couple || couple.status === "deleting") throw new HttpError(400, "Workspace unavailable");
-    const targetUser = db.prepare("SELECT email, full_name FROM users WHERE id = ?").get(target.id) as
-      | { email: string; full_name: string | null }
-      | undefined;
+    const targetUser = db
+      .prepare("SELECT email, full_name FROM users WHERE id = ?")
+      .get(target.id) as { email: string; full_name: string | null } | undefined;
     await requestCoupleAccess(userId, target.couple_id, {
       id: target.id,
       email: targetUser?.email ?? "",

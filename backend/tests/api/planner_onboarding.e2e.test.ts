@@ -42,9 +42,9 @@ async function submitWaitlist(
 }
 
 function isPlanner(email: string): boolean {
-  const row = db.prepare("SELECT user_type FROM users WHERE LOWER(email) = ?").get(email.toLowerCase()) as
-    | { user_type: string | null }
-    | undefined;
+  const row = db
+    .prepare("SELECT user_type FROM users WHERE LOWER(email) = ?")
+    .get(email.toLowerCase()) as { user_type: string | null } | undefined;
   return row?.user_type === "planner";
 }
 
@@ -87,12 +87,9 @@ describe("planner waitlist auto-accept", () => {
     await submitWaitlist("future@weddly.test", { selected_plan: "unlimited" });
     const { token, email } = await registerVerified("future@weddly.test");
     expect(isPlanner(email)).toBe(true);
-    const stats = await req<{ stats: { plan: string } }>(
-      "GET",
-      "/api/planner/stats",
-      undefined,
-      { token },
-    );
+    const stats = await req<{ stats: { plan: string } }>("GET", "/api/planner/stats", undefined, {
+      token,
+    });
     // Promoted to a planner; plan stays default until confirmed in onboarding.
     expect(stats.data.stats.plan).toBe("starter");
   });
@@ -141,9 +138,9 @@ describe("planner email invitations", () => {
 
     // Public token lookup resolves the inviting planner.
     const token = (
-      db.prepare("SELECT token FROM planner_invitations WHERE LOWER(email) = ?").get(
-        "bride@weddly.test",
-      ) as { token: string }
+      db
+        .prepare("SELECT token FROM planner_invitations WHERE LOWER(email) = ?")
+        .get("bride@weddly.test") as { token: string }
     ).token;
     const lookup = await req<{ planner_label: string; email: string }>(
       "GET",
@@ -187,25 +184,27 @@ describe("planner email invitations", () => {
 
     // The invitation is now marked accepted.
     const invStatus = (
-      db.prepare("SELECT status FROM planner_invitations WHERE LOWER(email) = ?").get(
-        "bride@weddly.test",
-      ) as { status: string }
+      db
+        .prepare("SELECT status FROM planner_invitations WHERE LOWER(email) = ?")
+        .get("bride@weddly.test") as { status: string }
     ).status;
     expect(invStatus).toBe("accepted");
 
     // 3. The planner CANNOT enter yet — consent still required.
-    const enterBefore = await req("POST", `/api/planner/clients/${coupleId}/enter`, {}, {
-      token: planner.token,
-    });
+    const enterBefore = await req(
+      "POST",
+      `/api/planner/clients/${coupleId}/enter`,
+      {},
+      {
+        token: planner.token,
+      },
+    );
     expect(enterBefore.status).toBe(403);
 
     // 4. The couple sees the pending request and approves it.
-    const couplePlanners = await req<{ planners: Array<{ planner_user_id: number; status: string }> }>(
-      "GET",
-      "/api/couples/planners",
-      undefined,
-      { token: reg.data.token },
-    );
+    const couplePlanners = await req<{
+      planners: Array<{ planner_user_id: number; status: string }>;
+    }>("GET", "/api/couples/planners", undefined, { token: reg.data.token });
     expect(couplePlanners.data.planners[0]?.status).toBe("pending");
     const accept = await req(
       "POST",
@@ -249,13 +248,23 @@ describe("planner email invitations", () => {
 
   test("duplicate invitation to the same email is rejected (409)", async () => {
     const planner = await bootstrapPlanner("agency3@weddly.test");
-    const first = await req("POST", "/api/planner/invitations", { email: "dup@weddly.test" }, {
-      token: planner.token,
-    });
+    const first = await req(
+      "POST",
+      "/api/planner/invitations",
+      { email: "dup@weddly.test" },
+      {
+        token: planner.token,
+      },
+    );
     expect(first.status).toBe(200);
-    const second = await req("POST", "/api/planner/invitations", { email: "dup@weddly.test" }, {
-      token: planner.token,
-    });
+    const second = await req(
+      "POST",
+      "/api/planner/invitations",
+      { email: "dup@weddly.test" },
+      {
+        token: planner.token,
+      },
+    );
     expect(second.status).toBe(409);
   });
 
@@ -263,14 +272,24 @@ describe("planner email invitations", () => {
     // Default starter cap = 4. Invite 4 distinct strangers, then the 5th 422s.
     const planner = await bootstrapPlanner("agency4@weddly.test");
     for (let i = 0; i < 4; i++) {
-      const r = await req("POST", "/api/planner/invitations", { email: `c${i}@weddly.test` }, {
-        token: planner.token,
-      });
+      const r = await req(
+        "POST",
+        "/api/planner/invitations",
+        { email: `c${i}@weddly.test` },
+        {
+          token: planner.token,
+        },
+      );
       expect(r.status).toBe(200);
     }
-    const over = await req("POST", "/api/planner/invitations", { email: "c4@weddly.test" }, {
-      token: planner.token,
-    });
+    const over = await req(
+      "POST",
+      "/api/planner/invitations",
+      { email: "c4@weddly.test" },
+      {
+        token: planner.token,
+      },
+    );
     expect(over.status).toBe(422);
   });
 

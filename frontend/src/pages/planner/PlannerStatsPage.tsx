@@ -134,9 +134,7 @@ export default function PlannerStatsPage() {
     .filter((ts) => !Number.isNaN(ts) && ts >= today.getTime())
     .sort((a, b) => a - b)[0];
   const nextWeddingDays =
-    nextWeddingTs === undefined
-      ? null
-      : Math.round((nextWeddingTs - today.getTime()) / 86_400_000);
+    nextWeddingTs === undefined ? null : Math.round((nextWeddingTs - today.getTime()) / 86_400_000);
   const upcomingCaption =
     stats.upcoming_weddings_30d > 0
       ? undefined

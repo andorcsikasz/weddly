@@ -21,9 +21,9 @@ const SOLO_DISMISS_KEY = "weddly.solo_invite_banner.dismissed";
 export function SubscriptionBanner() {
   const { user } = useAuth();
   const { t, locale } = useT();
-  const [mode, setMode] = useState<
-    "none" | "lapsed" | "founding" | "solo" | "planner_viewer"
-  >("none");
+  const [mode, setMode] = useState<"none" | "lapsed" | "founding" | "solo" | "planner_viewer">(
+    "none",
+  );
   const [enabled, setEnabled] = useState(false);
   const [foundingUntil, setFoundingUntil] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -58,8 +58,7 @@ export function SubscriptionBanner() {
           // edits), not "subscribe to unlock" — so they get an explanatory band
           // with no subscribe CTA instead of the normal lapsed prompt.
           setMode(s.billing.reason === "planner_managed_viewer" ? "planner_viewer" : "lapsed");
-        }
-        else if (!s.has_partner) {
+        } else if (!s.has_partner) {
           // Every partner-less couple: nudge them to invite their partner so the
           // platform stays free until their wedding day. Takes priority over the
           // founding band so a solo first-200 couple still gets the invite push.

@@ -25,6 +25,7 @@ import {
   useState,
 } from "react";
 import { Mail, Send, Plus, Search, Sparkles, X } from "lucide-react";
+import { InfoHint } from "./InfoHint";
 import {
   type CreateOutreachCampaignInput,
   OUTREACH_BODY_MAX_LEN,
@@ -93,8 +94,18 @@ export function OutreachInbox() {
     <section aria-labelledby="outreach-section-heading" className="mt-10">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 id="outreach-section-heading" className="font-grotesk text-2xl">
+          <h2
+            id="outreach-section-heading"
+            className="flex items-center gap-2 font-grotesk text-2xl"
+          >
             {t("outreach.heading")}
+            {/* The "replies land in your own inbox" note used to be a full-width
+                banner; tuck it behind a mail glyph so the header stays light. */}
+            <InfoHint
+              icon={Mail}
+              text={t("outreach.reply_note")}
+              label={t("outreach.reply_note")}
+            />
           </h2>
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
             {t("outreach.subheading")}
@@ -103,13 +114,6 @@ export function OutreachInbox() {
         <button type="button" className="btn-accent" onClick={() => setComposing(true)}>
           <Plus size={16} aria-hidden /> {t("outreach.new_campaign")}
         </button>
-      </div>
-
-      <div className="card mb-4 bg-umber-100/60 ring-1 ring-umber-200 dark:bg-umber-700/40 dark:ring-umber-600">
-        <div className="flex items-start gap-3">
-          <Mail size={16} className="mt-1 shrink-0 text-umber-600 dark:text-umber-200" />
-          <p className="text-sm text-ink-700 dark:text-paper-100">{t("outreach.reply_note")}</p>
-        </div>
       </div>
 
       {loading ? (

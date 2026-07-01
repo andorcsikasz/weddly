@@ -80,9 +80,14 @@ describe("planner-managed billing + guest-page add-on", () => {
     setBillingEnforcement(true, 1);
 
     // Before the add-on: member blocked on the guest page too.
-    const before = await req("PATCH", "/api/couples/current", { venue_name: "X" }, {
-      token: coupleToken,
-    });
+    const before = await req(
+      "PATCH",
+      "/api/couples/current",
+      { venue_name: "X" },
+      {
+        token: coupleToken,
+      },
+    );
     expect(before.status).toBe(402);
 
     // Planner cannot switch it on until the couple has prepaid their 30%.
@@ -108,9 +113,14 @@ describe("planner-managed billing + guest-page add-on", () => {
     expect(enable.data.guest_page_addon).toBe(true);
 
     // The couple member can now edit their own guest page (not 402)...
-    const guestPage = await req("PATCH", "/api/couples/current", { venue_name: "X" }, {
-      token: coupleToken,
-    });
+    const guestPage = await req(
+      "PATCH",
+      "/api/couples/current",
+      { venue_name: "X" },
+      {
+        token: coupleToken,
+      },
+    );
     expect(guestPage.status).not.toBe(402);
 
     // ...but is still viewer-only on the rest of the workspace.

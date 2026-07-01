@@ -166,10 +166,7 @@ function ClientCard({ client }: { client: PlannerClientView }) {
 
         <div className="flex-1 min-w-0">
           <p className="flex items-center gap-1.5 font-grotesk font-semibold text-base text-umber-900 dark:text-paper-50">
-            <span
-              className={`h-2 w-2 shrink-0 rounded-full ${accent.dot}`}
-              aria-hidden="true"
-            />
+            <span className={`h-2 w-2 shrink-0 rounded-full ${accent.dot}`} aria-hidden="true" />
             <span className="truncate">{titleCaseName(client.display_name)}</span>
           </p>
           {client.wedding_date && (

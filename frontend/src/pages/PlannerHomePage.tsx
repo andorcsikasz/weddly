@@ -684,40 +684,42 @@ export default function PlannerHomePage() {
           <div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <KpiTile
-              label={t("planner_home.kpi_overdue")}
-              value={stats.overdue_tasks}
-              unit={t("planner_home.kpi_overdue_unit")}
-              accent={stats.overdue_tasks > 0 ? "red" : undefined}
-              to="/app/planner/stats"
-            />
-            <KpiTile
-              label={t("planner_home.kpi_due_this_week")}
-              value={stats.due_this_week}
-              unit={t("planner_home.kpi_due_week_unit")}
-              accent={stats.due_this_week > 0 ? "amber" : undefined}
-              to="/app/planner/calendar"
-            />
-            <KpiTile
-              label={t("planner_home.kpi_total_tasks")}
-              value={stats.done_tasks}
-              unit={t("planner_home.kpi_tasks_unit")}
-              accent="green"
-              progress={
-                stats.total_tasks > 0 ? { done: stats.done_tasks, total: stats.total_tasks } : null
-              }
-              to="/app/planner/stats"
-            />
-            <KpiTile
-              label={t("planner_home.kpi_active_clients")}
-              value={stats.active_clients}
-              unit={t("planner_home.kpi_clients_unit")}
-              progress={
-                stats.max_clients > 0
-                  ? { done: stats.active_clients, total: stats.max_clients }
-                  : null
-              }
-              to="/app/planner/clients"
-            />
+                label={t("planner_home.kpi_overdue")}
+                value={stats.overdue_tasks}
+                unit={t("planner_home.kpi_overdue_unit")}
+                accent={stats.overdue_tasks > 0 ? "red" : undefined}
+                to="/app/planner/stats"
+              />
+              <KpiTile
+                label={t("planner_home.kpi_due_this_week")}
+                value={stats.due_this_week}
+                unit={t("planner_home.kpi_due_week_unit")}
+                accent={stats.due_this_week > 0 ? "amber" : undefined}
+                to="/app/planner/calendar"
+              />
+              <KpiTile
+                label={t("planner_home.kpi_total_tasks")}
+                value={stats.done_tasks}
+                unit={t("planner_home.kpi_tasks_unit")}
+                accent="green"
+                progress={
+                  stats.total_tasks > 0
+                    ? { done: stats.done_tasks, total: stats.total_tasks }
+                    : null
+                }
+                to="/app/planner/stats"
+              />
+              <KpiTile
+                label={t("planner_home.kpi_active_clients")}
+                value={stats.active_clients}
+                unit={t("planner_home.kpi_clients_unit")}
+                progress={
+                  stats.max_clients > 0
+                    ? { done: stats.active_clients, total: stats.max_clients }
+                    : null
+                }
+                to="/app/planner/clients"
+              />
             </div>
             <p className="mt-2 text-xs text-umber-500 dark:text-umber-400">
               {t("planner_home.kpi_caption")}
