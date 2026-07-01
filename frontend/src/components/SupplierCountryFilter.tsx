@@ -3,24 +3,16 @@
 // the full set. It seeds from the couple's onboarding country (passed as
 // `homeCountry`), which is also the reset target and the first listed option.
 //
-// A native <select> can't show a flag + reset affordance or a per-option
-// count, so this is a small hand-rolled listbox: a compact trigger (flag +
-// localised name on sm+, flag + ISO code on mobile) with an inline ✕ to reset,
-// and a menu that lists every country the catalogue covers with its count.
+// A native <select> can't show a reset affordance or a per-option count, so
+// this is a small hand-rolled listbox: a compact trigger (localised name on
+// sm+, ISO code on mobile) with an inline ✕ to reset, and a menu that lists
+// every country the catalogue covers with its count.
 
 import { countryName } from "@shared/country_list";
 import type { SupplierCountryCount } from "@shared/suppliers";
 import { ChevronDown, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useT } from "../lib/i18n";
-
-/** ISO 3166-1 alpha-2 → flag emoji via regional-indicator symbols. Returns ""
- *  for anything that isn't two ASCII letters so a bad code renders as no glyph
- *  rather than tofu. */
-function flagEmoji(code: string): string {
-  if (!/^[A-Za-z]{2}$/.test(code)) return "";
-  return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
-}
 
 type Props = {
   /** Current selection: "all" (or "") for the full catalogue, else an ISO code. */
@@ -110,9 +102,6 @@ export function SupplierCountryFilter({ value, homeCountry, countries, onChange 
             onClick={() => setOpen((o) => !o)}
             className="inline-flex items-center gap-1 rounded-full py-0.5 pl-2 pr-1 text-[11px] font-semibold tracking-[0.02em] text-ink-800 transition hover:text-ink-900 dark:text-paper-100"
           >
-            <span aria-hidden className="text-[13px] leading-none">
-              {activeCountry ? flagEmoji(activeCountry) : "🌍"}
-            </span>
             {/* Full localised name on sm+; bare ISO code on mobile to keep the
                 already-busy filter bar from overflowing. */}
             <span className="hidden sm:inline">{triggerName}</span>
@@ -141,10 +130,9 @@ export function SupplierCountryFilter({ value, homeCountry, countries, onChange 
             id={listboxId}
             role="listbox"
             aria-label={t("suppliers.country_filter_label")}
-            className="absolute left-0 z-30 mt-1 max-h-72 min-w-[12rem] overflow-y-auto rounded-xl border border-paper-300 bg-paper-50 py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+            className="absolute left-0 z-[1100] mt-1 max-h-72 min-w-[12rem] overflow-y-auto rounded-xl border border-paper-300 bg-paper-50 py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
           >
             <CountryOption
-              flag="🌍"
               label={t("suppliers.country_filter_all")}
               count={total}
               selected={isAll}
@@ -157,7 +145,6 @@ export function SupplierCountryFilter({ value, homeCountry, countries, onChange 
             {ordered.map((o) => (
               <CountryOption
                 key={o.code}
-                flag={flagEmoji(o.code)}
                 label={countryName(o.code, locale)}
                 count={o.count}
                 selected={value === o.code}
@@ -175,13 +162,11 @@ export function SupplierCountryFilter({ value, homeCountry, countries, onChange 
 }
 
 function CountryOption({
-  flag,
   label,
   count,
   selected,
   onPick,
 }: {
-  flag: string;
   label: string;
   count: number;
   selected: boolean;
@@ -198,9 +183,6 @@ function CountryOption({
             : "text-ink-800 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700/60"
         }`}
       >
-        <span aria-hidden className="text-base leading-none">
-          {flag}
-        </span>
         <span className="flex-1 truncate">{label}</span>
         <span className="tabular-nums text-[11px] text-ink-400 dark:text-umber-300">{count}</span>
       </button>
