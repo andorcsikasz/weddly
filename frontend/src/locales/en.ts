@@ -3667,6 +3667,8 @@ const en: LocaleMessages = {
     guests_filter_help: "Only show venues that fit",
     guests_filter_clear: "Clear",
     guests_filter_edit_in_budget: "Edit guest count in budget",
+    country_filter_label: "Country",
+    country_filter_all: "All",
     vote_up_aria: "Upvote, useful for couples",
     vote_down_aria: "Downvote, not useful",
     sort_label: "Sort",

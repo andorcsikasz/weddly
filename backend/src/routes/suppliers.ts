@@ -90,7 +90,27 @@ async function handleList(ctx: Ctx): Promise<Response> {
   // Drop curated entries an admin has hidden or deleted (moderation overrides).
   const overrides = curatedOverrideMap();
   const visible = overrides.size > 0 ? DIRECTORY.filter((s) => !overrides.has(s.id)) : DIRECTORY;
-  const scoped = couple ? visible.filter((s) => s.country === couple.country) : visible;
+
+  // Distinct curated countries + their counts, so the frontend can render a
+  // country picker (defaults to the couple's own country, with an "all"
+  // escape hatch). Sorted by count desc so the biggest catalogue leads.
+  const countryCounts = new Map<string, number>();
+  for (const s of visible) countryCounts.set(s.country, (countryCounts.get(s.country) ?? 0) + 1);
+  const countries = [...countryCounts.entries()]
+    .map(([code, count]) => ({ code, count }))
+    .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
+
+  // `?country=` overrides the couple-derived default: a valid alpha-2 code
+  // scopes to that country, `all` disables scoping (full catalogue), and an
+  // absent/invalid value falls back to the couple's onboarding country.
+  const countryParam = ctx.url.searchParams.get("country");
+  const countryFilter =
+    countryParam === "all"
+      ? null
+      : countryParam && /^[A-Za-z]{2}$/.test(countryParam)
+        ? countryParam.toUpperCase()
+        : (couple?.country ?? null);
+  const scoped = countryFilter ? visible.filter((s) => s.country === countryFilter) : visible;
   const curated = cat ? scoped.filter((s) => s.category === cat) : scoped;
   const community = listActiveCommunitySuppliers((cat as SupplierCategory | null) ?? null);
   let allBase: DirectorySupplierBase[] = [...curated, ...community.map(toDirectorySupplierBase)];
@@ -135,7 +155,7 @@ async function handleList(ctx: Ctx): Promise<Response> {
     }
   }
 
-  return json({ suppliers: allBase.map((b) => withVotes(b, scores, coupleVotes)) });
+  return json({ suppliers: allBase.map((b) => withVotes(b, scores, coupleVotes)), countries });
 }
 
 interface VoteBody {

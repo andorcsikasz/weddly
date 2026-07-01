@@ -147,6 +147,7 @@ import type {
   SupplierBooking,
   SupplierCategory,
   SupplierComment,
+  SupplierCountryCount,
   SupplierDetail,
   SupplierDirectoryAdminRow,
   SupplierEventInput,
@@ -1419,11 +1420,20 @@ export async function fetchGuestCsvBlob(): Promise<Blob> {
 }
 
 export const supplierApi = {
-  list: (category?: SupplierCategory) =>
-    apiFetch<{ suppliers: DirectorySupplier[] }>(
+  /** `country` scopes the curated catalogue: an ISO alpha-2 code, or "all" to
+   *  drop the couple-derived country scope. Omitted → backend defaults to the
+   *  couple's onboarding country. The response also lists every country the
+   *  catalogue covers (with counts) so the UI can build its picker. */
+  list: (category?: SupplierCategory, country?: string) => {
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (country) params.set("country", country);
+    const qs = params.toString();
+    return apiFetch<{ suppliers: DirectorySupplier[]; countries: SupplierCountryCount[] }>(
       "GET",
-      category ? `/api/suppliers?category=${category}` : "/api/suppliers",
-    ),
+      qs ? `/api/suppliers?${qs}` : "/api/suppliers",
+    );
+  },
   submitCommunity: (body: SubmitCommunitySupplierInput) =>
     apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body),
   /** Best-effort resolver: paste a Google Maps URL, get back any of:

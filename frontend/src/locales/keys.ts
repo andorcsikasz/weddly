@@ -4134,6 +4134,9 @@ export interface LocaleMessages {
     /** Tooltip/aria on the wallet link beside the read-only guest count —
      *  the headcount is edited on /app/budget, not here. */
     guests_filter_edit_in_budget: string;
+    /** Country picker on the directory filter bar + its "all countries" option. */
+    country_filter_label: string;
+    country_filter_all: string;
     /** Up/downvote buttons + sort. */
     vote_up_aria: string;
     vote_down_aria: string;

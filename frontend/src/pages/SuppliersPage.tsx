@@ -28,6 +28,7 @@ import {
   ArrowUpRight,
   Bookmark,
   BookmarkCheck,
+  ChevronDown,
   ChevronRight,
   LayoutGrid,
   List,
@@ -1291,6 +1292,39 @@ export default function SuppliersPage() {
             className="text-ink-400 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100"
           />
         </Link>
+        <div
+          className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
+          aria-hidden
+        />
+        {/* Country picker. Seeds from the couple's onboarding country (e.g. a
+            HU wedding lands on HU) and lets them scope the catalogue to any
+            country we have vendors in, or "Mind"/"All" for the full set.
+            Switching re-fetches the directory server-side. */}
+        <label className="group inline-flex shrink-0 items-center gap-1">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+            {t("suppliers.country_filter_label")}
+          </span>
+          <span className="relative inline-flex items-center">
+            <select
+              value={selectedCountry === "" ? "all" : selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              aria-label={t("suppliers.country_filter_label")}
+              className="cursor-pointer appearance-none rounded-full bg-transparent py-0.5 pl-1.5 pr-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-800 transition hover:text-ink-900 focus:outline-none dark:text-paper-100"
+            >
+              <option value="all">{t("suppliers.country_filter_all")}</option>
+              {countryOptions.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={12}
+              aria-hidden
+              className="pointer-events-none absolute right-1 text-ink-400 dark:text-umber-300"
+            />
+          </span>
+        </label>
       </div>
 
       {/* Step chain. Sequence numbers dropped — the icons carry the meaning.

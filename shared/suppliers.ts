@@ -179,6 +179,13 @@ export interface DirectorySupplier extends DirectorySupplierBase {
   user_vote: -1 | 0 | 1;
 }
 
+/** One entry in the `/api/suppliers` country picker: an ISO alpha-2 code and
+ *  how many curated listings sit in it. Sorted by `count` desc server-side. */
+export interface SupplierCountryCount {
+  code: string;
+  count: number;
+}
+
 // ─── Visit analytics ────────────────────────────────────────────────────────
 
 /** Public-side telemetry events the admin directory aggregates. Kept

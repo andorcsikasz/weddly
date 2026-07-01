@@ -3709,6 +3709,8 @@ const hu: LocaleMessages = {
     guests_filter_help: "Csak olyan helyszínek, ahol elférnek",
     guests_filter_clear: "Törlés",
     guests_filter_edit_in_budget: "Vendégszám szerkesztése a költségvetésnél",
+    country_filter_label: "Ország",
+    country_filter_all: "Mind",
     vote_up_aria: "Tetszik, szavazz fel",
     vote_down_aria: "Nem tetszik, szavazz le",
     sort_label: "Rendezés",
