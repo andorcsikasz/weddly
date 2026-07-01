@@ -899,7 +899,7 @@ function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: b
         }`}
       >
         <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-        <span>{label}</span>
+        <span className="whitespace-nowrap">{label}</span>
         <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
       </div>
       {/* Hairline — tablet (icon-only) always, and laptop when collapsed;
