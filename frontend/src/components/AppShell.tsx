@@ -660,8 +660,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               section headers) is reachable in one screen — it scrolls inside
               itself on short laptops instead of running off the bottom. The
               tightened row rhythm below keeps it scrollbar-free on most
-              displays. `min-h-0` lets the inner nav shrink so overflow works. */}
-          <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] min-h-0 flex-col gap-1 overflow-y-auto [scrollbar-width:thin]">
+              displays. `min-h-0` lets the inner nav shrink so overflow works.
+              `lg:w-full` fills the expanded rail so the floating collapse
+              toggle (`absolute right-1`, positioned against this box) lands at
+              the panel's true right edge — without it the column shrinks to its
+              content width and the toggle crowds the "Áttekintés" label. Kept
+              off at md so the tablet icon rail stays content-width/centered. */}
+          <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] min-h-0 flex-col gap-1 overflow-y-auto lg:w-full [scrollbar-width:thin]">
             {/* Collapse toggle — same affordance in both couple and admin
                 views. When expanded it floats into the top-right corner
                 (absolute, out of flow) so it stops reserving a whole row —
