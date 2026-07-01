@@ -4122,6 +4122,7 @@ const hu: LocaleMessages = {
       plan_starter: "Starter",
       plan_pro: "Pro",
       plan_premium: "Premium",
+      plan_cycle_hint: "2× katt a váltáshoz",
       suspend: "Felfüggesztés",
       reactivate: "Újraaktiválás",
       delete: "Törlés",
@@ -4516,7 +4517,8 @@ const hu: LocaleMessages = {
       "Csak ezután megy ki a hirdetésnek a visszaigazoló e-mail. Submit önmagában nem küld.",
     send_verify_success: "Visszaigazoló e-mail kiküldve a szolgáltatónak.",
     enrich: "Adatok kinyerése",
-    enrich_hint: "Letölti a szolgáltató saját weboldalát, és kitölti a hiányzó mezőket (leírás, telefon, e-mail, cím). A meglévő értékeket felülírja.",
+    enrich_hint:
+      "Letölti a szolgáltató saját weboldalát, és kitölti a hiányzó mezőket (leírás, telefon, e-mail, cím). A meglévő értékeket felülírja.",
     enrich_running: "Töltés…",
     enrich_filled: "{n} mező kitöltve a weboldalról.",
     enrich_none: "Nem találtam új adatot.",
@@ -4567,7 +4569,8 @@ const hu: LocaleMessages = {
     suppliers_card_field_open_reports: "Nyitott bejelentések",
     suppliers_card_dup_warning: "Lehetséges duplikátum",
     suppliers_card_dup_warning_aria: "Lehetséges duplikátum figyelmeztetés",
-    suppliers_card_dup_detail: "Hasonló nevű hirdetés már létezik: {names}. Ellenőrizd, nem duplikátum-e.",
+    suppliers_card_dup_detail:
+      "Hasonló nevű hirdetés már létezik: {names}. Ellenőrizd, nem duplikátum-e.",
     suppliers_card_incomplete: "Hiányos profil",
     suppliers_card_incomplete_aria: "Hiányos profil figyelmeztetés",
     suppliers_card_incomplete_detail:

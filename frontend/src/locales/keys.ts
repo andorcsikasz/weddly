@@ -4572,6 +4572,7 @@ export interface LocaleMessages {
       plan_starter: string;
       plan_pro: string;
       plan_premium: string;
+      plan_cycle_hint: string;
       suspend: string;
       reactivate: string;
       delete: string;

@@ -4078,6 +4078,7 @@ const en: LocaleMessages = {
       plan_starter: "Starter",
       plan_pro: "Pro",
       plan_premium: "Premium",
+      plan_cycle_hint: "Double-click to switch",
       suspend: "Suspend",
       reactivate: "Reactivate",
       delete: "Delete",
@@ -4470,7 +4471,8 @@ const en: LocaleMessages = {
       "Releases the verification mail to the supplier. Submission alone does not send it.",
     send_verify_success: "Verify email sent to the supplier.",
     enrich: "Fetch from website",
-    enrich_hint: "Scrapes the supplier's own website and fills in missing fields (description, phone, email, address). Overwrites existing values.",
+    enrich_hint:
+      "Scrapes the supplier's own website and fills in missing fields (description, phone, email, address). Overwrites existing values.",
     enrich_running: "Fetching…",
     enrich_filled: "Filled {n} field(s) from the website.",
     enrich_none: "Nothing new to add.",
@@ -4521,11 +4523,12 @@ const en: LocaleMessages = {
     suppliers_card_field_open_reports: "Open reports",
     suppliers_card_dup_warning: "Possible duplicate",
     suppliers_card_dup_warning_aria: "Possible duplicate warning",
-    suppliers_card_dup_detail: "A listing with a similar name already exists: {names}. Check it isn't a duplicate.",
+    suppliers_card_dup_detail:
+      "A listing with a similar name already exists: {names}. Check it isn't a duplicate.",
     suppliers_card_incomplete: "Thin profile",
     suppliers_card_incomplete_aria: "Incomplete profile warning",
     suppliers_card_incomplete_detail:
-      "No website and no description – couples have almost nothing to go on. Consider running \"Fetch from website\" before approving.",
+      'No website and no description – couples have almost nothing to go on. Consider running "Fetch from website" before approving.',
     suppliers_card_field_id: "ID",
     suppliers_card_field_admin_notes: "Admin note",
     suppliers_card_field_admin_notes_placeholder: "e.g. reached out, awaiting reply…",

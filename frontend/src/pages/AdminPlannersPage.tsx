@@ -7,7 +7,7 @@ import { Ban, Check, Handshake, Loader2, RotateCcw, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
 import type { PillTone } from "../components/admin";
-import { Button, useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminPlannerMgmtApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -15,6 +15,27 @@ import { useT } from "../lib/i18n";
 type Filter = "all" | "active" | "suspended";
 
 const PLANS: PlannerPlan[] = ["starter", "pro", "premium"];
+
+// Uber-style tier chip: each tier gets a distinct fill so the plan reads at a
+// glance across a dense list. Double-clicking cycles starter → pro → premium.
+const PLAN_STYLE: Record<PlannerPlan, string> = {
+  starter: "bg-paper-200 text-neutral-700 dark:bg-umber-800 dark:text-umber-200",
+  pro: "bg-neutral-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900",
+  premium: "bg-sage-600 text-paper-50 dark:bg-sage-500 dark:text-umber-900",
+};
+
+function nextPlan(plan: PlannerPlan): PlannerPlan {
+  const i = PLANS.indexOf(plan);
+  return PLANS[(i + 1) % PLANS.length] ?? "starter";
+}
+
+function initials(name: string, email: string): string {
+  const src = (name || email).trim();
+  const parts = src.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? src[0] ?? "?";
+  const second = parts.length > 1 ? (parts[1]?.[0] ?? "") : "";
+  return (first + second).toUpperCase();
+}
 
 function fmtDate(unixMs: number, locale: string): string {
   const d = new Date(unixMs);
@@ -102,88 +123,117 @@ function PlannerCard({
     );
   }
 
-  const selectClass =
-    "rounded-md border border-paper-300 bg-paper-50 px-2 py-1 text-xs text-umber-900 focus:border-umber-500 focus:outline-none dark:border-umber-700 dark:bg-umber-900 dark:text-paper-50";
+  function cyclePlan() {
+    if (busy) return;
+    handlePlanChange(nextPlan(planner.planner_plan));
+  }
+
+  const iconBtnClass =
+    "inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-umber-700 transition hover:border-umber-400 hover:text-umber-900 disabled:opacity-50 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:text-paper-50";
 
   return (
     <div className="admin-card">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
+      <div className="flex items-center gap-4">
+        {/* Identity */}
+        <div
+          aria-hidden="true"
+          className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-paper-50 sm:flex dark:bg-paper-100 dark:text-umber-900"
+        >
+          {initials(planner.full_name, planner.email)}
+        </div>
+
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate font-semibold text-umber-900 dark:text-paper-50">
+              {planner.full_name || planner.email}
+            </p>
             <Pill tone={statusPill.tone} icon={<statusPill.Icon size={11} />}>
               {statusPill.label}
             </Pill>
-            <span className="text-xs text-umber-500 dark:text-umber-400">
-              {fmtDate(planner.created_at, locale)}
-            </span>
           </div>
-          <p className="mt-2 truncate font-medium text-umber-900 dark:text-paper-50">
-            {planner.full_name || planner.email}
-          </p>
           <p className="truncate text-sm text-umber-700 dark:text-umber-300">{planner.email}</p>
-          <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-umber-500 dark:text-umber-400">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-umber-500 dark:text-umber-400">
             <span>
               {t("admin.planners.clients", {
                 n: planner.client_count,
                 max: planner.planner_max_clients,
               })}
             </span>
-            {planner.planner_city && <span>{planner.planner_city}</span>}
+            <span aria-hidden="true">·</span>
+            <span>{fmtDate(planner.created_at, locale)}</span>
+            {planner.planner_city && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{planner.planner_city}</span>
+              </>
+            )}
             {!planner.planner_onboarding_done && (
-              <span>{t("admin.planners.onboarding_pending")}</span>
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{t("admin.planners.onboarding_pending")}</span>
+              </>
             )}
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <label className="flex items-center gap-1 text-xs text-umber-500 dark:text-umber-400">
-            {t("admin.planners.plan")}
-            <select
-              className={selectClass}
-              value={planner.planner_plan}
+        {/* Plan + actions */}
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-col items-center gap-1">
+            <button
+              type="button"
+              onDoubleClick={cyclePlan}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  cyclePlan();
+                }
+              }}
               disabled={busy}
-              onChange={(e) => handlePlanChange(e.target.value as PlannerPlan)}
-              aria-label={t("admin.planners.plan")}
+              title={t("admin.planners.plan_cycle_hint")}
+              aria-label={`${t("admin.planners.plan")}: ${t(`admin.planners.plan_${planner.planner_plan}`)}. ${t("admin.planners.plan_cycle_hint")}`}
+              className={`inline-flex min-w-[76px] select-none items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide transition active:scale-95 disabled:opacity-60 ${PLAN_STYLE[planner.planner_plan]}`}
             >
-              {PLANS.map((p) => (
-                <option key={p} value={p}>
-                  {t(`admin.planners.plan_${p}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex gap-2">
-            {suspended ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleReactivate}
-                disabled={busy}
-                aria-label={t("admin.planners.reactivate")}
-              >
-                {busy ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleSuspend}
-                disabled={busy}
-                aria-label={t("admin.planners.suspend")}
-              >
-                <Ban size={13} />
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDelete}
-              disabled={busy}
-              aria-label={t("admin.planners.delete")}
-            >
-              <Trash2 size={13} />
-            </Button>
+              {busy ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                t(`admin.planners.plan_${planner.planner_plan}`)
+              )}
+            </button>
+            <span className="text-[10px] leading-none text-umber-400 dark:text-umber-500">
+              {t("admin.planners.plan_cycle_hint")}
+            </span>
           </div>
+
+          {suspended ? (
+            <button
+              type="button"
+              className={iconBtnClass}
+              onClick={handleReactivate}
+              disabled={busy}
+              aria-label={t("admin.planners.reactivate")}
+            >
+              <RotateCcw size={15} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={iconBtnClass}
+              onClick={handleSuspend}
+              disabled={busy}
+              aria-label={t("admin.planners.suspend")}
+            >
+              <Ban size={15} />
+            </button>
+          )}
+          <button
+            type="button"
+            className={iconBtnClass}
+            onClick={handleDelete}
+            disabled={busy}
+            aria-label={t("admin.planners.delete")}
+          >
+            <Trash2 size={15} />
+          </button>
         </div>
       </div>
     </div>
