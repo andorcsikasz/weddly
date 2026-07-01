@@ -103,6 +103,39 @@ export interface VendorAccount {
   updated_at: number;
 }
 
+/** Admin management row for a vendor. Unifies two populations behind one shape:
+ *  `state: "active"` rows are real `vendor_accounts` (the vendor self-activated),
+ *  `state: "pending"` rows are accepted-but-not-yet-activated waitlist entries
+ *  that only have a live `vendor_onboarding` token (no account yet). The admin
+ *  Szolgáltatók list shows both so "accepted → appears in management" holds even
+ *  before the vendor clicks their activation link. */
+export interface AdminVendorView {
+  state: "active" | "pending";
+  /** vendor_accounts.id for active rows; vendor_onboarding.id for pending rows.
+   *  Route ids are disambiguated by which endpoint they hit, never mixed. */
+  id: number;
+  vendor_code: string | null;
+  display_name: string;
+  contact_email: string | null;
+  contact_phone: string | null;
+  vat_number: string | null;
+  onboarding_done: boolean;
+  /** Owner user — present only for active rows (pending rows have no account/user
+   *  yet, just the email the activation link was sent to). */
+  owner_user_id: number | null;
+  owner_email: string | null;
+  /** users.status of the owner — "active" | "suspended". Null for pending rows. */
+  owner_status: "active" | "suspended" | null;
+  /** vendor_subscriptions.subscription_status snapshot, or null when the vendor
+   *  has no subscription row yet. */
+  subscription_status: string | null;
+  /** How many `listings` this vendor owns (0 for pending rows). */
+  listing_count: number;
+  /** For pending rows: whether the onboarding token has expired. */
+  token_expired: boolean;
+  created_at: number;
+}
+
 /** Fields a vendor can self-serve edit on their claimed listing (P2.D).
  *  Every field is optional so the client can PATCH partials — only present
  *  keys get applied; `null` clears the value, undefined leaves it alone.

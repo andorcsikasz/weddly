@@ -1734,6 +1734,24 @@ export const PLANNER_PLAN_LIMITS: Record<PlannerPlan, number> = {
   premium: 10,
 };
 
+/** Admin management row for a planner. A planner is a `users` row with
+ *  `user_type='planner'`; there is no separate table. Surfaced in the admin
+ *  Szervezők management list with plan tier, client cap and how many couples
+ *  are actively linked. Suspension rides the shared `users.status`. */
+export interface AdminPlannerView {
+  user_id: number;
+  full_name: string;
+  email: string;
+  status: UserStatus;
+  planner_plan: PlannerPlan;
+  planner_max_clients: number;
+  planner_city: string | null;
+  planner_onboarding_done: boolean;
+  /** Count of active `planner_clients` links (approved couples). */
+  client_count: number;
+  created_at: UnixMs;
+}
+
 /** An email invitation a planner sent to a not-yet-onboarded client. Once the
  *  invitee signs up + onboards, a pending planner_clients link is created
  *  (which the couple must still approve). status: pending until they onboard,
