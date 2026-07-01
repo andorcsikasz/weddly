@@ -8,7 +8,7 @@
 // NEARBY_RADIUS_KM must still be refused (a "~300 km" badge reads as a system
 // error). Both are easy to break invisibly during a refactor; pin them here.
 
-import { describe, expect, it } from "bun:test";
+import { beforeAll, describe, expect, it } from "bun:test";
 import {
   distanceContextForQuery,
   distanceKmForQuery,
@@ -16,6 +16,8 @@ import {
   metroKeysForQuery,
   NEARBY_RADIUS_KM,
   nearbyTownLabel,
+  registerTown,
+  registerTowns,
   searchTowns,
 } from "@/lib/hu_metro_areas";
 
@@ -189,5 +191,50 @@ describe("nearbyTownLabel", () => {
 
   it("returns null for a completely unknown query", () => {
     expect(nearbyTownLabel("xyzzy")).toBeNull();
+  });
+});
+
+// The runtime overlay is what lets the search resolve ANY of the ~3,155 HU
+// settlements (not just the ~200 curated metro towns) plus one-off geocoder
+// hits. These register into shared module state, so this block runs last to
+// avoid perturbing the curated-only assertions above.
+describe("runtime town overlay — gazetteer + geocoder", () => {
+  beforeAll(async () => {
+    const { HU_GAZETTEER } = await import("@/lib/hu_gazetteer");
+    registerTowns(HU_GAZETTEER);
+  });
+
+  it("resolves a gazetteer village outside the curated dictionary (Zebegény)", () => {
+    // Zebegény is a real Danube-bend village with no curated metro entry; before
+    // the gazetteer it resolved to nothing and proximity silently degraded to
+    // text matching. Now it must place on the map.
+    expect(nearbyTownLabel("zebegeny")).toBe("Zebegény");
+    const km = distanceKmForQuery("zebegeny", "Vác");
+    expect(km).not.toBeNull();
+    if (km == null) return;
+    // Zebegény ↔ Vác is ~15 km crow-flies — comfortably inside the nearby band.
+    expect(km).toBeGreaterThan(0);
+    expect(km).toBeLessThan(NEARBY_RADIUS_KM);
+  });
+
+  it("surfaces a gazetteer village in the typeahead", () => {
+    expect(searchTowns("zebeg", 7)).toContain("Zebegény");
+  });
+
+  it("never lets a registered row shadow a curated coordinate", () => {
+    // A bogus (0,0) Budapest must NOT override the hand-tuned metro coord — else
+    // every Budapest distance would blow up from the gulf-of-guinea origin.
+    registerTowns([["Budapest", 0, 0]]);
+    const ctx = distanceContextForQuery("budapest", "Érd");
+    expect(ctx?.fromLabel).toBe("Budapest");
+    expect(ctx?.km).toBeLessThanOrEqual(NEARBY_RADIUS_KM);
+  });
+
+  it("registers a one-off geocoder hit, including the typed alias", () => {
+    // Simulates a Nominatim fallback for a place the offline gazetteer lacks:
+    // canonical label + the raw term the user typed both resolve to the coord.
+    registerTown("Kleinmünchen", 48.26, 14.29, "kleinmunchen typed");
+    expect(nearbyTownLabel("kleinmunchen")).toBe("Kleinmünchen");
+    expect(nearbyTownLabel("kleinmunchen typed")).toBe("Kleinmünchen");
   });
 });

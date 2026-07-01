@@ -7,7 +7,12 @@
 // each card backed by localStorage.
 
 import type { CoupleSupplier } from "@shared/couple_suppliers";
-import type { DirectorySupplier, SupplierCategory, SupplierGroup } from "@shared/suppliers";
+import type {
+  DirectorySupplier,
+  SupplierCategory,
+  SupplierCountryCount,
+  SupplierGroup,
+} from "@shared/suppliers";
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import {
   BedDouble,
@@ -77,6 +82,7 @@ import {
   budgetApi,
   coupleApi,
   coupleSupplierApi,
+  placesApi,
   supplierApi,
   supplierCostApi,
 } from "../lib/endpoints";
@@ -91,6 +97,8 @@ import {
   metroKeysForQuery,
   NEARBY_RADIUS_KM,
   nearbyTownLabel,
+  registerTown,
+  registerTowns,
   searchTowns,
 } from "../lib/hu_metro_areas";
 import { Combobox, type ComboOption } from "../components/Combobox";
@@ -202,6 +210,28 @@ export default function SuppliersPage() {
     lat: number | null;
     lng: number | null;
   }>({ lat: null, lng: null });
+  // ISO alpha-2 country the wedding is in — biases the geocoder fallback so a
+  // HU couple typing an ambiguous town gets the Hungarian match, not a foreign
+  // namesake. Empty until the couple loads.
+  const [coupleCountry, setCoupleCountry] = useState("");
+  // Country picker for the curated catalogue. `selectedCountry` is an ISO
+  // alpha-2 code, or "all" to drop the country scope. Empty until the couple
+  // loads, at which point it seeds from their onboarding country. Changing it
+  // re-fetches the directory scoped to the picked country. `availableCountries`
+  // is the set of countries the catalogue covers (with counts), from the list
+  // response, so the dropdown only offers countries that actually have vendors.
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [availableCountries, setAvailableCountries] = useState<SupplierCountryCount[]>([]);
+  // The country the current `items` were fetched for. Guards the re-fetch
+  // effect from re-requesting the data the initial load already returned.
+  const loadedCountryRef = useRef("");
+  // The full HU settlement gazetteer is lazy-loaded (it's ~100 KB of data that
+  // no other page needs). `gazetteerReady` flips once it's registered so the
+  // town-resolving memos recompute and pick up every settlement. `geoResolved`
+  // bumps whenever a Nominatim geocoder hit registers a new town, forcing the
+  // same recompute so freshly-resolved places surface in the results + options.
+  const [gazetteerReady, setGazetteerReady] = useState(false);
+  const [geoResolved, setGeoResolved] = useState(0);
   // Couple-side context for the comparison dialog. We pre-load both so
   // opening the dialog doesn't trigger a network round-trip — the payloads
   // are small (a few rows each) and they also feed other parts of the page.
@@ -304,6 +334,19 @@ export default function SuppliersPage() {
     return Number.isInteger(n) && n > 0 ? n : null;
   })();
 
+  // Country picker options: every country the catalogue covers, biggest first.
+  // The couple's own country is folded in even when it has zero curated
+  // listings, so the selected value always maps to a visible option.
+  const countryOptions = useMemo<SupplierCountryCount[]>(() => {
+    const byCode = new Map(availableCountries.map((c) => [c.code, c.count]));
+    if (selectedCountry && selectedCountry !== "all" && !byCode.has(selectedCountry)) {
+      byCode.set(selectedCountry, 0);
+    }
+    return [...byCode.entries()]
+      .map(([code, count]) => ({ code, count }))
+      .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
+  }, [availableCountries, selectedCountry]);
+
   function setQuery(next: string) {
     const p = new URLSearchParams(params);
     if (next.trim()) p.set("q", next);
@@ -323,6 +366,60 @@ export default function SuppliersPage() {
   useEffect(() => {
     setCityInput(cityFilter);
   }, [cityFilter]);
+
+  // Lazy-load the full Hungarian settlement gazetteer on mount and register it
+  // so ANY typed town (e.g. "Zebegény") resolves to a coordinate for the
+  // radius / nearest-first proximity match — not just the ~200 curated towns.
+  // Kept out of the initial bundle via dynamic import; it's ~100 KB of data.
+  useEffect(() => {
+    let alive = true;
+    import("../lib/hu_gazetteer")
+      .then((m) => {
+        registerTowns(m.HU_GAZETTEER);
+        if (alive) setGazetteerReady(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Geocoder fallback: when the typed town / query resolves to no local
+  // coordinate (not curated, not in the gazetteer — a foreign or very obscure
+  // place), ask the existing Nominatim-backed /api/places/search to forward-
+  // geocode it, then register the hit so the synchronous proximity path picks
+  // it up. Debounced, and only fires once the gazetteer has loaded so we don't
+  // hit the network for towns the offline data already covers.
+  useEffect(() => {
+    if (!gazetteerReady) return;
+    const term = (cityInput.trim() || query.trim()).trim();
+    if (term.length < 3) return;
+    // Already placeable locally (curated town, gazetteer settlement, anchor
+    // prefix) — no need to spend a Nominatim call.
+    if (nearbyTownLabel(normalize(term))) return;
+    // The offline typeahead still has candidates for this fragment (a partial
+    // HU town the user is mid-typing) — let them pick one instead of burning a
+    // geocoder call. Only a term with ZERO offline matches (a foreign / very
+    // obscure place) falls through to Nominatim.
+    if (searchTowns(term, 1).length > 0) return;
+    let alive = true;
+    const tid = window.setTimeout(() => {
+      placesApi
+        .search(term, coupleCountry || undefined)
+        .then(({ places }) => {
+          if (!alive) return;
+          const hit = places.find((p) => p.lat != null && p.lng != null);
+          if (!hit || hit.lat == null || hit.lng == null) return;
+          registerTown(hit.locality ?? hit.primary, hit.lat, hit.lng, term);
+          setGeoResolved((n) => n + 1);
+        })
+        .catch(() => undefined);
+    }, 450);
+    return () => {
+      alive = false;
+      window.clearTimeout(tid);
+    };
+  }, [cityInput, query, coupleCountry, gazetteerReady]);
   // Drop every "narrowing" filter (search text, city, category chain, price,
   // guests) plus the sibling shortlist toggle. The saved / picked chips are
   // meant to surface the user's full marked set in one tap, so any leftover
@@ -433,12 +530,20 @@ export default function SuppliersPage() {
     Promise.all([supplierApi.list(), coupleSupplierApi.list(), coupleApi.current()])
       .then(([dir, mine, couple]) => {
         setItems(dir.suppliers);
+        setAvailableCountries(dir.countries);
         setCoupleSuppliers(mine.suppliers);
         const id = couple.couple?.id ?? null;
         setCoupleId(id);
         setTargetGuestCount(couple.couple?.target_guest_count ?? null);
         if (couple.couple) {
           setCurrency(couple.couple.currency ?? "HUF");
+          setCoupleCountry(couple.couple.country ?? "");
+          // Seed the picker from the onboarding country. The backend already
+          // scoped this first response to it, so record it as the loaded
+          // country to keep the re-fetch effect from firing a duplicate call.
+          const seed = couple.couple.country ?? "";
+          setSelectedCountry(seed);
+          loadedCountryRef.current = seed;
           setCoupleLocation({
             lat: couple.couple.location_lat,
             lng: couple.couple.location_lng,
@@ -475,6 +580,28 @@ export default function SuppliersPage() {
       .then((r) => setBudgetLines(r.lines))
       .catch(() => undefined);
   }, []);
+
+  // Re-fetch the directory when the user switches country in the picker. The
+  // initial mount already loaded the couple's own country (recorded in
+  // loadedCountryRef), so this only fires on a genuine change — switching to
+  // another country or "all". Community entries and the country list ride
+  // along unchanged.
+  useEffect(() => {
+    if (!selectedCountry || selectedCountry === loadedCountryRef.current) return;
+    loadedCountryRef.current = selectedCountry;
+    let cancelled = false;
+    supplierApi
+      .list(undefined, selectedCountry)
+      .then((dir) => {
+        if (cancelled) return;
+        setItems(dir.suppliers);
+        setAvailableCountries(dir.countries);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCountry]);
 
   // Cross-tab pick sync — partner B picks a venue in another tab, we
   // reflect it here without a refresh.
@@ -624,7 +751,7 @@ export default function SuppliersPage() {
     }
 
     return out.slice(0, 7);
-  }, [query, cities, items, t]);
+  }, [query, cities, items, t, gazetteerReady, geoResolved]);
 
   // Town suggestions for the city filter: supplier cities first, then the
   // wider dictionary so couples can pick a settlement with no listing of its
@@ -650,7 +777,7 @@ export default function SuppliersPage() {
       }
     }
     return out;
-  }, [cityInput, cities]);
+  }, [cityInput, cities, gazetteerReady, geoResolved]);
 
   // When the committed town has no supplier of its own, the distance (rounded
   // up to 5 km) to the nearest in-radius result — shown as a "+N km" suffix.
@@ -665,7 +792,7 @@ export default function SuppliersPage() {
     }
     if (!Number.isFinite(min)) return null;
     return Math.max(5, Math.ceil(min / 5) * 5);
-  }, [cityFilter, items]);
+  }, [cityFilter, items, gazetteerReady, geoResolved]);
 
   // Items after all the non-category filters (city, saved, price, guests,
   // free-text). Used twice: as the base for the displayed list AND to compute
@@ -760,6 +887,8 @@ export default function SuppliersPage() {
     priceBand,
     guestsFilter,
     query,
+    gazetteerReady,
+    geoResolved,
   ]);
 
   const filtered = useMemo(() => {

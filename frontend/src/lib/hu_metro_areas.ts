@@ -354,6 +354,51 @@ const ANCHOR_TO_GROUP: Map<string, MetroGroup> = (() => {
   return m;
 })();
 
+// ── Runtime town overlay ─────────────────────────────────────────────────────
+// METRO_AREAS_HU above is the hand-curated core: ~200 wedding-relevant towns
+// with rich anchor/group semantics. Everything else is layered in here at
+// runtime instead of being hard-imported into this module:
+//   1. the full ~3,155-settlement Hungarian gazetteer (hu_gazetteer.ts), which
+//      SuppliersPage lazy-loads and registers via `registerTowns` so a typed
+//      village like "Zebegény" resolves to a real coordinate and gets the same
+//      radius / nearest-first proximity match the curated towns already enjoy;
+//   2. one-off geocoder hits (`registerTown`) for foreign or very obscure
+//      places the gazetteer doesn't carry — surfaced through the existing
+//      Nominatim-backed /api/places/search.
+// The resolver + typeahead functions below consult this overlay transparently.
+// Curated names always win a collision, so a registered row can never shadow a
+// hand-tuned coordinate. The map is keyed by the diacritic-folded name.
+const RUNTIME_TOWNS = new Map<string, { city: string; lat: number; lng: number }>();
+
+/** Bulk-register gazetteer rows (`[canonicalName, lat, lng]`). Idempotent — a
+ *  name already known (curated or previously registered) is skipped, so calling
+ *  it twice (React strict-mode double effect, a second page mount) is a no-op. */
+export function registerTowns(rows: readonly (readonly [string, number, number])[]): void {
+  for (const [city, lat, lng] of rows) {
+    const norm = normalize(city);
+    if (CITY_TO_RECORD.has(norm) || RUNTIME_TOWNS.has(norm)) continue;
+    RUNTIME_TOWNS.set(norm, { city, lat, lng });
+  }
+}
+
+/** Register a single resolved place — e.g. a Nominatim geocoder hit for a town
+ *  outside the offline gazetteer. When the raw term the user typed differs from
+ *  the canonical label (an odd spelling, a foreign exonym), pass it as
+ *  `aliasKey` so the synchronous `resolveQueryCoords(normalize(typed))` path
+ *  still finds the coordinate. Curated names are never overwritten. */
+export function registerTown(city: string, lat: number, lng: number, aliasKey?: string): void {
+  const norm = normalize(city);
+  if (norm && !CITY_TO_RECORD.has(norm) && !RUNTIME_TOWNS.has(norm)) {
+    RUNTIME_TOWNS.set(norm, { city, lat, lng });
+  }
+  if (aliasKey) {
+    const an = normalize(aliasKey);
+    if (an && !CITY_TO_RECORD.has(an) && !RUNTIME_TOWNS.has(an)) {
+      RUNTIME_TOWNS.set(an, { city, lat, lng });
+    }
+  }
+}
+
 /** Earth radius in km, used by the inline Haversine. The frontend has
  *  no shared geo lib (backend keeps `lib/geo.ts` server-side), so we
  *  copy the formula — 7 lines, no dependency. */
@@ -443,6 +488,13 @@ function resolveQueryCoords(
   const rec = CITY_TO_RECORD.get(normalizedQuery);
   if (rec) return { city: rec.city, lat: rec.lat, lng: rec.lng };
 
+  // Gazetteer / geocoder overlay: any registered settlement resolves exactly.
+  const run = RUNTIME_TOWNS.get(normalizedQuery);
+  if (run) return { city: run.city, lat: run.lat, lng: run.lng };
+
+  // Anchor prefix-match stays curated-only ("buda" → Budapest). The gazetteer
+  // is matched by exact name; partial input is served by the typeahead, which
+  // hands back a full name the user commits.
   if (normalizedQuery.length >= 4) {
     const group = METRO_AREAS_HU.find((g) => normalize(g.anchor).startsWith(normalizedQuery));
     if (group) {
@@ -465,8 +517,14 @@ function resolveSupplierCoords(
   supplierCoords?: { lat: number | null; lng: number | null } | null,
 ): { lat: number; lng: number } | null {
   if (supplierCity) {
-    const rec = CITY_TO_RECORD.get(normalize(supplierCity));
+    const norm = normalize(supplierCity);
+    const rec = CITY_TO_RECORD.get(norm);
     if (rec) return { lat: rec.lat, lng: rec.lng };
+    // Fall back to the gazetteer so a supplier whose town isn't a curated entry
+    // (but is a real settlement) still gets placed on the map, even when the
+    // row itself carries no lat/lng — common for community submissions.
+    const run = RUNTIME_TOWNS.get(norm);
+    if (run) return { lat: run.lat, lng: run.lng };
   }
   if (supplierCoords && supplierCoords.lat != null && supplierCoords.lng != null) {
     return { lat: supplierCoords.lat, lng: supplierCoords.lng };
@@ -536,29 +594,40 @@ export function nearbyTownLabel(normalizedQuery: string): string | null {
 export function searchTowns(query: string, limit = 7): string[] {
   const q = normalize(query.trim());
   if (!q) return [];
-  const seen = new Set<string>();
+  const prefixSeen = new Set<string>();
   const prefix: string[] = [];
   const contains: string[] = [];
-  for (const g of METRO_AREAS_HU) {
-    for (const c of g.cities) {
-      const norm = normalize(c.city);
-      if (seen.has(norm)) continue;
-      if (norm.startsWith(q)) {
-        seen.add(norm);
-        prefix.push(c.city);
-      } else if (norm.includes(q)) {
-        contains.push(c.city);
+  // Scan a candidate name (with its already-folded form) into the prefix /
+  // substring buckets. Dedup of prefix hits happens here; substring hits are
+  // deduped when the final list is assembled.
+  const scan = (name: string, norm: string) => {
+    if (norm.startsWith(q)) {
+      if (!prefixSeen.has(norm)) {
+        prefixSeen.add(norm);
+        prefix.push(name);
       }
+    } else if (norm.includes(q)) {
+      contains.push(name);
     }
+  };
+  // Curated metro towns first (rich anchor/group semantics), then the full
+  // gazetteer + geocoder overlay. Overlay keys are pre-folded, so no re-fold.
+  for (const g of METRO_AREAS_HU) {
+    for (const c of g.cities) scan(c.city, normalize(c.city));
   }
+  for (const [norm, rec] of RUNTIME_TOWNS) scan(rec.city, norm);
+
   prefix.sort((a, b) => a.length - b.length || a.localeCompare(b, "hu"));
-  const out = [...prefix];
-  for (const name of contains) {
-    if (out.length >= limit) break;
+  const out: string[] = [];
+  const outSeen = new Set<string>();
+  const push = (name: string) => {
+    if (out.length >= limit) return;
     const norm = normalize(name);
-    if (seen.has(norm)) continue;
-    seen.add(norm);
+    if (outSeen.has(norm)) return;
+    outSeen.add(norm);
     out.push(name);
-  }
+  };
+  for (const name of prefix) push(name);
+  for (const name of contains) push(name);
   return out.slice(0, limit);
 }
