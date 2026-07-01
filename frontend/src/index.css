@@ -1744,3 +1744,12 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     animation: none !important;
   }
 }
+
+/* Leaflet maps must stay under the app chrome. The library's internal panes
+   run z-index 400-1000, which beats the sticky headers (z-30) and dropdown
+   menus (z-50) in the page-level stacking context, so an embedded map paints
+   over them. Isolating the container confines those values to the map. */
+.leaflet-container {
+  isolation: isolate;
+  z-index: 0;
+}
