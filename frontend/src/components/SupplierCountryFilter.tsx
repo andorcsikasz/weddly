@@ -130,7 +130,7 @@ export function SupplierCountryFilter({ value, homeCountry, countries, onChange 
             id={listboxId}
             role="listbox"
             aria-label={t("suppliers.country_filter_label")}
-            className="absolute left-0 z-[1100] mt-1 max-h-72 min-w-[12rem] overflow-y-auto rounded-xl border border-paper-300 bg-paper-50 py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+            className="absolute left-0 z-[1100] mt-1 max-h-56 min-w-[12rem] overflow-y-auto rounded-xl border border-paper-300 bg-paper-50 py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
           >
             <CountryOption
               label={t("suppliers.country_filter_all")}
