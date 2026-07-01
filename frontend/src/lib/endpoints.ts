@@ -2701,6 +2701,7 @@ export const plannerApi = {
     title: string;
     event_date: string;
     start_time?: string | null;
+    end_time?: string | null;
     couple_id?: number | null;
     notes?: string | null;
   }) => apiFetch<PlannerEvent>("POST", "/api/planner/events", body),
@@ -2710,6 +2711,7 @@ export const plannerApi = {
       title: string;
       event_date: string;
       start_time: string | null;
+      end_time: string | null;
       couple_id: number | null;
       notes: string | null;
     }>,

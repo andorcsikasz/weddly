@@ -1782,6 +1782,8 @@ export interface PlannerEvent {
   event_date: string;
   /** HH:MM, or null for an all-day event. */
   start_time: string | null;
+  /** HH:MM, or null for an open-ended / all-day event. Requires start_time. */
+  end_time: string | null;
   notes: string | null;
   created_at: UnixMs;
 }

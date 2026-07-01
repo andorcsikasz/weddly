@@ -77,8 +77,11 @@ function ThreadSidebar({
           </li>
         ))}
         {threads.length === 0 && unthreaded.length === 0 && (
-          <li className="px-4 py-6 text-center text-sm text-umber-400 dark:text-umber-500">
+          <li className="flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-umber-400 dark:text-umber-500">
             {t("planner_messages.inbox_empty")}
+            <Link to="/app/planner/clients" className="btn-outline btn-sm">
+              {t("planner_messages.empty_add_client_cta")}
+            </Link>
           </li>
         )}
       </ul>
@@ -347,8 +350,8 @@ export default function PlannerMessagesPage() {
             <p className="max-w-xs text-sm text-umber-500 dark:text-umber-400">
               {t("planner_messages.empty_no_clients")}
             </p>
-            <Link to="/app/planner" className="btn-primary btn-sm">
-              {t("planner_messages.empty_back_cta")}
+            <Link to="/app/planner/clients" className="btn-primary btn-sm">
+              {t("planner_messages.empty_add_client_cta")}
             </Link>
           </div>
         ) : (

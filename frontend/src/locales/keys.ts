@@ -7219,6 +7219,8 @@ export interface LocaleMessages {
     no_upcoming: string;
     upgrade_cta: string;
     pending_help: string;
+    load_error: string;
+    load_retry: string;
   };
   planner_calendar: {
     meta_title: string;
@@ -7255,6 +7257,8 @@ export interface LocaleMessages {
     field_title: string;
     field_date: string;
     field_time: string;
+    field_time_end: string;
+    field_time_end_invalid: string;
     field_client: string;
     field_client_none: string;
     field_notes: string;
@@ -7296,6 +7300,8 @@ export interface LocaleMessages {
   };
   planner_home: {
     title: string;
+    load_error: string;
+    load_retry: string;
     checklist_title: string;
     checklist_progress: string;
     checklist_dismiss: string;
@@ -7477,6 +7483,7 @@ export interface LocaleMessages {
     heading: string;
     back: string;
     inbox_empty: string;
+    empty_add_client_cta: string;
     select_client: string;
     compose_heading: string;
     field_to: string;
@@ -7578,12 +7585,14 @@ export interface LocaleMessages {
     meta_title: string;
     meta_description: string;
     load_error: string;
+    load_retry: string;
     badge_planner: string;
     avatar_change: string;
     avatar_remove: string;
     avatar_saved: string;
     avatar_error: string;
     avatar_invalid: string;
+    avatar_hint: string;
     references_title: string;
     references_subtitle: string;
     references_empty: string;
@@ -7622,6 +7631,8 @@ export interface LocaleMessages {
     /** Short chip variants (no interpolation) for the settings status pill. */
     state_trial_short: string;
     state_readonly_short: string;
+    renews_on: string;
+    compare_hint: string;
     /** Plan-card CTAs. */
     cta_subscribe: string;
     cta_current: string;

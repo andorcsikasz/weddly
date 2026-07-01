@@ -715,6 +715,7 @@ function EventModal({
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(initialDate);
   const [time, setTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [coupleId, setCoupleId] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -726,19 +727,23 @@ function EventModal({
       setTitle(editing.title);
       setDate(editing.event_date);
       setTime(editing.start_time ?? "");
+      setEndTime(editing.end_time ?? "");
       setCoupleId(editing.couple_id != null ? String(editing.couple_id) : "");
       setNotes(editing.notes ?? "");
     } else {
       setTitle("");
       setDate(initialDate);
       setTime("");
+      setEndTime("");
       setCoupleId("");
       setNotes("");
     }
     setShowErr(false);
   }, [open, editing, initialDate]);
 
-  const valid = title.trim().length > 0 && date.length > 0;
+  // HH:MM strings compare correctly as strings; an end needs a start.
+  const endTimeInvalid = endTime !== "" && (time === "" || endTime <= time);
+  const valid = title.trim().length > 0 && date.length > 0 && !endTimeInvalid;
 
   async function save() {
     if (!valid) {
@@ -751,6 +756,7 @@ function EventModal({
         title: title.trim(),
         event_date: date,
         start_time: time ? time : null,
+        end_time: time && endTime ? endTime : null,
         couple_id: coupleId ? Number(coupleId) : null,
         notes: notes.trim() ? notes.trim() : null,
       };
@@ -825,21 +831,31 @@ function EventModal({
           onChange={(e) => setTitle(e.target.value)}
           errorText={showErr && !title.trim() ? t("planner_calendar.field_required") : undefined}
         />
+        <TextField
+          id="ev-date"
+          type="date"
+          label={t("planner_calendar.field_date")}
+          required
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
         <div className="grid grid-cols-2 gap-3">
-          <TextField
-            id="ev-date"
-            type="date"
-            label={t("planner_calendar.field_date")}
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
           <TextField
             id="ev-time"
             type="time"
             label={t("planner_calendar.field_time")}
             value={time}
             onChange={(e) => setTime(e.target.value)}
+          />
+          <TextField
+            id="ev-time-end"
+            type="time"
+            label={t("planner_calendar.field_time_end")}
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            errorText={
+              showErr && endTimeInvalid ? t("planner_calendar.field_time_end_invalid") : undefined
+            }
           />
         </div>
         <div className="block">
@@ -1008,7 +1024,9 @@ export default function PlannerCalendarPage() {
         kind: "event",
         date: ev.event_date,
         coupleId: ev.couple_id,
-        label: ev.start_time ? `${ev.start_time} ${ev.title}` : ev.title,
+        label: ev.start_time
+          ? `${ev.start_time}${ev.end_time ? `–${ev.end_time}` : ""} ${ev.title}`
+          : ev.title,
         sublabel:
           ev.couple_id != null ? (clientNameById.get(ev.couple_id) ?? undefined) : undefined,
         eventId: ev.id,

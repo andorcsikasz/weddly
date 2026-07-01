@@ -1,5 +1,5 @@
 import { CheckCircle2, ChevronDown, ChevronUp, Circle } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import type {
   PlannerClientView,
@@ -542,6 +542,7 @@ export default function PlannerHomePage() {
   const [invites, setInvites] = useState<PlannerInviteView[]>([]);
   const [stats, setStats] = useState<PlannerStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [taskFilters, setTaskFilters] = useState<TaskFilters>({
     clientId: null,
     priority: "all",
@@ -562,8 +563,12 @@ export default function PlannerHomePage() {
     }
   }, []);
 
-  useEffect(() => {
-    void Promise.all([
+  // allSettled so one failing call degrades that section only instead of
+  // silently blanking the whole dashboard; any failure surfaces a retry banner.
+  const load = useCallback(() => {
+    setLoadError(false);
+    setLoading(true);
+    void Promise.allSettled([
       plannerApi.listClients(),
       plannerApi.listTasks(),
       plannerApi.listInvites(),
@@ -571,15 +576,19 @@ export default function PlannerHomePage() {
       plannerApi.listInbox(),
     ])
       .then(([cr, tr, ir, sr, mr]) => {
-        setClients(cr.clients);
-        setTasks(tr.tasks);
-        setInvites(ir.invites);
-        setStats(sr.stats);
-        setHasThreads(mr.threads.length > 0);
+        if (cr.status === "fulfilled") setClients(cr.value.clients);
+        if (tr.status === "fulfilled") setTasks(tr.value.tasks);
+        if (ir.status === "fulfilled") setInvites(ir.value.invites);
+        if (sr.status === "fulfilled") setStats(sr.value.stats);
+        if (mr.status === "fulfilled") setHasThreads(mr.value.threads.length > 0);
+        if ([cr, tr, ir, sr, mr].some((r) => r.status === "rejected")) setLoadError(true);
       })
-      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   function dismissChecklist() {
     setChecklistDismissed(true);
@@ -674,6 +683,18 @@ export default function PlannerHomePage() {
           </h1>
           <p className="mt-1 text-sm capitalize text-umber-500 dark:text-umber-400">{todayLabel}</p>
         </div>
+
+        {loadError && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blush-200 bg-blush-50 px-4 py-3 text-sm text-blush-800 dark:border-blush-900/40 dark:bg-blush-950/30 dark:text-blush-300"
+          >
+            <span>{t("planner_home.load_error")}</span>
+            <button type="button" onClick={load} className="btn-outline btn-sm shrink-0">
+              {t("planner_home.load_retry")}
+            </button>
+          </div>
+        )}
 
         {showChecklist && (
           <GettingStartedChecklist steps={checklistSteps} onDismiss={dismissChecklist} />

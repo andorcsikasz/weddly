@@ -84,6 +84,7 @@ interface PlannerEventRow {
   title: string;
   event_date: string;
   start_time: string | null;
+  end_time: string | null;
   notes: string | null;
   created_at: number;
 }
@@ -95,6 +96,7 @@ function toPlannerEvent(r: PlannerEventRow): PlannerEvent {
     title: r.title,
     event_date: r.event_date,
     start_time: r.start_time,
+    end_time: r.end_time,
     notes: r.notes,
     created_at: r.created_at,
   };
@@ -1590,7 +1592,7 @@ async function handleListEvents(ctx: Ctx): Promise<Response> {
 
   const rows = db
     .prepare(
-      `SELECT id, couple_id, title, event_date, start_time, notes, created_at
+      `SELECT id, couple_id, title, event_date, start_time, end_time, notes, created_at
          FROM planner_events
         WHERE ${clauses.join(" AND ")}
         ORDER BY event_date ASC, start_time ASC, id ASC`,
@@ -1606,6 +1608,7 @@ async function handleCreateEvent(ctx: Ctx): Promise<Response> {
     title?: unknown;
     event_date?: unknown;
     start_time?: unknown;
+    end_time?: unknown;
     couple_id?: unknown;
     notes?: unknown;
   }>(ctx.req);
@@ -1622,6 +1625,14 @@ async function handleCreateEvent(ctx: Ctx): Promise<Response> {
     startTime = body.start_time;
   }
 
+  let endTime: string | null = null;
+  if (body.end_time !== undefined && body.end_time !== null && body.end_time !== "") {
+    if (!isHhMm(body.end_time)) throw new HttpError(400, "end_time must be HH:MM");
+    if (startTime === null) throw new HttpError(400, "end_time requires start_time");
+    if (body.end_time <= startTime) throw new HttpError(400, "end_time must be after start_time");
+    endTime = body.end_time;
+  }
+
   let coupleId: number | null = null;
   if (body.couple_id !== undefined && body.couple_id !== null) {
     if (typeof body.couple_id !== "number" || !Number.isInteger(body.couple_id)) {
@@ -1636,11 +1647,20 @@ async function handleCreateEvent(ctx: Ctx): Promise<Response> {
   const ts = now();
   const row = db
     .prepare(
-      `INSERT INTO planner_events (planner_user_id, couple_id, title, event_date, start_time, notes, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       RETURNING id, couple_id, title, event_date, start_time, notes, created_at`,
+      `INSERT INTO planner_events (planner_user_id, couple_id, title, event_date, start_time, end_time, notes, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       RETURNING id, couple_id, title, event_date, start_time, end_time, notes, created_at`,
     )
-    .get(userId, coupleId, title, body.event_date, startTime, notes, ts) as PlannerEventRow;
+    .get(
+      userId,
+      coupleId,
+      title,
+      body.event_date,
+      startTime,
+      endTime,
+      notes,
+      ts,
+    ) as PlannerEventRow;
 
   return json(toPlannerEvent(row));
 }
@@ -1651,14 +1671,17 @@ async function handleUpdateEvent(ctx: Ctx): Promise<Response> {
   if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "id required");
 
   const existing = db
-    .prepare("SELECT id FROM planner_events WHERE id = ? AND planner_user_id = ?")
-    .get(id, userId);
+    .prepare(
+      "SELECT id, start_time, end_time FROM planner_events WHERE id = ? AND planner_user_id = ?",
+    )
+    .get(id, userId) as Pick<PlannerEventRow, "id" | "start_time" | "end_time"> | null;
   if (!existing) throw new HttpError(404, "Event not found");
 
   const body = await readJson<{
     title?: unknown;
     event_date?: unknown;
     start_time?: unknown;
+    end_time?: unknown;
     couple_id?: unknown;
     notes?: unknown;
   }>(ctx.req);
@@ -1679,14 +1702,42 @@ async function handleUpdateEvent(ctx: Ctx): Promise<Response> {
     fields.push("event_date = ?");
     vals.push(body.event_date);
   }
+  // Cross-field: validate the times the row will END UP with, not just the
+  // patch — a patch may clear the start while an end survives, or vice versa.
+  let effStart = existing.start_time;
   if (body.start_time !== undefined) {
     if (body.start_time === null || body.start_time === "") {
-      fields.push("start_time = ?");
-      vals.push(null);
+      effStart = null;
     } else {
       if (!isHhMm(body.start_time)) throw new HttpError(400, "start_time must be HH:MM");
-      fields.push("start_time = ?");
-      vals.push(body.start_time);
+      effStart = body.start_time;
+    }
+    fields.push("start_time = ?");
+    vals.push(effStart);
+  }
+  let effEnd = existing.end_time;
+  if (body.end_time !== undefined) {
+    if (body.end_time === null || body.end_time === "") {
+      effEnd = null;
+    } else {
+      if (!isHhMm(body.end_time)) throw new HttpError(400, "end_time must be HH:MM");
+      effEnd = body.end_time;
+    }
+    fields.push("end_time = ?");
+    vals.push(effEnd);
+  }
+  if (effEnd !== null) {
+    if (effStart === null) {
+      // Clearing the start silently drops the end too — an end without a start
+      // is meaningless and blocking the clear would be hostile.
+      if (body.end_time === undefined) {
+        fields.push("end_time = ?");
+        vals.push(null);
+      } else {
+        throw new HttpError(400, "end_time requires start_time");
+      }
+    } else if (effEnd <= effStart) {
+      throw new HttpError(400, "end_time must be after start_time");
     }
   }
   if (body.couple_id !== undefined) {
@@ -1715,7 +1766,7 @@ async function handleUpdateEvent(ctx: Ctx): Promise<Response> {
 
   const row = db
     .prepare(
-      "SELECT id, couple_id, title, event_date, start_time, notes, created_at FROM planner_events WHERE id = ?",
+      "SELECT id, couple_id, title, event_date, start_time, end_time, notes, created_at FROM planner_events WHERE id = ?",
     )
     .get(id) as PlannerEventRow;
   return json(toPlannerEvent(row));

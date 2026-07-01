@@ -11,7 +11,7 @@ import {
   MailQuestion,
   Users,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { PlannerStats } from "@shared/types";
 import { InfoHint } from "../../components/InfoHint";
@@ -96,15 +96,37 @@ export default function PlannerStatsPage() {
   const { t } = useT();
   useDocumentMeta("planner_stats.meta_title", "planner_stats.meta_description");
   const [stats, setStats] = useState<PlannerStats | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoadError(false);
     plannerApi
       .stats()
       .then((r) => setStats(r.stats))
-      .catch(() => {});
+      .catch(() => setLoadError(true));
   }, []);
 
+  useEffect(() => {
+    load();
+  }, [load]);
+
   if (!stats) {
+    // A failed fetch surfaces an alert + retry instead of pulsing forever.
+    if (loadError) {
+      return (
+        <div className="py-2">
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blush-200 bg-blush-50 px-4 py-3 text-sm text-blush-800 dark:border-blush-900/40 dark:bg-blush-950/30 dark:text-blush-300"
+          >
+            <span>{t("planner_stats.load_error")}</span>
+            <button type="button" onClick={load} className="btn-outline btn-sm shrink-0">
+              {t("planner_stats.load_retry")}
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="py-2">
         <div className="h-64 animate-pulse rounded-2xl bg-paper-100 dark:bg-umber-800" />

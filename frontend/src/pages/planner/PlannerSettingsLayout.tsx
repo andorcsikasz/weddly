@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import type { PlannerProfile } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
@@ -37,15 +37,17 @@ export default function PlannerSettingsLayout() {
   const [profile, setProfile] = useState<PlannerProfile | null>(null);
   const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoadError(false);
     plannerApi
       .getProfile()
-      .then((p) => {
-        setProfile(p);
-        setLoadError(false);
-      })
+      .then((p) => setProfile(p))
       .catch(() => setLoadError(true));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const initials = profile ? getInitials(profile.full_name, profile.email) : "?";
 
@@ -71,6 +73,9 @@ export default function PlannerSettingsLayout() {
                 {t("planner_profile.badge_planner")}
               </span>
             </div>
+            <p className="mt-1.5 text-xs text-umber-400 dark:text-umber-500">
+              {t("planner_profile.avatar_hint")}
+            </p>
           </div>
         </div>
 
@@ -103,12 +108,15 @@ export default function PlannerSettingsLayout() {
         </nav>
 
         {loadError && (
-          <p
+          <div
             role="alert"
-            className="mt-6 rounded-xl border border-blush-200 bg-blush-50 px-4 py-3 text-sm text-blush-800 dark:border-blush-900/40 dark:bg-blush-950/30 dark:text-blush-300"
+            className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blush-200 bg-blush-50 px-4 py-3 text-sm text-blush-800 dark:border-blush-900/40 dark:bg-blush-950/30 dark:text-blush-300"
           >
-            {t("planner_profile.load_error")}
-          </p>
+            <span>{t("planner_profile.load_error")}</span>
+            <button type="button" onClick={load} className="btn-outline btn-sm shrink-0">
+              {t("planner_profile.load_retry")}
+            </button>
+          </div>
         )}
 
         <div className="pb-16">

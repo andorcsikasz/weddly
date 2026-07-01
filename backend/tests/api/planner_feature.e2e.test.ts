@@ -805,6 +805,88 @@ describe("planner calendar events", () => {
     expect(after.data.events.length).toBe(0);
   });
 
+  test("end_time round-trips, requires a start, and must follow it", async () => {
+    const { token } = await bootstrapPlanner("ev-end@weddly.test");
+
+    // Create with a start+end range.
+    const created = await req<PlannerEvent>(
+      "POST",
+      "/api/planner/events",
+      { title: "Client meeting", event_date: "2026-07-20", start_time: "14:00", end_time: "15:30" },
+      { token },
+    );
+    expect(created.status).toBe(200);
+    expect(created.data.start_time).toBe("14:00");
+    expect(created.data.end_time).toBe("15:30");
+    const eventId = created.data.id;
+
+    // end before/equal to start → 400.
+    const backwards = await req(
+      "POST",
+      "/api/planner/events",
+      { title: "x", event_date: "2026-07-20", start_time: "14:00", end_time: "14:00" },
+      { token },
+    );
+    expect(backwards.status).toBe(400);
+
+    // end without a start → 400.
+    const orphanEnd = await req(
+      "POST",
+      "/api/planner/events",
+      { title: "x", event_date: "2026-07-20", end_time: "15:00" },
+      { token },
+    );
+    expect(orphanEnd.status).toBe(400);
+
+    // Malformed end → 400.
+    const badEnd = await req(
+      "POST",
+      "/api/planner/events",
+      { title: "x", event_date: "2026-07-20", start_time: "10:00", end_time: "26:70" },
+      { token },
+    );
+    expect(badEnd.status).toBe(400);
+
+    // PATCH: moving the end is validated against the STORED start.
+    const badPatch = await req(
+      "PATCH",
+      `/api/planner/events/${eventId}`,
+      { end_time: "13:00" },
+      {
+        token,
+      },
+    );
+    expect(badPatch.status).toBe(400);
+    const okPatch = await req<PlannerEvent>(
+      "PATCH",
+      `/api/planner/events/${eventId}`,
+      { end_time: "16:00" },
+      { token },
+    );
+    expect(okPatch.status).toBe(200);
+    expect(okPatch.data.end_time).toBe("16:00");
+
+    // PATCH: keeping an end while clearing the start is rejected...
+    const clearBoth = await req(
+      "PATCH",
+      `/api/planner/events/${eventId}`,
+      { start_time: null, end_time: "16:00" },
+      { token },
+    );
+    expect(clearBoth.status).toBe(400);
+
+    // ...but clearing just the start silently drops the stored end too.
+    const cleared = await req<PlannerEvent>(
+      "PATCH",
+      `/api/planner/events/${eventId}`,
+      { start_time: null },
+      { token },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.start_time).toBeNull();
+    expect(cleared.data.end_time).toBeNull();
+  });
+
   test("rejects a bad date and a bad time", async () => {
     const { token } = await bootstrapPlanner("ev-bad@weddly.test");
     const badDate = await req(

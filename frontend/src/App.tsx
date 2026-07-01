@@ -1142,12 +1142,25 @@ export default function App() {
             }
           />
           <Route path="profile" element={<Navigate to="/app/planner/settings/account" replace />} />
+          {/* Legacy/guessed dashboard aliases land on the dashboard instead of a 404. */}
+          <Route path="overview" element={<Navigate to="/app/planner" replace />} />
+          <Route path="dashboard" element={<Navigate to="/app/planner" replace />} />
           <Route path="settings" element={<PlannerSettingsLayout />}>
             <Route index element={<Navigate to="account" replace />} />
             <Route path="account" element={<PlannerSettingsAccount />} />
             <Route path="subscription" element={<PlannerSettingsSubscription />} />
             <Route path="data" element={<PlannerSettingsData />} />
           </Route>
+          {/* Unknown planner paths keep the planner chrome (sidebar + header)
+              so the user doesn't lose app context on a bad link. */}
+          <Route
+            path="*"
+            element={
+              <Page>
+                <NotFoundPage bare homeTo="/app/planner" />
+              </Page>
+            }
+          />
         </Route>
         <Route
           path="*"

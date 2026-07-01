@@ -1387,6 +1387,8 @@ addColumnIfMissing(
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_planner_events_user ON planner_events(planner_user_id, event_date)",
 );
+// Optional end time (HH:MM) so meetings/appointments can carry a duration.
+addColumnIfMissing("planner_events", "end_time", "end_time TEXT");
 
 // Planner profile fields — additive, all nullable (planners fill in later).
 addColumnIfMissing("users", "business_name", "business_name TEXT");
