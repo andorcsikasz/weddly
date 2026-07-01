@@ -108,12 +108,9 @@ export function OutreachInbox() {
             />
           </h2>
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-            {t("outreach.subheading")}
+            {t("outreach.subheading", { max: OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP })}
           </p>
         </div>
-        <button type="button" className="btn-accent" onClick={() => setComposing(true)}>
-          <Plus size={16} aria-hidden /> {t("outreach.new_campaign")}
-        </button>
       </div>
 
       {loading ? (
