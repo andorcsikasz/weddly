@@ -662,17 +662,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               tightened row rhythm below keeps it scrollbar-free on most
               displays. `min-h-0` lets the inner nav shrink so overflow works.
               `lg:w-full` fills the expanded rail so the floating collapse
-              toggle (`absolute right-1`, positioned against this box) lands at
-              the panel's true right edge — without it the column shrinks to its
-              content width and the toggle crowds the "Áttekintés" label. Kept
-              off at md so the tablet icon rail stays content-width/centered. */}
+              toggle (`absolute right-14`, positioned against this box) keeps a
+              stable offset from the panel's right edge — without it the column
+              shrinks to its content width and the toggle crowds the
+              "Áttekintés" label. Kept off at md so the tablet icon rail stays
+              content-width/centered. */}
           <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] min-h-0 flex-col gap-1 overflow-y-auto lg:w-full [scrollbar-width:thin]">
             {/* Collapse toggle — same affordance in both couple and admin
-                views. When expanded it floats into the top-right corner
+                views. When expanded it floats over the first row's right side
                 (absolute, out of flow) so it stops reserving a whole row —
                 the first nav item rises to the top, and the freed ~40px of
                 vertical space goes to the bottom of the rail instead of
-                sitting empty above. When collapsed it keeps a small centered
+                sitting empty above. `right-14` pulls it in off the panel edge
+                so it never juts past the rightmost sidebar text (the long
+                "INSPIRÁCIÓ ÉS EMLÉKEK" header). When collapsed it keeps a
+                small centered
                 row (a top-right float would collide with the first icon).
                 Hidden on tablet (md) because the rail is forced icon-only
                 there — there's nothing to collapse into. */}
@@ -680,7 +684,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={`hidden lg:flex ${
                 sidebarCollapsed
                   ? "justify-center pb-1"
-                  : "lg:absolute lg:right-2 lg:top-1 lg:z-10 lg:h-6 lg:items-center lg:justify-end"
+                  : "lg:absolute lg:right-14 lg:top-1 lg:z-10 lg:h-6 lg:items-center lg:justify-end"
               }`}
             >
               <button
