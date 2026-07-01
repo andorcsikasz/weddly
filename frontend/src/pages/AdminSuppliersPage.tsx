@@ -1,5 +1,6 @@
 import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
 import {
+  AlertTriangle,
   Check,
   ChevronDown,
   Clock,
@@ -37,6 +38,21 @@ function decodeEntities(s: string | null): string {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"');
+}
+
+/** Fold a business name to a comparison key for the soft duplicate warning:
+ *  lowercase, strip accents, drop the common HU company-form suffixes
+ *  (kft/bt/zrt/kkt/e.v.) and any punctuation, then collapse whitespace. This
+ *  is deliberately loose (a moderator hint, not a hard block), so we
+ *  favour catching "Etalon Party" vs "Etalon Party Kft." over precision. */
+function normalizeSupplierName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(kft|bt|zrt|kkt|e\.?v\.?|nyrt)\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 /** `created_at` is Unix milliseconds (server uses `Date.now()` everywhere —
@@ -148,6 +164,31 @@ function ModerationView() {
     () => suppliers.filter((s) => s.status === "awaiting_review").length,
     [suppliers],
   );
+
+  // Soft duplicate detection: group every loaded listing (all statuses) by its
+  // normalized name, then map each id to the OTHER listings sharing that key.
+  // Purely a moderator hint on the card – never blocks an action.
+  const duplicatesById = useMemo(() => {
+    const byKey = new Map<string, CommunitySupplierAdminView[]>();
+    for (const s of suppliers) {
+      const key = normalizeSupplierName(s.name);
+      if (!key) continue;
+      const bucket = byKey.get(key);
+      if (bucket) bucket.push(s);
+      else byKey.set(key, [s]);
+    }
+    const out = new Map<number, string[]>();
+    for (const bucket of byKey.values()) {
+      if (bucket.length < 2) continue;
+      for (const s of bucket) {
+        out.set(
+          s.id,
+          bucket.filter((o) => o.id !== s.id).map((o) => o.name),
+        );
+      }
+    }
+    return out;
+  }, [suppliers]);
 
   // Reset selection when filter changes — selected ids might no longer be visible.
   useEffect(() => {
@@ -421,6 +462,7 @@ function ModerationView() {
               onSavedNotes={replaceSupplier}
               locale={locale}
               initiallyExpanded={s.id === autoExpandId}
+              duplicateMatches={duplicatesById.get(s.id) ?? []}
             />
           ))}
         </div>
@@ -535,6 +577,9 @@ interface SupplierCardProps {
   /** True only for the first awaiting_review row on initial load; lets the
    *  moderator see the full detail surface for triage without an extra click. */
   initiallyExpanded: boolean;
+  /** Names of other loaded listings that share this one's normalized name.
+   *  Non-empty drives the soft duplicate warning chip. */
+  duplicateMatches: string[];
 }
 
 function SupplierCard({
@@ -551,9 +596,17 @@ function SupplierCard({
   onSavedNotes,
   locale,
   initiallyExpanded,
+  duplicateMatches,
 }: SupplierCardProps) {
   const { t } = useT();
   const toast = useToast();
+  // Soft "profile looks thin" hint: only meaningful for listings the moderator
+  // still has to approve. A listing with neither a website nor a blurb has
+  // almost nothing for a couple to go on. Never blocks approval.
+  const incomplete =
+    (s.status === "pending" || s.status === "awaiting_review") &&
+    !s.website?.trim() &&
+    !s.blurb?.trim();
   const [notesDraft, setNotesDraft] = useState<string>(s.admin_notes ?? "");
   const [notesSaving, setNotesSaving] = useState(false);
   // Cards collapse by default. The parent flags exactly one row (the first
@@ -637,6 +690,24 @@ function SupplierCard({
               {s.open_report_count}
             </Pill>
           ) : null}
+          {duplicateMatches.length > 0 ? (
+            <Pill
+              tone="blush"
+              icon={<AlertTriangle size={11} />}
+              srLabel={t("admin.suppliers_card_dup_warning_aria")}
+            >
+              {t("admin.suppliers_card_dup_warning")}
+            </Pill>
+          ) : null}
+          {incomplete ? (
+            <Pill
+              tone="blush"
+              icon={<AlertTriangle size={11} />}
+              srLabel={t("admin.suppliers_card_incomplete_aria")}
+            >
+              {t("admin.suppliers_card_incomplete")}
+            </Pill>
+          ) : null}
         </button>
         <ChevronDown
           size={16}
@@ -649,6 +720,29 @@ function SupplierCard({
 
       {expanded ? (
         <div className="flex flex-col gap-4 px-3 py-3">
+          {/* Soft moderation warnings — surfaced above the detail grid so the
+           *  moderator reads them before acting. Advisory only: they name the
+           *  concern but never disable Approve/Hide. */}
+          {duplicateMatches.length > 0 || incomplete ? (
+            <div className="flex flex-col gap-1 rounded-xl bg-blush-50 px-3 py-2 text-xs text-blush-800 ring-1 ring-blush-200 dark:bg-blush-900/30 dark:text-blush-200 dark:ring-blush-800">
+              {duplicateMatches.length > 0 ? (
+                <p className="m-0 flex items-start gap-1.5">
+                  <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0" />
+                  <span>
+                    {t("admin.suppliers_card_dup_detail", {
+                      names: duplicateMatches.join(", "),
+                    })}
+                  </span>
+                </p>
+              ) : null}
+              {incomplete ? (
+                <p className="m-0 flex items-start gap-1.5">
+                  <AlertTriangle size={13} aria-hidden className="mt-0.5 shrink-0" />
+                  <span>{t("admin.suppliers_card_incomplete_detail")}</span>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {/* Body: three-column dl grid on lg, stacking on small viewports.
            *  Each <dl> packs label/value pairs into a tight `grid-cols-[8rem_1fr]
            *  gap-y-1 text-xs` rhythm — roughly half the vertical height of the
@@ -856,7 +950,7 @@ function SupplierCard({
               onClick={onEnrich}
               disabled={enriching}
               aria-label={t("admin.enrich")}
-              title={t("admin.enrich")}
+              title={t("admin.enrich_hint")}
             >
               <Sparkles size={14} />
               <span>{enriching ? t("admin.enrich_running") : t("admin.enrich")}</span>

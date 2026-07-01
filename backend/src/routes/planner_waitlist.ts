@@ -1,12 +1,15 @@
-// Planner waitlist — public submission (anon POST) + admin triage endpoints.
-// Phase 1: data collection only. No triage email flow yet.
+// Planner waitlist: public submission (anon POST) + admin triage endpoints.
+// The admin decision sends an editable HU email to the planner (parity with
+// the vendor waitlist flow) and stores the sent copy on the row.
 
 import { PRIVACY_VERSION } from "@shared/legal";
 import type { PlannerWaitlistOutcome } from "@shared/planner_waitlist";
 import { db } from "../db";
+import { sendKind } from "../domain/emails/send";
 import { grantPlannerAccount } from "../domain/planner";
 import { requireAdmin } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { log } from "../lib/logger";
 import { rateLimit } from "../lib/rate_limit";
 
 const VALID_OUTCOMES: ReadonlySet<PlannerWaitlistOutcome> = new Set([
@@ -48,6 +51,8 @@ interface PlannerWaitlistRow {
   other_style: string | null;
   reference_links: string | null;
   early_bird: number;
+  sent_subject: string | null;
+  sent_body: string | null;
   created_at: number;
 }
 
@@ -76,6 +81,8 @@ function toAdminView(row: PlannerWaitlistRow) {
     other_style: row.other_style ?? null,
     reference_links: row.reference_links ?? null,
     early_bird: row.early_bird === 1,
+    sent_subject: row.sent_subject ?? null,
+    sent_body: row.sent_body ?? null,
     created_at: row.created_at,
   };
 }
@@ -223,26 +230,67 @@ async function handleAdminDecide(ctx: Ctx): Promise<Response> {
 
   const body = await readJson<Record<string, unknown>>(ctx.req);
   const outcome = trimStr(body.outcome);
+  const subject = trimStr(body.subject);
+  const emailBody = trimStr(body.body);
   const notes = trimStr(body.notes);
 
   if (!VALID_OUTCOMES.has(outcome as PlannerWaitlistOutcome)) {
     throw new HttpError(400, "outcome must be under_review | accepted | rejected");
   }
+  if (!subject) throw new HttpError(400, "subject required");
+  if (subject.length > 200) throw new HttpError(400, "subject too long (max 200)");
+  if (!emailBody) throw new HttpError(400, "body required");
+  if (emailBody.length > 5000) throw new HttpError(400, "body too long (max 5000)");
+  if (notes.length > 2000) throw new HttpError(400, "notes too long (max 2000)");
 
   const existing = db
     .prepare("SELECT * FROM planner_waitlist WHERE id = ?")
     .get(id) as PlannerWaitlistRow | null;
   if (!existing) throw new HttpError(404, "Not found");
 
+  // Send first; if delivery fails we still stamp the row (so the decision is
+  // recorded) but propagate a 502 so the admin can retry. A missing
+  // RESEND_API_KEY in dev/test makes the send a silent no-op, never a throw.
+  let sendError: string | null = null;
+  try {
+    await sendKind(
+      "planner_waitlist_decision",
+      { subject, body: emailBody, outcome: outcome as PlannerWaitlistOutcome },
+      { user: null, guest: { email: existing.email, full_name: existing.full_name } },
+    );
+  } catch (e) {
+    sendError = e instanceof Error ? e.message : String(e);
+    log.error("planner_waitlist.decide_send_failed", {
+      id,
+      to: existing.email,
+      outcome,
+      reason: sendError,
+    });
+  }
+
   const now = Math.floor(Date.now() / 1000);
   const updated = db
     .prepare(
       `UPDATE planner_waitlist
-          SET status = ?, reviewed_by_user_id = ?, reviewed_at = ?, outcome_at = ?, notes = ?
+          SET status = ?, reviewed_by_user_id = ?, reviewed_at = ?, outcome_at = ?, notes = ?,
+              sent_subject = ?, sent_body = ?
         WHERE id = ?
         RETURNING *`,
     )
-    .get(outcome, admin.id, now, now, notes || null, id) as PlannerWaitlistRow | null;
+    .get(
+      outcome,
+      admin.id,
+      now,
+      now,
+      notes || null,
+      subject,
+      emailBody,
+      id,
+    ) as PlannerWaitlistRow | null;
+
+  if (sendError) {
+    throw new HttpError(502, "Decision saved, but the email could not be sent. Please retry.");
+  }
 
   return json({ entry: updated ? toAdminView(updated) : null });
 }

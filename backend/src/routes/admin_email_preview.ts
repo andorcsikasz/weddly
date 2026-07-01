@@ -197,6 +197,11 @@ const STUBS: KindPayload = {
     body: "Thank you for your patience. We've reviewed your submission and would love to have you on board.\n\nWe'll be in touch within the next few weeks with next steps.",
     outcome: "accepted",
   },
+  planner_waitlist_decision: {
+    subject: "Wēddly: jóváhagytuk a szervezői hozzáférésed",
+    body: "Szia Anna!\n\nÁtnéztük a profilodat, és aktiváltuk a szervezői hozzáférésed. Lépj be, és a szervezői vezérlőpultból indítsd el az onboardingot.\n\nÜdv,\nA Wēddly csapata",
+    outcome: "accepted",
+  },
   community_supplier_verify: {
     supplierName: "Bloom Studio",
     verifyUrl: `${BASE_URL}/supplier/verify?token=preview`,

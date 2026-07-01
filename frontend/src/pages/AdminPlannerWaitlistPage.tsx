@@ -5,8 +5,9 @@ import type {
   PlannerWaitlistOutcome,
   PlannerWaitlistStatus,
 } from "@shared/planner_waitlist";
+import { buildPlannerEmailDraft } from "@shared/planner_waitlist";
 import { Check, Clock, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
 import type { PillTone } from "../components/admin";
 import { Button, useConfirm, useToast } from "../components/ui";
@@ -60,15 +61,41 @@ interface DecideModalProps {
 }
 
 function DecideModal({ entry, onClose, onSaved }: DecideModalProps) {
-  const [outcome, setOutcome] = useState<PlannerWaitlistOutcome>("under_review");
+  const initialOutcome: PlannerWaitlistOutcome = "under_review";
+  const [outcome, setOutcome] = useState<PlannerWaitlistOutcome>(initialOutcome);
   const [notes, setNotes] = useState(entry.notes ?? "");
+  // Seed the email draft from the last-sent copy if this row was already
+  // decided once, otherwise from the per-outcome default draft.
+  const firstDraft = buildPlannerEmailDraft(initialOutcome, entry);
+  const [subject, setSubject] = useState(entry.sent_subject ?? firstDraft.subject);
+  const [emailBody, setEmailBody] = useState(entry.sent_body ?? firstDraft.body);
   const [saving, setSaving] = useState(false);
   const toast = useToast();
+  // Once the admin hand-edits subject or body, stop auto-overwriting the draft
+  // when they flip the outcome; their words win.
+  const edited = useRef<boolean>(entry.sent_subject != null || entry.sent_body != null);
+
+  function pickOutcome(next: PlannerWaitlistOutcome) {
+    setOutcome(next);
+    if (edited.current) return;
+    const draft = buildPlannerEmailDraft(next, entry);
+    setSubject(draft.subject);
+    setEmailBody(draft.body);
+  }
 
   async function handleSave() {
+    if (!subject.trim() || !emailBody.trim()) {
+      toast.error("A tárgy és az üzenet nem lehet üres.");
+      return;
+    }
     setSaving(true);
     try {
-      const result = await adminPlannerWaitlistApi.decide(entry.id, { outcome, notes });
+      const result = await adminPlannerWaitlistApi.decide(entry.id, {
+        outcome,
+        subject: subject.trim(),
+        body: emailBody,
+        notes,
+      });
       if (result.entry) onSaved(result.entry);
       onClose();
     } catch {
@@ -96,7 +123,7 @@ function DecideModal({ entry, onClose, onSaved }: DecideModalProps) {
               <button
                 key={o}
                 type="button"
-                onClick={() => setOutcome(o)}
+                onClick={() => pickOutcome(o)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   outcome === o
                     ? "bg-umber-700 text-paper-50 dark:bg-umber-300 dark:text-umber-900"
@@ -107,6 +134,41 @@ function DecideModal({ entry, onClose, onSaved }: DecideModalProps) {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="planner-decide-subject" className={labelClass}>
+            E-mail tárgya
+          </label>
+          <input
+            id="planner-decide-subject"
+            type="text"
+            className={inputClass}
+            value={subject}
+            onChange={(e) => {
+              edited.current = true;
+              setSubject(e.target.value);
+            }}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="planner-decide-body" className={labelClass}>
+            Üzenet a szervezőnek
+          </label>
+          <textarea
+            id="planner-decide-body"
+            rows={9}
+            className={inputClass}
+            value={emailBody}
+            onChange={(e) => {
+              edited.current = true;
+              setEmailBody(e.target.value);
+            }}
+          />
+          <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
+            A szervező a Weddly-fejléces sablonban kapja meg ezt a szöveget.
+          </p>
         </div>
 
         <div className="mb-5">
@@ -273,6 +335,11 @@ function EntryCard({ entry, onUpdate }: EntryCardProps) {
           {entry.message && (
             <p className="mt-2 whitespace-pre-wrap rounded-md bg-paper-100 p-2 text-xs dark:bg-umber-800">
               {entry.message}
+            </p>
+          )}
+          {entry.sent_subject && (
+            <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
+              <span className="font-medium">Elküldött e-mail:</span> „{entry.sent_subject}"
             </p>
           )}
           {entry.notes && (

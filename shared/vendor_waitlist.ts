@@ -116,9 +116,10 @@ export function buildEmailDraft(
         `Köszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára (${category}). ` +
         `A csapatunk személyesen átnézte a profilotokat, és örömmel jelezzük: szerepeltetnénk ` +
         `titeket a Wēddly-n tervező pároknak ajánlott szolgáltatók között.\n\n` +
-        `Nincs most tőletek semmi tennivaló — a regisztrációkor megadott adatok és képek alapján ` +
-        `összerakjuk a profilotokat. Ha van időtök, lépjetek be és nézzétek át, hogy minden úgy ` +
-        `néz-e ki, ahogy szeretnétek.\n\n` +
+        `A következő lépés egyszerű: az e-mail alján lévő linken aktiváljátok a fiókotokat ` +
+        `(nincs szükség bankkártyára). A regisztrációkor megadott adatok és képek alapján már ` +
+        `összeraktuk a profilotokat, belépés után csak átnézitek, hogy minden úgy néz-e ki, ` +
+        `ahogy szeretnétek.\n\n` +
         `A Wēddly még béta szakaszban van, ezért minden őszinte visszajelzés aranyat ér nekünk — ` +
         `legyen szó a felületről, az árazásról vagy arról, mit hiányoltok egy ilyen eszközből.\n\n` +
         `Ha bármi kérdésetek van, vagy csak megosztanátok velünk valamit, válaszoljatok nyugodtan ` +

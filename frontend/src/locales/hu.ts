@@ -4571,7 +4571,7 @@ const hu: LocaleMessages = {
     suppliers_card_incomplete: "Hiányos profil",
     suppliers_card_incomplete_aria: "Hiányos profil figyelmeztetés",
     suppliers_card_incomplete_detail:
-      "Nincs se weboldal, se leírás — a pároknak alig van mit megnézniük. Érdemes az „Adatok kinyerése” gombbal feltölteni, mielőtt jóváhagyod.",
+      "Nincs se weboldal, se leírás – a pároknak alig van mit megnézniük. Érdemes az „Adatok kinyerése” gombbal feltölteni, mielőtt jóváhagyod.",
     suppliers_card_field_id: "Azonosító",
     suppliers_card_field_admin_notes: "Admin jegyzet",
     suppliers_card_field_admin_notes_placeholder:

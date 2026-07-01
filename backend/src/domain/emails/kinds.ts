@@ -43,6 +43,7 @@ export type EmailKind =
   | "rsvp_weekly_digest_for_couple" // weekly RSVP roll-up for couples on digest mode
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
   | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
+  | "planner_waitlist_decision" // admin-edited planner triage reply (accepted / under_review / rejected)
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
   | "community_supplier_published" // admin approved the listing, it's now live
   | "community_supplier_rejected" // admin rejected a pending listing during moderation
@@ -154,6 +155,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Outreach: admin manually triages a vendor's own waitlist submission. The
   // vendor expects the reply but still has no Weddly account.
   vendor_waitlist_decision: "outreach",
+  // Outreach: admin manually triages a planner's waitlist submission. The
+  // planner expects the reply; treated like the vendor decision mail.
+  planner_waitlist_decision: "outreach",
   // Outreach: a couple added this business to the community directory; the
   // recipient never asked for anything and has no Weddly account.
   community_supplier_verify: "outreach",

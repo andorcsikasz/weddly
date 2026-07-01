@@ -355,6 +355,16 @@ export interface VendorWaitlistDecisionPayload {
   outcome: "accepted" | "under_review" | "rejected";
 }
 
+export interface PlannerWaitlistDecisionPayload {
+  /** Subject line the admin typed in the planner triage modal, used verbatim. */
+  subject: string;
+  /** Free-text body the admin edited in the modal. Split on blank lines into
+   *  one `<p>` per chunk, same as the vendor decision mail. */
+  body: string;
+  /** Triage outcome, drives a small contextual preheader. */
+  outcome: "accepted" | "under_review" | "rejected";
+}
+
 export interface CommunitySupplierVerifyPayload {
   /** Business / listing name surfaced in the email body. */
   supplierName: string;
@@ -517,6 +527,7 @@ export type KindPayload = {
   rsvp_weekly_digest_for_couple: RsvpWeeklyDigestForCouplePayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
+  planner_waitlist_decision: PlannerWaitlistDecisionPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
   community_supplier_published: CommunitySupplierPublishedPayload;
   community_supplier_rejected: CommunitySupplierRejectedPayload;
@@ -1602,7 +1613,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Szia ${ctx.recipientName || p.businessName || ""}!`.trim(),
       paragraphs: [
         `Megkaptuk a(z) ${p.businessName} jelentkezését a Wēddly szolgáltatói várólistájára (${p.categoryLabel}${p.location ? ` · ${p.location}` : ""}).`,
-        "Még nem nyitottunk a szolgáltatóknak, egy szűk kategóriánkénti listát építünk, hogy a párok ne 200 szolgáltatóból válogassanak, hanem azokból, akik tényleg passzolnak hozzájuk. Amint nyitunk, e-mailben jelentkezünk.",
+        "Még nem nyitottunk a szolgáltatóknak, egy szűk kategóriánkénti listát építünk, hogy a párok ne 200 szolgáltatóból válogassanak, hanem azokból, akik tényleg passzolnak hozzájuk. Kategóriánként haladunk, így a visszajelzés pár hetet is igénybe vehet – amint a ti kategóriátokra kerül a sor, e-mailben jelentkezünk.",
         "Addig is, ha van bármi kérdés vagy szeretnétek többet mesélni magatokról, válaszoljatok erre a levélre, emberek olvassák.",
       ],
       cta: "Wēddly megnyitása",
@@ -1612,7 +1623,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Hi ${ctx.recipientName || p.businessName || "there"},`,
       paragraphs: [
         `We've received ${p.businessName}'s submission to the Weddly vendor waitlist (${p.categoryLabel}${p.location ? ` · ${p.location}` : ""}).`,
-        "We aren't onboarding suppliers yet, we're building a tight, per-category list so couples don't wade through 200 vendors but see the ones who actually fit. We'll email you the moment we open to applications in your category.",
+        "We aren't onboarding suppliers yet, we're building a tight, per-category list so couples don't wade through 200 vendors but see the ones who actually fit. We work through categories one at a time, so this can take a few weeks – we'll email you the moment we open applications in your category.",
         "If you'd like to share more or have any questions in the meantime, just reply to this email, a real person reads it.",
       ],
       cta: "Open Weddly",
@@ -1625,6 +1636,25 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // recipient sees a Weddly-branded mail rather than a context-less plain-text
   // reply (which is what the previous raw `sendEmail` path used to emit).
   vendor_waitlist_decision: (p) => {
+    const paragraphs = splitParagraphs(p.body);
+    return {
+      subject: p.subject,
+      ctaUrl: CONFIG.frontendBaseUrl,
+      hu: {
+        preheader: vendorWaitlistDecisionPreheader(p.outcome, "hu"),
+        greeting: "Szia!",
+        paragraphs,
+        cta: "Weddly megnyitása",
+      },
+      en: {
+        greeting: "Hi there,",
+        paragraphs,
+        cta: "Open Weddly",
+      },
+    };
+  },
+
+  planner_waitlist_decision: (p) => {
     const paragraphs = splitParagraphs(p.body);
     return {
       subject: p.subject,

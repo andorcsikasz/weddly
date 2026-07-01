@@ -204,6 +204,7 @@ export default function AdminVendorWaitlistPage() {
   const [entries, setEntries] = useState<VendorWaitlistAdminView[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<VendorWaitlistStatus>("new");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [editing, setEditing] = useState<VendorWaitlistAdminView | null>(null);
 
@@ -270,9 +271,28 @@ export default function AdminVendorWaitlistPage() {
     }
   }
 
+  // Distinct categories present across all submissions (regardless of the
+  // active status tab), sorted by their localized label so the dropdown
+  // reads alphabetically. Drives the category filter options.
+  const categoryOptions = useMemo(() => {
+    const seen = new Set<string>();
+    for (const e of entries) seen.add(e.category);
+    return [...seen].sort((a, b) =>
+      t(`suppliers.cat.${a}`).localeCompare(t(`suppliers.cat.${b}`), locale === "hu" ? "hu" : "en"),
+    );
+  }, [entries, t, locale]);
+
+  // The category filter narrows the whole board first, so the status tile
+  // counts reflect "how many <category> are in each status" — the useful
+  // triage view when a lot of submissions share one category (e.g. Fotós).
+  const entriesInCategory = useMemo(
+    () => (categoryFilter === "all" ? entries : entries.filter((e) => e.category === categoryFilter)),
+    [entries, categoryFilter],
+  );
+
   const visibleEntries = useMemo(
-    () => entries.filter((e) => e.status === filter),
-    [entries, filter],
+    () => entriesInCategory.filter((e) => e.status === filter),
+    [entriesInCategory, filter],
   );
 
   return (
@@ -290,7 +310,7 @@ export default function AdminVendorWaitlistPage() {
         className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4"
       >
         {FILTERS.map((f) => {
-          const count = entries.filter((e) => e.status === f).length;
+          const count = entriesInCategory.filter((e) => e.status === f).length;
           const active = filter === f;
           return (
             <button
@@ -321,6 +341,34 @@ export default function AdminVendorWaitlistPage() {
           );
         })}
       </div>
+
+      {/* Category filter. Only surfaces once submissions span more than one
+       *  category; with a single category it would be noise. Narrows the
+       *  whole board (stat tiles + list) so a Fotós-heavy inbox can be
+       *  triaged one category at a time. */}
+      {categoryOptions.length > 1 && (
+        <div className="mb-4 flex items-center gap-2">
+          <label
+            htmlFor="waitlist-category-filter"
+            className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-umber-300"
+          >
+            {t("admin.waitlist_filter_category_label")}
+          </label>
+          <select
+            id="waitlist-category-filter"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="min-h-tap rounded-xl bg-paper-50 px-3 py-2 text-sm text-neutral-900 ring-1 ring-ink-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 dark:bg-umber-900 dark:text-paper-100 dark:ring-umber-700"
+          >
+            <option value="all">{t("admin.waitlist_filter_category_all")}</option>
+            {categoryOptions.map((c) => (
+              <option key={c} value={c}>
+                {t(`suppliers.cat.${c}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {loading ? (
         <ul className="grid gap-2">

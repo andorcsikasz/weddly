@@ -1000,7 +1000,11 @@ addColumnIfMissing("couples", "current_period_end", "current_period_end INTEGER"
 // the planner needs before they can switch on guest-page editing for the
 // couple. `guest_page_addon` = the add-on is switched on, so couple members
 // regain edit access to their own guest page / website. See domain/billing.ts.
-addColumnIfMissing("couples", "guest_page_prepaid", "guest_page_prepaid INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing(
+  "couples",
+  "guest_page_prepaid",
+  "guest_page_prepaid INTEGER NOT NULL DEFAULT 0",
+);
 addColumnIfMissing("couples", "guest_page_addon", "guest_page_addon INTEGER NOT NULL DEFAULT 0");
 // Index AFTER the column adds (see the May-2026 ordering rule): a column added
 // via addColumnIfMissing can't carry an inline index in schema.sql.
@@ -1305,6 +1309,8 @@ addColumnIfMissing("planner_waitlist", "wedding_style_3", "wedding_style_3 TEXT"
 addColumnIfMissing("planner_waitlist", "other_style", "other_style TEXT");
 addColumnIfMissing("planner_waitlist", "reference_links", "reference_links TEXT");
 addColumnIfMissing("planner_waitlist", "early_bird", "early_bird INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("planner_waitlist", "sent_subject", "sent_subject TEXT");
+addColumnIfMissing("planner_waitlist", "sent_body", "sent_body TEXT");
 
 // film_devices index lives here (not schema.sql) per project rule.
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_album ON film_devices(album_id)");

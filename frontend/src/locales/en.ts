@@ -4525,7 +4525,7 @@ const en: LocaleMessages = {
     suppliers_card_incomplete: "Thin profile",
     suppliers_card_incomplete_aria: "Incomplete profile warning",
     suppliers_card_incomplete_detail:
-      "No website and no description — couples have almost nothing to go on. Consider running \"Fetch from website\" before approving.",
+      "No website and no description – couples have almost nothing to go on. Consider running \"Fetch from website\" before approving.",
     suppliers_card_field_id: "ID",
     suppliers_card_field_admin_notes: "Admin note",
     suppliers_card_field_admin_notes_placeholder: "e.g. reached out, awaiting reply…",
