@@ -132,7 +132,7 @@ export function ProfileMenu({ onOpenFeedback }: { onOpenFeedback?: () => void } 
           // `[&_a]/[&_button]:lowercase` lowercases just the menu items (links +
           // buttons) for the soft, lowercase-start look — the name/email above
           // are <p> elements, so they keep their proper casing.
-          className="absolute right-0 top-full z-30 mt-2 w-64 max-w-[calc(100vw-1rem)] origin-top-right rounded-2xl border border-paper-300 bg-white p-2 font-grotesk shadow-pop [&_a]:lowercase [&_button]:lowercase dark:border-umber-700 dark:bg-umber-800"
+          className="absolute right-0 top-full z-30 mt-2 max-h-[calc(100vh-5rem)] w-64 max-w-[calc(100vw-1rem)] origin-top-right overflow-y-auto overscroll-contain rounded-2xl border border-paper-300 bg-white p-2 font-grotesk shadow-pop [&_a]:lowercase [&_button]:lowercase dark:border-umber-700 dark:bg-umber-800"
         >
           <div className="px-3 py-2">
             <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
