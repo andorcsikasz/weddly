@@ -675,6 +675,10 @@ async function handleListInbox(ctx: Ctx): Promise<Response> {
                 ORDER BY pm2.created_at DESC LIMIT 1) AS last_subject
          FROM planner_messages pm
          JOIN couples c ON c.id = pm.couple_id
+         JOIN planner_clients pc
+           ON pc.planner_user_id = pm.planner_user_id
+          AND pc.couple_id = pm.couple_id
+          AND pc.status = 'active'
         WHERE pm.planner_user_id = ?
         GROUP BY pm.couple_id
         ORDER BY last_at DESC`,
@@ -1177,6 +1181,25 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
     .get(userId, coupleId);
   if (!link) throw new HttpError(404, "Invite not found");
 
+  // Enforce the active-client ceiling here too — mirror of
+  // handleAcceptPlannerRequest. Accepting an invite is the moment a pending link
+  // becomes active, so a planner buried in couple invites can't sail past their
+  // plan cap by accepting them all.
+  const plannerRow = db.prepare("SELECT planner_max_clients FROM users WHERE id = ?").get(userId) as
+    | { planner_max_clients: number | null }
+    | undefined;
+  const maxClients = plannerRow?.planner_max_clients ?? 4;
+  const activeCount = (
+    db
+      .prepare(
+        "SELECT COUNT(*) AS cnt FROM planner_clients WHERE planner_user_id = ? AND status = 'active'",
+      )
+      .get(userId) as { cnt: number }
+  ).cnt;
+  if (activeCount >= maxClients) {
+    throw new HttpError(422, "You have reached your client limit");
+  }
+
   db.prepare(
     "UPDATE planner_clients SET status = 'active' WHERE planner_user_id = ? AND couple_id = ? AND initiated_by = 'couple'",
   ).run(userId, coupleId);
@@ -1391,6 +1414,14 @@ async function handleRevokePlanner(ctx: Ctx): Promise<Response> {
     coupleId,
   );
 
+  // Consent withdrawal must cut LIVE access, not just the link: if the planner
+  // is currently inside this workspace (handleEnterClient pinned couple_id),
+  // eject them so the very next request re-derives no tenant. Guarded on
+  // couple_id so we never touch a planner sitting in a different client.
+  db.prepare(
+    "UPDATE users SET couple_id = NULL, updated_at = ? WHERE id = ? AND couple_id = ?",
+  ).run(now(), plannerUserId, coupleId);
+
   addAuditLog({
     actor_user_id: userId,
     couple_id: coupleId,
@@ -1416,13 +1447,12 @@ async function handleGetStats(ctx: Ctx): Promise<Response> {
     .get(userId) as { active_clients: number | null; pending_invites: number | null };
 
   // KPI semantic (shared by the aggregate task counts below AND the per_client
-  // breakdown): both span EVERY linked client, active and pending alike,
-  // exactly the set the client-list cards (handleListClients) display. Declined
-  // links are deleted, not flagged, so "all rows for this planner" == "all
-  // clients the planner sees". This keeps the dashboard reconcilable: the
-  // aggregate total_tasks equals the sum of per_client.task_total. A pending
-  // link grants no workspace ENTRY (handleEnterClient gates on 'active'); these
-  // are read-only roll-up counts the planner already sees on the client card.
+  // breakdown): both span only ACTIVE (consented) clients — pending links grant
+  // no workspace access, so their tasks stay out of the roll-up. Because both
+  // the aggregate and the per_client query filter pc.status='active', the
+  // dashboard stays reconcilable: aggregate total_tasks equals the sum of
+  // per_client.task_total. The clientCounts block above still reports pending
+  // links separately as pending_invites.
   const taskCounts = db
     .prepare(
       `SELECT
@@ -1728,6 +1758,12 @@ async function handleRemoveClient(ctx: Ctx): Promise<Response> {
     .prepare("DELETE FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
     .run(userId, coupleId);
   if (res.changes === 0) throw new HttpError(404, "Not linked to this workspace");
+
+  // Mirror of handleRevokePlanner: if the planner was viewing this workspace,
+  // drop their pinned tenant so the unlink takes effect immediately.
+  db.prepare(
+    "UPDATE users SET couple_id = NULL, updated_at = ? WHERE id = ? AND couple_id = ?",
+  ).run(now(), userId, coupleId);
 
   addAuditLog({
     actor_user_id: userId,

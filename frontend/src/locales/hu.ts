@@ -4122,7 +4122,7 @@ const hu: LocaleMessages = {
       plan_starter: "Starter",
       plan_pro: "Pro",
       plan_premium: "Premium",
-      plan_cycle_hint: "2× katt a váltáshoz",
+      plan_cycle_hint: "Katt a váltáshoz",
       suspend: "Felfüggesztés",
       reactivate: "Újraaktiválás",
       delete: "Törlés",

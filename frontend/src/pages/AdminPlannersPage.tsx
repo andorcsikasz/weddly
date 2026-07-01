@@ -181,13 +181,7 @@ function PlannerCard({
           <div className="flex flex-col items-center gap-1">
             <button
               type="button"
-              onDoubleClick={cyclePlan}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  cyclePlan();
-                }
-              }}
+              onClick={cyclePlan}
               disabled={busy}
               title={t("admin.planners.plan_cycle_hint")}
               aria-label={`${t("admin.planners.plan")}: ${t(`admin.planners.plan_${planner.planner_plan}`)}. ${t("admin.planners.plan_cycle_hint")}`}

@@ -4078,7 +4078,7 @@ const en: LocaleMessages = {
       plan_starter: "Starter",
       plan_pro: "Pro",
       plan_premium: "Premium",
-      plan_cycle_hint: "Double-click to switch",
+      plan_cycle_hint: "Tap to switch",
       suspend: "Suspend",
       reactivate: "Reactivate",
       delete: "Delete",

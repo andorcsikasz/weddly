@@ -338,6 +338,202 @@ describe("planner consent flow (planner-initiated request)", () => {
   });
 });
 
+// Consent withdrawal must cut LIVE access, not just delete the link. A planner
+// who is currently inside a workspace (handleEnterClient pins users.couple_id)
+// keeps deriving that tenant on every request until couple_id is reset. Both
+// the couple-side revoke and the planner-side unlink now clear it.
+describe("planner consent withdrawal evicts a live session", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  async function linkedAndInside(plannerEmail: string, coupleEmail: string) {
+    const { token: plannerToken, userId: plannerId } = await bootstrapPlanner(plannerEmail);
+    const { token: coupleToken, coupleId } = await bootstrapCouple(coupleEmail);
+    // Planner requests, couple approves, planner enters (couple_id pinned).
+    await req("POST", "/api/planner/clients", { email: coupleEmail }, { token: plannerToken });
+    await req("POST", `/api/couples/planners/${plannerId}/accept`, {}, { token: coupleToken });
+    const enter = await req(
+      "POST",
+      `/api/planner/clients/${coupleId}/enter`,
+      {},
+      {
+        token: plannerToken,
+      },
+    );
+    expect(enter.status).toBe(200);
+    const pinned = db.prepare("SELECT couple_id FROM users WHERE id = ?").get(plannerId) as {
+      couple_id: number | null;
+    };
+    expect(pinned.couple_id).toBe(coupleId);
+    return { plannerToken, plannerId, coupleToken, coupleId };
+  }
+
+  test("couple revoke clears the planner's pinned couple_id and cuts workspace reads", async () => {
+    const { plannerToken, plannerId, coupleToken } = await linkedAndInside(
+      "evict-planner@weddly.test",
+      "evict-couple@weddly.test",
+    );
+
+    const revoke = await req("DELETE", `/api/couples/planners/${plannerId}`, undefined, {
+      token: coupleToken,
+    });
+    expect(revoke.status).toBe(200);
+
+    const after = db.prepare("SELECT couple_id FROM users WHERE id = ?").get(plannerId) as {
+      couple_id: number | null;
+    };
+    expect(after.couple_id).toBeNull();
+
+    // The planner's next couple-scoped read no longer resolves a tenant.
+    const guests = await req("GET", "/api/guests", undefined, { token: plannerToken });
+    expect(guests.status).toBeGreaterThanOrEqual(400);
+  });
+
+  test("planner self-unlink clears their own pinned couple_id", async () => {
+    const { plannerToken, plannerId, coupleId } = await linkedAndInside(
+      "selfunlink-planner@weddly.test",
+      "selfunlink-couple@weddly.test",
+    );
+
+    const remove = await req("DELETE", `/api/planner/clients/${coupleId}`, undefined, {
+      token: plannerToken,
+    });
+    expect(remove.status).toBe(200);
+
+    const after = db.prepare("SELECT couple_id FROM users WHERE id = ?").get(plannerId) as {
+      couple_id: number | null;
+    };
+    expect(after.couple_id).toBeNull();
+  });
+
+  test("revoking one client does not evict a planner sitting in a different workspace", async () => {
+    const { token: plannerToken, userId: plannerId } = await bootstrapPlanner(
+      "multi-planner@weddly.test",
+    );
+    const { token: coupleAToken, coupleId: coupleA } = await bootstrapCouple("mp-a@weddly.test");
+    const { coupleId: coupleB } = await bootstrapCouple("mp-b@weddly.test");
+    // Link + approve both, then enter B.
+    for (const [email, coupleId, coupleToken] of [
+      ["mp-a@weddly.test", coupleA, coupleAToken],
+    ] as const) {
+      await req("POST", "/api/planner/clients", { email }, { token: plannerToken });
+      await req("POST", `/api/couples/planners/${plannerId}/accept`, {}, { token: coupleToken });
+      void coupleId;
+    }
+    // Link B directly to active so the planner can enter it.
+    db.prepare(
+      "INSERT INTO planner_clients (planner_user_id, couple_id, status, initiated_by, created_at) VALUES (?, ?, 'active', 'couple', ?)",
+    ).run(plannerId, coupleB, Math.floor(Date.now() / 1000));
+    await req("POST", `/api/planner/clients/${coupleB}/enter`, {}, { token: plannerToken });
+
+    // Couple A revokes while the planner is inside couple B.
+    const revoke = await req("DELETE", `/api/couples/planners/${plannerId}`, undefined, {
+      token: coupleAToken,
+    });
+    expect(revoke.status).toBe(200);
+
+    const after = db.prepare("SELECT couple_id FROM users WHERE id = ?").get(plannerId) as {
+      couple_id: number | null;
+    };
+    expect(after.couple_id).toBe(coupleB);
+  });
+});
+
+describe("planner client cap on the couple-invite accept path", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("accepting a couple invite is refused once the planner is at capacity", async () => {
+    const { token: plannerToken, userId: plannerId } =
+      await bootstrapPlanner("cap-planner@weddly.test");
+    // Pin the cap at 1 so the second accept must fail.
+    db.prepare("UPDATE users SET planner_max_clients = 1 WHERE id = ?").run(plannerId);
+
+    const { token: coupleAToken, coupleId: coupleA } = await bootstrapCouple("cap-a@weddly.test");
+    const { token: coupleBToken, coupleId: coupleB } = await bootstrapCouple("cap-b@weddly.test");
+
+    await req(
+      "POST",
+      "/api/couples/planner-invite",
+      { planner_email: "cap-planner@weddly.test" },
+      { token: coupleAToken },
+    );
+    await req(
+      "POST",
+      "/api/couples/planner-invite",
+      { planner_email: "cap-planner@weddly.test" },
+      { token: coupleBToken },
+    );
+
+    const acceptA = await req(
+      "POST",
+      `/api/planner/invites/${coupleA}/accept`,
+      {},
+      {
+        token: plannerToken,
+      },
+    );
+    expect(acceptA.status).toBe(200);
+
+    const acceptB = await req(
+      "POST",
+      `/api/planner/invites/${coupleB}/accept`,
+      {},
+      {
+        token: plannerToken,
+      },
+    );
+    expect(acceptB.status).toBe(422);
+
+    const rowB = db
+      .prepare("SELECT status FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+      .get(plannerId, coupleB) as { status: string };
+    expect(rowB.status).toBe("pending");
+  });
+});
+
+describe("planner inbox is scoped to active links", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("a revoked couple disappears from the planner inbox", async () => {
+    const { token: plannerToken, userId: plannerId } = await bootstrapPlanner(
+      "inbox-planner@weddly.test",
+    );
+    const { token: coupleToken, coupleId } = await bootstrapCouple("inbox-couple@weddly.test");
+    await req(
+      "POST",
+      "/api/planner/clients",
+      { email: "inbox-couple@weddly.test" },
+      { token: plannerToken },
+    );
+    await req("POST", `/api/couples/planners/${plannerId}/accept`, {}, { token: coupleToken });
+
+    const send = await req(
+      "POST",
+      `/api/planner/messages/${coupleId}`,
+      { subject: "Hello", body_text: "Body", recipient_email: "inbox-couple@weddly.test" },
+      { token: plannerToken },
+    );
+    expect(send.status).toBe(200);
+
+    const before = await req<{ threads: unknown[] }>("GET", "/api/planner/messages", undefined, {
+      token: plannerToken,
+    });
+    expect(before.data.threads.length).toBe(1);
+
+    await req("DELETE", `/api/couples/planners/${plannerId}`, undefined, { token: coupleToken });
+
+    const after = await req<{ threads: unknown[] }>("GET", "/api/planner/messages", undefined, {
+      token: plannerToken,
+    });
+    expect(after.data.threads.length).toBe(0);
+  });
+});
+
 describe("planner onboarding prefill from waitlist", () => {
   beforeEach(() => {
     wipeAll();
