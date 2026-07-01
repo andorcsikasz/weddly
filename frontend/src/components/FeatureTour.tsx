@@ -352,17 +352,23 @@ function useTargetRect(href: string, active: boolean, target?: string): DOMRect 
   return rect;
 }
 
+// The card is kept pinned to the top of the screen on every step. Earlier the
+// placement centered the card vertically on side-anchored targets, so some steps
+// sat at the top and others drifted to mid/lower screen — the tour read as
+// "sometimes at the top, sometimes not". Now the card only ever leaves the top
+// band when the spotlight itself occupies that band (then it drops just below the
+// target so it never covers the highlight).
 function computeCardPos(targetRect: DOMRect | null): { left: number; top: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const gap = 16;
   const cardH = 268;
+  const TOP = 80; // clears the 64px sticky header
+  const clampLeft = (l: number) => Math.max(16, Math.min(l, vw - CARD_W - 16));
 
+  // No spotlight (global overview) → top-center card.
   if (!targetRect) {
-    return {
-      left: Math.max(16, (vw - CARD_W) / 2),
-      top: Math.max(80, (vh - cardH) / 2),
-    };
+    return { left: clampLeft((vw - CARD_W) / 2), top: TOP };
   }
 
   // Clamp rect to the visible viewport so off-screen elements don't mislead placement.
@@ -371,45 +377,35 @@ function computeCardPos(targetRect: DOMRect | null): { left: number; top: number
   const visLeft = Math.max(0, targetRect.left);
   const visRight = Math.min(vw, targetRect.right);
   const visCenterX = (visLeft + visRight) / 2;
-  const visCenterY = (visTop + visBottom) / 2;
-  const visWidth = visRight - visLeft;
 
-  // Tall bottom-nav strip → place card above it, horizontally centered.
+  // Tall bottom-nav strip (mobile) → float the card above it, horizontally centered.
   if (targetRect.height > 60 && targetRect.bottom > vh * 0.7) {
-    return {
-      left: Math.max(16, Math.min((vw - CARD_W) / 2, vw - CARD_W - 16)),
-      top: Math.max(16, targetRect.top - cardH - gap),
-    };
+    return { left: clampLeft((vw - CARD_W) / 2), top: Math.max(16, targetRect.top - cardH - gap) };
   }
 
-  // Wide element (>55% of viewport) → place below when there's room, else above.
-  if (visWidth > vw * 0.55) {
-    const belowTop = visBottom + gap;
-    const aboveTop = visTop - cardH - gap;
-    const left = Math.max(16, Math.min(visLeft + 16, vw - CARD_W - 16));
-    if (belowTop + cardH < vh - 8) return { left, top: belowTop };
-    return { left, top: Math.max(80, aboveTop) };
+  // Prefer a slot to the SIDE of the target so the card can hug the top of the
+  // screen without covering the spotlight. Right side first, then left — both
+  // anchored at TOP so the card position stays consistent across steps.
+  if (vw - visRight - gap >= CARD_W) {
+    return { left: clampLeft(visRight + gap), top: TOP };
+  }
+  if (visLeft - gap >= CARD_W) {
+    return { left: clampLeft(visLeft - gap - CARD_W), top: TOP };
   }
 
-  // Small/narrow element anchored near the top (toolbars, mode tabs) → place below.
-  if (visTop < vh * 0.25 && visBottom < vh * 0.35) {
-    return {
-      left: Math.max(16, Math.min(visCenterX - CARD_W / 2, vw - CARD_W - 16)),
-      top: visBottom + gap,
-    };
+  // Full-width target (search bars, tables): no side room. If it sits low enough
+  // that a top-anchored card clears it, still pin to the top.
+  if (visTop >= TOP + cardH + gap) {
+    return { left: clampLeft(visCenterX - CARD_W / 2), top: TOP };
   }
 
-  // Element on the left half → place card to the right.
-  if (visLeft < vw * 0.45) {
-    const left = Math.min(visRight + gap, vw - CARD_W - 16);
-    const top = Math.max(80, Math.min(vh - cardH - 16, visCenterY - cardH / 2));
-    return { left, top };
+  // Otherwise the target occupies the top band → drop the card just below it
+  // (or above, if the target runs to the bottom of the screen).
+  const belowTop = visBottom + gap;
+  if (belowTop + cardH <= vh - 8) {
+    return { left: clampLeft(visCenterX - CARD_W / 2), top: belowTop };
   }
-
-  // Element on the right half → place card to the left.
-  const left = Math.max(16, visLeft - CARD_W - gap);
-  const top = Math.max(80, Math.min(vh - cardH - 16, visCenterY - cardH / 2));
-  return { left, top };
+  return { left: clampLeft(visCenterX - CARD_W / 2), top: Math.max(TOP, visTop - cardH - gap) };
 }
 
 interface Props {
