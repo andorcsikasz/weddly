@@ -2211,7 +2211,7 @@ function ChainStep({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex items-center justify-center rounded-lg border px-2.5 pt-[5px] pb-2.5 text-sm transition-colors ${
+      className={`group relative flex items-center justify-center rounded-lg border px-2.5 pt-[5px] pb-2.5 text-sm transition-colors duration-300 ease-out ${
         active
           ? "border-transparent stationery-coffee text-paper-50"
           : allDone
@@ -2231,10 +2231,12 @@ function ChainStep({
             {icon}
           </span>
         )}
-        <span className="flex h-5 items-center font-medium lowercase leading-none">{label}</span>
+        <span className="flex h-5 items-center font-medium lowercase leading-none transition-colors duration-300 ease-out">
+          {label}
+        </span>
         {count !== undefined && (
           <span
-            className={`flex h-5 items-center font-medium tabular-nums leading-none ${
+            className={`flex h-5 items-center font-medium tabular-nums leading-none transition-colors duration-300 ease-out ${
               active
                 ? "text-paper-50/70"
                 : allDone
@@ -2260,7 +2262,7 @@ function ChainStep({
           })).map((bar) => (
             <span
               key={bar.id}
-              className={`h-[3px] w-3 rounded-full transition-colors ${
+              className={`h-[3px] w-3 rounded-full transition-colors duration-300 ease-out ${
                 bar.filled
                   ? "bg-sage-500"
                   : active
