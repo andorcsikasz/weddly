@@ -6830,6 +6830,7 @@ const en: LocaleMessages = {
     topbar_back_to_landing: "Back to website",
     topbar_feedback: "Send feedback",
     rail_today_title: "Today",
+    rail_today_nameday: "Name day",
     rail_today_empty: "Nothing due today, enjoy it.",
     rail_urgent_title: "Attention",
     rail_all_good: "All clear",

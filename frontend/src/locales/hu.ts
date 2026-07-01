@@ -6884,6 +6884,7 @@ const hu: LocaleMessages = {
     topbar_back_to_landing: "Vissza a weboldalra",
     topbar_feedback: "Visszajelzés küldése",
     rail_today_title: "Ma",
+    rail_today_nameday: "Névnap",
     rail_today_empty: "Ma nincs feladat, szép nap lesz.",
     rail_urgent_title: "Figyelem",
     rail_all_good: "Minden rendben",

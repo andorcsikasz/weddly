@@ -7372,6 +7372,7 @@ export interface LocaleMessages {
     topbar_back_to_landing: string;
     topbar_feedback: string;
     rail_today_title: string;
+    rail_today_nameday: string;
     rail_today_empty: string;
     rail_urgent_title: string;
     rail_all_good: string;

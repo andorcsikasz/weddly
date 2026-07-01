@@ -12,6 +12,7 @@ import {
 import { Link } from "react-router-dom";
 import type { PlannerClientView, PlannerTaskRow } from "@shared/types";
 import { useT } from "../../lib/i18n";
+import { nameDayFor } from "../../lib/nameDays";
 
 interface Props {
   tasks: PlannerTaskRow[];
@@ -23,10 +24,16 @@ function clientDisplayName(clients: PlannerClientView[], coupleId: number): stri
   return clients.find((c) => c.couple_id === coupleId)?.display_name ?? "";
 }
 
-function SectionHeader({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+function SectionHeader({ icon: Icon, label }: { icon?: LucideIcon; label: string }) {
   return (
     <div className="mb-2 flex items-center gap-1.5">
-      <Icon size={13} className="shrink-0 text-umber-500 dark:text-umber-400" aria-hidden="true" />
+      {Icon && (
+        <Icon
+          size={13}
+          className="shrink-0 text-umber-500 dark:text-umber-400"
+          aria-hidden="true"
+        />
+      )}
       <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
         {label}
       </p>
@@ -39,11 +46,16 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
 
   const today = new Date().toISOString().slice(0, 10);
 
+  const now = new Date();
+
   const todayLabel = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
     weekday: "long",
     month: "short",
     day: "numeric",
-  }).format(new Date());
+  }).format(now);
+
+  // Hungarian name-day ("névnap") — a HU cultural tradition, so shown only in the HU locale.
+  const nameDay = locale === "hu" ? nameDayFor(now) : null;
 
   const todayTasks = tasks.filter((tk) => tk.due_date === today);
   const visibleToday = todayTasks.slice(0, 5);
@@ -61,8 +73,14 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
         className="card block space-y-3 p-4 transition-colors hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20"
       >
         <div>
-          <SectionHeader icon={Clock} label={t("planner_home.rail_today_title")} />
-          <p className="text-xs text-umber-400 -mt-1 ml-5">{todayLabel}</p>
+          <SectionHeader label={t("planner_home.rail_today_title")} />
+          <p className="text-xs text-umber-400 -mt-1">{todayLabel}</p>
+          {nameDay && (
+            <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
+              <span className="text-umber-400">{t("planner_home.rail_today_nameday")}:</span>{" "}
+              {nameDay}
+            </p>
+          )}
         </div>
 
         {visibleToday.length === 0 ? (
