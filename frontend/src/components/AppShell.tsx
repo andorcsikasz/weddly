@@ -457,7 +457,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // ── Sidebar collapse toggle ──────────────────────────────────────────
   // Desktop-only. When collapsed, the rail narrows to an icon strip and
   // labels become hover tooltips — useful on smaller laptops where the
-  // 224px rail crowds the main content. Persisted to localStorage so the
+  // 256px rail crowds the main content. Persisted to localStorage so the
   // choice survives reloads and route changes.
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -645,13 +645,15 @@ export function AppShell({ children }: { children: ReactNode }) {
          *   - Tablet (768–1023px): `md:flex md:w-14` icon-only rail so iPad
          *     portrait keeps a sidebar (previously dead — `hidden lg:block`
          *     plus `lg:hidden` bottom-nav left analytics unreachable).
-         *   - Laptop+ (≥1024px): expands to `w-56`, or stays `w-14` when
+         *   - Laptop+ (≥1024px): expands to `w-64` (wide enough for the
+         *     longest section header, e.g. "INSPIRÁCIÓ ÉS EMLÉKEK", to sit on
+         *     one line without clipping), or stays `w-14` when
          *     the user has explicitly collapsed it. `sidebarCollapsed` only
          *     applies at lg+ — below that the rail is icon-only regardless.
          */}
         <aside
           className={`hidden shrink-0 transition-[width] duration-300 ease-in-out md:flex md:w-14 ${
-            sidebarCollapsed ? "lg:w-14" : "lg:w-56"
+            sidebarCollapsed ? "lg:w-14" : "lg:w-64"
           }`}
         >
           {/* Bound the rail to the viewport so the full nav (15 links + 4
