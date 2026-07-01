@@ -14,6 +14,7 @@ import {
   GanttChartSquare,
   Gift,
   Globe,
+  Handshake,
   Image as ImageIcon,
   Inbox,
   Languages,
@@ -287,6 +288,20 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     tabKey: "admin.tab_users",
     icon: <UserCog size={18} />,
     badgeKey: "users",
+    group: "manage",
+  },
+  {
+    to: "/app/admin/vendors",
+    labelKey: "admin.nav_vendors",
+    // no tabKey — goes to the phone More sheet
+    icon: <Store size={18} />,
+    group: "manage",
+  },
+  {
+    to: "/app/admin/planners",
+    labelKey: "admin.nav_planners",
+    // no tabKey — goes to the phone More sheet
+    icon: <Handshake size={18} />,
     group: "manage",
   },
   {

@@ -4,6 +4,7 @@
 // rather than claiming an existing listing (see routes/vendor_onboarding.ts).
 
 import { randomBytes } from "node:crypto";
+import type { AdminVendorView } from "@shared/listings";
 import { VENDOR_ONBOARDING_TOKEN_TTL_MS } from "@shared/vendor_onboarding";
 import { db, now } from "../db";
 
@@ -75,6 +76,58 @@ export function createOnboardingToken(input: {
     };
   });
   return mint();
+}
+
+/** Accepted-but-not-yet-activated vendors: the still-pending onboarding tokens
+ *  that haven't materialised an account. Surfaced in the admin Szolgáltatók list
+ *  (as `state: "pending"`) so an accepted vendor appears in management even
+ *  before they click their activation link. One row per accepted vendor — a
+ *  re-accept/resend cancels the prior pending token (see createOnboardingToken).
+ *  Expired-but-still-'pending' rows are included and flagged `token_expired`. */
+export function listPendingOnboardings(): AdminVendorView[] {
+  const ts = now();
+  const rows = db
+    .prepare(
+      `SELECT * FROM vendor_onboarding
+        WHERE status = 'pending' AND vendor_account_id IS NULL
+        ORDER BY created_at DESC`,
+    )
+    .all() as VendorOnboardingRow[];
+  return rows.map((row) => ({
+    state: "pending" as const,
+    id: row.id,
+    vendor_code: null,
+    display_name: row.business_name,
+    contact_email: row.email,
+    contact_phone: null,
+    vat_number: null,
+    onboarding_done: false,
+    owner_user_id: null,
+    owner_email: null,
+    owner_status: null,
+    subscription_status: null,
+    listing_count: 0,
+    token_expired: row.expires_at < ts,
+    created_at: row.created_at,
+  }));
+}
+
+/** Cancel a specific still-pending onboarding row (used by the admin resend,
+ *  which supersedes the exact row it's resending — createOnboardingToken only
+ *  auto-cancels siblings sharing a waitlist_id, so an admin resend of a
+ *  waitlist_id-less row needs this explicit step). No-op if already resolved. */
+export function cancelPendingOnboarding(id: number): void {
+  db.prepare("UPDATE vendor_onboarding SET status = 'cancelled' WHERE id = ? AND status = 'pending'").run(
+    id,
+  );
+}
+
+export function getOnboardingById(id: number): VendorOnboardingRow | null {
+  return (
+    (db.prepare("SELECT * FROM vendor_onboarding WHERE id = ?").get(id) as
+      | VendorOnboardingRow
+      | undefined) ?? null
+  );
 }
 
 export function getOnboardingByToken(token: string): VendorOnboardingRow | null {

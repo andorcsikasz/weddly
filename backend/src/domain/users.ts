@@ -2,7 +2,7 @@
 
 import type { User, UserRole, UserStatus } from "@shared/types";
 import { CONFIG } from "../config";
-import { db } from "../db";
+import { db, now } from "../db";
 import { type Ctx, HttpError, requireAuth } from "../lib/http";
 
 export interface UserRow {
@@ -100,6 +100,14 @@ export function getUserByEmail(email: string): UserRow | null {
   return (
     (db.prepare("SELECT * FROM users WHERE email = ?").get(norm) as UserRow | undefined) ?? null
   );
+}
+
+/** Directly set a user's account status. `suspended` is checked on every token
+ *  verify so it takes effect immediately (the couple/vendor/planner loses
+ *  access on their next request). Used by the admin management surfaces to
+ *  suspend/reactivate vendors and planners without the flag grace window. */
+export function setUserStatus(userId: number, status: "active" | "suspended"): void {
+  db.prepare("UPDATE users SET status = ?, updated_at = ? WHERE id = ?").run(status, now(), userId);
 }
 
 /** Auth + ADMIN_EMAILS gate. Use on every /api/admin/* handler. */

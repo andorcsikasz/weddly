@@ -1,0 +1,182 @@
+// Admin vendor management (KEZELÉS → Szolgáltatók). Lists every vendor —
+// activated `vendor_accounts` plus accepted-but-not-yet-activated onboarding
+// tokens — and lets an admin suspend/reactivate, delete, edit business details,
+// and resend the activation link. Gated by requireAdmin() (same ADMIN_EMAILS
+// allowlist as the other admin routes). Distinct from the BEÉRKEZŐ vendor
+// waitlist (triage) and the community supplier moderation directory.
+
+import { CONFIG } from "../config";
+import { purgeOneUser } from "../domain/purge";
+import { setUserStatus } from "../domain/users";
+import { requireAdmin } from "../domain/users";
+import {
+  getVendorAccountById,
+  listAdminVendorAccounts,
+  updateVendorAccount,
+} from "../domain/vendor_accounts";
+import {
+  cancelPendingOnboarding,
+  createOnboardingToken,
+  getOnboardingById,
+  listPendingOnboardings,
+} from "../domain/vendor_onboarding";
+import { sendDecisionEmail } from "../domain/vendor_waitlist_emails";
+import { addAuditLog } from "../lib/audit";
+import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+
+function parseId(ctx: Ctx): number {
+  const id = Number(ctx.params.id);
+  if (!Number.isInteger(id) || id < 1) throw new HttpError(400, "Invalid id");
+  return id;
+}
+
+function handleList(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json({ active: listAdminVendorAccounts(), pending: listPendingOnboardings() });
+}
+
+/** Suspend or reactivate the vendor's owner user (users.status). Takes effect
+ *  on the vendor's next request — a suspended user fails token verify. */
+function setVendorStatus(ctx: Ctx, status: "active" | "suspended"): Response {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+  const account = getVendorAccountById(id);
+  if (!account) throw new HttpError(404, "Vendor not found");
+
+  setUserStatus(account.owner_user_id, status);
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: status === "suspended" ? "admin.vendor_suspend" : "admin.vendor_reactivate",
+    target_kind: "user",
+    target_id: account.owner_user_id,
+    note: `vendor ${account.display_name} (#${account.id})`,
+  });
+  return json({ ok: true, status });
+}
+
+function handleSuspend(ctx: Ctx): Response {
+  return setVendorStatus(ctx, "suspended");
+}
+
+function handleReactivate(ctx: Ctx): Response {
+  return setVendorStatus(ctx, "active");
+}
+
+function handleDelete(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+  const account = getVendorAccountById(id);
+  if (!account) throw new HttpError(404, "Vendor not found");
+
+  // Purge the owner user; the vendor_accounts row cascades (FK ON DELETE
+  // CASCADE), which in turn nulls out any owned listings' vendor_account_id.
+  purgeOneUser(account.owner_user_id, { adminInitiated: true });
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.vendor_delete",
+    target_kind: "user",
+    target_id: account.owner_user_id,
+    before: { display_name: account.display_name, vendor_account_id: account.id },
+  });
+  return json({ ok: true });
+}
+
+async function handleUpdate(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+  const account = getVendorAccountById(id);
+  if (!account) throw new HttpError(404, "Vendor not found");
+
+  const body = await readJson<{
+    display_name?: unknown;
+    contact_email?: unknown;
+    contact_phone?: unknown;
+    vat_number?: unknown;
+  }>(ctx.req);
+
+  const patch: Parameters<typeof updateVendorAccount>[1] = {};
+  if (body.display_name !== undefined) {
+    if (typeof body.display_name !== "string" || body.display_name.trim().length === 0) {
+      throw new HttpError(400, "`display_name` must be a non-empty string");
+    }
+    if (body.display_name.length > 200) throw new HttpError(400, "`display_name` too long");
+    patch.display_name = body.display_name.trim();
+  }
+  const optionalStr = (v: unknown, field: string): string | null => {
+    if (v === null) return null;
+    if (typeof v !== "string") throw new HttpError(400, `\`${field}\` must be a string or null`);
+    const trimmed = v.trim();
+    if (trimmed.length > 200) throw new HttpError(400, `\`${field}\` too long`);
+    return trimmed.length === 0 ? null : trimmed;
+  };
+  if (body.contact_email !== undefined)
+    patch.contact_email = optionalStr(body.contact_email, "contact_email");
+  if (body.contact_phone !== undefined)
+    patch.contact_phone = optionalStr(body.contact_phone, "contact_phone");
+  if (body.vat_number !== undefined) patch.vat_number = optionalStr(body.vat_number, "vat_number");
+
+  updateVendorAccount(id, patch);
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.vendor_update",
+    target_kind: "user",
+    target_id: account.owner_user_id,
+    note: `vendor #${account.id}`,
+  });
+  return json({ ok: true });
+}
+
+/** Re-send the activation link for an accepted-but-not-yet-activated vendor.
+ *  Re-mints a fresh single-use token (superseding the prior pending one) and
+ *  emails it via the standard branded shell. */
+async function handleResendActivation(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+  const row = getOnboardingById(id);
+  if (!row) throw new HttpError(404, "Onboarding not found");
+  if (row.status === "completed") throw new HttpError(400, "Vendor already activated");
+
+  // Supersede the exact row we're resending. createOnboardingToken only cancels
+  // siblings that share a waitlist_id, so this guarantees one live token even
+  // for a waitlist_id-less row.
+  cancelPendingOnboarding(row.id);
+  const token = createOnboardingToken({
+    waitlistId: row.waitlist_id,
+    businessName: row.business_name,
+    email: row.email,
+    category: row.category,
+    locale: row.locale,
+  });
+  const activateUrl = `${CONFIG.frontendBaseUrl}/vendor/activate/${encodeURIComponent(token.token)}`;
+  const body = `Aktiváld a szolgáltatói fiókod (nincs szükség bankkártyára):\n${activateUrl}\n\nActivate your vendor account (no card needed):\n${activateUrl}`;
+
+  await sendDecisionEmail({
+    to: row.email,
+    subject: "Aktiváld a Weddly szolgáltatói fiókod / Activate your Weddly vendor account",
+    body,
+    outcome: "accepted",
+    full_name: row.business_name,
+  });
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.vendor_resend_activation",
+    target_kind: "vendor_onboarding",
+    target_id: row.id,
+    note: row.email,
+  });
+  return json({ ok: true });
+}
+
+export function registerAdminVendorRoutes(router: Router) {
+  router.get("/api/admin/vendors", handleList, true);
+  router.post("/api/admin/vendors/:id/suspend", handleSuspend, true);
+  router.post("/api/admin/vendors/:id/reactivate", handleReactivate, true);
+  router.patch("/api/admin/vendors/:id", handleUpdate, true);
+  router.delete("/api/admin/vendors/:id", handleDelete, true);
+  router.post("/api/admin/vendors/onboarding/:id/resend", handleResendActivation, true);
+}

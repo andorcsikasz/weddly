@@ -7,7 +7,7 @@
 // Phase 3 will add stripe_account_id, KYC fields, and payout-related state.
 // Kept off P2.C by design — don't pre-build infra.
 
-import type { VendorAccount } from "@shared/listings";
+import type { AdminVendorView, VendorAccount } from "@shared/listings";
 import { db, now } from "../db";
 import { generateVendorCode } from "./invite_codes";
 
@@ -109,4 +109,93 @@ export function getVendorAccountByOwnerUserId(userId: number): VendorAccountRow 
       | VendorAccountRow
       | undefined) ?? null
   );
+}
+
+/** Admin management view — join denormalises the owner user (email + status)
+ *  and the subscription snapshot, plus a listing count, so the Szolgáltatók
+ *  list renders in one query without N+1 reads. */
+interface AdminVendorRow extends VendorAccountRow {
+  owner_email: string | null;
+  owner_status: string | null;
+  subscription_status: string | null;
+  listing_count: number;
+}
+
+export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
+  return {
+    state: "active",
+    id: row.id,
+    vendor_code: row.vendor_code,
+    display_name: row.display_name,
+    contact_email: row.contact_email,
+    contact_phone: row.contact_phone,
+    vat_number: row.vat_number,
+    onboarding_done: row.onboarding_done === 1,
+    owner_user_id: row.owner_user_id,
+    owner_email: row.owner_email,
+    owner_status: row.owner_status === "suspended" ? "suspended" : "active",
+    subscription_status: row.subscription_status,
+    listing_count: row.listing_count,
+    token_expired: false,
+    created_at: row.created_at,
+  };
+}
+
+export function listAdminVendorAccounts(): AdminVendorView[] {
+  const rows = db
+    .prepare(
+      `SELECT va.*,
+              u.email  AS owner_email,
+              u.status AS owner_status,
+              vs.subscription_status AS subscription_status,
+              (SELECT COUNT(*) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_count
+         FROM vendor_accounts va
+         LEFT JOIN users u ON u.id = va.owner_user_id
+         LEFT JOIN vendor_subscriptions vs ON vs.vendor_account_id = va.id
+        ORDER BY va.created_at DESC`,
+    )
+    .all() as AdminVendorRow[];
+  return rows.map(toAdminVendorView);
+}
+
+export interface UpdateVendorAccountInput {
+  display_name?: string;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  vat_number?: string | null;
+}
+
+/** Admin edit of a vendor's business details. Only present keys are applied;
+ *  returns the fresh row (or null if the account is gone). */
+export function updateVendorAccount(
+  id: number,
+  input: UpdateVendorAccountInput,
+): VendorAccountRow | null {
+  const sets: string[] = [];
+  const vals: (string | null)[] = [];
+  if (input.display_name !== undefined) {
+    sets.push("display_name = ?");
+    vals.push(input.display_name);
+  }
+  if (input.contact_email !== undefined) {
+    sets.push("contact_email = ?");
+    vals.push(input.contact_email);
+  }
+  if (input.contact_phone !== undefined) {
+    sets.push("contact_phone = ?");
+    vals.push(input.contact_phone);
+  }
+  if (input.vat_number !== undefined) {
+    sets.push("vat_number = ?");
+    vals.push(input.vat_number);
+  }
+  if (sets.length > 0) {
+    sets.push("updated_at = ?");
+    db.prepare(`UPDATE vendor_accounts SET ${sets.join(", ")} WHERE id = ?`).run(
+      ...vals,
+      now(),
+      id,
+    );
+  }
+  return getVendorAccountById(id);
 }

@@ -1,6 +1,11 @@
 // Planner-account domain helpers (distinct from couple-side `planning.ts`).
 
-import { PLANNER_PLAN_LIMITS, type PlannerPlan } from "@shared/types";
+import {
+  type AdminPlannerView,
+  PLANNER_PLAN_LIMITS,
+  type PlannerPlan,
+  type UserStatus,
+} from "@shared/types";
 import { db, now } from "../db";
 
 /** The public waitlist captures plans as basic/pro/unlimited; the planner
@@ -43,4 +48,64 @@ export function grantPlannerAccount(userId: number): void {
   db.prepare(
     "UPDATE users SET user_type = 'planner', updated_at = ? WHERE id = ? AND user_type != 'planner'",
   ).run(now(), userId);
+}
+
+interface AdminPlannerRow {
+  user_id: number;
+  full_name: string;
+  email: string;
+  status: string;
+  planner_plan: string | null;
+  planner_max_clients: number | null;
+  planner_city: string | null;
+  planner_onboarding_done: number | null;
+  client_count: number;
+  created_at: number;
+}
+
+function toAdminPlannerView(row: AdminPlannerRow): AdminPlannerView {
+  const plan = isPlannerPlan(row.planner_plan) ? row.planner_plan : "starter";
+  return {
+    user_id: row.user_id,
+    full_name: row.full_name,
+    email: row.email,
+    status: (row.status === "suspended" ? "suspended" : "active") as UserStatus,
+    planner_plan: plan,
+    planner_max_clients: row.planner_max_clients ?? plannerPlanMaxClients(plan),
+    planner_city: row.planner_city,
+    planner_onboarding_done: row.planner_onboarding_done === 1,
+    client_count: row.client_count,
+    created_at: row.created_at,
+  };
+}
+
+/** Every planner account (a `users` row with user_type='planner'), with a count
+ *  of their active `planner_clients` links, for the admin Szervezők list. */
+export function listAdminPlanners(): AdminPlannerView[] {
+  const rows = db
+    .prepare(
+      `SELECT u.id AS user_id,
+              u.full_name,
+              u.email,
+              u.status,
+              u.planner_plan,
+              u.planner_max_clients,
+              u.planner_city,
+              u.planner_onboarding_done,
+              u.created_at,
+              (SELECT COUNT(*) FROM planner_clients pc
+                WHERE pc.planner_user_id = u.id AND pc.status = 'active') AS client_count
+         FROM users u
+        WHERE u.user_type = 'planner'
+        ORDER BY u.created_at DESC`,
+    )
+    .all() as AdminPlannerRow[];
+  return rows.map(toAdminPlannerView);
+}
+
+/** Admin sets a planner's plan tier; keeps `planner_max_clients` in lockstep. */
+export function updatePlannerPlan(userId: number, plan: PlannerPlan): void {
+  db.prepare(
+    "UPDATE users SET planner_plan = ?, planner_max_clients = ?, updated_at = ? WHERE id = ?",
+  ).run(plan, plannerPlanMaxClients(plan), now(), userId);
 }

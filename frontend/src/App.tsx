@@ -48,6 +48,8 @@ const AdminFeedbackPage = lazy(() => import("./pages/AdminFeedbackPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
 const AdminSuppliersPage = lazy(() => import("./pages/AdminSuppliersPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
+const AdminVendorsPage = lazy(() => import("./pages/AdminVendorsPage"));
+const AdminPlannersPage = lazy(() => import("./pages/AdminPlannersPage"));
 const AdminVendorWaitlistPage = lazy(() => import("./pages/AdminVendorWaitlistPage"));
 const AdminPlannerWaitlistPage = lazy(() => import("./pages/AdminPlannerWaitlistPage"));
 const AdminEmailListPage = lazy(() => import("./pages/AdminEmailListPage"));
@@ -922,6 +924,26 @@ export default function App() {
               <Page>
                 <RequireAdmin>
                   <AdminUsersPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/vendors"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminVendorsPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/planners"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminPlannersPage />
                 </RequireAdmin>
               </Page>
             }
