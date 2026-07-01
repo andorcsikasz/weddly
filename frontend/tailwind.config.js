@@ -58,6 +58,10 @@ export default {
           800: "#5a4e36",
           900: "#3a3324",
         },
+        // Celebrate — deep crimson reserved for the post-wedding celebration
+        // card (white text on top). A truer, more festive red than blush, which
+        // reads terracotta-orange.
+        celebrate: "#B40421",
         // Blush — single warm accent for CTAs / chips.
         blush: {
           50: "#fdf5f3",

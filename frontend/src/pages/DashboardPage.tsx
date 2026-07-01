@@ -1825,20 +1825,17 @@ function DaysToGoTile({
 }
 
 // Post-wedding celebration tile — a warm thank-you + congratulations, no
-// actions. It's purely a moment of delight once the wedding has passed; the
-// seating PDF and guest export stay on their own pages, and archiving the
-// workspace lives in the account settings danger zone. Filled blush ("vörös
-// alapon fehér betűk") so it stands apart from the light KPI tiles beside it.
+// actions and no title. It's purely a moment of delight once the wedding has
+// passed; the seating PDF and guest export stay on their own pages, and
+// archiving the workspace lives in the account settings danger zone. Deep
+// crimson (`celebrate`) with white text so it stands apart from the light KPI
+// tiles beside it; a filled white heart opens the two short sentences.
 function PastWeddingTile({ label, message }: { label: string; message: string }) {
   return (
-    <div className="card border-0 bg-blush-600 p-4 text-paper-50 dark:bg-blush-600">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-paper-50/90">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50/15 text-paper-50">
-          <Heart size={12} fill="currentColor" aria-hidden="true" />
-        </span>
-        {label}
-      </div>
-      <div className="stat-num mt-2 text-lg font-bold leading-tight text-paper-50">{message}</div>
+    <div className="card border-0 bg-celebrate p-4 text-paper-50">
+      <Heart size={16} fill="currentColor" className="text-paper-50" aria-hidden="true" />
+      <p className="mt-2 text-sm font-semibold leading-snug text-paper-50">{label}</p>
+      <p className="mt-1 text-sm leading-snug text-paper-50/90">{message}</p>
     </div>
   );
 }
