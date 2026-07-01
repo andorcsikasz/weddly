@@ -680,7 +680,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={`hidden lg:flex ${
                 sidebarCollapsed
                   ? "justify-center pb-1"
-                  : "lg:absolute lg:right-1.5 lg:top-0.5 lg:z-10 lg:h-7 lg:items-center lg:justify-end"
+                  : "lg:absolute lg:right-2 lg:top-1 lg:z-10 lg:h-6 lg:items-center lg:justify-end"
               }`}
             >
               <button
@@ -689,12 +689,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-label={t(sidebarCollapsed ? "nav.sidebar_expand" : "nav.sidebar_collapse")}
                 title={t(sidebarCollapsed ? "nav.sidebar_expand" : "nav.sidebar_collapse")}
                 aria-expanded={!sidebarCollapsed}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-umber-200 bg-paper-50/95 text-umber-500 shadow-sm backdrop-blur-sm transition-colors hover:border-umber-300 hover:bg-paper-100 hover:text-umber-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 focus-visible:ring-offset-1 dark:border-umber-700 dark:bg-umber-800/95 dark:text-paper-300 dark:hover:border-umber-600 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-400"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-umber-200 bg-paper-50/95 text-umber-500 shadow-sm backdrop-blur-sm transition-colors hover:border-umber-300 hover:bg-paper-100 hover:text-umber-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 focus-visible:ring-offset-1 dark:border-umber-700 dark:bg-umber-800/95 dark:text-paper-300 dark:hover:border-umber-600 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-400"
               >
                 {sidebarCollapsed ? (
-                  <ChevronsRight size={14} aria-hidden="true" />
+                  <ChevronsRight size={12} aria-hidden="true" />
                 ) : (
-                  <ChevronsLeft size={14} aria-hidden="true" />
+                  <ChevronsLeft size={12} aria-hidden="true" />
                 )}
               </button>
             </div>
