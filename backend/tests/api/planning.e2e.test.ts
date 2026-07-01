@@ -103,6 +103,100 @@ describe("planning ideas: idea_status + idea_tag", () => {
     expect(badPatch.status).toBe(400);
   });
 
+  test("bulk schedule sets dates + position on many tasks in one call", async () => {
+    const { token } = await bootstrapCouple();
+    const a = await req<CreateResp>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Helyszín" },
+      { token },
+    );
+    const b = await req<CreateResp>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Torta" },
+      { token },
+    );
+
+    const res = await req<{ items: PlanningItem[]; applied: number }>(
+      "POST",
+      "/api/planning/schedule",
+      {
+        updates: [
+          { id: a.data.item.id, start_date: "2026-01-01", due_date: "2026-02-01", position: 5 },
+          { id: b.data.item.id, start_date: "2026-03-01", due_date: "2026-04-01", position: 3 },
+        ],
+      },
+      { token },
+    );
+    expect(res.status).toBe(200);
+    expect(res.data.applied).toBe(2);
+
+    const rowA = res.data.items.find((i) => i.id === a.data.item.id);
+    expect(rowA?.due_date).toBe("2026-02-01");
+    expect(rowA?.start_date).toBe("2026-01-01");
+    expect(rowA?.position).toBe(5);
+    const rowB = res.data.items.find((i) => i.id === b.data.item.id);
+    expect(rowB?.due_date).toBe("2026-04-01");
+    expect(rowB?.position).toBe(3);
+  });
+
+  test("bulk schedule ignores ids from another couple", async () => {
+    const mine = await bootstrapCouple("mine@weddly.test");
+    const other = await bootstrapCouple("other@weddly.test");
+    const foreign = await req<CreateResp>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Idegen feladat" },
+      { token: other.token },
+    );
+    const ours = await req<CreateResp>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Saját feladat" },
+      { token: mine.token },
+    );
+
+    const res = await req<{ items: PlanningItem[]; applied: number }>(
+      "POST",
+      "/api/planning/schedule",
+      {
+        updates: [
+          { id: foreign.data.item.id, start_date: "2026-01-01", due_date: "2026-02-01" },
+          { id: ours.data.item.id, start_date: "2026-01-01", due_date: "2026-02-01" },
+        ],
+      },
+      { token: mine.token },
+    );
+    // Only our own row is touched; the foreign id is silently skipped.
+    expect(res.data.applied).toBe(1);
+
+    const stillUndated = await req<{ items: PlanningItem[] }>("GET", "/api/planning", undefined, {
+      token: other.token,
+    });
+    expect(stillUndated.data.items.find((i) => i.id === foreign.data.item.id)?.due_date).toBeNull();
+  });
+
+  test("bulk schedule rejects a malformed date and a non-array body", async () => {
+    const { token } = await bootstrapCouple();
+    const created = await req<CreateResp>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Feladat" },
+      { token },
+    );
+    const badDate = await req(
+      "POST",
+      "/api/planning/schedule",
+      { updates: [{ id: created.data.item.id, start_date: null, due_date: "2026/02/01" }] },
+      { token },
+    );
+    expect(badDate.status).toBe(400);
+
+    const badBody = await req("POST", "/api/planning/schedule", { updates: "nope" }, { token });
+    expect(badBody.status).toBe(400);
+  });
+
   test("assignee round-trips on a task via create and patch", async () => {
     const { token } = await bootstrapCouple();
     const created = await req<CreateResp>(

@@ -567,10 +567,88 @@ async function handleGeneratePrompts(ctx: Ctx): Promise<Response> {
   return json({ items: listPlanningItemsByCouple(couple.id), created });
 }
 
+// ─── schedule wizard bulk-apply ──────────────────────────────────────────────
+// The "Ütemező varázsló" applies suggested deadlines (+ a manual priority
+// re-order) to many undated tasks at once. One PATCH per row would be up to
+// ~100 round-trips; this does the lot in a single transaction. Only the
+// couple's own task rows are touched — foreign / non-task ids are silently
+// skipped, so a concurrently-deleted row never fails the whole apply.
+
+const MAX_BULK_SCHEDULE = 500;
+
+interface ScheduleUpdate {
+  id: number;
+  start_date: string | null;
+  due_date: string | null;
+  position: number | null;
+}
+
+async function handleBulkSchedule(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const body = await readJson<{ updates?: unknown }>(ctx.req);
+  if (!Array.isArray(body.updates)) throw new HttpError(400, "updates must be an array");
+  if (body.updates.length > MAX_BULK_SCHEDULE) {
+    throw new HttpError(400, `too many updates (max ${MAX_BULK_SCHEDULE})`);
+  }
+
+  const parsed: ScheduleUpdate[] = body.updates.map((raw) => {
+    if (!raw || typeof raw !== "object") throw new HttpError(400, "each update must be an object");
+    const u = raw as Record<string, unknown>;
+    const id = Number(u.id);
+    if (!Number.isInteger(id)) throw new HttpError(400, "update id must be an integer");
+    // position omitted → don't touch the row's existing order (null sentinel).
+    const position = u.position === undefined ? null : parsePosition(u.position, 0);
+    return {
+      id,
+      start_date: parseStartDate(u.start_date),
+      due_date: parseDueDate(u.due_date),
+      position,
+    };
+  });
+
+  const ts = now();
+  const withDate = db.prepare(
+    `UPDATE planning_items SET start_date = ?, due_date = ?, updated_at = ?
+       WHERE id = ? AND couple_id = ? AND kind = 'task'`,
+  );
+  const withDateAndPos = db.prepare(
+    `UPDATE planning_items SET start_date = ?, due_date = ?, position = ?, updated_at = ?
+       WHERE id = ? AND couple_id = ? AND kind = 'task'`,
+  );
+  let applied = 0;
+  const tx = db.transaction(() => {
+    for (const u of parsed) {
+      const res =
+        u.position === null
+          ? withDate.run(u.start_date, u.due_date, ts, u.id, couple.id)
+          : withDateAndPos.run(u.start_date, u.due_date, u.position, ts, u.id, couple.id);
+      applied += res.changes;
+    }
+  });
+  tx();
+
+  if (applied > 0) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "planning.schedule.bulk",
+      target_kind: "planning_item",
+      target_id: null,
+      after: { applied },
+    });
+  }
+
+  return json({ items: listPlanningItemsByCouple(couple.id), applied });
+}
+
 export function registerPlanningRoutes(router: Router) {
   router.get("/api/planning", handleList, true);
   router.post("/api/planning", handleCreate, true);
   router.patch("/api/planning/:id", handleUpdate, true);
+  router.post("/api/planning/schedule", handleBulkSchedule, true);
   router.delete("/api/planning/:id", handleDelete, true);
   router.get("/api/planning/prompts/profile", handleGetProfile, true);
   router.put("/api/planning/prompts/profile", handlePutProfile, true);

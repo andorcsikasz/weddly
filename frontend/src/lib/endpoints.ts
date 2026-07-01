@@ -75,6 +75,8 @@ import type {
   PlannerInvitePublic,
   PlannerStats,
   PlannerEvent,
+  AdminPlannerView,
+  PlannerPlan,
 } from "@shared/types";
 import type {
   AdminFinancialPlannerOverview,
@@ -173,6 +175,7 @@ import type {
   VendorStats,
 } from "@shared/vendor_clients";
 import type {
+  AdminVendorView,
   VendorAvailabilityView,
   VendorListingEditInput,
   VendorListingView,
@@ -957,6 +960,21 @@ export const planningApi = {
   update: (id: number, body: PlanningItemPatch) =>
     apiFetch<{ item: import("@shared/types").PlanningItem }>("PATCH", `/api/planning/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/planning/${id}`),
+  /** Schedule-wizard bulk apply: set start/due dates (and an optional priority
+   *  position) on many undated tasks at once. Returns the refreshed list. */
+  applySchedule: (
+    updates: {
+      id: number;
+      start_date: string | null;
+      due_date: string | null;
+      position?: number;
+    }[],
+  ) =>
+    apiFetch<{ items: import("@shared/types").PlanningItem[]; applied: number }>(
+      "POST",
+      "/api/planning/schedule",
+      { updates },
+    ),
   /** Read the saved intake answers for the conditional decision-prompts. */
   getPromptProfile: () =>
     apiFetch<{ tags: PlanningPromptTags }>("GET", "/api/planning/prompts/profile"),
@@ -1668,6 +1686,51 @@ export const adminUserApi = {
     ),
 };
 
+/** Admin vendor management (KEZELÉS → Szolgáltatók). Lists activated vendor
+ *  accounts (`active`) plus accepted-but-not-yet-activated onboarding rows
+ *  (`pending`). Mutations act on the underlying user (suspend/delete) or the
+ *  account (edit); resend re-mints the activation link for a pending row. */
+export const adminVendorMgmtApi = {
+  list: () =>
+    apiFetch<{ active: AdminVendorView[]; pending: AdminVendorView[] }>(
+      "GET",
+      "/api/admin/vendors",
+    ),
+  suspend: (id: number) =>
+    apiFetch<{ ok: true; status: string }>("POST", `/api/admin/vendors/${id}/suspend`, {}),
+  reactivate: (id: number) =>
+    apiFetch<{ ok: true; status: string }>("POST", `/api/admin/vendors/${id}/reactivate`, {}),
+  update: (
+    id: number,
+    body: {
+      display_name?: string;
+      contact_email?: string | null;
+      contact_phone?: string | null;
+      vat_number?: string | null;
+    },
+  ) => apiFetch<{ ok: true }>("PATCH", `/api/admin/vendors/${id}`, body),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/vendors/${id}`),
+  /** Re-send the activation link for an accepted-but-pending vendor (the id is
+   *  the vendor_onboarding row id, not a vendor_accounts id). */
+  resendActivation: (onboardingId: number) =>
+    apiFetch<{ ok: true }>("POST", `/api/admin/vendors/onboarding/${onboardingId}/resend`, {}),
+};
+
+/** Admin planner management (KEZELÉS → Szervezők). A planner is a user with
+ *  user_type='planner'; ids here are user ids. */
+export const adminPlannerMgmtApi = {
+  list: () => apiFetch<{ planners: AdminPlannerView[] }>("GET", "/api/admin/planners"),
+  suspend: (id: number) =>
+    apiFetch<{ ok: true; status: string }>("POST", `/api/admin/planners/${id}/suspend`, {}),
+  reactivate: (id: number) =>
+    apiFetch<{ ok: true; status: string }>("POST", `/api/admin/planners/${id}/reactivate`, {}),
+  setPlan: (id: number, plan: PlannerPlan) =>
+    apiFetch<{ ok: true; planner_plan: PlannerPlan }>("PATCH", `/api/admin/planners/${id}`, {
+      planner_plan: plan,
+    }),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/planners/${id}`),
+};
+
 /** Vendor listing-claim flow — P2.C. Three steps:
  *  1. `start` — anonymous, hits the listing's email-on-file
  *  2. `verify` — read-only token check, returns the claim view for the page
@@ -2228,6 +2291,32 @@ export const adminSupplierApi = {
       { notes },
     ),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/suppliers/${id}`),
+  /** Purge the ENTIRE submitter account behind a community supplier (user row +
+   *  all owned data). Far more destructive than `remove`, which only deletes the
+   *  single listing. `id` is the numeric community supplier id. */
+  purgeSubmitter: (id: number) =>
+    apiFetch<{ ok: true }>("POST", `/api/admin/suppliers/${id}/purge-submitter`, {}),
+  /** Hide a curated (code-resident) supplier from the public directory. Keeps it
+   *  in the admin catalog as `hidden` and restorable. `slug` is the curated id. */
+  hideCurated: (slug: string, reason?: string) =>
+    apiFetch<{ ok: true; status: "hidden" }>(
+      "POST",
+      `/api/admin/suppliers/curated/${encodeURIComponent(slug)}/hide`,
+      { reason: reason ?? null },
+    ),
+  /** Restore a hidden/deleted curated supplier to its code-defined active state. */
+  unhideCurated: (slug: string) =>
+    apiFetch<{ ok: true; status: "active" }>(
+      "POST",
+      `/api/admin/suppliers/curated/${encodeURIComponent(slug)}/unhide`,
+      {},
+    ),
+  /** Tombstone a curated supplier (removes it from both the public directory and
+   *  the admin catalog). The override persists across deploys. */
+  removeCurated: (slug: string, reason?: string) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/admin/suppliers/curated/${encodeURIComponent(slug)}`, {
+      reason: reason ?? null,
+    }),
   /** Re-pull the card hero from a listing's own website (og:image), bypassing
    *  the size quality gate (manual override). Accepts any listing id — a curated
    *  slug, `c<id>`, or `v<id>`. Returns whether an image was stored + the new
@@ -2564,8 +2653,7 @@ export const plannerApi = {
    *  signup invitation. */
   createInvitation: (email: string) =>
     apiFetch<
-      | { kind: "request"; couple_id: number }
-      | { kind: "invite"; invitation: PlannerInvitation }
+      { kind: "request"; couple_id: number } | { kind: "invite"; invitation: PlannerInvitation }
     >("POST", "/api/planner/invitations", { email }),
   revokeInvitation: (id: number) =>
     apiFetch<{ ok: boolean }>("DELETE", `/api/planner/invitations/${id}`),
@@ -2605,8 +2693,7 @@ export const plannerApi = {
       notes: string | null;
     }>,
   ) => apiFetch<PlannerEvent>("PATCH", `/api/planner/events/${id}`, body),
-  deleteEvent: (id: number) =>
-    apiFetch<{ ok: boolean }>("DELETE", `/api/planner/events/${id}`),
+  deleteEvent: (id: number) => apiFetch<{ ok: boolean }>("DELETE", `/api/planner/events/${id}`),
   getClientCrm: (coupleId: number) =>
     apiFetch<PlannerClientCrm>("GET", `/api/planner/clients/${coupleId}/crm`),
   updateClientCrm: (coupleId: number, data: Partial<PlannerClientCrm>) =>

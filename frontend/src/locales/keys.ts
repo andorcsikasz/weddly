@@ -162,6 +162,17 @@ export interface LocaleMessages {
     /** Preview-cap toggle for the dateless list (default 15, expand to all). */
     no_dates_show_all: string;
     no_dates_show_less: string;
+    /** Schedule wizard ("Ütemező varázsló") launched from the undated card. */
+    wand_cta: string;
+    wand_title: string;
+    wand_subtitle: string;
+    wand_no_wedding_date: string;
+    wand_move_up: string;
+    wand_move_down: string;
+    wand_deadline_for: string;
+    wand_apply_count: string;
+    wand_apply: string;
+    wand_applied: string;
     /** Edit drawer. */
     edit_title: string;
     field_start_date: string;
@@ -5067,6 +5078,18 @@ export interface LocaleMessages {
     directory_source_curated: string;
     directory_source_community: string;
     directory_last_event_never: string;
+    /** Catalog moderation: submitter provenance, last-active + row actions. */
+    directory_col_submitter_seen: string;
+    directory_col_actions: string;
+    directory_submitter_admin: string;
+    directory_submitter_self: string;
+    directory_submitter_user: string;
+    directory_delete_entry: string;
+    directory_delete_account: string;
+    directory_purge_submitter_title: string;
+    directory_purge_submitter_body: string;
+    directory_purge_submitter_confirm: string;
+    directory_purge_submitter_done: string;
     /** /app/admin/feedback page — triage of Visszajelzés submissions. */
     nav_feedback: string;
     /** /app/admin/couple-cards page — triage of 100-questions card ratings. */

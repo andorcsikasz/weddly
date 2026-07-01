@@ -7,6 +7,7 @@
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
 import type { DirectorySupplier, DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
+import { toIsoDate } from "@shared/planning_timeline";
 import type { PlanningItem } from "@shared/types";
 import {
   BedDouble,
@@ -40,6 +41,7 @@ import {
   Speaker,
   StickyNote,
   Tent,
+  Wand2,
   Wine,
   X,
 } from "lucide-react";
@@ -52,6 +54,7 @@ import CalendarBoard from "./timeline/CalendarBoard";
 import DayView from "./timeline/DayView";
 import GanttView, { computeAllRange } from "./timeline/GanttView";
 import MonthView from "./timeline/MonthView";
+import ScheduleWand from "./timeline/ScheduleWand";
 import WeekView from "./timeline/WeekView";
 import { ApiError } from "../lib/api";
 import { coupleApi, coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
@@ -177,6 +180,7 @@ export default function TimelinePage() {
   const [weddingDate, setWeddingDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<PlanningItem | null>(null);
+  const [wandOpen, setWandOpen] = useState(false);
   const [chartMode, setChartMode] = useState<ChartMode>(() => readStoredMode() ?? "month");
   const [currentDate, setCurrentDate] = useState<Date>(() => startOfDay(new Date()));
   const today = useMemo(() => startOfDay(new Date()), []);
@@ -328,6 +332,7 @@ export default function TimelinePage() {
           supplierById={supplierById}
           hasAnyTasks={tasks.length > 0}
           onOpenTask={(item) => setEditing(item)}
+          onOpenWand={() => setWandOpen(true)}
         />
 
         <PocCard items={pocList} loading={loading} locale={locale} />
@@ -343,6 +348,15 @@ export default function TimelinePage() {
             const ok = await onSave(editing.id, patch);
             if (ok) setEditing(null);
           }}
+        />
+      )}
+
+      {wandOpen && (
+        <ScheduleWand
+          tasks={undatedTasks}
+          weddingDateIso={weddingDate ? toIsoDate(weddingDate) : null}
+          onClose={() => setWandOpen(false)}
+          onApplied={(list) => setItems(list)}
         />
       )}
     </>
@@ -926,12 +940,14 @@ function UndatedCard({
   supplierById,
   hasAnyTasks,
   onOpenTask,
+  onOpenWand,
 }: {
   loading: boolean;
   tasks: PlanningItem[];
   supplierById: Map<string, ResolvedSupplier>;
   hasAnyTasks: boolean;
   onOpenTask: (item: PlanningItem) => void;
+  onOpenWand: () => void;
 }) {
   const { t } = useT();
 
@@ -949,7 +965,7 @@ function UndatedCard({
 
   return (
     <section className="card p-0 rounded-3xl ring-1 ring-paper-300/60 dark:ring-umber-700/60">
-      <header className="border-b border-paper-200 px-5 py-4 dark:border-umber-700">
+      <header className="flex items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
         <h2 className="flex items-center gap-2.5 font-grotesk text-lg text-ink-900 dark:text-paper-50">
           <span className="inline-block h-5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           <span>{t("timeline.no_dates_title")}</span>
@@ -959,6 +975,17 @@ function UndatedCard({
             </span>
           )}
         </h2>
+        {tasks.length > 0 && (
+          <button
+            type="button"
+            onClick={onOpenWand}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-blush-200 bg-blush-50 px-3 py-1.5 font-sans text-xs font-semibold text-blush-700 transition-colors hover:bg-blush-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-2 dark:border-blush-400/25 dark:bg-blush-400/15 dark:text-blush-200 dark:hover:bg-blush-400/25"
+            title={t("timeline.wand_title")}
+          >
+            <Wand2 size={14} aria-hidden="true" />
+            <span className="hidden sm:inline">{t("timeline.wand_cta")}</span>
+          </button>
+        )}
       </header>
       {loading ? (
         <div className="space-y-2 p-5" aria-hidden="true">
