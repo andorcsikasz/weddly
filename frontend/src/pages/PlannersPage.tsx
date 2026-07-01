@@ -4,7 +4,7 @@
 
 import { PRIVACY_VERSION } from "@shared/legal";
 import { Check, CheckCircle2, ClipboardList, FileText, LayoutGrid, Users } from "lucide-react";
-import { Fragment, useState } from "react";
+import { type CSSProperties, Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
 import { plannerWaitlistApi } from "../lib/endpoints";
@@ -47,6 +47,62 @@ interface FormState {
   selected_plan: Plan | "";
   early_bird: boolean;
   privacy_accepted: boolean;
+}
+
+// ── Confetti ──────────────────────────────────────────────────────────────────
+
+/** Confetti palette — warm coffee/blush + a green to echo the success check
+ *  and a single lemon pop. Full Tailwind class strings so the scanner keeps
+ *  them (no raw hex in components). */
+const CONFETTI_COLORS = [
+  "bg-blush-400",
+  "bg-blush-500",
+  "bg-sage-400",
+  "bg-sage-300",
+  "bg-umber-300",
+  "bg-lemonade-yellow",
+];
+
+/** One-shot confetti burst for the waitlist success card. Pieces are generated
+ *  once (useMemo) with randomised position, colour, shape and motion; the
+ *  fall/spin/fade is driven by the `.confetti-piece` keyframe in index.css,
+ *  which is disabled under prefers-reduced-motion. Decorative only (aria-hidden,
+ *  pointer-events-none) so it never blocks the CTAs. */
+function Confetti() {
+  const pieces = useMemo(() => {
+    return Array.from({ length: 44 }, (_, i) => {
+      const round = Math.random() < 0.45;
+      const w = 5 + Math.random() * 5;
+      return {
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        round,
+        opacity: 0.8 + Math.random() * 0.2,
+        style: {
+          left: `${Math.random() * 100}%`,
+          width: `${w}px`,
+          height: round ? `${w}px` : `${w * 1.7}px`,
+          "--cf-drift": `${(Math.random() - 0.5) * 140}px`,
+          "--cf-fall": `${360 + Math.random() * 200}px`,
+          "--cf-duration": `${3.8 + Math.random() * 2.4}s`,
+          "--cf-delay": `${Math.random() * 1.1}s`,
+          "--cf-sway": `${10 + Math.random() * 22}px`,
+          "--cf-sway-duration": `${1.3 + Math.random() * 1.3}s`,
+        } as CSSProperties,
+      };
+    });
+  }, []);
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {pieces.map((p, i) => (
+        <span key={i} className="confetti-piece absolute top-0" style={p.style}>
+          <i
+            className={`${p.round ? "rounded-full" : "rounded-[1px]"} ${p.color}`}
+            style={{ opacity: p.opacity }}
+          />
+        </span>
+      ))}
+    </div>
+  );
 }
 
 // ── Helper ────────────────────────────────────────────────────────────────────
@@ -382,9 +438,10 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
 
   if (done) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+      <div className="relative mx-auto max-w-lg overflow-hidden px-4 py-16 text-center">
+        <Confetti />
         <CheckCircle2
-          className="mx-auto mb-4 h-12 w-12 text-sage-600 dark:text-sage-400"
+          className="check-pop mx-auto mb-4 h-12 w-12 text-sage-600 dark:text-sage-400"
           aria-hidden="true"
         />
         <h2 className="font-grotesk mb-3 text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
