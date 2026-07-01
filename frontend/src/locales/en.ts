@@ -6597,7 +6597,7 @@ const en: LocaleMessages = {
     already_have_access: "Already have access?",
     login_link: "Log in",
     success_next_intro: "While we review your application:",
-    success_follow: "Follow us on Instagram",
+    success_follow: "Follow us",
     success_explore: "Explore Weddly",
     benefit_1_title: "Visibility with planning couples",
     benefit_1_body:

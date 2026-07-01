@@ -6652,7 +6652,7 @@ const hu: LocaleMessages = {
     already_have_access: "Már van hozzáférésed?",
     login_link: "Jelentkezz be",
     success_next_intro: "Amíg a jelentkezésedet feldolgozzuk:",
-    success_follow: "Kövess minket Instagramon",
+    success_follow: "Kövess minket",
     success_explore: "Fedezd fel a Weddlyt",
     benefit_1_title: "Láthatóság a tervező pároknak",
     benefit_1_body:
