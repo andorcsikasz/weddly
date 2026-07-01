@@ -76,7 +76,7 @@ describe("<DesignPage> smoke (/app/design/website)", () => {
 
     // New controls: palette picker (a legacy palette by name), monogram block,
     // rounding + shadow + sections labels, demoted custom colors, finish card.
-    expect(screen.getByText("Pezsgő")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Pezsgő" })).toBeInTheDocument();
     expect(screen.getByText("Monogram megjelenítése")).toBeInTheDocument();
     expect(screen.getByText("Kártya lekerekítés")).toBeInTheDocument();
     expect(screen.getByText("Kártya árnyék")).toBeInTheDocument();

@@ -2298,8 +2298,6 @@ const en: LocaleMessages = {
     saving: "Saving…",
     save_blocked: "Your plan lapsed, so editing is paused.",
     save_error: "Couldn't save your design.",
-    style_seed_note: "Picking a style resets the palette, fonts, date and site details to match.",
-    style_applied: "Style applied.",
     undo: "Undo",
     finish: {
       title: "Happy with the look?",
@@ -2399,7 +2397,6 @@ const en: LocaleMessages = {
       shadow_label: "Card shadow",
       button_style_label: "Button style",
       sections_label: "Visible sections",
-      sections_hint: "RSVP can never be hidden. Hidden sections leave the preview right away.",
       image_treatment_label: "Photos",
       card_radius: { sharp: "Sharp", soft: "Soft", full: "Round" },
       shadow: { none: "None", soft: "Soft", pop: "Pop" },

@@ -2320,9 +2320,6 @@ const hu: LocaleMessages = {
     saving: "Mentés…",
     save_blocked: "Az előfizetésed lejárt, a szerkesztés szünetel.",
     save_error: "Az arculat mentése nem sikerült.",
-    style_seed_note:
-      "Egy stílus kiválasztása a palettát, a betűtípusokat, a dátumot és az oldal részleteit is hozzáigazítja.",
-    style_applied: "Stílus alkalmazva.",
     undo: "Visszavonás",
     finish: {
       title: "Tetszik az összkép?",
@@ -2423,8 +2420,6 @@ const hu: LocaleMessages = {
       shadow_label: "Kártya árnyék",
       button_style_label: "Gomb stílusa",
       sections_label: "Látható szakaszok",
-      sections_hint:
-        "A visszajelzés (RSVP) nem rejthető el. Az elrejtett szakaszok azonnal eltűnnek az előnézetből.",
       image_treatment_label: "Fotók",
       card_radius: { sharp: "Éles", soft: "Lágy", full: "Erős" },
       shadow: { none: "Nincs", soft: "Lágy", pop: "Erős" },

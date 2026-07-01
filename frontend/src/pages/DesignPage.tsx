@@ -92,18 +92,15 @@ function PresetTile({
   active,
   onSelect,
   label,
-  sublabel,
   ariaLabel,
   children,
   compact = false,
 }: {
   active: boolean;
   onSelect: () => void;
-  /** Visible caption under the preview. Omit to render no caption (the font
-   *  tiles preview the typeface itself, so a redundant name is dropped). */
+  /** Visible caption under the preview. Omit for swatch-only tiles where the
+   *  preview speaks for itself — the name stays in the tooltip + aria-label. */
   label?: string;
-  /** One-line mood caption under the label (the style packs' taglines). */
-  sublabel?: string;
   ariaLabel: string;
   children: React.ReactNode;
   /** Tighter padding + a smaller check badge, for short single-line previews
@@ -117,6 +114,7 @@ function PresetTile({
       onClick={onSelect}
       aria-pressed={active}
       aria-label={ariaLabel}
+      title={label ? undefined : ariaLabel}
       className={`group relative flex flex-col text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
         compact ? "gap-2 rounded-xl border bg-white p-2" : "gap-3 rounded-2xl border bg-white p-3"
       } ${
@@ -137,15 +135,8 @@ function PresetTile({
       )}
       {children}
       {label && (
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
-            {label}
-          </span>
-          {sublabel && (
-            <span className="mt-0.5 text-[11px] leading-snug text-ink-500 dark:text-umber-300">
-              {sublabel}
-            </span>
-          )}
+        <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+          {label}
         </span>
       )}
     </button>
@@ -1208,7 +1199,6 @@ export default function DesignPage() {
                           onSelect={() => chooseStyle(s.slug)}
                           ariaLabel={t(s.nameKey)}
                           label={t(s.nameKey)}
-                          sublabel={t(`design.style_desc.${s.slug}`)}
                         >
                           {/* Each tile previews its OWN date format (Roman for
                           Midnight, numeric for Monochrome) so the format reads as
@@ -1225,24 +1215,18 @@ export default function DesignPage() {
                         </PresetTile>
                       ))}
                     </div>
-                    <p className="mt-2 text-[11px] text-ink-400 dark:text-umber-300">
-                      {t("design.style_seed_note")}
-                    </p>
                     {/* One-shot undo after a pack switch: the switch reseeds
                         palette/fonts/date/chrome, so comparison taps must be
                         reversible. Cleared by any other edit or after 15s. */}
                     {styleSnapshot && (
-                      <div className="mt-2 flex w-fit items-center gap-2 rounded-full border border-paper-300 bg-white px-3 py-1.5 text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
-                        <span>{t("design.style_applied")}</span>
-                        <button
-                          type="button"
-                          onClick={undoStyle}
-                          className="inline-flex items-center gap-1 font-medium underline underline-offset-2 hover:text-ink-900 dark:hover:text-paper-50"
-                        >
-                          <Undo2 size={12} aria-hidden />
-                          {t("design.undo")}
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={undoStyle}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
+                      >
+                        <Undo2 size={12} aria-hidden />
+                        {t("design.undo")}
+                      </button>
                     )}
                   </section>
 
@@ -1253,7 +1237,9 @@ export default function DesignPage() {
                     <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
                       {t("design.section.palette")}
                     </h2>
-                    <div className="grid grid-cols-3 gap-2">
+                    {/* Swatch-only tiles: the colours ARE the label (name in
+                        tooltip + aria-label), so 4-up / 5-up grids stay calm. */}
+                    <div className="grid grid-cols-4 gap-2">
                       {PALETTES.slice(0, 4).map((p) => (
                         <PresetTile
                           key={p.slug}
@@ -1261,10 +1247,9 @@ export default function DesignPage() {
                           active={design.palette === p.slug}
                           onSelect={() => choosePalette(p.slug)}
                           ariaLabel={t(p.nameKey)}
-                          label={t(p.nameKey)}
                         >
                           <span
-                            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-black/5 dark:border-white/10"
+                            className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-black/5 dark:border-white/10"
                             style={{ backgroundColor: p.background.hex }}
                             aria-hidden
                           >
@@ -1289,7 +1274,7 @@ export default function DesignPage() {
                       {t("design.section.palette_more")}
                       <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-5 gap-1.5">
                       {PALETTES.slice(4).map((p) => (
                         <PresetTile
                           key={p.slug}
@@ -1297,23 +1282,22 @@ export default function DesignPage() {
                           active={design.palette === p.slug}
                           onSelect={() => choosePalette(p.slug)}
                           ariaLabel={t(p.nameKey)}
-                          label={t(p.nameKey)}
                         >
                           <span
-                            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-black/5 dark:border-white/10"
+                            className="flex h-10 w-full items-center justify-center gap-1 rounded-lg border border-black/5 dark:border-white/10"
                             style={{ backgroundColor: p.background.hex }}
                             aria-hidden
                           >
                             <span
-                              className="h-4 w-4 rounded-full"
+                              className="h-3.5 w-3.5 rounded-full"
                               style={{ backgroundColor: p.primary.hex }}
                             />
                             <span
-                              className="h-2.5 w-2.5 rounded-full"
+                              className="h-2 w-2 rounded-full"
                               style={{ backgroundColor: p.accent.hex }}
                             />
                             <span
-                              className="h-2.5 w-2.5 rounded-full"
+                              className="h-2 w-2 rounded-full"
                               style={{ backgroundColor: p.text.hex }}
                             />
                           </span>
@@ -1463,15 +1447,6 @@ export default function DesignPage() {
                             >
                               {formatWeddingDate(sampleDateIso, df.slug, locale)}
                             </span>
-                            <span
-                              className={`text-[11px] font-medium uppercase tracking-[0.12em] ${
-                                active
-                                  ? "text-ink-500 dark:text-umber-200"
-                                  : "text-ink-400 dark:text-umber-300"
-                              }`}
-                            >
-                              {t(df.nameKey)}
-                            </span>
                           </button>
                         );
                       })}
@@ -1511,9 +1486,6 @@ export default function DesignPage() {
                       </button>
                       {design.monogram.enabled && (
                         <div className="mt-3">
-                          <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
-                            {t("design.monogram.separator_label")}
-                          </span>
                           <div className="grid grid-cols-4 gap-1.5">
                             {MONOGRAM_SEPARATORS.map((sep) => {
                               const active = design.monogram.separator === sep.slug;
@@ -1728,9 +1700,6 @@ export default function DesignPage() {
                         );
                       })}
                     </ul>
-                    <p className="mt-1.5 text-[11px] text-ink-400 dark:text-umber-300">
-                      {t("design.web.sections_hint")}
-                    </p>
                   </section>
 
                   {/* Advanced: freeform per-role colour overrides, demoted to a
@@ -1872,11 +1841,6 @@ export default function DesignPage() {
                       </>
                     )}
                   </div>
-                  {couple?.slug && couple.is_public === false && (
-                    <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
-                      {t("design.publish_cta_text")}
-                    </p>
-                  )}
                 </div>
               </>
             )}

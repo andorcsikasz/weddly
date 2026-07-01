@@ -2497,10 +2497,7 @@ export interface LocaleMessages {
     saving: string;
     save_blocked: string;
     save_error: string;
-    /** Microcopy under the style-pack grid: a pack switch reseeds everything. */
-    style_seed_note: string;
     /** One-shot undo pill shown right after a (destructive) pack switch. */
-    style_applied: string;
     undo: string;
     /** Finish-line card at the bottom of the website editor. */
     finish: {
@@ -2623,9 +2620,6 @@ export interface LocaleMessages {
       shadow_label: string;
       button_style_label: string;
       sections_label: string;
-      /** Footnote under the section toggles: RSVP is never hideable and
-       *  hiding takes effect in the preview immediately. */
-      sections_hint: string;
       image_treatment_label: string;
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };
