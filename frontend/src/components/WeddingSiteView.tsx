@@ -33,7 +33,7 @@ import {
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
+import { buildMonogram, formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
 import { pickKeyMoments } from "@shared/schedule";
 import { formatDate, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -541,6 +541,13 @@ export function WeddingSiteView({
   const imgFilter =
     view.design.website_image_treatment === "grayscale" ? "grayscale(1)" : "grayscale(0)";
 
+  // The couple's monogram (initials + chosen separator), rendered as a small
+  // letter-spaced eyebrow above the hero names when enabled. "" when both
+  // names are missing, which skips the block entirely.
+  const monogram = view.design.monogram_enabled
+    ? buildMonogram(view.bride_name, view.groom_name, view.design.monogram_separator, locale)
+    : "";
+
   // When the hero has a cover photo the names + date sit DIRECTLY on it, so the
   // text colour must follow the photo, not the palette: a dark photo gets light
   // text, a light photo keeps the dark theme text. `null` (sampling failed)
@@ -651,6 +658,19 @@ export function WeddingSiteView({
             {/* Overlaid names + date. pointer-events-none lets photo clicks fall
                 through to the cover-edit target; the date button re-enables them. */}
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center sm:px-8">
+              {monogram && (
+                <p
+                  className="mb-4 text-sm tracking-[0.3em]"
+                  style={{
+                    fontFamily: "var(--wt-heading-font)",
+                    color: heroTextColor,
+                    textShadow: heroTextShadow,
+                  }}
+                  aria-hidden
+                >
+                  {monogram}
+                </p>
+              )}
               <h1
                 className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
                 style={{
@@ -711,6 +731,18 @@ export function WeddingSiteView({
           // No cover photo — names + date on the palette background.
           <>
             <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
+              {monogram && (
+                <p
+                  className="mb-4 text-sm tracking-[0.3em]"
+                  style={{
+                    fontFamily: "var(--wt-heading-font)",
+                    color: "var(--wt-accent-text)",
+                  }}
+                  aria-hidden
+                >
+                  {monogram}
+                </p>
+              )}
               <h1
                 className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
                 // `color: inherit` so the name takes the theme `--wt-text` (set
@@ -1066,10 +1098,14 @@ export function WeddingSiteView({
         </Band>
       ) : null}
 
-      {/* ── Confirmed-tier unlocked block = the gift list. Live: confirmed +
-          published only (server gates `view.wishlist`). Preview: always shown,
-          labelled "unlocks after RSVP"; clicking opens the wishlist editor. ── */}
-      {(isPreview || (showConfirmedExtras && view.wishlist && view.wishlist.length > 0)) && (
+      {/* ── Confirmed-tier unlocked block = the gift list. Live: the server
+          only populates `view.wishlist` at the confirmed tier, so "non-null and
+          non-empty → render" is the documented payload contract (and lets the
+          design editor feed the block real/sample entries at any tier).
+          Preview: always shown, labelled "unlocks after RSVP"; clicking opens
+          the wishlist editor. ── */}
+      {(isPreview ||
+        (view.wishlist !== null && view.wishlist.length > 0 && !sectionHidden("wishlist"))) && (
         <Band
           ariaLive={isPreview ? undefined : "polite"}
           onEdit={isPreview ? e.onEditPostRsvp : undefined}

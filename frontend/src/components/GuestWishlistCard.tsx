@@ -294,7 +294,16 @@ export function GuestWishlistCard({
   // -------------------------------------------------------------------------
 
   return (
-    <li className="flex gap-3 rounded-xl border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-900/40">
+    <li
+      className="flex gap-3 rounded-xl border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-900/40"
+      // Inside `.wedding-theme` the couple's Design drives the card rounding +
+      // elevation via the --wt-* vars; the fallbacks keep the exact current
+      // look on non-themed surfaces (and for older cached payloads).
+      style={{
+        borderRadius: "var(--wt-card-radius, 0.75rem)",
+        boxShadow: "var(--wt-card-shadow, none)",
+      }}
+    >
       {entry.image_url ? (
         <img
           src={entry.image_url}

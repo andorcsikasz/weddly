@@ -2285,10 +2285,16 @@ const hu: LocaleMessages = {
     section: {
       style: "Esküvői stílus",
       palette: "Színpaletta",
+      palette_more: "További paletták",
       fonts: "Betűtípusok",
       print: "Nyomtatási beállítások",
       monogram: "Monogram",
       date: "Dátumformátum",
+    },
+    group: {
+      style: "Stílus",
+      typography: "Tipográfia",
+      details: "Részletek",
     },
     print: {
       border: "Keret",
@@ -2300,12 +2306,30 @@ const hu: LocaleMessages = {
     preview_mobile: "Mobil",
     preview_desktop: "Asztali",
     preview_close: "Előnézet bezárása",
+    preview_open: "Előnézet",
+    preview_sample_chip: "Mintatartalom",
+    preview_sample: {
+      gift_1: "Nászút-kassza",
+      gift_2: "Randiest kettesben",
+    },
+    preview_sr_note: "A vendégoldal élő előnézete. Az interaktív elemek itt nem kattinthatók.",
     publish_cta_text: "Jól néz ki. Közzéteszed a vendégoldalt?",
     publish_cta_button: "Vendégoldal közzététele",
     font_sample_body: "Szeretettel meghívunk az esküvőnkre",
     saved: "Arculat mentve",
+    saving: "Mentés…",
     save_blocked: "Az előfizetésed lejárt, a szerkesztés szünetel.",
     save_error: "Az arculat mentése nem sikerült.",
+    style_seed_note:
+      "Egy stílus kiválasztása a palettát, a betűtípusokat, a dátumot és az oldal részleteit is hozzáigazítja.",
+    style_applied: "Stílus alkalmazva.",
+    undo: "Visszavonás",
+    finish: {
+      title: "Tetszik az összkép?",
+      view_live: "Élő oldal megnyitása",
+      copy_link: "Link másolása",
+      link_copied: "Link a vágólapon",
+    },
     style: {
       garden_romance: "Garden",
       modern_monochrome: "Editorial",
@@ -2381,6 +2405,8 @@ const hu: LocaleMessages = {
       low_contrast: "Alacsony kontraszt: a szöveg nehezen olvasható lehet a háttéren.",
       base_label: "Alap:",
       original: "Eredeti",
+      advanced_label: "Haladó: egyedi színek",
+      fix_contrast: "Egyedi színek törlése",
     },
     tab: {
       style_kit: "Stíluscsomag",
@@ -2397,6 +2423,8 @@ const hu: LocaleMessages = {
       shadow_label: "Kártya árnyék",
       button_style_label: "Gomb stílusa",
       sections_label: "Látható szakaszok",
+      sections_hint:
+        "A visszajelzés (RSVP) nem rejthető el. Az elrejtett szakaszok azonnal eltűnnek az előnézetből.",
       image_treatment_label: "Fotók",
       card_radius: { sharp: "Éles", soft: "Lágy", full: "Erős" },
       shadow: { none: "Nincs", soft: "Lágy", pop: "Erős" },

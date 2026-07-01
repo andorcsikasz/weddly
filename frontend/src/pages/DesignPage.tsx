@@ -9,8 +9,11 @@
 import {
   BORDER_STYLES,
   type BorderStyleSlug,
+  buildMonogram,
   BUTTON_STYLES,
   type ButtonStyleSlug,
+  CARD_RADII,
+  type CardRadiusSlug,
   getBorderCss,
   COLOR_ROLES,
   type ColorRole,
@@ -27,26 +30,41 @@ import {
   getStylePreset,
   IMAGE_TREATMENTS,
   type ImageTreatmentSlug,
+  MONOGRAM_SEPARATORS,
+  PALETTES,
+  type PaletteSlug,
   resolveDesign,
+  SHADOWS,
+  type ShadowSlug,
   STYLE_PRESETS,
   type StylePresetSlug,
   toPublicDesign,
+  WEBSITE_SECTIONS,
+  type WebsiteSectionSlug,
 } from "@shared/design";
 import { getContrastRatio } from "@shared/wcag";
 import type { Couple } from "@shared/types";
-import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
+import type { PublicWeddingScheduleEntry, PublicWeddingWebsiteView } from "@shared/wedding_website";
+import type { WishlistEntry } from "@shared/wishlist";
 import {
+  AlertTriangle,
   Check,
+  ChevronDown,
+  Copy,
   Download,
+  ExternalLink,
   Eye,
+  EyeOff,
   Loader2,
   Maximize2,
   Monitor,
   Pencil,
   Smartphone,
+  Undo2,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { InfoHint } from "../components/InfoHint";
 import { headingTreatmentCss, OrnamentDivider, OrnamentFrame } from "../components/ornaments";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
@@ -61,8 +79,10 @@ import {
   menuPdfUrl,
   placeCardsUrl,
   schedulePdfUrl,
+  scheduleApi,
   tableNumbersPdfUrl,
   thankYouPdfUrl,
+  wishlistApi,
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
@@ -72,6 +92,7 @@ function PresetTile({
   active,
   onSelect,
   label,
+  sublabel,
   ariaLabel,
   children,
   compact = false,
@@ -81,6 +102,8 @@ function PresetTile({
   /** Visible caption under the preview. Omit to render no caption (the font
    *  tiles preview the typeface itself, so a redundant name is dropped). */
   label?: string;
+  /** One-line mood caption under the label (the style packs' taglines). */
+  sublabel?: string;
   ariaLabel: string;
   children: React.ReactNode;
   /** Tighter padding + a smaller check badge, for short single-line previews
@@ -114,7 +137,16 @@ function PresetTile({
       )}
       {children}
       {label && (
-        <span className="text-sm font-medium text-ink-900 dark:text-paper-50">{label}</span>
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+            {label}
+          </span>
+          {sublabel && (
+            <span className="mt-0.5 text-[11px] leading-snug text-ink-500 dark:text-umber-300">
+              {sublabel}
+            </span>
+          )}
+        </span>
       )}
     </button>
   );
@@ -215,22 +247,86 @@ function FontChip({
       aria-pressed={active}
       aria-label={label}
       title={label}
-      className={`flex w-full items-center justify-center rounded-xl border px-1.5 py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+      className={`relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl border bg-white px-1.5 py-2.5 text-ink-900 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:text-paper-50 dark:focus-visible:ring-paper-100 ${
         active
-          ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-          : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+          ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+          : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
       }`}
     >
-      {/* "Aa" in the actual typeface IS the preview. The family name would only
-          truncate to noise at this six-up width, so it lives in the tooltip +
-          aria-label (the button already carries `label` for screen readers). */}
+      {/* Active state is a ring + badge (NOT an inverted fill) so the specimen
+          keeps its true weight and colour while selected. */}
+      {active && (
+        <span
+          className="absolute right-1 top-1 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+          aria-hidden
+        >
+          <Check size={9} strokeWidth={3} />
+        </span>
+      )}
+      {/* "Aa" in the actual typeface IS the preview. At sm+ the family name
+          lives in the tooltip + aria-label (it would truncate to noise at
+          six-up width); below sm the grid drops to 3-up and the name becomes a
+          visible caption, since touch devices have no hover tooltips. */}
       <span
         className="flex h-7 items-center text-xl leading-none"
         style={fontFamily ? { fontFamily } : undefined}
       >
         Aa
       </span>
+      <span className="w-full truncate text-center text-[10px] text-ink-500 sm:hidden dark:text-umber-300">
+        {label}
+      </span>
     </button>
+  );
+}
+
+/** One numbered "studio chapter" of the website editor: a native <details>
+ *  disclosure styled as an editorial worksheet. The summary row always shows a
+ *  live readout of the chapter's current choice (pack name + colour dots,
+ *  family names, hidden-section count) so a collapsed chapter still
+ *  communicates. Native details/summary keeps keyboard + AT semantics free;
+ *  the open state is mirrored into React via onToggle so re-renders don't
+ *  fight the user's toggle. */
+function Chapter({
+  num,
+  title,
+  readout,
+  defaultOpen,
+  children,
+}: {
+  num: string;
+  title: string;
+  readout?: React.ReactNode;
+  defaultOpen: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <details
+      open={open}
+      onToggle={(ev) => setOpen(ev.currentTarget.open)}
+      className="group rounded-2xl border border-paper-200 bg-paper-50/60 dark:border-umber-700 dark:bg-umber-900/40"
+    >
+      <summary className="flex cursor-pointer select-none list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 [&::-webkit-details-marker]:hidden dark:focus-visible:ring-paper-100">
+        <span className="flex min-w-0 flex-col">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-400 dark:text-umber-300">
+            {num}
+          </span>
+          <span className="font-serif text-xl italic tracking-tight text-ink-900 dark:text-paper-50">
+            {title}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          {readout}
+          <ChevronDown
+            size={16}
+            className="text-ink-400 transition-transform group-open:rotate-180 dark:text-umber-300"
+            aria-hidden
+          />
+        </span>
+      </summary>
+      <div className="space-y-6 px-4 pb-5 pt-1">{children}</div>
+    </details>
   );
 }
 
@@ -314,8 +410,27 @@ export default function DesignPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
   // Full-page guest-page preview overlay (Website tab). Open state + which
   // device frame width the preview is shown at (mobile ~390px vs desktop 100%).
+  // The viewport toggle is shared by the inline sticky preview and the overlay.
   const [fullPreview, setFullPreview] = useState(false);
   const [previewViewport, setPreviewViewport] = useState<"mobile" | "desktop">("desktop");
+  // Quiet ambient "Saved" flash next to the page title (replaces the old
+  // success toast, which fired on every debounced auto-save).
+  const [savedFlash, setSavedFlash] = useState(false);
+  // Snapshot taken right before a style-pack switch. A pack switch reseeds
+  // palette/fonts/date/chrome (destructive), so a one-shot Undo pill restores
+  // the pre-switch design. Cleared by any other edit or after 15s.
+  const [styleSnapshot, setStyleSnapshot] = useState<CoupleDesign | null>(null);
+  // Truthful preview data: the couple's real schedule + wishlist so the dark
+  // schedule band and the themed cards actually render while styling. Empty
+  // until fetched; the preview falls back to labelled sample beats.
+  const [previewSchedule, setPreviewSchedule] = useState<PublicWeddingScheduleEntry[]>([]);
+  const [previewWishlist, setPreviewWishlist] = useState<WishlistEntry[]>([]);
+  // Below lg only chapter 01 starts open (small screens scroll past the whole
+  // editor); at lg+ all chapters start open. Read once at mount.
+  const [lgUp] = useState(
+    () =>
+      typeof window.matchMedia === "function" && window.matchMedia("(min-width: 1024px)").matches,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -326,16 +441,65 @@ export default function DesignPage() {
         setCouple(r.couple);
         setDesign(r.couple.design);
         setSaved(r.couple.design);
+        // Lapsed plans are read-only; derive it upfront from the billing
+        // snapshot instead of waiting for the first PATCH to 402.
+        setReadOnly(!r.couple.billing.entitled);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+    // The couple's real content for the preview. Failures degrade silently to
+    // the sample beats; design edits never refetch (they only swap the theme).
+    scheduleApi
+      .list()
+      .then((r) => {
+        if (cancelled) return;
+        setPreviewSchedule(
+          r.events.map((ev) => ({
+            id: ev.id,
+            label: ev.label,
+            starts_at_minutes: ev.starts_at_minutes,
+            duration_minutes: ev.duration_minutes,
+            location: ev.location,
+            notes: ev.notes,
+            is_key_moment: ev.is_key_moment,
+          })),
+        );
+      })
+      .catch(() => {});
+    wishlistApi
+      .list()
+      .then((r) => {
+        if (cancelled) return;
+        setPreviewWishlist(
+          r.items.map((item) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            kind: item.kind,
+            target_amount_minor: item.target_amount_minor,
+            currency: item.currency,
+            url: item.url,
+            image_url: item.image_url,
+            interest_count: item.interest_count,
+            pledged_amount_minor: item.pledged_amount_minor,
+            viewer_has_interest: false,
+            viewer_pledged_amount_minor: null,
+          })),
+        );
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const dirty = useMemo(() => JSON.stringify(design) !== JSON.stringify(saved), [design, saved]);
+  // Key-order-proof dirty check: both sides pass through resolveDesign so a
+  // reordered-but-equal blob never triggers a phantom PATCH.
+  const dirty = useMemo(
+    () => JSON.stringify(resolveDesign(design)) !== JSON.stringify(resolveDesign(saved)),
+    [design, saved],
+  );
 
   // Debounced auto-save: ~900ms after the last change, persist the whole
   // design blob. Mirrors GuestPageEditorPage's auto-save. The save closure is
@@ -352,7 +516,8 @@ export default function DesignPage() {
         .then((r) => {
           setCouple(r.couple);
           setSaved(r.couple.design);
-          toast.success(t("design.saved"));
+          // Quiet ambient indicator instead of a toast per save.
+          setSavedFlash(true);
         })
         .catch((err) => {
           if (err instanceof ApiError && err.status === 402) {
@@ -367,14 +532,87 @@ export default function DesignPage() {
     return () => clearTimeout(id);
   }, [couple, dirty, saving, readOnly, design, toast, t]);
 
-  // Escape closes the full-page preview overlay (only bound while it's open).
+  // The "Saved" flash clears itself after a beat, so the status line only
+  // announces the settled transition (at most one SR announcement per edit).
+  useEffect(() => {
+    if (!savedFlash) return;
+    const id = setTimeout(() => setSavedFlash(false), 2000);
+    return () => clearTimeout(id);
+  }, [savedFlash]);
+
+  // Flush-on-leave: navigating away inside the 900ms debounce window used to
+  // silently drop the last edit. Fire-and-forget the pending design on unmount.
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
+  const readOnlyRef = useRef(readOnly);
+  readOnlyRef.current = readOnly;
+  const coupleLoadedRef = useRef(false);
+  coupleLoadedRef.current = couple !== null;
+  useEffect(() => {
+    return () => {
+      if (coupleLoadedRef.current && dirtyRef.current && !readOnlyRef.current) {
+        coupleApi.update({ design: designRef.current }).catch(() => {});
+      }
+    };
+  }, []);
+
+  // Revoke the exact-PDF blob URL on unmount too (previously it was only
+  // revoked on refetch / template switch, leaking the last object URL).
+  const pdfPreviewUrlRef = useRef(pdfPreviewUrl);
+  pdfPreviewUrlRef.current = pdfPreviewUrl;
+  useEffect(() => {
+    return () => {
+      if (pdfPreviewUrlRef.current) URL.revokeObjectURL(pdfPreviewUrlRef.current);
+    };
+  }, []);
+
+  // The style-pack Undo pill is one-shot: it expires after 15s (any other
+  // edit also clears it via the handlers below).
+  useEffect(() => {
+    if (!styleSnapshot) return;
+    const id = setTimeout(() => setStyleSnapshot(null), 15000);
+    return () => clearTimeout(id);
+  }, [styleSnapshot]);
+
+  // Focus + scroll management for the full-page preview overlay: it's a real
+  // modal (portal below), so trap Tab inside, focus the close button on open,
+  // lock body scroll, and restore focus on close. Escape still dismisses.
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const overlayCloseRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!fullPreview) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    overlayCloseRef.current?.focus();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") setFullPreview(false);
+      if (ev.key === "Escape") {
+        setFullPreview(false);
+        return;
+      }
+      if (ev.key !== "Tab") return;
+      const root = overlayRef.current;
+      if (!root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])'),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (!first || !last) return;
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      previouslyFocused?.focus?.();
+    };
   }, [fullPreview]);
 
   // Picking a style pre-selects its palette + fonts, but the couple can still
@@ -387,6 +625,9 @@ export default function DesignPage() {
     // custom colour / font-family overrides so the tile is the obvious reset.
     // Styles may also seed website chrome (e.g. the editorial style turns on
     // grayscale photos + sharp/shadowless/outline) via `defaultWeb`.
+    // The reset is destructive, so snapshot the outgoing design for the
+    // one-shot Undo pill (comparison taps are the primary gesture here).
+    setStyleSnapshot(designRef.current);
     setDesign((d) => ({
       ...d,
       style: slug,
@@ -403,11 +644,24 @@ export default function DesignPage() {
       web: { ...d.web, ...(preset.defaultWeb ?? {}) },
     }));
   }
+  function undoStyle() {
+    if (!styleSnapshot) return;
+    setDesign(styleSnapshot);
+    setStyleSnapshot(null);
+  }
+  function choosePalette(slug: PaletteSlug) {
+    setStyleSnapshot(null);
+    // Re-picking a palette drops the per-role overrides, mirroring the style
+    // reset semantics (the palette is the new base layer).
+    setDesign((d) => ({ ...d, palette: slug, colors: {} }));
+  }
   function chooseFonts(slug: FontPresetSlug) {
+    setStyleSnapshot(null);
     // Picking a font preset clears the independent family overrides.
     setDesign((d) => ({ ...d, fonts: slug, headingFont: null, bodyFont: null }));
   }
   function chooseColor(role: ColorRole, hex: string) {
+    setStyleSnapshot(null);
     setDesign((d) => ({ ...d, colors: { ...d.colors, [role]: hex.toLowerCase() } }));
   }
   function clearColor(role: ColorRole) {
@@ -418,19 +672,44 @@ export default function DesignPage() {
     });
   }
   function chooseHeadingFont(slug: FontFamilySlug | null) {
+    setStyleSnapshot(null);
     setDesign((d) => ({ ...d, headingFont: slug }));
   }
   function chooseBodyFont(slug: FontFamilySlug | null) {
+    setStyleSnapshot(null);
     setDesign((d) => ({ ...d, bodyFont: slug }));
   }
   function togglePrint(key: "border" | "ornament" | "qr") {
     setDesign((d) => ({ ...d, print: { ...d.print, [key]: !d.print[key] } }));
   }
   function chooseButtonStyle(slug: ButtonStyleSlug) {
+    setStyleSnapshot(null);
     setDesign((d) => ({ ...d, web: { ...d.web, buttonStyle: slug } }));
   }
   function chooseImageTreatment(slug: ImageTreatmentSlug) {
+    setStyleSnapshot(null);
     setDesign((d) => ({ ...d, web: { ...d.web, imageTreatment: slug } }));
+  }
+  function chooseCardRadius(slug: CardRadiusSlug) {
+    setStyleSnapshot(null);
+    setDesign((d) => ({ ...d, web: { ...d.web, cardRadius: slug } }));
+  }
+  function chooseShadow(slug: ShadowSlug) {
+    setStyleSnapshot(null);
+    setDesign((d) => ({ ...d, web: { ...d.web, shadow: slug } }));
+  }
+  function toggleSection(slug: WebsiteSectionSlug) {
+    setStyleSnapshot(null);
+    setDesign((d) => {
+      const hiddenSections = d.web.hiddenSections.includes(slug)
+        ? d.web.hiddenSections.filter((s) => s !== slug)
+        : [...d.web.hiddenSections, slug];
+      return { ...d, web: { ...d.web, hiddenSections } };
+    });
+  }
+  function chooseMonogram(patch: Partial<CoupleDesign["monogram"]>) {
+    setStyleSnapshot(null);
+    setDesign((d) => ({ ...d, monogram: { ...d.monogram, ...patch } }));
   }
   function chooseBorderStyle(slug: BorderStyleSlug) {
     // Keep the legacy `print.border` boolean in sync (on/off) so the current
@@ -438,6 +717,7 @@ export default function DesignPage() {
     setDesign((d) => ({ ...d, borderStyle: slug, print: { ...d.print, border: slug !== "none" } }));
   }
   function chooseDateFormat(slug: (typeof DATE_FORMATS)[number]["slug"]) {
+    setStyleSnapshot(null);
     setDesign((d) => ({ ...d, dateFormat: slug }));
   }
 
@@ -505,8 +785,142 @@ export default function DesignPage() {
     getContrastRatio(resolvedColors.text, resolvedColors.background) < 4.5 ||
     getContrastRatio(resolvedColors.accent_text, resolvedColors.background) < 3;
 
+  // Chapter-summary readouts + shared control helpers (website tab).
+  const activeFontPreset = getFontPreset(design.fonts);
+  const effectiveHeadingFamily = design.headingFont ?? activeFontPreset.headingFamily;
+  const effectiveBodyFamily = design.bodyFont ?? activeFontPreset.bodyFamily;
+  const familyLabel = (slug: FontFamilySlug) =>
+    t(FONT_FAMILIES.find((f) => f.slug === slug)?.nameKey ?? "design.family.cormorant");
+  const roleHex: Record<ColorRole, string> = {
+    primary: resolvedColors.primary,
+    background: resolvedColors.background,
+    accent: resolvedColors.accent,
+    text: resolvedColors.text,
+  };
+  const hiddenCount = design.web.hiddenSections.length;
+  // The monogram chips preview the couple's REAL initials; a sample "A & B"
+  // covers the not-yet-named case so the chips never render empty.
+  const monogramSpecimen = (slug: (typeof MONOGRAM_SEPARATORS)[number]["slug"]) =>
+    buildMonogram(couple?.bride_name, couple?.groom_name, slug, locale) ||
+    buildMonogram("A", "B", slug, locale);
+  // Shared selectable-control classes so the chapters' chips + tiles read as
+  // one system (mirrors PresetTile's ring-active state).
+  const chipCls = (active: boolean) =>
+    `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+      active
+        ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+        : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+    }`;
+  const specimenTileCls = (active: boolean) =>
+    `flex items-center justify-center rounded-xl border bg-white px-2 py-2.5 text-ink-900 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:text-paper-50 dark:focus-visible:ring-paper-100 ${
+      active
+        ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+        : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+    }`;
+  // The RSVP-button sample chips + mini wells render inside a `.wedding-theme`
+  // scope fed the SAME resolved values the guest page gets, so the previews
+  // are truthful (btn classes + fonts resolve exactly as on /w/:slug).
+  const themedWellStyle = {
+    "--wt-primary": resolvedColors.primary,
+    "--wt-accent": resolvedColors.accent,
+    "--wt-accent-text": resolvedColors.accent_text,
+    "--wt-bg": resolvedColors.background,
+    "--wt-text": resolvedColors.text,
+    "--wt-heading-font": resolvedColors.heading_font,
+    "--wt-body-font": resolvedColors.body_font,
+    backgroundColor: resolvedColors.background,
+  } as React.CSSProperties;
+  const rsvpSampleClass = (slug: ButtonStyleSlug) =>
+    slug === "outline" ? "btn-outline" : slug === "flat" ? "btn-primary" : "btn-primary btn-lifted";
+
+  // Copy the live guest-page URL (finish card, public sites only).
+  async function copyGuestLink() {
+    if (!couple?.slug) return;
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/w/${couple.slug}`);
+      toast.success(t("design.finish.link_copied"));
+    } catch {
+      // Clipboard unavailable (permissions/insecure context): stay silent, the
+      // visible URL in the View-live link still covers the share moment.
+    }
+  }
+
+  // Labelled sample content for couples who haven't authored a schedule or
+  // wishlist yet — without it the dark schedule band (the palette's most
+  // dramatic expression) and the themed cards (the ONLY consumers of the
+  // rounding + shadow controls) would never render while styling.
+  const sampleSchedule = useMemo<PublicWeddingScheduleEntry[]>(
+    () => [
+      {
+        id: -1,
+        label: t("design.print_preview.sample_program.ceremony"),
+        starts_at_minutes: 960,
+        duration_minutes: null,
+        location: null,
+        notes: null,
+        is_key_moment: true,
+      },
+      {
+        id: -2,
+        label: t("design.print_preview.sample_program.dinner"),
+        starts_at_minutes: 1140,
+        duration_minutes: null,
+        location: null,
+        notes: null,
+        is_key_moment: true,
+      },
+      {
+        id: -3,
+        label: t("design.print_preview.sample_program.party"),
+        starts_at_minutes: 1290,
+        duration_minutes: null,
+        location: null,
+        notes: null,
+        is_key_moment: true,
+      },
+    ],
+    [t],
+  );
+  const sampleWishlist = useMemo<WishlistEntry[]>(
+    () => [
+      {
+        id: -1,
+        title: t("design.preview_sample.gift_1"),
+        description: null,
+        kind: "gift",
+        target_amount_minor: null,
+        currency: null,
+        url: null,
+        image_url: null,
+        interest_count: 0,
+        pledged_amount_minor: 0,
+        viewer_has_interest: false,
+        viewer_pledged_amount_minor: null,
+      },
+      {
+        id: -2,
+        title: t("design.preview_sample.gift_2"),
+        description: null,
+        kind: "gift",
+        target_amount_minor: null,
+        currency: null,
+        url: null,
+        image_url: null,
+        interest_count: 0,
+        pledged_amount_minor: 0,
+        viewer_has_interest: false,
+        viewer_pledged_amount_minor: null,
+      },
+    ],
+    [t],
+  );
+  const usingSampleContent = previewSchedule.length === 0 || previewWishlist.length === 0;
+
   // Live guest-page preview through the SAME <WeddingSiteView> guests see, fed
   // the in-progress design so the couple watches the theme update as they pick.
+  // Schedule + wishlist are the couple's REAL content (fetched once at mount),
+  // degrading to the labelled samples above so the preview is never emptier
+  // than what guests will actually see.
   const previewView: PublicWeddingWebsiteView | null = couple
     ? {
         couple_slug: couple.slug ?? "",
@@ -524,8 +938,8 @@ export default function DesignPage() {
         location_lng: null,
         location_radius_km: couple.location_radius_km,
         post_rsvp_content: null,
-        schedule: [],
-        wishlist: null,
+        schedule: previewSchedule.length > 0 ? previewSchedule : sampleSchedule,
+        wishlist: previewWishlist.length > 0 ? previewWishlist : sampleWishlist,
         design: toPublicDesign(design),
         fetched_at: Date.now(),
       }
@@ -610,11 +1024,12 @@ export default function DesignPage() {
 
   // Surface sub-page links — each is its own URL so the two design surfaces are
   // genuinely separate pages (back/forward, deep-link), sharing this state.
+  // Real navigation semantics: these are URL sub-pages, not ARIA tabs, so the
+  // switcher is a <nav> and the active link carries aria-current="page".
   const tabBtn = (key: "website" | "print", label: string) => (
     <Link
       to={`/app/design/${key}`}
-      role="tab"
-      aria-selected={tab === key}
+      aria-current={tab === key ? "page" : undefined}
       className={`flex-1 rounded-full px-4 py-2 text-center text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
         tab === key
           ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
@@ -627,27 +1042,33 @@ export default function DesignPage() {
 
   return (
     <>
-      <header className="mb-4">
+      <header className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <h1 className="font-grotesk font-semibold tracking-tight">{t("design.title")}</h1>
           <InfoHint text={t("design.hint")} />
         </div>
+        {/* Ambient save status (replaces the per-save success toast). Announced
+            politely: only the settled "Saved" transition updates the text. */}
+        <p
+          role="status"
+          aria-live="polite"
+          className="flex min-h-5 items-center gap-1.5 text-xs text-ink-400 dark:text-umber-300"
+        >
+          {saving ? (
+            <>
+              <Loader2 size={12} className="animate-spin" aria-hidden />
+              {t("design.saving")}
+            </>
+          ) : savedFlash ? (
+            <>
+              <Check size={12} aria-hidden />
+              {t("design.saved")}
+            </>
+          ) : readOnly ? (
+            t("design.save_blocked")
+          ) : null}
+        </p>
       </header>
-
-      {/* Publish bridge — once the couple has a guest-page slug but hasn't made
-          it public yet, nudge them across to the guest-page publish toggle.
-          Hidden when already public or no slug exists. */}
-      {couple?.slug && couple.is_public === false ? (
-        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-paper-300 bg-white p-4 sm:flex-row sm:items-center sm:justify-between dark:border-umber-700 dark:bg-umber-800">
-          <p className="text-sm text-ink-700 dark:text-paper-100">{t("design.publish_cta_text")}</p>
-          <Link
-            to="/app/guest-page"
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
-          >
-            {t("design.publish_cta_button")}
-          </Link>
-        </div>
-      ) : null}
 
       {loading ? (
         <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
@@ -662,15 +1083,14 @@ export default function DesignPage() {
               live canvas lives in the right column. ───────────────────────── */}
           <div className="space-y-6">
             {/* Surface switcher: Website vs Print. */}
-            <div
-              role="tablist"
+            <nav
               data-tour-target="design-tabs"
               aria-label={t("design.title")}
               className="flex w-full items-center gap-1 rounded-full border border-paper-300 bg-white p-1 dark:border-umber-700 dark:bg-umber-800"
             >
               {tabBtn("website", t("design.tab.website"))}
               {tabBtn("print", t("design.tab.print"))}
-            </div>
+            </nav>
 
             {/* Per-surface heading. In print mode it names the SELECTED card
                 ("Asztalszám tervezése") so the editor reads as a card editor,
@@ -753,142 +1173,192 @@ export default function DesignPage() {
             {tab === "print" ? <InheritedSummary design={design} /> : null}
             {tab === "website" && (
               <>
-                {/* Wedding style */}
-                <section data-tour-target="design-style">
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.section.style")}
-                  </h2>
-                  <div className="grid grid-cols-2 gap-3">
-                    {STYLE_PRESETS.map((s) => (
-                      <PresetTile
-                        key={s.slug}
-                        active={design.style === s.slug}
-                        onSelect={() => chooseStyle(s.slug)}
-                        ariaLabel={t(s.nameKey)}
-                        label={t(s.nameKey)}
-                      >
-                        {/* Each tile previews its OWN date format (Roman for
-                        Midnight, numeric for Monochrome) so the format reads as
-                        part of the pack, not a separate choice. */}
-                        <StyleMoodCard
-                          preset={s}
-                          sampleName={sampleName}
-                          sampleDate={formatWeddingDate(sampleDateIso, s.defaultDateFormat, locale)}
-                        />
-                      </PresetTile>
-                    ))}
-                  </div>
-                </section>
-
-                {/* Colours — the base palette comes from the chosen Wedding Style;
-                here the couple fine-tunes any role on top of it. Each input is
-                seeded from the resolved colour (override or palette); Reset
-                clears the override back to the palette. */}
-                <section>
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                      {t("design.colors.title")}
-                    </h2>
-                    <InfoHint text={t("design.colors.hint")} />
-                    {/* Name the palette these swatches are based on so the
-                        couple knows which theme they're tweaking (audit 4b). */}
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: activePalette.accent.hex }}
-                        aria-hidden
-                      />
-                      {t("design.colors.base_label")} {t(activePalette.nameKey)}
+                {/* ── Chapter 01 — Style: the packs + the palette picker. ── */}
+                <Chapter
+                  num="01"
+                  title={t("design.group.style")}
+                  defaultOpen={true}
+                  readout={
+                    <span className="flex items-center gap-2">
+                      <span className="hidden text-xs text-ink-500 sm:inline dark:text-umber-300">
+                        {t(getStylePreset(design.style).nameKey)}
+                      </span>
+                      <span className="flex gap-1" aria-hidden>
+                        {COLOR_ROLES.map((role) => (
+                          <span
+                            key={role}
+                            className="h-3 w-3 rounded-full ring-1 ring-black/10 dark:ring-white/20"
+                            style={{ backgroundColor: roleHex[role] }}
+                          />
+                        ))}
+                      </span>
                     </span>
-                  </div>
-                  <div className="mx-auto w-fit max-w-full">
-                    {/* Swatch row: each role is a colour block with a pencil badge;
-                    clicking it opens the native colour editor (the swatch IS the
-                    input label). Reset clears the override back to the palette. */}
-                    <div className="flex flex-wrap justify-center gap-4">
-                      {COLOR_ROLES.map((role) => {
-                        const resolved = design.colors[role] ?? activePalette[role].hex;
-                        const overridden = design.colors[role] !== undefined;
-                        return (
-                          <div key={role} className="flex flex-col items-center gap-1">
-                            <label
-                              className="relative block h-12 w-12 cursor-pointer rounded-xl border border-paper-300 shadow-soft dark:border-umber-700"
-                              style={{ backgroundColor: resolved }}
-                              title={t(`design.colors.${role}`)}
-                            >
-                              <input
-                                type="color"
-                                value={resolved}
-                                onChange={(ev) => chooseColor(role, ev.target.value)}
-                                aria-label={t(`design.colors.${role}`)}
-                                className="sr-only"
-                              />
-                              <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
-                                <Pencil size={11} aria-hidden />
-                              </span>
-                            </label>
-                            <span className="text-[11px] text-ink-600 dark:text-umber-200">
-                              {t(`design.colors.${role}`)}
-                            </span>
-                            {overridden ? (
-                              // Show the palette's original hex as a small swatch
-                              // beside Reset so the couple sees what they changed
-                              // away from, and what Reset restores (audit 4b).
-                              <span className="flex items-center gap-1">
-                                <span
-                                  className="h-3 w-3 rounded-full border border-paper-300 dark:border-umber-700"
-                                  style={{ backgroundColor: activePalette[role].hex }}
-                                  title={`${t("design.colors.original")}: ${activePalette[role].hex}`}
-                                  aria-hidden
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => clearColor(role)}
-                                  className="text-[10px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
-                                >
-                                  {t("design.colors.reset")}
-                                </button>
-                              </span>
-                            ) : (
-                              <span className="h-[14px]" aria-hidden />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {lowContrast && (
-                      <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-400">
-                        {t("design.colors.low_contrast")}
-                      </p>
-                    )}
-                  </div>
-                </section>
-
-                {/* Fonts */}
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.section.fonts")}
-                  </h2>
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                    {FONT_PRESETS.map((f) => (
-                      <PresetTile
-                        key={f.slug}
-                        active={design.fonts === f.slug}
-                        onSelect={() => chooseFonts(f.slug)}
-                        ariaLabel={t(f.nameKey)}
-                      >
-                        <span
-                          className="block truncate text-2xl leading-tight text-ink-900 dark:text-paper-50"
-                          style={{ fontFamily: f.headingStack }}
-                          aria-hidden
+                  }
+                >
+                  {/* Wedding style */}
+                  <section data-tour-target="design-style">
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.section.style")}
+                    </h2>
+                    <div className="grid grid-cols-2 gap-3">
+                      {STYLE_PRESETS.map((s) => (
+                        <PresetTile
+                          key={s.slug}
+                          active={design.style === s.slug}
+                          onSelect={() => chooseStyle(s.slug)}
+                          ariaLabel={t(s.nameKey)}
+                          label={t(s.nameKey)}
+                          sublabel={t(`design.style_desc.${s.slug}`)}
                         >
-                          {sampleInitials}
-                        </span>
-                      </PresetTile>
-                    ))}
-                  </div>
+                          {/* Each tile previews its OWN date format (Roman for
+                          Midnight, numeric for Monochrome) so the format reads as
+                          part of the pack, not a separate choice. */}
+                          <StyleMoodCard
+                            preset={s}
+                            sampleName={sampleName}
+                            sampleDate={formatWeddingDate(
+                              sampleDateIso,
+                              s.defaultDateFormat,
+                              locale,
+                            )}
+                          />
+                        </PresetTile>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-[11px] text-ink-400 dark:text-umber-300">
+                      {t("design.style_seed_note")}
+                    </p>
+                    {/* One-shot undo after a pack switch: the switch reseeds
+                        palette/fonts/date/chrome, so comparison taps must be
+                        reversible. Cleared by any other edit or after 15s. */}
+                    {styleSnapshot && (
+                      <div className="mt-2 flex w-fit items-center gap-2 rounded-full border border-paper-300 bg-white px-3 py-1.5 text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
+                        <span>{t("design.style_applied")}</span>
+                        <button
+                          type="button"
+                          onClick={undoStyle}
+                          className="inline-flex items-center gap-1 font-medium underline underline-offset-2 hover:text-ink-900 dark:hover:text-paper-50"
+                        >
+                          <Undo2 size={12} aria-hidden />
+                          {t("design.undo")}
+                        </button>
+                      </div>
+                    )}
+                  </section>
 
-                  {/* Independent heading / body family overrides on top of the
+                  {/* Colour palette — every curated palette, the four pack
+                      palettes first, the legacy catalog behind a divider. A
+                      palette re-tints every role the couple hasn't pinned. */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.section.palette")}
+                    </h2>
+                    <div className="grid grid-cols-3 gap-2">
+                      {PALETTES.slice(0, 4).map((p) => (
+                        <PresetTile
+                          key={p.slug}
+                          compact
+                          active={design.palette === p.slug}
+                          onSelect={() => choosePalette(p.slug)}
+                          ariaLabel={t(p.nameKey)}
+                          label={t(p.nameKey)}
+                        >
+                          <span
+                            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-black/5 dark:border-white/10"
+                            style={{ backgroundColor: p.background.hex }}
+                            aria-hidden
+                          >
+                            <span
+                              className="h-4 w-4 rounded-full"
+                              style={{ backgroundColor: p.primary.hex }}
+                            />
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: p.accent.hex }}
+                            />
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: p.text.hex }}
+                            />
+                          </span>
+                        </PresetTile>
+                      ))}
+                    </div>
+                    <p className="mb-2 mt-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-400 dark:text-umber-300">
+                      <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+                      {t("design.section.palette_more")}
+                      <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {PALETTES.slice(4).map((p) => (
+                        <PresetTile
+                          key={p.slug}
+                          compact
+                          active={design.palette === p.slug}
+                          onSelect={() => choosePalette(p.slug)}
+                          ariaLabel={t(p.nameKey)}
+                          label={t(p.nameKey)}
+                        >
+                          <span
+                            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-black/5 dark:border-white/10"
+                            style={{ backgroundColor: p.background.hex }}
+                            aria-hidden
+                          >
+                            <span
+                              className="h-4 w-4 rounded-full"
+                              style={{ backgroundColor: p.primary.hex }}
+                            />
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: p.accent.hex }}
+                            />
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: p.text.hex }}
+                            />
+                          </span>
+                        </PresetTile>
+                      ))}
+                    </div>
+                  </section>
+                </Chapter>
+
+                {/* ── Chapter 02 — Typography: presets, families, date. ──── */}
+                <Chapter
+                  num="02"
+                  title={t("design.group.typography")}
+                  defaultOpen={lgUp}
+                  readout={
+                    <span className="hidden max-w-40 truncate text-xs text-ink-500 sm:inline dark:text-umber-300">
+                      {familyLabel(effectiveHeadingFamily)} · {familyLabel(effectiveBodyFamily)}
+                    </span>
+                  }
+                >
+                  {/* Fonts */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.section.fonts")}
+                    </h2>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {FONT_PRESETS.map((f) => (
+                        <PresetTile
+                          key={f.slug}
+                          active={design.fonts === f.slug}
+                          onSelect={() => chooseFonts(f.slug)}
+                          ariaLabel={t(f.nameKey)}
+                        >
+                          <span
+                            className="block truncate text-2xl leading-tight text-ink-900 dark:text-paper-50"
+                            style={{ fontFamily: f.headingStack }}
+                            aria-hidden
+                          >
+                            {sampleInitials}
+                          </span>
+                        </PresetTile>
+                      ))}
+                    </div>
+
+                    {/* Independent heading / body family overrides on top of the
                   preset, united in one card (a thin divider between the two
                   rows) so the typeface controls read as a single block. Each
                   chip renders its own name in its actual font; only bundled
@@ -898,167 +1368,520 @@ export default function DesignPage() {
                   preset above always re-highlights the right family here.
                   Picking the preset's own family re-links to it (null override),
                   so a later preset change keeps following. */}
-                  <div className="mt-3 divide-y divide-paper-200 rounded-2xl border border-paper-300 bg-white p-3 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
-                    {(
-                      [
+                    <div className="mt-3 divide-y divide-paper-200 rounded-2xl border border-paper-300 bg-white p-3 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
+                      {(
                         [
-                          "heading",
-                          design.headingFont,
-                          chooseHeadingFont,
-                          getFontPreset(design.fonts).headingFamily,
-                        ] as const,
-                        [
-                          "body",
-                          design.bodyFont,
-                          chooseBodyFont,
-                          getFontPreset(design.fonts).bodyFamily,
-                        ] as const,
-                      ] as const
-                    ).map(([which, current, setter, presetFamily]) => {
-                      const effective = current ?? presetFamily;
-                      return (
-                        <div key={which} className="py-2 first:pt-0 last:pb-0">
-                          <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
-                            {t(`design.font.${which}_label`)}
-                          </span>
-                          {/* Six-up so all twelve families fit in two rows per
+                          [
+                            "heading",
+                            design.headingFont,
+                            chooseHeadingFont,
+                            getFontPreset(design.fonts).headingFamily,
+                          ] as const,
+                          [
+                            "body",
+                            design.bodyFont,
+                            chooseBodyFont,
+                            getFontPreset(design.fonts).bodyFamily,
+                          ] as const,
+                        ] as const
+                      ).map(([which, current, setter, presetFamily]) => {
+                        const effective = current ?? presetFamily;
+                        return (
+                          <div key={which} className="py-2 first:pt-0 last:pb-0">
+                            <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
+                              {t(`design.font.${which}_label`)}
+                            </span>
+                            {/* Six-up so all twelve families fit in two rows per
                               category (heading + body), cutting the picker's
                               height roughly in half — the "Aa" itself is the
                               preview; the full family name lives in the tooltip
                               + aria-label since it would truncate at this width. */}
-                          <div className="grid grid-cols-6 gap-1.5">
-                            {FONT_FAMILIES.map((fam) => (
-                              <FontChip
-                                key={fam.slug}
-                                active={effective === fam.slug}
-                                // Re-selecting the preset's family clears the override
-                                // (null) so it keeps tracking later preset changes.
-                                onClick={() => setter(fam.slug === presetFamily ? null : fam.slug)}
-                                fontFamily={fam.stack}
-                                label={t(fam.nameKey)}
-                              />
-                            ))}
+                            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+                              {FONT_FAMILIES.map((fam) => (
+                                <FontChip
+                                  key={fam.slug}
+                                  active={effective === fam.slug}
+                                  // Re-selecting the preset's family clears the override
+                                  // (null) so it keeps tracking later preset changes.
+                                  onClick={() =>
+                                    setter(fam.slug === presetFamily ? null : fam.slug)
+                                  }
+                                  fontFamily={fam.stack}
+                                  label={t(fam.nameKey)}
+                                />
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
+                        );
+                      })}
+                    </div>
+                  </section>
 
-                {/* Date format — a 2×2 grid so every option gets equal weight
-                 *  (the old 3-up grid orphaned the 4th tile on its own row). Each
-                 *  tile leads with the formatted sample date and captions it with
-                 *  the format's name, so the choices read as one unified set. */}
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.section.date")}
-                  </h2>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {DATE_FORMATS.map((df) => {
-                      const active = design.dateFormat === df.slug;
-                      return (
-                        <button
-                          key={df.slug}
-                          type="button"
-                          onClick={() => chooseDateFormat(df.slug)}
-                          aria-pressed={active}
-                          aria-label={t(df.nameKey)}
-                          className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-white px-3 py-4 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
-                            active
-                              ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
-                              : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
-                          }`}
-                        >
-                          {active && (
-                            <span
-                              className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                              aria-hidden
-                            >
-                              <Check size={10} strokeWidth={3} />
-                            </span>
-                          )}
-                          <span
-                            className="w-full whitespace-nowrap font-serif text-base italic leading-tight tracking-tight text-ink-900 dark:text-paper-50"
-                            aria-hidden
-                          >
-                            {formatWeddingDate(sampleDateIso, df.slug, locale)}
-                          </span>
-                          <span
-                            className={`text-[11px] font-medium uppercase tracking-[0.12em] ${
+                  {/* Date format — a 2×2 grid so every option gets equal weight
+                   *  (the old 3-up grid orphaned the 4th tile on its own row). Each
+                   *  tile leads with the formatted sample date and captions it with
+                   *  the format's name, so the choices read as one unified set. */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.section.date")}
+                    </h2>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {DATE_FORMATS.map((df) => {
+                        const active = design.dateFormat === df.slug;
+                        return (
+                          <button
+                            key={df.slug}
+                            type="button"
+                            onClick={() => chooseDateFormat(df.slug)}
+                            aria-pressed={active}
+                            aria-label={t(df.nameKey)}
+                            className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-white px-3 py-4 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
                               active
-                                ? "text-ink-500 dark:text-umber-200"
-                                : "text-ink-400 dark:text-umber-300"
+                                ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+                                : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
                             }`}
                           >
-                            {t(df.nameKey)}
+                            {active && (
+                              <span
+                                className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                                aria-hidden
+                              >
+                                <Check size={10} strokeWidth={3} />
+                              </span>
+                            )}
+                            {/* The sample date renders in the couple's RESOLVED
+                              heading font + pack treatment (not a hardcoded
+                              italic serif) so a Monochrome couple isn't picking
+                              between four alien italic dates. */}
+                            <span
+                              className="w-full whitespace-nowrap text-base leading-tight tracking-tight text-ink-900 dark:text-paper-50"
+                              style={{
+                                fontFamily: resolvedColors.heading_font,
+                                ...headingTreatmentCss(resolvedColors.heading_style),
+                              }}
+                              aria-hidden
+                            >
+                              {formatWeddingDate(sampleDateIso, df.slug, locale)}
+                            </span>
+                            <span
+                              className={`text-[11px] font-medium uppercase tracking-[0.12em] ${
+                                active
+                                  ? "text-ink-500 dark:text-umber-200"
+                                  : "text-ink-400 dark:text-umber-300"
+                              }`}
+                            >
+                              {t(df.nameKey)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </Chapter>
+
+                {/* ── Chapter 03 — Details: monogram, chrome, sections, and
+                    the demoted freeform colour overrides. ─────────────────── */}
+                <Chapter
+                  num="03"
+                  title={t("design.group.details")}
+                  defaultOpen={lgUp}
+                  readout={
+                    hiddenCount > 0 ? (
+                      <span className="rounded-full bg-paper-200 px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:bg-umber-800 dark:text-umber-200">
+                        {hiddenCount}
+                      </span>
+                    ) : undefined
+                  }
+                >
+                  {/* Monogram — the chips ARE the specimen: the couple's real
+                      initials in the resolved heading font, per separator. */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.section.monogram")}
+                    </h2>
+                    <div className="rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
+                      <button
+                        type="button"
+                        onClick={() => chooseMonogram({ enabled: !design.monogram.enabled })}
+                        aria-pressed={design.monogram.enabled}
+                        className={chipCls(design.monogram.enabled)}
+                      >
+                        {design.monogram.enabled && <Check size={12} strokeWidth={3} aria-hidden />}
+                        {t("design.monogram.enable")}
+                      </button>
+                      {design.monogram.enabled && (
+                        <div className="mt-3">
+                          <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
+                            {t("design.monogram.separator_label")}
                           </span>
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {MONOGRAM_SEPARATORS.map((sep) => {
+                              const active = design.monogram.separator === sep.slug;
+                              return (
+                                <button
+                                  key={sep.slug}
+                                  type="button"
+                                  onClick={() => chooseMonogram({ separator: sep.slug })}
+                                  aria-pressed={active}
+                                  aria-label={monogramSpecimen(sep.slug)}
+                                  className={specimenTileCls(active)}
+                                >
+                                  <span
+                                    className="whitespace-nowrap text-lg leading-none"
+                                    style={{ fontFamily: resolvedColors.heading_font }}
+                                    aria-hidden
+                                  >
+                                    {monogramSpecimen(sep.slug)}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  {/* RSVP button look — each tile is the ACTUAL button class on
+                      a mini well painted with the resolved palette. */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.web.button_style_label")}
+                    </h2>
+                    <div className="grid grid-cols-3 gap-2">
+                      {BUTTON_STYLES.map((b) => {
+                        const active = design.web.buttonStyle === b.slug;
+                        return (
+                          <PresetTile
+                            key={b.slug}
+                            compact
+                            active={active}
+                            onSelect={() => chooseButtonStyle(b.slug)}
+                            ariaLabel={t(b.nameKey)}
+                            label={t(b.nameKey)}
+                          >
+                            <span
+                              className="wedding-theme pointer-events-none flex h-12 w-full items-center justify-center overflow-hidden rounded-lg border border-black/5 dark:border-white/10"
+                              style={themedWellStyle}
+                              aria-hidden
+                            >
+                              <span
+                                className={`${rsvpSampleClass(b.slug)} scale-[0.72] whitespace-nowrap`}
+                              >
+                                {t("wedding_site.rsvp_cta")}
+                              </span>
+                            </span>
+                          </PresetTile>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Photo treatment — the couple's real cover (or a palette
+                      swatch) shown in colour vs desaturated, so the tiles show
+                      the treatment instead of naming it. */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.web.image_treatment_label")}
+                    </h2>
+                    <div className="grid grid-cols-2 gap-2">
+                      {IMAGE_TREATMENTS.map((it) => {
+                        const active = design.web.imageTreatment === it.slug;
+                        const filter = it.slug === "grayscale" ? "grayscale(1)" : "none";
+                        return (
+                          <PresetTile
+                            key={it.slug}
+                            compact
+                            active={active}
+                            onSelect={() => chooseImageTreatment(it.slug)}
+                            ariaLabel={t(it.nameKey)}
+                            label={t(it.nameKey)}
+                          >
+                            {couple?.cover_image_url ? (
+                              <img
+                                src={couple.cover_image_url}
+                                alt=""
+                                className="h-14 w-full rounded-lg object-cover"
+                                style={{ filter }}
+                                aria-hidden
+                              />
+                            ) : (
+                              <span
+                                className="h-14 w-full rounded-lg"
+                                style={{
+                                  background: `linear-gradient(135deg, ${resolvedColors.primary}, ${resolvedColors.accent})`,
+                                  filter,
+                                }}
+                                aria-hidden
+                              />
+                            )}
+                          </PresetTile>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Card rounding — true mini-card shapes in the palette. */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.web.card_radius_label")}
+                    </h2>
+                    <div className="grid grid-cols-3 gap-2">
+                      {CARD_RADII.map((r) => {
+                        const active = design.web.cardRadius === r.slug;
+                        return (
+                          <PresetTile
+                            key={r.slug}
+                            compact
+                            active={active}
+                            onSelect={() => chooseCardRadius(r.slug)}
+                            ariaLabel={t(r.nameKey)}
+                            label={t(r.nameKey)}
+                          >
+                            <span
+                              className="flex h-12 w-full items-center justify-center rounded-lg bg-paper-100 dark:bg-umber-900"
+                              aria-hidden
+                            >
+                              <span
+                                className="h-8 w-16 border bg-white dark:bg-umber-800"
+                                style={{
+                                  borderRadius: r.css,
+                                  borderColor: resolvedColors.accent,
+                                }}
+                              />
+                            </span>
+                          </PresetTile>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Card shadow — the actual box-shadow on a mini card. */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.web.shadow_label")}
+                    </h2>
+                    <div className="grid grid-cols-3 gap-2">
+                      {SHADOWS.map((s) => {
+                        const active = design.web.shadow === s.slug;
+                        return (
+                          <PresetTile
+                            key={s.slug}
+                            compact
+                            active={active}
+                            onSelect={() => chooseShadow(s.slug)}
+                            ariaLabel={t(s.nameKey)}
+                            label={t(s.nameKey)}
+                          >
+                            <span
+                              className="flex h-12 w-full items-center justify-center rounded-lg bg-paper-100 dark:bg-umber-900"
+                              aria-hidden
+                            >
+                              <span
+                                className="h-8 w-16 rounded-lg border border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-800"
+                                style={{ boxShadow: s.css }}
+                              />
+                            </span>
+                          </PresetTile>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Visible sections — hide/show the optional guest-page
+                      blocks. Hiding is real and immediate in the preview. */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.web.sections_label")}
+                    </h2>
+                    <ul className="divide-y divide-paper-200 rounded-2xl border border-paper-300 bg-white dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
+                      {WEBSITE_SECTIONS.map((s) => {
+                        const hidden = design.web.hiddenSections.includes(s.slug);
+                        return (
+                          <li
+                            key={s.slug}
+                            className="flex items-center justify-between gap-3 px-3 py-1.5"
+                          >
+                            <span
+                              className={`text-sm ${
+                                hidden
+                                  ? "text-ink-400 line-through decoration-ink-300 dark:text-umber-400 dark:decoration-umber-600"
+                                  : "text-ink-900 dark:text-paper-50"
+                              }`}
+                            >
+                              {t(s.nameKey)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => toggleSection(s.slug)}
+                              aria-pressed={!hidden}
+                              aria-label={t(s.nameKey)}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:text-umber-200 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
+                            >
+                              {hidden ? (
+                                <EyeOff size={16} aria-hidden />
+                              ) : (
+                                <Eye size={16} aria-hidden />
+                              )}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <p className="mt-1.5 text-[11px] text-ink-400 dark:text-umber-300">
+                      {t("design.web.sections_hint")}
+                    </p>
+                  </section>
+
+                  {/* Advanced: freeform per-role colour overrides, demoted to a
+                      collapsed disclosure. The palette picker above is the
+                      curated colour path; raw hex is the escape hatch. */}
+                  <details className="rounded-2xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
+                    <summary className="cursor-pointer text-sm font-medium text-ink-700 dark:text-paper-100">
+                      {t("design.colors.advanced_label")}
+                    </summary>
+                    <div className="mt-3">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <InfoHint text={t("design.colors.hint")} />
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: activePalette.accent.hex }}
+                            aria-hidden
+                          />
+                          {t("design.colors.base_label")} {t(activePalette.nameKey)}
+                        </span>
+                      </div>
+                      {/* Swatch row: each role is a colour block with a pencil
+                          badge; clicking opens the native colour editor (the
+                          swatch IS the input label, with a focus-within ring
+                          for keyboard users). */}
+                      <div className="flex flex-wrap gap-4">
+                        {COLOR_ROLES.map((role) => {
+                          const resolved = design.colors[role] ?? activePalette[role].hex;
+                          const overridden = design.colors[role] !== undefined;
+                          return (
+                            <div key={role} className="flex flex-col items-center gap-1">
+                              <label
+                                className="relative block h-12 w-12 cursor-pointer rounded-xl border border-paper-300 shadow-soft focus-within:ring-2 focus-within:ring-ink-300 dark:border-umber-700 dark:focus-within:ring-paper-100"
+                                style={{ backgroundColor: resolved }}
+                                title={t(`design.colors.${role}`)}
+                              >
+                                <input
+                                  type="color"
+                                  value={resolved}
+                                  onChange={(ev) => chooseColor(role, ev.target.value)}
+                                  aria-label={t(`design.colors.${role}`)}
+                                  className="sr-only"
+                                />
+                                <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
+                                  <Pencil size={11} aria-hidden />
+                                </span>
+                              </label>
+                              <span className="text-[11px] text-ink-600 dark:text-umber-200">
+                                {t(`design.colors.${role}`)}
+                              </span>
+                              {/* Fixed-height reset row so toggling an override
+                                  never shifts the grid. */}
+                              <span className="flex h-6 items-center gap-1">
+                                {overridden && (
+                                  <>
+                                    <span
+                                      className="h-3 w-3 rounded-full border border-paper-300 dark:border-umber-700"
+                                      style={{ backgroundColor: activePalette[role].hex }}
+                                      title={`${t("design.colors.original")}: ${activePalette[role].hex}`}
+                                      aria-hidden
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => clearColor(role)}
+                                      className="px-1 py-0.5 text-[10px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+                                    >
+                                      {t("design.colors.reset")}
+                                    </button>
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {lowContrast && (
+                        <p
+                          role="status"
+                          className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400"
+                        >
+                          <AlertTriangle size={12} aria-hidden />
+                          {t("design.colors.low_contrast")}
+                          {Object.keys(design.colors).length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setDesign((d) => ({ ...d, colors: {} }))}
+                              className="font-medium underline underline-offset-2"
+                            >
+                              {t("design.colors.fix_contrast")}
+                            </button>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  </details>
+                </Chapter>
+
+                {/* ── Finish line — see it big, then publish / share it. ──── */}
+                <div className="rounded-2xl border border-paper-300 bg-white p-4 dark:border-umber-700 dark:bg-umber-800">
+                  <h2 className="font-serif text-xl italic tracking-tight text-ink-900 dark:text-paper-50">
+                    {t("design.finish.title")}
+                  </h2>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFullPreview(true)}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 transition hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
+                    >
+                      <Maximize2 size={14} aria-hidden />
+                      {t("design.full_preview")}
+                    </button>
+                    {couple?.slug && couple.is_public === false && (
+                      <Link
+                        to="/app/guest-page"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
+                      >
+                        {t("design.publish_cta_button")}
+                      </Link>
+                    )}
+                    {couple?.slug && couple.is_public && (
+                      <>
+                        <a
+                          href={`/w/${couple.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
+                        >
+                          <ExternalLink size={14} aria-hidden />
+                          {t("design.finish.view_live")}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => void copyGuestLink()}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 transition hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
+                        >
+                          <Copy size={14} aria-hidden />
+                          {t("design.finish.copy_link")}
                         </button>
-                      );
-                    })}
+                      </>
+                    )}
                   </div>
-                </section>
+                  {couple?.slug && couple.is_public === false && (
+                    <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
+                      {t("design.publish_cta_text")}
+                    </p>
+                  )}
+                </div>
               </>
             )}
 
-            {tab === "website" ? (
-              <div className="space-y-6">
-                {/* RSVP button look */}
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.web.button_style_label")}
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {BUTTON_STYLES.map((b) => {
-                      const active = design.web.buttonStyle === b.slug;
-                      return (
-                        <button
-                          key={b.slug}
-                          type="button"
-                          onClick={() => chooseButtonStyle(b.slug)}
-                          aria-pressed={active}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                            active
-                              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                              : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                          }`}
-                        >
-                          {active && <Check size={12} strokeWidth={3} aria-hidden />}
-                          {t(b.nameKey)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-                {/* Photo treatment — full colour vs desaturated black-and-white
-                    (the editorial look). */}
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.web.image_treatment_label")}
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {IMAGE_TREATMENTS.map((it) => {
-                      const active = design.web.imageTreatment === it.slug;
-                      return (
-                        <button
-                          key={it.slug}
-                          type="button"
-                          onClick={() => chooseImageTreatment(it.slug)}
-                          aria-pressed={active}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                            active
-                              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                              : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                          }`}
-                        >
-                          {active && <Check size={12} strokeWidth={3} aria-hidden />}
-                          {t(it.nameKey)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              </div>
-            ) : (
+            {tab === "website" ? null : (
               <div className="space-y-6">
                 {/* The card-type picker moved to the top of the panel (above the
                     shared identity); the print branch now starts with the
@@ -1230,37 +2053,93 @@ export default function DesignPage() {
               </div>
             ) : (
               <>
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200">
-                    {t("design.preview_label")}
-                  </p>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200">
+                      {t("design.preview_label")}
+                    </p>
+                    {usingSampleContent && (
+                      <span className="rounded-full border border-paper-300 bg-paper-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-300">
+                        {t("design.preview_sample_chip")}
+                      </span>
+                    )}
+                  </div>
                   {previewView && (
-                    <button
-                      type="button"
-                      onClick={() => setFullPreview(true)}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
-                    >
-                      <Maximize2 size={14} aria-hidden />
-                      {t("design.full_preview")}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {/* Inline viewport toggle: couples design for their
+                          guests' phones, so phone-width is one click, not a
+                          full-screen detour. Shares state with the overlay. */}
+                      <div className="flex items-center gap-0.5 rounded-full border border-paper-300 p-0.5 dark:border-umber-700">
+                        {(["mobile", "desktop"] as const).map((vp) => {
+                          const active = previewViewport === vp;
+                          const Icon = vp === "mobile" ? Smartphone : Monitor;
+                          return (
+                            <button
+                              key={vp}
+                              type="button"
+                              onClick={() => setPreviewViewport(vp)}
+                              aria-pressed={active}
+                              aria-label={t(
+                                vp === "mobile"
+                                  ? "design.preview_mobile"
+                                  : "design.preview_desktop",
+                              )}
+                              className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                                active
+                                  ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                                  : "text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                              }`}
+                            >
+                              <Icon size={13} aria-hidden />
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFullPreview(true)}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
+                      >
+                        <Maximize2 size={14} aria-hidden />
+                        {t("design.full_preview")}
+                      </button>
+                    </div>
                   )}
                 </div>
                 {previewView && (
-                  <div className="overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700">
+                  <div
+                    className={
+                      previewViewport === "mobile"
+                        ? "rounded-2xl border border-paper-200 bg-paper-100 p-4 dark:border-umber-700 dark:bg-umber-900"
+                        : "overflow-hidden rounded-2xl border border-paper-200 dark:border-umber-700"
+                    }
+                  >
                     {/* Full guest page, edge-to-edge so the editorial light/dark
                         bands reach the frame. Below lg it scrolls with the page;
                         on lg+ the sticky aside caps to the viewport and scrolls
-                        internally so the whole page stays reachable. */}
+                        internally so the whole page stays reachable. The inner
+                        wrapper is inert: the preview is a look-check, so its
+                        links/buttons must not join the editor's tab order. */}
                     <div className="lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
-                      <WeddingSiteView
-                        view={previewView}
-                        household={null}
-                        tier="public"
-                        locale={locale}
-                        isPreview={false}
-                        showFooter={false}
-                      />
+                      <div
+                        inert
+                        className={
+                          previewViewport === "mobile"
+                            ? "mx-auto max-w-[390px] overflow-hidden rounded-xl border border-paper-200 shadow-soft dark:border-umber-700"
+                            : undefined
+                        }
+                      >
+                        <WeddingSiteView
+                          view={previewView}
+                          household={null}
+                          tier="public"
+                          locale={locale}
+                          isPreview={false}
+                          showFooter={false}
+                        />
+                      </div>
                     </div>
+                    <p className="sr-only">{t("design.preview_sr_note")}</p>
                   </div>
                 )}
               </>
@@ -1269,63 +2148,92 @@ export default function DesignPage() {
         </div>
       )}
 
+      {/* Mobile: below lg the preview column stacks under the whole editor, so
+          phones would design blind. A floating pill opens the full-screen
+          preview, defaulting to the phone frame at editor-stacked widths. */}
+      {tab === "website" && !loading && previewView && !fullPreview && (
+        <button
+          type="button"
+          onClick={() => {
+            if (
+              typeof window.matchMedia === "function" &&
+              window.matchMedia("(max-width: 1023px)").matches
+            ) {
+              setPreviewViewport("mobile");
+            }
+            setFullPreview(true);
+          }}
+          className="fixed bottom-20 right-4 z-30 inline-flex min-h-12 items-center gap-2 rounded-full bg-ink-900 px-5 text-sm font-medium text-paper-50 shadow-pop transition hover:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 md:bottom-6 lg:hidden dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
+        >
+          <Eye size={16} aria-hidden />
+          {t("design.preview_open")}
+        </button>
+      )}
+
       {/* Full-page guest-page preview overlay — the SAME previewView through
           <WeddingSiteView>, framed at a mobile or desktop width via the header
-          toggle. Escape (bound above) or the close button dismiss it. */}
-      {fullPreview && previewView && (
-        <div
-          className="fixed inset-0 z-[60] flex flex-col bg-black/95 backdrop-blur-md"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t("design.full_preview")}
-        >
-          <header className="flex items-center justify-between gap-3 px-4 py-3">
-            <div className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1">
-              {(["mobile", "desktop"] as const).map((vp) => {
-                const active = previewViewport === vp;
-                const Icon = vp === "mobile" ? Smartphone : Monitor;
-                return (
-                  <button
-                    key={vp}
-                    type="button"
-                    onClick={() => setPreviewViewport(vp)}
-                    aria-pressed={active}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${
-                      active ? "bg-white text-ink-900" : "text-white/80 hover:text-white"
-                    }`}
-                  >
-                    <Icon size={14} aria-hidden />
-                    {t(vp === "mobile" ? "design.preview_mobile" : "design.preview_desktop")}
-                  </button>
-                );
-              })}
+          toggle. A real modal: portal to <body>, focus trapped (effect above),
+          body scroll locked, Escape or the close button dismiss it. */}
+      {fullPreview &&
+        previewView &&
+        createPortal(
+          <div
+            ref={overlayRef}
+            className="fixed inset-0 z-[60] flex flex-col bg-black/95 backdrop-blur-md"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("design.full_preview")}
+          >
+            <header className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1">
+                {(["mobile", "desktop"] as const).map((vp) => {
+                  const active = previewViewport === vp;
+                  const Icon = vp === "mobile" ? Smartphone : Monitor;
+                  return (
+                    <button
+                      key={vp}
+                      type="button"
+                      onClick={() => setPreviewViewport(vp)}
+                      aria-pressed={active}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${
+                        active ? "bg-white text-ink-900" : "text-white/80 hover:text-white"
+                      }`}
+                    >
+                      <Icon size={14} aria-hidden />
+                      {t(vp === "mobile" ? "design.preview_mobile" : "design.preview_desktop")}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                ref={overlayCloseRef}
+                onClick={() => setFullPreview(false)}
+                aria-label={t("design.preview_close")}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                <X size={18} aria-hidden />
+              </button>
+            </header>
+            <div className="flex-1 overflow-y-auto px-2 pb-6 sm:px-4">
+              <div
+                inert
+                className="mx-auto overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl transition-[max-width] dark:border-umber-700"
+                style={{ maxWidth: previewViewport === "mobile" ? 390 : "100%" }}
+              >
+                <WeddingSiteView
+                  view={previewView}
+                  household={null}
+                  tier="public"
+                  locale={locale}
+                  isPreview={false}
+                  showFooter={false}
+                />
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setFullPreview(false)}
-              aria-label={t("design.preview_close")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-            >
-              <X size={18} aria-hidden />
-            </button>
-          </header>
-          <div className="flex-1 overflow-y-auto px-2 pb-6 sm:px-4">
-            <div
-              className="mx-auto overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl transition-[max-width] dark:border-umber-700"
-              style={{ maxWidth: previewViewport === "mobile" ? 390 : "100%" }}
-            >
-              <WeddingSiteView
-                view={previewView}
-                household={null}
-                tier="public"
-                locale={locale}
-                isPreview={false}
-                showFooter={false}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

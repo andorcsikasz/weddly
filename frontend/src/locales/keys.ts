@@ -2447,10 +2447,18 @@ export interface LocaleMessages {
     section: {
       style: string;
       palette: string;
+      /** Divider label between the pack palettes and the legacy catalog. */
+      palette_more: string;
       fonts: string;
       print: string;
       monogram: string;
       date: string;
+    };
+    /** The three numbered studio chapters of the website editor. */
+    group: {
+      style: string;
+      typography: string;
+      details: string;
     };
     /** Print-template toggle labels. */
     print: {
@@ -2466,16 +2474,41 @@ export interface LocaleMessages {
     preview_mobile: string;
     preview_desktop: string;
     preview_close: string;
+    /** Mobile floating preview pill (below lg the preview stacks under the
+     *  editor, so phones open the full-screen overlay instead). */
+    preview_open: string;
+    /** Chip flagging that the preview is showing labelled sample beats because
+     *  the couple hasn't authored a schedule / wishlist yet. */
+    preview_sample_chip: string;
+    preview_sample: {
+      gift_1: string;
+      gift_2: string;
+    };
+    /** Visually-hidden note: the inline preview is inert (not interactive). */
+    preview_sr_note: string;
     /** Publish bridge banner: nudges the couple to publish their guest page
      *  once a slug exists but the page is still private. */
     publish_cta_text: string;
     publish_cta_button: string;
     /** Body sample line shown under the heading sample in a font tile. */
     font_sample_body: string;
-    /** Toast copy. */
+    /** Ambient save-status line (saving spinner / saved flash) + error toasts. */
     saved: string;
+    saving: string;
     save_blocked: string;
     save_error: string;
+    /** Microcopy under the style-pack grid: a pack switch reseeds everything. */
+    style_seed_note: string;
+    /** One-shot undo pill shown right after a (destructive) pack switch. */
+    style_applied: string;
+    undo: string;
+    /** Finish-line card at the bottom of the website editor. */
+    finish: {
+      title: string;
+      view_live: string;
+      copy_link: string;
+      link_copied: string;
+    };
     /** Wedding-style preset names. */
     style: {
       /** The four active style packs. */
@@ -2565,6 +2598,12 @@ export interface LocaleMessages {
       base_label: string;
       /** Tooltip on the small swatch showing a role's original palette hex. */
       original: string;
+      /** Collapsed-disclosure label the swatches live behind (the palette
+       *  picker is the curated path; raw hex is the escape hatch). */
+      advanced_label: string;
+      /** One-tap action beside the low-contrast warning: clears every
+       *  custom colour override back to the palette. */
+      fix_contrast: string;
     };
     /** Tabs: the Style Kit vs the Cards & printables hub. */
     tab: {
@@ -2584,6 +2623,9 @@ export interface LocaleMessages {
       shadow_label: string;
       button_style_label: string;
       sections_label: string;
+      /** Footnote under the section toggles: RSVP is never hideable and
+       *  hiding takes effect in the preview immediately. */
+      sections_hint: string;
       image_treatment_label: string;
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };
