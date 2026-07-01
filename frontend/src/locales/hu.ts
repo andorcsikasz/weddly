@@ -1017,8 +1017,9 @@ const hu: LocaleMessages = {
     set_date_dialog_title: "Esküvő dátumának véglegesítése",
     set_date_dialog_body: "Válaszd ki az esküvő dátumát. Később bármikor módosítható.",
     set_date_dialog_save: "Dátum mentése",
-    kpi_days_past: "Köszönjük, gratulálunk!",
-    kpi_days_past_sub: "Az esküvőtök megtörtént.",
+    kpi_days_past: "Köszönjük és gratulálunk!",
+    kpi_days_past_sub:
+      "Köszönjük, hogy részesei lehettünk a készülődéseteknek. Gratulálunk az esküvőtökhöz!",
     kpi_days_past_seating_pdf: "Ültetési rend (PDF)",
     kpi_days_past_guest_csv: "Vendéglista exportálása",
     kpi_total_spend_label: "Teljes költés",

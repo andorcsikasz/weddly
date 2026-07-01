@@ -1006,8 +1006,9 @@ const en: LocaleMessages = {
     set_date_dialog_title: "Lock the wedding date",
     set_date_dialog_body: "Pick the date you're getting married. You can change it later.",
     set_date_dialog_save: "Save date",
-    kpi_days_past: "Thank you and congratulations!",
-    kpi_days_past_sub: "Your wedding has happened.",
+    kpi_days_past: "Thank you & congratulations!",
+    kpi_days_past_sub:
+      "Thank you for letting us be part of your prep. Congratulations on your wedding!",
     kpi_days_past_seating_pdf: "Seating chart (PDF)",
     kpi_days_past_guest_csv: "Export guest list",
     kpi_total_spend_label: "Total spend",

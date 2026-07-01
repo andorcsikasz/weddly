@@ -192,11 +192,10 @@ export default function DashboardPage() {
   const [sentToEmail, setSentToEmail] = useState<string | null>(null);
   // Cost-planning slider — defaults to baseline once couple loads.
   const [planningCount, setPlanningCount] = useState<number | null>(null);
-  // Date-changed notify + archive — separate spinners so the button labels
-  // can swap to a localised "sending…" / "archiving…" copy on press.
+  // Date-changed notify — separate spinners so the button labels can swap to a
+  // localised "sending…" copy on press.
   const [notifyingDateChange, setNotifyingDateChange] = useState(false);
   const [dismissingDateChange, setDismissingDateChange] = useState(false);
-  const [archiving, setArchiving] = useState(false);
   // Cancel-invite spinner. Must be declared up here with the other useState
   // calls — placing it after the early `data === "loading"` return below
   // would violate the Rules of Hooks (React error #310 on first → loaded
@@ -675,28 +674,6 @@ export default function DashboardPage() {
     }
   }
 
-  async function onArchiveWorkspace() {
-    if (data === "loading" || data === null) return;
-    const ok = await confirm({
-      title: t("dashboard.archive_workspace_confirm_title"),
-      body: t("dashboard.archive_workspace_confirm_body"),
-      confirmLabel: t("dashboard.archive_workspace_confirm_yes"),
-      cancelLabel: t("common.cancel"),
-      destructive: true,
-    });
-    if (!ok) return;
-    setArchiving(true);
-    try {
-      const r = await coupleApi.archive();
-      setData({ ...data, couple: r.couple });
-      toast.success(t("dashboard.archive_workspace_done"));
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-    } finally {
-      setArchiving(false);
-    }
-  }
-
   async function saveWeddingDate(goal: WeddingDateGoal) {
     if (data === "loading" || data === null) return;
     try {
@@ -1139,15 +1116,7 @@ export default function DashboardPage() {
           {weddingPast ? (
             <PastWeddingTile
               label={t("dashboard.kpi_days_past")}
-              sub={t("dashboard.kpi_days_past_sub")}
-              seatingHref="/app/seating"
-              seatingLabel={t("dashboard.kpi_days_past_seating_pdf")}
-              guestsHref="/app/guests"
-              guestsLabel={t("dashboard.kpi_days_past_guest_csv")}
-              archiveLabel={t("dashboard.archive_workspace_button")}
-              archived={couple.archived_at !== null}
-              archiving={archiving}
-              onArchive={onArchiveWorkspace}
+              message={t("dashboard.kpi_days_past_sub")}
             />
           ) : (
             <DaysToGoTile
@@ -1855,64 +1824,21 @@ function DaysToGoTile({
   );
 }
 
-function PastWeddingTile({
-  label,
-  sub,
-  seatingHref,
-  seatingLabel,
-  guestsHref,
-  guestsLabel,
-  archiveLabel,
-  archived,
-  archiving,
-  onArchive,
-}: {
-  label: string;
-  sub: string;
-  seatingHref: string;
-  seatingLabel: string;
-  guestsHref: string;
-  guestsLabel: string;
-  archiveLabel: string;
-  archived: boolean;
-  archiving: boolean;
-  onArchive: () => void;
-}) {
+// Post-wedding celebration tile — a warm thank-you + congratulations, no
+// actions. It's purely a moment of delight once the wedding has passed; the
+// seating PDF and guest export stay on their own pages, and archiving the
+// workspace lives in the account settings danger zone. Filled blush ("vörös
+// alapon fehér betűk") so it stands apart from the light KPI tiles beside it.
+function PastWeddingTile({ label, message }: { label: string; message: string }) {
   return (
-    <div className="card bg-blush-50 p-4 dark:bg-blush-400/15">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blush-700 dark:text-blush-300">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-          <Heart size={12} aria-hidden="true" />
+    <div className="card border-0 bg-blush-600 p-4 text-paper-50 dark:bg-blush-600">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-paper-50/90">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50/15 text-paper-50">
+          <Heart size={12} fill="currentColor" aria-hidden="true" />
         </span>
         {label}
       </div>
-      <div className="stat-num mt-2 text-lg font-bold leading-tight text-ink-900 dark:text-paper-50">
-        {sub}
-      </div>
-      <div className="mt-3 flex flex-col gap-1.5 text-sm">
-        <Link
-          to={seatingHref}
-          className="text-blush-800 underline-offset-2 hover:underline dark:text-blush-300"
-        >
-          {seatingLabel}
-        </Link>
-        <Link
-          to={guestsHref}
-          className="text-blush-800 underline-offset-2 hover:underline dark:text-blush-300"
-        >
-          {guestsLabel}
-        </Link>
-        {!archived && (
-          <button
-            type="button"
-            onClick={onArchive}
-            disabled={archiving}
-            className="mt-1 text-left text-blush-800 underline-offset-2 hover:underline disabled:opacity-60 dark:text-blush-300"
-          >
-            {archiving ? "…" : archiveLabel}
-          </button>
-        )}
-      </div>
+      <div className="stat-num mt-2 text-lg font-bold leading-tight text-paper-50">{message}</div>
     </div>
   );
 }

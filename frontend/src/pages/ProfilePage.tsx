@@ -69,6 +69,7 @@ import {
   formatMoney,
   formatTimestamp,
   isPlausibleDateIso,
+  todayIso,
 } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -119,6 +120,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
   const { setSession, user: authUser, logout, refresh: refreshAuth } = useAuth();
   const { setLocale } = useT();
   const [leaving, setLeaving] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [coupleStatus, setCoupleStatus] = useState<CoupleStatus>("active");
   const [pauseReq, setPauseReq] = useState<CouplePauseRequest | null>(null);
@@ -220,6 +222,32 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
   function startPause() {
     if (!couple) return;
     setPauseFormOpen(true);
+  }
+
+  // Archive the workspace — a deliberate "we're done" action that snapshots a
+  // final bundle into Saved downloads and flips the couple read-only. Moved
+  // here from the post-wedding dashboard tile (which is now a pure celebration
+  // card); the account danger zone is its natural home next to leave/delete.
+  async function onArchiveWorkspace() {
+    if (!couple) return;
+    const ok = await confirm({
+      title: t("dashboard.archive_workspace_confirm_title"),
+      body: t("dashboard.archive_workspace_confirm_body"),
+      confirmLabel: t("dashboard.archive_workspace_confirm_yes"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setArchiving(true);
+    try {
+      const r = await coupleApi.archive();
+      setCouple(r.couple);
+      toast.success(t("dashboard.archive_workspace_done"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setArchiving(false);
+    }
   }
 
   async function confirmPause(reason: string) {
@@ -1149,6 +1177,30 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
           )}
         </section>
       )}
+
+      {showAccount &&
+        couple &&
+        couple.archived_at === null &&
+        couple.wedding_date !== null &&
+        couple.wedding_date < todayIso() && (
+          <section className="card mt-6">
+            <h2 className="flex items-center gap-2 font-grotesk text-lg">
+              <Archive size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+              {t("dashboard.archive_workspace_button")}
+            </h2>
+            <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+              {t("dashboard.archive_workspace_confirm_body")}
+            </p>
+            <button
+              type="button"
+              className="btn-outline mt-4"
+              onClick={onArchiveWorkspace}
+              disabled={archiving}
+            >
+              {archiving ? t("common.saving") : t("dashboard.archive_workspace_button")}
+            </button>
+          </section>
+        )}
 
       {showAccount && (
         <section className="card mt-6 border-2 border-blush-500 bg-blush-50/40 dark:bg-blush-400/15">
