@@ -7,6 +7,7 @@ import type {
   PlannerStats,
   PlannerTaskRow,
 } from "@shared/types";
+import { useConfirm } from "../components/ui";
 import { plannerApi } from "../lib/endpoints";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
@@ -96,6 +97,18 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
 
   if (clients.length === 0) return null;
 
+  // Aggregate counts so the legend answers "how many" without reading bars.
+  const totals = clients.reduce(
+    (acc, c) => ({
+      done: acc.done + c.task_done,
+      overdue: acc.overdue + c.task_overdue,
+      week: acc.week + c.due_this_week,
+      total: acc.total + c.task_total,
+    }),
+    { done: 0, overdue: 0, week: 0, total: 0 },
+  );
+  const totalRemaining = Math.max(0, totals.total - totals.done - totals.overdue - totals.week);
+
   return (
     <section className="mb-0">
       <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
@@ -105,9 +118,15 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
         <div className="space-y-3">
           {visible.map((c) => {
             const total = c.task_total;
+            const rowCls =
+              "flex items-center gap-3 -mx-2 rounded-lg px-2 py-0.5 transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/60";
             if (total === 0) {
               return (
-                <div key={c.couple_id} className="flex items-center gap-3">
+                <Link
+                  key={c.couple_id}
+                  to={`/app/planner/clients/${c.couple_id}`}
+                  className={rowCls}
+                >
                   <span
                     className="w-20 min-w-0 shrink truncate text-xs text-umber-500 dark:text-umber-400 sm:w-32"
                     title={c.display_name}
@@ -118,7 +137,7 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
                   <span className="shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-umber-400 dark:text-umber-500">
                     0
                   </span>
-                </div>
+                </Link>
               );
             }
             const donePct = Math.round((c.task_done / total) * 100);
@@ -127,7 +146,7 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
             const remaining = total - c.task_done - c.task_overdue - c.due_this_week;
             const remainingPct = Math.max(0, 100 - donePct - overduePct - weekPct);
             return (
-              <div key={c.couple_id} className="flex items-center gap-3">
+              <Link key={c.couple_id} to={`/app/planner/clients/${c.couple_id}`} className={rowCls}>
                 <span
                   className="w-20 min-w-0 shrink truncate text-xs font-medium text-ink-700 dark:text-paper-100 sm:w-32"
                   title={c.display_name}
@@ -167,27 +186,27 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
                 <span className="shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-umber-500 dark:text-umber-400">
                   {c.task_done}/{total}
                 </span>
-              </div>
+              </Link>
             );
           })}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-3 border-t border-paper-100 pt-3 dark:border-umber-800">
-          <span className="flex items-center gap-1.5 text-[10px] text-ink-500 dark:text-umber-400">
+          <span className="flex items-center gap-1.5 text-[10px] tabular-nums text-ink-500 dark:text-umber-400">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-sage-500" />
-            {t("planner_home.chart_done_label")}
+            {t("planner_home.chart_done_label")} · {totals.done}
           </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-ink-500 dark:text-umber-400">
+          <span className="flex items-center gap-1.5 text-[10px] tabular-nums text-ink-500 dark:text-umber-400">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-red-400" />
-            {t("planner_home.chart_overdue_label")}
+            {t("planner_home.chart_overdue_label")} · {totals.overdue}
           </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-ink-500 dark:text-umber-400">
+          <span className="flex items-center gap-1.5 text-[10px] tabular-nums text-ink-500 dark:text-umber-400">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />
-            {t("planner_home.chart_week_label")}
+            {t("planner_home.chart_week_label")} · {totals.week}
           </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-ink-500 dark:text-umber-400">
+          <span className="flex items-center gap-1.5 text-[10px] tabular-nums text-ink-500 dark:text-umber-400">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-paper-300 dark:bg-umber-600" />
-            {t("planner_home.chart_remaining_label")}
+            {t("planner_home.chart_remaining_label")} · {totalRemaining}
           </span>
         </div>
 
@@ -368,14 +387,16 @@ function UpcomingTasks({
   const weekTasks = filtered.filter((tk) => tk.due_date > todayStr && tk.due_date <= weekEndStr);
   const laterTasks = filtered.filter((tk) => tk.due_date > weekEndStr);
 
+  // Every row gets a dot so the list stays aligned; low priority is neutral.
   const priorityDot = (p: number) => {
-    if (p === 2)
-      return <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />;
-    if (p === 1)
-      return (
-        <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
-      );
-    return null;
+    const color =
+      p === 2 ? "bg-red-500" : p === 1 ? "bg-amber-400" : "bg-paper-300 dark:bg-umber-600";
+    return (
+      <span
+        className={`mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full ${color}`}
+        aria-hidden="true"
+      />
+    );
   };
 
   const renderGroup = (groupTasks: PlannerTaskRow[]) => {
@@ -535,6 +556,7 @@ function GettingStartedChecklist({
 export default function PlannerHomePage() {
   const { user } = useAuth();
   const { t, locale } = useT();
+  const confirm = useConfirm();
   useDocumentMeta("planner_home.meta_title", "planner_home.meta_description");
 
   const [clients, setClients] = useState<PlannerClientView[]>([]);
@@ -617,10 +639,18 @@ export default function PlannerHomePage() {
     } catch {}
   }
 
-  async function handleDeclineInvite(coupleId: number) {
+  async function handleDeclineInvite(inv: PlannerInviteView) {
+    const ok = await confirm({
+      title: t("planner_home.invite_decline_confirm_title"),
+      body: t("planner_home.invite_decline_confirm_body", { name: inv.display_name }),
+      confirmLabel: t("planner_home.invite_decline"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
     try {
-      await plannerApi.declineInvite(coupleId);
-      setInvites((prev) => prev.filter((i) => i.couple_id !== coupleId));
+      await plannerApi.declineInvite(inv.couple_id);
+      setInvites((prev) => prev.filter((i) => i.couple_id !== inv.couple_id));
     } catch {}
   }
 
@@ -766,7 +796,7 @@ export default function PlannerHomePage() {
                     </p>
                     <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
                       {inv.wedding_date
-                        ? formatDate(inv.wedding_date, "hu")
+                        ? formatDate(inv.wedding_date, locale)
                         : t("planner_home.client_wedding_date_none")}
                     </p>
                   </div>
@@ -780,7 +810,7 @@ export default function PlannerHomePage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => void handleDeclineInvite(inv.couple_id)}
+                      onClick={() => void handleDeclineInvite(inv)}
                       className="btn-outline btn-sm"
                     >
                       {t("planner_home.invite_decline")}
@@ -820,10 +850,16 @@ export default function PlannerHomePage() {
               {tasks.length > 0 && (
                 <button
                   type="button"
-                  className="btn-outline btn-sm"
+                  className="btn-outline btn-sm flex items-center gap-1"
+                  aria-expanded={showTaskFilters}
                   onClick={() => setShowTaskFilters((v) => !v)}
                 >
-                  {t("planner_home.filter_all_clients")}
+                  {t("planner_home.filter_toggle")}
+                  {showTaskFilters ? (
+                    <ChevronUp size={13} aria-hidden="true" />
+                  ) : (
+                    <ChevronDown size={13} aria-hidden="true" />
+                  )}
                 </button>
               )}
             </div>

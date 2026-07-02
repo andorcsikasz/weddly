@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, Clock, Plus, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { PlannerClientView } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -20,7 +20,12 @@ const CLIENT_COLORS = [
 ] as const;
 
 function initials(displayName: string): string {
-  const parts = displayName.trim().split(/\s+/);
+  // Join glyphs ("Shrek & Fiona") are not names — drop them so the avatar
+  // reads "SF", never "S&".
+  const parts = displayName
+    .trim()
+    .split(/\s+/)
+    .filter((p) => p !== "&" && p !== "+");
   if (parts.length >= 2) {
     return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
   }
@@ -61,11 +66,24 @@ function ConsentBadge({ status }: { status: string }) {
 }
 
 function HealthIcon({ overdue }: { overdue: number }) {
-  if (overdue === 0)
-    return <CheckCircle2 size={14} className="shrink-0 text-moss-600" aria-hidden="true" />;
-  if (overdue < 3)
-    return <AlertTriangle size={14} className="shrink-0 text-amber-500" aria-hidden="true" />;
-  return <AlertTriangle size={14} className="shrink-0 text-red-500" aria-hidden="true" />;
+  const { t } = useT();
+  const label =
+    overdue === 0
+      ? t("planner_home.card_health_ok")
+      : t("planner_home.card_health_overdue", { n: String(overdue) });
+  return (
+    <span className="shrink-0" title={label} role="img" aria-label={label}>
+      {overdue === 0 ? (
+        <CheckCircle2 size={14} className="text-moss-600" aria-hidden="true" />
+      ) : (
+        <AlertTriangle
+          size={14}
+          className={overdue < 3 ? "text-amber-500" : "text-red-500"}
+          aria-hidden="true"
+        />
+      )}
+    </span>
+  );
 }
 
 // ─── InlineNotes ──────────────────────────────────────────────────────────────
@@ -99,6 +117,7 @@ function InlineNotes({
         autoFocus
         onChange={(e) => setValue(e.target.value)}
         onBlur={handleBlur}
+        onClick={(e) => e.stopPropagation()}
         placeholder={t("planner_home.notes_placeholder")}
       />
     );
@@ -109,7 +128,10 @@ function InlineNotes({
       <button
         type="button"
         className="text-left text-xs text-umber-600 dark:text-umber-300 line-clamp-1 hover:underline"
-        onClick={() => setEditing(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setEditing(true);
+        }}
       >
         {value}
       </button>
@@ -120,7 +142,10 @@ function InlineNotes({
     <button
       type="button"
       className="btn-ghost text-xs px-0 py-0 text-umber-400 hover:text-umber-700 dark:text-umber-500 dark:hover:text-umber-300"
-      onClick={() => setEditing(true)}
+      onClick={(e) => {
+        e.stopPropagation();
+        setEditing(true);
+      }}
     >
       {t("planner_home.pipeline_notes_add")}
     </button>
@@ -131,7 +156,9 @@ function InlineNotes({
 
 function ClientCard({ client }: { client: PlannerClientView }) {
   const { t } = useT();
+  const navigate = useNavigate();
   const [notes, setNotes] = useState(client.notes);
+  const isActive = client.status === "active";
 
   const colorClass = CLIENT_COLORS[client.couple_id % 8] ?? CLIENT_COLORS[0];
   const avatarInitials = initials(client.display_name);
@@ -155,7 +182,14 @@ function ClientCard({ client }: { client: PlannerClientView }) {
   }
 
   return (
-    <div className="card p-4 hover:shadow-md transition-shadow cursor-default">
+    // The whole card is a mouse-convenience click target for active clients;
+    // the "Enter" Link below stays the keyboard/screen-reader affordance.
+    <div
+      className={`card p-4 hover:shadow-md transition-shadow ${
+        isActive ? "cursor-pointer" : "cursor-default"
+      }`}
+      onClick={isActive ? () => navigate(`/app/planner/clients/${client.couple_id}`) : undefined}
+    >
       {/* Top row */}
       <div className="flex items-center gap-3">
         <div
@@ -172,11 +206,11 @@ function ClientCard({ client }: { client: PlannerClientView }) {
           {client.wedding_date && (
             <div className="mt-0.5 flex items-center gap-1">
               <Clock size={11} className="shrink-0 text-umber-400" aria-hidden="true" />
-              <p className="text-xs text-umber-500 dark:text-umber-400">
+              <p className="truncate text-xs text-umber-500 dark:text-umber-400">
                 <span className="text-umber-400 dark:text-umber-500">
                   {t("planner_clients.wedding_label")}{" "}
                 </span>
-                {formatWeddingDate(client.wedding_date)}
+                <span className="whitespace-nowrap">{formatWeddingDate(client.wedding_date)}</span>
               </p>
             </div>
           )}
@@ -247,6 +281,7 @@ function ClientCard({ client }: { client: PlannerClientView }) {
           <Link
             to={`/app/planner/clients/${client.couple_id}`}
             className="btn-primary btn-sm flex-shrink-0"
+            onClick={(e) => e.stopPropagation()}
           >
             {t("planner_home.pipeline_enter")}
           </Link>

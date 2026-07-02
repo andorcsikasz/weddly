@@ -7476,12 +7476,16 @@ export interface LocaleMessages {
     upcoming_empty: string;
     task_summary: string;
     task_summary_ok: string;
+    card_health_ok: string;
+    card_health_overdue: string;
     messages_link: string;
     profile_link: string;
     back_label: string;
     invites_heading: string;
     invite_accept: string;
     invite_decline: string;
+    invite_decline_confirm_title: string;
+    invite_decline_confirm_body: string;
     kpi_active_clients: string;
     kpi_total_tasks: string;
     kpi_overdue: string;
@@ -7499,6 +7503,7 @@ export interface LocaleMessages {
     chart_show_more: string;
     chart_show_less: string;
     filter_all_clients: string;
+    filter_toggle: string;
     filter_priority_all: string;
     filter_priority_high: string;
     filter_priority_medium: string;

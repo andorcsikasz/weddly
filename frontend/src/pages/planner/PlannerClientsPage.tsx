@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 import type { PlannerClientView, PlannerInviteView } from "@shared/types";
+import { useConfirm } from "../../components/ui";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 import { useDocumentMeta } from "../../lib/seo";
@@ -14,7 +15,8 @@ import { InviteClientsCard } from "./InviteClientsCard";
 import { PlannerDashPipeline } from "./PlannerDashPipeline";
 
 export default function PlannerClientsPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
+  const confirm = useConfirm();
   useDocumentMeta("planner_clients_page.meta_title", "planner_clients_page.meta_description");
 
   const [clients, setClients] = useState<PlannerClientView[]>([]);
@@ -42,10 +44,18 @@ export default function PlannerClientsPage() {
       /* noop */
     }
   }
-  async function handleDeclineInvite(coupleId: number) {
+  async function handleDeclineInvite(inv: PlannerInviteView) {
+    const ok = await confirm({
+      title: t("planner_home.invite_decline_confirm_title"),
+      body: t("planner_home.invite_decline_confirm_body", { name: inv.display_name }),
+      confirmLabel: t("planner_home.invite_decline"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
     try {
-      await plannerApi.declineInvite(coupleId);
-      setInvites((prev) => prev.filter((i) => i.couple_id !== coupleId));
+      await plannerApi.declineInvite(inv.couple_id);
+      setInvites((prev) => prev.filter((i) => i.couple_id !== inv.couple_id));
     } catch {
       /* noop */
     }
@@ -79,7 +89,7 @@ export default function PlannerClientsPage() {
                   </p>
                   <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
                     {inv.wedding_date
-                      ? formatDate(inv.wedding_date, "hu")
+                      ? formatDate(inv.wedding_date, locale)
                       : t("planner_home.client_wedding_date_none")}
                   </p>
                 </div>
@@ -93,7 +103,7 @@ export default function PlannerClientsPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => void handleDeclineInvite(inv.couple_id)}
+                    onClick={() => void handleDeclineInvite(inv)}
                     className="btn-outline btn-sm"
                   >
                     {t("planner_home.invite_decline")}
