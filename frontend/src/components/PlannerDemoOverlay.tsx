@@ -90,13 +90,13 @@ export function PlannerDemoOverlay() {
         <div
           role="status"
           aria-live="polite"
-          className="border-b border-sage-300 bg-sage-100 px-4 py-2 text-sm text-ink-800 dark:border-sage-700/60 dark:bg-sage-900/40 dark:text-paper-100"
+          className="border-b border-paper-300 bg-paper-100 px-4 py-2 text-sm text-ink-800 dark:border-umber-700 dark:bg-umber-800/70 dark:text-paper-100"
         >
           <div className="mx-auto flex max-w-7xl items-center gap-3 sm:gap-4">
             <Sparkles
               size={16}
               aria-hidden="true"
-              className="shrink-0 text-sage-700 dark:text-sage-300"
+              className="shrink-0 text-umber-500 dark:text-umber-300"
             />
             <div className="min-w-0 flex-1 truncate font-semibold">
               {t("planner_demo.banner_title")}
@@ -104,7 +104,7 @@ export function PlannerDemoOverlay() {
             <button
               type="button"
               onClick={() => exitDemo("/planners")}
-              className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-ink-700 underline decoration-sage-400 decoration-1 underline-offset-4 transition-colors hover:text-ink-900 hover:decoration-sage-600 dark:text-paper-200 dark:decoration-sage-500 dark:hover:text-paper-50"
+              className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-ink-700 underline decoration-paper-400 decoration-1 underline-offset-4 transition-colors hover:text-ink-900 hover:decoration-umber-400 dark:text-paper-200 dark:decoration-umber-500 dark:hover:text-paper-50"
             >
               <ArrowLeft size={12} aria-hidden="true" />
               {t("planner_demo.banner_exit")}
@@ -112,7 +112,7 @@ export function PlannerDemoOverlay() {
             <button
               type="button"
               onClick={() => setNudgeOpen(true)}
-              className="hidden shrink-0 rounded-full bg-ink-900 px-3 py-1 text-xs font-semibold text-paper-50 transition-colors hover:bg-ink-700 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 sm:inline-flex"
+              className="hidden shrink-0 rounded-full bg-sage-700 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-sage-800 dark:bg-sage-600 dark:text-paper-50 dark:hover:bg-sage-500 sm:inline-flex"
             >
               {t("planner_demo.banner_cta")}
             </button>
@@ -120,7 +120,7 @@ export function PlannerDemoOverlay() {
               type="button"
               onClick={() => setBannerDismissed(true)}
               aria-label={t("planner_demo.banner_dismiss_aria")}
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-sage-200 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-sage-800/60"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-umber-700"
             >
               <X size={14} aria-hidden="true" />
             </button>

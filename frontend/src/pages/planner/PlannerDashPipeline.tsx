@@ -1,23 +1,15 @@
-import { AlertTriangle, CheckCircle2, Clock, Plus, UserPlus } from "lucide-react";
+import { Clock, Plus, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { PlannerClientView } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
-import { clientColor, titleCaseName } from "../../lib/planner_display";
+import { titleCaseName } from "../../lib/planner_display";
 
-// Client avatar colors — warm, muted palette aligned with the design system.
-// Uses eucalyptus + blush + umber-adjacent tones instead of raw Tailwind colors.
-const CLIENT_COLORS = [
-  "bg-blush-100 text-blush-800",
-  "bg-eucalyptus-100 text-eucalyptus-800",
-  "bg-amber-100 text-amber-800",
-  "bg-violet-100 text-violet-800",
-  "bg-eucalyptus-200 text-eucalyptus-900",
-  "bg-blush-200 text-blush-900",
-  "bg-amber-200 text-amber-900",
-  "bg-paper-300 text-umber-800",
-] as const;
+// Client avatars share ONE neutral background; only the initials differ.
+// Per-client hues made the roster read as random confetti, so identity
+// colour is reserved for surfaces that need disambiguation (calendar).
+const AVATAR_CLASS = "bg-paper-200 text-umber-700 dark:bg-umber-700 dark:text-paper-200";
 
 function initials(displayName: string): string {
   // Join glyphs ("Shrek & Fiona") are not names — drop them so the avatar
@@ -46,42 +38,15 @@ function formatWeddingDate(ymd: string): string {
   return `${year}. ${month}. ${day}.`;
 }
 
-// Consent status of the planner↔couple link. "active" means the couple has
-// approved access; anything else (pending invite / requested) is awaiting the
-// couple's approval, so we surface it explicitly on the card.
+// Consent status of the planner↔couple link. "active" is the default state
+// and stays quiet; only a pending invite/request (awaiting the couple's
+// approval) earns a badge; one indicator, one status.
 function ConsentBadge({ status }: { status: string }) {
   const { t } = useT();
-  const isActive = status === "active";
+  if (status === "active") return null;
   return (
-    <span
-      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-        isActive
-          ? "bg-moss-100 text-moss-900 dark:bg-moss-900/40 dark:text-moss-100"
-          : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-      }`}
-    >
-      {isActive ? t("couple_planners.status_active") : t("planner_home.pipeline_pending")}
-    </span>
-  );
-}
-
-function HealthIcon({ overdue }: { overdue: number }) {
-  const { t } = useT();
-  const label =
-    overdue === 0
-      ? t("planner_home.card_health_ok")
-      : t("planner_home.card_health_overdue", { n: String(overdue) });
-  return (
-    <span className="shrink-0" title={label} role="img" aria-label={label}>
-      {overdue === 0 ? (
-        <CheckCircle2 size={14} className="text-moss-600" aria-hidden="true" />
-      ) : (
-        <AlertTriangle
-          size={14}
-          className={overdue < 3 ? "text-amber-500" : "text-red-500"}
-          aria-hidden="true"
-        />
-      )}
+    <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+      {t("planner_home.pipeline_pending")}
     </span>
   );
 }
@@ -160,9 +125,7 @@ function ClientCard({ client }: { client: PlannerClientView }) {
   const [notes, setNotes] = useState(client.notes);
   const isActive = client.status === "active";
 
-  const colorClass = CLIENT_COLORS[client.couple_id % 8] ?? CLIENT_COLORS[0];
   const avatarInitials = initials(client.display_name);
-  const accent = clientColor(client.couple_id);
   const { total, done, overdue } = client.task_summary;
   const barWidth = `${Math.round((done / Math.max(total, 1)) * 100)}%`;
 
@@ -193,15 +156,14 @@ function ClientCard({ client }: { client: PlannerClientView }) {
       {/* Top row */}
       <div className="flex items-center gap-3">
         <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ${colorClass}`}
+          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ${AVATAR_CLASS}`}
         >
           {avatarInitials}
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="flex items-center gap-1.5 font-grotesk font-semibold text-base text-umber-900 dark:text-paper-50">
-            <span className={`h-2 w-2 shrink-0 rounded-full ${accent.dot}`} aria-hidden="true" />
-            <span className="truncate">{titleCaseName(client.display_name)}</span>
+          <p className="font-grotesk font-semibold text-base text-umber-900 dark:text-paper-50">
+            <span className="block truncate">{titleCaseName(client.display_name)}</span>
           </p>
           {client.wedding_date && (
             <div className="mt-0.5 flex items-center gap-1">
@@ -216,10 +178,7 @@ function ClientCard({ client }: { client: PlannerClientView }) {
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <ConsentBadge status={client.status} />
-          <HealthIcon overdue={overdue} />
-        </div>
+        <ConsentBadge status={client.status} />
       </div>
 
       {/* Row 2: days until + guest count */}
@@ -277,20 +236,16 @@ function ClientCard({ client }: { client: PlannerClientView }) {
           />
         </div>
 
-        {client.status === "active" ? (
+        {/* Pending cards get no button; the header badge already explains
+            why there's nothing to enter (the couple hasn't approved yet). */}
+        {client.status === "active" && (
           <Link
             to={`/app/planner/clients/${client.couple_id}`}
-            className="btn-primary btn-sm flex-shrink-0"
+            className="btn-success btn-sm flex-shrink-0"
             onClick={(e) => e.stopPropagation()}
           >
             {t("planner_home.pipeline_enter")}
           </Link>
-        ) : (
-          // Pending request — the couple hasn't approved access yet, so there's
-          // nothing to enter. Entering would 403 server-side.
-          <span className="btn-sm flex-shrink-0 cursor-default rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            {t("planner_home.pipeline_pending")}
-          </span>
         )}
       </div>
     </div>

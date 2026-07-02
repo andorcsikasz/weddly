@@ -98,16 +98,17 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
   if (clients.length === 0) return null;
 
   // Aggregate counts so the legend answers "how many" without reading bars.
+  // "Due this week" is a calendar concern; the dashboard bar only splits
+  // done / overdue / remaining so red stays the sole warning colour.
   const totals = clients.reduce(
     (acc, c) => ({
       done: acc.done + c.task_done,
       overdue: acc.overdue + c.task_overdue,
-      week: acc.week + c.due_this_week,
       total: acc.total + c.task_total,
     }),
-    { done: 0, overdue: 0, week: 0, total: 0 },
+    { done: 0, overdue: 0, total: 0 },
   );
-  const totalRemaining = Math.max(0, totals.total - totals.done - totals.overdue - totals.week);
+  const totalRemaining = Math.max(0, totals.total - totals.done - totals.overdue);
 
   return (
     <section className="mb-0">
@@ -142,9 +143,8 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
             }
             const donePct = Math.round((c.task_done / total) * 100);
             const overduePct = Math.round((c.task_overdue / total) * 100);
-            const weekPct = Math.round((c.due_this_week / total) * 100);
-            const remaining = total - c.task_done - c.task_overdue - c.due_this_week;
-            const remainingPct = Math.max(0, 100 - donePct - overduePct - weekPct);
+            const remaining = total - c.task_done - c.task_overdue;
+            const remainingPct = Math.max(0, 100 - donePct - overduePct);
             return (
               <Link key={c.couple_id} to={`/app/planner/clients/${c.couple_id}`} className={rowCls}>
                 <span
@@ -168,13 +168,6 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
                       title={`${t("planner_home.chart_overdue_label")}: ${c.task_overdue}`}
                     />
                   )}
-                  {weekPct > 0 && (
-                    <div
-                      className="h-full bg-amber-400"
-                      style={{ width: `${weekPct}%` }}
-                      title={`${t("planner_home.chart_week_label")}: ${c.due_this_week}`}
-                    />
-                  )}
                   {remainingPct > 0 && remaining > 0 && (
                     <div
                       className="h-full bg-paper-300 dark:bg-umber-600"
@@ -196,14 +189,12 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-sage-500" />
             {t("planner_home.chart_done_label")} · {totals.done}
           </span>
-          <span className="flex items-center gap-1.5 text-[10px] tabular-nums text-ink-500 dark:text-umber-400">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-red-400" />
-            {t("planner_home.chart_overdue_label")} · {totals.overdue}
-          </span>
-          <span className="flex items-center gap-1.5 text-[10px] tabular-nums text-ink-500 dark:text-umber-400">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />
-            {t("planner_home.chart_week_label")} · {totals.week}
-          </span>
+          {totals.overdue > 0 && (
+            <span className="flex items-center gap-1.5 text-[10px] tabular-nums text-ink-500 dark:text-umber-400">
+              <span className="inline-block h-2.5 w-2.5 rounded-sm bg-red-400" />
+              {t("planner_home.chart_overdue_label")} · {totals.overdue}
+            </span>
+          )}
           <span className="flex items-center gap-1.5 text-[10px] tabular-nums text-ink-500 dark:text-umber-400">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-paper-300 dark:bg-umber-600" />
             {t("planner_home.chart_remaining_label")} · {totalRemaining}
@@ -409,7 +400,9 @@ function UpcomingTasks({
     }
     return [...grouped.entries()].map(([coupleId, group]) => (
       <div key={coupleId}>
-        <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-umber-500 dark:text-umber-400">
+        {/* Uppercase + tracking already does the separator work; the colour
+            stays neutral so headers don't add another text hue to the page. */}
+        <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-400 dark:text-umber-400">
           {group.display_name}
         </h4>
         <ul className="space-y-1.5">
@@ -444,7 +437,7 @@ function UpcomingTasks({
     <div className="space-y-6">
       {todayTasks.length > 0 && (
         <div>
-          <h3 className="mb-3 text-sm font-semibold text-red-500 dark:text-red-400">
+          <h3 className="mb-3 text-sm font-semibold text-ink-700 dark:text-paper-200">
             {t("planner_home.rail_today_title")}
           </h3>
           <div className="space-y-4">{renderGroup(todayTasks)}</div>
@@ -452,7 +445,7 @@ function UpcomingTasks({
       )}
       {weekTasks.length > 0 && (
         <div>
-          <h3 className="mb-3 text-sm font-semibold text-amber-600 dark:text-amber-400">
+          <h3 className="mb-3 text-sm font-semibold text-ink-700 dark:text-paper-200">
             {t("planner_home.filter_timing_week")}
           </h3>
           <div className="space-y-4">{renderGroup(weekTasks)}</div>
@@ -460,7 +453,7 @@ function UpcomingTasks({
       )}
       {laterTasks.length > 0 && (
         <div>
-          <h3 className="mb-3 text-sm font-semibold text-umber-600 dark:text-umber-300">
+          <h3 className="mb-3 text-sm font-semibold text-ink-700 dark:text-paper-200">
             {t("planner_home.filter_timing_all")}
           </h3>
           <div className="space-y-4">{renderGroup(laterTasks)}</div>

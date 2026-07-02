@@ -7,7 +7,6 @@ import {
   Plus,
   Sparkles,
   UserPlus,
-  Zap,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { PlannerClientView, PlannerTaskRow } from "@shared/types";
@@ -106,19 +105,19 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
         )}
 
         {extraToday > 0 && (
-          <p className="text-xs text-blush-600">
+          <p className="text-xs text-umber-500 dark:text-umber-400">
             {t("planner_home.rail_more_today").replace("{{n}}", String(extraToday))}
           </p>
         )}
       </Link>
 
-      {/* SECTION B: URGENT ALERTS — opens the tasks list */}
+      {/* SECTION B: URGENT ALERTS, opens the tasks list. Same neutral card
+          as the rail siblings; the alert state is a single left border accent
+          + header icon instead of a fully amber-filled panel. */}
       <Link
         to="/app/planner/calendar?mode=tasks"
-        className={`block transition-colors ${
-          visibleOverdue.length === 0
-            ? "card p-4 hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20"
-            : "rounded-2xl border border-amber-200 bg-amber-50 p-4 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:hover:bg-amber-950/60"
+        className={`card block p-4 transition-colors hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20 ${
+          visibleOverdue.length > 0 ? "border-l-4 border-l-amber-500 dark:border-l-amber-500" : ""
         }`}
       >
         <SectionHeader
@@ -142,13 +141,6 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
             <ul className="space-y-1.5">
               {visibleOverdue.map((tk) => (
                 <li key={tk.task_id} className="flex items-start gap-2 min-w-0">
-                  <AlertTriangle
-                    size={12}
-                    className={`mt-0.5 shrink-0 ${
-                      tk.priority >= 2 ? "text-red-500" : "text-amber-500"
-                    }`}
-                    aria-hidden="true"
-                  />
                   <span className="flex-1 truncate text-sm text-ink-900 dark:text-paper-100">
                     {tk.title}
                   </span>
@@ -159,7 +151,7 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
               ))}
             </ul>
             {extraOverdue > 0 && (
-              <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">
+              <p className="mt-1.5 text-xs text-umber-500 dark:text-umber-400">
                 {t("planner_home.rail_more_overdue").replace("{{n}}", String(extraOverdue))}
               </p>
             )}
@@ -169,7 +161,7 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
 
       {/* SECTION C: QUICK ACTIONS */}
       <div className="card p-4 space-y-2">
-        <SectionHeader icon={Zap} label={t("planner_home.rail_actions_title")} />
+        <SectionHeader label={t("planner_home.rail_actions_title")} />
 
         <button
           type="button"
