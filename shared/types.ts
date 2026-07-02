@@ -151,6 +151,14 @@ export interface PlannerProfile {
   planner_city: string | null;
   planner_website: string | null;
   planner_phone: string | null;
+  /** ISO 3166-1 alpha-2 (shared/country_list.ts). Gates the company lookup. */
+  planner_country: string | null;
+  /** Official business identity, auto-filled by the company lookup or typed
+   *  manually. Always editable; sources in backend/src/lib/company_lookup. */
+  planner_registry_number: string | null;
+  planner_vat_number: string | null;
+  planner_legal_form: string | null;
+  planner_address: string | null;
   planner_weddings_per_year: number | null;
   planner_km_radius: number | null;
   planner_styles: string[] | null;

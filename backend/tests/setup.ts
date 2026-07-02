@@ -108,6 +108,13 @@ process.env.R2_BUCKET = "";
 process.env.R2_BACKUP_BUCKET = "";
 process.env.R2_BACKUP_INTERVAL_HOURS = "0";
 
+// Company lookup: every registry provider answers from deterministic fixtures
+// (src/lib/company_lookup/fake.ts) so the suite never touches a real registry.
+// GEMI_API_KEY is pinned NON-empty so the Greece provider registers as
+// available; the fake layer intercepts before the key would ever be sent.
+process.env.COMPANY_LOOKUP_FAKE = "1";
+process.env.GEMI_API_KEY = "test-gemi-key";
+
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {
   const f = `./data/test-weddly.db${ext}`;

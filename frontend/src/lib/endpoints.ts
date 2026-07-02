@@ -84,6 +84,7 @@ import type {
   StripeHealth,
 } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse } from "@shared/billing";
+import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/company_lookup";
 import type { PlannerBillingStatus } from "@shared/planner_billing";
 import type { CoupleDesignInput } from "@shared/design";
 import type { BlogPost } from "@shared/blog_posts";
@@ -310,6 +311,14 @@ export const demoApi = {
       couple: Couple | null;
       seeded: Record<string, number>;
     }>("POST", "/api/demo/start", {}),
+  /** Planner-side demo: spins up a "Fairy Godmother Weddings" planner account
+   *  pre-loaded with a book of fairy-tale clients and returns a session token.
+   *  No couple — the planner manages many. Drop the visitor into /app/planner. */
+  startPlanner: () =>
+    apiFetch<{
+      session: AuthSession;
+      seeded: Record<string, number>;
+    }>("POST", "/api/demo/planner/start", {}),
 };
 
 export const authApi = {
@@ -2666,6 +2675,26 @@ export const photoAlbumApi = {
 
   /** QR code SVG URL — embed directly in <img src> or open in new tab. */
   qrUrl: (token: string) => `/api/photo-albums/${token}/qr`,
+};
+
+/** Free official business-registry lookup (country-gated; see
+ *  backend/src/lib/company_lookup). Unavailable countries get manual entry. */
+export const companyLookupApi = {
+  availability: (country: string) =>
+    apiFetch<CompanyLookupAvailability>(
+      "GET",
+      `/api/company-lookup/availability?country=${encodeURIComponent(country)}`,
+    ),
+  search: (country: string, q: string) =>
+    apiFetch<{ results: CompanyLookupResult[] }>(
+      "GET",
+      `/api/company-lookup/search?country=${encodeURIComponent(country)}&q=${encodeURIComponent(q)}`,
+    ),
+  getCompany: (country: string, id: string) =>
+    apiFetch<{ company: CompanyLookupResult }>(
+      "GET",
+      `/api/company-lookup/company/${encodeURIComponent(id)}?country=${encodeURIComponent(country)}`,
+    ),
 };
 
 export const plannerApi = {

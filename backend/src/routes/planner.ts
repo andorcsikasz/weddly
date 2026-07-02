@@ -14,6 +14,7 @@ import {
   type PlannerInvitationRow,
   toPlannerInvitation,
 } from "../domain/planner_invitations";
+import { COUNTRIES } from "@shared/country_list";
 import type {
   PlannerEvent,
   PlannerPlan,
@@ -822,6 +823,11 @@ interface PlannerUserRow {
   planner_city: string | null;
   planner_website: string | null;
   planner_phone: string | null;
+  planner_country: string | null;
+  planner_registry_number: string | null;
+  planner_vat_number: string | null;
+  planner_legal_form: string | null;
+  planner_address: string | null;
   planner_weddings_per_year: number | null;
   planner_km_radius: number | null;
   planner_styles: string | null;
@@ -831,6 +837,7 @@ interface PlannerUserRow {
 
 const PLANNER_PROFILE_COLUMNS =
   "full_name, email, business_name, planner_bio, planner_city, planner_website, planner_phone, " +
+  "planner_country, planner_registry_number, planner_vat_number, planner_legal_form, planner_address, " +
   "planner_weddings_per_year, planner_km_radius, planner_styles, planner_plan, planner_avatar_url";
 
 /** Parse a planner_styles JSON column into a clean string[] (or null). */
@@ -860,6 +867,11 @@ function toPlannerProfileBase(
     planner_city: row.planner_city,
     planner_website: row.planner_website,
     planner_phone: row.planner_phone,
+    planner_country: row.planner_country,
+    planner_registry_number: row.planner_registry_number,
+    planner_vat_number: row.planner_vat_number,
+    planner_legal_form: row.planner_legal_form,
+    planner_address: row.planner_address,
     planner_weddings_per_year: row.planner_weddings_per_year,
     planner_km_radius: row.planner_km_radius,
     planner_styles: parseStyles(row.planner_styles),
@@ -944,6 +956,11 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
     planner_city?: unknown;
     planner_website?: unknown;
     planner_phone?: unknown;
+    planner_country?: unknown;
+    planner_registry_number?: unknown;
+    planner_vat_number?: unknown;
+    planner_legal_form?: unknown;
+    planner_address?: unknown;
     planner_weddings_per_year?: unknown;
     planner_km_radius?: unknown;
     planner_styles?: unknown;
@@ -990,6 +1007,32 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
   if (phone !== undefined) {
     fields.push("planner_phone = ?");
     vals.push(phone);
+  }
+  const country = str(body.planner_country);
+  if (country !== undefined) {
+    const code = country?.toUpperCase() ?? null;
+    if (code !== null && !COUNTRIES.some((c) => c.code === code)) {
+      throw new HttpError(400, "invalid planner_country");
+    }
+    fields.push("planner_country = ?");
+    vals.push(code);
+  }
+  // Official business identity fields: plain bounded strings, auto-filled by
+  // the company lookup or typed manually. No format validation on purpose,
+  // registry-number shapes vary per country.
+  const identityFields = [
+    "planner_registry_number",
+    "planner_vat_number",
+    "planner_legal_form",
+    "planner_address",
+  ] as const;
+  for (const field of identityFields) {
+    const v = str(body[field]);
+    if (v !== undefined) {
+      if (v !== null && v.length > 200) throw new HttpError(400, `${field} too long`);
+      fields.push(`${field} = ?`);
+      vals.push(v);
+    }
   }
   const wpy = intOrNull(body.planner_weddings_per_year);
   if (wpy !== undefined) {

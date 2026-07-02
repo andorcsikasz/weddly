@@ -1,7 +1,22 @@
-import { Briefcase, Globe, MapPin, Phone, SquarePen } from "lucide-react";
+import {
+  Briefcase,
+  Flag,
+  Globe,
+  Hash,
+  Landmark,
+  MapPin,
+  Phone,
+  ReceiptText,
+  ScrollText,
+  SquarePen,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import type { CompanyLookupResult } from "@shared/company_lookup";
+import { countryName } from "@shared/country_list";
 import type { PlannerProfile } from "@shared/types";
+import { CountryCombobox } from "../../components/CountryCombobox";
+import { CompanyLookupBox } from "../../components/planner/CompanyLookupBox";
 import { useToast } from "../../components/ui";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -17,12 +32,20 @@ interface OutletCtx {
  *  that's when the tab flips from the blank form to the read view. */
 function hasDetails(p: PlannerProfile): boolean {
   return Boolean(
-    p.business_name || p.planner_city || p.planner_phone || p.planner_website || p.planner_bio,
+    p.business_name ||
+      p.planner_city ||
+      p.planner_phone ||
+      p.planner_website ||
+      p.planner_bio ||
+      p.planner_country ||
+      p.planner_registry_number ||
+      p.planner_vat_number ||
+      p.planner_address,
   );
 }
 
 export default function PlannerSettingsAccount() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const { profile, setProfile, loadError } = useOutletContext<OutletCtx>();
 
@@ -48,9 +71,30 @@ export default function PlannerSettingsAccount() {
       planner_city: null,
       planner_website: null,
       planner_phone: null,
+      planner_country: null,
+      planner_registry_number: null,
+      planner_vat_number: null,
+      planner_legal_form: null,
+      planner_address: null,
       waitlist_prefill: null,
     };
     setFormState({ ...base, [field]: value || null } as PlannerProfile);
+  }
+
+  /** Auto-fill the editable fields from an official lookup result. Only
+   *  fields the registry actually returned are overwritten. */
+  function applyCompany(r: CompanyLookupResult) {
+    if (!active) return;
+    setFormState({
+      ...active,
+      business_name: r.name ?? active.business_name,
+      planner_city: r.city ?? active.planner_city,
+      planner_registry_number: r.registry_number ?? active.planner_registry_number,
+      planner_vat_number: r.vat_number ?? active.planner_vat_number,
+      planner_legal_form: r.legal_form ?? active.planner_legal_form,
+      planner_address: r.address ?? active.planner_address,
+    });
+    toast.success(t("company_lookup.filled_toast"));
   }
 
   function startEdit(field?: keyof PlannerProfile) {
@@ -77,6 +121,11 @@ export default function PlannerSettingsAccount() {
         planner_city: active.planner_city,
         planner_website: active.planner_website,
         planner_phone: active.planner_phone,
+        planner_country: active.planner_country,
+        planner_registry_number: active.planner_registry_number,
+        planner_vat_number: active.planner_vat_number,
+        planner_legal_form: active.planner_legal_form,
+        planner_address: active.planner_address,
       });
       setProfile(updated);
       setFormState(null);
@@ -103,9 +152,30 @@ export default function PlannerSettingsAccount() {
     value: string | null;
   }> = [
     { field: "business_name", icon: <Briefcase size={16} />, value: saved.business_name },
+    {
+      field: "planner_country",
+      icon: <Flag size={16} />,
+      value: saved.planner_country ? countryName(saved.planner_country, locale) : null,
+    },
     { field: "planner_city", icon: <MapPin size={16} />, value: saved.planner_city },
     { field: "planner_phone", icon: <Phone size={16} />, value: saved.planner_phone },
     { field: "planner_website", icon: <Globe size={16} />, value: saved.planner_website },
+    {
+      field: "planner_registry_number",
+      icon: <Hash size={16} />,
+      value: saved.planner_registry_number,
+    },
+    {
+      field: "planner_vat_number",
+      icon: <ReceiptText size={16} />,
+      value: saved.planner_vat_number,
+    },
+    {
+      field: "planner_legal_form",
+      icon: <ScrollText size={16} />,
+      value: saved.planner_legal_form,
+    },
+    { field: "planner_address", icon: <Landmark size={16} />, value: saved.planner_address },
   ];
   const filledRows = detailRows.filter((r) => r.value);
 
@@ -181,6 +251,15 @@ export default function PlannerSettingsAccount() {
             />
           </div>
 
+          <CountryCombobox
+            id="planner-acct-planner_country"
+            label={t("planner_profile.country_label")}
+            value={active.planner_country ?? ""}
+            onChange={(code) => set("planner_country", code)}
+          />
+
+          <CompanyLookupBox country={active.planner_country ?? ""} onPick={applyCompany} />
+
           <div>
             <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
               {t("planner_profile.business_name_label")}
@@ -232,6 +311,59 @@ export default function PlannerSettingsAccount() {
               value={active.planner_website ?? ""}
               onChange={(e) => set("planner_website", e.target.value)}
               placeholder="https://"
+            />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+                {t("planner_profile.registry_number_label")}
+              </label>
+              <input
+                id="planner-acct-planner_registry_number"
+                type="text"
+                className="input w-full"
+                value={active.planner_registry_number ?? ""}
+                onChange={(e) => set("planner_registry_number", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+                {t("planner_profile.vat_number_label")}
+              </label>
+              <input
+                id="planner-acct-planner_vat_number"
+                type="text"
+                className="input w-full"
+                value={active.planner_vat_number ?? ""}
+                onChange={(e) => set("planner_vat_number", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+              {t("planner_profile.legal_form_label")}
+            </label>
+            <input
+              id="planner-acct-planner_legal_form"
+              type="text"
+              className="input w-full"
+              value={active.planner_legal_form ?? ""}
+              onChange={(e) => set("planner_legal_form", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+              {t("planner_profile.address_label")}
+            </label>
+            <input
+              id="planner-acct-planner_address"
+              type="text"
+              className="input w-full"
+              value={active.planner_address ?? ""}
+              onChange={(e) => set("planner_address", e.target.value)}
             />
           </div>
 

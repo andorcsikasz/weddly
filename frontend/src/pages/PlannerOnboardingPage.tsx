@@ -1,7 +1,10 @@
 import { Fragment, type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Check, Sparkles } from "lucide-react";
+import type { CompanyLookupResult } from "@shared/company_lookup";
 import type { PlannerPlan } from "@shared/types";
+import { CountryCombobox } from "../components/CountryCombobox";
+import { CompanyLookupBox } from "../components/planner/CompanyLookupBox";
 import { Wordmark } from "../components/Wordmark";
 import { useAuth } from "../lib/auth";
 import { plannerApi } from "../lib/endpoints";
@@ -35,6 +38,13 @@ export default function PlannerOnboardingPage() {
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
   const [bio, setBio] = useState("");
+  // Official business identity. Country gates the registry lookup; the rest
+  // is auto-filled by a lookup pick and stays editable.
+  const [country, setCountry] = useState("");
+  const [registryNumber, setRegistryNumber] = useState("");
+  const [vatNumber, setVatNumber] = useState("");
+  const [legalForm, setLegalForm] = useState("");
+  const [address, setAddress] = useState("");
   // Read-only application extras carried from the waitlist (no edit surface in
   // onboarding yet; persisted on confirm so they are not lost).
   const [weddingsPerYear, setWeddingsPerYear] = useState<number | null>(null);
@@ -65,6 +75,11 @@ export default function PlannerOnboardingPage() {
         else if (wl?.website) setWebsite(wl.website);
         if (profile.planner_bio) setBio(profile.planner_bio);
         else if (wl?.bio) setBio(wl.bio);
+        if (profile.planner_country) setCountry(profile.planner_country);
+        if (profile.planner_registry_number) setRegistryNumber(profile.planner_registry_number);
+        if (profile.planner_vat_number) setVatNumber(profile.planner_vat_number);
+        if (profile.planner_legal_form) setLegalForm(profile.planner_legal_form);
+        if (profile.planner_address) setAddress(profile.planner_address);
 
         setWeddingsPerYear(profile.planner_weddings_per_year ?? wl?.weddings_per_year ?? null);
         setKmRadius(profile.planner_km_radius ?? wl?.km_radius ?? null);
@@ -97,6 +112,27 @@ export default function PlannerOnboardingPage() {
 
   const firstName = (user?.full_name ?? "").split(" ")[0] ?? "";
 
+  /** Auto-fill from an official lookup pick; only returned fields overwrite. */
+  function applyCompany(r: CompanyLookupResult) {
+    if (r.name) setBusinessName(r.name);
+    if (r.city) setCity(r.city);
+    if (r.registry_number) setRegistryNumber(r.registry_number);
+    if (r.vat_number) setVatNumber(r.vat_number);
+    if (r.legal_form) setLegalForm(r.legal_form);
+    if (r.address) setAddress(r.address);
+  }
+
+  /** The official identity fields shared by both save paths. */
+  function identityPayload() {
+    return {
+      planner_country: country || undefined,
+      planner_registry_number: registryNumber.trim() || undefined,
+      planner_vat_number: vatNumber.trim() || undefined,
+      planner_legal_form: legalForm.trim() || undefined,
+      planner_address: address.trim() || undefined,
+    };
+  }
+
   async function handleProfileNext() {
     if (!businessName.trim()) {
       setProfileError(t("planner_onboarding.business_name_required"));
@@ -116,6 +152,7 @@ export default function PlannerOnboardingPage() {
         planner_phone: phone.trim() || undefined,
         planner_website: website.trim() || undefined,
         planner_bio: bio.trim() || undefined,
+        ...identityPayload(),
       } as Parameters<typeof plannerApi.updateProfile>[0]);
       setStep(2);
     } catch {
@@ -147,6 +184,7 @@ export default function PlannerOnboardingPage() {
         planner_phone: phone.trim() || undefined,
         planner_website: website.trim() || undefined,
         planner_bio: bio.trim() || undefined,
+        ...identityPayload(),
         planner_weddings_per_year: weddingsPerYear,
         planner_km_radius: kmRadius,
         planner_styles: styles,
@@ -323,6 +361,15 @@ export default function PlannerOnboardingPage() {
                 />
               </div>
 
+              <CountryCombobox
+                id="po_country"
+                label={t("planner_profile.country_label")}
+                value={country}
+                onChange={setCountry}
+              />
+
+              <CompanyLookupBox country={country} onPick={applyCompany} />
+
               <div>
                 <label htmlFor="po_business" className="field-label">
                   {t("planner_onboarding.business_name_label")}{" "}
@@ -374,6 +421,43 @@ export default function PlannerOnboardingPage() {
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
                   placeholder="https://"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="po_registry_number" className="field-label">
+                    {t("planner_profile.registry_number_label")}
+                  </label>
+                  <input
+                    id="po_registry_number"
+                    className="input"
+                    value={registryNumber}
+                    onChange={(e) => setRegistryNumber(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="po_vat_number" className="field-label">
+                    {t("planner_profile.vat_number_label")}
+                  </label>
+                  <input
+                    id="po_vat_number"
+                    className="input"
+                    value={vatNumber}
+                    onChange={(e) => setVatNumber(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="po_address" className="field-label">
+                  {t("planner_profile.address_label")}
+                </label>
+                <input
+                  id="po_address"
+                  className="input"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
                 />
               </div>
 

@@ -6928,6 +6928,18 @@ export interface LocaleMessages {
     popup_cta: string;
     popup_microcopy: string;
   };
+  /** Planner-side demo (Fairy Godmother Weddings sandbox) — banner + nudge
+   *  inside /app/planner while the active session is the demo planner. */
+  planner_demo: {
+    banner_title: string;
+    banner_exit: string;
+    banner_cta: string;
+    banner_dismiss_aria: string;
+    popup_title: string;
+    popup_body: string;
+    popup_cta: string;
+    popup_microcopy: string;
+  };
   /** Standalone, SEO-targeted tool pages mounted at /eszkozok/* — public
    *  surfaces that double as ranking pages for long-tail Hungarian wedding
    *  queries Weddly can plausibly own (calculators, generators, templates). */
@@ -7139,6 +7151,9 @@ export interface LocaleMessages {
     eyebrow: string;
     hero_title: string;
     hero_cta: string;
+    demo_cta: string;
+    demo_loading: string;
+    demo_error: string;
     couple_escape: string;
     couple_escape_link: string;
     pricing_eyebrow: string;
@@ -7676,6 +7691,27 @@ export interface LocaleMessages {
   planner_clients: {
     wedding_label: string;
   };
+  /** Free official business-registry lookup (planner onboarding + settings).
+   *  Copy is country-agnostic; the search kinds come from the backend. */
+  company_lookup: {
+    title: string;
+    /** {kinds} = localised query kinds joined with " / ". */
+    subtitle: string;
+    kind_name: string;
+    kind_tax_number: string;
+    kind_registry_number: string;
+    search_button: string;
+    searching: string;
+    no_results: string;
+    error_upstream: string;
+    use_button: string;
+    status_active: string;
+    status_inactive: string;
+    manual_hint: string;
+    /** {source} = official source attribution from the backend. */
+    source_label: string;
+    filled_toast: string;
+  };
   planner_profile: {
     heading: string;
     full_name_label: string;
@@ -7683,6 +7719,11 @@ export interface LocaleMessages {
     city_label: string;
     phone_label: string;
     website_label: string;
+    country_label: string;
+    registry_number_label: string;
+    vat_number_label: string;
+    legal_form_label: string;
+    address_label: string;
     bio_label: string;
     bio_placeholder: string;
     save_button: string;

@@ -1411,6 +1411,14 @@ addColumnIfMissing("users", "planner_km_radius", "planner_km_radius INTEGER");
 addColumnIfMissing("users", "planner_styles", "planner_styles TEXT");
 // Planner profile photo — an uploaded avatar served from /uploads/planners/...
 addColumnIfMissing("users", "planner_avatar_url", "planner_avatar_url TEXT");
+// Official business identity, filled by the company lookup (routes/company_lookup.ts)
+// or typed manually. planner_country is ISO 3166-1 alpha-2 (shared/country_list.ts)
+// and decides whether the lookup UI appears at all.
+addColumnIfMissing("users", "planner_country", "planner_country TEXT");
+addColumnIfMissing("users", "planner_registry_number", "planner_registry_number TEXT");
+addColumnIfMissing("users", "planner_vat_number", "planner_vat_number TEXT");
+addColumnIfMissing("users", "planner_legal_form", "planner_legal_form TEXT");
+addColumnIfMissing("users", "planner_address", "planner_address TEXT");
 // Planner opted in to be notified when paid plans launch (1 = notify me).
 addColumnIfMissing("users", "planner_plan_notify", "planner_plan_notify INTEGER DEFAULT 0");
 

@@ -48,6 +48,11 @@ export function rateLimit(clientIp: string | null, endpoint: string, cfg: Bucket
 /** Tight bucket for auth endpoints — ~5 tries/min/IP, refills 1/12s. */
 export const AUTH_BUCKET: BucketConfig = { capacity: 5, refillRate: 1 / 12 };
 
+/** Company lookup (business registry proxy). A short burst covers a real
+ *  onboarding session while keeping farm traffic off the upstream registries
+ *  (the KVK open-data API in particular allows only ~1 query/min). */
+export const COMPANY_LOOKUP_BUCKET: BucketConfig = { capacity: 8, refillRate: 1 / 4 };
+
 // ─── Per-account failed-login throttle ──────────────────────────────────────
 // The per-IP AUTH_BUCKET can't see a distributed credential-stuffing run (many
 // IPs, one target account). This counts FAILED attempts per claimed email and
