@@ -64,6 +64,7 @@ import type {
   WeddingStyleTag,
   PlannerClientView,
   PlannerClientCrm,
+  PlannerBoardStatus,
   PlannerTaskRow,
   PlannerThreadPreview,
   PlannerMessage,
@@ -2710,7 +2711,19 @@ export const plannerApi = {
    *  couple or their workspace data. */
   removeClient: (coupleId: number) =>
     apiFetch<{ ok: boolean }>("DELETE", `/api/planner/clients/${coupleId}`),
-  listTasks: () => apiFetch<{ tasks: PlannerTaskRow[] }>("GET", "/api/planner/tasks"),
+  listTasks: (includeDone = false) =>
+    apiFetch<{ tasks: PlannerTaskRow[] }>(
+      "GET",
+      `/api/planner/tasks${includeDone ? "?include_done=1" : ""}`,
+    ),
+  /** Move a client task between kanban lanes ('todo'|'doing'|'done'); the
+   *  backend keeps `done` in lockstep so the couple's checklist agrees. */
+  updateTaskBoardStatus: (taskId: number, boardStatus: PlannerBoardStatus) =>
+    apiFetch<{ ok: boolean; task_id: number; board_status: PlannerBoardStatus; done: boolean }>(
+      "PATCH",
+      `/api/planner/tasks/${taskId}`,
+      { board_status: boardStatus },
+    ),
   listInbox: () => apiFetch<{ threads: PlannerThreadPreview[] }>("GET", "/api/planner/messages"),
   listThread: (coupleId: number) =>
     apiFetch<{ messages: PlannerMessage[] }>("GET", `/api/planner/messages/${coupleId}`),

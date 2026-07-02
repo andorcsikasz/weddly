@@ -7410,6 +7410,16 @@ export interface LocaleMessages {
     tasks_period_all: string;
     tasks_period_empty: string;
     tasks_count: string;
+    tasks_view_list: string;
+    tasks_view_board: string;
+    tasks_search_placeholder: string;
+    board_todo: string;
+    board_doing: string;
+    board_done: string;
+    board_empty: string;
+    board_move_prev: string;
+    board_move_next: string;
+    task_move_error: string;
     legend_events: string;
   };
   planner_clients_page: {

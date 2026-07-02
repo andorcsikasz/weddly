@@ -91,6 +91,11 @@ export interface PlannerClientCrm {
   guest_page_addon: boolean;
 }
 
+/** Kanban lane of a task on the planner board. Kept in lockstep with `done`
+ *  by the backend (done ⇔ 'done'); rows created before the board derive
+ *  'todo' / 'done' from `done`. */
+export type PlannerBoardStatus = "todo" | "doing" | "done";
+
 export interface PlannerTaskRow {
   task_id: number;
   couple_id: number;
@@ -99,6 +104,7 @@ export interface PlannerTaskRow {
   due_date: string;
   priority: number;
   done: boolean;
+  board_status: PlannerBoardStatus;
 }
 
 export interface PlannerThreadPreview {

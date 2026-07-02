@@ -14,13 +14,21 @@ import {
   ChevronRight,
   Clock,
   Heart,
+  LayoutList,
   ListChecks,
   Plus,
+  Search,
+  SquareKanban,
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import type { PlannerClientView, PlannerEvent, PlannerTaskRow } from "@shared/types";
+import type {
+  PlannerBoardStatus,
+  PlannerClientView,
+  PlannerEvent,
+  PlannerTaskRow,
+} from "@shared/types";
 import { Button, Dialog, TextField, useConfirm, useToast } from "../../components/ui";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -30,9 +38,11 @@ import { useDocumentMeta } from "../../lib/seo";
 type CalView = "day" | "4day" | "week" | "month" | "year" | "schedule";
 type Mode = "calendar" | "tasks";
 type TaskPeriod = "week" | "next30" | "all";
+type TaskViewMode = "list" | "board";
 
 const VIEW_KEY = "weddly.planner_cal_view";
 const MODE_KEY = "weddly.planner_cal_mode";
+const TASK_VIEW_KEY = "weddly.planner_tasks_view";
 
 interface CalEvent {
   kind: "wedding" | "task" | "event";
@@ -512,11 +522,144 @@ const TASK_PERIOD_KEYS: Record<TaskPeriod, string> = {
   all: "planner_calendar.tasks_period_all",
 };
 
-function TasksView({ tasks }: { tasks: PlannerTaskRow[] }) {
+const BOARD_LANES: PlannerBoardStatus[] = ["todo", "doing", "done"];
+const BOARD_LANE_KEYS: Record<PlannerBoardStatus, string> = {
+  todo: "planner_calendar.board_todo",
+  doing: "planner_calendar.board_doing",
+  done: "planner_calendar.board_done",
+};
+
+function BoardCard({
+  tk,
+  todayStr,
+  fmt,
+  onMove,
+}: {
+  tk: PlannerTaskRow;
+  todayStr: string;
+  fmt: (s: string) => string;
+  onMove: (taskId: number, status: PlannerBoardStatus) => void;
+}) {
+  const { t } = useT();
+  const lane = BOARD_LANES.indexOf(tk.board_status);
+  const prev = BOARD_LANES[lane - 1];
+  const next = BOARD_LANES[lane + 1];
+  const overdue = !tk.done && tk.due_date < todayStr;
+  const cc = clientColor(tk.couple_id);
+
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", String(tk.task_id));
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      className={`group cursor-grab rounded-xl border border-paper-200 bg-white p-3 shadow-soft transition-shadow hover:shadow-md active:cursor-grabbing dark:border-umber-700 dark:bg-umber-800 ${
+        tk.done ? "opacity-70" : ""
+      }`}
+    >
+      <div className="flex items-start gap-1.5">
+        {tk.priority > 0 && (
+          <span
+            className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+              tk.priority >= 2 ? "bg-red-500" : "bg-amber-400"
+            }`}
+            aria-hidden="true"
+          />
+        )}
+        <p
+          className={`min-w-0 flex-1 text-sm leading-snug text-ink-800 dark:text-paper-100 ${
+            tk.done ? "line-through decoration-umber-300" : ""
+          }`}
+        >
+          {tk.title}
+        </p>
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-umber-500 dark:text-umber-400">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${cc.dot}`} aria-hidden="true" />
+          <span className="truncate">{titleCaseName(tk.display_name)}</span>
+        </span>
+        <span
+          className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+            overdue
+              ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300"
+              : "bg-paper-200 text-umber-600 dark:bg-umber-700 dark:text-umber-200"
+          }`}
+        >
+          {fmt(tk.due_date)}
+        </span>
+      </div>
+
+      {/* Touch / keyboard fallback for drag & drop. */}
+      <div className="mt-1.5 flex justify-end gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <button
+          type="button"
+          disabled={!prev}
+          onClick={() => prev && onMove(tk.task_id, prev)}
+          aria-label={t("planner_calendar.board_move_prev")}
+          title={t("planner_calendar.board_move_prev")}
+          className="rounded p-0.5 text-umber-400 transition-colors hover:bg-paper-100 hover:text-ink-700 disabled:invisible dark:hover:bg-umber-700 dark:hover:text-paper-100"
+        >
+          <ChevronLeft size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          disabled={!next}
+          onClick={() => next && onMove(tk.task_id, next)}
+          aria-label={t("planner_calendar.board_move_next")}
+          title={t("planner_calendar.board_move_next")}
+          className="rounded p-0.5 text-umber-400 transition-colors hover:bg-paper-100 hover:text-ink-700 disabled:invisible dark:hover:bg-umber-700 dark:hover:text-paper-100"
+        >
+          <ChevronRight size={14} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TasksView({
+  tasks,
+  onMove,
+}: {
+  tasks: PlannerTaskRow[];
+  onMove: (taskId: number, status: PlannerBoardStatus) => void;
+}) {
   const { t, locale } = useT();
   const [period, setPeriod] = useState<TaskPeriod>("all");
+  const [taskView, setTaskView] = useState<TaskViewMode>(() => {
+    try {
+      return localStorage.getItem(TASK_VIEW_KEY) === "board" ? "board" : "list";
+    } catch {
+      return "list";
+    }
+  });
+  const [clientFilter, setClientFilter] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [dragOverLane, setDragOverLane] = useState<PlannerBoardStatus | null>(null);
   const today = new Date();
   const todayStr = ymd(today);
+
+  function changeTaskView(v: TaskViewMode) {
+    setTaskView(v);
+    try {
+      localStorage.setItem(TASK_VIEW_KEY, v);
+    } catch {
+      /* best-effort */
+    }
+  }
+
+  // Clients that actually have tasks — drives the client filter pills.
+  const taskClients = useMemo(() => {
+    const seen = new Map<number, string>();
+    for (const tk of tasks) {
+      if (!seen.has(tk.couple_id)) seen.set(tk.couple_id, titleCaseName(tk.display_name));
+    }
+    return [...seen.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [tasks]);
 
   const visible = useMemo(() => {
     let lo = "";
@@ -529,11 +672,21 @@ function TasksView({ tasks }: { tasks: PlannerTaskRow[] }) {
       lo = todayStr;
       hi = ymd(addDays(today, 30));
     }
+    const q = search.trim().toLowerCase();
     return [...tasks]
-      .filter((tk) => tk.due_date >= lo && tk.due_date <= hi)
+      .filter(
+        (tk) =>
+          tk.due_date >= lo &&
+          tk.due_date <= hi &&
+          (clientFilter === null || tk.couple_id === clientFilter) &&
+          (q === "" || tk.title.toLowerCase().includes(q)),
+      )
       .sort((a, b) => a.due_date.localeCompare(b.due_date));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, period]);
+  }, [tasks, period, clientFilter, search]);
+
+  // The flat list keeps its original open-only shape; done lives on the board.
+  const listVisible = useMemo(() => visible.filter((tk) => !tk.done), [visible]);
 
   const fmt = (s: string) =>
     new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
@@ -541,37 +694,119 @@ function TasksView({ tasks }: { tasks: PlannerTaskRow[] }) {
       day: "numeric",
     }).format(parseYmd(s));
 
+  const pillBase =
+    "rounded-full border border-paper-300 px-3 py-1 text-xs transition-colors dark:border-umber-700";
+  const pillActive =
+    "bg-ink-900 text-paper-50 border-ink-900 dark:bg-paper-100 dark:text-umber-900 dark:border-paper-100";
+  const pillInactive =
+    "text-ink-700 hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800";
+
+  const shown = taskView === "board" ? visible : listVisible;
+
   return (
     <div>
-      {/* Period selector + explicit count header */}
+      {/* Row 1: period + list/board toggle + count */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div
-          className="inline-flex rounded-full border border-paper-300 p-0.5 dark:border-umber-700"
-          role="group"
-          aria-label={t("planner_calendar.tasks_period_label")}
-        >
-          {TASK_PERIODS.map((p) => (
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="inline-flex rounded-full border border-paper-300 p-0.5 dark:border-umber-700"
+            role="group"
+            aria-label={t("planner_calendar.tasks_period_label")}
+          >
+            {TASK_PERIODS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                aria-pressed={period === p}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  period === p
+                    ? "bg-moss-100 text-moss-800 dark:bg-moss-900/40 dark:text-moss-100"
+                    : "text-umber-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-800"
+                }`}
+              >
+                {t(TASK_PERIOD_KEYS[p] as Parameters<typeof t>[0])}
+              </button>
+            ))}
+          </div>
+
+          <div className="inline-flex rounded-full border border-paper-300 p-0.5 dark:border-umber-700">
             <button
-              key={p}
               type="button"
-              onClick={() => setPeriod(p)}
-              aria-pressed={period === p}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                period === p
+              onClick={() => changeTaskView("list")}
+              aria-pressed={taskView === "list"}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                taskView === "list"
                   ? "bg-moss-100 text-moss-800 dark:bg-moss-900/40 dark:text-moss-100"
                   : "text-umber-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-800"
               }`}
             >
-              {t(TASK_PERIOD_KEYS[p] as Parameters<typeof t>[0])}
+              <LayoutList size={13} aria-hidden="true" />
+              {t("planner_calendar.tasks_view_list")}
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => changeTaskView("board")}
+              aria-pressed={taskView === "board"}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                taskView === "board"
+                  ? "bg-moss-100 text-moss-800 dark:bg-moss-900/40 dark:text-moss-100"
+                  : "text-umber-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-800"
+              }`}
+            >
+              <SquareKanban size={13} aria-hidden="true" />
+              {t("planner_calendar.tasks_view_board")}
+            </button>
+          </div>
         </div>
         <span className="text-xs text-umber-500 dark:text-umber-400">
-          {t("planner_calendar.tasks_count", { count: visible.length })}
+          {t("planner_calendar.tasks_count", { count: shown.length })}
         </span>
       </div>
 
-      {visible.length === 0 ? (
+      {/* Row 2: client filter + task search */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className={`${pillBase} ${clientFilter === null ? pillActive : pillInactive}`}
+          onClick={() => setClientFilter(null)}
+        >
+          {t("planner_home.filter_all_clients")}
+        </button>
+        {taskClients.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            className={`${pillBase} inline-flex items-center gap-1.5 ${
+              clientFilter === c.id ? pillActive : pillInactive
+            }`}
+            onClick={() => setClientFilter(clientFilter === c.id ? null : c.id)}
+          >
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${clientColor(c.id).dot}`}
+              aria-hidden="true"
+            />
+            {c.name}
+          </button>
+        ))}
+
+        <div className="relative ml-auto">
+          <Search
+            size={13}
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-umber-400"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("planner_calendar.tasks_search_placeholder")}
+            className="w-44 rounded-full border border-paper-300 bg-white py-1 pl-8 pr-3 text-xs text-ink-800 focus:outline-none focus:ring-1 focus:ring-moss-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 sm:w-56"
+          />
+        </div>
+      </div>
+
+      {shown.length === 0 ? (
         <div className="rounded-2xl border border-paper-200 bg-white p-10 text-center dark:border-umber-800 dark:bg-umber-900">
           <ListChecks
             size={40}
@@ -581,15 +816,68 @@ function TasksView({ tasks }: { tasks: PlannerTaskRow[] }) {
           />
           <p className="mt-3 text-sm text-umber-500 dark:text-umber-400">
             {t(
-              period === "all"
+              period === "all" && clientFilter === null && search.trim() === ""
                 ? "planner_calendar.tasks_empty"
                 : "planner_calendar.tasks_period_empty",
             )}
           </p>
         </div>
+      ) : taskView === "board" ? (
+        <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
+          {BOARD_LANES.map((lane) => {
+            const laneTasks = visible.filter((tk) => tk.board_status === lane);
+            return (
+              <div
+                key={lane}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragOverLane(lane);
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverLane(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverLane(null);
+                  const id = Number(e.dataTransfer.getData("text/plain"));
+                  if (Number.isFinite(id) && id > 0) onMove(id, lane);
+                }}
+                className={`rounded-2xl border p-3 transition-colors ${
+                  dragOverLane === lane
+                    ? "border-moss-400 bg-moss-50 dark:border-moss-600 dark:bg-moss-900/20"
+                    : "border-paper-200 bg-paper-50/60 dark:border-umber-800 dark:bg-umber-950/40"
+                }`}
+              >
+                <p className="mb-2 flex items-center justify-between px-1 text-[11px] font-semibold uppercase tracking-wider text-umber-500 dark:text-umber-400">
+                  {t(BOARD_LANE_KEYS[lane] as Parameters<typeof t>[0])}
+                  <span className="rounded-full bg-paper-200 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-umber-600 dark:bg-umber-700 dark:text-umber-200">
+                    {laneTasks.length}
+                  </span>
+                </p>
+                <div className="min-h-[6rem] space-y-2">
+                  {laneTasks.map((tk) => (
+                    <BoardCard
+                      key={tk.task_id}
+                      tk={tk}
+                      todayStr={todayStr}
+                      fmt={fmt}
+                      onMove={onMove}
+                    />
+                  ))}
+                  {laneTasks.length === 0 && (
+                    <p className="px-1 py-6 text-center text-xs italic text-umber-400 dark:text-umber-500">
+                      {t("planner_calendar.board_empty")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
-          {visible.map((tk) => {
+          {listVisible.map((tk) => {
             const overdue = tk.due_date < todayStr;
             return (
               <Link
@@ -896,6 +1184,7 @@ function EventModal({
 
 export default function PlannerCalendarPage() {
   const { t, locale } = useT();
+  const toast = useToast();
   useDocumentMeta("planner_calendar.meta_title", "planner_calendar.meta_description");
 
   const [clients, setClients] = useState<PlannerClientView[]>([]);
@@ -943,13 +1232,34 @@ export default function PlannerCalendarPage() {
   }
 
   useEffect(() => {
-    Promise.all([plannerApi.listClients(), plannerApi.listTasks()])
+    // include_done: the kanban board's "done" lane needs completed tasks too;
+    // the calendar grid filters them back out below.
+    Promise.all([plannerApi.listClients(), plannerApi.listTasks(true)])
       .then(([cr, tr]) => {
         setClients(cr.clients);
         setTasks(tr.tasks);
       })
       .catch(() => {});
   }, []);
+
+  /** Optimistic kanban move: flip the lane locally, then persist; roll back
+   *  with a toast if the API rejects it. */
+  const moveTask = useCallback(
+    (taskId: number, status: PlannerBoardStatus) => {
+      let prevTasks: PlannerTaskRow[] = [];
+      setTasks((ts) => {
+        prevTasks = ts;
+        return ts.map((tk) =>
+          tk.task_id === taskId ? { ...tk, board_status: status, done: status === "done" } : tk,
+        );
+      });
+      plannerApi.updateTaskBoardStatus(taskId, status).catch(() => {
+        setTasks(prevTasks);
+        toast.error(t("planner_calendar.task_move_error"));
+      });
+    },
+    [toast, t],
+  );
 
   // Days shown by the time-grid views.
   const gridDays = useMemo(() => {
@@ -1010,7 +1320,9 @@ export default function PlannerCalendarPage() {
         });
     }
     for (const tk of tasks) {
-      if (tk.due_date)
+      // Done tasks are fetched for the kanban board but stay off the calendar
+      // grid — a completed deadline is no longer an upcoming commitment.
+      if (tk.due_date && !tk.done)
         out.push({
           kind: "task",
           date: tk.due_date,
@@ -1185,7 +1497,7 @@ export default function PlannerCalendarPage() {
 
       {/* Body */}
       {mode === "tasks" ? (
-        <TasksView tasks={tasks} />
+        <TasksView tasks={tasks} onMove={moveTask} />
       ) : view === "year" ? (
         <YearView
           year={cursor.getFullYear()}

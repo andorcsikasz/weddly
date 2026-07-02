@@ -218,6 +218,12 @@ db.exec(
 // only checks the enum, it doesn't force ideas to carry them.
 addColumnIfMissing("planning_items", "idea_status", "idea_status TEXT");
 addColumnIfMissing("planning_items", "idea_tag", "idea_tag TEXT");
+// Kanban lane on kind='task' rows for the planner board ('todo' | 'doing' |
+// 'done', see shared PlannerBoardStatus). Kept in lockstep with `done` by the
+// writers (done=1 ⇔ 'done') so every done-based reader (couple checklist,
+// stats, timeline) stays correct without knowing about lanes. NULL derives as
+// done ? 'done' : 'todo', so existing rows need no backfill.
+addColumnIfMissing("planning_items", "board_status", "board_status TEXT");
 // Lightweight intake for the decision layer: the couple's manual answers to the
 // 6 conditional dimensions (outdoor? pets? destination?...) that aren't already
 // derivable from couples.ceremony_kind / the guest list. Stored as a small JSON

@@ -638,18 +638,24 @@ async function handleUpdateClientCrm(ctx: Ctx): Promise<Response> {
 async function handleListTasks(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
 
+  // `include_done=1` widens the list for the kanban board (its "Kész" lane
+  // needs completed tasks); default stays open-only so the dashboard and
+  // right rail keep their original shape.
+  const includeDone = new URL(ctx.req.url).searchParams.get("include_done") === "1";
+
   const rows = db
     .prepare(
       `SELECT pi.id AS task_id, pi.couple_id, pi.title, pi.due_date, pi.priority, pi.done,
+              pi.board_status,
               COALESCE(c.display_name, c.bride_name || ' & ' || c.groom_name) AS display_name
          FROM planning_items pi
          JOIN planner_clients pc ON pc.couple_id = pi.couple_id AND pc.planner_user_id = ? AND pc.status = 'active'
          JOIN couples c ON c.id = pi.couple_id
         WHERE pi.kind = 'task'
-          AND pi.done = 0
+          ${includeDone ? "" : "AND pi.done = 0"}
           AND pi.due_date IS NOT NULL
         ORDER BY pi.due_date ASC
-        LIMIT 50`,
+        LIMIT ${includeDone ? 250 : 50}`,
     )
     .all(userId) as Array<{
     task_id: number;
@@ -658,10 +664,66 @@ async function handleListTasks(ctx: Ctx): Promise<Response> {
     due_date: string;
     priority: number;
     done: number;
+    board_status: string | null;
     display_name: string;
   }>;
 
-  return json({ tasks: rows.map((r) => ({ ...r, done: r.done === 1 })) });
+  return json({
+    tasks: rows.map((r) => ({
+      ...r,
+      done: r.done === 1,
+      // Rows created before the board have no lane yet — derive it from done.
+      board_status: r.board_status ?? (r.done === 1 ? "done" : "todo"),
+    })),
+  });
+}
+
+const BOARD_STATUSES = ["todo", "doing", "done"] as const;
+
+/** Move a client task between kanban lanes on the planner board. `done` is
+ *  kept in lockstep ('done' ⇔ done=1) so the couple's own checklist and every
+ *  stats reader see the same truth. */
+async function handleUpdateTaskBoardStatus(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const taskId = Number(ctx.params?.taskId);
+  if (!Number.isFinite(taskId) || taskId <= 0) throw new HttpError(400, "taskId required");
+
+  const body = await readJson<{ board_status?: unknown }>(ctx.req);
+  const boardStatus = body.board_status;
+  if (
+    typeof boardStatus !== "string" ||
+    !(BOARD_STATUSES as readonly string[]).includes(boardStatus)
+  ) {
+    throw new HttpError(400, "board_status must be one of todo|doing|done");
+  }
+
+  const task = db
+    .prepare(
+      "SELECT id, couple_id, title, done, board_status FROM planning_items WHERE id = ? AND kind = 'task'",
+    )
+    .get(taskId) as
+    | { id: number; couple_id: number; title: string; done: number; board_status: string | null }
+    | undefined;
+  if (!task) throw new HttpError(404, "Task not found");
+
+  requireActiveClientLink(userId, task.couple_id);
+
+  const done = boardStatus === "done" ? 1 : 0;
+  db.prepare(
+    "UPDATE planning_items SET board_status = ?, done = ?, updated_at = ? WHERE id = ?",
+  ).run(boardStatus, done, now(), taskId);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: task.couple_id,
+    action: "planner.task_board_move",
+    target_kind: "planning_item",
+    target_id: taskId,
+    before: { board_status: task.board_status ?? (task.done === 1 ? "done" : "todo") },
+    after: { board_status: boardStatus },
+  });
+
+  return json({ ok: true, task_id: taskId, board_status: boardStatus, done: done === 1 });
 }
 
 async function handleListInbox(ctx: Ctx): Promise<Response> {
@@ -1882,6 +1944,7 @@ export function registerPlannerRoutes(router: Router) {
   router.delete("/api/planner/clients/:coupleId", handleRemoveClient, true);
   router.post("/api/planner/exit", handleExit, true);
   router.get("/api/planner/tasks", handleListTasks, true);
+  router.patch("/api/planner/tasks/:taskId", handleUpdateTaskBoardStatus, true);
   // Planner-side: calendar events
   router.get("/api/planner/events", handleListEvents, true);
   router.post("/api/planner/events", handleCreateEvent, true);

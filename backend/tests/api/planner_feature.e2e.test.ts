@@ -657,15 +657,18 @@ describe("planner onboarding prefill from waitlist", () => {
   });
 });
 
-/** Insert a planning task straight into a couple's workspace. */
+/** Insert a planning task straight into a couple's workspace. Returns the row id. */
 function insertTask(
   coupleId: number,
-  opts: { done?: boolean; dueDate?: string | null } = {},
-): void {
+  opts: { done?: boolean; dueDate?: string | null; title?: string } = {},
+): number {
   const ts = Date.now();
-  db.prepare(
-    "INSERT INTO planning_items (couple_id, kind, title, done, due_date, position, created_at, updated_at) VALUES (?, 'task', 'T', ?, ?, 0, ?, ?)",
-  ).run(coupleId, opts.done ? 1 : 0, opts.dueDate ?? null, ts, ts);
+  const res = db
+    .prepare(
+      "INSERT INTO planning_items (couple_id, kind, title, done, due_date, position, created_at, updated_at) VALUES (?, 'task', ?, ?, ?, 0, ?, ?)",
+    )
+    .run(coupleId, opts.title ?? "T", opts.done ? 1 : 0, opts.dueDate ?? null, ts, ts);
+  return Number(res.lastInsertRowid);
 }
 
 /** Insert a planner↔couple link row directly with a chosen status. */
@@ -725,6 +728,123 @@ describe("planner stats KPI consistency", () => {
     expect(clients.data.clients.length).toBe(1);
     const cardTotal = clients.data.clients.reduce((acc, c) => acc + c.task_summary.total, 0);
     expect(cardTotal).toBe(stats.total_tasks);
+  });
+});
+
+describe("planner task board (kanban lanes)", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("GET /api/planner/tasks — default excludes done, include_done=1 returns them with derived lanes", async () => {
+    const { token, userId } = await bootstrapPlanner("board-planner@weddly.test");
+    const { coupleId } = await bootstrapCouple("board-couple@weddly.test");
+    linkClient(userId, coupleId, "active");
+
+    insertTask(coupleId, { done: false, dueDate: "2027-01-10", title: "open" });
+    insertTask(coupleId, { done: true, dueDate: "2027-01-05", title: "finished" });
+
+    const open = await req<{ tasks: Array<{ title: string; board_status: string }> }>(
+      "GET",
+      "/api/planner/tasks",
+      undefined,
+      { token },
+    );
+    expect(open.status).toBe(200);
+    expect(open.data.tasks.map((t) => t.title)).toEqual(["open"]);
+
+    const all = await req<{
+      tasks: Array<{ title: string; done: boolean; board_status: string }>;
+    }>("GET", "/api/planner/tasks?include_done=1", undefined, { token });
+    expect(all.data.tasks.length).toBe(2);
+    // Lanes derive from `done` for rows created before the board existed.
+    expect(all.data.tasks.find((t) => t.title === "open")?.board_status).toBe("todo");
+    expect(all.data.tasks.find((t) => t.title === "finished")?.board_status).toBe("done");
+  });
+
+  test("PATCH /api/planner/tasks/:id — moves lanes and keeps done in lockstep", async () => {
+    const { token, userId } = await bootstrapPlanner("board-planner2@weddly.test");
+    const { coupleId } = await bootstrapCouple("board-couple2@weddly.test");
+    linkClient(userId, coupleId, "active");
+    const taskId = insertTask(coupleId, { done: false, dueDate: "2027-02-01" });
+
+    const toDoing = await req<{ ok: boolean; board_status: string; done: boolean }>(
+      "PATCH",
+      `/api/planner/tasks/${taskId}`,
+      { board_status: "doing" },
+      { token },
+    );
+    expect(toDoing.status).toBe(200);
+    expect(toDoing.data.board_status).toBe("doing");
+    expect(toDoing.data.done).toBe(false);
+
+    const toDone = await req<{ board_status: string; done: boolean }>(
+      "PATCH",
+      `/api/planner/tasks/${taskId}`,
+      { board_status: "done" },
+      { token },
+    );
+    expect(toDone.data.done).toBe(true);
+    // The couple-side truth follows the lane.
+    const row = db
+      .prepare("SELECT done, board_status FROM planning_items WHERE id = ?")
+      .get(taskId) as { done: number; board_status: string };
+    expect(row.done).toBe(1);
+    expect(row.board_status).toBe("done");
+
+    // Back to todo re-opens the task.
+    const toTodo = await req<{ done: boolean }>(
+      "PATCH",
+      `/api/planner/tasks/${taskId}`,
+      { board_status: "todo" },
+      { token },
+    );
+    expect(toTodo.data.done).toBe(false);
+  });
+
+  test("PATCH /api/planner/tasks/:id — consent + validation guardrails", async () => {
+    const { token, userId } = await bootstrapPlanner("board-planner3@weddly.test");
+    const { coupleId: pendingCouple } = await bootstrapCouple("board-pending@weddly.test");
+    const { coupleId: strangerCouple } = await bootstrapCouple("board-stranger@weddly.test");
+    linkClient(userId, pendingCouple, "pending");
+
+    const pendingTask = insertTask(pendingCouple, { dueDate: "2027-03-01" });
+    const strangerTask = insertTask(strangerCouple, { dueDate: "2027-03-01" });
+
+    // A pending (not yet consented) link grants no write access.
+    const rPending = await req(
+      "PATCH",
+      `/api/planner/tasks/${pendingTask}`,
+      { board_status: "done" },
+      { token },
+    );
+    expect(rPending.status).toBe(403);
+
+    // No link at all → same rejection.
+    const rStranger = await req(
+      "PATCH",
+      `/api/planner/tasks/${strangerTask}`,
+      { board_status: "done" },
+      { token },
+    );
+    expect(rStranger.status).toBe(403);
+
+    // Unknown task id and invalid lane values are rejected cleanly.
+    const rMissing = await req(
+      "PATCH",
+      "/api/planner/tasks/999999",
+      { board_status: "done" },
+      { token },
+    );
+    expect(rMissing.status).toBe(404);
+
+    const rBad = await req(
+      "PATCH",
+      `/api/planner/tasks/${pendingTask}`,
+      { board_status: "later" },
+      { token },
+    );
+    expect(rBad.status).toBe(400);
   });
 });
 

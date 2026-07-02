@@ -240,6 +240,7 @@ const PLANNER_EDIT_PREFIXES: readonly string[] = [
   "/api/planner/events",
   "/api/planner/portfolio",
   "/api/planner/profile",
+  "/api/planner/tasks",
 ];
 const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
