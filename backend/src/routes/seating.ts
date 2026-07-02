@@ -362,6 +362,28 @@ async function handleUpdateTable(ctx: Ctx): Promise<Response> {
   };
   const parsed = parseTableBody(merged);
 
+  // Occupied-seat disable guard: X-ing out a chair someone is sitting on
+  // would leave an invisible seated guest (the canvas hides guest labels on
+  // disabled chairs and assignment to them is blocked, but the row would
+  // survive). Refuse the write for NEWLY-disabled seats that are occupied —
+  // pre-existing disabled seats pass through so legacy rows stay editable.
+  const previouslyDisabled = new Set(existingDisabled.map((n) => Number(n)));
+  const newlyDisabled = parsed.disabled_seats.filter((n) => !previouslyDisabled.has(n));
+  if (newlyDisabled.length > 0) {
+    const occupied = db
+      .prepare(
+        `SELECT COUNT(*) AS c FROM seat_assignments
+         WHERE table_id = ? AND seat_index IN (${newlyDisabled.map(() => "?").join(",")})`,
+      )
+      .get(id, ...newlyDisabled) as { c: number };
+    if (occupied.c > 0) {
+      throw new HttpError(400, "Seat is occupied — unseat the guest first", {
+        code: "seat_occupied",
+        occupied_count: occupied.c,
+      });
+    }
+  }
+
   // Orphan-safe shrink: if the new seat count is below an existing
   // occupied seat_index, refuse the write so we never silently delete a
   // guest's assignment. The frontend surfaces this as a "table too small"

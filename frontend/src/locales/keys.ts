@@ -3931,6 +3931,32 @@ export interface LocaleMessages {
     /** Toast + inline hint when the user clicks + at the perimeter cap. */
     seats_at_cap: string;
     seats_at_cap_hint: string;
+    /** Cap-toast variant when crossed-out seats could be re-enabled instead. */
+    seats_at_cap_reenable: string;
+    /** Tooltip on the stepper's "/{max}" cap explaining where it comes from. */
+    seats_cap_tooltip: string;
+    /** Toast when the server clamped a requested seat count to the footprint. */
+    seats_clamped_toast: string;
+    /** Inline prompt after a resize that freed capacity + its action button. */
+    seats_fit_more_prompt: string;
+    seats_fit_more_action: string;
+    /** "{enabled}/{total} usable" caption on the seat-layout section. */
+    layout_enabled_of_total: string;
+    /** Toast when disabling a chair that currently has a seated guest. */
+    seat_occupied: string;
+    /** Feedback toasts for table create/duplicate/delete. */
+    toast_duplicated: string;
+    toast_table_deleted: string;
+    /** Redo controls (mirrors undo_action / undo_failed). */
+    redo_action: string;
+    redo_failed: string;
+    shortcut_redo: string;
+    /** Autosave chip states in the toolbar. */
+    autosave_saving: string;
+    autosave_saved: string;
+    autosave_failed: string;
+    /** Short visible label next to the tap-mode hand icon. */
+    tap_mode_short: string;
     pdf_failed: string;
     pdf_cancel: string;
     pdf_loading: string;

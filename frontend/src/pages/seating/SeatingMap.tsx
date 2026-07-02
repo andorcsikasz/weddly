@@ -7,9 +7,9 @@
 // but only PATCHes the server on pointer-up — otherwise we'd spam the API.
 
 import type { SeatAssignment, SeatingTable } from "@shared/types";
-import { chairOffsets, maxSeatsForTable } from "@shared/seating";
-import { Baby, Locate, Maximize2, Minus, Plus, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MAX_TABLE_SEATS, chairOffsets, maxSeatsForTable } from "@shared/seating";
+import { Baby, Locate, Magnet, Maximize2, Minus, Plus, RotateCw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "../../lib/i18n";
 
@@ -39,6 +39,18 @@ const CHAIR_CORNER_MM = 90;
 const NUDGE_COARSE_MM = 100;
 const NUDGE_FINE_MM = 10;
 
+// Zoom bounds around the fit-to-contain baseline (zoom = 1 shows the whole
+// room). 4x is enough to read every name on a 30 m ballroom; below 0.5x the
+// plan is a postage stamp.
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 4;
+// Snap grain when the magnet toggle is on: tables land on a 10 cm grid
+// (moves) and sides land on 5 cm steps (resizes).
+const SNAP_MOVE_MM = 100;
+const SNAP_RESIZE_MM = 50;
+// Rotation handle: 15-degree detents by default, free 1-degree with Shift.
+const ROTATE_SNAP_DEG = 15;
+
 type HandleDir = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
 interface Props {
@@ -50,6 +62,9 @@ interface Props {
   onMove: (id: number, x_mm: number, y_mm: number) => void;
   /** Called once on pointer-up after a resize drag, with rounded mm dimensions. */
   onResize: (id: number, width_mm: number, length_mm: number) => void;
+  /** Called once on pointer-up after a rotate drag (or R-key step), with the
+   *  normalised 0-359 angle. Optional — without it the handle is hidden. */
+  onRotate?: (id: number, rotation_deg: number) => void;
   /** Called when the user clicks the +/- seat buttons. delta is +1 or -1. */
   onSeatsChange: (id: number, delta: number) => void;
   /** Optional: invoked when the user presses Delete on the selected table. */
@@ -71,6 +86,9 @@ interface Props {
    *  disabling table drag/resize. Use in edit mode when the outer container
    *  is already flex with a known height. */
   fullHeight?: boolean;
+  /** Table id to pulse a short-lived halo around (just created/duplicated),
+   *  so the user's eye lands on where the new table dropped. */
+  highlightId?: number | null;
   /** When true, switches the canvas into "seat guests" mode: table drag/resize
    *  is disabled and each chair becomes a drag-drop target + tap target. */
   seatMode?: boolean;
@@ -117,6 +135,15 @@ type DragState =
       startLengthMm: number;
     }
   | {
+      kind: "rotate";
+      tableId: number;
+      // Table centre captured at drag-start; the angle derives from the
+      // pointer's polar position around it.
+      cx: number;
+      cy: number;
+      startRotationDeg: number;
+    }
+  | {
       kind: "chair";
       tableId: number;
       seatIndex: number;
@@ -134,6 +161,7 @@ export function SeatingMap({
   onSelect,
   onMove,
   onResize,
+  onRotate,
   onSeatsChange,
   onDeleteTable,
   onAddTable,
@@ -143,6 +171,7 @@ export function SeatingMap({
   onRoomChange,
   babySeatsByTable,
   fullHeight = false,
+  highlightId = null,
   seatMode = false,
   seatGuestsByTable,
   onDropSeat,
@@ -178,7 +207,48 @@ export function SeatingMap({
   const [localDims, setLocalDims] = useState<Map<number, { width_mm: number; length_mm: number }>>(
     new Map(),
   );
+  const [localRot, setLocalRot] = useState<Map<number, number>>(new Map());
   const [drag, setDrag] = useState<DragState | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  dragRef.current = drag;
+  // Snap-to-grid toggle. Off by default (owner rule: manual placement is
+  // unconstrained); persisted per device. Alt held during a drag inverts it.
+  const [snap, setSnap] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem("weddly.seating.snap") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleSnap = useCallback(() => {
+    setSnap((v) => {
+      const next = !v;
+      try {
+        window.localStorage.setItem("weddly.seating.snap", next ? "1" : "0");
+      } catch {
+        /* private mode — session-only toggle */
+      }
+      return next;
+    });
+  }, []);
+  // Zoom multiplier on top of the fit-to-contain baseline. Lives in a ref
+  // mirror so the non-passive wheel listener reads the current value.
+  const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(1);
+  zoomRef.current = zoom;
+  // Cursor-anchored zoom: remember the wrapper-relative point and scroll
+  // offsets at gesture time, then fix up scroll AFTER the resized SVG lays
+  // out so the mm point under the cursor stays put.
+  const zoomAnchorRef = useRef<{
+    cx: number;
+    cy: number;
+    sl: number;
+    st: number;
+    prevZoom: number;
+  } | null>(null);
+  // Drag HUD text (live coordinates / dimensions / angle during a drag).
+  const [hud, setHud] = useState<string | null>(null);
+  const hudPosRef = useRef<HTMLDivElement | null>(null);
   /** Ref to the floating ghost div — position updated imperatively on pointermove. */
   const chairGhostRef = useRef<HTMLDivElement | null>(null);
   /** Which chair the user is currently hovering over during a pointer-event chair drag. */
@@ -251,9 +321,9 @@ export function SeatingMap({
 
   // Pick a scale + SVG pixel size.
   // - Inline (no fullHeight, seatMode, expanded): SVG fills its container with CSS %.
-  // - fullHeight/edit mode: fit-to-contain (min scale) so the whole floor plan is
-  //   always visible without scrolling, regardless of room dimensions.
-  // - seatMode / expanded: fill (max scale) so the canvas overflows and is pannable.
+  // - fullHeight/edit + seat mode: fit-to-contain (min scale) × zoom. zoom=1
+  //   shows the whole floor plan; zooming in overflows into scroll/pan.
+  // - expanded: fill (max scale) × zoom so the canvas overflows and is pannable.
   const svgSize = useMemo<{ width: number | string; height: number | string }>(() => {
     if (!wrapperPx || wrapperPx.w <= 0 || wrapperPx.h <= 0) {
       return { width: "100%", height: "100%" };
@@ -261,15 +331,112 @@ export function SeatingMap({
     if (!expanded && !seatMode && !fullHeight) {
       return { width: "100%", height: "100%" };
     }
-    if ((fullHeight || seatMode) && !expanded) {
-      // Fit the entire floor plan inside the wrapper — no scrolling needed.
-      const scale = Math.min(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
-      return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
-    }
-    // expanded: zoom-to-fill so the user can pan.
-    const scale = Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
+    const base =
+      (fullHeight || seatMode) && !expanded
+        ? Math.min(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM)
+        : Math.max(wrapperPx.w / ROOM_W_MM, wrapperPx.h / ROOM_H_MM);
+    const scale = base * zoom;
     return { width: ROOM_W_MM * scale, height: ROOM_H_MM * scale };
-  }, [expanded, seatMode, fullHeight, wrapperPx, ROOM_W_MM, ROOM_H_MM]);
+  }, [expanded, seatMode, fullHeight, wrapperPx, ROOM_W_MM, ROOM_H_MM, zoom]);
+
+  // Screen pixels per world millimetre at the current zoom — drives the
+  // chair-label legibility tiers (full name / initials / nothing).
+  const pxPerMm = useMemo(() => {
+    if (typeof svgSize.width === "number") return svgSize.width / ROOM_W_MM;
+    if (wrapperPx && wrapperPx.w > 0) return wrapperPx.w / ROOM_W_MM;
+    return 0.05;
+  }, [svgSize, wrapperPx, ROOM_W_MM]);
+
+  // Clamp + set zoom, optionally anchored to a wrapper-relative point so the
+  // world position under the cursor stays fixed through the scale change.
+  const applyZoom = useCallback((next: number, anchor?: { cx: number; cy: number }) => {
+    const el = scrollWrapperRef.current;
+    const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next));
+    setZoom((prev) => {
+      if (clamped === prev) return prev;
+      if (el) {
+        const a = anchor ?? { cx: el.clientWidth / 2, cy: el.clientHeight / 2 };
+        zoomAnchorRef.current = {
+          ...a,
+          sl: el.scrollLeft,
+          st: el.scrollTop,
+          prevZoom: prev,
+        };
+      }
+      return clamped;
+    });
+  }, []);
+
+  // Post-layout scroll fixup for anchored zoom. Runs synchronously after the
+  // SVG re-renders at its new pixel size.
+  useLayoutEffect(() => {
+    const a = zoomAnchorRef.current;
+    const el = scrollWrapperRef.current;
+    if (!a || !el) return;
+    zoomAnchorRef.current = null;
+    const s = zoom / a.prevZoom;
+    el.scrollLeft = (a.sl + a.cx) * s - a.cx;
+    el.scrollTop = (a.st + a.cy) * s - a.cy;
+  }, [zoom]);
+
+  // Ctrl/Cmd+wheel (and trackpad pinch, which Chrome reports as ctrl+wheel)
+  // zooms at the cursor. Plain wheel keeps its native meaning: scroll/pan.
+  // Native non-passive listener because React's synthetic wheel handler
+  // can't preventDefault the browser page-zoom.
+  useEffect(() => {
+    const el = scrollWrapperRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const factor = Math.exp(-e.deltaY * 0.0015);
+      applyZoom(zoomRef.current * factor, {
+        cx: e.clientX - rect.left,
+        cy: e.clientY - rect.top,
+      });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [expanded, applyZoom]);
+
+  // Escape cancels an in-flight drag WITHOUT committing: local overrides are
+  // dropped so the table springs back to its persisted spot. Listener only
+  // lives while a drag is active, and swallows the event so the fullscreen
+  // overlay's own Escape handler doesn't also fire.
+  useEffect(() => {
+    if (!drag) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      const d = dragRef.current;
+      if (!d) return;
+      if (d.kind === "move" || d.kind === "resize" || d.kind === "rotate") {
+        const id = d.tableId;
+        setLocalPos((prev) => {
+          const next = new Map(prev);
+          next.delete(id);
+          return next;
+        });
+        setLocalDims((prev) => {
+          const next = new Map(prev);
+          next.delete(id);
+          return next;
+        });
+        setLocalRot((prev) => {
+          const next = new Map(prev);
+          next.delete(id);
+          return next;
+        });
+      }
+      setDrag(null);
+      setHud(null);
+    };
+    // Capture phase so this wins over the expanded-overlay Escape handler.
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [drag]);
 
   // ESC closes the expanded overlay. Lock body scroll while open so the
   // backdrop doesn't reveal the page underneath when the user scrolls.
@@ -295,6 +462,7 @@ export function SeatingMap({
   useEffect(() => {
     setLocalPos(new Map());
     setLocalDims(new Map());
+    setLocalRot(new Map());
   }, [tables]);
 
   const seatsByTable = new Map<number, SeatAssignment[]>();
@@ -352,6 +520,28 @@ export function SeatingMap({
     });
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     e.stopPropagation();
+  }
+
+  function startRotate(e: React.PointerEvent<SVGElement>, table: SeatingTable) {
+    if (e.button !== 0) return;
+    const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
+    setDrag({
+      kind: "rotate",
+      tableId: table.id,
+      cx: pos.x,
+      cy: pos.y,
+      startRotationDeg: table.rotation_deg ?? 0,
+    });
+    onSelect(table.id);
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    e.stopPropagation();
+  }
+
+  // Keep the floating HUD pill glued to the cursor without re-rendering.
+  function moveHud(e: React.PointerEvent) {
+    if (hudPosRef.current) {
+      hudPosRef.current.style.transform = `translate(${e.clientX + 16}px, ${e.clientY + 20}px)`;
+    }
   }
 
   function moveDrag(e: React.PointerEvent<SVGSVGElement>) {
@@ -778,6 +968,7 @@ export function SeatingMap({
                       ? chairDragHoverTarget.seatIndex
                       : null
                   }
+                  highlighted={highlightId === table.id}
                   t={t}
                 />
               );
@@ -1011,6 +1202,8 @@ interface TableShapeProps {
   ) => void;
   /** Click on the table body in seat mode — selects the table for the right panel. */
   onTableClick?: () => void;
+  /** Just-created pulse: draws a fading halo ring around the table. */
+  highlighted?: boolean;
   t: (
     key:
       | "seating.add_seat"
@@ -1046,6 +1239,7 @@ function TableShape({
   pointerHoverSeat,
   onChairPointerDown,
   onTableClick,
+  highlighted = false,
   t,
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
@@ -1189,6 +1383,28 @@ function TableShape({
       role={seatMode ? undefined : "button"}
       aria-label={ariaLabel}
     >
+      {/* Just-created halo — a soft pulsing ring slightly outside the body
+          so the eye finds the new table. Cleared by the page after ~1.6s. */}
+      {highlighted &&
+        (table.shape === "round" ? (
+          <circle
+            r={rx + 260}
+            className="animate-pulse fill-none stroke-blush-400"
+            strokeWidth={70}
+            style={{ pointerEvents: "none" }}
+          />
+        ) : (
+          <rect
+            x={-rx - 260}
+            y={-ry - 260}
+            width={rx * 2 + 520}
+            height={ry * 2 + 520}
+            rx={rectCorner + 160}
+            className="animate-pulse fill-none stroke-blush-400"
+            strokeWidth={70}
+            style={{ pointerEvents: "none" }}
+          />
+        ))}
       {/* Table body — single clean stroke + warm fill. */}
       {table.shape === "round" ? (
         <circle r={rx} className={`${fillClass} ${strokeClass}`} strokeWidth={strokeWidth} />

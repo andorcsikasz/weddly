@@ -242,6 +242,22 @@ function tableHalfDims(t: SeatingTable): { rx: number; ry: number } {
   return { rx: t.length_mm / 2, ry: t.width_mm / 2 };
 }
 
+/** Axis-aligned half-extents of a table's ROTATED footprint. The body spans
+ *  ±rx / ±ry in its own frame; turning it by rotation_deg sweeps that box
+ *  into a larger axis-aligned bbox (|cos|·rx + |sin|·ry per axis). Round
+ *  tables are rotation-invariant. Used only for page-fit bboxes — the drawn
+ *  body keeps its unrotated half-dims and is rotated at draw time. At 0° this
+ *  returns exactly `tableHalfDims` (cos 0 = 1, sin 0 = 0), so unrotated
+ *  layouts are unchanged. */
+function tableBboxHalfDims(t: SeatingTable): { rx: number; ry: number } {
+  const { rx, ry } = tableHalfDims(t);
+  if (t.shape === "round") return { rx, ry };
+  const rad = (t.rotation_deg * Math.PI) / 180;
+  const c = Math.abs(Math.cos(rad));
+  const s = Math.abs(Math.sin(rad));
+  return { rx: rx * c + ry * s, ry: rx * s + ry * c };
+}
+
 /** Lay tables out on the page. Layout strategy:
  *  - If room dimensions are provided, scale the whole room rectangle into
  *    the page so the print mirrors what the couple sees in the editor
@@ -308,7 +324,7 @@ function layoutTables(
     let maxX = -Infinity;
     let maxY = -Infinity;
     for (const t of tables) {
-      const { rx, ry } = tableHalfDims(t);
+      const { rx, ry } = tableBboxHalfDims(t);
       minX = Math.min(minX, t.x_mm - rx);
       minY = Math.min(minY, t.y_mm - ry);
       maxX = Math.max(maxX, t.x_mm + rx);
@@ -432,7 +448,7 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     let maxX = -Infinity;
     let maxY = -Infinity;
     for (const t of input.tables) {
-      const { rx, ry } = tableHalfDims(t);
+      const { rx, ry } = tableBboxHalfDims(t);
       minX = Math.min(minX, t.x_mm - rx);
       minY = Math.min(minY, t.y_mm - ry);
       maxX = Math.max(maxX, t.x_mm + rx);
@@ -590,11 +606,28 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     const rx = mm(pos.rx_mm);
     const ry = mm(pos.ry_mm);
 
-    // NOTE: t.rotation_deg is honoured on the on-screen canvas but renders
-    // as 0° here. pdf-lib rotation is around the bottom-left corner — the
-    // off-axis math (rotate, then re-center) is tracked for a follow-up.
+    // Table rotation — mirrors the canvas, which rotates the whole table
+    // group (body + chairs + seat numbers) around the centre (cx, cy) by
+    // rotation_deg, clockwise on screen (SVG Y-down `rotate()`). Same recipe
+    // here: rotate table-local offsets in the SVG frame FIRST, then Y-flip
+    // into PDF coords. On paper (Y-up) a clockwise-on-screen turn is a
+    // NEGATIVE pdf-lib angle, hence the sign flips below. Text (table label,
+    // seat numbers, guest names) stays upright, matching the canvas'
+    // counter-rotation of text nodes.
+    const rot = ((t.rotation_deg % 360) + 360) % 360;
+    const cosT = Math.cos((rot * Math.PI) / 180);
+    const sinT = Math.sin((rot * Math.PI) / 180);
+    /** Rotate a table-local (Y-down, SVG-convention) offset by the table
+     *  rotation. Caller Y-flips the result into PDF coords. At 0° this is
+     *  the identity, so unrotated tables draw exactly as before. */
+    const rotSvg = (dx: number, dy: number): { dx: number; dy: number } => ({
+      dx: dx * cosT - dy * sinT,
+      dy: dx * sinT + dy * cosT,
+    });
+
     const borderW = 1;
     if (t.shape === "round") {
+      // A circle is rotation-invariant — only its chair ring turns (below).
       page.drawCircle({
         x: cx,
         y: cy,
@@ -603,12 +636,30 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
         borderColor: INK_800,
         color: PAPER_50,
       });
-    } else {
+    } else if (rot === 0) {
       page.drawRectangle({
         x: cx - rx,
         y: cy - ry,
         width: rx * 2,
         height: ry * 2,
+        borderWidth: borderW,
+        borderColor: INK_800,
+        color: PAPER_50,
+      });
+    } else {
+      // pdf-lib rotates around the rect's OWN (x, y) anchor — its bottom-left
+      // corner — not the centre. Pre-rotate the centre→corner offset
+      // (-rx, -ry) by the PDF angle and anchor the rect there, so the visual
+      // pivot is the table centre. Same trick as the chairs below.
+      const rad = (-rot * Math.PI) / 180; // PDF Y-up: clockwise-on-paper = negative
+      const cosR = Math.cos(rad);
+      const sinR = Math.sin(rad);
+      page.drawRectangle({
+        x: cx - rx * cosR + ry * sinR,
+        y: cy - rx * sinR - ry * cosR,
+        width: rx * 2,
+        height: ry * 2,
+        rotate: degrees(-rot),
         borderWidth: borderW,
         borderColor: INK_800,
         color: PAPER_50,
@@ -640,10 +691,14 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
       const outX = Math.cos(c.angle);
       const outY_svg = Math.sin(c.angle); // SVG Y-down
       const pushPt = chairHpt / 2 + chairGapPt;
-      const px = cx + c.dx + outX * pushPt;
-      // Y-flip: editor dy and outward y BOTH flip sign in PDF coords.
-      const py = cy - c.dy - outY_svg * pushPt;
-      const rotDeg = -((c.angle * 180) / Math.PI + 90);
+      // Table-local chair centre in the SVG frame, turned by the table
+      // rotation, then Y-flipped: editor dy flips sign in PDF coords.
+      const local = rotSvg(c.dx + outX * pushPt, c.dy + outY_svg * pushPt);
+      const px = cx + local.dx;
+      const py = cy - local.dy;
+      // Chair orientation: edge-perpendicular angle PLUS the table rotation,
+      // negated as a block for PDF's Y-up (counterclockwise-positive) frame.
+      const rotDeg = -((c.angle * 180) / Math.PI + 90 + rot);
       const rad = (rotDeg * Math.PI) / 180;
       const cosR = Math.cos(rad);
       const sinR = Math.sin(rad);
@@ -688,8 +743,11 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
       const outX = Math.cos(c.angle);
       const outY_svg = Math.sin(c.angle);
       const namePush = chairHpt + chairGapPt + chairWpt / 2 + 4;
-      const px = cx + c.dx + outX * namePush;
-      const py = cy - c.dy - outY_svg * namePush;
+      // Position follows the rotated chair; the text itself stays upright
+      // (horizontal), matching the canvas' counter-rotated labels.
+      const local = rotSvg(c.dx + outX * namePush, c.dy + outY_svg * namePush);
+      const px = cx + local.dx;
+      const py = cy - local.dy;
       const guestFit = await fitText(fontPair, guest.full_name, 7, mm(28));
       const w = guestFit.font.widthOfTextAtSize(guestFit.text, 7);
       page.drawText(guestFit.text, {

@@ -8,6 +8,7 @@
 
 import type { Couple, Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
 import {
+  MAX_TABLE_SEATS,
   defaultDimsForShape,
   isDefaultTableLabel,
   maxSeatsForTable,
@@ -17,6 +18,7 @@ import {
   Armchair,
   Baby,
   Briefcase,
+  Check,
   ChevronDown,
   Circle,
   Copy,
@@ -26,11 +28,13 @@ import {
   Hand,
   LayoutGrid,
   Link2,
+  Loader2,
   Minus,
   Pencil,
   Plus,
   Printer,
   RectangleHorizontal,
+  Redo2,
   RotateCw,
   Square,
   Trash2,
@@ -44,7 +48,13 @@ import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } fro
 import { Link } from "react-router-dom";
 import { Button, Dialog, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { coupleApi, fetchPdfBlob, guestApi, seatingApi } from "../lib/endpoints";
+import {
+  type SeatingTableEnvelope,
+  coupleApi,
+  fetchPdfBlob,
+  guestApi,
+  seatingApi,
+} from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
@@ -79,12 +89,14 @@ interface PdfPreview {
   label: string;
 }
 
-// In-memory undo entry. Each action stores enough state to reverse itself.
-// Keeping `undo` as a closure over the API call keeps the stack itself
-// agnostic of the action type — the reducer never inspects it.
+// In-memory undo entry. Each action stores closures for BOTH directions so
+// the stack stays agnostic of the action type: `undo` reverses the action,
+// `redo` re-applies it after an undo. A fresh user action clears the redo
+// stack (linear history, like a text editor).
 interface UndoAction {
   label: string;
   undo: () => Promise<void>;
+  redo: () => Promise<void>;
 }
 
 const UNDO_STACK_LIMIT = 20;
@@ -140,6 +152,18 @@ export default function SeatingPage() {
   // Undo stack. Bounded by UNDO_STACK_LIMIT — we drop the oldest action when
   // it overflows so the stack stays small and predictable.
   const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
+  const [redoStack, setRedoStack] = useState<UndoAction[]>([]);
+  // Autosave chip state: how many mutations are in flight, whether the last
+  // one failed, and a short-lived "Saved" flash once the queue settles.
+  const [pendingSaves, setPendingSaves] = useState(0);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+  // Table id that was just created/duplicated — the canvas draws a brief
+  // halo around it so the user sees where the new table landed.
+  const [justCreatedId, setJustCreatedId] = useState<number | null>(null);
+  const justCreatedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Post-resize capacity prompt: "the table now fits {extra} more chairs".
+  const [fitPrompt, setFitPrompt] = useState<{ tableId: number; extra: number } | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   // Pending swap/replace prompt when the target seat is already occupied.
   const [conflictPrompt, setConflictPrompt] = useState<{
@@ -151,17 +175,63 @@ export default function SeatingPage() {
     sourceSeatIndex: number | null;
   } | null>(null);
 
+  // Freshest known `updated_at` per table id, written from EVERY server
+  // response (plan fetches and mutation envelopes alike). If-Match reads
+  // from here, never from possibly-stale React state — this is what closes
+  // the "resize just landed but the next click still carries the old ETag"
+  // race behind the silent seat-add failure.
+  const latestUpdatedAtRef = useRef<Map<number, number>>(new Map());
+  // Live mirror of `tables` for reading inside queued/async closures.
+  const tablesRef = useRef<SeatingTable[]>([]);
+  // Per-table PATCH serialization: a blur-committed resize and an immediate
+  // "+ seat" click chain instead of interleaving on the wire.
+  const patchChainsRef = useRef<Map<number, Promise<void>>>(new Map());
+
+  const rememberTables = useCallback((list: SeatingTable[]) => {
+    for (const tb of list) latestUpdatedAtRef.current.set(tb.id, tb.updated_at);
+    tablesRef.current = list;
+  }, []);
+
   async function refresh() {
     const [plan, gs, c] = await Promise.all([
       seatingApi.plan(),
       guestApi.list(),
       coupleApi.current(),
     ]);
+    rememberTables(plan.tables);
     setTables(plan.tables);
     setAssignments(plan.assignments);
     setGuests(gs.guests);
     setCouple(c.couple);
   }
+
+  // Merge one persisted row into state synchronously — mutation responses
+  // apply instantly instead of waiting a full plan round-trip.
+  const applyTable = useCallback(
+    (table: SeatingTable) => {
+      setTables((prev) => {
+        const next = prev.some((tb) => tb.id === table.id)
+          ? prev.map((tb) => (tb.id === table.id ? table : tb))
+          : [...prev, table];
+        rememberTables(next);
+        return next;
+      });
+    },
+    [rememberTables],
+  );
+
+  const dropTableFromState = useCallback(
+    (id: number) => {
+      latestUpdatedAtRef.current.delete(id);
+      setTables((prev) => {
+        const next = prev.filter((tb) => tb.id !== id);
+        tablesRef.current = next;
+        return next;
+      });
+      setAssignments((prev) => prev.filter((a) => a.table_id !== id));
+    },
+    [],
+  );
 
   useEffect(() => {
     refresh();
@@ -375,15 +445,22 @@ export default function SeatingPage() {
     [assignments],
   );
 
-  // Stack lives in a ref so concurrent events (drop while a toast is fading)
+  // Stacks live in refs so concurrent events (drop while a toast is fading)
   // can't drop entries via stale state. The visible state mirrors length so
-  // the inline "Undo" button can show/hide without race risk.
+  // the inline Undo/Redo buttons can show/hide without race risk.
   const undoStackRef = useRef<UndoAction[]>([]);
-  const pushUndo = useCallback((action: UndoAction) => {
+  const redoStackRef = useRef<UndoAction[]>([]);
+  const pushUndo = useCallback((action: UndoAction, opts?: { keepRedo?: boolean }) => {
     const arr = undoStackRef.current;
     arr.push(action);
     if (arr.length > UNDO_STACK_LIMIT) arr.shift();
     setUndoStack([...arr]);
+    // A fresh user action forks history — drop the redo branch. Undo/redo
+    // traversal passes keepRedo so walking the stack doesn't erase it.
+    if (!opts?.keepRedo) {
+      redoStackRef.current = [];
+      setRedoStack([]);
+    }
   }, []);
 
   const popAndUndo = useCallback(async () => {
@@ -392,11 +469,59 @@ export default function SeatingPage() {
     if (!action) return;
     try {
       await action.undo();
+      redoStackRef.current.push(action);
+      setRedoStack([...redoStackRef.current]);
       await refresh();
     } catch {
       toast.error(t("seating.undo_failed"));
     }
   }, [toast, t]);
+
+  const popAndRedo = useCallback(async () => {
+    const action = redoStackRef.current.pop();
+    setRedoStack([...redoStackRef.current]);
+    if (!action) return;
+    try {
+      await action.redo();
+      pushUndo(action, { keepRedo: true });
+      await refresh();
+    } catch {
+      toast.error(t("seating.redo_failed"));
+    }
+  }, [toast, t, pushUndo]);
+
+  // Wrap every mutating API call so the toolbar chip can show
+  // "Saving… / Saved / Save failed" — the plan autosaves on every action,
+  // and this is the first place that fact is visible to the user.
+  const hasSavedRef = useRef(false);
+  const runSaving = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
+    hasSavedRef.current = true;
+    setPendingSaves((n) => n + 1);
+    try {
+      const out = await fn();
+      setSaveFailed(false);
+      return out;
+    } catch (e) {
+      setSaveFailed(true);
+      throw e;
+    } finally {
+      setPendingSaves((n) => n - 1);
+    }
+  }, []);
+
+  // Flash "Saved" for a couple of seconds whenever the save queue settles
+  // cleanly, then fade back to nothing (a permanently-green chip is noise).
+  // hasSavedRef keeps the initial page load from flashing a phantom save.
+  useEffect(() => {
+    if (pendingSaves > 0) {
+      setSavedFlash(false);
+      return;
+    }
+    if (saveFailed || !hasSavedRef.current) return;
+    setSavedFlash(true);
+    const timer = setTimeout(() => setSavedFlash(false), 2000);
+    return () => clearTimeout(timer);
+  }, [pendingSaves, saveFailed]);
 
   // Toast helper that primes the user that Cmd/Ctrl+Z (or the inline button)
   // will reverse the last action.
@@ -423,8 +548,12 @@ export default function SeatingPage() {
       opts?: { silentUndo?: boolean },
     ) => {
       const previous = findAssignmentForGuest(guestId);
+      const forward = () =>
+        runSaving(() =>
+          seatingApi.assign({ table_id: tableId, seat_index: seatIndex, guest_id: guestId }),
+        );
       try {
-        await seatingApi.assign({ table_id: tableId, seat_index: seatIndex, guest_id: guestId });
+        await forward();
       } catch {
         toast.error(t("seating.save_failed"));
         await refresh();
@@ -434,14 +563,19 @@ export default function SeatingPage() {
         label: t("seating.undo_label"),
         undo: async () => {
           if (previous) {
-            await seatingApi.assign({
-              table_id: previous.table_id,
-              seat_index: previous.seat_index,
-              guest_id: guestId,
-            });
+            await runSaving(() =>
+              seatingApi.assign({
+                table_id: previous.table_id,
+                seat_index: previous.seat_index,
+                guest_id: guestId,
+              }),
+            );
           } else {
-            await seatingApi.unassign(guestId);
+            await runSaving(() => seatingApi.unassign(guestId));
           }
+        },
+        redo: async () => {
+          await forward();
         },
       });
       const guest = guestById.get(guestId);
@@ -457,15 +591,16 @@ export default function SeatingPage() {
       publish("seating:changed");
       await refresh();
     },
-    [findAssignmentForGuest, guestById, tables, pushUndo, announceUndoable, t, toast],
+    [findAssignmentForGuest, guestById, tables, pushUndo, announceUndoable, t, toast, runSaving],
   );
 
   const unassignGuest = useCallback(
     async (guestId: number, opts?: { silentUndo?: boolean }) => {
       const previous = findAssignmentForGuest(guestId);
       if (!previous) return;
+      const forward = () => runSaving(() => seatingApi.unassign(guestId));
       try {
-        await seatingApi.unassign(guestId);
+        await forward();
       } catch {
         toast.error(t("seating.save_failed"));
         await refresh();
@@ -474,11 +609,16 @@ export default function SeatingPage() {
       pushUndo({
         label: t("seating.undo_label"),
         undo: async () => {
-          await seatingApi.assign({
-            table_id: previous.table_id,
-            seat_index: previous.seat_index,
-            guest_id: guestId,
-          });
+          await runSaving(() =>
+            seatingApi.assign({
+              table_id: previous.table_id,
+              seat_index: previous.seat_index,
+              guest_id: guestId,
+            }),
+          );
+        },
+        redo: async () => {
+          await forward();
         },
       });
       const guest = guestById.get(guestId);
@@ -488,7 +628,7 @@ export default function SeatingPage() {
       publish("seating:changed");
       await refresh();
     },
-    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t, toast],
+    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t, toast, runSaving],
   );
 
   // Compose: swap two guests between seats. The new server-side `swap`
@@ -503,14 +643,18 @@ export default function SeatingPage() {
       targetSeatIndex: number,
     ) => {
       // We don't need to track the previous slot any more — `swap` is
-      // symmetric, so re-issuing it is the perfect undo.
+      // symmetric, so re-issuing it is the perfect undo AND the perfect redo.
       void targetTableId;
       void targetSeatIndex;
+      const doSwap = () =>
+        runSaving(() =>
+          seatingApi.swap({
+            guest_a_id: incomingGuestId,
+            guest_b_id: occupantGuestId,
+          }),
+        );
       try {
-        await seatingApi.swap({
-          guest_a_id: incomingGuestId,
-          guest_b_id: occupantGuestId,
-        });
+        await doSwap();
       } catch {
         toast.error(t("seating.save_failed"));
         await refresh();
@@ -519,10 +663,10 @@ export default function SeatingPage() {
       pushUndo({
         label: t("seating.undo_label"),
         undo: async () => {
-          await seatingApi.swap({
-            guest_a_id: incomingGuestId,
-            guest_b_id: occupantGuestId,
-          });
+          await doSwap();
+        },
+        redo: async () => {
+          await doSwap();
         },
       });
       const incoming = guestById.get(incomingGuestId);
@@ -537,7 +681,7 @@ export default function SeatingPage() {
       publish("seating:changed");
       await refresh();
     },
-    [guestById, pushUndo, announceUndoable, t, toast],
+    [guestById, pushUndo, announceUndoable, t, toast, runSaving],
   );
 
   const replaceAtSeat = useCallback(
@@ -548,13 +692,17 @@ export default function SeatingPage() {
       occupantGuestId: number,
     ) => {
       const incomingPrev = findAssignmentForGuest(incomingGuestId);
-      try {
-        await seatingApi.unassign(occupantGuestId);
-        await seatingApi.assign({
-          table_id: tableId,
-          seat_index: seatIndex,
-          guest_id: incomingGuestId,
+      const forward = () =>
+        runSaving(async () => {
+          await seatingApi.unassign(occupantGuestId);
+          await seatingApi.assign({
+            table_id: tableId,
+            seat_index: seatIndex,
+            guest_id: incomingGuestId,
+          });
         });
+      try {
+        await forward();
       } catch {
         toast.error(t("seating.save_failed"));
         await refresh();
@@ -563,19 +711,24 @@ export default function SeatingPage() {
       pushUndo({
         label: t("seating.undo_label"),
         undo: async () => {
-          await seatingApi.unassign(incomingGuestId);
-          if (incomingPrev) {
+          await runSaving(async () => {
+            await seatingApi.unassign(incomingGuestId);
+            if (incomingPrev) {
+              await seatingApi.assign({
+                table_id: incomingPrev.table_id,
+                seat_index: incomingPrev.seat_index,
+                guest_id: incomingGuestId,
+              });
+            }
             await seatingApi.assign({
-              table_id: incomingPrev.table_id,
-              seat_index: incomingPrev.seat_index,
-              guest_id: incomingGuestId,
+              table_id: tableId,
+              seat_index: seatIndex,
+              guest_id: occupantGuestId,
             });
-          }
-          await seatingApi.assign({
-            table_id: tableId,
-            seat_index: seatIndex,
-            guest_id: occupantGuestId,
           });
+        },
+        redo: async () => {
+          await forward();
         },
       });
       const incoming = guestById.get(incomingGuestId);
@@ -590,7 +743,7 @@ export default function SeatingPage() {
       publish("seating:changed");
       await refresh();
     },
-    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t, toast],
+    [findAssignmentForGuest, guestById, pushUndo, announceUndoable, t, toast, runSaving],
   );
 
   // Top-level entry point: assign with conflict-detection. If the seat is
@@ -664,14 +817,18 @@ export default function SeatingPage() {
         toast.error(t("seating.household_no_room"));
         return;
       }
+      const forward = () =>
+        runSaving(async () => {
+          for (const p of placements) {
+            await seatingApi.assign({
+              table_id: tableId,
+              seat_index: p.seatIndex,
+              guest_id: p.guestId,
+            });
+          }
+        });
       try {
-        for (const p of placements) {
-          await seatingApi.assign({
-            table_id: tableId,
-            seat_index: p.seatIndex,
-            guest_id: p.guestId,
-          });
-        }
+        await forward();
       } catch {
         toast.error(t("seating.save_failed"));
         await refresh();
@@ -682,18 +839,23 @@ export default function SeatingPage() {
         undo: async () => {
           // Reverse in opposite order so each seat is freed before the
           // next id is restored (avoids transient conflicts on the wire).
-          for (const p of [...placements].reverse()) {
-            const prev = priors.get(p.guestId);
-            if (prev) {
-              await seatingApi.assign({
-                table_id: prev.table_id,
-                seat_index: prev.seat_index,
-                guest_id: p.guestId,
-              });
-            } else {
-              await seatingApi.unassign(p.guestId);
+          await runSaving(async () => {
+            for (const p of [...placements].reverse()) {
+              const prev = priors.get(p.guestId);
+              if (prev) {
+                await seatingApi.assign({
+                  table_id: prev.table_id,
+                  seat_index: prev.seat_index,
+                  guest_id: p.guestId,
+                });
+              } else {
+                await seatingApi.unassign(p.guestId);
+              }
             }
-          }
+          });
+        },
+        redo: async () => {
+          await forward();
         },
       });
       if (placements.length < guestIds.length) {
@@ -712,12 +874,12 @@ export default function SeatingPage() {
       publish("seating:changed");
       await refresh();
     },
-    [tables, assignments, findAssignmentForGuest, pushUndo, announceUndoable, t, toast],
+    [tables, assignments, findAssignmentForGuest, pushUndo, announceUndoable, t, toast, runSaving],
   );
 
-  async function addTable() {
-    // Auto-name: scan existing labels for "<prefix> <n>" matches and pick
-    // max(n)+1. Falls back to tables.length+1 if no numbered labels exist.
+  // Next free "<prefix> <n>" label so adds and copies slot into the same
+  // numbered run (Asztal 5, Asztal 6, …).
+  function nextTableLabel(): string {
     const prefix = t("seating.table_default_label");
     const re = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} (\\d+)$`);
     let maxN = 0;
@@ -728,55 +890,89 @@ export default function SeatingPage() {
         if (Number.isFinite(n) && n > maxN) maxN = n;
       }
     }
-    const next = maxN > 0 ? maxN + 1 : tables.length + 1;
-    const label = `${prefix} ${next}`;
+    return `${prefix} ${maxN > 0 ? maxN + 1 : tables.length + 1}`;
+  }
+
+  // Shared post-create flow: apply the row, select it, pulse a halo on the
+  // canvas and scroll it into view so the user sees where it landed, and
+  // register an id-tracking undo/redo pair (redo recreates under a NEW id,
+  // so the closure keeps its own pointer).
+  function afterCreate(envelope: SeatingTableEnvelope, payload: Parameters<typeof seatingApi.createTable>[0]) {
+    applyTable(envelope.table);
+    notifyClamp(envelope);
+    setSelectedId(envelope.table.id);
+    highlightTable(envelope.table.id);
+    let currentId = envelope.table.id;
+    pushUndo({
+      label: t("seating.undo_label"),
+      undo: async () => {
+        await runSaving(() => seatingApi.removeTable(currentId));
+        dropTableFromState(currentId);
+      },
+      redo: async () => {
+        const res = await runSaving(() => seatingApi.createTable(payload));
+        currentId = res.table.id;
+        applyTable(res.table);
+      },
+    });
+    publish("seating:changed");
+  }
+
+  // Brief halo on a newly-created table + scroll it into view.
+  function highlightTable(id: number) {
+    setJustCreatedId(id);
+    if (justCreatedTimerRef.current) clearTimeout(justCreatedTimerRef.current);
+    justCreatedTimerRef.current = setTimeout(() => setJustCreatedId(null), 1600);
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-seating-table="${id}"]`);
+      if (el instanceof Element) el.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+  }
+
+  async function addTable() {
     // Drop new tables near the centre of the room with a small per-table
     // offset so consecutive adds don't stack on top of each other.
     const offset = (tables.length % 5) * 800;
-    const res = await seatingApi.createTable({
-      label,
-      shape: "round",
+    const payload = {
+      label: nextTableLabel(),
+      shape: "round" as TableShape,
       seats: 8,
       x_mm: roomWidthMm / 2 + offset - 1600,
       y_mm: roomHeightMm / 2,
       width_mm: 1500,
       length_mm: 1500,
-    });
-    setSelectedId(res.table.id);
-    refresh();
+    };
+    try {
+      const res = await runSaving(() => seatingApi.createTable(payload));
+      afterCreate(res, payload);
+    } catch {
+      toast.error(t("seating.save_failed"));
+    }
   }
 
   async function duplicateTable(source: SeatingTable) {
-    // Reuse the auto-naming logic so the copy slots into the existing
-    // numbered run (Asztal 5, Asztal 6, …) rather than ending up as
-    // "Asztal 2 (másolat)" sitting next to the original.
-    const prefix = t("seating.table_default_label");
-    const re = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} (\\d+)$`);
-    let maxN = 0;
-    for (const tb of tables) {
-      const m = tb.label.match(re);
-      if (m?.[1]) {
-        const n = Number(m[1]);
-        if (Number.isFinite(n) && n > maxN) maxN = n;
-      }
-    }
-    const next = maxN > 0 ? maxN + 1 : tables.length + 1;
-    // Drop the duplicate offset to the right and below so it doesn't sit
-    // exactly on top of the original table.
-    const dx = 800;
-    const dy = 800;
-    const res = await seatingApi.createTable({
-      label: `${prefix} ${next}`,
+    // Copy the FULL configuration — dropping disabled/baby seats used to
+    // silently produce a copy with more usable chairs than the original.
+    const payload = {
+      label: nextTableLabel(),
       shape: source.shape,
       seats: source.seats,
-      x_mm: clampToRoom(source.x_mm + dx, roomWidthMm),
-      y_mm: clampToRoom(source.y_mm + dy, roomHeightMm),
+      x_mm: clampToRoom(source.x_mm + 800, roomWidthMm),
+      y_mm: clampToRoom(source.y_mm + 800, roomHeightMm),
       width_mm: source.width_mm,
       length_mm: source.length_mm,
       rotation_deg: source.rotation_deg,
-    });
-    setSelectedId(res.table.id);
-    refresh();
+      disabled_seats: source.disabled_seats ?? [],
+      baby_seats: source.baby_seats ?? [],
+      is_kids_table: source.is_kids_table,
+    };
+    try {
+      const res = await runSaving(() => seatingApi.createTable(payload));
+      afterCreate(res, payload);
+      announceUndoable(t("seating.toast_duplicated").replace("{table}", res.table.label));
+    } catch {
+      toast.error(t("seating.save_failed"));
+    }
   }
 
   async function rotateTable(table: SeatingTable) {
@@ -793,21 +989,77 @@ export default function SeatingPage() {
       destructive: true,
     });
     if (!ok) return;
-    await seatingApi.removeTable(table.id);
+    // Snapshot the row AND its seat assignments so undo can rebuild the
+    // table (under a new id) with everyone back in their seats.
+    const snapshot = { ...table };
+    const seated = assignments
+      .filter((a) => a.table_id === table.id)
+      .map((a) => ({ seat_index: a.seat_index, guest_id: a.guest_id }));
+    let currentId = table.id;
+    try {
+      await runSaving(() => seatingApi.removeTable(table.id));
+    } catch {
+      toast.error(t("seating.save_failed"));
+      return;
+    }
+    dropTableFromState(table.id);
     if (selectedId === table.id) setSelectedId(null);
-    refresh();
+    pushUndo({
+      label: t("seating.undo_label"),
+      undo: async () => {
+        const res = await runSaving(() =>
+          seatingApi.createTable({
+            label: snapshot.label,
+            shape: snapshot.shape,
+            seats: snapshot.seats,
+            x_mm: snapshot.x_mm,
+            y_mm: snapshot.y_mm,
+            width_mm: snapshot.width_mm,
+            length_mm: snapshot.length_mm,
+            rotation_deg: snapshot.rotation_deg,
+            disabled_seats: snapshot.disabled_seats ?? [],
+            baby_seats: snapshot.baby_seats ?? [],
+            is_kids_table: snapshot.is_kids_table,
+          }),
+        );
+        currentId = res.table.id;
+        applyTable(res.table);
+        for (const s of seated) {
+          await runSaving(() =>
+            seatingApi.assign({
+              table_id: currentId,
+              seat_index: s.seat_index,
+              guest_id: s.guest_id,
+            }),
+          );
+        }
+      },
+      redo: async () => {
+        await runSaving(() => seatingApi.removeTable(currentId));
+        dropTableFromState(currentId);
+      },
+    });
+    announceUndoable(t("seating.toast_table_deleted").replace("{table}", snapshot.label));
+    publish("seating:changed");
   }
 
-  async function patchTable(table: SeatingTable, patch: Partial<SeatingTable>) {
-    // Snapshot the previous values for any field being patched, so undo can
-    // restore them.
-    const before: Partial<SeatingTable> = {};
-    for (const key of Object.keys(patch) as (keyof SeatingTable)[]) {
-      (before as Record<string, unknown>)[key] = (table as unknown as Record<string, unknown>)[key];
-    }
-    try {
-      await seatingApi.updateTable(table.id, { ...table, ...patch }, { ifMatch: table.updated_at });
-    } catch (e) {
+  // Toast the server's seat-clamp diagnostic: the request asked for more
+  // chairs than the footprint fits, and the row came back shrunk. Without
+  // this the clamp is a silent no-op the user can only guess at.
+  const notifyClamp = useCallback(
+    (envelope: SeatingTableEnvelope) => {
+      if (!envelope.seats_clamped) return;
+      toast.error(
+        t("seating.seats_clamped_toast")
+          .replace("{n}", String(envelope.table.seats))
+          .replace("{m}", String(envelope.seats_requested ?? envelope.table.seats)),
+      );
+    },
+    [toast, t],
+  );
+
+  const toastPatchError = useCallback(
+    (e: unknown) => {
       if (e instanceof ApiError && e.status === 409) {
         toast.error(t("seating.save_conflict"));
       } else if (
@@ -816,28 +1068,97 @@ export default function SeatingPage() {
         (e.detail as { code?: string } | undefined)?.code === "table_too_small"
       ) {
         toast.error(t("seating.table_too_small"));
+      } else if (
+        e instanceof ApiError &&
+        e.status === 400 &&
+        (e.detail as { code?: string } | undefined)?.code === "seat_occupied"
+      ) {
+        toast.error(t("seating.seat_occupied"));
       } else {
         toast.error(t("seating.save_failed"));
       }
-      await refresh();
-      return;
-    }
-    pushUndo({
-      label: t("seating.undo_label"),
-      undo: async () => {
-        await seatingApi.updateTable(table.id, { ...table, ...before });
-      },
-    });
-    publish("seating:changed");
-    refresh();
+    },
+    [toast, t],
+  );
+
+  // Bare field-PATCH used by undo/redo replays: partial body, freshest
+  // ETag, response applied to state. Throws on failure so the caller's
+  // catch can toast undo_failed/redo_failed.
+  const patchTableFields = useCallback(
+    async (id: number, fields: Partial<SeatingTable>) => {
+      const ifMatch = latestUpdatedAtRef.current.get(id);
+      const res = await runSaving(() =>
+        seatingApi.updateTable(id, fields, ifMatch !== undefined ? { ifMatch } : {}),
+      );
+      applyTable(res.table);
+    },
+    [applyTable, runSaving],
+  );
+
+  /** Send only the changed fields, serialized per table, with the freshest
+   *  known ETag. On a 409 we retry ONCE against the timestamp the server
+   *  reports — the overwhelmingly common cause is our own just-landed write
+   *  (blur-committed resize + immediate click), not a second editor. Only a
+   *  second 409 surfaces the "someone else edited" toast. Returns true when
+   *  the write landed so callers can gate their success toasts. */
+  async function patchTable(table: SeatingTable, patch: Partial<SeatingTable>): Promise<boolean> {
+    const id = table.id;
+    let ok = false;
+    const job = async () => {
+      const current = tablesRef.current.find((tb) => tb.id === id) ?? table;
+      const before: Partial<SeatingTable> = {};
+      for (const key of Object.keys(patch) as (keyof SeatingTable)[]) {
+        (before as Record<string, unknown>)[key] = (
+          current as unknown as Record<string, unknown>
+        )[key];
+      }
+      const send = async (ifMatch: number) => {
+        const res = await runSaving(() => seatingApi.updateTable(id, patch, { ifMatch }));
+        applyTable(res.table);
+        notifyClamp(res);
+      };
+      try {
+        await send(latestUpdatedAtRef.current.get(id) ?? current.updated_at);
+      } catch (e) {
+        const staleAt =
+          e instanceof ApiError && e.status === 409
+            ? (e.detail as { current_updated_at?: number } | undefined)?.current_updated_at
+            : undefined;
+        if (staleAt !== undefined) {
+          try {
+            await send(staleAt);
+          } catch (e2) {
+            toastPatchError(e2);
+            await refresh();
+            return;
+          }
+        } else {
+          toastPatchError(e);
+          await refresh();
+          return;
+        }
+      }
+      pushUndo({
+        label: t("seating.undo_label"),
+        undo: () => patchTableFields(id, before),
+        redo: () => patchTableFields(id, patch),
+      });
+      publish("seating:changed");
+      ok = true;
+    };
+    const prev = patchChainsRef.current.get(id) ?? Promise.resolve();
+    const chained = prev.then(job, job);
+    patchChainsRef.current.set(id, chained);
+    await chained;
+    return ok;
   }
 
   async function moveTable(id: number, x_mm: number, y_mm: number) {
     const table = tables.find((tb) => tb.id === id);
     if (!table) return;
     if (table.x_mm === x_mm && table.y_mm === y_mm) return;
-    await patchTable(table, { x_mm, y_mm });
-    announceUndoable(t("seating.toast_moved").replace("{table}", table.label));
+    const ok = await patchTable(table, { x_mm, y_mm });
+    if (ok) announceUndoable(t("seating.toast_moved").replace("{table}", table.label));
   }
 
   // One-click symmetric layout: head table hugs the top wall on the room's
@@ -868,11 +1189,7 @@ export default function SeatingPage() {
 
     try {
       for (const m of moves) {
-        await seatingApi.updateTable(
-          m.table.id,
-          { x_mm: m.x_mm, y_mm: m.y_mm },
-          { ifMatch: m.table.updated_at },
-        );
+        await patchTableFields(m.table.id, { x_mm: m.x_mm, y_mm: m.y_mm });
       }
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -889,9 +1206,18 @@ export default function SeatingPage() {
       undo: async () => {
         for (const prev of before) {
           try {
-            await seatingApi.updateTable(prev.id, { x_mm: prev.x_mm, y_mm: prev.y_mm });
+            await patchTableFields(prev.id, { x_mm: prev.x_mm, y_mm: prev.y_mm });
           } catch {
             /* surface via the refresh that popAndUndo runs */
+          }
+        }
+      },
+      redo: async () => {
+        for (const m of moves) {
+          try {
+            await patchTableFields(m.table.id, { x_mm: m.x_mm, y_mm: m.y_mm });
+          } catch {
+            /* surface via the refresh that popAndRedo runs */
           }
         }
       },
@@ -907,20 +1233,39 @@ export default function SeatingPage() {
     if (!table) return;
     if (table.width_mm === width_mm && table.length_mm === length_mm) return;
     // Server normalizes round/square to width == length, so just forward.
-    await patchTable(table, { width_mm, length_mm });
+    const ok = await patchTable(table, { width_mm, length_mm });
+    if (!ok) return;
     announceUndoable(t("seating.toast_resized").replace("{table}", table.label));
+    // If the bigger footprint fits more chairs than the table currently
+    // has, surface a one-tap "add them" prompt in the editor panel instead
+    // of leaving the extra capacity as trivia in the stepper cap.
+    const capAfter = Math.min(
+      MAX_TABLE_SEATS,
+      maxSeatsForTable(table.shape, width_mm, length_mm),
+    );
+    const extra = capAfter - table.seats;
+    setFitPrompt(extra > 0 ? { tableId: id, extra } : null);
   }
 
   async function changeSeats(id: number, delta: number) {
     const table = tables.find((tb) => tb.id === id);
     if (!table) return;
-    const cap = Math.min(40, maxSeatsForTable(table.shape, table.width_mm, table.length_mm));
+    const cap = Math.min(
+      MAX_TABLE_SEATS,
+      maxSeatsForTable(table.shape, table.width_mm, table.length_mm),
+    );
     const requested = table.seats + delta;
     // User clicked + but the table is already full at the 80 cm pitch.
     // Surface the constraint as a toast so they know to widen the table
     // before adding another seat (instead of guessing why + is greyed out).
+    // When crossed-out seats exist, re-enabling one is the cheaper fix, so
+    // say that instead.
     if (delta > 0 && requested > cap) {
-      toast.error(t("seating.seats_at_cap"));
+      toast.error(
+        (table.disabled_seats?.length ?? 0) > 0
+          ? t("seating.seats_at_cap_reenable")
+          : t("seating.seats_at_cap"),
+      );
       return;
     }
     const next = Math.max(1, Math.min(cap, requested));
@@ -1088,8 +1433,8 @@ export default function SeatingPage() {
     ],
   );
 
-  // Global keyboard handlers: Cmd/Ctrl+Z undo, Shift+Cmd/Ctrl+Z reserved for
-  // redo (unimplemented — see Cancel; we just no-op to swallow the chord).
+  // Global keyboard handlers: Cmd/Ctrl+Z undo, Shift+Cmd/Ctrl+Z (or
+  // Cmd/Ctrl+Y) redo, "?" opens the shortcuts sheet.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       // Don't interfere with text input.
@@ -1106,6 +1451,11 @@ export default function SeatingPage() {
         popAndUndo();
         return;
       }
+      if (mod && ((e.key.toLowerCase() === "z" && e.shiftKey) || e.key.toLowerCase() === "y")) {
+        e.preventDefault();
+        popAndRedo();
+        return;
+      }
       // Shortcuts cheatsheet quick-open with "?".
       if (e.key === "?" && !mod) {
         e.preventDefault();
@@ -1114,7 +1464,7 @@ export default function SeatingPage() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [popAndUndo]);
+  }, [popAndUndo, popAndRedo]);
 
   // Live-region announcement string. Updates whenever the tap-mode toggle
   // or selected-guest changes so AT users hear the new state. Stored in
@@ -1147,27 +1497,67 @@ export default function SeatingPage() {
           data-tour-target="seating-modes"
           className="flex min-w-0 flex-1 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:border-umber-600 dark:bg-umber-800"
         >
-          {(["edit", "seat"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={mode === m}
-              onClick={() => setMode(m)}
-              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-                mode === m
-                  ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                  : "text-ink-600 hover:bg-paper-100 dark:text-umber-200 dark:hover:bg-umber-700"
-              }`}
-            >
-              {m === "edit" ? t("seating.mode_edit_tab") : t("seating.mode_seat_tab")}
-            </button>
-          ))}
+          {(["edit", "seat"] as const).map((m) => {
+            const label = m === "edit" ? t("seating.mode_edit_tab") : t("seating.mode_seat_tab");
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => setMode(m)}
+                title={label}
+                className={`min-w-0 flex-1 truncate whitespace-nowrap px-4 py-2 text-sm font-medium transition-colors ${
+                  mode === m
+                    ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : "text-ink-600 hover:bg-paper-100 dark:text-umber-200 dark:hover:bg-umber-700"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Autosave status — quiet chip that answers "did my change stick?"
+            without a toast per drag. */}
+        <SaveStatusChip
+          pending={pendingSaves > 0}
+          failed={saveFailed}
+          savedFlash={savedFlash}
+          t={t}
+        />
+
+        {/* Undo / redo — available in BOTH modes (moves and resizes are just
+            as undoable as seat assignments). Icon-only to stay compact. */}
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-lg border border-ink-300 p-1.5 text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-umber-600 dark:text-paper-200 dark:hover:bg-umber-700"
+            onClick={popAndUndo}
+            disabled={undoStack.length === 0}
+            aria-label={t("seating.undo_action")}
+            title={t("seating.undo_action")}
+          >
+            <Undo2 size={15} aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-lg border border-ink-300 p-1.5 text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-umber-600 dark:text-paper-200 dark:hover:bg-umber-700"
+            onClick={popAndRedo}
+            disabled={redoStack.length === 0}
+            aria-label={t("seating.redo_action")}
+            title={t("seating.redo_action")}
+          >
+            <Redo2 size={15} aria-hidden />
+          </button>
         </div>
 
         {mode === "edit" ? (
-          // Edit mode right section — matches the w-[280px] right panel below.
-          <div className="flex w-[280px] shrink-0 items-center justify-end gap-2">
+          // Edit mode right section — matches the w-[280px] right panel below
+          // on large screens; shrinks to content below that so the mode tabs
+          // never starve and clip their labels.
+          <div className="flex shrink-0 items-center justify-end gap-2 lg:w-[280px]">
             {/* Icon-only action strip */}
             <div
               data-tour-target="seating-export"
@@ -1190,7 +1580,6 @@ export default function SeatingPage() {
                   )
                 }
                 grouped
-                iconOnly
               />
               <button
                 type="button"
@@ -1218,25 +1607,16 @@ export default function SeatingPage() {
             </button>
           </div>
         ) : (
-          // Seat mode right section mirrors the w-[280px] unassigned panel below.
-          <div className="flex w-[280px] shrink-0 items-center justify-end gap-2">
-            {undoStack.length > 0 && (
-              <button
-                type="button"
-                className="btn-outline btn-sm"
-                onClick={popAndUndo}
-                aria-label={t("seating.undo_action")}
-              >
-                <Undo2 size={14} /> {t("seating.undo_action")}
-              </button>
-            )}
+          // Seat mode right section mirrors the w-[280px] unassigned panel
+          // below on large screens; content-sized under that.
+          <div className="flex shrink-0 items-center justify-end gap-2 lg:w-[280px]">
             {!coarsePointer && (
               <button
                 type="button"
-                className={`inline-flex items-center justify-center rounded-lg border border-dashed p-1.5 transition-colors ${
+                className={`inline-flex items-center justify-center gap-1 rounded-lg border p-1.5 transition-colors ${
                   tapModeUser
                     ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                    : "border-ink-900 bg-transparent text-ink-900 hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
+                    : "border-ink-300 bg-transparent text-ink-900 hover:bg-ink-50 dark:border-umber-600 dark:text-paper-200 dark:hover:bg-umber-700"
                 }`}
                 onClick={() => {
                   setTapModeUser((v) => {
@@ -1253,12 +1633,15 @@ export default function SeatingPage() {
                 title={tapModeUser ? t("seating.tap_mode_off") : t("seating.tap_mode_on")}
               >
                 <Hand size={15} aria-hidden />
+                <span className="hidden text-xs font-medium sm:inline">
+                  {t("seating.tap_mode_short")}
+                </span>
               </button>
             )}
             {selectedGuestId !== null && (
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-lg border border-dashed border-ink-900 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
+                className="inline-flex items-center justify-center rounded-lg border border-ink-300 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-umber-600 dark:text-paper-200 dark:hover:bg-umber-700"
                 onClick={async () => {
                   const id = selectedGuestId;
                   setSelectedGuestId(null);
@@ -1272,7 +1655,7 @@ export default function SeatingPage() {
             )}
             <Link
               to="/app/guests"
-              className="inline-flex items-center justify-center gap-0.5 rounded-lg border border-dashed border-ink-900 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-paper-200 dark:text-paper-200 dark:hover:bg-umber-700"
+              className="inline-flex items-center justify-center gap-0.5 rounded-lg border border-ink-300 bg-transparent p-1.5 text-ink-900 transition-colors hover:bg-ink-50 dark:border-umber-600 dark:text-paper-200 dark:hover:bg-umber-700"
               aria-label={t("seating.go_to_guests")}
               title={t("seating.go_to_guests")}
             >
@@ -1338,6 +1721,7 @@ export default function SeatingPage() {
               onRoomChange={updateRoom}
               babySeatsByTable={babySeatsByTable}
               seatGuestsByTable={seatGuestsByTable}
+              highlightId={justCreatedId}
               fullHeight
             />
           </div>
@@ -1349,6 +1733,12 @@ export default function SeatingPage() {
               onDuplicate={() => selected && duplicateTable(selected)}
               onRotate={() => selected && rotateTable(selected)}
               onSeatsAtCap={() => toast.error(t("seating.seats_at_cap"))}
+              showFitPrompt={fitPrompt !== null && fitPrompt.tableId === selected?.id}
+              onDismissFit={() => setFitPrompt(null)}
+              onAcceptFit={async (nextSeats) => {
+                setFitPrompt(null);
+                if (selected) await patchTable(selected, { seats: nextSeats });
+              }}
               t={t}
             />
           </div>
@@ -1380,6 +1770,7 @@ export default function SeatingPage() {
                 roomHeightMm={roomHeightMm}
                 onRoomChange={updateRoom}
                 babySeatsByTable={babySeatsByTable}
+                highlightId={justCreatedId}
                 seatMode
                 seatGuestsByTable={seatGuestsByTable}
                 onDropSeat={dropToSeat}
@@ -1644,6 +2035,10 @@ export default function SeatingPage() {
             <ShortcutRow keys={["Delete"]} label={t("seating.shortcut_delete")} />
             <ShortcutRow keys={["N"]} label={t("seating.shortcut_n")} />
             <ShortcutRow keys={["Cmd/Ctrl", "Z"]} label={t("seating.shortcut_undo")} />
+            <ShortcutRow
+              keys={["Shift", "Cmd/Ctrl", "Z"]}
+              label={t("seating.shortcut_redo")}
+            />
           </ul>
         </Dialog>
       )}
@@ -1753,6 +2148,47 @@ function SeatPanelProgress({
   );
 }
 
+// Quiet autosave chip in the toolbar. Three states: saving (spinner),
+// saved (check, fades ~2s after the queue settles), failed (persists until
+// the next successful save). Renders nothing when idle so the toolbar stays
+// clean; role="status" lets screen readers hear the transitions.
+function SaveStatusChip({
+  pending,
+  failed,
+  savedFlash,
+  t,
+}: {
+  pending: boolean;
+  failed: boolean;
+  savedFlash: boolean;
+  t: ReturnType<typeof useT>["t"];
+}) {
+  return (
+    <span
+      role="status"
+      className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] ${
+        failed && !pending
+          ? "text-blush-700 dark:text-blush-300"
+          : "text-ink-500 dark:text-umber-300"
+      }`}
+    >
+      {pending ? (
+        <>
+          <Loader2 size={12} aria-hidden className="animate-spin" />
+          {t("seating.autosave_saving")}
+        </>
+      ) : failed ? (
+        t("seating.autosave_failed")
+      ) : savedFlash ? (
+        <>
+          <Check size={12} aria-hidden />
+          {t("seating.autosave_saved")}
+        </>
+      ) : null}
+    </span>
+  );
+}
+
 function ShortcutRow({ keys, label }: { keys: string[]; label: string }) {
   return (
     <li className="flex items-center justify-between gap-3">
@@ -1778,6 +2214,9 @@ function TableEditor({
   onDuplicate,
   onRotate,
   onSeatsAtCap,
+  showFitPrompt,
+  onDismissFit,
+  onAcceptFit,
   t,
 }: {
   table: SeatingTable | null;
@@ -1787,6 +2226,11 @@ function TableEditor({
   onRotate: () => void;
   /** Fires when the user clicks + on the seats stepper while at the cap. */
   onSeatsAtCap: () => void;
+  /** True right after a resize grew the seat cap past the current count. */
+  showFitPrompt?: boolean;
+  onDismissFit?: () => void;
+  /** Accepts the fit prompt with the target seat count. */
+  onAcceptFit?: (nextSeats: number) => void;
   t: ReturnType<typeof useT>["t"];
 }) {
   if (!table) {
@@ -1803,6 +2247,14 @@ function TableEditor({
   const hasTwoDims = table.shape === "long" || table.shape === "head";
   const xMeters = (table.x_mm / 1000).toFixed(1);
   const yMeters = (table.y_mm / 1000).toFixed(1);
+  // Live seat cap: geometry bound + the server's hard 1-40 range.
+  const seatCap = Math.min(
+    MAX_TABLE_SEATS,
+    maxSeatsForTable(table.shape, table.width_mm, table.length_mm),
+  );
+  // Recomputed live so a stepper change or another resize keeps the prompt
+  // honest (it hides itself the moment no extra chairs fit).
+  const fitExtra = showFitPrompt ? seatCap - table.seats : 0;
 
   return (
     <div className="card space-y-4 p-4">
@@ -1855,13 +2307,43 @@ function TableEditor({
       <Section label={t("seating.seats_label")}>
         <SeatsStepper
           value={table.seats}
-          max={maxSeatsForTable(table.shape, table.width_mm, table.length_mm)}
+          max={seatCap}
           onChange={(n) => {
             if (n !== table.seats) onPatch({ seats: n });
           }}
           onIncDenied={onSeatsAtCap}
           atCapHint={t("seating.seats_at_cap_hint")}
+          capTooltip={t("seating.seats_cap_tooltip")
+            .replace("{max}", String(seatCap))
+            .replace(
+              "{size}",
+              String(Math.round((hasTwoDims ? table.length_mm : table.width_mm) / 10)),
+            )}
+          addLabel={t("seating.add_seat")}
+          removeLabel={t("seating.remove_seat")}
         />
+        {fitExtra > 0 && (
+          <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-sage-300 bg-sage-50 px-2 py-1.5 dark:border-sage-500/40 dark:bg-sage-500/10">
+            <p className="flex-1 text-[11px] leading-snug text-sage-700 dark:text-sage-300">
+              {t("seating.seats_fit_more_prompt").replace("{n}", String(fitExtra))}
+            </p>
+            <button
+              type="button"
+              className="shrink-0 rounded-md bg-sage-600 px-2 py-1 text-[11px] font-semibold text-paper-50 transition-colors hover:bg-sage-700"
+              onClick={() => onAcceptFit?.(table.seats + fitExtra)}
+            >
+              {t("seating.seats_fit_more_action").replace("{n}", String(fitExtra))}
+            </button>
+            <button
+              type="button"
+              className="shrink-0 rounded p-0.5 text-sage-600 hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-500/20"
+              onClick={onDismissFit}
+              aria-label={t("common.cancel")}
+            >
+              <X size={12} aria-hidden />
+            </button>
+          </div>
+        )}
       </Section>
 
       <Section
@@ -1951,7 +2433,9 @@ function TableEditor({
           normal. Two independent sets on the wire (`disabled_seats`,
           `baby_seats`) keep the model simple. */}
       <Section
-        label={`${t("seating.layout_label")} · ${table.seats - (table.disabled_seats?.length ?? 0)}/${table.seats}`}
+        label={`${t("seating.layout_label")} · ${t("seating.layout_enabled_of_total")
+          .replace("{enabled}", String(table.seats - (table.disabled_seats?.length ?? 0)))
+          .replace("{total}", String(table.seats))}`}
       >
         <SeatLayoutPreview
           table={table}
@@ -2313,6 +2797,9 @@ function SeatsStepper({
   onIncDenied,
   max,
   atCapHint,
+  capTooltip,
+  addLabel,
+  removeLabel,
 }: {
   value: number;
   onChange: (next: number) => void;
@@ -2321,6 +2808,10 @@ function SeatsStepper({
   max: number;
   /** Inline hint shown only after the user tries to grow past the cap. */
   atCapHint?: string;
+  /** Explains where the cap comes from ("max 7 chairs at 200 cm"). */
+  capTooltip?: string;
+  addLabel?: string;
+  removeLabel?: string;
 }) {
   const upper = Math.max(1, max);
   const atMax = value >= upper;
@@ -2353,7 +2844,8 @@ function SeatsStepper({
           onClick={dec}
           disabled={decDisabled}
           className="grid h-8 w-8 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent dark:text-paper-100 dark:hover:bg-umber-700 dark:disabled:text-umber-300"
-          aria-label="−"
+          aria-label={removeLabel ?? "−"}
+          title={removeLabel}
         >
           <Minus size={16} aria-hidden />
         </button>
@@ -2369,11 +2861,18 @@ function SeatsStepper({
               ? "text-ink-300 hover:bg-blush-50 dark:text-umber-300 dark:hover:bg-blush-400/15"
               : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
           }`}
-          aria-label="+"
+          aria-label={addLabel ?? "+"}
+          title={addLabel}
         >
           <Plus size={16} aria-hidden />
         </button>
-        <span className="px-1 text-xs tabular-nums text-ink-400 dark:text-umber-300" aria-hidden>
+        {/* The cap is real information ("this is all that physically fits"),
+            not decoration — expose it to AT and explain it on hover. */}
+        <span
+          className="cursor-help px-1 text-xs tabular-nums text-ink-400 underline decoration-dotted underline-offset-2 dark:text-umber-300"
+          title={capTooltip}
+          aria-label={capTooltip}
+        >
           /{upper}
         </span>
       </div>

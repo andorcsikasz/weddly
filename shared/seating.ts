@@ -5,6 +5,11 @@
 
 import type { TableShape } from "./types";
 
+/** Hard ceiling on seats per table, independent of footprint. Mirrors the
+ *  backend's 1–40 validation range so both steppers stop where the server
+ *  would reject. */
+export const MAX_TABLE_SEATS = 40;
+
 /** Standard chair width in mm — used as the pitch when computing how many
  *  seats fit around a given table. Real banquet chairs sit ~50 cm wide,
  *  but 80 cm of perimeter per chair leaves enough elbow-room that nobody

@@ -1685,6 +1685,78 @@ describe("print: seating chart", () => {
   });
 });
 
+describe("print: seating chart honours table rotation", () => {
+  test("rotation_deg=37 round-trips through PATCH", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rot-1@weddly.test");
+    const t = await makeTable(token, {
+      shape: "long",
+      seats: 6,
+      width_mm: 900,
+      length_mm: 2400,
+      x_mm: 3000,
+      y_mm: 2000,
+    });
+    const patch = await req<{ table: { rotation_deg: number } }>(
+      "PATCH",
+      `/api/seating/tables/${t.id}`,
+      { rotation_deg: 37 },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.table.rotation_deg).toBe(37);
+    // And it survives a fresh read of the plan.
+    const plan = await req<{ tables: { id: number; rotation_deg: number }[] }>(
+      "GET",
+      "/api/seating/plan",
+      undefined,
+      { token },
+    );
+    expect(plan.data.tables.find((x) => x.id === t.id)?.rotation_deg).toBe(37);
+  });
+
+  test("rotated long table + seated guest renders a valid A4 PDF", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("rot-2@weddly.test");
+    // One rotated long table and one unrotated round neighbour so BOTH the
+    // rotated-rectangle branch and the legacy 0° branch draw in one render.
+    const rotated = await makeTable(token, {
+      label: "Head-ish",
+      shape: "long",
+      seats: 6,
+      width_mm: 900,
+      length_mm: 2400,
+      x_mm: 3000,
+      y_mm: 2000,
+      rotation_deg: 90,
+    });
+    await makeTable(token, {
+      label: "Round",
+      shape: "round",
+      seats: 6,
+      width_mm: 3000,
+      length_mm: 3000,
+      x_mm: 6000,
+      y_mm: 2000,
+    });
+    const g = await addGuest(token, "Rotated Guest");
+    const assign = await req(
+      "POST",
+      "/api/seating/assign",
+      { table_id: rotated.id, seat_index: 0, guest_id: g },
+      { token },
+    );
+    expect(assign.status).toBe(200);
+    const res = await fetch(`${BASE}/api/print/seating/a4`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const buf = await expectPdf(res);
+    // Non-trivial: two tables, twelve chairs, a guest name and the embedded
+    // font subset all landed in the file, not just an empty page.
+    expect(buf.byteLength).toBeGreaterThan(2000);
+  });
+});
+
 describe("print: place cards", () => {
   test("anon → 401", async () => {
     const res = await fetch(`${BASE}/api/print/place-cards`);
@@ -2011,5 +2083,186 @@ describe("schedule: key moments", () => {
     expect(r.status).toBe(200);
     expect(r.data.event.is_key_moment).toBe(true);
     expect(r.data.event.label).toBe("Renamed beat");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Seating tables — M1 correctness pass: seat-clamp envelope, partial-PATCH
+// merge semantics, the resize→seats If-Match flow behind the "5 /7 but +
+// does nothing" bug, and the occupied-seat disable guard.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("seating tables: clamp envelope + partial PATCH semantics", () => {
+  test("create clamps seats to the footprint and reports it", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("st-m1-clamp@weddly.test");
+    // Ø150 cm round fits floor(π·1500 / 800) = 5 chairs; asking for 8 must
+    // come back clamped WITH the diagnostic so the UI can explain.
+    const r = await req<{
+      table: { seats: number };
+      seats_clamped?: boolean;
+      seats_requested?: number;
+    }>(
+      "POST",
+      "/api/seating/tables",
+      { label: "Clamp", shape: "round", seats: 8, x_mm: 0, y_mm: 0, width_mm: 1500 },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.table.seats).toBe(5);
+    expect(r.data.seats_clamped).toBe(true);
+    expect(r.data.seats_requested).toBe(8);
+  });
+
+  test("partial PATCH leaves unsent fields untouched", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("st-m1-partial@weddly.test");
+    const t = await makeTable(token, { shape: "round", seats: 5, width_mm: 1500, length_mm: 1500 });
+    // Resize only — label/seats/position must carry through server-side.
+    const grow = await req<{ table: { width_mm: number; seats: number; label: string } }>(
+      "PATCH",
+      `/api/seating/tables/${t.id}`,
+      { width_mm: 2000 },
+      { token },
+    );
+    expect(grow.status).toBe(200);
+    expect(grow.data.table.width_mm).toBe(2000);
+    expect(grow.data.table.seats).toBe(5);
+    expect(grow.data.table.label).toBe("T");
+    // Seats only — the fresh 200 cm footprint (cap 7) must be what the
+    // merge validates against, NOT a stale copy of the old dims.
+    const seats = await req<{ table: { seats: number; width_mm: number } }>(
+      "PATCH",
+      `/api/seating/tables/${t.id}`,
+      { seats: 6 },
+      { token },
+    );
+    expect(seats.status).toBe(200);
+    expect(seats.data.table.seats).toBe(6);
+    expect(seats.data.table.width_mm).toBe(2000);
+  });
+
+  test("resize then seat-add in rapid succession with per-response ETags", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("st-m1-etag@weddly.test");
+    const t = await makeTable(token, { shape: "round", seats: 5, width_mm: 1500, length_mm: 1500 });
+    // The user's exact repro: grow 150 → 200 cm, then immediately + a seat.
+    // Each write carries the ETag from the PREVIOUS response — no 409, no
+    // clamp-back to the old cap.
+    const grow = await req<{ table: { updated_at: number } }>(
+      "PATCH",
+      `/api/seating/tables/${t.id}`,
+      { width_mm: 2000 },
+      { token, headers: { "If-Match": String(t.updated_at) } },
+    );
+    expect(grow.status).toBe(200);
+    const add = await req<{ table: { seats: number }; seats_clamped?: boolean }>(
+      "PATCH",
+      `/api/seating/tables/${t.id}`,
+      { seats: 6 },
+      { token, headers: { "If-Match": String(grow.data.table.updated_at) } },
+    );
+    expect(add.status).toBe(200);
+    expect(add.data.table.seats).toBe(6);
+    expect(add.data.seats_clamped).toBeUndefined();
+    // A write against the ORIGINAL (stale) ETag must 409 and report the
+    // fresh timestamp so the client can retry.
+    const stale = await req<{ error?: string; code?: string; current_updated_at?: number }>(
+      "PATCH",
+      `/api/seating/tables/${t.id}`,
+      { seats: 7 },
+      { token, headers: { "If-Match": String(t.updated_at) } },
+    );
+    expect(stale.status).toBe(409);
+  });
+
+  test("duplicate-style create preserves disabled and baby seats", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("st-m1-dup@weddly.test");
+    const r = await req<{ table: { disabled_seats: number[]; baby_seats: number[] } }>(
+      "POST",
+      "/api/seating/tables",
+      {
+        label: "Copy",
+        shape: "round",
+        seats: 6,
+        x_mm: 800,
+        y_mm: 800,
+        width_mm: 3000,
+        length_mm: 3000,
+        disabled_seats: [1, 3],
+        baby_seats: [2],
+      },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.table.disabled_seats).toEqual([1, 3]);
+    expect(r.data.table.baby_seats).toEqual([2]);
+  });
+});
+
+describe("seating tables: occupied-seat disable guard", () => {
+  test("disabling an occupied seat is rejected with seat_occupied", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("st-m1-occ@weddly.test");
+    const t = await makeTable(token, { seats: 6 });
+    const guestId = await addGuest(token, "Sitting Guest");
+    const assign = await req(
+      "POST",
+      "/api/seating/assign",
+      { table_id: t.id, seat_index: 1, guest_id: guestId },
+      { token },
+    );
+    expect(assign.status).toBe(200);
+    const r = await req<{ detail?: { code?: string } }>(
+      "PATCH",
+      `/api/seating/tables/${t.id}`,
+      { disabled_seats: [1] },
+      { token },
+    );
+    expect(r.status).toBe(400);
+    expect(r.data.detail?.code).toBe("seat_occupied");
+    // The assignment survives untouched.
+    const plan = await req<{ assignments: { guest_id: number; seat_index: number }[] }>(
+      "GET",
+      "/api/seating/plan",
+      undefined,
+      { token },
+    );
+    expect(plan.data.assignments).toEqual([
+      expect.objectContaining({ guest_id: guestId, seat_index: 1 }),
+    ]);
+  });
+
+  test("disabling a free seat still works, and pre-disabled seats pass through", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("st-m1-occ2@weddly.test");
+    const t = await makeTable(token, { seats: 6 });
+    const guestId = await addGuest(token, "Sitting Guest");
+    await req(
+      "POST",
+      "/api/seating/assign",
+      { table_id: t.id, seat_index: 1, guest_id: guestId },
+      { token },
+    );
+    // Seat 2 is free — disabling it is fine.
+    const ok = await req<{ table: { disabled_seats: number[] } }>(
+      "PATCH",
+      `/api/seating/tables/${t.id}`,
+      { disabled_seats: [2] },
+      { token },
+    );
+    expect(ok.status).toBe(200);
+    expect(ok.data.table.disabled_seats).toEqual([2]);
+    // A later unrelated PATCH that re-sends the SAME disabled list must not
+    // trip the guard (only newly-disabled seats are checked).
+    const rename = await req<{ table: { label: string; disabled_seats: number[] } }>(
+      "PATCH",
+      `/api/seating/tables/${t.id}`,
+      { label: "Renamed", disabled_seats: [2] },
+      { token },
+    );
+    expect(rename.status).toBe(200);
+    expect(rename.data.table.disabled_seats).toEqual([2]);
   });
 });

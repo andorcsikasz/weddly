@@ -1297,6 +1297,16 @@ export interface SeatingPlan {
   conflicts: SeatingConflict[];
 }
 
+/** Create/update responses carry the persisted row plus an optional clamp
+ *  diagnostic: when the requested seat count exceeded what the table's
+ *  footprint fits at the 80 cm chair pitch, the server silently shrinks it
+ *  and reports the original ask so the UI can explain instead of no-op. */
+export interface SeatingTableEnvelope {
+  table: SeatingTable;
+  seats_clamped?: boolean;
+  seats_requested?: number;
+}
+
 export const seatingApi = {
   plan: () => apiFetch<SeatingPlan>("GET", "/api/seating/plan"),
   createTable: (body: {
@@ -1311,7 +1321,7 @@ export const seatingApi = {
     disabled_seats?: number[];
     baby_seats?: number[];
     is_kids_table?: boolean;
-  }) => apiFetch<{ table: SeatingTable }>("POST", "/api/seating/tables", body),
+  }) => apiFetch<SeatingTableEnvelope>("POST", "/api/seating/tables", body),
   /** Partial PATCH with optional `If-Match` for optimistic concurrency.
    *  Pass the row's `updated_at` (or stringified equivalent) to get a 409
    *  when a second editor has touched the same table since the last load. */
@@ -1320,7 +1330,7 @@ export const seatingApi = {
     body: Partial<SeatingTable>,
     opts: { ifMatch?: number | string } = {},
   ) =>
-    apiFetch<{ table: SeatingTable }>("PATCH", `/api/seating/tables/${id}`, body, {
+    apiFetch<SeatingTableEnvelope>("PATCH", `/api/seating/tables/${id}`, body, {
       headers: opts.ifMatch !== undefined ? { "If-Match": String(opts.ifMatch) } : undefined,
     }),
   removeTable: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/seating/tables/${id}`),
