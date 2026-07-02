@@ -1177,7 +1177,7 @@ const en: LocaleMessages = {
     phase_plan_title: "Plan",
     phase_plan_body: "Date, style, headcount, budget. Together, with live numbers.",
     phase_suppliers_title: "Suppliers",
-    phase_suppliers_body: "Curated directory by category. Bookable in v2.",
+    phase_suppliers_body: "Curated directory by category. Save, compare, keep notes.",
     phase_guests_title: "Guests",
     phase_guests_body: "Guest list, per-guest RSVP links, meals, and plus-ones.",
     phase_seating_title: "Seating",
@@ -1198,7 +1198,7 @@ const en: LocaleMessages = {
     card_guests_cta: "Enter your code",
     suppliers_section_title: "A curated directory",
     suppliers_section_body:
-      "Handpicked venues, photographers, caterers and more, all in one place. Booking opens with v2.",
+      "Handpicked venues, photographers, caterers and more, all in one place, with direct contact details.",
     suppliers_couple_cta: "Browse",
     suppliers_vendor_cta: "Get listed",
     guest_sheet_title: "Enter your invite code",

@@ -1191,7 +1191,8 @@ const hu: LocaleMessages = {
     phase_plan_title: "Tervezés",
     phase_plan_body: "Dátum, stílus, létszám, keret. Egy helyen, élő számokkal.",
     phase_suppliers_title: "Szolgáltatók",
-    phase_suppliers_body: "Kategorizált, válogatott címjegyzék. Foglalás v2-ben.",
+    phase_suppliers_body:
+      "Kategorizált, válogatott címjegyzék. Mentés, összehasonlítás, jegyzetek.",
     phase_guests_title: "Vendégek",
     phase_guests_body: "Vendéglista, egyedi RSVP linkek, étrend, kísérők.",
     phase_seating_title: "Ültetés",
@@ -1213,7 +1214,7 @@ const hu: LocaleMessages = {
     card_guests_cta: "Add meg a kódodat",
     suppliers_section_title: "Válogatott szolgáltatói lista",
     suppliers_section_body:
-      "Kézzel válogatott helyszínek, fotósok, vendéglátók és még sok más, mind egy helyen. A foglalás a következő verzióval jön.",
+      "Kézzel válogatott helyszínek, fotósok, vendéglátók és még sok más, mind egy helyen, közvetlen elérhetőségekkel.",
     suppliers_couple_cta: "Szolgáltatók böngészése",
     suppliers_vendor_cta: "Kerülj fel a listára",
     guest_sheet_title: "Add meg a meghívó kódod",

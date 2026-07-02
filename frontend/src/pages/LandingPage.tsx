@@ -641,7 +641,7 @@ export default function LandingPage() {
           </h2>
           <div className="mt-6 space-y-2 sm:mt-8">
             {faqEntries.map((entry) => (
-              <FaqCard key={entry.q} q={entry.q} a={entry.a} />
+              <FaqCard key={entry.q} q={entry.q} a={entry.a} cta={entry.cta} />
             ))}
           </div>
         </div>
@@ -1566,7 +1566,11 @@ function AudienceRow({
   );
 }
 
-function FaqCard({ q, a }: { q: string; a: ReactNode }) {
+function FaqCard({
+  q,
+  a,
+  cta,
+}: { q: string; a: ReactNode; cta?: { href: string; label: string } }) {
   return (
     <details className="group rounded-xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-4 py-3 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-5 sm:py-3.5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left">
@@ -1581,6 +1585,20 @@ function FaqCard({ q, a }: { q: string; a: ReactNode }) {
       <p className="mt-2.5 font-grotesk text-sm leading-relaxed text-umber-700 dark:text-umber-200">
         {a}
       </p>
+      {cta && (
+        <Link
+          to={cta.href}
+          className="group/faq mt-2.5 inline-flex items-center gap-1.5 pb-1 font-grotesk text-sm font-medium text-umber-800 transition-colors hover:text-umber-500 dark:text-paper-200 dark:hover:text-umber-300"
+        >
+          <span>{cta.label}</span>
+          <span
+            aria-hidden
+            className="transition-transform duration-200 group-hover/faq:translate-x-0.5"
+          >
+            →
+          </span>
+        </Link>
+      )}
     </details>
   );
 }
