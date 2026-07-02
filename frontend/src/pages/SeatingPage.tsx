@@ -1709,6 +1709,10 @@ export default function SeatingPage() {
               onSelect={setSelectedId}
               onMove={moveTable}
               onResize={resizeTable}
+              onRotate={(id, deg) => {
+                const tbl = tables.find((tb) => tb.id === id);
+                if (tbl && tbl.rotation_deg !== deg) patchTable(tbl, { rotation_deg: deg });
+              }}
               onSeatsChange={changeSeats}
               onDeleteTable={(id) => {
                 const tbl = tables.find((tb) => tb.id === id);
@@ -2034,6 +2038,8 @@ export default function SeatingPage() {
             <ShortcutRow keys={["[", "]"]} label={t("seating.shortcut_brackets")} />
             <ShortcutRow keys={["Delete"]} label={t("seating.shortcut_delete")} />
             <ShortcutRow keys={["N"]} label={t("seating.shortcut_n")} />
+            <ShortcutRow keys={["R", "Shift+R"]} label={t("seating.shortcut_rotate")} />
+            <ShortcutRow keys={["Cmd/Ctrl", "+", "−", "0"]} label={t("seating.shortcut_zoom")} />
             <ShortcutRow keys={["Cmd/Ctrl", "Z"]} label={t("seating.shortcut_undo")} />
             <ShortcutRow
               keys={["Shift", "Cmd/Ctrl", "Z"]}
@@ -2393,17 +2399,42 @@ function TableEditor({
         </div>
       </Section>
 
+      <Section label={t("seating.rotation_label")}>
+        <div className="flex items-center gap-2">
+          <div className="w-24">
+            <SuffixedInput
+              suffix="°"
+              min={0}
+              max={359}
+              step={5}
+              ariaLabel={t("seating.rotation_label")}
+              defaultValue={table.rotation_deg}
+              inputKey={`${table.id}-${table.rotation_deg}-rot`}
+              onCommit={(deg) => {
+                const norm = ((Math.round(deg) % 360) + 360) % 360;
+                if (norm !== table.rotation_deg) onPatch({ rotation_deg: norm });
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1.5 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+            onClick={onRotate}
+            aria-label={t("seating.rotate_table")}
+            title={t("seating.rotate_table")}
+          >
+            <RotateCw size={12} aria-hidden />
+            <span>+45°</span>
+          </button>
+        </div>
+        {table.shape === "round" && (
+          <p className="mt-1 text-[10px] text-ink-400 dark:text-umber-300">
+            {t("seating.rotation_round_hint")}
+          </p>
+        )}
+      </Section>
+
       <div className="flex flex-wrap items-center gap-1.5 border-t border-paper-200 pt-3 dark:border-umber-700">
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-[10px] lowercase text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
-          onClick={onRotate}
-          aria-label={t("seating.rotate_table")}
-          title={t("seating.rotate_table")}
-        >
-          <RotateCw size={12} aria-hidden />
-          <span>{table.rotation_deg}°</span>
-        </button>
         <button
           type="button"
           className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-[10px] lowercase text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"

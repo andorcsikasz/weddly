@@ -538,7 +538,11 @@ export function SeatingMap({
   }
 
   // Keep the floating HUD pill glued to the cursor without re-rendering.
+  // lastPointerRef seeds the very first frame (before the imperative path
+  // has a mounted node to move) so the pill never flashes at the origin.
+  const lastPointerRef = useRef({ x: -9999, y: -9999 });
   function moveHud(e: React.PointerEvent) {
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
     if (hudPosRef.current) {
       hudPosRef.current.style.transform = `translate(${e.clientX + 16}px, ${e.clientY + 20}px)`;
     }
@@ -576,13 +580,41 @@ export function SeatingMap({
     const p = toSvgPoint(e.clientX, e.clientY);
     if (!p) return;
 
+    // Magnet toggle, inverted while Alt is held ("temporarily the other way").
+    const snapping = snap !== e.altKey;
+
+    if (drag.kind === "rotate") {
+      // Angle of the pointer around the table centre. The handle sits above
+      // the table (local -y), so add 90° to make "handle pointing up" = 0°.
+      const raw =
+        (Math.atan2(p.y - drag.cy, p.x - drag.cx) * 180) / Math.PI + 90;
+      // Default 15° detents; Shift = free 1° rotation.
+      const step = e.shiftKey ? 1 : ROTATE_SNAP_DEG;
+      const deg = ((Math.round(raw / step) * step) % 360 + 360) % 360;
+      moveHud(e);
+      setHud(`${deg}°`);
+      setLocalRot((prev) => {
+        if (prev.get(drag.tableId) === deg) return prev;
+        const next = new Map(prev);
+        next.set(drag.tableId, deg);
+        return next;
+      });
+      return;
+    }
+
     if (drag.kind === "move") {
       const tableId = drag.tableId;
       const moving = tables.find((tb) => tb.id === tableId);
       const fallback = moving ? { x: moving.x_mm, y: moving.y_mm } : { x: 0, y: 0 };
       const last = localPos.get(tableId) ?? fallback;
-      const nextX = clamp(Math.round(p.x - drag.grabOffsetX), 0, ROOM_W_MM);
-      const nextY = clamp(Math.round(p.y - drag.grabOffsetY), 0, ROOM_H_MM);
+      let nextX = clamp(Math.round(p.x - drag.grabOffsetX), 0, ROOM_W_MM);
+      let nextY = clamp(Math.round(p.y - drag.grabOffsetY), 0, ROOM_H_MM);
+      if (snapping) {
+        nextX = clamp(Math.round(nextX / SNAP_MOVE_MM) * SNAP_MOVE_MM, 0, ROOM_W_MM);
+        nextY = clamp(Math.round(nextY / SNAP_MOVE_MM) * SNAP_MOVE_MM, 0, ROOM_H_MM);
+      }
+      moveHud(e);
+      setHud(`${(nextX / 1000).toFixed(2)} · ${(nextY / 1000).toFixed(2)} m`);
       if (nextX === last.x && nextY === last.y) return;
       setLocalPos((prev) => {
         const next = new Map(prev);
@@ -616,8 +648,17 @@ export function SeatingMap({
     let newWidth = drag.startWidthMm;
     let newLength = drag.startLengthMm;
 
+    // 5 cm steps while the magnet is active so opposite tables end up the
+    // same size without pixel-hunting.
+    const roundDim = (v: number) =>
+      clamp(
+        snapping ? Math.round(v / SNAP_RESIZE_MM) * SNAP_RESIZE_MM : Math.round(v),
+        MIN_DIM_MM,
+        MAX_DIM_MM,
+      );
+
     if (uniform) {
-      const side = clamp(Math.round(2 * Math.max(dx, dy)), MIN_DIM_MM, MAX_DIM_MM);
+      const side = roundDim(2 * Math.max(dx, dy));
       newWidth = side;
       newLength = side;
     } else {
@@ -626,9 +667,22 @@ export function SeatingMap({
       const handle = drag.handle;
       const adjustsX = handle === "e" || handle === "w" || handle.length === 2;
       const adjustsY = handle === "n" || handle === "s" || handle.length === 2;
-      if (adjustsX) newLength = clamp(Math.round(2 * dx), MIN_DIM_MM, MAX_DIM_MM);
-      if (adjustsY) newWidth = clamp(Math.round(2 * dy), MIN_DIM_MM, MAX_DIM_MM);
+      if (adjustsX) newLength = roundDim(2 * dx);
+      if (adjustsY) newWidth = roundDim(2 * dy);
     }
+
+    // Live size + resulting chair capacity: this is the moment the user
+    // learns that size drives seats, so say it right at the cursor.
+    const liveCap = Math.min(
+      MAX_TABLE_SEATS,
+      maxSeatsForTable(table.shape, newWidth, newLength),
+    );
+    moveHud(e);
+    setHud(
+      table.shape === "round"
+        ? `Ø ${Math.round(newWidth / 10)} cm · ${liveCap}`
+        : `${Math.round(newLength / 10)} × ${Math.round(newWidth / 10)} cm · ${liveCap}`,
+    );
 
     setLocalDims((prev) => {
       const next = new Map(prev);
@@ -677,11 +731,17 @@ export function SeatingMap({
     if (drag.kind === "move") {
       const pos = localPos.get(drag.tableId);
       if (pos) onMove(drag.tableId, pos.x, pos.y);
+    } else if (drag.kind === "rotate") {
+      const deg = localRot.get(drag.tableId);
+      if (deg !== undefined && deg !== drag.startRotationDeg) {
+        onRotate?.(drag.tableId, deg);
+      }
     } else {
       const dims = localDims.get(drag.tableId);
       if (dims) onResize(drag.tableId, dims.width_mm, dims.length_mm);
     }
     setDrag(null);
+    setHud(null);
     // Best-effort release; not all browsers flag this on the SVG itself, so
     // we silently ignore the failure.
     try {
@@ -711,10 +771,38 @@ export function SeatingMap({
         }
       }
 
+      // Cmd/Ctrl +/− zoom the canvas; Cmd/Ctrl+0 resets to fit.
+      if ((e.metaKey || e.ctrlKey) && (e.key === "+" || e.key === "=")) {
+        e.preventDefault();
+        applyZoom(zoomRef.current * 1.25);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "-") {
+        e.preventDefault();
+        applyZoom(zoomRef.current / 1.25);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "0") {
+        e.preventDefault();
+        applyZoom(1);
+        return;
+      }
+
       // From here on we need a selected table.
       if (selectedId === null) return;
       const table = tables.find((tb) => tb.id === selectedId);
       if (!table) return;
+
+      // R rotates the selected table one 15° detent (Shift+R backwards).
+      if ((e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (onRotate && !seatMode) {
+          e.preventDefault();
+          const cur = localRot.get(table.id) ?? table.rotation_deg ?? 0;
+          const delta = e.shiftKey ? -ROTATE_SNAP_DEG : ROTATE_SNAP_DEG;
+          onRotate(table.id, (((cur + delta) % 360) + 360) % 360);
+          return;
+        }
+      }
 
       const step = e.shiftKey ? NUDGE_FINE_MM : NUDGE_COARSE_MM;
       const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
@@ -781,22 +869,31 @@ export function SeatingMap({
       selectedId,
       tables,
       localPos,
+      localRot,
       flushKeyMove,
       onSeatsChange,
       onDeleteTable,
       onAddTable,
+      onRotate,
+      seatMode,
+      applyZoom,
       ROOM_W_MM,
       ROOM_H_MM,
     ],
   );
 
+  const zoomPct = Math.round(zoom * 100);
   const cardContent = (
     <>
-      <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-4 py-2.5 dark:border-umber-700">
-        <div>
-          <h2 className="text-base font-grotesk">{t("seating.map_title")}</h2>
-          <p className="text-xs text-ink-500 dark:text-umber-300">{t("seating.map_help")}</p>
-        </div>
+      {/* Slim single-row header — the old title + help paragraph cost two
+          text rows of canvas height; the help text now lives in the title
+          tooltip. Rendered as a div (not <header>) so the fullscreen portal
+          doesn't grow a second banner landmark. */}
+      <div
+        className="flex items-center justify-between gap-2 border-b border-paper-200 px-4 py-1.5 dark:border-umber-700"
+        title={t("seating.map_help")}
+      >
+        <h2 className="truncate text-sm font-grotesk">{t("seating.map_title")}</h2>
         <div className="flex items-center gap-2">
           <RoomDimsInput
             widthMm={ROOM_W_MM}
@@ -805,6 +902,20 @@ export function SeatingMap({
             widthAriaLabel={t("seating.room_width_aria")}
             heightAriaLabel={t("seating.room_height_aria")}
           />
+          <button
+            type="button"
+            onClick={toggleSnap}
+            className={`rounded-md border p-1.5 transition-colors ${
+              snap
+                ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                : "border-ink-300 text-ink-700 hover:bg-paper-100 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-800"
+            }`}
+            aria-pressed={snap}
+            aria-label={t("seating.snap_toggle_label")}
+            title={t("seating.snap_toggle_label")}
+          >
+            <Magnet size={14} aria-hidden />
+          </button>
           {expanded && (
             <button
               type="button"
@@ -812,9 +923,7 @@ export function SeatingMap({
                 // Re-centre: scroll so the wrapper's viewport is in the
                 // middle of the (always-overflowing) SVG. Handy when the
                 // user scrolls deep into a 50 m room and wants to "go back
-                // to the middle". The `Math.max` fit guarantees at least
-                // one axis is bigger than the wrapper, so the scrollLefts
-                // are non-zero.
+                // to the middle".
                 const el = scrollWrapperRef.current;
                 if (!el) return;
                 el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
@@ -837,27 +946,33 @@ export function SeatingMap({
             {expanded ? <X size={16} aria-hidden /> : <Maximize2 size={16} aria-hidden />}
           </button>
         </div>
-      </header>
+      </div>
       {/* Three layout regimes:
-          - INLINE/EDIT: fixed 60 vh frame, no scroll. Fit-to-meet.
-          - INLINE/SEAT: flex-1 (grows to fill the outer card which is h-full)
-            with overflow-auto so the user can pan/scroll a large room.
-          - EXPANDED (portal overlay): same as before — min-h-0 flex-1
-            overflow-auto so an overlarge SVG is scrollable. */}
+          - INLINE/EDIT + INLINE/SEAT: flex-1 with overflow-auto; fit × zoom.
+          - EXPANDED (portal overlay): min-h-0 flex-1 overflow-auto, fill × zoom.
+          The outer div stays position:relative and NON-scrolling so the zoom
+          pill can float bottom-right without riding the scroll. */}
       <div
-        ref={scrollWrapperRef}
-        className={`relative bg-paper-50 dark:bg-umber-900 ${
-          expanded
-            ? "min-h-0 flex-1 overflow-auto p-4"
-            : seatMode || fullHeight
-              ? "min-h-0 flex-1 overflow-hidden"
-              : "h-[60vh] max-h-[640px] w-full overflow-hidden"
+        className={`relative ${
+          expanded || seatMode || fullHeight
+            ? "min-h-0 flex-1"
+            : "h-[60vh] max-h-[640px] w-full"
         }`}
       >
         <div
+          ref={scrollWrapperRef}
+          className={`h-full w-full bg-paper-50 dark:bg-umber-900 ${
+            expanded
+              ? "overflow-auto p-4"
+              : seatMode || fullHeight
+                ? "overflow-auto"
+                : "overflow-hidden"
+          }`}
+        >
+        <div
           className={
             expanded || seatMode || fullHeight
-              ? "flex min-h-full min-w-full items-center justify-center"
+              ? "flex min-h-full min-w-full"
               : "h-full w-full"
           }
         >
@@ -865,12 +980,14 @@ export function SeatingMap({
             ref={svgRef}
             viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
             preserveAspectRatio="xMidYMid meet"
+            className={`block select-none focus:outline-none ${
+              expanded || seatMode || fullHeight ? "m-auto" : ""
+            }`}
             style={
               expanded || seatMode || fullHeight
                 ? { width: svgSize.width, height: svgSize.height, flexShrink: 0 }
                 : { width: "100%", height: "100%" }
             }
-            className="block select-none focus:outline-none"
             onPointerMove={moveDrag}
             onPointerUp={endDrag}
             onPointerLeave={endDrag}
@@ -969,12 +1086,52 @@ export function SeatingMap({
                       : null
                   }
                   highlighted={highlightId === table.id}
+                  rotationOverride={localRot.get(table.id)}
+                  canRotate={!seatMode && onRotate !== undefined}
+                  onRotateHandleDown={(e) => startRotate(e, table)}
+                  pxPerMm={pxPerMm}
+                  rotateHandleLabel={t("seating.rotate_handle_aria")}
                   t={t}
                 />
               );
             })}
           </svg>
         </div>
+        </div>
+        {/* Zoom pill — floats bottom-right INSIDE the canvas frame (outside
+            the scrolling element so it stays anchored). Only shown for the
+            sized modes where zoom actually applies. */}
+        {(expanded || seatMode || fullHeight) && (
+          <div className="absolute bottom-3 right-3 z-10 flex flex-col items-stretch divide-y divide-paper-200 overflow-hidden rounded-xl border border-ink-300 bg-paper-50/95 shadow-sm backdrop-blur dark:divide-umber-700 dark:border-umber-600 dark:bg-umber-800/95">
+            <button
+              type="button"
+              className="grid h-8 w-9 place-items-center text-ink-700 transition-colors hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+              onClick={() => applyZoom(zoomRef.current * 1.25)}
+              aria-label={t("seating.zoom_in")}
+              title={t("seating.zoom_in")}
+            >
+              <ZoomIn size={15} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className="h-7 w-9 text-center text-[10px] font-semibold tabular-nums text-ink-600 transition-colors hover:bg-paper-100 dark:text-umber-200 dark:hover:bg-umber-700"
+              onClick={() => applyZoom(1)}
+              aria-label={t("seating.zoom_reset")}
+              title={t("seating.zoom_reset")}
+            >
+              {zoomPct}%
+            </button>
+            <button
+              type="button"
+              className="grid h-8 w-9 place-items-center text-ink-700 transition-colors hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+              onClick={() => applyZoom(zoomRef.current / 1.25)}
+              aria-label={t("seating.zoom_out")}
+              title={t("seating.zoom_out")}
+            >
+              <ZoomOut size={15} aria-hidden />
+            </button>
+          </div>
+        )}
       </div>
       {/* Drag ghost — floats at cursor position during a pointer-event chair drag. */}
       {drag?.kind === "chair" &&
@@ -987,6 +1144,23 @@ export function SeatingMap({
             }}
           >
             {drag.guestName}
+          </div>,
+          document.body,
+        )}
+      {/* Drag HUD — live position / size / angle at the cursor during table
+          move, resize, and rotate drags. */}
+      {hud !== null &&
+        drag !== null &&
+        drag.kind !== "chair" &&
+        createPortal(
+          <div
+            ref={hudPosRef}
+            className="pointer-events-none fixed left-0 top-0 z-[9999] select-none rounded bg-ink-800 px-2 py-1 text-xs font-semibold tabular-nums text-paper-50 shadow-lg dark:bg-umber-700"
+            style={{
+              transform: `translate(${lastPointerRef.current.x + 16}px, ${lastPointerRef.current.y + 20}px)`,
+            }}
+          >
+            {hud}
           </div>,
           document.body,
         )}
@@ -1204,6 +1378,15 @@ interface TableShapeProps {
   onTableClick?: () => void;
   /** Just-created pulse: draws a fading halo ring around the table. */
   highlighted?: boolean;
+  /** Live rotation during a rotate drag (overrides table.rotation_deg). */
+  rotationOverride?: number;
+  /** Whether the rotate handle should render on selection (edit mode only). */
+  canRotate?: boolean;
+  /** Pointer-down on the rotate handle — starts the rotate drag. */
+  onRotateHandleDown?: (e: React.PointerEvent<SVGElement>) => void;
+  /** Screen px per world mm at the current zoom — drives label legibility tiers. */
+  pxPerMm?: number;
+  rotateHandleLabel?: string;
   t: (
     key:
       | "seating.add_seat"
@@ -1240,6 +1423,11 @@ function TableShape({
   onChairPointerDown,
   onTableClick,
   highlighted = false,
+  rotationOverride,
+  canRotate = false,
+  onRotateHandleDown,
+  pxPerMm = 0.05,
+  rotateHandleLabel,
   t,
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
@@ -1326,8 +1514,23 @@ function TableShape({
   // Rotation is applied to the whole table group around (cx, cy). Defaults
   // to 0 for legacy rows (the field was added later, but the API mapper
   // normalises). The resize math reverses this rotation when interpreting
-  // pointer deltas.
-  const rotation = (((table.rotation_deg ?? 0) % 360) + 360) % 360;
+  // pointer deltas. During a rotate drag the live local angle wins so the
+  // table follows the cursor without waiting on the server.
+  const rotation = (((rotationOverride ?? table.rotation_deg ?? 0) % 360) + 360) % 360;
+
+  // Rotate handle: shown on selection in edit mode. Plain round tables with
+  // no marked seats skip it — spinning a featureless circle does nothing —
+  // but a round table with disabled/baby chairs rotates its seat numbering,
+  // which is a real capability (point the gap at the dance floor).
+  const showRotateHandle =
+    canRotate &&
+    isSelected &&
+    !seatMode &&
+    !(
+      table.shape === "round" &&
+      (table.disabled_seats?.length ?? 0) === 0 &&
+      (table.baby_seats?.length ?? 0) === 0
+    );
 
   return (
     <g
@@ -1464,14 +1667,34 @@ function TableShape({
         const crossLen = chairHeightMm * 0.45;
         const babyIconSize = chairHeightMm * 0.72;
 
-        // In seat mode, guest first name fits inside the chair.
+        // In seat mode, guest first name fits inside the chair — but only
+        // when it is actually legible at the current zoom. Legibility tiers
+        // by the label's natural on-screen size:
+        //   >= 10 px  → first name (as before)
+        //   6–10 px   → initials, rendered larger so they stay readable
+        //   < 6 px    → nothing (the occupied fill carries the signal)
+        // The full name is ALWAYS in the chair's <title> for hover + AT.
+        const nameFontMm = chairWidthMm * 0.26;
+        const namePx = nameFontMm * pxPerMm;
         const guestLabel =
-          seatMode && seatGuest
+          seatMode && seatGuest && namePx >= 10
             ? (() => {
                 const first = seatGuest.name.trim().split(/\s+/)[0] ?? seatGuest.name;
                 return first.length <= 9 ? first : `${first.slice(0, 8)}.`;
               })()
             : null;
+        const guestInitials =
+          seatMode && seatGuest && namePx < 10 && namePx >= 6
+            ? seatGuest.name
+                .trim()
+                .split(/\s+/)
+                .slice(0, 2)
+                .map((w) => w[0]?.toUpperCase() ?? "")
+                .join("")
+            : null;
+        // Seat numbers vanish below ~5 px — unreadable pixels are noise.
+        const numberPx = chairHeightMm * 0.6 * pxPerMm;
+        const showSeatNumber = numberPx >= 5;
 
         const canDragOut = seatMode && !isDisabled && !tapMode && isOccupied && seatGuest !== null;
         return (
@@ -1577,39 +1800,43 @@ function TableShape({
                 />
               </g>
             )}
-            {/* In edit mode: seat number. In seat mode: guest first name, or a
-                bold seat number on empty chairs. Empty seat numbers get the
-                full chair-height type size (matching edit mode) and a dark
-                ink fill so they stay legible at real planning zoom — the old
-                0.26-width / ink-400 number was nearly invisible on the canvas
-                (audit finding). */}
-            {!isDisabled && !isBaby && (
-              <text
-                x={px}
-                y={py}
-                transform={`rotate(${-rotation} ${px} ${py})`}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={
-                  seatMode
-                    ? guestLabel
-                      ? chairWidthMm * 0.26
-                      : chairHeightMm * 0.62
-                    : chairHeightMm * 0.6
-                }
-                fontWeight={600}
-                className={`font-grotesk ${
-                  isDraggingOut
-                    ? "fill-ink-500 dark:fill-umber-400"
-                    : isOccupied
-                      ? "fill-paper-50"
-                      : "fill-ink-700"
-                }`}
-                style={{ pointerEvents: "none", userSelect: "none" }}
-              >
-                {seatMode ? (guestLabel ?? String(i + 1)) : i + 1}
-              </text>
-            )}
+            {/* Full guest name on hover / for AT regardless of zoom tier. */}
+            {seatGuest && <title>{seatGuest.name}</title>}
+            {/* In edit mode: seat number. In seat mode: guest first name or
+                initials depending on what is legible at this zoom, or a bold
+                seat number on empty chairs. Sub-legible text renders as
+                nothing at all — the occupied fill already carries it. */}
+            {!isDisabled &&
+              !isBaby &&
+              (seatMode && seatGuest ? guestLabel !== null || guestInitials !== null : showSeatNumber) && (
+                <text
+                  x={px}
+                  y={py}
+                  transform={`rotate(${-rotation} ${px} ${py})`}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize={
+                    seatMode
+                      ? guestLabel
+                        ? chairWidthMm * 0.26
+                        : guestInitials
+                          ? chairHeightMm * 0.5
+                          : chairHeightMm * 0.62
+                      : chairHeightMm * 0.6
+                  }
+                  fontWeight={600}
+                  className={`font-grotesk ${
+                    isDraggingOut
+                      ? "fill-ink-500 dark:fill-umber-400"
+                      : isOccupied
+                        ? "fill-paper-50"
+                        : "fill-ink-700"
+                  }`}
+                  style={{ pointerEvents: "none", userSelect: "none" }}
+                >
+                  {seatMode ? (guestLabel ?? guestInitials ?? String(i + 1)) : i + 1}
+                </text>
+              )}
           </g>
         );
       })}
@@ -1675,6 +1902,47 @@ function TableShape({
               onPointerDown={onHandlePointerDown}
             />
           ))}
+          {/* Rotate handle — lollipop above the table's top edge, in the
+              table's local frame so it orbits with the current rotation.
+              Drag it around the centre; 15° detents, Shift = free. */}
+          {showRotateHandle && (
+            <g
+              role="button"
+              aria-label={rotateHandleLabel}
+              style={{ cursor: "grab" }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                onRotateHandleDown?.(e);
+              }}
+            >
+              <line
+                x1={0}
+                y1={-ry - 360}
+                x2={0}
+                y2={-ry - 850}
+                className="stroke-umber-800 dark:stroke-paper-100"
+                strokeWidth={30}
+              />
+              <circle
+                cx={0}
+                cy={-ry - 1000}
+                r={170}
+                className="fill-paper-50 stroke-umber-800 dark:fill-umber-900 dark:stroke-paper-100"
+                strokeWidth={24}
+              />
+              <g
+                transform={`translate(${-110} ${-ry - 1110})`}
+                style={{ pointerEvents: "none" }}
+              >
+                <RotateCw
+                  width={220}
+                  height={220}
+                  className="fill-none stroke-umber-800 dark:stroke-paper-100"
+                  strokeWidth={2}
+                />
+              </g>
+            </g>
+          )}
           <SeatButton
             cx={-seatBtnGap / 2}
             cy={seatBtnY}

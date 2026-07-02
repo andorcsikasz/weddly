@@ -3821,6 +3821,16 @@ export interface LocaleMessages {
     delete_table: string;
     duplicate_table: string;
     rotate_table: string;
+    /** Free-rotation controls: panel section, canvas handle, round-table caption. */
+    rotation_label: string;
+    rotation_round_hint: string;
+    rotate_handle_aria: string;
+    /** Snap-to-grid magnet toggle in the map header. */
+    snap_toggle_label: string;
+    /** Inline zoom pill on the canvas. */
+    zoom_in: string;
+    zoom_out: string;
+    zoom_reset: string;
     layout_label: string;
     toggle_seat: string;
     /** Hint under a bride / groom placeholder card when the partner isn't
@@ -3951,6 +3961,8 @@ export interface LocaleMessages {
     redo_action: string;
     redo_failed: string;
     shortcut_redo: string;
+    shortcut_rotate: string;
+    shortcut_zoom: string;
     /** Autosave chip states in the toolbar. */
     autosave_saving: string;
     autosave_saved: string;
