@@ -15,6 +15,7 @@ import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { addCoupleMember, assignOrganiserCode, getCoupleById, toCouple } from "../domain/couples";
 import { purgeStaleDemoCouples, seedShrekDemo } from "../domain/demo_seed";
+import { purgeStalePlannerDemos, seedPlannerDemo } from "../domain/planner_demo_seed";
 import { uniqueCoupleSlug } from "../domain/slug";
 import { toUser, type UserRow } from "../domain/users";
 import { type Ctx, json, type Router } from "../lib/http";
@@ -25,6 +26,11 @@ import { log } from "../lib/logger";
  *  who clicks the demo CTA twice in a row gets through; a script-kiddie
  *  spamming the endpoint to fill the DB hits 429 fast. */
 const DEMO_BUCKET = { capacity: 3, refillRate: 1 / 60 };
+
+/** Demo planner entitlement window — far enough out that computeEntitlement
+ *  keeps the founding plan "entitled" for the whole 4h demo lifetime (and then
+ *  some), so a visitor never hits the read-only gate. */
+const PLANNER_DEMO_ENTITLEMENT_MS = 3650 * 24 * 60 * 60 * 1000; // ~10 years
 
 /** Random opaque suffix so each demo account is a fresh users row — keeps
  *  the email column unique without leaking PII. */
@@ -118,16 +124,86 @@ async function handleStart(ctx: Ctx): Promise<Response> {
   return json({ session, couple, seeded }, { status: 201 });
 }
 
+/** Planner-side demo: spin up a throwaway "Fairy Godmother Weddings" planner
+ *  account pre-loaded with a book of fairy-tale clients (Shrek & Fiona among
+ *  them, plus a pending Belle & Adam invite), return an auth session, and drop
+ *  the visitor into /app/planner. Mirrors handleStart; reaped by the same
+ *  sweeps. */
+async function handleStartPlanner(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "demo:start", DEMO_BUCKET);
+
+  // Lazy housekeeping. ORDER MATTERS: reap stale demo planners BEFORE their
+  // client couples (see purgeStalePlannerDemos' ordering note).
+  try {
+    const planners = purgeStalePlannerDemos();
+    const couples = purgeStaleDemoCouples();
+    if (planners > 0 || couples > 0) log.info("demo.purge", { planners, couples });
+  } catch (e) {
+    log.warn("demo.purge_failed", { error: String(e) });
+  }
+
+  const ts = now();
+  const email = randomDemoEmail();
+  // One hash reused for the planner + every throwaway client-couple owner —
+  // none of them are ever logged into via the form.
+  const passwordHash = await hashPassword(crypto.randomUUID() + crypto.randomUUID());
+
+  // Demo planner user: premium tier, onboarding pre-completed so the dashboard
+  // renders instead of bouncing to the onboarding wizard.
+  const userResult = db
+    .prepare(
+      `INSERT INTO users
+         (email, password_hash, full_name, status, role, verified_email, user_type,
+          business_name, planner_plan, planner_max_clients, planner_onboarding_done,
+          created_at, updated_at)
+       VALUES (?, ?, 'Fairy Godmother Weddings', 'active', 'owner', 1, 'planner',
+               'Fairy Godmother Weddings', 'premium', 10, 1, ?, ?)`,
+    )
+    .run(email, passwordHash, ts, ts);
+  const userId = Number(userResult.lastInsertRowid);
+
+  // Entitlement WITHOUT consuming a real founding slot: is_founding_member=0
+  // keeps the demo out of plannerFoundingSlotsUsed(), while a far-future
+  // founding_until makes computeEntitlement return entitled (not read-only).
+  db.prepare(
+    `INSERT INTO planner_subscriptions
+       (user_id, subscription_status, trial_ends_at, founding_until,
+        is_founding_member, currency, created_at, updated_at)
+     VALUES (?, 'founding', NULL, ?, 0, 'HUF', ?, ?)`,
+  ).run(userId, ts + PLANNER_DEMO_ENTITLEMENT_MS, ts, ts);
+
+  const seeded = seedPlannerDemo(userId, { ownerPasswordHash: passwordHash });
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: null,
+    action: "demo.start_planner",
+    target_kind: "user",
+    target_id: userId,
+    note: `seeded planner demo (${JSON.stringify(seeded)})`,
+  });
+
+  const token = issueSession(userId);
+  const userRow = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as UserRow;
+  const session: AuthSession = { token, user: toUser(userRow) };
+
+  return json({ session, seeded }, { status: 201 });
+}
+
 export function registerDemoRoutes(router: Router) {
   router.post("/api/demo/start", handleStart);
+  router.post("/api/demo/planner/start", handleStartPlanner);
 }
 
 /** Boot-time best-effort purge. Called from server.ts so a long-quiet
  *  instance still tidies up stale demos even if no one clicks the CTA. */
 export function runDemoBootSweep(): void {
   try {
+    // Planners first, then their client couples (ordering note in
+    // purgeStalePlannerDemos).
+    const planners = purgeStalePlannerDemos();
     const purged = purgeStaleDemoCouples();
-    if (purged > 0) log.info("demo.boot_sweep", { purged });
+    if (planners > 0 || purged > 0) log.info("demo.boot_sweep", { planners, couples: purged });
   } catch (e) {
     log.warn("demo.boot_sweep_failed", { error: String(e) });
   }

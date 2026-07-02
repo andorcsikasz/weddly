@@ -97,6 +97,7 @@ export function listAdminPlanners(): AdminPlannerView[] {
                 WHERE pc.planner_user_id = u.id AND pc.status = 'active') AS client_count
          FROM users u
         WHERE u.user_type = 'planner'
+          AND u.email NOT LIKE '%@demo.weddly.local'
         ORDER BY u.created_at DESC`,
     )
     .all() as AdminPlannerRow[];
