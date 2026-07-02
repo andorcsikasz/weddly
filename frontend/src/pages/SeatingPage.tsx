@@ -9,6 +9,8 @@
 import type { Couple, Guest, SeatAssignment, SeatingTable, TableShape } from "@shared/types";
 import {
   MAX_TABLE_SEATS,
+  MIN_AISLE_MM,
+  TABLE_SIZE_PRESETS,
   defaultDimsForShape,
   isDefaultTableLabel,
   maxSeatsForTable,
@@ -36,12 +38,14 @@ import {
   RectangleHorizontal,
   Redo2,
   RotateCw,
+  Search,
   Square,
   Trash2,
   Undo2,
   Unlink2,
   User,
   Users,
+  Wheat,
   X,
 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -58,7 +62,7 @@ import {
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
-import { computeSymmetricLayout } from "./seating/layout";
+import { computeSymmetricLayout, tableFootprintMm } from "./seating/layout";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
 import { isCurrentSessionDemo } from "../lib/demoSession";
 
@@ -100,6 +104,15 @@ interface UndoAction {
 }
 
 const UNDO_STACK_LIMIT = 20;
+
+// Accent-insensitive, case-insensitive match key for guest search. Essential
+// for HU names — "Toth" must find "Tóth".
+function normalizeName(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
 
 export default function SeatingPage() {
   const { t } = useT();
@@ -149,6 +162,21 @@ export default function SeatingPage() {
   // member can be placed individually. Reset on page reload.
   const [unlinkedHouseholds, setUnlinkedHouseholds] = useState<Set<number>>(new Set());
   const tapMode = coarsePointer || tapModeUser;
+  // Guest search in the unassigned panel (accent-insensitive; "/" focuses).
+  const [guestQuery, setGuestQuery] = useState("");
+  const guestSearchRef = useRef<HTMLInputElement | null>(null);
+  // Declined guests are hidden from the placement pool by default — seating
+  // someone who said no is almost always a mistake. The toggle brings them
+  // back for the edge cases (declined-then-reconsidered).
+  const [showDeclined, setShowDeclined] = useState(false);
+  // Seat-picker popover: opened by clicking an EMPTY chair with no guest
+  // armed. Anchored at the click's client coordinates.
+  const [seatPicker, setSeatPicker] = useState<{
+    tableId: number;
+    seatIndex: number;
+    x: number;
+    y: number;
+  } | null>(null);
   // Undo stack. Bounded by UNDO_STACK_LIMIT — we drop the oldest action when
   // it overflows so the stack stays small and predictable.
   const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
@@ -220,18 +248,15 @@ export default function SeatingPage() {
     [rememberTables],
   );
 
-  const dropTableFromState = useCallback(
-    (id: number) => {
-      latestUpdatedAtRef.current.delete(id);
-      setTables((prev) => {
-        const next = prev.filter((tb) => tb.id !== id);
-        tablesRef.current = next;
-        return next;
-      });
-      setAssignments((prev) => prev.filter((a) => a.table_id !== id));
-    },
-    [],
-  );
+  const dropTableFromState = useCallback((id: number) => {
+    latestUpdatedAtRef.current.delete(id);
+    setTables((prev) => {
+      const next = prev.filter((tb) => tb.id !== id);
+      tablesRef.current = next;
+      return next;
+    });
+    setAssignments((prev) => prev.filter((a) => a.table_id !== id));
+  }, []);
 
   useEffect(() => {
     refresh();
@@ -309,7 +334,10 @@ export default function SeatingPage() {
   // Per-table, per-seat guest info — fed into SeatingMap in seat mode so it
   // can render names on chairs and know which seats are occupied.
   const seatGuestsByTable = useMemo(() => {
-    const out = new Map<number, Map<number, { id: number; name: string }>>();
+    const out = new Map<
+      number,
+      Map<number, { id: number; name: string; dietary?: string | null }>
+    >();
     for (const a of assignments) {
       const g = guestById.get(a.guest_id);
       if (!g) continue;
@@ -318,7 +346,7 @@ export default function SeatingPage() {
         inner = new Map();
         out.set(a.table_id, inner);
       }
-      inner.set(a.seat_index, { id: g.id, name: g.full_name });
+      inner.set(a.seat_index, { id: g.id, name: g.full_name, dietary: g.dietary });
     }
     return out;
   }, [assignments, guestById]);
@@ -365,11 +393,78 @@ export default function SeatingPage() {
     );
   }, [couple, guests, seatedIds, partnerRole, t]);
   // Unassigned guests *excluding* the partners — those are rendered first
-  // via partnerSlots so they don't double up.
+  // via partnerSlots so they don't double up. Declined guests are excluded
+  // unless the user opts in via the showDeclined toggle.
   const unassigned = useMemo(
-    () => guests.filter((g) => !seatedIds.has(g.id) && partnerRole(g) === null),
+    () =>
+      guests.filter(
+        (g) =>
+          !seatedIds.has(g.id) &&
+          partnerRole(g) === null &&
+          (showDeclined || g.rsvp_status !== "no"),
+      ),
+    [guests, seatedIds, partnerRole, showDeclined],
+  );
+  // How many hidden-by-default declined guests exist (drives the toggle count).
+  const declinedUnseatedCount = useMemo(
+    () =>
+      guests.filter(
+        (g) => !seatedIds.has(g.id) && partnerRole(g) === null && g.rsvp_status === "no",
+      ).length,
     [guests, seatedIds, partnerRole],
   );
+  // Declined guests still holding a seat — worth a warning line, since the
+  // couple probably wants that chair back.
+  const declinedSeatedCount = useMemo(
+    () => guests.filter((g) => seatedIds.has(g.id) && g.rsvp_status === "no").length,
+    [guests, seatedIds],
+  );
+  // Capacity line: usable chairs across all tables vs guests who said yes.
+  const totalChairs = useMemo(
+    () => tables.reduce((sum, tb) => sum + tb.seats - (tb.disabled_seats?.length ?? 0), 0),
+    [tables],
+  );
+  const confirmedGuests = useMemo(
+    () => guests.filter((g) => g.rsvp_status === "yes").length,
+    [guests],
+  );
+  // Progress counts only guests who haven't declined — a "no" shouldn't
+  // keep the plan stuck at 95% forever.
+  const eligibleGuestCount = useMemo(
+    () => guests.filter((g) => g.rsvp_status !== "no").length,
+    [guests],
+  );
+  const eligibleSeatedCount = useMemo(
+    () => guests.filter((g) => seatedIds.has(g.id) && g.rsvp_status !== "no").length,
+    [guests, seatedIds],
+  );
+  // Advisory aisle check: pairs of tables whose chair-back envelopes leave
+  // less than MIN_AISLE_MM (80 cm) of walking space between them. Purely
+  // informational — placement stays unconstrained; the canvas shows a soft
+  // halo + count chip that the user can dismiss.
+  const aisleWarnIds = useMemo(() => {
+    const out = new Set<number>();
+    const boxes = tables.map((tb) => ({
+      id: tb.id,
+      x: tb.x_mm,
+      y: tb.y_mm,
+      ...tableFootprintMm(tb),
+    }));
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i];
+        const b = boxes[j];
+        if (!a || !b) continue;
+        const xGap = Math.abs(a.x - b.x) - (a.w + b.w) / 2;
+        const yGap = Math.abs(a.y - b.y) - (a.h + b.h) / 2;
+        if (Math.max(xGap, yGap) < MIN_AISLE_MM) {
+          out.add(a.id);
+          out.add(b.id);
+        }
+      }
+    }
+    return out;
+  }, [tables]);
   // Build the render order for the unassigned panel: a household with 2+
   // unassigned members (and not unlinked this session) becomes a single
   // group card; everyone else falls through as a flat row. Order matches
@@ -406,8 +501,16 @@ export default function SeatingPage() {
       // Solo household, unlinked household, or household-less guest.
       out.push({ kind: "single", guest: g });
     }
-    return out;
-  }, [unassigned, unlinkedHouseholds]);
+    // Search filter — a household card stays visible while ANY member
+    // matches so "Toth" surfaces the whole Tóth party.
+    const q = normalizeName(guestQuery.trim());
+    if (!q) return out;
+    return out.filter((e) =>
+      e.kind === "single"
+        ? normalizeName(e.guest.full_name).includes(q)
+        : e.guests.some((g) => normalizeName(g.full_name).includes(q)),
+    );
+  }, [unassigned, unlinkedHouseholds, guestQuery]);
   // Per-table set of seat indices currently occupied by a baby guest. The
   // canvas chair render reads this to overlay a Baby icon — different from
   // the baby_seats flag (which marks a chair as "needs a high-chair"
@@ -897,7 +1000,10 @@ export default function SeatingPage() {
   // canvas and scroll it into view so the user sees where it landed, and
   // register an id-tracking undo/redo pair (redo recreates under a NEW id,
   // so the closure keeps its own pointer).
-  function afterCreate(envelope: SeatingTableEnvelope, payload: Parameters<typeof seatingApi.createTable>[0]) {
+  function afterCreate(
+    envelope: SeatingTableEnvelope,
+    payload: Parameters<typeof seatingApi.createTable>[0],
+  ) {
     applyTable(envelope.table);
     notifyClamp(envelope);
     setSelectedId(envelope.table.id);
@@ -1108,9 +1214,9 @@ export default function SeatingPage() {
       const current = tablesRef.current.find((tb) => tb.id === id) ?? table;
       const before: Partial<SeatingTable> = {};
       for (const key of Object.keys(patch) as (keyof SeatingTable)[]) {
-        (before as Record<string, unknown>)[key] = (
-          current as unknown as Record<string, unknown>
-        )[key];
+        (before as Record<string, unknown>)[key] = (current as unknown as Record<string, unknown>)[
+          key
+        ];
       }
       const send = async (ifMatch: number) => {
         const res = await runSaving(() => seatingApi.updateTable(id, patch, { ifMatch }));
@@ -1239,10 +1345,7 @@ export default function SeatingPage() {
     // If the bigger footprint fits more chairs than the table currently
     // has, surface a one-tap "add them" prompt in the editor panel instead
     // of leaving the extra capacity as trivia in the stepper cap.
-    const capAfter = Math.min(
-      MAX_TABLE_SEATS,
-      maxSeatsForTable(table.shape, width_mm, length_mm),
-    );
+    const capAfter = Math.min(MAX_TABLE_SEATS, maxSeatsForTable(table.shape, width_mm, length_mm));
     const extra = capAfter - table.seats;
     setFitPrompt(extra > 0 ? { tableId: id, extra } : null);
   }
@@ -1395,7 +1498,7 @@ export default function SeatingPage() {
   }, []);
 
   const handleTapSeat = useCallback(
-    async (tableId: number, seatIndex: number) => {
+    async (tableId: number, seatIndex: number, at?: { x: number; y: number }) => {
       if (selectedHouseholdId !== null) {
         const ids = unassigned
           .filter((g) => g.household_id === selectedHouseholdId)
@@ -1405,9 +1508,20 @@ export default function SeatingPage() {
         return;
       }
       if (selectedGuestId === null) {
-        // No guest selected — tap on an occupied seat selects that guest.
+        // No guest selected — tap on an occupied seat selects that guest;
+        // tap on an EMPTY seat opens the inline guest picker right there,
+        // so seat-first placement works without hunting the side panel.
         const occ = findAssignmentAtSeat(tableId, seatIndex);
-        if (occ) setSelectedGuestId(occ.guest_id);
+        if (occ) {
+          setSelectedGuestId(occ.guest_id);
+        } else {
+          setSeatPicker({
+            tableId,
+            seatIndex,
+            x: at?.x ?? window.innerWidth / 2,
+            y: at?.y ?? window.innerHeight / 3,
+          });
+        }
         return;
       }
       const guestId = selectedGuestId;
@@ -1454,6 +1568,14 @@ export default function SeatingPage() {
       if (mod && ((e.key.toLowerCase() === "z" && e.shiftKey) || e.key.toLowerCase() === "y")) {
         e.preventDefault();
         popAndRedo();
+        return;
+      }
+      // "/" jumps to the guest search box (seat mode).
+      if (e.key === "/" && !mod) {
+        if (guestSearchRef.current) {
+          e.preventDefault();
+          guestSearchRef.current.focus();
+        }
         return;
       }
       // Shortcuts cheatsheet quick-open with "?".
@@ -1726,6 +1848,7 @@ export default function SeatingPage() {
               babySeatsByTable={babySeatsByTable}
               seatGuestsByTable={seatGuestsByTable}
               highlightId={justCreatedId}
+              aisleWarnIds={aisleWarnIds}
               fullHeight
             />
           </div>
@@ -1857,9 +1980,67 @@ export default function SeatingPage() {
                       : t("seating.drag_help")}
                 </p>
                 <SeatPanelProgress
-                  progress={seatingProgress(guests.length, seatedIds.size)}
+                  progress={seatingProgress(eligibleGuestCount, eligibleSeatedCount)}
                   t={t}
                 />
+                {/* Capacity line: enough chairs for everyone who said yes? */}
+                {totalChairs > 0 && (
+                  <p
+                    className={`mb-1.5 text-[11px] tabular-nums ${
+                      totalChairs < confirmedGuests
+                        ? "font-medium text-blush-700 dark:text-blush-300"
+                        : "text-ink-500 dark:text-umber-300"
+                    }`}
+                  >
+                    {t("seating.capacity_line")
+                      .replace("{chairs}", String(totalChairs))
+                      .replace("{confirmed}", String(confirmedGuests))}
+                  </p>
+                )}
+                {declinedSeatedCount > 0 && (
+                  <p className="mb-1.5 rounded-md bg-blush-50 px-2 py-1 text-[11px] text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
+                    {t("seating.declined_seated_warning").replace(
+                      "{n}",
+                      String(declinedSeatedCount),
+                    )}
+                  </p>
+                )}
+                {/* Guest search — accent-insensitive, "/" focuses. */}
+                <div className="relative mb-2">
+                  <Search
+                    size={13}
+                    aria-hidden
+                    className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+                  />
+                  <input
+                    ref={guestSearchRef}
+                    type="search"
+                    value={guestQuery}
+                    onChange={(e) => setGuestQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        e.currentTarget.blur();
+                        setGuestQuery("");
+                      }
+                    }}
+                    placeholder={t("seating.guest_search_placeholder")}
+                    aria-label={t("seating.guest_search_placeholder")}
+                    className="w-full rounded-lg border border-paper-300 bg-paper-50 py-1 pl-7 pr-2 text-xs text-ink-900 placeholder:text-ink-400 focus:border-ink-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100"
+                  />
+                </div>
+                {declinedUnseatedCount > 0 && (
+                  <button
+                    type="button"
+                    className="mb-2 text-[11px] text-ink-500 underline decoration-dotted underline-offset-2 hover:text-ink-700 dark:text-umber-300 dark:hover:text-paper-100"
+                    onClick={() => setShowDeclined((v) => !v)}
+                    aria-pressed={showDeclined}
+                  >
+                    {(showDeclined
+                      ? t("seating.hide_declined_toggle")
+                      : t("seating.show_declined_toggle")
+                    ).replace("{n}", String(declinedUnseatedCount))}
+                  </button>
+                )}
                 {guests.length > 0 && unassigned.length === 0 && partnerSlots.length === 0 ? (
                   <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
                     {t("seating.no_unassigned")}
@@ -1889,6 +2070,11 @@ export default function SeatingPage() {
                           />
                         </li>
                       ),
+                    )}
+                    {guestQuery.trim() !== "" && unassignedEntries.length === 0 && (
+                      <li className="px-1 py-2 text-xs text-ink-500 dark:text-umber-300">
+                        {t("seating.guest_search_empty")}
+                      </li>
                     )}
                     {unassignedEntries.map((entry) =>
                       entry.kind === "household" ? (
@@ -2041,12 +2227,24 @@ export default function SeatingPage() {
             <ShortcutRow keys={["R", "Shift+R"]} label={t("seating.shortcut_rotate")} />
             <ShortcutRow keys={["Cmd/Ctrl", "+", "−", "0"]} label={t("seating.shortcut_zoom")} />
             <ShortcutRow keys={["Cmd/Ctrl", "Z"]} label={t("seating.shortcut_undo")} />
-            <ShortcutRow
-              keys={["Shift", "Cmd/Ctrl", "Z"]}
-              label={t("seating.shortcut_redo")}
-            />
+            <ShortcutRow keys={["Shift", "Cmd/Ctrl", "Z"]} label={t("seating.shortcut_redo")} />
           </ul>
         </Dialog>
+      )}
+
+      {seatPicker && (
+        <SeatPickerPopover
+          at={seatPicker}
+          tableLabel={tables.find((tb) => tb.id === seatPicker.tableId)?.label ?? ""}
+          pool={[...partnerSlots.flatMap((s) => (s.guest ? [s.guest] : [])), ...unassigned]}
+          onPick={async (guestId) => {
+            const p = seatPicker;
+            setSeatPicker(null);
+            await requestAssign(p.tableId, p.seatIndex, guestId);
+          }}
+          onClose={() => setSeatPicker(null)}
+          t={t}
+        />
       )}
 
       {conflictPrompt && (
@@ -2150,6 +2348,106 @@ function SeatPanelProgress({
               .replace("{seated}", String(progress.seated))
               .replace("{total}", String(progress.total))}
       </p>
+    </div>
+  );
+}
+
+// Inline guest picker, opened by clicking an EMPTY chair when no guest is
+// armed. A small anchored card with an autofocused search + the unassigned
+// pool; picking a guest routes through the same conflict-aware assign as
+// drag-and-drop. Escape or outside-click closes without touching anything.
+function SeatPickerPopover({
+  at,
+  tableLabel,
+  pool,
+  onPick,
+  onClose,
+  t,
+}: {
+  at: { x: number; y: number; seatIndex: number };
+  tableLabel: string;
+  pool: Guest[];
+  onPick: (guestId: number) => void;
+  onClose: () => void;
+  t: ReturnType<typeof useT>["t"];
+}) {
+  const [query, setQuery] = useState("");
+  const q = normalizeName(query.trim());
+  const matches = q ? pool.filter((g) => normalizeName(g.full_name).includes(q)) : pool;
+  // Clamp the card inside the viewport (280 × ~320 px card).
+  const left = Math.max(8, Math.min(at.x, window.innerWidth - 296));
+  const top = Math.max(8, Math.min(at.y, window.innerHeight - 340));
+  return (
+    <div
+      className="fixed inset-0 z-[70]"
+      onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-label={t("seating.seat_picker_title")
+          .replace("{table}", tableLabel)
+          .replace("{seat}", String(at.seatIndex + 1))}
+        className="absolute flex w-[280px] flex-col overflow-hidden rounded-xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        style={{ left, top }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="border-b border-paper-200 px-3 py-2 text-xs font-semibold text-ink-900 dark:border-umber-700 dark:text-paper-50">
+          {t("seating.seat_picker_title")
+            .replace("{table}", tableLabel)
+            .replace("{seat}", String(at.seatIndex + 1))}
+        </p>
+        <div className="relative border-b border-paper-200 dark:border-umber-700">
+          <Search
+            size={13}
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+          />
+          <input
+            autoFocus
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("seating.guest_search_placeholder")}
+            aria-label={t("seating.guest_search_placeholder")}
+            className="w-full bg-transparent py-2 pl-8 pr-3 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400"
+          />
+        </div>
+        <ul className="max-h-56 overflow-y-auto overscroll-contain p-1">
+          {matches.length === 0 && (
+            <li className="px-2 py-2 text-xs text-ink-500 dark:text-umber-300">
+              {t("seating.guest_search_empty")}
+            </li>
+          )}
+          {matches.map((g) => (
+            <li key={g.id}>
+              <button
+                type="button"
+                className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm text-ink-800 transition-colors hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+                onClick={() => onPick(g.id)}
+              >
+                {g.kind === "baby" && (
+                  <Baby size={13} aria-hidden className="shrink-0 text-blush-500" />
+                )}
+                <span className="min-w-0 flex-1 truncate">{g.full_name}</span>
+                {g.dietary && (
+                  <Wheat
+                    size={12}
+                    aria-hidden
+                    className="shrink-0 text-umber-500 dark:text-umber-300"
+                  />
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -2396,6 +2694,46 @@ function TableEditor({
               }}
             />
           )}
+        </div>
+        {/* One-tap catalogue sizes for the current shape. Each chip shows
+            the size and how many chairs it fits, teaching the size-seats
+            relationship where the decision happens. */}
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {TABLE_SIZE_PRESETS[table.shape].map((p) => {
+            const active = table.width_mm === p.width_mm && table.length_mm === p.length_mm;
+            const cap = Math.min(
+              MAX_TABLE_SEATS,
+              maxSeatsForTable(table.shape, p.width_mm, p.length_mm),
+            );
+            const label = hasTwoDims
+              ? `${Math.round(p.length_mm / 10)}×${Math.round(p.width_mm / 10)}`
+              : table.shape === "round"
+                ? `Ø${Math.round(p.width_mm / 10)}`
+                : `${Math.round(p.width_mm / 10)}`;
+            return (
+              <button
+                key={`${p.width_mm}x${p.length_mm}`}
+                type="button"
+                onClick={() => {
+                  if (!active) onPatch({ width_mm: p.width_mm, length_mm: p.length_mm });
+                }}
+                aria-pressed={active}
+                title={t("seating.seats_cap_tooltip")
+                  .replace("{max}", String(cap))
+                  .replace(
+                    "{size}",
+                    String(Math.round((hasTwoDims ? p.length_mm : p.width_mm) / 10)),
+                  )}
+                className={`rounded-full border px-2 py-0.5 text-[10px] tabular-nums transition-colors ${
+                  active
+                    ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : "border-paper-300 bg-paper-50 text-ink-600 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-umber-500"
+                }`}
+              >
+                {label} cm · {cap}
+              </button>
+            );
+          })}
         </div>
       </Section>
 
@@ -2789,13 +3127,15 @@ function EditableHeading({
           className="group flex w-full items-center gap-2 rounded-lg text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-700"
           aria-label={editAriaLabel}
         >
-          <h3 className="flex-1 truncate font-grotesk text-xl text-ink-900 dark:text-paper-50">
+          {/* Dotted underline + always-visible pencil so the name reads as
+              editable without hunting for a hover state. */}
+          <h3 className="flex-1 truncate font-grotesk text-xl text-ink-900 underline decoration-paper-400 decoration-dotted underline-offset-4 dark:text-paper-50 dark:decoration-umber-500">
             {value}
           </h3>
           <Pencil
             size={14}
             aria-hidden
-            className="text-ink-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-umber-300"
+            className="text-ink-300 opacity-50 transition-opacity group-hover:opacity-100 dark:text-umber-300"
           />
         </button>
       )}
@@ -3086,7 +3426,7 @@ function TableSeatPanel({
   t,
 }: {
   table: SeatingTable;
-  seatGuests: Map<number, { id: number; name: string }> | undefined;
+  seatGuests: Map<number, { id: number; name: string; dietary?: string | null }> | undefined;
   onUnassign: (guestId: number) => void;
   onClose: () => void;
   t: (key: string) => string;
@@ -3139,6 +3479,15 @@ function TableSeatPanel({
                   <span className="flex-1 truncate font-medium text-ink-900 dark:text-paper-50">
                     {guest.name}
                   </span>
+                  {guest.dietary && (
+                    <span title={guest.dietary} className="shrink-0">
+                      <Wheat
+                        size={12}
+                        aria-label={guest.dietary}
+                        className="text-umber-500 dark:text-umber-300"
+                      />
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => onUnassign(guest.id)}
@@ -3188,7 +3537,7 @@ function TableCard({
   tapMode: boolean;
   selectedGuestId: number | null;
   onTapGuest: (guest: Guest) => void;
-  onTapSeat: (tableId: number, seatIndex: number) => void;
+  onTapSeat: (tableId: number, seatIndex: number, at?: { x: number; y: number }) => void;
   t: ReturnType<typeof useT>["t"];
 }) {
   const seatToAssign = new Map(assignments.map((a) => [a.seat_index, a]));
@@ -3230,7 +3579,9 @@ function TableCard({
                 .map((idx) => {
                   const a = seatToAssign.get(idx);
                   const guest = a ? guestById.get(a.guest_id) : undefined;
-                  const tappable = tapMode && (selectedGuestId !== null || guest);
+                  // Empty seats are always click targets now (they open the
+                  // inline guest picker outside tap mode).
+                  const tappable = (tapMode && (selectedGuestId !== null || guest)) || !guest;
                   // Seat <li> is keyboard-actionable too — Enter/Space drops
                   // the currently-selected guest into this seat (mirroring
                   // the tap behaviour). Empty seats are skipped from focus
@@ -3248,13 +3599,15 @@ function TableCard({
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => onDropSeat(table.id, idx, e)}
                       onClick={(e) => {
-                        if (!tapMode) return;
+                        // Tap mode: place/select via the armed payload.
+                        // Outside tap mode an EMPTY seat still responds —
+                        // it opens the inline guest picker at the click.
+                        if (!tapMode && guest) return;
                         e.stopPropagation();
-                        onTapSeat(table.id, idx);
+                        onTapSeat(table.id, idx, { x: e.clientX, y: e.clientY });
                       }}
                       onKeyDown={(e) => {
                         if (e.key !== "Enter" && e.key !== " ") return;
-                        if (selectedGuestId === null && !guest) return;
                         e.preventDefault();
                         e.stopPropagation();
                         onTapSeat(table.id, idx);
@@ -3285,7 +3638,10 @@ function TableCard({
                             onTap={onTapGuest}
                           />
                         ) : (
-                          <span>-</span>
+                          <span className="inline-flex items-center gap-1 text-ink-400 dark:text-umber-300">
+                            <Plus size={11} aria-hidden />
+                            {t("seating.empty_seat_add")}
+                          </span>
                         )}
                       </div>
                     </li>
@@ -3435,6 +3791,17 @@ function DraggableGuest({
         />
       )}
       {guest.full_name}
+      {/* Dietary flag — full free-text in the tooltip so the couple can
+          seat allergies thoughtfully (kitchen-side tally comes later). */}
+      {guest.dietary && (
+        <span title={guest.dietary} className="ml-1 inline-block align-text-bottom">
+          <Wheat
+            size={compact ? 11 : 13}
+            aria-label={guest.dietary}
+            className="text-umber-500 dark:text-umber-300"
+          />
+        </span>
+      )}
       {relinkable && onRelink && (
         <button
           type="button"

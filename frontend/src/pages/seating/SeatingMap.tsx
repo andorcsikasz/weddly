@@ -8,7 +8,18 @@
 
 import type { SeatAssignment, SeatingTable } from "@shared/types";
 import { MAX_TABLE_SEATS, chairOffsets, maxSeatsForTable } from "@shared/seating";
-import { Baby, Locate, Magnet, Maximize2, Minus, Plus, RotateCw, X, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  Baby,
+  Locate,
+  Magnet,
+  Maximize2,
+  Minus,
+  Plus,
+  RotateCw,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "../../lib/i18n";
@@ -97,8 +108,13 @@ interface Props {
   seatGuestsByTable?: Map<number, Map<number, { id: number; name: string }>>;
   /** Called when the user drops a guest onto a specific chair in seat mode. */
   onDropSeat?: (tableId: number, seatIndex: number, e: React.DragEvent) => void;
-  /** Called when the user taps/clicks a chair in seat mode. */
-  onTapSeat?: (tableId: number, seatIndex: number) => void;
+  /** Called when the user taps/clicks a chair in seat mode. `at` carries the
+   *  client coordinates so the page can anchor a picker popover there. */
+  onTapSeat?: (tableId: number, seatIndex: number, at?: { x: number; y: number }) => void;
+  /** Advisory: table ids flagged by the aisle-distance check (< 80 cm of
+   *  walking space to a neighbour). Rendered as a soft halo + count chip;
+   *  never blocks placement. */
+  aisleWarnIds?: Set<number>;
   /** Whether tap-to-place mode is active (affects cursor + visual hint). */
   tapMode?: boolean;
   /** Guest id currently selected for placement — highlights their chair. */
@@ -183,7 +199,21 @@ export function SeatingMap({
   onSeatDrop,
   onSeatRelease,
   onChairDragFinish,
+  aisleWarnIds,
 }: Props) {
+  // Aisle-warning chip dismissal — resets whenever the offending set changes
+  // so a new violation resurfaces the hint.
+  const [aisleDismissed, setAisleDismissed] = useState(false);
+  const aisleKey = aisleWarnIds
+    ? Array.from(aisleWarnIds)
+        .sort((a, b) => a - b)
+        .join(",")
+    : "";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: aisleKey is the change signal
+  useEffect(() => {
+    setAisleDismissed(false);
+  }, [aisleKey]);
+  const showAisleWarnings = (aisleWarnIds?.size ?? 0) > 0 && !aisleDismissed;
   const { t } = useT();
   // Local aliases keep the rest of the component readable; the rendering
   // and clamp logic still references these in mm.
@@ -586,11 +616,10 @@ export function SeatingMap({
     if (drag.kind === "rotate") {
       // Angle of the pointer around the table centre. The handle sits above
       // the table (local -y), so add 90° to make "handle pointing up" = 0°.
-      const raw =
-        (Math.atan2(p.y - drag.cy, p.x - drag.cx) * 180) / Math.PI + 90;
+      const raw = (Math.atan2(p.y - drag.cy, p.x - drag.cx) * 180) / Math.PI + 90;
       // Default 15° detents; Shift = free 1° rotation.
       const step = e.shiftKey ? 1 : ROTATE_SNAP_DEG;
-      const deg = ((Math.round(raw / step) * step) % 360 + 360) % 360;
+      const deg = (((Math.round(raw / step) * step) % 360) + 360) % 360;
       moveHud(e);
       setHud(`${deg}°`);
       setLocalRot((prev) => {
@@ -673,10 +702,7 @@ export function SeatingMap({
 
     // Live size + resulting chair capacity: this is the moment the user
     // learns that size drives seats, so say it right at the cursor.
-    const liveCap = Math.min(
-      MAX_TABLE_SEATS,
-      maxSeatsForTable(table.shape, newWidth, newLength),
-    );
+    const liveCap = Math.min(MAX_TABLE_SEATS, maxSeatsForTable(table.shape, newWidth, newLength));
     moveHud(e);
     setHud(
       table.shape === "round"
@@ -954,9 +980,7 @@ export function SeatingMap({
           pill can float bottom-right without riding the scroll. */}
       <div
         className={`relative ${
-          expanded || seatMode || fullHeight
-            ? "min-h-0 flex-1"
-            : "h-[60vh] max-h-[640px] w-full"
+          expanded || seatMode || fullHeight ? "min-h-0 flex-1" : "h-[60vh] max-h-[640px] w-full"
         }`}
       >
         <div
@@ -969,135 +993,163 @@ export function SeatingMap({
                 : "overflow-hidden"
           }`}
         >
-        <div
-          className={
-            expanded || seatMode || fullHeight
-              ? "flex min-h-full min-w-full"
-              : "h-full w-full"
-          }
-        >
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
-            preserveAspectRatio="xMidYMid meet"
-            className={`block select-none focus:outline-none ${
-              expanded || seatMode || fullHeight ? "m-auto" : ""
-            }`}
-            style={
-              expanded || seatMode || fullHeight
-                ? { width: svgSize.width, height: svgSize.height, flexShrink: 0 }
-                : { width: "100%", height: "100%" }
+          <div
+            className={
+              expanded || seatMode || fullHeight ? "flex min-h-full min-w-full" : "h-full w-full"
             }
-            onPointerMove={moveDrag}
-            onPointerUp={endDrag}
-            onPointerLeave={endDrag}
-            onKeyDown={handleKey}
-            // Click on empty area to deselect.
-            onClick={(e) => {
-              if (e.target === svgRef.current) onSelect(null);
-            }}
-            aria-label={t("seating.map_title")}
-            role="img"
-            tabIndex={0}
           >
-            <defs>
-              {/* Diagonal stripe used to highlight a table when the unassigned
+            <svg
+              ref={svgRef}
+              viewBox={`0 0 ${ROOM_W_MM} ${ROOM_H_MM}`}
+              preserveAspectRatio="xMidYMid meet"
+              className={`block select-none focus:outline-none ${
+                expanded || seatMode || fullHeight ? "m-auto" : ""
+              }`}
+              style={
+                expanded || seatMode || fullHeight
+                  ? { width: svgSize.width, height: svgSize.height, flexShrink: 0 }
+                  : { width: "100%", height: "100%" }
+              }
+              onPointerMove={moveDrag}
+              onPointerUp={endDrag}
+              onPointerLeave={endDrag}
+              onKeyDown={handleKey}
+              // Click on empty area to deselect.
+              onClick={(e) => {
+                if (e.target === svgRef.current) onSelect(null);
+              }}
+              aria-label={t("seating.map_title")}
+              role="img"
+              tabIndex={0}
+            >
+              <defs>
+                {/* Diagonal stripe used to highlight a table when the unassigned
                 panel is the active drop target. Defined once at the SVG root
                 so any fill="url(#seat-drop-stripe)" can reference it. */}
-              <pattern
-                id="seat-drop-stripe"
-                patternUnits="userSpaceOnUse"
-                width={120}
-                height={120}
-                patternTransform="rotate(45)"
-              >
-                <rect width={120} height={120} className="fill-blush-50" />
-                <line x1={0} y1={0} x2={0} y2={120} className="stroke-blush-200" strokeWidth={40} />
-              </pattern>
-            </defs>
-            <Grid widthMm={ROOM_W_MM} heightMm={ROOM_H_MM} />
-            {unassignedHighlight && (
-              <rect
-                x={0}
-                y={0}
-                width={ROOM_W_MM}
-                height={ROOM_H_MM}
-                fill="url(#seat-drop-stripe)"
-                opacity={0.4}
-                style={{ pointerEvents: "none" }}
-              />
-            )}
-            {tables.map((table) => {
-              const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
-              const dims = localDims.get(table.id) ?? {
-                width_mm: table.width_mm,
-                length_mm: table.length_mm,
-              };
-              // Build a synthetic table with the live local dimensions so the
-              // shape redraws under the cursor during a resize drag.
-              const liveTable: SeatingTable = { ...table, ...dims };
-              const filled = seatsByTable.get(table.id)?.length ?? 0;
-              return (
-                <TableShape
-                  key={table.id}
-                  table={liveTable}
-                  cx={pos.x}
-                  cy={pos.y}
-                  filledSeats={filled}
-                  babySeatedSet={babySeatsByTable?.get(table.id)}
-                  isSelected={selectedId === table.id}
-                  coarsePointer={coarsePointer}
-                  onPointerDown={(e) => startMove(e, table)}
-                  onHandlePointerDown={(e, h) => startResize(e, table, h)}
-                  onSeatsDelta={(delta) => onSeatsChange(table.id, delta)}
-                  seatMode={seatMode}
-                  seatGuests={seatGuestsByTable?.get(table.id)}
-                  selectedGuestId={selectedGuestId}
-                  tapMode={tapMode}
-                  onDropSeat={(seatIndex, e) => onDropSeat?.(table.id, seatIndex, e)}
-                  onTapSeat={(seatIndex) => onTapSeat?.(table.id, seatIndex)}
-                  onChairDragStart={(seatIndex, guestId) =>
-                    onChairDragStart?.(table.id, seatIndex, guestId)
-                  }
-                  onChairDragEnd={onChairDragEnd}
-                  draggingSeatIndex={
-                    drag?.kind === "chair" && drag.tableId === table.id ? drag.seatIndex : null
-                  }
-                  onTableClick={() => onSelect(table.id)}
-                  onChairPointerDown={(e, seatIndex, guestId) => {
-                    if (e.button !== 0) return;
-                    e.stopPropagation();
-                    (e.currentTarget as Element).setPointerCapture(e.pointerId);
-                    const guestName = seatGuestsByTable?.get(table.id)?.get(seatIndex)?.name ?? "";
-                    setDrag({
-                      kind: "chair",
-                      tableId: table.id,
-                      seatIndex,
-                      guestId,
-                      guestName,
-                      initX: e.clientX,
-                      initY: e.clientY,
-                    });
-                    onChairDragStart?.(table.id, seatIndex, guestId);
-                  }}
-                  pointerHoverSeat={
-                    drag?.kind === "chair" && chairDragHoverTarget?.tableId === table.id
-                      ? chairDragHoverTarget.seatIndex
-                      : null
-                  }
-                  highlighted={highlightId === table.id}
-                  rotationOverride={localRot.get(table.id)}
-                  canRotate={!seatMode && onRotate !== undefined}
-                  onRotateHandleDown={(e) => startRotate(e, table)}
-                  pxPerMm={pxPerMm}
-                  rotateHandleLabel={t("seating.rotate_handle_aria")}
-                  t={t}
+                <pattern
+                  id="seat-drop-stripe"
+                  patternUnits="userSpaceOnUse"
+                  width={120}
+                  height={120}
+                  patternTransform="rotate(45)"
+                >
+                  <rect width={120} height={120} className="fill-blush-50" />
+                  <line
+                    x1={0}
+                    y1={0}
+                    x2={0}
+                    y2={120}
+                    className="stroke-blush-200"
+                    strokeWidth={40}
+                  />
+                </pattern>
+              </defs>
+              <Grid widthMm={ROOM_W_MM} heightMm={ROOM_H_MM} />
+              {unassignedHighlight && (
+                <rect
+                  x={0}
+                  y={0}
+                  width={ROOM_W_MM}
+                  height={ROOM_H_MM}
+                  fill="url(#seat-drop-stripe)"
+                  opacity={0.4}
+                  style={{ pointerEvents: "none" }}
                 />
-              );
-            })}
-          </svg>
+              )}
+              {tables.map((table) => {
+                const pos = localPos.get(table.id) ?? { x: table.x_mm, y: table.y_mm };
+                const dims = localDims.get(table.id) ?? {
+                  width_mm: table.width_mm,
+                  length_mm: table.length_mm,
+                };
+                // Build a synthetic table with the live local dimensions so the
+                // shape redraws under the cursor during a resize drag.
+                const liveTable: SeatingTable = { ...table, ...dims };
+                const filled = seatsByTable.get(table.id)?.length ?? 0;
+                return (
+                  <TableShape
+                    key={table.id}
+                    table={liveTable}
+                    cx={pos.x}
+                    cy={pos.y}
+                    filledSeats={filled}
+                    babySeatedSet={babySeatsByTable?.get(table.id)}
+                    isSelected={selectedId === table.id}
+                    coarsePointer={coarsePointer}
+                    onPointerDown={(e) => startMove(e, table)}
+                    onHandlePointerDown={(e, h) => startResize(e, table, h)}
+                    onSeatsDelta={(delta) => onSeatsChange(table.id, delta)}
+                    seatMode={seatMode}
+                    seatGuests={seatGuestsByTable?.get(table.id)}
+                    selectedGuestId={selectedGuestId}
+                    tapMode={tapMode}
+                    onDropSeat={(seatIndex, e) => onDropSeat?.(table.id, seatIndex, e)}
+                    onTapSeat={(seatIndex, at) => onTapSeat?.(table.id, seatIndex, at)}
+                    aisleWarned={showAisleWarnings && (aisleWarnIds?.has(table.id) ?? false)}
+                    onChairDragStart={(seatIndex, guestId) =>
+                      onChairDragStart?.(table.id, seatIndex, guestId)
+                    }
+                    onChairDragEnd={onChairDragEnd}
+                    draggingSeatIndex={
+                      drag?.kind === "chair" && drag.tableId === table.id ? drag.seatIndex : null
+                    }
+                    onTableClick={() => onSelect(table.id)}
+                    onChairPointerDown={(e, seatIndex, guestId) => {
+                      if (e.button !== 0) return;
+                      e.stopPropagation();
+                      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+                      const guestName =
+                        seatGuestsByTable?.get(table.id)?.get(seatIndex)?.name ?? "";
+                      setDrag({
+                        kind: "chair",
+                        tableId: table.id,
+                        seatIndex,
+                        guestId,
+                        guestName,
+                        initX: e.clientX,
+                        initY: e.clientY,
+                      });
+                      onChairDragStart?.(table.id, seatIndex, guestId);
+                    }}
+                    pointerHoverSeat={
+                      drag?.kind === "chair" && chairDragHoverTarget?.tableId === table.id
+                        ? chairDragHoverTarget.seatIndex
+                        : null
+                    }
+                    highlighted={highlightId === table.id}
+                    rotationOverride={localRot.get(table.id)}
+                    canRotate={!seatMode && onRotate !== undefined}
+                    onRotateHandleDown={(e) => startRotate(e, table)}
+                    pxPerMm={pxPerMm}
+                    rotateHandleLabel={t("seating.rotate_handle_aria")}
+                    t={t}
+                  />
+                );
+              })}
+            </svg>
+          </div>
         </div>
-        </div>
+        {/* Advisory aisle chip — top-left, dismissible, reappears only when
+            the set of too-close tables changes. */}
+        {showAisleWarnings && !seatMode && (
+          <div
+            className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-umber-400 bg-paper-50/95 px-2.5 py-1 text-[11px] font-medium text-umber-700 shadow-sm backdrop-blur dark:border-umber-500 dark:bg-umber-800/95 dark:text-umber-200"
+            title={t("seating.aisle_warning_help")}
+            role="status"
+          >
+            <span>
+              {t("seating.aisle_warning_count").replace("{n}", String(aisleWarnIds?.size ?? 0))}
+            </span>
+            <button
+              type="button"
+              className="rounded-full p-0.5 transition-colors hover:bg-paper-200 dark:hover:bg-umber-700"
+              onClick={() => setAisleDismissed(true)}
+              aria-label={t("seating.aisle_warning_dismiss")}
+            >
+              <X size={11} aria-hidden />
+            </button>
+          </div>
+        )}
         {/* Zoom pill — floats bottom-right INSIDE the canvas frame (outside
             the scrolling element so it stays anchored). Only shown for the
             sized modes where zoom actually applies. */}
@@ -1358,8 +1410,10 @@ interface TableShapeProps {
   tapMode?: boolean;
   /** Drop handler for each chair in seat mode. */
   onDropSeat?: (seatIndex: number, e: React.DragEvent) => void;
-  /** Tap handler for each chair in seat mode. */
-  onTapSeat?: (seatIndex: number) => void;
+  /** Tap handler for each chair in seat mode (with client coords). */
+  onTapSeat?: (seatIndex: number, at?: { x: number; y: number }) => void;
+  /** Advisory aisle warning — draws a soft amber dashed halo. */
+  aisleWarned?: boolean;
   /** Drag-start from an occupied chair in seat mode. */
   onChairDragStart?: (seatIndex: number, guestId: number) => void;
   /** Drag-end from an occupied chair in seat mode. */
@@ -1428,6 +1482,7 @@ function TableShape({
   onRotateHandleDown,
   pxPerMm = 0.05,
   rotateHandleLabel,
+  aisleWarned = false,
   t,
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
@@ -1586,6 +1641,33 @@ function TableShape({
       role={seatMode ? undefined : "button"}
       aria-label={ariaLabel}
     >
+      {/* Advisory aisle-warning halo — amber dashed outline when a
+          neighbour is closer than the 80 cm walking minimum. Informational
+          only; nothing is blocked. */}
+      {aisleWarned &&
+        (table.shape === "round" ? (
+          <circle
+            r={rx + 180}
+            className="fill-none stroke-umber-500"
+            strokeWidth={40}
+            strokeDasharray="120 120"
+            style={{ pointerEvents: "none" }}
+            opacity={0.7}
+          />
+        ) : (
+          <rect
+            x={-rx - 180}
+            y={-ry - 180}
+            width={rx * 2 + 360}
+            height={ry * 2 + 360}
+            rx={rectCorner + 120}
+            className="fill-none stroke-umber-500"
+            strokeWidth={40}
+            strokeDasharray="120 120"
+            style={{ pointerEvents: "none" }}
+            opacity={0.7}
+          />
+        ))}
       {/* Just-created halo — a soft pulsing ring slightly outside the body
           so the eye finds the new table. Cleared by the page after ~1.6s. */}
       {highlighted &&
@@ -1743,13 +1825,16 @@ function TableShape({
               seatMode && !isDisabled
                 ? (e: React.MouseEvent) => {
                     e.stopPropagation();
-                    onTapSeat?.(i);
+                    onTapSeat?.(i, { x: e.clientX, y: e.clientY });
                   }
                 : undefined
             }
             style={
               seatMode && !isDisabled
-                ? { cursor: tapMode ? "pointer" : canDragOut ? "grab" : "default" }
+                ? // Empty chairs are ALWAYS pointer targets in seat mode —
+                  // clicking one opens the inline guest picker. Occupied
+                  // chairs keep the grab cursor for drag-out.
+                  { cursor: tapMode || !isOccupied ? "pointer" : canDragOut ? "grab" : "default" }
                 : undefined
             }
           >
@@ -1760,7 +1845,11 @@ function TableShape({
               height={chairHeightMm}
               rx={chairCorner}
               transform={`rotate(${rotDeg} ${px} ${py})`}
-              className={fillClassName}
+              className={`${fillClassName} ${
+                seatMode && !isDisabled && !isOccupied
+                  ? "transition-colors hover:fill-blush-400"
+                  : ""
+              }`}
             />
             {isDisabled && (
               <g
@@ -1808,7 +1897,9 @@ function TableShape({
                 nothing at all — the occupied fill already carries it. */}
             {!isDisabled &&
               !isBaby &&
-              (seatMode && seatGuest ? guestLabel !== null || guestInitials !== null : showSeatNumber) && (
+              (seatMode && seatGuest
+                ? guestLabel !== null || guestInitials !== null
+                : showSeatNumber) && (
                 <text
                   x={px}
                   y={py}
@@ -1930,10 +2021,7 @@ function TableShape({
                 className="fill-paper-50 stroke-umber-800 dark:fill-umber-900 dark:stroke-paper-100"
                 strokeWidth={24}
               />
-              <g
-                transform={`translate(${-110} ${-ry - 1110})`}
-                style={{ pointerEvents: "none" }}
-              >
+              <g transform={`translate(${-110} ${-ry - 1110})`} style={{ pointerEvents: "none" }}>
                 <RotateCw
                   width={220}
                   height={220}

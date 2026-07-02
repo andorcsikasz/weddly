@@ -3969,6 +3969,23 @@ export interface LocaleMessages {
     autosave_failed: string;
     /** Short visible label next to the tap-mode hand icon. */
     tap_mode_short: string;
+    /** Guest search in the unassigned panel + the seat-picker popover. */
+    guest_search_placeholder: string;
+    guest_search_empty: string;
+    /** RSVP-aware pool: declined-guest toggle + seated-declined warning. */
+    show_declined_toggle: string;
+    hide_declined_toggle: string;
+    declined_seated_warning: string;
+    /** "{chairs} chairs · {confirmed} confirmed" capacity line. */
+    capacity_line: string;
+    /** Empty-seat CTA in the TableCard grid. */
+    empty_seat_add: string;
+    /** Title of the inline guest picker opened from an empty chair. */
+    seat_picker_title: string;
+    /** Advisory aisle-distance chip on the canvas. */
+    aisle_warning_count: string;
+    aisle_warning_help: string;
+    aisle_warning_dismiss: string;
     pdf_failed: string;
     pdf_cancel: string;
     pdf_loading: string;

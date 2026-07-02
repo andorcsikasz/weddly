@@ -99,6 +99,29 @@ export function isDefaultTableLabel(label: string, defaultPrefix: string): boole
   return new RegExp(`^${escaped}\\s+\\d+$`, "i").test(label.trim());
 }
 
+/** Common banquet table sizes offered as one-tap presets in the editor.
+ *  Values are catalogue-standard rental sizes; the seat count shown next to
+ *  each chip comes from maxSeatsForTable at runtime. */
+export const TABLE_SIZE_PRESETS: Record<TableShape, { width_mm: number; length_mm: number }[]> = {
+  round: [
+    { width_mm: 1500, length_mm: 1500 },
+    { width_mm: 1800, length_mm: 1800 },
+    { width_mm: 2000, length_mm: 2000 },
+  ],
+  square: [
+    { width_mm: 1200, length_mm: 1200 },
+    { width_mm: 1600, length_mm: 1600 },
+  ],
+  long: [
+    { width_mm: 800, length_mm: 1800 },
+    { width_mm: 1000, length_mm: 2400 },
+  ],
+  head: [
+    { width_mm: 900, length_mm: 4000 },
+    { width_mm: 900, length_mm: 6000 },
+  ],
+};
+
 export interface ChairOffset {
   /** Offset from the table centre to the chair centre. */
   dx: number;
