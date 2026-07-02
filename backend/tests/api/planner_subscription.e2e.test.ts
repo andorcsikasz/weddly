@@ -9,10 +9,7 @@
 import "../setup";
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import {
-  type PlannerBillingStatus,
-  PLANNER_FOUNDING_CAP,
-} from "@shared/planner_billing";
+import { type PlannerBillingStatus, PLANNER_FOUNDING_CAP } from "@shared/planner_billing";
 import { db, now } from "../../src/db";
 import { setBillingEnforcement } from "../../src/domain/billing";
 import { initPlannerBilling } from "../../src/domain/planner_billing";
@@ -153,9 +150,14 @@ describe("planner subscription billing", () => {
     const { token, userId } = await makePlanner("deferred@weddly.test");
     lapse(userId);
     // Leave enforcement OFF (the default) — nobody should be paywalled yet.
-    const edit = await req("PATCH", "/api/planner/profile", { planner_bio: "Still editable" }, {
-      token,
-    });
+    const edit = await req(
+      "PATCH",
+      "/api/planner/profile",
+      { planner_bio: "Still editable" },
+      {
+        token,
+      },
+    );
     expect(edit.status).not.toBe(402);
   });
 
