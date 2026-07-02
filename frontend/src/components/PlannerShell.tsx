@@ -218,7 +218,7 @@ function PlannerProfileMenu({
             className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-moss-200 dark:ring-umber-700"
           />
         ) : (
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-moss-100 text-xs font-semibold uppercase text-moss-800 dark:bg-moss-900/40 dark:text-moss-100">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-moss-600 text-xs font-semibold uppercase text-paper-50 dark:bg-moss-500">
             {initials}
           </span>
         )}
