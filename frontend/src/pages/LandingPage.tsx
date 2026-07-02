@@ -836,16 +836,19 @@ function FoundingCouplesBand() {
     // through this top margin so the espresso "moment" doesn't butt straight
     // up against the budget card. ~1.4x the prior gap (the budget demo's
     // py-12 = 48px bottom) → +20px ≈ 68px. Reset from sm up.
-    <section className="mt-5 bg-umber-900 sm:mt-0">
+    // Dark mode flips the inversion: the page is already espresso, so the
+    // band goes cream with espresso text to keep reading as a distinct
+    // "moment" instead of dissolving into the dark page.
+    <section className="mt-5 bg-umber-900 sm:mt-0 dark:bg-paper-100">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-9 px-4 py-20 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-12 sm:py-16 sm:text-left">
         {/* Left: the pitch */}
         <div className="sm:max-w-md">
-          <h2 className="font-grotesk text-2xl font-medium leading-snug tracking-tight text-paper-50 sm:text-3xl">
+          <h2 className="font-grotesk text-2xl font-medium leading-snug tracking-tight text-paper-50 sm:text-3xl dark:text-umber-900">
             {t("landing.founders_title")}
           </h2>
           {/* Capped + balanced so the promise sits under the title in two even
               rows and never overruns the column. */}
-          <p className="mx-auto mt-4 max-w-[19rem] text-balance font-grotesk text-sm leading-relaxed text-paper-300 sm:mx-0 sm:text-base">
+          <p className="mx-auto mt-4 max-w-[19rem] text-balance font-grotesk text-sm leading-relaxed text-paper-300 sm:mx-0 sm:text-base dark:text-umber-700">
             {t("landing.founders_promise")}
           </p>
         </div>
@@ -853,17 +856,17 @@ function FoundingCouplesBand() {
         {/* Right: the live remaining-seats hero + the action row */}
         <div className="flex shrink-0 flex-col items-center gap-4 sm:items-end">
           <div className="flex flex-col items-center sm:items-end">
-            <span className="font-grotesk text-6xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-7xl">
+            <span className="font-grotesk text-6xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-7xl dark:text-umber-900">
               <FoundingCount value={heroSeats} />
             </span>
-            <span className="mt-1 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400">
+            <span className="mt-1 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400 dark:text-umber-600">
               {t("landing.founders_seats_label")}
             </span>
           </div>
           <div className="flex items-center gap-3">
             <Link
               to="/signup"
-              className="btn btn-landing btn-lg bg-paper-50 px-8 font-grotesk text-xs uppercase tracking-[0.2em] text-umber-950 hover:bg-paper-200"
+              className="btn btn-landing btn-lg bg-paper-50 px-8 font-grotesk text-xs uppercase tracking-[0.2em] text-umber-950 hover:bg-paper-200 dark:bg-umber-900 dark:text-paper-50 dark:hover:bg-umber-800"
             >
               {t("landing.founders_cta")}
             </Link>
@@ -872,13 +875,13 @@ function FoundingCouplesBand() {
               onClick={shareFoundingLink}
               aria-label={t("landing.founders_share_cta")}
               title={t("landing.founders_share_cta")}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-paper-300 transition-colors hover:bg-paper-50/10 hover:text-paper-50"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-paper-300 transition-colors hover:bg-paper-50/10 hover:text-paper-50 dark:text-umber-600 dark:hover:bg-umber-900/10 dark:hover:text-umber-900"
             >
               <Share2 size={18} aria-hidden />
             </button>
           </div>
           {copyFallback && (
-            <p className="mt-1 max-w-xs break-all text-xs text-paper-400">{copyFallback}</p>
+            <p className="mt-1 max-w-xs break-all text-xs text-paper-400 dark:text-umber-600">{copyFallback}</p>
           )}
         </div>
       </div>
@@ -919,17 +922,18 @@ function StatCounter({
       {/* Vintage split-flap tile — espresso card, cream serif digit, and a
           dark seam across the middle with a hairline highlight just below
           for the flap-card depth (coffee-shop counter / old tennis
-          scoreboard). */}
-      <div className="relative mx-auto flex aspect-[5/6] w-12 items-center justify-center overflow-hidden rounded-lg bg-umber-900 shadow-pop ring-1 ring-umber-950/50 sm:w-20 lg:w-24 dark:bg-umber-950 dark:ring-umber-700/60">
+          scoreboard). Dark mode inverts the tile to cream with an espresso
+          digit so it pops off the dark page instead of sinking into it. */}
+      <div className="relative mx-auto flex aspect-[5/6] w-12 items-center justify-center overflow-hidden rounded-lg bg-umber-900 shadow-pop ring-1 ring-umber-950/50 sm:w-20 lg:w-24 dark:bg-paper-100 dark:ring-paper-300">
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-[2px] -translate-y-px bg-black/30"
+          className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-[2px] -translate-y-px bg-black/30 dark:bg-umber-900/20"
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-px translate-y-px bg-paper-50/12"
+          className="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-px translate-y-px bg-paper-50/12 dark:bg-white/60"
         />
-        <span className="relative translate-y-[0.08em] font-serif text-2xl font-semibold tabular-nums leading-none text-paper-50 sm:text-4xl lg:text-5xl">
+        <span className="relative translate-y-[0.08em] font-serif text-2xl font-semibold tabular-nums leading-none text-paper-50 sm:text-4xl lg:text-5xl dark:text-umber-900">
           {fmt.format(display)}
         </span>
       </div>
