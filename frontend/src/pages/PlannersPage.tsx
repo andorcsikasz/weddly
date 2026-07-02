@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { type CSSProperties, Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { PlannerDemoLaunchButton } from "../components/PlannerDemoLaunchButton";
 import { PublicShell } from "../components/PublicShell";
 import { plannerWaitlistApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -1154,16 +1155,19 @@ export default function PlannersPage() {
             <h1 className="font-grotesk mb-5 whitespace-pre-line text-4xl font-semibold leading-[1.05] tracking-tight text-umber-900 sm:text-5xl dark:text-paper-50">
               {t("planners.hero_title")}
             </h1>
-            <a
-              href="#waitlist"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="btn-primary inline-block px-8 py-3 text-sm"
-            >
-              {t("planners.hero_cta")}
-            </a>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="#waitlist"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="btn-primary inline-block px-8 py-3 text-sm"
+              >
+                {t("planners.hero_cta")}
+              </a>
+              <PlannerDemoLaunchButton />
+            </div>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <span className="text-sm text-umber-500 dark:text-umber-400">
                 {t("planners.couple_escape")}

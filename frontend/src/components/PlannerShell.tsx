@@ -32,6 +32,7 @@ import { useAuth } from "../lib/auth";
 import { plannerApi, plannerBillingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { FeedbackDialog } from "./FeedbackDialog";
+import { PlannerDemoOverlay } from "./PlannerDemoOverlay";
 import { Wordmark } from "./Wordmark";
 
 type PlannerNavItem = { to: string; labelKey: string; icon: ReactNode; end?: boolean };
@@ -400,6 +401,7 @@ export function PlannerShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-full overflow-x-clip bg-paper-50 dark:bg-umber-950">
+      <PlannerDemoOverlay />
       <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
           <div className="flex min-w-0 items-center gap-3">
