@@ -263,6 +263,9 @@ const STUBS: KindPayload = {
     inviteUrl: "https://tryweddly.com/signup?planner_invite=sample-token",
     replyToEmail: "hello@eventful.studio",
   },
+  newsletter_confirm: {
+    confirmUrl: `${BASE_URL}/newsletter/confirm/preview-token`,
+  },
 };
 
 const ALL_KINDS = Object.keys(KIND_CATEGORY) as EmailKind[];

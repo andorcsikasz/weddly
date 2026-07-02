@@ -13,7 +13,7 @@ interface RecordConsentInput {
   subjectUserId: number | null;
   /** What kind of actor accepted: a real `users` row or an anonymous
    *  submission row. */
-  subjectKind: "user" | "vendor_waitlist";
+  subjectKind: "user" | "vendor_waitlist" | "newsletter";
   /** Ref to the non-user subject row (e.g. stringified vendor_waitlist.id). */
   subjectRef: string | null;
   document: ConsentDocument;

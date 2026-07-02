@@ -1642,3 +1642,23 @@ CREATE TABLE IF NOT EXISTS guest_messages (
   created_at           INTEGER NOT NULL,
   updated_at           INTEGER NOT NULL
 );
+
+-- Newsletter subscribers (landing + blog email capture). Double opt-in per
+-- Grtv. §6: subscribe inserts status='pending' and emails a confirm link;
+-- the click flips to 'confirmed'. Unsubscribe keeps the row as a suppression
+-- record instead of deleting it. Only the SHA-256 hash of the confirm/
+-- unsubscribe token is stored (same rationale as auth/tokens.ts); the token
+-- is re-minted on repeat subscribe attempts, token_created_at drives the
+-- 7-day confirm-link TTL.
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  email            TEXT    NOT NULL UNIQUE,
+  locale           TEXT    NOT NULL DEFAULT 'hu',              -- 'hu' | 'en'
+  status           TEXT    NOT NULL DEFAULT 'pending',         -- 'pending' | 'confirmed' | 'unsubscribed'
+  token_hash       TEXT    UNIQUE,
+  token_created_at INTEGER,
+  source           TEXT,                                       -- 'landing' | 'blog:<slug>' | ...
+  created_at       INTEGER NOT NULL,
+  confirmed_at     INTEGER,
+  unsubscribed_at  INTEGER
+);

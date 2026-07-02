@@ -229,6 +229,23 @@ export const publicStatsApi = {
   get: () => apiFetch<{ couples: number; rsvps: number; ts: number }>("GET", "/api/public/stats"),
 };
 
+/** Public newsletter capture (landing + blog). Double opt-in: subscribe only
+ *  triggers a confirmation email; confirm/unsubscribe consume the emailed
+ *  token. Subscribe always resolves ok — the server never reveals whether an
+ *  address is already on the list. */
+export const newsletterApi = {
+  subscribe: (payload: {
+    email: string;
+    locale: "hu" | "en";
+    source: string;
+    privacy_version: string;
+  }) => apiFetch<{ ok: true }>("POST", "/api/newsletter/subscribe", payload),
+  confirm: (token: string) =>
+    apiFetch<{ ok: true; already: boolean }>("POST", "/api/newsletter/confirm", { token }),
+  unsubscribe: (token: string) =>
+    apiFetch<{ ok: true; already: boolean }>("POST", "/api/newsletter/unsubscribe", { token }),
+};
+
 /** Public blog index + per-slug detail. Drafts (`is_published = false`) are
  *  excluded server-side, so any post the caller receives is safe to render. */
 export const blogApi = {

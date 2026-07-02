@@ -1323,6 +1323,31 @@ export interface LocaleMessages {
     merge_running: string;
     merge_success: string;
   };
+  /** Public newsletter capture (landing + blog) and the confirm/unsubscribe
+   *  landing pages the emailed links point at. */
+  newsletter: {
+    title: string;
+    body: string;
+    email_placeholder: string;
+    /** Checkbox label; consent_link is the trailing privacy-policy anchor. */
+    consent: string;
+    consent_link: string;
+    submit: string;
+    submitting: string;
+    success_title: string;
+    success_body: string;
+    error_consent: string;
+    confirm_working: string;
+    confirm_success_title: string;
+    confirm_success_body: string;
+    confirm_expired_title: string;
+    confirm_expired_body: string;
+    confirm_invalid_title: string;
+    confirm_invalid_body: string;
+    unsub_success_title: string;
+    unsub_success_body: string;
+    back_home: string;
+  };
   landing: {
     hero_title: string;
     hero_sub: string;

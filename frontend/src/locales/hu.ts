@@ -1121,6 +1121,32 @@ const hu: LocaleMessages = {
     merge_running: "Összevonás…",
     merge_success: "Csatlakoztál, üdv az új munkaterületen.",
   },
+  newsletter: {
+    title: "Esküvőtervezés, levélben",
+    body: "Tippek, ellenőrzőlisták és termékújdonságok, nagyjából havi egy-két levél. Se spam, se továbbadott cím.",
+    email_placeholder: "email@pelda.hu",
+    consent: "Hozzájárulok, hogy a Wēddly hírlevelet küldjön erre a címre. Részletek:",
+    consent_link: "adatkezelési tájékoztató",
+    submit: "Feliratkozom",
+    submitting: "Küldés…",
+    success_title: "Nézd meg a postafiókod",
+    success_body:
+      "Küldtünk egy megerősítő linket. A feliratkozás csak a kattintás után él, addig nem küldünk semmit.",
+    error_consent: "A feliratkozáshoz pipáld be a hozzájárulást.",
+    confirm_working: "Megerősítés folyamatban…",
+    confirm_success_title: "Kész, fel vagy iratkozva",
+    confirm_success_body:
+      "Örülünk, hogy itt vagy. Minden levelünk alján ott lesz az egykattintásos leiratkozás.",
+    confirm_expired_title: "Ez a link lejárt",
+    confirm_expired_body:
+      "A megerősítő link 7 napig él. Iratkozz fel újra, és küldünk egy frisset.",
+    confirm_invalid_title: "Érvénytelen link",
+    confirm_invalid_body:
+      "Ez a link nem él, lehet, hogy egy újabb feliratkozás felülírta. Iratkozz fel újra, és küldünk egy frisset.",
+    unsub_success_title: "Leiratkoztál",
+    unsub_success_body: "Erre a címre nem küldünk több hírlevelet. Bármikor visszairatkozhatsz.",
+    back_home: "Vissza a főoldalra",
+  },
   landing: {
     hero_title: "Az egész\nesküvőtök,\negy helyen.",
     hero_sub:
@@ -5733,7 +5759,7 @@ const hu: LocaleMessages = {
       "A teljes lista a fenti „Adatfeldolgozók” pontban olvasható. Más harmadik féllel, különösen reklámozóval, adatbrókerrel, közösségi platformmal, nem osztjuk meg az adataitokat.",
     email_compliance_title: "E-mailes kommunikáció (Grtv. §6, ePrivacy)",
     email_compliance_body:
-      "Két fajta e-mailt küldünk. (1) Tranzakciós: regisztráció-megerősítés, jelszóvisszaállítás, partnermeghívó, e-mailcím-csere, RSVP-megerősítés a vendégeknek, határidős előretolt értesítések a pár saját esküvőjével kapcsolatban, ezeket a szerződés teljesítése (GDPR 6. cikk (1) b) jogalapon küldjük, és nem lehet rólunk teljesen leiratkozni, amíg a fiókod aktív. (2) Életciklus / termék-hírlevél: a béta alatt jelenleg ilyet nem küldünk. Ha a jövőben bevezetjük (pl. új funkciókról, tippekről), kizárólag a magyar Grtv. 6. §-ának megfelelően, előzetes opt-in hozzájárulással küldjük majd, és minden ilyen levél tartalmaz egy egy-kattintásos leiratkozási linket. A küldő minden esetben azonosítható (üzemeltető neve + impresszum-link a láblécben).",
+      "Két fajta e-mailt küldünk. (1) Tranzakciós: regisztráció-megerősítés, jelszóvisszaállítás, partnermeghívó, e-mailcím-csere, RSVP-megerősítés a vendégeknek, határidős előretolt értesítések a pár saját esküvőjével kapcsolatban, ezeket a szerződés teljesítése (GDPR 6. cikk (1) b) jogalapon küldjük, és nem lehet rólunk teljesen leiratkozni, amíg a fiókod aktív. (2) Termék-hírlevél (tervezési tippek, újdonságok, nagyjából havi egy-két levél): kizárólag annak küldjük, aki a weboldalon kifejezetten feliratkozott ÉS az e-mailben kapott linkkel meg is erősítette (double opt-in), a magyar Grtv. 6. §-ának megfelelően. A hírlevélhez az e-mail címet, a választott nyelvet, a feliratkozás forrását és a hozzájárulás időpontját tároljuk; minden levél tartalmaz egykattintásos leiratkozási linket, leiratkozás után pedig csak egy tiltólistás bejegyzést őrzünk meg, hogy arra a címre biztosan ne küldjünk többet. A küldő minden esetben azonosítható (üzemeltető neve + impresszum-link a láblécben).",
     automated_decisions_title: "Automatizált döntéshozatal (GDPR 22. cikk)",
     automated_decisions_body:
       "A Wēddly nem hoz olyan, kizárólag automatizált feldolgozáson alapuló döntést, amely rátok nézve joghatással bírna vagy hasonlóan jelentős mértékben érintene titeket. A szolgáltatói rangsor, a costplanning becslő, az ülésrend-segédlet, mind algoritmusok ugyan, de mindegyik egy javaslat, amit ti hagytok jóvá vagy módosítotok.",

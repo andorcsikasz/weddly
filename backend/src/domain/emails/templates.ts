@@ -486,6 +486,11 @@ export interface PlannerEmailInvitePayload {
   replyToEmail?: string;
 }
 
+export interface NewsletterConfirmPayload {
+  /** Double opt-in confirm link ({FRONTEND_BASE_URL}/newsletter/confirm/…). */
+  confirmUrl: string;
+}
+
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
@@ -541,6 +546,7 @@ export type KindPayload = {
   planner_access_approved: PlannerAccessApprovedPayload;
   planner_client_invite: PlannerClientInvitePayload;
   planner_email_invite: PlannerEmailInvitePayload;
+  newsletter_confirm: NewsletterConfirmPayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -2108,6 +2114,33 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Create an account and set up your wedding workspace. You can then approve your planner so they can help organise everything.",
       ],
       cta: "Create your account",
+    },
+  }),
+
+  // Double opt-in confirm for the landing/blog newsletter capture. The address
+  // gets NOTHING further unless this link is clicked, and the copy says so —
+  // that's the Grtv. §6 posture in one sentence.
+  newsletter_confirm: (p) => ({
+    subject: "Erősítsd meg a feliratkozásod / Confirm your subscription · Weddly",
+    ctaUrl: p.confirmUrl,
+    hu: {
+      preheader: "Egy kattintás, és kész a feliratkozás.",
+      greeting: "Szia!",
+      paragraphs: [
+        "Valaki, reméljük, te, feliratkozott erre a címre a Wēddly hírlevelére: esküvőtervezési tippek és termékújdonságok, nagyjából havi egy-két levél.",
+        "Ha te voltál, erősítsd meg az alábbi gombbal. Ha nem, nincs teendőd: e nélkül a kattintás nélkül erre a címre nem küldünk több levelet.",
+      ],
+      cta: "Feliratkozás megerősítése",
+      footnote: "A link 7 napig érvényes. Minden levelünkben lesz egykattintásos leiratkozás.",
+    },
+    en: {
+      greeting: "Hi there,",
+      paragraphs: [
+        "Someone, hopefully you, signed this address up for the Weddly newsletter: wedding-planning tips and product news, roughly one or two emails a month.",
+        "If that was you, confirm below. If not, do nothing: without this click we won't send anything else to this address.",
+      ],
+      cta: "Confirm subscription",
+      footnote: "The link is valid for 7 days. Every email includes a one-click unsubscribe.",
     },
   }),
 };

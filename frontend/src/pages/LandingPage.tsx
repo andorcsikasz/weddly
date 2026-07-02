@@ -44,6 +44,7 @@ const SuppliersPreview = lazy(() =>
   import("../components/illustrations").then((m) => ({ default: m.SuppliersPreview })),
 );
 import { DemoLaunchCard } from "../components/DemoLaunchCard";
+import { NewsletterCapture } from "../components/NewsletterCapture";
 import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useToast } from "../components/ui";
@@ -643,6 +644,9 @@ export default function LandingPage() {
             {faqEntries.map((entry) => (
               <FaqCard key={entry.q} q={entry.q} a={entry.a} cta={entry.cta} />
             ))}
+          </div>
+          <div className="mt-10">
+            <NewsletterCapture source="landing" />
           </div>
         </div>
       </section>

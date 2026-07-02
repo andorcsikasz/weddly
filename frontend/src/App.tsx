@@ -65,6 +65,7 @@ const InvitePage = lazy(() => import("./pages/InvitePage"));
 const LogisticsPage = lazy(() => import("./pages/LogisticsPage"));
 const MediaPage = lazy(() => import("./pages/MediaPage"));
 const MoodboardPage = lazy(() => import("./pages/MoodboardPage"));
+const NewsletterConfirmPage = lazy(() => import("./pages/NewsletterConfirmPage"));
 const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
 const PlanningPage = lazy(() => import("./pages/PlanningPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
@@ -513,6 +514,22 @@ export default function App() {
         />
         <Route path="/register" element={<RegisterRedirect />} />
         <Route path="/unsubscribe/:token" element={<UnsubscribeRedirect />} />
+        <Route
+          path="/newsletter/confirm/:token"
+          element={
+            <Page>
+              <NewsletterConfirmPage mode="confirm" />
+            </Page>
+          }
+        />
+        <Route
+          path="/newsletter/unsubscribe/:token"
+          element={
+            <Page>
+              <NewsletterConfirmPage mode="unsubscribe" />
+            </Page>
+          }
+        />
         {/* Post-wedding follow-up emails sent before 2026-07 linked here. */}
         <Route path="/feedback" element={<Navigate to="/app?feedback=1" replace />} />
         <Route

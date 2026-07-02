@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { NewsletterCapture } from "../components/NewsletterCapture";
 import { PublicShell } from "../components/PublicShell";
 import { ApiError } from "../lib/api";
 import { blogApi } from "../lib/endpoints";
@@ -162,6 +163,10 @@ export default function BlogPostPage() {
             </figure>
 
             <BlogBody body={copy.body} locale={locale} />
+
+            <div className="mt-16">
+              <NewsletterCapture source={`blog:${post.slug}`} />
+            </div>
 
             {related.length > 0 ? (
               <aside className="mt-16 border-t border-paper-300 dark:border-umber-700 pt-10">

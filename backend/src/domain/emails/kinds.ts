@@ -56,7 +56,8 @@ export type EmailKind =
   | "planner_message" // free-form planner → couple message (user-entered subject + body)
   | "planner_access_approved" // couple approved the planner's access request, heads-up to the planner
   | "planner_client_invite" // couple invited a planner to their workspace, heads-up to the planner
-  | "planner_email_invite"; // planner invited a not-yet-registered person by email to become their client
+  | "planner_email_invite" // planner invited a not-yet-registered person by email to become their client
+  | "newsletter_confirm"; // double opt-in confirm link for the landing/blog newsletter capture
 
 export type EmailCategory = "transactional" | "lifecycle" | "outreach";
 
@@ -206,4 +207,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // become their client. The recipient explicitly receives a signup link they
   // are expected to act on, so it is never opt-out suppressed.
   planner_email_invite: "transactional",
+  // Outreach: the recipient typed their email into the public capture form but
+  // has no Weddly account — same footer framing as vendor_waitlist_received
+  // ("no account, ignore = nothing happens"), which is literally true: without
+  // the confirm click the address never receives another mail.
+  newsletter_confirm: "outreach",
 };

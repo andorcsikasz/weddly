@@ -1108,6 +1108,33 @@ const en: LocaleMessages = {
     merge_running: "Merging…",
     merge_success: "You're in, welcome to the new workspace.",
   },
+  newsletter: {
+    title: "Wedding planning, in your inbox",
+    body: "Tips, checklists and product news, roughly one or two emails a month. No spam, no shared addresses.",
+    email_placeholder: "email@example.com",
+    consent: "I agree to receive the Weddly newsletter at this address. Details:",
+    consent_link: "privacy policy",
+    submit: "Subscribe",
+    submitting: "Sending…",
+    success_title: "Check your inbox",
+    success_body:
+      "We've sent a confirmation link. The subscription only starts once you click it, until then we send nothing.",
+    error_consent: "Please tick the consent box to subscribe.",
+    confirm_working: "Confirming…",
+    confirm_success_title: "Done, you're subscribed",
+    confirm_success_body:
+      "Glad to have you. Every email we send has a one-click unsubscribe at the bottom.",
+    confirm_expired_title: "This link has expired",
+    confirm_expired_body:
+      "Confirmation links are valid for 7 days. Subscribe again and we'll send a fresh one.",
+    confirm_invalid_title: "Invalid link",
+    confirm_invalid_body:
+      "This link is not active, a newer subscription attempt may have replaced it. Subscribe again and we'll send a fresh one.",
+    unsub_success_title: "You're unsubscribed",
+    unsub_success_body:
+      "We won't send any more newsletters to this address. You can subscribe again anytime.",
+    back_home: "Back to the homepage",
+  },
   landing: {
     hero_title: "Your whole\nwedding,\nin one place.",
     hero_sub: "",
@@ -5672,7 +5699,7 @@ const en: LocaleMessages = {
       'The full list is in the "Subprocessors" section above. We do not share your data with advertisers, data brokers or social platforms.',
     email_compliance_title: "Email communications (Hungarian Grtv. §6, ePrivacy)",
     email_compliance_body:
-      "We send two kinds of email. (1) Transactional: account verification, password reset, partner invite, email-change confirmation, RSVP receipts to guests, and reminders about your own upcoming wedding, sent under the contract-performance basis (Art. 6(1)(b) GDPR) and not unsubscribable while your account is active. (2) Lifecycle / product newsletter: currently none during the beta. If we introduce them later (e.g. feature announcements, tips), they will only go to recipients who explicitly opt in, in compliance with §6 of the Hungarian Grtv. Every such email will carry a one-click unsubscribe link. The sender is always identifiable (operator name + link to the imprint in the footer).",
+      "We send two kinds of email. (1) Transactional: account verification, password reset, partner invite, email-change confirmation, RSVP receipts to guests, and reminders about your own upcoming wedding, sent under the contract-performance basis (Art. 6(1)(b) GDPR) and not unsubscribable while your account is active. (2) Product newsletter (planning tips, feature announcements, roughly one or two emails a month): sent only to recipients who explicitly opted in on the website AND confirmed via the emailed link (double opt-in), in compliance with §6 of the Hungarian Grtv. For the newsletter we store the email address, the chosen language, the source of the signup and the consent timestamp; every newsletter carries a one-click unsubscribe link, and unsubscribing keeps only a suppression record so we never email that address again. The sender is always identifiable (operator name + link to the imprint in the footer).",
     automated_decisions_title: "Automated decision-making (GDPR Art. 22)",
     automated_decisions_body:
       "Weddly does not take decisions based solely on automated processing that would produce legal effects on you or similarly significantly affect you. The supplier ranking, the cost-planning estimator, the seating helper, they're all algorithms, but each is a suggestion you accept or override.",
