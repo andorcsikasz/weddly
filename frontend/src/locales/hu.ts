@@ -6771,6 +6771,7 @@ const hu: LocaleMessages = {
   planner_shell: {
     menu_label: "Fiók menü",
     menu_account: "Beállítások",
+    menu_plan: "Csomag",
   },
   planner_stats: {
     meta_title: "Statisztika · Wēddly",

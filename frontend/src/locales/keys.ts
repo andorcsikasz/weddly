@@ -7290,6 +7290,7 @@ export interface LocaleMessages {
   planner_shell: {
     menu_label: string;
     menu_account: string;
+    menu_plan: string;
   };
   planner_stats: {
     meta_title: string;

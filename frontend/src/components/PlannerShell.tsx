@@ -1,9 +1,10 @@
 // Planner workspace shell - the authenticated layout for user_type='planner'
 // at /app/planner/*. Mirrors VendorShell's structure (sticky header + collapsible
 // left nav rail) so the planner workspace reads as a professional command center
-// rather than a single screen. The header also carries the greeting, plan chip
-// and a notification bell (overdue tasks + pending couple invites) that used to
-// live on the dashboard topbar. Page chrome uses the standard horizontal padding.
+// rather than a single screen. The header carries a language toggle, a
+// notification bell (overdue tasks + pending couple invites) and the profile
+// menu, where the plan/clients chip now lives. Page chrome uses the standard
+// horizontal padding.
 
 import {
   AlertTriangle,
@@ -162,13 +163,15 @@ function getInitials(fullName: string, email: string): string {
 function PlannerProfileMenu({
   user,
   avatarUrl,
+  stats,
   onLogout,
 }: {
   user: User;
   avatarUrl: string | null;
+  stats: PlannerStats | null;
   onLogout: () => void;
 }) {
-  const { t, locale, setLocale } = useT();
+  const { t } = useT();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -237,6 +240,22 @@ function PlannerProfileMenu({
             <p className="truncate text-xs text-ink-500 dark:text-umber-300">{user.email}</p>
           </div>
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
+          {stats && (
+            <Link
+              to="/app/planner/stats"
+              role="menuitem"
+              title={t("planner_home.topbar_clients_aria")}
+              className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Users size={16} aria-hidden="true" />
+                <span>{t("planner_shell.menu_plan")}</span>
+              </span>
+              <span className="text-xs font-medium capitalize text-moss-800 dark:text-moss-100">
+                {`${stats.plan} · ${stats.active_clients}/${stats.max_clients}`}
+              </span>
+            </Link>
+          )}
           <Link
             to="/app/planner/settings/account"
             role="menuitem"
@@ -245,23 +264,6 @@ function PlannerProfileMenu({
             <UserRound size={16} aria-hidden="true" />
             <span>{t("planner_shell.menu_account")}</span>
           </Link>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              setLocale(locale === "hu" ? "en" : "hu");
-            }}
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 dark:text-paper-100 dark:hover:bg-umber-700"
-          >
-            <span className="inline-flex items-center gap-2">
-              <Languages size={16} aria-hidden="true" />
-              <span>{t("nav.switch_language")}</span>
-            </span>
-            <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-              {locale} → {locale === "hu" ? "en" : "hu"}
-            </span>
-          </button>
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
           <button
             type="button"
@@ -282,7 +284,7 @@ function PlannerProfileMenu({
 }
 
 export function PlannerShell({ children }: { children: ReactNode }) {
-  const { t } = useT();
+  const { t, locale, setLocale } = useT();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -382,17 +384,15 @@ export function PlannerShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2.5">
-            {stats && (
-              <Link
-                to="/app/planner/stats"
-                className="hidden items-center gap-1.5 rounded-full border border-moss-200 bg-moss-50 px-3 py-1 text-xs capitalize text-moss-800 transition-colors hover:bg-moss-100 sm:inline-flex dark:border-moss-900 dark:bg-moss-900/30 dark:text-moss-100 dark:hover:bg-moss-900/50"
-                title={t("planner_home.topbar_clients_aria")}
-                aria-label={`${t("planner_home.topbar_clients_aria")}: ${stats.active_clients}/${stats.max_clients}`}
-              >
-                <Users size={13} aria-hidden="true" className="text-moss-600 dark:text-moss-300" />
-                {`${stats.plan} · ${stats.active_clients}/${stats.max_clients}`}
-              </Link>
-            )}
+            <button
+              type="button"
+              onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
+              title={`${t("nav.switch_language")} (${locale} → ${locale === "hu" ? "en" : "hu"})`}
+              aria-label={t("nav.switch_language")}
+            >
+              <Languages size={18} aria-hidden="true" />
+            </button>
 
             <NotificationBell overdue={stats?.overdue_tasks ?? 0} pendingInvites={invites.length} />
 
@@ -400,6 +400,7 @@ export function PlannerShell({ children }: { children: ReactNode }) {
               <PlannerProfileMenu
                 user={user}
                 avatarUrl={avatarUrl}
+                stats={stats}
                 onLogout={() => void onLogout()}
               />
             )}

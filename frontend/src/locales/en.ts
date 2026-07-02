@@ -6716,6 +6716,7 @@ const en: LocaleMessages = {
   planner_shell: {
     menu_label: "Account menu",
     menu_account: "Settings",
+    menu_plan: "Plan",
   },
   planner_stats: {
     meta_title: "Statistics · Weddly",
