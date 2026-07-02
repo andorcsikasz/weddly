@@ -5,7 +5,7 @@ import { existsSync } from "node:fs";
 import { join, sep } from "node:path";
 import { extractToken, verifySessionToken } from "./auth/session";
 import { CONFIG } from "./config";
-import "./db"; // open DB + apply schema
+import { db } from "./db"; // open DB + apply schema
 import "./init_households"; // idempotent backfill: couple slugs + households
 import { initObservability, captureException } from "./lib/observability";
 
@@ -652,33 +652,74 @@ const server = Bun.serve({
   // upload (a 4 MB image plus multipart overhead) with headroom.
   maxRequestBodySize: 8 * 1024 * 1024,
   async fetch(req) {
-    let res: Response;
+    inflightRequests++;
     try {
-      res = await handleRequest(req);
-    } catch (e) {
-      // Last-resort guard: a throw from OUTSIDE handleRequest's own try/catch
-      // (e.g. the static/SSR fallback path, which runs before the handler try)
-      // would otherwise surface as Bun's default 500 with none of our security
-      // headers or request id. Emit a sanitized 500 instead.
-      captureException(e, { route: new URL(req.url).pathname, method: req.method });
-      res = httpErr(500, "Internal server error");
+      return await serveOne(req);
+    } finally {
+      inflightRequests--;
     }
-    // Compress dynamic text responses (SSR HTML, JSON, sitemap/robots/llms).
-    // Static assets are served from precompressed siblings inside
-    // handleRequest and already carry Content-Encoding, so this is a no-op
-    // for them. See lib/compression.ts.
-    res = await maybeCompress(req, res);
-    // Belt-and-suspenders: guarantee the baseline security headers on EVERY
-    // response. The success + static branches in handleRequest already set them;
-    // the error branches (401/402/404/500) only set CORS, and the redirect/
-    // fallback paths set nothing — this closes that gap in one place.
-    const headers = new Headers(res.headers);
-    for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
-      if (!headers.has(k)) headers.set(k, v);
-    }
-    return new Response(res.body, { status: res.status, headers });
   },
 });
+
+// Counts requests currently inside serveOne. The SIGTERM drain below waits on
+// this so a redeploy never cuts a response off mid-write.
+let inflightRequests = 0;
+
+async function serveOne(req: Request): Promise<Response> {
+  let res: Response;
+  try {
+    res = await handleRequest(req);
+  } catch (e) {
+    // Last-resort guard: a throw from OUTSIDE handleRequest's own try/catch
+    // (e.g. the static/SSR fallback path, which runs before the handler try)
+    // would otherwise surface as Bun's default 500 with none of our security
+    // headers or request id. Emit a sanitized 500 instead.
+    captureException(e, { route: new URL(req.url).pathname, method: req.method });
+    res = httpErr(500, "Internal server error");
+  }
+  // Compress dynamic text responses (SSR HTML, JSON, sitemap/robots/llms).
+  // Static assets are served from precompressed siblings inside
+  // handleRequest and already carry Content-Encoding, so this is a no-op
+  // for them. See lib/compression.ts.
+  res = await maybeCompress(req, res);
+  // Belt-and-suspenders: guarantee the baseline security headers on EVERY
+  // response. The success + static branches in handleRequest already set them;
+  // the error branches (401/402/404/500) only set CORS, and the redirect/
+  // fallback paths set nothing — this closes that gap in one place.
+  const headers = new Headers(res.headers);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    if (!headers.has(k)) headers.set(k, v);
+  }
+  return new Response(res.body, { status: res.status, headers });
+}
+
+// Graceful shutdown. Railway sends SIGTERM on every redeploy/restart and keeps
+// the old container alive alongside the new one for 20s (overlapSeconds in
+// railway.json). Without a handler Bun dies instantly and any in-flight
+// request surfaces as a 502 at the edge. Here we stop accepting new
+// connections, let in-flight requests drain (10s cap, well inside the 20s
+// overlap), then close SQLite cleanly so the WAL is checkpointed.
+if (process.env.NODE_ENV !== "test") {
+  let shuttingDown = false;
+  const shutdown = async (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    log.info("server.shutdown.begin", { signal, inflight: inflightRequests });
+    server.stop(); // refuse new connections; in-flight requests keep running
+    const deadline = Date.now() + 10_000;
+    while (inflightRequests > 0 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (inflightRequests > 0) {
+      log.warn("server.shutdown.drain_timeout", { inflight: inflightRequests });
+    }
+    db.close();
+    log.info("server.shutdown.done", { signal });
+    process.exit(0);
+  };
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+}
 
 // Pause-to-delete sweep — only in real environments. Tests drive it directly.
 if (process.env.NODE_ENV !== "test") {
