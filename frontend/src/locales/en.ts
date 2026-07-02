@@ -1353,6 +1353,7 @@ const en: LocaleMessages = {
     pricing_bullet_2: "Every feature open to couples",
     pricing_bullet_3: "CSV / PDF export, included",
     pricing_bullet_4: "Pause any time · 30-day grace",
+    pricing_bullet_referral: "Referrals: 1 free month per invited couple, 2 per vendor",
     pricing_v2_note: "Once the first 200 spots fill, new couples start the 2-week free trial.",
     mockup_aria_dashboard: "Weddly dashboard preview",
     mockup_aria_budget: "Live budget mockup",

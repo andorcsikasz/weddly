@@ -1575,6 +1575,9 @@ export interface LocaleMessages {
     pricing_bullet_2: string;
     pricing_bullet_3: string;
     pricing_bullet_4: string;
+    /** Referral value-prop bullet on the pricing card — the program itself
+     *  lives in Settings → Billing once signed in. */
+    pricing_bullet_referral: string;
     pricing_v2_note: string;
     /** aria-labels for the four decorative landing-page SVG mockups. */
     mockup_aria_dashboard: string;

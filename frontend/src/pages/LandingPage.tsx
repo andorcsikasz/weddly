@@ -576,6 +576,9 @@ export default function LandingPage() {
                 <IconRow tone="coffee" icon={<Pause size={16} />}>
                   {t("landing.pricing_bullet_4")}
                 </IconRow>
+                <IconRow tone="coffee" icon={<Share2 size={16} />}>
+                  {t("landing.pricing_bullet_referral")}
+                </IconRow>
               </ul>
               <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg mt-6 w-full">
                 {t("landing.cta_signup")}

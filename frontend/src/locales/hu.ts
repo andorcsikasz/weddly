@@ -1369,6 +1369,8 @@ const hu: LocaleMessages = {
     pricing_bullet_2: "Minden funkció elérhető a pároknak",
     pricing_bullet_3: "Korlátlan CSV- és PDF-export",
     pricing_bullet_4: "Bármikor szüneteltethető · 30 nap türelmi idő",
+    pricing_bullet_referral:
+      "Ajánlói program: meghívott pár után 1, szolgáltató után 2 hónap ingyen",
     pricing_v2_note: "Ha betelik a 200 hely, az új párok a 2 hetes ingyenes próbával kezdenek.",
     mockup_aria_dashboard: "Wēddly vezérlőpult-előnézet",
     mockup_aria_budget: "Élő költségvetés-előnézet",

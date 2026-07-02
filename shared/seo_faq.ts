@@ -67,6 +67,11 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
       cta: { href: "/signup", label: "Nézd meg élőben" },
     },
     {
+      q: "Van ajánlói program?",
+      a: "Van. A fiókodban találsz egy személyes ajánlói linket: minden pár után, amelynek mindkét tagja a linkeden keresztül regisztrál, 1 hónapot kapsz ingyen, minden szolgáltató után, aki aktiválja a fiókját, 2 hónapot.",
+      cta: { href: "/signup", label: "Szerezd meg a saját linked" },
+    },
+    {
       q: "Mi jön később?",
       a: "A szolgáltatófoglalás, az esküvő utáni galéria, a köszönetkövetés és az értékelések a későbbi verziókban érkeznek. A jelenlegi termék már most lefedi az esküvő előtti fő tervezési folyamatot.",
     },
@@ -113,6 +118,11 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
       q: "Is Weddly ready to use today?",
       a: "Yes. The core planning flow is live today: budget, guest list, personal RSVP links, visual seating, printable PDFs, day-of schedule, task timeline and your guest page. The curated supplier directory is also live, with direct contact details for every listing.",
       cta: { href: "/signup", label: "See it live" },
+    },
+    {
+      q: "Is there a referral program?",
+      a: "Yes. Your account includes a personal referral link: you get 1 free month for every couple where both partners sign up through your link, and 2 free months for every vendor who activates their account.",
+      cta: { href: "/signup", label: "Get your link" },
     },
     {
       q: "What is coming later?",
