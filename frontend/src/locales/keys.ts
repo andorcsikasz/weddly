@@ -7291,6 +7291,13 @@ export interface LocaleMessages {
     step_label_contact: string;
     form_title: string;
     step1_cta: string;
+    faq_title: string;
+    faq_1_q: string;
+    faq_1_a: string;
+    faq_2_q: string;
+    faq_2_a: string;
+    faq_3_q: string;
+    faq_3_a: string;
   };
   planner_nav: {
     greeting: string;

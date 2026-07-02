@@ -6766,6 +6766,16 @@ const hu: LocaleMessages = {
     step_label_contact: "Kapcsolat",
     form_title: "Jelentkezem",
     step1_cta: "Tovább a jelentkezéshez",
+    faq_title: "Gyakori kérdések",
+    faq_1_q: "Miben más a szervezői fiók, mint a párok munkaterülete?",
+    faq_1_a:
+      "A pár egyetlen esküvőt tervez a saját munkaterületén. A szervezői fiók e fölött ül: az összes ügyfeled munkaterületét egy nézetből éred el, közös naptárral, páronkénti feladatlistákkal és határidőkkel.",
+    faq_2_q: "Miben más a szervező, mint a szolgáltató?",
+    faq_2_a:
+      "A szolgáltató (fotós, zenekar, helyszín) a katalógusban hirdeti magát, és a párok találnak rá. A szervező aktívan viszi az esküvőket: a pár jóváhagyásával hozzáfér a vendéglistához, az ültetési tervhez és a dokumentumokhoz, és bennük is dolgozik.",
+    faq_3_q: "Miért éri meg szervezőként a Weddly?",
+    faq_3_a:
+      "Nem kell táblázatok, e-mail szálak és jegyzetek között ugrálnod: minden pár adata egy helyen él, és a párjaid ugyanabban a rendszerben dolgoznak, így egy státusz vagy határidő sem csúszik el.",
   },
   planner_nav: {
     greeting: "Üdv, {{name}}!",

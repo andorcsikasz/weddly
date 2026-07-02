@@ -881,7 +881,9 @@ function FoundingCouplesBand() {
             </button>
           </div>
           {copyFallback && (
-            <p className="mt-1 max-w-xs break-all text-xs text-paper-400 dark:text-umber-600">{copyFallback}</p>
+            <p className="mt-1 max-w-xs break-all text-xs text-paper-400 dark:text-umber-600">
+              {copyFallback}
+            </p>
           )}
         </div>
       </div>

@@ -6711,6 +6711,16 @@ const en: LocaleMessages = {
     step_label_contact: "Contact",
     form_title: "Sign up",
     step1_cta: "Continue to registration",
+    faq_title: "Common questions",
+    faq_1_q: "How is a planner account different from a couple's workspace?",
+    faq_1_a:
+      "A couple plans a single wedding in their own workspace. A planner account sits above that: you reach every client's workspace from one view, with a shared calendar plus per-couple task boards and deadlines.",
+    faq_2_q: "How is a planner different from a vendor?",
+    faq_2_a:
+      "Vendors (photographers, bands, venues) list themselves in the directory and couples find them. Planners actively run weddings: with the couple's approval you access and work in their guest list, seating chart and documents.",
+    faq_3_q: "Why is Weddly worth it for a planner?",
+    faq_3_a:
+      "No more juggling spreadsheets, email threads and notes: every couple's data lives in one place, and your couples work in the same system, so no status or deadline ever slips.",
   },
   planner_nav: {
     greeting: "Hi, {{name}}!",

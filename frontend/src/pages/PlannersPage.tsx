@@ -3,7 +3,15 @@
 // Phase 2: open paid tiers (basic / pro / unlimited).
 
 import { PRIVACY_VERSION } from "@shared/legal";
-import { Check, CheckCircle2, ClipboardList, FileText, LayoutGrid, Users } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ClipboardList,
+  FileText,
+  LayoutGrid,
+  Users,
+} from "lucide-react";
 import { type CSSProperties, Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
@@ -1086,6 +1094,48 @@ function BetaOffer() {
   );
 }
 
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+// Same details/summary card pattern as the landing-page FAQ; answers the
+// "planner vs vendor vs couple" positioning doubts left after the form.
+
+function PlannerFaq() {
+  const { t } = useT();
+  const entries = [1, 2, 3].map((i) => ({
+    q: t(`planners.faq_${i}_q`),
+    a: t(`planners.faq_${i}_a`),
+  }));
+  return (
+    <section className="border-t border-paper-200 dark:border-umber-800">
+      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <h2 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
+          {t("planners.faq_title")}
+        </h2>
+        <div className="mt-6 space-y-2 sm:mt-8">
+          {entries.map((entry) => (
+            <details
+              key={entry.q}
+              className="group rounded-xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-4 py-3 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-5 sm:py-3.5"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left">
+                <span className="font-grotesk text-base font-medium text-umber-900 dark:text-paper-50 sm:text-lg">
+                  {entry.q}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className="shrink-0 text-umber-700 dark:text-umber-300 transition-transform group-open:rotate-180"
+                />
+              </summary>
+              <p className="mt-2.5 font-grotesk text-sm leading-relaxed text-umber-700 dark:text-umber-200">
+                {entry.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function PlannersPage() {
@@ -1149,6 +1199,9 @@ export default function PlannersPage() {
             No plan is preselected: the user picks deliberately on step 4
             rather than being defaulted into the largest tier. */}
         <RegistrationForm initialPlan="" />
+
+        {/* ── FAQ ── */}
+        <PlannerFaq />
 
         {/* ── Footer escape links ── */}
         <section className="border-t border-paper-200 px-4 py-10 text-center dark:border-umber-800">
