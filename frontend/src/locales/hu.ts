@@ -4268,6 +4268,7 @@ const hu: LocaleMessages = {
     fin_projected_arr: "Várható ARR a(z) {n}. hónapban",
     fin_subscribers_suffix: "pár",
     nav_group_inbox: "Beérkező",
+    nav_group_accounts: "Fiókok",
     nav_group_manage: "Kezelés",
     nav_group_insights: "Statisztika",
     taxonomy_title: "Szolgáltatói kategóriák",

@@ -4223,6 +4223,7 @@ const en: LocaleMessages = {
     fin_projected_arr: "Projected ARR at month {n}",
     fin_subscribers_suffix: "couples",
     nav_group_inbox: "Inbox",
+    nav_group_accounts: "Accounts",
     nav_group_manage: "Manage",
     nav_group_insights: "Insights",
     taxonomy_title: "Supplier categories",

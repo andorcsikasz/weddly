@@ -4756,6 +4756,7 @@ export interface LocaleMessages {
     /** Admin rail group subheads. Inbox = badge-bearing moderation
      *  queues; Manage = CRM + config; Insights = read-only analytics. */
     nav_group_inbox: string;
+    nav_group_accounts: string;
     nav_group_manage: string;
     nav_group_insights: string;
     /** /app/admin/categories page — supplier groups + categories CRUD. */

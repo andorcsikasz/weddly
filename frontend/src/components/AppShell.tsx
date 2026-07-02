@@ -218,10 +218,12 @@ const ITEMS: NavItem[] = [
  *  rows don't blur the difference between "do work" and "look at numbers":
  *   - `inbox` — badge-bearing moderation queues (suppliers, vendor
  *     waitlist, feedback). What an admin opens the dashboard to clear.
- *   - `manage` — CRM + taxonomy config (users, categories). Stable
+ *   - `accounts` — the three account directories (users, planners,
+ *     vendors). Who is on the platform.
+ *   - `manage` — taxonomy + content + email config. Stable
  *     edit-when-needed surfaces.
  *   - `insights` — read-only rollups (analytics). Tail of the rail. */
-type AdminNavGroup = "inbox" | "manage" | "insights";
+type AdminNavGroup = "inbox" | "accounts" | "manage" | "insights";
 
 /** Maps each admin nav row to the matching `AdminSidebarBadges` key.
  *  Items without a badgeKey never show a red index (e.g. Categories —
@@ -280,30 +282,32 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     icon: <Layers size={18} />,
     group: "inbox",
   },
-  // ── Manage ────────────────────────────────────────────────────────
-  // CRM + config. Stable surfaces, edited as needed.
+  // ── Accounts ──────────────────────────────────────────────────────
+  // The three account directories — who is on the platform.
   {
     to: "/app/admin/users",
     labelKey: "admin.nav_users",
     tabKey: "admin.tab_users",
     icon: <UserCog size={18} />,
     badgeKey: "users",
-    group: "manage",
-  },
-  {
-    to: "/app/admin/vendors",
-    labelKey: "admin.nav_vendors",
-    // no tabKey — goes to the phone More sheet
-    icon: <Store size={18} />,
-    group: "manage",
+    group: "accounts",
   },
   {
     to: "/app/admin/planners",
     labelKey: "admin.nav_planners",
     // no tabKey — goes to the phone More sheet
     icon: <Handshake size={18} />,
-    group: "manage",
+    group: "accounts",
   },
+  {
+    to: "/app/admin/vendors",
+    labelKey: "admin.nav_vendors",
+    // no tabKey — goes to the phone More sheet
+    icon: <Store size={18} />,
+    group: "accounts",
+  },
+  // ── Manage ────────────────────────────────────────────────────────
+  // Taxonomy + content + email config. Stable surfaces, edited as needed.
   {
     to: "/app/admin/categories",
     labelKey: "admin.nav_taxonomy",
@@ -1005,14 +1009,17 @@ function SideLink({
   // the same height collapsed or expanded, and an icon stays on the exact
   // same row when the user toggles the rail (paired with the fixed-height
   // SidebarGroupHeader below, which does the same for section breaks).
-  // `lg:w-auto` on purpose: in the flex column it stretches the row to the
-  // full rail width, so the active pill's dark background runs all the way
-  // under the floating collapse toggle — the toggle's own paper disc keeps it
-  // readable on top. (A `w-fit` pill that stops at the label was tried and
-  // rejected: the dark part must reach under the « icon.)
+  // `lg:w-auto` on purpose: in the flex column it stretches the row to fill
+  // its width, so the active pill's dark background runs all the way under the
+  // floating collapse toggle — the toggle's own paper disc keeps it readable on
+  // top. (A `w-fit` pill that stops at the label was tried and rejected: the
+  // dark part must reach under the « icon.) `lg:mx-2` insets the pill box by the
+  // same 8px the section dividers use (`inset-x-2`), so the dark header, every
+  // hover row, and the group hairlines all share one left/right axis instead of
+  // the pill bleeding flush to the rail edges and looking ~8px wider.
   const shape = collapsed
     ? "h-8 w-9 justify-center"
-    : "h-8 w-9 justify-center lg:w-auto lg:justify-start lg:px-3";
+    : "h-8 w-9 justify-center lg:mx-2 lg:w-auto lg:justify-start lg:px-3";
   return (
     <NavLink
       to={to}
@@ -1079,7 +1086,7 @@ function AdminSideLink({
 }) {
   const shape = collapsed
     ? "h-8 w-9 justify-center"
-    : "h-8 w-9 justify-center lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
+    : "h-8 w-9 justify-center lg:mx-2 lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
   return (
     <NavLink
       to={to}
