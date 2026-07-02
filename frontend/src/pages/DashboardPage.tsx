@@ -1832,7 +1832,7 @@ function DaysToGoTile({
 // tiles beside it; a filled white heart opens the two short sentences.
 function PastWeddingTile({ label, message }: { label: string; message: string }) {
   return (
-    <div className="card border-0 bg-celebrate p-4 text-paper-50">
+    <div className="rounded-2xl bg-celebrate p-4 text-paper-50 shadow-soft">
       <Heart size={16} fill="currentColor" className="text-paper-50" aria-hidden="true" />
       <p className="mt-2 text-sm font-semibold leading-snug text-paper-50">{label}</p>
       <p className="mt-1 text-sm leading-snug text-paper-50/90">{message}</p>
