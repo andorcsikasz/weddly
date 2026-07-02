@@ -511,21 +511,25 @@ export function WeddingSiteView({
     : t("wedding_site.date_tbd");
 
   // The editorial hero sets the date BIG + letter-spaced as the page's
-  // signature element (e.g. "2026 · 09 · 12"). Always numeric-spaced regardless
-  // of the couple's text date_format (a long month name doesn't carry the
-  // poster feel) — EXCEPT the year-less pick (numeric_md), which the hero
-  // honours ("09 · 12") since dropping the year is the whole point of it.
-  // Null when there's no plausible date yet.
-  const heroDateBig = isPlausibleDateIso(view.wedding_date)
-    ? formatWeddingDate(
-        view.wedding_date,
-        view.design.date_format === "numeric_md" ? "numeric_md" : "numeric_dot",
-        locale,
-      )
-        .replace(/\.$/, "")
-        .split(".")
-        .join(" · ")
-    : null;
+  // signature element, following the couple's CHOSEN date format (the picker
+  // must visibly change the site, not just the printables). Numeric formats
+  // are re-spaced with middle dots for the poster feel ("2026 · 09 · 12" /
+  // "09 · 12"); slash and roman render verbatim; the spelled-out long format
+  // gets a smaller, tighter treatment below so a month name fits a phone
+  // hero. Null when there's no plausible date yet.
+  const heroDateBig = (() => {
+    if (!isPlausibleDateIso(view.wedding_date)) return null;
+    const slug = view.design.date_format;
+    const raw = formatWeddingDate(view.wedding_date, slug, locale);
+    if (slug === "numeric_dot" || slug === "numeric_md") {
+      return raw.replace(/\.$/, "").split(".").join(" · ");
+    }
+    return raw;
+  })();
+  const heroDateSizeClass =
+    view.design.date_format === "long"
+      ? "text-3xl tracking-[0.06em] sm:text-5xl"
+      : "text-5xl tracking-[0.18em] sm:text-7xl";
 
   // Section hiding applies to the LIVE page only — the editor preview keeps
   // every section visible so the couple can still edit hidden ones.
@@ -695,7 +699,7 @@ export function WeddingSiteView({
                     type="button"
                     onClick={e.onEditDate}
                     title={editHint}
-                    className="pointer-events-auto mx-auto mt-7 block rounded-md px-2 py-1 text-5xl tracking-[0.18em] transition hover:opacity-80 sm:text-7xl"
+                    className={`pointer-events-auto mx-auto mt-7 block rounded-md px-2 py-1 transition hover:opacity-80 ${heroDateSizeClass}`}
                     style={{
                       fontFamily: "var(--wt-heading-font)",
                       color: heroTextColor,
@@ -706,7 +710,7 @@ export function WeddingSiteView({
                   </button>
                 ) : (
                   <p
-                    className="mx-auto mt-7 text-5xl tracking-[0.18em] sm:text-7xl"
+                    className={`mx-auto mt-7 ${heroDateSizeClass}`}
                     style={{
                       fontFamily: "var(--wt-heading-font)",
                       color: heroTextColor,
@@ -769,14 +773,14 @@ export function WeddingSiteView({
                     type="button"
                     onClick={e.onEditDate}
                     title={editHint}
-                    className="relative z-10 mx-auto mt-7 block rounded-md px-2 py-1 text-5xl tracking-[0.18em] transition hover:opacity-80 sm:text-7xl"
+                    className={`relative z-10 mx-auto mt-7 block rounded-md px-2 py-1 transition hover:opacity-80 ${heroDateSizeClass}`}
                     style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
                   >
                     {heroDateBig}
                   </button>
                 ) : (
                   <p
-                    className="relative z-10 mx-auto mt-7 text-5xl tracking-[0.18em] sm:text-7xl"
+                    className={`relative z-10 mx-auto mt-7 ${heroDateSizeClass}`}
                     style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
                     aria-label={dateLine}
                   >
