@@ -2453,6 +2453,7 @@ const en: LocaleMessages = {
     },
     date: {
       numeric_dot: "Numeric",
+      numeric_md: "Month & day",
       long: "Long",
       slash: "Slashes",
       roman: "Roman",

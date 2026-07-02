@@ -512,10 +512,16 @@ export function WeddingSiteView({
 
   // The editorial hero sets the date BIG + letter-spaced as the page's
   // signature element (e.g. "2026 · 09 · 12"). Always numeric-spaced regardless
-  // of the couple's text date_format, since the long month name doesn't carry
-  // the same poster feel. Null when there's no plausible date yet.
+  // of the couple's text date_format (a long month name doesn't carry the
+  // poster feel) — EXCEPT the year-less pick (numeric_md), which the hero
+  // honours ("09 · 12") since dropping the year is the whole point of it.
+  // Null when there's no plausible date yet.
   const heroDateBig = isPlausibleDateIso(view.wedding_date)
-    ? formatWeddingDate(view.wedding_date, "numeric_dot", locale)
+    ? formatWeddingDate(
+        view.wedding_date,
+        view.design.date_format === "numeric_md" ? "numeric_md" : "numeric_dot",
+        locale,
+      )
         .replace(/\.$/, "")
         .split(".")
         .join(" · ")

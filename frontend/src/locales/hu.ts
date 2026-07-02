@@ -2476,6 +2476,7 @@ const hu: LocaleMessages = {
     },
     date: {
       numeric_dot: "Számjegyes",
+      numeric_md: "Hónap és nap",
       long: "Hosszú",
       slash: "Perjeles",
       roman: "Római",

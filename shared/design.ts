@@ -104,8 +104,10 @@ export const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 export type MonogramSeparatorSlug = "amp" | "plus" | "slash" | "and";
 
 /** How the wedding date is rendered across the guest page + printables. The
- *  concrete formatting is locale-aware - see {@link formatWeddingDate}. */
-export type DateFormatSlug = "numeric_dot" | "long" | "slash" | "roman";
+ *  concrete formatting is locale-aware - see {@link formatWeddingDate}.
+ *  `numeric_md` is the year-less variant (MM.DD) for couples who want the
+ *  poster date without the year. */
+export type DateFormatSlug = "numeric_dot" | "numeric_md" | "long" | "slash" | "roman";
 
 /** The ornament "language" a style pack speaks - drives the divider / frame /
  *  corner marks rendered on both the guest page and the printed cards. The
@@ -626,6 +628,7 @@ export const MONOGRAM_SEPARATORS: readonly { slug: MonogramSeparatorSlug; glyph:
 
 export const DATE_FORMATS: readonly { slug: DateFormatSlug; nameKey: string }[] = [
   { slug: "numeric_dot", nameKey: "design.date.numeric_dot" },
+  { slug: "numeric_md", nameKey: "design.date.numeric_md" },
   { slug: "long", nameKey: "design.date.long" },
   { slug: "slash", nameKey: "design.date.slash" },
   { slug: "roman", nameKey: "design.date.roman" },
@@ -1037,6 +1040,10 @@ export function formatWeddingDate(
   const day = Number(d);
   if (slug === "numeric_dot") {
     return locale === "hu" ? `${year}.${mo}.${d}.` : `${year}.${mo}.${d}`;
+  }
+  if (slug === "numeric_md") {
+    // Year-less numeric (MM.DD) - the date as a monogram-like mark.
+    return locale === "hu" ? `${mo}.${d}.` : `${mo}.${d}`;
   }
   if (slug === "slash") {
     return locale === "hu" ? `${year}/${mo}/${d}` : `${mo}/${d}/${year}`;

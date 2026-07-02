@@ -2680,6 +2680,7 @@ export interface LocaleMessages {
     /** Date-format preset names. */
     date: {
       numeric_dot: string;
+      numeric_md: string;
       long: string;
       slash: string;
       roman: string;
