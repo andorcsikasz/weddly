@@ -764,6 +764,11 @@ export interface DesignWebsiteOptions {
   hiddenSections: WebsiteSectionSlug[];
   /** Photo rendering — desaturate cover/venue imagery or leave full colour. */
   imageTreatment: ImageTreatmentSlug;
+  /** Opt-in: show the embedded venue map (exact pin) to EVERYONE, not just
+   *  confirmed guests. Off by default — the privacy buffer stays the public
+   *  face until the couple explicitly flips this. The public-wedding endpoint
+   *  reads it server-side to decide whether to expose the coordinates. */
+  venueMap: boolean;
 }
 
 /** Resolve a card-radius slug to its CSS length; never throws. */
@@ -798,6 +803,7 @@ export const DEFAULT_DESIGN: CoupleDesign = {
     buttonStyle: "outline",
     hiddenSections: [],
     imageTreatment: "none",
+    venueMap: false,
   },
 };
 
@@ -882,6 +888,7 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
         i.web?.imageTreatment && VALID_IMAGE_TREATMENTS.has(i.web.imageTreatment)
           ? i.web.imageTreatment
           : DEFAULT_DESIGN.web.imageTreatment,
+      venueMap: typeof i.web?.venueMap === "boolean" ? i.web.venueMap : DEFAULT_DESIGN.web.venueMap,
     },
   };
 }

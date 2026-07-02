@@ -117,6 +117,11 @@ function buildView(
       ? (couple.ceremony_kind as CeremonyKind)
       : null;
   const isConfirmed = tier === "confirmed";
+  const design = parseDesignJson(couple.design_json);
+  // Exact venue pin: confirmed tier, OR the couple explicitly opted in to a
+  // public venue map on /app/design (design.web.venueMap). The privacy buffer
+  // stays the default; the toggle is the couple's deliberate reveal.
+  const exposePin = isConfirmed || design.web.venueMap;
   return {
     couple_slug: couple.slug ?? "",
     couple_display_name: couple.display_name,
@@ -129,14 +134,16 @@ function buildView(
     cover_image_url: couple.cover_image_url,
     cover_position_x: couple.cover_position_x,
     cover_position_y: couple.cover_position_y,
+    // Optional fixed-slot photos — presentation content, visible at every tier.
+    site_image_1_url: couple.site_image_1_url,
+    site_image_2_url: couple.site_image_2_url,
     guest_page_intro: couple.guest_page_intro,
     useful_info: couple.useful_info,
-    // Exact venue pin — confirmed tier only. The privacy buffer
-    // (`location_radius_km`) is the public face; the precise coordinates
-    // unlock once a household member has RSVP'd yes. Server-side null
-    // at lower tiers so a tampered client can't surface them.
-    location_lat: isConfirmed ? couple.location_lat : null,
-    location_lng: isConfirmed ? couple.location_lng : null,
+    // Exact venue pin — confirmed tier, or the couple's explicit public-map
+    // opt-in (exposePin above). Server-side null otherwise so a tampered
+    // client can't surface the coordinates.
+    location_lat: exposePin ? couple.location_lat : null,
+    location_lng: exposePin ? couple.location_lng : null,
     location_radius_km: couple.location_radius_km,
     // Post-RSVP markdown block — confirmed tier only. Same omit-server-side
     // rule as the pin: the response simply doesn't include the data
@@ -153,7 +160,7 @@ function buildView(
     // Visual identity — presentation-only, never gated (styling is public).
     // Resolved to hex + font stacks; the guest page reads these straight into
     // CSS custom properties. NULL/legacy design_json → Botanical Green.
-    design: toPublicDesign(parseDesignJson(couple.design_json)),
+    design: toPublicDesign(design),
     fetched_at: now(),
   };
 }

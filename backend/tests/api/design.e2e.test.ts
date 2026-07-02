@@ -45,6 +45,7 @@ interface CoupleDesign {
     buttonStyle: string;
     hiddenSections: string[];
     imageTreatment: string;
+    venueMap: boolean;
   };
 }
 
@@ -171,6 +172,7 @@ describe("design: default resolution", () => {
         buttonStyle: "outline",
         hiddenSections: [],
         imageTreatment: "none",
+        venueMap: false,
       },
     });
   });
@@ -500,6 +502,7 @@ describe("design: website-only `web` sub-object", () => {
       buttonStyle: "outline",
       hiddenSections: [],
       imageTreatment: "none",
+      venueMap: false,
     });
   });
 

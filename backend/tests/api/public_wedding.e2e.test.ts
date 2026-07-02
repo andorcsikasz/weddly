@@ -1007,6 +1007,54 @@ describe("GET /api/guest/portal — legacy redirect-shim", () => {
   });
 });
 
+describe("public venue map opt-in (design.web.venueMap)", () => {
+  test("exact pin stays hidden at the public tier by default", async () => {
+    const { coupleId } = await bootstrapCouple("venue-map-off@weddly.test");
+    db.prepare(
+      "UPDATE couples SET is_public = 1, location_lat = 47.4979, location_lng = 19.0402 WHERE id = ?",
+    ).run(coupleId);
+    const slug = await getSlug(coupleId);
+    const r = await req<PublicWeddingResponse>("GET", `/api/public/wedding/${slug}`);
+    expect(r.status).toBe(200);
+    expect(r.data.wedding.location_lat).toBeNull();
+    expect(r.data.wedding.location_lng).toBeNull();
+  });
+
+  test("flipping the toggle via PATCH design exposes the pin to everyone", async () => {
+    const { token, coupleId } = await bootstrapCouple("venue-map-on@weddly.test");
+    db.prepare(
+      "UPDATE couples SET is_public = 1, location_lat = 47.4979, location_lng = 19.0402 WHERE id = ?",
+    ).run(coupleId);
+    const patch = await req<{ couple: { design: { web: { venueMap: boolean } } } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { venueMap: true } } },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.couple.design.web.venueMap).toBe(true);
+
+    const slug = await getSlug(coupleId);
+    const r = await req<PublicWeddingResponse>("GET", `/api/public/wedding/${slug}`);
+    expect(r.status).toBe(200);
+    expect(r.data.wedding.location_lat).toBeCloseTo(47.4979);
+    expect(r.data.wedding.location_lng).toBeCloseTo(19.0402);
+  });
+
+  test("non-boolean venueMap → 400", async () => {
+    const { token } = await bootstrapCouple("venue-map-bad@weddly.test");
+    const patch = await req(
+      "PATCH",
+      "/api/couples/current",
+      {
+        design: { web: { venueMap: "yes" } },
+      },
+      { token },
+    );
+    expect(patch.status).toBe(400);
+  });
+});
+
 // Force-mention the imported view type so the explicit cast above is not
 // flagged as unused on a fresh checkout where the file may compile before
 // the new helpers are referenced.

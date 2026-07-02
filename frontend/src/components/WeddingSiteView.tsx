@@ -617,6 +617,22 @@ export function WeddingSiteView({
     </div>
   );
 
+  // Optional fixed-slot photos: full-bleed editorial image bands, honouring the
+  // photo treatment (grayscale cross-fades with the cover). Empty slot = no
+  // band; the slots are managed on /app/design.
+  const siteImageBand = (url: string | null | undefined) =>
+    url ? (
+      <section className="w-full">
+        <img
+          src={url}
+          alt=""
+          loading="lazy"
+          className="aspect-[3/2] max-h-[70vh] w-full object-cover sm:aspect-[21/9]"
+          style={{ filter: imgFilter, transition: "filter 400ms ease" }}
+        />
+      </section>
+    ) : null;
+
   return (
     <div className="wedding-theme w-full" style={themeStyle}>
       {/* ── Hero ────────────────────────────────────────────────────────────
@@ -891,6 +907,9 @@ export function WeddingSiteView({
           />
         </Band>
       ) : null}
+
+      {/* ── Optional photo slot 1 — full-bleed band after the welcome note. ── */}
+      {siteImageBand(view.site_image_1_url)}
 
       {/* ── Invited tier — personal hello + member list (live page only). ── */}
       {!isPreview && showInvitedExtras && household && (
@@ -1210,6 +1229,9 @@ export function WeddingSiteView({
           ) : null}
         </Band>
       )}
+
+      {/* ── Optional photo slot 2 — full-bleed band before the RSVP ask. ── */}
+      {siteImageBand(view.site_image_2_url)}
 
       {/* ── RSVP CTA — generic at the public tier, personal at invited. ─── */}
       {(isPreview || !showConfirmedExtras) && (

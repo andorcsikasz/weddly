@@ -81,6 +81,9 @@ describe("<DesignPage> smoke (/app/design/website)", () => {
     expect(screen.getByText("Kártya lekerekítés")).toBeInTheDocument();
     expect(screen.getByText("Kártya árnyék")).toBeInTheDocument();
     expect(screen.getByText("Látható szakaszok")).toBeInTheDocument();
+    expect(screen.getByText("Térkép a helyszínnél")).toBeInTheDocument();
+    expect(screen.getByText("1. kép")).toBeInTheDocument();
+    expect(screen.getByText("2. kép")).toBeInTheDocument();
     expect(screen.getByText("Haladó: egyedi színek")).toBeInTheDocument();
     expect(screen.getByText("Tetszik az összkép?")).toBeInTheDocument();
 

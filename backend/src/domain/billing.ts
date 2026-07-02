@@ -344,6 +344,9 @@ const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "
 const GUEST_PAGE_ADDON_PATHS: ReadonlySet<string> = new Set([
   "/api/couples/current",
   "/api/couples/current/cover",
+  // The two fixed-slot site photos are guest-page content, same as the cover.
+  "/api/couples/current/site-photo/1",
+  "/api/couples/current/site-photo/2",
 ]);
 
 function onAnyPrefix(pathname: string, prefixes: readonly string[]): boolean {

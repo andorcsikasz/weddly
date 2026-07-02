@@ -2620,7 +2620,15 @@ export interface LocaleMessages {
       shadow_label: string;
       button_style_label: string;
       sections_label: string;
+      /** Public venue-map opt-in row (in the sections list) + its disabled
+       *  tooltip when no venue coordinates are set yet. */
+      venue_map_label: string;
+      venue_map_needs_location: string;
       image_treatment_label: string;
+      /** The two optional fixed-slot site photos (upload tiles + errors). */
+      photo_slot: string;
+      photo_remove: string;
+      photo_upload_error: string;
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };
       button_style: { lifted: string; flat: string; outline: string };
@@ -6180,6 +6188,15 @@ export interface LocaleMessages {
     welcome_desk_toggle_off: string;
     welcome_desk_status_on: string;
     welcome_desk_status_off: string;
+    /** "Email notifications" card on the account settings tab — the in-app
+     *  home of the lifecycle opt-out flag behind /api/account/email-preferences.
+     *  Every lifecycle email's footer "preferences" link points here
+     *  (#email-preferences anchor). Transactional mail is unaffected. */
+    email_prefs_title: string;
+    email_prefs_body: string;
+    email_prefs_toggle_aria: string;
+    email_prefs_on: string;
+    email_prefs_off: string;
     /** "Wedding RSVP" settings card on /app/profile. Today it carries a
      *  single opt-in: whether the RSVP flow asks guests if they need
      *  accommodation. Default off so couples who don't offer it don't ask. */

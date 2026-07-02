@@ -648,6 +648,13 @@ export interface Couple {
    *  (defaults to 50/50 at the render site) so legacy/fixture literals omit it. */
   cover_position_x?: number;
   cover_position_y?: number;
+  /** Optional fixed-slot photos on the public wedding site — slot 1 renders
+   *  after the welcome band, slot 2 before the RSVP ask. Uploaded via
+   *  POST /api/couples/current/site-photo/:slot. Optional (server always
+   *  populates; absent in legacy test fixtures) — absent and null both mean
+   *  "slot empty". */
+  site_image_1_url?: string | null;
+  site_image_2_url?: string | null;
   /** Pre-RSVP welcome block on the merged Vendégoldal (`/w/:slug`).
    *  Visible at every tier of the public endpoint. Null when unset. */
   guest_page_intro: string | null;

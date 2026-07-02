@@ -854,6 +854,11 @@ addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 // photo in the guest-page editor to choose which part stays in frame.
 addColumnIfMissing("couples", "cover_position_x", "cover_position_x INTEGER NOT NULL DEFAULT 50");
 addColumnIfMissing("couples", "cover_position_y", "cover_position_y INTEGER NOT NULL DEFAULT 50");
+// Two OPTIONAL fixed-slot photos on the public wedding site (slot 1 renders
+// after the welcome band, slot 2 before the RSVP ask). Uploaded via
+// POST /api/couples/current/site-photo/:slot; stores the /uploads/... URL.
+addColumnIfMissing("couples", "site_image_1_url", "site_image_1_url TEXT");
+addColumnIfMissing("couples", "site_image_2_url", "site_image_2_url TEXT");
 
 // Moodboard source state. Every couple defaults to 'preset' — a curated
 // Pinterest board rendered automatically so /app/moodboard is never blank.

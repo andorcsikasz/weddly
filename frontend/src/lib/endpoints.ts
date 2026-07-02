@@ -629,6 +629,38 @@ export const coupleApi = {
     }
     return JSON.parse(text) as { couple: Couple };
   },
+  /** Multipart upload for one of the two OPTIONAL fixed-slot site photos
+   *  (slot 1 renders after the welcome band, slot 2 before the RSVP ask).
+   *  Same FormData-over-fetch pattern as uploadCover above. */
+  uploadSitePhoto: async (slot: 1 | 2, file: File): Promise<{ couple: Couple }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = getToken();
+    const res = await fetch(`/api/couples/current/site-photo/${slot}`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Upload failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as { couple: Couple };
+  },
+  /** Clear a fixed-slot site photo (deletes the stored file too). */
+  deleteSitePhoto: (slot: 1 | 2) =>
+    apiFetch<{ couple: Couple }>("DELETE", `/api/couples/current/site-photo/${slot}`),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
   archive: () => apiFetch<{ couple: Couple }>("POST", "/api/couples/current/archive", {}),
@@ -2086,6 +2118,21 @@ export interface FeedbackInput {
 
 export const feedbackApi = {
   submit: (body: FeedbackInput) => apiFetch<{ ok: true }>("POST", "/api/feedback", body),
+};
+
+export interface EmailPreferences {
+  /** True = opted out of lifecycle/reminder emails (transactional mail —
+   *  verification, password reset, RSVP — is unaffected). */
+  lifecycle_opt_out: boolean;
+  unsubscribe_token: string;
+}
+
+export const emailPrefsApi = {
+  get: () => apiFetch<EmailPreferences>("GET", "/api/account/email-preferences"),
+  update: (lifecycle_opt_out: boolean) =>
+    apiFetch<{ ok: true; lifecycle_opt_out: boolean }>("POST", "/api/account/email-preferences", {
+      lifecycle_opt_out,
+    }),
 };
 
 export type CoupleCardRating = "bad" | "ok" | "great";

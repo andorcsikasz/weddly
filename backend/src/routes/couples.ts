@@ -2230,6 +2230,15 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         }
         next.web.imageTreatment = v as ImageTreatmentSlug;
       }
+      // Public venue-map opt-in — a plain boolean (the public-wedding endpoint
+      // reads it server-side to decide whether to expose the exact pin).
+      if ("venueMap" in w) {
+        const v = w.venueMap;
+        if (typeof v !== "boolean") {
+          throw new HttpError(400, "design.web.venueMap must be a boolean");
+        }
+        next.web.venueMap = v;
+      }
     }
     const changed =
       next.style !== prev.style ||
@@ -2249,6 +2258,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.web.shadow !== prev.web.shadow ||
       next.web.buttonStyle !== prev.web.buttonStyle ||
       next.web.imageTreatment !== prev.web.imageTreatment ||
+      next.web.venueMap !== prev.web.venueMap ||
       JSON.stringify(next.web.hiddenSections) !== JSON.stringify(prev.web.hiddenSections);
     if (changed) {
       updates.push({ col: "design_json", val: JSON.stringify(next) });
@@ -2400,6 +2410,117 @@ async function handleUploadCover(ctx: Ctx): Promise<Response> {
 
   const refreshed = getCoupleById(couple.id);
   if (!refreshed) throw new HttpError(500, "Couple vanished mid-upload");
+  return json({ couple: toCouple(refreshed) });
+}
+
+// ─── Optional fixed-slot site photos ────────────────────────────────────────
+//
+// POST /api/couples/current/site-photo/:slot (multipart, slot 1|2) uploads a
+// photo into one of the two OPTIONAL fixed slots on the public wedding site
+// (slot 1 renders after the welcome band, slot 2 before the RSVP ask).
+// DELETE clears the slot + best-effort removes the stored file. Same size /
+// mime / magic-byte rules as the cover upload above.
+
+function parseSitePhotoSlot(ctx: Ctx): 1 | 2 {
+  const raw = ctx.params.slot;
+  if (raw !== "1" && raw !== "2") {
+    throw new HttpError(400, "slot must be 1 or 2", { code: "bad_slot" });
+  }
+  return raw === "1" ? 1 : 2;
+}
+
+async function handleUploadSitePhoto(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple to update");
+  const slot = parseSitePhotoSlot(ctx);
+
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
+  });
+  const raw = form.get("file");
+  if (!(raw instanceof File)) {
+    throw new HttpError(400, "`file` field required", { code: "missing_file" });
+  }
+  if (raw.size <= 0) {
+    throw new HttpError(400, "Empty file", { code: "empty_file" });
+  }
+  if (raw.size > MAX_COVER_BYTES) {
+    throw new HttpError(413, `File too large (max ${MAX_COVER_BYTES / 1024 / 1024} MB)`, {
+      code: "file_too_large",
+    });
+  }
+  if (SUPPORTED_COVER_MIMES[raw.type] === undefined) {
+    throw new HttpError(415, `Unsupported image type: ${raw.type || "unknown"}`, {
+      code: "unsupported_type",
+    });
+  }
+  const sniffed = await sniffUploadedImage(raw);
+  const ext = sniffed ? SUPPORTED_COVER_MIMES[sniffed] : undefined;
+  if (!ext) {
+    throw new HttpError(415, "File contents are not a valid image", {
+      code: "unsupported_type",
+    });
+  }
+
+  const col = slot === 1 ? "site_image_1_url" : "site_image_2_url";
+  const previousUrl = slot === 1 ? couple.site_image_1_url : couple.site_image_2_url;
+  const key = `couples/${couple.id}/site-photo-${slot}.${ext}`;
+
+  // Best-effort cleanup on extension transitions (same-name writes overwrite).
+  const prevKey = previousUrl ? keyFromUploadUrl(previousUrl) : null;
+  if (prevKey && prevKey !== key) await storage.delete(prevKey);
+
+  await storage.write(key, raw);
+
+  const ts = now();
+  const publicUrl = `/uploads/couples/${couple.id}/site-photo-${slot}.${ext}?v=${ts}`;
+  db.prepare(`UPDATE couples SET ${col} = ?, updated_at = ? WHERE id = ?`).run(
+    publicUrl,
+    ts,
+    couple.id,
+  );
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple.site_photo_upload",
+    target_kind: "couple",
+    target_id: couple.id,
+    before: { slot, url: previousUrl },
+    after: { slot, url: publicUrl, bytes: raw.size, mime: raw.type },
+  });
+
+  const refreshed = getCoupleById(couple.id);
+  if (!refreshed) throw new HttpError(500, "Couple vanished mid-upload");
+  return json({ couple: toCouple(refreshed) });
+}
+
+async function handleDeleteSitePhoto(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple to update");
+  const slot = parseSitePhotoSlot(ctx);
+
+  const col = slot === 1 ? "site_image_1_url" : "site_image_2_url";
+  const previousUrl = slot === 1 ? couple.site_image_1_url : couple.site_image_2_url;
+  const prevKey = previousUrl ? keyFromUploadUrl(previousUrl) : null;
+  if (prevKey) await storage.delete(prevKey);
+
+  db.prepare(`UPDATE couples SET ${col} = NULL, updated_at = ? WHERE id = ?`).run(now(), couple.id);
+  if (previousUrl) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "couple.site_photo_clear",
+      target_kind: "couple",
+      target_id: couple.id,
+      before: { slot, url: previousUrl },
+      after: { slot, url: null },
+    });
+  }
+
+  const refreshed = getCoupleById(couple.id);
+  if (!refreshed) throw new HttpError(500, "Couple vanished mid-delete");
   return json({ couple: toCouple(refreshed) });
 }
 
@@ -3296,6 +3417,8 @@ export function registerCoupleRoutes(router: Router) {
   router.get("/api/couples/activity", handleGetActivity, true);
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.post("/api/couples/current/cover", handleUploadCover, true);
+  router.post("/api/couples/current/site-photo/:slot", handleUploadSitePhoto, true);
+  router.delete("/api/couples/current/site-photo/:slot", handleDeleteSitePhoto, true);
   router.patch("/api/couples/slug", handleUpdateSlug, true);
   router.get("/api/users/me/couples", handleListMyCouples, true);
   router.post("/api/users/me/active-couple", handleSwitchActiveCouple, true);

@@ -63,6 +63,12 @@ export interface PublicWeddingWebsiteView {
    *  (defaults to 50/50 at render) so SSR/fixture literals can omit it. */
   cover_position_x?: number;
   cover_position_y?: number;
+  /** Optional fixed-slot photos: slot 1 renders as a full-bleed band after the
+   *  welcome section, slot 2 before the RSVP ask. Visible at every tier.
+   *  Optional so existing fixture literals keep compiling; absent and null
+   *  both mean "slot empty, band not rendered". */
+  site_image_1_url?: string | null;
+  site_image_2_url?: string | null;
   /** Pre-RSVP welcome block (markdown). Visible at every tier — the
    *  couple authors this for "anyone with the link". Null when unset. */
   guest_page_intro: string | null;

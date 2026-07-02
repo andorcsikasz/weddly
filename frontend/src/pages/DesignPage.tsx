@@ -55,6 +55,7 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  ImagePlus,
   Loader2,
   Maximize2,
   Monitor,
@@ -416,6 +417,8 @@ export default function DesignPage() {
   // until fetched; the preview falls back to labelled sample beats.
   const [previewSchedule, setPreviewSchedule] = useState<PublicWeddingScheduleEntry[]>([]);
   const [previewWishlist, setPreviewWishlist] = useState<WishlistEntry[]>([]);
+  // Which photo slot has an upload/delete in flight (1 | 2 | null).
+  const [photoBusy, setPhotoBusy] = useState<1 | 2 | null>(null);
   // Below lg only chapter 01 starts open (small screens scroll past the whole
   // editor); at lg+ all chapters start open. Read once at mount.
   const [lgUp] = useState(
@@ -702,6 +705,10 @@ export default function DesignPage() {
     setStyleSnapshot(null);
     setDesign((d) => ({ ...d, monogram: { ...d.monogram, ...patch } }));
   }
+  function chooseVenueMap(on: boolean) {
+    setStyleSnapshot(null);
+    setDesign((d) => ({ ...d, web: { ...d.web, venueMap: on } }));
+  }
   function chooseBorderStyle(slug: BorderStyleSlug) {
     // Keep the legacy `print.border` boolean in sync (on/off) so the current
     // PDF path stays consistent until pdf.ts reads the style directly.
@@ -824,6 +831,38 @@ export default function DesignPage() {
   const rsvpSampleClass = (slug: ButtonStyleSlug) =>
     slug === "outline" ? "btn-outline" : slug === "flat" ? "btn-primary" : "btn-primary btn-lifted";
 
+  // Upload / clear one of the two optional fixed-slot site photos. The server
+  // returns the refreshed couple, so the live preview updates immediately.
+  async function uploadSitePhotoSlot(slot: 1 | 2, file: File) {
+    if (photoBusy) return;
+    setPhotoBusy(slot);
+    try {
+      const r = await coupleApi.uploadSitePhoto(slot, file);
+      setCouple(r.couple);
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError && err.status === 402
+          ? t("design.save_blocked")
+          : t("design.web.photo_upload_error"),
+      );
+    } finally {
+      setPhotoBusy(null);
+    }
+  }
+  async function removeSitePhoto(slot: 1 | 2) {
+    if (photoBusy) return;
+    setPhotoBusy(slot);
+    try {
+      const r = await coupleApi.deleteSitePhoto(slot);
+      setCouple(r.couple);
+    } catch {
+      toast.error(t("design.save_error"));
+    } finally {
+      setPhotoBusy(null);
+    }
+  }
+  const hasVenueCoords = couple?.location_lat != null && couple?.location_lng != null;
+
   // Copy the live guest-page URL (finish card, public sites only).
   async function copyGuestLink() {
     if (!couple?.slug) return;
@@ -923,10 +962,15 @@ export default function DesignPage() {
         venue_name: couple.venue_name,
         venue_city: couple.venue_city,
         cover_image_url: couple.cover_image_url,
+        site_image_1_url: couple.site_image_1_url,
+        site_image_2_url: couple.site_image_2_url,
         guest_page_intro: couple.guest_page_intro,
         useful_info: couple.useful_info,
-        location_lat: null,
-        location_lng: null,
+        // The embedded venue map only renders in the preview when the couple
+        // turned the public-map toggle on (keeps leaflet out of the editor
+        // bundle path otherwise, and mirrors what public visitors will see).
+        location_lat: design.web.venueMap ? (couple.location_lat ?? null) : null,
+        location_lng: design.web.venueMap ? (couple.location_lng ?? null) : null,
         location_radius_km: couple.location_radius_km,
         post_rsvp_content: null,
         schedule: previewSchedule.length > 0 ? previewSchedule : sampleSchedule,
@@ -1591,6 +1635,68 @@ export default function DesignPage() {
                         );
                       })}
                     </div>
+                    {/* Two OPTIONAL fixed-slot photos: slot 1 lands after the
+                        welcome band, slot 2 before the RSVP ask. Upload swaps
+                        the tile to the image with a remove badge. */}
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {([1, 2] as const).map((slot) => {
+                        const url =
+                          slot === 1 ? couple?.site_image_1_url : couple?.site_image_2_url;
+                        const busy = photoBusy === slot;
+                        return (
+                          <div key={slot} className="relative">
+                            {url ? (
+                              <>
+                                <img
+                                  src={url}
+                                  alt={t("design.web.photo_slot", { n: slot })}
+                                  className="h-20 w-full rounded-xl border border-paper-300 object-cover dark:border-umber-700"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => void removeSitePhoto(slot)}
+                                  disabled={busy}
+                                  aria-label={t("design.web.photo_remove")}
+                                  className="absolute -right-1.5 -top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft transition hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:focus-visible:ring-paper-100"
+                                >
+                                  {busy ? (
+                                    <Loader2 size={12} className="animate-spin" aria-hidden />
+                                  ) : (
+                                    <X size={12} aria-hidden />
+                                  )}
+                                </button>
+                              </>
+                            ) : (
+                              <label
+                                className={`flex h-20 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-paper-400 text-ink-400 transition focus-within:ring-2 focus-within:ring-ink-300 hover:border-ink-400 hover:text-ink-600 dark:border-umber-600 dark:text-umber-300 dark:focus-within:ring-paper-100 dark:hover:text-umber-100 ${
+                                  busy || readOnly ? "cursor-default opacity-60" : ""
+                                }`}
+                              >
+                                {busy ? (
+                                  <Loader2 size={16} className="animate-spin" aria-hidden />
+                                ) : (
+                                  <ImagePlus size={16} aria-hidden />
+                                )}
+                                <span className="text-[10px] font-medium">
+                                  {t("design.web.photo_slot", { n: slot })}
+                                </span>
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/webp"
+                                  className="sr-only"
+                                  disabled={busy || readOnly}
+                                  onChange={(ev) => {
+                                    const f = ev.target.files?.[0];
+                                    if (f) void uploadSitePhotoSlot(slot, f);
+                                    ev.target.value = "";
+                                  }}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </section>
 
                   {/* Card rounding — true mini-card shapes in the palette. */}
@@ -1699,6 +1805,38 @@ export default function DesignPage() {
                           </li>
                         );
                       })}
+                      {/* Public venue map opt-in: reveals the exact pin (and
+                          the embedded map) to everyone, not just confirmed
+                          guests. Disabled until the couple has set a venue
+                          location; the reveal is server-gated. */}
+                      <li className="flex items-center justify-between gap-3 px-3 py-1.5">
+                        <span
+                          className={`text-sm ${
+                            design.web.venueMap
+                              ? "text-ink-900 dark:text-paper-50"
+                              : "text-ink-400 dark:text-umber-400"
+                          }`}
+                        >
+                          {t("design.web.venue_map_label")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => chooseVenueMap(!design.web.venueMap)}
+                          disabled={!hasVenueCoords}
+                          aria-pressed={design.web.venueMap}
+                          aria-label={t("design.web.venue_map_label")}
+                          title={
+                            hasVenueCoords ? undefined : t("design.web.venue_map_needs_location")
+                          }
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-100 disabled:cursor-default disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:text-umber-200 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
+                        >
+                          {design.web.venueMap ? (
+                            <Eye size={16} aria-hidden />
+                          ) : (
+                            <EyeOff size={16} aria-hidden />
+                          )}
+                        </button>
+                      </li>
                     </ul>
                   </section>
 

@@ -209,6 +209,11 @@ export interface CoupleRow {
   /** Cover-photo focal point (object-position %, 0..100, 50 = centred). */
   cover_position_x: number;
   cover_position_y: number;
+  /** Optional fixed-slot photos on the public site (uploaded /uploads/... URLs,
+   *  slot 1 after the welcome band, slot 2 before the RSVP ask). Null = slot
+   *  empty, the band simply doesn't render. */
+  site_image_1_url: string | null;
+  site_image_2_url: string | null;
   /** Moodboard source: 'preset' (curated default board), 'pinterest' (own
    *  board link in moodboard_url) or 'upload' (rows in moodboard_images).
    *  Defaults to 'preset' so /app/moodboard is never blank. */
@@ -459,6 +464,8 @@ export function toCouple(row: CoupleRow): Couple {
     cover_image_url: row.cover_image_url,
     cover_position_x: row.cover_position_x ?? 50,
     cover_position_y: row.cover_position_y ?? 50,
+    site_image_1_url: row.site_image_1_url ?? null,
+    site_image_2_url: row.site_image_2_url ?? null,
     guest_page_intro: row.guest_page_intro,
     useful_info: row.useful_info,
     post_rsvp_content: row.post_rsvp_content,
