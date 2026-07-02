@@ -993,9 +993,12 @@ function SideLink({
   // the same height collapsed or expanded, and an icon stays on the exact
   // same row when the user toggles the rail (paired with the fixed-height
   // SidebarGroupHeader below, which does the same for section breaks).
+  // `lg:w-fit` (not `w-auto`): in the flex column `auto` stretches the row to
+  // the full rail width, so the active pill ran black past the label and the
+  // floating collapse toggle. Fit-content ends the pill right after the text.
   const shape = collapsed
     ? "h-8 w-9 justify-center"
-    : "h-8 w-9 justify-center lg:w-auto lg:justify-start lg:px-3";
+    : "h-8 w-9 justify-center lg:w-fit lg:justify-start lg:px-3";
   return (
     <NavLink
       to={to}
