@@ -12,6 +12,7 @@ import {
   Bell,
   CalendarDays,
   ChevronDown,
+  Home,
   Languages,
   LayoutDashboard,
   LogOut,
@@ -30,6 +31,7 @@ import type { PlannerInviteView, PlannerProfile, PlannerStats, User } from "@sha
 import { useAuth } from "../lib/auth";
 import { plannerApi, plannerBillingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { FeedbackDialog } from "./FeedbackDialog";
 import { Wordmark } from "./Wordmark";
 
 type PlannerNavItem = { to: string; labelKey: string; icon: ReactNode; end?: boolean };
@@ -165,11 +167,13 @@ function PlannerProfileMenu({
   avatarUrl,
   stats,
   onLogout,
+  onOpenFeedback,
 }: {
   user: User;
   avatarUrl: string | null;
   stats: PlannerStats | null;
   onLogout: () => void;
+  onOpenFeedback: () => void;
 }) {
   const { t } = useT();
   const location = useLocation();
@@ -264,6 +268,28 @@ function PlannerProfileMenu({
             <UserRound size={16} aria-hidden="true" />
             <span>{t("planner_shell.menu_account")}</span>
           </Link>
+          {/* Same escape hatches the couple-side ProfileMenu offers: back to
+           *  the public landing + the feedback dialog (hosted by the shell). */}
+          <Link
+            to="/"
+            role="menuitem"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <Home size={16} aria-hidden="true" />
+            <span>{t("profile.menu_landing")}</span>
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onOpenFeedback();
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <MessageCircle size={16} aria-hidden="true" />
+            <span>{t("landing.nav_feedback")}</span>
+          </button>
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
           <button
             type="button"
@@ -297,6 +323,8 @@ export function PlannerShell({ children }: { children: ReactNode }) {
   // Read-only when the planner's subscription has lapsed — surfaces a banner
   // linking to billing so the 402 gate on mutations isn't a silent dead end.
   const [readOnly, setReadOnly] = useState(false);
+  // Feedback dialog, opened from the profile menu (same home as /app).
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -402,6 +430,7 @@ export function PlannerShell({ children }: { children: ReactNode }) {
                 avatarUrl={avatarUrl}
                 stats={stats}
                 onLogout={() => void onLogout()}
+                onOpenFeedback={() => setFeedbackOpen(true)}
               />
             )}
           </div>
@@ -477,6 +506,13 @@ export function PlannerShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      <FeedbackDialog
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        source="app"
+        context={location.pathname}
+      />
     </div>
   );
 }
