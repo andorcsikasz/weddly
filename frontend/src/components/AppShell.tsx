@@ -474,9 +474,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   // ── Workspace handoff cleanup ────────────────────────────────────────
   // When the user signs out, wipe every `weddly.*` localStorage key so
   // the next person on this device doesn't inherit the previous tenant's
-  // local prefs (saved suppliers, onboarding draft, dismissed banners,
-  // locale). The session token itself is cleared by `setSession(null)`
-  // in AuthProvider — this just sweeps the rest.
+  // local prefs (saved suppliers, onboarding draft, dismissed banners).
+  // The session token itself is cleared by `setSession(null)` in
+  // AuthProvider; this just sweeps the rest. `weddly.locale` survives:
+  // the UI language is a device preference, not tenant data, and wiping
+  // it flipped explicit-HU users back to English after every demo/logout.
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (prevUserId.current !== null && user === null) {
@@ -484,7 +486,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         const keys: string[] = [];
         for (let i = 0; i < localStorage.length; i += 1) {
           const k = localStorage.key(i);
-          if (k && k.startsWith("weddly.") && k !== "weddly.token") {
+          if (k && k.startsWith("weddly.") && k !== "weddly.token" && k !== "weddly.locale") {
             keys.push(k);
           }
         }

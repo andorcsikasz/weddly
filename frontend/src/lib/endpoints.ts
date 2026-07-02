@@ -373,6 +373,10 @@ export const authApi = {
     apiFetch<AuthSession>("POST", "/api/auth/login", body),
   logout: () => apiFetch<{ ok: true }>("POST", "/api/auth/logout"),
   me: () => apiFetch<{ user: User }>("GET", "/api/auth/me"),
+  /** Persist an explicit locale-switcher pick on users.locale so the choice
+   *  survives sign-out and follows the account to fresh devices. */
+  setLocale: (locale: "hu" | "en") =>
+    apiFetch<{ user: User }>("POST", "/api/auth/locale", { locale }),
   forgot: (email: string) => apiFetch<{ ok: true }>("POST", "/api/auth/forgot", { email }),
   reset: (token: string, password: string) =>
     apiFetch<{ ok: true }>("POST", "/api/auth/reset", { token, password }),

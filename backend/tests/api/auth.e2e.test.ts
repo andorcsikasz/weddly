@@ -2383,3 +2383,48 @@ describe("credential tokens — hashed at rest", () => {
     expect(r.status).toBe(200);
   });
 });
+
+// ─── /api/auth/locale — persist the UI-language pick ────────────────────────
+describe("POST /api/auth/locale", () => {
+  test("requires auth", async () => {
+    wipeAll();
+    const r = await req("POST", "/api/auth/locale", { locale: "hu" });
+    expect(r.status).toBe(401);
+  });
+
+  test("rejects anything that is not 'hu' or 'en'", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("locale-bad@example.com");
+    for (const locale of ["de", "", 42, null, undefined]) {
+      const r = await req("POST", "/api/auth/locale", { locale }, { token });
+      expect(r.status).toBe(400);
+    }
+  });
+
+  test("persists the pick and /api/auth/me keeps serving it", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("locale-hu@example.com");
+    const set = await req<{ user: { locale: string } }>(
+      "POST",
+      "/api/auth/locale",
+      { locale: "hu" },
+      { token },
+    );
+    expect(set.status).toBe(200);
+    expect(set.data.user.locale).toBe("hu");
+    const me = await req<{ user: { locale: string } }>("GET", "/api/auth/me", undefined, {
+      token,
+    });
+    expect(me.status).toBe(200);
+    expect(me.data.user.locale).toBe("hu");
+    // Flipping back works too — the endpoint is a plain setter, not one-way.
+    const back = await req<{ user: { locale: string } }>(
+      "POST",
+      "/api/auth/locale",
+      { locale: "en" },
+      { token },
+    );
+    expect(back.status).toBe(200);
+    expect(back.data.user.locale).toBe("en");
+  });
+});

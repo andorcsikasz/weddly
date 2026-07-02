@@ -405,10 +405,36 @@ function handleMe(ctx: Ctx): Response {
   return json({ user: toUser(row) });
 }
 
+interface SetLocaleBody {
+  locale?: unknown;
+}
+
+/** Persist the user's explicit UI-language pick on `users.locale` so it
+ *  survives sign-out and follows the account to fresh devices. Registration
+ *  captures an initial value, but until this endpoint existed a later
+ *  switcher flip never reached the server: /api/auth/me kept hydrating the
+ *  stale signup locale and the UI "randomly" reverted to English. */
+async function handleSetLocale(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const body = await readJson<SetLocaleBody>(ctx.req);
+  if (body.locale !== "hu" && body.locale !== "en") {
+    throw new HttpError(400, "locale must be 'hu' or 'en'");
+  }
+  db.prepare("UPDATE users SET locale = ?, updated_at = ? WHERE id = ?").run(
+    body.locale,
+    now(),
+    userId,
+  );
+  const fresh = getUserById(userId);
+  if (!fresh) throw new HttpError(404, "User not found");
+  return json({ user: toUser(fresh) });
+}
+
 export function registerAuthRoutes(router: Router) {
   router.post("/api/auth/register", handleRegister);
   router.post("/api/auth/login", handleLogin);
   router.post("/api/auth/logout", handleLogout, true);
   router.post("/api/auth/change-password", handleChangePassword, true);
   router.get("/api/auth/me", handleMe, true);
+  router.post("/api/auth/locale", handleSetLocale, true);
 }

@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // True when an /api/* call returned 401 mid-session — pops the re-login
   // modal so the user can resume without losing typed state.
   const [sessionExpired, setSessionExpired] = useState(false);
-  const { setLocale: setI18nLocale } = useT();
+  const { locale, setLocale: setI18nLocale } = useT();
 
   // Sync the server-stored `user.locale` into the in-memory i18n state
   // exactly once per login — but only if this device hasn't explicitly
@@ -50,6 +50,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setI18nLocale(user.locale, { silent: true });
     }
   }, [user?.locale, setI18nLocale]);
+
+  // Mirror the device's EXPLICIT locale pick back to the server whenever it
+  // diverges from `user.locale`. Registration captures an initial value, but
+  // without this write-back a later switcher flip only lived in localStorage,
+  // so any sign-out (which wipes weddly.* keys) or fresh device rehydrated the
+  // stale signup locale and the UI reverted to English. Guarded on the saved
+  // localStorage value (not the in-memory locale) so server-driven hydration
+  // on a fresh device never overwrites the account pref with the EN default.
+  useEffect(() => {
+    if (!user) return;
+    let saved: string | null = null;
+    try {
+      saved = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+    } catch {
+      return; // localStorage blocked, nothing explicit to sync
+    }
+    if (saved !== "hu" && saved !== "en") return;
+    if (saved === user.locale) return;
+    const picked = saved;
+    authApi
+      .setLocale(picked)
+      .then(() => {
+        // Keep the in-memory user in step so this effect settles instead of
+        // re-firing on every locale/user change.
+        setUser((cur) => (cur ? { ...cur, locale: picked } : cur));
+      })
+      .catch(() => {
+        // Network flake; the next login/flip retries naturally.
+      });
+  }, [user, locale]);
 
   const refresh = useCallback(async () => {
     if (!getToken()) {

@@ -11,6 +11,7 @@ import {
   Bell,
   CalendarDays,
   ChevronDown,
+  Languages,
   LayoutDashboard,
   LogOut,
   MailQuestion,
@@ -167,7 +168,7 @@ function PlannerProfileMenu({
   avatarUrl: string | null;
   onLogout: () => void;
 }) {
-  const { t } = useT();
+  const { t, locale, setLocale } = useT();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -244,6 +245,23 @@ function PlannerProfileMenu({
             <UserRound size={16} aria-hidden="true" />
             <span>{t("planner_shell.menu_account")}</span>
           </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              setLocale(locale === "hu" ? "en" : "hu");
+            }}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <span className="inline-flex items-center gap-2">
+              <Languages size={16} aria-hidden="true" />
+              <span>{t("nav.switch_language")}</span>
+            </span>
+            <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {locale} → {locale === "hu" ? "en" : "hu"}
+            </span>
+          </button>
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
           <button
             type="button"
