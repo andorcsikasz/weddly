@@ -292,7 +292,7 @@ function sweepInvitePartnerAuto(ts: number): number {
     void sendKind(
       "partner_invite_reminder",
       {
-        invitePartnerUrl: `${CONFIG.frontendBaseUrl}/app/dashboard#invite-partner`,
+        invitePartnerUrl: `${CONFIG.frontendBaseUrl}/app#invite-partner`,
         coupleDisplayName,
       },
       {
@@ -439,7 +439,7 @@ function sweepWeddingFollowup(ts: number): number {
       "wedding_today_followup",
       {
         coupleDisplayName: r.display_name,
-        feedbackUrl: `${CONFIG.frontendBaseUrl}/feedback`,
+        feedbackUrl: `${CONFIG.frontendBaseUrl}/app?feedback=1`,
       },
       {
         user: { id: r.user_id, email: r.email, full_name: r.full_name },

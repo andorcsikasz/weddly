@@ -306,7 +306,7 @@ function handleRemindInvitePartner(ctx: Ctx): Response {
     couple.display_name && couple.display_name !== "Purged workspace"
       ? couple.display_name
       : undefined;
-  const invitePartnerUrl = `${CONFIG.frontendBaseUrl}/app/dashboard#invite-partner`;
+  const invitePartnerUrl = `${CONFIG.frontendBaseUrl}/app#invite-partner`;
 
   void sendKind(
     "partner_invite_reminder",

@@ -413,7 +413,7 @@ async function handleCreateInvitation(ctx: Ctx): Promise<Response> {
 
   const invite = createPlannerInvitation(userId, email);
   const { label, email: replyToEmail } = plannerLabelAndEmail(userId);
-  const inviteUrl = `${CONFIG.frontendBaseUrl}/register?planner_invite=${invite.token}`;
+  const inviteUrl = `${CONFIG.frontendBaseUrl}/signup?planner_invite=${invite.token}`;
 
   addAuditLog({
     actor_user_id: userId,

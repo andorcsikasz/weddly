@@ -1736,6 +1736,48 @@ describe("POST /api/unsubscribe/:token — RFC 8058", () => {
   });
 });
 
+// ─── /unsubscribe/:token (pretty alias used by email footer links) ─────────
+
+describe("GET /unsubscribe/:token — non-API alias", () => {
+  test("valid token returns 200 HTML + flips flag (matches before SPA fallback)", async () => {
+    wipeAll();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "unsub-alias@example.com",
+      password: "supersafe123",
+      full_name: "Alias",
+    });
+    const prefs = db
+      .prepare("SELECT unsubscribe_token FROM email_preferences WHERE user_id = ?")
+      .get(reg.data.user.id) as { unsubscribe_token: string };
+
+    const res = await fetch(
+      `http://localhost:${process.env.PORT ?? "8791"}/unsubscribe/${prefs.unsubscribe_token}`,
+      { headers: { "x-test-client-ip": "10.99.0.14" } },
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")?.startsWith("text/html")).toBe(true);
+
+    const after = db
+      .prepare("SELECT lifecycle_opt_out FROM email_preferences WHERE user_id = ?")
+      .get(reg.data.user.id) as { lifecycle_opt_out: number };
+    expect(after.lifecycle_opt_out).toBe(1);
+  });
+
+  test("one-click POST on the alias returns 204", async () => {
+    wipeAll();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "unsub-alias-post@example.com",
+      password: "supersafe123",
+      full_name: "AliasPost",
+    });
+    const prefs = db
+      .prepare("SELECT unsubscribe_token FROM email_preferences WHERE user_id = ?")
+      .get(reg.data.user.id) as { unsubscribe_token: string };
+    const r = await req("POST", `/unsubscribe/${prefs.unsubscribe_token}`, {});
+    expect(r.status).toBe(204);
+  });
+});
+
 // ─── /api/auth/google ──────────────────────────────────────────────────────
 
 describe("POST /api/auth/google", () => {

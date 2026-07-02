@@ -30,7 +30,7 @@ const STUBS: KindPayload = {
     forgotUrl: `${BASE_URL}/forgot-password`,
   },
   email_change_verify: {
-    confirmUrl: `${BASE_URL}/email-confirm?token=preview-token`,
+    confirmUrl: `${BASE_URL}/change-email/preview-token`,
     oldEmail: "mia.old@example.com",
   },
   email_change_warning: {
@@ -39,7 +39,7 @@ const STUBS: KindPayload = {
   },
   partner_invite: {
     inviterName: "Mia",
-    inviteUrl: `${BASE_URL}/invite?code=preview`,
+    inviteUrl: `${BASE_URL}/invite/preview-token`,
     coupleDisplayName: "Mia & Lucas",
   },
   partner_invite_accepted: {
@@ -150,7 +150,7 @@ const STUBS: KindPayload = {
   wedding_today: { coupleDisplayName: "Mia & Lucas" },
   wedding_today_followup: {
     coupleDisplayName: "Mia & Lucas",
-    feedbackUrl: `${BASE_URL}/feedback`,
+    feedbackUrl: `${BASE_URL}/app?feedback=1`,
   },
   wedding_date_changed: {
     coupleDisplayName: "Mia & Lucas",
@@ -260,7 +260,7 @@ const STUBS: KindPayload = {
   },
   planner_email_invite: {
     plannerLabel: "Eventful Studio",
-    inviteUrl: "https://tryweddly.com/register?planner_invite=sample-token",
+    inviteUrl: "https://tryweddly.com/signup?planner_invite=sample-token",
     replyToEmail: "hello@eventful.studio",
   },
 };

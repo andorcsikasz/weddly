@@ -56,6 +56,7 @@ import {
   coupleApi,
   couplePlannerApi,
   documentsApi,
+  emailPrefsApi,
   exportApi,
   fetchGuestCsvBlob,
   fetchSavedExportBlob,
@@ -1105,6 +1106,8 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
         />
       )}
 
+      {showAccount && <EmailPreferencesCard t={t} />}
+
       {showData && (
         <section className="card mt-6">
           <h2 className="flex items-center gap-2 font-grotesk text-lg">
@@ -1876,6 +1879,95 @@ function UserAvatarDisc({ fullName, email }: { fullName: string; email: string }
  *  itself doesn't change behavior; the persistent flag means the owner
  *  can glance at /app/settings/workspace on any device and see whether
  *  the tablet at the venue is currently live. */
+/** Lifecycle email opt-out toggle, backed by /api/account/email-preferences.
+ *  The `#email-preferences` anchor is the target of the "Email preferences"
+ *  footer link in every lifecycle email, so keep the id stable. Transactional
+ *  mail (verification, password reset, RSVP) is unaffected by the flag. */
+function EmailPreferencesCard({ t }: { t: T }) {
+  // null = still loading; the toggle stays disabled until the GET resolves.
+  const [optOut, setOptOut] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    emailPrefsApi
+      .get()
+      .then((p) => {
+        if (!cancelled) setOptOut(p.lifecycle_opt_out);
+      })
+      .catch(() => {
+        if (!cancelled) setError(t("common.error_generic"));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
+
+  const subscribed = optOut === false;
+
+  async function flip() {
+    if (optOut === null || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const r = await emailPrefsApi.update(!optOut);
+      setOptOut(r.lifecycle_opt_out);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section id="email-preferences" className="card mt-6 scroll-mt-24">
+      <h2 className="flex items-center gap-2 font-grotesk text-lg">
+        <BellRing size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
+        {t("profile.email_prefs_title")}
+      </h2>
+      <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+        {t("profile.email_prefs_body")}
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <label className="inline-flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            role="switch"
+            className="peer sr-only"
+            checked={subscribed}
+            onChange={flip}
+            disabled={saving || optOut === null}
+            aria-label={t("profile.email_prefs_toggle_aria")}
+          />
+          <span
+            aria-hidden
+            className={`relative h-7 w-12 rounded-full transition-colors ${
+              subscribed ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
+            } peer-focus-visible:ring-2 peer-focus-visible:ring-ink-700 peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-paper-100 dark:peer-focus-visible:ring-offset-umber-900`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                subscribed ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </span>
+          <span className="text-sm font-medium text-ink-700 dark:text-paper-100">
+            {saving
+              ? t("common.saving")
+              : subscribed
+                ? t("profile.email_prefs_on")
+                : t("profile.email_prefs_off")}
+          </span>
+        </label>
+      </div>
+
+      {error && <p className="field-error mt-3">{error}</p>}
+    </section>
+  );
+}
+
 function WelcomeDeskCard({
   couple,
   t,

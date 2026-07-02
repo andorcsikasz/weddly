@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { adminUserApi, plannerApi } from "../lib/endpoints";
@@ -368,6 +368,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMoreOpen(false);
   }, [location.pathname]);
+  // Deep link from the post-wedding follow-up email: `/app?feedback=1` opens
+  // the feedback dialog directly. Strip the param afterwards so refresh /
+  // back-button doesn't re-trigger the modal.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("feedback") !== "1") return;
+    setFeedbackOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("feedback");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
   // Track previous auth state so we only fire the localStorage sweep on
   // the user → null transition (sign-out), not on the initial null-loading
   // pass that happens before /api/auth/me resolves.

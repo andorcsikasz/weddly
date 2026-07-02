@@ -207,6 +207,34 @@ function GuestPageRedirect() {
   return <Navigate to={`/w/${encodeURIComponent(slug)}/${encodeURIComponent(code)}`} replace />;
 }
 
+/** Legacy `/register` → `/signup`. Planner invite emails and referral share
+ *  links minted before 2026-07 pointed at /register, which never existed as a
+ *  route. Keep the query string (`?planner_invite=`, `?ref_code=`) so those
+ *  links still land on a working signup. */
+function RegisterRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={{ pathname: "/signup", search }} replace />;
+}
+
+/** Legacy `/app/dashboard` → `/app` (the dashboard is the index route),
+ *  keeping the `#invite-partner` anchor from old reminder emails. */
+function DashboardLegacyRedirect() {
+  const { hash } = useLocation();
+  return <Navigate to={{ pathname: "/app", hash }} replace />;
+}
+
+/** Visible unsubscribe links in lifecycle emails point at
+ *  `/unsubscribe/<token>`. In production the backend router serves that path
+ *  directly (before the SPA fallback); this route only exists so the dev
+ *  server — where Vite owns the origin — forwards to the proxied API. */
+function UnsubscribeRedirect() {
+  const { token = "" } = useParams<{ token: string }>();
+  useEffect(() => {
+    window.location.replace(`/api/unsubscribe/${encodeURIComponent(token)}`);
+  }, [token]);
+  return <FullScreenLoader />;
+}
+
 export function RedirectIfAuthed({ children }: { children: JSX.Element }) {
   const { user, loading, logout } = useAuth();
   // A live *demo* session must never block the auth forms. The throwaway
@@ -483,6 +511,10 @@ export default function App() {
             </Page>
           }
         />
+        <Route path="/register" element={<RegisterRedirect />} />
+        <Route path="/unsubscribe/:token" element={<UnsubscribeRedirect />} />
+        {/* Post-wedding follow-up emails sent before 2026-07 linked here. */}
+        <Route path="/feedback" element={<Navigate to="/app?feedback=1" replace />} />
         <Route
           path="/signup"
           element={
@@ -739,6 +771,13 @@ export default function App() {
               </Page>
             }
           />
+          {/* Legacy email links: partner-invite reminders sent before 2026-07
+           *  pointed at /app/dashboard#invite-partner; the dashboard is the
+           *  /app index. Keep the hash so the anchor still lands. */}
+          <Route path="dashboard" element={<DashboardLegacyRedirect />} />
+          {/* Admin digest emails link to /app/admin; land on the first
+           *  moderation surface instead of the 404 page. */}
+          <Route path="admin" element={<Navigate to="/app/admin/suppliers" replace />} />
           <Route
             path="guests"
             element={

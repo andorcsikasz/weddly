@@ -418,7 +418,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
               ${unsubLabel}
             </a>
             &nbsp;·&nbsp;
-            <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/account/preferences`)}"
+            <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/app/settings/account#email-preferences`)}"
                style="color:${COLOR.muted};text-decoration:underline;">
               ${prefsLabel}
             </a>

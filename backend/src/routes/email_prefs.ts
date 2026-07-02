@@ -94,6 +94,12 @@ export function registerEmailPrefsRoutes(router: Router) {
   router.get("/api/unsubscribe/:token", handleUnsubscribe);
   // RFC 8058: Gmail/Outlook bot POSTs the same URL when the header is honored.
   router.post("/api/unsubscribe/:token", handleUnsubscribePost);
+  // Pretty alias used by the visible footer link in every lifecycle email
+  // (`${frontendBaseUrl}/unsubscribe/<token>`). The router matches before the
+  // SPA static fallback, so this serves the confirmation HTML directly instead
+  // of dumping the recipient on the React 404 page.
+  router.get("/unsubscribe/:token", handleUnsubscribe);
+  router.post("/unsubscribe/:token", handleUnsubscribePost);
   // Logged-in dashboard prefs.
   router.get("/api/account/email-preferences", handleGetPrefs, true);
   router.post("/api/account/email-preferences", handleUpdatePrefs, true);
