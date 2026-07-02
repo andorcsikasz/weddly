@@ -3986,6 +3986,8 @@ export interface LocaleMessages {
     aisle_warning_count: string;
     aisle_warning_help: string;
     aisle_warning_dismiss: string;
+    /** aria-roledescription on canvas table groups ("movable table"). */
+    table_roledescription: string;
     pdf_failed: string;
     pdf_cancel: string;
     pdf_loading: string;

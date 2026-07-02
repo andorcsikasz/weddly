@@ -3544,6 +3544,7 @@ const en: LocaleMessages = {
     aisle_warning_help:
       "The flagged tables have less than 80 cm of walking space between them. Advisory only, nothing is blocked.",
     aisle_warning_dismiss: "Dismiss warning",
+    table_roledescription: "movable table",
     pdf_failed: "Couldn't generate the PDF. Try again.",
     pdf_cancel: "Cancel",
     pdf_loading: "Preparing PDF…",

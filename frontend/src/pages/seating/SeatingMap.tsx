@@ -317,6 +317,17 @@ export function SeatingMap({
   // proportioned regardless of container size, so all drag/resize logic
   // continues to work without changes.
   const [expanded, setExpanded] = useState(false);
+  // Dialog semantics for the fullscreen portal: focus moves into the card on
+  // open and back to wherever the user was on close.
+  const portalCardRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!expanded) return;
+    const prev = document.activeElement as HTMLElement | null;
+    portalCardRef.current?.focus();
+    return () => {
+      prev?.focus?.();
+    };
+  }, [expanded]);
 
   // Wrapper sizing. We measure the scroll container so the SVG can be drawn
   // at a "useful" zoom level instead of the default fit-to-meet behaviour,
@@ -1019,7 +1030,10 @@ export function SeatingMap({
                 if (e.target === svgRef.current) onSelect(null);
               }}
               aria-label={t("seating.map_title")}
-              role="img"
+              // role="group", NOT "img": an img role flattens the subtree
+              // for assistive tech, hiding the focusable, keyboard-operable
+              // table buttons inside.
+              role="group"
               tabIndex={0}
             >
               <defs>
@@ -1122,6 +1136,7 @@ export function SeatingMap({
                     onRotateHandleDown={(e) => startRotate(e, table)}
                     pxPerMm={pxPerMm}
                     rotateHandleLabel={t("seating.rotate_handle_aria")}
+                    roleDescription={t("seating.table_roledescription")}
                     t={t}
                   />
                 );
@@ -1234,8 +1249,38 @@ export function SeatingMap({
             onPointerDown={(e) => {
               if (e.target === e.currentTarget) setExpanded(false);
             }}
+            /* Minimal focus trap: keep Tab cycling inside the dialog card
+               while the overlay is open. */
+            onKeyDown={(e) => {
+              if (e.key !== "Tab") return;
+              const card = portalCardRef.current;
+              if (!card) return;
+              const focusables = Array.from(
+                card.querySelectorAll<HTMLElement>(
+                  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+                ),
+              ).filter((el) => !el.hasAttribute("disabled"));
+              if (focusables.length === 0) return;
+              const first = focusables[0];
+              const last = focusables[focusables.length - 1];
+              if (!first || !last) return;
+              if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+              } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+              }
+            }}
           >
-            <div className="card flex h-[90vh] w-[90vw] flex-col overflow-hidden p-0 shadow-pop">
+            <div
+              ref={portalCardRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label={t("seating.map_title")}
+              tabIndex={-1}
+              className="card flex h-[90vh] w-[90vw] flex-col overflow-hidden p-0 shadow-pop focus:outline-none"
+            >
               {cardContent}
             </div>
           </div>,
@@ -1414,6 +1459,8 @@ interface TableShapeProps {
   onTapSeat?: (seatIndex: number, at?: { x: number; y: number }) => void;
   /** Advisory aisle warning — draws a soft amber dashed halo. */
   aisleWarned?: boolean;
+  /** aria-roledescription for the table group ("movable table"). */
+  roleDescription?: string;
   /** Drag-start from an occupied chair in seat mode. */
   onChairDragStart?: (seatIndex: number, guestId: number) => void;
   /** Drag-end from an occupied chair in seat mode. */
@@ -1483,6 +1530,7 @@ function TableShape({
   pxPerMm = 0.05,
   rotateHandleLabel,
   aisleWarned = false,
+  roleDescription,
   t,
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
@@ -1640,6 +1688,7 @@ function TableShape({
       tabIndex={seatMode ? -1 : 0}
       role={seatMode ? undefined : "button"}
       aria-label={ariaLabel}
+      aria-roledescription={seatMode ? undefined : roleDescription}
     >
       {/* Advisory aisle-warning halo — amber dashed outline when a
           neighbour is closer than the 80 cm walking minimum. Informational

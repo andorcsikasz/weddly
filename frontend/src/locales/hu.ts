@@ -3583,6 +3583,7 @@ const hu: LocaleMessages = {
     aisle_warning_help:
       "A jelölt asztalok között 80 cm-nél kevesebb hely maradt a közlekedésre. Csak jelzés, nem akadályoz.",
     aisle_warning_dismiss: "Figyelmeztetés elrejtése",
+    table_roledescription: "mozgatható asztal",
     pdf_failed: "Nem sikerült elkészíteni a PDF-et. Próbáld újra.",
     pdf_cancel: "Megszakítás",
     pdf_loading: "PDF készül…",

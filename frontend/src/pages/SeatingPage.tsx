@@ -1610,7 +1610,7 @@ export default function SeatingPage() {
         {a11yMessage}
       </span>
       {/* Single toolbar row: title (left) → tabs (flex-1) → icon strip + add table (right) */}
-      <div className="seating-toolbar mb-4 flex items-center gap-4">
+      <div className="seating-toolbar mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <h1 className="shrink-0 font-grotesk">{t("seating.title")}</h1>
 
         {/* Mode tabs — stretch to fill the remaining space */}
@@ -1820,10 +1820,12 @@ export default function SeatingPage() {
         </div>
       ) : mode === "edit" ? (
         // ── EDIT MODE ────────────────────────────────────────────────────────
-        // Full-height flex (same proportions as seat mode). Map fills flex-1;
-        // table editor sits in a fixed-width right column.
-        <div className="flex h-[calc(100vh-196px)] gap-4">
-          <div data-tour-target="seating-canvas" className="min-w-0 flex-1">
+        // md+: full-height row, map flex-1 + fixed-width editor column.
+        // Below md: stacked column — capped-height canvas on top (tap mode is
+        // force-enabled on coarse pointers), editor card below at natural
+        // height, page scrolls normally.
+        <div className="flex flex-col gap-4 md:h-[calc(100vh-196px)] md:flex-row">
+          <div data-tour-target="seating-canvas" className="h-[52vh] min-w-0 md:h-auto md:flex-1">
             <SeatingMap
               tables={tables}
               assignments={assignments}
@@ -1852,7 +1854,7 @@ export default function SeatingPage() {
               fullHeight
             />
           </div>
-          <div className="w-[280px] shrink-0">
+          <div className="w-full shrink-0 md:w-[280px]">
             <TableEditor
               table={selected}
               onPatch={(patch) => selected && patchTable(selected, patch)}
@@ -1875,10 +1877,11 @@ export default function SeatingPage() {
         // Full-height map + compact unassigned panel on the right. TableCard
         // grid appears below (scroll down) for the classic per-table view.
         <>
-          <div className="flex h-[calc(100vh-200px)] gap-4">
-            {/* Map: flex-1 so it takes all remaining width, h-full so the
-              SeatingMap card stretches vertically. */}
-            <div data-tour-target="seating-canvas" className="min-w-0 flex-1">
+          <div className="flex flex-col gap-4 md:h-[calc(100vh-200px)] md:flex-row">
+            {/* Map: flex-1 so it takes all remaining width on md+; capped
+              height stacked on phones (the TableCard grid below is the
+              primary mobile assignment surface). */}
+            <div data-tour-target="seating-canvas" className="h-[45vh] min-w-0 md:h-auto md:flex-1">
               <SeatingMap
                 tables={tables}
                 assignments={assignments}
@@ -1937,7 +1940,7 @@ export default function SeatingPage() {
             ) : (
               <aside
                 data-tour-target="seating-unassigned"
-                className={`w-[280px] shrink-0 rounded-xl border bg-paper-50 p-3 transition-colors dark:bg-umber-900 ${
+                className={`w-full shrink-0 rounded-xl border bg-paper-50 p-3 transition-colors md:w-[280px] dark:bg-umber-900 ${
                   draggingSeatedId !== null
                     ? unassignedHover
                       ? "border-blush-500 bg-blush-50 ring-2 ring-blush-400 dark:bg-blush-400/15"
@@ -3214,7 +3217,7 @@ function SeatsStepper({
           type="button"
           onClick={dec}
           disabled={decDisabled}
-          className="grid h-8 w-8 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent dark:text-paper-100 dark:hover:bg-umber-700 dark:disabled:text-umber-300"
+          className="grid h-10 w-10 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent md:h-8 md:w-8 dark:text-paper-100 dark:hover:bg-umber-700 dark:disabled:text-umber-300"
           aria-label={removeLabel ?? "−"}
           title={removeLabel}
         >
@@ -3227,7 +3230,7 @@ function SeatsStepper({
           type="button"
           onClick={inc}
           aria-disabled={atMax || undefined}
-          className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+          className={`grid h-10 w-10 place-items-center rounded-lg transition-colors md:h-8 md:w-8 ${
             atMax
               ? "text-ink-300 hover:bg-blush-50 dark:text-umber-300 dark:hover:bg-blush-400/15"
               : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
@@ -3435,7 +3438,7 @@ function TableSeatPanel({
   const disabledSet = new Set(table.disabled_seats ?? []);
 
   return (
-    <div className="flex h-full w-[280px] shrink-0 flex-col rounded-xl border border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-900">
+    <div className="flex w-full shrink-0 flex-col rounded-xl border border-paper-200 bg-paper-50 md:h-full md:w-[280px] dark:border-umber-700 dark:bg-umber-900">
       <div className="flex items-start justify-between gap-2 border-b border-paper-200 px-3 py-2.5 dark:border-umber-700">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
@@ -3491,7 +3494,7 @@ function TableSeatPanel({
                   <button
                     type="button"
                     onClick={() => onUnassign(guest.id)}
-                    className="shrink-0 rounded p-0.5 text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                    className="shrink-0 rounded p-1.5 text-ink-400 hover:bg-paper-200 hover:text-ink-700 md:p-0.5 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                     aria-label={t("seating.table_panel_unassign")}
                     title={t("seating.table_panel_unassign")}
                   >
