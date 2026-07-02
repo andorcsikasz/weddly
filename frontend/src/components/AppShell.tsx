@@ -658,15 +658,16 @@ export function AppShell({ children }: { children: ReactNode }) {
          *   - Tablet (768–1023px): `md:flex md:w-14` icon-only rail so iPad
          *     portrait keeps a sidebar (previously dead — `hidden lg:block`
          *     plus `lg:hidden` bottom-nav left analytics unreachable).
-         *   - Laptop+ (≥1024px): expands to `w-64` (wide enough for the
+         *   - Laptop+ (≥1024px): expands to `w-56` (still wide enough for the
          *     longest section header, e.g. "INSPIRÁCIÓ ÉS EMLÉKEK", to sit on
-         *     one line without clipping), or stays `w-14` when
+         *     one line without clipping — trimmed from w-64 to drop the dead
+         *     space to the right of the content), or stays `w-14` when
          *     the user has explicitly collapsed it. `sidebarCollapsed` only
          *     applies at lg+ — below that the rail is icon-only regardless.
          */}
         <aside
           className={`hidden shrink-0 transition-[width] duration-300 ease-in-out md:flex md:w-14 ${
-            sidebarCollapsed ? "lg:w-14" : "lg:w-64"
+            sidebarCollapsed ? "lg:w-14" : "lg:w-56"
           }`}
         >
           {/* Bound the rail to the viewport so the full nav (15 links + 4
