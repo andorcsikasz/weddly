@@ -846,6 +846,16 @@ export interface LocaleMessages {
       blocked_dates: string;
       status_empty: string;
       revenue_help: string;
+      trend_title: string;
+      trend_empty: string;
+      range_7d: string;
+      range_30d: string;
+      range_90d: string;
+      range_365d: string;
+      unit_inquiries: string;
+      conversion_title: string;
+      conversion_confirmed: string;
+      conversion_rate: string;
     };
     billing: {
       page_title: string;

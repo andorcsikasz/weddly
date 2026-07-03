@@ -71,6 +71,10 @@ export interface VendorStats {
   by_status: Record<string, number>;
   /** Confirmed/upcoming events, soonest first. */
   upcoming: { id: number; couple_display_name: string; event_date: string }[];
+  /** Sparse daily inquiry counts (booking created_at) for the last 365 days,
+   *  oldest first; days with zero inquiries are omitted. Powers the stats
+   *  trend chart + range filter. */
+  inquiries_by_day: { date: string; count: number }[];
   blocked_dates_count: number;
   /** 0..100 — how complete the public listing is. */
   listing_completeness: number;

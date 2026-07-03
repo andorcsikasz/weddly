@@ -151,6 +151,7 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     expect(r.data.inquiries_30d).toBe(0);
     expect(r.data.by_status).toEqual({});
     expect(r.data.upcoming).toEqual([]);
+    expect(r.data.inquiries_by_day).toEqual([]);
     expect(r.data.blocked_dates_count).toBe(0);
     expect(r.data.revenue_tracked).toBe(0);
     // The bootstrap card has blurb + contact_email + price_band filled, but no
@@ -197,6 +198,11 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     expect(r.data.inquiries_30d).toBe(2);
     expect(r.data.by_status).toEqual({ confirmed: 1, requested: 1 });
     expect(r.data.revenue_tracked).toBe(50_000);
+
+    // Both inquiries were created "now", so the daily series carries a single
+    // bucket for today (UTC) with count 2.
+    const today = new Date().toISOString().slice(0, 10);
+    expect(r.data.inquiries_by_day).toEqual([{ date: today, count: 2 }]);
 
     // Only the confirmed future booking is "upcoming".
     expect(r.data.upcoming.length).toBe(1);

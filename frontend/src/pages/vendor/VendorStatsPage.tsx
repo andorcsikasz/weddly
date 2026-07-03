@@ -5,13 +5,13 @@
 // graceful upgrade CTA in place of the detailed analytics; PRO-tier vendors
 // additionally see the inquiries-over-time comparison, the by-status donut, and
 // the upcoming events list.
-// No real chart library - the donut and bars are hand-rolled from design tokens.
-// Backend follow-up: there is no daily inquiry time series yet, so this page
-// deliberately ships no date-range filter and no trend line. Once the rollup
-// carries a per-day series we can add a proper sparkline / range pills here.
+// No real chart library - the donut and the trend bars are hand-rolled from
+// design tokens. The trend chart buckets the rollup's sparse per-day series
+// (stats.inquiries_by_day) into daily / weekly / monthly bars per the selected
+// range pill.
 
-import { BarChart3, CalendarClock, Inbox, Info, Lock, RefreshCw } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { BarChart3, CalendarClock, Inbox, Info, Lock, RefreshCw, TrendingUp } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorFeatureFlags } from "@shared/vendor_plan";
@@ -44,6 +44,12 @@ export default function VendorStatsPage() {
   const [features, setFeatures] = useState<VendorFeatureFlags | null>(null);
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
+  const [range, setRange] = useState<RangeKey>("30d");
+
+  const buckets = useMemo(
+    () => (stats ? bucketInquiries(stats.inquiries_by_day, range, locale) : []),
+    [stats, range, locale],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,9 +104,10 @@ export default function VendorStatsPage() {
     }));
   const statusTotal = statusSegments.reduce((sum, s) => sum + s.count, 0);
 
-  // Inquiries-over-time is a two-bar comparison (all time vs last 30 days) —
-  // the rollup doesn't carry a full time series.
-  const inquiryMax = Math.max(stats.inquiries_total, stats.inquiries_30d, 1);
+  // Conversion: how many inquiries became confirmed bookings.
+  const confirmedCount = stats.by_status.confirmed ?? 0;
+  const conversionRate =
+    stats.inquiries_total > 0 ? Math.round((confirmedCount / stats.inquiries_total) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -111,17 +118,21 @@ export default function VendorStatsPage() {
         <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.stats.page_body")}</p>
       </header>
 
-      {/* Summary numbers — always visible, both tiers. */}
+      {/* Summary numbers — always visible, both tiers. Cards deep-link to the
+          surface behind the number. */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           icon={<Inbox size={18} aria-hidden="true" />}
           label={t("vendor.stats.inquiries")}
           value={String(stats.inquiries_total)}
+          to="/vendor/clients"
         />
         <StatCard
           icon={<CalendarClock size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.inquiries_30d")}
           value={String(stats.inquiries_30d)}
+          sub={t("vendor.stats.unit_inquiries")}
+          to="/vendor/clients"
         />
         <StatCard
           icon={<BarChart3 size={18} aria-hidden="true" />}
@@ -133,31 +144,42 @@ export default function VendorStatsPage() {
           icon={<CalendarClock size={18} aria-hidden="true" />}
           label={t("vendor.stats.blocked_dates")}
           value={String(stats.blocked_dates_count)}
+          to="/vendor/calendar"
         />
       </div>
 
       {/* Detailed analytics — PRO only. FREE sees an upgrade prompt. */}
       {advancedUnlocked ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {/* Inquiries over time */}
+          {/* Inquiries over time — range pills + bucketed trend bars. */}
           <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
-            <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-              {t("vendor.stats.inquiries")}
-            </h2>
-            <div className="flex flex-col gap-3">
-              <BarRow
-                label={t("vendor.dashboard.inquiries_total")}
-                count={stats.inquiries_total}
-                max={inquiryMax}
-                locale={locale}
-              />
-              <BarRow
-                label={t("vendor.dashboard.inquiries_30d")}
-                count={stats.inquiries_30d}
-                max={inquiryMax}
-                locale={locale}
-              />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+                {t("vendor.stats.trend_title")}
+              </h2>
+              <div className="flex gap-1" role="group" aria-label={t("vendor.stats.trend_title")}>
+                {RANGE_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={range === key}
+                    onClick={() => setRange(key)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                      range === key
+                        ? "bg-steel-600 text-white"
+                        : "text-ink-600 hover:bg-paper-200 dark:text-paper-300 dark:hover:bg-umber-800"
+                    }`}
+                  >
+                    {t(`vendor.stats.range_${key}`)}
+                  </button>
+                ))}
+              </div>
             </div>
+            <TrendChart
+              buckets={buckets}
+              unit={t("vendor.stats.unit_inquiries")}
+              empty={t("vendor.stats.trend_empty")}
+            />
           </section>
 
           {/* By status - donut + legend */}
@@ -179,24 +201,28 @@ export default function VendorStatsPage() {
                   total={statusTotal}
                   centerLabel={t("vendor.stats.inquiries")}
                 />
-                <ul className="flex w-full flex-col gap-2">
+                {/* Legend rows deep-link into the client list pre-filtered to
+                    that status. */}
+                <ul className="flex w-full flex-col gap-1">
                   {statusSegments.map((seg) => (
-                    <li
-                      key={seg.status}
-                      className="flex items-center justify-between gap-3 text-sm"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span
-                          aria-hidden="true"
-                          className={`h-2.5 w-2.5 shrink-0 rounded-full bg-chart-${seg.color}`}
-                        />
-                        <span className="truncate text-ink-700 dark:text-paper-200">
-                          {seg.label}
+                    <li key={seg.status}>
+                      <Link
+                        to={`/vendor/clients?status=${encodeURIComponent(seg.status)}`}
+                        className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-1 text-sm transition-colors hover:bg-paper-100 dark:hover:bg-umber-800"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span
+                            aria-hidden="true"
+                            className={`h-2.5 w-2.5 shrink-0 rounded-full bg-chart-${seg.color}`}
+                          />
+                          <span className="truncate text-ink-700 dark:text-paper-200">
+                            {seg.label}
+                          </span>
                         </span>
-                      </span>
-                      <span className="shrink-0 font-semibold text-ink-900 tabular-nums dark:text-paper-50">
-                        {seg.count.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB")}
-                      </span>
+                        <span className="shrink-0 font-semibold text-ink-900 tabular-nums dark:text-paper-50">
+                          {seg.count.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB")}
+                        </span>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -204,49 +230,33 @@ export default function VendorStatsPage() {
             )}
           </section>
 
-          {/* Upcoming events */}
+          {/* Conversion summary — performance context instead of duplicating
+              the overview page's upcoming-events list here. */}
           <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-700 dark:bg-umber-900">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
-                <CalendarClock
-                  size={18}
-                  aria-hidden="true"
-                  className="text-steel-700 dark:text-steel-300"
-                />
-                <span>{t("vendor.stats.upcoming")}</span>
-              </h2>
-              <Link
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
+              <TrendingUp
+                size={18}
+                aria-hidden="true"
+                className="text-steel-700 dark:text-steel-300"
+              />
+              <span>{t("vendor.stats.conversion_title")}</span>
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <ConversionCell
+                label={t("vendor.stats.inquiries")}
+                value={String(stats.inquiries_total)}
                 to="/vendor/clients"
-                className="text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
-              >
-                {t("vendor.dashboard.view_clients")}
-              </Link>
+              />
+              <ConversionCell
+                label={t("vendor.stats.conversion_confirmed")}
+                value={String(confirmedCount)}
+                to="/vendor/clients?status=confirmed"
+              />
+              <ConversionCell
+                label={t("vendor.stats.conversion_rate")}
+                value={stats.inquiries_total > 0 ? `${conversionRate}%` : "–"}
+              />
             </div>
-            {stats.upcoming.length === 0 ? (
-              <p className="py-6 text-center text-sm text-ink-500 dark:text-paper-400">
-                {t("vendor.dashboard.no_upcoming")}
-              </p>
-            ) : (
-              <ul className="flex flex-col divide-y divide-paper-200 dark:divide-umber-700">
-                {stats.upcoming.map((event) => (
-                  <li key={event.id}>
-                    <Link
-                      to={`/vendor/clients/${event.id}`}
-                      className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800"
-                    >
-                      <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
-                        {event.couple_display_name}
-                      </span>
-                      <span className="shrink-0 text-sm text-ink-600 dark:text-paper-300">
-                        {event.event_date
-                          ? formatDate(event.event_date, locale)
-                          : t("vendor.clients.no_event_date")}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
           </section>
         </div>
       ) : (
@@ -265,32 +275,55 @@ function StatCard({
   icon,
   label,
   value,
+  sub,
   help,
+  to,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
+  sub?: string;
   help?: string;
+  to?: string;
 }) {
-  return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-3.5 dark:border-umber-700 dark:bg-umber-900">
+  const body = (
+    <>
       <div className="flex items-center gap-2 text-ink-500 dark:text-paper-400">
         <span className="text-steel-700 dark:text-steel-300">{icon}</span>
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
         {help ? (
-          <span
-            className="ml-auto inline-flex cursor-help text-ink-400 dark:text-paper-500"
-            title={help}
-          >
-            <Info size={14} aria-hidden="true" />
-            <span className="sr-only">{help}</span>
+          // Styled hover/focus tooltip — the native title attr is unreliable
+          // and invisible on touch/keyboard, so the explanation gets a real
+          // popover layer.
+          <span className="group relative ml-auto inline-flex cursor-help text-ink-400 focus:outline-none dark:text-paper-500">
+            <Info size={14} aria-hidden="true" tabIndex={0} focusable="true" />
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute right-0 top-full z-20 mt-1.5 hidden w-56 rounded-lg bg-ink-900 px-3 py-2 text-left text-xs font-normal normal-case tracking-normal text-paper-50 shadow-lg group-hover:block group-focus-within:block dark:bg-umber-950 dark:ring-1 dark:ring-umber-700"
+            >
+              {help}
+            </span>
           </span>
         ) : null}
       </div>
       <div className="text-center text-2xl font-semibold text-ink-900 dark:text-paper-50">
         {value}
       </div>
-    </div>
+      {sub && (
+        <div className="-mt-1.5 text-center text-xs text-ink-500 dark:text-paper-400">{sub}</div>
+      )}
+    </>
+  );
+  const frame =
+    "flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-3.5 dark:border-umber-700 dark:bg-umber-900";
+  if (!to) return <div className={frame}>{body}</div>;
+  return (
+    <Link
+      to={to}
+      className={`${frame} transition-colors hover:border-steel-300 hover:bg-paper-100 dark:hover:border-steel-600 dark:hover:bg-umber-800`}
+    >
+      {body}
+    </Link>
   );
 }
 
@@ -350,10 +383,10 @@ function StatusDonut({
           })}
       </svg>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-semibold text-ink-900 tabular-nums dark:text-paper-50">
+        <span className="font-grotesk text-2xl font-semibold leading-none text-ink-900 tabular-nums dark:text-paper-50">
           {total}
         </span>
-        <span className="text-[10px] font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
+        <span className="mt-1 max-w-[5.5rem] truncate text-[10px] font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
           {centerLabel}
         </span>
       </div>
@@ -361,33 +394,161 @@ function StatusDonut({
   );
 }
 
-function BarRow({
-  label,
-  count,
-  max,
-  locale,
-}: {
+// ----- Trend chart -----------------------------------------------------------
+
+const RANGE_KEYS = ["7d", "30d", "90d", "365d"] as const;
+type RangeKey = (typeof RANGE_KEYS)[number];
+
+interface TrendBucket {
+  /** Axis label (already locale-formatted). */
   label: string;
   count: number;
-  max: number;
-  locale: "hu" | "en";
+}
+
+/** UTC day helper — the backend series uses UTC ISO days, so bucketing walks
+ *  UTC midnights to avoid off-by-one days around midnight local time. */
+function utcDayISO(offsetDays: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Fold the sparse per-day series into the buckets of the selected range:
+ *  7/30 days → one bucket per day, 90 days → per ISO week (7-day windows
+ *  ending today), 365 days → per calendar month. Zero-count buckets are kept
+ *  so the axis is continuous. */
+function bucketInquiries(
+  series: { date: string; count: number }[],
+  range: RangeKey,
+  locale: "hu" | "en",
+): TrendBucket[] {
+  const tag = locale === "hu" ? "hu-HU" : "en-GB";
+  const counts = new Map(series.map((s) => [s.date, s.count]));
+  const dayLabel = new Intl.DateTimeFormat(tag, { month: "short", day: "numeric" });
+  const monthLabel = new Intl.DateTimeFormat(tag, { year: "2-digit", month: "short" });
+
+  if (range === "7d" || range === "30d") {
+    const days = range === "7d" ? 7 : 30;
+    return Array.from({ length: days }, (_, i) => {
+      const iso = utcDayISO(days - 1 - i);
+      return {
+        label: dayLabel.format(new Date(`${iso}T00:00:00Z`)),
+        count: counts.get(iso) ?? 0,
+      };
+    });
+  }
+
+  if (range === "90d") {
+    // 13 rolling 7-day windows ending today, labelled by their start day.
+    return Array.from({ length: 13 }, (_, w) => {
+      const startOffset = (13 - w) * 7 - 1;
+      let count = 0;
+      for (let d = 0; d < 7; d++) count += counts.get(utcDayISO(startOffset - d)) ?? 0;
+      const startIso = utcDayISO(startOffset);
+      return { label: dayLabel.format(new Date(`${startIso}T00:00:00Z`)), count };
+    });
+  }
+
+  // 365d → the last 12 calendar months (current month last).
+  const nowD = new Date();
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(Date.UTC(nowD.getUTCFullYear(), nowD.getUTCMonth() - (11 - i), 1));
+    const ym = d.toISOString().slice(0, 7);
+    let count = 0;
+    for (const [date, c] of counts) if (date.startsWith(ym)) count += c;
+    return { label: monthLabel.format(d), count };
+  });
+}
+
+/** Hand-rolled bar trend: one thin rounded bar per bucket on a recessive
+ *  three-line grid, with a per-bar hover/focus tooltip (exact bucket + count).
+ *  Single series, so identity lives in the section title — no legend. */
+function TrendChart({
+  buckets,
+  unit,
+  empty,
+}: {
+  buckets: TrendBucket[];
+  unit: string;
+  empty: string;
 }) {
-  const pct = max > 0 ? Math.round((count / max) * 100) : 0;
+  const max = Math.max(...buckets.map((b) => b.count), 0);
+  if (max === 0) {
+    return (
+      <p className="flex h-44 items-center justify-center text-center text-sm text-ink-500 dark:text-paper-400">
+        {empty}
+      </p>
+    );
+  }
+  // Label thinning: at most ~6 axis labels, evenly spaced from the first.
+  const step = Math.ceil(buckets.length / 6);
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="truncate text-ink-700 dark:text-paper-200">{label}</span>
-        <span className="shrink-0 font-semibold text-ink-900 tabular-nums dark:text-paper-50">
-          {count.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB")}
-        </span>
+      <div className="relative h-40">
+        {/* Recessive grid: baseline, midline, max line with tiny value tags. */}
+        {[0, 0.5, 1].map((f) => (
+          <div
+            key={f}
+            className="absolute inset-x-0 border-t border-paper-200 dark:border-umber-800"
+            style={{ bottom: `${f * 100}%` }}
+          >
+            <span className="absolute -top-2 right-0 text-[10px] text-ink-400 tabular-nums dark:text-paper-500">
+              {Math.round(f * max)}
+            </span>
+          </div>
+        ))}
+        <div className="absolute inset-0 flex items-end gap-[2px] pr-6">
+          {buckets.map((b, i) => (
+            <div key={`${b.label}-${i}`} className="group relative flex h-full flex-1 items-end">
+              <div
+                className="w-full rounded-t bg-steel-600 transition-colors group-hover:bg-steel-700 dark:bg-steel-400 dark:group-hover:bg-steel-300"
+                style={{ height: `${Math.max((b.count / max) * 100, b.count > 0 ? 3 : 0)}%` }}
+              />
+              {/* Full-column hover target + tooltip. */}
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink-900 px-2.5 py-1.5 text-xs text-paper-50 shadow-lg group-hover:block dark:bg-umber-950 dark:ring-1 dark:ring-umber-700"
+              >
+                {b.label}: <span className="font-semibold tabular-nums">{b.count}</span> {unit}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800">
-        <div
-          className="h-full rounded-full bg-steel-600 transition-all dark:bg-steel-400"
-          style={{ width: `${Math.max(pct, count > 0 ? 4 : 0)}%` }}
-        />
+      <div className="flex gap-[2px] pr-6">
+        {buckets.map((b, i) => (
+          <span
+            key={`${b.label}-${i}`}
+            className="flex-1 truncate text-center text-[10px] text-ink-400 dark:text-paper-500"
+          >
+            {i % step === 0 ? b.label : ""}
+          </span>
+        ))}
       </div>
     </div>
+  );
+}
+
+function ConversionCell({ label, value, to }: { label: string; value: string; to?: string }) {
+  const body = (
+    <>
+      <span className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
+        {label}
+      </span>
+      <span className="text-2xl font-semibold text-ink-900 tabular-nums dark:text-paper-50">
+        {value}
+      </span>
+    </>
+  );
+  const frame = "flex flex-col items-center gap-1 rounded-xl bg-paper-100 p-3 dark:bg-umber-800";
+  if (!to) return <div className={frame}>{body}</div>;
+  return (
+    <Link
+      to={to}
+      className={`${frame} transition-colors hover:bg-paper-200 dark:hover:bg-umber-700`}
+    >
+      {body}
+    </Link>
   );
 }
 

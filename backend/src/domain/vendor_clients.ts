@@ -310,6 +310,7 @@ export function listVendorClientDetails(accountId: number): VendorClientDetail[]
 }
 
 const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
+const YEAR_MS = 1000 * 60 * 60 * 24 * 365;
 
 /** Number of key public-listing fields the completeness percentage scores. */
 const LISTING_COMPLETENESS_FIELDS = 5;
@@ -342,14 +343,22 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
   const byStatus: Record<string, number> = {};
   let revenue = 0;
   let inquiries30d = 0;
+  const byDay = new Map<string, number>();
   for (const r of rows) {
     byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
     if (nowMs - r.created_at <= THIRTY_DAYS_MS) inquiries30d += 1;
+    if (nowMs - r.created_at <= YEAR_MS) {
+      const day = new Date(r.created_at).toISOString().slice(0, 10);
+      byDay.set(day, (byDay.get(day) ?? 0) + 1);
+    }
     // Tracked revenue = deposits actually recorded against the vendor's
     // bookings (money in), not the agreed contract totals.
     const dp = (r as BookingRow & { deposit_paid?: number | null }).deposit_paid;
     if (typeof dp === "number") revenue += dp;
   }
+  const inquiriesByDay = [...byDay.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, count]) => ({ date, count }));
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = rows
     .filter((r) => r.event_date >= today && r.status === "confirmed")
@@ -384,6 +393,7 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
     inquiries_30d: inquiries30d,
     by_status: byStatus,
     upcoming,
+    inquiries_by_day: inquiriesByDay,
     blocked_dates_count: blocked.n,
     listing_completeness: listingCompleteness(getListingByVendorAccountId(accountId)),
     revenue_tracked: revenue,
