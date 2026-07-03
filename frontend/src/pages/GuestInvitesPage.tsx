@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Handshake, Mail, X } from "lucide-react";
 import type {
   Couple,
   EnvelopeTip,
@@ -41,25 +41,19 @@ function SendControls({
 }) {
   const { t } = useT();
   return (
-    <div className="mt-4 flex flex-col gap-4">
-      <div>
-        <span className="field-label">{t("guest_invites.audience_label")}</span>
-        <SegmentedControl
-          ariaLabel={t("guest_invites.audience_label")}
-          className="mt-1"
-          value={audience}
-          onChange={onAudience}
-          options={AUDIENCES.map((a) => ({
-            value: a,
-            label: t(`guest_invites.audience_${a}`),
-          }))}
-        />
-      </div>
-      <div>
-        <span className="field-label">{t("guest_invites.send_mode_label")}</span>
+    <div className="mt-4 flex flex-col gap-3">
+      <SegmentedControl
+        ariaLabel={t("guest_invites.audience_label")}
+        value={audience}
+        onChange={onAudience}
+        options={AUDIENCES.map((a) => ({
+          value: a,
+          label: t(`guest_invites.audience_${a}`),
+        }))}
+      />
+      <div className="flex flex-wrap items-center gap-2">
         <SegmentedControl
           ariaLabel={t("guest_invites.send_mode_label")}
-          className="mt-1"
           value={mode}
           onChange={onMode}
           options={[
@@ -67,21 +61,42 @@ function SendControls({
             { value: "schedule", label: t("guest_invites.send_mode_schedule") },
           ]}
         />
-      </div>
-      {mode === "schedule" && (
-        <div>
-          <label htmlFor="gi_schedule" className="field-label">
-            {t("guest_invites.schedule_label")}
-          </label>
+        {mode === "schedule" && (
           <input
-            id="gi_schedule"
             type="datetime-local"
-            className="input"
+            aria-label={t("guest_invites.schedule_label")}
+            title={t("guest_invites.schedule_label")}
+            className="input min-w-[180px] flex-1"
             value={scheduledValue}
             onChange={(e) => onScheduledValue(e.target.value)}
           />
-        </div>
-      )}
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Identical bottom-pinned primary button shared by the three composer cards.
+ *  `mt-auto` anchors it so the buttons sit on one baseline across the grid. */
+function SendButton({
+  sending,
+  mode,
+  onClick,
+}: {
+  sending: boolean;
+  mode: "now" | "schedule";
+  onClick: () => void;
+}) {
+  const { t } = useT();
+  return (
+    <div className="mt-auto pt-5">
+      <button type="button" className="btn-primary w-full" disabled={sending} onClick={onClick}>
+        {sending
+          ? t("guest_invites.sending")
+          : mode === "now"
+            ? t("guest_invites.send_now_button")
+            : t("guest_invites.schedule_button")}
+      </button>
     </div>
   );
 }
@@ -113,7 +128,7 @@ function InviteCard({ onSent }: { onSent: () => void }) {
   }
 
   return (
-    <section className="card">
+    <section className="card flex flex-col">
       <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
         {t("guest_invites.template_invite")}
       </h2>
@@ -128,18 +143,7 @@ function InviteCard({ onSent }: { onSent: () => void }) {
         scheduledValue={scheduledValue}
         onScheduledValue={setScheduledValue}
       />
-      <button
-        type="button"
-        className="btn-primary mt-5 w-full"
-        disabled={sending}
-        onClick={() => void handleSend()}
-      >
-        {sending
-          ? t("guest_invites.sending")
-          : mode === "now"
-            ? t("guest_invites.send_now_button")
-            : t("guest_invites.schedule_button")}
-      </button>
+      <SendButton sending={sending} mode={mode} onClick={() => void handleSend()} />
     </section>
   );
 }
@@ -185,38 +189,30 @@ function MajorUpdateCard({ onSent }: { onSent: () => void }) {
   }
 
   return (
-    <section className="card">
+    <section className="card flex flex-col">
       <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
         {t("guest_invites.template_major_update")}
       </h2>
       <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
         {t("guest_invites.major_update_desc")}
       </p>
-      <div className="mt-4 flex flex-col gap-4">
-        <div>
-          <label htmlFor="gi_mu_subject" className="field-label">
-            {t("guest_invites.subject_label")}
-          </label>
-          <input
-            id="gi_mu_subject"
-            className="input"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder={t("guest_invites.subject_placeholder")}
-          />
-        </div>
-        <div>
-          <label htmlFor="gi_mu_body" className="field-label">
-            {t("guest_invites.body_label")}
-          </label>
-          <textarea
-            id="gi_mu_body"
-            className="input min-h-[120px] resize-y"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={t("guest_invites.body_placeholder")}
-          />
-        </div>
+      <div className="mt-4 flex flex-col gap-3">
+        <input
+          id="gi_mu_subject"
+          className="input"
+          aria-label={t("guest_invites.subject_label")}
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          placeholder={t("guest_invites.subject_placeholder")}
+        />
+        <textarea
+          id="gi_mu_body"
+          className="input min-h-[88px] resize-y"
+          aria-label={t("guest_invites.body_label")}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={t("guest_invites.body_placeholder")}
+        />
       </div>
       <SendControls
         audience={audience}
@@ -226,18 +222,7 @@ function MajorUpdateCard({ onSent }: { onSent: () => void }) {
         scheduledValue={scheduledValue}
         onScheduledValue={setScheduledValue}
       />
-      <button
-        type="button"
-        className="btn-primary mt-5 w-full"
-        disabled={sending}
-        onClick={() => void handleSend()}
-      >
-        {sending
-          ? t("guest_invites.sending")
-          : mode === "now"
-            ? t("guest_invites.send_now_button")
-            : t("guest_invites.schedule_button")}
-      </button>
+      <SendButton sending={sending} mode={mode} onClick={() => void handleSend()} />
     </section>
   );
 }
@@ -347,42 +332,34 @@ function PreWeddingCard({
   const effective = tip?.effective;
 
   return (
-    <section className="card">
+    <section className="card flex flex-col">
       <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
         {t("guest_invites.template_pre_wedding_info")}
       </h2>
       <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
         {t("guest_invites.pre_wedding_desc")}
       </p>
-      <div className="mt-4 flex flex-col gap-4">
-        <div>
-          <label htmlFor="gi_pw_subject" className="field-label">
-            {t("guest_invites.subject_label")}
-          </label>
-          <input
-            id="gi_pw_subject"
-            className="input"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder={t("guest_invites.subject_placeholder")}
-          />
-        </div>
-        <div>
-          <label htmlFor="gi_pw_body" className="field-label">
-            {t("guest_invites.body_label")}
-          </label>
-          <textarea
-            id="gi_pw_body"
-            className="input min-h-[120px] resize-y"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={t("guest_invites.body_placeholder")}
-          />
-        </div>
+      <div className="mt-4 flex flex-col gap-3">
+        <input
+          id="gi_pw_subject"
+          className="input"
+          aria-label={t("guest_invites.subject_label")}
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          placeholder={t("guest_invites.subject_placeholder")}
+        />
+        <textarea
+          id="gi_pw_body"
+          className="input min-h-[88px] resize-y"
+          aria-label={t("guest_invites.body_label")}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={t("guest_invites.body_placeholder")}
+        />
       </div>
 
       {/* Envelope tip */}
-      <div className="mt-5 rounded-xl border border-paper-300 p-4 dark:border-umber-700">
+      <div className="mt-4 rounded-xl border border-paper-300 p-3.5 dark:border-umber-700">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-umber-900 dark:text-paper-50">
@@ -419,28 +396,25 @@ function PreWeddingCard({
             />
 
             {tipManual ? (
-              <div>
-                <label htmlFor="gi_tip_override" className="field-label">
-                  {t("guest_invites.envelope_tip_amount_label")}
-                </label>
-                <div className="mt-1 flex gap-2">
-                  <input
-                    id="gi_tip_override"
-                    type="number"
-                    min={0}
-                    className="input flex-1"
-                    value={overrideInput}
-                    onChange={(e) => setOverrideInput(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="btn-outline shrink-0"
-                    disabled={savingTip}
-                    onClick={handleSaveOverride}
-                  >
-                    {t("common.save")}
-                  </button>
-                </div>
+              <div className="flex gap-2">
+                <input
+                  id="gi_tip_override"
+                  type="number"
+                  min={0}
+                  className="input flex-1"
+                  aria-label={t("guest_invites.envelope_tip_amount_label")}
+                  title={t("guest_invites.envelope_tip_amount_label")}
+                  value={overrideInput}
+                  onChange={(e) => setOverrideInput(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn-outline shrink-0"
+                  disabled={savingTip}
+                  onClick={handleSaveOverride}
+                >
+                  {t("common.save")}
+                </button>
               </div>
             ) : null}
 
@@ -463,30 +437,39 @@ function PreWeddingCard({
         scheduledValue={scheduledValue}
         onScheduledValue={setScheduledValue}
       />
-      <button
-        type="button"
-        className="btn-primary mt-5 w-full"
-        disabled={sending}
-        onClick={() => void handleSend()}
-      >
-        {sending
-          ? t("guest_invites.sending")
-          : mode === "now"
-            ? t("guest_invites.send_now_button")
-            : t("guest_invites.schedule_button")}
-      </button>
+      <SendButton sending={sending} mode={mode} onClick={() => void handleSend()} />
     </section>
   );
 }
 
-/** A single summary tile. */
-function StatTile({ label, value }: { label: string; value: number }) {
+/** One compact stats row: group label + inline value/label pairs.
+ *  Zero values render muted so the live numbers pop. */
+function StatRow({
+  label,
+  items,
+}: {
+  label: string;
+  items: { label: string; value: number }[];
+}) {
   return (
-    <div className="rounded-xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
-      <p className="font-grotesk text-2xl font-semibold text-umber-900 dark:text-paper-50">
-        {value}
-      </p>
-      <p className="mt-0.5 text-xs text-umber-600 dark:text-umber-300">{label}</p>
+    <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 px-4 py-2.5">
+      <span className="w-24 shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-umber-500 dark:text-umber-400">
+        {label}
+      </span>
+      {items.map((it) => (
+        <span key={it.label} className="inline-flex items-baseline gap-1.5">
+          <span
+            className={`font-grotesk text-base font-semibold ${
+              it.value === 0
+                ? "text-umber-400 dark:text-umber-500"
+                : "text-umber-900 dark:text-paper-50"
+            }`}
+          >
+            {it.value}
+          </span>
+          <span className="text-xs text-umber-600 dark:text-umber-300">{it.label}</span>
+        </span>
+      ))}
     </div>
   );
 }
@@ -622,7 +605,7 @@ export default function GuestInvitesPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <h1 className="font-grotesk text-3xl font-semibold text-umber-900 dark:text-paper-50 sm:text-4xl">
           {t("guest_invites.title")}
         </h1>
@@ -638,40 +621,43 @@ export default function GuestInvitesPage() {
         ) : (
           <>
             {/* ── A) Monitoring ── */}
-            <section className="mt-8">
+            <section className="mt-6">
               <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
                 {t("guest_invites.monitoring_title")}
               </h2>
 
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatTile label={t("guest_invites.stat_total")} value={stats.total} />
-                <StatTile label={t("guest_invites.stat_adults")} value={stats.adults} />
-                <StatTile label={t("guest_invites.stat_children")} value={stats.children} />
-                <StatTile label={t("guest_invites.stat_babies")} value={stats.babies} />
-              </div>
-
-              <h3 className="mt-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-umber-500 dark:text-umber-400">
-                {t("guest_invites.channel_section_title")}
-              </h3>
-              <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatTile label={t("guest_invites.invited_online")} value={stats.online} />
-                <StatTile label={t("guest_invites.invited_physical")} value={stats.physical} />
-                <StatTile label={t("guest_invites.invited_both")} value={stats.both} />
-                <StatTile label={t("guest_invites.not_invited")} value={stats.notInvited} />
-              </div>
-
-              <h3 className="mt-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-umber-500 dark:text-umber-400">
-                {t("guest_invites.rsvp_title")}
-              </h3>
-              <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatTile label={t("guest_invites.rsvp_yes")} value={stats.yes} />
-                <StatTile label={t("guest_invites.rsvp_no")} value={stats.no} />
-                <StatTile label={t("guest_invites.rsvp_maybe")} value={stats.maybe} />
-                <StatTile label={t("guest_invites.rsvp_pending")} value={stats.pending} />
+              <div className="mt-3 divide-y divide-paper-200 rounded-xl border border-paper-300 bg-paper-50 dark:divide-umber-800 dark:border-umber-700 dark:bg-umber-900">
+                <StatRow
+                  label={t("guest_invites.guests_section_title")}
+                  items={[
+                    { label: t("guest_invites.stat_total"), value: stats.total },
+                    { label: t("guest_invites.stat_adults"), value: stats.adults },
+                    { label: t("guest_invites.stat_children"), value: stats.children },
+                    { label: t("guest_invites.stat_babies"), value: stats.babies },
+                  ]}
+                />
+                <StatRow
+                  label={t("guest_invites.channel_section_title")}
+                  items={[
+                    { label: t("guest_invites.invited_online"), value: stats.online },
+                    { label: t("guest_invites.invited_physical"), value: stats.physical },
+                    { label: t("guest_invites.invited_both"), value: stats.both },
+                    { label: t("guest_invites.not_invited"), value: stats.notInvited },
+                  ]}
+                />
+                <StatRow
+                  label={t("guest_invites.rsvp_title")}
+                  items={[
+                    { label: t("guest_invites.rsvp_yes"), value: stats.yes },
+                    { label: t("guest_invites.rsvp_no"), value: stats.no },
+                    { label: t("guest_invites.rsvp_maybe"), value: stats.maybe },
+                    { label: t("guest_invites.rsvp_pending"), value: stats.pending },
+                  ]}
+                />
               </div>
 
               {/* Per-guest table */}
-              <div className="mt-6 overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
+              <div className="mt-4 overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
                 <div className="hidden grid-cols-12 gap-2 border-b border-paper-300 bg-paper-100 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-umber-500 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-400 sm:grid">
                   <span className="col-span-4">{t("guest_invites.col_name")}</span>
                   <span className="col-span-4">{t("guest_invites.col_channel")}</span>
@@ -691,7 +677,7 @@ export default function GuestInvitesPage() {
                       return (
                         <li
                           key={g.id}
-                          className="grid grid-cols-1 gap-2 px-4 py-3 sm:grid-cols-12 sm:items-center"
+                          className="grid grid-cols-1 gap-2 px-4 py-2.5 sm:grid-cols-12 sm:items-center"
                         >
                           <span className="font-medium text-umber-900 dark:text-paper-50 sm:col-span-4">
                             {g.full_name}
@@ -700,26 +686,30 @@ export default function GuestInvitesPage() {
                             <button
                               type="button"
                               aria-pressed={onlineOn}
+                              aria-label={`${g.full_name}: ${t("guest_invites.channel_online")}`}
+                              title={t("guest_invites.channel_online")}
                               onClick={() => void toggleChannel(g, "online")}
-                              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
                                 onlineOn
                                   ? "border-umber-700 bg-umber-700 text-paper-50 dark:border-umber-400 dark:bg-umber-400 dark:text-umber-900"
-                                  : "border-paper-300 text-umber-600 hover:border-umber-400 dark:border-umber-600 dark:text-umber-300"
+                                  : "border-paper-300 text-umber-400 hover:border-umber-400 hover:text-umber-700 dark:border-umber-600 dark:text-umber-500 dark:hover:border-umber-400 dark:hover:text-umber-200"
                               }`}
                             >
-                              {t("guest_invites.channel_online")}
+                              <Mail size={15} aria-hidden="true" />
                             </button>
                             <button
                               type="button"
                               aria-pressed={physicalOn}
+                              aria-label={`${g.full_name}: ${t("guest_invites.channel_physical")}`}
+                              title={t("guest_invites.channel_physical")}
                               onClick={() => void toggleChannel(g, "physical")}
-                              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
                                 physicalOn
                                   ? "border-umber-700 bg-umber-700 text-paper-50 dark:border-umber-400 dark:bg-umber-400 dark:text-umber-900"
-                                  : "border-paper-300 text-umber-600 hover:border-umber-400 dark:border-umber-600 dark:text-umber-300"
+                                  : "border-paper-300 text-umber-400 hover:border-umber-400 hover:text-umber-700 dark:border-umber-600 dark:text-umber-500 dark:hover:border-umber-400 dark:hover:text-umber-200"
                               }`}
                             >
-                              {t("guest_invites.channel_physical")}
+                              <Handshake size={15} aria-hidden="true" />
                             </button>
                           </span>
                           <span className="text-sm text-umber-700 dark:text-umber-200 sm:col-span-2">
@@ -739,7 +729,7 @@ export default function GuestInvitesPage() {
             </section>
 
             {/* ── B) Communication ── */}
-            <section className="mt-12">
+            <section className="mt-10">
               <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
                 {t("guest_invites.comm_title")}
               </h2>
@@ -754,7 +744,7 @@ export default function GuestInvitesPage() {
               </div>
 
               {/* Past + scheduled broadcasts */}
-              <h3 className="mt-10 font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
+              <h3 className="mt-8 font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
                 {t("guest_invites.broadcasts_title")}
               </h3>
               {messages.length === 0 ? (
@@ -803,10 +793,12 @@ export default function GuestInvitesPage() {
                         {m.status === "scheduled" && (
                           <button
                             type="button"
-                            className="btn-ghost text-xs"
+                            aria-label={t("guest_invites.cancel_confirm_yes")}
+                            title={t("guest_invites.cancel_button")}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-umber-500 transition-colors hover:bg-paper-200 hover:text-umber-900 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50"
                             onClick={() => void handleCancel(m.id)}
                           >
-                            {t("guest_invites.cancel_button")}
+                            <X size={16} aria-hidden="true" />
                           </button>
                         )}
                       </div>
