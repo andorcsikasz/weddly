@@ -143,6 +143,16 @@ export const CONFIG = {
    *  (`whsec_…`). Distinct from the couple/vendor webhook so signatures never
    *  collide — register it as its own endpoint in the Stripe dashboard. */
   stripePlannerWebhookSecret: process.env.STRIPE_PLANNER_WEBHOOK_SECRET ?? "",
+  /** Recurring Price ids for the vendor monthly plan, one per currency (see
+   *  shared/vendor_billing.ts VENDOR_MONTHLY_PRICE, keep in sync). Create
+   *  them with backend/scripts/stripe_setup_vendor.ts. When unset, vendor
+   *  checkout returns 503 (billing never blocks boot). */
+  stripePriceVendorEur: process.env.STRIPE_PRICE_VENDOR_EUR ?? "",
+  stripePriceVendorHuf: process.env.STRIPE_PRICE_VENDOR_HUF ?? "",
+  /** Signing secret for the SEPARATE vendor Stripe webhook endpoint
+   *  (`whsec_…`), its own endpoint in the Stripe dashboard, like the planner
+   *  one. */
+  stripeVendorWebhookSecret: process.env.STRIPE_VENDOR_WEBHOOK_SECRET ?? "",
   /** Path to the MaxMind GeoLite2-Country `.mmdb` on disk. Lives on the `/data`
    *  persistent volume in prod so it survives redeploys. The file is NEVER
    *  committed (MaxMind's EULA forbids redistribution + it would bloat the

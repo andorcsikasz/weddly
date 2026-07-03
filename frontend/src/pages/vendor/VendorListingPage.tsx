@@ -24,12 +24,14 @@ import {
 } from "react";
 import { Check, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
-import type {
-  VendorAvailabilityView,
-  VendorListingEditInput,
-  VendorListingView,
+import {
+  priceBandLockedUntil,
+  type VendorAvailabilityView,
+  type VendorListingEditInput,
+  type VendorListingView,
 } from "@shared/listings";
 import type { VendorBilling } from "@shared/vendor_billing";
+import { AddressAutocomplete } from "../../components/AddressAutocomplete";
 import { TextField } from "../../components/ui/TextField";
 import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
@@ -398,13 +400,58 @@ export default function VendorListingPage() {
 
   const track = form ? capacityTrack(form) : null;
 
+  // Anti-fraud pricing cooldown, mirrored from the server rule
+  // (shared/listings.ts): while locked the band buttons are disabled and the
+  // unlock date replaces the help line, so the vendor never hits the 409.
+  const priceLockedUntil = view ? priceBandLockedUntil(view.listing.price_band_changed_at) : null;
+  const priceLocked = priceLockedUntil !== null && priceLockedUntil > Date.now();
+  const priceUnlockDate = priceLocked
+    ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(new Date(priceLockedUntil))
+    : null;
+
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-3">
-        <h1 className="font-grotesk text-3xl">{t("vendor_home.page_title")}</h1>
-        <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">
-          {t("vendor_home.page_body")}
-        </p>
+      {/* Header row doubles as the autosave status line: the indicator sits on
+          the right instead of occupying its own row inside the form. */}
+      <div className="mb-2 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-grotesk text-2xl">{t("vendor_home.page_title")}</h1>
+          <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">
+            {t("vendor_home.page_body")}
+          </p>
+        </div>
+        {form && view && (
+          <div className="shrink-0 pb-0.5" aria-live="polite">
+            {autosaveStatus === "saving" && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-steel-500 dark:bg-steel-300"
+                />
+                {t("vendor_home.autosave_saving")}
+              </span>
+            )}
+            {autosaveStatus === "saved" && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-sage-700 dark:text-sage-300">
+                <Check aria-hidden="true" size={14} strokeWidth={2.4} />
+                {t("vendor_home.autosave_saved")}
+              </span>
+            )}
+            {autosaveStatus === "unsaved" && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-300">
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 rounded-full bg-steel-400 dark:bg-steel-400"
+                />
+                {t("vendor_home.autosave_unsaved")}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {loadError && (
@@ -622,12 +669,18 @@ export default function VendorListingPage() {
                 maxLength={80}
                 required
               />
-              <TextField
+              <AddressAutocomplete
                 id="vendor-address"
                 label={t("vendor_home.label_address")}
                 value={form.address}
-                onChange={onChange("address")}
+                onChange={(v) => setForm((prev) => (prev ? { ...prev, address: v } : prev))}
+                onPick={(s) => {
+                  if (s.city) {
+                    setForm((prev) => (prev ? { ...prev, city: s.city ?? prev.city } : prev));
+                  }
+                }}
                 maxLength={240}
+                disabled={saving}
               />
               <TextField
                 id="vendor-website"
@@ -661,9 +714,12 @@ export default function VendorListingPage() {
 
               <div>
                 <span className="field-label">{t("vendor_home.label_price_band")}</span>
-                <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
-                  {t("vendor_home.label_price_band_help")}
-                </p>
+                {priceLocked && priceUnlockDate && (
+                  <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-200">
+                    <Lock size={12} aria-hidden="true" />
+                    {t("vendor_home.price_band_locked_until", { date: priceUnlockDate })}
+                  </p>
+                )}
                 <div
                   role="group"
                   aria-label={t("vendor_home.label_price_band")}
@@ -677,7 +733,8 @@ export default function VendorListingPage() {
                         type="button"
                         aria-pressed={active}
                         onClick={() => setPriceBand(lvl)}
-                        className={`flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition ${
+                        disabled={priceLocked}
+                        className={`flex flex-col items-start gap-0.5 rounded-xl border p-2.5 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${
                           active
                             ? "border-steel-600 bg-steel-600 text-white"
                             : "border-steel-200 bg-paper-50 text-ink-600 hover:border-steel-400 dark:border-steel-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-steel-500"

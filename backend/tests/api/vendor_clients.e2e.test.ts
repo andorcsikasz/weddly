@@ -355,10 +355,15 @@ describe("vendor clients — /api/vendor/clients + payment tracking", () => {
 
   test("free plan: list/detail work but payment tracking is PRO-gated (403)", async () => {
     wipeAll();
-    // No upgradeToPro → vendor stays FREE (no subscription row).
-    const { vendorToken, listingId } = await bootstrapVendor("free-gate");
+    const { vendorToken, listingId, accountId } = await bootstrapVendor("free-gate");
     const { coupleId } = await bootstrapCouple("couple-free@weddly.test");
+    // The inquiry arrives while the activation grant is live (claim-complete
+    // grants founding/trial), THEN the vendor lapses to FREE: a free vendor
+    // can't receive new inquiries but keeps the ones already delivered.
     const bookingId = await createInboundBooking(listingId, coupleId, "2030-11-11");
+    db.prepare(
+      "UPDATE vendor_subscriptions SET subscription_status = 'none', founding_until = NULL, is_founding_member = 0 WHERE vendor_account_id = ?",
+    ).run(accountId);
 
     // FREE tier still sees the basic client list + detail.
     const list = await req<{ clients: VendorClientView[] }>(

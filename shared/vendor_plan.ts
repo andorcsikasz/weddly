@@ -18,16 +18,24 @@ export type VendorFeature =
   | "client_crm_detail"
   | "payment_tracking"
   | "advanced_stats"
-  | "response_workflow";
+  | "response_workflow"
+  /** Receiving direct inquiries (booking requests) from couples. On FREE the
+   *  public listing stays visible but its inquiry CTA is off. */
+  | "direct_messages"
+  /** The self-serve availability calendar (blocked dates + the public busy
+   *  calendar / next-free date derived from it). */
+  | "calendar_availability";
 
 /** Per-feature minimum plan. A feature with `minPlan: "free"` is always on;
- *  the four premium features require `"pro"`. Kept as a map (not a bare set)
+ *  the premium features require `"pro"`. Kept as a map (not a bare set)
  *  so a future "lite tier" can slot a third plan in without touching callers. */
 export const VENDOR_FEATURES: Record<VendorFeature, { minPlan: VendorPlan }> = {
   client_crm_detail: { minPlan: "pro" },
   payment_tracking: { minPlan: "pro" },
   advanced_stats: { minPlan: "pro" },
   response_workflow: { minPlan: "pro" },
+  direct_messages: { minPlan: "pro" },
+  calendar_availability: { minPlan: "pro" },
 };
 
 /** True when `plan` may use `feature`. PRO unlocks everything; FREE only the
@@ -58,5 +66,7 @@ export function vendorFeatureFlags(plan: VendorPlan): VendorFeatureFlags {
     payment_tracking: isVendorFeatureEnabled(plan, "payment_tracking"),
     advanced_stats: isVendorFeatureEnabled(plan, "advanced_stats"),
     response_workflow: isVendorFeatureEnabled(plan, "response_workflow"),
+    direct_messages: isVendorFeatureEnabled(plan, "direct_messages"),
+    calendar_availability: isVendorFeatureEnabled(plan, "calendar_availability"),
   };
 }

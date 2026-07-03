@@ -58,6 +58,15 @@ export const COMPANY_LOOKUP_BUCKET: BucketConfig = { capacity: 8, refillRate: 1 
  *  useless as an open registry proxy. */
 export const COMPANY_LOOKUP_ANON_BUCKET: BucketConfig = { capacity: 5, refillRate: 1 / 15 };
 
+/** Address autocomplete (Photon geocoder proxy). Fires per keystroke pause
+ *  (the client debounces), so the budget is sized for typing sessions rather
+ *  than clicks: a full address is ~5-8 queries. */
+export const ADDRESS_SUGGEST_BUCKET: BucketConfig = { capacity: 30, refillRate: 1 };
+
+/** Anonymous address autocomplete (pre-account vendor signup). Enough for
+ *  one signup's worth of typing, useless as an open geocoder proxy. */
+export const ADDRESS_SUGGEST_ANON_BUCKET: BucketConfig = { capacity: 20, refillRate: 1 / 3 };
+
 // ─── Per-account failed-login throttle ──────────────────────────────────────
 // The per-IP AUTH_BUCKET can't see a distributed credential-stuffing run (many
 // IPs, one target account). This counts FAILED attempts per claimed email and

@@ -24,6 +24,7 @@ import {
   updateBookingStatus,
 } from "../domain/supplier_bookings";
 import { requireAdmin } from "../domain/users";
+import { ensureVendorScheduledSubscription } from "./vendor_billing";
 import { db } from "../db";
 
 const VALID_STATUSES = new Set<BookingStatus>([
@@ -111,6 +112,12 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       target_id: booking.id,
       after: { supplier_id: supplierId, event_date: body.event_date },
     });
+    // Freemium: when this inquiry spent the vendor's last free lead credit the
+    // first payment is now scheduled: create the Stripe subscription in the
+    // background (idempotent; also retried from the vendor billing status read).
+    if (booking.vendor_account_id !== null) {
+      void ensureVendorScheduledSubscription(booking.vendor_account_id);
+    }
     return json(booking, { status: 201 });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);

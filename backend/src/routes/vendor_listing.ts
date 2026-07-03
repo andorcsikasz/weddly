@@ -11,7 +11,11 @@
 // Name / category / status / lat-lng are deliberately NOT editable — those
 // flow through admin moderation (name) or the geocode worker (lat-lng).
 
-import type { VendorListingEditInput, VendorListingView } from "@shared/listings";
+import {
+  priceBandLockedUntil,
+  type VendorListingEditInput,
+  type VendorListingView,
+} from "@shared/listings";
 import { db, now } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { sniffUploadedImage } from "../lib/image_sniff";
@@ -148,6 +152,22 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
   const { listing: currentListing, account } = resolveVendorListing(ctx);
   const body = await readJson<VendorListingEditInput>(ctx.req);
   const patch = buildPatch(body);
+  // Anti-fraud pricing cooldown (shared/listings.ts): a change to the price
+  // band, including withdrawing it, is allowed once every 30 days. Only a
+  // real change trips the gate; re-sending the current value is a no-op.
+  // Publishing the FIRST price never starts the clock (misclick grace), but
+  // every change of a published band stamps the anchor, so hide-and-republish
+  // can't be used to flip bands faster than the cooldown.
+  if (patch.price_band !== undefined && patch.price_band !== currentListing.price_band) {
+    const lockedUntil = priceBandLockedUntil(currentListing.price_band_changed_at);
+    if (lockedUntil !== null && now() < lockedUntil) {
+      throw new HttpError(
+        409,
+        `price_band is locked until ${new Date(lockedUntil).toISOString().slice(0, 10)}`,
+      );
+    }
+    if (currentListing.price_band !== null) patch.price_band_changed_at = now();
+  }
   const updated = patchListing(currentListing.id, patch);
   if (!updated) {
     // patchListing only returns null when the row vanished between resolve
@@ -161,8 +181,16 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
     action: "vendor.listing_update",
     target_kind: "listing",
     target_id: null, // listing.id is a string; audit_log.target_id is numeric, so we leave it null and stash the id in `before`
-    before: { listing_id: currentListing.id },
-    after: { fields: Object.keys(patch) },
+    // Price-band transitions are recorded verbatim (not just the field name)
+    // so a band-flipping pattern is reconstructable from the audit log alone.
+    before: {
+      listing_id: currentListing.id,
+      ...(patch.price_band !== undefined ? { price_band: currentListing.price_band } : {}),
+    },
+    after: {
+      fields: Object.keys(patch),
+      ...(patch.price_band !== undefined ? { price_band: patch.price_band } : {}),
+    },
   });
   const view: VendorListingView = { listing: updated, account };
   return json(view);

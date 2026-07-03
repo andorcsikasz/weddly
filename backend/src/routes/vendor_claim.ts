@@ -27,7 +27,9 @@ import {
   markOtherPendingClaimsCancelled,
 } from "../domain/listing_claims";
 import { getListingById } from "../domain/listings";
+import { vendorCurrencyForLocale } from "@shared/vendor_billing";
 import { createVendorAccount } from "../domain/vendor_accounts";
+import { initVendorBilling } from "../domain/vendor_billing";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -337,6 +339,14 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
     }
     throw e;
   }
+
+  // Claiming IS this vendor's activation, so the founding-or-trial window
+  // starts here, the same grant the register + onboarding paths make. Without a
+  // sub row the account would sit on the FREE plan with no lead window to
+  // enter (freemium: direct inquiries are PRO). Idempotent. Currency defaults
+  // to EUR, the claim flow carries no locale; the vendor can pay in EUR
+  // regardless of country.
+  initVendorBilling(newVendorAccountId, vendorCurrencyForLocale(null), ts);
 
   addAuditLog({
     actor_user_id: newUserId,

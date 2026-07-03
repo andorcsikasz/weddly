@@ -14,6 +14,7 @@
 
 import type { BookingStatus, SupplierBooking, SupplierAvailability } from "@shared/suppliers";
 import { db, now } from "../db";
+import { isVendorEntitled, recordVendorLeadCredit } from "./vendor_billing";
 
 const VALID_STATUSES: ReadonlySet<BookingStatus> = new Set([
   "requested",
@@ -133,6 +134,13 @@ export function getAvailability(supplierId: string): SupplierAvailability {
   if (!listing || listing.vendor_account_id === null) {
     return { unavailable_dates: [], next_available: null, bookable: false };
   }
+  // Direct inquiries + the busy calendar are PRO features (freemium): a
+  // claimed listing whose vendor is on the FREE plan stays visible but is not
+  // bookable, and the frontend falls back to the tracked website redirect, same
+  // as an unclaimed listing.
+  if (!isVendorEntitled(listing.vendor_account_id)) {
+    return { unavailable_dates: [], next_available: null, bookable: false };
+  }
   const unavailable = listBlockedDates(listing.vendor_account_id);
   return {
     unavailable_dates: unavailable,
@@ -150,8 +158,11 @@ export interface CreateBookingArgs {
 }
 
 /** Insert a booking inquiry. Throws when the supplier is unclaimed (v1
- *  refuses to send mail to scraped contact addresses) or the date is past /
- *  malformed. Caller is responsible for rate-limiting via lib/rate_limit. */
+ *  refuses to send mail to scraped contact addresses), the vendor is on the
+ *  FREE plan (direct inquiries are PRO, freemium), or the date is past /
+ *  malformed. Delivering the inquiry spends one of the vendor's free lead
+ *  credits when they're inside the lead window (see domain/vendor_billing.ts).
+ *  Caller is responsible for rate-limiting via lib/rate_limit. */
 export function createBooking(args: CreateBookingArgs): SupplierBooking {
   if (!isIsoDate(args.eventDate)) {
     throw new Error("event_date must be valid YYYY-MM-DD");
@@ -159,6 +170,9 @@ export function createBooking(args: CreateBookingArgs): SupplierBooking {
   const listing = getListingFor(args.supplierId);
   if (!listing || listing.vendor_account_id === null) {
     throw new Error("booking_unavailable: supplier is not claimed");
+  }
+  if (!isVendorEntitled(listing.vendor_account_id)) {
+    throw new Error("booking_unavailable: vendor is not accepting direct inquiries");
   }
   const ts = now();
   const info = db
@@ -178,6 +192,11 @@ export function createBooking(args: CreateBookingArgs): SupplierBooking {
       ts,
     );
   const id = Number(info.lastInsertRowid);
+  // The delivered inquiry is a generated lead: spend one free credit when the
+  // vendor is inside the card-on-file lead window (3rd credit schedules the
+  // first payment for the start of next month). The caller kicks off the
+  // Stripe subscription via ensureVendorScheduledSubscription.
+  recordVendorLeadCredit(listing.vendor_account_id, ts);
   const row = db.prepare("SELECT * FROM supplier_bookings WHERE id = ?").get(id) as BookingRow;
   return toBooking(row);
 }

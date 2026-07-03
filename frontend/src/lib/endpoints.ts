@@ -86,6 +86,7 @@ import type {
 } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse } from "@shared/billing";
 import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/company_lookup";
+import type { AddressSuggestion } from "@shared/geo";
 import type { PlannerBillingStatus } from "@shared/planner_billing";
 import type { CoupleDesignInput } from "@shared/design";
 import type { BlogPost } from "@shared/blog_posts";
@@ -2749,6 +2750,16 @@ export const companyLookupApi = {
     apiFetch<{ company: CompanyLookupResult }>(
       "GET",
       `/api/company-lookup/company/${encodeURIComponent(id)}?country=${encodeURIComponent(country)}`,
+    ),
+};
+
+/** Address autocomplete (backend proxy over the free Photon/OSM geocoder).
+ *  Anonymous-allowed: the vendor signup form runs pre-account. */
+export const geoApi = {
+  addressSuggest: (q: string, lang: string) =>
+    apiFetch<{ suggestions: AddressSuggestion[] }>(
+      "GET",
+      `/api/geo/address-suggest?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}`,
     ),
 };
 

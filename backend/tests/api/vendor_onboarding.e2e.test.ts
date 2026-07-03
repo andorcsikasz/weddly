@@ -157,7 +157,7 @@ describe("vendor onboarding — accept → activate → live", () => {
     expect(again.status).toBe(409);
   });
 
-  test("the founding vendor can edit; a lapsed vendor is gated with 402", async () => {
+  test("the founding vendor can edit; a lapsed vendor keeps the listing but loses the calendar", async () => {
     wipeAll();
     const admin = await addAdmin();
     const { token } = await acceptedWaitlistToken(admin, {
@@ -182,7 +182,9 @@ describe("vendor onboarding — accept → activate → live", () => {
     );
     expect(ok.status).toBe(200);
 
-    // Force the sub into the lapsed 'none' state → the gate must refuse edits.
+    // Force the sub into the lapsed 'none' state. Freemium contract: the
+    // LISTING stays editable on the FREE plan; the availability calendar is
+    // the PRO surface the 402 gate still protects.
     const acct = db
       .prepare(
         "SELECT va.id AS id FROM vendor_accounts va JOIN users u ON u.id = va.owner_user_id WHERE u.email = ?",
@@ -192,10 +194,18 @@ describe("vendor onboarding — accept → activate → live", () => {
       "UPDATE vendor_subscriptions SET subscription_status = 'none', founding_until = NULL, is_founding_member = 0 WHERE vendor_account_id = ?",
     ).run(acct.id);
 
-    const blocked = await req(
+    const stillEditable = await req(
       "PATCH",
       "/api/vendor/listing/me",
       { city: "Graz" },
+      { token: vendorToken },
+    );
+    expect(stillEditable.status).toBe(200);
+
+    const blocked = await req(
+      "POST",
+      "/api/vendor/availability/me",
+      { date: "2031-06-01" },
       { token: vendorToken },
     );
     expect(blocked.status).toBe(402);

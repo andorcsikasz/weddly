@@ -96,6 +96,9 @@ process.env.STRIPE_PRICE_PLANNER_PRO_HUF = "";
 process.env.STRIPE_PRICE_PLANNER_PREMIUM_EUR = "";
 process.env.STRIPE_PRICE_PLANNER_PREMIUM_HUF = "";
 process.env.STRIPE_PLANNER_WEBHOOK_SECRET = "";
+process.env.STRIPE_PRICE_VENDOR_EUR = "";
+process.env.STRIPE_PRICE_VENDOR_HUF = "";
+process.env.STRIPE_VENDOR_WEBHOOK_SECRET = "";
 
 // Cloudflare R2 object storage stays disabled in tests so the storage layer
 // uses the local-disk backend (UPLOADS_DIR above) — pin every R2 field empty
@@ -114,6 +117,10 @@ process.env.R2_BACKUP_INTERVAL_HOURS = "0";
 // available; the fake layer intercepts before the key would ever be sent.
 process.env.COMPANY_LOOKUP_FAKE = "1";
 process.env.GEMI_API_KEY = "test-gemi-key";
+
+// Address autocomplete: the Photon proxy answers from deterministic fixtures
+// (src/lib/address_suggest.ts) so the suite never touches the real geocoder.
+process.env.ADDRESS_SUGGEST_FAKE = "1";
 
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {

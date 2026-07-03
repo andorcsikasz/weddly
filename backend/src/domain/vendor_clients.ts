@@ -16,6 +16,7 @@ import type {
 } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { vendorPlanFromEntitlement } from "@shared/vendor_plan";
+import { VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
 import type { Currency } from "@shared/types";
 import { db, now } from "../db";
 import { type Ctx, HttpError, requireAuth } from "../lib/http";
@@ -370,6 +371,10 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
         founding_until: null,
         is_founding_member: false,
         current_period_end: null,
+        card_on_file: false,
+        lead_credits_used: 0,
+        lead_credits_total: VENDOR_FREE_LEAD_CREDITS,
+        billing_starts_at: null,
         currency: "EUR" as Currency,
         entitled: false,
         reason: "none" as const,

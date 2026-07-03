@@ -24,6 +24,7 @@ export function CompanyLookupBox({ country, onPick }: Props) {
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<CompanyLookupResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pickingId, setPickingId] = useState<string | null>(null);
   // Country can flip while an availability fetch is in flight; only the
   // latest request may commit state.
   const requestSeq = useRef(0);
@@ -46,6 +47,29 @@ export function CompanyLookupBox({ country, onPick }: Props) {
   if (!availability?.available) return null;
 
   const kindsLine = availability.search_kinds.map((k) => t(`company_lookup.kind_${k}`)).join(" / ");
+
+  /** Import EVERYTHING the registry publishes: some sources return trimmed
+   *  search rows, so a pick first fetches the full official record and lets
+   *  its non-null fields win over the row. If the detail fetch fails, the
+   *  search row is still official data; fall back to it rather than block. */
+  async function handlePick(r: CompanyLookupResult) {
+    if (pickingId) return;
+    setPickingId(r.id);
+    try {
+      const { company } = await companyLookupApi.getCompany(country, r.id);
+      const merged: CompanyLookupResult = { ...r };
+      for (const [key, val] of Object.entries(company)) {
+        if (val != null) (merged as unknown as Record<string, unknown>)[key] = val;
+      }
+      // "unknown" is the detail endpoint saying nothing, not a downgrade.
+      if (company.status === "unknown") merged.status = r.status;
+      onPick(merged);
+    } catch {
+      onPick(r);
+    } finally {
+      setPickingId(null);
+    }
+  }
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -131,8 +155,15 @@ export function CompanyLookupBox({ country, onPick }: Props) {
                       .join(" · ")}
                   </p>
                 </div>
-                <button type="button" className="btn-outline shrink-0" onClick={() => onPick(r)}>
-                  {t("company_lookup.use_button")}
+                <button
+                  type="button"
+                  className="btn-outline shrink-0"
+                  disabled={pickingId !== null}
+                  onClick={() => void handlePick(r)}
+                >
+                  {pickingId === r.id
+                    ? t("company_lookup.searching")
+                    : t("company_lookup.use_button")}
                 </button>
               </li>
             ))}

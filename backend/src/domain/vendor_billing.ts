@@ -1,21 +1,27 @@
-// Vendor billing domain: founding-cohort eligibility, the activation grant, and
-// the entitlement snapshot used by the vendor edit gate + onboarding. The state
-// machine + entitlement rules are shared with couples (shared/billing.ts) —
-// only the table and the cohort/price constants differ (shared/vendor_billing.ts).
+// Vendor billing domain: founding-cohort eligibility, the activation grant,
+// the freemium lead-window state machine, and the entitlement snapshot used by
+// the vendor edit gate + onboarding. The entitlement rules live in
+// shared/vendor_billing.ts (computeVendorEntitlement) so server and client
+// agree; this file owns the vendor_subscriptions row transitions:
 //
-// Stripe wiring (Checkout/Portal/webhook) is a fast-follow: the founding 100
-// are free for a year with no card, so account creation never depends on Stripe
-// being configured. `applyVendorSubscriptionState` is the seam the future
-// webhook will call.
+//   trialing (3 days) ──card saved──▶ lead_window ──3rd inquiry──▶
+//   billing_starts_at stamped (next month start) ──Stripe webhook──▶ active
+//
+// `applyVendorSubscriptionState` is the seam the vendor billing webhook calls;
+// `markVendorCardOnFile` + `recordVendorLeadCredit` are the freemium seams
+// (called from the webhook and from inquiry creation respectively).
 
 import {
-  type BillingReason,
-  computeEntitlement,
+  computeVendorEntitlement,
+  startOfNextUtcMonth,
   type SubscriptionStatus,
-  type VendorBilling,
   VENDOR_FOUNDING_CAP,
   VENDOR_FOUNDING_DURATION_MS,
+  VENDOR_FREE_LEAD_CREDITS,
   VENDOR_TRIAL_DURATION_MS,
+  type VendorBilling,
+  type VendorBillingReason,
+  type VendorSubscriptionStatus,
 } from "@shared/vendor_billing";
 import type { Currency } from "@shared/types";
 import { db, now } from "../db";
@@ -30,6 +36,10 @@ export interface VendorSubRow {
   current_period_end: number | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  card_on_file: number;
+  card_added_at: number | null;
+  lead_credits_used: number;
+  billing_starts_at: number | null;
   currency: string;
   created_at: number;
   updated_at: number;
@@ -106,12 +116,14 @@ export function initVendorBilling(
 
 // ── Entitlement snapshot ────────────────────────────────────────────────────
 /** Map a stored vendor sub row to the billing DTO, COMPUTING entitlement from
- *  status + timestamps at read-time (reuses the couple-side pure function). */
+ *  status + timestamps at read-time (the shared pure function). */
 export function toVendorBilling(row: VendorSubRow, nowMs: number = Date.now()): VendorBilling {
-  const status = row.subscription_status as SubscriptionStatus;
-  const { entitled, reason } = computeEntitlement(status, {
+  const status = row.subscription_status as VendorSubscriptionStatus;
+  const { entitled, reason } = computeVendorEntitlement(status, {
     trial_ends_at: row.trial_ends_at,
     founding_until: row.founding_until,
+    lead_credits_used: row.lead_credits_used,
+    billing_starts_at: row.billing_starts_at,
     nowMs,
   });
   return {
@@ -120,6 +132,10 @@ export function toVendorBilling(row: VendorSubRow, nowMs: number = Date.now()): 
     founding_until: row.founding_until,
     is_founding_member: row.is_founding_member === 1,
     current_period_end: row.current_period_end,
+    card_on_file: row.card_on_file === 1,
+    lead_credits_used: row.lead_credits_used,
+    lead_credits_total: VENDOR_FREE_LEAD_CREDITS,
+    billing_starts_at: row.billing_starts_at,
     currency: row.currency as Currency,
     entitled,
     reason,
@@ -134,8 +150,72 @@ export function isVendorEntitled(vendorAccountId: number, nowMs: number = Date.n
   return toVendorBilling(sub, nowMs).entitled;
 }
 
-// ── Stripe linkage (fast-follow webhook seam) ───────────────────────────────
-/** Apply a Stripe vendor subscription's state to the vendor sub row. The future
+// ── Freemium lead-window transitions ────────────────────────────────────────
+/** Card saved with Stripe (checkout setup completed). Flips a no-card vendor
+ *  (trialing, running or expired, or lapsed-to-none) into the lead_window:
+ *  full PRO until the first VENDOR_FREE_LEAD_CREDITS inquiries arrive. A
+ *  vendor already founding / on a paid sub / mid-lead-window just gets the
+ *  card flag stamped, no free leads are (re)granted, so a canceled
+ *  subscriber can't farm new free windows by re-adding a card. Idempotent. */
+export function markVendorCardOnFile(vendorAccountId: number, nowMs: number = now()): void {
+  const sub = getVendorSub(vendorAccountId);
+  if (!sub) return;
+  const status = sub.subscription_status as VendorSubscriptionStatus;
+  const entersLeadWindow =
+    (status === "trialing" || status === "none") && sub.stripe_subscription_id === null;
+  db.prepare(
+    `UPDATE vendor_subscriptions
+        SET card_on_file = 1,
+            card_added_at = COALESCE(card_added_at, ?),
+            subscription_status = ?,
+            updated_at = ?
+      WHERE vendor_account_id = ?`,
+  ).run(nowMs, entersLeadWindow ? "lead_window" : sub.subscription_status, nowMs, vendorAccountId);
+}
+
+/** A couple inquiry was delivered to this vendor. Spends one free lead credit
+ *  when the vendor is inside the lead window; the credit that reaches
+ *  VENDOR_FREE_LEAD_CREDITS stamps billing_starts_at = start of the NEXT
+ *  month (the "we generated 3 direct sales → payment period starts next
+ *  month" trigger). Returns true when this call just scheduled billing, so
+ *  the caller can kick off the Stripe subscription. No-op for every other
+ *  status (trial and founding inquiries are free and uncounted). */
+export function recordVendorLeadCredit(vendorAccountId: number, nowMs: number = now()): boolean {
+  const spend = db.transaction((): boolean => {
+    const sub = getVendorSub(vendorAccountId);
+    if (!sub || sub.subscription_status !== "lead_window") return false;
+    if (sub.billing_starts_at !== null || sub.lead_credits_used >= VENDOR_FREE_LEAD_CREDITS) {
+      return false;
+    }
+    const used = sub.lead_credits_used + 1;
+    const startsBilling = used >= VENDOR_FREE_LEAD_CREDITS;
+    db.prepare(
+      `UPDATE vendor_subscriptions
+          SET lead_credits_used = ?, billing_starts_at = ?, updated_at = ?
+        WHERE vendor_account_id = ?`,
+    ).run(used, startsBilling ? startOfNextUtcMonth(nowMs) : null, nowMs, vendorAccountId);
+    return startsBilling;
+  });
+  return spend();
+}
+
+// ── Stripe linkage ──────────────────────────────────────────────────────────
+export function setVendorStripeCustomerId(vendorAccountId: number, customerId: string): void {
+  db.prepare(
+    "UPDATE vendor_subscriptions SET stripe_customer_id = ?, updated_at = ? WHERE vendor_account_id = ?",
+  ).run(customerId, now(), vendorAccountId);
+}
+
+/** Resolve a vendor account id from a Stripe customer id (webhook fallback
+ *  when the subscription metadata is missing). */
+export function getVendorByStripeCustomer(customerId: string): number | null {
+  const row = db
+    .prepare("SELECT vendor_account_id FROM vendor_subscriptions WHERE stripe_customer_id = ?")
+    .get(customerId) as { vendor_account_id: number } | undefined;
+  return row?.vendor_account_id ?? null;
+}
+
+/** Apply a Stripe vendor subscription's state to the vendor sub row. The
  *  vendor billing webhook funnels lifecycle events through here. Same Stripe →
  *  our-status mapping as the couple side. */
 export function applyVendorSubscriptionState(
@@ -167,12 +247,14 @@ export function applyVendorSubscriptionState(
 }
 
 // ── Entitlement gate ────────────────────────────────────────────────────────
-// Vendor EDIT surfaces. A mutating request (POST/PUT/PATCH/DELETE) to any of
-// these is refused with 402 once the vendor's founding/trial window lapses and
-// they aren't subscribed — the listing editor + availability go read-only.
-// Deliberately EXCLUDED so a lapsed vendor can recover: /api/vendor/onboard/*,
-// /api/vendor/claim/*, and (future) /api/vendor/billing/*.
-const VENDOR_EDIT_PREFIXES: readonly string[] = ["/api/vendor/listing", "/api/vendor/availability"];
+// Vendor PRO surfaces. A mutating request (POST/PUT/PATCH/DELETE) to any of
+// these is refused with 402 once the vendor's window lapses and they aren't
+// subscribed: the availability calendar goes read-only. The LISTING EDITOR is
+// deliberately NOT here: the FREE plan keeps the public listing live and
+// editable (freemium: only DMs / calendar / CRM are PRO). Also excluded so a
+// lapsed vendor can recover: /api/vendor/onboard/*, /api/vendor/claim/*, and
+// /api/vendor/billing/*.
+const VENDOR_EDIT_PREFIXES: readonly string[] = ["/api/vendor/availability"];
 const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 /** Central read-only gate for the vendor workspace, called from the request
@@ -184,7 +266,7 @@ export function vendorEntitlementBlock(
   method: string,
   pathname: string,
   userId: number | null,
-): BillingReason | null {
+): VendorBillingReason | null {
   if (!userId || !MUTATING_METHODS.has(method)) return null;
   const onEditSurface = VENDOR_EDIT_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),

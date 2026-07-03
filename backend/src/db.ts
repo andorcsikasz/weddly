@@ -1458,6 +1458,10 @@ addColumnIfMissing("vendor_accounts", "postal_code", "postal_code TEXT");
 // Vendor-written label behind category='other' listings: the "my service
 // isn't in the taxonomy yet" escape hatch on the signup form.
 addColumnIfMissing("listings", "custom_category", "custom_category TEXT");
+// Anti-fraud pricing cooldown anchor: epoch ms of the vendor's last accepted
+// price_band change (see PRICE_BAND_COOLDOWN_DAYS in shared/listings.ts).
+// NULL = the published band was never changed, so the next change is free.
+addColumnIfMissing("listings", "price_band_changed_at", "price_band_changed_at INTEGER");
 // Uniqueness indexes live here (not schema.sql) per the May 2026 ordering rule —
 // the column must exist before the index that references it. Partial so the
 // pre-backfill NULLs don't collide with each other.
@@ -1467,6 +1471,57 @@ db.exec(
 db.exec(
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_accounts_vendor_code ON vendor_accounts(vendor_code) WHERE vendor_code IS NOT NULL",
 );
+
+// Vendor freemium lifecycle (shared/vendor_billing.ts): a saved card flips the
+// expired trial into the lead_window status; each couple inquiry delivered in
+// that window spends a free lead credit; the credit that hits
+// VENDOR_FREE_LEAD_CREDITS schedules the first payment for the start of the
+// next month (billing_starts_at, also the Stripe trial_end).
+addColumnIfMissing(
+  "vendor_subscriptions",
+  "card_on_file",
+  "card_on_file INTEGER NOT NULL DEFAULT 0",
+);
+addColumnIfMissing("vendor_subscriptions", "card_added_at", "card_added_at INTEGER");
+addColumnIfMissing(
+  "vendor_subscriptions",
+  "lead_credits_used",
+  "lead_credits_used INTEGER NOT NULL DEFAULT 0",
+);
+addColumnIfMissing("vendor_subscriptions", "billing_starts_at", "billing_starts_at INTEGER");
+
+// One-time grandfather: every vendor account that existed BEFORE the vendor
+// freemium launch is an early adopter: grant the founding year (free, no
+// card), the same promise activation makes. Idempotent: only accounts with no
+// vendor_subscriptions row are touched; accounts created after launch get
+// their row at activation (initVendorBilling) or claim-complete, never here.
+// Mirrors the planner grandfather above. Currency pinned from owner locale.
+{
+  const ungrantedVendors = db
+    .prepare(
+      `SELECT va.id, u.locale FROM vendor_accounts va
+        LEFT JOIN users u ON u.id = va.owner_user_id
+        WHERE NOT EXISTS
+          (SELECT 1 FROM vendor_subscriptions vs WHERE vs.vendor_account_id = va.id)`,
+    )
+    .all() as Array<{ id: number; locale: string | null }>;
+  if (ungrantedVendors.length > 0) {
+    const nowMs = Date.now();
+    const foundingUntil = nowMs + 1000 * 60 * 60 * 24 * 365;
+    const insertVendorSub = db.prepare(
+      `INSERT INTO vendor_subscriptions
+         (vendor_account_id, subscription_status, trial_ends_at, founding_until,
+          is_founding_member, currency, created_at, updated_at)
+       VALUES (?, 'founding', NULL, ?, 1, ?, ?, ?)`,
+    );
+    db.transaction(() => {
+      for (const v of ungrantedVendors) {
+        const currency = v.locale === "hu" ? "HUF" : "EUR";
+        insertVendorSub.run(v.id, foundingUntil, currency, nowMs, nowMs);
+      }
+    })();
+  }
+}
 
 // Vendor "clients" + payment tracking (vendor workspace). The client view is
 // supplier_bookings enriched with vendor-managed CRM fields: an agreed contract

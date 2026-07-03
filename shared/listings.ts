@@ -59,6 +59,11 @@ export interface Listing {
   blurb_en: string | null;
   /** 1 = $, 5 = $$$$$. Null when unpriced. */
   price_band: 1 | 2 | 3 | 4 | 5 | null;
+  /** Epoch ms of the last accepted price-band CHANGE. Anchors the anti-fraud
+   *  cooldown (see PRICE_BAND_COOLDOWN_DAYS + priceBandLockedUntil). Null when
+   *  the published band has never been changed. Publishing the FIRST price
+   *  does not start the clock, so a fresh vendor can still correct a misclick. */
+  price_band_changed_at: number | null;
   /** Seated-dinner capacity range. Null on community/claimed (no field yet) and
    *  on curated entries we haven't placed. */
   capacity_min: number | null;
@@ -169,6 +174,22 @@ export interface VendorListingEditInput {
   price_band?: 1 | 2 | 3 | 4 | 5 | null;
   capacity_min?: number | null;
   capacity_max?: number | null;
+}
+
+/** Anti-fraud pricing cooldown: once a vendor changes (or withdraws) their
+ *  PUBLISHED price band, the next change is allowed only this many days
+ *  later. Stops band-flipping games (rank cheap in searches, then flip to
+ *  premium for the inquiry). Publishing the first price never starts the
+ *  clock. Shared so the editor can disable the controls with the exact date
+ *  the server would enforce. */
+export const PRICE_BAND_COOLDOWN_DAYS = 30;
+
+/** Epoch ms until which the price band is locked, or null when it is freely
+ *  editable (never changed, or the cooldown anchor is absent). Callers still
+ *  compare against "now": a past timestamp means the lock has expired. */
+export function priceBandLockedUntil(changedAt: number | null): number | null {
+  if (changedAt == null) return null;
+  return changedAt + PRICE_BAND_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
 }
 
 /** Fields a vendor can self-serve edit on their own `vendor_accounts` row

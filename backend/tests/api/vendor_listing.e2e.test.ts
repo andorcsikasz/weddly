@@ -577,3 +577,144 @@ describe("P2.D vendor listing — DELETE /api/vendor/listing/me/hero", () => {
     expect(del.data.listing.hero_image_url).toBeNull();
   });
 });
+
+describe("vendor listing price-band 30-day cooldown", () => {
+  async function makeVendor(tag: string): Promise<{ vendorToken: string; listingId: string }> {
+    const { listingId } = await makeApprovedListing(
+      `owner-${tag}@weddly.test`,
+      `vendor-${tag}@weddly.test`,
+      `${tag} Photo Studio`,
+    );
+    return claimListing(listingId, `vendor-${tag}@weddly.test`, "Vendor Owner");
+  }
+
+  test("changing a published band stamps the anchor and locks further changes", async () => {
+    wipeAll();
+    const { vendorToken, listingId } = await makeVendor("cooldown-lock");
+
+    // Claim-seeded band is 3 with no anchor, so the first change is free.
+    const first = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 4 },
+      { token: vendorToken },
+    );
+    expect(first.status).toBe(200);
+    expect(first.data.listing.price_band).toBe(4);
+    expect(first.data.listing.price_band_changed_at).not.toBeNull();
+
+    // Second change inside the window → 409, band untouched.
+    const second = await req(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 5 },
+      { token: vendorToken },
+    );
+    expect(second.status).toBe(409);
+
+    // Withdrawing the price is also a change; same lock.
+    const withdraw = await req(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: null },
+      { token: vendorToken },
+    );
+    expect(withdraw.status).toBe(409);
+
+    const row = db.prepare("SELECT price_band FROM listings WHERE id = ?").get(listingId) as {
+      price_band: number;
+    };
+    expect(row.price_band).toBe(4);
+  });
+
+  test("re-sending the current band is a no-op, not a change", async () => {
+    wipeAll();
+    const { vendorToken } = await makeVendor("cooldown-noop");
+
+    const change = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 2 },
+      { token: vendorToken },
+    );
+    expect(change.status).toBe(200);
+
+    // Same band + an unrelated field: must not 409, unrelated field applies.
+    const noop = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 2, blurb_en: "Still the same band" },
+      { token: vendorToken },
+    );
+    expect(noop.status).toBe(200);
+    expect(noop.data.listing.blurb_en).toBe("Still the same band");
+  });
+
+  test("publishing the first price never starts the clock", async () => {
+    wipeAll();
+    const { vendorToken, listingId } = await makeVendor("cooldown-first");
+    // Simulate the signup-path listing that starts unpriced.
+    db.prepare(
+      "UPDATE listings SET price_band = NULL, price_band_changed_at = NULL WHERE id = ?",
+    ).run(listingId);
+
+    const publish = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 2 },
+      { token: vendorToken },
+    );
+    expect(publish.status).toBe(200);
+    expect(publish.data.listing.price_band_changed_at).toBeNull();
+
+    // The first CHANGE of the published band is still free (misclick grace)…
+    const adjust = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 3 },
+      { token: vendorToken },
+    );
+    expect(adjust.status).toBe(200);
+    expect(adjust.data.listing.price_band_changed_at).not.toBeNull();
+
+    // …and from then on the cooldown holds.
+    const blocked = await req(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 4 },
+      { token: vendorToken },
+    );
+    expect(blocked.status).toBe(409);
+  });
+
+  test("the band unlocks once 30 days have passed", async () => {
+    wipeAll();
+    const { vendorToken, listingId } = await makeVendor("cooldown-expiry");
+
+    const change = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 4 },
+      { token: vendorToken },
+    );
+    expect(change.status).toBe(200);
+
+    // Time-travel the anchor to 31 days ago.
+    const thirtyOneDaysAgo = Date.now() - 31 * 24 * 60 * 60 * 1000;
+    db.prepare("UPDATE listings SET price_band_changed_at = ? WHERE id = ?").run(
+      thirtyOneDaysAgo,
+      listingId,
+    );
+
+    const after = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 1 },
+      { token: vendorToken },
+    );
+    expect(after.status).toBe(200);
+    expect(after.data.listing.price_band).toBe(1);
+    // The accepted change re-stamps the anchor to "now".
+    expect(after.data.listing.price_band_changed_at).toBeGreaterThan(thirtyOneDaysAgo);
+  });
+});

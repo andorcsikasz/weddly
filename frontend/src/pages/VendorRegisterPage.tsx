@@ -14,6 +14,7 @@ import type { AuthSession } from "@shared/types";
 import { Check } from "lucide-react";
 import { Fragment, type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AddressAutocomplete } from "../components/AddressAutocomplete";
 import { Confetti } from "../components/Confetti";
 import { CountryCombobox } from "../components/CountryCombobox";
 import { CompanyLookupBox } from "../components/planner/CompanyLookupBox";
@@ -508,20 +509,20 @@ export default function VendorRegisterPage() {
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="vr_address" className="field-label">
-                  {t("vendor_register.address_label")}
-                </label>
-                <input
-                  id="vr_address"
-                  type="text"
-                  className="input"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  maxLength={240}
-                  autoComplete="street-address"
-                />
-              </div>
+              <AddressAutocomplete
+                id="vr_address"
+                label={t("vendor_register.address_label")}
+                value={address}
+                onChange={(v) => {
+                  clearError();
+                  setAddress(v);
+                }}
+                onPick={(s) => {
+                  if (s.city) setCity(s.city);
+                  if (s.postal_code) setPostalCode(s.postal_code);
+                }}
+                maxLength={240}
+              />
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
