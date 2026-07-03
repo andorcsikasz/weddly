@@ -74,6 +74,10 @@ export default {
           700: "#9d3b27",
           800: "#7d3122",
           900: "#612821",
+          // Several dark-mode surfaces already reference blush-950; without
+          // this stop Tailwind silently dropped those classes and the panels
+          // rendered transparent.
+          950: "#401b16",
         },
         // Sage — vivid forest green. Marks couple-private "DIY" supplier
         // entries AND the page's success / notify CTAs (e.g. the date-changed

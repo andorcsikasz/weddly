@@ -160,15 +160,22 @@ export function formatHufRange(
   return formatMoneyRange(min, max, "HUF", locale);
 }
 
-/** Today's date in `YYYY-MM-DD`. Use as the `min` attribute on every date
- *  input the couple uses to plan the future (wedding date, task due dates,
- *  honeymoon window, …) — picking a past date is always nonsense for these. */
-export function todayIso(): string {
-  const d = new Date();
+/** Local-time `YYYY-MM-DD` of an arbitrary Date. Task due dates are stored as
+ *  local calendar dates, so date-string comparisons must never come from
+ *  `toISOString()` (UTC) — between midnight and 02:00 CEST that still reports
+ *  yesterday and misfiles due tasks. */
+export function localYmd(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+/** Today's date in `YYYY-MM-DD`. Use as the `min` attribute on every date
+ *  input the couple uses to plan the future (wedding date, task due dates,
+ *  honeymoon window, …) — picking a past date is always nonsense for these. */
+export function todayIso(): string {
+  return localYmd(new Date());
 }
 
 /** Pick the later of two `YYYY-MM-DD` strings. Used to compose a `min`

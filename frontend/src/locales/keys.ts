@@ -7796,6 +7796,9 @@ export interface LocaleMessages {
     rail_all_good: string;
     rail_more_overdue: string;
     rail_more_today: string;
+    rail_overdue_yesterday: string;
+    rail_overdue_days: string;
+    rail_mark_done: string;
     pipeline_title: string;
     pipeline_add_btn: string;
     pipeline_pending_invites: string;
