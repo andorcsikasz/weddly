@@ -47,7 +47,7 @@ function SectionHeader({ icon: Icon, label }: { icon?: LucideIcon; label: string
   );
 }
 
-/** Circle that becomes a check on hover — completes the task in place. */
+/** Circle that becomes a check on hover: completes the task in place. */
 function DoneToggle({ onDone, label }: { onDone: () => void; label: string }) {
   return (
     <button
@@ -74,7 +74,7 @@ function RailTaskRow({
 }: {
   task: PlannerTaskRow;
   clientName: string;
-  /** e.g. "3 napja esedékes" — only on overdue rows. */
+  /** e.g. "3 napja esedékes": only on overdue rows. */
   overdueLabel?: string;
   tone: "neutral" | "alert";
   onMarkDone: (taskId: number) => void;
@@ -124,7 +124,7 @@ export function PlannerDashRightRail({
   const [urgentOpen, setUrgentOpen] = useState(true);
 
   const now = new Date();
-  // Local calendar date — NOT toISOString() (UTC), which misfiles tasks
+  // Local calendar date: NOT toISOString() (UTC), which misfiles tasks
   // between midnight and 02:00 CEST.
   const today = localYmd(now);
 
@@ -134,7 +134,7 @@ export function PlannerDashRightRail({
     day: "numeric",
   }).format(now);
 
-  // Hungarian name-day ("névnap") — a HU cultural tradition, so shown only in the HU locale.
+  // Hungarian name-day ("névnap"): a HU cultural tradition, so shown only in the HU locale.
   const nameDay = locale === "hu" ? nameDayFor(now) : null;
 
   const todayTasks = tasks.filter((tk) => tk.due_date === today && !tk.done);
@@ -162,7 +162,7 @@ export function PlannerDashRightRail({
 
   return (
     <>
-      {/* Desktop-collapsed: the card shrinks to its own slim handle — the
+      {/* Desktop-collapsed: the card shrinks to its own slim handle: the
           expand control stays on the card chrome instead of floating above
           it, and the urgent count keeps pulsing through so tucking the rail
           away never hides an alert. Mobile always shows the full card. */}
@@ -192,10 +192,10 @@ export function PlannerDashRightRail({
       )}
 
       {/* One merged card: today's agenda on top, collapsible urgent alerts
-          below. The frame is the shared card chrome — urgency lives in the
+          below. The frame is the shared card chrome; urgency lives in the
           blush panel inside, never on the border. */}
       <div className={`card p-4 ${collapsed ? "lg:hidden" : ""}`}>
-        {/* HEADER — the date block opens the calendar; the collapse control
+        {/* HEADER: the date block opens the calendar; the collapse control
             sits on the card itself (desktop only). */}
         <div className="flex items-start justify-between gap-2">
           <Link
@@ -223,7 +223,7 @@ export function PlannerDashRightRail({
           </button>
         </div>
 
-        {/* TODAY'S TASKS — each row completes in place or jumps to the list */}
+        {/* TODAY'S TASKS: each row completes in place or jumps to the list */}
         {visibleToday.length === 0 ? (
           <p className="mt-3 text-xs italic text-umber-400">{t("planner_home.rail_today_empty")}</p>
         ) : (
@@ -250,7 +250,7 @@ export function PlannerDashRightRail({
           </Link>
         )}
 
-        {/* URGENT ALERTS — collapsible blush panel; rows open the tasks list */}
+        {/* URGENT ALERTS: collapsible blush panel; rows open the tasks list */}
         <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-800">
           {overdueTasks.length === 0 ? (
             <>
@@ -263,7 +263,7 @@ export function PlannerDashRightRail({
               </div>
             </>
           ) : (
-            /* Blush-tinted panel (the palette's warm terracotta signal — never
+            /* Blush-tinted panel (the palette's warm terracotta signal: never
                amber) so the urgent block reads as its own zone inside the
                card; the list collapses with an animated height
                (grid-rows 0fr↔1fr trick, pure CSS). */

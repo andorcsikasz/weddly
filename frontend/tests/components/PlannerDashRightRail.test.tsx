@@ -2,7 +2,7 @@
 // overdue, done rows excluded), the urgent panel's count + per-row overdue
 // labels, the inline mark-done toggle, and the on-card collapse control
 // (collapsed = slim handle with the urgent count still visible). The rail is
-// fully props-driven — no fetch stubbing needed.
+// fully props-driven; no fetch stubbing needed.
 
 import type { PlannerClientView, PlannerTaskRow } from "@shared/types";
 import { beforeEach, describe, expect, it } from "bun:test";

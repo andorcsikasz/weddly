@@ -518,7 +518,7 @@ function UpcomingTasks({
 }) {
   const { t, locale } = useT();
 
-  // Local calendar date — toISOString() is UTC and misfiles tasks after midnight.
+  // Local calendar date: toISOString() is UTC and misfiles tasks after midnight.
   const todayStr = localYmd(new Date());
   const weekEnd = new Date();
   weekEnd.setDate(weekEnd.getDate() + 7);

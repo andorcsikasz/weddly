@@ -162,7 +162,7 @@ export function formatHufRange(
 
 /** Local-time `YYYY-MM-DD` of an arbitrary Date. Task due dates are stored as
  *  local calendar dates, so date-string comparisons must never come from
- *  `toISOString()` (UTC) — between midnight and 02:00 CEST that still reports
+ *  `toISOString()` (UTC): between midnight and 02:00 CEST that still reports
  *  yesterday and misfiles due tasks. */
 export function localYmd(d: Date): string {
   const y = d.getFullYear();
