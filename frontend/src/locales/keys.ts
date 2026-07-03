@@ -3616,6 +3616,26 @@ export interface LocaleMessages {
     /** Per-row "Print place card" icon button + toast on click. */
     print_place_card: string;
     print_place_card_started: string;
+    /** Cards ↔ table view toggle + spreadsheet-lens table headers. */
+    view_label: string;
+    view_cards: string;
+    view_table: string;
+    table_col_name: string;
+    table_col_household: string;
+    table_col_group: string;
+    /** Tooltip on the group cell: the edit propagates to the household. */
+    table_group_household_hint: string;
+    table_col_rsvp: string;
+    table_col_meal: string;
+    table_col_dietary: string;
+    table_col_accommodation: string;
+    table_col_invited: string;
+    table_col_actions: string;
+    table_meal_unset: string;
+    /** Dietary toggle-select placeholder: none vs "{count} selected". */
+    table_dietary_none: string;
+    table_dietary_selected: string;
+    table_sort_hint: string;
     dietary: string;
     /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
     allergies: string;
@@ -7564,6 +7584,10 @@ export interface LocaleMessages {
     submitting: string;
     success_title: string;
     success_body: string;
+    /** Variant when the applicant was signed in (grant already applied). */
+    success_body_authed: string;
+    success_cta_signup: string;
+    success_cta_dashboard: string;
     success_plan: string;
     back_home: string;
     not_a_planner: string;
@@ -7574,7 +7598,6 @@ export interface LocaleMessages {
     login_link: string;
     success_next_intro: string;
     success_follow: string;
-    success_explore: string;
     benefit_1_title: string;
     benefit_1_body: string;
     benefit_2_title: string;
@@ -8136,6 +8159,18 @@ export interface LocaleMessages {
     data_export_soon: string;
     data_delete_desc: string;
   };
+  /** Couple-facing planner directory rail on /app/vendors. */
+  planner_directory: {
+    title: string;
+    subtitle: string;
+    connect: string;
+    invited: string;
+    approve: string;
+    linked: string;
+    /** "{n} weddings a year" chip on the planner card. */
+    weddings_per_year: string;
+    website_aria: string;
+  };
   couple_planners: {
     heading: string;
     empty: string;
@@ -8161,6 +8196,7 @@ export interface LocaleMessages {
     title: string;
     subtitle: string;
     monitoring_title: string;
+    guests_section_title: string;
     stat_total: string;
     stat_adults: string;
     stat_children: string;

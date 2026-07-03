@@ -17,9 +17,11 @@ import {
   MEAL_LABEL_MAX,
   MEAL_ORDER,
   isCustomMealMenu,
+  mealItemLabel,
   normalizeMealMenuInput,
 } from "@shared/meals";
 import {
+  ArrowUpDown,
   Atom,
   Baby,
   Ban,
@@ -41,6 +43,7 @@ import {
   GripVertical,
   Heart,
   Home,
+  LayoutGrid,
   Leaf,
   Link2,
   Lock,
@@ -56,6 +59,7 @@ import {
   Send,
   Shell,
   Sprout,
+  Table as TableIcon,
   Target,
   Trash2,
   Upload,
@@ -184,6 +188,10 @@ export default function GuestsPage() {
   const invitedFilter = params.get("invited") === "1";
   const accommodationFilter = params.get("accom") === "1";
   const householdFilter = params.get("household") === "closed";
+  // Spreadsheet-style flat table lens. Orthogonal to the filter axes (they all
+  // still apply); it only swaps the presentation from cards to one big table
+  // with inline dropdown editing.
+  const tableView = params.get("view") === "table";
   const sortKey: SortKey = ((): SortKey => {
     const v = params.get("sort");
     return v === "name" || v === "added" || v === "rsvp" || v === "group" ? v : "default";
@@ -441,6 +449,62 @@ export default function GuestsPage() {
     }
   }
 
+  /** Inline cell edit from the table view (group / RSVP / meal / dietary /
+   *  accommodation). Optimistic: the row updates instantly, the PATCH ships
+   *  the full guest (the backend revalidates the whole row), and a failure
+   *  rolls back to the pre-edit snapshot. */
+  async function onInlineUpdateGuest(g: Guest, patch: Partial<Guest>) {
+    const prevGuests = guests;
+    const prevSearch = searchResults;
+    const apply = (list: Guest[]) =>
+      list.map((row) => (row.id === g.id ? { ...row, ...patch } : row));
+    setGuests(apply);
+    setSearchResults((prev) => (prev ? apply(prev) : prev));
+    try {
+      const r = await guestApi.update(g.id, { ...g, ...patch });
+      const reconcile = (list: Guest[]) => list.map((row) => (row.id === g.id ? r.guest : row));
+      setGuests(reconcile);
+      setSearchResults((prev) => (prev ? reconcile(prev) : prev));
+    } catch (e) {
+      setGuests(prevGuests);
+      setSearchResults(prevSearch);
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  /** Group edit from the table view. The household is the source of truth for
+   *  group_tag (the backend overrides per-guest values with the household's
+   *  tag on every PATCH), so a housed guest's change goes through the
+   *  household (propagating to every member) and only orphans get a direct
+   *  guest-level update. Optimistic on both stores, rolled back on failure. */
+  async function onTableChangeGroup(g: Guest, tag: GuestGroupTag) {
+    if (g.household_id == null) {
+      await onInlineUpdateGuest(g, { group_tag: tag });
+      return;
+    }
+    const hhId = g.household_id;
+    const prevGuests = guests;
+    const prevHouseholds = households;
+    const prevSearch = searchResults;
+    // Partner-role rows keep their fixed her_family / his_family tags; mirror
+    // the backend's exemption so the optimistic state matches the reconcile.
+    const applyGuests = (list: Guest[]) =>
+      list.map((row) =>
+        row.household_id === hhId && row.partner_role === null ? { ...row, group_tag: tag } : row,
+      );
+    setGuests(applyGuests);
+    setSearchResults((prev) => (prev ? applyGuests(prev) : prev));
+    setHouseholds((list) => list.map((hh) => (hh.id === hhId ? { ...hh, group_tag: tag } : hh)));
+    try {
+      await householdApi.update(hhId, { group_tag: tag });
+    } catch (e) {
+      setGuests(prevGuests);
+      setHouseholds(prevHouseholds);
+      setSearchResults(prevSearch);
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
   async function onCycleInviteState(g: Guest) {
     // 3-state cycle: not-invited → invited → delivered → not-invited.
     // Encode the *target* as a (invited, delivered) pair on the wire so the
@@ -687,6 +751,14 @@ export default function GuestsPage() {
       else p.set("sort", key);
     });
   }
+  // Cards / table presentation toggle. Deliberately NOT cleared by
+  // clearAllFilters: it's a lens preference, not a filter.
+  function setTableView(on: boolean) {
+    patchParams((p) => {
+      if (on) p.set("view", "table");
+      else p.delete("view");
+    });
+  }
   // Clear every filter axis (and the search box) in one shot.
   function clearAllFilters() {
     patchParams((p) => {
@@ -887,8 +959,10 @@ export default function GuestsPage() {
           invited={invitedFilter}
           accommodation={accommodationFilter}
           householdView={householdFilter}
+          tableView={tableView}
           sortKey={sortKey}
           activeFilterCount={activeFilterCount}
+          onSetTableView={setTableView}
           onToggleRsvp={toggleRsvp}
           onToggleGroup={toggleGroup}
           onToggleInvited={toggleInvited}
@@ -940,6 +1014,37 @@ export default function GuestsPage() {
               <Download size={16} aria-hidden /> {t("guests.download_template")}
             </button>
           </div>
+        </div>
+      ) : tableView ? (
+        // Spreadsheet lens: every (filtered) guest in one table with inline
+        // dropdown editing for group / RSVP / meal / dietary. Search and all
+        // stacked filters keep applying; only the presentation changes.
+        <div className="space-y-3">
+          {!(debouncedQuery && searching) && (
+            <p className="text-sm text-ink-500 dark:text-umber-300">
+              {filteredFlatGuests.length === 0
+                ? t("guests.filtered_results_empty")
+                : t(
+                    filteredFlatGuests.length === 1
+                      ? "guests.filtered_results_one"
+                      : "guests.filtered_results_other",
+                    { count: filteredFlatGuests.length },
+                  )}
+            </p>
+          )}
+          <GuestTable
+            guests={filteredFlatGuests}
+            households={households}
+            mealMenu={couple?.meal_menu ?? null}
+            sortKey={sortKey}
+            onSetSort={setSort}
+            onUpdateGuest={onInlineUpdateGuest}
+            onChangeGroup={onTableChangeGroup}
+            onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
+            onDeleteGuest={onDeleteGuest}
+            onCycleInviteState={onCycleInviteState}
+            onPrintPlaceCard={onPrintPlaceCard}
+          />
         </div>
       ) : flatView ? (
         // Flat filtered list: search and/or any stacked guest-level filter.
@@ -1293,6 +1398,336 @@ function SearchResults({
         </li>
       ))}
     </ul>
+  );
+}
+
+// ── Table view ───────────────────────────────────────────────────────────────
+
+// Compact cell dropdown shared by the table's inline editors. appearance-none
+// + our own chevron so the control reads as a quiet cell until hovered.
+function CellSelect({
+  value,
+  ariaLabel,
+  title,
+  onChange,
+  children,
+  className = "",
+}: {
+  value: string;
+  ariaLabel: string;
+  title?: string;
+  onChange: (v: string) => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span className={`relative inline-flex w-full min-w-[6.5rem] ${className}`} title={title}>
+      <select
+        className="h-8 w-full cursor-pointer appearance-none truncate rounded-lg border border-transparent bg-transparent py-0 pl-2 pr-6 text-xs text-ink-700 transition-colors hover:border-paper-300 hover:bg-paper-100 focus:border-umber-500 focus:outline-none dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
+        value={value}
+        aria-label={ariaLabel}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        size={12}
+        aria-hidden
+        className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+      />
+    </span>
+  );
+}
+
+/** Spreadsheet lens over the (filtered) guest list. Group, RSVP, meal and the
+ *  dietary tags are edited inline via dropdowns; dietary uses a toggle-select
+ *  (picking an option flips that allergen tag on/off) so the free-text
+ *  remainder written by the RSVP form is preserved untouched. Name / RSVP /
+ *  group headers double as sort toggles into the shared URL-backed sort axis. */
+function GuestTable({
+  guests,
+  households,
+  mealMenu,
+  sortKey,
+  onSetSort,
+  onUpdateGuest,
+  onChangeGroup,
+  onEditGuest,
+  onDeleteGuest,
+  onCycleInviteState,
+  onPrintPlaceCard,
+}: {
+  guests: Guest[];
+  households: Household[];
+  mealMenu: MealMenu | null;
+  sortKey: SortKey;
+  onSetSort: (k: SortKey) => void;
+  onUpdateGuest: (g: Guest, patch: Partial<Guest>) => void | Promise<void>;
+  onChangeGroup: (g: Guest, tag: GuestGroupTag) => void | Promise<void>;
+  onEditGuest: (g: Guest) => void;
+  onDeleteGuest: (id: number) => void | Promise<void>;
+  onCycleInviteState: (g: Guest) => void | Promise<void>;
+  onPrintPlaceCard: (g: Guest) => void | Promise<void>;
+}) {
+  const { t } = useT();
+  const householdLabelById = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const hh of households) m.set(hh.id, hh.label);
+    return m;
+  }, [households]);
+
+  if (guests.length === 0) {
+    return (
+      <p className="card text-sm text-ink-500 dark:text-umber-300">
+        {t("guests.filtered_results_empty")}
+      </p>
+    );
+  }
+
+  const th =
+    "px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-ink-400 dark:text-umber-500";
+  const sortableHeader = (key: SortKey, label: string) => (
+    <button
+      type="button"
+      onClick={() => onSetSort(sortKey === key ? "default" : key)}
+      title={t("guests.table_sort_hint")}
+      className={`inline-flex items-center gap-1 uppercase tracking-widest transition-colors hover:text-ink-900 dark:hover:text-paper-50 ${
+        sortKey === key ? "text-ink-900 dark:text-paper-50" : ""
+      }`}
+    >
+      {label}
+      <ArrowUpDown size={11} aria-hidden className={sortKey === key ? "" : "opacity-40"} />
+    </button>
+  );
+
+  return (
+    <div className="card overflow-x-auto p-0">
+      <table className="w-full min-w-[920px] border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-paper-200 dark:border-umber-700">
+            <th className={th} scope="col">
+              {sortableHeader("name", t("guests.table_col_name"))}
+            </th>
+            <th className={th} scope="col">
+              {t("guests.table_col_household")}
+            </th>
+            <th className={th} scope="col">
+              {sortableHeader("group", t("guests.table_col_group"))}
+            </th>
+            <th className={th} scope="col">
+              {sortableHeader("rsvp", t("guests.table_col_rsvp"))}
+            </th>
+            <th className={th} scope="col">
+              {t("guests.table_col_meal")}
+            </th>
+            <th className={th} scope="col">
+              {t("guests.table_col_dietary")}
+            </th>
+            <th className={`${th} text-center`} scope="col">
+              {t("guests.table_col_accommodation")}
+            </th>
+            <th className={`${th} text-center`} scope="col">
+              {t("guests.table_col_invited")}
+            </th>
+            <th className={th} scope="col">
+              <span className="sr-only">{t("guests.table_col_actions")}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-paper-200 dark:divide-umber-700">
+          {guests.map((g) => (
+            <GuestTableRow
+              key={g.id}
+              guest={g}
+              householdLabel={
+                g.household_id != null ? (householdLabelById.get(g.household_id) ?? null) : null
+              }
+              mealMenu={mealMenu}
+              onUpdateGuest={onUpdateGuest}
+              onChangeGroup={onChangeGroup}
+              onEditGuest={onEditGuest}
+              onDeleteGuest={onDeleteGuest}
+              onCycleInviteState={onCycleInviteState}
+              onPrintPlaceCard={onPrintPlaceCard}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function GuestTableRow({
+  guest: g,
+  householdLabel,
+  mealMenu,
+  onUpdateGuest,
+  onChangeGroup,
+  onEditGuest,
+  onDeleteGuest,
+  onCycleInviteState,
+  onPrintPlaceCard,
+}: {
+  guest: Guest;
+  householdLabel: string | null;
+  mealMenu: MealMenu | null;
+  onUpdateGuest: (g: Guest, patch: Partial<Guest>) => void | Promise<void>;
+  onChangeGroup: (g: Guest, tag: GuestGroupTag) => void | Promise<void>;
+  onEditGuest: (g: Guest) => void;
+  onDeleteGuest: (id: number) => void | Promise<void>;
+  onCycleInviteState: (g: Guest) => void | Promise<void>;
+  onPrintPlaceCard: (g: Guest) => void | Promise<void>;
+}) {
+  const { t } = useT();
+  const dietary = parseDietaryTags(g.dietary);
+
+  function toggleDietaryTag(tag: DietaryTag) {
+    const next = new Set(dietary.tags);
+    if (next.has(tag)) next.delete(tag);
+    else next.add(tag);
+    void onUpdateGuest(g, { dietary: buildDietary(next, dietary.remainder) });
+  }
+
+  return (
+    <tr className="transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-800/40">
+      <td className="max-w-[16rem] px-3 py-2">
+        <span className="flex items-center gap-1.5">
+          <PartnerRoleIcon role={g.partner_role} />
+          <KindIcon kind={g.kind} />
+          <SupplierIcon show={g.is_supplier} />
+          <PlusOneBadge show={g.is_plus_one} />
+          <span className="truncate font-medium text-ink-900 dark:text-paper-50">
+            {g.full_name}
+          </span>
+        </span>
+        {g.email && (
+          <span className="block truncate text-xs text-ink-500 dark:text-umber-300">{g.email}</span>
+        )}
+      </td>
+      <td className="max-w-[10rem] truncate px-3 py-2 text-xs text-ink-600 dark:text-umber-200">
+        {householdLabel ?? "–"}
+      </td>
+      <td className="px-3 py-2">
+        {/* Group is household-canonical on the backend, so this select edits
+            the whole household's tag (title says so), not just this row. */}
+        <CellSelect
+          value={g.group_tag}
+          ariaLabel={t("guests.table_col_group")}
+          title={g.household_id != null ? t("guests.table_group_household_hint") : undefined}
+          onChange={(v) => void onChangeGroup(g, v as GuestGroupTag)}
+        >
+          {GROUPS.map((gr) => (
+            <option key={gr} value={gr}>
+              {t(`guests.group_${gr}`)}
+            </option>
+          ))}
+        </CellSelect>
+      </td>
+      <td className="px-3 py-2">
+        <CellSelect
+          value={g.rsvp_status}
+          ariaLabel={t("guests.table_col_rsvp")}
+          onChange={(v) => void onUpdateGuest(g, { rsvp_status: v as RsvpStatus })}
+          className={
+            g.rsvp_status === "yes"
+              ? "[&>select]:font-medium [&>select]:text-emerald-700 dark:[&>select]:text-emerald-300"
+              : g.rsvp_status === "no"
+                ? "[&>select]:text-ink-400 dark:[&>select]:text-umber-400"
+                : ""
+          }
+        >
+          {(["pending", "yes", "maybe", "no"] as RsvpStatus[]).map((s) => (
+            <option key={s} value={s}>
+              {t(`guests.rsvp_${s}`)}
+            </option>
+          ))}
+        </CellSelect>
+      </td>
+      <td className="px-3 py-2">
+        <CellSelect
+          value={g.meal_choice ?? ""}
+          ariaLabel={t("guests.table_col_meal")}
+          onChange={(v) =>
+            void onUpdateGuest(g, { meal_choice: v === "" ? null : (v as MealChoice) })
+          }
+        >
+          <option value="">{t("guests.table_meal_unset")}</option>
+          {MEALS.map((c) => (
+            <option key={c} value={c}>
+              {(mealMenu && mealItemLabel(mealMenu, c)) || t(`guests.meal_${c}`)}
+            </option>
+          ))}
+        </CellSelect>
+      </td>
+      <td className="px-3 py-2">
+        <span className="flex items-center gap-1.5">
+          <MealIcons meal={null} dietary={g.dietary} />
+          {/* Toggle-select: value stays "", the visible summary lives in the
+              hidden placeholder option, and picking an allergen flips it. */}
+          <CellSelect
+            value=""
+            ariaLabel={t("guests.table_col_dietary")}
+            onChange={(v) => toggleDietaryTag(v as DietaryTag)}
+            className="min-w-[7rem]"
+          >
+            <option value="" hidden>
+              {dietary.tags.size > 0
+                ? t("guests.table_dietary_selected", { count: dietary.tags.size })
+                : t("guests.table_dietary_none")}
+            </option>
+            {DIETARY_TAG_KEYS.map((tag) => (
+              <option key={tag} value={tag}>
+                {dietary.tags.has(tag) ? "✓ " : "  "}
+                {t(`rsvp.tag_${tag}`)}
+              </option>
+            ))}
+          </CellSelect>
+        </span>
+      </td>
+      <td className="px-3 py-2 text-center">
+        <input
+          type="checkbox"
+          className="h-4 w-4 cursor-pointer accent-umber-700 dark:accent-paper-100"
+          checked={g.accommodation_needed}
+          aria-label={t("guests.table_col_accommodation")}
+          onChange={(e) => void onUpdateGuest(g, { accommodation_needed: e.target.checked })}
+        />
+      </td>
+      <td className="px-3 py-2 text-center">
+        <InviteChip guest={g} onCycle={() => void onCycleInviteState(g)} />
+      </td>
+      <td className="px-3 py-2">
+        <span className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => onEditGuest(g)}
+            aria-label={t("guests.edit")}
+            title={t("guests.edit")}
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => void onPrintPlaceCard(g)}
+            aria-label={t("guests.print_place_card")}
+            title={t("guests.print_place_card")}
+          >
+            <Printer size={14} />
+          </button>
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => void onDeleteGuest(g.id)}
+            aria-label={t("guests.confirm_delete")}
+            title={t("guests.confirm_delete")}
+          >
+            <Trash2 size={14} />
+          </button>
+        </span>
+      </td>
+    </tr>
   );
 }
 
@@ -4272,8 +4707,10 @@ function GuestFilterBar({
   invited,
   accommodation,
   householdView,
+  tableView,
   sortKey,
   activeFilterCount,
+  onSetTableView,
   onToggleRsvp,
   onToggleGroup,
   onToggleInvited,
@@ -4289,8 +4726,10 @@ function GuestFilterBar({
   invited: boolean;
   accommodation: boolean;
   householdView: boolean;
+  tableView: boolean;
   sortKey: SortKey;
   activeFilterCount: number;
+  onSetTableView: (on: boolean) => void;
   onToggleRsvp: (s: RsvpStatus) => void;
   onToggleGroup: (g: GuestGroupTag) => void;
   onToggleInvited: () => void;
@@ -4353,6 +4792,41 @@ function GuestFilterBar({
             aria-hidden
             className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
           />
+        </div>
+        {/* Cards ↔ table lens. Two icon segments, mirrored to `?view=table`. */}
+        <div
+          role="group"
+          aria-label={t("guests.view_label")}
+          className="inline-flex overflow-hidden rounded-full border border-paper-300 dark:border-umber-700"
+        >
+          <button
+            type="button"
+            className={`flex h-9 w-9 items-center justify-center transition-colors ${
+              !tableView
+                ? "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                : "bg-paper-50 text-ink-500 hover:text-ink-900 dark:bg-umber-800 dark:text-umber-300 dark:hover:text-paper-100"
+            }`}
+            aria-pressed={!tableView}
+            title={t("guests.view_cards")}
+            aria-label={t("guests.view_cards")}
+            onClick={() => onSetTableView(false)}
+          >
+            <LayoutGrid size={14} aria-hidden />
+          </button>
+          <button
+            type="button"
+            className={`flex h-9 w-9 items-center justify-center transition-colors ${
+              tableView
+                ? "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                : "bg-paper-50 text-ink-500 hover:text-ink-900 dark:bg-umber-800 dark:text-umber-300 dark:hover:text-paper-100"
+            }`}
+            aria-pressed={tableView}
+            title={t("guests.view_table")}
+            aria-label={t("guests.view_table")}
+            onClick={() => onSetTableView(true)}
+          >
+            <TableIcon size={14} aria-hidden />
+          </button>
         </div>
         <button
           type="button"
