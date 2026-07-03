@@ -968,7 +968,9 @@ export default function PlannerHomePage() {
             type="button"
             onClick={toggleRail}
             aria-expanded={!railCollapsed}
-            aria-label={t(railCollapsed ? "planner_home.rail_expand" : "planner_home.rail_collapse")}
+            aria-label={t(
+              railCollapsed ? "planner_home.rail_expand" : "planner_home.rail_collapse",
+            )}
             title={t(railCollapsed ? "planner_home.rail_expand" : "planner_home.rail_collapse")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-umber-500 transition-colors hover:bg-moss-50 hover:text-moss-800 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-moss-200"
           >
