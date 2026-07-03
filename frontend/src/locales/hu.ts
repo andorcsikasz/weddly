@@ -4070,6 +4070,10 @@ const hu: LocaleMessages = {
         deleted: "Értékelés törölve",
         deleteConfirmTitle: "Törlöd ezt az értékelést?",
         deleteConfirmBody: "Soft delete, a sor megmarad, csak elrejtjük.",
+        verifiedBadge: "Igazolt pár",
+        eligibilityHint:
+          "Értékelést az a pár írhat, aki tényleg dolgozott a szolgáltatóval: vedd fel a költségtervedbe vagy jelöld ki a kategóriád választásának, és máris értékelhetsz.",
+        alreadyReviewedNote: "Már értékeltétek ezt a szolgáltatót, köszönjük!",
       },
       comments: {
         title: "Kérdések és válaszok",

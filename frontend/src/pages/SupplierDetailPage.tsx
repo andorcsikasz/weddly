@@ -232,6 +232,8 @@ export default function SupplierDetailPage() {
 
   const [detail, setDetail] = useState<SupplierDetail | null>(null);
   const [reviews, setReviews] = useState<SupplierReview[] | null>(null);
+  const [canReview, setCanReview] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const [comments, setComments] = useState<SupplierComment[] | null>(null);
   const [availability, setAvailability] = useState<SupplierAvailability | null>(null);
   const [bookings, setBookings] = useState<SupplierBooking[]>([]);
@@ -264,6 +266,8 @@ export default function SupplierDetailPage() {
       ]);
       setDetail(d);
       setReviews(rs.items);
+      setCanReview(rs.can_review);
+      setAlreadyReviewed(rs.already_reviewed);
       setComments(cs.items);
       setAvailability(av);
       setBookings(isAdmin ? (await supplierBookingApi.list(supplierId)).items : []);
@@ -541,6 +545,8 @@ export default function SupplierDetailPage() {
             reviews={reviews ?? []}
             avg={ratingAvg}
             count={ratingCount}
+            canReview={canReview}
+            alreadyReviewed={alreadyReviewed}
             onChange={refresh}
             confirm={confirm}
             toast={toast}
@@ -706,8 +712,16 @@ function ReviewsSection({
   reviews,
   avg,
   count,
+  canReview,
+  alreadyReviewed,
   ...ctx
-}: SectionCtx & { reviews: SupplierReview[]; avg: number | null; count: number }) {
+}: SectionCtx & {
+  reviews: SupplierReview[];
+  avg: number | null;
+  count: number;
+  canReview: boolean;
+  alreadyReviewed: boolean;
+}) {
   const { supplierId, onChange, toast, confirm, locale, isAdmin, t } = ctx;
   // Default 0 = no rating picked yet. Stars render as hollow glyphs and the
   // Beküldés button stays disabled until the user actually clicks one.
@@ -730,11 +744,13 @@ function ReviewsSection({
     if (rating === 0) return; // guard: button is also disabled but be defensive
     setSubmitting(true);
     try {
+      // `published` is an admin (editorial) lever; couple reviews go live
+      // immediately server-side, and sending the field would 403.
       await reviewApi.create(supplierId, {
         rating,
         body: body.trim() || null,
         tags,
-        published,
+        ...(isAdmin ? { published } : {}),
       });
       setBody("");
       setTags([]);
@@ -788,10 +804,17 @@ function ReviewsSection({
         )}
       </div>
 
-      {/* Review composer is admin-only in this cut. Couple-authored reviews
-          ride a Phase-3 anti-spam (engagement-proof) gate the backend doesn't
-          enforce yet, so couples read published reviews but can't post. */}
-      {isAdmin && (
+      {/* Composer opens for admins (editorial voice) and for couples the
+          backend verified: engagement proof (cost-plan row / category pick)
+          and no prior review. Everyone else gets a hint line instead. */}
+      {!isAdmin && !canReview && (
+        <p className="mb-6 text-sm italic text-ink-500 dark:text-umber-300">
+          {alreadyReviewed
+            ? t("suppliers.detail.reviews.alreadyReviewedNote")
+            : t("suppliers.detail.reviews.eligibilityHint")}
+        </p>
+      )}
+      {(isAdmin || canReview) && (
         <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
           <div className="mb-3 flex items-center gap-3">
             <span className="text-sm text-ink-600 dark:text-umber-200">
@@ -832,14 +855,20 @@ function ReviewsSection({
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
-              <input
-                type="checkbox"
-                checked={published}
-                onChange={(e) => setPublished(e.target.checked)}
-              />
-              {t("suppliers.detail.reviews.publishedLabel")}
-            </label>
+            {/* Draft/publish is an editorial (admin) lever; couple reviews go
+                live immediately, so they get no checkbox to wonder about. */}
+            {isAdmin ? (
+              <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
+                <input
+                  type="checkbox"
+                  checked={published}
+                  onChange={(e) => setPublished(e.target.checked)}
+                />
+                {t("suppliers.detail.reviews.publishedLabel")}
+              </label>
+            ) : (
+              <span />
+            )}
             <button
               type="button"
               disabled={submitting || rating === 0}
@@ -871,13 +900,16 @@ function ReviewsSection({
                     {r.author.display_name}
                   </span>
                   {r.editorial && <Pill tone="violet">Editorial</Pill>}
+                  {!r.editorial && (
+                    <Pill tone="sage">{t("suppliers.detail.reviews.verifiedBadge")}</Pill>
+                  )}
                   {!r.published && <Pill tone="blush">Draft</Pill>}
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-ink-500 dark:text-umber-300">
                     {formatDate(r.created_at, locale)}
                   </span>
-                  {isAdmin && (
+                  {(isAdmin || r.own) && (
                     <button
                       type="button"
                       onClick={() => remove(r.id)}

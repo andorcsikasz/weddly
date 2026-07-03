@@ -315,8 +315,13 @@ export interface SupplierReview {
   tags: SupplierReviewTag[];
   published: boolean;
   /** True when the row's `couple_id` is null — i.e. authored by an admin under
-   *  the "Weddly editors" voice. Drives the badge on the card. */
+   *  the "Weddly editors" voice. Drives the badge on the card. A non-editorial
+   *  review is always VERIFIED: the create gate requires engagement proof
+   *  (cost-plan row or category pick), so couple reviews carry that badge. */
   editorial: boolean;
+  /** True when the requesting viewer authored this review — drives the
+   *  couple-side edit/delete affordance. Optional: absent on write responses. */
+  own?: boolean;
   author: {
     display_name: string;
   };
@@ -335,6 +340,12 @@ export interface ReviewListResponse {
   items: SupplierReview[];
   nextCursor: string | null;
   summary: ReviewSummary;
+  /** Viewer may open the composer: admin, or a couple with engagement proof
+   *  (supplier in couple_supplier_costs / couple_picks) that hasn't reviewed
+   *  this supplier yet. */
+  can_review: boolean;
+  /** Viewer's couple already has a (non-deleted) review here. */
+  already_reviewed: boolean;
 }
 
 /** Card- and detail-page-friendly rollup. Stays null until the supplier has

@@ -15,7 +15,7 @@ import { demoApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 export function DemoLaunchCard() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const navigate = useNavigate();
   const { setSession } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -26,7 +26,9 @@ export function DemoLaunchCard() {
     setBusy(true);
     setError(null);
     try {
-      const res = await demoApi.start();
+      // Pass the active UI locale so the seeded workspace content (guests,
+      // tasks, budget lines, notes) matches the language of the UI chrome.
+      const res = await demoApi.start(locale);
       markCurrentSessionDemo();
       setSession(res.session.token, res.session.user);
       // Hard navigate to /app so the shell remounts on a clean session.

@@ -14,7 +14,7 @@ import { demoApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 export function PlannerDemoLaunchButton() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const navigate = useNavigate();
   const { setSession } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -25,7 +25,9 @@ export function PlannerDemoLaunchButton() {
     setBusy(true);
     setError(null);
     try {
-      const res = await demoApi.startPlanner();
+      // Pass the active UI locale so the seeded book of business (clients,
+      // tasks, notes, messages) is written in the same language as the UI.
+      const res = await demoApi.startPlanner(locale);
       markCurrentSessionDemo();
       setSession(res.session.token, res.session.user);
       // Hard navigate so the planner shell remounts on a clean session.

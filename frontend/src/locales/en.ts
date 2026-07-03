@@ -4026,6 +4026,10 @@ const en: LocaleMessages = {
         deleted: "Review deleted",
         deleteConfirmTitle: "Delete this review?",
         deleteConfirmBody: "Soft delete, the row stays, just hidden.",
+        verifiedBadge: "Verified couple",
+        eligibilityHint:
+          "Reviews are open to couples who actually worked with this supplier: add it to your cost plan or make it your category pick, and you can rate it right away.",
+        alreadyReviewedNote: "You've already reviewed this supplier, thank you!",
       },
       comments: {
         title: "Questions & answers",

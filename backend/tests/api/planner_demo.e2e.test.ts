@@ -162,4 +162,49 @@ describe("planner demo", () => {
     // The demo never touched the real founding cohort.
     expect(plannerFoundingSlotsUsed()).toBe(foundingBefore);
   });
+
+  test("locale=hu seeds a fully Hungarian book of business", async () => {
+    const r = await req<StartRes>("POST", "/api/demo/planner/start", { locale: "hu" });
+    expect(r.status).toBe(201);
+    const { session } = r.data;
+
+    const clients = await req<ClientsRes>("GET", "/api/planner/clients", undefined, {
+      token: session.token,
+    });
+    expect(clients.status).toBe(200);
+    const names = clients.data.clients.map((c) => c.display_name);
+    expect(names).toContain("Hamupipőke & Szőke Herceg");
+    expect(names).toContain("Hófehérke & Florian herceg");
+    expect(names).toContain("Aranyhaj & Flynn Rider");
+    expect(names).not.toContain("Cinderella & Prince Charming");
+
+    // The planner's own identity + seeded content are Hungarian too.
+    const planner = db
+      .prepare("SELECT full_name, business_name FROM users WHERE id = ?")
+      .get(session.user.id) as { full_name: string; business_name: string };
+    expect(planner.business_name).toBe("Tündérkeresztanya Esküvők");
+
+    const eventTitles = (
+      db
+        .prepare("SELECT title FROM planner_events WHERE planner_user_id = ?")
+        .all(session.user.id) as { title: string }[]
+    ).map((e) => e.title);
+    expect(eventTitles).toContain("Heti tervezőblokk");
+
+    const taskTitles = (
+      db.prepare("SELECT DISTINCT title FROM planning_items").all() as { title: string }[]
+    ).map((t) => t.title);
+    expect(taskTitles).toContain("Helyszín-szerződés aláírása");
+    expect(taskTitles).not.toContain("Sign the venue contract");
+  });
+
+  test("default (no locale) stays fully English", async () => {
+    const { session } = await startPlannerDemo();
+    const clients = await req<ClientsRes>("GET", "/api/planner/clients", undefined, {
+      token: session.token,
+    });
+    const names = clients.data.clients.map((c) => c.display_name);
+    expect(names).toContain("Cinderella & Prince Charming");
+    expect(names).not.toContain("Hamupipőke & Szőke Herceg");
+  });
 });

@@ -14,11 +14,11 @@ import { issueSession } from "../auth/session";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { addCoupleMember, assignOrganiserCode, getCoupleById, toCouple } from "../domain/couples";
-import { purgeStaleDemoCouples, seedShrekDemo } from "../domain/demo_seed";
+import { type DemoLocale, purgeStaleDemoCouples, seedShrekDemo } from "../domain/demo_seed";
 import { purgeStalePlannerDemos, seedPlannerDemo } from "../domain/planner_demo_seed";
 import { uniqueCoupleSlug } from "../domain/slug";
 import { toUser, type UserRow } from "../domain/users";
-import { type Ctx, json, type Router } from "../lib/http";
+import { type Ctx, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 import { log } from "../lib/logger";
 
@@ -40,8 +40,26 @@ function randomDemoEmail(): string {
   return `demo-${hex}@demo.weddly.local`;
 }
 
+/** Locale the demo dataset is seeded in. The SPA sends its active UI locale in
+ *  the request body (`{ locale: "hu" | "en" }`) so the seeded content always
+ *  matches the chrome around it; direct/legacy callers without a body fall
+ *  back to the Accept-Language header, and everything else gets EN. */
+async function demoLocale(ctx: Ctx): Promise<DemoLocale> {
+  let fromBody: unknown;
+  try {
+    const body = await readJson<Record<string, unknown>>(ctx.req);
+    fromBody = body?.locale;
+  } catch {
+    // No/invalid JSON body — fall through to the header.
+  }
+  if (fromBody === "hu" || fromBody === "en") return fromBody;
+  const header = ctx.req.headers.get("accept-language") ?? "";
+  return header.trim().toLowerCase().startsWith("hu") ? "hu" : "en";
+}
+
 async function handleStart(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "demo:start", DEMO_BUCKET);
+  const locale = await demoLocale(ctx);
 
   // Lazy housekeeping: any demo couple older than ~24h gets purged before we
   // create the next one. Failures here are non-fatal — we still want the
@@ -59,7 +77,7 @@ async function handleStart(ctx: Ctx): Promise<Response> {
   // matches every other users row.
   const email = randomDemoEmail();
   const passwordHash = await hashPassword(crypto.randomUUID() + crypto.randomUUID());
-  const fullName = "Demo Guest";
+  const fullName = locale === "hu" ? "Demó vendég" : "Demo Guest";
 
   const userResult = db
     .prepare(
@@ -101,7 +119,7 @@ async function handleStart(ctx: Ctx): Promise<Response> {
   addCoupleMember(coupleId, userId, "owner");
 
   // Fill the workspace — guests, households, budget, seating, schedule, …
-  const seeded = seedShrekDemo(coupleId);
+  const seeded = seedShrekDemo(coupleId, locale);
 
   addAuditLog({
     actor_user_id: userId,
@@ -131,6 +149,7 @@ async function handleStart(ctx: Ctx): Promise<Response> {
  *  sweeps. */
 async function handleStartPlanner(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "demo:start", DEMO_BUCKET);
+  const locale = await demoLocale(ctx);
 
   // Lazy housekeeping. ORDER MATTERS: reap stale demo planners BEFORE their
   // client couples (see purgeStalePlannerDemos' ordering note).
@@ -150,16 +169,17 @@ async function handleStartPlanner(ctx: Ctx): Promise<Response> {
 
   // Demo planner user: premium tier, onboarding pre-completed so the dashboard
   // renders instead of bouncing to the onboarding wizard.
+  const businessName = locale === "hu" ? "Tündérkeresztanya Esküvők" : "Fairy Godmother Weddings";
   const userResult = db
     .prepare(
       `INSERT INTO users
          (email, password_hash, full_name, status, role, verified_email, user_type,
           business_name, planner_plan, planner_max_clients, planner_onboarding_done,
           created_at, updated_at)
-       VALUES (?, ?, 'Fairy Godmother Weddings', 'active', 'owner', 1, 'planner',
-               'Fairy Godmother Weddings', 'premium', 10, 1, ?, ?)`,
+       VALUES (?, ?, ?, 'active', 'owner', 1, 'planner',
+               ?, 'premium', 10, 1, ?, ?)`,
     )
-    .run(email, passwordHash, ts, ts);
+    .run(email, passwordHash, businessName, businessName, ts, ts);
   const userId = Number(userResult.lastInsertRowid);
 
   // Entitlement WITHOUT consuming a real founding slot: is_founding_member=0
@@ -172,7 +192,7 @@ async function handleStartPlanner(ctx: Ctx): Promise<Response> {
      VALUES (?, 'founding', NULL, ?, 0, 'HUF', ?, ?)`,
   ).run(userId, ts + PLANNER_DEMO_ENTITLEMENT_MS, ts, ts);
 
-  const seeded = seedPlannerDemo(userId, { ownerPasswordHash: passwordHash });
+  const seeded = seedPlannerDemo(userId, { ownerPasswordHash: passwordHash, locale });
 
   addAuditLog({
     actor_user_id: userId,

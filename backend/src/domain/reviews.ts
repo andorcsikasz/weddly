@@ -63,7 +63,11 @@ function authorDisplayName(row: ReviewWithAuthorRow): string {
   return "Weddly couple";
 }
 
-export function toReview(row: ReviewWithAuthorRow, tags: SupplierReviewTag[]): SupplierReview {
+export function toReview(
+  row: ReviewWithAuthorRow,
+  tags: SupplierReviewTag[],
+  viewerUserId?: number,
+): SupplierReview {
   return {
     id: row.id,
     supplier_id: row.supplier_id,
@@ -72,6 +76,7 @@ export function toReview(row: ReviewWithAuthorRow, tags: SupplierReviewTag[]): S
     tags,
     published: Boolean(row.published),
     editorial: row.couple_id === null,
+    own: viewerUserId !== undefined && row.author_user_id === viewerUserId,
     author: { display_name: authorDisplayName(row) },
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -106,7 +111,14 @@ const REVIEW_BASE_SELECT = `
 
 export function listReviewsForSupplier(
   supplierId: string,
-  opts: { limit: number; cursor: number | null; includeUnpublished: boolean },
+  opts: {
+    limit: number;
+    cursor: number | null;
+    includeUnpublished: boolean;
+    /** When set, each item's `own` flags the viewer's authorship (drives the
+     *  couple-side edit/delete affordance). */
+    viewerUserId?: number;
+  },
 ): { items: SupplierReview[]; nextCursor: string | null } {
   const limit = Math.max(1, Math.min(50, opts.limit));
   const params: (string | number)[] = [supplierId];
@@ -127,7 +139,7 @@ export function listReviewsForSupplier(
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
   const tags = loadTagsForReviews(page.map((r) => r.id));
-  const items = page.map((r) => toReview(r, tags.get(r.id) ?? []));
+  const items = page.map((r) => toReview(r, tags.get(r.id) ?? [], opts.viewerUserId));
   const nextCursor = hasMore && page.length > 0 ? String(page[page.length - 1]!.id) : null;
   return { items, nextCursor };
 }

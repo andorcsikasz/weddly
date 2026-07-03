@@ -323,20 +323,23 @@ export interface AdminBlogPostPayload {
  *  no email. The returned `couple.is_demo` is what the /app UI keys off
  *  to render the demo banner + conversion popup. */
 export const demoApi = {
-  start: () =>
+  /** `locale` is the SPA's active UI locale — the backend seeds the demo
+   *  dataset (guests, tasks, notes, messages) in that language so the demo
+   *  content matches the chrome around it. */
+  start: (locale: "hu" | "en") =>
     apiFetch<{
       session: AuthSession;
       couple: Couple | null;
       seeded: Record<string, number>;
-    }>("POST", "/api/demo/start", {}),
+    }>("POST", "/api/demo/start", { locale }),
   /** Planner-side demo: spins up a "Fairy Godmother Weddings" planner account
    *  pre-loaded with a book of fairy-tale clients and returns a session token.
    *  No couple — the planner manages many. Drop the visitor into /app/planner. */
-  startPlanner: () =>
+  startPlanner: (locale: "hu" | "en") =>
     apiFetch<{
       session: AuthSession;
       seeded: Record<string, number>;
-    }>("POST", "/api/demo/planner/start", {}),
+    }>("POST", "/api/demo/planner/start", { locale }),
 };
 
 export const authApi = {

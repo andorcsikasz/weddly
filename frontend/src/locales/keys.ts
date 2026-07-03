@@ -4552,6 +4552,14 @@ export interface LocaleMessages {
         deleted: string;
         deleteConfirmTitle: string;
         deleteConfirmBody: string;
+        /** Badge on couple-authored reviews — the engagement-proof gate makes
+         *  every couple review a verified one. */
+        verifiedBadge: string;
+        /** Shown instead of the composer when the viewer's couple has no
+         *  engagement proof for this supplier yet. */
+        eligibilityHint: string;
+        /** Shown instead of the composer when the couple already reviewed. */
+        alreadyReviewedNote: string;
       };
       comments: {
         title: string;
