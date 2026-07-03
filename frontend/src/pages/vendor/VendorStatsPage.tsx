@@ -19,6 +19,7 @@ import { Skeleton, SkeletonText } from "../../components/ui";
 import { vendorBillingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
+import { useDocumentTitle } from "../../lib/seo";
 
 // Booking statuses we have human labels for (reused from the supplier detail
 // calendar namespace). Anything outside this set falls back to the raw value.
@@ -37,6 +38,7 @@ const CHART_COLORS = ["terracotta", "sage", "taupe", "rose", "olive", "ochre", "
 
 export default function VendorStatsPage() {
   const { t, locale } = useT();
+  useDocumentTitle(t("vendor.stats.page_title"));
 
   const [stats, setStats] = useState<VendorStats | null>(null);
   const [features, setFeatures] = useState<VendorFeatureFlags | null>(null);

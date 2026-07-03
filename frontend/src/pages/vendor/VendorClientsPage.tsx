@@ -15,6 +15,7 @@ import { Skeleton } from "../../components/ui";
 import { vendorBillingApi, vendorClientsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
+import { useDocumentTitle } from "../../lib/seo";
 
 // Canonical inquiry-status ordering. Labels reuse the existing supplier
 // directory calendar status namespace (translated in both locales); an unknown
@@ -28,21 +29,30 @@ const STATUS_ORDER = [
   "expired",
 ] as const;
 
-const STATUS_TONE: Record<string, string> = {
-  requested: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300",
-  vendor_seen: "bg-paper-200 text-ink-700 dark:bg-umber-700 dark:text-paper-200",
-  confirmed: "bg-sage-100 text-sage-700 dark:bg-sage-900/20 dark:text-sage-300",
-  declined: "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-300",
-  cancelled: "bg-paper-200 text-ink-500 dark:bg-umber-700 dark:text-umber-300",
-  expired: "bg-paper-200 text-ink-500 dark:bg-umber-700 dark:text-umber-300",
+/** Statuses that ended without money changing hands: their balance column is
+ *  struck through so an abandoned contract value never reads as money owed. */
+const VOID_STATUSES: ReadonlySet<string> = new Set(["declined", "cancelled", "expired"]);
+
+// Icon + colour per status. The table shows just the coloured icon (labels
+// live in an instant hover tooltip + sr-only text); below `sm` the grid stacks
+// and there is no hover, so the label is rendered inline next to the icon.
+const STATUS_ICON: Record<string, { Icon: LucideIcon; tone: string }> = {
+  requested: { Icon: Inbox, tone: "text-amber-600 dark:text-amber-300" },
+  vendor_seen: { Icon: Eye, tone: "text-steel-600 dark:text-steel-300" },
+  confirmed: { Icon: CircleCheck, tone: "text-sage-700 dark:text-sage-300" },
+  declined: { Icon: CircleX, tone: "text-red-600 dark:text-red-300" },
+  cancelled: { Icon: Undo2, tone: "text-ink-400 dark:text-umber-400" },
+  expired: { Icon: Hourglass, tone: "text-ink-400 dark:text-umber-400" },
 };
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useT();
   const known = (STATUS_ORDER as readonly string[]).includes(status);
-  const label = known ? t(`suppliers.detail.calendar.status.${status}`) : status;
-  const tone =
-    STATUS_TONE[status] ?? "bg-paper-200 text-ink-700 dark:bg-umber-700 dark:text-paper-200";
+  const label = known ? t(`vendor.clients.status_${status}`) : status;
+  const { Icon, tone } = STATUS_ICON[status] ?? {
+    Icon: CircleHelp,
+    tone: "text-ink-400 dark:text-umber-400",
+  };
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tone}`}
@@ -175,6 +185,7 @@ function EmptyClients() {
 
 export default function VendorClientsPage() {
   const { t, locale } = useT();
+  useDocumentTitle(t("vendor.clients.page_title"));
   const [clients, setClients] = useState<VendorClientView[]>([]);
   const [plan, setPlan] = useState<VendorPlan>("free");
   const [currency, setCurrency] = useState<Currency>("HUF");
@@ -206,13 +217,20 @@ export default function VendorClientsPage() {
 
   const isPro = isVendorFeatureEnabled(plan, "client_crm_detail");
 
-  // Status pills: "all" plus the distinct statuses present, in canonical order.
-  const presentStatuses = useMemo(() => {
-    const seen = new Set(clients.map((c) => c.status));
-    const ordered = STATUS_ORDER.filter((s) => seen.has(s));
-    const extra = [...seen].filter((s) => !(STATUS_ORDER as readonly string[]).includes(s)).sort();
-    return [...ordered, ...extra];
+  // Status pills: "all" plus EVERY canonical status (each with its count), so
+  // the filter row always mirrors the status options on the detail form,
+  // plus any unknown extras actually present in the data.
+  const statusCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of clients) counts.set(c.status, (counts.get(c.status) ?? 0) + 1);
+    return counts;
   }, [clients]);
+  const pillStatuses = useMemo(() => {
+    const extra = [...statusCounts.keys()]
+      .filter((s) => !(STATUS_ORDER as readonly string[]).includes(s))
+      .sort();
+    return [...STATUS_ORDER, ...extra];
+  }, [statusCounts]);
 
   const filtered = useMemo(
     () => (statusFilter === "all" ? clients : clients.filter((c) => c.status === statusFilter)),
@@ -250,30 +268,29 @@ export default function VendorClientsPage() {
       ) : (
         <>
           {/* Status filter */}
-          {presentStatuses.length > 1 && (
-            <div className="mb-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className={`${pillBase} ${statusFilter === "all" ? pillActive : pillInactive}`}
-                onClick={() => setStatusFilter("all")}
-              >
-                {t("suppliers.filter_all")}
-              </button>
-              {presentStatuses.map((s) => {
-                const known = (STATUS_ORDER as readonly string[]).includes(s);
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    className={`${pillBase} ${statusFilter === s ? pillActive : pillInactive}`}
-                    onClick={() => setStatusFilter(s)}
-                  >
-                    {known ? t(`suppliers.detail.calendar.status.${s}`) : s}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <div className="mb-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={`${pillBase} ${statusFilter === "all" ? pillActive : pillInactive}`}
+              onClick={() => setStatusFilter("all")}
+            >
+              {t("suppliers.filter_all")} ({clients.length})
+            </button>
+            {pillStatuses.map((s) => {
+              const known = (STATUS_ORDER as readonly string[]).includes(s);
+              const count = statusCounts.get(s) ?? 0;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  className={`${pillBase} ${statusFilter === s ? pillActive : pillInactive}`}
+                  onClick={() => setStatusFilter(s)}
+                >
+                  {known ? t(`vendor.clients.status_${s}`) : s} ({count})
+                </button>
+              );
+            })}
+          </div>
 
           {/* Grid "table" — header on sm+, Link rows that navigate to detail. */}
           <div className="overflow-hidden rounded-xl border border-paper-200 dark:border-umber-800">
@@ -292,7 +309,10 @@ export default function VendorClientsPage() {
                     to={`/vendor/clients/${c.id}`}
                     className="grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:bg-paper-100 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3 dark:hover:bg-umber-900 dark:focus-visible:bg-umber-900"
                   >
-                    <span className="truncate font-medium text-ink-900 dark:text-paper-50">
+                    <span
+                      className="truncate font-medium text-ink-900 dark:text-paper-50"
+                      title={c.couple_display_name}
+                    >
                       {c.couple_display_name}
                     </span>
                     <span className="text-sm text-ink-600 dark:text-paper-300">
@@ -311,7 +331,16 @@ export default function VendorClientsPage() {
                     <span className="text-sm tabular-nums text-ink-700 sm:text-right dark:text-paper-200">
                       <ProCell locked={!isPro}>
                         {c.balance !== null ? (
-                          formatMoney(c.balance, currency, locale)
+                          VOID_STATUSES.has(c.status) ? (
+                            <span
+                              className="text-ink-400 line-through dark:text-umber-400"
+                              title={t(`vendor.clients.status_${c.status}`)}
+                            >
+                              {formatMoney(c.balance, currency, locale)}
+                            </span>
+                          ) : (
+                            formatMoney(c.balance, currency, locale)
+                          )
                         ) : (
                           <span className="text-ink-400">-</span>
                         )}

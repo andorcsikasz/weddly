@@ -18,6 +18,7 @@ import { ApiError } from "../../lib/api";
 import { vendorBillingApi, vendorClientsApi } from "../../lib/endpoints";
 import { formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
+import { useDocumentTitle } from "../../lib/seo";
 
 /** The booking statuses a vendor can set. Labels come from the vendor.* i18n
  *  namespace (status_<value>); see the integration note in the return summary. */
@@ -44,6 +45,45 @@ function moneyToInput(value: number | null): string {
   return value === null || value === undefined ? "" : String(value);
 }
 
+/** Locale-grouped rendering of a raw digits string ("420000" → "420 000").
+ *  Falls back to the raw text while it isn't a clean number so half-typed
+ *  input never gets mangled. */
+function groupDigits(raw: string, locale: string): string {
+  const n = parseIntOrNull(raw);
+  if (n === null || raw.trim() === "") return raw;
+  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US").format(n);
+}
+
+/** Money input that shows the same thousand-separated formatting as the
+ *  read-only summaries: grouped while resting, raw digits while focused so
+ *  the caret behaves. Plain text input (type="number" rejects separators). */
+function MoneyField({
+  id,
+  label,
+  value,
+  onValueChange,
+  locale,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onValueChange: (raw: string) => void;
+  locale: string;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <TextField
+      id={id}
+      label={label}
+      inputMode="numeric"
+      value={focused ? value : groupDigits(value, locale)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={(e) => onValueChange(e.target.value.replace(/[\s  ,]/g, ""))}
+    />
+  );
+}
+
 export default function VendorClientDetailPage() {
   const { t, locale } = useT();
   const toast = useToast();
@@ -55,6 +95,7 @@ export default function VendorClientDetailPage() {
   const [currency, setCurrency] = useState<Currency>("HUF");
   const [features, setFeatures] = useState<VendorFeatureFlags | null>(null);
   const [loadState, setLoadState] = useState<"loading" | "ok" | "error">("loading");
+  useDocumentTitle(detail?.couple_display_name ?? t("vendor.clients.page_title"));
 
   // CRM editor form state (mirrors the editable booking columns).
   const [status, setStatus] = useState("");
@@ -297,7 +338,18 @@ export default function VendorClientDetailPage() {
         />
         <SummaryItem
           label={t("vendor.clients.balance")}
-          value={detail.balance === null ? "-" : fmt(detail.balance)}
+          value={
+            detail.balance === null ? (
+              "-"
+            ) : ["declined", "cancelled", "expired"].includes(detail.status) ? (
+              // A dead inquiry's balance is context, not money owed.
+              <span className="text-ink-400 line-through dark:text-umber-400">
+                {fmt(detail.balance)}
+              </span>
+            ) : (
+              fmt(detail.balance)
+            )
+          }
         />
       </section>
 
@@ -335,24 +387,26 @@ export default function VendorClientDetailPage() {
               onChange={(e) => setStage(e.target.value)}
             />
 
-            <TextField
+            <MoneyField
               id="vc-contract"
               type="number"
               inputMode="numeric"
               min={0}
               label={t("vendor.clients.contract_value")}
               value={contractValue}
-              onChange={(e) => setContractValue(e.target.value)}
+              onValueChange={setContractValue}
+              locale={locale}
             />
 
-            <TextField
+            <MoneyField
               id="vc-deposit"
               type="number"
               inputMode="numeric"
               min={0}
               label={t("vendor.clients.deposit_paid")}
               value={depositPaid}
-              onChange={(e) => setDepositPaid(e.target.value)}
+              onValueChange={setDepositPaid}
+              locale={locale}
             />
           </div>
 
@@ -476,14 +530,15 @@ export default function VendorClientDetailPage() {
               value={payLabel}
               onChange={(e) => setPayLabel(e.target.value)}
             />
-            <TextField
+            <MoneyField
               id="vc-pay-amount"
               type="number"
               inputMode="numeric"
               min={0}
               label={t("vendor.payments.amount_field")}
               value={payAmount}
-              onChange={(e) => setPayAmount(e.target.value)}
+              onValueChange={setPayAmount}
+              locale={locale}
             />
             <TextField
               id="vc-pay-due"

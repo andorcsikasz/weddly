@@ -172,7 +172,11 @@ const upsertListingStmt = db.prepare(`
   )
   ON CONFLICT(id) DO UPDATE SET
     source            = excluded.source,
-    vendor_account_id = excluded.vendor_account_id,
+    -- COALESCE keeps an existing claim: the curated/community sync paths pass
+    -- NULL here (they don't know about claims), and clobbering the linkage
+    -- would silently detach a vendor from their listing on every re-sync
+    -- (e.g. an admin hide/unhide of a claimed community card).
+    vendor_account_id = COALESCE(excluded.vendor_account_id, listings.vendor_account_id),
     category          = excluded.category,
     name              = excluded.name,
     city              = excluded.city,

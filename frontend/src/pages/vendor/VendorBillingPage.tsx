@@ -17,6 +17,7 @@ import { Skeleton } from "../../components/ui";
 import { vendorBillingApi } from "../../lib/endpoints";
 import { formatDateMs, formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
+import { useDocumentTitle } from "../../lib/seo";
 
 type TKey = Parameters<ReturnType<typeof useT>["t"]>[0];
 
@@ -39,6 +40,9 @@ const PRO_FEATURES: { feature: VendorFeature; label: TKey }[] = [
 
 export default function VendorBillingPage() {
   const { t, locale } = useT();
+  useDocumentTitle(t("vendor.billing.page_title"));
+  const [searchParams] = useSearchParams();
+  const setupJustCompleted = searchParams.get("setup") === "success";
 
   const [billing, setBilling] = useState<VendorBilling | null>(null);
   const [plan, setPlan] = useState<VendorPlan | null>(null);

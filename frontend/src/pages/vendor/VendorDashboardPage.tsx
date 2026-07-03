@@ -27,11 +27,13 @@ import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/en
 import { formatDate, formatMoney } from "../../lib/format";
 import { useAuth } from "../../lib/auth";
 import { useT } from "../../lib/i18n";
+import { useDocumentTitle } from "../../lib/seo";
 
 const COMPLETENESS_DISMISS_KEY = "weddly.vendor_completeness_dismissed";
 
 export default function VendorDashboardPage() {
   const { t, locale } = useT();
+  useDocumentTitle(t("vendor.dashboard.page_title"));
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -116,7 +118,10 @@ export default function VendorDashboardPage() {
     }
   }, []);
 
-  const greetingName = businessName ?? user?.full_name ?? t("vendor.nav.brand_fallback");
+  // Greet the PERSON, not the brand: "Üdv, Mézi" reads right, "Üdv, Mézi
+  // Tortaműhely" reads like two names glued together. The business name still
+  // owns the shell header + profile chip.
+  const greetingName = user?.full_name ?? businessName ?? t("vendor.nav.brand_fallback");
 
   if (loading || redirecting) {
     return <DashboardSkeleton title={t("vendor.dashboard.page_title")} />;
@@ -316,7 +321,10 @@ export default function VendorDashboardPage() {
                     to={`/vendor/clients/${event.id}`}
                     className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800"
                   >
-                    <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+                    <span
+                      className="truncate text-sm font-medium text-ink-900 dark:text-paper-50"
+                      title={event.couple_display_name}
+                    >
                       {event.couple_display_name}
                     </span>
                     <span className="flex shrink-0 items-center gap-2 text-sm text-ink-600 dark:text-paper-300">

@@ -36,6 +36,8 @@ import { TextField } from "../../components/ui/TextField";
 import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
+import { useDocumentTitle } from "../../lib/seo";
+import { Skeleton, SkeletonText } from "../../components/ui";
 import VendorListingPreview from "./VendorListingPreview";
 
 /** Visual price-band scale shown in the editor. Each level maps to the same
@@ -201,6 +203,7 @@ function capacityTrack(form: FormState): { left: number; right: number; invalid:
 
 export default function VendorListingPage() {
   const { t, locale } = useT();
+  useDocumentTitle(t("vendor_home.page_title"));
   const toast = useToast();
 
   const [view, setView] = useState<VendorListingView | null>(null);
@@ -220,6 +223,7 @@ export default function VendorListingPage() {
   const [availability, setAvailability] = useState<VendorAvailabilityView | null>(null);
   const [newDate, setNewDate] = useState("");
   const [availBusy, setAvailBusy] = useState(false);
+  const [visibilityBusy, setVisibilityBusy] = useState(false);
 
   const loadView = useCallback(async () => {
     try {
@@ -312,6 +316,24 @@ export default function VendorListingPage() {
       toast.error(t("vendor_home.availability_block_failed"));
     } finally {
       setAvailBusy(false);
+    }
+  };
+
+  const onToggleVisibility = async () => {
+    if (!view || visibilityBusy) return;
+    setVisibilityBusy(true);
+    try {
+      const next = await vendorListingApi.setVisibility(view.listing.status !== "active");
+      setView(next);
+      toast.success(
+        next.listing.status === "active"
+          ? t("vendor_home.visibility_published")
+          : t("vendor_home.visibility_paused_toast"),
+      );
+    } catch {
+      toast.error(t("vendor_home.visibility_failed"));
+    } finally {
+      setVisibilityBusy(false);
     }
   };
 
@@ -457,6 +479,27 @@ export default function VendorListingPage() {
       {loadError && (
         <div className="card mb-4" role="alert">
           <p className="text-sm text-blush-700 dark:text-blush-300">{loadError}</p>
+        </div>
+      )}
+
+      {/* Skeleton while the listing + availability fetch is in flight, so the
+          space under the header never renders as a blank flash. */}
+      {!view && !loadError && (
+        <div
+          className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start"
+          aria-busy="true"
+        >
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="card space-y-3">
+                <Skeleton variant="line" width="30%" height={14} />
+                <SkeletonText lines={3} />
+              </div>
+            ))}
+          </div>
+          <div className="hidden lg:block">
+            <Skeleton height={280} rounded="2xl" />
+          </div>
         </div>
       )}
 
@@ -842,6 +885,56 @@ export default function VendorListingPage() {
         </div>
       )}
 
+      {/* Visibility: self-serve pause for fully-booked seasons. Moderation
+          states are read-only here; the admin pipeline owns those. */}
+      {view && (
+        <section className="card mt-3 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="font-semibold">{t("vendor_home.visibility_title")}</h2>
+              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                {t("vendor_home.visibility_body")}
+              </p>
+            </div>
+            <span
+              className={
+                view.listing.status === "active"
+                  ? "inline-flex items-center rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-sage-700 dark:bg-sage-500/20 dark:text-sage-200"
+                  : "inline-flex items-center rounded-full bg-paper-200 px-2.5 py-0.5 text-xs font-medium text-ink-600 dark:bg-umber-700 dark:text-paper-300"
+              }
+            >
+              {view.listing.status === "active"
+                ? t("vendor_home.visibility_live")
+                : view.listing.status === "hidden"
+                  ? t("vendor_home.visibility_paused")
+                  : t("vendor_home.visibility_moderated")}
+            </span>
+          </div>
+          {view.listing.status === "active" || view.listing.status === "hidden" ? (
+            <button
+              type="button"
+              onClick={onToggleVisibility}
+              disabled={visibilityBusy}
+              className={
+                view.listing.status === "active"
+                  ? "btn btn-outline"
+                  : "btn bg-steel-600 text-white hover:bg-steel-700"
+              }
+            >
+              {visibilityBusy
+                ? t("vendor_home.saving")
+                : view.listing.status === "active"
+                  ? t("vendor_home.visibility_pause_cta")
+                  : t("vendor_home.visibility_publish_cta")}
+            </button>
+          ) : (
+            <p className="text-sm text-ink-500 dark:text-umber-300">
+              {t("vendor_home.visibility_moderated_note")}
+            </p>
+          )}
+        </section>
+      )}
+
       {availability && (
         <section className="card mt-3 space-y-3">
           <div>
@@ -889,8 +982,12 @@ export default function VendorListingPage() {
                     type="button"
                     onClick={() => onRemoveBlock(d)}
                     disabled={availBusy}
-                    aria-label={t("vendor_home.availability_remove", { date: d })}
-                    title={t("vendor_home.availability_remove", { date: d })}
+                    aria-label={t("vendor_home.availability_remove", {
+                      date: formatBlockedDate(d, locale),
+                    })}
+                    title={t("vendor_home.availability_remove", {
+                      date: formatBlockedDate(d, locale),
+                    })}
                     className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-300 hover:text-ink-800 disabled:opacity-50 dark:text-umber-300 dark:hover:bg-umber-700"
                   >
                     ×

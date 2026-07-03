@@ -4,12 +4,16 @@
 //
 //   GET /api/vendor/listing/me     — read the caller's claimed listing + account
 //   PATCH /api/vendor/listing/me   — update marketing copy, contact, pricing
+//   POST /api/vendor/listing/me/visibility, self-serve pause/unpause
+//                                    (status 'active' <-> 'hidden' only)
 //
 // Authorisation: requireAuth + role === 'vendor' + the user must own a
 // vendor_account that's currently attached to a listing. Anything else is
 // 403 (a couple-role user, a vendor whose listing got admin-hidden, etc.).
-// Name / category / status / lat-lng are deliberately NOT editable — those
-// flow through admin moderation (name) or the geocode worker (lat-lng).
+// Name / category / lat-lng are deliberately NOT editable; those flow
+// through admin moderation (name) or the geocode worker (lat-lng). Status is
+// NOT part of the PATCH either: the only self-serve transition is the
+// dedicated visibility toggle, which refuses to touch moderation states.
 
 import {
   priceBandLockedUntil,
@@ -20,6 +24,11 @@ import { db, now } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { sniffUploadedImage } from "../lib/image_sniff";
 import { keyFromUploadUrl, storage } from "../lib/storage";
+import {
+  getCommunitySupplierById,
+  setStatus as setCommunityStatus,
+} from "../domain/community_suppliers";
+import { clearCuratedOverride, setCuratedOverride } from "../domain/curated_overrides";
 import {
   getListingById,
   getListingByVendorAccountId,
@@ -317,6 +326,111 @@ async function handleDeleteHero(ctx: Ctx): Promise<Response> {
   return json(view);
 }
 
+// ── Visibility toggle (pause / unpause) ────────────────────────────────────
+//
+// A fully-booked vendor can take their card offline without support: 'active'
+// <-> 'hidden' and nothing else. The public directory still reads the SOURCE
+// tables (curated + community), not `listings`, so the toggle must flip the
+// source-of-truth per listing kind:
+//   - community ('c{N}'): community_suppliers.status via setStatus, which
+//     mirrors into `listings` itself
+//   - curated (claimed slug): a curated_supplier_overrides row (same lever the
+//     admin hide uses), plus the mirrored listings.status for the editor pill
+//   - self-serve ('v{N}'): listings.status only (no public surface yet)
+// Moderation guardrails: 'pending'/'awaiting_review' rows are 409 (flipping an
+// unreviewed card live would skip review), and a card hidden/deleted BY AN
+// ADMIN cannot be re-published by its vendor; only a self-pause can be
+// undone. Sits under the /api/vendor/listing entitlement EDIT prefix, so a
+// lapsed vendor cannot flip visibility while read-only.
+
+const VENDOR_PAUSE_REASON = "vendor_pause";
+
+function assertSelfPause(hiddenByUserId: number | null, ownerUserId: number): void {
+  if (hiddenByUserId !== null && hiddenByUserId !== ownerUserId) {
+    throw new HttpError(409, "Listing was hidden by moderation and cannot be re-published", {
+      code: "listing_moderated",
+    });
+  }
+}
+
+async function handleSetVisibility(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const body = await readJson<{ published?: unknown }>(ctx.req);
+  if (typeof body.published !== "boolean") {
+    throw new HttpError(400, "`published` must be a boolean", { code: "bad_published" });
+  }
+  const nextStatus = body.published ? "active" : "hidden";
+  const ts = now();
+
+  if (listing.source === "community" && /^c\d+$/.test(listing.id)) {
+    const communityId = Number(listing.id.slice(1));
+    const row = getCommunitySupplierById(communityId);
+    if (!row) throw new HttpError(404, "Community listing vanished");
+    if (row.status !== "active" && row.status !== "hidden") {
+      throw new HttpError(409, "Listing is in moderation and cannot be toggled", {
+        code: "listing_moderated",
+      });
+    }
+    if (row.status === "hidden") assertSelfPause(row.hidden_by_user_id, account.owner_user_id);
+    if (row.status !== nextStatus) {
+      // setStatus mirrors into `listings` via syncListingFromCommunityId.
+      setCommunityStatus(
+        communityId,
+        nextStatus,
+        body.published ? null : account.owner_user_id,
+        body.published ? null : VENDOR_PAUSE_REASON,
+      );
+    }
+  } else if (listing.source === "curated") {
+    const override = db
+      .prepare(
+        "SELECT status, hidden_by_user_id FROM curated_supplier_overrides WHERE supplier_id = ?",
+      )
+      .get(listing.id) as { status: string; hidden_by_user_id: number | null } | undefined;
+    if (override) assertSelfPause(override.hidden_by_user_id, account.owner_user_id);
+    if (body.published) {
+      clearCuratedOverride(listing.id);
+    } else {
+      setCuratedOverride(listing.id, "hidden", account.owner_user_id, VENDOR_PAUSE_REASON);
+    }
+    db.prepare("UPDATE listings SET status = ?, updated_at = ? WHERE id = ?").run(
+      nextStatus,
+      ts,
+      listing.id,
+    );
+  } else {
+    // Self-serve 'v{N}' row: `listings` is the only home it has.
+    if (listing.status !== "active" && listing.status !== "hidden") {
+      throw new HttpError(409, "Listing is in moderation and cannot be toggled", {
+        code: "listing_moderated",
+      });
+    }
+    if (nextStatus !== listing.status) {
+      db.prepare("UPDATE listings SET status = ?, updated_at = ? WHERE id = ?").run(
+        nextStatus,
+        ts,
+        listing.id,
+      );
+    }
+  }
+
+  if (nextStatus !== listing.status) {
+    addAuditLog({
+      actor_user_id: account.owner_user_id,
+      couple_id: null,
+      action: "vendor.listing_visibility",
+      target_kind: "listing",
+      target_id: null,
+      before: { listing_id: listing.id, status: listing.status },
+      after: { status: nextStatus },
+    });
+  }
+  const refreshed = getListingById(listing.id);
+  if (!refreshed) throw new HttpError(404, "Listing vanished mid-update");
+  const view: VendorListingView = { listing: refreshed, account };
+  return json(view);
+}
+
 // ── Onboarding completion ──────────────────────────────────────────────────
 //
 // The self-serve signup wizard (frontend /vendor/onboarding) edits the listing
@@ -352,6 +466,7 @@ async function handleCompleteOnboarding(ctx: Ctx): Promise<Response> {
 export function registerVendorListingRoutes(router: Router) {
   router.get("/api/vendor/listing/me", handleGetMe);
   router.patch("/api/vendor/listing/me", handlePatchMe);
+  router.post("/api/vendor/listing/me/visibility", handleSetVisibility);
   router.post("/api/vendor/listing/me/hero", handleUploadHero);
   router.delete("/api/vendor/listing/me/hero", handleDeleteHero);
   router.post("/api/vendor/onboarding/complete", handleCompleteOnboarding);

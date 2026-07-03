@@ -718,3 +718,111 @@ describe("vendor listing price-band 30-day cooldown", () => {
     expect(after.data.listing.price_band_changed_at).toBeGreaterThan(thirtyOneDaysAgo);
   });
 });
+
+describe("vendor listing / POST /api/vendor/listing/me/visibility", () => {
+  test("self-pause hides the public card, unpause restores it", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-vis@weddly.test",
+      "vendor-vis@weddly.test",
+      "Visibility Photo Studio",
+    );
+    const { vendorToken } = await claimListing(listingId, "vendor-vis@weddly.test", "Vendor Owner");
+
+    // Live before the pause.
+    const before = await req<{ suppliers: Array<{ id: string }> }>("GET", "/api/suppliers");
+    expect(before.data.suppliers.some((s) => s.id === listingId)).toBe(true);
+
+    const pause = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/visibility",
+      { published: false },
+      { token: vendorToken },
+    );
+    expect(pause.status).toBe(200);
+    expect(pause.data.listing.status).toBe("hidden");
+
+    // Gone from the public directory (the couple-facing read path, which
+    // serves community rows from community_suppliers, not `listings`).
+    const during = await req<{ suppliers: Array<{ id: string }> }>("GET", "/api/suppliers");
+    expect(during.data.suppliers.some((s) => s.id === listingId)).toBe(false);
+
+    const unpause = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/visibility",
+      { published: true },
+      { token: vendorToken },
+    );
+    expect(unpause.status).toBe(200);
+    expect(unpause.data.listing.status).toBe("active");
+
+    const after = await req<{ suppliers: Array<{ id: string }> }>("GET", "/api/suppliers");
+    expect(after.data.suppliers.some((s) => s.id === listingId)).toBe(true);
+  });
+
+  test("an admin-hidden listing cannot be re-published by its vendor", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-vis-adm@weddly.test",
+      "vendor-vis-adm@weddly.test",
+      "Moderated Photo Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-vis-adm@weddly.test",
+      "Vendor Owner",
+    );
+
+    const adminToken = await registerAdminAndGetToken();
+    const numericId = Number(listingId.slice(1));
+    const hide = await req(
+      "POST",
+      `/api/admin/suppliers/${numericId}/hide`,
+      { reason: "moderation test" },
+      { token: adminToken },
+    );
+    expect(hide.status).toBe(200);
+
+    const attempt = await req(
+      "POST",
+      "/api/vendor/listing/me/visibility",
+      { published: true },
+      { token: vendorToken },
+    );
+    expect(attempt.status).toBe(409);
+  });
+
+  test("non-boolean `published` → 400; couple-role user → 403; anon → 401", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-vis-bad@weddly.test",
+      "vendor-vis-bad@weddly.test",
+      "BadInput Photo Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-vis-bad@weddly.test",
+      "Vendor Owner",
+    );
+
+    const bad = await req(
+      "POST",
+      "/api/vendor/listing/me/visibility",
+      { published: "yes" },
+      { token: vendorToken },
+    );
+    expect(bad.status).toBe(400);
+
+    const couple = await bootstrapCouple("couple-vis@weddly.test");
+    const forbidden = await req(
+      "POST",
+      "/api/vendor/listing/me/visibility",
+      { published: false },
+      { token: couple.token },
+    );
+    expect(forbidden.status).toBe(403);
+
+    const anon = await req("POST", "/api/vendor/listing/me/visibility", { published: false });
+    expect(anon.status).toBe(401);
+  });
+});
