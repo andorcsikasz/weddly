@@ -7789,6 +7789,8 @@ export interface LocaleMessages {
     rail_today_nameday: string;
     rail_today_empty: string;
     rail_urgent_title: string;
+    rail_collapse: string;
+    rail_expand: string;
     rail_all_good: string;
     rail_more_overdue: string;
     rail_more_today: string;

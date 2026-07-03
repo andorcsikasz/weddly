@@ -11,6 +11,8 @@ import {
   ListTodo,
   type LucideIcon,
   MailQuestion,
+  PanelRightClose,
+  PanelRightOpen,
   SlidersHorizontal,
   Users,
   X,
@@ -500,6 +502,7 @@ function UpcomingTasks({
 // ─── GettingStartedChecklist ──────────────────────────────────────────────────
 
 const CHECKLIST_DISMISSED_KEY = "weddly.planner_checklist_dismissed";
+const RAIL_COLLAPSED_KEY = "weddly.planner_rail_collapsed";
 
 interface ChecklistStep {
   key: string;
@@ -608,16 +611,32 @@ export default function PlannerHomePage() {
   const [showTaskFilters, setShowTaskFilters] = useState(initialTiming !== "all");
   const [hasThreads, setHasThreads] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(true);
+  // Desktop-only: tucks the agenda rail away to the right edge; the grid
+  // column animates between the full 320px and a slim 2.75rem handle.
+  const [railCollapsed, setRailCollapsed] = useState(false);
 
   const refreshRef = useRef(false);
 
   useEffect(() => {
     try {
       setChecklistDismissed(localStorage.getItem(CHECKLIST_DISMISSED_KEY) === "1");
+      setRailCollapsed(localStorage.getItem(RAIL_COLLAPSED_KEY) === "1");
     } catch {
       setChecklistDismissed(false);
     }
   }, []);
+
+  function toggleRail() {
+    setRailCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(RAIL_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        /* best-effort */
+      }
+      return next;
+    });
+  }
 
   // allSettled so one failing call degrades that section only instead of
   // silently blanking the whole dashboard; any failure surfaces a retry banner.
@@ -736,8 +755,15 @@ export default function PlannerHomePage() {
   const allChecklistDone = checklistSteps.every((s) => s.done);
   const showChecklist = !loading && !checklistDismissed && !allChecklistDone;
 
+  const today = new Date().toISOString().slice(0, 10);
+  const railOverdueCount = tasks.filter((tk) => tk.due_date < today && !tk.done).length;
+
   return (
-    <main className="py-2 lg:grid lg:grid-cols-[1fr_320px] lg:gap-6">
+    <main
+      className={`py-2 transition-[grid-template-columns] duration-300 ease-out lg:grid lg:gap-6 ${
+        railCollapsed ? "lg:grid-cols-[1fr_2.75rem]" : "lg:grid-cols-[1fr_320px]"
+      }`}
+    >
       {/* LEFT COLUMN */}
       <div className="min-w-0 space-y-6">
         {/* Briefing header */}
@@ -935,9 +961,40 @@ export default function PlannerHomePage() {
         )}
       </div>
 
-      {/* RIGHT COLUMN */}
-      <div className="mt-6 lg:mt-0 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-        <PlannerDashRightRail tasks={tasks} clients={clients} />
+      {/* RIGHT COLUMN — collapsible to the right edge on desktop */}
+      <div className="mt-6 min-w-0 lg:mt-0 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+        <div className="mb-2 hidden justify-end lg:flex">
+          <button
+            type="button"
+            onClick={toggleRail}
+            aria-expanded={!railCollapsed}
+            aria-label={t(railCollapsed ? "planner_home.rail_expand" : "planner_home.rail_collapse")}
+            title={t(railCollapsed ? "planner_home.rail_expand" : "planner_home.rail_collapse")}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-umber-500 transition-colors hover:bg-moss-50 hover:text-moss-800 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-moss-200"
+          >
+            {railCollapsed ? (
+              <PanelRightOpen size={18} aria-hidden="true" />
+            ) : (
+              <PanelRightClose size={18} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+        {/* Collapsed handle keeps a pulse of the urgent count so tucking the
+            rail away never hides an alert completely. Mobile always shows the
+            full card — the collapse is a desktop-space concern. */}
+        {railCollapsed && railOverdueCount > 0 && (
+          <div className="hidden justify-end lg:flex">
+            <span
+              className="flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-100 px-1 text-[10px] font-semibold tabular-nums text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+              title={t("planner_home.rail_urgent_title")}
+            >
+              {railOverdueCount}
+            </span>
+          </div>
+        )}
+        <div className={railCollapsed ? "lg:hidden" : ""}>
+          <PlannerDashRightRail tasks={tasks} clients={clients} />
+        </div>
       </div>
     </main>
   );

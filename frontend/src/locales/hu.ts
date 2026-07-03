@@ -7256,6 +7256,8 @@ const hu: LocaleMessages = {
     rail_today_nameday: "Névnap",
     rail_today_empty: "Ma nincs feladat, szép nap lesz.",
     rail_urgent_title: "Figyelem",
+    rail_collapse: "Napi sáv becsukása",
+    rail_expand: "Napi sáv kinyitása",
     rail_all_good: "Minden rendben",
     rail_more_overdue: "...és {{n}} további lejárt",
     rail_more_today: "...és {{n}} további",

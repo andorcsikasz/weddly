@@ -129,19 +129,22 @@ export function PlannerDashRightRail({ tasks, clients }: Props) {
               </div>
             </>
           ) : (
-            <>
+            /* Amber-tinted panel so the urgent block reads as its own zone
+               inside the card; the list collapses with an animated height
+               (grid-rows 0fr↔1fr trick, pure CSS). */
+            <div className="-mx-2 rounded-xl bg-amber-50/70 p-2 dark:bg-amber-900/15">
               <button
                 type="button"
                 onClick={() => setUrgentOpen((o) => !o)}
                 aria-expanded={urgentOpen}
-                className="-m-1 flex w-full items-center gap-1.5 rounded-lg p-1 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800/60"
+                className="flex w-full items-center gap-1.5 rounded-lg p-1 transition-colors hover:bg-amber-100/70 dark:hover:bg-amber-900/25"
               >
                 <AlertTriangle
                   size={13}
                   className="shrink-0 text-amber-500 dark:text-amber-400"
                   aria-hidden="true"
                 />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">
                   {t("planner_home.rail_urgent_title")}
                 </span>
                 <span className="text-[10px] font-semibold tabular-nums text-amber-600 dark:text-amber-400">
@@ -149,40 +152,47 @@ export function PlannerDashRightRail({ tasks, clients }: Props) {
                 </span>
                 <ChevronDown
                   size={14}
-                  className={`ml-auto shrink-0 text-umber-400 transition-transform ${
+                  className={`ml-auto shrink-0 text-amber-500 transition-transform duration-300 dark:text-amber-400 ${
                     urgentOpen ? "rotate-180" : ""
                   }`}
                   aria-hidden="true"
                 />
               </button>
 
-              {urgentOpen && (
-                <div className="mt-2">
-                  <ul className="space-y-1.5">
-                    {visibleOverdue.map((tk) => (
-                      <li key={tk.task_id}>
-                        <Link
-                          to="/app/planner/calendar?mode=tasks"
-                          className="-mx-1 flex items-start gap-2 rounded-lg px-1 py-0.5 min-w-0 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800/60"
-                        >
-                          <span className="flex-1 truncate text-sm text-ink-900 dark:text-paper-100">
-                            {tk.title}
-                          </span>
-                          <span className="shrink-0 text-[10px] text-umber-500 dark:text-umber-400">
-                            {clientDisplayName(clients, tk.couple_id)}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                  {extraOverdue > 0 && (
-                    <p className="mt-1.5 text-xs text-umber-500 dark:text-umber-400">
-                      {t("planner_home.rail_more_overdue").replace("{{n}}", String(extraOverdue))}
-                    </p>
-                  )}
+              <div
+                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                  urgentOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                }`}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="mt-2 px-1">
+                    <ul className="space-y-1.5">
+                      {visibleOverdue.map((tk) => (
+                        <li key={tk.task_id}>
+                          <Link
+                            to="/app/planner/calendar?mode=tasks"
+                            tabIndex={urgentOpen ? undefined : -1}
+                            className="-mx-1 flex items-start gap-2 rounded-lg px-1 py-0.5 min-w-0 transition-colors hover:bg-amber-100/70 dark:hover:bg-amber-900/25"
+                          >
+                            <span className="flex-1 truncate text-sm text-ink-900 dark:text-paper-100">
+                              {tk.title}
+                            </span>
+                            <span className="shrink-0 text-[10px] text-umber-500 dark:text-umber-400">
+                              {clientDisplayName(clients, tk.couple_id)}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    {extraOverdue > 0 && (
+                      <p className="mt-1.5 pb-1 text-xs text-umber-500 dark:text-umber-400">
+                        {t("planner_home.rail_more_overdue").replace("{{n}}", String(extraOverdue))}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
-            </>
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -7199,6 +7199,8 @@ const en: LocaleMessages = {
     rail_today_nameday: "Name day",
     rail_today_empty: "Nothing due today, enjoy it.",
     rail_urgent_title: "Attention",
+    rail_collapse: "Collapse day rail",
+    rail_expand: "Expand day rail",
     rail_all_good: "All clear",
     rail_more_overdue: "...and {{n}} more overdue",
     rail_more_today: "...and {{n}} more today",
