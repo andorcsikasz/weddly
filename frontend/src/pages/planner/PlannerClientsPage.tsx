@@ -82,11 +82,11 @@ export default function PlannerClientsPage() {
             {invites.map((inv) => (
               <div
                 key={inv.couple_id}
-                className="card flex items-center justify-between gap-4 px-5 py-4"
+                className="card group flex items-center justify-between gap-4 px-5 py-4"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/25 dark:text-amber-400"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-amber-600 transition-colors group-hover:bg-amber-50 dark:text-amber-400 dark:group-hover:bg-amber-900/25"
                     title={t("planner_home.pipeline_pending")}
                   >
                     <MailQuestion size={16} aria-hidden="true" />

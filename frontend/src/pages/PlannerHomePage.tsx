@@ -53,13 +53,14 @@ function KpiTile({
   const isRed = accent === "red" && Number(value) > 0;
   const isAmber = accent === "amber" && Number(value) > 0;
   const isGreen = accent === "green";
-  // The icon chip carries the status colour; the frame stays the shared
-  // card chrome so the four tiles read as one row, not four alerts.
+  // The icon carries the status colour as a bare outline; the soft chip
+  // background only appears while the cursor is over the tile (group-hover),
+  // so at rest the row stays quiet.
   const chip = isRed
-    ? "bg-red-50 text-red-600 dark:bg-red-900/25 dark:text-red-400"
+    ? "text-red-500 group-hover:bg-red-50 dark:text-red-400 dark:group-hover:bg-red-900/25"
     : isAmber
-      ? "bg-amber-50 text-amber-600 dark:bg-amber-900/25 dark:text-amber-400"
-      : "bg-moss-50 text-moss-600 dark:bg-moss-900/40 dark:text-moss-300";
+      ? "text-amber-500 group-hover:bg-amber-50 dark:text-amber-400 dark:group-hover:bg-amber-900/25"
+      : "text-moss-600 group-hover:bg-moss-50 dark:text-moss-300 dark:group-hover:bg-moss-900/40";
   const inner = (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -67,7 +68,7 @@ function KpiTile({
           {label}
         </div>
         <span
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${chip}`}
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${chip}`}
           title={label}
         >
           <Icon size={14} aria-hidden="true" />
@@ -103,7 +104,7 @@ function KpiTile({
       <Link
         to={to}
         title={label}
-        className="card block p-4 transition hover:-translate-y-0.5 hover:border-moss-400 hover:shadow-pop focus-visible:ring-2 focus-visible:ring-moss-600 dark:hover:border-moss-500 dark:focus-visible:ring-moss-400"
+        className="card group block p-4 transition hover:-translate-y-0.5 hover:border-moss-400 hover:shadow-pop focus-visible:ring-2 focus-visible:ring-moss-600 dark:hover:border-moss-500 dark:focus-visible:ring-moss-400"
       >
         {inner}
       </Link>
@@ -826,11 +827,11 @@ export default function PlannerHomePage() {
               {invites.map((inv) => (
                 <div
                   key={inv.couple_id}
-                  className="card flex items-center justify-between gap-4 px-5 py-4"
+                  className="card group flex items-center justify-between gap-4 px-5 py-4"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/25 dark:text-amber-400"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-amber-600 transition-colors group-hover:bg-amber-50 dark:text-amber-400 dark:group-hover:bg-amber-900/25"
                       title={t("planner_home.pipeline_pending")}
                     >
                       <MailQuestion size={16} aria-hidden="true" />
