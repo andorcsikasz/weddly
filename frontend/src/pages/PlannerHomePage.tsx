@@ -22,14 +22,12 @@ import { PlannerDashRightRail } from "./planner/PlannerDashRightRail";
 function KpiTile({
   label,
   value,
-  unit,
   progress,
   accent,
   to,
 }: {
   label: string;
   value: string | number;
-  unit: string;
   progress?: { done: number; total: number } | null;
   accent?: "red" | "amber" | "green";
   to?: string;
@@ -56,7 +54,6 @@ function KpiTile({
         >
           {value}
         </div>
-        <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">{unit}</div>
         {progress && progress.total > 0 && (
           <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
             <div
@@ -740,21 +737,18 @@ export default function PlannerHomePage() {
               <KpiTile
                 label={t("planner_home.kpi_overdue")}
                 value={stats.overdue_tasks}
-                unit={t("planner_home.kpi_overdue_unit")}
                 accent={stats.overdue_tasks > 0 ? "red" : undefined}
                 to="/app/planner/stats"
               />
               <KpiTile
                 label={t("planner_home.kpi_due_this_week")}
                 value={stats.due_this_week}
-                unit={t("planner_home.kpi_due_week_unit")}
                 accent={stats.due_this_week > 0 ? "amber" : undefined}
                 to="/app/planner/calendar"
               />
               <KpiTile
                 label={t("planner_home.kpi_total_tasks")}
                 value={stats.done_tasks}
-                unit={t("planner_home.kpi_tasks_unit")}
                 accent="green"
                 progress={
                   stats.total_tasks > 0
@@ -766,7 +760,6 @@ export default function PlannerHomePage() {
               <KpiTile
                 label={t("planner_home.kpi_active_clients")}
                 value={stats.active_clients}
-                unit={t("planner_home.kpi_clients_unit")}
                 progress={
                   stats.max_clients > 0
                     ? { done: stats.active_clients, total: stats.max_clients }

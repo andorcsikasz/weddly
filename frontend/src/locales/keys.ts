@@ -7727,10 +7727,6 @@ export interface LocaleMessages {
     kpi_total_tasks: string;
     kpi_overdue: string;
     kpi_due_this_week: string;
-    kpi_clients_unit: string;
-    kpi_tasks_unit: string;
-    kpi_overdue_unit: string;
-    kpi_due_week_unit: string;
     plan_chip: string;
     chart_heading: string;
     chart_done_label: string;
