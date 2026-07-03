@@ -156,7 +156,8 @@ async function handleSetEnforcement(ctx: Ctx): Promise<Response> {
 // ── Stripe health monitor ───────────────────────────────────────────────────
 // Shows what we can even before billing is connected: which env vars are set,
 // the key's mode (test/live), and — once a key IS present — whether a live API
-// ping (accounts.retrieve) actually succeeds. Never returns secret values.
+// ping succeeds (accounts.retrieve, falling back to a price fetch for
+// restricted keys without Account read). Never returns secret values.
 
 /** Derive the key mode from its prefix without exposing the key. */
 function stripeKeyMode(key: string): StripeHealth["mode"] {
@@ -201,6 +202,33 @@ async function stripeHealth(): Promise<StripeHealth> {
       checkedAt,
     };
   } catch (err) {
+    // Restricted keys (rk_…) often lack the Account-read scope even though
+    // every permission billing actually needs is granted. Fall back to
+    // retrieving a configured price: a 200 there still proves the key works,
+    // we just can't show the charges/payouts go-live flags.
+    const priceId = CONFIG.stripePriceEur || CONFIG.stripePriceHuf;
+    if (priceId) {
+      try {
+        await stripe().prices.retrieve(priceId);
+        return {
+          enabled: true,
+          mode,
+          config,
+          connection: {
+            ok: true,
+            accountId: null,
+            chargesEnabled: null,
+            payoutsEnabled: null,
+            country: null,
+            defaultCurrency: null,
+            error: null,
+          },
+          checkedAt,
+        };
+      } catch {
+        // fall through to reporting the original account-endpoint error
+      }
+    }
     return {
       enabled: true,
       mode,

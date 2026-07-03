@@ -632,8 +632,10 @@ function StripeHealthCard({ locale }: { locale: string }) {
             <ConfigItem label="HUF ár (price)" ok={h.config.priceHuf} />
           </div>
 
-          {/* Élő fiók-adatok, ha a ping sikerült */}
-          {h.connection?.ok && (
+          {/* Élő fiók-adatok, ha a ping sikerült. Restricted kulcsnál a fiók-
+              endpoint nem elérhető: olyankor a ping az árat kéri le, a fiók-
+              mezők null-ok, és ezt a blokkot nem mutatjuk. */}
+          {h.connection?.ok && h.connection.accountId && (
             <div className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
               <HealthRow label="Fiók" value={h.connection.accountId ?? "-"} mono />
               <HealthRow
