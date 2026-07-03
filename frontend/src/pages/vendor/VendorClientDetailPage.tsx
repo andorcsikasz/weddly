@@ -9,7 +9,7 @@
 import type { Currency } from "@shared/types";
 import type { VendorClientDetail, VendorClientPayment } from "@shared/vendor_clients";
 import type { VendorFeatureFlags } from "@shared/vendor_plan";
-import { ArrowLeft, Lock, Mail, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CircleCheck, CircleDashed, Lock, Mail, Plus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -32,9 +32,11 @@ const STATUS_OPTIONS = [
 ] as const;
 
 /** Parse a money / number input to an integer whole-unit value, or null when the
- *  field is left blank or invalid. */
+ *  field is left blank or invalid. Grouping separators (regular, non-breaking
+ *  and thin spaces, commas) are stripped first so a formatted "420 000" or
+ *  "420,000" round-trips cleanly. */
 function parseIntOrNull(raw: string): number | null {
-  const trimmed = raw.trim();
+  const trimmed = raw.replace(/[\s  ,]/g, "").trim();
   if (trimmed === "") return null;
   const n = Number(trimmed);
   if (!Number.isFinite(n)) return null;
@@ -383,15 +385,13 @@ export default function VendorClientDetailPage() {
               id="vc-stage"
               label={t("vendor.clients.stage_label")}
               placeholder={t("vendor.clients.stage_placeholder")}
+              helperText={t("vendor.clients.stage_hint")}
               value={stage}
               onChange={(e) => setStage(e.target.value)}
             />
 
             <MoneyField
               id="vc-contract"
-              type="number"
-              inputMode="numeric"
-              min={0}
               label={t("vendor.clients.contract_value")}
               value={contractValue}
               onValueChange={setContractValue}
@@ -400,9 +400,6 @@ export default function VendorClientDetailPage() {
 
             <MoneyField
               id="vc-deposit"
-              type="number"
-              inputMode="numeric"
-              min={0}
               label={t("vendor.clients.deposit_paid")}
               value={depositPaid}
               onValueChange={setDepositPaid}
@@ -448,12 +445,9 @@ export default function VendorClientDetailPage() {
       {/* Payment schedule — PRO. */}
       {canTrackPayments ? (
         <section className="card space-y-5">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
-              {t("vendor.payments.title")}
-            </h2>
-            <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.payments.intro")}</p>
-          </div>
+          <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+            {t("vendor.payments.title")}
+          </h2>
 
           {payments.length === 0 ? (
             <p className="text-sm text-ink-500 dark:text-paper-400">{t("vendor.payments.empty")}</p>
@@ -477,14 +471,32 @@ export default function VendorClientDetailPage() {
                   <span className="font-semibold text-ink-900 dark:text-paper-50">
                     {fmt(p.amount)}
                   </span>
-                  <span
-                    className={
-                      p.paid
-                        ? "rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-sage-700 dark:bg-sage-500/20 dark:text-sage-200"
-                        : "rounded-full bg-paper-200 px-2.5 py-0.5 text-xs font-medium text-ink-600 dark:bg-umber-700 dark:text-paper-300"
-                    }
-                  >
-                    {p.paid ? t("vendor.payments.paid") : t("vendor.payments.unpaid")}
+                  {/* Paid state as a coloured icon; the label lives in an
+                      instant CSS tooltip + sr-only text (same idiom as the
+                      clients-table status icons). */}
+                  <span className="group relative inline-flex items-center">
+                    {p.paid ? (
+                      <CircleCheck
+                        size={18}
+                        aria-hidden="true"
+                        className="text-sage-700 dark:text-sage-300"
+                      />
+                    ) : (
+                      <CircleDashed
+                        size={18}
+                        aria-hidden="true"
+                        className="text-amber-600 dark:text-amber-300"
+                      />
+                    )}
+                    <span className="sr-only">
+                      {p.paid ? t("vendor.payments.paid") : t("vendor.payments.unpaid")}
+                    </span>
+                    <span
+                      role="tooltip"
+                      className="pointer-events-none absolute right-full top-1/2 z-20 mr-1.5 hidden -translate-y-1/2 whitespace-nowrap rounded-md border border-paper-200 bg-paper-50 px-2 py-1 text-[11px] font-medium text-ink-700 shadow-pop group-hover:block dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                    >
+                      {p.paid ? t("vendor.payments.paid") : t("vendor.payments.unpaid")}
+                    </span>
                   </span>
                   <Button
                     variant="outline"
@@ -532,9 +544,6 @@ export default function VendorClientDetailPage() {
             />
             <MoneyField
               id="vc-pay-amount"
-              type="number"
-              inputMode="numeric"
-              min={0}
               label={t("vendor.payments.amount_field")}
               value={payAmount}
               onValueChange={setPayAmount}
