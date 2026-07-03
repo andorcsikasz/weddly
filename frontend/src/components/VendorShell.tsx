@@ -9,6 +9,7 @@ import {
   BarChart3,
   Bell,
   CalendarClock,
+  CalendarDays,
   ChevronDown,
   CreditCard,
   Home,
@@ -39,7 +40,7 @@ import { Wordmark } from "./Wordmark";
 type VendorNavItem = { to: string; labelKey: string; icon: ReactNode; end?: boolean };
 
 // Billing is reachable through Settings (the Csomag tab) + the profile menu,
-// so the rail stays at five primary surfaces.
+// so the rail stays at six primary surfaces.
 const VENDOR_ITEMS: VendorNavItem[] = [
   {
     to: "/vendor",
@@ -48,6 +49,7 @@ const VENDOR_ITEMS: VendorNavItem[] = [
     end: true,
   },
   { to: "/vendor/clients", labelKey: "vendor.nav.clients", icon: <Users size={18} /> },
+  { to: "/vendor/calendar", labelKey: "vendor.nav.calendar", icon: <CalendarDays size={18} /> },
   { to: "/vendor/listing", labelKey: "vendor.nav.listing", icon: <Store size={18} /> },
   { to: "/vendor/stats", labelKey: "vendor.nav.stats", icon: <BarChart3 size={18} /> },
   { to: "/vendor/settings", labelKey: "vendor.nav.settings", icon: <Settings size={18} /> },
@@ -352,7 +354,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
   // Confirmed events in the next 7 days, for the header bell.
   const [upcomingWeek, setUpcomingWeek] = useState(0);
   // Stays false until the first stats fetch lands, so the bell's seen-watermark
-  // never sees the transient all-zero mount state (and never on fetch failure —
+  // never sees the transient all-zero mount state (and never on fetch failure;
   // the counts are unknown then, not zero).
   const [statsReady, setStatsReady] = useState(false);
   useEffect(() => {

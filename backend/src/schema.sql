@@ -1249,6 +1249,21 @@ CREATE TABLE IF NOT EXISTS vendor_client_payments (
   updated_at INTEGER NOT NULL
 );
 
+-- Vendor to-do board. Private, vendor-scoped work items (not tied to a couple
+-- or booking) shown on the Trello-style board in the vendor workspace. Lanes
+-- mirror the planner board: 'todo' | 'doing' | 'done'.
+CREATE TABLE IF NOT EXISTS vendor_tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  due_date TEXT,                                               -- 'YYYY-MM-DD' or NULL
+  board_status TEXT NOT NULL DEFAULT 'todo',                   -- 'todo' | 'doing' | 'done'
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vendor_tasks_vendor
+  ON vendor_tasks(vendor_account_id, board_status);
+
 -- Denormalised supplier rollup. One row per supplier_id (lazy upsert from the
 -- domain layer on every review write). Saves an aggregation pass on the
 -- directory list endpoint and the detail GET. `top_tags` is a JSON array of
