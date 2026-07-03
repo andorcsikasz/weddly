@@ -534,6 +534,8 @@ const hu: LocaleMessages = {
     hero_dropzone_cta: "Húzz ide egy fotót, vagy kattints a feltöltéshez",
     hero_dropzone_hint: "JPG, PNG vagy WebP",
     hero_dropzone_replace: "Ejtsd ide vagy kattints a cseréhez",
+    hero_size_hint: "Ajánlott méret: 1200×800 px (3:2 arány), így vágjuk a katalóguskártyán",
+    preview_open: "Előnézet megnyitása",
     preview_no_photo: "Még nincs borítókép",
     preview_capacity_from: "Min. {min}",
     preview_capacity_upto: "Max. {max}",

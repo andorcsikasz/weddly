@@ -528,6 +528,8 @@ const en: LocaleMessages = {
     hero_dropzone_cta: "Drag a photo here or click to upload",
     hero_dropzone_hint: "JPG, PNG or WebP",
     hero_dropzone_replace: "Drop or click to replace",
+    hero_size_hint: "Recommended size: 1200×800 px (3:2 ratio), the exact crop of your catalogue card",
+    preview_open: "Open public preview",
     preview_no_photo: "No cover photo yet",
     preview_capacity_from: "From {min}",
     preview_capacity_upto: "Up to {max}",

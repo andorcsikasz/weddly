@@ -21,7 +21,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { Currency } from "@shared/types";
 import type { VendorClientView } from "@shared/vendor_clients";
 import { isVendorFeatureEnabled, type VendorPlan } from "@shared/vendor_plan";
@@ -218,7 +218,13 @@ export default function VendorClientsPage() {
   const [currency, setCurrency] = useState<Currency>("HUF");
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  // The status filter lives in the URL (?status=confirmed) so the stats page
+  // KPI cards and donut legend can deep-link into a pre-filtered list.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = searchParams.get("status") ?? "all";
+  const setStatusFilter = (s: string) => {
+    setSearchParams(s === "all" ? {} : { status: s }, { replace: true });
+  };
 
   useEffect(() => {
     let cancelled = false;

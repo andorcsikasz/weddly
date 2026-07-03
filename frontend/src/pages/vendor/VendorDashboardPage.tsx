@@ -268,23 +268,26 @@ export default function VendorDashboardPage() {
         </Link>
       </section>
 
-      {/* Secondary KPIs */}
+      {/* Secondary KPIs — each opens the surface behind the number. */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         <KpiCard
           icon={<Inbox size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.inquiries_total")}
           value={String(stats.inquiries_total)}
+          to="/vendor/clients"
         />
         <KpiCard
           icon={<Wallet size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.revenue_tracked")}
           value={formatMoney(stats.revenue_tracked, currency, locale)}
           tone={revenuePositive ? "sage" : undefined}
+          to="/vendor/clients"
         />
         <KpiCard
           icon={<CalendarOff size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.blocked_dates")}
           value={String(stats.blocked_dates_count)}
+          to="/vendor/calendar"
         />
       </div>
 
@@ -363,26 +366,39 @@ function KpiCard({
   value,
   sub,
   tone,
+  to,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   sub?: string;
   tone?: KpiTone;
+  to?: string;
 }) {
   const iconTone =
     tone === "sage" ? "text-sage-600 dark:text-sage-300" : "text-steel-600 dark:text-steel-300";
   const valueTone =
     tone === "sage" ? "text-sage-700 dark:text-sage-300" : "text-ink-900 dark:text-paper-50";
-  return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
+  const body = (
+    <>
       <div className={`flex items-center gap-2 ${iconTone}`}>
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
       </div>
       <div className={`text-center text-2xl font-semibold ${valueTone}`}>{value}</div>
       {sub && <div className="text-center text-xs text-ink-500 dark:text-paper-400">{sub}</div>}
-    </div>
+    </>
+  );
+  const frame =
+    "flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900";
+  if (!to) return <div className={frame}>{body}</div>;
+  return (
+    <Link
+      to={to}
+      className={`${frame} transition-colors hover:border-steel-300 hover:bg-paper-100 dark:hover:border-steel-600 dark:hover:bg-umber-800`}
+    >
+      {body}
+    </Link>
   );
 }
 

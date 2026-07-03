@@ -685,6 +685,8 @@ export interface LocaleMessages {
     hero_dropzone_cta: string;
     hero_dropzone_hint: string;
     hero_dropzone_replace: string;
+    hero_size_hint: string;
+    preview_open: string;
     preview_no_photo: string;
     /** Receives `{min}` - minimum guest capacity. */
     preview_capacity_from: string;

@@ -22,7 +22,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Check, Lock } from "lucide-react";
+import { Check, ExternalLink, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   priceBandLockedUntil,
@@ -121,11 +121,9 @@ function BillingBanner({
       role="status"
     >
       <span>{text}</span>
-      {warn && (
-        <Link to="/vendor/billing" className="font-medium underline underline-offset-2">
-          {t("vendor_home.billing_lapsed_cta")}
-        </Link>
-      )}
+      <Link to="/vendor/billing" className="font-medium underline underline-offset-2">
+        {warn ? t("vendor_home.billing_lapsed_cta") : t("vendor.settings.tab_billing")}
+      </Link>
     </div>
   );
 }
@@ -533,17 +531,31 @@ export default function VendorListingPage() {
               />
               {t("vendor_home.visibility_live")}
             </span>
-            <VendorListingPreview
-              name={view.listing.name}
-              heroUrl={view.listing.hero_image_url ?? null}
-              city={form.city}
-              priceBand={form.price_band}
-              capacityMin={form.capacity_min}
-              capacityMax={form.capacity_max}
-              blurb={
-                locale === "hu" ? form.blurb_hu || form.blurb_en : form.blurb_en || form.blurb_hu
-              }
-            />
+            {/* The preview card IS the link to the live public page. */}
+            <Link
+              to={`/app/suppliers/${view.listing.id}`}
+              aria-label={t("vendor_home.preview_open")}
+              className="block rounded-2xl transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-steel-400"
+            >
+              <VendorListingPreview
+                name={view.listing.name}
+                heroUrl={view.listing.hero_image_url ?? null}
+                city={form.city}
+                priceBand={form.price_band}
+                capacityMin={form.capacity_min}
+                capacityMax={form.capacity_max}
+                blurb={
+                  locale === "hu" ? form.blurb_hu || form.blurb_en : form.blurb_en || form.blurb_hu
+                }
+              />
+            </Link>
+            <Link
+              to={`/app/suppliers/${view.listing.id}`}
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+            >
+              <ExternalLink size={14} aria-hidden="true" />
+              {t("vendor_home.preview_open")}
+            </Link>
           </aside>
 
           <form onSubmit={onSubmit} className="order-2 space-y-2.5 lg:order-1">
@@ -604,7 +616,7 @@ export default function VendorListingPage() {
                 }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={onHeroDrop}
-                className={`relative flex min-h-[8rem] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
+                className={`relative flex aspect-[3/2] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
                   dragOver
                     ? "border-steel-400 bg-steel-50 dark:border-steel-500 dark:bg-steel-600/15"
                     : "border-paper-300 bg-paper-50 hover:border-steel-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-steel-500"
@@ -633,23 +645,20 @@ export default function VendorListingPage() {
                     <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                       {t("vendor_home.hero_dropzone_hint")}
                     </p>
+                    <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+                      {t("vendor_home.hero_size_hint")}
+                    </p>
                   </div>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  className="btn bg-steel-600 text-white hover:bg-steel-700"
-                  onClick={() => heroInputRef.current?.click()}
-                  disabled={heroBusy}
-                >
-                  {heroBusy
-                    ? t("vendor_home.hero_uploading")
-                    : view.listing.hero_image_url
-                      ? t("vendor_home.hero_replace")
-                      : t("vendor_home.hero_upload")}
-                </button>
-                {view.listing.hero_image_url && (
+              {/* The dropzone itself is the upload control; the zone is cut to
+                  the exact 3:2 crop of the catalogue card. Only the destructive
+                  action needs its own button. */}
+              {view.listing.hero_image_url ? (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs text-ink-500 dark:text-umber-300">
+                    {t("vendor_home.hero_size_hint")}
+                  </p>
                   <button
                     type="button"
                     className="btn-ghost"
@@ -658,8 +667,8 @@ export default function VendorListingPage() {
                   >
                     {t("vendor_home.hero_delete")}
                   </button>
-                )}
-              </div>
+                </div>
+              ) : null}
             </fieldset>
 
             <fieldset className="card space-y-2.5 p-4" disabled={saving}>
