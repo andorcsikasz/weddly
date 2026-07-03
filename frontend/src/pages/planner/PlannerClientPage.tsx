@@ -58,6 +58,19 @@ function waPhone(raw: string): string {
   return raw.replace(/\D/g, "");
 }
 
+// Editable amount fields show space-grouped digits ("840 000") instead of a
+// raw number wall. The parser strips everything non-digit, so pasting
+// "840,000 Ft" still lands.
+function formatThousands(val: number | null | undefined): string {
+  if (val === null || val === undefined) return "";
+  return String(val).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+function parseAmount(raw: string): number | null {
+  const digits = raw.replace(/\D/g, "");
+  return digits ? Number(digits) : null;
+}
+
 function formatAmount(val: number | null, locale: string): string {
   if (val === null) return "–";
   return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US", {
@@ -491,13 +504,11 @@ export default function PlannerClientPage() {
                 {t("planner_client.contract_value_label")}
               </label>
               <input
-                type="number"
-                min="0"
-                className="input w-full"
-                value={form.contract_value ?? ""}
-                onChange={(e) =>
-                  set("contract_value", e.target.value ? Number(e.target.value) : null)
-                }
+                type="text"
+                inputMode="numeric"
+                className="input w-full tabular-nums"
+                value={formatThousands(form.contract_value)}
+                onChange={(e) => set("contract_value", parseAmount(e.target.value))}
               />
             </div>
             <div>
@@ -505,13 +516,11 @@ export default function PlannerClientPage() {
                 {t("planner_client.deposit_paid_label")}
               </label>
               <input
-                type="number"
-                min="0"
-                className="input w-full"
-                value={form.deposit_paid ?? ""}
-                onChange={(e) =>
-                  set("deposit_paid", e.target.value ? Number(e.target.value) : null)
-                }
+                type="text"
+                inputMode="numeric"
+                className="input w-full tabular-nums"
+                value={formatThousands(form.deposit_paid)}
+                onChange={(e) => set("deposit_paid", parseAmount(e.target.value))}
               />
             </div>
           </div>
