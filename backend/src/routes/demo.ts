@@ -9,6 +9,7 @@
 // row is purged on the next demo-start sweep so the next session is fresh.
 
 import type { AuthSession, User } from "@shared/types";
+import { vendorCurrencyForLocale } from "@shared/vendor_billing";
 import { hashPassword } from "../auth/password";
 import { issueSession } from "../auth/session";
 import { db, now } from "../db";
@@ -16,7 +17,14 @@ import { addAuditLog } from "../lib/audit";
 import { addCoupleMember, assignOrganiserCode, getCoupleById, toCouple } from "../domain/couples";
 import { type DemoLocale, purgeStaleDemoCouples, seedShrekDemo } from "../domain/demo_seed";
 import { purgeStalePlannerDemos, seedPlannerDemo } from "../domain/planner_demo_seed";
+import {
+  purgeStaleVendorDemos,
+  seedVendorDemo,
+  vendorDemoBusinessName,
+  vendorDemoOwnerName,
+} from "../domain/vendor_demo_seed";
 import { uniqueCoupleSlug } from "../domain/slug";
+import { createVendorAccount } from "../domain/vendor_accounts";
 import { toUser, type UserRow } from "../domain/users";
 import { type Ctx, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
@@ -27,10 +35,10 @@ import { log } from "../lib/logger";
  *  spamming the endpoint to fill the DB hits 429 fast. */
 const DEMO_BUCKET = { capacity: 3, refillRate: 1 / 60 };
 
-/** Demo planner entitlement window — far enough out that computeEntitlement
- *  keeps the founding plan "entitled" for the whole 4h demo lifetime (and then
- *  some), so a visitor never hits the read-only gate. */
-const PLANNER_DEMO_ENTITLEMENT_MS = 3650 * 24 * 60 * 60 * 1000; // ~10 years
+/** Demo planner/vendor entitlement window, far enough out that
+ *  computeEntitlement keeps the founding plan "entitled" for the whole 4h demo
+ *  lifetime (and then some), so a visitor never hits the read-only gate. */
+const DEMO_ENTITLEMENT_MS = 3650 * 24 * 60 * 60 * 1000; // ~10 years
 
 /** Random opaque suffix so each demo account is a fresh users row — keeps
  *  the email column unique without leaking PII. */
@@ -190,7 +198,7 @@ async function handleStartPlanner(ctx: Ctx): Promise<Response> {
        (user_id, subscription_status, trial_ends_at, founding_until,
         is_founding_member, currency, created_at, updated_at)
      VALUES (?, 'founding', NULL, ?, 0, 'HUF', ?, ?)`,
-  ).run(userId, ts + PLANNER_DEMO_ENTITLEMENT_MS, ts, ts);
+  ).run(userId, ts + DEMO_ENTITLEMENT_MS, ts, ts);
 
   const seeded = seedPlannerDemo(userId, { ownerPasswordHash: passwordHash, locale });
 
@@ -210,20 +218,102 @@ async function handleStartPlanner(ctx: Ctx): Promise<Response> {
   return json({ session, seeded }, { status: 201 });
 }
 
+/** Vendor-side demo: spin up a throwaway Shrek-themed cake studio ("Mézi
+ *  Tortaműhely" / "Gingy's Wedding Cakes") pre-loaded with fairy-tale client
+ *  inquiries, payment schedules and blocked dates, return an auth session, and
+ *  drop the visitor into /vendor. Mirrors handleStartPlanner; reaped by the
+ *  same sweeps. */
+async function handleStartVendor(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "demo:start", DEMO_BUCKET);
+  const locale = await demoLocale(ctx);
+
+  // Lazy housekeeping: vendors before couples so the seeded client couples'
+  // bookings are already gone when the couples sweep runs (both orders work
+  // since the deletes are explicit, but this keeps the sweeps symmetric with
+  // the planner demo).
+  try {
+    const vendors = purgeStaleVendorDemos();
+    const couples = purgeStaleDemoCouples();
+    if (vendors > 0 || couples > 0) log.info("demo.purge", { vendors, couples });
+  } catch (e) {
+    log.warn("demo.purge_failed", { error: String(e) });
+  }
+
+  const ts = now();
+  const email = randomDemoEmail();
+  // One hash reused for the vendor + every throwaway client-couple owner;
+  // none of them are ever logged into via the form.
+  const passwordHash = await hashPassword(crypto.randomUUID() + crypto.randomUUID());
+
+  const userResult = db
+    .prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, locale, created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'vendor', 1, ?, ?, ?)`,
+    )
+    .run(email, passwordHash, vendorDemoOwnerName(locale), locale, ts, ts);
+  const userId = Number(userResult.lastInsertRowid);
+
+  // onboarding_done defaults to 1 in createVendorAccount, so the demo lands on
+  // the dashboard instead of bouncing into the onboarding wizard.
+  const account = createVendorAccount({
+    ownerUserId: userId,
+    displayName: vendorDemoBusinessName(locale),
+    contactEmail: email,
+  });
+
+  // Entitlement WITHOUT consuming a real founding slot: is_founding_member=0
+  // keeps the demo out of vendorFoundingSlotsUsed(), while a far-future
+  // founding_until makes computeEntitlement return entitled, so the listing
+  // editor, availability and the PRO client/payment surfaces all stay live.
+  const currency = vendorCurrencyForLocale(locale);
+  db.prepare(
+    `INSERT INTO vendor_subscriptions
+       (vendor_account_id, subscription_status, trial_ends_at, founding_until,
+        is_founding_member, currency, created_at, updated_at)
+     VALUES (?, 'founding', NULL, ?, 0, ?, ?, ?)`,
+  ).run(account.id, ts + DEMO_ENTITLEMENT_MS, currency, ts, ts);
+
+  const seeded = seedVendorDemo(account.id, {
+    ownerPasswordHash: passwordHash,
+    contactEmail: email,
+    locale,
+    currency,
+  });
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: null,
+    action: "demo.start_vendor",
+    target_kind: "vendor_account",
+    target_id: account.id,
+    note: `seeded vendor demo (${JSON.stringify(seeded)})`,
+  });
+
+  const token = issueSession(userId);
+  const userRow = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as UserRow;
+  const session: AuthSession = { token, user: toUser(userRow) };
+
+  return json({ session, seeded }, { status: 201 });
+}
+
 export function registerDemoRoutes(router: Router) {
   router.post("/api/demo/start", handleStart);
   router.post("/api/demo/planner/start", handleStartPlanner);
+  router.post("/api/demo/vendor/start", handleStartVendor);
 }
 
 /** Boot-time best-effort purge. Called from server.ts so a long-quiet
  *  instance still tidies up stale demos even if no one clicks the CTA. */
 export function runDemoBootSweep(): void {
   try {
-    // Planners first, then their client couples (ordering note in
+    // Planners + vendors first, then their client couples (ordering note in
     // purgeStalePlannerDemos).
     const planners = purgeStalePlannerDemos();
+    const vendors = purgeStaleVendorDemos();
     const purged = purgeStaleDemoCouples();
-    if (planners > 0 || purged > 0) log.info("demo.boot_sweep", { planners, couples: purged });
+    if (planners > 0 || vendors > 0 || purged > 0) {
+      log.info("demo.boot_sweep", { planners, vendors, couples: purged });
+    }
   } catch (e) {
     log.warn("demo.boot_sweep_failed", { error: String(e) });
   }

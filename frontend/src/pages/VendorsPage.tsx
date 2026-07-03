@@ -7,6 +7,7 @@ import { ArrowLeft, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
+import { VendorDemoLaunchButton } from "../components/VendorDemoLaunchButton";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -26,10 +27,11 @@ export default function VendorsPage() {
             <Check size={14} className="text-umber-600 dark:text-umber-400" aria-hidden />
             {t("vendors.trust_signal")}
           </p>
-          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
+          <div className="mt-6 flex flex-col flex-wrap items-center gap-3 sm:flex-row lg:justify-start">
             <Link to="/vendors/signup" className="btn-primary btn-lg shadow-sm">
               {t("vendors.signup_cta")}
             </Link>
+            <VendorDemoLaunchButton />
             <Link
               to="/login"
               className="text-sm font-medium text-ink-600 underline-offset-2 hover:underline dark:text-umber-200"

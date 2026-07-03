@@ -24,6 +24,7 @@ import { useAuth } from "../lib/auth";
 import { vendorListingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useTheme } from "../lib/useTheme";
+import { VendorDemoOverlay } from "./VendorDemoOverlay";
 import { Wordmark } from "./Wordmark";
 
 type VendorNavItem = { to: string; labelKey: string; icon: ReactNode; end?: boolean };
@@ -111,6 +112,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-full overflow-x-clip">
+      <VendorDemoOverlay />
       <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
           <Link

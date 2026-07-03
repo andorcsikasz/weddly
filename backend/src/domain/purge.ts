@@ -14,6 +14,7 @@ import { log } from "../lib/logger";
 import { sweepStaleRateLimitBuckets } from "../lib/rate_limit";
 import { purgeStaleDemoCouples } from "./demo_seed";
 import { purgeStalePlannerDemos } from "./planner_demo_seed";
+import { purgeStaleVendorDemos } from "./vendor_demo_seed";
 import { sendKind } from "./emails";
 import { listFlagsDueForPurge, markFlagPurged } from "./user_flags";
 
@@ -474,11 +475,12 @@ export function runPurgeSweep(): {
 
   // Demo workspaces past the 4h lifetime — kept on the same hourly tick
   // instead of a dedicated timer so we only run one housekeeping loop.
-  // Reap demo PLANNERS before their client couples (ordering note in
-  // purgeStalePlannerDemos).
+  // Reap demo PLANNERS and VENDORS before their client couples (ordering
+  // note in purgeStalePlannerDemos).
   let demosPurged = 0;
   try {
     purgeStalePlannerDemos();
+    purgeStaleVendorDemos();
     demosPurged = purgeStaleDemoCouples();
   } catch (e) {
     log.error("purge.demo_sweep_failed", e);
