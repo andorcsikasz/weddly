@@ -590,7 +590,17 @@ export default function MoodboardPage() {
         </div>
       ) : pins.length > 0 ? (
         <PinGrid pins={pins} />
-      ) : null}
+      ) : (
+        // Scrape succeeded but the board has zero pins. Without this branch
+        // the page rendered nothing below the header, which reads as broken.
+        <div className="card flex flex-col items-start gap-3">
+          <h2 className="font-grotesk text-xl">{t("moodboard.empty_title")}</h2>
+          <p className="text-sm text-ink-600 dark:text-umber-300">{t("moodboard.empty_body")}</p>
+          <button type="button" className="btn-primary btn-sm" onClick={() => setChoosing(true)}>
+            {t("moodboard.change")}
+          </button>
+        </div>
+      )}
     </>
   );
 }

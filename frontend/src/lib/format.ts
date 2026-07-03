@@ -93,11 +93,16 @@ const COMPACT = (locale: Locale) =>
 const compactHu = COMPACT("hu");
 const compactEn = COMPACT("en");
 
-/** Compact, symbol-less amount for tight UI spots: "132k", "2,8M". Currency
- *  is opaque here — the caller pairs it with a visible symbol elsewhere. */
+/** Compact, symbol-less amount for tight UI spots: "132k", "2,8 M". Currency
+ *  is opaque here; the caller pairs it with a visible symbol elsewhere.
+ *  HU never compacts below a million: hu-HU renders thousands as "215 E"
+ *  (ezer), which reads as a typo to most people, and the full grouped figure
+ *  is short enough anyway. Compact only earns its keep at "1,6 M". */
 export function formatHufCompact(amount: number, locale: Locale = "hu"): string {
+  const n = Math.round(amount);
+  if (locale !== "en" && Math.abs(n) < 1_000_000) return numFmt.format(n);
   const fmt = locale === "en" ? compactEn : compactHu;
-  return fmt.format(Math.round(amount));
+  return fmt.format(n);
 }
 
 /** Just the symbol (`Ft` / `€` / `$`) for the given currency + locale. Used

@@ -373,6 +373,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMoreOpen(false);
   }, [location.pathname]);
+  // Auto-close on resize too: the sheet's grid reflows with the viewport, so
+  // a tap aimed mid-resize can land on whichever item slid under the pointer.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const close = () => setMoreOpen(false);
+    window.addEventListener("resize", close);
+    return () => window.removeEventListener("resize", close);
+  }, [moreOpen]);
   // Deep link from the post-wedding follow-up email: `/app?feedback=1` opens
   // the feedback dialog directly. Strip the param afterwards so refresh /
   // back-button doesn't re-trigger the modal.

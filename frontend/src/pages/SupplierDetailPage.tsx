@@ -14,7 +14,6 @@ import {
   type ComponentType,
   type SVGProps,
   Suspense,
-  lazy,
   useCallback,
   useEffect,
   useMemo,
@@ -80,12 +79,13 @@ import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
+import { lazyWithReload } from "../lib/lazy_reload";
 import { useAuth } from "../lib/auth";
 import { reviewApi, supplierApi, supplierBookingApi, supplierCommentApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 // Lazy so the OpenStreetMap embed modal only loads when the user opens the map.
-const SupplierMapModal = lazy(() => import("../components/SupplierMapModal"));
+const SupplierMapModal = lazyWithReload(() => import("../components/SupplierMapModal"));
 
 /** Same localStorage shape the directory uses, so the heart icon stays in
  *  sync across `/app/suppliers` (the list) and `/app/suppliers/:id` (this

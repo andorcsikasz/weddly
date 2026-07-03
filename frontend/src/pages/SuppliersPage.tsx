@@ -64,7 +64,7 @@ import {
   Wine,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookedSupplierCard } from "../components/BookedSupplierCard";
 import { CakeDrinksCalculator } from "../components/CakeDrinksCalculator";
@@ -118,12 +118,13 @@ import {
 } from "../lib/supplier_saved";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { lazyWithReload } from "../lib/lazy_reload";
 import { useDocumentMeta } from "../lib/seo";
 
 // Leaflet + react-leaflet add ~150 KB minified that no other page uses —
 // lazy-loading keeps the initial /app bundle small for couples who never
 // open the map tab.
-const SupplierMap = lazy(() => import("../components/SupplierMap"));
+const SupplierMap = lazyWithReload(() => import("../components/SupplierMap"));
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
@@ -1925,12 +1926,15 @@ export default function SuppliersPage() {
                         loading="lazy"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <Icon
-                          size={36}
-                          className="text-ink-400/40 dark:text-umber-300/40"
-                          aria-hidden
-                        />
+                      // No hero image: a deliberate-looking category badge, not
+                      // a bare glyph (a lone faint icon reads as a broken image).
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+                        <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-paper-50 text-ink-400 shadow-sm dark:bg-umber-800 dark:text-umber-300">
+                          <Icon size={24} aria-hidden />
+                        </span>
+                        <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
+                          {t(`suppliers.cat.${s.category}`)}
+                        </span>
                       </div>
                     )}
                     {/* Top-right: pick + save */}

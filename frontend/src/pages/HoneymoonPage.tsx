@@ -44,7 +44,6 @@ import {
 import {
   type ComponentType,
   type KeyboardEvent,
-  lazy,
   Suspense,
   useEffect,
   useLayoutEffect,
@@ -67,6 +66,7 @@ import {
   KONZINFO_REGISTER_URL,
 } from "@shared/konzinfo";
 import { ApiError } from "../lib/api";
+import { lazyWithReload } from "../lib/lazy_reload";
 import { type AirportOrigin, searchAirportOrigins } from "../lib/airport_origins";
 import { budgetApi, coupleApi, honeymoonApi, placesApi, planningApi } from "../lib/endpoints";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
@@ -74,7 +74,7 @@ import { useT } from "../lib/i18n";
 import { publish, subscribe } from "../lib/sync";
 
 // Lazy — Leaflet (~150KB) only ships when the user opens the map popup.
-const HoneymoonMapModal = lazy(() => import("../components/HoneymoonMapModal"));
+const HoneymoonMapModal = lazyWithReload(() => import("../components/HoneymoonMapModal"));
 
 /* ─── Honey-jar easter egg ─────────────────────────────────────────────
  * Lucide ships no honey-pot icon, so here's a small inline SVG drawn to

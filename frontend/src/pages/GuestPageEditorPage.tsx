@@ -554,6 +554,11 @@ export default function GuestPageEditorPage() {
         // since they represent real guests the couple still has to brief.
         setHouseholds(hR.households.filter((h) => !h.is_couple_household));
       })
+      .catch(() => {
+        // Without this, a failed load used to silently render the blank
+        // editor; surface it so the user knows to retry instead.
+        if (!cancelled) setError(t("common.error_generic"));
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });

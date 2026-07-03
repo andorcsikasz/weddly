@@ -1,6 +1,7 @@
-import { lazy, Suspense, type JSX, type ReactNode, useEffect } from "react";
+import { Suspense, type JSX, type ReactNode, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { lazyWithReload } from "./lib/lazy_reload";
 import { VerifyEmailGate } from "./components/VerifyEmailGate";
 import { useAuth } from "./lib/auth";
 import { clearDemoSessionFlag, isCurrentSessionDemo } from "./lib/demoSession";
@@ -34,91 +35,95 @@ import TermsPage from "./pages/TermsPage";
 import VendorsPage from "./pages/VendorsPage";
 import PlannersPage from "./pages/PlannersPage";
 
-const AppShellLayout = lazy(() =>
+const AppShellLayout = lazyWithReload(() =>
   import("./components/AppShell").then((m) => ({ default: m.AppShellLayout })),
 );
-const AdminAnalyticsPage = lazy(() => import("./pages/AdminAnalyticsPage"));
-const AdminEmailPreviewPage = lazy(() =>
+const AdminAnalyticsPage = lazyWithReload(() => import("./pages/AdminAnalyticsPage"));
+const AdminEmailPreviewPage = lazyWithReload(() =>
   import("./pages/AdminEmailPreviewPage").then((m) => ({ default: m.AdminEmailPreviewPage })),
 );
-const AdminFinancialPlannerPage = lazy(() => import("./pages/AdminFinancialPlannerPage"));
-const AdminBlogPage = lazy(() => import("./pages/AdminBlogPage"));
-const AdminCoupleCardsPage = lazy(() => import("./pages/AdminCoupleCardsPage"));
-const AdminFeedbackPage = lazy(() => import("./pages/AdminFeedbackPage"));
-const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
-const AdminSuppliersPage = lazy(() => import("./pages/AdminSuppliersPage"));
-const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
-const AdminVendorsPage = lazy(() => import("./pages/AdminVendorsPage"));
-const AdminPlannersPage = lazy(() => import("./pages/AdminPlannersPage"));
-const AdminVendorWaitlistPage = lazy(() => import("./pages/AdminVendorWaitlistPage"));
-const AdminPlannerWaitlistPage = lazy(() => import("./pages/AdminPlannerWaitlistPage"));
-const AdminEmailListPage = lazy(() => import("./pages/AdminEmailListPage"));
-const BudgetPage = lazy(() => import("./pages/BudgetPage"));
-const ChangeEmailPage = lazy(() => import("./pages/ChangeEmailPage"));
-const DashboardPage = lazy(() => import("./pages/DashboardPage"));
-const DesignPage = lazy(() => import("./pages/DesignPage"));
-const GuestPageEditorPage = lazy(() => import("./pages/GuestPageEditorPage"));
-const GuestsPage = lazy(() => import("./pages/GuestsPage"));
-const GuestInvitesPage = lazy(() => import("./pages/GuestInvitesPage"));
-const HoneymoonPage = lazy(() => import("./pages/HoneymoonPage"));
-const InvitePage = lazy(() => import("./pages/InvitePage"));
-const LogisticsPage = lazy(() => import("./pages/LogisticsPage"));
-const MediaPage = lazy(() => import("./pages/MediaPage"));
-const MoodboardPage = lazy(() => import("./pages/MoodboardPage"));
-const NewsletterConfirmPage = lazy(() => import("./pages/NewsletterConfirmPage"));
-const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
-const PlanningPage = lazy(() => import("./pages/PlanningPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const SettingsLayout = lazy(() => import("./pages/SettingsLayout"));
-const BillingSettings = lazy(() => import("./pages/BillingSettings"));
-const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
-const GuestPhotoPage = lazy(() => import("./pages/GuestPhotoPage"));
-const RsvpCheckinPage = lazy(() => import("./pages/RsvpCheckinPage"));
-const RsvpPage = lazy(() => import("./pages/RsvpPage"));
-const SchedulePage = lazy(() => import("./pages/SchedulePage"));
-const SeatingPage = lazy(() => import("./pages/SeatingPage"));
-const SuppliersPage = lazy(() => import("./pages/SuppliersPage"));
-const SupplierDetailPage = lazy(() => import("./pages/SupplierDetailPage"));
-const TimelinePage = lazy(() => import("./pages/TimelinePage"));
-const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
-const VendorClaimVerifyPage = lazy(() => import("./pages/VendorClaimVerifyPage"));
-const VendorActivatePage = lazy(() => import("./pages/VendorActivatePage"));
-const VendorRegisterPage = lazy(() => import("./pages/VendorRegisterPage"));
-const VendorOnboardingPage = lazy(() => import("./pages/vendor/VendorOnboardingPage"));
+const AdminFinancialPlannerPage = lazyWithReload(() => import("./pages/AdminFinancialPlannerPage"));
+const AdminBlogPage = lazyWithReload(() => import("./pages/AdminBlogPage"));
+const AdminCoupleCardsPage = lazyWithReload(() => import("./pages/AdminCoupleCardsPage"));
+const AdminFeedbackPage = lazyWithReload(() => import("./pages/AdminFeedbackPage"));
+const AdminCategoriesPage = lazyWithReload(() => import("./pages/AdminCategoriesPage"));
+const AdminSuppliersPage = lazyWithReload(() => import("./pages/AdminSuppliersPage"));
+const AdminUsersPage = lazyWithReload(() => import("./pages/AdminUsersPage"));
+const AdminVendorsPage = lazyWithReload(() => import("./pages/AdminVendorsPage"));
+const AdminPlannersPage = lazyWithReload(() => import("./pages/AdminPlannersPage"));
+const AdminVendorWaitlistPage = lazyWithReload(() => import("./pages/AdminVendorWaitlistPage"));
+const AdminPlannerWaitlistPage = lazyWithReload(() => import("./pages/AdminPlannerWaitlistPage"));
+const AdminEmailListPage = lazyWithReload(() => import("./pages/AdminEmailListPage"));
+const BudgetPage = lazyWithReload(() => import("./pages/BudgetPage"));
+const ChangeEmailPage = lazyWithReload(() => import("./pages/ChangeEmailPage"));
+const DashboardPage = lazyWithReload(() => import("./pages/DashboardPage"));
+const DesignPage = lazyWithReload(() => import("./pages/DesignPage"));
+const GuestPageEditorPage = lazyWithReload(() => import("./pages/GuestPageEditorPage"));
+const GuestsPage = lazyWithReload(() => import("./pages/GuestsPage"));
+const GuestInvitesPage = lazyWithReload(() => import("./pages/GuestInvitesPage"));
+const HoneymoonPage = lazyWithReload(() => import("./pages/HoneymoonPage"));
+const InvitePage = lazyWithReload(() => import("./pages/InvitePage"));
+const LogisticsPage = lazyWithReload(() => import("./pages/LogisticsPage"));
+const MediaPage = lazyWithReload(() => import("./pages/MediaPage"));
+const MoodboardPage = lazyWithReload(() => import("./pages/MoodboardPage"));
+const NewsletterConfirmPage = lazyWithReload(() => import("./pages/NewsletterConfirmPage"));
+const OnboardingWizard = lazyWithReload(() => import("./pages/OnboardingWizard"));
+const PlanningPage = lazyWithReload(() => import("./pages/PlanningPage"));
+const ProfilePage = lazyWithReload(() => import("./pages/ProfilePage"));
+const SettingsLayout = lazyWithReload(() => import("./pages/SettingsLayout"));
+const BillingSettings = lazyWithReload(() => import("./pages/BillingSettings"));
+const ResetPasswordPage = lazyWithReload(() => import("./pages/ResetPasswordPage"));
+const GuestPhotoPage = lazyWithReload(() => import("./pages/GuestPhotoPage"));
+const RsvpCheckinPage = lazyWithReload(() => import("./pages/RsvpCheckinPage"));
+const RsvpPage = lazyWithReload(() => import("./pages/RsvpPage"));
+const SchedulePage = lazyWithReload(() => import("./pages/SchedulePage"));
+const SeatingPage = lazyWithReload(() => import("./pages/SeatingPage"));
+const SuppliersPage = lazyWithReload(() => import("./pages/SuppliersPage"));
+const SupplierDetailPage = lazyWithReload(() => import("./pages/SupplierDetailPage"));
+const TimelinePage = lazyWithReload(() => import("./pages/TimelinePage"));
+const VerifyEmailPage = lazyWithReload(() => import("./pages/VerifyEmailPage"));
+const VendorClaimVerifyPage = lazyWithReload(() => import("./pages/VendorClaimVerifyPage"));
+const VendorActivatePage = lazyWithReload(() => import("./pages/VendorActivatePage"));
+const VendorRegisterPage = lazyWithReload(() => import("./pages/VendorRegisterPage"));
+const VendorOnboardingPage = lazyWithReload(() => import("./pages/vendor/VendorOnboardingPage"));
 // VendorHomePage (pages/VendorHomePage.tsx) is the legacy standalone listing
 // editor — its body will be lifted into the in-shell VendorListingPage by a
 // feature agent, so it's no longer routed directly here.
-const VendorShellLayout = lazy(() =>
+const VendorShellLayout = lazyWithReload(() =>
   import("./components/VendorShell").then((m) => ({ default: m.VendorShellLayout })),
 );
-const VendorDashboardPage = lazy(() => import("./pages/vendor/VendorDashboardPage"));
-const VendorClientsPage = lazy(() => import("./pages/vendor/VendorClientsPage"));
-const VendorClientDetailPage = lazy(() => import("./pages/vendor/VendorClientDetailPage"));
-const VendorListingPage = lazy(() => import("./pages/vendor/VendorListingPage"));
-const VendorStatsPage = lazy(() => import("./pages/vendor/VendorStatsPage"));
-const VendorBillingPage = lazy(() => import("./pages/vendor/VendorBillingPage"));
-const VendorSettingsPage = lazy(() => import("./pages/vendor/VendorSettingsPage"));
-const VerifySupplierPage = lazy(() => import("./pages/VerifySupplierPage"));
-const WeddingWebsitePage = lazy(() => import("./pages/WeddingWebsitePage"));
-const WishlistEditorPage = lazy(() => import("./pages/WishlistEditorPage"));
-const PlannerShellLayout = lazy(() =>
+const VendorDashboardPage = lazyWithReload(() => import("./pages/vendor/VendorDashboardPage"));
+const VendorClientsPage = lazyWithReload(() => import("./pages/vendor/VendorClientsPage"));
+const VendorClientDetailPage = lazyWithReload(
+  () => import("./pages/vendor/VendorClientDetailPage"),
+);
+const VendorListingPage = lazyWithReload(() => import("./pages/vendor/VendorListingPage"));
+const VendorStatsPage = lazyWithReload(() => import("./pages/vendor/VendorStatsPage"));
+const VendorBillingPage = lazyWithReload(() => import("./pages/vendor/VendorBillingPage"));
+const VendorSettingsPage = lazyWithReload(() => import("./pages/vendor/VendorSettingsPage"));
+const VerifySupplierPage = lazyWithReload(() => import("./pages/VerifySupplierPage"));
+const WeddingWebsitePage = lazyWithReload(() => import("./pages/WeddingWebsitePage"));
+const WishlistEditorPage = lazyWithReload(() => import("./pages/WishlistEditorPage"));
+const PlannerShellLayout = lazyWithReload(() =>
   import("./components/PlannerShell").then((m) => ({ default: m.PlannerShellLayout })),
 );
-const PlannerHomePage = lazy(() => import("./pages/PlannerHomePage"));
-const PlannerClientsPage = lazy(() => import("./pages/planner/PlannerClientsPage"));
-const PlannerCalendarPage = lazy(() => import("./pages/planner/PlannerCalendarPage"));
-const PlannerStatsPage = lazy(() => import("./pages/planner/PlannerStatsPage"));
-const PlannerOnboardingPage = lazy(() => import("./pages/PlannerOnboardingPage"));
-const PlannerMessagesPage = lazy(() => import("./pages/PlannerMessagesPage"));
-const PlannerProfilePage = lazy(() => import("./pages/PlannerProfilePage"));
-const PlannerSettingsLayout = lazy(() => import("./pages/planner/PlannerSettingsLayout"));
-const PlannerSettingsAccount = lazy(() => import("./pages/planner/PlannerSettingsAccount"));
-const PlannerSettingsSubscription = lazy(
+const PlannerHomePage = lazyWithReload(() => import("./pages/PlannerHomePage"));
+const PlannerClientsPage = lazyWithReload(() => import("./pages/planner/PlannerClientsPage"));
+const PlannerCalendarPage = lazyWithReload(() => import("./pages/planner/PlannerCalendarPage"));
+const PlannerStatsPage = lazyWithReload(() => import("./pages/planner/PlannerStatsPage"));
+const PlannerOnboardingPage = lazyWithReload(() => import("./pages/PlannerOnboardingPage"));
+const PlannerMessagesPage = lazyWithReload(() => import("./pages/PlannerMessagesPage"));
+const PlannerProfilePage = lazyWithReload(() => import("./pages/PlannerProfilePage"));
+const PlannerSettingsLayout = lazyWithReload(() => import("./pages/planner/PlannerSettingsLayout"));
+const PlannerSettingsAccount = lazyWithReload(
+  () => import("./pages/planner/PlannerSettingsAccount"),
+);
+const PlannerSettingsSubscription = lazyWithReload(
   () => import("./pages/planner/PlannerSettingsSubscription"),
 );
-const PlannerSettingsData = lazy(() => import("./pages/planner/PlannerSettingsData"));
-const PlannerBillingPage = lazy(() => import("./pages/planner/PlannerBillingPage"));
-const PlannerClientPage = lazy(() => import("./pages/planner/PlannerClientPage"));
+const PlannerSettingsData = lazyWithReload(() => import("./pages/planner/PlannerSettingsData"));
+const PlannerBillingPage = lazyWithReload(() => import("./pages/planner/PlannerBillingPage"));
+const PlannerClientPage = lazyWithReload(() => import("./pages/planner/PlannerClientPage"));
 
 // Session-storage flag set by VerifyEmailGate when the user opts into the
 // "continue with limited access" path. Lets the gate downgrade to an
@@ -1101,6 +1106,16 @@ export default function App() {
                 <RequireAdmin>
                   <AdminEmailListPage />
                 </RequireAdmin>
+              </Page>
+            }
+          />
+          {/* Unknown /app paths keep the couple chrome (sidebar + header) so a
+              mistyped or stale link doesn't dump the user on the public 404. */}
+          <Route
+            path="*"
+            element={
+              <Page>
+                <NotFoundPage bare homeTo="/app" />
               </Page>
             }
           />

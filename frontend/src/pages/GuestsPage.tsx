@@ -1436,7 +1436,7 @@ function HouseholdCard({
             for just metadata. The couple's own household (bride + groom)
             renders just the label — chip / slug / code / invited cells
             are skipped because the hosts don't check themselves in. */}
-        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600 md:grid md:gap-x-6 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_minmax(0,13rem)_8rem_5.5rem_auto]">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-ink-600 md:grid md:gap-x-6 dark:text-umber-200 md:grid-cols-[minmax(0,1fr)_minmax(0,13rem)_minmax(0,8rem)_max-content_auto]">
           {/* Label grows to fill row 1 so the RSVP code rides the same line,
               pinned right — never wrapping to a row of its own on mobile.
               On desktop the parent is a grid; every cell carries an explicit
@@ -1477,7 +1477,7 @@ function HouseholdCard({
              * — at phone widths it just steals a row from the code/
              * invited cells. The full RSVP URL is one tap away via the
              * share button, so the inline slug is desktop-only. */
-            <span className="hidden font-mono uppercase md:col-start-3 md:row-start-1 md:inline">
+            <span className="hidden min-w-0 font-mono uppercase md:col-start-3 md:row-start-1 md:inline md:truncate">
               {coupleSlug}
             </span>
           )}

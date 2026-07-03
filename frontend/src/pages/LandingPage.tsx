@@ -20,7 +20,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { lazy, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LazyMount } from "../components/LazyMount";
 import { WorkspaceMockup } from "../components/mockups";
@@ -31,16 +31,16 @@ import { WorkspaceMockup } from "../components/mockups";
 // part of the eager landing payload. LazyMount's built-in Suspense
 // fallback (null) covers the chunk-fetch window; the aspect-ratio div
 // already reserves layout space so no jump.
-const BudgetMockup = lazy(() =>
+const BudgetMockup = lazyWithReload(() =>
   import("../components/mockups").then((m) => ({ default: m.BudgetMockup })),
 );
-const GuestListMockup = lazy(() =>
+const GuestListMockup = lazyWithReload(() =>
   import("../components/mockups").then((m) => ({ default: m.GuestListMockup })),
 );
-const SeatingMockup = lazy(() =>
+const SeatingMockup = lazyWithReload(() =>
   import("../components/mockups").then((m) => ({ default: m.SeatingMockup })),
 );
-const SuppliersPreview = lazy(() =>
+const SuppliersPreview = lazyWithReload(() =>
   import("../components/illustrations").then((m) => ({ default: m.SuppliersPreview })),
 );
 import { DemoLaunchCard } from "../components/DemoLaunchCard";
@@ -51,6 +51,7 @@ import { useToast } from "../components/ui";
 import { publicStatsApi } from "../lib/endpoints";
 import { currencySymbol, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { lazyWithReload } from "../lib/lazy_reload";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
 import { SEO_FAQ } from "@shared/seo_faq";

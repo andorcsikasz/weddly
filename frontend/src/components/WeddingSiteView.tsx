@@ -31,12 +31,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { buildMonogram, formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
 import { pickKeyMoments } from "@shared/schedule";
 import { formatDate, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
+import { lazyWithReload } from "../lib/lazy_reload";
 import { GuestWishlistCard } from "./GuestWishlistCard";
 import { OrnamentDivider, headingTreatmentCss } from "./ornaments";
 import { WeddingCountdown } from "./WeddingCountdown";
@@ -50,7 +51,7 @@ import type {
 // The embedded venue map is lazy-imported so the ~150KB leaflet bundle only
 // ships to (and only executes in) a real browser. Under happy-dom in the test
 // suite the Suspense fallback (null) is what renders, so Leaflet never runs.
-const VenueMap = lazy(() => import("./VenueMap"));
+const VenueMap = lazyWithReload(() => import("./VenueMap"));
 
 /** Per-style-pack CSS filter for the venue map tiles, derived 1:1 from the
  *  design ornament language so the map's mood matches the pack:
