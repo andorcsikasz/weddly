@@ -122,23 +122,34 @@ function NotificationBell({
             </p>
           )}
           {overdue > 0 && (
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 dark:text-paper-100">
+            <Link
+              to="/app/planner/calendar?mode=tasks"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
               <AlertTriangle size={15} className="shrink-0 text-red-500" aria-hidden="true" />
               <span>{t("planner_home.notif_overdue").replace("{{n}}", String(overdue))}</span>
-            </div>
+            </Link>
           )}
           {pendingInvites > 0 && (
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 dark:text-paper-100">
+            <Link
+              to="/app/planner/clients"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
               <MailQuestion size={15} className="shrink-0 text-amber-500" aria-hidden="true" />
               <span>
                 {t("planner_home.notif_invites").replace("{{n}}", String(pendingInvites))}
               </span>
-            </div>
+            </Link>
           )}
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
           <Link
             to="/app/planner/messages"
             role="menuitem"
+            onClick={() => setOpen(false)}
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
           >
             <MessageCircle size={16} aria-hidden="true" />
