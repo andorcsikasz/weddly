@@ -7438,6 +7438,8 @@ const hu: LocaleMessages = {
     remove_explain:
       "Az ügyfél eltávolítása csak a köztetek lévő kapcsolatot szünteti meg. A pár fiókja és minden adatuk érintetlen marad.",
     remove_button: "Ügyfél eltávolítása",
+    remove_arm_prompt: "Biztos vagy benne?",
+    remove_arm_continue: "Igen, folytatom",
     remove_confirm_title: "Ügyfél eltávolítása",
     remove_confirm_body:
       "Ezzel csak a kapcsolat szűnik meg közted és a pár között. A pár munkaterülete és minden adatuk megmarad.",

@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   Clock,
   ListChecks,
   Lock,
@@ -214,6 +215,16 @@ export default function PlannerClientPage() {
   const [saving, setSaving] = useState(false);
   const [entering, setEntering] = useState(false);
   const [guestPageBusy, setGuestPageBusy] = useState(false);
+  // Danger zone: collapsed at rest; removal is 3-step (open the zone →
+  // arm the button → confirm dialog). The armed state auto-disarms.
+  const [dangerOpen, setDangerOpen] = useState(false);
+  const [removeArmed, setRemoveArmed] = useState(false);
+
+  useEffect(() => {
+    if (!removeArmed) return;
+    const timer = setTimeout(() => setRemoveArmed(false), 6000);
+    return () => clearTimeout(timer);
+  }, [removeArmed]);
 
   useEffect(() => {
     if (!id) return;
@@ -670,22 +681,75 @@ export default function PlannerClientPage() {
       </form>
 
       {/* Danger zone - unlink only removes the planner↔couple link; the couple
-          keeps their workspace and all data. */}
-      <div className="card border-red-200 p-5 dark:border-red-900/40">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-red-500 dark:text-red-400">
-          {t("planner_client.danger_heading")}
-        </p>
-        <p className="mt-2 text-sm text-umber-600 dark:text-umber-300">
-          {t("planner_client.remove_explain")}
-        </p>
+          keeps their workspace and all data. Collapsed at rest; removal is a
+          3-step ladder: open the zone → arm the button → confirm dialog. */}
+      <div className="rounded-2xl border border-red-200 bg-red-50/50 shadow-soft dark:border-red-900/40 dark:bg-red-900/10 dark:shadow-none">
         <button
           type="button"
-          onClick={() => void handleRemove()}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
+          onClick={() => {
+            setDangerOpen((v) => !v);
+            setRemoveArmed(false);
+          }}
+          aria-expanded={dangerOpen}
+          className="flex w-full items-center justify-between gap-2 rounded-2xl px-5 py-4 transition-colors hover:bg-red-100/50 dark:hover:bg-red-900/20"
         >
-          <Trash2 size={14} aria-hidden="true" />
-          {t("planner_client.remove_button")}
+          <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-red-500 dark:text-red-400">
+            <AlertTriangle size={13} aria-hidden="true" />
+            {t("planner_client.danger_heading")}
+          </span>
+          <ChevronDown
+            size={15}
+            className={`shrink-0 text-red-400 transition-transform duration-300 ${
+              dangerOpen ? "rotate-180" : ""
+            }`}
+            aria-hidden="true"
+          />
         </button>
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+            dangerOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          }`}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div className="px-5 pb-5">
+              <p className="text-sm text-umber-600 dark:text-umber-300">
+                {t("planner_client.remove_explain")}
+              </p>
+              {!removeArmed ? (
+                <button
+                  type="button"
+                  onClick={() => setRemoveArmed(true)}
+                  tabIndex={dangerOpen ? undefined : -1}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100/60 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                  {t("planner_client.remove_button")}
+                </button>
+              ) : (
+                <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                  <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                    {t("planner_client.remove_arm_prompt")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void handleRemove()}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                    {t("planner_client.remove_arm_continue")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRemoveArmed(false)}
+                    className="rounded-xl px-3 py-2 text-sm text-umber-600 transition-colors hover:bg-red-100/60 dark:text-umber-300 dark:hover:bg-red-900/20"
+                  >
+                    {t("common.cancel")}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

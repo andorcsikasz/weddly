@@ -7380,6 +7380,8 @@ const en: LocaleMessages = {
     remove_explain:
       "Removing this client only severs the link between you. The couple's account and all their data remain untouched.",
     remove_button: "Remove client",
+    remove_arm_prompt: "Are you sure?",
+    remove_arm_continue: "Yes, continue",
     remove_confirm_title: "Remove client",
     remove_confirm_body:
       "This only removes the link between you and the couple. Their workspace and all their data stay intact.",

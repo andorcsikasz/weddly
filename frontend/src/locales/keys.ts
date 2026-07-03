@@ -7964,6 +7964,8 @@ export interface LocaleMessages {
     danger_heading: string;
     remove_explain: string;
     remove_button: string;
+    remove_arm_prompt: string;
+    remove_arm_continue: string;
     remove_confirm_title: string;
     remove_confirm_body: string;
     remove_success: string;
