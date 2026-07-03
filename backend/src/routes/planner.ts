@@ -16,6 +16,7 @@ import {
 } from "../domain/planner_invitations";
 import { COUNTRIES } from "@shared/country_list";
 import type {
+  PlannerDirectoryEntry,
   PlannerEvent,
   PlannerPlan,
   PlannerPortfolioItem,
@@ -1332,6 +1333,38 @@ async function handleListInvites(ctx: Ctx): Promise<Response> {
   });
 }
 
+/** Tell the couple how the planner answered their invite. Without this, an
+ *  accept or decline is invisible until they happen to reopen settings. Sent
+ *  to both partners (partner B may not exist yet). */
+async function notifyCouplePlannerInviteOutcome(
+  plannerUserId: number,
+  coupleId: number,
+  accepted: boolean,
+): Promise<void> {
+  const couple = db
+    .prepare("SELECT partner_a_id, partner_b_id FROM couples WHERE id = ?")
+    .get(coupleId) as { partner_a_id: number; partner_b_id: number | null } | undefined;
+  if (!couple) return;
+  const { label, email: replyToEmail } = plannerLabelAndEmail(plannerUserId);
+  const partnerIds = [couple.partner_a_id, couple.partner_b_id].filter(
+    (v): v is number => v != null,
+  );
+  for (const partnerId of partnerIds) {
+    const partner = db
+      .prepare("SELECT id, email, full_name FROM users WHERE id = ?")
+      .get(partnerId) as { id: number; email: string; full_name: string | null } | undefined;
+    if (!partner?.email) continue;
+    await sendKind(
+      "planner_invite_outcome",
+      { plannerLabel: label, accepted, replyToEmail: accepted ? replyToEmail : undefined },
+      {
+        user: { id: partner.id, email: partner.email, full_name: partner.full_name ?? "" },
+        couple_id: coupleId,
+      },
+    );
+  }
+}
+
 async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
   const coupleId = Number(ctx.params?.coupleId);
@@ -1378,6 +1411,8 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
     target_id: coupleId,
   });
 
+  await notifyCouplePlannerInviteOutcome(userId, coupleId, true);
+
   return json({ ok: true });
 }
 
@@ -1385,6 +1420,15 @@ async function handleDeclineInvite(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
   const coupleId = Number(ctx.params?.coupleId);
   if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+
+  // Read before delete: the couple only gets the outcome mail when they were
+  // the inviting side. Deleting a planner-initiated pending row through this
+  // endpoint is a withdrawal of the planner's own request, no mail for that.
+  const link = db
+    .prepare(
+      "SELECT initiated_by FROM planner_clients WHERE planner_user_id = ? AND couple_id = ? AND status = 'pending'",
+    )
+    .get(userId, coupleId) as { initiated_by: string } | undefined;
 
   db.prepare(
     "DELETE FROM planner_clients WHERE planner_user_id = ? AND couple_id = ? AND status = 'pending'",
@@ -1397,6 +1441,10 @@ async function handleDeclineInvite(ctx: Ctx): Promise<Response> {
     target_kind: "couple",
     target_id: coupleId,
   });
+
+  if (link?.initiated_by === "couple") {
+    await notifyCouplePlannerInviteOutcome(userId, coupleId, false);
+  }
 
   return json({ ok: true });
 }
@@ -1437,6 +1485,78 @@ async function handleListLinkedPlanners(ctx: Ctx): Promise<Response> {
   return json({
     planners: rows.map((r) => ({ ...r, linked_at: r.created_at })),
   });
+}
+
+/** Couple-facing planner directory: the "wedding planners" rail on
+ *  /app/vendors. Lists live, verified planner accounts with a minimally
+ *  complete profile (business name + city): that requirement is the carrot for
+ *  finishing onboarding, and it keeps half-empty cards out of the rail.
+ *  Excluded: dormant provisioned accounts (verified_email=0), suspended users,
+ *  and demo planners. The email column is never selected; connecting goes by
+ *  user id so the directory can't be scraped for addresses. Each row carries
+ *  the link state relative to THIS couple so the rail can render the right
+ *  action (request / pending / approve / linked). */
+async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
+  const { coupleId } = requireCoupleAuth(ctx);
+  const rows = db
+    .prepare(
+      `SELECT u.id, u.full_name, u.business_name, u.planner_bio, u.planner_city,
+              u.planner_country, u.planner_website, u.planner_styles, u.planner_km_radius,
+              u.planner_weddings_per_year, u.planner_avatar_url,
+              pc.status AS link_state, pc.initiated_by AS link_initiated_by
+         FROM users u
+         LEFT JOIN planner_clients pc
+           ON pc.planner_user_id = u.id AND pc.couple_id = ?
+        WHERE u.user_type = 'planner'
+          AND u.status = 'active'
+          AND u.verified_email = 1
+          AND u.email NOT LIKE '%@demo.weddly.local'
+          AND TRIM(COALESCE(u.business_name, '')) != ''
+          AND TRIM(COALESCE(u.planner_city, '')) != ''
+        ORDER BY (CASE WHEN COALESCE(u.planner_avatar_url, '') != '' THEN 1 ELSE 0 END
+                + CASE WHEN TRIM(COALESCE(u.planner_bio, '')) != '' THEN 1 ELSE 0 END) DESC,
+                 u.created_at DESC
+        LIMIT 50`,
+    )
+    .all(coupleId) as Array<{
+    id: number;
+    full_name: string;
+    business_name: string;
+    planner_bio: string | null;
+    planner_city: string;
+    planner_country: string | null;
+    planner_website: string | null;
+    planner_styles: string | null;
+    planner_km_radius: number | null;
+    planner_weddings_per_year: number | null;
+    planner_avatar_url: string | null;
+    link_state: string | null;
+    link_initiated_by: string | null;
+  }>;
+
+  const planners: PlannerDirectoryEntry[] = rows.map((r) => ({
+    planner_user_id: r.id,
+    business_name: r.business_name,
+    full_name: r.full_name,
+    city: r.planner_city,
+    country: r.planner_country,
+    bio: r.planner_bio,
+    website: r.planner_website,
+    styles: parseStyles(r.planner_styles),
+    km_radius: r.planner_km_radius,
+    weddings_per_year: r.planner_weddings_per_year,
+    avatar_url: r.planner_avatar_url,
+    link_status:
+      r.link_state === "active"
+        ? "active"
+        : r.link_state === "pending"
+          ? r.link_initiated_by === "couple"
+            ? "invited"
+            : "requested"
+          : "none",
+  }));
+
+  return json({ planners });
 }
 
 /** Couple-side approval of a planner-initiated access request. Flips the
@@ -1513,19 +1633,33 @@ async function handleAcceptPlannerRequest(ctx: Ctx): Promise<Response> {
 async function handleInvitePlanner(ctx: Ctx): Promise<Response> {
   const { userId, coupleId } = requireCoupleAuth(ctx);
 
-  const body = await readJson<{ planner_email?: unknown }>(ctx.req);
-  if (typeof body.planner_email !== "string" || !body.planner_email.trim()) {
-    throw new HttpError(400, "planner_email required");
-  }
-  const plannerEmail = body.planner_email.trim().toLowerCase();
-
-  const planner = db
-    .prepare("SELECT id, user_type, email, full_name FROM users WHERE LOWER(email) = ?")
-    .get(plannerEmail) as
+  // Two ways to name the planner: by email (settings-page manual invite) or by
+  // user id (the directory rail, which never exposes planner emails).
+  const body = await readJson<{ planner_email?: unknown; planner_user_id?: unknown }>(ctx.req);
+  let planner:
     | { id: number; user_type: string; email: string; full_name: string | null }
     | undefined;
-  if (!planner) throw new HttpError(404, "No planner found with that email");
-  if (planner.user_type !== "planner") throw new HttpError(404, "No planner found with that email");
+  if (body.planner_user_id !== undefined) {
+    const plannerUserId = Number(body.planner_user_id);
+    if (!Number.isInteger(plannerUserId) || plannerUserId <= 0) {
+      throw new HttpError(400, "planner_user_id must be a positive integer");
+    }
+    planner = db
+      .prepare("SELECT id, user_type, email, full_name FROM users WHERE id = ?")
+      .get(plannerUserId) as typeof planner;
+    if (!planner || planner.user_type !== "planner") throw new HttpError(404, "No planner found");
+  } else {
+    if (typeof body.planner_email !== "string" || !body.planner_email.trim()) {
+      throw new HttpError(400, "planner_email required");
+    }
+    const plannerEmail = body.planner_email.trim().toLowerCase();
+    planner = db
+      .prepare("SELECT id, user_type, email, full_name FROM users WHERE LOWER(email) = ?")
+      .get(plannerEmail) as typeof planner;
+    if (!planner) throw new HttpError(404, "No planner found with that email");
+    if (planner.user_type !== "planner")
+      throw new HttpError(404, "No planner found with that email");
+  }
 
   const existing = db
     .prepare("SELECT id, status FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
@@ -1542,7 +1676,7 @@ async function handleInvitePlanner(ctx: Ctx): Promise<Response> {
     action: "planner.couple_invite",
     target_kind: "user",
     target_id: planner.id,
-    note: `invited planner ${plannerEmail}`,
+    note: `invited planner ${planner.email}`,
   });
 
   const couple = db
@@ -2040,6 +2174,7 @@ export function registerPlannerRoutes(router: Router) {
   router.get("/api/planner-invites/:token", handleLookupInvitation);
   // Couple-side: planner panel (M7)
   router.get("/api/couples/planners", handleListLinkedPlanners, true);
+  router.get("/api/couples/planner-directory", handlePlannerDirectory, true);
   router.post("/api/couples/planner-invite", handleInvitePlanner, true);
   router.post("/api/couples/planners/:plannerUserId/accept", handleAcceptPlannerRequest, true);
   router.delete("/api/couples/planners/:plannerUserId", handleRevokePlanner, true);

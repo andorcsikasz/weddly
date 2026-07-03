@@ -205,6 +205,30 @@ export interface PlannerInviteView {
   created_at: number;
 }
 
+/** One row of the couple-facing planner directory (the "wedding planners"
+ *  rail on /app/vendors). Only live, verified planner accounts with a
+ *  minimally complete profile (business name + city) are listed. The email
+ *  is deliberately absent so the directory can't be scraped for addresses;
+ *  connecting goes by user id instead. */
+export interface PlannerDirectoryEntry {
+  planner_user_id: number;
+  business_name: string;
+  full_name: string;
+  city: string;
+  country: string | null;
+  bio: string | null;
+  website: string | null;
+  styles: string[] | null;
+  km_radius: number | null;
+  weddings_per_year: number | null;
+  avatar_url: string | null;
+  /** Link state relative to the requesting couple: 'invited' = this couple
+   *  already invited them (pending on the planner side); 'requested' = the
+   *  planner asked this couple for access (pending on the couple side);
+   *  'active' = linked. */
+  link_status: "none" | "invited" | "requested" | "active";
+}
+
 // ─── Admin dashboard (users + couples directory) ─────────────────────────────
 
 export interface AdminUserView {

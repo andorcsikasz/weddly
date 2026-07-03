@@ -94,7 +94,9 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   const body = await readJson<Record<string, unknown>>(ctx.req);
   const full_name = trimStr(body.full_name);
   const email = trimStr(body.email);
-  const phone = trimStr(body.phone) || null;
+  // `planner_waitlist.phone` is NOT NULL; the form always sends one, but a
+  // direct API submit without it must not 500 — store an empty string.
+  const phone = trimStr(body.phone);
   const company_name = trimStr(body.company_name) || null;
   const city = trimStr(body.city) || null;
   const message = trimStr(body.message) || null;
@@ -196,6 +198,18 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     grantPlannerAccount(ctx.userId);
     initPlannerBilling(ctx.userId);
   }
+
+  // Confirm receipt and carry the applicant to their actual next step. For a
+  // logged-out applicant that step is REGISTERING with this same email (the
+  // grant happens at register time); without this mail the success screen is
+  // the only place that ever tells them, and it's gone once they navigate away.
+  void sendKind(
+    "planner_waitlist_received",
+    { plannerName: full_name, hasAccount: Boolean(ctx.userId) },
+    ctx.userId
+      ? { user: { id: ctx.userId, email, full_name } }
+      : { user: null, guest: { email, full_name } },
+  );
 
   return json(
     {

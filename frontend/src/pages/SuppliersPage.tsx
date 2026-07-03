@@ -71,6 +71,7 @@ import { CakeDrinksCalculator } from "../components/CakeDrinksCalculator";
 import { InfoHint } from "../components/InfoHint";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { OutreachInbox } from "../components/OutreachInbox";
+import { PlannerDirectoryRail } from "../components/PlannerDirectoryRail";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SupplierCountryFilter } from "../components/SupplierCountryFilter";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
@@ -1056,169 +1057,179 @@ export default function SuppliersPage() {
 
   return (
     <>
-      <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <h1 className="font-grotesk">{t("suppliers.title")}</h1>
-          <InfoHint text={t("suppliers.sub")} />
-        </div>
-        {/* Controls stack under the title on mobile so the view-mode pills and
+      {/* Two-column shell: directory content left, wedding-planner rail right
+          (lg+, stacks below on mobile). The rail renders nothing while the
+          planner directory is empty, so the main column keeps its full width
+          until there is real planner supply. */}
+      <div className="lg:flex lg:items-start lg:gap-6">
+        <div className="min-w-0 lg:flex-1">
+          <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="font-grotesk">{t("suppliers.title")}</h1>
+              <InfoHint text={t("suppliers.sub")} />
+            </div>
+            {/* Controls stack under the title on mobile so the view-mode pills and
             "Drop your own" button don't compress the heading + sub-copy into a
             tall narrow column. `flex-wrap` lets the two control groups break
             independently on the narrowest viewports. */}
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
-          <div
-            role="group"
-            aria-label={t("suppliers.view_label")}
-            className="inline-flex items-center rounded-full border border-umber-600 dark:border-umber-700 dark:bg-umber-800 p-0.5 text-xs"
-          >
-            {(
-              [
-                { mode: "grid", icon: LayoutGrid, label: "view_grid" },
-                { mode: "line", icon: List, label: "view_line" },
-                { mode: "map", icon: MapIcon, label: "view_map" },
-              ] as const
-            ).map(({ mode, icon: VIcon, label }) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setViewMode(mode)}
-                aria-pressed={viewMode === mode}
-                className={
-                  viewMode === mode
-                    ? "inline-flex items-center gap-1 rounded-full bg-ink-700 dark:bg-paper-50 dark:text-umber-900 px-2.5 py-1 text-paper-100"
-                    : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 dark:text-umber-200 hover:text-ink-900 dark:hover:text-paper-50"
-                }
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
+              <div
+                role="group"
+                aria-label={t("suppliers.view_label")}
+                className="inline-flex items-center rounded-full border border-umber-600 dark:border-umber-700 dark:bg-umber-800 p-0.5 text-xs"
               >
-                <VIcon size={12} aria-hidden /> {t(`suppliers.${label}`)}
-              </button>
-            ))}
-          </div>
-          {/* "Tipp leadása" is a community contribution, not a primary
+                {(
+                  [
+                    { mode: "grid", icon: LayoutGrid, label: "view_grid" },
+                    { mode: "line", icon: List, label: "view_line" },
+                    { mode: "map", icon: MapIcon, label: "view_map" },
+                  ] as const
+                ).map(({ mode, icon: VIcon, label }) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setViewMode(mode)}
+                    aria-pressed={viewMode === mode}
+                    className={
+                      viewMode === mode
+                        ? "inline-flex items-center gap-1 rounded-full bg-ink-700 dark:bg-paper-50 dark:text-umber-900 px-2.5 py-1 text-paper-100"
+                        : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 dark:text-umber-200 hover:text-ink-900 dark:hover:text-paper-50"
+                    }
+                  >
+                    <VIcon size={12} aria-hidden /> {t(`suppliers.${label}`)}
+                  </button>
+                ))}
+              </div>
+              {/* "Tipp leadása" is a community contribution, not a primary
               action — using btn-primary made it visually compete with
               the view toggle next to it (taller, dark navy) when it's
               actually a secondary affordance. Now: dashed outline at
               the toggle's exact height, Plus icon to reinforce
               "add new" semantics, ink-toned not navy. */}
-          <button
-            type="button"
-            onClick={() => setSubmitOpen(true)}
-            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-dashed border-umber-600 px-3 text-xs font-medium text-ink-700 transition hover:border-umber-700 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-          >
-            <Plus size={12} aria-hidden />
-            {t("suppliers.drop_your_own")}
-          </button>
-        </div>
-      </header>
+              <button
+                type="button"
+                onClick={() => setSubmitOpen(true)}
+                className="inline-flex h-7 items-center gap-1.5 rounded-full border border-dashed border-umber-600 px-3 text-xs font-medium text-ink-700 transition hover:border-umber-700 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+              >
+                <Plus size={12} aria-hidden />
+                {t("suppliers.drop_your_own")}
+              </button>
+            </div>
+          </header>
 
-      {/* Search + city filter + saved chip. Inputs share the soft pill
+          {/* Search + city filter + saved chip. Inputs share the soft pill
           look of the "Mentett" toggle so the row reads as one quiet
           control surface rather than competing heavyweight fields. */}
-      <div data-tour-target="vendors-search" className="mb-3 flex flex-wrap items-center gap-2">
-        <Combobox
-          className="min-w-[14rem] flex-1"
-          value={query}
-          onChange={setQuery}
-          onSelect={onSearchSuggestion}
-          options={searchSuggestions}
-          ariaLabel={t("suppliers.search_label")}
-          placeholder={t("suppliers.search_placeholder")}
-          leadingIcon={Search}
-          onClear={() => setQuery("")}
-          inputClassName="h-9 w-full rounded-full border border-umber-600 pl-9 pr-9 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
-        />
-        <Combobox
-          className="w-full sm:w-60"
-          value={cityInput}
-          onChange={(v) => {
-            setCityInput(v);
-            if (v.trim() === "") setCityFilter("");
-          }}
-          onSelect={(opt) => {
-            setCityFilter(opt.id);
-            setCityInput(opt.label);
-          }}
-          options={cityOptions}
-          ariaLabel={t("suppliers.city_label")}
-          placeholder={t("suppliers.city_all")}
-          leadingIcon={MapPin}
-          onClear={() => {
-            setCityFilter("");
-            setCityInput("");
-          }}
-          suffix={
-            cityNearbyKm != null ? t("suppliers.nearby_plus_km", { km: cityNearbyKm }) : undefined
-          }
-          inputClassName="h-9 w-full rounded-full border border-umber-600 pl-9 pr-20 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
-        />
-        <button
-          type="button"
-          onClick={toggleSavedFilter}
-          disabled={saved.size === 0 && !showSavedOnly}
-          aria-pressed={showSavedOnly}
-          aria-label={t("suppliers.saved_filter", { n: saved.size })}
-          title={t("suppliers.saved_filter", { n: saved.size })}
-          className={
-            showSavedOnly
-              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 dark:border-paper-50 px-3 text-sm font-medium text-ink-900 dark:text-paper-50"
-              : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
-                  saved.size > 0
-                    ? "border-umber-600 text-ink-700 hover:border-umber-700 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
-                    : "border-umber-600 text-ink-500 dark:border-umber-700 dark:text-umber-300"
-                }`
-          }
-        >
-          <Star size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
-          <span className="tabular-nums">{saved.size}</span>
-        </button>
-        <button
-          type="button"
-          onClick={togglePickedFilter}
-          disabled={Object.keys(selection).length === 0 && !showPickedOnly}
-          aria-pressed={showPickedOnly}
-          aria-label={t(
-            showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
-            { n: Object.keys(selection).length },
-          )}
-          title={t(
-            showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
-            { n: Object.keys(selection).length },
-          )}
-          className={
-            showPickedOnly
-              ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-sage-600 px-3 text-sm font-medium text-sage-700 dark:border-sage-300 dark:text-sage-300"
-              : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
-                  Object.keys(selection).length > 0
-                    ? "border-sage-400 text-sage-700 hover:border-sage-500 dark:border-sage-400/40 dark:text-sage-300"
-                    : "border-umber-600 text-ink-500 dark:border-umber-700 dark:text-umber-300"
-                }`
-          }
-        >
-          <BookmarkCheck
-            size={14}
-            className={showPickedOnly || Object.keys(selection).length > 0 ? "fill-sage-200" : ""}
-            aria-hidden
-          />
-          <span className="tabular-nums">{Object.keys(selection).length}</span>
-        </button>
-        <label className="flex items-center gap-2">
-          <span className="sr-only">{t("suppliers.sort_label")}</span>
-          <select
-            className="h-9 min-w-[10rem] rounded-full border border-umber-600 px-3 text-sm text-ink-800 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
-            value={sortMode}
-            onChange={(e) =>
-              setSortMode(e.target.value as "top" | "alpha" | "price_asc" | "price_desc")
-            }
-            aria-label={t("suppliers.sort_label")}
-          >
-            <option value="top">{t("suppliers.sort_top")}</option>
-            <option value="price_asc">{t("suppliers.sort_price_asc")}</option>
-            <option value="price_desc">{t("suppliers.sort_price_desc")}</option>
-            <option value="alpha">{t("suppliers.sort_alpha")}</option>
-          </select>
-        </label>
-      </div>
+          <div data-tour-target="vendors-search" className="mb-3 flex flex-wrap items-center gap-2">
+            <Combobox
+              className="min-w-[14rem] flex-1"
+              value={query}
+              onChange={setQuery}
+              onSelect={onSearchSuggestion}
+              options={searchSuggestions}
+              ariaLabel={t("suppliers.search_label")}
+              placeholder={t("suppliers.search_placeholder")}
+              leadingIcon={Search}
+              onClear={() => setQuery("")}
+              inputClassName="h-9 w-full rounded-full border border-umber-600 pl-9 pr-9 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
+            />
+            <Combobox
+              className="w-full sm:w-60"
+              value={cityInput}
+              onChange={(v) => {
+                setCityInput(v);
+                if (v.trim() === "") setCityFilter("");
+              }}
+              onSelect={(opt) => {
+                setCityFilter(opt.id);
+                setCityInput(opt.label);
+              }}
+              options={cityOptions}
+              ariaLabel={t("suppliers.city_label")}
+              placeholder={t("suppliers.city_all")}
+              leadingIcon={MapPin}
+              onClear={() => {
+                setCityFilter("");
+                setCityInput("");
+              }}
+              suffix={
+                cityNearbyKm != null
+                  ? t("suppliers.nearby_plus_km", { km: cityNearbyKm })
+                  : undefined
+              }
+              inputClassName="h-9 w-full rounded-full border border-umber-600 pl-9 pr-20 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
+            />
+            <button
+              type="button"
+              onClick={toggleSavedFilter}
+              disabled={saved.size === 0 && !showSavedOnly}
+              aria-pressed={showSavedOnly}
+              aria-label={t("suppliers.saved_filter", { n: saved.size })}
+              title={t("suppliers.saved_filter", { n: saved.size })}
+              className={
+                showSavedOnly
+                  ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 dark:border-paper-50 px-3 text-sm font-medium text-ink-900 dark:text-paper-50"
+                  : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
+                      saved.size > 0
+                        ? "border-umber-600 text-ink-700 hover:border-umber-700 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
+                        : "border-umber-600 text-ink-500 dark:border-umber-700 dark:text-umber-300"
+                    }`
+              }
+            >
+              <Star size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
+              <span className="tabular-nums">{saved.size}</span>
+            </button>
+            <button
+              type="button"
+              onClick={togglePickedFilter}
+              disabled={Object.keys(selection).length === 0 && !showPickedOnly}
+              aria-pressed={showPickedOnly}
+              aria-label={t(
+                showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
+                { n: Object.keys(selection).length },
+              )}
+              title={t(
+                showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
+                { n: Object.keys(selection).length },
+              )}
+              className={
+                showPickedOnly
+                  ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-sage-600 px-3 text-sm font-medium text-sage-700 dark:border-sage-300 dark:text-sage-300"
+                  : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
+                      Object.keys(selection).length > 0
+                        ? "border-sage-400 text-sage-700 hover:border-sage-500 dark:border-sage-400/40 dark:text-sage-300"
+                        : "border-umber-600 text-ink-500 dark:border-umber-700 dark:text-umber-300"
+                    }`
+              }
+            >
+              <BookmarkCheck
+                size={14}
+                className={
+                  showPickedOnly || Object.keys(selection).length > 0 ? "fill-sage-200" : ""
+                }
+                aria-hidden
+              />
+              <span className="tabular-nums">{Object.keys(selection).length}</span>
+            </button>
+            <label className="flex items-center gap-2">
+              <span className="sr-only">{t("suppliers.sort_label")}</span>
+              <select
+                className="h-9 min-w-[10rem] rounded-full border border-umber-600 px-3 text-sm text-ink-800 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
+                value={sortMode}
+                onChange={(e) =>
+                  setSortMode(e.target.value as "top" | "alpha" | "price_asc" | "price_desc")
+                }
+                aria-label={t("suppliers.sort_label")}
+              >
+                <option value="top">{t("suppliers.sort_top")}</option>
+                <option value="price_asc">{t("suppliers.sort_price_asc")}</option>
+                <option value="price_desc">{t("suppliers.sort_price_desc")}</option>
+                <option value="alpha">{t("suppliers.sort_alpha")}</option>
+              </select>
+            </label>
+          </div>
 
-      {/* Row 2: catalogue scope (country) + price-band picker + guest-count,
+          {/* Row 2: catalogue scope (country) + price-band picker + guest-count,
           grouped inside a softened container so they read as one control.
           Country leads (it's the broadest scope), then Árszint, then the
           user-context Vendégszám. Each price chip represents one band —
@@ -1227,605 +1238,823 @@ export default function SuppliersPage() {
           declared value pass through so non-venue cards are not dropped.
           The row wraps on narrow screens so the extra country control never
           pushes the guest count off the edge. */}
-      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1.5 sm:gap-x-5 sm:px-4 dark:border-umber-700 dark:bg-umber-700/40">
-        <SupplierCountryFilter
-          value={countrySelection}
-          homeCountry={coupleCountry}
-          countries={availableCountries}
-          onChange={setCountryFilter}
-        />
-        <div
-          className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
-          aria-hidden
-        />
-        <div className="flex flex-nowrap items-center gap-2 shrink-0 sm:gap-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-            {t("suppliers.price_filter_label")}
-          </span>
-          <div className="inline-flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map((band) => {
-              const active = priceBand !== null && band <= priceBand;
-              return (
+          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1.5 sm:gap-x-5 sm:px-4 dark:border-umber-700 dark:bg-umber-700/40">
+            <SupplierCountryFilter
+              value={countrySelection}
+              homeCountry={coupleCountry}
+              countries={availableCountries}
+              onChange={setCountryFilter}
+            />
+            <div
+              className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
+              aria-hidden
+            />
+            <div className="flex flex-nowrap items-center gap-2 shrink-0 sm:gap-3">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+                {t("suppliers.price_filter_label")}
+              </span>
+              <div className="inline-flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((band) => {
+                  const active = priceBand !== null && band <= priceBand;
+                  return (
+                    <button
+                      key={band}
+                      type="button"
+                      aria-pressed={priceBand === band}
+                      aria-label={t("suppliers.price_filter_band_aria", { n: band })}
+                      onClick={() => setPriceBand(priceBand === band ? null : band)}
+                      className={
+                        active
+                          ? "inline-flex h-6 w-4 items-center justify-center text-[11px] sm:w-5 font-semibold text-ink-700 transition hover:text-ink-900 dark:text-paper-50"
+                          : "inline-flex h-6 w-4 items-center justify-center text-[11px] sm:w-5 text-ink-300 transition hover:text-ink-500 dark:text-umber-500 dark:hover:text-umber-300"
+                      }
+                    >
+                      $
+                    </button>
+                  );
+                })}
+              </div>
+              {priceBand !== null && (
                 <button
-                  key={band}
                   type="button"
-                  aria-pressed={priceBand === band}
-                  aria-label={t("suppliers.price_filter_band_aria", { n: band })}
-                  onClick={() => setPriceBand(priceBand === band ? null : band)}
-                  className={
-                    active
-                      ? "inline-flex h-6 w-4 items-center justify-center text-[11px] sm:w-5 font-semibold text-ink-700 transition hover:text-ink-900 dark:text-paper-50"
-                      : "inline-flex h-6 w-4 items-center justify-center text-[11px] sm:w-5 text-ink-300 transition hover:text-ink-500 dark:text-umber-500 dark:hover:text-umber-300"
-                  }
+                  onClick={() => setPriceBand(null)}
+                  className="hidden text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline sm:inline dark:text-umber-300 dark:hover:text-paper-100"
                 >
-                  $
+                  {t("suppliers.guests_filter_clear")}
                 </button>
-              );
-            })}
-          </div>
-          {priceBand !== null && (
-            <button
-              type="button"
-              onClick={() => setPriceBand(null)}
-              className="hidden text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline sm:inline dark:text-umber-300 dark:hover:text-paper-100"
-            >
-              {t("suppliers.guests_filter_clear")}
-            </button>
-          )}
-        </div>
-        <div
-          className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
-          aria-hidden
-        />
-        {/* Guest count is read-only here — it's owned by the cost-planning
+              )}
+            </div>
+            <div
+              className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
+              aria-hidden
+            />
+            {/* Guest count is read-only here — it's owned by the cost-planning
             slider on /app/budget and mirrored in. Editing it inline would
             give couples two sources of truth for the same number, so the
             whole control (label + value + arrow) is a link that routes
             edits to the budget page. */}
-        <Link
-          to="/app/budget"
-          title={t("suppliers.guests_filter_edit_in_budget")}
-          aria-label={t("suppliers.guests_filter_edit_in_budget")}
-          className="group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 transition hover:bg-paper-50 sm:gap-2 dark:hover:bg-umber-800"
-        >
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100">
-            {t("suppliers.guests_filter_label")}
-          </span>
-          <span className="min-w-[2ch] text-center text-[11px] font-semibold tabular-nums text-ink-800 dark:text-paper-100">
-            {guestsFilter ?? "-"}
-          </span>
-          <ArrowUpRight
-            size={13}
-            aria-hidden
-            className="text-ink-400 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100"
-          />
-        </Link>
-      </div>
+            <Link
+              to="/app/budget"
+              title={t("suppliers.guests_filter_edit_in_budget")}
+              aria-label={t("suppliers.guests_filter_edit_in_budget")}
+              className="group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 transition hover:bg-paper-50 sm:gap-2 dark:hover:bg-umber-800"
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100">
+                {t("suppliers.guests_filter_label")}
+              </span>
+              <span className="min-w-[2ch] text-center text-[11px] font-semibold tabular-nums text-ink-800 dark:text-paper-100">
+                {guestsFilter ?? "-"}
+              </span>
+              <ArrowUpRight
+                size={13}
+                aria-hidden
+                className="text-ink-400 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100"
+              />
+            </Link>
+          </div>
 
-      {/* Step chain. Sequence numbers dropped — the icons carry the meaning.
+          {/* Step chain. Sequence numbers dropped — the icons carry the meaning.
           Steps are packed tightly (gap-1) and separated by a thin forward
           arrow so the row reads as one process flow, not a sequence of
           buttons. Each step also carries a row of discreet bars (one per
           sub-category) that turn sage as the couple locks each pick in.
           The right-edge fade only shows when the row actually overflows —
           otherwise it leaves a phantom white slab next to the last step. */}
-      <div className="relative mb-2">
-        {/* snap-x mandatory keeps each step centred under a flicked thumb on
+          <div className="relative mb-2">
+            {/* snap-x mandatory keeps each step centred under a flicked thumb on
             touch widths — without it the row drifts mid-icon and the user
             has to nudge it back. snap-start on each child anchors the
             alignment to the leading edge of the step group. */}
-        <div ref={chainScrollRef} className="overflow-x-auto snap-x snap-mandatory pb-1">
-          <div className="flex min-w-max items-stretch gap-1">
-            {SUPPLIER_GROUPS.map((g, i) => {
-              const Icon = GROUP_ICON[g.id];
-              const progress = groupSelectionProgress.byGroup.get(g.id) ?? {
-                done: 0,
-                total: g.categories.length,
-              };
-              return (
-                <div key={g.id} className="flex snap-start items-stretch gap-1">
-                  {i > 0 && (
-                    <span className="self-center text-paper-400 dark:text-umber-300" aria-hidden>
-                      →
-                    </span>
-                  )}
-                  <ChainStep
-                    active={activeGroup === g.id}
-                    // Re-click on the active group clears the filter — the
-                    // "Mind" tile is gone so this toggle is the only way back.
-                    onClick={() => pickGroup(activeGroup === g.id ? null : g.id)}
-                    label={t(`suppliers.group.${g.id}`)}
-                    count={groupCounts.get(g.id) ?? 0}
-                    icon={<Icon size={16} />}
-                    progress={progress}
-                    t={t}
-                  />
-                </div>
-              );
-            })}
+            <div ref={chainScrollRef} className="overflow-x-auto snap-x snap-mandatory pb-1">
+              <div className="flex min-w-max items-stretch gap-1">
+                {SUPPLIER_GROUPS.map((g, i) => {
+                  const Icon = GROUP_ICON[g.id];
+                  const progress = groupSelectionProgress.byGroup.get(g.id) ?? {
+                    done: 0,
+                    total: g.categories.length,
+                  };
+                  return (
+                    <div key={g.id} className="flex snap-start items-stretch gap-1">
+                      {i > 0 && (
+                        <span
+                          className="self-center text-paper-400 dark:text-umber-300"
+                          aria-hidden
+                        >
+                          →
+                        </span>
+                      )}
+                      <ChainStep
+                        active={activeGroup === g.id}
+                        // Re-click on the active group clears the filter — the
+                        // "Mind" tile is gone so this toggle is the only way back.
+                        onClick={() => pickGroup(activeGroup === g.id ? null : g.id)}
+                        label={t(`suppliers.group.${g.id}`)}
+                        count={groupCounts.get(g.id) ?? 0}
+                        icon={<Icon size={16} />}
+                        progress={progress}
+                        t={t}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Right-edge fade — only when the row overflows. */}
+            {chainOverflows && (
+              <div
+                className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-paper-50 dark:from-umber-900 to-transparent"
+                aria-hidden
+              />
+            )}
           </div>
-        </div>
-        {/* Right-edge fade — only when the row overflows. */}
-        {chainOverflows && (
-          <div
-            className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-paper-50 dark:from-umber-900 to-transparent"
-            aria-hidden
-          />
-        )}
-      </div>
-      <p className="mb-3 hidden text-xs text-ink-500 sm:block dark:text-umber-300">
-        {t("suppliers.chain_help")}
-      </p>
+          <p className="mb-3 hidden text-xs text-ink-500 sm:block dark:text-umber-300">
+            {t("suppliers.chain_help")}
+          </p>
 
-      {/* Sub-category pills (only when a group is selected). Each pill shows
+          {/* Sub-category pills (only when a group is selected). Each pill shows
           the count of suppliers in that category after the non-category
           filters, so couples can pre-scan where the inventory lives.
           On mobile the row becomes a horizontal snap-scroller — wrapping
           to a second/third line was the "ticketek szétcsúsztak" complaint
           from the May 2026 mobile audit (compact, predictable horizontal
           motion beats a chaotic two-line wrap at thumb width). */}
-      {activeGroup && subCategories.length > 0 && (
-        <div className="mb-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-3 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-          <button
-            type="button"
-            onClick={() => setActiveCat(null)}
-            className={
-              activeCat === null
-                ? "inline-flex items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
-                : "inline-flex items-center gap-1.5 rounded-xl border border-umber-600 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
-            }
-          >
-            <span className="lowercase">{t("suppliers.filter_all")}</span>
-            <span
-              className={
-                activeCat === null
-                  ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
-                  : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
-              }
-            >
-              {inGroupTotal}
-            </span>
-          </button>
-          {subCategories.map((c) => {
-            const Icon = CATEGORY_ICON[c];
-            const selected = activeCat === c;
-            const count = subCategoryCounts.get(c) ?? 0;
-            return (
+          {activeGroup && subCategories.length > 0 && (
+            <div className="mb-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-3 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
               <button
-                key={c}
                 type="button"
-                onClick={() => setActiveCat(c)}
+                onClick={() => setActiveCat(null)}
                 className={
-                  selected
+                  activeCat === null
                     ? "inline-flex items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
                     : "inline-flex items-center gap-1.5 rounded-xl border border-umber-600 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
                 }
               >
-                <Icon size={13} />
-                <span className="lowercase">{t(`suppliers.cat.${c}`)}</span>
+                <span className="lowercase">{t("suppliers.filter_all")}</span>
                 <span
                   className={
-                    selected
+                    activeCat === null
                       ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
                       : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
                   }
                 >
-                  {count}
+                  {inGroupTotal}
                 </span>
               </button>
-            );
-          })}
-          {/* Right-floating action group: the cake & drinks calculator (only
+              {subCategories.map((c) => {
+                const Icon = CATEGORY_ICON[c];
+                const selected = activeCat === c;
+                const count = subCategoryCounts.get(c) ?? 0;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setActiveCat(c)}
+                    className={
+                      selected
+                        ? "inline-flex items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
+                        : "inline-flex items-center gap-1.5 rounded-xl border border-umber-600 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
+                    }
+                  >
+                    <Icon size={13} />
+                    <span className="lowercase">{t(`suppliers.cat.${c}`)}</span>
+                    <span
+                      className={
+                        selected
+                          ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
+                          : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
+                      }
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+              {/* Right-floating action group: the cake & drinks calculator (only
               for the food/drink categories it estimates) sits just left of
               "Csinálom magam". On sm+ the pair sits flush-right of the pill
               row via `ml-auto`; on mobile the row is a horizontal scroller so
               they ride as the last shrink-0 chips. */}
-          <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
-            {activeCat && CALC_CATEGORIES.has(activeCat) && (
-              <button
-                type="button"
-                onClick={() => setCalcOpen(true)}
-                aria-label={t("suppliers.calc.open_aria")}
-                title={t("suppliers.calc.open_aria")}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
-              >
-                <Calculator size={13} aria-hidden />
-                <span>{t("suppliers.calc.open")}</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setDiyEditing(null);
-                setDiyOpen(true);
-              }}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
-            >
-              <Pencil size={13} aria-hidden />
-              <span className="lowercase">{t("suppliers.diy_button_short")}</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {activeCat === "accommodation" && (
-        <section
-          aria-labelledby="accommodation-external-heading"
-          className="mb-4 rounded-2xl border border-paper-200 bg-paper-50 p-4 sm:p-5 dark:border-umber-700 dark:bg-umber-800"
-        >
-          <div className="flex items-start gap-3">
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300">
-              <BedDouble size={16} aria-hidden />
-            </span>
-            <div className="min-w-0">
-              <h3
-                id="accommodation-external-heading"
-                className="text-sm font-semibold text-ink-900 dark:text-paper-100"
-              >
-                {t("suppliers.accommodation_external_title")}
-              </h3>
-              <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
-                {t("suppliers.accommodation_external_subtitle")}
-              </p>
+              <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
+                {activeCat && CALC_CATEGORIES.has(activeCat) && (
+                  <button
+                    type="button"
+                    onClick={() => setCalcOpen(true)}
+                    aria-label={t("suppliers.calc.open_aria")}
+                    title={t("suppliers.calc.open_aria")}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
+                  >
+                    <Calculator size={13} aria-hidden />
+                    <span>{t("suppliers.calc.open")}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDiyEditing(null);
+                    setDiyOpen(true);
+                  }}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
+                >
+                  <Pencil size={13} aria-hidden />
+                  <span className="lowercase">{t("suppliers.diy_button_short")}</span>
+                </button>
+              </div>
             </div>
-          </div>
-          {/* Brand-coloured partner tiles — full bleed brand colour, white
+          )}
+
+          {activeCat === "accommodation" && (
+            <section
+              aria-labelledby="accommodation-external-heading"
+              className="mb-4 rounded-2xl border border-paper-200 bg-paper-50 p-4 sm:p-5 dark:border-umber-700 dark:bg-umber-800"
+            >
+              <div className="flex items-start gap-3">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300">
+                  <BedDouble size={16} aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <h3
+                    id="accommodation-external-heading"
+                    className="text-sm font-semibold text-ink-900 dark:text-paper-100"
+                  >
+                    {t("suppliers.accommodation_external_title")}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+                    {t("suppliers.accommodation_external_subtitle")}
+                  </p>
+                </div>
+              </div>
+              {/* Brand-coloured partner tiles — full bleed brand colour, white
               wordmark, external-link icon top-right. The previous treatment
               (generic bed icon + grey outline) read as "more of the same
               Weddly UI"; couples scan recognisable brands faster when the
               card USES the brand. Brand colours go via Tailwind arbitrary
               value (`bg-[#003580]`) — they're external-company-owned and
               shouldn't pollute the design tokens. */}
-          <ul className="mt-3 grid gap-3 sm:grid-cols-3">
-            {[
-              {
-                key: "booking",
-                href: "https://www.booking.com/",
-                wordmark: (
-                  <span className="text-xl font-bold tracking-tight text-white">
-                    Booking
-                    <span className="text-[#febb02]">.</span>
-                    com
-                  </span>
-                ),
-                bgClass: "bg-[#003580] hover:bg-[#002a66]",
-              },
-              {
-                key: "airbnb",
-                href: "https://www.airbnb.com/",
-                wordmark: (
-                  <span className="text-xl font-bold lowercase tracking-tight text-white">
-                    airbnb
-                  </span>
-                ),
-                bgClass: "bg-[#FF5A5F] hover:bg-[#e64a4f]",
-              },
-              {
-                key: "szallas_hu",
-                href: "https://www.szallas.hu/",
-                wordmark: (
-                  <span className="text-xl font-bold tracking-tight text-white">
-                    Szállás
-                    <span className="opacity-70">.hu</span>
-                  </span>
-                ),
-                bgClass: "bg-[#0e7c66] hover:bg-[#0a5e4e]",
-              },
-            ].map((p) => (
-              <li key={p.key}>
-                <a
-                  href={p.href}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className={`group relative flex h-full items-center justify-between rounded-xl px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${p.bgClass}`}
-                >
-                  {p.wordmark}
-                  <ExternalLink
-                    size={16}
-                    aria-hidden
-                    className="absolute right-3 top-3 text-white/70 transition group-hover:text-white"
-                  />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+              <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+                {[
+                  {
+                    key: "booking",
+                    href: "https://www.booking.com/",
+                    wordmark: (
+                      <span className="text-xl font-bold tracking-tight text-white">
+                        Booking
+                        <span className="text-[#febb02]">.</span>
+                        com
+                      </span>
+                    ),
+                    bgClass: "bg-[#003580] hover:bg-[#002a66]",
+                  },
+                  {
+                    key: "airbnb",
+                    href: "https://www.airbnb.com/",
+                    wordmark: (
+                      <span className="text-xl font-bold lowercase tracking-tight text-white">
+                        airbnb
+                      </span>
+                    ),
+                    bgClass: "bg-[#FF5A5F] hover:bg-[#e64a4f]",
+                  },
+                  {
+                    key: "szallas_hu",
+                    href: "https://www.szallas.hu/",
+                    wordmark: (
+                      <span className="text-xl font-bold tracking-tight text-white">
+                        Szállás
+                        <span className="opacity-70">.hu</span>
+                      </span>
+                    ),
+                    bgClass: "bg-[#0e7c66] hover:bg-[#0a5e4e]",
+                  },
+                ].map((p) => (
+                  <li key={p.key}>
+                    <a
+                      href={p.href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className={`group relative flex h-full items-center justify-between rounded-xl px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${p.bgClass}`}
+                    >
+                      {p.wordmark}
+                      <ExternalLink
+                        size={16}
+                        aria-hidden
+                        className="absolute right-3 top-3 text-white/70 transition group-hover:text-white"
+                      />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      {/* Booking.com-style nearby banner — appears when the typed town
+          {/* Booking.com-style nearby banner — appears when the typed town
           isn't an anchor but resolves to a known metro (e.g. "Zsámbék"
           → Budapest area). Neutral paper/ink palette instead of the
           old blush variant: blush is the codebase's error colour
           (ToastProvider, FieldError, AlertCircle pills) and the banner
           was reading as a warning rather than a hint. */}
-      {(() => {
-        const townLabel = nearbyTownLabel(queryNorm);
-        if (!townLabel) return null;
-        return (
-          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
-            <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
-            <span>
-              {t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}
-            </span>
-          </p>
-        );
-      })()}
+          {(() => {
+            const townLabel = nearbyTownLabel(queryNorm);
+            if (!townLabel) return null;
+            return (
+              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
+                <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
+                <span>
+                  {t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}
+                </span>
+              </p>
+            );
+          })()}
 
-      {viewMode === "map" ? (
-        // Same tour target as the grid/list container so the feature tour's
-        // "vendors-list" steps still have something to spotlight in map view —
-        // otherwise steps 2-3 find no element and the card drifts to center
-        // with no highlight (the "compass not fully functional" report).
-        <div data-tour-target="vendors-list">
-          <Suspense
-            fallback={
-              <Skeleton
-                variant="block"
-                rounded="2xl"
-                className="w-full"
-                style={{ height: "70vh", minHeight: "480px" }}
-                aria-label={t("common.loading")}
-              />
-            }
-          >
-            <SupplierMap
-              suppliers={filtered.filter((s): s is DirectorySupplier => s.source !== "self")}
-            />
-          </Suspense>
-        </div>
-      ) : (
-        <>
-          {/* "Már foglaltam" card. Only appears once the couple has narrowed
+          {viewMode === "map" ? (
+            // Same tour target as the grid/list container so the feature tour's
+            // "vendors-list" steps still have something to spotlight in map view —
+            // otherwise steps 2-3 find no element and the card drifts to center
+            // with no highlight (the "compass not fully functional" report).
+            <div data-tour-target="vendors-list">
+              <Suspense
+                fallback={
+                  <Skeleton
+                    variant="block"
+                    rounded="2xl"
+                    className="w-full"
+                    style={{ height: "70vh", minHeight: "480px" }}
+                    aria-label={t("common.loading")}
+                  />
+                }
+              >
+                <SupplierMap
+                  suppliers={filtered.filter((s): s is DirectorySupplier => s.source !== "self")}
+                />
+              </Suspense>
+            </div>
+          ) : (
+            <>
+              {/* "Már foglaltam" card. Only appears once the couple has narrowed
               down to a specific sub-category (activeGroup AND activeCat both
               set) — without that context the autocomplete + admin-queue
               category pinning have nothing to anchor to. Rendered above the
               grid (full-width either way) so the `auto-rows-fr` grid below
               keeps every directory card the same height without this taller
               form inflating the card rows. */}
-          {activeGroup && activeCat && (
-            <div className="mb-3">
-              <BookedSupplierCard
-                coupleId={coupleId}
-                category={activeCat}
-                categoryLabel={t(`suppliers.cat.${activeCat}`)}
-                items={items}
-                pickedId={selection[activeCat] ?? null}
-                onPickExisting={(supplier) => {
-                  // Mirror the new pick into local state so the matching
-                  // directory card flips to its "isPicked" treatment without
-                  // waiting for the cross-tab subscriber to re-emit.
-                  setSelectionState((cur) => ({ ...cur, [supplier.category]: supplier.id }));
-                }}
-              />
-            </div>
-          )}
-          <div
-            data-tour-target="vendors-list"
-            className={
-              viewMode === "line"
-                ? "flex flex-col gap-2"
-                : "grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3"
-            }
-          >
-            {visibleSuppliers.map((s) => {
-              const Icon = CATEGORY_ICON[s.category];
-              const isHighlighted = s.id === highlightId;
-              const isSaved = s.source !== "self" && saved.has(s.id);
-              const isPicked = selection[s.category] === s.id;
-              const isCompared = compareIds.includes(s.id);
-              const compareCapReached = compareIds.length >= COMPARE_MAX;
-              if (s.source === "self") {
-                const openEdit = () => {
-                  setDiyEditing(s);
-                  setDiyOpen(true);
-                };
-                if (viewMode === "line") {
+              {activeGroup && activeCat && (
+                <div className="mb-3">
+                  <BookedSupplierCard
+                    coupleId={coupleId}
+                    category={activeCat}
+                    categoryLabel={t(`suppliers.cat.${activeCat}`)}
+                    items={items}
+                    pickedId={selection[activeCat] ?? null}
+                    onPickExisting={(supplier) => {
+                      // Mirror the new pick into local state so the matching
+                      // directory card flips to its "isPicked" treatment without
+                      // waiting for the cross-tab subscriber to re-emit.
+                      setSelectionState((cur) => ({ ...cur, [supplier.category]: supplier.id }));
+                    }}
+                  />
+                </div>
+              )}
+              <div
+                data-tour-target="vendors-list"
+                className={
+                  viewMode === "line"
+                    ? "flex flex-col gap-2"
+                    : "grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3"
+                }
+              >
+                {visibleSuppliers.map((s) => {
+                  const Icon = CATEGORY_ICON[s.category];
+                  const isHighlighted = s.id === highlightId;
+                  const isSaved = s.source !== "self" && saved.has(s.id);
+                  const isPicked = selection[s.category] === s.id;
+                  const isCompared = compareIds.includes(s.id);
+                  const compareCapReached = compareIds.length >= COMPARE_MAX;
+                  if (s.source === "self") {
+                    const openEdit = () => {
+                      setDiyEditing(s);
+                      setDiyOpen(true);
+                    };
+                    if (viewMode === "line") {
+                      return (
+                        <article
+                          key={s.id}
+                          data-supplier-id={s.id}
+                          className={`relative flex items-center gap-3 rounded-2xl border border-sage-300 bg-sage-50/60 px-4 py-3 transition hover:border-sage-400 hover:shadow-sm dark:border-sage-400/40 dark:bg-sage-400/15 dark:hover:border-sage-400/60 ${
+                            isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
+                          }`}
+                        >
+                          {/* DIY supplier card — couple-saved row from
+                        `couple_suppliers`, no `listings` join. The hero-image
+                        upload is vendor-only (P2.D), so the monogram fallback
+                        stays for this view. */}
+                          <Avatar name={s.name} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="truncate text-sm font-semibold">{s.name}</h3>
+                              <span className="hidden shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300 sm:inline-flex">
+                                {t("suppliers.diy_pill")}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
+                              <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                                <Icon size={11} aria-hidden />
+                                {t(`suppliers.cat.${s.category}`)}
+                              </span>
+                              {s.price_huf !== null && s.price_huf > 0 && (
+                                <>
+                                  <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                                    ·
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 whitespace-nowrap text-sage-700 dark:text-sage-300">
+                                    <Wallet size={11} aria-hidden />
+                                    {formatMoney(
+                                      s.price_huf,
+                                      currency,
+                                      locale === "hu" ? "hu" : "en",
+                                    )}
+                                  </span>
+                                </>
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={openEdit}
+                            aria-label={t("suppliers.diy_action_edit_aria")}
+                            className="inline-flex h-7 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-3 text-xs font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
+                          >
+                            <Pencil size={12} aria-hidden />
+                            <span className="hidden sm:inline">
+                              {t("suppliers.diy_modal_edit")}
+                            </span>
+                          </button>
+                        </article>
+                      );
+                    }
+                    return (
+                      <article
+                        key={s.id}
+                        data-supplier-id={s.id}
+                        className={`card !p-4 relative flex h-full flex-col border-sage-400 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15 ${
+                          isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={openEdit}
+                          aria-label={t("suppliers.diy_action_edit_aria")}
+                          className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-600 transition hover:bg-sage-100 hover:text-sage-800 dark:text-sage-300 dark:hover:bg-sage-400/20 dark:hover:text-sage-200"
+                        >
+                          <Pencil size={14} aria-hidden />
+                        </button>
+                        <div className="flex items-start gap-3 pr-8">
+                          {/* Same DIY supplier card as above (expanded layout) — no
+                        listings join, monogram fallback only. */}
+                          <Avatar name={s.name} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="truncate text-base font-semibold">{s.name}</h3>
+                              <span className="shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300">
+                                {t("suppliers.diy_pill")}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                              <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                                <Icon size={12} aria-hidden />
+                                {t(`suppliers.cat.${s.category}`)}
+                              </span>
+                              {s.price_huf !== null && s.price_huf > 0 && (
+                                <>
+                                  <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                                    ·
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-sage-700 dark:text-sage-300">
+                                    <Wallet size={12} aria-hidden />
+                                    {formatMoney(
+                                      s.price_huf,
+                                      currency,
+                                      locale === "hu" ? "hu" : "en",
+                                    )}
+                                  </span>
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        {s.notes && (
+                          <p className="mt-2 line-clamp-3 text-sm text-ink-700 dark:text-paper-100">
+                            {s.notes}
+                          </p>
+                        )}
+                        <div className="mt-auto flex items-center justify-end gap-2 pt-3">
+                          <button
+                            type="button"
+                            onClick={openEdit}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-medium text-sage-700 transition hover:border-sage-500 hover:bg-sage-100 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
+                          >
+                            <Pencil size={13} aria-hidden />
+                            {t("suppliers.diy_modal_edit")}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  }
+                  if (viewMode === "line") {
+                    return (
+                      <article
+                        key={s.id}
+                        data-supplier-id={s.id}
+                        className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition hover:shadow-sm ${
+                          isPicked
+                            ? "border-sage-400 bg-sage-50/70 dark:border-sage-400/40 dark:bg-sage-400/15"
+                            : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+                        } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
+                      >
+                        <Avatar
+                          name={s.name}
+                          heroUrl={s.hero_image_url}
+                          category={s.category}
+                          onClick={() => filterByCategory(s.category)}
+                          ariaLabel={t("suppliers.show_all_in_category", {
+                            category: t(`suppliers.cat.${s.category}`),
+                          })}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            {user?.is_admin ? (
+                              <Link
+                                to={`/app/suppliers/${encodeURIComponent(s.id)}`}
+                                className="truncate text-sm font-semibold hover:underline"
+                              >
+                                {s.name}
+                              </Link>
+                            ) : (
+                              <h3 className="truncate text-sm font-semibold">{s.name}</h3>
+                            )}
+                            {s.source === "community" && s.submitter_type === "self" && (
+                              <span
+                                className="hidden shrink-0 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 sm:inline-flex"
+                                title={t("suppliers.self_pill_tooltip")}
+                                aria-label={t("suppliers.self_pill_tooltip")}
+                              >
+                                <Store size={10} aria-hidden />
+                                {t("suppliers.self_pill")}
+                              </span>
+                            )}
+                            {s.source === "community" && s.submitter_type !== "self" && (
+                              <span
+                                className="hidden shrink-0 items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300 sm:inline-flex"
+                                title={t("suppliers.community_pill_tooltip")}
+                                aria-label={t("suppliers.community_pill_tooltip")}
+                              >
+                                <Users size={10} aria-hidden />
+                                {t("suppliers.community_pill")}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
+                            <span className="inline-flex items-center gap-1 uppercase tracking-wide">
+                              <Icon size={11} aria-hidden />
+                              {t(`suppliers.cat.${s.category}`)}
+                            </span>
+                            {s.venue_style && (
+                              <>
+                                <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                                  ·
+                                </span>
+                                <span className="uppercase tracking-wide text-ink-600 dark:text-umber-200">
+                                  {t(`suppliers.venue_style.${s.venue_style}`)}
+                                </span>
+                              </>
+                            )}
+                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                              ·
+                            </span>
+                            <span className="uppercase tracking-wide">{s.city}</span>
+                            <DistanceHint
+                              queryNorm={queryNorm}
+                              city={s.city}
+                              lat={s.lat}
+                              lng={s.lng}
+                            />
+                            {s.price_band !== null && (
+                              <>
+                                <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                                  ·
+                                </span>
+                                <span
+                                  className="text-ink-600 dark:text-umber-200"
+                                  title={t("suppliers.price_legend")}
+                                >
+                                  <PriceBandDots band={s.price_band} />
+                                </span>
+                              </>
+                            )}
+                            {(s.capacity_max ?? 0) > 0 && (
+                              <>
+                                <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                                  ·
+                                </span>
+                                <span className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200">
+                                  <Users size={11} aria-hidden />
+                                  {s.capacity_min && s.capacity_max
+                                    ? t("suppliers.capacity_range", {
+                                        min: s.capacity_min,
+                                        max: s.capacity_max,
+                                      })
+                                    : t("suppliers.capacity_max_only", {
+                                        max: s.capacity_max ?? 0,
+                                      })}
+                                </span>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        {/* Action cluster: contact CTAs collapse to icons on small
+                      widths so the row never wraps. Star + vote pinned to the
+                      far right. */}
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <a
+                            href={s.website}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="btn-outline btn-sm"
+                            aria-label={t("suppliers.visit_website")}
+                            onClick={() => trackSupplierClick(s.id, "website_click")}
+                          >
+                            <span className="hidden md:inline">{t("suppliers.visit_website")}</span>
+                            <span className="md:hidden">→</span>
+                          </a>
+                          {s.contact_phone && (
+                            <PhoneReveal
+                              phone={s.contact_phone}
+                              onCall={() => trackSupplierClick(s.id, "phone_click")}
+                              iconOnly
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => togglePicked(s)}
+                            aria-label={
+                              isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")
+                            }
+                            aria-pressed={isPicked}
+                            title={t("suppliers.pick_aria")}
+                            className={
+                              isPicked
+                                ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                                : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                            }
+                          >
+                            {isPicked ? (
+                              <BookmarkCheck size={15} className="fill-sage-200" aria-hidden />
+                            ) : (
+                              <Bookmark size={15} aria-hidden />
+                            )}
+                          </button>
+                          <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
+                          <CompareToggle
+                            supplierId={s.id}
+                            isCompared={isCompared}
+                            capReached={compareCapReached}
+                            onToggle={() => toggleCompare(s.id)}
+                            t={t}
+                          />
+                          <ReportButton
+                            onReport={() =>
+                              setReporting({
+                                id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
+                                name: s.name,
+                              })
+                            }
+                            t={t}
+                          />
+                          <VoteRow supplier={s} onVote={onVote} t={t} />
+                        </div>
+                      </article>
+                    );
+                  }
                   return (
                     <article
                       key={s.id}
                       data-supplier-id={s.id}
-                      className={`relative flex items-center gap-3 rounded-2xl border border-sage-300 bg-sage-50/60 px-4 py-3 transition hover:border-sage-400 hover:shadow-sm dark:border-sage-400/40 dark:bg-sage-400/15 dark:hover:border-sage-400/60 ${
-                        isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
-                      }`}
+                      onClick={() => navigate(`/app/suppliers/${encodeURIComponent(s.id)}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter")
+                          navigate(`/app/suppliers/${encodeURIComponent(s.id)}`);
+                      }}
+                      tabIndex={0}
+                      className={`card !p-0 relative flex h-full flex-col cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${
+                        isPicked ? "border-2 border-sage-500 dark:border-sage-400/60" : ""
+                      } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                     >
-                      {/* DIY supplier card — couple-saved row from
-                        `couple_suppliers`, no `listings` join. The hero-image
-                        upload is vendor-only (P2.D), so the monogram fallback
-                        stays for this view. */}
-                      <Avatar name={s.name} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="truncate text-sm font-semibold">{s.name}</h3>
-                          <span className="hidden shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300 sm:inline-flex">
-                            {t("suppliers.diy_pill")}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
-                          <span className="inline-flex items-center gap-1 uppercase tracking-wide">
-                            <Icon size={11} aria-hidden />
-                            {t(`suppliers.cat.${s.category}`)}
-                          </span>
-                          {s.price_huf !== null && s.price_huf > 0 && (
-                            <>
-                              <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                                ·
-                              </span>
-                              <span className="inline-flex items-center gap-1 whitespace-nowrap text-sage-700 dark:text-sage-300">
-                                <Wallet size={11} aria-hidden />
-                                {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
-                              </span>
-                            </>
-                          )}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={openEdit}
-                        aria-label={t("suppliers.diy_action_edit_aria")}
-                        className="inline-flex h-7 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-3 text-xs font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
-                      >
-                        <Pencil size={12} aria-hidden />
-                        <span className="hidden sm:inline">{t("suppliers.diy_modal_edit")}</span>
-                      </button>
-                    </article>
-                  );
-                }
-                return (
-                  <article
-                    key={s.id}
-                    data-supplier-id={s.id}
-                    className={`card !p-4 relative flex h-full flex-col border-sage-400 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15 ${
-                      isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={openEdit}
-                      aria-label={t("suppliers.diy_action_edit_aria")}
-                      className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-600 transition hover:bg-sage-100 hover:text-sage-800 dark:text-sage-300 dark:hover:bg-sage-400/20 dark:hover:text-sage-200"
-                    >
-                      <Pencil size={14} aria-hidden />
-                    </button>
-                    <div className="flex items-start gap-3 pr-8">
-                      {/* Same DIY supplier card as above (expanded layout) — no
-                        listings join, monogram fallback only. */}
-                      <Avatar name={s.name} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="truncate text-base font-semibold">{s.name}</h3>
-                          <span className="shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300">
-                            {t("suppliers.diy_pill")}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
-                          <span className="inline-flex items-center gap-1 uppercase tracking-wide">
-                            <Icon size={12} aria-hidden />
-                            {t(`suppliers.cat.${s.category}`)}
-                          </span>
-                          {s.price_huf !== null && s.price_huf > 0 && (
-                            <>
-                              <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                                ·
-                              </span>
-                              <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-sage-700 dark:text-sage-300">
-                                <Wallet size={12} aria-hidden />
-                                {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
-                              </span>
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    {s.notes && (
-                      <p className="mt-2 line-clamp-3 text-sm text-ink-700 dark:text-paper-100">
-                        {s.notes}
-                      </p>
-                    )}
-                    <div className="mt-auto flex items-center justify-end gap-2 pt-3">
-                      <button
-                        type="button"
-                        onClick={openEdit}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-medium text-sage-700 transition hover:border-sage-500 hover:bg-sage-100 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
-                      >
-                        <Pencil size={13} aria-hidden />
-                        {t("suppliers.diy_modal_edit")}
-                      </button>
-                    </div>
-                  </article>
-                );
-              }
-              if (viewMode === "line") {
-                return (
-                  <article
-                    key={s.id}
-                    data-supplier-id={s.id}
-                    className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition hover:shadow-sm ${
-                      isPicked
-                        ? "border-sage-400 bg-sage-50/70 dark:border-sage-400/40 dark:bg-sage-400/15"
-                        : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
-                    } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
-                  >
-                    <Avatar
-                      name={s.name}
-                      heroUrl={s.hero_image_url}
-                      category={s.category}
-                      onClick={() => filterByCategory(s.category)}
-                      ariaLabel={t("suppliers.show_all_in_category", {
-                        category: t(`suppliers.cat.${s.category}`),
-                      })}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        {user?.is_admin ? (
-                          <Link
-                            to={`/app/suppliers/${encodeURIComponent(s.id)}`}
-                            className="truncate text-sm font-semibold hover:underline"
-                          >
-                            {s.name}
-                          </Link>
+                      {/* Hero image — the card's focal point. Pick + save float
+                      top-right; the contact actions float bottom-left so they
+                      live ON the card rather than in a separate text footer. */}
+                      <div className="relative h-40 w-full shrink-0 bg-paper-200 dark:bg-umber-700">
+                        {s.hero_image_url ? (
+                          <img
+                            src={s.hero_image_url}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
                         ) : (
-                          <h3 className="truncate text-sm font-semibold">{s.name}</h3>
+                          // No hero image: a deliberate-looking category badge, not
+                          // a bare glyph (a lone faint icon reads as a broken image).
+                          <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+                            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-paper-50 text-ink-400 shadow-sm dark:bg-umber-800 dark:text-umber-300">
+                              <Icon size={24} aria-hidden />
+                            </span>
+                            <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
+                              {t(`suppliers.cat.${s.category}`)}
+                            </span>
+                          </div>
                         )}
-                        {s.source === "community" && s.submitter_type === "self" && (
-                          <span
-                            className="hidden shrink-0 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 sm:inline-flex"
-                            title={t("suppliers.self_pill_tooltip")}
-                            aria-label={t("suppliers.self_pill_tooltip")}
+                        {/* Top-right: pick + save */}
+                        <div
+                          className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => togglePicked(s)}
+                            aria-label={
+                              isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")
+                            }
+                            aria-pressed={isPicked}
+                            title={t("suppliers.pick_aria")}
+                            className={
+                              isPicked
+                                ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                                : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                            }
                           >
-                            <Store size={10} aria-hidden />
-                            {t("suppliers.self_pill")}
-                          </span>
-                        )}
-                        {s.source === "community" && s.submitter_type !== "self" && (
-                          <span
-                            className="hidden shrink-0 items-center gap-1 rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300 sm:inline-flex"
-                            title={t("suppliers.community_pill_tooltip")}
-                            aria-label={t("suppliers.community_pill_tooltip")}
-                          >
-                            <Users size={10} aria-hidden />
-                            {t("suppliers.community_pill")}
-                          </span>
-                        )}
+                            {isPicked ? (
+                              <BookmarkCheck size={13} className="fill-sage-200" aria-hidden />
+                            ) : (
+                              <Bookmark size={13} aria-hidden />
+                            )}
+                          </button>
+                          <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
+                        </div>
+                        {/* Bottom-right: compare + community vote, also on the card */}
+                        <div
+                          className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <CompareToggle
+                            supplierId={s.id}
+                            isCompared={isCompared}
+                            capReached={compareCapReached}
+                            onToggle={() => toggleCompare(s.id)}
+                            t={t}
+                          />
+                          <VoteRow supplier={s} onVote={onVote} t={t} />
+                        </div>
                       </div>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
-                        <span className="inline-flex items-center gap-1 uppercase tracking-wide">
-                          <Icon size={11} aria-hidden />
-                          {t(`suppliers.cat.${s.category}`)}
-                        </span>
-                        {s.venue_style && (
-                          <>
-                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                              ·
-                            </span>
-                            <span className="uppercase tracking-wide text-ink-600 dark:text-umber-200">
-                              {t(`suppliers.venue_style.${s.venue_style}`)}
-                            </span>
-                          </>
-                        )}
-                        <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                          ·
-                        </span>
-                        <span className="uppercase tracking-wide">{s.city}</span>
-                        <DistanceHint queryNorm={queryNorm} city={s.city} lat={s.lat} lng={s.lng} />
-                        {s.price_band !== null && (
-                          <>
-                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                              ·
-                            </span>
+                      {/* Card body — name + price on one line and a single tight
+                      meta line. No address/blurb/action row (all moved onto the
+                      hero image above) so the body stays minimal. */}
+                      <div
+                        className={`flex flex-1 flex-col px-4 pb-3 pt-2.5 ${isPicked ? "bg-sage-50/60 dark:bg-sage-400/15" : ""}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="min-w-0 flex-1 truncate text-base font-semibold">
+                            {s.name}
+                          </h3>
+                          {s.price_band !== null && (
                             <span
-                              className="text-ink-600 dark:text-umber-200"
+                              className="shrink-0 text-ink-600 dark:text-umber-200"
                               title={t("suppliers.price_legend")}
+                              aria-label={t("suppliers.price_legend")}
                             >
                               <PriceBandDots band={s.price_band} />
                             </span>
-                          </>
-                        )}
-                        {(s.capacity_max ?? 0) > 0 && (
-                          <>
-                            <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                              ·
-                            </span>
-                            <span className="inline-flex items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200">
+                          )}
+                        </div>
+                        <p className="mt-0.5 flex min-w-0 items-center gap-x-1.5 truncate text-xs text-ink-500 dark:text-umber-300">
+                          <Icon size={12} className="shrink-0" aria-hidden />
+                          <span className="uppercase tracking-wide">
+                            {t(`suppliers.cat.${s.category}`)}
+                          </span>
+                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                            ·
+                          </span>
+                          <span className="uppercase tracking-wide">{s.city}</span>
+                          <DistanceHint
+                            queryNorm={queryNorm}
+                            city={s.city}
+                            lat={s.lat}
+                            lng={s.lng}
+                          />
+                          {(s.capacity_max ?? 0) > 0 && (
+                            <span
+                              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200"
+                              aria-label={t("suppliers.capacity_label")}
+                            >
+                              <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                                ·
+                              </span>
                               <Users size={11} aria-hidden />
                               {s.capacity_min && s.capacity_max
                                 ? t("suppliers.capacity_range", {
@@ -1834,241 +2063,54 @@ export default function SuppliersPage() {
                                   })
                                 : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
                             </span>
-                          </>
-                        )}
-                      </p>
-                    </div>
-                    {/* Action cluster: contact CTAs collapse to icons on small
-                      widths so the row never wraps. Star + vote pinned to the
-                      far right. */}
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <a
-                        href={s.website}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="btn-outline btn-sm"
-                        aria-label={t("suppliers.visit_website")}
-                        onClick={() => trackSupplierClick(s.id, "website_click")}
-                      >
-                        <span className="hidden md:inline">{t("suppliers.visit_website")}</span>
-                        <span className="md:hidden">→</span>
-                      </a>
-                      {s.contact_phone && (
-                        <PhoneReveal
-                          phone={s.contact_phone}
-                          onCall={() => trackSupplierClick(s.id, "phone_click")}
-                          iconOnly
-                        />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => togglePicked(s)}
-                        aria-label={
-                          isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")
-                        }
-                        aria-pressed={isPicked}
-                        title={t("suppliers.pick_aria")}
-                        className={
-                          isPicked
-                            ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                            : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
-                        }
-                      >
-                        {isPicked ? (
-                          <BookmarkCheck size={15} className="fill-sage-200" aria-hidden />
-                        ) : (
-                          <Bookmark size={15} aria-hidden />
-                        )}
-                      </button>
-                      <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
-                      <CompareToggle
-                        supplierId={s.id}
-                        isCompared={isCompared}
-                        capReached={compareCapReached}
-                        onToggle={() => toggleCompare(s.id)}
-                        t={t}
-                      />
-                      <ReportButton
-                        onReport={() =>
-                          setReporting({
-                            id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                            name: s.name,
-                          })
-                        }
-                        t={t}
-                      />
-                      <VoteRow supplier={s} onVote={onVote} t={t} />
-                    </div>
-                  </article>
-                );
-              }
-              return (
-                <article
-                  key={s.id}
-                  data-supplier-id={s.id}
-                  onClick={() => navigate(`/app/suppliers/${encodeURIComponent(s.id)}`)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") navigate(`/app/suppliers/${encodeURIComponent(s.id)}`);
-                  }}
-                  tabIndex={0}
-                  className={`card !p-0 relative flex h-full flex-col cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${
-                    isPicked ? "border-2 border-sage-500 dark:border-sage-400/60" : ""
-                  } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
-                >
-                  {/* Hero image — the card's focal point. Pick + save float
-                      top-right; the contact actions float bottom-left so they
-                      live ON the card rather than in a separate text footer. */}
-                  <div className="relative h-40 w-full shrink-0 bg-paper-200 dark:bg-umber-700">
-                    {s.hero_image_url ? (
-                      <img
-                        src={s.hero_image_url}
-                        alt=""
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      // No hero image: a deliberate-looking category badge, not
-                      // a bare glyph (a lone faint icon reads as a broken image).
-                      <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-                        <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-paper-50 text-ink-400 shadow-sm dark:bg-umber-800 dark:text-umber-300">
-                          <Icon size={24} aria-hidden />
-                        </span>
-                        <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
-                          {t(`suppliers.cat.${s.category}`)}
-                        </span>
+                          )}
+                        </p>
                       </div>
-                    )}
-                    {/* Top-right: pick + save */}
-                    <div
-                      className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => togglePicked(s)}
-                        aria-label={
-                          isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")
-                        }
-                        aria-pressed={isPicked}
-                        title={t("suppliers.pick_aria")}
-                        className={
-                          isPicked
-                            ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
-                        }
-                      >
-                        {isPicked ? (
-                          <BookmarkCheck size={13} className="fill-sage-200" aria-hidden />
-                        ) : (
-                          <Bookmark size={13} aria-hidden />
-                        )}
-                      </button>
-                      <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
-                    </div>
-                    {/* Bottom-right: compare + community vote, also on the card */}
-                    <div
-                      className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <CompareToggle
-                        supplierId={s.id}
-                        isCompared={isCompared}
-                        capReached={compareCapReached}
-                        onToggle={() => toggleCompare(s.id)}
-                        t={t}
-                      />
-                      <VoteRow supplier={s} onVote={onVote} t={t} />
-                    </div>
-                  </div>
-                  {/* Card body — name + price on one line and a single tight
-                      meta line. No address/blurb/action row (all moved onto the
-                      hero image above) so the body stays minimal. */}
-                  <div
-                    className={`flex flex-1 flex-col px-4 pb-3 pt-2.5 ${isPicked ? "bg-sage-50/60 dark:bg-sage-400/15" : ""}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="min-w-0 flex-1 truncate text-base font-semibold">{s.name}</h3>
-                      {s.price_band !== null && (
-                        <span
-                          className="shrink-0 text-ink-600 dark:text-umber-200"
-                          title={t("suppliers.price_legend")}
-                          aria-label={t("suppliers.price_legend")}
-                        >
-                          <PriceBandDots band={s.price_band} />
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 flex min-w-0 items-center gap-x-1.5 truncate text-xs text-ink-500 dark:text-umber-300">
-                      <Icon size={12} className="shrink-0" aria-hidden />
-                      <span className="uppercase tracking-wide">
-                        {t(`suppliers.cat.${s.category}`)}
-                      </span>
-                      <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                        ·
-                      </span>
-                      <span className="uppercase tracking-wide">{s.city}</span>
-                      <DistanceHint queryNorm={queryNorm} city={s.city} lat={s.lat} lng={s.lng} />
-                      {(s.capacity_max ?? 0) > 0 && (
-                        <span
-                          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200"
-                          aria-label={t("suppliers.capacity_label")}
-                        >
-                          <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                            ·
-                          </span>
-                          <Users size={11} aria-hidden />
-                          {s.capacity_min && s.capacity_max
-                            ? t("suppliers.capacity_range", {
-                                min: s.capacity_min,
-                                max: s.capacity_max,
-                              })
-                            : t("suppliers.capacity_max_only", { max: s.capacity_max ?? 0 })}
-                        </span>
-                      )}
+                      {/* end card body */}
+                    </article>
+                  );
+                })}
+                {filtered.length === 0 && items.length > 0 && (
+                  <div className="col-span-full flex flex-col items-center gap-2 py-8 text-center">
+                    <p className="text-sm text-ink-500 dark:text-umber-300">
+                      {countryScope
+                        ? t("suppliers.empty_country", {
+                            country: countryName(countryScope, locale),
+                          })
+                        : t("suppliers.empty_filtered")}
                     </p>
-                  </div>
-                  {/* end card body */}
-                </article>
-              );
-            })}
-            {filtered.length === 0 && items.length > 0 && (
-              <div className="col-span-full flex flex-col items-center gap-2 py-8 text-center">
-                <p className="text-sm text-ink-500 dark:text-umber-300">
-                  {countryScope
-                    ? t("suppliers.empty_country", {
-                        country: countryName(countryScope, locale),
-                      })
-                    : t("suppliers.empty_filtered")}
-                </p>
-                {/* When the emptiness is caused by the country scope, offer a
+                    {/* When the emptiness is caused by the country scope, offer a
                     one-tap widen to "Mind"/All rather than leaving the couple
                     at a dead end (audit item 12). */}
-                {countryScope && (
-                  <button
-                    type="button"
-                    onClick={() => setCountryFilter("all")}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-                  >
-                    <Globe size={13} aria-hidden />
-                    {t("suppliers.empty_country_show_all")}
-                  </button>
+                    {countryScope && (
+                      <button
+                        type="button"
+                        onClick={() => setCountryFilter("all")}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                      >
+                        <Globe size={13} aria-hidden />
+                        {t("suppliers.empty_country_show_all")}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-          {filtered.length > visibleCount && (
-            <div className="flex justify-center pt-3">
-              <button
-                type="button"
-                onClick={() => setVisibleCount((c) => c + SUPPLIERS_PAGE_SIZE)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-4 text-sm font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-              >
-                {t("suppliers.load_more", { n: filtered.length - visibleCount })}
-              </button>
-            </div>
+              {filtered.length > visibleCount && (
+                <div className="flex justify-center pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((c) => c + SUPPLIERS_PAGE_SIZE)}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-4 text-sm font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                  >
+                    {t("suppliers.load_more", { n: filtered.length - visibleCount })}
+                  </button>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+        <PlannerDirectoryRail />
+      </div>
 
       {/* Outreach Inbox — the "shop → message" flow lives on the same
           page as the directory so couples can shortlist + reach out

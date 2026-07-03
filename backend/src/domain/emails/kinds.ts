@@ -58,6 +58,8 @@ export type EmailKind =
   | "planner_access_approved" // couple approved the planner's access request, heads-up to the planner
   | "planner_client_invite" // couple invited a planner to their workspace, heads-up to the planner
   | "planner_email_invite" // planner invited a not-yet-registered person by email to become their client
+  | "planner_waitlist_received" // /planners application confirm, next-step CTA (register / open dashboard)
+  | "planner_invite_outcome" // planner accepted or declined the couple's invite, heads-up to the couple
   | "newsletter_confirm"; // double opt-in confirm link for the landing/blog newsletter capture
 
 export type EmailCategory = "transactional" | "lifecycle" | "outreach";
@@ -160,6 +162,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Outreach: admin manually triages a planner's waitlist submission. The
   // planner expects the reply; treated like the vendor decision mail.
   planner_waitlist_decision: "outreach",
+  // Outreach: planner submitted the /planners application; like the vendor
+  // waitlist confirm, they may have no Weddly account yet.
+  planner_waitlist_received: "outreach",
   // Transactional: the admin provisioned an account in the recipient's name
   // (agreed in person beforehand) and the activation link inside is the only
   // way into that account, so it must always deliver.
@@ -212,8 +217,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // become their client. The recipient explicitly receives a signup link they
   // are expected to act on, so it is never opt-out suppressed.
   planner_email_invite: "transactional",
+  // Transactional: the resolution of the couple's own invite; the planner
+  // accepted or declined, and the couple is waiting to hear which.
+  planner_invite_outcome: "transactional",
   // Outreach: the recipient typed their email into the public capture form but
-  // has no Weddly account — same footer framing as vendor_waitlist_received
+  // has no Weddly account, same footer framing as vendor_waitlist_received
   // ("no account, ignore = nothing happens"), which is literally true: without
   // the confirm click the address never receives another mail.
   newsletter_confirm: "outreach",

@@ -16,6 +16,7 @@ import { type CSSProperties, Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PlannerDemoLaunchButton } from "../components/PlannerDemoLaunchButton";
 import { PublicShell } from "../components/PublicShell";
+import { useAuth } from "../lib/auth";
 import { plannerWaitlistApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -346,6 +347,7 @@ const EMPTY: FormState = {
 
 function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
   const { t } = useT();
+  const { user } = useAuth();
   const [step, setStep] = useState<Step>(0);
   const [form, setForm] = useState<FormState>({ ...EMPTY, selected_plan: initialPlan });
   const [prevPlan, setPrevPlan] = useState<Plan | "">(initialPlan);
@@ -464,15 +466,22 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
             </span>
           </p>
         )}
-        <p className="text-umber-700 dark:text-umber-300">{t("planners.success_body")}</p>
+        <p className="text-umber-700 dark:text-umber-300">
+          {t(user ? "planners.success_body_authed" : "planners.success_body")}
+        </p>
 
         <div className="mt-8 border-t border-paper-200 pt-6 dark:border-umber-800">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
             {t("planners.success_next_intro")}
           </p>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-5">
-            <Link to="/" className="btn-primary px-5 py-2.5 text-sm">
-              {t("planners.success_explore")}
+            {/* The grant is applied at REGISTER time for signed-out applicants,
+                so the primary CTA must carry them to signup, not the landing. */}
+            <Link
+              to={user ? "/app/planner" : "/signup"}
+              className="btn-primary px-5 py-2.5 text-sm"
+            >
+              {t(user ? "planners.success_cta_dashboard" : "planners.success_cta_signup")}
             </Link>
             <div className="flex items-center gap-2">
               <span className="text-sm text-umber-600 dark:text-umber-300">

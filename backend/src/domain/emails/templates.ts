@@ -500,6 +500,24 @@ export interface PlannerEmailInvitePayload {
   replyToEmail?: string;
 }
 
+export interface PlannerWaitlistReceivedPayload {
+  /** Applicant's name, used in the greeting. */
+  plannerName: string;
+  /** Whether the applicant was signed in when applying. Signed-in applicants
+   *  already hold the planner grant (CTA → dashboard); signed-out ones must
+   *  register with the SAME email to receive it (CTA → signup). */
+  hasAccount: boolean;
+}
+
+export interface PlannerInviteOutcomePayload {
+  /** Planner's display label (business name / full name / fallback). */
+  plannerLabel: string;
+  /** true = the planner accepted the couple's invite; false = declined. */
+  accepted: boolean;
+  /** Planner's email on accept, so the couple can reply directly. */
+  replyToEmail?: string;
+}
+
 export interface NewsletterConfirmPayload {
   /** Double opt-in confirm link ({FRONTEND_BASE_URL}/newsletter/confirm/…). */
   confirmUrl: string;
@@ -561,6 +579,8 @@ export type KindPayload = {
   planner_access_approved: PlannerAccessApprovedPayload;
   planner_client_invite: PlannerClientInvitePayload;
   planner_email_invite: PlannerEmailInvitePayload;
+  planner_waitlist_received: PlannerWaitlistReceivedPayload;
+  planner_invite_outcome: PlannerInviteOutcomePayload;
   newsletter_confirm: NewsletterConfirmPayload;
 };
 
@@ -2159,6 +2179,87 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Create an account and set up your wedding workspace. You can then approve your planner so they can help organise everything.",
       ],
       cta: "Create your account",
+    },
+  }),
+
+  // Confirmation for the /planners application. Doubles as the funnel's most
+  // important nudge: a signed-out applicant only becomes a planner when they
+  // register with the SAME email, so the CTA must carry them to signup.
+  planner_waitlist_received: (p) => ({
+    subject: "Megkaptuk a jelentkezésed / Application received · Weddly",
+    ctaUrl: p.hasAccount
+      ? `${CONFIG.frontendBaseUrl}/app/planner`
+      : `${CONFIG.frontendBaseUrl}/signup`,
+    hu: {
+      preheader: "A szervezői hozzáférésed készen áll.",
+      greeting: `Szia ${p.plannerName}!`,
+      paragraphs: p.hasAccount
+        ? [
+            "Köszönjük a jelentkezésed a Weddly tervezői programjába. A szervezői fiókod aktív, beléphetsz a tervező felületre.",
+            "Töltsd ki a profilod (vállalkozásnév és város), hogy megjelenj a pároknak szóló szervezői ajánlóban, és érkezhessenek a megkeresések.",
+          ]
+        : [
+            "Köszönjük a jelentkezésed a Weddly tervezői programjába. A hozzáférésed készen áll.",
+            "Már csak egy lépés van hátra: regisztrálj **ugyanezzel az e-mail címmel**, és a fiókod automatikusan szervezői fiókként jön létre.",
+            "Ezután töltsd ki a profilod (vállalkozásnév és város), hogy megjelenj a pároknak szóló szervezői ajánlóban.",
+          ],
+      cta: p.hasAccount ? "Tervező felület megnyitása" : "Fiók létrehozása",
+    },
+    en: {
+      greeting: `Hi ${p.plannerName},`,
+      paragraphs: p.hasAccount
+        ? [
+            "Thanks for applying to the Weddly planner programme. Your planner account is active and your dashboard is ready.",
+            "Fill in your profile (business name and city) to appear in the planner directory couples browse, so inquiries can start coming in.",
+          ]
+        : [
+            "Thanks for applying to the Weddly planner programme. Your access is ready.",
+            "One step left: create an account with **this same email address** and it will automatically be set up as a planner account.",
+            "Then fill in your profile (business name and city) to appear in the planner directory couples browse.",
+          ],
+      cta: p.hasAccount ? "Open planner dashboard" : "Create your account",
+    },
+  }),
+
+  // The resolution of a couple's planner invite. The couple asked, the planner
+  // answered. Without this mail an accept is invisible until the couple
+  // happens to reopen their settings page.
+  planner_invite_outcome: (p, ctx) => ({
+    subject: p.accepted
+      ? "A szervező elfogadta a meghívásod / Your planner accepted · Weddly"
+      : "A szervező elutasította a meghívásod / Your planner declined · Weddly",
+    ctaUrl: p.accepted
+      ? `${CONFIG.frontendBaseUrl}/app/settings/workspace`
+      : `${CONFIG.frontendBaseUrl}/app/vendors`,
+    replyTo: p.accepted ? p.replyToEmail : undefined,
+    hu: {
+      preheader: p.accepted
+        ? `${p.plannerLabel} elfogadta a meghívásod.`
+        : `${p.plannerLabel} elutasította a meghívásod.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: p.accepted
+        ? [
+            `**${p.plannerLabel}** elfogadta a meghívásod, mostantól hozzáfér a munkaterületetekhez, és segíthet a szervezésben.`,
+            "A hozzáférését bármikor visszavonhatod a munkaterület beállításai között.",
+          ]
+        : [
+            `**${p.plannerLabel}** most nem tudta elfogadni a meghívásod.`,
+            "A szervezői ajánlóban találsz további esküvőszervezőket, akiket felkérhetsz.",
+          ],
+      cta: p.accepted ? "Munkaterület beállítások" : "Szervezők böngészése",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: p.accepted
+        ? [
+            `**${p.plannerLabel}** accepted your invite and can now access your workspace to help with the planning.`,
+            "You can withdraw their access any time from your workspace settings.",
+          ]
+        : [
+            `**${p.plannerLabel}** couldn't accept your invite right now.`,
+            "You'll find more wedding planners to reach out to in the planner directory.",
+          ],
+      cta: p.accepted ? "Open workspace settings" : "Browse planners",
     },
   }),
 

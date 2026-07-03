@@ -271,6 +271,15 @@ const STUBS: KindPayload = {
     inviteUrl: "https://tryweddly.com/signup?planner_invite=sample-token",
     replyToEmail: "hello@eventful.studio",
   },
+  planner_waitlist_received: {
+    plannerName: "Anna",
+    hasAccount: false,
+  },
+  planner_invite_outcome: {
+    plannerLabel: "Eventful Studio",
+    accepted: true,
+    replyToEmail: "hello@eventful.studio",
+  },
   newsletter_confirm: {
     confirmUrl: `${BASE_URL}/newsletter/confirm/preview-token`,
   },
