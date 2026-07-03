@@ -16,6 +16,7 @@
 // dedicated visibility toggle, which refuses to touch moderation states.
 
 import {
+  MAX_LISTING_PHOTOS,
   priceBandLockedUntil,
   type VendorListingEditInput,
   type VendorListingView,
@@ -30,8 +31,13 @@ import {
 } from "../domain/community_suppliers";
 import { clearCuratedOverride, setCuratedOverride } from "../domain/curated_overrides";
 import {
+  addListingPhoto,
+  countListingPhotos,
+  deleteListingPhoto,
   getListingById,
   getListingByVendorAccountId,
+  getListingPhoto,
+  listListingPhotos,
   patchListing,
   toVendorAccount,
   type ListingPatch,
@@ -67,7 +73,11 @@ export function resolveVendorListing(ctx: Ctx): VendorListingView {
 async function handleGetMe(ctx: Ctx): Promise<Response> {
   const view = resolveVendorListing(ctx);
   const sub = getVendorSub(view.account.id);
-  return json({ ...view, billing: sub ? toVendorBilling(sub) : null });
+  return json({
+    ...view,
+    billing: sub ? toVendorBilling(sub) : null,
+    photos: listListingPhotos(view.listing.id),
+  });
 }
 
 // ── PATCH input parsing ────────────────────────────────────────────────────
@@ -201,7 +211,11 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
       ...(patch.price_band !== undefined ? { price_band: patch.price_band } : {}),
     },
   });
-  const view: VendorListingView = { listing: updated, account };
+  const view: VendorListingView = {
+    listing: updated,
+    account,
+    photos: listListingPhotos(updated.id),
+  };
   return json(view);
 }
 
@@ -222,9 +236,10 @@ const SUPPORTED_HERO_MIMES: Record<string, "jpg" | "png" | "webp"> = {
   "image/webp": "webp",
 };
 
-async function handleUploadHero(ctx: Ctx): Promise<Response> {
-  const { listing, account } = resolveVendorListing(ctx);
-
+/** Pull + validate the `file` field of a multipart image upload (hero and
+ *  gallery share the exact same rules) and return it with its magic-bytes
+ *  extension. Never trusts the client Content-Type. */
+async function readUploadedImage(ctx: Ctx): Promise<{ raw: File; ext: "jpg" | "png" | "webp" }> {
   // Bun parses multipart natively via `Request.formData()`. The field name
   // is `file` to match the conventional <input type="file" name="file" />
   // used by the vendor home page's upload widget.
@@ -257,6 +272,12 @@ async function handleUploadHero(ctx: Ctx): Promise<Response> {
       code: "unsupported_type",
     });
   }
+  return { raw, ext };
+}
+
+async function handleUploadHero(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const { raw, ext } = await readUploadedImage(ctx);
 
   const key = `listings/${listing.id}/hero.${ext}`;
 
@@ -292,7 +313,11 @@ async function handleUploadHero(ctx: Ctx): Promise<Response> {
   if (!refreshed) {
     throw new HttpError(404, "Listing vanished mid-upload");
   }
-  const view: VendorListingView = { listing: refreshed, account };
+  const view: VendorListingView = {
+    listing: refreshed,
+    account,
+    photos: listListingPhotos(refreshed.id),
+  };
   return json(view);
 }
 
@@ -301,7 +326,7 @@ async function handleDeleteHero(ctx: Ctx): Promise<Response> {
   if (!listing.hero_image_url) {
     // Idempotent: deleting a non-existent hero is fine — the client may
     // double-click or replay the action after a network blip.
-    const view: VendorListingView = { listing, account };
+    const view: VendorListingView = { listing, account, photos: listListingPhotos(listing.id) };
     return json(view);
   }
   const k = keyFromUploadUrl(listing.hero_image_url);
@@ -322,7 +347,77 @@ async function handleDeleteHero(ctx: Ctx): Promise<Response> {
   });
   const refreshed = getListingById(listing.id);
   if (!refreshed) throw new HttpError(404, "Listing vanished mid-delete");
-  const view: VendorListingView = { listing: refreshed, account };
+  const view: VendorListingView = {
+    listing: refreshed,
+    account,
+    photos: listListingPhotos(refreshed.id),
+  };
+  return json(view);
+}
+
+// ── Portfolio gallery ──────────────────────────────────────────────────────
+//
+// Up to MAX_LISTING_PHOTOS portfolio photos beyond the hero. Same validation
+// pipeline as the hero (size cap, mime allow-list, magic-byte sniff); each
+// photo gets a unique key so there is nothing to cache-bust, and the row id
+// is the delete handle. Public exposure: routes/suppliers.ts folds these into
+// the detail payload's gallery_urls (hero first).
+
+async function handleUploadPhoto(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  if (countListingPhotos(listing.id) >= MAX_LISTING_PHOTOS) {
+    throw new HttpError(409, `Gallery is full (max ${MAX_LISTING_PHOTOS} photos)`, {
+      code: "gallery_full",
+    });
+  }
+  const { raw, ext } = await readUploadedImage(ctx);
+
+  const ts = now();
+  // Unique name per upload: timestamp + entropy, so concurrent uploads never
+  // collide and old URLs stay immutable.
+  const name = `${ts}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const key = `listings/${listing.id}/gallery/${name}`;
+  await storage.write(key, raw);
+  const photo = addListingPhoto(listing.id, `/uploads/${key}`);
+
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_photo_upload",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id },
+    after: { photo_id: photo.id, url: photo.url, bytes: raw.size, mime: raw.type },
+  });
+
+  const view: VendorListingView = { listing, account, photos: listListingPhotos(listing.id) };
+  return json(view, { status: 201 });
+}
+
+async function handleDeletePhoto(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const photoId = Number(ctx.params.photo_id);
+  if (!Number.isInteger(photoId) || photoId <= 0) {
+    throw new HttpError(400, "photo_id must be a positive integer");
+  }
+  // Scoped lookup — a photo id belonging to another listing reads as absent,
+  // and deleting an absent photo is idempotent (double-click / replay safe).
+  const photo = getListingPhoto(listing.id, photoId);
+  if (photo) {
+    const k = keyFromUploadUrl(photo.url);
+    if (k) await storage.delete(k);
+    deleteListingPhoto(listing.id, photoId);
+    addAuditLog({
+      actor_user_id: account.owner_user_id,
+      couple_id: null,
+      action: "vendor.listing_photo_delete",
+      target_kind: "listing",
+      target_id: null,
+      before: { listing_id: listing.id, photo_id: photoId, url: photo.url },
+      after: {},
+    });
+  }
+  const view: VendorListingView = { listing, account, photos: listListingPhotos(listing.id) };
   return json(view);
 }
 
@@ -427,7 +522,11 @@ async function handleSetVisibility(ctx: Ctx): Promise<Response> {
   }
   const refreshed = getListingById(listing.id);
   if (!refreshed) throw new HttpError(404, "Listing vanished mid-update");
-  const view: VendorListingView = { listing: refreshed, account };
+  const view: VendorListingView = {
+    listing: refreshed,
+    account,
+    photos: listListingPhotos(refreshed.id),
+  };
   return json(view);
 }
 
@@ -469,5 +568,7 @@ export function registerVendorListingRoutes(router: Router) {
   router.post("/api/vendor/listing/me/visibility", handleSetVisibility);
   router.post("/api/vendor/listing/me/hero", handleUploadHero);
   router.delete("/api/vendor/listing/me/hero", handleDeleteHero);
+  router.post("/api/vendor/listing/me/photos", handleUploadPhoto);
+  router.delete("/api/vendor/listing/me/photos/:photo_id", handleDeletePhoto);
   router.post("/api/vendor/onboarding/complete", handleCompleteOnboarding);
 }

@@ -22,9 +22,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { Check, ExternalLink, Lock } from "lucide-react";
+import { Check, ExternalLink, Lock, Plus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
+  MAX_LISTING_PHOTOS,
   priceBandLockedUntil,
   type VendorAvailabilityView,
   type VendorListingEditInput,
@@ -222,8 +223,10 @@ export default function VendorListingPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [heroBusy, setHeroBusy] = useState(false);
+  const [galleryBusy, setGalleryBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const heroInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
   // Always-current form snapshot so an autosave can tell whether the vendor
   // kept typing during its round trip (reference changes on every keystroke).
   const formRef = useRef<FormState | null>(form);
@@ -297,6 +300,45 @@ export default function VendorListingPage() {
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) void uploadHeroFile(file);
+  };
+
+  // Gallery uploads run sequentially so a multi-select lands in pick order and
+  // the server cap (409 gallery_full) stops the batch cleanly.
+  const onGalleryPick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith("image/"));
+    e.target.value = "";
+    if (files.length === 0 || galleryBusy) return;
+    setGalleryBusy(true);
+    try {
+      for (const file of files) {
+        const next = await vendorListingApi.uploadPhoto(file);
+        setView(next);
+      }
+      toast.success(t("vendor_home.gallery_upload_success"));
+    } catch (err) {
+      const status = (err as { status?: number } | undefined)?.status;
+      toast.error(
+        status === 409
+          ? t("vendor_home.gallery_full", { max: String(MAX_LISTING_PHOTOS) })
+          : t("vendor_home.gallery_upload_failed"),
+      );
+    } finally {
+      setGalleryBusy(false);
+    }
+  };
+
+  const onGalleryDelete = async (photoId: number) => {
+    if (galleryBusy) return;
+    setGalleryBusy(true);
+    try {
+      const next = await vendorListingApi.deletePhoto(photoId);
+      setView(next);
+      toast.success(t("vendor_home.gallery_delete_success"));
+    } catch {
+      toast.error(t("vendor_home.gallery_delete_failed"));
+    } finally {
+      setGalleryBusy(false);
+    }
   };
 
   const onHeroDelete = async () => {
@@ -669,6 +711,68 @@ export default function VendorListingPage() {
                   </button>
                 </div>
               ) : null}
+            </fieldset>
+
+            {/* Portfolio gallery — up to MAX_LISTING_PHOTOS beyond the hero;
+                shows on the public detail page's thumbnail strip. */}
+            <fieldset className="card space-y-2.5 p-4" disabled={saving || galleryBusy}>
+              <legend className="font-semibold">{t("vendor_home.section_gallery")}</legend>
+              <p className="text-sm text-ink-600 dark:text-umber-200">
+                {t("vendor_home.gallery_intro")}
+              </p>
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                className="hidden"
+                onChange={(e) => void onGalleryPick(e)}
+              />
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {(view.photos ?? []).map((p) => (
+                  <div
+                    key={p.id}
+                    className="group relative aspect-[3/2] overflow-hidden rounded-lg bg-paper-100 dark:bg-umber-800"
+                  >
+                    <img
+                      src={p.url}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      aria-label={t("vendor_home.gallery_delete")}
+                      onClick={() => void onGalleryDelete(p.id)}
+                      disabled={galleryBusy}
+                      className="absolute right-1 top-1 rounded-full bg-ink-900/60 p-1 text-white opacity-0 transition-opacity hover:bg-ink-900/85 focus-visible:opacity-100 group-hover:opacity-100"
+                    >
+                      <X size={14} aria-hidden="true" />
+                    </button>
+                  </div>
+                ))}
+                {(view.photos?.length ?? 0) < MAX_LISTING_PHOTOS && (
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    disabled={galleryBusy}
+                    className="flex aspect-[3/2] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-paper-300 text-ink-500 transition hover:border-steel-400 hover:text-steel-600 dark:border-umber-700 dark:text-umber-300 dark:hover:border-steel-500"
+                  >
+                    <Plus size={18} aria-hidden="true" />
+                    <span className="text-xs font-medium">
+                      {galleryBusy
+                        ? t("vendor_home.hero_uploading")
+                        : t("vendor_home.gallery_add")}
+                    </span>
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-ink-500 dark:text-umber-300">
+                {t("vendor_home.gallery_count", {
+                  n: String(view.photos?.length ?? 0),
+                  max: String(MAX_LISTING_PHOTOS),
+                })}
+              </p>
             </fieldset>
 
             <fieldset className="card space-y-2.5 p-4" disabled={saving}>

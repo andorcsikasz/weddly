@@ -686,6 +686,18 @@ export interface LocaleMessages {
     hero_dropzone_hint: string;
     hero_dropzone_replace: string;
     hero_size_hint: string;
+    section_gallery: string;
+    gallery_intro: string;
+    /** Receives `{n}` current count and `{max}` cap. */
+    gallery_count: string;
+    gallery_add: string;
+    gallery_delete: string;
+    gallery_upload_success: string;
+    gallery_upload_failed: string;
+    /** Receives `{max}` cap. */
+    gallery_full: string;
+    gallery_delete_success: string;
+    gallery_delete_failed: string;
     preview_open: string;
     preview_no_photo: string;
     /** Receives `{min}` - minimum guest capacity. */

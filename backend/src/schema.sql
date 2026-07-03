@@ -1677,3 +1677,15 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   confirmed_at     INTEGER,
   unsubscribed_at  INTEGER
 );
+
+-- Listing photo gallery (beyond the single hero image). Claimed vendors
+-- upload up to a capped number of portfolio photos; the public supplier
+-- detail page surfaces them as gallery_urls (hero first). Files live under
+-- uploads: listings/<listing_id>/gallery/<name>.<ext> via lib/storage.ts.
+CREATE TABLE IF NOT EXISTS listing_photos (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  listing_id TEXT    NOT NULL,
+  url        TEXT    NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_listing_photos_listing ON listing_photos(listing_id);

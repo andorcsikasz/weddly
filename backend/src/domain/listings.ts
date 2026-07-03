@@ -24,6 +24,7 @@ import { DIRECTORY } from "./suppliers_data";
 import type { CommunitySupplierRow } from "./community_suppliers";
 import type {
   Listing,
+  ListingPhoto,
   ListingSource,
   ListingStatus,
   ListingSubmitterType,
@@ -513,4 +514,40 @@ export function listListingsByCategory(category: SupplierCategory | null): Listi
       : db.prepare("SELECT * FROM listings WHERE status = 'active' ORDER BY created_at DESC").all()
   ) as ListingRow[];
   return rows.map(toListing);
+}
+
+// ── Listing photo gallery ────────────────────────────────────────────────────
+// Portfolio photos beyond the single hero image. Oldest first so the vendor's
+// upload order is the display order.
+
+export function listListingPhotos(listingId: string): ListingPhoto[] {
+  return db
+    .prepare("SELECT id, url, created_at FROM listing_photos WHERE listing_id = ? ORDER BY id ASC")
+    .all(listingId) as ListingPhoto[];
+}
+
+export function countListingPhotos(listingId: string): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM listing_photos WHERE listing_id = ?")
+    .get(listingId) as { n: number };
+  return row.n;
+}
+
+export function addListingPhoto(listingId: string, url: string): ListingPhoto {
+  const ts = now();
+  const res = db
+    .prepare("INSERT INTO listing_photos (listing_id, url, created_at) VALUES (?, ?, ?)")
+    .run(listingId, url, ts);
+  return { id: Number(res.lastInsertRowid), url, created_at: ts };
+}
+
+export function getListingPhoto(listingId: string, photoId: number): ListingPhoto | null {
+  const row = db
+    .prepare("SELECT id, url, created_at FROM listing_photos WHERE id = ? AND listing_id = ?")
+    .get(photoId, listingId) as ListingPhoto | undefined;
+  return row ?? null;
+}
+
+export function deleteListingPhoto(listingId: string, photoId: number): void {
+  db.prepare("DELETE FROM listing_photos WHERE id = ? AND listing_id = ?").run(photoId, listingId);
 }

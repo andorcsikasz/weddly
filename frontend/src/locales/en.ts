@@ -530,6 +530,17 @@ const en: LocaleMessages = {
     hero_dropzone_replace: "Drop or click to replace",
     hero_size_hint:
       "Recommended size: 1200×800 px (3:2 ratio), the exact crop of your catalogue card",
+    section_gallery: "Gallery",
+    gallery_intro:
+      "Show off your work with more photos. Couples see them on your public profile, after the cover photo.",
+    gallery_add: "Add photo",
+    gallery_count: "{n} / {max} photos",
+    gallery_delete: "Delete photo",
+    gallery_upload_success: "Photo uploaded.",
+    gallery_upload_failed: "Upload failed. JPG, PNG or WebP, max 4 MB.",
+    gallery_full: "The gallery is full ({max} photos). Delete one before uploading another.",
+    gallery_delete_success: "Photo deleted.",
+    gallery_delete_failed: "Could not delete, please try again.",
     preview_open: "Open public preview",
     preview_no_photo: "No cover photo yet",
     preview_capacity_from: "From {min}",

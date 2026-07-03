@@ -1963,6 +1963,16 @@ export const vendorListingApi = {
     return JSON.parse(text) as VendorListingView;
   },
   deleteHero: () => apiFetch<VendorListingView>("DELETE", "/api/vendor/listing/me/hero"),
+  /** Portfolio gallery upload — same multipart pipeline + constraints as the
+   *  hero (JPEG/PNG/WebP, 4 MB); 409 code 'gallery_full' at the cap. The
+   *  returned view carries the refreshed `photos` array. */
+  uploadPhoto: (file: File): Promise<VendorListingView> => {
+    const form = new FormData();
+    form.append("file", file);
+    return uploadMultipart<VendorListingView>("POST", "/api/vendor/listing/me/photos", form);
+  },
+  deletePhoto: (photoId: number) =>
+    apiFetch<VendorListingView>("DELETE", `/api/vendor/listing/me/photos/${photoId}`),
   /** Marks the post-signup onboarding wizard complete so the dashboard stops
    *  redirecting back into it. Returns the refreshed view (account.onboarding_done
    *  is now true). Idempotent. */

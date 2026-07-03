@@ -826,3 +826,134 @@ describe("vendor listing price-band 30-day cooldown", () => {
     expect(after.data.listing.price_band_changed_at).toBeGreaterThan(thirtyOneDaysAgo);
   });
 });
+
+// ── Portfolio gallery ────────────────────────────────────────────────────────
+
+async function uploadPhoto(
+  vendorToken: string,
+  blob: Blob,
+  filename = "photo.png",
+): Promise<Response> {
+  const form = new FormData();
+  form.append("file", blob, filename);
+  return await fetch(`${VENDOR_BASE}/api/vendor/listing/me/photos`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${vendorToken}`,
+      "x-test-client-ip": `10.1.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`,
+    },
+    body: form,
+  });
+}
+
+describe("vendor listing — portfolio gallery (/api/vendor/listing/me/photos)", () => {
+  test("upload, list, public detail exposure (hero first), delete", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-gal@weddly.test",
+      "vendor-gal@weddly.test",
+      "Gallery Photo Studio",
+    );
+    const { vendorToken } = await claimListing(listingId, "vendor-gal@weddly.test", "Vendor Owner");
+
+    // Hero first so the public gallery ordering (hero, then uploads) is testable.
+    const hero = await uploadHero(vendorToken, tinyPngBlob());
+    expect(hero.status).toBe(200);
+    const heroUrl = ((await hero.json()) as VendorListingView).listing.hero_image_url;
+    expect(heroUrl).toBeTruthy();
+
+    const up1 = await uploadPhoto(vendorToken, tinyPngBlob());
+    expect(up1.status).toBe(201);
+    const up2 = await uploadPhoto(vendorToken, tinyPngBlob());
+    expect(up2.status).toBe(201);
+    const afterUploads = (await up2.json()) as VendorListingView;
+    expect(afterUploads.photos?.length).toBe(2);
+    const [p1, p2] = afterUploads.photos ?? [];
+    expect(p1?.url).toMatch(
+      new RegExp(
+        `^/uploads/listings/${listingId.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}/gallery/.+\\.png$`,
+      ),
+    );
+
+    // GET me carries the same photos.
+    const me = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, {
+      token: vendorToken,
+    });
+    expect(me.status).toBe(200);
+    expect(me.data.photos?.map((p) => p.id)).toEqual([p1?.id, p2?.id].filter(Boolean) as number[]);
+
+    // Public detail: gallery_urls = [hero, photo1, photo2] in that order.
+    const detail = await req<{ gallery_urls: string[] | null }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listingId)}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(detail.status).toBe(200);
+    expect(detail.data.gallery_urls).toEqual(
+      [heroUrl, p1?.url, p2?.url].filter(Boolean) as string[],
+    );
+
+    // Delete the first photo; the second remains. A replayed delete is a 200 no-op.
+    const del = await req<VendorListingView>(
+      "DELETE",
+      `/api/vendor/listing/me/photos/${p1?.id}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(del.status).toBe(200);
+    expect(del.data.photos?.map((p) => p.id)).toEqual([p2?.id].filter(Boolean) as number[]);
+    const replay = await req<VendorListingView>(
+      "DELETE",
+      `/api/vendor/listing/me/photos/${p1?.id}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(replay.status).toBe(200);
+    expect(replay.data.photos?.length).toBe(1);
+  });
+
+  test("the cap rejects the 13th photo with 409 gallery_full", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-galcap@weddly.test",
+      "vendor-galcap@weddly.test",
+      "Gallery Cap Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-galcap@weddly.test",
+      "Vendor Owner",
+    );
+
+    for (let i = 0; i < 12; i++) {
+      const r = await uploadPhoto(vendorToken, tinyPngBlob(), `photo-${i}.png`);
+      expect(r.status).toBe(201);
+    }
+    const overflow = await uploadPhoto(vendorToken, tinyPngBlob(), "photo-12.png");
+    expect(overflow.status).toBe(409);
+    const body = (await overflow.json()) as { detail?: { code?: string } };
+    expect(body.detail?.code).toBe("gallery_full");
+  });
+
+  test("anon → 401, couple-role → 403", async () => {
+    wipeAll();
+    const anonForm = new FormData();
+    anonForm.append("file", tinyPngBlob(), "photo.png");
+    const anon = await fetch(`${VENDOR_BASE}/api/vendor/listing/me/photos`, {
+      method: "POST",
+      body: anonForm,
+    });
+    expect(anon.status).toBe(401);
+
+    const { token } = await bootstrapCouple("not-vendor-gallery@weddly.test");
+    const coupleForm = new FormData();
+    coupleForm.append("file", tinyPngBlob(), "photo.png");
+    const couple = await fetch(`${VENDOR_BASE}/api/vendor/listing/me/photos`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: coupleForm,
+    });
+    expect(couple.status).toBe(403);
+  });
+});

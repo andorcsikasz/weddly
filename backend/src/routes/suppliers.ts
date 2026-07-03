@@ -18,6 +18,7 @@ import { curatedOverrideMap, isCuratedPubliclyVisible } from "../domain/curated_
 import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
 import { recordSupplierEvents } from "../domain/supplier_views";
+import { listListingPhotos } from "../domain/listings";
 import { getReviewSummary } from "../domain/reviews";
 import { countNonDeletedComments } from "../domain/supplier_comments";
 import { getAvailability } from "../domain/supplier_bookings";
@@ -265,8 +266,12 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const supplierId = ctx.params.supplier_id?.trim();
   if (!supplierId) throw new HttpError(400, "supplier_id required");
-  const base = resolveSupplierBase(supplierId);
-  if (!base) throw new HttpError(404, "Unknown supplier");
+  const resolved = resolveSupplierBase(supplierId);
+  if (!resolved) throw new HttpError(404, "Unknown supplier");
+  // Copy before overlaying — resolveSupplierBase can hand back the shared
+  // static DIRECTORY object, and mutating that would leak one request's
+  // overlay into every later request.
+  const base = { ...resolved };
 
   // Overlay vendor_account_id + hero from listings (same shape the list view
   // uses). Curated entries default to null and only flip when the vendor
@@ -279,6 +284,17 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
   if (listing) {
     base.vendor_account_id = listing.vendor_account_id;
     base.hero_image_url = listing.hero_image_url;
+  }
+
+  // Vendor-uploaded portfolio photos override the static seed gallery:
+  // hero first, then uploads in upload order — the detail page renders
+  // gallery_urls[0] as the hero and the rest as the thumbnail strip.
+  const uploadedPhotos = listListingPhotos(supplierId);
+  if (uploadedPhotos.length > 0) {
+    base.gallery_urls = [
+      ...(base.hero_image_url ? [base.hero_image_url] : []),
+      ...uploadedPhotos.map((p) => p.url),
+    ];
   }
 
   // Vote overlay so the detail page can keep the up/down hint above the

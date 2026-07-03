@@ -235,12 +235,25 @@ export interface VendorDataExport {
 /** Response shape for the GET + PATCH vendor self-serve listing endpoints —
  *  the listing the caller owns, plus a denormalised vendor-account snapshot
  *  so the editor has every public-facing field on hand in one round trip. */
+/** One portfolio photo on a claimed listing (beyond the single hero image). */
+export interface ListingPhoto {
+  id: number;
+  url: string;
+  created_at: number;
+}
+
+/** Gallery cap per listing — enforced server-side, mirrored in the editor UI. */
+export const MAX_LISTING_PHOTOS = 12;
+
 export interface VendorListingView {
   listing: Listing;
   account: VendorAccount;
   /** Subscription snapshot — drives the founding/trial/lapsed banner on the
    *  vendor home. Null only when the vendor has no sub row yet. */
   billing?: VendorBilling | null;
+  /** Portfolio gallery, oldest first. Present on the listing-editor payloads
+   *  (GET/upload/delete under /api/vendor/listing/me). */
+  photos?: ListingPhoto[];
 }
 
 /** Vendor self-serve availability (the dates a claimed vendor marks as taken).
