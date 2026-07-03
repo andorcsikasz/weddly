@@ -1619,6 +1619,20 @@ CREATE TABLE IF NOT EXISTS planner_events (
   created_at       INTEGER NOT NULL
 );
 
+-- Timestamped private notes a planner keeps on one client workspace — the
+-- comment-feed on the client CRM page. Append-style entries (newest first in
+-- the UI); planner_clients.notes stays as the roster quick-note. Visible only
+-- to the owning planner, never to the couple.
+CREATE TABLE IF NOT EXISTS planner_client_notes (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  couple_id        INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  body             TEXT    NOT NULL,
+  created_at       INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_planner_client_notes_link
+  ON planner_client_notes(planner_user_id, couple_id, created_at);
+
 -- Planner portfolio / references — past work the planner showcases on their
 -- profile. Each row is one reference entry: a title + free-text description and
 -- an optional uploaded image (served from /uploads/planners/<user>/portfolio/).

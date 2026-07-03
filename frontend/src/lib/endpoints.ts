@@ -64,6 +64,7 @@ import type {
   WeddingStyleTag,
   PlannerClientView,
   PlannerClientCrm,
+  PlannerClientNote,
   PlannerBoardStatus,
   PlannerTaskRow,
   PlannerThreadPreview,
@@ -2929,6 +2930,15 @@ export const plannerApi = {
     apiFetch<PlannerClientCrm>("GET", `/api/planner/clients/${coupleId}/crm`),
   updateClientCrm: (coupleId: number, data: Partial<PlannerClientCrm>) =>
     apiFetch<{ ok: boolean }>("PATCH", `/api/planner/clients/${coupleId}/crm`, data),
+  /** Timestamped private notes (comment feed) on one client, newest first. */
+  listClientNotes: (coupleId: number) =>
+    apiFetch<{ notes: PlannerClientNote[] }>("GET", `/api/planner/clients/${coupleId}/notes`),
+  addClientNote: (coupleId: number, body: string) =>
+    apiFetch<{ note: PlannerClientNote }>("POST", `/api/planner/clients/${coupleId}/notes`, {
+      body,
+    }),
+  deleteClientNote: (coupleId: number, noteId: number) =>
+    apiFetch<{ ok: boolean }>("DELETE", `/api/planner/clients/${coupleId}/notes/${noteId}`),
 };
 
 export const couplePlannerApi = {

@@ -91,6 +91,14 @@ export interface PlannerClientCrm {
   guest_page_addon: boolean;
 }
 
+/** One timestamped entry in the planner's private comment-feed on a client
+ *  (CRM page). Separate from PlannerClientCrm.notes, the roster quick-note. */
+export interface PlannerClientNote {
+  id: number;
+  body: string;
+  created_at: UnixMs;
+}
+
 /** Kanban lane of a task on the planner board. Kept in lockstep with `done`
  *  by the backend (done ⇔ 'done'); rows created before the board derive
  *  'todo' / 'done' from `done`. */

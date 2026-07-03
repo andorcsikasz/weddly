@@ -7925,6 +7925,9 @@ export interface LocaleMessages {
     balance_label: string;
     notes_heading: string;
     notes_placeholder: string;
+    note_add_button: string;
+    notes_empty: string;
+    note_delete_aria: string;
     save_button: string;
     save_success: string;
     enter_workspace: string;

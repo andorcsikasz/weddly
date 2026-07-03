@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import type { PlannerClientCrm } from "@shared/types";
+import type { PlannerClientCrm, PlannerClientNote } from "@shared/types";
 import { useConfirm, useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { plannerApi } from "../../lib/endpoints";
@@ -78,6 +78,127 @@ function formatAmount(val: number | null, locale: string): string {
     currency: locale === "hu" ? "HUF" : "EUR",
     maximumFractionDigits: 0,
   }).format(val);
+}
+
+// ─── NotesFeed ────────────────────────────────────────────────────────────────
+// Comment-style private notes: append-only entries, each stamped with when it
+// was written, newest first. Replaces the old single free-text blob.
+
+function NotesFeed({ coupleId }: { coupleId: number }) {
+  const { t, locale } = useT();
+  const confirm = useConfirm();
+  const [notes, setNotes] = useState<PlannerClientNote[]>([]);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    plannerApi
+      .listClientNotes(coupleId)
+      .then((r) => setNotes(r.notes))
+      .catch(() => {});
+  }, [coupleId]);
+
+  const stamp = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  async function add() {
+    const body = draft.trim();
+    if (!body || busy) return;
+    setBusy(true);
+    try {
+      const r = await plannerApi.addClientNote(coupleId, body);
+      setNotes((prev) => [r.note, ...prev]);
+      setDraft("");
+    } catch {
+      /* toast-worthy but non-fatal; the draft stays for retry */
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(note: PlannerClientNote) {
+    const ok = await confirm({
+      title: t("common.confirm_delete_title"),
+      body: t("common.confirm_delete_body"),
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await plannerApi.deleteClientNote(coupleId, note.id);
+      setNotes((prev) => prev.filter((n) => n.id !== note.id));
+    } catch {
+      /* row stays visible on failure */
+    }
+  }
+
+  return (
+    <div className="card p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
+        {t("planner_client.notes_heading")}
+      </p>
+
+      <div className="mt-4 flex items-end gap-2">
+        <textarea
+          rows={2}
+          className="input w-full resize-none"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              void add();
+            }
+          }}
+          placeholder={t("planner_client.notes_placeholder")}
+        />
+        <button
+          type="button"
+          onClick={() => void add()}
+          disabled={!draft.trim() || busy}
+          className="btn-moss btn-sm shrink-0 disabled:opacity-50"
+        >
+          {t("planner_client.note_add_button")}
+        </button>
+      </div>
+
+      {notes.length === 0 ? (
+        <p className="mt-4 text-sm text-umber-400 dark:text-umber-500">
+          {t("planner_client.notes_empty")}
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {notes.map((n) => (
+            <li
+              key={n.id}
+              className="group/note rounded-xl bg-paper-100 px-3.5 py-2.5 dark:bg-umber-700"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] tabular-nums text-umber-500 dark:text-umber-300">
+                  {stamp.format(n.created_at)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void remove(n)}
+                  aria-label={t("planner_client.note_delete_aria")}
+                  title={t("planner_client.note_delete_aria")}
+                  className="text-umber-400 opacity-0 transition-opacity hover:text-red-500 focus-visible:opacity-100 group-hover/note:opacity-100"
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                </button>
+              </div>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-ink-800 dark:text-paper-100">
+                {n.body}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 export default function PlannerClientPage() {
@@ -540,19 +661,8 @@ export default function PlannerClientPage() {
           </div>
         </div>
 
-        {/* Notes */}
-        <div className="card p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-400">
-            {t("planner_client.notes_heading")}
-          </p>
-          <textarea
-            rows={5}
-            className="input mt-4 w-full resize-none"
-            value={form.notes ?? ""}
-            onChange={(e) => set("notes", e.target.value || null)}
-            placeholder={t("planner_client.notes_placeholder")}
-          />
-        </div>
+        {/* Notes — timestamped comment feed, saves independently of the form */}
+        <NotesFeed coupleId={crm.couple_id} />
 
         <button type="submit" disabled={saving} className="btn-outline w-full">
           {saving ? "..." : t("planner_client.save_button")}

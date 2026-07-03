@@ -1328,3 +1328,121 @@ describe("planner avatar + portfolio uploads", () => {
     expect(portfolio[0]!.title).toBe("Reference without a photo");
   });
 });
+
+// Timestamped private notes (comment feed) on one client. Scoped to the owning
+// planner + an ACTIVE link — an unlinked planner must never read another
+// planner's notes about a couple.
+describe("planner client notes (timestamped feed)", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  async function linkedPlanner(plannerEmail: string, coupleEmail: string) {
+    const { token, userId } = await bootstrapPlanner(plannerEmail);
+    const { coupleId } = await bootstrapCouple(coupleEmail);
+    const add = await req("POST", "/api/planner/clients", { email: coupleEmail }, { token });
+    expect(add.status).toBe(200);
+    // Consent flow is covered elsewhere; flip the link active directly.
+    db.prepare(
+      "UPDATE planner_clients SET status = 'active' WHERE planner_user_id = ? AND couple_id = ?",
+    ).run(userId, coupleId);
+    return { token, userId, coupleId };
+  }
+
+  test("POST + GET — note lands with a numeric created_at, newest first", async () => {
+    const { token, coupleId } = await linkedPlanner("noter@weddly.test", "notee@weddly.test");
+
+    const before = Date.now();
+    const first = await req<{ note: { id: number; body: string; created_at: number } }>(
+      "POST",
+      `/api/planner/clients/${coupleId}/notes`,
+      { body: "Caterer sürgetése, késik a menü." },
+      { token },
+    );
+    expect(first.status).toBe(200);
+    expect(first.data.note.body).toBe("Caterer sürgetése, késik a menü.");
+    expect(typeof first.data.note.created_at).toBe("number");
+    expect(first.data.note.created_at).toBeGreaterThanOrEqual(before);
+
+    const second = await req<{ note: { id: number } }>(
+      "POST",
+      `/api/planner/clients/${coupleId}/notes`,
+      { body: "Lampioneresztés alkonyatkor, engedély megvan." },
+      { token },
+    );
+    expect(second.status).toBe(200);
+
+    const list = await req<{ notes: { id: number; body: string; created_at: number }[] }>(
+      "GET",
+      `/api/planner/clients/${coupleId}/notes`,
+      undefined,
+      { token },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.notes.length).toBe(2);
+    // Newest first.
+    expect(list.data.notes[0]!.id).toBe(second.data.note.id);
+    expect(list.data.notes[1]!.id).toBe(first.data.note.id);
+  });
+
+  test("POST — empty body rejected", async () => {
+    const { token, coupleId } = await linkedPlanner("noter2@weddly.test", "notee2@weddly.test");
+    const r = await req(
+      "POST",
+      `/api/planner/clients/${coupleId}/notes`,
+      { body: "   " },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("cross-planner isolation — an unlinked planner gets 403", async () => {
+    const { token, coupleId } = await linkedPlanner("owner@weddly.test", "shared@weddly.test");
+    await req("POST", `/api/planner/clients/${coupleId}/notes`, { body: "titkos" }, { token });
+
+    const { token: otherToken } = await bootstrapPlanner("other@weddly.test");
+    const list = await req("GET", `/api/planner/clients/${coupleId}/notes`, undefined, {
+      token: otherToken,
+    });
+    expect(list.status).toBe(403);
+    const post = await req(
+      "POST",
+      `/api/planner/clients/${coupleId}/notes`,
+      { body: "behatolás" },
+      { token: otherToken },
+    );
+    expect(post.status).toBe(403);
+  });
+
+  test("DELETE — removes own note, second delete 404s", async () => {
+    const { token, coupleId } = await linkedPlanner("deleter@weddly.test", "notee3@weddly.test");
+    const created = await req<{ note: { id: number } }>(
+      "POST",
+      `/api/planner/clients/${coupleId}/notes`,
+      { body: "múlandó" },
+      { token },
+    );
+    const noteId = created.data.note.id;
+
+    const del = await req("DELETE", `/api/planner/clients/${coupleId}/notes/${noteId}`, undefined, {
+      token,
+    });
+    expect(del.status).toBe(200);
+
+    const again = await req(
+      "DELETE",
+      `/api/planner/clients/${coupleId}/notes/${noteId}`,
+      undefined,
+      { token },
+    );
+    expect(again.status).toBe(404);
+
+    const list = await req<{ notes: unknown[] }>(
+      "GET",
+      `/api/planner/clients/${coupleId}/notes`,
+      undefined,
+      { token },
+    );
+    expect(list.data.notes.length).toBe(0);
+  });
+});

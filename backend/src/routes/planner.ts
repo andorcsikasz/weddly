@@ -533,6 +533,65 @@ async function handleUpdateNotes(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+// ── Timestamped client notes (comment feed on the CRM page) ────────────────
+
+async function handleListClientNotes(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+  requireActiveClientLink(userId, coupleId);
+
+  const rows = db
+    .prepare(
+      `SELECT id, body, created_at FROM planner_client_notes
+        WHERE planner_user_id = ? AND couple_id = ?
+        ORDER BY created_at DESC, id DESC`,
+    )
+    .all(userId, coupleId) as { id: number; body: string; created_at: number }[];
+
+  return json({ notes: rows });
+}
+
+async function handleAddClientNote(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+  requireActiveClientLink(userId, coupleId);
+
+  const body = await readJson<{ body?: unknown }>(ctx.req);
+  const text = typeof body.body === "string" ? body.body.trim() : "";
+  if (!text) throw new HttpError(400, "body required");
+  if (text.length > 2000) throw new HttpError(400, "note too long (max 2000 chars)");
+
+  const row = db
+    .prepare(
+      `INSERT INTO planner_client_notes (planner_user_id, couple_id, body, created_at)
+       VALUES (?, ?, ?, ?)
+       RETURNING id, body, created_at`,
+    )
+    .get(userId, coupleId, text, now()) as { id: number; body: string; created_at: number };
+
+  return json({ note: row });
+}
+
+async function handleDeleteClientNote(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const coupleId = Number(ctx.params?.coupleId);
+  const noteId = Number(ctx.params?.noteId);
+  if (!Number.isFinite(coupleId) || coupleId <= 0) throw new HttpError(400, "coupleId required");
+  if (!Number.isInteger(noteId) || noteId <= 0) throw new HttpError(400, "noteId required");
+  requireActiveClientLink(userId, coupleId);
+
+  const res = db
+    .prepare(
+      "DELETE FROM planner_client_notes WHERE id = ? AND planner_user_id = ? AND couple_id = ?",
+    )
+    .run(noteId, userId, coupleId);
+  if (res.changes === 0) throw new HttpError(404, "note not found");
+
+  return json({ ok: true });
+}
+
 async function handleGetClientCrm(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
   const coupleId = Number(ctx.params?.coupleId);
@@ -1937,6 +1996,9 @@ export function registerPlannerRoutes(router: Router) {
   router.get("/api/planner/clients", handleListClients, true);
   router.post("/api/planner/clients", handleAddClient, true);
   router.patch("/api/planner/clients/:coupleId/notes", handleUpdateNotes, true);
+  router.get("/api/planner/clients/:coupleId/notes", handleListClientNotes, true);
+  router.post("/api/planner/clients/:coupleId/notes", handleAddClientNote, true);
+  router.delete("/api/planner/clients/:coupleId/notes/:noteId", handleDeleteClientNote, true);
   router.get("/api/planner/clients/:coupleId/crm", handleGetClientCrm, true);
   router.patch("/api/planner/clients/:coupleId/crm", handleUpdateClientCrm, true);
   router.post("/api/planner/clients/:coupleId/guest-page-access", handleSetGuestPageAccess, true);
