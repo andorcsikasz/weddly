@@ -15,6 +15,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { Wordmark } from "./Wordmark";
 
@@ -121,22 +122,10 @@ function PublicHeader() {
   const { hidden, atTop } = useHeaderState();
   const isAudiencePage = pathname === "/planners" || pathname === "/vendors";
 
-  // Theme toggle shared with AppShell via `localStorage["weddly.theme"]`.
-  // Public default is `light` (the warm paper marketing aesthetic); /app
-  // defaults to `dark` when the user has never expressed a preference.
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
-    if (typeof window === "undefined") return "light";
-    return window.localStorage.getItem("weddly.theme") === "dark" ? "dark" : "light";
-  });
-  useEffect(() => {
-    if (theme === "dark") document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-    try {
-      window.localStorage.setItem("weddly.theme", theme);
-    } catch {
-      /* localStorage blocked — preference just won't persist */
-    }
-  }, [theme]);
+  // Theme toggle shared with the app shells via `localStorage["weddly.theme"]`
+  // (see lib/useTheme.ts). Public default is `light` (the warm paper marketing
+  // aesthetic); the authenticated shells default to `dark`.
+  const [theme, setTheme] = useTheme("light");
 
   function openFeedback() {
     setMenuOpen(false);

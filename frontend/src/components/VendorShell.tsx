@@ -10,10 +10,12 @@ import {
   CreditCard,
   LayoutDashboard,
   LogOut,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
   Store,
+  Sun,
   Users,
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
@@ -21,6 +23,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { vendorListingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useTheme } from "../lib/useTheme";
 import { Wordmark } from "./Wordmark";
 
 type VendorNavItem = { to: string; labelKey: string; icon: ReactNode; end?: boolean };
@@ -74,6 +77,10 @@ export function VendorShell({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Warm-dark mode, shared with the other shells via localStorage. Like the
+  // couple /app, the vendor workspace defaults to dark on first visit.
+  const [theme, setTheme] = useTheme("dark");
+
   // Desktop nav rail collapse state, persisted across sessions. Default expanded.
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
@@ -112,14 +119,29 @@ export function VendorShell({ children }: { children: ReactNode }) {
           >
             <Wordmark size="sm" />
           </Link>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="inline-flex h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-          >
-            <LogOut size={18} aria-hidden="true" />
-            <span className="hidden sm:inline">{t("vendor.nav.logout")}</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+              aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+              title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+            >
+              {theme === "dark" ? (
+                <Sun size={18} aria-hidden="true" />
+              ) : (
+                <Moon size={18} aria-hidden="true" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="inline-flex h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+            >
+              <LogOut size={18} aria-hidden="true" />
+              <span className="hidden sm:inline">{t("vendor.nav.logout")}</span>
+            </button>
+          </div>
         </div>
       </header>
 

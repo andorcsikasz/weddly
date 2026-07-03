@@ -19,9 +19,11 @@ import {
   MailQuestion,
   MessageCircle,
   MessageSquare,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  Sun,
   UserRound,
   Users,
 } from "lucide-react";
@@ -31,6 +33,7 @@ import type { PlannerInviteView, PlannerProfile, PlannerStats, User } from "@sha
 import { useAuth } from "../lib/auth";
 import { plannerApi, plannerBillingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { PlannerDemoOverlay } from "./PlannerDemoOverlay";
 import { Wordmark } from "./Wordmark";
@@ -326,6 +329,9 @@ export function PlannerShell({ children }: { children: ReactNode }) {
   const [readOnly, setReadOnly] = useState(false);
   // Feedback dialog, opened from the profile menu (same home as /app).
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // Warm-dark mode, shared with the other shells via localStorage. Like the
+  // couple /app, the planner workspace defaults to dark on first visit.
+  const [theme, setTheme] = useTheme("dark");
 
   useEffect(() => {
     let cancelled = false;
@@ -422,6 +428,20 @@ export function PlannerShell({ children }: { children: ReactNode }) {
               aria-label={t("nav.switch_language")}
             >
               <Languages size={18} aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
+              aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+              title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+            >
+              {theme === "dark" ? (
+                <Sun size={18} aria-hidden="true" />
+              ) : (
+                <Moon size={18} aria-hidden="true" />
+              )}
             </button>
 
             <NotificationBell overdue={stats?.overdue_tasks ?? 0} pendingInvites={invites.length} />

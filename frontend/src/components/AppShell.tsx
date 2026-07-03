@@ -43,6 +43,7 @@ import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { adminUserApi, plannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useTheme } from "../lib/useTheme";
 import { CoachMarks } from "./CoachMarks";
 import { FeatureTour } from "./FeatureTour";
 import { DemoOverlay } from "./DemoOverlay";
@@ -449,25 +450,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [user?.is_admin, location.pathname]);
 
   // ── Warm-dark mode toggle ────────────────────────────────────────────
-  // Theme preference is shared with PublicShell via `localStorage["weddly.theme"]`,
-  // so toggling on the landing carries into /app and vice versa. Class lives
-  // on <html> so portals (Toasts, Dialogs, maps) inherit it automatically.
-  // We deliberately do NOT remove the `dark` class on unmount — that would
-  // strip the preference when navigating between shells. PublicShell re-applies
-  // it on its own mount.
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
-    if (typeof window === "undefined") return "dark";
-    return window.localStorage.getItem("weddly.theme") === "light" ? "light" : "dark";
-  });
-  useEffect(() => {
-    if (theme === "dark") document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-    try {
-      window.localStorage.setItem("weddly.theme", theme);
-    } catch {
-      /* localStorage blocked — fine, the user's choice just won't persist */
-    }
-  }, [theme]);
+  // Shared with the other shells via `localStorage["weddly.theme"]` (see
+  // lib/useTheme.ts), so toggling on the landing carries into /app and vice
+  // versa. /app defaults to dark when the user has never expressed a
+  // preference.
+  const [theme, setTheme] = useTheme("dark");
 
   // ── Sidebar collapse toggle ──────────────────────────────────────────
   // Desktop-only. When collapsed, the rail narrows to an icon strip and
