@@ -7188,6 +7188,8 @@ const en: LocaleMessages = {
     filter_timing_all: "All upcoming",
     filter_timing_week: "Due this week",
     filter_timing_overdue: "Overdue",
+    filter_clients_count: "{{count}} clients",
+    filter_clear: "Clear filters",
     topbar_greeting_urgent: "{{n}} urgent",
     topbar_notif_aria: "Notifications",
     topbar_profile_aria: "Profile menu",

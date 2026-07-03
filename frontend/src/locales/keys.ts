@@ -7778,6 +7778,8 @@ export interface LocaleMessages {
     filter_timing_all: string;
     filter_timing_week: string;
     filter_timing_overdue: string;
+    filter_clients_count: string;
+    filter_clear: string;
     topbar_greeting_urgent: string;
     topbar_notif_aria: string;
     topbar_profile_aria: string;

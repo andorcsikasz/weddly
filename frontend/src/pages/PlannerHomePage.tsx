@@ -11,8 +11,6 @@ import {
   ListTodo,
   type LucideIcon,
   MailQuestion,
-  PanelRightClose,
-  PanelRightOpen,
   SlidersHorizontal,
   Users,
   X,
@@ -31,6 +29,7 @@ import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { formatDate } from "../lib/format";
+import { localYmd } from "../lib/planner_display";
 import { AddClientCard } from "./planner/AddClientCard";
 import { PlannerDashPipeline } from "./planner/PlannerDashPipeline";
 import { PlannerDashRightRail } from "./planner/PlannerDashRightRail";
@@ -265,13 +264,122 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
 // ─── Task filter panel ────────────────────────────────────────────────────────
 
 type TimingFilter = "all" | "week" | "overdue";
-type PriorityFilter = "all" | "high" | "medium";
+type TaskPriority = "high" | "medium";
 
 interface TaskFilters {
-  clientId: number | null;
-  priority: PriorityFilter;
+  /** Selected client couple_ids; empty means every client. */
+  clientIds: number[];
+  /** Selected priorities; empty means every priority. */
+  priorities: TaskPriority[];
   timing: TimingFilter;
 }
+
+interface FilterOption {
+  id: string;
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+}
+
+function FilterDropdown({
+  label,
+  active,
+  multi,
+  options,
+}: {
+  /** Trigger text summarising the current selection. */
+  label: string;
+  /** True when this dropdown narrows the list (tints the trigger). */
+  active: boolean;
+  /** Multi-select keeps the panel open across picks; single-select closes. */
+  multi: boolean;
+  options: FilterOption[];
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="true"
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
+          active
+            ? "border-moss-300 bg-moss-50 text-moss-800 dark:border-moss-700 dark:bg-moss-900/40 dark:text-moss-200"
+            : "border-paper-300 text-ink-600 hover:bg-paper-100 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
+        }`}
+      >
+        <span className="max-w-[11rem] truncate">{label}</span>
+        <ChevronDown
+          size={13}
+          className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+0.35rem)] z-30 min-w-[11rem] max-w-[16rem] rounded-xl border border-paper-300 bg-paper-50 py-1 shadow-lg dark:border-umber-700 dark:bg-umber-800">
+          {options.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              aria-pressed={opt.selected}
+              onClick={() => {
+                opt.onSelect();
+                if (!multi) setOpen(false);
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm text-ink-700 transition-colors hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              {multi ? (
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                    opt.selected
+                      ? "border-moss-700 bg-moss-700 text-paper-50 dark:border-moss-300 dark:bg-moss-300 dark:text-moss-950"
+                      : "border-paper-300 dark:border-umber-600"
+                  }`}
+                  aria-hidden="true"
+                >
+                  {opt.selected && <Check size={11} strokeWidth={3} />}
+                </span>
+              ) : (
+                <Check
+                  size={14}
+                  className={`shrink-0 text-moss-700 dark:text-moss-300 ${opt.selected ? "" : "invisible"}`}
+                  aria-hidden="true"
+                />
+              )}
+              <span className="min-w-0 flex-1 truncate">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function toggleInList<T>(list: T[], item: T): T[] {
+  return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
+}
+
+const PRIORITY_ORDER: TaskPriority[] = ["high", "medium"];
 
 function TaskFilterPanel({
   clients,
@@ -284,76 +392,85 @@ function TaskFilterPanel({
 }) {
   const { t } = useT();
 
-  const pillBase =
-    "rounded-full border border-paper-300 px-3 py-1 text-xs transition-colors dark:border-umber-700";
-  const pillActive =
-    "bg-moss-700 text-paper-50 border-moss-700 dark:bg-moss-300 dark:text-moss-950 dark:border-moss-300";
-  const pillInactive = "text-ink-700 hover:bg-moss-50 dark:text-paper-200 dark:hover:bg-umber-800";
+  const singleClient =
+    filters.clientIds.length === 1
+      ? clients.find((c) => c.couple_id === filters.clientIds[0])
+      : undefined;
+  const clientLabel =
+    filters.clientIds.length === 0
+      ? t("planner_home.filter_all_clients")
+      : (singleClient?.display_name ??
+        t("planner_home.filter_clients_count").replace(
+          "{{count}}",
+          String(filters.clientIds.length),
+        ));
+
+  const priorityLabels: Record<TaskPriority, string> = {
+    high: t("planner_home.filter_priority_high"),
+    medium: t("planner_home.filter_priority_medium"),
+  };
+  const priorityLabel =
+    filters.priorities.length === 0
+      ? t("planner_home.filter_priority_all")
+      : PRIORITY_ORDER.filter((p) => filters.priorities.includes(p))
+          .map((p) => priorityLabels[p])
+          .join(", ");
+
+  const timingLabels: Record<TimingFilter, string> = {
+    all: t("planner_home.filter_timing_all"),
+    week: t("planner_home.filter_timing_week"),
+    overdue: t("planner_home.filter_timing_overdue"),
+  };
+
+  const anyActive =
+    filters.clientIds.length > 0 || filters.priorities.length > 0 || filters.timing !== "all";
 
   return (
-    <div className="mb-4 space-y-2">
-      <div className="flex flex-wrap gap-2">
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      <FilterDropdown
+        label={clientLabel}
+        active={filters.clientIds.length > 0}
+        multi
+        options={clients.map((c) => ({
+          id: String(c.couple_id),
+          label: c.display_name,
+          selected: filters.clientIds.includes(c.couple_id),
+          onSelect: () =>
+            onChange({ ...filters, clientIds: toggleInList(filters.clientIds, c.couple_id) }),
+        }))}
+      />
+      <FilterDropdown
+        label={priorityLabel}
+        active={filters.priorities.length > 0}
+        multi
+        options={PRIORITY_ORDER.map((p) => ({
+          id: p,
+          label: priorityLabels[p],
+          selected: filters.priorities.includes(p),
+          onSelect: () => onChange({ ...filters, priorities: toggleInList(filters.priorities, p) }),
+        }))}
+      />
+      <FilterDropdown
+        label={timingLabels[filters.timing]}
+        active={filters.timing !== "all"}
+        multi={false}
+        options={(["all", "week", "overdue"] as TimingFilter[]).map((tm) => ({
+          id: tm,
+          label: timingLabels[tm],
+          selected: filters.timing === tm,
+          onSelect: () => onChange({ ...filters, timing: tm }),
+        }))}
+      />
+      {anyActive && (
         <button
           type="button"
-          className={`${pillBase} ${filters.clientId === null ? pillActive : pillInactive}`}
-          onClick={() => onChange({ ...filters, clientId: null })}
+          onClick={() => onChange({ clientIds: [], priorities: [], timing: "all" })}
+          className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs text-umber-500 transition-colors hover:bg-paper-100 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-paper-100"
         >
-          {t("planner_home.filter_all_clients")}
+          <X size={12} aria-hidden="true" />
+          {t("planner_home.filter_clear")}
         </button>
-        {clients.map((c) => (
-          <button
-            key={c.couple_id}
-            type="button"
-            className={`${pillBase} ${filters.clientId === c.couple_id ? pillActive : pillInactive}`}
-            onClick={() =>
-              onChange({
-                ...filters,
-                clientId: filters.clientId === c.couple_id ? null : c.couple_id,
-              })
-            }
-          >
-            {c.display_name}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {(["all", "high", "medium"] as PriorityFilter[]).map((p) => (
-          <button
-            key={p}
-            type="button"
-            className={`${pillBase} ${filters.priority === p ? pillActive : pillInactive}`}
-            onClick={() => onChange({ ...filters, priority: p })}
-          >
-            {t(
-              p === "all"
-                ? "planner_home.filter_priority_all"
-                : p === "high"
-                  ? "planner_home.filter_priority_high"
-                  : "planner_home.filter_priority_medium",
-            )}
-          </button>
-        ))}
-
-        <span className="border-l border-paper-200 dark:border-umber-700" />
-
-        {(["all", "week", "overdue"] as TimingFilter[]).map((tm) => (
-          <button
-            key={tm}
-            type="button"
-            className={`${pillBase} ${filters.timing === tm ? pillActive : pillInactive}`}
-            onClick={() => onChange({ ...filters, timing: tm })}
-          >
-            {t(
-              tm === "all"
-                ? "planner_home.filter_timing_all"
-                : tm === "week"
-                  ? "planner_home.filter_timing_week"
-                  : "planner_home.filter_timing_overdue",
-            )}
-          </button>
-        ))}
-      </div>
+      )}
     </div>
   );
 }
@@ -363,14 +480,13 @@ function TaskFilterPanel({
 function applyTaskFilters(tasks: PlannerTaskRow[], filters: TaskFilters): PlannerTaskRow[] {
   let result = tasks;
 
-  if (filters.clientId !== null) {
-    result = result.filter((t) => t.couple_id === filters.clientId);
+  if (filters.clientIds.length > 0) {
+    result = result.filter((t) => filters.clientIds.includes(t.couple_id));
   }
 
-  if (filters.priority === "high") {
-    result = result.filter((t) => t.priority === 2);
-  } else if (filters.priority === "medium") {
-    result = result.filter((t) => t.priority === 1);
+  if (filters.priorities.length > 0) {
+    const wanted = new Set<number>(filters.priorities.map((p) => (p === "high" ? 2 : 1)));
+    result = result.filter((t) => wanted.has(t.priority));
   }
 
   if (filters.timing === "week" || filters.timing === "overdue") {
@@ -403,10 +519,11 @@ function UpcomingTasks({
 }) {
   const { t, locale } = useT();
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // Local calendar date — toISOString() is UTC and misfiles tasks after midnight.
+  const todayStr = localYmd(new Date());
   const weekEnd = new Date();
   weekEnd.setDate(weekEnd.getDate() + 7);
-  const weekEndStr = weekEnd.toISOString().slice(0, 10);
+  const weekEndStr = localYmd(weekEnd);
 
   const filtered = applyTaskFilters(tasks, filters);
 
@@ -603,8 +720,8 @@ export default function PlannerHomePage() {
   const initialTiming: TimingFilter =
     timingParam === "week" || timingParam === "overdue" ? timingParam : "all";
   const [taskFilters, setTaskFilters] = useState<TaskFilters>({
-    clientId: null,
-    priority: "all",
+    clientIds: [],
+    priorities: [],
     timing: initialTiming,
   });
   const [showAddClient, setShowAddClient] = useState(false);
@@ -636,6 +753,27 @@ export default function PlannerHomePage() {
       }
       return next;
     });
+  }
+
+  // Optimistic completion from the day rail: the row disappears instantly and
+  // the server call follows; a failure restores the previous list. Stats
+  // refresh in the background so the overdue KPI tracks the checkoff.
+  function markTaskDone(taskId: number) {
+    const prev = tasks;
+    setTasks(
+      prev.map((tk) =>
+        tk.task_id === taskId ? { ...tk, done: true, board_status: "done" as const } : tk,
+      ),
+    );
+    plannerApi.updateTaskBoardStatus(taskId, "done").then(
+      () => {
+        plannerApi
+          .stats()
+          .then((sr) => setStats(sr.stats))
+          .catch(() => {});
+      },
+      () => setTasks(prev),
+    );
   }
 
   // allSettled so one failing call degrades that section only instead of
@@ -754,9 +892,6 @@ export default function PlannerHomePage() {
   ];
   const allChecklistDone = checklistSteps.every((s) => s.done);
   const showChecklist = !loading && !checklistDismissed && !allChecklistDone;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const railOverdueCount = tasks.filter((tk) => tk.due_date < today && !tk.done).length;
 
   return (
     <main
@@ -932,7 +1067,7 @@ export default function PlannerHomePage() {
               {tasks.length > 0 && (
                 <button
                   type="button"
-                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                  className={`relative inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
                     showTaskFilters
                       ? "bg-moss-100 text-moss-800 dark:bg-moss-900/40 dark:text-moss-200"
                       : "text-umber-600 hover:bg-moss-50 hover:text-moss-800 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-moss-200"
@@ -943,6 +1078,14 @@ export default function PlannerHomePage() {
                   onClick={() => setShowTaskFilters((v) => !v)}
                 >
                   <SlidersHorizontal size={16} aria-hidden="true" />
+                  {(taskFilters.clientIds.length > 0 ||
+                    taskFilters.priorities.length > 0 ||
+                    taskFilters.timing !== "all") && (
+                    <span
+                      className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-moss-600 dark:bg-moss-300"
+                      aria-hidden="true"
+                    />
+                  )}
                 </button>
               )}
             </div>
@@ -961,42 +1104,16 @@ export default function PlannerHomePage() {
         )}
       </div>
 
-      {/* RIGHT COLUMN — collapsible to the right edge on desktop */}
+      {/* RIGHT COLUMN — collapsible to the right edge on desktop; the
+          collapse control lives on the rail card itself. */}
       <div className="mt-6 min-w-0 lg:mt-0 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-        <div className="mb-2 hidden justify-end lg:flex">
-          <button
-            type="button"
-            onClick={toggleRail}
-            aria-expanded={!railCollapsed}
-            aria-label={t(
-              railCollapsed ? "planner_home.rail_expand" : "planner_home.rail_collapse",
-            )}
-            title={t(railCollapsed ? "planner_home.rail_expand" : "planner_home.rail_collapse")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-umber-500 transition-colors hover:bg-moss-50 hover:text-moss-800 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-moss-200"
-          >
-            {railCollapsed ? (
-              <PanelRightOpen size={18} aria-hidden="true" />
-            ) : (
-              <PanelRightClose size={18} aria-hidden="true" />
-            )}
-          </button>
-        </div>
-        {/* Collapsed handle keeps a pulse of the urgent count so tucking the
-            rail away never hides an alert completely. Mobile always shows the
-            full card — the collapse is a desktop-space concern. */}
-        {railCollapsed && railOverdueCount > 0 && (
-          <div className="hidden justify-end lg:flex">
-            <span
-              className="flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-100 px-1 text-[10px] font-semibold tabular-nums text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-              title={t("planner_home.rail_urgent_title")}
-            >
-              {railOverdueCount}
-            </span>
-          </div>
-        )}
-        <div className={railCollapsed ? "lg:hidden" : ""}>
-          <PlannerDashRightRail tasks={tasks} clients={clients} />
-        </div>
+        <PlannerDashRightRail
+          tasks={tasks}
+          clients={clients}
+          collapsed={railCollapsed}
+          onToggleCollapsed={toggleRail}
+          onMarkDone={markTaskDone}
+        />
       </div>
     </main>
   );

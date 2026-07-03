@@ -7245,6 +7245,8 @@ const hu: LocaleMessages = {
     filter_timing_all: "Összes közelgő",
     filter_timing_week: "Ezen a héten",
     filter_timing_overdue: "Lejárt",
+    filter_clients_count: "{{count}} ügyfél",
+    filter_clear: "Szűrők törlése",
     topbar_greeting_urgent: "{{n}} sürgős feladat",
     topbar_notif_aria: "Értesítések",
     topbar_profile_aria: "Profil menü",
