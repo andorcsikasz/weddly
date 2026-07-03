@@ -210,9 +210,14 @@ describe("PATCH /api/vendor/account", () => {
       "Invalid Vendor",
     );
 
-    const blank = await req("PATCH", "/api/vendor/account", { display_name: "  " }, {
-      token: vendorToken,
-    });
+    const blank = await req(
+      "PATCH",
+      "/api/vendor/account",
+      { display_name: "  " },
+      {
+        token: vendorToken,
+      },
+    );
     expect(blank.status).toBe(400);
 
     const oversize = await req(

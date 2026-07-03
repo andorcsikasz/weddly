@@ -287,7 +287,9 @@ function StatCard({
           </span>
         ) : null}
       </div>
-      <div className="text-2xl font-semibold text-ink-900 dark:text-paper-50">{value}</div>
+      <div className="text-center text-2xl font-semibold text-ink-900 dark:text-paper-50">
+        {value}
+      </div>
     </div>
   );
 }

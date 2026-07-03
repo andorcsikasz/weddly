@@ -5,7 +5,21 @@
 // behind an upgrade nudge for FREE vendors. Plan is read from the billing
 // snapshot (vendorBillingApi.get) so the soft paywall matches the server gate.
 
-import { ArrowRight, Lock, MailOpen, Search, UserPlus } from "lucide-react";
+import {
+  ArrowRight,
+  CircleCheck,
+  CircleHelp,
+  CircleX,
+  Eye,
+  Hourglass,
+  Inbox,
+  Lock,
+  type LucideIcon,
+  MailOpen,
+  Search,
+  Undo2,
+  UserPlus,
+} from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Currency } from "@shared/types";
@@ -17,9 +31,10 @@ import { formatDate, formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
 
-// Canonical inquiry-status ordering. Labels reuse the existing supplier
-// directory calendar status namespace (translated in both locales); an unknown
-// status falls back to its raw value so the list never breaks on new states.
+// Canonical inquiry-status ordering. Labels use the SAME vendor.clients
+// namespace as the status select on the client detail form, so the badge, the
+// filter pills and the form always agree; an unknown status falls back to its
+// raw value so the list never breaks on new states.
 const STATUS_ORDER = [
   "requested",
   "vendor_seen",
@@ -54,10 +69,20 @@ function StatusBadge({ status }: { status: string }) {
     tone: "text-ink-400 dark:text-umber-400",
   };
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tone}`}
-    >
-      {label}
+    <span className="group relative inline-flex items-center gap-1.5">
+      <Icon size={18} aria-hidden="true" className={tone} />
+      <span className="sr-only">{label}</span>
+      <span className={`text-xs font-medium sm:hidden ${tone}`} aria-hidden="true">
+        {label}
+      </span>
+      {/* Instant hover tooltip (CSS only, no delay). Sits to the RIGHT of the
+          icon so it never crosses the table container's overflow-hidden edge. */}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute left-full top-1/2 z-20 ml-1.5 hidden -translate-y-1/2 whitespace-nowrap rounded-md border border-paper-200 bg-paper-50 px-2 py-1 text-[11px] font-medium text-ink-700 shadow-pop sm:group-hover:block dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+      >
+        {label}
+      </span>
     </span>
   );
 }
@@ -108,17 +133,17 @@ function GhostTable() {
   const { t } = useT();
   return (
     <div
-      className="overflow-hidden rounded-xl border border-paper-200 dark:border-umber-800"
+      className="overflow-hidden rounded-xl border border-steel-200 dark:border-steel-800"
       aria-hidden="true"
     >
-      <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-paper-200 bg-paper-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-500 sm:grid dark:border-umber-800 dark:bg-umber-900 dark:text-umber-300">
+      <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-steel-200 bg-steel-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-steel-800 sm:grid dark:border-steel-800 dark:bg-steel-900 dark:text-steel-200">
         <span>{t("vendor.clients.col_couple")}</span>
         <span>{t("vendor.clients.col_event_date")}</span>
-        <span>{t("vendor.clients.col_status")}</span>
+        <span className="text-center">{t("vendor.clients.col_status")}</span>
         <span>{t("vendor.clients.col_stage")}</span>
         <span className="text-right">{t("vendor.clients.col_balance")}</span>
       </div>
-      <div className="divide-y divide-paper-200 dark:divide-umber-800">
+      <div className="divide-y divide-paper-200 bg-white dark:divide-umber-700 dark:bg-umber-800">
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
@@ -126,7 +151,9 @@ function GhostTable() {
           >
             <Skeleton variant="line" height={14} width="70%" />
             <Skeleton variant="line" height={12} width="55%" />
-            <Skeleton height={20} width={84} rounded="full" />
+            <div className="flex sm:justify-center">
+              <Skeleton height={18} width={18} rounded="full" />
+            </div>
             <Skeleton variant="line" height={12} width="45%" />
             <div className="flex sm:justify-end">
               <Skeleton variant="line" height={12} width={64} />
@@ -293,21 +320,21 @@ export default function VendorClientsPage() {
           </div>
 
           {/* Grid "table" — header on sm+, Link rows that navigate to detail. */}
-          <div className="overflow-hidden rounded-xl border border-paper-200 dark:border-umber-800">
-            <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-paper-200 bg-paper-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-500 sm:grid dark:border-umber-800 dark:bg-umber-900 dark:text-umber-300">
+          <div className="overflow-hidden rounded-xl border border-steel-200 dark:border-steel-800">
+            <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-steel-200 bg-steel-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-steel-800 sm:grid dark:border-steel-800 dark:bg-steel-900 dark:text-steel-200">
               <span>{t("vendor.clients.col_couple")}</span>
               <span>{t("vendor.clients.col_event_date")}</span>
-              <span>{t("vendor.clients.col_status")}</span>
+              <span className="text-center">{t("vendor.clients.col_status")}</span>
               <span>{t("vendor.clients.col_stage")}</span>
               <span className="text-right">{t("vendor.clients.col_balance")}</span>
             </div>
 
-            <ul className="divide-y divide-paper-200 dark:divide-umber-800">
+            <ul className="divide-y divide-paper-200 bg-white dark:divide-umber-700 dark:bg-umber-800">
               {filtered.map((c) => (
                 <li key={c.id}>
                   <Link
                     to={`/vendor/clients/${c.id}`}
-                    className="grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:bg-paper-100 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3 dark:hover:bg-umber-900 dark:focus-visible:bg-umber-900"
+                    className="grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-steel-50 focus:outline-none focus-visible:bg-steel-50 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3 dark:hover:bg-umber-700 dark:focus-visible:bg-umber-700"
                   >
                     <span
                       className="truncate font-medium text-ink-900 dark:text-paper-50"
@@ -320,7 +347,7 @@ export default function VendorClientsPage() {
                         ? formatDate(c.event_date, locale)
                         : t("vendor.clients.no_event_date")}
                     </span>
-                    <span>
+                    <span className="sm:text-center">
                       <StatusBadge status={c.status} />
                     </span>
                     <span className="text-sm text-ink-600 dark:text-paper-300">

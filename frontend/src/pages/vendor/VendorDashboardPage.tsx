@@ -380,8 +380,8 @@ function KpiCard({
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
       </div>
-      <div className={`text-2xl font-semibold ${valueTone}`}>{value}</div>
-      {sub && <div className="text-xs text-ink-500 dark:text-paper-400">{sub}</div>}
+      <div className={`text-center text-2xl font-semibold ${valueTone}`}>{value}</div>
+      {sub && <div className="text-center text-xs text-ink-500 dark:text-paper-400">{sub}</div>}
     </div>
   );
 }
