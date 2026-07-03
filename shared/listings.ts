@@ -7,6 +7,7 @@
 
 import type { SupplierCategory, VenueStyle } from "./suppliers";
 import type { VendorBilling } from "./vendor_billing";
+import type { VendorClientDetail } from "./vendor_clients";
 
 /**
  * Where the listing came from. Drives the moderation/trust UX and gates which
@@ -168,6 +169,46 @@ export interface VendorListingEditInput {
   price_band?: 1 | 2 | 3 | 4 | 5 | null;
   capacity_min?: number | null;
   capacity_max?: number | null;
+}
+
+/** Fields a vendor can self-serve edit on their own `vendor_accounts` row
+ *  (the legal payee / company identity, PATCH /api/vendor/account). Same
+ *  partial-PATCH semantics as {@link VendorListingEditInput}: only present
+ *  keys apply, `null` clears. `display_name` is the account label (header,
+ *  emails) — the public listing name stays admin-moderated and is NOT
+ *  touched here. */
+export interface VendorAccountEditInput {
+  display_name?: string;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  vat_number?: string | null;
+  country?: string | null;
+  registry_number?: string | null;
+  legal_form?: string | null;
+  address?: string | null;
+  city?: string | null;
+  postal_code?: string | null;
+}
+
+/** GET /api/vendor/export — the vendor's full data snapshot as one JSON
+ *  document (GDPR-style takeout). Client-side this is serialised to a
+ *  downloadable file; no server-side file is written. */
+export interface VendorDataExport {
+  exported_at: number;
+  user: {
+    id: number;
+    email: string;
+    full_name: string;
+    locale: string | null;
+    created_at: number;
+  };
+  account: VendorAccount;
+  listings: Listing[];
+  billing: VendorBilling | null;
+  /** Bookings with the vendor's own CRM fields + payment milestones. */
+  clients: VendorClientDetail[];
+  /** ISO YYYY-MM-DD days the vendor marked unavailable. */
+  blocked_dates: string[];
 }
 
 /** Response shape for the GET + PATCH vendor self-serve listing endpoints —

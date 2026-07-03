@@ -189,10 +189,17 @@ export interface UpdateVendorAccountInput {
   contact_email?: string | null;
   contact_phone?: string | null;
   vat_number?: string | null;
+  country?: string | null;
+  registry_number?: string | null;
+  legal_form?: string | null;
+  address?: string | null;
+  city?: string | null;
+  postal_code?: string | null;
 }
 
-/** Admin edit of a vendor's business details. Only present keys are applied;
- *  returns the fresh row (or null if the account is gone). */
+/** Edit of a vendor's business details (admin surface + vendor self-serve).
+ *  Only present keys are applied; returns the fresh row (or null if the
+ *  account is gone). */
 export function updateVendorAccount(
   id: number,
   input: UpdateVendorAccountInput,
@@ -214,6 +221,30 @@ export function updateVendorAccount(
   if (input.vat_number !== undefined) {
     sets.push("vat_number = ?");
     vals.push(input.vat_number);
+  }
+  if (input.country !== undefined) {
+    sets.push("country = ?");
+    vals.push(input.country);
+  }
+  if (input.registry_number !== undefined) {
+    sets.push("registry_number = ?");
+    vals.push(input.registry_number);
+  }
+  if (input.legal_form !== undefined) {
+    sets.push("legal_form = ?");
+    vals.push(input.legal_form);
+  }
+  if (input.address !== undefined) {
+    sets.push("address = ?");
+    vals.push(input.address);
+  }
+  if (input.city !== undefined) {
+    sets.push("city = ?");
+    vals.push(input.city);
+  }
+  if (input.postal_code !== undefined) {
+    sets.push("postal_code = ?");
+    vals.push(input.postal_code);
   }
   if (sets.length > 0) {
     sets.push("updated_at = ?");

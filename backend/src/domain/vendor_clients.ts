@@ -299,6 +299,15 @@ export function listVendorClients(accountId: number): VendorClientView[] {
   return rows.map(toVendorClientView);
 }
 
+/** Same list with the full CRM detail (notes + contact + payment schedule)
+ *  per client — the data-export shape. */
+export function listVendorClientDetails(accountId: number): VendorClientDetail[] {
+  const rows = db
+    .prepare("SELECT * FROM supplier_bookings WHERE vendor_account_id = ? ORDER BY created_at DESC")
+    .all(accountId) as BookingRow[];
+  return rows.map(toVendorClientDetail);
+}
+
 const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 
 /** Number of key public-listing fields the completeness percentage scores. */

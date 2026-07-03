@@ -372,6 +372,16 @@ export function getListingByVendorAccountId(vendorAccountId: number): Listing | 
   return row ? toListing(row) : null;
 }
 
+/** Every listing a vendor account owns (any status), newest-updated first.
+ *  The data export uses this — unlike the single-listing UI resolver above,
+ *  a multi-listing account gets all of its rows. */
+export function listListingsByVendorAccountId(vendorAccountId: number): Listing[] {
+  const rows = db
+    .prepare("SELECT * FROM listings WHERE vendor_account_id = ? ORDER BY updated_at DESC")
+    .all(vendorAccountId) as ListingRow[];
+  return rows.map(toListing);
+}
+
 /** Create a fresh 'claimed' listing for a newly-onboarded vendor — one that
  *  came through the waitlist and so has NO existing directory row to claim.
  *  id = 'v' + accountId per the listings id convention. Seeded with the
