@@ -4,6 +4,7 @@ import { describe, expect, test } from "bun:test";
 import type { AdminVendorView } from "@shared/listings";
 import { db } from "../../src/db";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
+import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { createOnboardingToken } from "../../src/domain/vendor_onboarding";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 
@@ -147,6 +148,33 @@ describe("admin vendor management", () => {
     expect(res.status).toBe(200);
     const row = db.prepare("SELECT id FROM vendor_accounts WHERE id = ?").get(accountId);
     expect(row ?? null).toBeNull();
+  });
+
+  test("list derives the FREE/PRO plan from the billing entitlement", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { accountId } = await seedActivatedVendor("vendor5@weddly.test", "Tiered Tunes");
+    initVendorBilling(accountId, "HUF");
+
+    // Founding grant → entitled → PRO with the founding badge.
+    let res = await req<{ active: AdminVendorView[] }>("GET", "/api/admin/vendors", undefined, {
+      token: adminToken,
+    });
+    let view = res.data.active.find((v) => v.id === accountId);
+    expect(view?.plan).toBe("pro");
+    expect(view?.billing_reason).toBe("founding");
+    expect(view?.is_founding_member).toBe(true);
+    expect(view?.subscription_status).toBe("founding");
+
+    // Lapse the founding window → the derived plan falls to FREE.
+    db.prepare(
+      "UPDATE vendor_subscriptions SET founding_until = ? WHERE vendor_account_id = ?",
+    ).run(Date.now() - 1000, accountId);
+    res = await req<{ active: AdminVendorView[] }>("GET", "/api/admin/vendors", undefined, {
+      token: adminToken,
+    });
+    view = res.data.active.find((v) => v.id === accountId);
+    expect(view?.plan).toBe("free");
+    expect(view?.is_founding_member).toBe(true);
   });
 
   test("non-admin is rejected", async () => {

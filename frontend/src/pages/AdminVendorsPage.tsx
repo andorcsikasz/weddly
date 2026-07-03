@@ -4,6 +4,7 @@
 // link. Sibling of AdminUsersPage; the BEÉRKEZŐ vendor waitlist stays separate.
 
 import type { AdminVendorView } from "@shared/listings";
+import type { VendorPlan } from "@shared/vendor_plan";
 import { Ban, Check, Clock, Loader2, Mail, Pencil, RotateCcw, Store, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
@@ -14,6 +15,22 @@ import { adminVendorMgmtApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 type Filter = "all" | "active" | "pending" | "suspended";
+
+// Mirrors the planner list's tier chip: the FREE/PRO tier reads at a glance
+// across a dense list. Display-only here, since the vendor plan is derived
+// from billing entitlement and an admin can't flip it by hand.
+const PLAN_STYLE: Record<VendorPlan, string> = {
+  free: "bg-paper-200 text-neutral-700 dark:bg-umber-800 dark:text-umber-200",
+  pro: "bg-neutral-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900",
+};
+
+function initials(name: string, email: string | null): string {
+  const src = (name || email || "").trim();
+  const parts = src.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? src[0] ?? "?";
+  const second = parts.length > 1 ? (parts[1]?.[0] ?? "") : "";
+  return (first + second).toUpperCase();
+}
 
 function fmtDate(unixMs: number, locale: string): string {
   const d = new Date(unixMs);
@@ -211,52 +228,69 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
     void run(() => adminVendorMgmtApi.remove(vendor.id), "admin.vendors.delete_success");
   }
 
+  const iconBtnClass =
+    "inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-umber-700 transition hover:border-umber-400 hover:text-umber-900 disabled:opacity-50 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:text-paper-50";
+
+  const email = vendor.contact_email ?? vendor.owner_email;
+
   return (
     <>
       {editing && (
         <EditModal vendor={vendor} onClose={() => setEditing(false)} onSaved={onChanged} />
       )}
       <div className="admin-card">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
+        <div className="flex items-center gap-4">
+          {/* Identity */}
+          <div
+            aria-hidden="true"
+            className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-paper-50 sm:flex dark:bg-paper-100 dark:text-umber-900"
+          >
+            {initials(vendor.display_name, email)}
+          </div>
+
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate font-semibold text-umber-900 dark:text-paper-50">
+                {vendor.display_name}
+              </p>
               <Pill tone={statusPill.tone} icon={<statusPill.Icon size={11} />}>
                 {statusPill.label}
               </Pill>
-              {vendor.vendor_code && (
-                <span className="text-xs text-umber-500 dark:text-umber-400">
-                  {vendor.vendor_code}
-                </span>
-              )}
               {vendor.token_expired && <Pill tone="muted">{t("admin.vendors.token_expired")}</Pill>}
-              <span className="text-xs text-umber-500 dark:text-umber-400">
-                {fmtDate(vendor.created_at, locale)}
-              </span>
+              {vendor.is_founding_member && <Pill tone="blush">{t("admin.vendors.founding")}</Pill>}
             </div>
-            <p className="mt-2 truncate font-medium text-umber-900 dark:text-paper-50">
-              {vendor.display_name}
-            </p>
-            {vendor.contact_email && (
-              <p className="truncate text-sm text-umber-700 dark:text-umber-300">
-                {vendor.contact_email}
-              </p>
+            {email && (
+              <p className="truncate text-sm text-umber-700 dark:text-umber-300">{email}</p>
             )}
-            {vendor.contact_phone && (
-              <p className="text-sm text-umber-700 dark:text-umber-300">{vendor.contact_phone}</p>
-            )}
-            <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-umber-500 dark:text-umber-400">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-umber-500 dark:text-umber-400">
+              {vendor.vendor_code && <span>{vendor.vendor_code}</span>}
+              {vendor.vendor_code && <span aria-hidden="true">·</span>}
+              <span>{fmtDate(vendor.created_at, locale)}</span>
               {vendor.state === "active" && (
-                <span>{t("admin.vendors.listing_count", { n: vendor.listing_count })}</span>
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>{t("admin.vendors.listing_count", { n: vendor.listing_count })}</span>
+                </>
               )}
               {vendor.subscription_status && (
-                <span>
-                  {t("admin.vendors.subscription")}: {vendor.subscription_status}
-                </span>
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>
+                    {t("admin.vendors.subscription")}: {vendor.subscription_status}
+                  </span>
+                </>
+              )}
+              {vendor.contact_phone && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>{vendor.contact_phone}</span>
+                </>
               )}
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col items-end gap-2">
+          {/* Plan + actions */}
+          <div className="flex shrink-0 items-center gap-2">
             {vendor.state === "pending" ? (
               <Button size="sm" onClick={handleResend} disabled={busy}>
                 {busy ? (
@@ -268,51 +302,60 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                 )}
               </Button>
             ) : (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
+              <>
+                {vendor.plan && (
+                  <span
+                    title={vendor.billing_reason ?? undefined}
+                    aria-label={`${t("admin.vendors.plan")}: ${t(`admin.vendors.plan_${vendor.plan}`)}`}
+                    className={`inline-flex min-w-[76px] select-none items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide ${PLAN_STYLE[vendor.plan]}`}
+                  >
+                    {t(`admin.vendors.plan_${vendor.plan}`)}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className={iconBtnClass}
                   onClick={() => setEditing(true)}
                   disabled={busy}
                   aria-label={t("admin.vendors.edit")}
                 >
-                  <Pencil size={13} />
-                </Button>
+                  <Pencil size={15} />
+                </button>
                 {bucket === "suspended" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  <button
+                    type="button"
+                    className={iconBtnClass}
                     onClick={handleReactivate}
                     disabled={busy}
                     aria-label={t("admin.vendors.reactivate")}
                   >
                     {busy ? (
-                      <Loader2 size={13} className="animate-spin" />
+                      <Loader2 size={15} className="animate-spin" />
                     ) : (
-                      <RotateCcw size={13} />
+                      <RotateCcw size={15} />
                     )}
-                  </Button>
+                  </button>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  <button
+                    type="button"
+                    className={iconBtnClass}
                     onClick={handleSuspend}
                     disabled={busy}
                     aria-label={t("admin.vendors.suspend")}
                   >
-                    <Ban size={13} />
-                  </Button>
+                    <Ban size={15} />
+                  </button>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
+                <button
+                  type="button"
+                  className={iconBtnClass}
                   onClick={handleDelete}
                   disabled={busy}
                   aria-label={t("admin.vendors.delete")}
                 >
-                  <Trash2 size={13} />
-                </Button>
-              </div>
+                  <Trash2 size={15} />
+                </button>
+              </>
             )}
           </div>
         </div>

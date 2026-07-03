@@ -4897,6 +4897,10 @@ export interface LocaleMessages {
       token_expired: string;
       listing_count: string;
       subscription: string;
+      plan: string;
+      plan_free: string;
+      plan_pro: string;
+      founding: string;
       resend: string;
       edit: string;
       suspend: string;

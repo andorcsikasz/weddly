@@ -8,6 +8,8 @@
 // Kept off P2.C by design — don't pre-build infra.
 
 import type { AdminVendorView, VendorAccount } from "@shared/listings";
+import { computeVendorEntitlement, type VendorSubscriptionStatus } from "@shared/vendor_billing";
+import { vendorPlanFromEntitlement } from "@shared/vendor_plan";
 import { db, now } from "../db";
 import { generateVendorCode } from "./invite_codes";
 
@@ -144,10 +146,33 @@ interface AdminVendorRow extends VendorAccountRow {
   owner_email: string | null;
   owner_status: string | null;
   subscription_status: string | null;
+  sub_trial_ends_at: number | null;
+  sub_founding_until: number | null;
+  sub_is_founding_member: number | null;
+  sub_lead_credits_used: number | null;
+  sub_billing_starts_at: number | null;
   listing_count: number;
 }
 
 export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
+  // Derive the FREE/PRO tier the same way the vendor's own billing surface
+  // does (computeVendorEntitlement) so admin and vendor can never disagree.
+  let plan: AdminVendorView["plan"] = null;
+  let billingReason: AdminVendorView["billing_reason"] = null;
+  if (row.subscription_status) {
+    const { entitled, reason } = computeVendorEntitlement(
+      row.subscription_status as VendorSubscriptionStatus,
+      {
+        trial_ends_at: row.sub_trial_ends_at,
+        founding_until: row.sub_founding_until,
+        lead_credits_used: row.sub_lead_credits_used ?? 0,
+        billing_starts_at: row.sub_billing_starts_at,
+        nowMs: Date.now(),
+      },
+    );
+    plan = vendorPlanFromEntitlement(entitled);
+    billingReason = reason;
+  }
   return {
     state: "active",
     id: row.id,
@@ -161,6 +186,9 @@ export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
     owner_email: row.owner_email,
     owner_status: row.owner_status === "suspended" ? "suspended" : "active",
     subscription_status: row.subscription_status,
+    plan,
+    billing_reason: billingReason,
+    is_founding_member: row.sub_is_founding_member === 1,
     listing_count: row.listing_count,
     token_expired: false,
     created_at: row.created_at,
@@ -173,7 +201,12 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
       `SELECT va.*,
               u.email  AS owner_email,
               u.status AS owner_status,
-              vs.subscription_status AS subscription_status,
+              vs.subscription_status  AS subscription_status,
+              vs.trial_ends_at        AS sub_trial_ends_at,
+              vs.founding_until       AS sub_founding_until,
+              vs.is_founding_member   AS sub_is_founding_member,
+              vs.lead_credits_used    AS sub_lead_credits_used,
+              vs.billing_starts_at    AS sub_billing_starts_at,
               (SELECT COUNT(*) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_count
          FROM vendor_accounts va
          LEFT JOIN users u ON u.id = va.owner_user_id

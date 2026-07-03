@@ -6,8 +6,9 @@
 // multi-city venues, agencies).
 
 import type { SupplierCategory, VenueStyle } from "./suppliers";
-import type { VendorBilling } from "./vendor_billing";
+import type { VendorBilling, VendorBillingReason } from "./vendor_billing";
 import type { VendorClientDetail } from "./vendor_clients";
+import type { VendorPlan } from "./vendor_plan";
 
 /**
  * Where the listing came from. Drives the moderation/trust UX and gates which
@@ -147,6 +148,15 @@ export interface AdminVendorView {
   /** vendor_subscriptions.subscription_status snapshot, or null when the vendor
    *  has no subscription row yet. */
   subscription_status: string | null;
+  /** Derived tier at read-time: "pro" while the billing entitlement holds,
+   *  "free" once it lapses. Null when there's no subscription row (pending
+   *  rows and legacy accounts). */
+  plan: VendorPlan | null;
+  /** Why the entitlement holds or lapsed (trialing / founding / lead_window /
+   *  subscription / trial_expired / …). Null when there's no subscription row. */
+  billing_reason: VendorBillingReason | null;
+  /** Founding-cohort badge (free first year). False for pending rows. */
+  is_founding_member: boolean;
   /** How many `listings` this vendor owns (0 for pending rows). */
   listing_count: number;
   /** For pending rows: whether the onboarding token has expired. */
