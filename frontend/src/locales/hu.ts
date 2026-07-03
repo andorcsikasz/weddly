@@ -1356,11 +1356,11 @@ const hu: LocaleMessages = {
     // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
     pricing_title: "Az első 200 párnak ingyenes.",
     pricing_body:
-      "Legyetek az első 200 pár között, és a Wēddly végig ingyenes marad a tervezésetek alatt, akár 18 hónapig. Utána 990 Ft havonta, 2 hét ingyenes próbával, minden funkcióval.",
-    pricing_amount: "990",
+      "Legyetek az első 200 pár között, és a Wēddly végig ingyenes marad a tervezésetek alatt, akár 18 hónapig. Utána 2 490 Ft havonta, 2 hét ingyenes próbával, minden funkcióval.",
+    pricing_amount: "2 490",
     pricing_amount_decimal: "",
     pricing_amount_sub: "/ hó",
-    pricing_early_note: "Early access ár aug. 15-ig · utána 2 490 Ft / hó.",
+    pricing_early_note: "Havidíj, bármikor lemondható · nincs éves elköteleződés.",
     pricing_value_note: "Low-cortisol esküvőszervezés egy BigMac menü áráért.",
     pricing_after: "Az első 200 párnak 18 hónapig ingyenes.",
     pricing_after_detail:
@@ -6376,8 +6376,8 @@ const hu: LocaleMessages = {
     banner_exit: "Vissza a szervezőoldalra",
     banner_cta: "Indítsd a sajátodat",
     banner_dismiss_aria: "Bezárás",
-    popup_title: "Vidd a saját páraidat egy ilyen munkaterületre.",
-    popup_body: "Öt mesehős-esküvő, egy naptár, egy pipeline. A tiéd pár perc alatt kész.",
+    popup_title: "Minden pár egy munkafelületen.",
+    popup_body: "Az új munkaterületed esküvőszervezőként.",
     popup_cta: "Jelentkezem szervezőként",
     popup_microcopy: "Ingyenes a nyílt béta alatt.",
   },

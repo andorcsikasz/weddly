@@ -12,7 +12,7 @@ import "../setup";
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { AdminFinancialPlannerOverview } from "@shared/admin_financial_planner";
 import type { AdminCoupleView } from "@shared/types";
-import { type BillingStatusResponse, PAID_LAUNCH_DATE } from "@shared/billing";
+import { type BillingStatusResponse, MONTHLY_PRICE, PAID_LAUNCH_DATE } from "@shared/billing";
 import type { Couple } from "@shared/types";
 import { db } from "../../src/db";
 import {
@@ -77,7 +77,7 @@ describe("billing state machine", () => {
     expect(r.status).toBe(200);
     expect(r.data.enabled).toBe(false);
     expect(r.data.currency).toBe("HUF");
-    expect(r.data.price).toBe(990);
+    expect(r.data.price).toBe(MONTHLY_PRICE.HUF);
     // Solo couple hasn't consumed a founding slot (that happens at partner-join).
     expect(r.data.founding_spots_left).toBe(200);
   });

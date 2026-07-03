@@ -9,6 +9,7 @@ import {
   type StripeHealth,
   subscriptionUnitEconomics,
 } from "@shared/admin_financial_planner";
+import { MONTHLY_PRICE } from "@shared/billing";
 import { db } from "../../src/db";
 import { recordGrowthEvent } from "../../src/domain/growth_events";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
@@ -65,10 +66,10 @@ describe("GET /api/admin/financial-planner/overview", () => {
     expect(r.data.counts.trialing).toBeGreaterThanOrEqual(1);
     expect(r.data.counts.active).toBe(1);
     expect(r.data.paying_subscribers).toBe(1);
-    expect(r.data.mrr_eur_total).toBe(5); // one EUR subscriber at 5 EUR
-    expect(r.data.arr_eur_total).toBe(60);
+    expect(r.data.mrr_eur_total).toBe(MONTHLY_PRICE.EUR); // one EUR subscriber
+    expect(r.data.arr_eur_total).toBe(MONTHLY_PRICE.EUR * 12);
     expect(r.data.founding_spots_left).toBe(200);
-    expect(r.data.price_huf).toBe(990);
+    expect(r.data.price_huf).toBe(MONTHLY_PRICE.HUF);
   });
 
   test("counts checkout-started couples (distinct) and total attempts", async () => {

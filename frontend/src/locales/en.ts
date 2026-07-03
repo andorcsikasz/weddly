@@ -1340,11 +1340,11 @@ const en: LocaleMessages = {
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_title: "Free for the first 200 couples.",
     pricing_body:
-      "Sign up among the first 200 couples and Weddly stays free through your whole planning, up to 18 months. After that it's 5.50 € a month (early-access price until Aug 15, then 7 €), with a two-week free trial and every feature included.",
-    pricing_amount: "5",
-    pricing_amount_decimal: "50",
+      "Sign up among the first 200 couples and Weddly stays free through your whole planning, up to 18 months. After that it's 7 € a month, with a two-week free trial and every feature included.",
+    pricing_amount: "7",
+    pricing_amount_decimal: "",
     pricing_amount_sub: "/ month",
-    pricing_early_note: "Early-access price until Aug 15 · then 7 € / month.",
+    pricing_early_note: "Monthly, cancel anytime · no annual lock-in.",
     pricing_value_note: "Low-cortisol wedding planning, for the price of a BigMac menu.",
     pricing_after: "Free for 18 months for the first 200 couples.",
     pricing_after_detail:
@@ -6316,9 +6316,9 @@ const en: LocaleMessages = {
     banner_exit: "Back to the planner page",
     banner_cta: "Start your own",
     banner_dismiss_aria: "Dismiss",
-    popup_title: "Give your own couples a workspace like this.",
-    popup_body: "Five fairy-tale weddings, one calendar, one pipeline. Yours in minutes.",
-    popup_cta: "Sign up as a planner",
+    popup_title: "Every couple. One workspace.",
+    popup_body: "Your new workspace as a wedding planner.",
+    popup_cta: "Apply as a Wedding Planner",
     popup_microcopy: "Free during the open beta.",
   },
   tools: {

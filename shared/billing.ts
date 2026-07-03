@@ -2,7 +2,7 @@
 //
 // Money model recap (see CLAUDE.md): every couple has a `currency` (HUF for
 // HU signups, EUR otherwise). The standard plan is a flat monthly price in
-// that currency — 1 990 Ft / month or 5 € / month — billed through Stripe.
+// that currency — 2 490 Ft / month or 7 € / month — billed through Stripe.
 //
 // The state machine lives on the couple, in `subscription_status` plus three
 // timestamps. Entitlement (does this couple have edit access right now?) is
@@ -66,9 +66,9 @@ export function partnerFreeWindowEnd(weddingMs: number | null, nowMs: number): n
  *  the display/forecast figures — the charged amount comes from the Stripe
  *  Price object, which must be kept in sync. */
 export const MONTHLY_PRICE: Record<Currency, number> = {
-  HUF: 990,
-  EUR: 5,
-  USD: 5,
+  HUF: 2490,
+  EUR: 7,
+  USD: 7,
 };
 
 /** Billing snapshot attached to the Couple DTO. */
