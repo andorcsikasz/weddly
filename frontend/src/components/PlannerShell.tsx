@@ -33,6 +33,7 @@ import type { PlannerInviteView, PlannerProfile, PlannerStats, User } from "@sha
 import { useAuth } from "../lib/auth";
 import { plannerApi, plannerBillingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { useNotifSeen } from "../lib/useNotifSeen";
 import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { PlannerDemoOverlay } from "./PlannerDemoOverlay";
@@ -67,14 +68,30 @@ const NAV_COLLAPSED_KEY = "weddly.planner_nav_collapsed";
 function NotificationBell({
   overdue,
   pendingInvites,
+  ready,
 }: {
   overdue: number;
   pendingInvites: number;
+  ready: boolean;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const hasNotifications = overdue > 0 || pendingInvites > 0;
+  // The dot clears on open (per-device watermark) and re-arms when a count
+  // rises again; the panel content itself always reflects the live counts.
+  const { dot, markSeen } = useNotifSeen(
+    "weddly.planner_notif_seen",
+    { overdue, invites: pendingInvites },
+    ready,
+  );
+
+  function toggleOpen() {
+    setOpen((v) => {
+      if (!v) markSeen();
+      return !v;
+    });
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -98,14 +115,12 @@ function NotificationBell({
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
         aria-label={t("planner_home.topbar_notif_aria")}
       >
         <Bell size={18} />
-        {hasNotifications && (
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
-        )}
+        {dot && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />}
       </button>
       {open && (
         <div
@@ -455,7 +470,11 @@ export function PlannerShell({ children }: { children: ReactNode }) {
               )}
             </button>
 
-            <NotificationBell overdue={stats?.overdue_tasks ?? 0} pendingInvites={invites.length} />
+            <NotificationBell
+              overdue={stats?.overdue_tasks ?? 0}
+              pendingInvites={invites.length}
+              ready={stats !== null}
+            />
 
             {user && (
               <PlannerProfileMenu
