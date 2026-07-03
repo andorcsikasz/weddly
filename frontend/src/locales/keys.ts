@@ -7002,7 +7002,7 @@ export interface LocaleMessages {
     popup_cta: string;
     popup_microcopy: string;
   };
-  /** Vendor-side demo (Shrek-themed bakery sandbox) — banner + nudge inside
+  /** Vendor-side demo (Shrek-themed bakery sandbox): banner + nudge inside
    *  /vendor while the active session is the demo vendor. */
   vendor_demo: {
     banner_title: string;
