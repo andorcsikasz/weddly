@@ -1,9 +1,9 @@
-// Vendor settings — account basics for the signed-in vendor. Email is
+// Vendor settings — account (personal) tab of the settings hub. Email is
 // read-only, the display name is click-to-edit, the UI locale is a
-// radiogroup, and a change-password form rounds it out. Logout already lives
-// in the VendorShell header, so it isn't repeated here. There is no vendor
-// data-export endpoint yet (the GDPR export route is couple-scoped), so that
-// section is intentionally omitted until a /api/vendor export seam exists.
+// radiogroup, and a change-password form rounds it out. Company identity,
+// billing and data takeout live in the sibling tabs (VendorSettingsCompany /
+// VendorBillingPage / VendorSettingsData); VendorSettingsLayout owns the
+// hero + document title.
 
 import { Globe, KeyRound, ShieldCheck, UserRound } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -12,7 +12,6 @@ import { ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { authApi, userApi } from "../../lib/endpoints";
 import { type Locale, useT } from "../../lib/i18n";
-
 export default function VendorSettingsPage() {
   const { t, locale, setLocale } = useT();
   const { user, refresh: refreshAuth, setSession } = useAuth();
@@ -126,14 +125,7 @@ export default function VendorSettingsPage() {
   }
 
   return (
-    <div>
-      <h1 className="font-grotesk text-2xl tracking-tight text-ink-900 dark:text-paper-50">
-        {t("vendor.settings.page_title")}
-      </h1>
-      <p className="mt-2 text-sm text-ink-600 dark:text-paper-300">
-        {t("vendor.settings.page_body")}
-      </p>
-
+    <div className="mt-2">
       {/* Account basics */}
       <section className="card mt-6">
         <h2 className="flex items-center gap-2 font-grotesk text-lg">

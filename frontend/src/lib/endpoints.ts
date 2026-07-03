@@ -180,7 +180,10 @@ import type {
 } from "@shared/vendor_clients";
 import type {
   AdminVendorView,
+  VendorAccount,
+  VendorAccountEditInput,
   VendorAvailabilityView,
+  VendorDataExport,
   VendorListingEditInput,
   VendorListingView,
 } from "@shared/listings";
@@ -1953,6 +1956,18 @@ export const vendorListingApi = {
    *  redirecting back into it. Returns the refreshed view (account.onboarding_done
    *  is now true). Idempotent. */
   completeOnboarding: () => apiFetch<VendorListingView>("POST", "/api/vendor/onboarding/complete"),
+};
+
+/** Vendor self-serve account (company identity) + data takeout. The account
+ *  PATCH edits the legal-payee fields (display name, contact, VAT, registry,
+ *  address) — the PUBLIC listing stays on vendorListingApi. */
+export const vendorAccountApi = {
+  update: (body: VendorAccountEditInput) =>
+    apiFetch<{ account: VendorAccount }>("PATCH", "/api/vendor/account", body),
+  /** Full JSON snapshot of the vendor's data (account + listings + billing +
+   *  clients incl. payments + blocked dates); the caller serialises it into a
+   *  downloadable file. */
+  export: () => apiFetch<VendorDataExport>("GET", "/api/vendor/export"),
 };
 
 /** Vendor self-serve availability — the booked/blocked days a claimed vendor

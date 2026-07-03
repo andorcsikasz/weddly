@@ -30,6 +30,19 @@ export function useDocumentMeta(titleKey: string, descriptionKey: string) {
 }
 
 /**
+ * Title-only variant for authenticated in-app surfaces (vendor/planner
+ * workspaces): no description/og rewrites because these pages are never
+ * crawled, but each route still deserves its own tab title instead of the
+ * marketing tagline. Pass the already-translated page name; the brand
+ * suffix is appended here so every call site stays consistent.
+ */
+export function useDocumentTitle(pageName: string) {
+  useEffect(() => {
+    document.title = `${pageName} · Wēddly`;
+  }, [pageName]);
+}
+
+/**
  * Literal-string variant for pages whose title/description aren't fixed
  * i18n keys (e.g. /blog/:slug, where the meta comes from the post record
  * the page resolved at runtime). Same DOM writes as `useDocumentMeta`; the

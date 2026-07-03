@@ -19,6 +19,12 @@ import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 import { useDocumentMeta } from "../../lib/seo";
 
+// Dark-olive frame shared by every card on this page; the hovered/focused
+// ("selected") card thickens via a same-colour ring so nothing shifts.
+const STAT_FRAME = "border-moss-600 dark:border-moss-500";
+const STAT_FRAME_HOVER =
+  "transition hover:bg-moss-50 hover:ring-1 hover:ring-moss-600 focus-visible:ring-1 focus-visible:ring-moss-600 dark:hover:bg-moss-900/20 dark:hover:ring-moss-500 dark:focus-visible:ring-moss-500";
+
 function StatTile({
   icon,
   label,
@@ -65,26 +71,23 @@ function StatTile({
           </span>
         )}
       </div>
-      <div className="mt-2 flex items-baseline gap-1.5">
-        <span className={`text-3xl font-bold leading-none tabular-nums ${valueClass}`}>
+      <div className="mt-1.5 flex items-baseline gap-1.5">
+        <span className={`text-2xl font-bold leading-none tabular-nums ${valueClass}`}>
           {value}
         </span>
         {unit && <span className="text-xs text-umber-400 dark:text-umber-500">{unit}</span>}
       </div>
       {caption && (
-        <p className="mt-1.5 text-[11px] leading-snug text-umber-400 dark:text-umber-500">
+        <p className="mt-1 text-[11px] leading-snug text-umber-400 dark:text-umber-500">
           {caption}
         </p>
       )}
     </>
   );
-  const base = "card p-4";
+  const base = `card p-3.5 ${STAT_FRAME}`;
   if (to) {
     return (
-      <Link
-        to={to}
-        className={`${base} block transition-colors hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20`}
-      >
+      <Link to={to} className={`${base} block ${STAT_FRAME_HOVER}`}>
         {inner}
       </Link>
     );
@@ -166,11 +169,11 @@ export default function PlannerStatsPage() {
 
   return (
     <div className="py-2">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-umber-900 dark:text-paper-50">
           {t("planner_stats.title")}
         </h1>
-        <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
+        <p className="mt-0.5 text-sm text-umber-600 dark:text-umber-300">
           {t("planner_stats.subtitle")}
         </p>
       </div>
@@ -197,22 +200,27 @@ export default function PlannerStatsPage() {
           value={`${completionPct}%`}
           accent="moss"
           help={t("planner_stats.completion_help")}
+          to="/app/planner"
         />
         <StatTile
           icon={<AlertTriangle size={14} aria-hidden="true" />}
           label={t("planner_stats.kpi_overdue")}
           value={stats.overdue_tasks}
           accent={stats.overdue_tasks > 0 ? "red" : undefined}
+          to="/app/planner?timing=overdue"
         />
       </div>
 
       {/* Plan usage + pending invites */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <div className="card p-5 sm:col-span-2">
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <Link
+          to="/app/planner/billing"
+          className={`card block p-4 sm:col-span-2 ${STAT_FRAME} ${STAT_FRAME_HOVER}`}
+        >
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
             {t("planner_stats.plan_title")}
           </p>
-          <div className="mt-2 flex items-baseline justify-between">
+          <div className="mt-1.5 flex items-baseline justify-between">
             <span className="font-grotesk text-xl font-semibold capitalize text-umber-900 dark:text-paper-50">
               {stats.plan}
             </span>
@@ -222,26 +230,23 @@ export default function PlannerStatsPage() {
                 .replace("{{max}}", String(stats.max_clients))}
             </span>
           </div>
-          <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+          <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
             <div
               className={`h-full rounded-full transition-all ${planBarClass}`}
               style={{ width: `${planPct}%` }}
             />
           </div>
           {planNearCap && (
-            <Link
-              to="/app/planner/billing"
-              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-moss-700 transition-colors hover:text-moss-800 dark:text-moss-300 dark:hover:text-moss-200"
-            >
+            <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-moss-700 dark:text-moss-300">
               {t("planner_stats.upgrade_cta")}
               <ArrowRight size={13} aria-hidden="true" />
-            </Link>
+            </span>
           )}
-        </div>
+        </Link>
 
         <Link
           to="/app/planner/clients"
-          className="card flex flex-col justify-center p-5 transition-colors hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20"
+          className={`card flex flex-col justify-center p-4 ${STAT_FRAME} ${STAT_FRAME_HOVER}`}
         >
           <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
             <MailQuestion
@@ -262,7 +267,7 @@ export default function PlannerStatsPage() {
               <InfoHint text={t("planner_stats.pending_help")} className="-my-1 normal-case" />
             </span>
           </div>
-          <span className="mt-2 text-3xl font-bold tabular-nums text-umber-900 dark:text-paper-50">
+          <span className="mt-1.5 text-2xl font-bold tabular-nums text-umber-900 dark:text-paper-50">
             {stats.pending_invites}
           </span>
           {stats.pending_invites === 0 && (
@@ -274,14 +279,14 @@ export default function PlannerStatsPage() {
       </div>
 
       {/* Per-client completion */}
-      <section className="mt-8">
-        <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+      <section className="mt-6">
+        <h2 className="mb-3 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
           {t("planner_stats.completion_title")}
         </h2>
         {clientsWithTasks.length === 0 ? (
           <p className="text-sm text-umber-400 dark:text-umber-500">{t("planner_stats.empty")}</p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {clientsWithTasks.map((c) => {
               const total = c.task_total;
               const donePct = Math.round((c.task_done / total) * 100);
@@ -292,7 +297,7 @@ export default function PlannerStatsPage() {
                 <Link
                   key={c.couple_id}
                   to={`/app/planner/clients/${c.couple_id}`}
-                  className="flex items-center gap-3 rounded-xl border border-paper-200 bg-white px-4 py-3 transition-colors hover:border-moss-300 hover:bg-moss-50 dark:border-umber-800 dark:bg-umber-900 dark:hover:border-moss-700 dark:hover:bg-moss-900/20"
+                  className={`flex items-center gap-3 rounded-xl border bg-white px-4 py-2 dark:bg-umber-900 ${STAT_FRAME} ${STAT_FRAME_HOVER}`}
                   title={t("planner_stats.view_client")}
                 >
                   <span className="w-32 shrink-0 truncate text-sm font-medium text-ink-700 dark:text-paper-100">
@@ -337,7 +342,7 @@ export default function PlannerStatsPage() {
         )}
 
         {/* Legend */}
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-3 flex flex-wrap gap-3">
           <span className="flex items-center gap-1.5 text-[10px] text-ink-500 dark:text-umber-400">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-moss-500" />
             {t("planner_home.chart_done_label")}

@@ -590,7 +590,11 @@ export interface LocaleMessages {
     /** Billing banner. founding/trial receive `{date}` (free-until / trial-end). */
     billing_founding: string;
     billing_trial: string;
+    /** Receives `{used}` + `{total}` — delivered vs promised lead-window inquiries. */
+    billing_lead_window: string;
     billing_lapsed: string;
+    billing_lapsed_cta: string;
+    availability_locked: string;
     section_marketing: string;
     section_contact: string;
     section_pricing: string;
@@ -605,6 +609,10 @@ export interface LocaleMessages {
     label_contact_phone: string;
     label_price_band: string;
     label_price_band_help: string;
+    /** Anti-fraud cooldown (shared/listings.ts PRICE_BAND_COOLDOWN_DAYS):
+     *  shown instead of the help line while the band is locked.
+     *  {date} = localised unlock date. */
+    price_band_locked_until: string;
     label_capacity_min: string;
     label_capacity_max: string;
     section_hero: string;
@@ -635,6 +643,18 @@ export interface LocaleMessages {
     /** Receives `{date}` — the next free day. */
     availability_next_free: string;
     availability_none_free: string;
+    /** Self-serve pause/unpause card on the listing editor. */
+    visibility_title: string;
+    visibility_body: string;
+    visibility_live: string;
+    visibility_paused: string;
+    visibility_moderated: string;
+    visibility_pause_cta: string;
+    visibility_publish_cta: string;
+    visibility_paused_toast: string;
+    visibility_published: string;
+    visibility_failed: string;
+    visibility_moderated_note: string;
     availability_blocked: string;
     availability_block_failed: string;
     availability_unblocked: string;
@@ -690,8 +710,16 @@ export interface LocaleMessages {
       section_account: string;
       logout: string;
       brand_fallback: string;
+      /** aria-label for the unread-inquiry count badge on the clients nav item. */
+      new_inquiries: string;
       collapse_sidebar: string;
       expand_sidebar: string;
+    };
+    /** Header profile-menu labels (mirrors planner_shell). */
+    shell: {
+      menu_label: string;
+      menu_plan: string;
+      menu_settings: string;
     };
     dashboard: {
       page_title: string;
@@ -753,6 +781,7 @@ export interface LocaleMessages {
       status_expired: string;
       stage_label: string;
       stage_placeholder: string;
+      stage_hint: string;
       contract_value: string;
       deposit_paid: string;
       balance: string;
@@ -823,10 +852,32 @@ export interface LocaleMessages {
       per_month: string;
       compare_title: string;
       you_are_here: string;
-      free_price: string;
       payment_portal_note: string;
       upgrade_value: string;
       upgrade_cta: string;
+      trial_expired_line: string;
+      add_card_title: string;
+      /** Receives `{total}` — complimentary lead count before billing starts. */
+      add_card_body: string;
+      add_card_cta: string;
+      setup_success_note: string;
+      lead_meter_title: string;
+      /** Receives `{used}` + `{total}` — lead-window meter. */
+      lead_meter_count: string;
+      /** Receives `{total}`. */
+      lead_window_line: string;
+      /** Receives `{total}` + `{date}` — first charge date once leads are delivered. */
+      billing_starts_line: string;
+      /** Receives `{date}`. */
+      next_payment_line: string;
+      past_due_line: string;
+      leads_exhausted_line: string;
+      subscribe_cta: string;
+      portal_cta: string;
+      redirecting: string;
+      action_failed: string;
+      feature_direct_messages: string;
+      feature_calendar: string;
       invoice_history_title: string;
       invoice_col_date: string;
       invoice_col_amount: string;
@@ -848,6 +899,33 @@ export interface LocaleMessages {
       saving: string;
       saved: string;
       save_failed: string;
+      tabs_aria: string;
+      tab_account: string;
+      tab_company: string;
+      tab_billing: string;
+      tab_data: string;
+      badge_vendor: string;
+      company_title: string;
+      company_body: string;
+      company_name: string;
+      company_name_required: string;
+      company_email: string;
+      company_phone: string;
+      company_vat: string;
+      company_registry: string;
+      company_legal_form: string;
+      company_country: string;
+      company_postal: string;
+      company_city: string;
+      company_address: string;
+      company_listing_link: string;
+      bio_title: string;
+      bio_body: string;
+      bio_hu: string;
+      bio_en: string;
+      data_delete_heading: string;
+      data_delete_desc: string;
+      data_delete_cta: string;
     };
     plan: {
       free_label: string;
@@ -7607,10 +7685,6 @@ export interface LocaleMessages {
     rail_all_good: string;
     rail_more_overdue: string;
     rail_more_today: string;
-    rail_actions_title: string;
-    rail_action_add_client: string;
-    rail_action_profile: string;
-    rail_action_messages: string;
     pipeline_title: string;
     pipeline_add_btn: string;
     pipeline_pending_invites: string;
@@ -7800,6 +7874,10 @@ export interface LocaleMessages {
     /** {source} = official source attribution from the backend. */
     source_label: string;
     filled_toast: string;
+  };
+  geo: {
+    /** OSM licence line shown under the address suggestion list. */
+    address_attribution: string;
   };
   planner_profile: {
     heading: string;

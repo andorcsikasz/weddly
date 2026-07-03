@@ -1,6 +1,6 @@
 import { CheckCircle2, ChevronDown, ChevronUp, Circle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import type {
   PlannerClientView,
   PlannerInviteView,
@@ -70,17 +70,20 @@ function KpiTile({
       </div>
     </>
   );
+  // Dark-olive frame on every tile; the hovered/focused ("selected") one reads
+  // slightly thicker via a same-colour ring so the layout never shifts.
+  const frame = "border-moss-600 dark:border-moss-500";
   if (to) {
     return (
       <Link
         to={to}
-        className="card block p-4 transition-colors hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20"
+        className={`card block p-4 ${frame} transition hover:bg-moss-50 hover:ring-1 hover:ring-moss-600 focus-visible:ring-1 focus-visible:ring-moss-600 dark:hover:bg-moss-900/20 dark:hover:ring-moss-500 dark:focus-visible:ring-moss-500`}
       >
         {inner}
       </Link>
     );
   }
-  return <div className="card p-4">{inner}</div>;
+  return <div className={`card p-4 ${frame}`}>{inner}</div>;
 }
 
 // ─── Task overview chart ──────────────────────────────────────────────────────
@@ -558,13 +561,20 @@ export default function PlannerHomePage() {
   const [stats, setStats] = useState<PlannerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  // "?timing=overdue|week" deep-links the task list pre-filtered (the stats
+  // page's overdue KPI points here); the filter panel opens so the active
+  // pill is visible.
+  const [searchParams] = useSearchParams();
+  const timingParam = searchParams.get("timing");
+  const initialTiming: TimingFilter =
+    timingParam === "week" || timingParam === "overdue" ? timingParam : "all";
   const [taskFilters, setTaskFilters] = useState<TaskFilters>({
     clientId: null,
     priority: "all",
-    timing: "all",
+    timing: initialTiming,
   });
   const [showAddClient, setShowAddClient] = useState(false);
-  const [showTaskFilters, setShowTaskFilters] = useState(false);
+  const [showTaskFilters, setShowTaskFilters] = useState(initialTiming !== "all");
   const [hasThreads, setHasThreads] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(true);
 
@@ -873,11 +883,7 @@ export default function PlannerHomePage() {
 
       {/* RIGHT COLUMN */}
       <div className="mt-6 lg:mt-0 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-        <PlannerDashRightRail
-          tasks={tasks}
-          clients={clients}
-          onAddClientClick={() => setShowAddClient(true)}
-        />
+        <PlannerDashRightRail tasks={tasks} clients={clients} />
       </div>
     </main>
   );

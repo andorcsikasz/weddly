@@ -101,6 +101,9 @@ const VendorListingPage = lazyWithReload(() => import("./pages/vendor/VendorList
 const VendorStatsPage = lazyWithReload(() => import("./pages/vendor/VendorStatsPage"));
 const VendorBillingPage = lazyWithReload(() => import("./pages/vendor/VendorBillingPage"));
 const VendorSettingsPage = lazyWithReload(() => import("./pages/vendor/VendorSettingsPage"));
+const VendorSettingsLayout = lazyWithReload(() => import("./pages/vendor/VendorSettingsLayout"));
+const VendorSettingsCompany = lazyWithReload(() => import("./pages/vendor/VendorSettingsCompany"));
+const VendorSettingsData = lazyWithReload(() => import("./pages/vendor/VendorSettingsData"));
 const VerifySupplierPage = lazyWithReload(() => import("./pages/VerifySupplierPage"));
 const WeddingWebsitePage = lazyWithReload(() => import("./pages/WeddingWebsitePage"));
 const WishlistEditorPage = lazyWithReload(() => import("./pages/WishlistEditorPage"));
@@ -269,7 +272,16 @@ export function RedirectIfAuthed({ children }: { children: JSX.Element }) {
 
 function FullScreenLoader() {
   return (
-    <div className="flex h-full items-center justify-center text-ink-500 text-sm">Loading…</div>
+    <div
+      className="flex min-h-[60vh] items-center justify-center"
+      role="status"
+      aria-label="Loading"
+    >
+      <span
+        aria-hidden="true"
+        className="h-7 w-7 animate-spin rounded-full border-2 border-paper-300 border-t-steel-600 dark:border-umber-700 dark:border-t-steel-300"
+      />
+    </div>
   );
 }
 
@@ -667,22 +679,23 @@ export default function App() {
               </Page>
             }
           />
-          <Route
-            path="billing"
-            element={
-              <Page>
-                <VendorBillingPage />
-              </Page>
-            }
-          />
+          {/* Billing folded into the settings hub as the Csomag tab; the old
+              path keeps working for bookmarks + older in-app links. */}
+          <Route path="billing" element={<Navigate to="/vendor/settings/billing" replace />} />
           <Route
             path="settings"
             element={
               <Page>
-                <VendorSettingsPage />
+                <VendorSettingsLayout />
               </Page>
             }
-          />
+          >
+            <Route index element={<Navigate to="account" replace />} />
+            <Route path="account" element={<VendorSettingsPage />} />
+            <Route path="company" element={<VendorSettingsCompany />} />
+            <Route path="billing" element={<VendorBillingPage />} />
+            <Route path="data" element={<VendorSettingsData />} />
+          </Route>
         </Route>
         <Route
           path="/change-email/:token"
