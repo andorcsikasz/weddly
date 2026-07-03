@@ -75,7 +75,7 @@ function KpiTile({
         </span>
       </div>
       <div
-        className={`mt-1 text-2xl font-bold leading-none tabular-nums ${
+        className={`mt-1 text-center text-2xl font-bold leading-none tabular-nums ${
           isRed
             ? "text-red-500 dark:text-red-400"
             : isAmber

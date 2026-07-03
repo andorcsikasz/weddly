@@ -1452,10 +1452,14 @@ export default function PlannerCalendarPage() {
 
         <div className="ml-auto flex items-center gap-2.5">
           {mode === "calendar" && (
-            <Button variant="primary" size="sm" onClick={openAddEvent}>
+            <button
+              type="button"
+              onClick={openAddEvent}
+              className="inline-flex items-center gap-1.5 rounded-full bg-moss-900 px-3.5 py-1.5 text-sm font-medium text-paper-50 transition-colors hover:bg-moss-800 dark:bg-moss-300 dark:text-moss-950 dark:hover:bg-moss-200"
+            >
               <Plus size={15} aria-hidden="true" />
               {t("planner_calendar.add_event")}
-            </Button>
+            </button>
           )}
           {mode === "calendar" && <ViewDropdown view={view} onChange={changeView} />}
 
