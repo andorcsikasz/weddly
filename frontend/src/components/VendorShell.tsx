@@ -1,7 +1,7 @@
 // Vendor workspace shell — the authenticated layout for role='vendor' users at
 // /vendor/*. Mirrors AppShell's structure (sticky header with the wordmark +
 // account menu + logout, a left nav rail) but is intentionally lean: vendors
-// have six primary surfaces, not the couple's twenty. The nav rail collapses to
+// have seven primary surfaces, not the couple's twenty. The nav rail collapses to
 // a horizontal scroller on mobile. Page chrome uses the standard horizontal
 // padding (px-4 sm:px-6 lg:px-8 xl:px-10) so content isn't pressed to the edge.
 
@@ -21,6 +21,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  Star,
   Store,
   Sun,
   Users,
@@ -52,6 +53,7 @@ const VENDOR_ITEMS: VendorNavItem[] = [
   { to: "/vendor/calendar", labelKey: "vendor.nav.calendar", icon: <CalendarDays size={18} /> },
   { to: "/vendor/listing", labelKey: "vendor.nav.listing", icon: <Store size={18} /> },
   { to: "/vendor/stats", labelKey: "vendor.nav.stats", icon: <BarChart3 size={18} /> },
+  { to: "/vendor/reviews", labelKey: "vendor.nav.reviews", icon: <Star size={18} /> },
   { to: "/vendor/settings", labelKey: "vendor.nav.settings", icon: <Settings size={18} /> },
 ];
 

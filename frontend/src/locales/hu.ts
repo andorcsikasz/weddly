@@ -559,6 +559,7 @@ const hu: LocaleMessages = {
       calendar: "Naptár",
       listing: "Hirdetésem",
       stats: "Statisztika",
+      reviews: "Vélemények",
       billing: "Számlázás",
       settings: "Beállítások",
       section_workspace: "Munkaterület",
@@ -701,6 +702,17 @@ const hu: LocaleMessages = {
       conversion_title: "Konverzió",
       conversion_confirmed: "Megerősített foglalás",
       conversion_rate: "Megkeresésből foglalás",
+    },
+    reviews: {
+      page_title: "Vélemények",
+      page_body: "Amit az igazolt párok írtak rólad a Weddly katalógusban.",
+      count_label: "{n} vélemény",
+      cold_start_note:
+        "Az átlag 3 megjelent vélemény után jelenik meg a nyilvános adatlapodon.",
+      empty_title: "Még nincs véleményed",
+      empty_body:
+        "Csak igazolt párok írhatnak véleményt: olyanok, akik a tervezésük során ténylegesen kiválasztottak téged. Amint megérkezik az első, itt látod.",
+      load_more: "Továbbiak betöltése",
     },
     billing: {
       page_title: "Számlázás",

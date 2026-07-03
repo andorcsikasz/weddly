@@ -100,6 +100,7 @@ const VendorClientDetailPage = lazyWithReload(
 const VendorListingPage = lazyWithReload(() => import("./pages/vendor/VendorListingPage"));
 const VendorCalendarPage = lazyWithReload(() => import("./pages/vendor/VendorCalendarPage"));
 const VendorStatsPage = lazyWithReload(() => import("./pages/vendor/VendorStatsPage"));
+const VendorReviewsPage = lazyWithReload(() => import("./pages/vendor/VendorReviewsPage"));
 const VendorBillingPage = lazyWithReload(() => import("./pages/vendor/VendorBillingPage"));
 const VendorSettingsPage = lazyWithReload(() => import("./pages/vendor/VendorSettingsPage"));
 const VendorSettingsLayout = lazyWithReload(() => import("./pages/vendor/VendorSettingsLayout"));
@@ -685,6 +686,14 @@ export default function App() {
             element={
               <Page>
                 <VendorStatsPage />
+              </Page>
+            }
+          />
+          <Route
+            path="reviews"
+            element={
+              <Page>
+                <VendorReviewsPage />
               </Page>
             }
           />

@@ -554,6 +554,7 @@ const en: LocaleMessages = {
       calendar: "Calendar",
       listing: "Listing",
       stats: "Stats",
+      reviews: "Reviews",
       billing: "Billing",
       settings: "Settings",
       section_workspace: "Workspace",
@@ -696,6 +697,16 @@ const en: LocaleMessages = {
       conversion_title: "Conversion",
       conversion_confirmed: "Confirmed bookings",
       conversion_rate: "Inquiry to booking",
+    },
+    reviews: {
+      page_title: "Reviews",
+      page_body: "What verified couples wrote about you in the Weddly directory.",
+      count_label: "{n} reviews",
+      cold_start_note: "The average appears on your public profile after 3 published reviews.",
+      empty_title: "No reviews yet",
+      empty_body:
+        "Only verified couples can review: ones who actually picked you during their planning. As soon as the first one lands, you will see it here.",
+      load_more: "Load more",
     },
     billing: {
       page_title: "Billing",

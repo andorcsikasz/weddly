@@ -719,6 +719,7 @@ export interface LocaleMessages {
       calendar: string;
       listing: string;
       stats: string;
+      reviews: string;
       billing: string;
       settings: string;
       section_workspace: string;
@@ -868,6 +869,16 @@ export interface LocaleMessages {
       conversion_title: string;
       conversion_confirmed: string;
       conversion_rate: string;
+    };
+    reviews: {
+      page_title: string;
+      page_body: string;
+      /** Receives `{n}` — published review count. */
+      count_label: string;
+      cold_start_note: string;
+      empty_title: string;
+      empty_body: string;
+      load_more: string;
     };
     billing: {
       page_title: string;
