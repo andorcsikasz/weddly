@@ -201,7 +201,7 @@ describe("vendor self-serve registration", () => {
     // missing label → 400, nothing created
     const missing = await register({ ...baseBody, category: "other" });
     expect(missing.status).toBe(400);
-    expect(db.prepare("SELECT 1 FROM users WHERE email = ?").get(baseBody.email)).toBeNull();
+    expect(db.prepare("SELECT 1 FROM users WHERE email = ?").get(baseBody.email ?? "")).toBeNull();
 
     const reg = await register({
       ...baseBody,
