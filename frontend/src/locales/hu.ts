@@ -7227,7 +7227,7 @@ const hu: LocaleMessages = {
       "Biztosan elutasítod {name} meghívóját? Ezt nem lehet visszavonni, a párnak új meghívót kell küldenie.",
     kpi_active_clients: "Aktív ügyfelek",
     kpi_total_tasks: "Összes feladat",
-    kpi_overdue: "Lejárt feladatok",
+    kpi_overdue: "Lejárt feladat",
     kpi_due_this_week: "Ezen a héten",
     plan_chip: "{{plan}} · {{used}}/{{max}} ügyfél",
     chart_heading: "Feladatok ügyfelenként",
