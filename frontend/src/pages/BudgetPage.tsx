@@ -617,6 +617,44 @@ export default function BudgetPage() {
     [couple?.frozen_categories],
   );
 
+  // Headcount scaling factor. Per-guest categories' planned cost scales with
+  // the live headcount on the CostPlanningCard above — the stored `planned_huf`
+  // is the per-baseline-headcount amount, and the card displays it × factor.
+  // The table below MUST apply the same factor or its planned figures (rows and
+  // footer total) drift away from the card's total whenever the slider sits off
+  // the baseline. That divergence was the reported "two disagreeing planned
+  // totals on one screen" bug.
+  const factor = baseline > 0 ? effectiveCount / baseline : 1;
+
+  /** Planned amount to DISPLAY for a category bucket — scaled to the live
+   *  headcount for per-guest categories (unless frozen), matching
+   *  CostPlanningCard. Rounded at the bucket level so the figure is byte-for-
+   *  byte identical to the card's per-category display. */
+  const scaledCategoryPlanned = useCallback(
+    (category: BudgetCategory, rawPlanned: number) => {
+      const scales = PER_GUEST_CATEGORIES.has(category) && !frozenCategoriesSet.has(category);
+      return scales ? Math.round(rawPlanned * factor) : rawPlanned;
+    },
+    [factor, frozenCategoriesSet],
+  );
+
+  /** Planned amount to DISPLAY for a custom "other" row — scaled only when the
+   *  row carries the `per_guest` flag, mirroring the card's custom slider. */
+  const scaledCustomPlanned = useCallback(
+    (line: BudgetLine) =>
+      line.per_guest ? Math.round(line.planned_huf * factor) : line.planned_huf,
+    [factor],
+  );
+
+  /** Inverse of `scaledCustomPlanned` — turn a user-typed DISPLAY amount back
+   *  into the per-baseline value we persist, so editing a per-guest custom row
+   *  in the table behaves exactly like dragging its slider on the card. */
+  const unscaleCustomPlanned = useCallback(
+    (line: BudgetLine, displayValue: number) =>
+      line.per_guest && factor > 0 ? Math.round(displayValue / factor) : displayValue,
+    [factor],
+  );
+
   async function removeLine(id: number) {
     const ok = await confirm({
       title: t("common.confirm_delete_title"),
@@ -784,15 +822,37 @@ export default function BudgetPage() {
     let actual = 0;
     let paid = 0;
     let delta = 0;
+    // Planned is summed from the SAME scaled per-bucket displays the rows show
+    // — category buckets (per-guest categories scaled to headcount), honeymoon
+    // (never scales), then custom rows — so the footer equals the sum of the
+    // visible rows AND matches the CostPlanningCard's headcount-scaled total.
+    // Actual/paid never scale, so they still sum the raw stored amounts.
+    for (const [cat, b] of categoryBuckets) {
+      const disp = scaledCategoryPlanned(cat, b.planned);
+      planned += disp;
+      actual += b.actual;
+      paid += b.paid;
+      if (b.actual > 0) delta += b.actual - disp;
+    }
+    if (honeymoonAgg) {
+      planned += honeymoonAgg.planned;
+      actual += honeymoonAgg.actual;
+      // honeymoon paid is not tracked in the aggregate — pull it from lines.
+      if (honeymoonAgg.actual > 0) delta += honeymoonAgg.actual - honeymoonAgg.planned;
+    }
     for (const l of lines) {
-      planned += l.planned_huf;
-      actual += l.actual_huf;
-      paid += l.paid_huf;
-      if (l.actual_huf > 0) delta += l.actual_huf - l.planned_huf;
+      if (l.category === "honeymoon") paid += l.paid_huf;
+      if (l.category === "other" && !isDefaultOtherLine(l)) {
+        const disp = scaledCustomPlanned(l);
+        planned += disp;
+        actual += l.actual_huf;
+        paid += l.paid_huf;
+        if (l.actual_huf > 0) delta += l.actual_huf - disp;
+      }
     }
     // Outstanding = what's been priced but not yet settled. Never negative.
     return { planned, actual, paid, remaining: Math.max(0, actual - paid), delta };
-  }, [lines]);
+  }, [lines, categoryBuckets, honeymoonAgg, scaledCategoryPlanned, scaledCustomPlanned]);
 
   // Pulled once near the top so every money render below — table, totals,
   // snapshot card, breakdown dialog — shares one source of truth and stays
@@ -991,7 +1051,7 @@ export default function BudgetPage() {
             }
             const bucket = categoryBuckets.get(cat);
             const linesForCat = bucket?.lines ?? [];
-            const planned = bucket?.planned ?? 0;
+            const planned = scaledCategoryPlanned(cat, bucket?.planned ?? 0);
             const actual = bucket?.actual ?? 0;
             const isFrozen = frozenCategoriesSet.has(cat);
             const editable = bucket?.editable ?? true;
@@ -1034,12 +1094,13 @@ export default function BudgetPage() {
               <BudgetMobileCustomCard
                 key={line.id}
                 line={line}
+                planned={scaledCustomPlanned(line)}
                 currency={currency}
                 locale={locale}
                 scope={`line:${line.id}`}
                 documents={docsByScope.get(`line:${line.id}`) ?? []}
                 payments={paymentsByScope.get(`line:${line.id}`) ?? []}
-                onPlannedCommit={(v) => save(line, "planned_huf", v)}
+                onPlannedCommit={(v) => save(line, "planned_huf", unscaleCustomPlanned(line, v))}
                 onActualCommit={(v) => save(line, "actual_huf", v)}
                 onPaidCommit={(v) => save(line, "paid_huf", v)}
                 onDocsChanged={reloadDocuments}
@@ -1086,7 +1147,7 @@ export default function BudgetPage() {
                 // passes on every BudgetPage re-render.
                 const bucket = categoryBuckets.get(cat);
                 const linesForCat = bucket?.lines ?? [];
-                const planned = bucket?.planned ?? 0;
+                const planned = scaledCategoryPlanned(cat, bucket?.planned ?? 0);
                 const actual = bucket?.actual ?? 0;
                 const delta = actual - planned;
                 const isFrozen = frozenCategoriesSet.has(cat);
@@ -1175,7 +1236,8 @@ export default function BudgetPage() {
               {lines
                 .filter((l) => l.category === "other" && !isDefaultOtherLine(l))
                 .map((line) => {
-                  const delta = line.actual_huf - line.planned_huf;
+                  const plannedDisplay = scaledCustomPlanned(line);
+                  const delta = line.actual_huf - plannedDisplay;
                   return (
                     <tr
                       key={line.id}
@@ -1188,8 +1250,8 @@ export default function BudgetPage() {
                       </td>
                       <td className="px-4 py-2 align-middle">
                         <HufInput
-                          value={line.planned_huf}
-                          onCommit={(v) => save(line, "planned_huf", v)}
+                          value={plannedDisplay}
+                          onCommit={(v) => save(line, "planned_huf", unscaleCustomPlanned(line, v))}
                           dataKey="planned"
                           ariaLabel={t("budget.planned")}
                         />
@@ -2464,6 +2526,7 @@ function BudgetMobileCard({
  *  card but with the user's icon + label and an always-on delete button. */
 function BudgetMobileCustomCard({
   line,
+  planned,
   currency,
   locale,
   scope,
@@ -2477,6 +2540,9 @@ function BudgetMobileCustomCard({
   onDelete,
 }: {
   line: BudgetLine;
+  /** Headcount-scaled planned amount to display — matches the desktop table
+   *  and the CostPlanningCard. The raw per-baseline value stays in `line`. */
+  planned: number;
   currency: Currency;
   locale: "hu" | "en";
   scope: string;
@@ -2490,7 +2556,7 @@ function BudgetMobileCustomCard({
   onDelete: () => void;
 }) {
   const { t } = useT();
-  const delta = line.actual_huf - line.planned_huf;
+  const delta = line.actual_huf - planned;
   return (
     <article data-budget-line-id={line.id} data-category="other-custom" className="card p-2.5">
       <header className="flex items-start justify-between gap-2">
@@ -2518,7 +2584,7 @@ function BudgetMobileCustomCard({
           </dt>
           <dd>
             <HufInput
-              value={line.planned_huf}
+              value={planned}
               onCommit={onPlannedCommit}
               dataKey="planned"
               ariaLabel={t("budget.planned")}
