@@ -182,6 +182,7 @@ export function wipeAll(): void {
     "sessions",
     "rate_limit_buckets",
     "password_reset_tokens",
+    "planner_activation_tokens",
     "email_verification_tokens",
     "email_change_tokens",
     "email_log",

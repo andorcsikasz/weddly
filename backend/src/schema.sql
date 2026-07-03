@@ -1703,3 +1703,18 @@ CREATE TABLE IF NOT EXISTS listing_photos (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_listing_photos_listing ON listing_photos(listing_id);
+
+-- Admin-provisioned planner activations. An admin pre-registers a planner
+-- (email + name + business name + category) with a 2-year free comp; the
+-- planner receives an activation link and goes live by setting a password
+-- and accepting the legal documents. Single-use (consumed_at), 30-day TTL,
+-- only the SHA-256 hash of the token is stored (auth/tokens.ts).
+CREATE TABLE IF NOT EXISTS planner_activation_tokens (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token       TEXT    NOT NULL UNIQUE,
+  expires_at  INTEGER NOT NULL,
+  consumed_at INTEGER,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_planner_activation_user ON planner_activation_tokens(user_id);

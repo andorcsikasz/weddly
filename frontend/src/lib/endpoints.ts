@@ -78,6 +78,8 @@ import type {
   PlannerStats,
   PlannerEvent,
   AdminPlannerView,
+  AdminProvisionPlannerInput,
+  PlannerActivationView,
   PlannerPlan,
 } from "@shared/types";
 import type {
@@ -1845,6 +1847,25 @@ export const adminPlannerMgmtApi = {
       planner_plan: plan,
     }),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/planners/${id}`),
+  provision: (body: AdminProvisionPlannerInput) =>
+    apiFetch<{ ok: true; user_id: number }>("POST", "/api/admin/planners/provision", body),
+  resendActivation: (id: number) =>
+    apiFetch<{ ok: true }>("POST", `/api/admin/planners/${id}/resend-activation`, {}),
+};
+
+/** Admin-provisioned planner activation landing (public, token-gated). The
+ *  `complete` call returns a fresh AuthSession the caller must install via
+ *  useAuth().setSession, same contract as the vendor claim flow. */
+export const plannerActivationApi = {
+  view: (token: string) =>
+    apiFetch<PlannerActivationView>("GET", `/api/planner/activation/${encodeURIComponent(token)}`),
+  complete: (body: {
+    token: string;
+    password: string;
+    privacy_version: string;
+    terms_version: string;
+    locale?: string;
+  }) => apiFetch<AuthSession>("POST", "/api/planner/activation/complete", body),
 };
 
 /** Vendor listing-claim flow — P2.C. Three steps:

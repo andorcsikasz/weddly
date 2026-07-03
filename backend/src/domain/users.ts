@@ -52,6 +52,11 @@ export interface UserRow {
   /** 'couple' (default) or 'planner'. Drives post-login routing and workspace
    *  fork. Set to 'planner' via admin action after waitlist approval. */
   user_type?: string | null;
+  /** Planner/vendor business identity, filled at onboarding or when an admin
+   *  provisions the account. Null for couple users. */
+  business_name?: string | null;
+  /** Free-text business category typed by the admin at planner provisioning. */
+  planner_category?: string | null;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var

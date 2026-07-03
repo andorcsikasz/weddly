@@ -202,6 +202,14 @@ const STUBS: KindPayload = {
     body: "Szia Anna!\n\nÁtnéztük a profilodat, és aktiváltuk a szervezői hozzáférésed. Lépj be, és a szervezői vezérlőpultból indítsd el az onboardingot.\n\nÜdv,\nA Wēddly csapata",
     outcome: "accepted",
   },
+  planner_provisioned: {
+    plannerName: "Anna",
+    businessName: "Anna Weddings",
+    category: "esküvőszervező",
+    activateUrl: `${BASE_URL}/planner/activate/preview-token`,
+    freeUntilHu: "2028. július 3.",
+    freeUntilEn: "3 July 2028",
+  },
   community_supplier_verify: {
     supplierName: "Bloom Studio",
     verifyUrl: `${BASE_URL}/supplier/verify?token=preview`,

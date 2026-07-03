@@ -1779,6 +1779,37 @@ export interface AdminPlannerView {
   /** Count of active `planner_clients` links (approved couples). */
   client_count: number;
   created_at: UnixMs;
+  business_name: string | null;
+  /** Free-text business category typed by the admin at provisioning. */
+  planner_category: string | null;
+  /** True while an admin-provisioned planner has an unconsumed activation
+   *  token, i.e. they received the activation email but haven't gone live. */
+  pending_activation: boolean;
+  /** End of the free window (planner_subscriptions.founding_until) when the
+   *  planner is on a founding/comp grant; null on trial or paid statuses. */
+  founding_until: UnixMs | null;
+}
+
+/** Input for the admin "register a planner" form. The provisioned planner
+ *  gets a 2-year free comp and an emailed activation link. */
+export interface AdminProvisionPlannerInput {
+  email: string;
+  full_name: string;
+  business_name: string;
+  category: string;
+}
+
+/** Public view of a planner activation token, shown on the activation landing
+ *  page so the invitee sees what was registered in their name before going
+ *  live. Resolved by the secret token, so surfacing the email is safe. */
+export interface PlannerActivationView {
+  email: string;
+  full_name: string;
+  business_name: string | null;
+  planner_category: string | null;
+  /** End of the granted free window (2 years from provisioning). */
+  free_until: UnixMs;
+  expires_at: UnixMs;
 }
 
 /** An email invitation a planner sent to a not-yet-onboarded client. Once the

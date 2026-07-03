@@ -579,6 +579,22 @@ export interface LocaleMessages {
     page_completed: string;
     page_home: string;
   };
+  /** Admin-provisioned planner activation landing (/planner/activate/:token).
+   *  Password + clickwrap consent flow into a live planner session. */
+  planner_activate: {
+    page_title: string;
+    page_body: string;
+    title: string;
+    intro: string;
+    email_line: string;
+    free_line: string;
+    submit: string;
+    legal_prefix: string;
+    error_title: string;
+    error_invalid: string;
+    error_expired: string;
+    error_consumed: string;
+  };
   /** Vendor self-serve listing editor (P2.D). The single screen a vendor has
    *  after the claim flow — edits the public listing fields couples see. */
   vendor_home: {
@@ -4932,8 +4948,23 @@ export interface LocaleMessages {
       empty: string;
       status_active: string;
       status_suspended: string;
+      status_pending_activation: string;
       clients: string;
       onboarding_pending: string;
+      free_until: string;
+      provision_cta: string;
+      provision_title: string;
+      provision_intro: string;
+      provision_email: string;
+      provision_name: string;
+      provision_business: string;
+      provision_category: string;
+      provision_category_placeholder: string;
+      provision_submit: string;
+      provision_success: string;
+      provision_email_taken: string;
+      resend_activation: string;
+      resend_success: string;
       plan: string;
       plan_starter: string;
       plan_pro: string;

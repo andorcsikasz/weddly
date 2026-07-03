@@ -84,6 +84,7 @@ const TimelinePage = lazyWithReload(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazyWithReload(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazyWithReload(() => import("./pages/VendorClaimVerifyPage"));
 const VendorActivatePage = lazyWithReload(() => import("./pages/VendorActivatePage"));
+const PlannerActivatePage = lazyWithReload(() => import("./pages/PlannerActivatePage"));
 const VendorRegisterPage = lazyWithReload(() => import("./pages/VendorRegisterPage"));
 const VendorOnboardingPage = lazyWithReload(() => import("./pages/vendor/VendorOnboardingPage"));
 // VendorHomePage (pages/VendorHomePage.tsx) is the legacy standalone listing
@@ -611,6 +612,18 @@ export default function App() {
           element={
             <Page>
               <VendorActivatePage />
+            </Page>
+          }
+        />
+        {/* Admin-provisioned planner activation. Same shape as the vendor
+            activate flow: the emailed single-use token is the credential, the
+            page collects a password + clickwrap consent and completes into a
+            live planner session. Public (the planner can't log in yet). */}
+        <Route
+          path="/planner/activate/:token"
+          element={
+            <Page>
+              <PlannerActivatePage />
             </Page>
           }
         />

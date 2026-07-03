@@ -61,6 +61,10 @@ interface AdminPlannerRow {
   planner_onboarding_done: number | null;
   client_count: number;
   created_at: number;
+  business_name: string | null;
+  planner_category: string | null;
+  pending_activation: number;
+  founding_until: number | null;
 }
 
 function toAdminPlannerView(row: AdminPlannerRow): AdminPlannerView {
@@ -76,6 +80,10 @@ function toAdminPlannerView(row: AdminPlannerRow): AdminPlannerView {
     planner_onboarding_done: row.planner_onboarding_done === 1,
     client_count: row.client_count,
     created_at: row.created_at,
+    business_name: row.business_name,
+    planner_category: row.planner_category,
+    pending_activation: row.pending_activation === 1,
+    founding_until: row.founding_until,
   };
 }
 
@@ -93,8 +101,14 @@ export function listAdminPlanners(): AdminPlannerView[] {
               u.planner_city,
               u.planner_onboarding_done,
               u.created_at,
+              u.business_name,
+              u.planner_category,
               (SELECT COUNT(*) FROM planner_clients pc
-                WHERE pc.planner_user_id = u.id AND pc.status = 'active') AS client_count
+                WHERE pc.planner_user_id = u.id AND pc.status = 'active') AS client_count,
+              EXISTS(SELECT 1 FROM planner_activation_tokens pat
+                WHERE pat.user_id = u.id AND pat.consumed_at IS NULL) AS pending_activation,
+              (SELECT ps.founding_until FROM planner_subscriptions ps
+                WHERE ps.user_id = u.id AND ps.subscription_status = 'founding') AS founding_until
          FROM users u
         WHERE u.user_type = 'planner'
           AND u.email NOT LIKE '%@demo.weddly.local'

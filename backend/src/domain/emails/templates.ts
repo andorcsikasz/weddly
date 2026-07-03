@@ -365,6 +365,20 @@ export interface PlannerWaitlistDecisionPayload {
   outcome: "accepted" | "under_review" | "rejected";
 }
 
+export interface PlannerProvisionedPayload {
+  /** The provisioned planner's name, used in the greeting. */
+  plannerName: string;
+  /** Business name the admin registered the profile under. */
+  businessName: string;
+  /** Free-text category the admin typed (e.g. "esküvőszervező"). */
+  category: string;
+  /** Full activation URL with the single-use token. */
+  activateUrl: string;
+  /** Human date (YYYY-MM-DD) the free window runs until, per locale. */
+  freeUntilHu: string;
+  freeUntilEn: string;
+}
+
 export interface CommunitySupplierVerifyPayload {
   /** Business / listing name surfaced in the email body. */
   supplierName: string;
@@ -533,6 +547,7 @@ export type KindPayload = {
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   planner_waitlist_decision: PlannerWaitlistDecisionPayload;
+  planner_provisioned: PlannerProvisionedPayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
   community_supplier_published: CommunitySupplierPublishedPayload;
   community_supplier_rejected: CommunitySupplierRejectedPayload;
@@ -1678,6 +1693,36 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       },
     };
   },
+
+  planner_provisioned: (p) => ({
+    subject: "Elkészült a szervezői fiókod / Your planner account is ready",
+    ctaUrl: p.activateUrl,
+    hu: {
+      preheader: `${p.businessName} profilja aktiválásra vár, 2 év ingyenes hozzáféréssel.`,
+      greeting: `Szia ${p.plannerName}!`,
+      paragraphs: [
+        `Jó hírünk van: elkészítettük neked a(z) **${p.businessName}**${p.category ? ` (${p.category})` : ""} szervezői profilját a Weddly-n.`,
+        `Ajándékba **2 év teljesen ingyenes hozzáférést** kapsz (érvényes eddig: ${p.freeUntilHu}). Nincs bankkártya, nincs apró betű: a lenti gombbal élesíted a fiókot, beállítasz egy jelszót, és már használhatod is.`,
+        `Az élesítéssel elfogadod az Általános Szerződési Feltételeket (${CONFIG.frontendBaseUrl}/terms) és az Adatkezelési tájékoztatót (${CONFIG.frontendBaseUrl}/privacy). Mindkettőt a gomb után is megtalálod, mielőtt véglegesítenél.`,
+      ],
+      cta: "Fiók élesítése",
+      ctaSubtext: "A link 30 napig érvényes és egyszer használható.",
+      footnote:
+        "Ha nem kérted ezt a fiókot, nincs teendőd: élesítés nélkül a profil nem lép életbe.",
+    },
+    en: {
+      greeting: `Hi ${p.plannerName},`,
+      paragraphs: [
+        `Good news: we've set up the planner profile for **${p.businessName}**${p.category ? ` (${p.category})` : ""} on Weddly in your name.`,
+        `As a gift you get **2 years of completely free access**, until ${p.freeUntilEn}. No card, no fine print: hit the button below to activate the account, set a password, and you're in.`,
+        `By activating you accept the Terms of Service (${CONFIG.frontendBaseUrl}/terms) and the Privacy Policy (${CONFIG.frontendBaseUrl}/privacy). Both are shown again on the activation page before you confirm.`,
+      ],
+      cta: "Activate account",
+      ctaSubtext: "The link is valid for 30 days and can be used once.",
+      footnote:
+        "If you didn't ask for this account, there's nothing to do: without activation the profile never goes live.",
+    },
+  }),
 
   wedding_today_followup: (p, ctx) => ({
     subject: `Milyen volt? / How was the wedding?, ${p.coupleDisplayName}`,

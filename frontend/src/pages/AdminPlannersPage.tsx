@@ -1,13 +1,26 @@
 // Admin planner management (KEZELÉS → Szervezők). A planner is a users row with
 // user_type='planner'; this lists every planner with plan tier + active-client
 // count and lets an admin change plan tier, suspend/reactivate, and delete.
+// The header action pre-registers a planner (email + name + business name +
+// category): the account is provisioned dormant with a 2-year free comp and
+// the planner activates it through an emailed link.
 
 import type { AdminPlannerView, PlannerPlan } from "@shared/types";
-import { Ban, Check, Handshake, Loader2, RotateCcw, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  Ban,
+  Check,
+  Handshake,
+  Loader2,
+  MailPlus,
+  RotateCcw,
+  Send,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
 import type { PillTone } from "../components/admin";
-import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { Button, Dialog, TextField, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminPlannerMgmtApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -47,6 +60,140 @@ function fmtDate(unixMs: number, locale: string): string {
   }).format(d);
 }
 
+/** "Szervező regisztrálása" modal: email + name + business name + category.
+ *  Submit provisions the dormant account (2-year comp) and fires the
+ *  activation email; the list refreshes with the new "pending" row. */
+function ProvisionPlannerDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [category, setCategory] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fresh form every open; a half-typed planner from a cancelled attempt
+  // must not leak into the next one.
+  useEffect(() => {
+    if (!open) return;
+    setEmail("");
+    setFullName("");
+    setBusinessName("");
+    setCategory("");
+    setError(null);
+  }, [open]);
+
+  const canSubmit =
+    email.includes("@") &&
+    fullName.trim().length > 0 &&
+    businessName.trim().length > 0 &&
+    category.trim().length > 0;
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await adminPlannerMgmtApi.provision({
+        email: email.trim(),
+        full_name: fullName.trim(),
+        business_name: businessName.trim(),
+        category: category.trim(),
+      });
+      toast.success(t("admin.planners.provision_success"));
+      onCreated();
+      onClose();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setError(t("admin.planners.provision_email_taken"));
+      } else {
+        setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      title={t("admin.planners.provision_title")}
+      onClose={onClose}
+      role="dialog"
+      closeOnBackdrop
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} disabled={submitting}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            type="submit"
+            form="provision-planner-form"
+            variant="primary"
+            disabled={!canSubmit}
+            loading={submitting}
+            loadingLabel={t("common.loading")}
+            leftIcon={<MailPlus size={15} />}
+          >
+            {t("admin.planners.provision_submit")}
+          </Button>
+        </>
+      }
+    >
+      <p className="mb-4 text-sm text-ink-600 dark:text-umber-300">
+        {t("admin.planners.provision_intro")}
+      </p>
+      <form id="provision-planner-form" className="space-y-4" onSubmit={onSubmit}>
+        <TextField
+          id="provision-email"
+          type="email"
+          label={t("admin.planners.provision_email")}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="off"
+        />
+        <TextField
+          id="provision-name"
+          label={t("admin.planners.provision_name")}
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          required
+          autoComplete="off"
+        />
+        <TextField
+          id="provision-business"
+          label={t("admin.planners.provision_business")}
+          value={businessName}
+          onChange={(e) => setBusinessName(e.target.value)}
+          required
+          autoComplete="off"
+        />
+        <TextField
+          id="provision-category"
+          label={t("admin.planners.provision_category")}
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          placeholder={t("admin.planners.provision_category_placeholder")}
+          required
+          autoComplete="off"
+        />
+        {error && <p className="field-error">{error}</p>}
+      </form>
+    </Dialog>
+  );
+}
+
 function PlannerCard({
   planner,
   onChanged,
@@ -63,7 +210,9 @@ function PlannerCard({
 
   const statusPill: { tone: PillTone; Icon: typeof Handshake; label: string } = suspended
     ? { tone: "muted", Icon: Ban, label: t("admin.planners.status_suspended") }
-    : { tone: "sage", Icon: Check, label: t("admin.planners.status_active") };
+    : planner.pending_activation
+      ? { tone: "blush", Icon: Send, label: t("admin.planners.status_pending_activation") }
+      : { tone: "sage", Icon: Check, label: t("admin.planners.status_active") };
 
   async function run(fn: () => Promise<unknown>, successKey: string) {
     setBusy(true);
@@ -115,6 +264,13 @@ function PlannerCard({
     void run(() => adminPlannerMgmtApi.remove(planner.user_id), "admin.planners.delete_success");
   }
 
+  function handleResendActivation() {
+    void run(
+      () => adminPlannerMgmtApi.resendActivation(planner.user_id),
+      "admin.planners.resend_success",
+    );
+  }
+
   function handlePlanChange(plan: PlannerPlan) {
     if (plan === planner.planner_plan) return;
     void run(
@@ -153,6 +309,15 @@ function PlannerCard({
           </div>
           <p className="truncate text-sm text-umber-700 dark:text-umber-300">{planner.email}</p>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-umber-500 dark:text-umber-400">
+            {planner.business_name && (
+              <>
+                <span className="truncate">
+                  {planner.business_name}
+                  {planner.planner_category ? ` (${planner.planner_category})` : ""}
+                </span>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
             <span>
               {t("admin.planners.clients", {
                 n: planner.client_count,
@@ -167,7 +332,17 @@ function PlannerCard({
                 <span>{planner.planner_city}</span>
               </>
             )}
-            {!planner.planner_onboarding_done && (
+            {planner.founding_until && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>
+                  {t("admin.planners.free_until", {
+                    date: fmtDate(planner.founding_until, locale),
+                  })}
+                </span>
+              </>
+            )}
+            {!planner.planner_onboarding_done && !planner.pending_activation && (
               <>
                 <span aria-hidden="true">·</span>
                 <span>{t("admin.planners.onboarding_pending")}</span>
@@ -193,6 +368,18 @@ function PlannerCard({
             )}
           </button>
 
+          {planner.pending_activation && (
+            <button
+              type="button"
+              className={iconBtnClass}
+              onClick={handleResendActivation}
+              disabled={busy}
+              title={t("admin.planners.resend_activation")}
+              aria-label={t("admin.planners.resend_activation")}
+            >
+              <Send size={15} />
+            </button>
+          )}
           {suspended ? (
             <button
               type="button"
@@ -235,6 +422,7 @@ export default function AdminPlannersPage() {
   const [planners, setPlanners] = useState<AdminPlannerView[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
+  const [provisionOpen, setProvisionOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -280,6 +468,22 @@ export default function AdminPlannersPage() {
           </span>
         }
         subtitle={t("admin.planners.subtitle")}
+        actions={
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<UserPlus size={15} />}
+            onClick={() => setProvisionOpen(true)}
+          >
+            {t("admin.planners.provision_cta")}
+          </Button>
+        }
+      />
+
+      <ProvisionPlannerDialog
+        open={provisionOpen}
+        onClose={() => setProvisionOpen(false)}
+        onCreated={() => void load()}
       />
 
       <div className="mb-6 flex flex-wrap gap-2">
