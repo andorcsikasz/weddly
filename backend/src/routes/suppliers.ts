@@ -286,16 +286,20 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
     base.hero_image_url = listing.hero_image_url;
   }
 
-  // Vendor-uploaded portfolio photos override the static seed gallery:
-  // hero first, then uploads in upload order — the detail page renders
-  // gallery_urls[0] as the hero and the rest as the thumbnail strip.
+  // Build the gallery from LOCAL (CSP-safe) images only: the cached hero first,
+  // then the re-hosted portfolio photos in order. The detail page renders these
+  // via <img src>, and our CSP `img-src` only allows `'self'` (+ a few fixed
+  // hosts) — so the static seed's raw vendor-website URLs would be blocked by
+  // the browser and paint as broken thumbnails. Those photos live in
+  // `listing_photos`: vendor uploads (vendor_listing.ts) or the curated-gallery
+  // backfill (domain/listing_gallery_backfill) that re-hosts the seed images.
+  // When nothing is cached yet the strip collapses to the hero alone — one
+  // clean image, never a row of broken icons.
   const uploadedPhotos = listListingPhotos(supplierId);
-  if (uploadedPhotos.length > 0) {
-    base.gallery_urls = [
-      ...(base.hero_image_url ? [base.hero_image_url] : []),
-      ...uploadedPhotos.map((p) => p.url),
-    ];
-  }
+  base.gallery_urls = [
+    ...(base.hero_image_url ? [base.hero_image_url] : []),
+    ...uploadedPhotos.map((p) => p.url),
+  ];
 
   // Vote overlay so the detail page can keep the up/down hint above the
   // stars during the migration window (v1 retains both surfaces).

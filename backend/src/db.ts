@@ -943,6 +943,16 @@ addColumnIfMissing("listings", "hero_image_url", "hero_image_url TEXT");
 // vendor_listing.ts always wins (the sweep skips rows with a vendor_account_id).
 addColumnIfMissing("listings", "hero_checked_at", "hero_checked_at INTEGER");
 
+// `gallery_checked_at` is the same one-shot marker as `hero_checked_at`, but for
+// the portfolio strip: domain/listing_gallery_backfill downloads a curated
+// venue's static seed `gallery_urls` (which hotlink the venue's own website and
+// are therefore blocked by our CSP img-src allow-list when rendered) and re-hosts
+// them under `listings/<id>/gallery/…` as CSP-safe local copies. NULL means
+// "never attempted"; stamped on every attempt (hit or miss) so a venue whose
+// images 404 is tried exactly once. Vendor-owned listings are skipped — a paying
+// vendor manages their own gallery via vendor_listing.ts.
+addColumnIfMissing("listings", "gallery_checked_at", "gallery_checked_at INTEGER");
+
 // `venue_style` characterises a venue (castle, boat, restaurant…) beyond its
 // always-"venue" category. Sourced from the curated directory's "jelleg" tag.
 // Null on non-venue + unclassified listings. See @shared/suppliers VenueStyle.

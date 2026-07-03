@@ -33,6 +33,7 @@ import { startPurgeWorker } from "./domain/purge";
 import { startBackupWorker } from "./domain/backup";
 import { startWishlistImageBackfill } from "./domain/wishlist_image_backfill";
 import { startListingImageBackfill } from "./domain/listing_image_backfill";
+import { startListingGalleryBackfill } from "./domain/listing_gallery_backfill";
 import { registerAccommodationRoutes } from "./routes/accommodations";
 import { registerAdminAnalyticsRoutes } from "./routes/admin_analytics";
 import { registerAdminEmailListRoutes } from "./routes/admin_email_list";
@@ -750,6 +751,12 @@ if (process.env.NODE_ENV !== "test") {
   // card a real image instead of the icon placeholder. Non-blocking and
   // self-limiting — each row is attempted exactly once. See the module header.
   startListingImageBackfill();
+  // One-time sweep: re-host curated venues' seed portfolio galleries locally.
+  // The seed `gallery_urls` hotlink each venue's own website, which our CSP
+  // img-src blocks in the browser (broken thumbnails); this downloads them once
+  // and serves CSP-safe local copies on the detail page. Non-blocking and
+  // self-limiting — each row is attempted exactly once. See the module header.
+  startListingGalleryBackfill();
   // Boot-time guard against re-introducing the legacy `sendEmail` direct-call
   // pattern. The May 2026 "phishy email" bug lived for months because nothing
   // flagged it; this scan emits a `mailer.integrity.violation` warning at boot
