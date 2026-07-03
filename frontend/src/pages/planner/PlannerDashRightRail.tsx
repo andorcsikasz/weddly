@@ -1,13 +1,12 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
   Clock,
   type LucideIcon,
-  MessageSquare,
-  Plus,
   Sparkles,
-  UserPlus,
 } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { PlannerClientView, PlannerTaskRow } from "@shared/types";
 import { useT } from "../../lib/i18n";
@@ -16,7 +15,6 @@ import { nameDayFor } from "../../lib/nameDays";
 interface Props {
   tasks: PlannerTaskRow[];
   clients: PlannerClientView[];
-  onAddClientClick: () => void;
 }
 
 function clientDisplayName(clients: PlannerClientView[], coupleId: number): string {
@@ -40,8 +38,9 @@ function SectionHeader({ icon: Icon, label }: { icon?: LucideIcon; label: string
   );
 }
 
-export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props) {
+export function PlannerDashRightRail({ tasks, clients }: Props) {
   const { t, locale } = useT();
+  const [urgentOpen, setUrgentOpen] = useState(true);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -66,124 +65,128 @@ export function PlannerDashRightRail({ tasks, clients, onAddClientClick }: Props
 
   return (
     <div className="flex flex-col gap-4">
-      {/* SECTION A: TODAY'S AGENDA — opens the calendar */}
-      <Link
-        to="/app/planner/calendar"
-        className="card block space-y-3 p-4 transition-colors hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20"
-      >
-        <div>
-          <SectionHeader label={t("planner_home.rail_today_title")} />
-          <p className="text-xs text-umber-400 -mt-1">{todayLabel}</p>
-          {nameDay && (
-            <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
-              <span className="text-umber-400">{t("planner_home.rail_today_nameday")}:</span>{" "}
-              {nameDay}
-            </p>
-          )}
-        </div>
-
-        {visibleToday.length === 0 ? (
-          <p className="text-xs text-umber-400 italic">{t("planner_home.rail_today_empty")}</p>
-        ) : (
-          <ul className="space-y-1.5">
-            {visibleToday.map((tk) => (
-              <li key={tk.task_id} className="flex items-start gap-2 min-w-0">
-                <Clock
-                  size={12}
-                  className="mt-0.5 shrink-0 text-umber-300 dark:text-umber-500"
-                  aria-hidden="true"
-                />
-                <span className="flex-1 truncate text-sm text-ink-900 dark:text-paper-100">
-                  {tk.title}
-                </span>
-                <span className="shrink-0 text-[10px] text-umber-400">
-                  {clientDisplayName(clients, tk.couple_id)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {extraToday > 0 && (
-          <p className="text-xs text-umber-500 dark:text-umber-400">
-            {t("planner_home.rail_more_today").replace("{{n}}", String(extraToday))}
-          </p>
-        )}
-      </Link>
-
-      {/* SECTION B: URGENT ALERTS, opens the tasks list. Same neutral card
-          as the rail siblings; the alert state is a single left border accent
-          + header icon instead of a fully amber-filled panel. */}
-      <Link
-        to="/app/planner/calendar?mode=tasks"
-        className={`card block p-4 transition-colors hover:border-moss-300 hover:bg-moss-50 dark:hover:border-moss-700 dark:hover:bg-moss-900/20 ${
+      {/* One merged card: today's agenda on top, collapsible urgent alerts below.
+          The alert state is a single left border accent + header icon instead
+          of a fully amber-filled panel. */}
+      <div
+        className={`card p-4 ${
           visibleOverdue.length > 0 ? "border-l-4 border-l-amber-500 dark:border-l-amber-500" : ""
         }`}
       >
-        <SectionHeader
-          icon={visibleOverdue.length === 0 ? Sparkles : AlertTriangle}
-          label={
-            visibleOverdue.length === 0
-              ? t("planner_home.rail_all_good")
-              : t("planner_home.rail_urgent_title")
-          }
-        />
-
-        {visibleOverdue.length === 0 ? (
-          <div className="flex items-center gap-1.5 ml-1">
-            <CheckCircle2 size={14} className="shrink-0 text-moss-600" aria-hidden="true" />
-            <span className="text-xs text-moss-700 dark:text-moss-400">
-              {t("planner_home.rail_all_good_body")}
-            </span>
+        {/* TODAY'S AGENDA — opens the calendar */}
+        <Link
+          to="/app/planner/calendar"
+          className="-m-2 block space-y-3 rounded-lg p-2 transition-colors hover:bg-moss-50 dark:hover:bg-moss-900/20"
+        >
+          <div>
+            <SectionHeader label={t("planner_home.rail_today_title")} />
+            <p className="text-xs text-umber-400 -mt-1">{todayLabel}</p>
+            {nameDay && (
+              <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
+                <span className="text-umber-400">{t("planner_home.rail_today_nameday")}:</span>{" "}
+                {nameDay}
+              </p>
+            )}
           </div>
-        ) : (
-          <>
+
+          {visibleToday.length === 0 ? (
+            <p className="text-xs text-umber-400 italic">{t("planner_home.rail_today_empty")}</p>
+          ) : (
             <ul className="space-y-1.5">
-              {visibleOverdue.map((tk) => (
+              {visibleToday.map((tk) => (
                 <li key={tk.task_id} className="flex items-start gap-2 min-w-0">
+                  <Clock
+                    size={12}
+                    className="mt-0.5 shrink-0 text-umber-300 dark:text-umber-500"
+                    aria-hidden="true"
+                  />
                   <span className="flex-1 truncate text-sm text-ink-900 dark:text-paper-100">
                     {tk.title}
                   </span>
-                  <span className="shrink-0 text-[10px] text-umber-500 dark:text-umber-400">
+                  <span className="shrink-0 text-[10px] text-umber-400">
                     {clientDisplayName(clients, tk.couple_id)}
                   </span>
                 </li>
               ))}
             </ul>
-            {extraOverdue > 0 && (
-              <p className="mt-1.5 text-xs text-umber-500 dark:text-umber-400">
-                {t("planner_home.rail_more_overdue").replace("{{n}}", String(extraOverdue))}
-              </p>
-            )}
-          </>
-        )}
-      </Link>
+          )}
 
-      {/* SECTION C: QUICK ACTIONS */}
-      <div className="card p-4 space-y-2">
-        <SectionHeader label={t("planner_home.rail_actions_title")} />
-
-        <button
-          type="button"
-          onClick={onAddClientClick}
-          className="btn-outline w-full justify-start gap-2 text-sm"
-        >
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          {t("planner_home.rail_action_add_client")}
-        </button>
-
-        <Link
-          to="/app/planner/settings/account"
-          className="btn-outline w-full justify-start gap-2 text-sm"
-        >
-          <UserPlus className="w-4 h-4" aria-hidden="true" />
-          {t("planner_home.rail_action_profile")}
+          {extraToday > 0 && (
+            <p className="text-xs text-umber-500 dark:text-umber-400">
+              {t("planner_home.rail_more_today").replace("{{n}}", String(extraToday))}
+            </p>
+          )}
         </Link>
 
-        <Link to="/app/planner/messages" className="btn-outline w-full justify-start gap-2 text-sm">
-          <MessageSquare className="w-4 h-4" aria-hidden="true" />
-          {t("planner_home.rail_action_messages")}
-        </Link>
+        {/* URGENT ALERTS — collapsible; rows open the tasks list */}
+        <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-800">
+          {visibleOverdue.length === 0 ? (
+            <>
+              <SectionHeader icon={Sparkles} label={t("planner_home.rail_all_good")} />
+              <div className="flex items-center gap-1.5 ml-1">
+                <CheckCircle2 size={14} className="shrink-0 text-moss-600" aria-hidden="true" />
+                <span className="text-xs text-moss-700 dark:text-moss-400">
+                  {t("planner_home.rail_all_good_body")}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setUrgentOpen((o) => !o)}
+                aria-expanded={urgentOpen}
+                className="-m-1 flex w-full items-center gap-1.5 rounded-lg p-1 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800/60"
+              >
+                <AlertTriangle
+                  size={13}
+                  className="shrink-0 text-umber-500 dark:text-umber-400"
+                  aria-hidden="true"
+                />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
+                  {t("planner_home.rail_urgent_title")}
+                </span>
+                <span className="text-[10px] font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                  {overdueTasks.length}
+                </span>
+                <ChevronDown
+                  size={14}
+                  className={`ml-auto shrink-0 text-umber-400 transition-transform ${
+                    urgentOpen ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {urgentOpen && (
+                <div className="mt-2">
+                  <ul className="space-y-1.5">
+                    {visibleOverdue.map((tk) => (
+                      <li key={tk.task_id}>
+                        <Link
+                          to="/app/planner/calendar?mode=tasks"
+                          className="-mx-1 flex items-start gap-2 rounded-lg px-1 py-0.5 min-w-0 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800/60"
+                        >
+                          <span className="flex-1 truncate text-sm text-ink-900 dark:text-paper-100">
+                            {tk.title}
+                          </span>
+                          <span className="shrink-0 text-[10px] text-umber-500 dark:text-umber-400">
+                            {clientDisplayName(clients, tk.couple_id)}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {extraOverdue > 0 && (
+                    <p className="mt-1.5 text-xs text-umber-500 dark:text-umber-400">
+                      {t("planner_home.rail_more_overdue").replace("{{n}}", String(extraOverdue))}
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
