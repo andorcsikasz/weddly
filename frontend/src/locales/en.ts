@@ -7211,7 +7211,7 @@ const en: LocaleMessages = {
     pipeline_guests: "{{n}} confirmed guests",
     pipeline_tasks_done: "{{done}}/{{total}} tasks done",
     pipeline_tasks_overdue: "{{n}} overdue",
-    pipeline_enter: "Enter →",
+    pipeline_enter: "Enter",
     pipeline_pending: "Awaiting approval",
     pipeline_empty_title: "No clients yet",
     pipeline_empty_body: "Add your first client to see the full picture.",

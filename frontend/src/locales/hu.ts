@@ -707,8 +707,7 @@ const hu: LocaleMessages = {
       page_title: "Vélemények",
       page_body: "Amit az igazolt párok írtak rólad a Weddly katalógusban.",
       count_label: "{n} vélemény",
-      cold_start_note:
-        "Az átlag 3 megjelent vélemény után jelenik meg a nyilvános adatlapodon.",
+      cold_start_note: "Az átlag 3 megjelent vélemény után jelenik meg a nyilvános adatlapodon.",
       empty_title: "Még nincs véleményed",
       empty_body:
         "Csak igazolt párok írhatnak véleményt: olyanok, akik a tervezésük során ténylegesen kiválasztottak téged. Amint megérkezik az első, itt látod.",
@@ -7269,7 +7268,7 @@ const hu: LocaleMessages = {
     pipeline_guests: "{{n}} visszaigazolt vendég",
     pipeline_tasks_done: "{{done}}/{{total}} feladat kész",
     pipeline_tasks_overdue: "{{n}} lejárt",
-    pipeline_enter: "Belépés →",
+    pipeline_enter: "Belépés",
     pipeline_pending: "Jóváhagyásra vár",
     pipeline_empty_title: "Még nincs ügyfeled",
     pipeline_empty_body: "Add hozzá az első ügyfelet, és azonnal látod a teljes képet.",

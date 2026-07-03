@@ -1,4 +1,4 @@
-import { ArrowRight, Clock, Plus, UserPlus, Users } from "lucide-react";
+import { ArrowRight, Clock, MailQuestion, Plus, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { PlannerClientView } from "@shared/types";
@@ -282,7 +282,8 @@ export function PlannerDashPipeline({ clients, onAddClientClick, inviteCount }: 
 
         <div className="flex items-center gap-2">
           {inviteCount > 0 && (
-            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+            <span className="flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+              <MailQuestion size={12} aria-hidden="true" />
               {t("planner_home.pipeline_pending_invites").replace("{{n}}", String(inviteCount))}
             </span>
           )}

@@ -142,11 +142,13 @@ export default function PlannerClientsPage() {
           track the sent invitations + their status. */}
       <InviteClientsCard />
 
-      <PlannerDashPipeline
-        clients={clients}
-        onAddClientClick={() => setShowAdd(true)}
-        inviteCount={invites.length}
-      />
+      <div className="mt-8">
+        <PlannerDashPipeline
+          clients={clients}
+          onAddClientClick={() => setShowAdd(true)}
+          inviteCount={invites.length}
+        />
+      </div>
     </div>
   );
 }
