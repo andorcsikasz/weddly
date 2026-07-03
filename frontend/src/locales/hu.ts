@@ -6414,7 +6414,7 @@ const hu: LocaleMessages = {
     banner_cta: "Indítsd a sajátodat",
     banner_dismiss_aria: "Bezárás",
     popup_title: "Minden megkeresés egy helyen.",
-    popup_body: "Az új munkaterületed esküvői szolgáltatóként.",
+    popup_body: "Az egyetlen munkafelület, amire szükséged lesz.",
     popup_cta: "Hirdesd a vállalkozásod",
     popup_microcopy: "Két perc, bankkártya nélkül.",
   },

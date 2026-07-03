@@ -6354,7 +6354,7 @@ const en: LocaleMessages = {
     banner_cta: "Start your own",
     banner_dismiss_aria: "Dismiss",
     popup_title: "Every inquiry. One workspace.",
-    popup_body: "Your new workspace as a wedding vendor.",
+    popup_body: "The only workspace you'll ever need.",
     popup_cta: "List your business",
     popup_microcopy: "Two minutes, no card needed.",
   },
