@@ -221,10 +221,41 @@ export interface AdminEngagementAnalytics {
 
 // ─── /api/admin/analytics/demo ───────────────────────────────────────────
 
+/** The three visitor-facing demo entry points: the couple workspace demo
+ *  (`POST /api/demo/start`), the planner demo (`/api/demo/planner/start`)
+ *  and the vendor demo (`/api/demo/vendor/start`). The seeded client
+ *  couples a planner/vendor demo creates are internal props, not demos a
+ *  visitor started — they are excluded from every count here. */
+export type AdminDemoKind = "couple" | "planner" | "vendor";
+
+/** Per-entry-point demo rollup — same semantics as the combined
+ *  `AdminDemoAnalytics` headline fields, scoped to one demo kind. */
+export interface AdminDemoTypeStats {
+  /** Demos of this kind alive in the DB right now. */
+  total: number;
+  /** New demos of this kind over each window. */
+  new_demos: { last_24h: number; last_7d: number; last_30d: number };
+  /** Newest-last `{date, count}` daily creations, last 14 days. */
+  demos_daily: Array<{ date: string; count: number }>;
+  /** Live demos of this kind with at least one audit event in 24h. */
+  active_24h: number;
+  /** Mean audit event count across live demos of this kind. */
+  avg_events: number;
+  /** Total audit events from this kind over the last 30 days. */
+  events_30d: number;
+  /** Ever-served count: live demos + purged `demo_usage` snapshots. */
+  served_total: number;
+  /** Mean lifetime (seconds) across purged demos of this kind. */
+  avg_lifetime_seconds: number;
+  /** Top features tried (live + historic), ordered by event count. */
+  top_features: Array<{ feature: string; count: number; demos: number }>;
+}
+
 /** Demo-platform usage rollup. Kept separate from the regular surfaces
  *  because demo workspaces are intentionally short-lived (a background
  *  sweep purges idle ones) and would skew signups / retention if mixed
- *  in with real users. */
+ *  in with real users. Headline fields are the SUM of the three kinds in
+ *  `by_type`; planner/vendor-seeded client couples count nowhere. */
 export interface AdminDemoAnalytics {
   /** Demo workspaces alive in the DB right now (excludes purged rows).
    *  Demo couples are flagged via `couples.is_demo = 1`. */
@@ -259,6 +290,10 @@ export interface AdminDemoAnalytics {
    *  ordered by event count. Same shape as the engagement endpoint's
    *  `top_features` so the frontend can reuse its bar-list component. */
   top_features: Array<{ feature: string; count: number; demos: number }>;
+  /** Per-entry-point breakdown — couple vs planner vs vendor demos,
+   *  each with the same stat shape so the frontend renders one panel
+   *  per kind off a shared component. */
+  by_type: Record<AdminDemoKind, AdminDemoTypeStats>;
 }
 
 // ─── /api/admin/analytics/growth-funnel ─────────────────────────────────────

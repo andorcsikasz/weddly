@@ -5816,6 +5816,11 @@ export interface LocaleMessages {
     analytics_demo_kpi_active: string;
     analytics_demo_kpi_events: string;
     analytics_demo_kpi_lifetime: string;
+    /** Demo-kind selector tiles — couple vs planner vs vendor demos. */
+    analytics_demo_type_couple: string;
+    analytics_demo_type_planner: string;
+    analytics_demo_type_vendor: string;
+    analytics_demo_type_served_note: string;
     /** Section headers — three `<section className="card">` blocks. */
     analytics_section_money: string;
     analytics_section_activity: string;

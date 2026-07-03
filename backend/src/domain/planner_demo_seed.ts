@@ -21,7 +21,14 @@
 
 import { db, now } from "../db";
 import { addCoupleMember, assignOrganiserCode } from "./couples";
-import { DEMO_MAX_AGE_MS, type DemoLocale, type LText, pickL, seedShrekDemo } from "./demo_seed";
+import {
+  DEMO_MAX_AGE_MS,
+  type DemoLocale,
+  insertDemoUsageSnapshot,
+  type LText,
+  pickL,
+  seedShrekDemo,
+} from "./demo_seed";
 import { generateHouseholdCode, generateInviteCode } from "./invite_codes";
 import { uniqueCoupleSlug } from "./slug";
 
@@ -855,11 +862,11 @@ function createDemoClientCouple(input: DemoCoupleInput): number {
       `INSERT INTO couples
          (partner_a_id, partner_b_id, display_name, bride_name, groom_name,
           wedding_date_kind, guest_count_kind, budget_kind,
-          style_tags_json, currency, status, is_demo,
+          style_tags_json, currency, status, is_demo, demo_kind,
           created_at, updated_at, onboarded_at)
        VALUES (?, NULL, ?, ?, ?,
                'exact', 'exact', 'exact',
-               ?, 'HUF', 'active', 1,
+               ?, 'HUF', 'active', 1, 'planner_client',
                ?, ?, ?)`,
     )
     .run(
@@ -1129,15 +1136,31 @@ export function purgeStalePlannerDemos(maxAgeMs: number = DEMO_MAX_AGE_MS): numb
   const cutoff = now() - maxAgeMs;
   const planners = db
     .prepare(
-      "SELECT id FROM users WHERE user_type = 'planner' AND email LIKE '%@demo.weddly.local' AND created_at < ?",
+      "SELECT id, created_at FROM users WHERE user_type = 'planner' AND email LIKE '%@demo.weddly.local' AND created_at < ?",
     )
-    .all(cutoff) as { id: number }[];
+    .all(cutoff) as { id: number; created_at: number }[];
   if (planners.length === 0) return 0;
 
   let purged = 0;
   for (const p of planners) {
     try {
       db.transaction(() => {
+        // Snapshot the planner demo's audit trail into demo_usage
+        // (kind='planner') before the rows are scrubbed, so the admin demo
+        // analytics keeps its per-kind "demos served" count after reaping.
+        const actions = (
+          db.prepare("SELECT action FROM audit_log WHERE actor_user_id = ?").all(p.id) as {
+            action: string;
+          }[]
+        ).map((r) => r.action);
+        insertDemoUsageSnapshot({
+          kind: "planner",
+          sourceId: p.id,
+          slug: null,
+          createdAt: p.created_at,
+          actions,
+        });
+
         db.prepare("DELETE FROM planner_clients WHERE planner_user_id = ?").run(p.id);
         db.prepare("DELETE FROM planner_events WHERE planner_user_id = ?").run(p.id);
         db.prepare("DELETE FROM planner_messages WHERE planner_user_id = ?").run(p.id);

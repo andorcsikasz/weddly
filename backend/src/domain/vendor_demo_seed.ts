@@ -25,7 +25,13 @@
 import type { Currency } from "@shared/types";
 import { db, now } from "../db";
 import { addCoupleMember, assignOrganiserCode } from "./couples";
-import { DEMO_MAX_AGE_MS, type DemoLocale, type LText, pickL } from "./demo_seed";
+import {
+  DEMO_MAX_AGE_MS,
+  type DemoLocale,
+  insertDemoUsageSnapshot,
+  type LText,
+  pickL,
+} from "./demo_seed";
 import { createVendorListing, patchListing } from "./listings";
 import { uniqueCoupleSlug } from "./slug";
 
@@ -276,11 +282,11 @@ function createDemoClientCouple(
       `INSERT INTO couples
          (partner_a_id, partner_b_id, display_name, bride_name, groom_name,
           wedding_date_kind, guest_count_kind, budget_kind,
-          style_tags_json, currency, status, is_demo,
+          style_tags_json, currency, status, is_demo, demo_kind,
           created_at, updated_at, onboarded_at)
        VALUES (?, NULL, ?, ?, ?,
                'exact', 'exact', 'exact',
-               '[]', 'HUF', 'active', 1,
+               '[]', 'HUF', 'active', 1, 'vendor_client',
                ?, ?, ?)`,
     )
     .run(
@@ -452,18 +458,34 @@ export function purgeStaleVendorDemos(maxAgeMs: number = DEMO_MAX_AGE_MS): numbe
   const cutoff = now() - maxAgeMs;
   const vendors = db
     .prepare(
-      `SELECT u.id AS user_id, va.id AS account_id
+      `SELECT u.id AS user_id, u.created_at AS created_at, va.id AS account_id
          FROM users u
          LEFT JOIN vendor_accounts va ON va.owner_user_id = u.id
         WHERE u.role = 'vendor' AND u.email LIKE '%@demo.weddly.local' AND u.created_at < ?`,
     )
-    .all(cutoff) as { user_id: number; account_id: number | null }[];
+    .all(cutoff) as { user_id: number; created_at: number; account_id: number | null }[];
   if (vendors.length === 0) return 0;
 
   let purged = 0;
   for (const v of vendors) {
     try {
       db.transaction(() => {
+        // Snapshot the vendor demo's audit trail into demo_usage
+        // (kind='vendor') before the rows are scrubbed, mirroring the
+        // planner sweep, so the per-kind "demos served" count survives.
+        const actions = (
+          db.prepare("SELECT action FROM audit_log WHERE actor_user_id = ?").all(v.user_id) as {
+            action: string;
+          }[]
+        ).map((r) => r.action);
+        insertDemoUsageSnapshot({
+          kind: "vendor",
+          sourceId: v.user_id,
+          slug: null,
+          createdAt: v.created_at,
+          actions,
+        });
+
         if (v.account_id !== null) {
           db.prepare("DELETE FROM vendor_client_payments WHERE vendor_account_id = ?").run(
             v.account_id,

@@ -823,6 +823,18 @@ db.exec(`
 // couples keep their existing read.
 addColumnIfMissing("couples", "is_demo", "is_demo INTEGER NOT NULL DEFAULT 0");
 db.exec("CREATE INDEX IF NOT EXISTS idx_couples_is_demo ON couples(is_demo, created_at)");
+// What KIND of demo row an is_demo couple is: 'couple' = a visitor-started
+// workspace demo, 'planner_client' / 'vendor_client' = throwaway client
+// couples the planner/vendor demo seeders create as props. The admin demo
+// analytics counts only 'couple' rows as visitor demos; NULL (pre-column
+// rows, gone within one 4h sweep) is treated as 'couple'.
+addColumnIfMissing("couples", "demo_kind", "demo_kind TEXT");
+// Which entry point a purged demo snapshot came from: 'couple' | 'planner' |
+// 'vendor' | 'planner_client' | 'vendor_client'. Planner/vendor rows store
+// the demo USER id in source_couple_id (a stable retroactive handle, not a
+// FK). Historic pre-column rows default to 'couple' — they are a
+// couple-heavy blend and stay in the couple bucket.
+addColumnIfMissing("demo_usage", "kind", "kind TEXT NOT NULL DEFAULT 'couple'");
 
 // Public wedding website (`/w/:slug`) — Next-7 schema additions, settled
 // via 3-agent consensus (Agent C, moderating between privacy-default and
@@ -1417,6 +1429,10 @@ addColumnIfMissing("users", "planner_km_radius", "planner_km_radius INTEGER");
 addColumnIfMissing("users", "planner_styles", "planner_styles TEXT");
 // Planner profile photo — an uploaded avatar served from /uploads/planners/...
 addColumnIfMissing("users", "planner_avatar_url", "planner_avatar_url TEXT");
+// Business category typed by the admin at planner provisioning (free text,
+// e.g. "esküvőszervező", "dekoratőr"). Surfaced on the admin Szervezők list
+// and in the activation email; not used for matching.
+addColumnIfMissing("users", "planner_category", "planner_category TEXT");
 // Official business identity, filled by the company lookup (routes/company_lookup.ts)
 // or typed manually. planner_country is ISO 3166-1 alpha-2 (shared/country_list.ts)
 // and decides whether the lookup UI appears at all.

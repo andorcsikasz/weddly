@@ -17,6 +17,7 @@ import type {
   AdminActivityAnalytics,
   AdminAnalyticsStats,
   AdminDemoAnalytics,
+  AdminDemoKind,
   AdminEngagementAnalytics,
   AdminGuestAnalytics,
   AdminHoneymoonAnalytics,
@@ -3125,6 +3126,12 @@ function formatRelative(
 
 // ─── Demo section ──────────────────────────────────────────────────────────
 
+const DEMO_KINDS: Array<{ id: AdminDemoKind; labelKey: string }> = [
+  { id: "couple", labelKey: "admin.analytics_demo_type_couple" },
+  { id: "planner", labelKey: "admin.analytics_demo_type_planner" },
+  { id: "vendor", labelKey: "admin.analytics_demo_type_vendor" },
+];
+
 function DemoSection({
   state,
   locale,
@@ -3133,6 +3140,7 @@ function DemoSection({
   locale: "hu" | "en";
 }) {
   const { t } = useT();
+  const [kind, setKind] = useState<AdminDemoKind>("couple");
   const title = t("admin.analytics_demo_title");
   if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
   if (state.status === "error")
@@ -3141,9 +3149,10 @@ function DemoSection({
     );
 
   const d = state.data;
-  const dailyMax = Math.max(0, ...d.demos_daily.map((p) => p.count));
+  const s = d.by_type[kind];
+  const dailyMax = Math.max(0, ...s.demos_daily.map((p) => p.count));
   const hasDemos = d.total_demos_served > 0 || d.total_demos > 0;
-  const topFeatureMax = Math.max(0, ...d.top_features.map((f) => f.count));
+  const topFeatureMax = Math.max(0, ...s.top_features.map((f) => f.count));
 
   return (
     <SectionCard title={title} subtitle={t("admin.analytics_demo_sub")}>
@@ -3153,33 +3162,65 @@ function DemoSection({
         </p>
       ) : (
         <>
+          <div className="mb-3 grid grid-cols-3 gap-2">
+            {DEMO_KINDS.map((k) => {
+              const stats = d.by_type[k.id];
+              const active = k.id === kind;
+              return (
+                <button
+                  key={k.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setKind(k.id)}
+                  className={
+                    "rounded-xl border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 " +
+                    (active
+                      ? "border-ink-900 bg-ink-900/[0.04] dark:border-paper-100 dark:bg-paper-100/10"
+                      : "border-paper-300 bg-white hover:border-ink-500 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600")
+                  }
+                >
+                  <div className="text-[11px] font-medium text-neutral-500 dark:text-umber-300">
+                    {t(k.labelKey)}
+                  </div>
+                  <div className="stat-num text-lg font-semibold text-neutral-800 dark:text-paper-50">
+                    {formatNumber(stats.total, locale)}
+                  </div>
+                  <div className="text-[10px] text-neutral-500 dark:text-umber-300">
+                    {t("admin.analytics_demo_type_served_note", {
+                      n: formatNumber(stats.served_total, locale),
+                    })}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
           <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <KpiTile
               label={t("admin.analytics_demo_kpi_total")}
-              value={formatNumber(d.total_demos, locale)}
+              value={formatNumber(s.total, locale)}
               sub={
-                t("admin.analytics_demo_kpi_served") +
-                ` ${formatNumber(d.total_demos_served, locale)}`
+                t("admin.analytics_demo_kpi_served") + ` ${formatNumber(s.served_total, locale)}`
               }
               emphasis
             />
             <KpiTile
               label={t("admin.analytics_demo_new_24h")}
-              value={formatNumber(d.new_demos.last_24h, locale)}
-              sub={`${formatNumber(d.new_demos.last_7d, locale)} / 7d`}
+              value={formatNumber(s.new_demos.last_24h, locale)}
+              sub={`${formatNumber(s.new_demos.last_7d, locale)} / 7d`}
             />
             <KpiTile
               label={t("admin.analytics_demo_kpi_active")}
-              value={formatNumber(d.active_demos_24h, locale)}
+              value={formatNumber(s.active_24h, locale)}
             />
             <KpiTile
               label={t("admin.analytics_demo_kpi_events")}
-              value={formatNumber(d.avg_events_per_demo, locale)}
-              sub={`Σ ${formatNumber(d.total_demo_events_30d, locale)}`}
+              value={formatNumber(s.avg_events, locale)}
+              sub={`Σ ${formatNumber(s.events_30d, locale)}`}
             />
             <KpiTile
               label={t("admin.analytics_demo_kpi_lifetime")}
-              value={formatLifetime(d.avg_lifetime_seconds, locale)}
+              value={formatLifetime(s.avg_lifetime_seconds, locale)}
             />
           </div>
 
@@ -3188,16 +3229,16 @@ function DemoSection({
               title={t("admin.analytics_demo_daily_title")}
               subtitle={t("admin.analytics_demo_daily_sub")}
             >
-              {d.demos_daily.length === 0 || dailyMax === 0 ? (
+              {s.demos_daily.length === 0 || dailyMax === 0 ? (
                 <p className="text-sm text-neutral-500 dark:text-umber-300">
                   {t("admin.analytics_demo_empty")}
                 </p>
               ) : (
                 <>
-                  <SignupsAreaChart points={d.demos_daily} max={dailyMax} />
+                  <SignupsAreaChart points={s.demos_daily} max={dailyMax} />
                   <div className="mt-1 flex justify-between text-[10px] text-neutral-500 dark:text-umber-300">
-                    <span>{d.demos_daily[0]?.date ?? ""}</span>
-                    <span>{d.demos_daily[d.demos_daily.length - 1]?.date ?? ""}</span>
+                    <span>{s.demos_daily[0]?.date ?? ""}</span>
+                    <span>{s.demos_daily[s.demos_daily.length - 1]?.date ?? ""}</span>
                   </div>
                 </>
               )}
@@ -3207,13 +3248,13 @@ function DemoSection({
               title={t("admin.analytics_demo_top_features_title")}
               subtitle={t("admin.analytics_demo_top_features_sub")}
             >
-              {d.top_features.length === 0 ? (
+              {s.top_features.length === 0 ? (
                 <p className="text-sm text-neutral-500 dark:text-umber-300">
                   {t("admin.analytics_demo_top_features_empty")}
                 </p>
               ) : (
                 <ul className="flex flex-col gap-1.5">
-                  {d.top_features.slice(0, 6).map((f) => {
+                  {s.top_features.slice(0, 6).map((f) => {
                     const pct =
                       topFeatureMax === 0
                         ? 0

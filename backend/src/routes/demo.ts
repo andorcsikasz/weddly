@@ -103,11 +103,11 @@ async function handleStart(ctx: Ctx): Promise<Response> {
       `INSERT INTO couples
          (partner_a_id, partner_b_id, display_name, bride_name, groom_name,
           wedding_date_kind, guest_count_kind, budget_kind,
-          style_tags_json, currency, status, is_demo,
+          style_tags_json, currency, status, is_demo, demo_kind,
           created_at, updated_at, onboarded_at)
        VALUES (?, NULL, 'Shrek & Fiona', 'Fiona', 'Shrek',
                'exact', 'exact', 'exact',
-               '["rustic","garden"]', 'HUF', 'active', 1,
+               '["rustic","garden"]', 'HUF', 'active', 1, 'couple',
                ?, ?, ?)`,
     )
     .run(userId, ts, ts, ts);

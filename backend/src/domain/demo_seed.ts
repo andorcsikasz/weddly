@@ -1457,8 +1457,15 @@ export const DEMO_MAX_AGE_MS = 4 * 60 * 60 * 1000;
 export function purgeStaleDemoCouples(maxAgeMs: number = DEMO_MAX_AGE_MS): number {
   const cutoff = now() - maxAgeMs;
   const rows = db
-    .prepare("SELECT id, slug, created_at FROM couples WHERE is_demo = 1 AND created_at < ?")
-    .all(cutoff) as { id: number; slug: string | null; created_at: number }[];
+    .prepare(
+      "SELECT id, slug, created_at, demo_kind FROM couples WHERE is_demo = 1 AND created_at < ?",
+    )
+    .all(cutoff) as {
+    id: number;
+    slug: string | null;
+    created_at: number;
+    demo_kind: string | null;
+  }[];
   if (rows.length === 0) return 0;
   let purged = 0;
   for (const r of rows) {
@@ -1473,7 +1480,7 @@ export function purgeStaleDemoCouples(maxAgeMs: number = DEMO_MAX_AGE_MS): numbe
       // Snapshot usage from audit_log BEFORE the rows disappear. We match
       // via couple_id directly so any "demo.start" entry written before the
       // user was linked to the couple is still captured.
-      snapshotDemoUsage(r.id, r.slug, r.created_at, userIds);
+      snapshotDemoUsage(r.id, r.slug, r.created_at, userIds, r.demo_kind ?? "couple");
 
       purgeOneCouple(r.id, { silent: true });
 
@@ -1512,6 +1519,7 @@ function snapshotDemoUsage(
   slug: string | null,
   createdAt: number,
   userIds: number[],
+  kind: string,
 ): void {
   // Pull every audit row attributable to this demo. We match by couple_id
   // OR actor_user_id ∈ demo's users, the demo.start row is logged with
@@ -1533,27 +1541,49 @@ function snapshotDemoUsage(
       .all(coupleId, ...userIds) as { action: string }[];
   }
 
+  insertDemoUsageSnapshot({
+    kind,
+    sourceId: coupleId,
+    slug,
+    createdAt,
+    actions: auditRows.map((r) => r.action),
+  });
+}
+
+/** Aggregate a purged demo's audit actions into one `demo_usage` row.
+ *  Shared by all three sweeps: the couples sweep passes the couple id +
+ *  its `demo_kind`, the planner/vendor sweeps pass the demo USER id with
+ *  kind 'planner' / 'vendor' (source_couple_id is just a stable handle,
+ *  not a FK — the source row is gone right after). */
+export function insertDemoUsageSnapshot(opts: {
+  kind: string;
+  sourceId: number;
+  slug: string | null;
+  createdAt: number;
+  actions: string[];
+}): void {
   const featureCounts: Record<string, number> = {};
-  for (const row of auditRows) {
-    const dot = row.action.indexOf(".");
-    const feature = dot === -1 ? row.action : row.action.slice(0, dot);
+  for (const action of opts.actions) {
+    const dot = action.indexOf(".");
+    const feature = dot === -1 ? action : action.slice(0, dot);
     featureCounts[feature] = (featureCounts[feature] ?? 0) + 1;
   }
 
   const purgedAt = now();
-  const lifetimeSeconds = Math.max(0, Math.floor((purgedAt - createdAt) / 1000));
+  const lifetimeSeconds = Math.max(0, Math.floor((purgedAt - opts.createdAt) / 1000));
   db.prepare(
     `INSERT INTO demo_usage
-       (source_couple_id, source_slug, created_at, purged_at,
+       (kind, source_couple_id, source_slug, created_at, purged_at,
         lifetime_seconds, total_events, feature_counts_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
-    coupleId,
-    slug,
-    createdAt,
+    opts.kind,
+    opts.sourceId,
+    opts.slug,
+    opts.createdAt,
     purgedAt,
     lifetimeSeconds,
-    auditRows.length,
+    opts.actions.length,
     JSON.stringify(featureCounts),
   );
 }

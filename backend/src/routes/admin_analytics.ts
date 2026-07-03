@@ -11,6 +11,8 @@ import type {
   AdminActivityAnalytics,
   AdminAnalyticsStats,
   AdminDemoAnalytics,
+  AdminDemoKind,
+  AdminDemoTypeStats,
   AdminEngagementAnalytics,
   AdminGrowthFunnelAnalytics,
   AdminGrowthFunnelStep,
@@ -875,151 +877,252 @@ function demoAnalytics(): AdminDemoAnalytics {
   const cutoff7d = now - 7 * DAY_MS;
   const cutoff30d = now - 30 * DAY_MS;
 
-  // Demo couples — flagged via is_demo. Live rows only; purged tombstones
-  // sit in status='deleting' and the background sweep drops them entirely.
-  const demoRows = db
-    .prepare(`SELECT id, created_at FROM couples WHERE is_demo = 1 AND status != 'deleting'`)
-    .all() as { id: number; created_at: number }[];
-
-  const totalDemos = demoRows.length;
-  let new24h = 0;
-  let new7d = 0;
-  let new30d = 0;
-  for (const r of demoRows) {
-    if (r.created_at >= cutoff24h) new24h += 1;
-    if (r.created_at >= cutoff7d) new7d += 1;
-    if (r.created_at >= cutoff30d) new30d += 1;
-  }
-
-  // 14-day daily creation series. Same UTC YYYY-MM-DD bucketing as the
-  // activity surface's signups_daily so the frontend can reuse the chart.
+  // 14-day daily bucketing. Same UTC YYYY-MM-DD scheme as the activity
+  // surface's signups_daily so the frontend can reuse the chart.
   const isoDay = (d: Date): string =>
     `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-  const days: Array<{ date: string; count: number }> = [];
   const todayUtc = new Date(now);
   todayUtc.setUTCHours(0, 0, 0, 0);
-  for (let i = 13; i >= 0; i -= 1) {
-    const d = new Date(todayUtc.getTime() - i * DAY_MS);
-    days.push({ date: isoDay(d), count: 0 });
-  }
-  const dateIndex = new Map(days.map((d, i) => [d.date, i]));
-  for (const r of demoRows) {
-    const d = new Date(r.created_at);
-    d.setUTCHours(0, 0, 0, 0);
-    const key = isoDay(d);
-    const idx = dateIndex.get(key);
-    if (idx !== undefined) {
-      const bucket = days[idx];
-      if (bucket) bucket.count += 1;
+  const emptyDays = (): Array<{ date: string; count: number }> => {
+    const days: Array<{ date: string; count: number }> = [];
+    for (let i = 13; i >= 0; i -= 1) {
+      const d = new Date(todayUtc.getTime() - i * DAY_MS);
+      days.push({ date: isoDay(d), count: 0 });
     }
-  }
-
-  // active_demos_24h + total_demo_events_30d + avg_events_per_demo. One
-  // SELECT joining audit_log → users → couples filtered by is_demo. We
-  // do this with a sub-query on couple ids to keep the planner happy.
-  const demoIds = demoRows.map((r) => r.id);
-  let activeDemos24h = 0;
-  let totalDemoEvents30d = 0;
-  let avgEventsPerDemo = 0;
-  if (demoIds.length > 0) {
-    const placeholders = demoIds.map(() => "?").join(",");
-    const auditDemoRows = db
-      .prepare(
-        `SELECT u.couple_id AS couple_id, a.created_at AS created_at FROM audit_log a
-          JOIN users u ON u.id = a.actor_user_id
-          WHERE u.couple_id IN (${placeholders})
-            AND a.created_at >= ?`,
-      )
-      .all(...demoIds, cutoff30d) as { couple_id: number; created_at: number }[];
-
-    totalDemoEvents30d = auditDemoRows.length;
-    const eventsPerDemo = new Map<number, number>();
-    const recentDemos = new Set<number>();
-    for (const r of auditDemoRows) {
-      eventsPerDemo.set(r.couple_id, (eventsPerDemo.get(r.couple_id) ?? 0) + 1);
-      if (r.created_at >= cutoff24h) recentDemos.add(r.couple_id);
-    }
-    activeDemos24h = recentDemos.size;
-    if (eventsPerDemo.size > 0) {
-      const sum = [...eventsPerDemo.values()].reduce((acc, n) => acc + n, 0);
-      avgEventsPerDemo = Math.round(sum / demoIds.length);
-    }
-  }
-
-  // ─── Historic snapshots + cross-source feature aggregate. ─────────────
-  // `demo_usage` rows are written by the continuous purge sweep right
-  // before each demo workspace is hard-deleted — one row per ever-purged
-  // demo with lifetime + feature counts. We blend them with live audit
-  // data so the "what did visitors try?" signal survives the 4h reaper.
-  const featureTotals = new Map<string, { count: number; demos: Set<string | number> }>();
-  const bump = (feature: string, n: number, demoKey: string | number): void => {
-    let bucket = featureTotals.get(feature);
-    if (!bucket) {
-      bucket = { count: 0, demos: new Set() };
-      featureTotals.set(feature, bucket);
-    }
-    bucket.count += n;
-    bucket.demos.add(demoKey);
+    return days;
   };
 
-  // Live demos — per-action counts from audit_log, grouped by couple.
-  if (demoIds.length > 0) {
-    const placeholders = demoIds.map(() => "?").join(",");
-    const liveByAction = db
-      .prepare(
-        `SELECT couple_id, action, COUNT(*) AS n FROM audit_log
-          WHERE couple_id IN (${placeholders})
-          GROUP BY couple_id, action`,
-      )
-      .all(...demoIds) as { couple_id: number; action: string; n: number }[];
-    for (const r of liveByAction) {
-      const dot = r.action.indexOf(".");
-      const feature = dot === -1 ? r.action : r.action.slice(0, dot);
-      bump(feature, r.n, `live:${r.couple_id}`);
-    }
+  interface LiveRow {
+    id: number;
+    created_at: number;
   }
-
-  // Historic snapshots — feature counts are pre-aggregated as JSON.
-  const usageRows = db
-    .prepare("SELECT source_couple_id, lifetime_seconds, feature_counts_json FROM demo_usage")
-    .all() as {
-    source_couple_id: number;
+  interface EventRow {
+    entity_id: number;
+    created_at: number;
+    action: string;
+  }
+  interface UsageRow {
+    kind: string;
+    source_id: number;
+    created_at: number;
     lifetime_seconds: number;
     feature_counts_json: string;
-  }[];
-  for (const u of usageRows) {
-    let counts: Record<string, number> = {};
-    try {
-      counts = JSON.parse(u.feature_counts_json) as Record<string, number>;
-    } catch {
-      counts = {};
-    }
-    for (const [feature, n] of Object.entries(counts)) {
-      bump(feature, n, `hist:${u.source_couple_id}`);
-    }
   }
 
-  const topFeatures = [...featureTotals.entries()]
-    .map(([feature, b]) => ({ feature, count: b.count, demos: b.demos.size }))
+  // ─── The three cohorts, one per demo entry point. ──────────────────────
+  // Couple demos are visitor-started workspaces (demo_kind='couple'; NULL
+  // covers pre-column rows, which reap within one 4h sweep). The client
+  // couples a planner/vendor demo seeds are demo_kind='*_client' props and
+  // count NOWHERE — before the split they inflated every headline, since
+  // one planner demo start seeds several is_demo couples.
+  const coupleLive = db
+    .prepare(
+      `SELECT id, created_at FROM couples
+        WHERE is_demo = 1 AND status != 'deleting'
+          AND COALESCE(demo_kind, 'couple') = 'couple'`,
+    )
+    .all() as LiveRow[];
+  const plannerLive = db
+    .prepare(
+      `SELECT id, created_at FROM users
+        WHERE user_type = 'planner' AND email LIKE '%@demo.weddly.local'`,
+    )
+    .all() as LiveRow[];
+  const vendorLive = db
+    .prepare(
+      `SELECT id, created_at FROM users
+        WHERE role = 'vendor' AND email LIKE '%@demo.weddly.local'`,
+    )
+    .all() as LiveRow[];
+
+  // Audit trail per cohort. Couple demos match on audit.couple_id (the
+  // demo.start row is stamped with it); planner/vendor demos match on the
+  // ACTOR, so actions a planner-demo visitor takes inside a seeded client
+  // workspace land in the planner bucket, not the couple one.
+  const eventsFor = (column: "couple_id" | "actor_user_id", ids: number[]): EventRow[] => {
+    if (ids.length === 0) return [];
+    const placeholders = ids.map(() => "?").join(",");
+    return db
+      .prepare(
+        `SELECT ${column} AS entity_id, created_at, action FROM audit_log
+          WHERE ${column} IN (${placeholders})`,
+      )
+      .all(...ids) as EventRow[];
+  };
+
+  // Historic snapshots — one row per ever-purged demo, written by the
+  // sweeps right before hard-delete. *_client rows are excluded the same
+  // way their live couples are.
+  const usageRows = db
+    .prepare(
+      `SELECT kind, source_couple_id AS source_id, created_at,
+              lifetime_seconds, feature_counts_json
+         FROM demo_usage`,
+    )
+    .all() as UsageRow[];
+
+  const statsFor = (live: LiveRow[], events: EventRow[], usage: UsageRow[]): AdminDemoTypeStats => {
+    // Starts (new_demos + demos_daily) blend live rows with purged
+    // snapshots — demos reap after ~4h, so live rows alone would zero out
+    // every day but today.
+    let new24h = 0;
+    let new7d = 0;
+    let new30d = 0;
+    const days = emptyDays();
+    const dateIndex = new Map(days.map((d, i) => [d.date, i]));
+    const starts = [...live.map((r) => r.created_at), ...usage.map((u) => u.created_at)];
+    for (const ts of starts) {
+      if (ts >= cutoff24h) new24h += 1;
+      if (ts >= cutoff7d) new7d += 1;
+      if (ts >= cutoff30d) new30d += 1;
+      const d = new Date(ts);
+      d.setUTCHours(0, 0, 0, 0);
+      const idx = dateIndex.get(isoDay(d));
+      if (idx !== undefined) {
+        const bucket = days[idx];
+        if (bucket) bucket.count += 1;
+      }
+    }
+
+    const featureTotals = new Map<string, { count: number; demos: Set<string> }>();
+    const bump = (feature: string, n: number, demoKey: string): void => {
+      let bucket = featureTotals.get(feature);
+      if (!bucket) {
+        bucket = { count: 0, demos: new Set() };
+        featureTotals.set(feature, bucket);
+      }
+      bucket.count += n;
+      bucket.demos.add(demoKey);
+    };
+
+    let events30d = 0;
+    const active = new Set<number>();
+    for (const e of events) {
+      if (e.created_at >= cutoff30d) events30d += 1;
+      if (e.created_at >= cutoff24h) active.add(e.entity_id);
+      const dot = e.action.indexOf(".");
+      bump(dot === -1 ? e.action : e.action.slice(0, dot), 1, `live:${e.entity_id}`);
+    }
+    for (const u of usage) {
+      let counts: Record<string, number> = {};
+      try {
+        counts = JSON.parse(u.feature_counts_json) as Record<string, number>;
+      } catch {
+        counts = {};
+      }
+      for (const [feature, n] of Object.entries(counts)) {
+        bump(feature, n, `hist:${u.source_id}`);
+      }
+    }
+
+    const topFeatures = [...featureTotals.entries()]
+      .map(([feature, b]) => ({ feature, count: b.count, demos: b.demos.size }))
+      .sort((a, b) => b.count - a.count || a.feature.localeCompare(b.feature))
+      .slice(0, 12);
+
+    return {
+      total: live.length,
+      new_demos: { last_24h: new24h, last_7d: new7d, last_30d: new30d },
+      demos_daily: days,
+      active_24h: active.size,
+      avg_events: live.length === 0 ? 0 : Math.round(events30d / live.length),
+      events_30d: events30d,
+      served_total: live.length + usage.length,
+      avg_lifetime_seconds:
+        usage.length === 0
+          ? 0
+          : Math.round(usage.reduce((s, u) => s + u.lifetime_seconds, 0) / usage.length),
+      top_features: topFeatures,
+    };
+  };
+
+  const byType: Record<AdminDemoKind, AdminDemoTypeStats> = {
+    couple: statsFor(
+      coupleLive,
+      eventsFor(
+        "couple_id",
+        coupleLive.map((r) => r.id),
+      ),
+      usageRows.filter((u) => u.kind === "couple"),
+    ),
+    planner: statsFor(
+      plannerLive,
+      eventsFor(
+        "actor_user_id",
+        plannerLive.map((r) => r.id),
+      ),
+      usageRows.filter((u) => u.kind === "planner"),
+    ),
+    vendor: statsFor(
+      vendorLive,
+      eventsFor(
+        "actor_user_id",
+        vendorLive.map((r) => r.id),
+      ),
+      usageRows.filter((u) => u.kind === "vendor"),
+    ),
+  };
+
+  // ─── Combined headline = sum of the three kinds. ───────────────────────
+  const kinds = [byType.couple, byType.planner, byType.vendor];
+  const sum = (pick: (k: AdminDemoTypeStats) => number): number =>
+    kinds.reduce((acc, k) => acc + pick(k), 0);
+
+  const totalDemos = sum((k) => k.total);
+  const totalDemoEvents30d = sum((k) => k.events_30d);
+
+  const combinedDays = emptyDays();
+  for (const k of kinds) {
+    k.demos_daily.forEach((d, i) => {
+      const bucket = combinedDays[i];
+      if (bucket) bucket.count += d.count;
+    });
+  }
+
+  // Weighted lifetime mean — weights are each kind's purged-snapshot count.
+  const lifetimeWeights = kinds.map((k) => k.served_total - k.total);
+  const lifetimeWeightSum = lifetimeWeights.reduce((a, b) => a + b, 0);
+  const avgLifetimeSeconds =
+    lifetimeWeightSum === 0
+      ? 0
+      : Math.round(
+          kinds.reduce((acc, k, i) => acc + k.avg_lifetime_seconds * (lifetimeWeights[i] ?? 0), 0) /
+            lifetimeWeightSum,
+        );
+
+  // Cohorts are disjoint, so merged demo counts can simply add up.
+  const mergedFeatures = new Map<string, { count: number; demos: number }>();
+  for (const k of kinds) {
+    for (const f of k.top_features) {
+      const bucket = mergedFeatures.get(f.feature);
+      if (bucket) {
+        bucket.count += f.count;
+        bucket.demos += f.demos;
+      } else {
+        mergedFeatures.set(f.feature, { count: f.count, demos: f.demos });
+      }
+    }
+  }
+  const topFeatures = [...mergedFeatures.entries()]
+    .map(([feature, b]) => ({ feature, count: b.count, demos: b.demos }))
     .sort((a, b) => b.count - a.count || a.feature.localeCompare(b.feature))
     .slice(0, 12);
 
-  const totalDemosServed = totalDemos + usageRows.length;
-  const avgLifetimeSeconds =
-    usageRows.length === 0
-      ? 0
-      : Math.round(usageRows.reduce((s, u) => s + u.lifetime_seconds, 0) / usageRows.length);
-
   return {
     total_demos: totalDemos,
-    new_demos: { last_24h: new24h, last_7d: new7d, last_30d: new30d },
-    demos_daily: days,
-    active_demos_24h: activeDemos24h,
-    avg_events_per_demo: avgEventsPerDemo,
+    new_demos: {
+      last_24h: sum((k) => k.new_demos.last_24h),
+      last_7d: sum((k) => k.new_demos.last_7d),
+      last_30d: sum((k) => k.new_demos.last_30d),
+    },
+    demos_daily: combinedDays,
+    active_demos_24h: sum((k) => k.active_24h),
+    avg_events_per_demo: totalDemos === 0 ? 0 : Math.round(totalDemoEvents30d / totalDemos),
     total_demo_events_30d: totalDemoEvents30d,
-    total_demos_served: totalDemosServed,
+    total_demos_served: sum((k) => k.served_total),
     avg_lifetime_seconds: avgLifetimeSeconds,
     top_features: topFeatures,
+    by_type: byType,
   };
 }
 
