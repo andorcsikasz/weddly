@@ -282,15 +282,17 @@ export function PlannerDashPipeline({ clients, onAddClientClick, inviteCount }: 
 
         <div className="flex items-center gap-2">
           {inviteCount > 0 && (
-            <span
-              className="flex items-center gap-1.5 rounded-full border border-amber-400 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-amber-700 dark:border-amber-500/50 dark:text-amber-300"
-              title={t("planner_home.pipeline_pending_invites").replace(
-                "{{n}}",
-                String(inviteCount),
-              )}
-            >
+            <span className="group/badge relative flex items-center gap-1.5 rounded-full border border-amber-400 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-amber-700 dark:border-amber-500/50 dark:text-amber-300">
               <MailQuestion size={12} aria-hidden="true" />
               {inviteCount}
+              {/* Instant tooltip — the native title attribute has a ~1s browser
+                  delay, so the full phrase reveals via CSS on hover instead. */}
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute right-0 top-full z-20 mt-1.5 whitespace-nowrap rounded-lg bg-umber-900 px-2.5 py-1 text-[11px] font-medium text-paper-50 opacity-0 shadow-pop transition-opacity duration-100 group-hover/badge:opacity-100 dark:bg-umber-950"
+              >
+                {t("planner_home.pipeline_pending_invites").replace("{{n}}", String(inviteCount))}
+              </span>
             </span>
           )}
           <button
