@@ -964,20 +964,32 @@ export interface LocaleMessages {
       learn_more: string;
     };
   };
-  /** Vendor calendar + to-do board at /vendor/calendar. The calendar mode is
-   *  the occupancy month grid (blocked + booked days, next-free line); the
-   *  tasks mode is the Trello-style board (todo / doing / done). */
+  /** Vendor calendar + to-do board at /vendor/calendar. The calendar mode
+   *  mirrors the planner's six views (day / 4day / week / month / year /
+   *  schedule) over bookings + inquiries + blocked days + task deadlines;
+   *  the tasks mode is the Trello-style board (todo / doing / done). */
   vendor_calendar: {
     page_title: string;
     mode_calendar: string;
     mode_tasks: string;
-    month_prev: string;
-    month_next: string;
+    nav_prev: string;
+    nav_next: string;
     today: string;
+    view_day: string;
+    view_4day: string;
+    view_week: string;
+    view_month: string;
+    view_year: string;
+    view_schedule: string;
+    /** Time-grid band label for date-only entries. */
+    all_day: string;
+    schedule_empty: string;
     legend_blocked: string;
     legend_booked: string;
-    /** Receives `{name}` - the couple name(s) booked on the day. */
-    booked_title: string;
+    legend_pending: string;
+    legend_tasks: string;
+    /** Short label on a blocked day's calendar pill. */
+    blocked_pill_label: string;
     /** Receives `{date}` - the day a click would block. */
     block_day_title: string;
     section_availability: string;
